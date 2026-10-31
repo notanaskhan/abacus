@@ -32,6 +32,7 @@ the decision for the firm to apply in CCH and stores no full TIN.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import re
 from collections.abc import Mapping, Sequence
@@ -51,7 +52,7 @@ from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.isolation import IsolationFailed, run_isolated
 from abacus.kernel.uow import DomainEvent, Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import work_item_facts
-from abacus.modules.evidence.api import file_handoff_copy, screen_and_stage
+from abacus.modules.evidence.api import file_handoff_copy, stage_content
 from abacus.modules.identity.api import (
     AuthContext,
     Forbidden,
@@ -510,7 +511,12 @@ async def import_k1_set(ctx: AuthContext, return_id: UUID, file_name: str, conte
     """The bridge's `k1_set` upload: parsed, stored write-once, applied; answers the sync event.
     The caller (`engine_import.import_file`) authorised `engine_import.create` on the return."""
     found = await _parsed(content)
-    screened = await screen_and_stage(ctx.tenant_id, content, file_name, None)
+    # T-02-T23 (DEC-1477): the manifest is JSON, which no upload type admits (DEC-58), so it is
+    # not screened as a client upload. It was parsed in the isolated child above against the
+    # strict schema (only its structured fields are kept, a full TIN refuses it); the bytes are
+    # stored write-once and encrypted as the record of what the engine sent.
+    stored = await stage_content(ctx.tenant_id, content)
+    name = "".join(c for c in file_name.rsplit("/", 1)[-1] if c.isprintable())[:200] or "k1_set"
     async with uow(ctx.tenant) as tx:
         link = await repo.link_of(tx.session, return_id)
         if link is not None and link.engine_return_id != found.engine_return_id:
@@ -524,11 +530,11 @@ async def import_k1_set(ctx: AuthContext, return_id: UUID, file_name: str, conte
                 "return_id": return_id,
                 "engine_return_id": found.engine_return_id,
                 "actor_user_id": ctx.user_id,
-                "file_name": screened.file_name,
-                "file_key": screened.stored.key,
-                "file_version": screened.stored.version_id,
-                "file_size": screened.stored.size,
-                "payload_sha256": screened.sha256,
+                "file_name": name,
+                "file_key": stored.key,
+                "file_version": stored.version_id,
+                "file_size": stored.size,
+                "payload_sha256": hashlib.sha256(content).hexdigest(),
                 "kind": "k1_set",
                 "version": found.version,
                 "summary": {

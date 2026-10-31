@@ -168,6 +168,7 @@ from abacus.modules.organisations.api import (
     ClientRecordChange,
     NewClient,
     RoleAsked,
+    activate_contact,
     clear_conflict_result,
     client_with_entity,
     create_client,
@@ -195,16 +196,26 @@ from abacus.modules.reporting.api import (
 )
 from abacus.modules.requests.api import (
     ItemPatch,
+    attach_organizer,
+    create_questionnaire,
+    draft_question,
     fulfil_by_upload,
+    import_questionnaire_template,
     latest_version_of,
     move_after_review,
+    publish_questionnaire_template,
+    questionnaire_templates,
+    save_portal_answer,
+    send_question,
     update_item,
 )
+from abacus.modules.tax.api import import_engine_file, share_k1_internal
 from abacus_tools import deploy_lock
 from abacus_tools.db_connect import connect as connect_db
 from abacus_tools.fakes.identity import ISSUER
 from abacus_tools.flags import set_flag
 from abacus_tools.local.db_guard import violations
+from abacus_tools.synthetic.documents import positioned_pdf
 from abacus_tools.synthetic.scenarios.brightwater_hale.acceptance import (
     CONTACTS,
     THORNBURY_ANSWERS,
@@ -374,6 +385,25 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.standards import (
 from abacus_tools.synthetic.scenarios.brightwater_hale.tax_board import BOARD_BY_LABEL
 from abacus_tools.synthetic.scenarios.brightwater_hale.tax_board import NEEDS as TAX_BOARD_NEEDS
 from abacus_tools.synthetic.scenarios.brightwater_hale.tax_board import SLICE as TAX_BOARD_SLICE
+from abacus_tools.synthetic.scenarios.brightwater_hale.tax_content import (
+    ANSWERED_BY,
+    ORGANIZER,
+    ORGANIZER_NAME,
+    K1Set,
+    ask_of,
+    contact_email,
+    organizer_csv,
+    set_of,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.tax_content import (
+    NEEDS as TAX_CONTENT_NEEDS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.tax_content import (
+    SLICE as TAX_CONTENT_SLICE,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.tax_content import (
+    Recipient as K1Recipient,
+)
 from abacus_tools.synthetic.scenarios.brightwater_hale.timeline import Event
 
 SUPERUSER_ENV: Final = "ABACUS_LOCAL_SUPERUSER_DSN"
@@ -1645,6 +1675,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     TAX_BOARD_SLICE: TAX_BOARD_NEEDS,  # T-02-T11: the board sets the binders' returns
     CONSENTS_SLICE: CONSENTS_NEEDS,  # T-01-T23: the sets name the tax engagements' entities
     STANDARDS_SLICE: STANDARDS_NEEDS,  # K-02-T18: Margaret creates; each owner publishes
+    TAX_CONTENT_SLICE: TAX_CONTENT_NEEDS,  # T-02-T23: K-1 sets, the organizer, questions
 }
 
 
@@ -2817,6 +2848,295 @@ async def _acceptance_decided(conn: asyncpg.Connection, _: Scenario, event: Even
 
 
 Handler = Callable[[asyncpg.Connection, Scenario, Event], Awaitable[None]]
+
+# --- T-02-T23 (`--slice tax_content`): K-1 sets and POR-05's questions -----------------------
+
+
+def _return_item(client: str) -> UUID:
+    """The client's 2025 return (its first part)."""
+    found = next((r for r in RETURN_BY_LABEL.values() if r.client == client), None)
+    if found is None:
+        raise LookupError(f"no 2025 return for {client!r}")
+    return UUID(found.id)
+
+
+def _recipient(event: Event) -> tuple[K1Set, K1Recipient]:
+    k1_set = set_of(str(event.data["client"]))
+    ref = str(event.data["ref"])
+    return k1_set, next(r for r in k1_set.recipients if r.ref == ref)
+
+
+def _k1_pdf(k1_set: K1Set, recipient: K1Recipient) -> bytes:
+    lines = [
+        f"Schedule K-1 (Form {k1_set.form.upper()}) 2025",
+        k1_set.client,
+        f"Recipient: {recipient.name}",
+        *(f"Box {b.code} {b.description} {b.amount}" for b in recipient.boxes),
+    ]
+    return positioned_pdf([[(50.0, 740.0 - 14 * i, line) for i, line in enumerate(lines)]])
+
+
+async def _k1_contact_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """A recipient's delivery contact on the issuing client, named as TXP-12 names it."""
+    k1_set, recipient = _recipient(event)
+    client = await _client_id(conn, k1_set.client)
+    await create_contact(
+        await _staff_context(conn, event),
+        client,
+        name=recipient.contact,
+        party_kind="person",
+        email=contact_email(recipient.contact),
+        phone=None,
+        roles=[],
+    )
+
+
+async def _contact_of(conn: asyncpg.Connection, client: str, name: str) -> UUID:
+    found = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT c.id FROM contacts c JOIN clients k ON k.id = c.client_id "
+        "WHERE c.tenant_id = $1 AND k.name = $2 AND c.display_name = $3",
+        TENANT,
+        client,
+        name,
+    )
+    if found is None:
+        raise LookupError(f"no contact {name!r} on {client!r}")
+    return cast(UUID, found)
+
+
+async def _k1_portal_person_added(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """POR-13's people: a client user whose contact is active, as an accepted invitation leaves
+    it (`organisations.activate_contact`), so a release grants them `k1_recipient` at once."""
+    name = str(event.data["contact"])
+    contact = await _contact_of(conn, str(event.data["client"]), name)
+    user = UUID(stable_id(f"user:k1:{name}"))
+    async with as_tenant(conn, TENANT):
+        await conn.execute(
+            "INSERT INTO users (id, idp_issuer, idp_subject, email, display_name) "
+            "VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING",
+            user,
+            ISSUER,
+            f"scenario-k1-{stable_id(name)}",
+            contact_email(name),
+            name,
+        )
+        await conn.execute(
+            "INSERT INTO memberships (tenant_id, user_id, status, kind) "
+            "VALUES ($1, $2, 'active', 'client') ON CONFLICT DO NOTHING",
+            TENANT,
+            user,
+        )
+    async with uow(TenantContext(TENANT, "system", LOADER)) as tx:
+        await activate_contact(tx, contact, user)
+
+
+async def _engine_pdf_imported(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """The engine's K-1 PDF through the bridge (`pdfs`), a person's upload."""
+    k1_set, recipient = _recipient(event)
+    await import_engine_file(
+        await _staff_context(conn, event),
+        _return_item(k1_set.client),
+        "pdfs",
+        k1_set.pdf_name(recipient),
+        _k1_pdf(k1_set, recipient),
+    )
+
+
+async def _k1_set_imported(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """The K-1 set through the bridge's `k1_set` import (T-02-T20); each delivery contact named."""
+    k1_set = set_of(str(event.data["client"]))
+    ctx = await _staff_context(conn, event)
+    item = _return_item(k1_set.client)
+    await import_engine_file(
+        ctx,
+        item,
+        "k1_set",
+        f"{k1_set.engine_return_id.replace(':', '_')}_k1_set.json",
+        k1_set.manifest(),
+    )
+    for recipient in k1_set.recipients:
+        contact = await _contact_of(conn, k1_set.client, recipient.contact)
+        # No route names a recipient's contact before a release (TXP-12's picker is T-02-T25):
+        # the loader links the contact it created, the one the release delivers to.
+        async with as_tenant(conn, TENANT):
+            await conn.execute(
+                "UPDATE k1_recipients SET contact_id = $3 WHERE tenant_id = $1 "
+                "AND work_item_id = $2 AND engine_ref = $4 AND contact_id IS NULL",
+                TENANT,
+                item,
+                contact,
+                recipient.ref,
+            )
+
+
+async def _k1_shared(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Samuel shares a partner's draft with their own 1040 (DEC-88), as TXP-12's share does."""
+    k1_set = set_of(str(event.data["client"]))
+    item = _return_item(k1_set.client)
+    package = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT p.id FROM k1_packages p JOIN k1_recipients r ON r.id = p.recipient_id "
+        "WHERE p.tenant_id = $1 AND p.work_item_id = $2 AND r.engine_ref = $3 "
+        "AND p.status = 'draft' ORDER BY p.version_no DESC LIMIT 1",
+        TENANT,
+        item,
+        str(event.data["ref"]),
+    )
+    if package is None:
+        raise LookupError(f"no draft K-1 for {event.data['ref']}")
+    await share_k1_internal(
+        await _staff_context(conn, event),
+        item,
+        [cast(UUID, package)],
+        [_return_item(str(event.data["target"]))],
+    )
+
+
+async def _organizer_imported(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Grace imports the firm's organizer template (T-02-T16's CSV), a draft version."""
+    await import_questionnaire_template(
+        await _staff_context(conn, event), ORGANIZER_NAME, organizer_csv(), "csv", dry_run=False
+    )
+
+
+async def _organizer_template(ctx: AuthContext) -> tuple[UUID, int]:
+    """The organizer template and the version to publish (its draft, else the current one)."""
+    found = next(t for t in await questionnaire_templates(ctx) if t.name == ORGANIZER_NAME)
+    return found.id, int(found.draft_version or found.current_version or 1)
+
+
+async def _organizer_published(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Daniel Reyes publishes it (`questionnaire_template.publish`, fresh second factor)."""
+    ctx = await _staff_context(conn, event)
+    template, version = await _organizer_template(ctx)
+    await publish_questionnaire_template(ctx, template, version)
+
+
+async def _binder_of(conn: asyncpg.Connection, item: UUID) -> UUID:
+    found = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM request_lists WHERE tenant_id = $1 AND work_item_id = $2 "
+        "ORDER BY created_at DESC LIMIT 1",
+        TENANT,
+        item,
+    )
+    if found is None:
+        raise LookupError(f"no binder on {item}")
+    return cast(UUID, found)
+
+
+async def _organizer_attached(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Kevin attaches the published organizer to the Feld 2025 Binder."""
+    ctx = await _staff_context(conn, event)
+    template, _version = await _organizer_template(ctx)
+    version_id = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM questionnaire_template_versions WHERE tenant_id = $1 "
+        "AND template_id = $2 AND published_at IS NOT NULL ORDER BY version DESC LIMIT 1",
+        TENANT,
+        template,
+    )
+    if version_id is None:
+        raise LookupError("the organizer is not published")
+    binder = await _binder_of(conn, _return_item(str(event.data["client"])))
+    await attach_organizer(ctx, binder, cast(UUID, version_id), None)
+
+
+async def _portal_context(conn: asyncpg.Connection, name: str) -> AuthContext:
+    """A portal person signed in with their second step (the portal's MFA floor)."""
+    person = PERSON_BY_NAME[name]
+    user = UUID(person.id)
+    async with as_tenant(conn, TENANT):
+        membership = await conn.fetchval(
+            "SELECT id FROM memberships WHERE tenant_id = $1 AND user_id = $2", TENANT, user
+        )
+    return AuthContext(
+        TenantContext(TENANT, "human", str(user)),
+        user,
+        cast(UUID, membership),
+        None,
+        system_now(),
+        client=True,
+        portal_second_step=True,
+    )
+
+
+async def _organizer_answered(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Claire Feld answers one organizer question in the portal (POR-05: 22 of 24)."""
+    question = next(q for q in ORGANIZER if q.key == str(event.data["key"]))
+    feld = _return_item("Jonah & Claire Feld")
+    row = await tenant_row(
+        conn,
+        TENANT,
+        "SELECT x.id, x.questionnaire_id FROM questions x JOIN questionnaires q "
+        "ON q.id = x.questionnaire_id WHERE q.tenant_id = $1 AND q.work_item_id = $2 "
+        "AND q.kind = 'organizer' AND x.client_wording = $3",
+        TENANT,
+        feld,
+        question.wording,
+    )
+    if row is None:
+        raise LookupError(f"no organizer question {question.key}")
+    await save_portal_answer(
+        await _portal_context(conn, str(event.data.get("person", ANSWERED_BY))),
+        cast(UUID, row["questionnaire_id"]),
+        cast(UUID, row["id"]),
+        question.answer,
+        1,
+    )
+
+
+async def _audit_item(conn: asyncpg.Connection, client: str) -> UUID:
+    audit = next(a for a in AUDITS if a.client == client)
+    found = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM work_items WHERE tenant_id = $1 AND engagement_id = $2 "
+        "ORDER BY created_at LIMIT 1",
+        TENANT,
+        engagement_id_of(audit),
+    )
+    if found is None:
+        raise LookupError(f"no audit work item for {client!r}")
+    return cast(UUID, found)
+
+
+async def _questions_sent(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """A person's team questions or inquiry: created, each question drafted, then sent."""
+    ask = ask_of(str(event.data["label"]))
+    ctx = await _staff_context(conn, event)
+    item = (
+        _return_item(ask.client) if ask.work == "return" else await _audit_item(conn, ask.client)
+    )
+    addressee = (
+        await _contact_of(conn, ask.client, ask.addressee) if ask.addressee is not None else None
+    )
+    made = await create_questionnaire(
+        ctx,
+        kind=ask.kind,
+        work_item_id=item,
+        title=ask.title,
+        addressed_to_contact_id=addressee,
+        due_on=date.fromisoformat(ask.due) if ask.due is not None else None,
+    )
+    for wording, help_text in ask.questions:
+        drafted = await draft_question(
+            ctx,
+            made.id,
+            section=ask.title,
+            type_="yes_no" if ask.work == "return" else "long_text",
+            client_wording=wording,
+            help_text=help_text or None,
+            linked_request_item_id=None,
+        )
+        await send_question(ctx, drafted.id)
+
+
 HANDLERS: Final[dict[str, Handler]] = {
     "identity.firm_created": _firm_created,
     "organisations.office_created": _office_created,
@@ -2905,6 +3225,18 @@ HANDLERS: Final[dict[str, Handler]] = {
     "standards.version_published": _standard_published,
     "reporting.template_imported": _report_template_imported,
     "reporting.template_published": _report_template_published,
+    # T-02-T23 (`--slice tax_content`): contacts and portal people, the engine's PDFs, then each
+    # K-1 set and the shares; the organizer imported, published, attached and answered; asks.
+    "tax.k1_contact_created": _k1_contact_created,
+    "tax.k1_portal_person_added": _k1_portal_person_added,
+    "tax.engine_pdf_imported": _engine_pdf_imported,
+    "tax.k1_set_imported": _k1_set_imported,
+    "tax.k1_shared": _k1_shared,
+    "requests.organizer_imported": _organizer_imported,
+    "requests.organizer_published": _organizer_published,
+    "requests.organizer_attached": _organizer_attached,
+    "requests.organizer_answered": _organizer_answered,
+    "requests.questions_sent": _questions_sent,
 }
 # Within one instant the timeline orders by label; the loader orders by dependency first.
 _ORDER: Final = {kind: n for n, kind in enumerate(HANDLERS)}
