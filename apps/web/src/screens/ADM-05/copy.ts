@@ -63,6 +63,23 @@ export const COPY = {
   renewTip: "Opens SIG-02 with the drafted envelopes",
   clear: "Clear",
   error: "Consents couldn't load.",
+  // T-01-T32 (part 2): renewals (d, h) and the evidence drawer (c).
+  renewalsDrafted: (n: number): string => `${String(n)} renewal envelopes drafted`,
+  drawer: {
+    title: (client: string): string => `§7216 consents · ${client}`,
+    purpose: "Purpose",
+    templates: "Templates",
+    signed: "Signed",
+    method: "Method",
+    expires: "Expires",
+    reads: "Agent reads since signature",
+    readCount: (n: number): string => `${String(n)} tool calls`,
+    documents: "Signed documents",
+    download: "Download evidence",
+    esign: "Accrued e-signature",
+    separate:
+      "The two arrived in one envelope but are separate signed documents (Rev. Proc. 2013-14 §5.05).",
+  },
   retry: "Try again",
 } as const;
 
@@ -75,6 +92,22 @@ export const PURPOSES: Readonly<Record<Purpose, string>> = {
   third_party_disclosure: "Disclosure to a named third party",
   other_services_use: "Use for other services",
   firm_defined: "Firm-defined purpose",
+};
+
+/** T-01-T32: each signed document's tab and the paper's heading (the handoff's c). */
+export const DOCUMENT_TABS: Readonly<Partial<Record<Purpose, string>>> = {
+  use: "Consent to use",
+  ai_disclosure: "Consent to disclose — AI sub-processors",
+};
+export const DOCUMENT_HEADINGS: Readonly<Partial<Record<Purpose, string>>> = {
+  use: "Consent to Use of Tax Return Information",
+  ai_disclosure: "Consent to Disclose Tax Return Information to AI Service Providers",
+};
+export const METHODS: Readonly<Record<string, string>> = {
+  email_code: "email code",
+  kba: "KBA",
+  wet: "wet signature",
+  record: "recorded",
 };
 
 /** The purpose chip's options (the spec's picker, in its order). */

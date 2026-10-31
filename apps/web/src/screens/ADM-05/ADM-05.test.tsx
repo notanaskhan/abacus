@@ -5,11 +5,12 @@
 import { client } from "@abacus/api-client/client";
 import { toastStore } from "@abacus/ui";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { installFixtureMode } from "../../app-core/fixture-mode";
 import { newQueryClient } from "../../testing/support";
-import { ConsentRegistryPage } from ".";
+import { type JSX, useState } from "react";
+import { ADM05, ConsentRegistryPage, parseSearch } from ".";
 import { type Adm05State, OPENS, scenarios } from "./scenarios";
 
 beforeAll(() => {
@@ -124,6 +125,89 @@ describe("ADM-05 links (DEC-1273)", () => {
     const link = await screen.findByRole("link", { name: "Morgan & Kai Ferris" });
     expect(link.getAttribute("href")).toMatch(
       /^\/clients\/[0-9a-f-]{36}\/tax-profile\/consents$/u,
+    );
+  });
+});
+
+// T-01-T32 (part 2): c, d, e and h on their fixture scenarios.
+function showWith(state: Adm05State, opened: string[]): void {
+  restore = installFixtureMode(scenarios[state]);
+  render(
+    <QueryClientProvider client={newQueryClient()}>
+      <ADM05Page initial={OPENS[state]} onOpenEnvelope={(id) => opened.push(id)} />
+    </QueryClientProvider>,
+  );
+}
+
+function ADM05Page({
+  initial,
+  onOpenEnvelope,
+}: {
+  initial: string;
+  onOpenEnvelope: (id: string) => void;
+}): JSX.Element {
+  const [search, setSearch] = useState(() => parseSearch(initial));
+  return <ADM05 search={search} onSearch={setSearch} onOpenEnvelope={onOpenEnvelope} />;
+}
+
+describe("ADM-05 c · evidence drawer", () => {
+  it("shows Feld's two signed documents, each on its own paper", async () => {
+    show("c");
+    fireEvent.click(await screen.findByRole("button", { name: "Evidence · Jonah & Claire Feld" }));
+    const drawer = await screen.findByRole("dialog");
+    expect(
+      within(drawer).getAllByText("§7216 consents · Jonah & Claire Feld").length,
+    ).toBeGreaterThan(0);
+    expect(await within(drawer).findByText("Use · AI disclosure (2 consents)")).toBeTruthy();
+    expect(within(drawer).getByText("142 tool calls")).toBeTruthy();
+    expect(within(drawer).getByText(/Claire Feld Feb 2, 2026/)).toBeTruthy();
+    expect(within(drawer).getByText("Consent to Use of Tax Return Information")).toBeTruthy();
+    fireEvent.click(
+      within(drawer).getByRole("tab", { name: "Consent to disclose — AI sub-processors" }),
+    );
+    expect(
+      await within(drawer).findByText(
+        "Consent to Disclose Tax Return Information to AI Service Providers",
+      ),
+    ).toBeTruthy();
+    expect(within(drawer).getByRole("button", { name: "Download evidence" })).toBeTruthy();
+  });
+});
+
+describe("ADM-05 d and h · renewals", () => {
+  it("drafts one envelope per client, says so, and opens SIG-02", async () => {
+    const opened: string[] = [];
+    showWith("d", opened);
+    const shown = await rows();
+    for (const row of shown.slice(2, 5)) {
+      const box = within(row).queryByRole("checkbox");
+      if (box !== null && !(box as HTMLInputElement).disabled) fireEvent.click(box);
+    }
+    const renew = await screen.findByRole("button", { name: /^Renew \d…$/u });
+    const n = Number(/\d/u.exec(renew.textContent)?.[0] ?? "0");
+    fireEvent.click(renew);
+    await waitFor(() => {
+      expect(toastStore.list().map((t) => t.text)).toContain(
+        `${String(n)} renewal envelopes drafted`,
+      );
+    });
+    expect(n).toBe(3);
+    expect(opened).toHaveLength(1);
+  });
+});
+
+describe("ADM-05 e · declined", () => {
+  it("explains why a declined consent is never asked again", async () => {
+    show("e");
+    const shown = await rows();
+    const harold = shown.find((r) => r.textContent.includes("Harold Stein"));
+    expect(harold).toBeDefined();
+    if (harold === undefined) return;
+    expect(within(harold).getByRole("checkbox")).toHaveProperty("disabled", true);
+    expect(harold.querySelector("[data-declined-tip]")).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Request consent…" })).toHaveProperty(
+      "disabled",
+      true,
     );
   });
 });
