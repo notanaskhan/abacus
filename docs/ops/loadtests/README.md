@@ -22,7 +22,7 @@ public. Load runs on synthetic firms only, so there is no client data to leak, a
 |---|---|
 | Harness: YAML profiles, client-side p50/p95/p99, SSE, Temporal load (`make loadtest PROFILE=`) | built (Q-03-T035) |
 | Journey content: `journeys` (J02, J04-PBC, J12 with persona weights), `pbc_import_burst` (300-item import), `smoke` | built (Q-03-T044) |
-| Firm profiles x1, x25, x100 (`make seed-staging PROFILE=`) | built (Q-03-T044) |
+| Firm profiles x1, x25, x100 (`make seed-staging PROFILE=`) | built (Q-03-T044); x25 rehearsed on a laptop's throwaway Postgres 2026-11-01 (below) |
 | Perf stack `infra/envs/perf` and its create and destroy workflow | **not built** (Q-03-T036) |
 | Chapter 10 scenarios: `monday_9am`, `deadline_surge`, `pbc_import_fairness`, `sse_soak`, `backfill_business_hours`, `failure_under_load`; the post-deploy `x1_smoke` | built (Q-03-T043) |
 | `--dry-run` (`make loadtest DRY_RUN=1`): the plan, no request | built (Q-03-T043) |
@@ -66,6 +66,7 @@ recorded in the vault, never here.
 1. Seed through the perf stack's ops task, never from a laptop: the command is `make seed-staging PROFILE=x1` (or `x25`, `x100`), which runs `abacus_tools.synthetic.fleet --staging --profile x1`. It refuses unless the environment is staging-type, no staging deploy is in flight, and every fleet firm id it touches is synthetic. **x25 and x100 also refuse any database host that does not start `abacus-perf`** (`fleet.perf_guard`): Q-03-T036 must name the perf stack's database instance that way, and staging's shared database never matches. x1 may seed staging (one firm). Every check reads as the firm under row-level security, so it holds as the owner role.
 2. The x1 profile is 1 firm; x25 is 25 and x100 is 100 Brightwater-size firms: 46 seats, 184 clients, 27 audits with a 16-request PBC list each, two client people per audit, the rollout and portal flags on. Firm n is the same firm in every profile, so x25 after x1 adds 24.
 3. Re-running a profile writes nothing (`N write(s), M already loaded` in the output). That is the check that the seed is complete.
+4. Laptop rehearsal of x25 (TASK-2471, 2026-11-01; `fleet.load(dsn, "x25")` on a throwaway local Postgres, never a hosted one): 25 synthetic firms, 2,500 memberships (46 seats and 54 client people each), 4,600 clients, 675 audits, 675 PBC lists, 10,800 requests and 4,600 `client.created` audit rows through `organisations.api.create_client`; 9,025 writes in 76 s; the re-run wrote nothing in 8 s. The profile's content is complete; only its run on the perf stack waits for Q-03-T036.
 
 ## 4. Run and read
 
