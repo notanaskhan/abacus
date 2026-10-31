@@ -17,7 +17,8 @@ Expand-only. RED.
 - `approval_grants.action` takes the matrix's action pattern (digits after the first letter,
   DEC-1162), so `k1_package.release` can be granted.
 - `schedule_k_release.requested` and `schedule_k_release.undone` join the human-only audit
-  register (65 entries; the downgrade restores 0563's 63).
+  register, with `delivery_packet.approved` (on the yaml since T-01-T35) so the database agrees
+  with it again (66 entries; the downgrade restores 0563's 63).
 
 Classification: ids and times Internal; `failure_code` a code, never a value.
 
@@ -101,7 +102,16 @@ _BEFORE = [
     "suggestion.edited",
     "team.approved",
 ]
-_HUMAN_ONLY = sorted([*_BEFORE, "schedule_k_release.requested", "schedule_k_release.undone"])
+# `delivery_packet.approved` is on the yaml register (T-01-T35) without a migration; it joins here
+# so the database agrees with the yaml again.
+_HUMAN_ONLY = sorted(
+    [
+        *_BEFORE,
+        "delivery_packet.approved",
+        "schedule_k_release.requested",
+        "schedule_k_release.undone",
+    ]
+)
 
 
 def _human_only(actions: list[str]) -> None:

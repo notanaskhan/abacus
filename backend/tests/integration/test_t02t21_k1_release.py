@@ -233,3 +233,33 @@ async def test_only_a_person_releases_and_the_database_agrees(
             "UPDATE k1_packages SET status = 'released', released_at = now() WHERE id = $1",
             finals[0],
         )
+
+
+async def test_a_contact_of_another_client_is_never_given_the_k1(
+    board: Board, sent: Sent, signer: None
+) -> None:
+    ridgeline, feld, samuel, finals = await _ready(board)
+    other_client = await board.seed.value("SELECT client_id FROM work_items WHERE id = $1", feld)
+    stranger = await board.seed.value(
+        "INSERT INTO contacts (tenant_id, client_id, display_name, email, contact_kind, "
+        "portal_state) VALUES ($1, $2, 'Not a partner', 'stranger@example.test', "
+        "'k1_recipient', 'not_invited') RETURNING id",
+        board.tenant,
+        other_client,
+    )
+    await board.seed.run(
+        "UPDATE k1_packages SET delivery_contact_id = $2 WHERE id = $1", finals[0], stranger
+    )
+    with frozen(DEMO):
+        made = await k1_release.request_release(samuel, ridgeline, finals, TEMPLATE, 2, None)
+    with frozen(LATER):
+        assert await k1_release.start(board.tenant, made.id) == "running"
+        with pytest.raises(Exception, match="contact_missing"):
+            await k1_release.deliver(board.tenant, made.id, finals[0])
+    assert sent.keys == []
+    assert (
+        await board.seed.value(
+            "SELECT count(*) FROM client_access_grants WHERE contact_id = $1", stranger
+        )
+        == 0
+    )
