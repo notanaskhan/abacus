@@ -56,3 +56,7 @@ Cells (stored as `integration_mappings`): `return_id_template` (default `{Tax ye
 
 ## 10. PDFs, acknowledgements and diagnostic issues, live since T-01-T26 (DEC-1464)
 `kind=pdfs` (one PDF per upload, named `<tax year><type>_<client code>_V<n>_<kind>.pdf`, kinds as in §6) files an imported evidence version (channel `import`, source `engine_import`): the client copy, vouchers and K-1s in Deliverables, Form 8879 and NY TR-579-IT in Signed authorizations. `kind=acks` stores one pending `engine_acks` row per jurisdiction (`federal` or a state's two letters; the submission id's last four only) and announces `engine_ack.rejected` per rejection. A diagnostics `error` raises one `engine_diagnostic` issue per return and `engine:<code>:<field>` however often the file is re-imported. Both answer 201 with an import of status `routed`. 422 `engine_file_invalid` reasons add `bad_pdf_name`, `unknown_pdf_kind`, `not_a_pdf`; `import_kind_unavailable` is no longer answered.
+
+## T-01-T33 additions (DEC-1473)
+`EngineSyncOut.checkpoint_id` (additive): the return's current checkpoint, the one `POST …/engine-exports` requires. The live read fills `blockers` (`final_approval_required` first until the return's status is exportable, then final approval's blockers) and `approver_name`.
+

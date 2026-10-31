@@ -11557,6 +11557,10 @@ export type EngineSyncOut = {
      */
     blockers?: Array<ApprovalBlockerOut>;
     /**
+     * Checkpoint Id
+     */
+    checkpoint_id?: string | null;
+    /**
      * Diagnostics
      */
     diagnostics: Array<EngineDiagnosticOut>;

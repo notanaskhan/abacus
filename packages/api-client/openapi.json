@@ -24961,6 +24961,19 @@
             "title": "Blockers",
             "type": "array"
           },
+          "checkpoint_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Checkpoint Id"
+          },
           "diagnostics": {
             "cls": "restricted",
             "items": {
