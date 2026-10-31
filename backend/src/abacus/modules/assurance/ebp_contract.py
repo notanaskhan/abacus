@@ -41,8 +41,10 @@ from abacus.modules.identity.api import (
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
 Money = Annotated[Decimal, classified("confidential")]
+MaybeMoney = Annotated[Decimal | None, classified("confidential")]
 Label = Annotated[str, Field(max_length=300), classified("internal")]
 Note = Annotated[str, Field(min_length=1, max_length=2000), classified("confidential")]
+MaybeNote = Annotated[str | None, Field(min_length=1, max_length=2000), classified("confidential")]
 EbpAction = Literal[
     "ebp_plan.edit",
     "ebp_provider.manage",
@@ -88,7 +90,7 @@ class FigureRowOut(BaseModel):
 
     key: Annotated[str, Field(pattern=r"^[a-z0-9_.]{1,64}$"), classified("internal")]
     label: Label
-    amount: Money | None
+    amount: MaybeMoney
     status: Annotated[str | None, Field(max_length=40), classified("internal")] = None
     note: Annotated[str | None, Field(max_length=500), classified("confidential")] = None
 
@@ -348,7 +350,7 @@ class PartIvLineOut(BaseModel):
 
     line: Annotated[Literal["4a", "4b", "4d", "4i", "4j"], classified("internal")]
     draft_answer: Annotated[Literal["yes", "no"] | None, classified("internal")]
-    draft_amount: Money | None
+    draft_amount: MaybeMoney
     consistency: Annotated[Literal["consistent", "inconsistent"], classified("internal")]
     basis: Label
 
@@ -399,7 +401,7 @@ class FiguresOut(BaseModel):
 
     title: Label
     rows: Annotated[list[FigureRowOut], Field(max_length=500), classified("confidential")]
-    total: Money | None
+    total: MaybeMoney
     allowed_actions: Actions
 
 
@@ -416,7 +418,7 @@ class ResultIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     result: Annotated[Literal["pass", "exception", "no_effect"], classified("internal")]
-    note: Note | None = None
+    note: MaybeNote = None
 
 
 class CertificationPointIn(BaseModel):
@@ -451,7 +453,7 @@ class Aud27ItemOut(BaseModel):
 
     id: Annotated[UUID, classified("internal")]
     name: Annotated[str, Field(max_length=300), classified("confidential")]
-    amount: Money | None
+    amount: MaybeMoney
     status: Annotated[AudItemStatus, classified("internal")]
     # "Evaluated · pending EP" is a display variant of evaluated.
     pending_ep: Annotated[bool, classified("internal")]

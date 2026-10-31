@@ -4580,7 +4580,6 @@
           "amount": {
             "anyOf": [
               {
-                "cls": "confidential",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
                 "type": "string"
               },
@@ -4588,6 +4587,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Amount"
           },
           "id": {
@@ -29030,7 +29030,6 @@
           "amount": {
             "anyOf": [
               {
-                "cls": "confidential",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
                 "type": "string"
               },
@@ -29038,6 +29037,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Amount"
           },
           "key": {
@@ -29163,7 +29163,6 @@
           "total": {
             "anyOf": [
               {
-                "cls": "confidential",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
                 "type": "string"
               },
@@ -29171,6 +29170,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Total"
           }
         },
@@ -51637,7 +51637,6 @@
           "draft_amount": {
             "anyOf": [
               {
-                "cls": "confidential",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
                 "type": "string"
               },
@@ -51645,6 +51644,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Draft Amount"
           },
           "draft_answer": {
@@ -87039,7 +87039,6 @@
           "note": {
             "anyOf": [
               {
-                "cls": "confidential",
                 "maxLength": 2000,
                 "minLength": 1,
                 "type": "string"
@@ -87048,6 +87047,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Note"
           },
           "result": {
