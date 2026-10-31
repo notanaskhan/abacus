@@ -62,6 +62,7 @@ from abacus.modules.signatures.provider import (
     SignerSpec,
     SignerState,
     provider_for,
+    sign_return_url,
 )
 from abacus.modules.signatures.reminders import reminder_instants, reminder_sender
 from abacus.modules.signatures.workflows import EnvelopeInput, ReminderDue, SendPlan
@@ -179,6 +180,7 @@ async def envelope_send(given: EnvelopeInput) -> SendPlan:
                 SignerSpec(str(p.id), int(p.order), int(p.routing_group), p.identity_method)
                 for p in people
             ),
+            return_url=sign_return_url(envelope_id),
         )
         try:
             adapter = await provider_for(tenant.tenant_id)

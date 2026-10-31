@@ -296,7 +296,7 @@ from abacus.modules.evidence.uploads import (
     upload,
     upload_preview,
 )
-from abacus.modules.evidence.viewer import readable_version, viewer_page
+from abacus.modules.evidence.viewer import readable_version, signer_page, viewer_page
 from abacus.modules.evidence.withdrawals import ACTIVITIES as WITHDRAWAL_ACTIVITIES
 from abacus.modules.evidence.withdrawals import SUBSCRIPTIONS as WITHDRAWAL_SUBSCRIPTIONS
 from abacus.modules.evidence.withdrawals import WORKFLOWS as WITHDRAWAL_WORKFLOWS
@@ -631,6 +631,7 @@ __all__ = [
     "screen_and_stage_detached",
     "screening_facts",
     "set_policy",
+    "signer_page",
     "stage_content",
     "stale_pdfs",
     "start_trust_layer_backfill",

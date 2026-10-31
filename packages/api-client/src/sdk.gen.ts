@@ -9128,7 +9128,7 @@ export const startConnection = <ThrowOnError extends boolean = false>(options: O
 /**
  * Portal List Route
  *
- * POR-06 list (N-02-T23).
+ * POR-06 list (N-02-T23): the person's own signer rows, through `scope_only`.
  */
 export const portalList = <ThrowOnError extends boolean = false>(options?: Options<PortalListData, ThrowOnError>): RequestResult<PortalListResponses, PortalListErrors, ThrowOnError> => (options?.client ?? client).get<PortalListResponses, PortalListErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9139,7 +9139,7 @@ export const portalList = <ThrowOnError extends boolean = false>(options?: Optio
 /**
  * Portal View Route
  *
- * POR-06 review (N-02-T23).
+ * POR-06 review (N-02-T23): the documents, the person's fields and state.
  */
 export const portalView = <ThrowOnError extends boolean = false>(options: Options<PortalViewData, ThrowOnError>): RequestResult<PortalViewResponses, PortalViewErrors, ThrowOnError> => (options.client ?? client).get<PortalViewResponses, PortalViewErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9150,7 +9150,7 @@ export const portalView = <ThrowOnError extends boolean = false>(options: Option
 /**
  * Portal Decline Route
  *
- * Decline with a reason (N-02-T28).
+ * Decline with a reason (N-02-T23); signing sessions are refused while declined.
  */
 export const portalDecline = <ThrowOnError extends boolean = false>(options: Options<PortalDeclineData, ThrowOnError>): RequestResult<PortalDeclineResponses, PortalDeclineErrors, ThrowOnError> => (options.client ?? client).post<PortalDeclineResponses, PortalDeclineErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9165,7 +9165,8 @@ export const portalDecline = <ThrowOnError extends boolean = false>(options: Opt
 /**
  * Portal Decline Withdraw Route
  *
- * Withdraw a decline while open (N-02-T28).
+ * Withdraw the person's own portal decline while the envelope is Declined (N-02-T23);
+ * 409 `decline_not_withdrawable` otherwise.
  */
 export const portalDeclineWithdraw = <ThrowOnError extends boolean = false>(options: Options<PortalDeclineWithdrawData, ThrowOnError>): RequestResult<PortalDeclineWithdrawResponses, PortalDeclineWithdrawErrors, ThrowOnError> => (options.client ?? client).post<PortalDeclineWithdrawResponses, PortalDeclineWithdrawErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9176,7 +9177,7 @@ export const portalDeclineWithdraw = <ThrowOnError extends boolean = false>(opti
 /**
  * Portal Page Route
  *
- * A page the signer reviews (N-02-T23).
+ * A masked page the signer reviews (N-02-T23); the read is logged.
  */
 export const portalPage = <ThrowOnError extends boolean = false>(options: Options<PortalPageData, ThrowOnError>): RequestResult<PortalPageResponses, PortalPageErrors, ThrowOnError> => (options.client ?? client).get<PortalPageResponses, PortalPageErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9187,7 +9188,8 @@ export const portalPage = <ThrowOnError extends boolean = false>(options: Option
 /**
  * Portal Download Route
  *
- * Signed copy plus evidence page, audited (N-02-T29).
+ * The signed copy with its evidence pages, audited (N-02-T23); 409
+ * `signed_copy_not_ready` until evidence is recorded.
  */
 export const portalDownload = <ThrowOnError extends boolean = false>(options: Options<PortalDownloadData, ThrowOnError>): RequestResult<PortalDownloadResponses, PortalDownloadErrors, ThrowOnError> => (options.client ?? client).get<PortalDownloadResponses, PortalDownloadErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9198,7 +9200,8 @@ export const portalDownload = <ThrowOnError extends boolean = false>(options: Op
 /**
  * Portal Consent Route
  *
- * ERSD acceptance, stored (N-02-T24).
+ * ERSD acceptance of the firm's newest disclosure, stored per signer (N-02-T23); 409
+ * `disclosure_outdated` for any other version.
  */
 export const portalConsent = <ThrowOnError extends boolean = false>(options: Options<PortalConsentData, ThrowOnError>): RequestResult<PortalConsentResponses, PortalConsentErrors, ThrowOnError> => (options.client ?? client).post<PortalConsentResponses, PortalConsentErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9213,7 +9216,7 @@ export const portalConsent = <ThrowOnError extends boolean = false>(options: Opt
 /**
  * Portal Progress Route
  *
- * Last page seen (N-02-T23).
+ * The furthest page seen (N-02-T23).
  */
 export const portalProgress = <ThrowOnError extends boolean = false>(options: Options<PortalProgressData, ThrowOnError>): RequestResult<PortalProgressResponses, PortalProgressErrors, ThrowOnError> => (options.client ?? client).post<PortalProgressResponses, PortalProgressErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9228,7 +9231,10 @@ export const portalProgress = <ThrowOnError extends boolean = false>(options: Op
 /**
  * Portal Signing Session Route
  *
- * One-time provider view; refusals in the contract (N-02-T26).
+ * A one-time provider view for the named signer (N-02-T23): 409 `envelope_not_open`,
+ * `declined`, `verification_failed`, `mfa_required`, `not_your_turn`, `before_date_as_of` or
+ * `esign_consent_required`; 503 `provider_unavailable`. A replay answers the same session while
+ * it is open; the link is never stored.
  */
 export const portalSigningSession = <ThrowOnError extends boolean = false>(options: Options<PortalSigningSessionData, ThrowOnError>): RequestResult<PortalSigningSessionResponses, PortalSigningSessionErrors, ThrowOnError> => (options.client ?? client).post<PortalSigningSessionResponses, PortalSigningSessionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9239,7 +9245,8 @@ export const portalSigningSession = <ThrowOnError extends boolean = false>(optio
 /**
  * Portal Signing Return Route
  *
- * Server-checked return (N-02-T26).
+ * The server-checked return (N-02-T23): the provider is polled before anything is shown;
+ * query parameters are ignored, and `outcome` is `signed` only once the poll says so.
  */
 export const portalSigningReturn = <ThrowOnError extends boolean = false>(options: Options<PortalSigningReturnData, ThrowOnError>): RequestResult<PortalSigningReturnResponses, PortalSigningReturnErrors, ThrowOnError> => (options.client ?? client).get<PortalSigningReturnResponses, PortalSigningReturnErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9250,7 +9257,7 @@ export const portalSigningReturn = <ThrowOnError extends boolean = false>(option
 /**
  * Portal Viewed Route
  *
- * Viewed (N-02-T23).
+ * The first view, once (N-02-T23).
  */
 export const portalViewed = <ThrowOnError extends boolean = false>(options: Options<PortalViewedData, ThrowOnError>): RequestResult<PortalViewedResponses, PortalViewedErrors, ThrowOnError> => (options.client ?? client).post<PortalViewedResponses, PortalViewedErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
