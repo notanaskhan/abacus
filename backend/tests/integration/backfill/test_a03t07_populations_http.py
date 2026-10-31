@@ -22,6 +22,7 @@ from .support import Net, Person, Seeder, Site
 from .tb_support import work_item
 
 Json = dict[str, Any]  # Any: JSON bodies
+Sheet = dict[str, Any]  # Any: the census rows the next upload parses
 HEADER = ("Participant ID", "Name", "Hire date", "Compensation", "SSN")
 MAP = {
     "record_key": "Participant ID",
@@ -86,7 +87,7 @@ def _body(site: Site, column_map: dict[str, str] | None = None) -> Json:
 
 
 async def test_ac1_census_v2_yields_412_records_and_two_ties(
-    net: Net, seed: Seeder, sheet: dict[str, Any]
+    net: Net, seed: Seeder, sheet: Sheet
 ) -> None:
     site, marcus, item = await _setup(seed)
     made = await net.call("POST", f"/v1/work-items/{item}/populations", marcus, body=_body(site))
@@ -124,9 +125,7 @@ async def test_ac1_census_v2_yields_412_records_and_two_ties(
     assert actions.count("population.tie_recorded") == 2
 
 
-async def test_ac2_census_v1_computes_off_182300(
-    net: Net, seed: Seeder, sheet: dict[str, Any]
-) -> None:
+async def test_ac2_census_v1_computes_off_182300(net: Net, seed: Seeder, sheet: Sheet) -> None:
     site, marcus, item = await _setup(seed)
     sheet["rows"] = _census(409, Decimal("14377700.00"))
     made = await net.call("POST", f"/v1/work-items/{item}/populations", marcus, body=_body(site))
@@ -146,7 +145,7 @@ async def test_ac2_census_v1_computes_off_182300(
 
 
 async def test_ac4_an_ssn_column_is_refused_422_restricted_column(
-    net: Net, seed: Seeder, sheet: dict[str, Any]
+    net: Net, seed: Seeder, sheet: Sheet
 ) -> None:
     site, marcus, item = await _setup(seed)
     body = _body(site, {**MAP, "name": "SSN"})
@@ -160,7 +159,7 @@ async def test_ac4_an_ssn_column_is_refused_422_restricted_column(
 
 
 async def test_ac2_an_unverified_citation_is_refused_and_nothing_is_saved(
-    net: Net, seed: Seeder, sheet: dict[str, Any]
+    net: Net, seed: Seeder, sheet: Sheet
 ) -> None:
     site, marcus, item = await _setup(seed)
     made = await net.call("POST", f"/v1/work-items/{item}/populations", marcus, body=_body(site))
@@ -189,7 +188,7 @@ async def test_ac2_an_unverified_citation_is_refused_and_nothing_is_saved(
 
 
 async def test_another_engagements_evidence_is_not_found(
-    net: Net, seed: Seeder, sheet: dict[str, Any]
+    net: Net, seed: Seeder, sheet: Sheet
 ) -> None:
     site, marcus, item = await _setup(seed)
     other = await seed.site(site.tenant_id, marcus.user_id, "elsewhere")
@@ -199,7 +198,7 @@ async def test_another_engagements_evidence_is_not_found(
 
 
 async def test_a_person_off_the_engagement_never_reads_the_population(
-    net: Net, seed: Seeder, sheet: dict[str, Any]
+    net: Net, seed: Seeder, sheet: Sheet
 ) -> None:
     site, marcus, item = await _setup(seed)
     made = await net.call("POST", f"/v1/work-items/{item}/populations", marcus, body=_body(site))

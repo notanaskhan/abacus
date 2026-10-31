@@ -199,7 +199,7 @@ def _line(n: int, **kw: object) -> GlEntry:
         "source_ref": f"S{n}",
     }
     values.update(kw)
-    return GlEntry(**values)  # type: ignore[arg-type]
+    return GlEntry(**values)  # type: ignore[arg-type] -- the fields as a test builds them
 
 
 def granite_peak() -> list[GlEntry]:
@@ -258,4 +258,4 @@ def test_built_is_frozen() -> None:
     built = upload_records([["Key"], ["A"]], {"record_key": "Key"})
     assert isinstance(built, Built)
     with pytest.raises(AttributeError):
-        built.total = Decimal(1)  # type: ignore[misc]
+        built.total = Decimal(1)  # type: ignore[misc] -- proving the dataclass is frozen
