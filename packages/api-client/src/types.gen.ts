@@ -6602,6 +6602,10 @@ export type ComposerLetterOut = {
      */
     consents?: Array<LetterConsentOut>;
     /**
+     * Documents
+     */
+    documents?: Array<LetterDocumentOut>;
+    /**
      * Engagement Id
      */
     engagement_id: string;
@@ -6633,6 +6637,14 @@ export type ComposerLetterOut = {
      * Redline Count
      */
     redline_count?: number;
+    /**
+     * Routing Note
+     */
+    routing_note?: string | null;
+    /**
+     * Sent At
+     */
+    sent_at?: string | null;
     /**
      * Signers
      */
@@ -19519,6 +19531,41 @@ export type LetterConsentOut = {
 };
 
 /**
+ * LetterDocumentOut
+ *
+ * N-02-T37 (ENG-04 f): a document signed beside the letter, on its own (a §7216 consent is
+ * never a clause: Rev. Proc. 2013-14 §5.05; AC-15): its template, signers and blocks.
+ */
+export type LetterDocumentOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Paper
+     */
+    paper?: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Signers
+     */
+    signers?: Array<LetterSignerOut>;
+    /**
+     * Template Name
+     */
+    template_name: string;
+    /**
+     * Template Version No
+     */
+    template_version_no: number;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * LetterDraftIn
  *
  * `PUT …/letter/composer` (If-Match): draft edits.
@@ -19705,6 +19752,10 @@ export type LetterSignerOut = {
      * Signed
      */
     signed?: boolean;
+    /**
+     * Signed On
+     */
+    signed_on?: string | null;
 };
 
 /**

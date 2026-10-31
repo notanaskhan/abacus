@@ -419,7 +419,7 @@ import {
 import { LetterComposer } from "./ENG-04";
 import {
   type Eng04State,
-  OPENS as ENG04_OPENS,
+  OPENS_FOR as ENG04_OPENS,
   STATES as ENG04_STATES,
   scenarios as eng04Scenarios,
 } from "./ENG-04/scenarios";
@@ -2180,7 +2180,7 @@ function Shl16Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("SHL-16", { title: "Checkpoint diff drawer", Component: Shl16Artboard });
 
-// ENG-04 (N-02-T34): the letter composer, a–c, as ENG-02's Letter & terms tab body.
+// ENG-04 (N-02-T34, N-02-T37): the letter composer, a–f, as ENG-02's Letter & terms tab body.
 function Eng04Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
   const state: Eng04State = ENG04_STATES.find((s) => s === params.st) ?? "a";
   const [ready, setReady] = useState<string | null>(null);
@@ -2199,8 +2199,8 @@ function Eng04Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
   return (
     <div key={state} data-artboard={state} className="flex h-[700px]">
       <LetterComposer
-        engagementId={ENG04_OPENS}
-        engagementName="Ridgeline cost segregation & §754 analysis"
+        engagementId={ENG04_OPENS[state].id}
+        engagementName={ENG04_OPENS[state].name}
         height={700}
       />
     </div>

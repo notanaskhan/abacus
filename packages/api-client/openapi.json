@@ -14392,6 +14392,15 @@
             "title": "Consents",
             "type": "array"
           },
+          "documents": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/LetterDocumentOut"
+            },
+            "title": "Documents",
+            "type": "array"
+          },
           "engagement_id": {
             "cls": "internal",
             "format": "uuid",
@@ -14482,6 +14491,31 @@
             "default": 0,
             "title": "Redline Count",
             "type": "integer"
+          },
+          "routing_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Routing Note"
+          },
+          "sent_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Sent At"
           },
           "signers": {
             "cls": "confidential",
@@ -41287,6 +41321,59 @@
         "title": "LetterConsentOut",
         "type": "object"
       },
+      "LetterDocumentOut": {
+        "description": "N-02-T37 (ENG-04 f): a document signed beside the letter, on its own (a \u00a77216 consent is\nnever a clause: Rev. Proc. 2013-14 \u00a75.05; AC-15): its template, signers and blocks.",
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "paper": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Paper",
+            "type": "array"
+          },
+          "signers": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/LetterSignerOut"
+            },
+            "title": "Signers",
+            "type": "array"
+          },
+          "template_name": {
+            "cls": "internal",
+            "title": "Template Name",
+            "type": "string"
+          },
+          "template_version_no": {
+            "cls": "internal",
+            "title": "Template Version No",
+            "type": "integer"
+          },
+          "title": {
+            "cls": "internal",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "template_name",
+          "template_version_no"
+        ],
+        "title": "LetterDocumentOut",
+        "type": "object"
+      },
       "LetterDraftIn": {
         "additionalProperties": false,
         "description": "`PUT \u2026/letter/composer` (If-Match): draft edits.",
@@ -41634,6 +41721,19 @@
             "default": false,
             "title": "Signed",
             "type": "boolean"
+          },
+          "signed_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Signed On"
           }
         },
         "required": [

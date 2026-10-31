@@ -51,6 +51,8 @@ import {
   waitsOnLetter,
 } from "../../domain/engagements";
 import { useFlag } from "../../app-core/flags";
+import { useOpenOverlay } from "../../app-core/open";
+import { ov } from "../../routes/to";
 import { LetterComposer } from "../ENG-04";
 import { ENG05, type Eng05Open } from "../ENG-05";
 import { COPY } from "./copy";
@@ -691,6 +693,7 @@ export function ENG02({
   // N-02-T34: with `engagements.letter_composer` on, Letter & terms is ENG-04; off, the kept
   // record panel (`letter.record`).
   const composerOn = useFlag("engagements.letter_composer") === true;
+  const openOverlay = useOpenOverlay();
 
   const initials = new Map([...staff.names].map(([id, n]) => [id, initialsOf(n)]));
 
@@ -905,7 +908,13 @@ export function ENG02({
   if (view === "letter" && composerOn && record !== undefined) {
     const pane = (
       <div data-shell="cols" className="flex min-h-0 flex-1 items-stretch pt-(--gutter-pane)">
-        <LetterComposer engagementId={record.id} engagementName={record.name} />
+        <LetterComposer
+          engagementId={record.id}
+          engagementName={record.name}
+          onOpenEnvelope={(envelopeId) => {
+            openOverlay(ov.SIG02(envelopeId)); // N-02-T37: Send opens SIG-02, prefilled
+          }}
+        />
       </div>
     );
     return (
