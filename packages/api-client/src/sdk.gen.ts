@@ -5125,6 +5125,8 @@ export const setupFile = <ThrowOnError extends boolean = false>(options: Options
 
 /**
  * Export File Route
+ *
+ * The workbook, fingerprint-checked; the download is audited (T-01-T25).
  */
 export const exportFile = <ThrowOnError extends boolean = false>(options: Options<ExportFileData, ThrowOnError>): RequestResult<ExportFileResponses, ExportFileErrors, ThrowOnError> => (options.client ?? client).get<ExportFileResponses, ExportFileErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5135,7 +5137,8 @@ export const exportFile = <ThrowOnError extends boolean = false>(options: Option
 /**
  * Mark Exported Route
  *
- * A person confirms the file reached the engine.
+ * A person confirms the file reached the engine; the chip reads Synced (T-01-T25). 409
+ * `already_marked`, `stale_version`.
  */
 export const markExported = <ThrowOnError extends boolean = false>(options: Options<MarkExportedData, ThrowOnError>): RequestResult<MarkExportedResponses, MarkExportedErrors, ThrowOnError> => (options.client ?? client).post<MarkExportedResponses, MarkExportedErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -10594,7 +10597,9 @@ export const efileEnvelope = <ThrowOnError extends boolean = false>(options: Opt
 /**
  * Export Return Route
  *
- * Generate the workbook after final approval (consumes the write grant).
+ * Generate the workbook after final approval, consuming its grant (T-01-T25). 409
+ * `export_disabled`, `not_final_approved`, `grant_refused`, `undo_window_open`. The same
+ * checkpoint answers the same export.
  */
 export const exportReturn = <ThrowOnError extends boolean = false>(options: Options<ExportReturnData, ThrowOnError>): RequestResult<ExportReturnResponses, ExportReturnErrors, ThrowOnError> => (options.client ?? client).post<ExportReturnResponses, ExportReturnErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

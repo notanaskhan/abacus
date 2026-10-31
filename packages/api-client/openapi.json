@@ -24564,6 +24564,12 @@
             "cls": "internal",
             "title": "Sha256",
             "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "default": 1,
+            "title": "Version",
+            "type": "integer"
           }
         },
         "required": [
@@ -131527,6 +131533,7 @@
     },
     "/v1/engine-exports/{export_id}/file": {
       "get": {
+        "description": "The workbook, fingerprint-checked; the download is audited (T-01-T25).",
         "operationId": "export_file",
         "parameters": [
           {
@@ -131645,7 +131652,7 @@
     },
     "/v1/engine-exports/{export_id}/mark-exported": {
       "post": {
-        "description": "A person confirms the file reached the engine.",
+        "description": "A person confirms the file reached the engine; the chip reads Synced (T-01-T25). 409\n`already_marked`, `stale_version`.",
         "operationId": "mark_exported",
         "parameters": [
           {
@@ -184232,7 +184239,7 @@
     },
     "/v1/tax-returns/{return_id}/engine-exports": {
       "post": {
-        "description": "Generate the workbook after final approval (consumes the write grant).",
+        "description": "Generate the workbook after final approval, consuming its grant (T-01-T25). 409\n`export_disabled`, `not_final_approved`, `grant_refused`, `undo_window_open`. The same\ncheckpoint answers the same export.",
         "operationId": "export_return",
         "parameters": [
           {

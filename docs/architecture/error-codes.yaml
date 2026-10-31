@@ -101,6 +101,11 @@ codes:
     - abacus.modules.fieldwork.planning.AlreadyDecided
     - abacus.modules.platform.incident_register.AlreadyDecided
     summary: 'Both people have decided this incident: nothing more is recorded (AC-22).'
+  already_marked:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.export.AlreadyMarked
+    summary: The export was already marked exported.
   already_member:
     status: 409
     raised_by:
@@ -686,6 +691,11 @@ codes:
     - abacus.modules.evidence.withdrawals.EvidenceNotWithdrawable
     summary: 'Not a client''s detached-key upload (a firm upload, or one stored before detached-key mode):
       nothing can erase it, so it is not withdrawn (ADR-162 §8).'
+  export_disabled:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.export.ExportDisabled
+    summary: 'A kill switch is off: the W2 capability, or the firm''s file-bridge install.'
   export_kind_unsupported:
     status: 422
     raised_by:
@@ -826,6 +836,12 @@ codes:
     raised_by:
     - abacus.modules.identity.client_access.GrantExists
     summary: The person already holds this role on this scope.
+  grant_refused:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.export.GrantRefused
+    summary: 'The approval''s grant cannot be consumed: spent on another export, voided, expired, for
+      other content, or its approver no longer holds the action.'
   grant_scope_invalid:
     status: 422
     raised_by:
@@ -1284,6 +1300,11 @@ codes:
     raised_by:
     - abacus.modules.methodology.standards.NotDraft
     summary: 'Only a draft changes: this version is published or discarded.'
+  not_final_approved:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.export.NotFinalApproved
+    summary: The return has no final approval to export, or the checkpoint is not the approved one.
   not_ignored:
     status: 409
     raised_by:
@@ -2014,6 +2035,7 @@ codes:
     - abacus.modules.review.gate_actions.GateStaleVersion
     - abacus.modules.signatures.builder.StaleEnvelope
     - abacus.modules.tax.engine_import.ImportStale
+    - abacus.modules.tax.export.ExportStale
     - abacus.modules.tax.status.StaleReturn
     - abacus.modules.tax.tax_profile.TaxProfileStale
     summary: 'The record changed since it was read: read it again (409).'
@@ -2223,6 +2245,11 @@ codes:
     - abacus.modules.requests.binders.UndoWindowClosed
     - abacus.modules.signatures.builder.UndoWindowClosed
     summary: Undo is possible for 10 seconds after a publish, and only once.
+  undo_window_open:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.export.UndoWindowOpen
+    summary: 'The final approval''s Undo window has not closed yet: try again in a few seconds.'
   unknown_agent:
     status: 422
     raised_by:

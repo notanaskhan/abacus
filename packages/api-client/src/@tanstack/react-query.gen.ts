@@ -8506,6 +8506,8 @@ export const exportFileQueryKey = (options: Options<ExportFileData>) => createQu
 
 /**
  * Export File Route
+ *
+ * The workbook, fingerprint-checked; the download is audited (T-01-T25).
  */
 export const exportFileOptions = (options: Options<ExportFileData>) => queryOptions<ExportFileResponse, ExportFileError, ExportFileResponse, ReturnType<typeof exportFileQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -8523,7 +8525,8 @@ export const exportFileOptions = (options: Options<ExportFileData>) => queryOpti
 /**
  * Mark Exported Route
  *
- * A person confirms the file reached the engine.
+ * A person confirms the file reached the engine; the chip reads Synced (T-01-T25). 409
+ * `already_marked`, `stale_version`.
  */
 export const markExportedMutation = (options?: Partial<Options<MarkExportedData>>): UseMutationOptions<MarkExportedResponse, MarkExportedError, Options<MarkExportedData>> => {
     const mutationOptions: UseMutationOptions<MarkExportedResponse, MarkExportedError, Options<MarkExportedData>> = {
@@ -17544,7 +17547,9 @@ export const efileEnvelopeMutation = (options?: Partial<Options<EfileEnvelopeDat
 /**
  * Export Return Route
  *
- * Generate the workbook after final approval (consumes the write grant).
+ * Generate the workbook after final approval, consuming its grant (T-01-T25). 409
+ * `export_disabled`, `not_final_approved`, `grant_refused`, `undo_window_open`. The same
+ * checkpoint answers the same export.
  */
 export const exportReturnMutation = (options?: Partial<Options<ExportReturnData>>): UseMutationOptions<ExportReturnResponse, ExportReturnError, Options<ExportReturnData>> => {
     const mutationOptions: UseMutationOptions<ExportReturnResponse, ExportReturnError, Options<ExportReturnData>> = {
