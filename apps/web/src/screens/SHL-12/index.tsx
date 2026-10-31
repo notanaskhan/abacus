@@ -55,7 +55,7 @@ import { COPY } from "./copy";
 // Every blocked frame names its reason in words, and the disabled control names the failing check
 // as its description. Signing is a HumanAction on the signed-in person (INV-1); the write carries
 // the content hash and statement version the person saw and waits for the server (never
-// optimistic). Bulk (f) is P-04-T49's.
+// optimistic). Bulk (f) is `Bulk.tsx` (P-04-T49).
 
 type LadderLevel = LadderLevelOut["level"];
 
@@ -553,3 +553,5 @@ function Body({
     </div>
   );
 }
+
+export { BulkSignOffSheet, type BulkSignOffSheetProps } from "./Bulk";

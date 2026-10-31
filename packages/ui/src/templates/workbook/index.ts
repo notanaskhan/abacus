@@ -8,6 +8,7 @@ export {
 } from "./WorkbookLayout";
 export type {
   CalcStep,
+  GridPayload,
   SignOffSlotVM,
   TablePayload,
   WorkbookCopy,

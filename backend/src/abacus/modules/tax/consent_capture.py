@@ -57,6 +57,7 @@ from abacus.modules.organisations.api import (
     ConsentRequestIn,
     FilingUnit,
     check_scope,
+    consent_counts,
     consent_outs,
     consent_template_versions_on,
     envelope_completed,
@@ -75,6 +76,7 @@ from abacus.modules.reporting.api import (
     consent_recipients,
     render_isolated,
 )
+from abacus.modules.requests.api import register_binder_consents
 from abacus.modules.signatures.api import (
     EnvelopeSource,
     SourceDocument,
@@ -342,9 +344,28 @@ async def on_envelope_completed(event: OutboxEvent) -> None:
     )
 
 
+async def binder_consents(
+    tenant: TenantContext, rows: Sequence[tuple[UUID, UUID, str | None]]
+) -> dict[UUID, tuple[int, int]]:
+    """BND-01's §7216 consents tag (DEC-1288): for a return binder (season `TY<year>`), the
+    client's consents for that year in force and asked for; none when none is asked for."""
+    years: dict[UUID, tuple[UUID, int]] = {}
+    for binder, client, season in rows:
+        if season is not None and season.startswith("TY") and season[2:].isdigit():
+            years[binder] = (client, int(season[2:]))
+    counts = await consent_counts(tenant, sorted(set(years.values())))
+    return {
+        binder: counts[pair]
+        for binder, pair in years.items()
+        if pair in counts and counts[pair][1] > 0
+    }
+
+
 def register() -> None:
-    """At import (tax/api.py): the capture slot and the `consent_set` envelope source."""
+    """At import (tax/api.py): the capture slot, the `consent_set` envelope source and BND-01's
+    consents tag."""
     register_consent_capture(CAPTURE)
+    register_binder_consents(binder_consents)
     register_envelope_source(
         EnvelopeSource(
             kind=SOURCE,

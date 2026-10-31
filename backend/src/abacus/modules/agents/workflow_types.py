@@ -49,6 +49,24 @@ class MatchRunInput:
 
 
 @dataclass(frozen=True)
+class IntakeMatchInput:
+    """N-01-T22: the matcher's intake mode for one intake attachment of a matched client, on
+    behalf of the client's relationship partner (code resolves them; the event names neither)."""
+
+    tenant_id: str
+    attachment_id: str
+    client_id: str
+    event_id: str
+
+
+@dataclass(frozen=True)
+class IntakeMatchRunInput:
+    tenant_id: str
+    run_id: str
+    attachment_id: str
+
+
+@dataclass(frozen=True)
 class GuidanceDraftInput:
     """SPEC-035 (TASK-073): one guidance drafter run for one request item, for `requested_by`."""
 

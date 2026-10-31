@@ -37,6 +37,13 @@ def _uuid(payload: dict[str, object], key: str) -> UUID | None:
     return UUID(str(value)) if value is not None else None
 
 
+async def _envelope_sender(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """N-02-T24: the person who sent the envelope (a record-mode import has none)."""
+    del tenant_id
+    sender = _uuid(payload, "sent_by")
+    return [sender] if sender is not None else []
+
+
 async def _admins(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     return await firm_admins(tenant_id)
 
@@ -345,6 +352,10 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "ai_policy.publish_requested": Kind(
         "ai_policy_approval_requested", _assignee, "ai_policy", None, None
     ),
+    # N-02-T24 (N-02 §4.8): SIG-01's outcomes, to the person who sent the envelope.
+    "envelope.completed": Kind("envelope_completed", _envelope_sender, "envelope", "envelope_id"),
+    "envelope.declined": Kind("envelope_declined", _envelope_sender, "envelope", "envelope_id"),
+    "envelope.expired": Kind("envelope_expired", _envelope_sender, "envelope", "envelope_id"),
     # Q-02-T33: the incident register (the platform module's events; firm-level).
     "incident.recorded": Kind(
         "incident_recorded", _incident_recorded, "security_incident", "incident_id", None
@@ -503,6 +514,9 @@ TEMPLATES: Final[dict[str, str]] = {
     "finding.severity_proposed": "A deficiency on {engagement} is waiting for you to conclude.",
     "legal_hold.placed": "A legal hold was placed on {subject}.",
     "ai_policy.publish_requested": "A new AI policy version is waiting for your approval.",
+    "envelope.completed": "Every signer has signed an envelope on {subject}.",
+    "envelope.declined": "A signer declined an envelope on {subject}.",
+    "envelope.expired": "An envelope on {subject} expired before everyone signed.",
     "incident.recorded": "A security incident was recorded: {subject}.",
     "incident.propagated": "Accrued reported a security incident affecting your firm: {subject}.",
     "wall.created": "An ethical wall is waiting for your approval.",
@@ -678,6 +692,15 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     # export sheet (`notification.export_ready`, imported content), never to a download.
     NotificationKind("export_ready", "system", "Download"),
     NotificationKind("export_failed", "system", "Download"),
+    # N-02-T24 (N-02 §4.8): envelopes. Email text is `notification.<kind>` content (staff import);
+    # the verification and countersign kinds' producers are N-02-T27 and N-02-T28, the letter's
+    # the composer's (N-02-T32).
+    NotificationKind("envelope_completed", "client_activity", "FileCheck"),
+    NotificationKind("envelope_declined", "client_activity", "FileX"),
+    NotificationKind("envelope_expired", "deadline", "Clock"),
+    NotificationKind("envelope_signer_verification_failed", "client_activity", "ShieldAlert"),
+    NotificationKind("envelope_countersign_requested", "approval", "FileSignature"),
+    NotificationKind("letter_approval_requested", "approval", "FileSignature"),
 )
 for _kind in _REGISTERED:
     register_kind(_kind)

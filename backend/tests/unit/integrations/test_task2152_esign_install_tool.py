@@ -115,3 +115,22 @@ async def test_the_catalogue_document_is_the_hidden_esignature_row() -> None:
 async def test_the_commands_are_allowlisted_for_ops_requests() -> None:
     for sub in ("connect", "rotate", "disconnect", "status"):
         assert f"abacus_tools.esign_install {sub}" in OPS_COMMANDS
+
+
+async def test_webhook_keys_come_only_from_the_environment_and_are_sealed_with_the_account() -> (
+    None
+):
+    # DEC-1281: optional, comma-separated while one rotates, shape-checked, never echoed.
+    from abacus.modules.signatures.docuseal import DocuSealAccount
+
+    assert tool.webhook_keys({}) == ()
+    two = tool.webhook_keys(
+        {tool.WEBHOOK_ENV: " whsec_aaaaaaaaaaaaaaaa , whsec_bbbbbbbbbbbbbbbb "}
+    )
+    assert two == ("whsec_aaaaaaaaaaaaaaaa", "whsec_bbbbbbbbbbbbbbbb")
+    with pytest.raises(tool.Refused) as refused:
+        tool.webhook_keys({tool.WEBHOOK_ENV: "whsec_has a space in it"})
+    assert "has a space" not in str(refused.value)
+    account = DocuSealAccount.from_secret(tool.secret_of(KEY, two))
+    assert account.webhook_keys == two and account.api_key == KEY
+    assert DocuSealAccount.from_secret(tool.secret_of(KEY)).webhook_keys == ()

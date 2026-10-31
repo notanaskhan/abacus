@@ -30,6 +30,7 @@ from abacus.modules.engagements.api import GateFact, recorded_letter, replace_ga
 from abacus.modules.identity.api import AuthContext
 
 LETTER: Final = "engagement_letter"
+CONTRACTED: Final = frozenset({"consent_set", "tax_return"})  # consumers.SOURCE_CONTRACTS
 LETTER_GATE: Final = "G3"
 
 
@@ -111,6 +112,9 @@ def register_envelope_source(source: EnvelopeSource) -> None:
     known = _SOURCES.get(source.kind)
     if known is not None and known != source:
         raise RuntimeError(f"envelope source {source.kind!r} is already registered")
+    if source.kind in CONTRACTED and source.draft is None:
+        # C7 v1.1 (N-02-T25): `consent_set` and `tax_return` sources must be able to draft.
+        raise RuntimeError(f"envelope source {source.kind!r} must provide a draft")
     _SOURCES[source.kind] = source
 
 

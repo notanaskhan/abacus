@@ -155,6 +155,22 @@ async def _envelope(
             "evidence_version_id, sha256) VALUES ($1, $2, 1, $3, $4)",
             (tenant, envelope, site.version_id, "b" * 64),
         ),
+        (
+            # The send's grant, consumed by the relay for its sender (N-02-T22, DEC-1284).
+            "INSERT INTO approval_grants (tenant_id, subject_type, subject_id, action, "
+            "approver_user_id, engagement_id, payload_sha256, not_before, expires_at, used_at, "
+            "consumer_ref) VALUES ($1, 'envelope', $2, 'envelope.send', $3, $4, $5, $6, $7, $6, "
+            "gen_random_uuid())",
+            (
+                tenant,
+                envelope,
+                sender.user_id,
+                site.engagement_id if engagement else None,
+                "e" * 64,
+                now - timedelta(minutes=1),
+                now + timedelta(hours=1),
+            ),
+        ),
     ]
     ids: list[uuid.UUID] = []
     for order in range(1, signers + 1):
