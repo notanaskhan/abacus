@@ -21,7 +21,7 @@ FELD = Export("2025I:FeldJ", 2025, "1040", ())
 
 def test_every_pdf_the_engine_produces_is_read_by_its_name() -> None:
     files = CchAxcessFake().pdf_files(FELD, 3)
-    kinds = set()
+    kinds: set[str] = set()
     for name, content in files.items():
         assert conformance(name, content) == []
         pdf = parse_pdf(name, content)
