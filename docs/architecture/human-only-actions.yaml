@@ -133,3 +133,5 @@ actions:
     verb: release  # the workbook leaves for the engine after final approval (T-01-T25, 0561)
   - action: engine_export.marked_exported
     verb: confirm  # a person confirms the file reached the engine (T-01-T25, 0561)
+  - action: letter.approved
+    verb: approve  # the engagement partner approves the letter's content hash (N-02-T33, 0563)

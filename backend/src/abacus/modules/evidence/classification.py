@@ -193,6 +193,35 @@ async def filed_classification_match(
         return await session.scalar(query)
 
 
+async def attachment_tax_years(
+    tenant: TenantContext, attachment_ids: list[UUID]
+) -> dict[UUID, int]:
+    """T-02-T18: each inbox attachment's newest classified tax year (code's or a person's, as
+    recorded); an attachment with none is left out."""
+    if not attachment_ids:
+        return {}
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                select(
+                    DocumentClassification.subject_id,
+                    DocumentClassification.tax_year,
+                )
+                .where(
+                    DocumentClassification.subject_kind == "inbox_attachment",
+                    DocumentClassification.subject_id.in_(attachment_ids),
+                    DocumentClassification.tax_year.is_not(None),
+                )
+                .order_by(DocumentClassification.created_at)
+            )
+        ).all()
+    out: dict[UUID, int] = {}
+    for subject, year in rows:
+        if year is not None:
+            out[subject] = year  # the newest row wins
+    return out
+
+
 async def version_with_fingerprint(
     tenant: TenantContext, client_id: UUID, fingerprint: str
 ) -> UUID | None:

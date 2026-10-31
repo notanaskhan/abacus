@@ -151,7 +151,12 @@ from abacus.modules.identity.api import (
 )
 from abacus.modules.methodology.api import (
     EngagementType,
+    create_standard,
+    import_standard_workbook,
     import_template,
+    publish_standard,
+    standard_by_key,
+    standard_workbook,
 )
 from abacus.modules.methodology.api import (
     approve_version as approve_methodology_version,
@@ -343,6 +348,15 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.shell import (
     SANDBOX_FIRM_ID,
     SANDBOX_FIRM_NAME,
 )
+from abacus_tools.synthetic.scenarios.brightwater_hale.standards import (
+    BH_TAX_02_CLIENTS,
+    payload_of,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.standards import NEEDS as STANDARDS_NEEDS
+from abacus_tools.synthetic.scenarios.brightwater_hale.standards import SLICE as STANDARDS_SLICE
+from abacus_tools.synthetic.scenarios.brightwater_hale.standards import (
+    spec_of as standard_spec,
+)
 from abacus_tools.synthetic.scenarios.brightwater_hale.tax_board import BOARD_BY_LABEL
 from abacus_tools.synthetic.scenarios.brightwater_hale.tax_board import NEEDS as TAX_BOARD_NEEDS
 from abacus_tools.synthetic.scenarios.brightwater_hale.tax_board import SLICE as TAX_BOARD_SLICE
@@ -370,6 +384,7 @@ FLAGS_ON: Final = (
     # I-01-T13: HOME-01 lite on synthetic firms (GET /v1/home and the C13 gate list and counts).
     "home.dashboard",
     "review.grammar_api",
+    "review.approve_agent_output",  # P-04-T46 (DEC-1385): SHL-10 approval on synthetic firms
     "engagements.roll_forward_v2",  # P-07-T55: ENG-13 v2 on synthetic firms
     # N-02-T17: record mode (SIG-01, the import, the portal reads) on synthetic firms from S15.
     "signatures.envelopes",
@@ -1614,6 +1629,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     EMAIL_TEMPLATES_SLICE: (),  # R-01-T22: Grace's firm admin role is audit_core's
     TAX_BOARD_SLICE: TAX_BOARD_NEEDS,  # T-02-T11: the board sets the binders' returns
     CONSENTS_SLICE: CONSENTS_NEEDS,  # T-01-T23: the sets name the tax engagements' entities
+    STANDARDS_SLICE: STANDARDS_NEEDS,  # K-02-T18: Margaret creates; each owner publishes
 }
 
 
@@ -2297,6 +2313,65 @@ async def _methodology_approved(conn: asyncpg.Connection, _: Scenario, event: Ev
     )
 
 
+async def _standard_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """K-02-T18: Margaret creates the standard and names its owner (`firm_standard.create`)."""
+    data = event.data
+    await create_standard(
+        await _staff_context(conn, event),
+        key=str(data["key"]),
+        name=str(data["name"]),
+        kind=str(data["kind"]),
+        owner_id=user_id_of(_SEATS[str(data["owner"])]),
+    )
+
+
+async def _standard_payload(conn: asyncpg.Connection, key: str, version: int) -> dict[str, object]:
+    """The version's payload; BH-TAX-02 names its clients and Daniel Reyes by id here."""
+    if key != "bh-tax-02":
+        return payload_of(standard_spec(key), version)
+    signer = user_id_of(_SEATS["DR"])
+    applies: list[dict[str, object]] = []
+    for name in BH_TAX_02_CLIENTS:
+        client = await tenant_value(
+            conn, TENANT, "SELECT id FROM clients WHERE tenant_id = $1 AND name = $2", TENANT, name
+        )
+        if client is None:
+            raise LookupError(f"BH-TAX-02 names {name}, which the scenario has not created")
+        applies.append({"client_id": str(client), "approver_user_id": str(signer)})
+    return {
+        "kind": "return_approval_policy",
+        "code": "BH-TAX-02",
+        "rule": "signing_partner_final_approval",
+        "applies_to": applies,
+        "export_condition": "after_final_approval",
+    }
+
+
+async def _standard_imported(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """K-02-T18: the version's workbook through the import endpoint's path, as a draft."""
+    data = event.data
+    key = str(data["key"])
+    ctx = await _staff_context(conn, event)
+    standard = await standard_by_key(ctx, key)
+    payload = await _standard_payload(conn, key, int(cast(int, data["version"])))
+    await import_standard_workbook(
+        ctx, standard.id, standard_workbook(standard.kind, standard.name, payload)
+    )
+
+
+async def _standard_published(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """K-02-T18: the owner publishes the draft, effective the day they publish it."""
+    data = event.data
+    ctx = await _staff_context(conn, event)
+    standard = await standard_by_key(ctx, str(data["key"]))
+    await publish_standard(
+        ctx,
+        standard.id,
+        effective_from=event.at.astimezone(_CT).date(),
+        change_summary=f"Version {int(cast(int, data['version']))}",
+    )
+
+
 async def _retention_policy_set(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     data = event.data
     change = PolicyChange(
@@ -2786,6 +2861,9 @@ HANDLERS: Final[dict[str, Handler]] = {
     # K-01-T10 (`--slice methodology`): each version imported, then approved in label order.
     "methodology.version_imported": _methodology_imported,
     "methodology.version_approved": _methodology_approved,
+    "standards.created": _standard_created,  # K-02-T18
+    "standards.version_imported": _standard_imported,
+    "standards.version_published": _standard_published,
 }
 # Within one instant the timeline orders by label; the loader orders by dependency first.
 _ORDER: Final = {kind: n for n, kind in enumerate(HANDLERS)}

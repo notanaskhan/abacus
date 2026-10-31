@@ -46,7 +46,6 @@ import { CAUSES, COPY, FIELDS } from "./copy";
 // cch-sync timing (Exporting… for 1,240 ms) and is skipped under reduced motion.
 
 const EXPORTING_MS = 1240;
-const UPLOAD_ID = "3f9a5e62-1c4d-4b8e-9f20-7a6b5c4d3e21";
 // T-01-T19: an engine import posts the engine's values CSV as the request body. Artboard e opens on
 // the fixture's pending import; its handler answers whatever file it is sent.
 const SPECIMEN_FILE = "2025I_FeldJ_V3_values.csv";
@@ -351,7 +350,12 @@ export function TAX09({
   if (data === undefined) return <div className="h-[42px]" />;
   const state: Chip = chip ?? data.state;
   const blockers = data.blockers ?? [];
-  const mayExport = data.allowed_actions.includes("tax_return.export") && blockers.length === 0;
+  // T-01-T33: Export generates from the return's current checkpoint, as the sync read names it.
+  const checkpoint = data.checkpoint_id ?? null;
+  const mayExport =
+    data.allowed_actions.includes("tax_return.export") &&
+    blockers.length === 0 &&
+    checkpoint !== null;
   const blocked = COPY.blocked(
     data.approver_name ?? "",
     data.policy_code ?? "",
@@ -363,11 +367,12 @@ export function TAX09({
   const notExported = !fresh && !history.some((h) => h.kind === "marked_exported");
 
   const runExport = (): void => {
+    if (checkpoint === null) return;
     setChip("exporting");
     exporting.mutate(
       {
         path: { return_id: returnId },
-        body: { checkpoint_id: UPLOAD_ID },
+        body: { checkpoint_id: checkpoint },
         headers: { "Idempotency-Key": crypto.randomUUID() },
       },
       {

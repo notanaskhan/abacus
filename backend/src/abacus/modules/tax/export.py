@@ -269,6 +269,15 @@ async def _switches(tenant: TenantContext) -> None:
 # --- export, download, mark exported --------------------------------------------------------
 
 
+async def exportable(tenant: TenantContext, return_id: UUID) -> bool:
+    """T-01-T33: whether the return's status lets Export generate (final approval recorded)."""
+    async with tenant_session(tenant) as session:
+        status = await session.scalar(
+            text("SELECT status FROM tax_returns WHERE work_item_id = :r"), {"r": return_id}
+        )
+    return str(status) in EXPORTABLE
+
+
 async def export_return(ctx: AuthContext, return_id: UUID, checkpoint_id: UUID) -> ExportView:
     """Generate the workbook of the approved checkpoint, consuming the final approval's grant."""
     _person(ctx)

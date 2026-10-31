@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Path
@@ -39,6 +39,7 @@ from abacus.modules.identity.api import (
     current_context,
     current_member,
 )
+from abacus.modules.tax import k1_packages as k1
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 Member = Annotated[AuthContext, Depends(current_member)]
@@ -94,6 +95,8 @@ class K1PackageOut(BaseModel):
     released_at: Annotated[datetime | None, classified("confidential")]
     version_no: Annotated[int, classified("internal")]
     allowed_actions: Annotated[list[str], classified("internal")]
+    # T-02-T20 (additive): TXP-12's expanded row (K-1, K-3, state K-1s, letter).
+    documents: Annotated[list[K1DocumentOut], classified("internal")] = []
 
 
 class K1PackageDetailOut(BaseModel):
@@ -221,6 +224,54 @@ async def _stub(ctx: AuthContext, action: str) -> NoReturn:
     raise NotImplementedYet
 
 
+async def _gate(ctx: AuthContext) -> None:
+    """T-02-T20: a client principal 404, then the flag; each service authorises its action on
+    the issuing return (a principal it refuses answers 403 or 404 there)."""
+    if ctx.client:
+        raise NotFound("k1_package")
+    if not await flag_enabled(ctx.tenant, TAX_K1_RELEASE):
+        raise NotFound(TAX_K1_RELEASE.name)
+
+
+def _doc_out(d: k1.DocumentView) -> K1DocumentOut:
+    return K1DocumentOut(
+        id=d.id,
+        kind=cast(DocumentKind, d.kind),
+        jurisdiction=d.jurisdiction,
+        evidence_version_id=d.evidence_version_id,
+        is_draft=d.is_draft,
+    )
+
+
+def _package_out(p: k1.PackageView) -> K1PackageOut:
+    return K1PackageOut(
+        id=p.id,
+        recipient_id=p.recipient_id,
+        recipient_name=p.recipient_name,
+        recipient_kind=cast(Literal["gp", "lp", "shareholder", "beneficiary"], p.recipient_kind),
+        form=cast(Literal["1065", "1120s", "1041"], p.form),
+        tax_year=p.tax_year,
+        status=K1PackageStatus(p.status),
+        k3_status=cast(Literal["included", "not_required", "not_included"], p.k3_status),
+        state_codes=list(p.state_codes),
+        released_at=cast(datetime | None, p.released_at),
+        version_no=p.version_no,
+        allowed_actions=list(p.allowed_actions),
+        documents=[_doc_out(d) for d in p.documents],
+    )
+
+
+def _change_out(c: k1.DetailsChange) -> RecipientDetailsChangeOut:
+    return RecipientDetailsChangeOut(
+        id=c.id,
+        recipient_id=c.recipient_id,
+        kind=cast(Literal["w9", "w8", "address"], c.kind),
+        status=RecipientDetailsChangeStatus(c.status),
+        submitted_at=cast(datetime, c.submitted_at),
+        evidence_version_id=c.evidence_version_id,
+    )
+
+
 async def _portal_stub(ctx: AuthContext) -> NoReturn:
     """A firm principal never reaches the portal routes; the recipient's own-records check and
     the MFA floor come with T-02-T22."""
@@ -240,7 +291,12 @@ async def _portal_stub(ctx: AuthContext) -> NoReturn:
 async def list_k1_packages_route(
     return_id: Annotated[UUID, Path()], ctx: Ctx
 ) -> ListPage[K1PackageOut]:
-    await _stub(ctx, "k1_package.read")
+    """TXP-12: rows with documents (the expanded row); `counts` are the tiles by status."""
+    await _gate(ctx)
+    rows, counts = await k1.packages_of(ctx, return_id)
+    return ListPage[K1PackageOut](
+        items=[_package_out(p) for p in rows], total=len(rows), counts=counts
+    )
 
 
 @k1_router.get(
@@ -250,7 +306,22 @@ async def list_k1_packages_route(
     errors=(501,),
 )
 async def k1_package_route(package_id: PackageId, ctx: Ctx) -> K1PackageDetailOut:
-    await _stub(ctx, "k1_package.read")
+    await _gate(ctx)
+    p = await k1.package(ctx, package_id)
+    return K1PackageDetailOut(
+        package=_package_out(p),
+        lines=[
+            K1BoxLineOut(
+                document_kind=cast(DocumentKind, line.document_kind),
+                box_code=line.box_code,
+                description=line.description,
+                amount=line.amount,
+                is_total=line.is_total,
+            )
+            for line in p.lines
+        ],
+        documents=[_doc_out(d) for d in p.documents],
+    )
 
 
 @k1_router.get(
@@ -262,7 +333,11 @@ async def k1_package_route(package_id: PackageId, ctx: Ctx) -> K1PackageDetailOu
 async def k1_document_route(
     package_id: PackageId, document_id: Annotated[UUID, Path()], ctx: Ctx
 ) -> K1ViewerManifestOut:
-    await _stub(ctx, "k1_package.read")
+    await _gate(ctx)
+    d = await k1.k1_document(ctx, package_id, document_id)
+    return K1ViewerManifestOut(
+        document_id=d.id, evidence_version_id=d.evidence_version_id, page_count=None
+    )
 
 
 @k1_router.post(
@@ -274,7 +349,11 @@ async def k1_document_route(
 async def share_k1_route(
     return_id: Annotated[UUID, Path()], body: K1ShareIn, ctx: Ctx
 ) -> K1ShareOut:
-    await _stub(ctx, "k1_package.share_internal")
+    """DEC-88: a hand-off, an `internal_handoff` copy and a final-approval dependency each."""
+    await _gate(ctx)
+    return K1ShareOut(
+        shared=await k1.share_internal(ctx, return_id, body.package_ids, body.target_return_ids)
+    )
 
 
 @k1_router.get(
@@ -286,7 +365,11 @@ async def share_k1_route(
 async def k1_release_check_route(
     return_id: Annotated[UUID, Path()], ctx: Ctx
 ) -> K1ReleaseCheckOut:
-    await _stub(ctx, "k1_package.read")
+    await _gate(ctx)
+    found = await k1.release_check(ctx, return_id)
+    return K1ReleaseCheckOut(
+        eligible=found.eligible, failing=list(found.failing), package_ids=list(found.package_ids)
+    )
 
 
 @k1_router.post(
@@ -324,7 +407,10 @@ async def undo_k1_release_route(release_id: Annotated[UUID, Path()], ctx: Ctx) -
 async def resend_k1_route(
     package_id: PackageId, body: K1ResendIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> K1PackageOut:
-    await _stub(ctx, "k1_package.resend")
+    """The corrected contact; T21's workflow sends the new invitation."""
+    await _gate(ctx)
+    await k1.resend(ctx, package_id, body.contact_id)
+    return _package_out(await k1.package(ctx, package_id))
 
 
 @k1_router.get(
@@ -336,7 +422,8 @@ async def resend_k1_route(
 async def details_changes_route(
     recipient_id: Annotated[UUID, Path()], ctx: Ctx
 ) -> list[RecipientDetailsChangeOut]:
-    await _stub(ctx, "k1_recipient.review_details")
+    await _gate(ctx)
+    return [_change_out(c) for c in await k1.details_changes(ctx, recipient_id)]
 
 
 @k1_router.post(
@@ -348,7 +435,9 @@ async def details_changes_route(
 async def accept_details_change_route(
     change_id: Annotated[UUID, Path()], body: ReviewReasonIn, ctx: Ctx
 ) -> RecipientDetailsChangeOut:
-    await _stub(ctx, "k1_recipient.review_details")
+    """DV-10: recorded for the firm to apply in CCH (no full TIN is stored)."""
+    await _gate(ctx)
+    return _change_out(await k1.decide_details_change(ctx, change_id, True, body.reason))
 
 
 @k1_router.post(
@@ -360,7 +449,8 @@ async def accept_details_change_route(
 async def reject_details_change_route(
     change_id: Annotated[UUID, Path()], body: ReviewReasonIn, ctx: Ctx
 ) -> RecipientDetailsChangeOut:
-    await _stub(ctx, "k1_recipient.review_details")
+    await _gate(ctx)
+    return _change_out(await k1.decide_details_change(ctx, change_id, False, body.reason))
 
 
 @portal_k1_router.get(
