@@ -348,6 +348,16 @@ async def _gate(ctx: AuthContext, flag: Flag, action: str) -> None:
         raise NotFound(flag.name)
 
 
+async def version_state_out(ctx: AuthContext, v: lifecycle.VersionState) -> VersionStateOut:
+    """A version's lifecycle row for the viewer (K-01-T18's import routes answer it too)."""
+    return await _state_out(ctx, v)
+
+
+async def require_live(ctx: AuthContext, flag: Flag, action: str) -> None:
+    """`_gate` for the module's other routers (K-01-T18)."""
+    await _gate(ctx, flag, action)
+
+
 async def _state_out(ctx: AuthContext, v: lifecycle.VersionState) -> VersionStateOut:
     may = await allowed_actions(ctx, Resource.firm(ctx.tenant_id), ["methodology.manage", APPROVE])
     acts = [

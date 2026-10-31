@@ -8884,6 +8884,62 @@ export type DiffOpOut = {
 };
 
 /**
+ * DiffRowOut
+ */
+export type DiffRowOut = {
+    /**
+     * After Text
+     */
+    after_text: string | null;
+    /**
+     * Before Text
+     */
+    before_text: string | null;
+    /**
+     * Changed Fields
+     */
+    changed_fields: Array<string>;
+    /**
+     * Kind
+     */
+    kind: 'added' | 'changed' | 'removed';
+    /**
+     * Number
+     */
+    number: number;
+    /**
+     * Program Code
+     */
+    program_code: string;
+    /**
+     * Step Key
+     */
+    step_key: string;
+};
+
+/**
+ * DiffTilesOut
+ */
+export type DiffTilesOut = {
+    /**
+     * Added
+     */
+    added: number;
+    /**
+     * Changed
+     */
+    changed: number;
+    /**
+     * Removed
+     */
+    removed: number;
+    /**
+     * Unchanged
+     */
+    unchanged: number;
+};
+
+/**
  * DigestCardOut
  */
 export type DigestCardOut = {
@@ -13901,6 +13957,54 @@ export type FixInstructionsIn = {
      * Seen Version
      */
     seen_version: number;
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * FlagResolutionIn
+ */
+export type FlagResolutionIn = {
+    /**
+     * Action
+     */
+    action: 'confirm' | 'edit';
+    /**
+     * Row Version
+     */
+    row_version: number;
+    /**
+     * Text
+     */
+    text?: string | null;
+};
+
+/**
+ * FlagResolutionOut
+ */
+export type FlagResolutionOut = {
+    /**
+     * Parse Flag
+     */
+    parse_flag: string;
+    /**
+     * Resolution
+     */
+    resolution: 'confirmed' | 'edited';
+    /**
+     * Row Version
+     */
+    row_version: number;
+    /**
+     * Step Id
+     */
+    step_id: string;
+    /**
+     * Step Key
+     */
+    step_key: string;
     /**
      * Text
      */
@@ -20779,6 +20883,40 @@ export type ListPageTaxReturnRowOut = {
 };
 
 /**
+ * ListPage[VersionActivityOut]
+ */
+export type ListPageVersionActivityOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<VersionActivityOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
  * ListPage[WallEventOut]
  */
 export type ListPageWallEventOut = {
@@ -22080,6 +22218,62 @@ export type MessageTriageOut = {
      * Seen Proposals
      */
     seen_proposals: Array<string>;
+};
+
+/**
+ * MethodologyImportIn
+ */
+export type MethodologyImportIn = {
+    /**
+     * Engagement Types
+     */
+    engagement_types?: Array<'fs_audit' | 'ebp_audit' | 'review' | 'compilation' | 'preparation' | 'agreed_upon_procedures' | 'soc1' | 'soc2' | 'readiness' | 'internal_audit' | 'tax_compliance' | 'cas_monthly_close' | 'notice_response' | 'advisory'>;
+    /**
+     * Template Name
+     */
+    template_name: string;
+};
+
+/**
+ * MethodologyImportOut
+ */
+export type MethodologyImportOut = {
+    /**
+     * Failure Code
+     */
+    failure_code: string | null;
+    /**
+     * Files
+     */
+    files: Array<SourceFileOut>;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Pages Done
+     */
+    pages_done: number;
+    /**
+     * Pages Total
+     */
+    pages_total: number | null;
+    /**
+     * Started At
+     */
+    started_at: string;
+    /**
+     * Status
+     */
+    status: 'awaiting_files' | 'scanning' | 'parsing' | 'needs_review' | 'failed' | 'cancelled';
+    /**
+     * Template Id
+     */
+    template_id: string;
+    /**
+     * Version Id
+     */
+    version_id: string | null;
 };
 
 /**
@@ -32029,6 +32223,44 @@ export type SourceDocumentsOut = {
 };
 
 /**
+ * SourceFileOut
+ */
+export type SourceFileOut = {
+    /**
+     * Bytes
+     */
+    bytes: number;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Filename
+     */
+    filename: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Media Type
+     */
+    media_type: string;
+    /**
+     * Role
+     */
+    role: 'document_docx' | 'document_pdf' | 'workbook';
+    /**
+     * Scan Status
+     */
+    scan_status: 'clean';
+    /**
+     * Sha256
+     */
+    sha256: string;
+};
+
+/**
  * SourceOut
  */
 export type SourceOut = {
@@ -32909,6 +33141,32 @@ export type StandardVersionSummaryOut = {
      * Version
      */
     version: number;
+};
+
+/**
+ * StandardsMappingIn
+ */
+export type StandardsMappingIn = {
+    /**
+     * Default For New Engagements
+     */
+    default_for_new_engagements: boolean;
+    /**
+     * Engagement Types
+     */
+    engagement_types: Array<'fs_audit' | 'ebp_audit' | 'review' | 'compilation' | 'preparation' | 'agreed_upon_procedures' | 'soc1' | 'soc2' | 'readiness' | 'internal_audit' | 'tax_compliance' | 'cas_monthly_close' | 'notice_response' | 'advisory'>;
+    /**
+     * Quality Management Ref
+     */
+    quality_management_ref?: string | null;
+    /**
+     * Row Version
+     */
+    row_version: number;
+    /**
+     * Standards Set Id
+     */
+    standards_set_id: string | null;
 };
 
 /**
@@ -36832,6 +37090,42 @@ export type VarianceThresholdsPayloadOutput = {
 };
 
 /**
+ * VersionActivityOut
+ */
+export type VersionActivityOut = {
+    /**
+     * Actor Kind
+     */
+    actor_kind: 'human' | 'agent' | 'system';
+    /**
+     * Actor Name
+     */
+    actor_name: string | null;
+    /**
+     * Actor User Id
+     */
+    actor_user_id: string | null;
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Facts
+     */
+    facts: {
+        [key: string]: unknown;
+    };
+    /**
+     * Kind
+     */
+    kind: string;
+    /**
+     * Seq
+     */
+    seq: number;
+};
+
+/**
  * VersionBody
  */
 export type VersionBody = {
@@ -36851,6 +37145,29 @@ export type VersionBody = {
      * Snapshot Id
      */
     snapshot_id: string;
+};
+
+/**
+ * VersionDiffOut
+ */
+export type VersionDiffOut = {
+    /**
+     * Against Label
+     */
+    against_label: string | null;
+    /**
+     * Against Version Id
+     */
+    against_version_id: string | null;
+    /**
+     * Rows
+     */
+    rows: Array<DiffRowOut>;
+    tiles: DiffTilesOut;
+    /**
+     * Version Id
+     */
+    version_id: string;
 };
 
 /**
@@ -75647,6 +75964,286 @@ export type MeteringResponses = {
 
 export type MeteringResponse = MeteringResponses[keyof MeteringResponses];
 
+export type CreateImportData = {
+    body: MethodologyImportIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/methodology/imports';
+};
+
+export type CreateImportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type CreateImportError = CreateImportErrors[keyof CreateImportErrors];
+
+export type CreateImportResponses = {
+    /**
+     * Successful Response
+     */
+    201: MethodologyImportOut;
+};
+
+export type CreateImportResponse = CreateImportResponses[keyof CreateImportResponses];
+
+export type GetImportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Import Id
+         */
+        import_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/imports/{import_id}';
+};
+
+export type GetImportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type GetImportError = GetImportErrors[keyof GetImportErrors];
+
+export type GetImportResponses = {
+    /**
+     * Successful Response
+     */
+    200: MethodologyImportOut;
+};
+
+export type GetImportResponse = GetImportResponses[keyof GetImportResponses];
+
+export type CancelImportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Import Id
+         */
+        import_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/imports/{import_id}/cancel';
+};
+
+export type CancelImportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type CancelImportError = CancelImportErrors[keyof CancelImportErrors];
+
+export type CancelImportResponses = {
+    /**
+     * Successful Response
+     */
+    200: MethodologyImportOut;
+};
+
+export type CancelImportResponse = CancelImportResponses[keyof CancelImportResponses];
+
+export type UploadFileData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Import Id
+         */
+        import_id: string;
+        /**
+         * Role
+         */
+        role: 'document_docx' | 'document_pdf' | 'workbook';
+    };
+    query: {
+        /**
+         * Filename
+         */
+        filename: string;
+    };
+    url: '/v1/methodology/imports/{import_id}/files/{role}';
+};
+
+export type UploadFileErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type UploadFileError = UploadFileErrors[keyof UploadFileErrors];
+
+export type UploadFileResponses = {
+    /**
+     * Successful Response
+     */
+    200: MethodologyImportOut;
+};
+
+export type UploadFileResponse = UploadFileResponses[keyof UploadFileResponses];
+
+export type StartImportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Import Id
+         */
+        import_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/imports/{import_id}/start';
+};
+
+export type StartImportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type StartImportError = StartImportErrors[keyof StartImportErrors];
+
+export type StartImportResponses = {
+    /**
+     * Successful Response
+     */
+    200: MethodologyImportOut;
+};
+
+export type StartImportResponse = StartImportResponses[keyof StartImportResponses];
+
 export type ProgramData = {
     body?: never;
     headers?: {
@@ -75976,6 +76573,58 @@ export type GetVersionResponses = {
 
 export type GetVersionResponse = GetVersionResponses[keyof GetVersionResponses];
 
+export type MethodologyVersionActivityData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/versions/{version_id}/activity';
+};
+
+export type MethodologyVersionActivityErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type MethodologyVersionActivityError = MethodologyVersionActivityErrors[keyof MethodologyVersionActivityErrors];
+
+export type MethodologyVersionActivityResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageVersionActivityOut;
+};
+
+export type MethodologyVersionActivityResponse = MethodologyVersionActivityResponses[keyof MethodologyVersionActivityResponses];
+
 export type ApproveVersionData = {
     body: ApproveVersionIn;
     headers?: {
@@ -76031,6 +76680,63 @@ export type ApproveVersionResponses = {
 };
 
 export type ApproveVersionResponse = ApproveVersionResponses[keyof ApproveVersionResponses];
+
+export type MethodologyVersionDiffData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: {
+        /**
+         * Against
+         */
+        against?: string | null;
+    };
+    url: '/v1/methodology/versions/{version_id}/diff';
+};
+
+export type MethodologyVersionDiffErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type MethodologyVersionDiffError = MethodologyVersionDiffErrors[keyof MethodologyVersionDiffErrors];
+
+export type MethodologyVersionDiffResponses = {
+    /**
+     * Successful Response
+     */
+    200: VersionDiffOut;
+};
+
+export type MethodologyVersionDiffResponse = MethodologyVersionDiffResponses[keyof MethodologyVersionDiffResponses];
 
 export type DiscardDraftData = {
     body: SubmitVersionIn;
@@ -76253,6 +76959,64 @@ export type ExportVersionResponses = {
 };
 
 export type ExportVersionResponse = ExportVersionResponses[keyof ExportVersionResponses];
+
+export type MethodologyFileDownloadData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+        /**
+         * File Id
+         */
+        file_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/versions/{version_id}/files/{file_id}/download';
+};
+
+export type MethodologyFileDownloadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type MethodologyFileDownloadError = MethodologyFileDownloadErrors[keyof MethodologyFileDownloadErrors];
+
+export type MethodologyFileDownloadResponses = {
+    /**
+     * Response Methodology File Download
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type MethodologyFileDownloadResponse = MethodologyFileDownloadResponses[keyof MethodologyFileDownloadResponses];
 
 export type TemplateDraftsData = {
     body?: never;
@@ -76590,6 +77354,62 @@ export type PublishDraftedResponses = {
 
 export type PublishDraftedResponse = PublishDraftedResponses[keyof PublishDraftedResponses];
 
+export type StandardsMappingData = {
+    body: StandardsMappingIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/versions/{version_id}/standards-mapping';
+};
+
+export type StandardsMappingErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type StandardsMappingError = StandardsMappingErrors[keyof StandardsMappingErrors];
+
+export type StandardsMappingResponses = {
+    /**
+     * Successful Response
+     */
+    200: VersionStateOut;
+};
+
+export type StandardsMappingResponse = StandardsMappingResponses[keyof StandardsMappingResponses];
+
 export type VersionStateData = {
     body?: never;
     headers?: {
@@ -76769,6 +77589,66 @@ export type EditStepResponses = {
 };
 
 export type EditStepResponse = EditStepResponses[keyof EditStepResponses];
+
+export type FlagResolutionData = {
+    body: FlagResolutionIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+        /**
+         * Step Id
+         */
+        step_id: string;
+    };
+    query?: never;
+    url: '/v1/methodology/versions/{version_id}/steps/{step_id}/flag-resolution';
+};
+
+export type FlagResolutionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type FlagResolutionError = FlagResolutionErrors[keyof FlagResolutionErrors];
+
+export type FlagResolutionResponses = {
+    /**
+     * Successful Response
+     */
+    200: FlagResolutionOut;
+};
+
+export type FlagResolutionResponse = FlagResolutionResponses[keyof FlagResolutionResponses];
 
 export type MandatoryStepData = {
     body: MandatoryIn;

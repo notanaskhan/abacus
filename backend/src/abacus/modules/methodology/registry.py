@@ -30,6 +30,11 @@ TABLES: frozenset[str] = frozenset(
         "report_template_versions",
         "report_template_publications",
         "report_template_consent_terms",  # T-01-T17 (0461)
+        # K-01-T18 (0580): import review.
+        "methodology_imports",  # status, version and progress move under guarded updates
+        "methodology_source_files",
+        "methodology_source_pages",
+        "program_step_sources",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -43,6 +48,9 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "methodology_version_events",
         "programs",  # K-01-T05 (0224)
         "program_step_pbc_links",  # K-01-T05 (0224)
+        "methodology_source_files",  # K-01-T18 (0580)
+        "methodology_source_pages",  # K-01-T18 (0580)
+        "program_step_sources",  # K-01-T18 (0580)
         "report_templates",  # P-11-T06 (0460): identity never moves
         "report_template_versions",  # P-11-T06 (0460)
         "report_template_publications",  # P-11-T06 (0460)

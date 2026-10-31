@@ -5,8 +5,10 @@ before it (K-01-T06). Synthetic, Brightwater Hale only; nothing here is platform
 
 - **BH Audit Methodology · EBP**: v1 (effective Jan 1, 2024) and v2 (Jan 1, 2025), 64 steps each,
   then v3 (Jan 1, 2026): seven programs of 16 + 8 + 6 + 8 + 10 + 7 + 12 = 67 steps, 21 of them
-  mandatory (KNW-02). v3 against v2: four steps added (BH-EBP-110, 140, 410, 510) and one removed
-  (BH-EBP-310). Each EBP version carries the 24-request PBC template.
+  mandatory (KNW-02). v3 against v2: four steps added (BH-EBP-110, 140, 410, 510), nine changed
+  (BH-EBP-110 steps 7, 9 and 10, KNW-03 e, and one step in each of the six other programs,
+  `EBP_V3_CHANGED`) and one removed (BH-EBP-310): KNW-02 c's 4 · 9 · 1 · 54 (K-01-T18).
+  Each EBP version carries the 24-request PBC template.
 - **BH Audit Methodology · FS** v1 to v5 (effective each Jan 1, 2022 to 2026) and **· SSARS** v1
   and v2 (2025, 2026): their shapes are the seed's (K-01 names only the versions).
 - **The flags** the import path sits behind, `methodology.programs` and `methodology.lifecycle`,
@@ -41,6 +43,10 @@ EBP_PROGRAMS: Final = (110, 140, 210, 310, 410, 510, 610)
 EBP_V3: Final = (16, 8, 6, 8, 10, 7, 12)  # 67
 EBP_V2: Final = (15, 7, 6, 9, 9, 6, 12)  # 64: v3 less 110, 140, 410, 510's new steps, plus 310's
 EBP_MANDATORY: Final = (5, 3, 2, 3, 3, 2, 3)  # 21: each program's first steps
+# K-01-T18 (KNW-02 c, AC6.1): the steps v3 rewords, by program and number (AC4.3 names 110's).
+EBP_V3_CHANGED: Final = frozenset(
+    {(110, 7), (110, 9), (110, 10), (140, 3), (210, 4), (310, 5), (410, 6), (510, 2), (610, 8)}
+)
 PBC_REQUESTS: Final = 24
 LEVELS: Final = ("Foundation", "Planning", "Testing", "Completion")
 
@@ -105,11 +111,13 @@ def workbook(spec: VersionSpec) -> bytes:
     steps.append(["program_code", "number", "text", "level", "mandatory", "requests"])
     for code, count, locked in zip(spec.codes, spec.shape, spec.mandatory, strict=True):
         for n in range(1, count + 1):
+            program = int(code.rsplit("-", 1)[1])
+            revised = spec.family == "ebp" and spec.number >= 3 and (program, n) in EBP_V3_CHANGED
             steps.append(
                 [
                     code,
                     n,
-                    f"{code} step {n}",
+                    f"{code} step {n}" + (" (revised in v3)" if revised else ""),
                     LEVELS[n % 4],
                     "yes" if n <= locked else "no",
                     str(n) if spec.family == "ebp" and n <= PBC_REQUESTS else "",
@@ -165,4 +173,4 @@ def spec_of(family: str, number: int) -> VersionSpec:
     return next(v for v in VERSIONS if (v.family, v.number) == (family, number))
 
 
-__all__ = ["NEEDS", "SLICE", "VERSIONS", "VersionSpec", "spec_of", "workbook"]
+__all__ = ["EBP_V3_CHANGED", "NEEDS", "SLICE", "VERSIONS", "VersionSpec", "spec_of", "workbook"]
