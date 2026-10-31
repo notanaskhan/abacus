@@ -43,6 +43,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Final
 
+from abacus_tools.synthetic.scenarios.brightwater_hale.audits import AUDITS
 from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import CT
 from abacus_tools.synthetic.scenarios.brightwater_hale.scenario import SETUP_AT
 from abacus_tools.synthetic.scenarios.brightwater_hale.slices import register_slice
@@ -450,6 +451,12 @@ class Ask:
     questions: tuple[tuple[str, str], ...]  # (wording, help)
 
 
+# POR-05 e's kicker names Hannah Leclerc, who is not on Granite Peak's drawn audit team; its
+# engagement partner sends the two questions in the seed (DEC-1477).
+GRANITE_PEAK_EP: Final = next(
+    a.ep for a in AUDITS if a.client == "Granite Peak Outdoor Supply, Inc."
+)
+
 ASKS: Final = (
     Ask(
         "feld-digital-asset",
@@ -505,7 +512,7 @@ ASKS: Final = (
     ),
     Ask(
         "granite-peak-analytics",
-        "HL",
+        GRANITE_PEAK_EP,
         "Granite Peak Outdoor Supply, Inc.",
         "audit",
         "team_questions",
