@@ -413,6 +413,7 @@ codes:
   content_changed:
     status: 409
     raised_by:
+    - abacus.modules.assurance.mapping_live.ContentChanged
     - abacus.modules.review.sign_offs.ContentChanged
     - abacus.modules.tax.approval.ContentChanged
     summary: 'The target changed since the signer saw it: nothing is written.'
@@ -1197,6 +1198,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.ledger.mapping.MappingInvalid
+  mapping_run_in_progress:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.mapping_live.MappingExistsForTb
+    summary: 'The rules already ran on this trial balance of record: one set per TB (ADR-341 §4).'
   mapping_set_exists:
     status: 409
     raised_by:
@@ -2040,6 +2046,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.agents.ai_policy_service.StaleDraft
+    - abacus.modules.assurance.mapping_live.StaleVersion
     - abacus.modules.assurance.phase.ProfileStale
     - abacus.modules.communications.follow_up_policy.FollowUpPolicyStale
     - abacus.modules.communications.template_service.TemplateDraftStale

@@ -7,6 +7,14 @@ from abacus.modules.ledger.audit_targets import (
     audit_entities,
     audit_owners,
 )
+from abacus.modules.ledger.compute.mapping import (
+    CONFIDENCE,
+    Subtotal,
+    Tallies,
+    rule_line,
+    subtotals,
+    tallies,
+)
 from abacus.modules.ledger.events import TrialBalanceVersionCreated
 from abacus.modules.ledger.general_ledger import (
     Balance,
@@ -35,11 +43,14 @@ from abacus.modules.ledger.gl_service import (
     year_end_trial_balance,
 )
 from abacus.modules.ledger.mapping import (
+    AccountEdits,
     AlreadyPublished,
     FsLineView,
     GroupingSetInvalid,
     GroupingView,
     MappedAccount,
+    MappedLine,
+    MappedTrialBalance,
     MappingAuthors,
     MappingExists,
     MappingInvalid,
@@ -50,6 +61,7 @@ from abacus.modules.ledger.mapping import (
     VersionHasProblems,
     VersionNotDraft,
     VersionView,
+    account_edits,
     build_statements,
     create_mapping_set,
     edit_mappings,
@@ -58,7 +70,9 @@ from abacus.modules.ledger.mapping import (
     grouping_version_id,
     import_grouping_set,
     import_parsed_grouping_set,
+    mapped_trial_balance,
     mapping_set_authors,
+    mapping_set_by_id,
     mapping_set_of,
     mapping_view,
     normalised_code,
@@ -67,7 +81,6 @@ from abacus.modules.ledger.mapping import (
     publish_version,
     published_versions,
     recently_used,
-    rule_line,
     statements_for,
 )
 from abacus.modules.ledger.normalise import (
@@ -142,7 +155,9 @@ register_entity_owners(ENTITY_KINDS, audit_entities)
 register_engagement_owners(ENGAGEMENT_KINDS, audit_owners)
 
 __all__ = [
+    "CONFIDENCE",
     "ROUTERS",
+    "AccountEdits",
     "AdjustmentEntry",
     "AdjustmentSource",
     "AlreadyPublished",
@@ -169,6 +184,8 @@ __all__ = [
     "Leadsheet",
     "LedgerLine",
     "MappedAccount",
+    "MappedLine",
+    "MappedTrialBalance",
     "MappingAuthors",
     "MappingExists",
     "MappingInvalid",
@@ -187,6 +204,8 @@ __all__ = [
     "SnapshotView",
     "StatementGroup",
     "Statements",
+    "Subtotal",
+    "Tallies",
     "TbAccount",
     "TbAuthors",
     "TbDigest",
@@ -204,6 +223,7 @@ __all__ = [
     "VersionNotDraft",
     "VersionStale",
     "VersionView",
+    "account_edits",
     "adopt_trial_balance",
     "adopt_version",
     "annotate",
@@ -229,7 +249,9 @@ __all__ = [
     "layer_available",
     "layer_totals",
     "leadsheets",
+    "mapped_trial_balance",
     "mapping_set_authors",
+    "mapping_set_by_id",
     "mapping_set_of",
     "mapping_view",
     "normalised_code",
@@ -250,7 +272,9 @@ __all__ = [
     "snapshot_line",
     "snapshot_view",
     "statements_for",
+    "subtotals",
     "superseded_snapshot",
+    "tallies",
     "trial_balance_authors",
     "trial_balance_view",
     "validate",

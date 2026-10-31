@@ -223,3 +223,21 @@ async def recent_fs_lines(
         )
     ).all()
     return [line for line, _ in rows if line is not None]
+
+
+async def edits_of(session: AsyncSession, mapping_set_id: UUID) -> Sequence[MappingSetEdit]:
+    """Every edit in the set, each account's oldest first (A-03-T08: "was …" and `seen_version`;
+    LIST_EXEMPT: the caller authorised on the engagement)."""
+    return (
+        (
+            await session.execute(
+                select(MappingSetEdit)
+                .where(MappingSetEdit.mapping_set_id == mapping_set_id)
+                .order_by(
+                    MappingSetEdit.account_code, MappingSetEdit.created_at, MappingSetEdit.id
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
