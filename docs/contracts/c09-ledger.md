@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C9 in `docs/contracts/README.md` |
 | Version | v1 (layers half; A-03 adds groupings, the FS-line taxonomy and mapping, frozen S20) |
-| Status | stub (A-02-T03, 2026-10-25); the SPEC-309 to SPEC-311 operations are live; the view by layer and the leadsheet by area are live (A-02-T10, 2026-10-26); the issue link (A-02-T17) and Open in Excel (A-02-T22, 2026-10-27) are live; the `ledger_line` citable is registered (A-02-T22) |
+| Status | stub (A-02-T03, 2026-10-25); the SPEC-309 to SPEC-311 operations are live; the view by layer and the leadsheet by area are live (A-02-T10, 2026-10-26); the issue link (A-02-T17) and Open in Excel (A-02-T22, 2026-10-27) are live; the `ledger_line` citable is registered (A-02-T22). **v1 final (A-02-T38, 2026-10-31):** the TB-layers half is frozen; A-03 adds groupings, the FS-line taxonomy and mapping (C9 v2), A-06 registers the adjustment source, A-05 the document-extracted versions |
 | Provider epic | A-02 (A-03 for the taxonomy half) |
 | Consumers | AUD-06 (A-02-T05, T09, T14, T24); A-03 (mapping), A-04 (materiality benchmark), A-05 (document-extracted TB), A-06 (adjustment source), T-05, T-06, C-01, A-10 |
 | Freeze sprint | S10 (starts Mon Mar 8, 2027) |
@@ -198,6 +198,9 @@ Publishing, mapping and both sign-offs are human-only: the matrix denies the age
 - **Outbox:** `mapping_set.went_stale` (`mapping_set_id`, `engagement_id`, `trial_balance_id`, `version_no`). It is emitted once per trial balance version, on `trial_balance.version_created` from version 2 on, when the mapping's newest sign-offs are on other content. Review's stale detector consumes it and tells each signer (`sign_off_stale`).
 
 ### C9 v2 will add (A-03-T03, T08, T14)
+
+The v2 contract is `docs/contracts/ledger-mapping.md` (stub, A-03-T03, 2026-10-30).
+
 
 - account states including the reserved `suggested` / `adopted` (with A-09);
 - `TbMappingWorkflow` with progress;

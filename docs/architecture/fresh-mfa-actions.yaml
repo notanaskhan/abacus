@@ -136,6 +136,9 @@ actions:
     group: release
   - action: questionnaire_template.publish
     group: standards
+  # The firm's grouping and FS-line taxonomy (A-03-T01, DEC-1550; A-03 §4.3): publishing a version
+  - action: grouping_set.publish
+    group: standards
   # Report templates (P-11-T06, DEC-1350): publishing a version of the firm's wording
   - action: report_template.publish
     group: standards
