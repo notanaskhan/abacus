@@ -8,7 +8,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import QueryableAttribute
 
 from abacus.kernel.db import TenantContext, tenant_session
@@ -21,12 +21,23 @@ _OWNERS: dict[str, tuple[QueryableAttribute[UUID], QueryableAttribute[UUID | Non
     "comment": (Comment.id, Comment.engagement_id),
     "fulfilment": (Fulfilment.id, Fulfilment.engagement_id),
 }
-AUDIT_KINDS = frozenset(_OWNERS)
+# T-02-T16: questionnaire rows have no ORM model; a question is its questionnaire's engagement's.
+_TEXT_OWNERS = {
+    "question": text(
+        "SELECT q.id, n.engagement_id FROM questions q JOIN questionnaires n "
+        "ON n.id = q.questionnaire_id WHERE q.id = ANY(:ids)"
+    ),
+}
+AUDIT_KINDS = frozenset(_OWNERS) | frozenset(_TEXT_OWNERS)
 
 
 async def audit_owners(tenant: TenantContext, kind: str, ids: Sequence[UUID]) -> dict[UUID, UUID]:
     """For `kind` rows named by an audit event (the caller has authorised the read of the trail):
     their id -> the owning engagement. Unknown ids are left out."""
+    if kind in _TEXT_OWNERS:
+        async with tenant_session(tenant) as session:
+            found = await session.execute(_TEXT_OWNERS[kind], {"ids": list(ids)})
+            return {row[0]: row[1] for row in found if row[1] is not None}
     key, owner = _OWNERS[kind]
     async with tenant_session(tenant) as session:
         rows = await session.execute(select(key, owner).where(key.in_(list(ids))))
