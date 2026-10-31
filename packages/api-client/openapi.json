@@ -36361,6 +36361,28 @@
         "title": "IntakeCreatedOut",
         "type": "object"
       },
+      "IntakeDuplicateOut": {
+        "description": "A flagged duplicate upload on the request (T-02-T17), for Keep newer or Discard duplicate.",
+        "properties": {
+          "file_name": {
+            "cls": "confidential",
+            "title": "File Name",
+            "type": "string"
+          },
+          "version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version_id",
+          "file_name"
+        ],
+        "title": "IntakeDuplicateOut",
+        "type": "object"
+      },
       "IntakeEntityIn": {
         "additionalProperties": false,
         "properties": {
@@ -36628,6 +36650,17 @@
             ],
             "cls": "internal",
             "title": "Due On"
+          },
+          "duplicate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IntakeDuplicateOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
           },
           "file_name": {
             "anyOf": [
@@ -37095,6 +37128,12 @@
             "title": "Media Type",
             "type": "string"
           },
+          "message_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Message Id",
+            "type": "string"
+          },
           "received_at": {
             "cls": "internal",
             "format": "date-time",
@@ -37154,6 +37193,7 @@
         "required": [
           "attachment_id",
           "thread_id",
+          "message_id",
           "file_name",
           "media_type",
           "size_bytes",
@@ -54414,6 +54454,19 @@
             ],
             "cls": "internal",
             "title": "Current Version"
+          },
+          "current_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Current Version Id"
           },
           "draft_version": {
             "anyOf": [

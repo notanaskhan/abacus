@@ -17188,6 +17188,22 @@ export type IntakeCreatedOut = {
 };
 
 /**
+ * IntakeDuplicateOut
+ *
+ * A flagged duplicate upload on the request (T-02-T17), for Keep newer or Discard duplicate.
+ */
+export type IntakeDuplicateOut = {
+    /**
+     * File Name
+     */
+    file_name: string;
+    /**
+     * Version Id
+     */
+    version_id: string;
+};
+
+/**
  * IntakeEntityIn
  */
 export type IntakeEntityIn = {
@@ -17324,6 +17340,7 @@ export type IntakeRequestOut = {
      * Due On
      */
     due_on: string | null;
+    duplicate?: IntakeDuplicateOut | null;
     /**
      * File Name
      */
@@ -17561,6 +17578,10 @@ export type IntakeWaitingFileOut = {
      * Media Type
      */
     media_type: string;
+    /**
+     * Message Id
+     */
+    message_id: string;
     /**
      * Received At
      */
@@ -26086,6 +26107,10 @@ export type QuestionnaireTemplateOut = {
      * Current Version
      */
     current_version: number | null;
+    /**
+     * Current Version Id
+     */
+    current_version_id?: string | null;
     /**
      * Draft Version
      */
