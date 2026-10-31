@@ -9,7 +9,7 @@ epic: N-01
 plan_key: N-01-T22
 branch: s17-n01-t22
 created: 2026-10-30
-updated: 2026-10-30
+updated: 2026-10-31
 ---
 
 ## Objective
@@ -80,3 +80,8 @@ path lets the agent file, ignore, hold or supersede."
   v2 readers now filter to engagement-mode rows (the gate projector would otherwise have seen
   intake runs). Deferred: v2 citation rows on attachments, INB-02 bundle candidates,
   `ProposalRecorded` for intake runs. Tests: 8 integration (fake model), 4 unit; fast eval green.
+- 2026-10-31: loose ends (DEC-1287). INB-02's cards read the shown intake proposals through a
+  communications slot, re-authorised for the reader; `inbox_match.intake_recorded` raises
+  `ambiguous_candidates` on a card too close to call. `proposal.recorded` stays engagement-only
+  (no gate for intake); citation rows wait for an engagement-less trust-kit anchor (quotes stay
+  verified on the proposal). The real-model eval still needs the eval environment.
