@@ -34,12 +34,11 @@ from abacus.kernel.listing import ListPage
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
-    Resource,
-    authorise,
     current_context,
     current_member,
 )
 from abacus.modules.tax import k1_packages as k1
+from abacus.modules.tax import k1_release
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 Member = Annotated[AuthContext, Depends(current_member)]
@@ -215,15 +214,6 @@ k1_router = AbacusRouter(prefix="/v1", tags=["k1-packages"])
 portal_k1_router = AbacusRouter(prefix="/v1/portal", tags=["portal"])
 
 
-async def _stub(ctx: AuthContext, action: str) -> NoReturn:
-    if ctx.client:
-        raise NotFound("k1_package")
-    await authorise(ctx, action, Resource.firm(ctx.tenant_id))
-    if not await flag_enabled(ctx.tenant, TAX_K1_RELEASE):
-        raise NotFound(TAX_K1_RELEASE.name)
-    raise NotImplementedYet
-
-
 async def _gate(ctx: AuthContext) -> None:
     """T-02-T20: a client principal 404, then the flag; each service authorises its action on
     the issuing return (a principal it refuses answers 403 or 404 there)."""
@@ -366,7 +356,7 @@ async def k1_release_check_route(
     return_id: Annotated[UUID, Path()], ctx: Ctx
 ) -> K1ReleaseCheckOut:
     await _gate(ctx)
-    found = await k1.release_check(ctx, return_id)
+    found = await k1_release.eligibility(ctx, return_id)
     return K1ReleaseCheckOut(
         eligible=found.eligible, failing=list(found.failing), package_ids=list(found.package_ids)
     )
@@ -385,7 +375,19 @@ async def release_k1_route(
     ctx: Ctx,
     idempotency_key: IdempotencyKey,
 ) -> K1ReleaseOut:
-    await _stub(ctx, "k1_package.release")
+    """T-02-T21: a single-use grant held 10 s for Undo; then `K1ReleaseWorkflow` delivers."""
+    await _gate(ctx)
+    made = await k1_release.request_release(
+        ctx,
+        return_id,
+        body.package_ids,
+        body.email_template_version_id,
+        body.seen_version,
+        idempotency_key,
+    )
+    return K1ReleaseOut(
+        release_id=made.id, status=_status(made.status), not_before=made.not_before
+    )
 
 
 @k1_router.post(
@@ -395,7 +397,18 @@ async def release_k1_route(
     errors=(409, 501),
 )
 async def undo_k1_release_route(release_id: Annotated[UUID, Path()], ctx: Ctx) -> K1ReleaseOut:
-    await _stub(ctx, "k1_package.release")
+    await _gate(ctx)
+    made = await k1_release.undo(ctx, release_id)
+    return K1ReleaseOut(
+        release_id=made.id, status=_status(made.status), not_before=made.not_before
+    )
+
+
+ReleaseStatus = Literal["pending", "undone", "running", "completed", "failed"]
+
+
+def _status(status: str) -> ReleaseStatus:
+    return cast(ReleaseStatus, status)
 
 
 @k1_router.post(

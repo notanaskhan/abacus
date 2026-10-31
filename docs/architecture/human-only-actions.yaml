@@ -135,3 +135,7 @@ actions:
     verb: confirm  # a person confirms the file reached the engine (T-01-T25, 0561)
   - action: letter.approved
     verb: approve  # the engagement partner approves the letter's content hash (N-02-T33, 0563)
+  - action: schedule_k_release.requested
+    verb: release  # a person releases final K-1s to their recipients (T-02-T21, 0566)
+  - action: schedule_k_release.undone
+    verb: decide  # the person who released undoes it inside the 10 s window (T-02-T21, 0566)

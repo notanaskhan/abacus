@@ -56,9 +56,11 @@ from abacus.modules.identity.api import (
     AuthContext,
     Forbidden,
     Resource,
+    ScopeFacts,
     allowed_actions,
     authorise,
     engagement_resource,
+    resolve_scope,
 )
 from abacus.modules.requests.api import fulfil_by_rule, k1_request_for
 from abacus.modules.tax import engine_repository as repo
@@ -565,6 +567,36 @@ async def _issuer(ctx: AuthContext, return_id: UUID, action: str) -> Issuer:
     resource = replace(base, work_item_id=return_id)
     await authorise(ctx, action, resource)
     return Issuer(return_id, facts.engagement_id, facts.client_id, facts.client_name, resource)
+
+
+async def issuer_for(ctx: AuthContext, return_id: UUID, action: str) -> Issuer:
+    """The issuing return as `_issuer` reads it, for T21's release (`tax/k1_release.py`)."""
+    return await _issuer(ctx, return_id, action)
+
+
+async def record_event(
+    tx: UnitOfWork,
+    tenant_id: UUID,
+    package_id: UUID,
+    kind: str,
+    actor: UUID | None,
+    facts: Mapping[str, object] | None = None,
+) -> None:
+    """A `k1_package_events` row (T21's release writes `released` as the system)."""
+    await _event(tx, tenant_id, package_id, kind, actor, facts)
+
+
+async def package_scope(tenant: TenantContext, package_id: UUID) -> ScopeFacts | None:
+    """A `k1_package` grant's scope (DEC-34): the issuing return inside its engagement and
+    client. The grant reaches that one package only: the portal reads check the grant's own
+    package (own-only, T-02-T26), never the return."""
+    async with tenant_session(tenant) as session:
+        work_item = await session.scalar(
+            text("SELECT work_item_id FROM k1_packages WHERE id = :p"), {"p": package_id}
+        )
+    if work_item is None:
+        return None
+    return await resolve_scope(tenant, "work_item", cast(UUID, work_item))
 
 
 @dataclass(frozen=True)

@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Version | v1 |
-| Status | T-02-T20 (2026-10-31): firm reads, share, release check, resend and details review live behind `tax.k1_release`; release and undo (T21) and the portal routes (T26) stay 501 |
+| Status | T-02-T21 (2026-10-31): release and undo live behind `tax.k1_release` (T-02-T20's firm reads, share, release check, resend and details review before them); the portal routes (T26) stay 501 |
 | Provider epic | T-02 |
 | Consumers | TXP-12, POR-13, TAX-03 (hand-offs), R-02 (deliverables v0; the C10 precursor) |
 | Spec | SPEC-502 AC-5; `docs/plan/epics/T-02.md` §3, §4.3 |
@@ -36,3 +36,11 @@ Box amounts TRI; names and addresses confidential; TIN last four only.
 - `POST /v1/k1-packages/{pid}:resend`: a released package only (409 `k1_not_released`); records the contact and emits `schedule_k_package.resend_requested` for T21's workflow.
 - Details changes: `GET /v1/k1-recipients/{rid}/details-changes`; `:accept` / `:reject` once, by a person (0565's trigger; 409 `details_change_decided`).
 
+
+## T-02-T21 additions (DEC-1476)
+- `GET …/k1-packages/release-check` adds `no_release_policy` (BH-TAX-02 names no signer for the issuing client today) and `recipient_contact_missing` (a ready package has neither a delivery contact nor a recipient contact).
+- `POST …/k1-packages:release` (202, `Idempotency-Key`): `package_ids` must be the check's ready packages (409 `k1_release_ineligible`, `facts.failing` the codes or `packages_not_ready`); `seen_version` must be at least the newest `version_no` among them and `email_template_version_id` the firm's `deliverable_ready` version in use (409 `stale_version`). The answer is the release `pending` with `not_before` = now + 10 s. A person with a fresh second factor only; agent, system, support and the policy principal 403.
+- `POST /v1/k1-releases/{rid}:undo`: the requester before `not_before` (409 `undo_window_closed` after, or for anyone else; 409 `effect_started` once the workflow consumed the grant). The answer is the release `undone`.
+- After the window, `K1ReleaseWorkflow` per package: the contact, a `k1_recipient` grant on the package (a pending grant and a contact invitation when the contact has no portal person yet), `released`, one "Deliverable ready" email (`deliverable_ready`, no amounts) and the hand-off drafts on other returns replaced by the final with its K-1 box values in `final_values`. The release ends `completed`, or `failed` with a code.
+- `schedule_k_package.resend_requested` gives the corrected contact the grant or invitation and a new "Deliverable ready" email.
+- A `k1_recipient` grant's `k1_package` scope resolves to the issuing return (the portal reads check the grant's own package, T26).

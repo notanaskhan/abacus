@@ -177,6 +177,9 @@ from abacus.modules.communications.template_service import (
 from abacus.modules.communications.template_service import publish as publish_email_template
 from abacus.modules.communications.template_service import save_draft as save_email_template_draft
 from abacus.modules.communications.template_service import template_state as email_template_state
+from abacus.modules.communications.template_store import (
+    version_in_use as template_version_in_use,
+)
 from abacus.modules.communications.templates_contract import (
     FollowUpPolicyFields,
     NextSendOut,
@@ -410,6 +413,7 @@ __all__ = [
     "sink_address",
     "sink_domain",
     "template_key",
+    "template_version_in_use",
     "templated_outcome",
     "triage_outcomes",
     "viewer_scoped",

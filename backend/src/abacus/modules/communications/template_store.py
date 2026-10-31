@@ -19,6 +19,7 @@ from sqlalchemy import Row, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.crypto import open_sealed, seal
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.communications.render import TemplateContent, content_sha256
 from abacus.modules.communications.templates import TemplateInvalid
 
@@ -118,6 +119,14 @@ async def resolve(session: AsyncSession, tenant_id: UUID, key: str) -> StoredVer
         )
     ).one_or_none()
     return None if row is None else await _stored(tenant_id, key, row)
+
+
+async def version_in_use(tenant: TenantContext, key: str) -> UUID | None:
+    """T-02-T21: the id of the version `send_templated` would send for `key` now (the firm's
+    published one, else the platform default), so a release can refuse a stale choice."""
+    async with tenant_session(tenant) as session:
+        found = await resolve(session, tenant.tenant_id, key)
+    return None if found is None else found.version_id
 
 
 async def version_at(
