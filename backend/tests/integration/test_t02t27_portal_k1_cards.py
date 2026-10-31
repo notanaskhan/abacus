@@ -1,8 +1,9 @@
 """T-02-T27 (TASK-2531; T-02 §3.7; DV-12; ADR-031; DEC-1576) against Postgres: the additive POR-13
 reads behind the screen's fixture-to-live swap.
 
-- Before release, `expected` names who issues the person's K-1 and by when (POR-13 b): no
-  amounts, no documents, no package id, and only the person's own recipients.
+- `expected` names who issues the person's unreleased K-1 and by when (POR-13 b): no amounts,
+  no documents, no package id, only the person's own recipients, and only on a return a grant
+  of theirs already reaches (INV-4); before any grant both reads answer 404.
 - After release the card carries the issuer's name; a row carries no TIN; the detail carries the
   recipient's own TIN masked and whether an address is on file (Your details).
 
@@ -16,6 +17,9 @@ import uuid
 from dataclasses import asdict
 from typing import cast
 
+import pytest
+
+from abacus.kernel.errors import NotFound
 from abacus.modules.tax import k1_portal
 
 from . import test_t02t09_practice_board as t02t09
@@ -44,20 +48,49 @@ async def _issuer(b: Board, package: uuid.UUID) -> str:
     )
 
 
-async def test_before_release_the_person_sees_only_who_issues_and_by_when(
+async def test_nothing_is_named_before_a_grant_reaches_the_return(
     board: Board, sent: t02t21.Sent, signer: None
 ) -> None:
+    """INV-4: before any K-1 of theirs is released the person holds no grant on the issuing
+    return, so neither read names it (404, as for a person with nothing)."""
     _ridgeline, _feld, _samuel, finals = await t02t21._ready(board)  # pyright: ignore[reportPrivateUsage] -- T-02-T21's harness
-    first, second = [await _signed_in(board, p) for p in finals]
-    mine = await k1_portal.expected(first)
-    assert len(mine) == 1
-    found = asdict(mine[0])
-    assert set(found) == {"issuer_name", "form", "tax_year", "k3_status", "expected_on"}
-    assert found["issuer_name"] == await _issuer(board, finals[0])
-    assert (found["form"], found["tax_year"]) == ("1065", 2025)
-    assert str(finals[0]) not in json.dumps(found, default=str)
-    assert len(await k1_portal.expected(second)) == 1
-    assert await k1_portal.packages(first) == []  # a draft never lists
+    first = await _signed_in(board, finals[0])
+    with pytest.raises(NotFound):
+        await k1_portal.expected(first)
+    with pytest.raises(NotFound):
+        await k1_portal.packages(first)
+
+
+async def test_an_expected_k1_on_a_return_a_grant_reaches_names_only_issuer_and_date(
+    board: Board, sent: t02t21.Sent, signer: None
+) -> None:
+    finals, (first, _second) = await _released(board)
+    # A second recipient record of the same person on the same return, still a draft.
+    item = await board.seed.value("SELECT work_item_id FROM k1_packages WHERE id = $1", finals[0])
+    contact = await board.seed.value(
+        "SELECT delivery_contact_id FROM k1_packages WHERE id = $1", finals[0]
+    )
+    recipient = await board.seed.value(
+        "INSERT INTO k1_recipients (tenant_id, work_item_id, engine_ref, display_name, "
+        "recipient_kind, contact_id) VALUES ($1, $2, 'P09', 'Second Entity LLC', 'lp', $3) "
+        "RETURNING id",
+        board.tenant,
+        item,
+        contact,
+    )
+    draft = await board.seed.value(
+        "INSERT INTO k1_packages (tenant_id, recipient_id, work_item_id, form, tax_year, status, "
+        "version_no) VALUES ($1, $2, $3, '1065', 2025, 'draft', 1) RETURNING id",
+        board.tenant,
+        recipient,
+        item,
+    )
+    [found] = await k1_portal.expected(first)
+    shown = asdict(found)
+    assert set(shown) == {"issuer_name", "form", "tax_year", "k3_status", "expected_on"}
+    assert shown["issuer_name"] == await _issuer(board, finals[0])
+    assert str(draft) not in json.dumps(shown, default=str)
+    assert "Second Entity LLC" not in json.dumps(shown, default=str)
 
 
 async def test_after_release_the_card_names_the_issuer_and_only_the_detail_has_the_tin(
@@ -76,4 +109,4 @@ async def test_after_release_the_card_names_the_issuer_and_only_the_detail_has_t
     assert detail.tin_last4 == last4
     assert detail.address_on_file is not None
     assert detail.issuer_name == row.issuer_name
-    assert await k1_portal.expected(first) == []  # released: it is a card now
+    assert await k1_portal.expected(first) == []  # released: a card now, nothing waiting
