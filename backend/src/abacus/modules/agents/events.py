@@ -155,3 +155,16 @@ class SuggestionResolved(DomainEvent):
     engagement_id: Annotated[UUID | None, classified("internal")]
     decision: Annotated[str, classified("internal")]
     by_user: Annotated[UUID, classified("internal")]
+
+
+class IntakeProposalsRecorded(DomainEvent):
+    """N-01-T22 follow-up (DEC-1287): the matcher's intake mode recorded proposals for an
+    attachment. Intake proposals wait on INB-02's card, not a human gate (they have no
+    engagement), so this, not `proposal.recorded`, is their signal; communications reads the
+    proposals, never this payload, to flag a card it cannot call."""
+
+    event_type: ClassVar[str] = "inbox_match.intake_recorded"
+
+    attachment_id: Annotated[UUID, classified("internal")]
+    client_id: Annotated[UUID, classified("internal")]
+    match_id: Annotated[UUID, classified("internal")]

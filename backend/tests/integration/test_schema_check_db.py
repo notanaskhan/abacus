@@ -1171,7 +1171,8 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             | {"issue_id", "issue_linked_by", "issue_linked_at"}  # 0193 (A-02-T11): issue link
         ),
         "grouping_set_versions": frozenset(  # SPEC-316 (TASK-345): published once
-            {"status", "published_by", "published_at", "published_actor_kind"}
+            # A-03-T06 (0521): the publish also sets the dated effective_from.
+            {"status", "published_by", "published_at", "published_actor_kind", "effective_from"}
         ),
         # TASK-019: who has taken a queued version (take, release, reassign).
         "review_assignments": frozenset({"assignee_user_id", "assigned_by", "assigned_at"}),
@@ -1380,6 +1381,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"number", "text", "assertions", "standard_refs", "level", "guidance", "prepopulates"}
             | {"depends_on_step_keys", "flag_resolution", "flag_resolved_by", "flag_resolved_at"}
             | {"edited_by", "edited_at", "row_version"}
+            | {"mandatory", "lock_note"}  # K-01-T14 (0464): a lock and its note
         ),
         # K-01-T02 (0180): guarded lifecycle transitions (ED-111: declared without this row).
         "methodology_version_states": frozenset(
@@ -1573,6 +1575,44 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             | {"approval_policy_version_id", "review_levels_version_id", "original_due_on"}
             | {"extended_due_on", "due_rule_version_ids", "prior_year_return_id", "row_version"}
         ),
+        # P-11-T05 (0430): a generated document never moves; a render job moves its state only.
+        "generated_documents": frozenset(),
+        "render_jobs": frozenset({"status", "failure_code", "started_at", "finished_at"}),
+        # S18 and S21 (0465-0468, 0550): what their rows let the app role change.
+        "engine_diagnostics": frozenset({"issue_id"}),  # 0465
+        "engine_import_diffs": frozenset(
+            {"approved_checkpoint_id", "decided_at", "decided_by", "row_version", "status"}
+        ),  # 0465
+        "engine_return_links": frozenset({"version"}),  # 0465
+        "integration_mappings": frozenset(
+            {"direction", "target_value", "updated_at", "updated_by", "version"}
+        ),  # 0466
+        "questionnaire_template_versions": frozenset({"published_at", "published_by"}),  # 0467
+        "questionnaires": frozenset(
+            {
+                "completed_at",
+                "completed_by",
+                "row_version",
+                "status",
+                "submitted_at",
+                "submitted_by",
+            }
+        ),  # 0467
+        "questions": frozenset({"sent_at", "sent_by"}),  # 0467
+        "tax_authorizations": frozenset(
+            {"envelope_id", "evidence_version_id", "row_version", "status"}
+        ),  # 0550
+        "tax_elections": frozenset(
+            {"amount", "decided_by_return_id", "row_version", "status_code", "updated_by"}
+        ),  # 0550
+        "tax_profile_files": frozenset({"consumed_by"}),  # 0550
+        # A-03-T05 (0520): a sample set's title and purpose, and a version's status moves; the
+        # drawn seed, parameters and items never change (a guard trigger freezes a version).
+        "sample_sets": frozenset({"title", "purpose", "program_step_key", "row_version"}),
+        "sample_set_versions": frozenset(
+            {"status", "items_hash", "content_hash", "failure_code", "approved_by"}
+            | {"approved_at", "approved_actor_kind", "superseded_by", "row_version"}
+        ),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
@@ -1609,6 +1649,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         | {"inbox_file_id"}  # SPEC-033 (TASK-066): the matcher's file
         | {"methodology_version_id"}  # SPEC-035 Q3 (TASK-074): a firm-level run's version
         | {"shadow"}  # SPEC-036 (TASK-076): started in shadow
+        | {"inbox_attachment_id"}  # N-01-T22 (0431): an intake-mode run's attachment
     )
     assert sc.APP_INSERT_COLUMNS["screening_results"] == frozenset(
         {"id", "tenant_id", "engagement_id", "evidence_version_id", "agent_run_id", "action"}
@@ -1777,6 +1818,9 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "return_engine_summaries": "tax_return_events_immutable",
         # N-01-T17 (0404): rule and agent classifications.
         "document_classifications": "trust_kit_immutable",
+        "engine_sync_events": "tax_return_events_immutable",  # 0465 (T-01-T19)
+        "answer_versions": "answer_versions_immutable",  # 0467 (T-02-T16)
+        "duplicate_resolutions": "duplicate_resolutions_immutable",  # 0468 (T-02-T17)
     }
     assert _evidence_problems(evidence) == []
 

@@ -47,6 +47,7 @@ from abacus.modules.agents.guidance_draft import DRAFTER, DraftOutcome, create_d
 from abacus.modules.agents.handoff import Citation, Handoff, ScreeningOutput, VerifiedCitation
 from abacus.modules.agents.home_counts import register_home_counts
 from abacus.modules.agents.inbox_match import MATCHER, MatchOutcome, create_match_run, match
+from abacus.modules.agents.intake_candidates import intake_candidates
 from abacus.modules.agents.intake_match import IntakeOutcome, create_intake_match_run, match_intake
 from abacus.modules.agents.issue_client_requests import send_issue_to_client
 from abacus.modules.agents.knowledge import KnowledgeHit, knowledge_context, search_knowledge
@@ -165,7 +166,7 @@ from abacus.modules.agents.workflows import (
     ScreeningWorkflow,
     UploadReviewWorkflow,
 )
-from abacus.modules.communications.api import register_reminder_history
+from abacus.modules.communications.api import register_intake_candidates, register_reminder_history
 from abacus.modules.evidence.api import register_export_section, register_proposal_source
 from abacus.modules.identity.api import (
     AbacusRouter,
@@ -232,6 +233,8 @@ register_field_citations_reader()
 register_engagement_owners(AUDIT_KINDS, audit_owners)
 # R-01-T24 security review M-a: communications checks a scheduled Reminder against what was sent.
 register_reminder_history(reminder_history_of)
+# N-01-T22 follow-up (DEC-1287): INB-02's cards read the matcher's shown intake proposals.
+register_intake_candidates(intake_candidates)
 
 register_pilot_metric_source("w7", w7_override_rate)  # Q-04-T008 (DEC-825)
 register_client_request_sender(send_issue_to_client)  # P-04-T31 (DEC-828)

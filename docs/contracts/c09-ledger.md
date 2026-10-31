@@ -199,6 +199,9 @@ Publishing, mapping and both sign-offs are human-only: the matrix denies the age
 
 ### C9 v2 will add (A-03-T03, T08, T14)
 
+The v2 contract is `docs/contracts/ledger-mapping.md` (stub, A-03-T03, 2026-10-30).
+
+
 - account states including the reserved `suggested` / `adopted` (with A-09);
 - `TbMappingWorkflow` with progress;
 - the `group_by=fs_line` option on the TB view;

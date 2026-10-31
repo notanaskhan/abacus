@@ -8,8 +8,9 @@ import { ChecksList } from "./checks-list";
 
 // SignOffSlots (C-25; E7; P-04-T40; SHL-12): the ladder of sign-off levels on a target (L1 to
 // L5), each slot empty, signed (a person and when) or stale (signed before the content changed).
-// The viewer's next slot carries the Sign off HumanAction, enabled only when every check passes;
-// a slot is never signed for the agent.
+// P-04-T49: the ladder never signs. Every slot and the viewer's next "Sign off…" only open SHL-12
+// (`onOpenSignOff(level)`), the one place a sign-off is added (chapter 04 E7); the next slot's
+// opener stays disabled while a check fails. A slot is never signed for the agent.
 
 export interface SignOffSlot {
   level: string;
@@ -28,7 +29,8 @@ export interface SignOffSlotsProps {
   actor: Actor;
   checks?: readonly GateCheck[];
   busy?: boolean;
-  onSignOff?: (level: string) => void;
+  /** Opens SHL-12 at that level. Nothing here signs. */
+  onOpenSignOff?: (level: string) => void;
   className?: string;
 }
 
@@ -38,7 +40,7 @@ export function SignOffSlots({
   actor,
   checks = [],
   busy = false,
-  onSignOff,
+  onOpenSignOff,
   className,
 }: SignOffSlotsProps): JSX.Element {
   const blocked = checks.some((c) => !c.ok);
@@ -56,7 +58,21 @@ export function SignOffSlots({
             className="flex min-h-[44px] items-center gap-[10px] px-[12px]"
           >
             <StatusDisc state={s.signer === null ? "todo" : s.stale === true ? "warn" : "done"} />
-            <span className="w-[32px] text-dense font-medium">{s.level}</span>
+            {onOpenSignOff === undefined ? (
+              <span className="w-[32px] text-dense font-medium">{s.level}</span>
+            ) : (
+              <button
+                type="button"
+                data-open-sign-off={s.level}
+                aria-label={`${s.role} ${s.level}`}
+                onClick={() => {
+                  onOpenSignOff(s.level);
+                }}
+                className="w-[32px] text-left text-dense font-medium underline-offset-2 hover:underline"
+              >
+                {s.level}
+              </button>
+            )}
             <span className="flex-1 text-body">
               {s.signer === null ? (
                 <span className="text-ink-3">{s.role}</span>
@@ -76,9 +92,10 @@ export function SignOffSlots({
               <HumanAction
                 verb="Sign off"
                 object={s.level}
+                opensDialog
                 actor={actor}
                 disabled={busy || blocked}
-                onClick={() => onSignOff?.(s.level)}
+                onClick={() => onOpenSignOff?.(s.level)}
               />
             )}
           </li>
