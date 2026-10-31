@@ -9,7 +9,7 @@ import pytest
 from temporalio.client import WorkflowHistory
 from temporalio.worker import Replayer
 
-from abacus.modules.sampling.draw_workflow import SampleDrawWorkflow
+from abacus.modules.sampling.api import SampleDrawWorkflow
 
 HISTORIES = Path(__file__).resolve().parent / "histories"
 ALL = sorted(HISTORIES.glob("sample-draw-v*.json"))

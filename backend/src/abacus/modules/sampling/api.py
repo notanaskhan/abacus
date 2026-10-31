@@ -25,6 +25,7 @@ from abacus.modules.sampling.compute import (
 )
 from abacus.modules.sampling.contract import ROUTERS
 from abacus.modules.sampling.draw_activities import ACTIVITIES
+from abacus.modules.sampling.draw_types import SampleDrawInput
 from abacus.modules.sampling.draw_workflow import SampleDrawWorkflow
 from abacus.modules.sampling.payments import (
     PAYMENTS_RULE_VERSION,
@@ -101,6 +102,8 @@ __all__ = [
     "Entry",
     "Parameters",
     "Population",
+    "SampleDrawInput",
+    "SampleDrawWorkflow",
     "Selected",
     "attribute_size",
     "bills_by_party",

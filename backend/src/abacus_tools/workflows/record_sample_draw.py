@@ -21,8 +21,7 @@ from temporalio.exceptions import ApplicationError
 from temporalio.worker import Worker
 
 from abacus.kernel.temporal import payload_codec
-from abacus.modules.sampling.draw_types import SampleDrawInput
-from abacus.modules.sampling.draw_workflow import SampleDrawWorkflow
+from abacus.modules.sampling.api import SampleDrawInput, SampleDrawWorkflow
 from abacus_tools.stack import Stack, connect, run_with_stack
 from abacus_tools.workflows.histories import decoded_and_scrubbed
 from abacus_tools.workflows.record_retrieval import refuse_overwrite

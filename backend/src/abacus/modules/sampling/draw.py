@@ -168,7 +168,11 @@ def _display(record: Row) -> str:
     return raw if isinstance(raw, str) else json.dumps(raw or {})
 
 
-def _select(version: Row, population_hash: str, records: list[dict[str, Any]]) -> SampleDraw:
+def _select(
+    version: Row,
+    population_hash: str,
+    records: list[dict[str, Any]],  # Any: database rows of mixed column types
+) -> SampleDraw:
     """The frozen sampler's selection, checked against what the draw started with."""
     try:
         engine = sampler(str(version["sampler_version"]))
