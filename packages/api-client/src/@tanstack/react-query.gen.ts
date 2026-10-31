@@ -17667,6 +17667,8 @@ export const returnIntakeQueryKey = (options: Options<ReturnIntakeData>) => crea
 
 /**
  * Return Intake Route
+ *
+ * TAX-03's intake (T-02-T18): binder, requests, waiting files, questions, hand-offs.
  */
 export const returnIntakeOptions = (options: Options<ReturnIntakeData>) => queryOptions<ReturnIntakeResponse, ReturnIntakeError, ReturnIntakeResponse, ReturnType<typeof returnIntakeQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

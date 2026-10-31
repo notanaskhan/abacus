@@ -360,6 +360,7 @@ __all__ = [
     "search_knowledge",
     "shadow_score",
     "spec",
+    "stage_for",
     "start_agents",
     "start_screening",
     "starts_in_shadow",
