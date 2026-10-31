@@ -45,6 +45,7 @@
 | Inquiry rows | POR-05 firm preview | live once T-02's questionnaires land (OQ-6) |
 | Committee chair | POR-15 | planned (R-02) |
 | Planning letter | AUD-22 | planned (A-07) |
+| Opens AUD-01 · all audits | AUD-01 | handoff link (status in the manifest) |
 
 ## Acceptance
 - AUD-05 acceptance: management override is mandatory and cannot be rebutted; the contributions presumption is retained and the investment-income rebuttal is only proposed.

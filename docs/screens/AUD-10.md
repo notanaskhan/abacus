@@ -42,6 +42,16 @@
 | High exception | AUD-15 through the exception router | planned (A-06) |
 | Draft evidence request… | SHL-14 (CUECs 1, 2, 3, 6 to Dana) | live (P-04) |
 | Inbound | AUD-04 ("BH-EBP-140 required"), AUD-02 rail, AUD-09 row 4 | live |
+| Opens AUD-03 · source documents filtered to Form 5500 & SOC 1 | AUD-03 | handoff link (status in the manifest) |
+| Opens CLI-02 · Northwind Robotics, Inc. | CLI-02 | handoff link (status in the manifest) |
+| Opens KNW-03 · BH Audit Methodology · EBP v3 | KNW-03 | handoff link (status in the manifest) |
+| Opens ENG-05 · team and roles | ENG-05 | handoff link (status in the manifest) |
+| Opens AUD-29 · activity log | AUD-29 | handoff link (status in the manifest) |
+| Opens AUD-06 · Trial Balance | AUD-06 | handoff link (status in the manifest) |
+| Opens AUD-07 · Materiality | AUD-07 | handoff link (status in the manifest) |
+| Opens AUD-08 · Risk Assessment | AUD-08 | handoff link (status in the manifest) |
+| Opens AUD-11 · Sample Selection | AUD-11 | fixture build (handoff link) |
+| Opens AUD-12 · Testing | AUD-12 | handoff link (status in the manifest) |
 
 ## Acceptance
 - AUD-10 acceptance: the coverage bar shows SOC period Oct 1, 2024 – Sep 30, 2025 against plan year Jan 1 – Dec 31, 2025 with a 92-day gap, matching AUD-04, AUD-09 row 4 and the seed.

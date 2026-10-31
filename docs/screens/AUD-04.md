@@ -48,6 +48,7 @@ Verbatim from spec.md: header pills "Draft · Accrued Agent", "Prepared · MD", 
 | BH-EBP-140 required | AUD-10 | live once T37 lands; planned before |
 | Sign off… | SHL-12 `?ov=signoff:workpaper:<id>:L1` | live (P-04) |
 | Rail rows | AUD-05, AUD-09, AUD-03 | live (A-01) |
+| Opens AUD-01 · all audits | AUD-01 | handoff link (status in the manifest) |
 
 ## Acceptance
 - AUD-04 acceptance: the popover header names the firm's program and its step text is the firm's own wording.

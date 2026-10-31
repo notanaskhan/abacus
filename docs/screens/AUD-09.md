@@ -44,6 +44,17 @@
 | Fix in Knowledge → | KNW-03 f at BH-EBP-140 step 8 | live (K-01) |
 | Row 4 | AUD-10 | live once T37 lands |
 | Request evidence… | SHL-14 | live (P-04) |
+| Opens AUD-01 · all audits | AUD-01 | handoff link (status in the manifest) |
+| Opens CLI-02 | CLI-02 | handoff link (status in the manifest) |
+| Opens AUD-03 | AUD-03 | handoff link (status in the manifest) |
+| Opens SHL-12 for the whole run | SHL-12 | handoff link (status in the manifest) |
+| Opens WB-09 · run trace | WB-09 | handoff link (status in the manifest) |
+| Opens AUD-06 | AUD-06 | handoff link (status in the manifest) |
+| Opens AUD-07 | AUD-07 | handoff link (status in the manifest) |
+| Opens AUD-08 | AUD-08 | handoff link (status in the manifest) |
+| Opens AUD-04 | AUD-04 | handoff link (status in the manifest) |
+| Opens AUD-11 | AUD-11 | fixture build (handoff link) |
+| Opens AUD-12 | AUD-12 | handoff link (status in the manifest) |
 
 ## Acceptance
 - AUD-09 acceptance: the severity column holds only AU-C 265 words or "Exception for resolution"; COSO components sit in their own column.

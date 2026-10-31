@@ -44,6 +44,9 @@ Verbatim from spec.md and revision.md: "Which planning materiality should this a
 | Citation chips | SHL-07 → KNW-03 | live |
 | Request more analysis… | dock composer | planned (P-09); records an analysis request through C3 today |
 | Inbound | HOME-02, SHL-04, AUD-02 rail | live |
+| Opens AUD-01 · all audits | AUD-01 | handoff link (status in the manifest) |
+| Opens AUD-03 | AUD-03 | handoff link (status in the manifest) |
+| Opens SHL-12 · sign off | SHL-12 | handoff link (status in the manifest) |
 
 ## Acceptance
 - AUD-07 acceptance: 1.5% × 16,812,400 = 252,186 → $252,200; PM 75% = $189,150; CT 5% = $12,610; 1.0% = $168,100 (PM $126,075, CT $8,405); 2.0% bound $336,200.

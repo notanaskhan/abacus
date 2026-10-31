@@ -48,6 +48,23 @@ Tally labels RISKS · SIGNIFICANT · FRAUD RISKS · HIGH RMM · UNADDRESSED · E
 | Approve as significant risk | SHL-11 `?ov=decision:<cardId>&subject=R3` | live (P-04) |
 | Open R8 → | `?ov=risk:R8` | live |
 | Inbound | AUD-05, AUD-07, AUD-02, HOME-02 | live |
+| Opens AUD-01 · all audits | AUD-01 | handoff link (status in the manifest) |
+| Opens CLI-02 | CLI-02 | handoff link (status in the manifest) |
+| Opens KNW-03 | KNW-03 | handoff link (status in the manifest) |
+| Opens AUD-03 | AUD-03 | handoff link (status in the manifest) |
+| Opens AUD-06 | AUD-06 | handoff link (status in the manifest) |
+| Opens AUD-04 | AUD-04 | handoff link (status in the manifest) |
+| Opens AUD-09 | AUD-09 | handoff link (status in the manifest) |
+| Opens AUD-10 | AUD-10 | handoff link (status in the manifest) |
+| Opens AUD-11 | AUD-11 | fixture build (handoff link) |
+| Opens AUD-12 | AUD-12 | handoff link (status in the manifest) |
+| Opens EBP-04 · contributions & remittance timeliness | EBP-04 | handoff link (status in the manifest) |
+| Opens EBP-06 · investments & certification | EBP-06 | handoff link (status in the manifest) |
+| Opens EBP-05 · distributions & participant loans | EBP-05 | handoff link (status in the manifest) |
+| Opens EBP-09 · administrative expenses | EBP-09 | handoff link (status in the manifest) |
+| Opens AUD-27 · parties in interest | AUD-27 | handoff link (status in the manifest) |
+| Opens SHL-08 · PayGrid Contribution Detail 2025.xlsx at pay date 12/26/2025 | SHL-08 | handoff link (status in the manifest) |
+| Opens SHL-12 · sign off at Reviewer (L2) | SHL-12 | handoff link (status in the manifest) |
 
 ## Acceptance
 - AUD-08 acceptance: the tally reconciles to the grid (10; R1 mandatory + R3 proposed = 2 with "1 proposed"; fraud R1, R3; High RMM R1, R3, R8; unaddressed R8).
