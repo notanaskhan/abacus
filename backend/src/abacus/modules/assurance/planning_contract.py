@@ -147,7 +147,8 @@ class PriorYearOut(BaseModel):
 
     year: Annotated[str, classified("internal")]  # "PY2024"
     amount: Money
-    overall_used: Money | None  # the final, audited overall for that year
+    # The final, audited overall for that year.
+    overall_used: Annotated[Decimal | None, classified("confidential")]
 
 
 class BenchmarkOut(BaseModel):
@@ -672,7 +673,7 @@ class ControlExceptionOut(BaseModel):
     concluded_severity: Annotated[DeficiencySeverityStatus | None, classified("internal")]
     disposition: Annotated[ControlExceptionDispositionStatus, classified("internal")]
     coso_component: Annotated[CosoComponent, classified("internal")]
-    misstatement_candidate_amount: Money | None
+    misstatement_candidate_amount: Annotated[Decimal | None, classified("confidential")]
     routed_kind: Annotated[Literal["finding", "misstatement"] | None, classified("internal")]
     routed_ref: Annotated[UUID | None, classified("internal")]
     suggestion_id: Annotated[UUID | None, classified("internal")]
@@ -1198,7 +1199,7 @@ async def control_exceptions_route(engagement_id: UUID, ctx: Ctx) -> ListPage[Co
     response_model=ControlExceptionOut,
     errors=(409, 501),
 )
-async def propose_severity_route(
+async def exception_propose_severity_route(
     engagement_id: UUID,
     sheet_row: Annotated[int, Path(ge=2)],
     body: ProposedSeverityIn,

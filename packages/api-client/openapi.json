@@ -17588,7 +17588,6 @@
           "misstatement_candidate_amount": {
             "anyOf": [
               {
-                "cls": "confidential",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
                 "type": "string"
               },
@@ -17596,6 +17595,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Misstatement Candidate Amount"
           },
           "proposed_severity": {
@@ -55395,7 +55395,6 @@
           "overall_used": {
             "anyOf": [
               {
-                "cls": "confidential",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
                 "type": "string"
               },
@@ -55403,6 +55402,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Overall Used"
           },
           "year": {
@@ -116062,7 +116062,7 @@
     "/v1/engagements/{engagement_id}/internal-control/exceptions/{sheet_row}/proposed-severity": {
       "patch": {
         "description": "A proposal only; concluding severity is reserved to the engagement partner (AC6.3; T25).",
-        "operationId": "propose_severity",
+        "operationId": "exception_propose_severity",
         "parameters": [
           {
             "in": "path",
@@ -116210,7 +116210,7 @@
             "description": "Contract stub: not implemented yet"
           }
         },
-        "summary": "Propose Severity Route",
+        "summary": "Exception Propose Severity Route",
         "tags": [
           "assurance"
         ],

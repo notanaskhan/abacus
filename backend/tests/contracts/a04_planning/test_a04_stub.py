@@ -179,7 +179,7 @@ def test_t01_the_six_flags_exist_and_default_off() -> None:
     for name in FLAGS:
         flag = _flags.FLAGS[name]
         assert flag.kind == "boolean"
-        assert flag.default is False, name
+        assert str(flag.default).lower() == "false", name  # the registry stores the word
 
 
 def test_t01_the_materiality_examples_foot() -> None:

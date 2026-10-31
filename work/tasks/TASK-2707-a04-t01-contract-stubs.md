@@ -45,6 +45,12 @@ Rollback: revert the commit; no migration, no data.
   `MaterialityOut`…); renamed so the OpenAPI diff is purely additive (47 operations, 0 renamed).
   error-codes.yaml unchanged by this task (the stub raises only 404/501). Tests run at the S22
   end review.
+- `2026-10-31` — S22 end review: two optional amounts (`Money | None`) dropped their
+  classification tag (now `Annotated[Decimal | None, classified(...)]`); the severity proposal's
+  operation id duplicated fieldwork's `propose_severity` (renamed); the flag test compared the
+  registry's stored word; `test_app_gates` lists every A-04 POST by its status; the generated
+  security tests regenerated. **Made twice:** `Alias | None` on a classified alias loses the tag
+  (pydantic keeps metadata only inside `Annotated`); candidate lint.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

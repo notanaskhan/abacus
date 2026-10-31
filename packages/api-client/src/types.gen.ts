@@ -54315,7 +54315,7 @@ export type ConvertToMisstatementResponses = {
 
 export type ConvertToMisstatementResponse = ConvertToMisstatementResponses[keyof ConvertToMisstatementResponses];
 
-export type ProposeSeverity2Data = {
+export type ExceptionProposeSeverityData = {
     body: ProposedSeverityIn;
     headers: {
         /**
@@ -54345,7 +54345,7 @@ export type ProposeSeverity2Data = {
     url: '/v1/engagements/{engagement_id}/internal-control/exceptions/{sheet_row}/proposed-severity';
 };
 
-export type ProposeSeverity2Errors = {
+export type ExceptionProposeSeverityErrors = {
     /**
      * Not authenticated
      */
@@ -54372,16 +54372,16 @@ export type ProposeSeverity2Errors = {
     501: ErrorOut;
 };
 
-export type ProposeSeverity2Error = ProposeSeverity2Errors[keyof ProposeSeverity2Errors];
+export type ExceptionProposeSeverityError = ExceptionProposeSeverityErrors[keyof ExceptionProposeSeverityErrors];
 
-export type ProposeSeverity2Responses = {
+export type ExceptionProposeSeverityResponses = {
     /**
      * Successful Response
      */
     200: ControlExceptionOut;
 };
 
-export type ProposeSeverity2Response = ProposeSeverity2Responses[keyof ProposeSeverity2Responses];
+export type ExceptionProposeSeverityResponse = ExceptionProposeSeverityResponses[keyof ExceptionProposeSeverityResponses];
 
 export type ExceptionRequestEvidenceData = {
     body?: never;
