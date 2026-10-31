@@ -37,6 +37,12 @@ ALLOW: tuple[tuple[str, str, str], ...] = (
         " never a credential (A-04-T10)",
     ),
     (
+        "evals/decision_recommendation/suite.yaml",
+        "SECRET-003",
+        "the recommender's structured output field `recommended_option_key` names a materiality"
+        " option (rate_1_5), never a credential (A-04-T09)",
+    ),
+    (
         "backend/tests/unit/sampling/test_a03t07_populations.py",
         "PII-001",
         "synthetic SSN-shaped values under an innocent header, proving a population's column map"

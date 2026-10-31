@@ -16,6 +16,7 @@ export const COPY = {
   importBody: "Fetch the latest return data from CCH Axcess",
   uploadTitle: "Upload engine file",
   uploadBody: "An export or diagnostics file from CCH Axcess",
+  openK1Package: "Open K-1 package",
   blocked: (approver: string, policy: string, k1: string | null): string =>
     k1 === null
       ? `Final approval required — ${approver} (${policy})`

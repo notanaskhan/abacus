@@ -1,6 +1,6 @@
 ---
 id: TASK-2520
-title: T-01-T39 TAX-12 frontend part 2 (fixture mode): c, c2, d, e and the packet editor
+title: "T-01-T39 TAX-12 frontend part 2 (fixture mode): c, c2, d, e and the packet editor"
 spec: SPEC-501  # AC-11; docs/screens/TAX-12.md
 acceptance_criteria: [AC-11]
 risk_zone: green

@@ -4,13 +4,13 @@ title: P-11-T05 migration reporting_v1 (expand-only)
 spec: SPEC-520
 acceptance_criteria: [AC-33, AC-27, AC-15, AC-16]
 risk_zone: amber
-status: in-review
+status: done
 epic: P-11
 plan_key: P-11-T05
 branch: s17-p11-t05
 worktree: /Users/ayushkbhatia/Accrued/abacus-s17
 created: 2026-10-29
-updated: 2026-10-29
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -42,6 +42,7 @@ tables (expand-only; nothing reads them yet).
   superuser via the trigger, tenant isolation, final needs a person and an approval on this
   content hash, agent drafts name their run, evidence xor sample, out-of-date keys, render-job
   update columns), banned-pattern exclusions for the test. Run at the S17 end review.
+- 2026-11-01: merged to main in #747 (23d9fbca7).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

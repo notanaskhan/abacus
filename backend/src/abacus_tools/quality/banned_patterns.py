@@ -2686,6 +2686,7 @@ RULES: list[Rule | TreeRule] = [
             "src/abacus/modules/assurance/mapping.py",
             "src/abacus/modules/assurance/trial_balance.py",
             "src/abacus/modules/tax/approval.py",  # T-01-T18: the return's only L4 writer
+            "src/abacus/modules/sampling/sample_sets.py",  # A-03-T10: a sample's only L2 writer
         ),
     ),
     Rule(

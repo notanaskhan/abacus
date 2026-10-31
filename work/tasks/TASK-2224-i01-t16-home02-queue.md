@@ -4,12 +4,12 @@ title: I-01-T16 HOME-02 queue on T9 close-review; creates home.approvals
 spec: SPEC-000  # I-01-T16 row and docs/screens/HOME-02.md
 acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: green
-status: in-review
+status: done
 epic: I-01
 plan_key: I-01-T16
 branch: s17-i01-t16
 created: 2026-10-30
-updated: 2026-10-30
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -30,3 +30,4 @@ focus announced, and the band counts equal the HOME-01 badge."
 
 ## Progress log
 - 2026-10-30: built in S17 Lane 2 off main; tests run in the end review.
+- 2026-11-01: merged to main in #796 (52978b13b).
