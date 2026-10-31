@@ -16,7 +16,7 @@ No data is inserted: letter templates and the clause library are database conten
 through P-11 (KNW-03), never a migration.
 
 Revision ID: 0560
-Revises: 0550, 0431 (joins main's two heads: T-01-T43's 0550 and N-01-T22's 0431)
+Revises: 0433 (main's head when S19 merged; it descends from both 0550 and 0431)
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, tenant_table
 
 revision = "0560"
-down_revision = ("0550", "0431")
+down_revision = "0433"
 branch_labels = None
 depends_on = None
 

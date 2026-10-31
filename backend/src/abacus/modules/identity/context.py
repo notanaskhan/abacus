@@ -31,6 +31,9 @@ class AuthContext:
     client: bool = False
     # P-08-T10 (ADR-168): the portal session a portal access token resolved to; None otherwise.
     portal_session_id: UUID | None = None
+    # N-02-T23 (DEC-1283): that portal session passed the second step or started on a trusted
+    # device (P-08-T17's floor); signing requires it. A sign-in token carries `mfa_at` instead.
+    portal_second_step: bool = False
 
     @property
     def is_support(self) -> bool:
