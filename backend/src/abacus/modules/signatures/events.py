@@ -40,6 +40,44 @@ class EnvelopeSendApproved(DomainEvent):
     version: Annotated[int, classified("internal")]
 
 
+class EnvelopeSuperseded(DomainEvent):
+    """C7 v1.1 (N-02-T25): the system marked the envelope superseded (an amount changed after
+    signing); every gate consumer treats it as unmet."""
+
+    event_type: ClassVar[str] = "envelope.superseded"
+
+    envelope_id: Annotated[UUID, classified("internal")]
+    client_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")]
+    reason: Annotated[str, classified("internal")]
+
+
+class EnvelopeSignerSigned(DomainEvent):
+    """C7 v1.1 (N-02-T25): one signer signed, as the provider's poll recorded it."""
+
+    event_type: ClassVar[str] = "envelope.signer_signed"
+
+    envelope_id: Annotated[UUID, classified("internal")]
+    signer_id: Annotated[UUID, classified("internal")]
+    client_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")]
+    source_kind: Annotated[str, classified("internal")]
+    source_id: Annotated[UUID, classified("internal")]
+
+
+class EnvelopeSignerVerificationFailed(DomainEvent):
+    """C7 v1.1 (N-02-T25): one signer's identity check closed their remote path (DF-11)."""
+
+    event_type: ClassVar[str] = "envelope.signer_verification_failed"
+
+    envelope_id: Annotated[UUID, classified("internal")]
+    signer_id: Annotated[UUID, classified("internal")]
+    client_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")]
+    source_kind: Annotated[str, classified("internal")]
+    source_id: Annotated[UUID, classified("internal")]
+
+
 class EnvelopeDeclined(DomainEvent):
     """N-02-T24: a signer declined (at the provider or in the portal); the sender is told."""
 

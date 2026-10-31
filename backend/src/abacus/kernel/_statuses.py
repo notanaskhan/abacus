@@ -835,6 +835,35 @@ class ClientInvitationStatus(StrEnum):
     EXPIRED = "expired"
 
 
+class SampleSetVersionStatus(StrEnum):
+    DRAWING = "drawing"
+    DRAFT = "draft"
+    APPROVED = "approved"
+    SUPERSEDED = "superseded"
+    FAILED = "failed"
+
+
+class CompletenessTieResultStatus(StrEnum):
+    TIE = "tie"
+    OFF = "off"
+    CHECK = "check"
+
+
+class MappingSetStatus(StrEnum):
+    IN_PROGRESS = "in_progress"
+    PREPARED = "prepared"
+    REVIEWED = "reviewed"
+    CHANGED_AFTER_SIGN_OFF = "changed_after_sign_off"
+
+
+class AccountMappingStateStatus(StrEnum):
+    UNMAPPED = "unmapped"
+    RULE = "rule"
+    EDITED = "edited"
+    SUGGESTED = "suggested"
+    ADOPTED = "adopted"
+
+
 # Each object's stored codes, and their SQL CHECK list.
 STORED: dict[str, tuple[str, ...]] = {
     "engagement": (
@@ -1529,6 +1558,31 @@ STORED: dict[str, tuple[str, ...]] = {
         "accepted",
         "revoked",
         "expired",
+    ),
+    "sample_set_version": (
+        "drawing",
+        "draft",
+        "approved",
+        "superseded",
+        "failed",
+    ),
+    "completeness_tie_result": (
+        "tie",
+        "off",
+        "check",
+    ),
+    "mapping_set": (
+        "in_progress",
+        "prepared",
+        "reviewed",
+        "changed_after_sign_off",
+    ),
+    "account_mapping_state": (
+        "unmapped",
+        "rule",
+        "edited",
+        "suggested",
+        "adopted",
     ),
 }
 CHECKS: dict[str, str] = {

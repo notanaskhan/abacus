@@ -3,5 +3,14 @@
 
 actions:
   # --- Sampling ---
-  sample_set.create:        {engagement_partner: allow, manager: allow, senior: allow}
+  sample_set.create:        {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny}   # create a sample set and start a draw (a person starts every draw, DV-A1)
+  # --- Sampling engine (A-03 §4.3, §4.7; A-03-T01, DEC-1550; ADR-340) ---
+  # Every write is a person's: agent, system, support and every portal principal deny (INV-1).
+  # Reads are engagement members through visible(); the agent reads at task_scope (C17 later).
+  population.read:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, specialist: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: task_scope, system: deny, independence: required}   # GET /v1/populations/{pid}
+  population.create:        {engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny, independence: required}   # build a population and record its completeness ties
+  sample_set.read:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, specialist: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: task_scope, system: deny, independence: required}   # picker, projection, draw progress, items
+  sample_set.approve:       {engagement_partner: allow, manager: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny, independence: required, not_preparer_of_target: required}   # L2 approval through review.api; never the preparer (R-SO-3); DB CHECK approved_actor_kind = 'human'
+  sample_set.export:        {engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny, independence: required, not_offshore: required}   # deterministic XLSX (ADR-042), audited; census display fields stay onshore
+  sample_set.generate_requests: {engagement_partner: allow, manager: allow, senior: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny, independence: required}   # preview and create the item-request fan-out (Idempotency-Key)
   support_match.run:        {system: allow, agent: task_scope}

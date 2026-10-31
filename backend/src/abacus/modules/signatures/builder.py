@@ -53,6 +53,7 @@ from abacus.modules.identity.api import (
     void_grant,
 )
 from abacus.modules.organisations.api import signer_contacts
+from abacus.modules.signatures.consumers import check_contract
 from abacus.modules.signatures.events import EnvelopeSendApproved
 from abacus.modules.signatures.hub import firm_and_flag, resource_of, visible_head
 from abacus.modules.signatures.sources import SourceDraft, envelope_source
@@ -289,6 +290,7 @@ async def create_draft(ctx: AuthContext, source_kind: str, source_id: UUID) -> U
     if source.draft is None:
         raise SourceCannotDraft(facts={"kind": source_kind})
     draft = await source.draft(ctx, source_id)
+    check_contract(source_kind, draft.purpose, draft.policy_family)  # C7 v1.1 (N-02-T25)
     await authorise(ctx, DRAFT, await _draft_resource(ctx, draft))
     kind, by, run = _drafter(ctx)
     envelope_id = uuid4()

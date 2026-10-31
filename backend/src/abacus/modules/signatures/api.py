@@ -5,6 +5,12 @@ C7 v1: the routers, and the slot sources register with (`sources.py`, N-02-T09).
 for an envelope's documents and signers, its gate, retention record type, checks and completed
 label; it gets its summary from `envelope_summary_for` and its gate facts from
 `envelope_gate_facts`. Record mode (N-02-T08) is frozen as C7 v1 (DEC-820).
+
+C7 v1.1 (N-02-T25, DEC-1285; additive, for T-01 and T-02): the `consent_set` and `tax_return`
+source contracts, `supersede_for_amount_change` (system only), `extend_retention` (forward
+only), `envelope_summaries_for(work_item_ids)` (TAX-01's signer chips), the `efile_authorization`
+gate facts, and the signer-level events (`consumers.py`). A superseded envelope is unmet for
+every gate and is flagged in every summary.
 """
 
 from __future__ import annotations
@@ -23,9 +29,30 @@ from abacus.modules.identity.api import AbacusRouter, AuthContext, register_mfa_
 from abacus.modules.signatures.activities import ACTIVITIES as ENVELOPE_ACTIVITIES
 from abacus.modules.signatures.audit_targets import CLIENT_KINDS, audit_clients
 from abacus.modules.signatures.builder import create_draft
+from abacus.modules.signatures.consumers import (
+    CONSENT_SET,
+    EFILE_GATE,
+    SOURCE_CONTRACTS,
+    SUPERSEDED_LABEL,
+    TAX_RETURN,
+    RetentionNotExtended,
+    SignerChip,
+    SourceContract,
+    SystemOnly,
+    WorkItemEnvelope,
+    efile_gate,
+    envelope_summaries_for,
+    extend_retention,
+    supersede_for_amount_change,
+)
 from abacus.modules.signatures.contract import policies_router, portal_router, router
 from abacus.modules.signatures.docuseal_firm import firm_provider, register_esign_install
-from abacus.modules.signatures.events import EnvelopeSendApproved
+from abacus.modules.signatures.events import (
+    EnvelopeSendApproved,
+    EnvelopeSignerSigned,
+    EnvelopeSignerVerificationFailed,
+    EnvelopeSuperseded,
+)
 from abacus.modules.signatures.hub import seal_ip
 from abacus.modules.signatures.imports import UnconsumedFile, staged_files
 from abacus.modules.signatures.provider import (
@@ -79,6 +106,7 @@ class EnvelopeSummary:
     status: str
     signed: int
     total: int
+    superseded: bool = False  # C7 v1.1: unmet for every gate, whatever the status
 
 
 @dataclass(frozen=True)
@@ -93,9 +121,9 @@ class GateFacts:
 _NEWEST = text(
     "SELECT e.id, e.status, "
     "(SELECT count(*) FROM envelope_signers s WHERE s.envelope_id = e.id AND s.status = 'signed') "
-    "AS signed, (SELECT count(*) FROM envelope_signers s WHERE s.envelope_id = e.id) AS total "
-    "FROM envelopes e WHERE e.source_kind = :kind AND e.source_id = :source "
-    "ORDER BY e.created_at DESC LIMIT 1"
+    "AS signed, (SELECT count(*) FROM envelope_signers s WHERE s.envelope_id = e.id) AS total, "
+    "e.superseded_at IS NOT NULL AS superseded FROM envelopes e "
+    "WHERE e.source_kind = :kind AND e.source_id = :source ORDER BY e.created_at DESC LIMIT 1"
 )
 
 
@@ -111,14 +139,23 @@ async def envelope_summary_for(
         ).one_or_none()
     if row is None:
         return None
-    return EnvelopeSummary(row.id, row.status, int(row.signed), int(row.total))
+    return EnvelopeSummary(
+        row.id, row.status, int(row.signed), int(row.total), bool(row.superseded)
+    )
 
 
 _COMPLETED_ON = text("SELECT completed_at::date FROM envelopes WHERE id = :id")
 
 
 async def envelope_gate_facts(ctx: AuthContext, gate_kind: str, target_ref: UUID) -> GateFacts:
-    """Gate facts for G3 (the engagement letter); other gates arrive with their sources."""
+    """Gate facts for G3 (the engagement letter) and, from C7 v1.1, the e-file authorization
+    (`target_ref` is the tax return); other gates arrive with their sources. A superseded
+    envelope never meets a gate."""
+    if gate_kind == EFILE_GATE:
+        found = await efile_gate(ctx.tenant, target_ref)
+        if found is None:
+            return GateFacts(met=False, envelope_id=None, completed_on=None)
+        return GateFacts(met=True, envelope_id=found[0], completed_on=found[1].isoformat())
     if gate_kind != LETTER_GATE:
         return GateFacts(met=False, envelope_id=None, completed_on=None)
     envelope = await letter_envelope(ctx.tenant, target_ref)
@@ -175,38 +212,53 @@ ROUTERS: tuple[AbacusRouter, ...] = (router, policies_router, portal_router, web
 
 __all__ = [
     "ACTIVITIES",
+    "CONSENT_SET",
+    "EFILE_GATE",
     "LETTER",
     "ROUTERS",
     "SCHEDULES",
+    "SOURCE_CONTRACTS",
     "SUBSCRIPTIONS",
+    "SUPERSEDED_LABEL",
+    "TAX_RETURN",
     "WORKFLOWS",
     "Completed",
     "Created",
     "EnvelopeInput",
+    "EnvelopeSignerSigned",
+    "EnvelopeSignerVerificationFailed",
     "EnvelopeSource",
     "EnvelopeSpec",
     "EnvelopeSummary",
+    "EnvelopeSuperseded",
     "EnvelopeWorkflow",
     "EsignProvider",
     "GateFacts",
     "ProviderUnavailable",
     "ReminderDue",
     "ReminderSender",
+    "RetentionNotExtended",
     "SendPlan",
     "SignTodo",
+    "SignerChip",
     "SignerEvidence",
     "SignerState",
+    "SourceContract",
     "SourceDocument",
     "SourceDraft",
     "SourceSigner",
+    "SystemOnly",
     "UnconsumedFile",
     "UnknownEnvelopeSource",
+    "WorkItemEnvelope",
     "configure_provider",
     "create_draft",
     "envelope_gate_facts",
     "envelope_source",
+    "envelope_summaries_for",
     "envelope_summary_for",
     "envelope_workflow_id",
+    "extend_retention",
     "hint_envelope",
     "register_envelope_source",
     "register_esign_install",
@@ -217,4 +269,5 @@ __all__ = [
     "sign_todo",
     "staged_files",
     "start_envelope",
+    "supersede_for_amount_change",
 ]
