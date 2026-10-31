@@ -91,8 +91,12 @@ async def _released(b: Board) -> tuple[list[uuid.UUID], list[AuthContext]]:
 
 
 async def test_ac1_a_member_reads_only_their_own_package_and_each_download_is_logged(
-    board: Board, sent: t02t21.Sent, signer: None
+    board: Board, sent: t02t21.Sent, signer: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    async def stored(tenant: object, version_id: uuid.UUID) -> bytes:
+        return f"%PDF-1.4 {version_id} %%EOF".encode()  # the harness seeds rows, not objects
+
+    monkeypatch.setattr(k1_portal, "version_content", stored)
     finals, (first, second) = await _released(board)
     mine = await k1_portal.packages(first)
     assert [p.id for p in mine] == [finals[0]]
