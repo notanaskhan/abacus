@@ -22,6 +22,7 @@ from abacus.kernel.classification import unclassified_fields
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag
+from abacus.kernel.uow import UnitOfWork
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.identity.authz.matrix import RULES
 from abacus.modules.reporting import api as c11_api
@@ -206,4 +207,6 @@ async def test_ac31_render_final_refuses_the_agent_before_any_work() -> None:
     agent = c11_api.Requester("agent", run_id=uuid.uuid4())
     approval = c11_api.ApprovalRef("letter_approval", uuid.uuid4(), "0" * 64)
     with pytest.raises(c11_api.RenderRefused):
-        await c11_api.render_final(uuid.uuid4(), approval, agent)
+        # P-11-T08: render_final runs in the caller's unit of work (C11 §2); the refusal comes
+        # before the unit of work is touched.
+        await c11_api.render_final(cast(UnitOfWork, None), uuid.uuid4(), approval, agent)

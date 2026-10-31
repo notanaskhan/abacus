@@ -7,6 +7,7 @@
 // fixture stand-ins (DEC-1269) until the importer's v2 export replaces them.
 import type {
   AbacusModulesMethodologyContractStepOut as StepOut,
+  AgentRunOut,
   GuidanceBlockOut,
   TemplateItemOut,
 } from "@abacus/api-client";
@@ -268,3 +269,151 @@ export const KNW03_CITED_IN = {
   host: "Northwind Robotics 401(k) Plan",
   where: "General Audit Planning › Service Organizations",
 };
+
+// --- K-01-T15: KNW-03 c (a draft), d (tailored on an engagement) and f (Fix in Knowledge) -------
+
+/** BH-EBP-140 Service Organizations at v3, as KNW-03 f draws it (8 steps, 3 locked); step 8 is new
+ * in v3, published as guidance, not mandatory. Texts are the artboard's, completed past its
+ * two-line clamp (DEC-1455). */
+const ROWS_140: readonly Row[] = [
+  {
+    text: "Identify service organizations",
+    assertions: [],
+    standard: "AU-C 402",
+    pbc: [],
+    level: "foundation",
+    mandatory: true,
+  },
+  {
+    text: "Obtain SOC 1 Type 2 reports",
+    assertions: [],
+    standard: "AU-C 402",
+    pbc: [5],
+    level: "foundation",
+    mandatory: true,
+  },
+  {
+    text: "Carved-out subservice organizations",
+    assertions: [],
+    standard: "AU-C 402",
+    pbc: [5],
+    level: "planning",
+    mandatory: false,
+  },
+  {
+    text: "Evaluate the service auditor's report",
+    assertions: [],
+    standard: "AU-C 402",
+    pbc: [],
+    level: "planning",
+    mandatory: true,
+  },
+  {
+    text: "Test the plan's complementary user entity controls",
+    assertions: ["All"],
+    standard: "AU-C 402",
+    pbc: [],
+    level: "testing",
+    mandatory: false,
+  },
+  {
+    text: "Recordkeeper and trustee reconciliations",
+    assertions: ["Existence"],
+    standard: "AU-C 500",
+    pbc: [],
+    level: "testing",
+    mandatory: false,
+  },
+  {
+    text: "Payroll provider controls over contributions",
+    assertions: ["Accuracy"],
+    standard: "AU-C 402",
+    pbc: [],
+    level: "testing",
+    mandatory: false,
+  },
+  {
+    text: "Bridge letter and gap-period procedures when the SOC 1 period does not reach plan year-end",
+    assertions: [],
+    standard: "AU-C 402",
+    pbc: [],
+    level: "testing",
+    mandatory: false,
+  },
+];
+
+const SERVICE_ORGANIZATIONS: GuidanceBlockOut[] = [
+  {
+    kind: "paragraph",
+    text: "Service organizations whose controls are significant to the plan need a SOC 1 Type 2 report that covers the plan year. When the report period ends before plan year-end, the gap needs a bridge letter and gap-period procedures.",
+    items: [],
+    strong: [],
+  },
+];
+export const KNW03_SERVICE_ORGS_TITLE = "Service organizations";
+export const KNW03_STEP8_NOTE =
+  "Step 8 is published as guidance, not mandatory. The pack points to a bridge-letter template that v3 does not include.";
+
+export const KNW03_STEPS_140: StepOut[] = ROWS_140.map((r, i) => {
+  const n = i + 1;
+  return {
+    id: stableId(`methodology:step:140:v3:${String(n)}`),
+    step_key: `ebp-140-${String(n)}`,
+    anchor: `ebp-140-${String(n)}@v3`,
+    number: n,
+    text: r.text,
+    assertions: r.assertions,
+    standard_refs: [r.standard],
+    level: r.level,
+    mandatory: r.mandatory,
+    lock_note: null,
+    guidance: n === 8 ? SERVICE_ORGANIZATIONS : [],
+    prepopulates: [],
+    depends_on_step_keys: [],
+    pbc_positions: r.pbc,
+    origin: "workbook",
+    parse_flag: null,
+    flag_resolution: null,
+    rules_count: 0,
+    row_version: 1,
+    allowed_actions: [],
+  };
+});
+
+/** f: the Northwind Internal Control run that failed at 9:58 AM on BH-EBP-140 step 8 (C6 v1). */
+export const KNW03_RUN_ID = stableId("agent-run:northwind-internal-control-0958");
+export const KNW03_RUN_ERROR =
+  "Pack configuration error: BH-EBP-140 step 8 points to a SOC 1 bridge-letter template that EBP v3 does not include. No evidence written.";
+export const KNW03_RUN: AgentRunOut = {
+  id: KNW03_RUN_ID,
+  agent: "internal_control",
+  agent_label: "Internal Control",
+  subject: "Northwind Robotics 401(k) Plan · BH-EBP-140 step 8",
+  state: "failed",
+  state_reason: KNW03_RUN_ERROR,
+  started_at: "2026-09-14T14:58:00Z",
+  finished_at: "2026-09-14T14:58:20Z",
+  duration_ms: 20000,
+  initiator_name: "Hannah Leclerc",
+};
+
+/** c: Hannah Leclerc's draft v4 of BH-EBP-110, drafted from v3. Optional steps are hers to edit
+ * and remove; mandatory steps stay locked to the QM owner (no action on them). */
+export const KNW03_STEPS_V4: StepOut[] = KNW03_STEPS_V3.map((s) => ({
+  ...s,
+  id: stableId(`methodology:step:110:v4:${String(s.number)}`),
+  anchor: `${s.step_key}@v4`,
+  allowed_actions: s.mandatory ? [] : ["methodology.edit_step", "methodology.remove_step"],
+}));
+
+/** d: A-04's tailoring of BH-EBP-110 on the Northwind engagement (fixture-only until A-04's read). */
+export const KNW03_TAILORING = {
+  engagement: "Northwind Robotics 401(k) Plan",
+  steps: {
+    "ebp-110-11": {
+      kind: "tailored",
+      text: "Tailored — rationale: no related-party transactions outside Northwind Robotics, Inc.",
+    },
+    "ebp-110-7": { kind: "decided", text: "Decided 1.5% · Margaret Okonkwo" },
+  },
+} as const;

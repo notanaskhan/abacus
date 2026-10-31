@@ -268,4 +268,25 @@ test.describe("J01-core firm onboarding", () => {
       await journey.as("margaret-okonkwo", "/knowledge", { clock: DEMO_INSTANT });
     },
   );
+
+  // K-02-T19: J01 step 7, partners publish firm standards (KNW-04 i on fixtures; staging walks the
+  // publish after the batch deploy). Only the owner partner holds Publish; nothing agent-owned does.
+  test(
+    "J01-07 partners publish firm standards",
+    owner("K-02 · K-02-T19 fixture; staging after the K-02 batch deploy · S19"),
+    async ({ journey }) => {
+      test.fixme(
+        journey.project !== "fixture",
+        "KNW-04's draft and publish walk is fixture-first",
+      );
+      await journey.as("priya-raman", "/knowledge/standards?section=aje_thresholds", {
+        scenario: "KNW-04:i",
+        flags: ["knowledge.firm_standards"],
+      });
+      await journey.step("J01 step 7: Priya's draft v3 of BH AJE thresholds", async (page) => {
+        await expect(page.getByText("Draft v3").first()).toBeVisible();
+        await expect(page.getByRole("button", { name: "Publish v3…" })).toBeVisible();
+      });
+    },
+  );
 });
