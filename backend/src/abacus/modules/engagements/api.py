@@ -117,6 +117,8 @@ from abacus.modules.engagements.letter_render import (
     register_letter_renderer,
 )
 from abacus.modules.engagements.letter_send import (
+    LetterSigning,
+    register_letter_envelope_signing,
     register_letter_envelope_status,
     register_letter_sender,
 )
@@ -436,6 +438,7 @@ __all__ = [
     "LetterFinalAsk",
     "LetterRenderAsk",
     "LetterRendered",
+    "LetterSigning",
     "MaskedTinOut",
     "MethodologyAlreadyApplied",
     "MethodologyVersionView",
@@ -533,6 +536,7 @@ __all__ = [
     "register_evidence_readable",
     "register_gate_provider",
     "register_judgment_source",
+    "register_letter_envelope_signing",
     "register_letter_envelope_status",
     "register_letter_finaliser",
     "register_letter_locker",
