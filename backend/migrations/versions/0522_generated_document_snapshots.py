@@ -13,7 +13,7 @@ money, date, text, percent, count, name and address, never a TIN); hashes and id
 data is inserted.
 
 Revision ID: 0522
-Revises: 0562
+Revises: 0565
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, insert_only, tenant_table
 
 revision = "0522"
-down_revision = "0562"
+down_revision = "0565"
 branch_labels = None
 depends_on = None
 
