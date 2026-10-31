@@ -729,8 +729,10 @@ async def signing_return(ctx: AuthContext, envelope_id: UUID, session_id: UUID) 
     if state is None:
         raise NotFound("signing_session")
     given = EnvelopeInput(str(ctx.tenant_id), str(mine.envelope_id))
-    if mine.status in OPEN and mine.provider_envelope_id is not None:
-        await envelope_poll(given)  # the provider's truth, recorded before anything is shown
+    # The provider's truth, recorded before anything is shown; only for a session still waiting
+    # on its outcome, so a settled or abandoned session's page never calls the provider again.
+    if state in ("issued", "returned") and mine.status in OPEN and mine.provider_envelope_id:
+        await envelope_poll(given)
     mine = await signer_of(ctx, envelope_id, SIGN)
     outcome: str | None = None
     if mine.signer_status == "signed":

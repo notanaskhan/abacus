@@ -11,7 +11,7 @@ import inspect
 import json
 import uuid
 from collections.abc import Awaitable, Callable
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 from typing import cast, get_args
 
 import pytest
@@ -197,11 +197,20 @@ async def test_n02t23_portal_routes_firm_404_then_flag_404(
     monkeypatch.setattr(portal, "flag_enabled", flag_enabled)
     endpoint = cast(Endpoint, route.endpoint)
     with pytest.raises(NotFound):
-        await _call(endpoint, _ctx())
+        await _portal_call(endpoint, _ctx())
     assert seen == []
     with pytest.raises(NotFound):
-        await _call(endpoint, _ctx(client=True))
+        await _portal_call(endpoint, _ctx(client=True))
     assert seen == [SIGNATURES_ENVELOPES]
+
+
+def _portal_call(endpoint: Endpoint, ctx: AuthContext) -> Awaitable[object]:
+    """A portal route with a body reads it before the service gates: give it one of each."""
+    body = SimpleNamespace(
+        last_page_seen=1, disclosure_version_id=uuid.uuid4(), reason="other", note=None
+    )
+    params = inspect.signature(endpoint).parameters
+    return endpoint(**{n: (ctx if n == "ctx" else body if n == "body" else None) for n in params})
 
 
 @pytest.mark.parametrize("model", MODELS, ids=[m.__name__ for m in MODELS])
