@@ -26,3 +26,5 @@ registerOverlay("signoff", { layer: "modal", render });
 registerOverlay("decision", { layer: "modal", render });
 // P-04-T49 (S20 wire-up): SHL-12 f `?ov=signoffs:<target_type>:<id>,<id>,…:<level>`, the bulk sheet.
 registerOverlay("signoffs", { layer: "modal", render });
+// T-01-T15 follow-up (DEC-1288): TAX-09 `?ov=engine-sync:<returnId>`, the return's engine sync.
+registerOverlay("engine-sync", { layer: "modal", render });

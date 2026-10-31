@@ -278,6 +278,17 @@ describe("BND-01 acceptance (spec.md checklist)", () => {
     expect(statusOf(rowOf("Copperleaf Coffee Roasters, Inc."))).toBe("Closed");
   });
 
+  it("the Ferris row's §7216 consents tag opens CLI-05's Consents (DEC-1288)", async () => {
+    show("a");
+    await rows();
+    const tag = within(rowOf("Morgan & Kai Ferris")).getByRole("link", {
+      name: "§7216 consents 1 of 2",
+    });
+    expect(tag.getAttribute("href")).toMatch(/^\/clients\/[0-9a-f-]+\/tax-profile\/consents$/);
+    // A row with no consent asked for carries no tag.
+    expect(within(rowOf("Gloria Mendez")).queryByRole("link", { name: /§7216/ })).toBeNull();
+  });
+
   it("BND-01 acceptance: the Feld row reads 5 of 7, Published (2 open)", async () => {
     show("a");
     await rows();

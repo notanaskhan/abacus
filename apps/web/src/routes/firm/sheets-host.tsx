@@ -3,8 +3,9 @@ import { FeatureGate } from "../../app-core/flags";
 import type { OverlayRenderProps } from "../../app-core/overlays";
 
 // The sheets `sheets.tsx` registers, loaded when one opens: each behind its flag
-// (`review.grammar_api` for SHL-10, SHL-11 and SHL-12, `review.checkpoints` for SHL-16, `signatures.envelopes` for
-// SIG-02) and its own screen chunk.
+// (`review.grammar_api` for SHL-10, SHL-11 and SHL-12, `review.checkpoints` for SHL-16,
+// `signatures.envelopes` for SIG-02, `tax.returns_v1` for TAX-09's engine sync) and its own
+// screen chunk.
 
 const ApproveSheet = lazy(async () => ({
   default: (await import("../../screens/SHL-10")).ApproveSheet,
@@ -14,6 +15,9 @@ const CheckpointDrawer = lazy(async () => ({
 }));
 const SignOffSheet = lazy(async () => ({
   default: (await import("../../screens/SHL-12")).SignOffSheet,
+}));
+const EngineSyncLayer = lazy(async () => ({
+  default: (await import("../../screens/TAX-09")).EngineSyncLayer,
 }));
 const BulkSignOffSheet = lazy(async () => ({
   default: (await import("../../screens/SHL-12")).BulkSignOffSheet,
@@ -25,9 +29,19 @@ const EnvelopeBuilder = lazy(async () => ({
   default: (await import("../../screens/SIG-02")).EnvelopeBuilder,
 }));
 
-export default function SheetsHost({ ref, close }: OverlayRenderProps): JSX.Element | null {
+export default function SheetsHost(props: OverlayRenderProps): JSX.Element | null {
+  const { ref, close } = props;
   const id = ref.args[0];
   if (id === undefined) return null;
+  if (ref.key === "engine-sync") {
+    return (
+      <FeatureGate flag="tax.returns_v1">
+        <Suspense fallback={null}>
+          <EngineSyncLayer {...props} />
+        </Suspense>
+      </FeatureGate>
+    );
+  }
   const onOpenChange = (open: boolean): void => {
     if (!open) close();
   };
