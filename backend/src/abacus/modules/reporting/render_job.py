@@ -175,7 +175,7 @@ async def run(tenant_id: UUID, document_id: UUID, version_no: int) -> None:
             docx = render_docx(request)
             files.append(("docx", docx.docx, docx.render_hash, located.output.page_count))
     except RenderRefused as refused:
-        _log.info("render_job.refused", code=refused.code, document_id=str(document_id))
+        _log.info("render_job.refused", document_id=str(document_id))  # the code is on the job
         await _fail(system, row, document_id, version_no, refused.code)
         return
     stored: list[tuple[str, StoredObject, str, int]] = [
