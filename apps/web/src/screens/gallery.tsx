@@ -231,6 +231,12 @@ import {
   STATES as AUD31_STATES,
   scenarios as aud31Scenarios,
 } from "./AUD-31/scenarios";
+import { AUD07Frame } from "./AUD-07/artboard";
+import {
+  type Aud07State,
+  STATES as AUD07_STATES,
+  scenarios as aud07Scenarios,
+} from "./AUD-07/scenarios";
 import { AUD11Frame } from "./AUD-11/artboard";
 import {
   type Aud11State,
@@ -1748,6 +1754,26 @@ function Aud11Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("AUD-11", { title: "Sampling · Northwind participants", Component: Aud11Artboard });
+
+// AUD-07 (A-04-T10): a–e and the C-20 states, each on its own scenario.
+function Aud07Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Aud07State = AUD07_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      aud07Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <AUD07Frame key={state} state={state} /> : null;
+}
+
+registerScreen("AUD-07", { title: "Materiality · partner decision", Component: Aud07Artboard });
 
 registerScreen("AUD-02", {
   title: "Audit cockpit · Overview, Source Documents, Agent",
