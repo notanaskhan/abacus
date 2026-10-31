@@ -51894,10 +51894,6 @@ export type MappingSetsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MappingSetsError = MappingSetsErrors[keyof MappingSetsErrors];
@@ -51954,10 +51950,6 @@ export type MappingRunStartErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MappingRunStartError = MappingRunStartErrors[keyof MappingRunStartErrors];
@@ -74716,10 +74708,6 @@ export type MappingSetErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MappingSetError = MappingSetErrors[keyof MappingSetErrors];
@@ -74780,10 +74768,6 @@ export type AccountMappingEditErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AccountMappingEditError = AccountMappingEditErrors[keyof AccountMappingEditErrors];
@@ -74840,10 +74824,6 @@ export type MappingConfirmErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MappingConfirmError = MappingConfirmErrors[keyof MappingConfirmErrors];
@@ -74896,10 +74876,6 @@ export type MappingRunErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MappingRunError = MappingRunErrors[keyof MappingRunErrors];
@@ -74952,10 +74928,6 @@ export type MappedTrialBalanceErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MappedTrialBalanceError = MappedTrialBalanceErrors[keyof MappedTrialBalanceErrors];

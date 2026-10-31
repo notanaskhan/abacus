@@ -3,6 +3,8 @@
 The audit line's read models and actions: the AUD-06 trial balance first (SPEC-309).
 """
 
+# A-03-T08: the C9 v2 routes call this lazily; imported here so its error codes are catalogued.
+from abacus.modules.assurance import mapping_live as mapping_live
 from abacus.modules.assurance.archive_gate import g9
 from abacus.modules.assurance.audits_contract import audits_router
 from abacus.modules.assurance.completion import g6, g7

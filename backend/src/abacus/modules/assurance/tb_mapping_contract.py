@@ -15,14 +15,15 @@ for A-09's TB mapper, and so is the adopt route, declared in the contract doc on
 
 The gate is the sampling stub's (DEC-1553): a client principal 404; the action on the engagement,
 or for a mapping-set id the read at firm level with any non-person refused on a write; then 404
-with the flag off; then the Granite Peak fixture where one exists, otherwise 501.
+with the flag off; then the Granite Peak fixture where one exists, otherwise the live mapping
+(A-03-T08, `mapping_live.py`), authorised on the set's own engagement.
 """
 
 from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal, NoReturn, cast
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Path, Query
@@ -31,7 +32,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from abacus.kernel._flags import LEDGER_TB_MAPPING
 from abacus.kernel._statuses import AccountMappingStateStatus, MappingSetStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.modules.assurance import tb_mapping_fixtures as fx
@@ -338,8 +339,14 @@ async def firm_gate(ctx: AuthContext, action: str) -> None:
     await _flag_or_404(ctx)
 
 
-def _not_yet() -> NoReturn:
-    raise NotImplementedYet
+async def live_gate(ctx: AuthContext, action: str) -> None:
+    """A live mapping set (A-03-T08): client 404; a write refused to any non-person; the flag.
+    The service then authorises the action on the set's own engagement (DEC-1661)."""
+    if ctx.client:
+        raise NotFound("mapping sets")
+    if _READ_OF.get(action, action) != action and ctx.tenant.actor_kind != "human":
+        raise Forbidden(action, "role")
+    await _flag_or_404(ctx)
 
 
 router = AbacusRouter(prefix="/v1", tags=["mapping"])
@@ -439,7 +446,7 @@ async def grouping_lines_route(
     "/engagements/{engagement_id}/mapping-sets",
     action="mapping_set.read",
     response_model=ListPage[MappingSetSummaryOut],
-    errors=(501,),
+    errors=(),
 )
 async def mapping_sets_route(
     engagement_id: UUID,
@@ -449,10 +456,12 @@ async def mapping_sets_route(
     label: Annotated[str | None, Query(max_length=40)] = None,
 ) -> ListPage[MappingSetSummaryOut]:
     """One mapping set per trial balance of record (ADR-341 §4)."""
+    from abacus.modules.assurance import mapping_live as live  # it imports these models
+
     await engagement_gate(ctx, "mapping_set.read", engagement_id)
     found = fx.mapping_sets(engagement_id)
     if found is None:
-        _not_yet()
+        return await live.mapping_sets(ctx, engagement_id)
     return ListPage[MappingSetSummaryOut](
         items=[MappingSetSummaryOut.model_validate(m) for m in found], total=len(found)
     )
@@ -463,22 +472,26 @@ async def mapping_sets_route(
     action="mapping_set.run",
     response_model=MappingRunOut,
     status_code=202,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def mapping_run_start_route(
     engagement_id: UUID, body: MappingRunIn, ctx: Ctx
 ) -> MappingRunOut:
     """Start or re-run the rules on a TB of record (`TbMappingWorkflow`, A-03-T08); the
     subscriber starts it on adoption as system. 409 `mapping_run_in_progress`."""
+    from abacus.modules.assurance import mapping_live as live  # it imports these models
+
     await engagement_gate(ctx, "mapping_set.run", engagement_id)
-    _not_yet()
+    if ctx.tenant.actor_kind != "human":
+        raise Forbidden("mapping_set.run", "role")
+    return await live.run_start(ctx, engagement_id, body)
 
 
 @router.get(
     "/mapping-sets/{mapping_set_id}",
     action="mapping_set.read",
     response_model=MappingSetOut,
-    errors=(501,),
+    errors=(),
 )
 async def mapping_set_route(
     mapping_set_id: UUID,
@@ -486,62 +499,73 @@ async def mapping_set_route(
     filter_: Annotated[Literal["needs_review", "unmatched"] | None, Query(alias="filter")] = None,
     group_by: Literal["fs_line"] | None = None,
 ) -> MappingSetOut:
-    await firm_gate(ctx, "mapping_set.read")
-    _not_yet()
+    from abacus.modules.assurance import mapping_live as live  # it imports these models
+
+    await live_gate(ctx, "mapping_set.read")
+    return await live.mapping_set(ctx, mapping_set_id, filter_, group_by)
 
 
 @router.get(
     "/mapping-sets/{mapping_set_id}/run",
     action="mapping_set.read",
     response_model=MappingRunOut,
-    errors=(501,),
+    errors=(),
 )
 async def mapping_run_route(mapping_set_id: UUID, ctx: Ctx) -> MappingRunOut:
-    await firm_gate(ctx, "mapping_set.read")
+    from abacus.modules.assurance import mapping_live as live  # it imports these models
+
     found = fx.run(mapping_set_id)
-    if found is None:
-        _not_yet()
-    return MappingRunOut.model_validate(found)
+    if found is not None:
+        await firm_gate(ctx, "mapping_set.read")
+        return MappingRunOut.model_validate(found)
+    await live_gate(ctx, "mapping_set.read")
+    return await live.run(ctx, mapping_set_id)
 
 
 @router.put(
     "/mapping-sets/{mapping_set_id}/accounts/{account_code}",
     action="account_mapping.edit",
     response_model=AccountMappingOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def account_mapping_edit_route(
     mapping_set_id: UUID, account_code: AccountCode, body: AccountMappingEditIn, ctx: Ctx
 ) -> AccountMappingOut:
     """One account's FS line, insert-only; 412-equivalent 409 `stale_version` (A-03-T08)."""
-    await firm_gate(ctx, "account_mapping.edit")
-    _not_yet()
+    from abacus.modules.assurance import mapping_live as live  # it imports these models
+
+    await live_gate(ctx, "account_mapping.edit")
+    return await live.edit_account(ctx, mapping_set_id, account_code, body)
 
 
 @router.post(
     "/mapping-sets/{mapping_set_id}/confirm",
     action="mapping_set.confirm",
     response_model=MappingSetSummaryOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def mapping_confirm_route(
     mapping_set_id: UUID, body: MappingConfirmIn, ctx: Ctx
 ) -> MappingSetSummaryOut:
     """Adopt every mapping and record L1 through review.api in one unit; 409
     `unmapped_accounts`, `content_changed` (A-03-T08)."""
-    await firm_gate(ctx, "mapping_set.confirm")
-    _not_yet()
+    from abacus.modules.assurance import mapping_live as live  # it imports these models
+
+    await live_gate(ctx, "mapping_set.confirm")
+    return await live.confirm(ctx, mapping_set_id, body)
 
 
 @router.get(
     "/mapping-sets/{mapping_set_id}/trial-balance",
     action="mapping_set.read",
     response_model=MappedTrialBalanceOut,
-    errors=(501,),
+    errors=(),
 )
 async def mapped_trial_balance_route(mapping_set_id: UUID, ctx: Ctx) -> MappedTrialBalanceOut:
-    await firm_gate(ctx, "mapping_set.read")
-    _not_yet()
+    from abacus.modules.assurance import mapping_live as live  # it imports these models
+
+    await live_gate(ctx, "mapping_set.read")
+    return await live.mapped(ctx, mapping_set_id)
 
 
 ROUTERS = (router,)
