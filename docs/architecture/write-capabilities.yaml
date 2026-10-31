@@ -63,4 +63,11 @@ writes:
     owner_epic: N-02
     decision: ADR-342
     # DEC-1280: open. A firm sends only with its kill switch on and a connected install (ADR-342).
+    # W7 notes (N-02-T45, C7 v1.1 frozen): the one write is "create and send this envelope" to the
+    # firm's own DocuSeal account, never a client system (ADR-040 holds: connectors only read).
+    # It runs only from the outbox relay after a person's Send consumed its approval grant (ADR-161;
+    # the 10-second Undo window), idempotent on the envelope's id, and is audited as
+    # `write_capability.executed`. Provider truth comes back by polling (the webhook only hints a
+    # poll, ADR-152 amendment). Kill switch: `signatures.esign_provider` off for a firm (record mode
+    # stays; RB-18). Enabling another W7 adapter needs its own ADR like ADR-342.
     enabled: true
