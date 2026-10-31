@@ -379,6 +379,32 @@ async def test_a_session_is_refused_without_mfa_out_of_turn_and_before_date_as_o
     assert (status, code) == (409, "before_date_as_of")
 
 
+async def test_n02t29_the_view_names_the_signers_in_order_the_method_and_when_signing_opens(
+    net: Net, fake: FakeEsign
+) -> None:
+    """N-02-T29 (DEC-1388): POR-06's signers card, KBA steps and date gate read the server."""
+    w = await _world(net)
+    first = await _signer(w, "Dana Kowalski")
+    second = await _signer(w, "Owen Calder")
+    envelope, ids = await _send(w, [first, second])
+    view = await _ok(w, "GET", f"{BASE}/{envelope}", second)
+    assert (view["family"], view["identity_method"]) == ("engagement_letter", "email_code")
+    signers = cast(list[Body], view["signers"])
+    assert [(s["id"], s["name"], s["me"]) for s in signers] == [
+        (str(ids[0]), "Dana Kowalski", False),
+        (str(ids[1]), "Owen Calder", True),
+    ]
+    assert {s["role"] for s in signers} == {"signer"}
+    assert all(s["signed_at"] is None for s in signers)
+    assert view["signing_opens_on"] is None
+
+    later = date.today() + timedelta(days=10)
+    dated, _ = await _send(w, [first], date_as_of=later)
+    opened = await _ok(w, "GET", f"{BASE}/{dated}", first)
+    assert opened["signing_opens_on"] == later.isoformat()
+    assert opened["date_as_of"] == later.isoformat()
+
+
 async def test_a_firm_principal_and_a_person_who_is_not_a_signer_see_nothing(
     net: Net, fake: FakeEsign
 ) -> None:

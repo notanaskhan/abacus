@@ -31,7 +31,8 @@ ROUTES = [
 
 
 # Built: T-02-T09 serves the board (rows, tiles, bulk assignment); T-02-T13 the record, the
-# overview and the two requestable transitions; intake and single assignment wait for theirs.
+# overview and the two requestable transitions; T-02-T18 the intake read (TAX-03, T-02-T19);
+# single assignment waits for its own.
 LIVE = {
     "/v1/tax-returns",
     "/v1/tax-returns/summary",
@@ -39,6 +40,7 @@ LIVE = {
     "/v1/tax-returns/{return_id}",
     "/v1/tax-returns/{return_id}/overview",
     "/v1/tax-returns/{return_id}/transitions",
+    "/v1/tax-returns/{return_id}/intake",
 }
 
 

@@ -12,6 +12,7 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from uuid import UUID
 
+from abacus.kernel.db import TenantContext
 from abacus.modules.identity.api import AuthContext
 
 LetterSender = Callable[[AuthContext, UUID], Awaitable[UUID]]
@@ -29,4 +30,25 @@ async def send_letter_envelope(ctx: AuthContext, engagement_id: UUID) -> UUID:
     return await _SENDERS[0](ctx, engagement_id)
 
 
-__all__ = ["LetterSender", "register_letter_sender", "send_letter_envelope"]
+# N-02-T35: the letter envelope's C7 status (`declined`, `expired`, `voided`, ...), so a person
+# can withdraw an envelope that ended unsigned. Unregistered, no envelope has ended (fail closed).
+LetterEnvelopeStatus = Callable[[TenantContext, UUID], Awaitable[str | None]]
+_STATUS: list[LetterEnvelopeStatus] = []
+
+
+def register_letter_envelope_status(status: LetterEnvelopeStatus) -> None:
+    _STATUS[:] = [status]
+
+
+async def letter_envelope_status(tenant: TenantContext, envelope_id: UUID) -> str | None:
+    return await _STATUS[0](tenant, envelope_id) if _STATUS else None
+
+
+__all__ = [
+    "LetterEnvelopeStatus",
+    "LetterSender",
+    "letter_envelope_status",
+    "register_letter_envelope_status",
+    "register_letter_sender",
+    "send_letter_envelope",
+]

@@ -81,6 +81,11 @@ export const ov = {
     key: "signoff",
     args: level === undefined ? [type, id] : [type, id, level],
   }),
+  /** SHL-14, the request composer drawer over its host (`?ov=request:<id|new>:<binderId>`). */
+  SHL14: (requestId: string, binderId: string): OverlayRef => ({
+    key: "request",
+    args: [requestId, binderId],
+  }),
   /** SHL-15, the issue composer (P-04-T54): fix instructions on one issue (`?ov=issue:<id>`). */
   SHL15: (issueId: string): OverlayRef => ({ key: "issue", args: [issueId] }),
   /** SHL-15, a new issue on a record (`?ov=issue:new:<type>:<id>[:<engagementId>]`). */

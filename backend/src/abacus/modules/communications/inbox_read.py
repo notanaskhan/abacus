@@ -895,11 +895,12 @@ class WaitingAttachment:
     subject_display: str
     received_at: datetime
     flags: tuple[FlagView, ...]
+    message_id: UUID
 
 
 _WAITING = text(
     "SELECT a.id, a.thread_id, a.file_name, a.media_type, a.size_bytes, m.channel, "
-    "m.sender_display, m.subject_display, m.received_at FROM inbox_attachments a "
+    "m.sender_display, m.subject_display, m.received_at, a.message_id FROM inbox_attachments a "
     "JOIN inbound_messages m ON m.id = a.message_id "
     "WHERE a.client_id = :client AND a.status = 'waiting' "
     "ORDER BY m.received_at, a.created_at, a.id"
@@ -935,6 +936,7 @@ async def waiting_for_client(tenant: TenantContext, client_id: UUID) -> list[Wai
                 for f in raised
                 if f.attachment_id == r.id
             ),
+            r.message_id,
         )
         for r in rows
     ]
