@@ -34,6 +34,9 @@ from abacus.modules.sampling.population import (
     build_population,
     tie_out,
 )
+
+# A-03-T07: populations and completeness ties (the routes call the service; T10 reads them).
+from abacus.modules.sampling.populations import TIE_VERSION, population_view
 from abacus.modules.sampling.selection import (
     CRITERIA_VERSION,
     DEFAULT_KEYWORDS,
@@ -56,6 +59,7 @@ __all__ = [
     "RULE_VERSION",
     "SAMPLER_CURRENT",
     "SAMPLER_VERSIONS",
+    "TIE_VERSION",
     "Band",
     "Bill",
     "Entry",
@@ -67,6 +71,7 @@ __all__ = [
     "build_payments",
     "build_population",
     "manual_kinds_for",
+    "population_view",
     "projected_misstatement",
     "recorded_bill",
     "seeded_v1",
