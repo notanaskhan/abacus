@@ -41,6 +41,7 @@ from abacus.modules.evidence.citations.registry import Verdict as CitationVerdic
 from abacus.modules.evidence.citations.service import RecordedCitation, record_citations
 from abacus.modules.evidence.classification import (
     ClassifiedIntake,
+    attachment_tax_years,
     classify_intake,
     filed_classification_match,
     record_agent_classification,
@@ -559,6 +560,7 @@ __all__ = [
     "add_version",
     "anchor_chain",
     "assign_inbox_file",
+    "attachment_tax_years",
     "check_ready",
     "check_upload_content",
     "citation_cell_reason",

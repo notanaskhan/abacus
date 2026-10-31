@@ -10673,6 +10673,8 @@ export const approveReturn = <ThrowOnError extends boolean = false>(options: Opt
 
 /**
  * Return Intake Route
+ *
+ * TAX-03's intake (T-02-T18): binder, requests, waiting files, questions, hand-offs.
  */
 export const returnIntake = <ThrowOnError extends boolean = false>(options: Options<ReturnIntakeData, ThrowOnError>): RequestResult<ReturnIntakeResponses, ReturnIntakeErrors, ThrowOnError> => (options.client ?? client).get<ReturnIntakeResponses, ReturnIntakeErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

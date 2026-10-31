@@ -135,6 +135,11 @@ async def _resource(ctx: AuthContext, loaded: Loaded) -> Resource:
     return replace(base, work_item_id=loaded.facts.work_item_id)
 
 
+# T-02-T18: the intake read model loads and scopes the return the same way.
+load_return = _load
+return_resource = _resource
+
+
 async def record(ctx: AuthContext, return_id: UUID) -> TaxReturnRecordOut:
     loaded = await _load(ctx, return_id)
     people = {u for us in loaded.facts.assignees.values() for u in us}
