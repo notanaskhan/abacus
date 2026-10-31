@@ -95,7 +95,12 @@ GATE_KIND: Final = "sample_set_approval"
 APPROVAL_LEVEL: Final = 2
 SEED_BITS: Final = 24
 ITEMS_PAGE: Final = 100
-_HUNDRED: Final = Decimal(100)
+# The statistical size is found by search (`compute.stats`); outside these bounds its cost grows
+# without limit (0.999 / 0.5% / 0.4% runs for minutes), so the request is refused instead of
+# tying up the API (security review, DEC-1662). Audit practice sits well inside them.
+MAX_CONFIDENCE: Final = Decimal("0.99")
+MIN_TOLERABLE: Final = Decimal("0.01")
+MAX_STRATA: Final = 20
 _ACTIONS: Final[tuple[SampleSetAction, ...]] = (
     "sample_set.create",
     "sample_set.approve",
@@ -397,6 +402,8 @@ async def _size(
     tenant: TenantContext, body: VersionIn, amounts: Sequence[Decimal | None]
 ) -> _Size:
     p = body.parameters
+    if len(body.strata) > MAX_STRATA:
+        raise ParametersInvalid(facts={"field": "strata"})
     if body.method == "threshold_random_stratified":
         if not body.strata or body.override is not None:
             raise ParametersInvalid(facts={"field": "strata"})
@@ -409,7 +416,11 @@ async def _size(
     if p.tolerable_rate is None or p.confidence is None:
         raise ParametersInvalid(facts={"field": "parameters"})
     expected = p.expected_rate if p.expected_rate is not None else Decimal(0)
-    if expected >= p.tolerable_rate:
+    if p.confidence > MAX_CONFIDENCE:
+        raise ParametersInvalid(facts={"field": "confidence"})
+    if p.tolerable_rate < MIN_TOLERABLE:
+        raise ParametersInvalid(facts={"field": "tolerable_rate"})
+    if expected * 2 > p.tolerable_rate:
         raise ParametersInvalid(facts={"field": "expected_rate"})
     crosscheck = attribute_size(p.confidence, p.tolerable_rate, expected)
     if body.method == "attribute_statistical":

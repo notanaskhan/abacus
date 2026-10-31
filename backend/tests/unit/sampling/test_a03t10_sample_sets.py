@@ -245,3 +245,53 @@ async def test_ac_only_a_synthetic_firm_takes_a_scenario_seed(
     assert source == "server" and 0 <= seed < 2**24
     with pytest.raises(sample_sets.SeedNotAllowed):
         await sample_sets._seed(tenant, 2**24)  # pyright: ignore[reportPrivateUsage] -- the rule
+
+
+@pytest.mark.parametrize(
+    ("confidence", "tolerable", "expected", "field"),
+    [
+        ("0.999", "0.05", "0", "confidence"),
+        ("0.95", "0.005", "0", "tolerable_rate"),
+        ("0.95", "0.05", "0.03", "expected_rate"),
+    ],
+)
+async def test_parameters_outside_the_bounded_search_are_refused_before_any_work(
+    confidence: str, tolerable: str, expected: str, field: str
+) -> None:
+    """Security review: 0.999 / 0.5% / 0.4% runs the size search for minutes; such a request is
+    refused (422 `parameters_invalid`) before the search starts."""
+    from abacus.kernel.db import TenantContext
+    from abacus.modules.sampling import sample_sets
+    from abacus.modules.sampling.contract import VersionIn
+
+    body = VersionIn.model_validate(
+        {
+            "population_id": str(uuid.uuid4()),
+            "method": "attribute_statistical",
+            "parameters": {
+                "confidence": confidence,
+                "tolerable_rate": tolerable,
+                "expected_rate": expected,
+            },
+        }
+    )
+    with pytest.raises(sample_sets.ParametersInvalid) as refused:
+        await sample_sets._size(TenantContext(uuid.uuid4(), "human", "u"), body, [])  # pyright: ignore[reportPrivateUsage] -- the guard
+    assert refused.value.facts == {"field": field}
+
+
+async def test_more_than_twenty_strata_are_refused() -> None:
+    from abacus.kernel.db import TenantContext
+    from abacus.modules.sampling import sample_sets
+    from abacus.modules.sampling.contract import VersionIn
+
+    body = VersionIn.model_validate(
+        {
+            "population_id": str(uuid.uuid4()),
+            "method": "threshold_random_stratified",
+            "parameters": {},
+            "strata": [{"min_amount": str(n), "test_rule": "none"} for n in range(21)],
+        }
+    )
+    with pytest.raises(sample_sets.ParametersInvalid):
+        await sample_sets._size(TenantContext(uuid.uuid4(), "human", "u"), body, [])  # pyright: ignore[reportPrivateUsage] -- the guard
