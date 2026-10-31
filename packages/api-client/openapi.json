@@ -3381,7 +3381,6 @@
         "required": [
           "account_class",
           "rule",
-          "limit_usd",
           "approver_level",
           "batch"
         ],
