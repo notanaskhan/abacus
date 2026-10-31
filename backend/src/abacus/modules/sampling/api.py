@@ -14,6 +14,9 @@ from abacus.modules.sampling.compute import (
     udl,
     udl_percent,
 )
+
+# The routers the API mounts, in order (P-39; F-03-T07). A-03-T02: the sampling contract stub.
+from abacus.modules.sampling.contract import ROUTERS
 from abacus.modules.sampling.payments import (
     PAYMENTS_RULE_VERSION,
     Band,
@@ -42,9 +45,6 @@ from abacus.modules.sampling.selection import (
     seeded_v1,
     select,
 )
-
-# The routers the API mounts, in order (P-39; F-03-T07).
-ROUTERS: tuple[()] = ()
 
 __all__ = [
     "CRITERIA_VERSION",

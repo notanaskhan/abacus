@@ -999,6 +999,23 @@ objects:
       revoked:  {label: "Revoked", variant: null, terminal: true, derived: false}
       expired:  {label: "Expired", variant: null, terminal: true, derived: false}
 
+  # ---- Sampling engine (A-03 §4.2; AUD-11; A-03-T02, SPEC-580 AC-12; ADR-340) ----
+  sample_set_version:   # sample_set_versions.status; "Override pending" and "Prepared · MD" are derived from override_size and the L1 sign-off
+    source: "A-03 §4.2 M-A (AUD-11 a, b, e)"
+    codes:
+      drawing:    {label: "Drawing", variant: null, disc: spinner, terminal: false, derived: false}   # DV-A1: code started by a person, never the agent
+      draft:      {label: "Draft", variant: state, terminal: false, derived: false}
+      approved:   {label: "Approved", variant: green-tint, terminal: false, derived: false}
+      superseded: {label: "Superseded", variant: soon, terminal: true, derived: false}   # AUD-11a Version 1, struck
+      failed:     {label: "Failed", variant: red-tint, terminal: true, derived: false}
+
+  completeness_tie_result:   # completeness_ties.result; the AUD-11 card 1 tally pills
+    source: "A-03 §4.2 M-A (AUD-11 a, f; composed off state)"
+    codes:
+      tie:     {label: "tie", variant: green, terminal: false, derived: false}
+      "off":   {label: "off {amount}", variant: amber, terminal: false, derived: false}
+      check:   {label: "Check", variant: amber, terminal: false, derived: false}
+
 retired:
   # --- request_item.status (9.5.6, DEC-09; migration P-44) ---
   "request_item.open":             {replacement: ["request.draft", "request.requested"], note: "draft while firm-only; requested once sent to the client"}
