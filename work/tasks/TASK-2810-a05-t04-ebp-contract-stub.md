@@ -2,7 +2,7 @@
 id: TASK-2810
 title: A-05-T04 contract stub ebp-workpapers v1
 spec: SPEC-640
-acceptance_criteria: [AC-1]
+acceptance_criteria: [AC-2]
 risk_zone: amber
 status: in-review
 epic: A-05
