@@ -1,7 +1,10 @@
 """P-11-T03 (SPEC-520 AC-31; `docs/contracts/c11-renderer.md`; ADR-320): every C11 route is in
-the generated client, declares its one matrix action and answers 404 for a client principal, 404
-with `reporting.generated_documents` off and 501 with it on; every field is classified; agent
-principals are refused final renders, regeneration and template publication."""
+the generated client, declares its one matrix action and answers 404 for a client principal
+before anything else is asked; every field is classified; agent principals are refused final
+renders, regeneration and template publication. Since P-11-T11 every route is live (no 501):
+the generated-document routes check the client, then the flag (404 off), then the action on the
+document's scope (`reporting/reads.py`; their order is proven against Postgres by
+`tests/integration/test_p11t11_reporting_routes.py`)."""
 
 from __future__ import annotations
 
@@ -17,10 +20,9 @@ from fastapi.routing import APIRoute
 from pydantic import BaseModel
 
 from abacus.api.export_openapi import document
-from abacus.kernel._flags import REPORTING_GENERATED_DOCUMENTS
 from abacus.kernel.classification import unclassified_fields
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag
 from abacus.kernel.uow import UnitOfWork
 from abacus.modules.identity.api import AuthContext
@@ -34,16 +36,9 @@ PATHS = cast(dict[str, dict[str, Json]], DOC["paths"])
 Endpoint = Callable[..., Awaitable[object]]
 
 ROUTES = [r for router in c11_api.ROUTERS for r in router.routes if isinstance(r, APIRoute)]
-# P-11-T06 made the template routes live (`reporting/templates.py`; SPEC-520 AC-1 to AC-5); the
-# rest stay stubs until P-11-T07 (preview) and T11 (generated documents).
-LIVE = {
-    "list_report_templates_route",
-    "get_report_template_version_route",
-    "import_report_template_route",
-    "publish_report_template_route",
-    "deprecate_report_template_route",  # T-01-T17 (C11 v1.1 additive)
-}
-STUBS = [r for r in ROUTES if r.name not in LIVE]
+# P-11-T06 made the template routes live (`reporting/templates.py`; SPEC-520 AC-1 to AC-5) and
+# P-11-T11 the rest (`reporting/reads.py`): no C11 route answers 501.
+LIVE = {r.name for r in ROUTES}
 MODELS = [
     v
     for v in vars(c11).values()
@@ -105,35 +100,29 @@ def test_ac31_each_route_declares_one_matrix_action_and_stubs_answer_501(
     assert ("501" in responses) == (route.name not in LIVE)
 
 
-@pytest.mark.parametrize("route", STUBS, ids=lambda r: r.name)
-async def test_ac31_client_404_then_action_then_flag_then_501(
+@pytest.mark.parametrize("route", ROUTES, ids=lambda r: r.name)
+async def test_ac31_a_client_principal_gets_404_before_any_flag_or_action(
     route: APIRoute, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    from abacus.modules.reporting import reads, templates
+
     seen: list[Flag] = []
     asked: list[str] = []
-    state = {"on": False}
 
     async def flag_enabled(_tenant: object, f: Flag) -> bool:
         seen.append(f)
-        return state["on"]
+        return True
 
     async def authorise(_ctx: object, action: str, _resource: object) -> None:
         asked.append(action)
 
-    monkeypatch.setattr(c11, "flag_enabled", flag_enabled)
-    monkeypatch.setattr(c11, "authorise", authorise)
+    for module in (reads, templates):
+        monkeypatch.setattr(module, "flag_enabled", flag_enabled)
+        monkeypatch.setattr(module, "authorise", authorise)
     endpoint = cast(Endpoint, route.endpoint)
     with pytest.raises(NotFound):
         await _call(endpoint, _ctx(client=True))
     assert (seen, asked) == ([], [])
-    with pytest.raises(NotFound):
-        await _call(endpoint, _ctx())
-    method = next(iter(route.methods or {"GET"})).lower()
-    assert asked == [PATHS[route.path][method]["x-abacus-action"]]
-    assert seen == [REPORTING_GENERATED_DOCUMENTS]
-    state["on"] = True
-    with pytest.raises(NotImplementedYet):
-        await _call(endpoint, _ctx())
 
 
 @pytest.mark.parametrize("model", MODELS, ids=[m.__name__ for m in MODELS])

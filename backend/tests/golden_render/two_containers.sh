@@ -33,6 +33,23 @@ for kind in pdf docx; do
     exit 1
   fi
 done
+# P-11-T12 (TASK-2514): the Brightwater Hale fixtures, the same two-container agreement.
+fixtures() { docker run --rm --network none -v "$here:/app/tests/golden_render:ro" "$image" \
+  python tests/golden_render/render_fixtures.py; }
+fa="$(fixtures)"
+fb="$(fixtures)"
+if [ "$fa" != "$fb" ]; then
+  echo "FAIL: the two containers rendered different fixture bytes" >&2
+  exit 1
+fi
+if [ "${RECORD_GOLDEN:-0}" = "1" ]; then
+  echo "$fa" > "$here/p11t12.sha256"
+  echo "recorded the fixture goldens"
+fi
+if [ "$fa" != "$(cat "$here/p11t12.sha256" 2>/dev/null || true)" ]; then
+  echo "FAIL: the fixtures differ from the recorded p11t12.sha256" >&2
+  exit 1
+fi
 # The goldens as committed (or just recorded) are mounted over the image's copy.
 docker run --rm --network none -v "$here:/app/tests/golden_render:ro" "$image" \
   pytest tests/golden_render -q -p no:cacheprovider

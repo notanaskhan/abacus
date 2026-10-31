@@ -36,6 +36,7 @@ IDS = (
     "client_import_erase:platform",  # P-07-T52: bulk import files erased after 30 days, daily
     "envelope_status_poll:platform",  # N-02-T19: provider status truth, every 5 minutes
     "connection_health:platform",  # A-02-T25 (DEC-708): every firm's connections, daily
+    "consent_sweep:platform",  # T-01-T16: §7216 consent lifecycle (expiring, expired), daily
     "export_expiry:platform",  # A-01-T22: the daily engagement export expiry sweep
     "home_activity_prune:platform",  # I-01-T12 (DEC-900): Home client activity past 90 days
     "incident_reminders:platform",  # G-02-T18: FTC clock reminders, every 6 hours
@@ -53,6 +54,7 @@ BACKGROUND = (
     "auth_session_purge:platform",
     "client_import_erase:platform",
     "connection_health:platform",
+    "consent_sweep:platform",
     "export_expiry:platform",
     "home_activity_prune:platform",
     "incident_reminders:platform",
@@ -131,6 +133,8 @@ async def test_ensure_creates_one_schedule_per_job_and_converges_on_a_rerun(
     assert facts["export_expiry:platform"]["every_seconds"] == (86400,)
     assert facts["incident_reminders:platform"]["workflow_type"] == "IncidentClockReminders"
     assert facts["incident_reminders:platform"]["every_seconds"] == (6 * 3600,)
+    assert facts["consent_sweep:platform"]["workflow_type"] == "ConsentLifecycleSweepWorkflow"
+    assert facts["consent_sweep:platform"]["every_seconds"] == (86400,)
     for fact in (facts[i] for i in BACKGROUND):
         assert fact["task_queue"] == queue_for("background")
     for fact in facts.values():

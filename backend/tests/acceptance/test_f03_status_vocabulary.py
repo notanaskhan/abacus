@@ -927,10 +927,20 @@ def _status_fields() -> dict[str, Json]:
 def _literals(prop: Json) -> list[str] | None:
     if "enum" in prop:
         return [str(v) for v in prop["enum"]]
-    # An optional status (`Literal[...] | None`) is the enum beside a null (G-02-T11).
+    # A one-value `Literal["drafting"]` is emitted as `const` (C11's render ticket).
+    if "const" in prop:
+        return [str(prop["const"])]
+    # An optional status (`Literal[...] | None`) is the enum beside a null (G-02-T11); a union of
+    # enums (`FirmStandardVersionStatus | Literal["superseded"]`, K-02) is every member's values,
+    # and is an enum only when each member is.
     variants = [v for v in prop.get("anyOf", []) if v.get("type") != "null"]
     if len(variants) == 1:
         return _literals(variants[0])
+    if len(variants) > 1:
+        parts = [_literals(v) for v in variants]
+        if all(p is not None for p in parts):
+            return [code for p in parts if p is not None for code in p]
+        return None
     if "$ref" in prop:
         target = SCHEMAS[str(prop["$ref"]).rsplit("/", 1)[1]]
         return [str(v) for v in target["enum"]] if "enum" in target else None

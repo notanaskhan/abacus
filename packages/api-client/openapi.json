@@ -95182,6 +95182,7 @@
     },
     "/v1/delivery-packets/{packet_id}": {
       "patch": {
+        "description": "Toggle the vouchers or the invoice. 409 `packet_not_draft`, `stale_version`,\n`item_not_toggleable`.",
         "operationId": "patch_packet",
         "parameters": [
           {
@@ -95297,16 +95298,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Patch Packet Route",
@@ -95318,6 +95309,7 @@
     },
     "/v1/delivery-packets/{packet_id}/approve": {
       "post": {
+        "description": "DEC-38: the return's signer or a manager; a person only. 409 `packet_not_draft`,\n`stale_version`.",
         "operationId": "approve_packet",
         "parameters": [
           {
@@ -95433,16 +95425,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Approve Packet Route",
@@ -95570,16 +95552,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Regenerate Letter Route",
@@ -153235,16 +153207,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Generated Document Route",
@@ -153352,16 +153314,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Generated Document Changes Route",
@@ -153490,26 +153442,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Service unavailable"
           }
         },
         "summary": "Regenerate Generated Document Route",
@@ -153637,16 +153569,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Compare Generated Document Route",
@@ -153763,16 +153685,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Generated Document Fields Route",
@@ -177230,16 +177142,6 @@
             },
             "description": "Invalid request"
           },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
-          },
           "503": {
             "content": {
               "application/json": {
@@ -184452,6 +184354,7 @@
     },
     "/v1/tax-returns/{return_id}/delivery": {
       "get": {
+        "description": "TAX-12's checklist read model: the open packet and the engine's payment figures\n(T-01-T35). The binding, transmission and acknowledgements arrive with T-01-T36/T37.",
         "operationId": "delivery",
         "parameters": [
           {
@@ -184547,16 +184450,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Delivery Route",
@@ -184568,6 +184461,7 @@
     },
     "/v1/tax-returns/{return_id}/delivery-packet:assemble": {
       "post": {
+        "description": "Assemble from the engine PDFs and the C11 letter (no model text). 409\n`not_final_approved`, `not_exported`, `packet_approved`, `no_letter_template`.",
         "operationId": "assemble_packet",
         "parameters": [
           {
@@ -184684,16 +184578,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Assemble Packet Route",
@@ -184705,7 +184589,7 @@
     },
     "/v1/tax-returns/{return_id}/efile-envelope": {
       "post": {
-        "description": "Draft the 8879 envelope through C7 with the amount binding (C21 tolerances).",
+        "description": "Draft the 8879 envelope through C7 with the amount binding (C21 tolerances; T-01-T36).\n409 `packet_not_approved`, `envelope_exists`, `no_figures`, `no_authorization_form`.",
         "operationId": "efile_envelope",
         "parameters": [
           {
@@ -184822,16 +184706,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Efile Envelope Route",

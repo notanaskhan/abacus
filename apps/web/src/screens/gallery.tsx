@@ -289,6 +289,12 @@ import {
   scenarios as por03Scenarios,
 } from "./POR-03/scenarios";
 import { PortalRequest } from "./POR-04";
+import { POR05 } from "./POR-05";
+import {
+  type Por05State,
+  STATES as POR05_STATES,
+  scenarios as por05Scenarios,
+} from "./POR-05/scenarios";
 import { PortalSign } from "./POR-06";
 import {
   ARTBOARD as POR06_ARTBOARD,
@@ -2425,6 +2431,34 @@ function Por06Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 registerScreen("POR-06", {
   title: "Sign · Ridgeline engagement letter",
   Component: Por06Artboard,
+});
+
+// POR-05 (T-02-T24): Questions, a–f; `&w=390` draws the phone.
+function Por05Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Por05State = POR05_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      por05Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div key={state} data-artboard={state} data-surface="portal">
+      <POR05 frame mobile={params.w === "390"} />
+    </div>
+  );
+}
+
+registerScreen("POR-05", {
+  title: "Questions · Feld 2025 Tax Organizer",
+  Component: Por05Artboard,
 });
 
 // POR-16 (A-02-T18): Connections for Copperleaf, a–g; the sheet and the dialog open on b, e, f.
