@@ -166,10 +166,24 @@ async def firm(seed: Seeder, as_: Callable[[object], Call]) -> Firm:
 
 
 async def _draft(firm: Firm, as_: Callable[[object], Call]) -> dict[str, object]:
+    """A new standard has no version: its first content arrives by import, as a draft
+    (K-02-T11); "New version…" copies a published one."""
     with frozen(DEMO):
-        found = await as_(firm.owner)("POST", f"/v1/standards/{firm.standard_id}/versions")
+        found = await as_(firm.owner)(
+            "POST",
+            f"/v1/standards/{firm.standard_id}/imports",
+            params={"format": "csv"},
+            content=b"context,pct,amount_usd\nclose_flux,10,2500\n",
+            headers={"Content-Type": "text/csv"},
+        )
     assert found.status_code == 201, found.text
-    return cast(dict[str, object], found.json())
+    summary = cast(dict[str, object], cast(list[object], found.json()["drafts"])[0])
+    with frozen(DEMO):
+        full = await as_(firm.owner)(
+            "GET", f"/v1/standards/{firm.standard_id}/versions/{summary['id']}"
+        )
+    assert full.status_code == 200, full.text
+    return cast(dict[str, object], full.json())
 
 
 async def _publish(
@@ -261,6 +275,7 @@ async def test_ac47_an_import_drafts_and_never_publishes(
         again = await as_(firm.owner)(
             "POST",
             f"/v1/standards/{firm.standard_id}/imports",
+            params={"format": "csv"},
             content=b"context,pct,amount_usd\nclose_flux,10,2500\n",
             headers={"Content-Type": "text/csv"},
         )
