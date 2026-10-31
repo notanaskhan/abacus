@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
+from datetime import date
 from typing import Annotated, ClassVar, Final
 from uuid import UUID
 
@@ -38,6 +39,7 @@ from abacus.modules.engagements.api import work_item_facts
 from abacus.modules.evidence.api import file_engine_copy, screen_and_stage
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.review.api import record_engine_issue
+from abacus.modules.signatures.api import efile_gate, extend_retention
 from abacus.modules.tax import engine_repository as repo
 from abacus.modules.tax.engine_adapter import (
     AcksFile,
@@ -112,7 +114,60 @@ async def import_other(
     content: bytes,
 ) -> UUID:
     """A PDF or an e-file status report; answers the sync event's id. The caller authorised
-    `engine_import.create` on the return."""
+    `engine_import.create` on the return. An accepted federal acknowledgement extends the signed
+    8879's retention to the IRS received date plus three years (N-02-T38; Pub 1345)."""
+    event_id = await _import_other(ctx, return_id, engagement_id, kind, file_name, content)
+    if kind == "acks":
+        await _extend_8879_retention(ctx.tenant_id, return_id, event_id)
+    return event_id
+
+
+# Pub 1345: the 8879 is kept three years from the return's due date or the IRS received date,
+# whichever is later; the received date is the accepted federal acknowledgement's.
+RETENTION_YEARS: Final = 3
+
+
+def kept_until(received_at: str) -> date | None:
+    """The IRS received date plus three years (a Feb 29 lands on Mar 1), or None if unreadable."""
+    try:
+        on = date.fromisoformat(received_at[:10])
+    except ValueError:
+        return None
+    try:
+        return on.replace(year=on.year + RETENTION_YEARS)
+    except ValueError:
+        return date(on.year + RETENTION_YEARS, 3, 1)
+
+
+async def _extend_8879_retention(tenant_id: UUID, return_id: UUID, event_id: UUID) -> None:
+    system = TenantContext(tenant_id, "system", "tax:efile_retention")
+    async with tenant_session(system) as session:
+        received = await session.scalar(
+            text(
+                "SELECT status_at FROM engine_acks WHERE sync_event_id = :e "
+                "AND jurisdiction = 'federal' AND status = 'accepted' LIMIT 1"
+            ),
+            {"e": event_id},
+        )
+    if received is None:
+        return
+    until = kept_until(str(received))
+    if until is None:
+        return
+    gate = await efile_gate(system, return_id)
+    if gate is None:
+        return
+    await extend_retention(system, gate[0], until)
+
+
+async def _import_other(
+    ctx: AuthContext,
+    return_id: UUID,
+    engagement_id: UUID,
+    kind: str,
+    file_name: str,
+    content: bytes,
+) -> UUID:
     from abacus.modules.tax.engine_import import EngineReturnMismatch
 
     pdf: EnginePdf | None = None

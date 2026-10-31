@@ -14,6 +14,7 @@ The rules count is 0 until K-03's rules land (a placeholder, never an invented n
 
 from __future__ import annotations
 
+import hashlib
 import io
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -28,6 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import NotFound
+from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.identity.api import AuthContext, Resource, authorise
 from abacus.modules.methodology.models import (
     MethodologyVersion,
@@ -303,4 +305,12 @@ async def export_version(ctx: AuthContext, version_id: UUID) -> bytes:
     )
     buffer = io.BytesIO()
     workbook.save(buffer)
-    return normalised(buffer.getvalue())
+    content = normalised(buffer.getvalue())
+    # AC4.6 (K-01-T16 found it missing): every export is audited, with the bytes' fingerprint.
+    async with uow(ctx.tenant) as tx:
+        tx.record(
+            "methodology_version.exported",
+            target=Target("methodology_version", version_id),
+            after=Ref(sha256=hashlib.sha256(content).hexdigest()),
+        )
+    return content
