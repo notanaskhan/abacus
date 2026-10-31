@@ -38,6 +38,7 @@ from abacus.modules.reporting.contract import (
     documents_router,
     templates_router,
 )
+from abacus.modules.reporting.contract import TemplateImportIn as TemplateImportIn
 from abacus.modules.reporting.engagement_letters import (
     finalise_engagement_letter,
     lock_engagement_letter,
@@ -52,7 +53,14 @@ from abacus.modules.reporting.render.core import render_docx as render_docx
 from abacus.modules.reporting.render.core import render_isolated as render_isolated
 from abacus.modules.reporting.render.head import RenderRefused as _RenderingRefused
 
+# P-11-T13: the template import and publication services the routes call, for the scenario loader
+# (a firm's content goes in through these, never a migration or constant; AGENTS 16).
+from abacus.modules.reporting.templates import import_bundle as _import_bundle
+from abacus.modules.reporting.templates import publish as _publish_template
+
 consent_recipients = _consent_recipients
+import_template_bundle = _import_bundle
+publish_template = _publish_template
 RenderingRefused = _RenderingRefused
 
 # The routers the API mounts, in order (P-39; F-03-T07).
@@ -260,6 +268,7 @@ async def render(tx: UnitOfWork, request: RenderRequest) -> RenderTicket:
         template_version_id=request.template_version_id,
         layout_key=kind.layout,
         snapshot_sha256=snapshot_sha,
+        snapshot=snapshot,
         content_hash=content_hash,
         approval_ref=None,
         requested_by_kind=who.kind,
@@ -304,6 +313,9 @@ async def render_final(
         raise RenderRefused("final_requires_approval", "the approval is not a person's")
     if approved[1] != approval_ref.content_hash:
         raise RenderRefused("approval_hash_mismatch")
+    sealed = await docs.snapshot_of_version(tx.session, cast(UUID, draft["id"]))
+    if sealed is None:
+        raise RenderRefused("approval_hash_mismatch", "the draft has no sealed snapshot")
     version_no = await docs.next_version(tx, document_id)
     await docs.insert_version(
         tx,
@@ -313,6 +325,7 @@ async def render_final(
         template_version_id=cast(UUID | None, draft["template_version_id"]),
         layout_key=str(draft["layout_key"]),
         snapshot_sha256=str(draft["snapshot_sha256"]),
+        snapshot=sealed,
         content_hash=approval_ref.content_hash,
         approval_ref={
             "kind": approval_ref.kind,
@@ -338,6 +351,94 @@ async def render_final(
         generated_document_id=document_id,
         version_no=version_no,
         content_hash=approval_ref.content_hash,
+    )
+
+
+async def regenerate(tx: UnitOfWork, document_id: UUID, requester: Requester) -> RenderTicket:
+    """A person's new draft of the document (P-11-T11; AC-18): the latest version's sealed
+    snapshot, with each declared value the kind's provider answers now in place of the sealed
+    one (a provider that answers only inside its consumer's call keeps the sealed values), its
+    clause states and overrides; refused when locked (`document_locked`)."""
+    from abacus.modules.reporting import documents as docs
+
+    if requester.kind != "human" or requester.user_id is None:
+        raise RenderRefused("final_requires_approval", "regenerate is a person's")
+    doc = await docs.document_row(tx, document_id)
+    if doc is None:
+        raise RenderRefused("not_found")
+    if await docs.locked(tx, document_id):
+        raise RenderRefused("document_locked")
+    latest = await docs.latest_version(tx, document_id)
+    if latest is None:
+        raise RenderRefused("missing_variable", "no version to regenerate")
+    sealed = await docs.snapshot_of_version(tx.session, cast(UUID, latest["id"]))
+    if sealed is None:
+        raise RenderRefused("missing_variable", "the version has no sealed snapshot")
+    kind = document_kind(str(doc["kind"]))
+    scope = RenderScope(
+        client_id=cast(UUID, doc["client_id"]),
+        engagement_id=cast(UUID | None, doc["engagement_id"]),
+        work_item_id=cast(UUID | None, doc["work_item_id"]),
+    )
+    template_version_id = cast(UUID | None, latest["template_version_id"])
+    raw = sealed.get("variables")
+    values = (
+        {str(k): str(v) for k, v in cast(Mapping[object, object], raw).items()}
+        if isinstance(raw, Mapping)
+        else {}
+    )
+    resolved = await kind.variables_provider(
+        OwnerRef(str(doc["owner_type"]), doc["owner_id"]), scope
+    )
+    declared = await docs.declared_keys(tx, template_version_id)
+    merged = {**values, **{k: v for k, v in resolved.items() if v.strip()}}
+    variables, missing = docs.declared_values(declared, merged)
+    if missing:
+        raise RenderRefused("missing_variable", ",".join(missing))
+    clauses = sealed.get("clauses")
+    overrides = sealed.get("overrides")
+    snapshot = docs.snapshot_of(
+        layout=kind.layout,
+        template_version_id=template_version_id,
+        variables=variables,
+        clause_states={
+            str(k): bool(v) for k, v in cast(Mapping[object, object], clauses or {}).items()
+        },
+        overrides={
+            str(k): tuple(str(p) for p in cast(list[object], v))
+            for k, v in cast(Mapping[object, object], overrides or {}).items()
+        },
+    )
+    snapshot_sha = docs.sha256_hex(docs.canonical(snapshot))
+    content_hash = docs.sha256_hex(f"{kind.layout}:{snapshot_sha}".encode())
+    version_no = await docs.next_version(tx, document_id)
+    await docs.insert_version(
+        tx,
+        document_id=document_id,
+        version_no=version_no,
+        mode="draft",
+        template_version_id=template_version_id,
+        layout_key=kind.layout,
+        snapshot_sha256=snapshot_sha,
+        snapshot=snapshot,
+        content_hash=content_hash,
+        approval_ref=None,
+        requested_by_kind="human",
+        requested_by_user_id=requester.user_id,
+        requested_by_run_id=None,
+        on_behalf_of_user_id=None,
+    )
+    docs.record_rendered(
+        tx,
+        "generated_document.regenerated",
+        document_id=document_id,
+        version_no=version_no,
+        content_hash=content_hash,
+        engagement_id=scope.engagement_id,
+        client_id=scope.client_id,
+    )
+    return RenderTicket(
+        generated_document_id=document_id, version_no=version_no, content_hash=content_hash
     )
 
 
@@ -385,6 +486,8 @@ class _SourceSubscriptions(Mapping[str, Callable[[OutboxEvent], Awaitable[None]]
         return {k: tuple(v) for k, v in out.items()}
 
     def __getitem__(self, event_type: str) -> Callable[[OutboxEvent], Awaitable[None]]:
+        if event_type == RENDER_REQUESTED:
+            return _render_requested
         kinds = self._events()[event_type]
 
         async def handle(event: OutboxEvent) -> None:
@@ -395,15 +498,26 @@ class _SourceSubscriptions(Mapping[str, Callable[[OutboxEvent], Awaitable[None]]
         return handle
 
     def __iter__(self) -> Iterator[str]:
-        return iter(self._events())
+        return iter((RENDER_REQUESTED, *(e for e in self._events() if e != RENDER_REQUESTED)))
 
     def __len__(self) -> int:
-        return len(self._events())
+        return len(set(self._events()) | {RENDER_REQUESTED})
+
+
+# P-11-T11 (DEC-1561): a version's render job runs on the relay's delivery of its event.
+RENDER_REQUESTED = "generated_document.render_requested"
+
+
+async def _render_requested(event: OutboxEvent) -> None:
+    # Imported here: the job reaches evidence.api, which reporting.api must not import (DEC-1457).
+    from abacus.modules.reporting.render_job import on_render_requested
+
+    await on_render_requested(event)
 
 
 SUBSCRIPTIONS: Mapping[str, Callable[[OutboxEvent], Awaitable[None]]] = _SourceSubscriptions()
 # The worker composes WORKFLOWS and ACTIVITIES beside SUBSCRIPTIONS for every module that has one.
-# The render job's workflow and activity land with the evidence write (P-11-T09).
+# The render job is a relay subscription, not a workflow (DEC-1561).
 WORKFLOWS: dict[type, str] = {}
 ACTIVITIES: tuple[object, ...] = ()
 

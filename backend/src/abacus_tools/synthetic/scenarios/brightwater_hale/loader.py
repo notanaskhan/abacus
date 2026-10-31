@@ -188,6 +188,11 @@ from abacus.modules.portal.api import (
     add_portal_host,
     set_branding,
 )
+from abacus.modules.reporting.api import (
+    TemplateImportIn,
+    import_template_bundle,
+    publish_template,
+)
 from abacus.modules.requests.api import (
     ItemPatch,
     fulfil_by_upload,
@@ -338,6 +343,15 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.portal_pbc import (
     SLICE as PORTAL_PBC_SLICE,
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.prng import stable_id
+from abacus_tools.synthetic.scenarios.brightwater_hale.report_templates import (
+    NEEDS as REPORT_TEMPLATES_NEEDS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.report_templates import (
+    SLICE as REPORT_TEMPLATES_SLICE,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.report_templates import (
+    bundle as report_template_bundle,
+)
 from abacus_tools.synthetic.scenarios.brightwater_hale.scenario import (
     FIRM_ID,
     SCENARIO_VERSION,
@@ -1622,6 +1636,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     RETURNED_SLICE: PORTAL_PBC_NEEDS,  # POR-03 g's alternate path (DEC-471)
     COMPLIANCE_SLICE: COMPLIANCE_NEEDS,
     METHODOLOGY_SLICE: METHODOLOGY_NEEDS,  # K-01-T10: Grace imports, Margaret approves
+    REPORT_TEMPLATES_SLICE: REPORT_TEMPLATES_NEEDS,  # P-11-T13: Grace imports, Margaret publishes
     CONNECTIONS_SLICE: CONNECTIONS_NEEDS,  # A-02-T27: Copperleaf's POR-16a connections
     ACCEPTANCE_SLICE: ACCEPTANCE_NEEDS,
     INTAKE_SLICE: INTAKE_NEEDS,  # P-07-T50: wave 3 (drafts, the open Harborline hit, Meridian)
@@ -2372,6 +2387,30 @@ async def _standard_published(conn: asyncpg.Connection, _: Scenario, event: Even
     )
 
 
+async def _report_template_imported(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """P-11-T13: the bundle through C11's import, as a firm admin imports it (a draft version)."""
+    body = TemplateImportIn.model_validate(report_template_bundle(str(event.data["name"])))
+    report = await import_template_bundle(await _staff_context(conn, event), body, dry_run=False)
+    if not report.ok:
+        raise RuntimeError(f"template {body.name} refused: {report.errors}")
+
+
+async def _report_template_published(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """P-11-T13: the partner publishes the version Grace imported (fresh MFA, four eyes)."""
+    row = await tenant_row(
+        conn,
+        TENANT,
+        "SELECT t.id, v.version_no FROM report_templates t JOIN report_template_versions v "
+        "ON v.template_id = t.id WHERE t.name = $1 ORDER BY v.version_no DESC LIMIT 1",
+        str(event.data["name"]),
+    )
+    if row is None:
+        raise RuntimeError(f"template {event.data['name']} was not imported")
+    await publish_template(
+        await _staff_context(conn, event), cast(UUID, row["id"]), int(row["version_no"])
+    )
+
+
 async def _retention_policy_set(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     data = event.data
     change = PolicyChange(
@@ -2864,6 +2903,8 @@ HANDLERS: Final[dict[str, Handler]] = {
     "standards.created": _standard_created,  # K-02-T18
     "standards.version_imported": _standard_imported,
     "standards.version_published": _standard_published,
+    "reporting.template_imported": _report_template_imported,
+    "reporting.template_published": _report_template_published,
 }
 # Within one instant the timeline orders by label; the loader orders by dependency first.
 _ORDER: Final = {kind: n for n, kind in enumerate(HANDLERS)}
