@@ -55,6 +55,8 @@ from abacus.modules.signatures.events import (
 )
 from abacus.modules.signatures.hub import seal_ip
 from abacus.modules.signatures.imports import UnconsumedFile, staged_files
+from abacus.modules.signatures.integrity import ACTIVITIES as INTEGRITY_ACTIVITIES
+from abacus.modules.signatures.integrity import SCHEDULES as INTEGRITY_SCHEDULES
 from abacus.modules.signatures.provider import (
     Completed,
     Created,
@@ -92,6 +94,7 @@ from abacus.modules.signatures.workflows import (
     EnvelopeInput,
     EnvelopeStatusPollWorkflow,
     EnvelopeWorkflow,
+    EvidenceIntegrityWorkflow,
     ReminderDue,
     SendPlan,
     envelope_workflow_id,
@@ -175,10 +178,15 @@ register_client_owners(CLIENT_KINDS, audit_clients)
 WORKFLOWS: dict[type, WorkClass] = {
     EnvelopeWorkflow: "time_sensitive",
     EnvelopeStatusPollWorkflow: "background",  # N-02-T19: the 5-minute poll
+    EvidenceIntegrityWorkflow: "background",  # N-02-T38: the nightly evidence re-hash
 }
 register_work_classes(WORKFLOWS)
-ACTIVITIES: tuple[object, ...] = (*ENVELOPE_ACTIVITIES, *STATUS_POLL_ACTIVITIES)
-SCHEDULES = STATUS_POLL_SCHEDULES
+ACTIVITIES: tuple[object, ...] = (
+    *ENVELOPE_ACTIVITIES,
+    *STATUS_POLL_ACTIVITIES,
+    *INTEGRITY_ACTIVITIES,  # N-02-T38: the nightly evidence re-hash
+)
+SCHEDULES = (*STATUS_POLL_SCHEDULES, *INTEGRITY_SCHEDULES)
 # N-02-T18: the provider for a firm with no process-wide one is its own DocuSeal account, built
 # only when the kill switch, W7 and a connected install allow (ProviderUnavailable otherwise).
 register_firm_provider(firm_provider)

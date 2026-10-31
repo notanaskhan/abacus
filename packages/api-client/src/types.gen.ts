@@ -44847,10 +44847,6 @@ export type PatchPacketErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PatchPacketError = PatchPacketErrors[keyof PatchPacketErrors];
@@ -44907,10 +44903,6 @@ export type ApprovePacketErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ApprovePacketError = ApprovePacketErrors[keyof ApprovePacketErrors];
@@ -44967,10 +44959,6 @@ export type RegenerateLetterErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RegenerateLetterError = RegenerateLetterErrors[keyof RegenerateLetterErrors];
@@ -71346,10 +71334,6 @@ export type GetGeneratedDocumentErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetGeneratedDocumentError = GetGeneratedDocumentErrors[keyof GetGeneratedDocumentErrors];
@@ -71402,10 +71386,6 @@ export type GetGeneratedDocumentChangesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetGeneratedDocumentChangesError = GetGeneratedDocumentChangesErrors[keyof GetGeneratedDocumentChangesErrors];
@@ -71466,14 +71446,6 @@ export type RegenerateGeneratedDocumentErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
-    /**
-     * Service unavailable
-     */
-    503: ErrorOut;
 };
 
 export type RegenerateGeneratedDocumentError = RegenerateGeneratedDocumentErrors[keyof RegenerateGeneratedDocumentErrors];
@@ -71535,10 +71507,6 @@ export type CompareGeneratedDocumentErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CompareGeneratedDocumentError = CompareGeneratedDocumentErrors[keyof CompareGeneratedDocumentErrors];
@@ -71595,10 +71563,6 @@ export type GetGeneratedDocumentFieldsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetGeneratedDocumentFieldsError = GetGeneratedDocumentFieldsErrors[keyof GetGeneratedDocumentFieldsErrors];
@@ -82239,10 +82203,6 @@ export type PreviewReportTemplateErrors = {
      */
     422: ValidationErrorOut;
     /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
-    /**
      * Service unavailable
      */
     503: ErrorOut;
@@ -85505,10 +85465,6 @@ export type DeliveryErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DeliveryError = DeliveryErrors[keyof DeliveryErrors];
@@ -85569,10 +85525,6 @@ export type AssemblePacketErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AssemblePacketError = AssemblePacketErrors[keyof AssemblePacketErrors];
@@ -85633,10 +85585,6 @@ export type EfileEnvelopeErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EfileEnvelopeError = EfileEnvelopeErrors[keyof EfileEnvelopeErrors];

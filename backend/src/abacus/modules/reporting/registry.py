@@ -1,7 +1,7 @@
 """The reporting module's registry (P-39; F-03-T07).
 
 The tables it owns (ADR-103) and what the app role may do with them. P-11-T05 (0430): C11's six
-generated-document tables.
+generated-document tables. P-11-T11 (0522): the sealed render snapshot.
 """
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ TABLES: frozenset[str] = frozenset(
         "generated_document_fields",
         "generated_document_events",
         "render_jobs",
+        "generated_document_snapshots",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004); each also carries a
@@ -25,6 +26,7 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "generated_document_files",
         "generated_document_fields",
         "generated_document_events",
+        "generated_document_snapshots",
     }
 )
 # Columns the app may supply on insert; everything else is server-set.
@@ -54,6 +56,9 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "render_jobs": frozenset(
         {"id", "tenant_id", "generated_document_id", "target_version_no", "workflow_id"}
+    ),
+    "generated_document_snapshots": frozenset(
+        {"id", "tenant_id", "version_id", "snapshot", "snapshot_sha256"}
     ),
 }
 # Columns the app may update; tables not listed keep what their migration grants.

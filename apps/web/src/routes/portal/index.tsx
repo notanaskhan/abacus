@@ -55,6 +55,10 @@ const Connections = lazy(async () => ({
 const SignScreen = lazy(async () => ({
   default: (await import("../../screens/POR-06")).PortalSign,
 }));
+// POR-05 (T-02-T24): Questions, its own chunk (`?q=` names the questionnaire).
+const QuestionsScreen = lazy(async () => ({
+  default: (await import("../../screens/POR-05")).POR05,
+}));
 // POR-04 (R-01-T12): the request sheet over Documents, its own chunk.
 const RequestSheetScreen = lazy(async () => ({
   default: (await import("../../screens/POR-04")).POR04,
@@ -65,6 +69,7 @@ export const AREA_PATHS: Readonly<Record<string, string>> = {
   Home: "/",
   Documents: "/documents",
   Sign: "/sign",
+  Questions: "/questions",
 };
 
 function Root(): JSX.Element {
@@ -181,6 +186,7 @@ function Area({ area }: { area: string }): JSX.Element | null {
   if (area === "Requests") return <RoomPage />;
   if (area === "Connections") return <ConnectionsPage />;
   if (area === "Sign") return <SignPage />;
+  if (area === "Questions") return <QuestionsPage />;
   return <Shell area={area} />;
 }
 
@@ -330,6 +336,22 @@ function SignPage(): JSX.Element {
   );
 }
 
+/** POR-05 (T-02-T24; docs/screens/POR-05.md): the questionnaires at `/questions?q=`. */
+function QuestionsPage(): JSX.Element {
+  const mobile = useMobileViewport();
+  const navigateTo = useAreaNavigate();
+  const [questionnaireId] = useState(
+    () => new URLSearchParams(window.location.search).get("q") ?? undefined,
+  );
+  return (
+    <QuestionsScreen
+      {...(questionnaireId === undefined ? {} : { questionnaireId })}
+      mobile={mobile}
+      onNavigate={navigateTo}
+    />
+  );
+}
+
 /** The portal's 390 layout (T7-M, DEC-45) below 768 px wide (DEC-346). */
 export const PORTAL_MOBILE_QUERY = "(max-width: 767px)";
 
@@ -385,6 +407,7 @@ export const portalTree = rootRoute.addChildren([
   page("/requests/$requestId", () => <Area area="Requests" />),
   page("/connections", () => <Area area="Connections" />), // POR-16 (A-02-T28)
   page("/sign", () => <Area area="Sign" />), // POR-06 (N-02-T26)
+  page("/questions", () => <Area area="Questions" />), // POR-05 (T-02-T24)
   page("/sign/$envelopeId", () => <Area area="Sign" />),
   page("/sign/$envelopeId/return", () => <Area area="Sign" />),
   page("/k1s", NotBuilt),

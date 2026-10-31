@@ -5,7 +5,8 @@ Every route answers 404 for a client principal (clients never reach C11: INV-4; 
 through C10 and envelopes through C7), then checks its one matrix action, then answers 404 with
 `reporting.generated_documents` off and 501 `not_implemented` with it on until its task lands:
 templates P-11-T06 (live: `templates.py`; the SAMPLE preview waits for the renderer, P-11-T07),
-generated-document reads and regenerate P-11-T11. Fixture mode serves the
+generated-document reads and regenerate P-11-T11 (live: `reads.py`, with the render job,
+`render_job.py`). Fixture mode serves the
 same shapes from the Brightwater Hale seed (`apps/web/src/fixtures/handlers/reporting.ts`).
 
 Rules the shapes carry:
@@ -21,25 +22,16 @@ Rules the shapes carry:
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import REPORTING_GENERATED_DOCUMENTS
 from abacus.kernel._statuses import GeneratedDocumentStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
-from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
-from abacus.modules.identity.api import (
-    AbacusRouter,
-    AuthContext,
-    Resource,
-    authorise,
-    current_context,
-)
+from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=8, max_length=200)]
@@ -114,6 +106,7 @@ AUDIT_EVENTS = (
     "generated_document.regenerated",
     "generated_document.locked",
     "generated_document.marked_out_of_date",
+    "generated_document.render_failed",  # P-11-T11 (additive): the render job refused
 )
 # C11 §4: the human-only actions.
 HUMAN_ONLY_ACTIONS = (
@@ -129,17 +122,6 @@ FIRM_ACTIONS = (
     "report_template.import",
     "report_template.publish",
 )
-
-
-async def _stub(ctx: AuthContext, action: str) -> NoReturn:
-    """A client principal never reaches C11: 404. Then the action at the firm, then the flag,
-    then 501."""
-    if ctx.client:
-        raise NotFound("generated documents")
-    await authorise(ctx, action, Resource.firm(ctx.tenant_id))
-    if not await flag_enabled(ctx.tenant, REPORTING_GENERATED_DOCUMENTS):
-        raise NotFound(REPORTING_GENERATED_DOCUMENTS.name)
-    raise NotImplementedYet
 
 
 # --- DocBlocks (ADR-320 §2; P-11 §4.2) ---------------------------------------------------------
@@ -677,44 +659,47 @@ async def deprecate_report_template_route(
     "/{template_id}/versions/{version_no}/preview",
     action="report_template.read",
     response_model=TemplatePreviewOut,
-    errors=(501, 503),
+    errors=(503,),
 )
 async def preview_report_template_route(
     ctx: Ctx, template_id: UUID, version_no: int
 ) -> TemplatePreviewOut:
     """A SAMPLE render from synthetic sample data; page images `no-store`; never evidence."""
-    await _stub(ctx, "report_template.read")
+    from abacus.modules.reporting import reads
+
+    return await reads.preview(ctx, template_id, version_no)
 
 
 @documents_router.get(
     "/{document_id}",
     action="generated_document.read",
     response_model=GeneratedDocumentOut,
-    errors=(501,),
 )
 async def get_generated_document_route(ctx: Ctx, document_id: UUID) -> GeneratedDocumentOut:
     """The document, its computed status and its versions (AC-14)."""
-    await _stub(ctx, "generated_document.read")
+    from abacus.modules.reporting import reads
+
+    return await reads.read(ctx, document_id)
 
 
 @documents_router.get(
     "/{document_id}/versions/{version_no}/fields",
     action="generated_document.read",
     response_model=FieldRegionsOut,
-    errors=(501,),
 )
 async def get_generated_document_fields_route(
     ctx: Ctx, document_id: UUID, version_no: int
 ) -> FieldRegionsOut:
     """The field-region manifest (AC-22)."""
-    await _stub(ctx, "generated_document.read")
+    from abacus.modules.reporting import reads
+
+    return await reads.fields(ctx, document_id, version_no)
 
 
 @documents_router.get(
     "/{document_id}/versions/{version_no}/compare",
     action="generated_document.read",
     response_model=CompareOut,
-    errors=(501,),
 )
 async def compare_generated_document_route(
     ctx: Ctx,
@@ -723,28 +708,33 @@ async def compare_generated_document_route(
     to: Annotated[str, Query(pattern=r"^(standard|[1-9][0-9]{0,4})$")] = "standard",
 ) -> CompareOut:
     """A deterministic word diff against the standard text or another version (AC-23)."""
-    await _stub(ctx, "generated_document.read")
+    from abacus.modules.reporting import reads
+
+    return await reads.compare(ctx, document_id, version_no, to)
 
 
 @documents_router.get(
     "/{document_id}/changes",
     action="generated_document.read",
     response_model=ChangesOut,
-    errors=(501,),
 )
 async def get_generated_document_changes_route(ctx: Ctx, document_id: UUID) -> ChangesOut:
     """Variables whose current value differs from the snapshot (AC-17)."""
-    await _stub(ctx, "generated_document.read")
+    from abacus.modules.reporting import reads
+
+    return await reads.changes(ctx, document_id)
 
 
 @documents_router.post(
     "/{document_id}/regenerate",
     action="generated_document.regenerate",
     response_model=RenderTicketOut,
-    errors=(409, 501, 503),
+    errors=(409,),
 )
 async def regenerate_generated_document_route(
     ctx: Ctx, document_id: UUID, idempotency_key: IdempotencyKey
 ) -> RenderTicketOut:
     """Human-only: version n+1 as a new draft; 409 `document_locked` (AC-18, AC-19)."""
-    await _stub(ctx, "generated_document.regenerate")
+    from abacus.modules.reporting import reads
+
+    return await reads.regenerate(ctx, document_id, idempotency_key)
