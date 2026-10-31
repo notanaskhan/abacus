@@ -19264,6 +19264,26 @@ export type K1DependencyOut = {
 };
 
 /**
+ * K1DetailsChangeTagOut
+ *
+ * T-02-T25 (DV-10): a pending recipient-details change, the row's second line.
+ */
+export type K1DetailsChangeTagOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'w9' | 'w8' | 'address';
+    /**
+     * Submitted At
+     */
+    submitted_at: string;
+};
+
+/**
  * K1DocumentOut
  */
 export type K1DocumentOut = {
@@ -19290,9 +19310,59 @@ export type K1DocumentOut = {
 };
 
 /**
+ * K1HandoffOut
+ *
+ * T-02-T25: a draft shared to another return's intake (TXP-12's Internal handoff column).
+ * The target is named only to a reader of it (DEC-88); otherwise "Another return", no id.
+ */
+export type K1HandoffOut = {
+    /**
+     * Replaced At
+     */
+    replaced_at: string | null;
+    /**
+     * Shared At
+     */
+    shared_at: string;
+    /**
+     * Status
+     */
+    status: 'draft_shared' | 'final_replaced';
+    /**
+     * Target Form
+     */
+    target_form: string | null;
+    /**
+     * Target Name
+     */
+    target_name: string;
+    /**
+     * Target Return Id
+     */
+    target_return_id: string | null;
+};
+
+/**
  * K1HandoffStatus
  */
 export type K1HandoffStatus = 'awaiting' | 'received';
+
+/**
+ * K1MaskedTinOut
+ *
+ * A recipient's taxpayer ID, kind and last four only; the detail's, never a list row's
+ * (ADR-031).
+ */
+export type K1MaskedTinOut = {
+    /**
+     * Kind
+     */
+    kind: 'ssn' | 'ein' | 'itin';
+    /**
+     * Last4
+     */
+    last4: string;
+};
 
 /**
  * K1PackageDetailOut
@@ -19307,6 +19377,7 @@ export type K1PackageDetailOut = {
      */
     lines: Array<K1BoxLineOut>;
     package: K1PackageOut;
+    tin?: K1MaskedTinOut | null;
 };
 
 /**
@@ -19320,6 +19391,11 @@ export type K1PackageOut = {
      */
     allowed_actions: Array<string>;
     /**
+     * Delivery Contact Name
+     */
+    delivery_contact_name?: string | null;
+    details_change?: K1DetailsChangeTagOut | null;
+    /**
      * Documents
      */
     documents?: Array<K1DocumentOut>;
@@ -19328,6 +19404,10 @@ export type K1PackageOut = {
      */
     form: '1065' | '1120s' | '1041';
     /**
+     * Handoffs
+     */
+    handoffs?: Array<K1HandoffOut>;
+    /**
      * Id
      */
     id: string;
@@ -19335,6 +19415,22 @@ export type K1PackageOut = {
      * K3 Status
      */
     k3_status: 'included' | 'not_required' | 'not_included';
+    /**
+     * Locality
+     */
+    locality?: string | null;
+    /**
+     * Ownership Note
+     */
+    ownership_note?: string | null;
+    /**
+     * Period End
+     */
+    period_end?: string | null;
+    /**
+     * Period Start
+     */
+    period_start?: string | null;
     /**
      * Recipient Id
      */
@@ -19348,6 +19444,10 @@ export type K1PackageOut = {
      */
     recipient_name: string;
     /**
+     * Related Returns
+     */
+    related_returns?: Array<K1RelatedReturnOut>;
+    /**
      * Released At
      */
     released_at: string | null;
@@ -19356,6 +19456,10 @@ export type K1PackageOut = {
      */
     state_codes: Array<string>;
     status: K1PackageStatus;
+    /**
+     * Supersedes Package Id
+     */
+    supersedes_package_id?: string | null;
     /**
      * Tax Year
      */
@@ -19372,6 +19476,31 @@ export type K1PackageOut = {
 export type K1PackageStatus = 'not_prepared' | 'draft' | 'released' | 'viewed' | 'downloaded' | 'bounced' | 'superseded';
 
 /**
+ * K1RelatedReturnOut
+ *
+ * T-02-T25: a return of the recipient's own client for the year, a share target. Offered
+ * only to a reader of both returns (DEC-88).
+ */
+export type K1RelatedReturnOut = {
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Form
+     */
+    form: string;
+    /**
+     * Return Id
+     */
+    return_id: string;
+    /**
+     * Status
+     */
+    status: string;
+};
+
+/**
  * K1ReleaseCheckOut
  *
  * Release eligibility: failing checks as codes, never prose.
@@ -19381,6 +19510,10 @@ export type K1ReleaseCheckOut = {
      * Eligible
      */
     eligible: boolean;
+    /**
+     * Email Template Version Id
+     */
+    email_template_version_id?: string | null;
     /**
      * Failing
      */

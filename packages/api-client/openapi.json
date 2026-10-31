@@ -40791,6 +40791,40 @@
         "title": "K1DependencyOut",
         "type": "object"
       },
+      "K1DetailsChangeTagOut": {
+        "description": "T-02-T25 (DV-10): a pending recipient-details change, the row's second line.",
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "w9",
+              "w8",
+              "address"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "submitted_at": {
+            "cls": "confidential",
+            "format": "date-time",
+            "title": "Submitted At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "submitted_at"
+        ],
+        "title": "K1DetailsChangeTagOut",
+        "type": "object"
+      },
       "K1DocumentOut": {
         "properties": {
           "evidence_version_id": {
@@ -40844,6 +40878,79 @@
         "title": "K1DocumentOut",
         "type": "object"
       },
+      "K1HandoffOut": {
+        "description": "T-02-T25: a draft shared to another return's intake (TXP-12's Internal handoff column).\nThe target is named only to a reader of it (DEC-88); otherwise \"Another return\", no id.",
+        "properties": {
+          "replaced_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Replaced At"
+          },
+          "shared_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Shared At",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "draft_shared",
+              "final_replaced"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "target_form": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Target Form"
+          },
+          "target_name": {
+            "cls": "confidential",
+            "title": "Target Name",
+            "type": "string"
+          },
+          "target_return_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Target Return Id"
+          }
+        },
+        "required": [
+          "target_return_id",
+          "target_name",
+          "target_form",
+          "status",
+          "shared_at",
+          "replaced_at"
+        ],
+        "title": "K1HandoffOut",
+        "type": "object"
+      },
       "K1HandoffStatus": {
         "enum": [
           "awaiting",
@@ -40851,6 +40958,34 @@
         ],
         "title": "K1HandoffStatus",
         "type": "string"
+      },
+      "K1MaskedTinOut": {
+        "description": "A recipient's taxpayer ID, kind and last four only; the detail's, never a list row's\n(ADR-031).",
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "ssn",
+              "ein",
+              "itin"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "last4": {
+            "cls": "restricted",
+            "pattern": "^[0-9]{4}$",
+            "title": "Last4",
+            "type": "string",
+            "x-pii-kind": "tin"
+          }
+        },
+        "required": [
+          "kind",
+          "last4"
+        ],
+        "title": "K1MaskedTinOut",
+        "type": "object"
       },
       "K1PackageDetailOut": {
         "properties": {
@@ -40874,6 +41009,17 @@
           "package": {
             "$ref": "#/components/schemas/K1PackageOut",
             "cls": "confidential"
+          },
+          "tin": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/K1MaskedTinOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted"
           }
         },
         "required": [
@@ -40895,6 +41041,29 @@
             "title": "Allowed Actions",
             "type": "array"
           },
+          "delivery_contact_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Delivery Contact Name"
+          },
+          "details_change": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/K1DetailsChangeTagOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
+          },
           "documents": {
             "cls": "internal",
             "default": [],
@@ -40914,6 +41083,15 @@
             "title": "Form",
             "type": "string"
           },
+          "handoffs": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/K1HandoffOut"
+            },
+            "title": "Handoffs",
+            "type": "array"
+          },
           "id": {
             "cls": "internal",
             "format": "uuid",
@@ -40929,6 +41107,56 @@
             ],
             "title": "K3 Status",
             "type": "string"
+          },
+          "locality": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Locality"
+          },
+          "ownership_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Ownership Note"
+          },
+          "period_end": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Period End"
+          },
+          "period_start": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Period Start"
           },
           "recipient_id": {
             "cls": "internal",
@@ -40951,6 +41179,15 @@
             "cls": "confidential",
             "title": "Recipient Name",
             "type": "string"
+          },
+          "related_returns": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/K1RelatedReturnOut"
+            },
+            "title": "Related Returns",
+            "type": "array"
           },
           "released_at": {
             "anyOf": [
@@ -40976,6 +41213,19 @@
           "status": {
             "$ref": "#/components/schemas/K1PackageStatus",
             "cls": "internal"
+          },
+          "supersedes_package_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Supersedes Package Id"
           },
           "tax_year": {
             "cls": "internal",
@@ -41018,6 +41268,40 @@
         "title": "K1PackageStatus",
         "type": "string"
       },
+      "K1RelatedReturnOut": {
+        "description": "T-02-T25: a return of the recipient's own client for the year, a share target. Offered\nonly to a reader of both returns (DEC-88).",
+        "properties": {
+          "client_name": {
+            "cls": "confidential",
+            "title": "Client Name",
+            "type": "string"
+          },
+          "form": {
+            "cls": "internal",
+            "title": "Form",
+            "type": "string"
+          },
+          "return_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Return Id",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "return_id",
+          "client_name",
+          "form",
+          "status"
+        ],
+        "title": "K1RelatedReturnOut",
+        "type": "object"
+      },
       "K1ReleaseCheckOut": {
         "description": "Release eligibility: failing checks as codes, never prose.",
         "properties": {
@@ -41025,6 +41309,19 @@
             "cls": "internal",
             "title": "Eligible",
             "type": "boolean"
+          },
+          "email_template_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Email Template Version Id"
           },
           "failing": {
             "cls": "internal",
