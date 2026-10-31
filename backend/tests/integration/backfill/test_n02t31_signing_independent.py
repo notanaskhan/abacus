@@ -213,8 +213,9 @@ async def test_ac_a_session_is_one_time_and_expires(net: Net, fake: FakeEsign) -
     await net.seed.run_untriggered_many(
         [
             (
-                "UPDATE signing_sessions SET expires_at = now() - interval '1 second' "
-                "WHERE id = $1",
+                # Issued ten minutes ago and lapsed five later (the CHECK keeps the window).
+                "UPDATE signing_sessions SET issued_at = now() - interval '10 minutes', "
+                "expires_at = now() - interval '5 minutes' WHERE id = $1",
                 (uuid.UUID(str(third["session_id"])),),
             )
         ]
