@@ -29,7 +29,7 @@ from datetime import date, datetime, timedelta
 from typing import Final
 from uuid import UUID
 
-from sqlalchemy import Insert, func, insert, or_, select, update
+from sqlalchemy import Insert, func, insert, or_, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.db import TenantContext, tenant_session
@@ -124,6 +124,10 @@ class VersionState:
     row_version: int
     checklist: list[ChecklistItem]
     checklist_hash: str
+    # K-01-T18 (KNW-02 d): the QM reference and the mapped set's code and label.
+    quality_management_ref: str | None = None
+    standards_set_code: str | None = None
+    standards_set_label: str | None = None
 
 
 async def checklist_of(session: AsyncSession, version_id: UUID) -> list[ChecklistItem]:
@@ -202,7 +206,24 @@ async def _view(session: AsyncSession, version_id: UUID) -> VersionState:
         row_version=state.row_version,
         checklist=items,
         checklist_hash=hash_of(items),
+        quality_management_ref=state.quality_management_ref,
+        **await _standards_set(session, state.standards_set_id),
     )
+
+
+async def _standards_set(session: AsyncSession, set_id: UUID | None) -> dict[str, str | None]:
+    """The mapped set's code and label (0580's reader: platform rows, by id)."""
+    if set_id is None:
+        return {"standards_set_code": None, "standards_set_label": None}
+    found = (
+        await session.execute(
+            text("SELECT code, label FROM standards_set_named(:id)"), {"id": set_id}
+        )
+    ).one_or_none()
+    return {
+        "standards_set_code": None if found is None else str(found[0]),
+        "standards_set_label": None if found is None else str(found[1]),
+    }
 
 
 async def view_in(session: AsyncSession, version_id: UUID) -> VersionState:

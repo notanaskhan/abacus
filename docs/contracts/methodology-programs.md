@@ -47,7 +47,7 @@ Matrix (`permission-matrix/methodology.yaml`, moved from `engagements.yaml`): `m
 
 ## 3. Models
 `backend/src/abacus/modules/methodology/contract.py`; every field internal.
-- **`VersionStateOut`**: `version_id`, `template_id`, `label`, `status`, `effective_from`, `effective_to`, `approved_by_user_id`, `approved_by_name`, `approved_at`, `approval_basis` (`approved`, `legacy_import`), `standards_set_id`, `engagement_types[]`, `default_for_new_engagements`, `drafted_from_version_id`, `row_version`, `allowed_actions[]`.
+- **`VersionStateOut`**: `version_id`, `template_id`, `label`, `status`, `effective_from`, `effective_to`, `approved_by_user_id`, `approved_by_name`, `approved_at`, `approval_basis` (`approved`, `legacy_import`), `standards_set_id`, `engagement_types[]`, `default_for_new_engagements`, `drafted_from_version_id`, `row_version`, `allowed_actions[]`; additive since K-01-T18: `quality_management_ref`, `standards_set_code`, `standards_set_label` (read through 0580's SECURITY DEFINER `standards_set_named`).
 - **`ProgramOut`**: `id`, `version`, `code` ("BH-EBP-110"), `name`, `position`, `step_count`, `mandatory_count`, `flags_open`, `counts_by_level`.
 - **`StepOut`**: `id`, `step_key`, `anchor`, `number`, `text`, `assertions[]`, `standard_refs[]`, `level` (`foundation`, `planning`, `testing`, `completion`), `mandatory`, `lock_note`, `guidance[]` (sanitised blocks: paragraph or ordered list with strong ranges; never HTML), `prepopulates[]`, `depends_on_step_keys[]`, `pbc_positions[]`, `origin`, `parse_flag`, `flag_resolution`, `rules_count`, `row_version`, `allowed_actions[]`.
 - **`StepResolveOut`**: `version_id`, `program_id`, `program_code`, `step_id`, `number`, `anchor`.

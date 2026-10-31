@@ -37283,13 +37283,25 @@ export type VersionStateOut = {
      */
     label: string;
     /**
+     * Quality Management Ref
+     */
+    quality_management_ref?: string | null;
+    /**
      * Row Version
      */
     row_version: number;
     /**
+     * Standards Set Code
+     */
+    standards_set_code?: string | null;
+    /**
      * Standards Set Id
      */
     standards_set_id: string | null;
+    /**
+     * Standards Set Label
+     */
+    standards_set_label?: string | null;
     status: MethodologyVersionStatus;
     /**
      * Template Id

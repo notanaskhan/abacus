@@ -13,8 +13,9 @@ Four `methodology` tables, every one tenant-scoped with forced RLS:
 - `program_step_sources` (insert-only): where a step came from: the file, the page range, the
   region and the quote, with the code verification's result.
 
-`methodology_version_events.kind` gains `import_started` and `flag_resolved`, and 0224's
-`methodology_content_frozen()` lets a version in review take one update: a person resolving a
+`standards_set_named(id)` (SECURITY DEFINER) lets the app read one platform standards set's code
+and label by id, for KNW-02 d. `methodology_version_events.kind` gains `import_started` and
+`flag_resolved`, and 0224's `methodology_content_frozen()` lets a version in review take one update: a person resolving a
 step's open parse flag (its resolution columns, and the text for an edit; nothing else).
 
 Revision ID: 0580
@@ -160,9 +161,22 @@ _TABLES = (
 )
 
 
+_STANDARDS_SET = """
+    CREATE FUNCTION standards_set_named(p_id uuid)
+    RETURNS TABLE (id uuid, code text, label text, family text)
+    LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
+        SELECT s.id, s.code, s.label, s.family FROM public.standards_sets s WHERE s.id = p_id
+    $$
+"""
+
+
 def upgrade() -> None:
     _kinds(f"{_KINDS}, {_IMPORT_KINDS}")
     op.execute(_FROZEN)
+    # KNW-02 d names the mapped set: platform reference rows, readable one by id (no tenant data).
+    op.execute(_STANDARDS_SET)
+    op.execute("REVOKE ALL ON FUNCTION standards_set_named(uuid) FROM PUBLIC")
+    op.execute("GRANT EXECUTE ON FUNCTION standards_set_named(uuid) TO abacus_app")
     op.execute(
         """
         CREATE TABLE methodology_imports (
@@ -277,6 +291,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    op.execute("DROP FUNCTION standards_set_named(uuid)")
     op.execute(_FROZEN_0224)
     _kinds(_KINDS)
     for table in _TABLES:

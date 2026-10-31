@@ -78293,10 +78293,34 @@
             "title": "Label",
             "type": "string"
           },
+          "quality_management_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Quality Management Ref"
+          },
           "row_version": {
             "cls": "internal",
             "title": "Row Version",
             "type": "integer"
+          },
+          "standards_set_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Standards Set Code"
           },
           "standards_set_id": {
             "anyOf": [
@@ -78310,6 +78334,18 @@
             ],
             "cls": "internal",
             "title": "Standards Set Id"
+          },
+          "standards_set_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Standards Set Label"
           },
           "status": {
             "$ref": "#/components/schemas/MethodologyVersionStatus",
