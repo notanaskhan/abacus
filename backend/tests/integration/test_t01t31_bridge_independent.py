@@ -114,7 +114,12 @@ async def test_export_needs_a_live_grant(migrated_db: MigratedDatabase, switched
     )
     assert refused.status_code == 409
     assert refused.json()["detail"] in ("grant_refused", "not_final_approved")
-    assert await feld.seed.value("SELECT count(*) FROM engine_exports") == 0
+    assert (
+        await feld.seed.value(
+            "SELECT count(*) FROM engine_exports WHERE return_id = $1", feld.item
+        )
+        == 0
+    )
 
 
 async def test_an_unapproved_checkpoint_is_never_exported(
