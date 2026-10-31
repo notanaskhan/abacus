@@ -3507,6 +3507,124 @@ export const STATUS_REGISTRY = {
       "terminal": true,
       "derived": false
     }
+  },
+  "sample_set_version": {
+    "drawing": {
+      "label": "Drawing",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "spinner"
+    },
+    "draft": {
+      "label": "Draft",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "approved": {
+      "label": "Approved",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "soon",
+      "terminal": true,
+      "derived": false
+    },
+    "failed": {
+      "label": "Failed",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "completeness_tie_result": {
+    "tie": {
+      "label": "tie",
+      "variant": "green",
+      "terminal": false,
+      "derived": false
+    },
+    "off": {
+      "label": "off {amount}",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "check": {
+      "label": "Check",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "mapping_set": {
+    "in_progress": {
+      "label": "In progress",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "half"
+    },
+    "prepared": {
+      "label": "Prepared",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "rail": "Prepared · {initials}"
+      }
+    },
+    "reviewed": {
+      "label": "Reviewed",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "rail": "Reviewed · {initials}"
+      }
+    },
+    "changed_after_sign_off": {
+      "label": "Changed after sign-off",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "account_mapping_state": {
+    "unmapped": {
+      "label": "Needs review",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "rule": {
+      "label": "Rule",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "edited": {
+      "label": "Edited",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "suggested": {
+      "label": "Suggested",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "adopted": {
+      "label": "Adopted",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    }
   }
 } as const;
 

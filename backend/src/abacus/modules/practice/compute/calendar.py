@@ -28,6 +28,11 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Final, Literal
 
+# A-03-T21: the business-day arithmetic lives in the kernel; re-exported for K-02's callers.
+from abacus.kernel.calendar import add_business_days as add_business_days
+from abacus.kernel.calendar import is_business_day as is_business_day
+from abacus.kernel.calendar import roll as roll
+
 ClockKind = Literal[
     "au_c_230_assembly", "au_c_265_communication", "ftc_notice", "form_8879_retention"
 ]
@@ -39,8 +44,6 @@ CLOCK_DAYS: Final[Mapping[ClockKind, int]] = {
     "ftc_notice": 30,
 }
 FORM_8879_RETENTION_YEARS: Final = 3
-
-_SATURDAY: Final = 5
 
 
 @dataclass(frozen=True)
@@ -100,29 +103,6 @@ def add_months(start: date, months: int, day: int) -> date:
     index = start.month - 1 + months
     year, month = start.year + index // 12, index % 12 + 1
     return date(year, month, min(day, calendar.monthrange(year, month)[1]))
-
-
-def is_business_day(day: date, holidays: frozenset[date]) -> bool:
-    return day.weekday() < _SATURDAY and day not in holidays
-
-
-def roll(day: date, holidays: frozenset[date]) -> tuple[date, bool]:
-    """IRC §7503: the next business day on or after `day`, and whether it moved."""
-    moved = day
-    while not is_business_day(moved, holidays):
-        moved += timedelta(days=1)
-    return moved, moved != day
-
-
-def add_business_days(start: date, n: int, holidays: frozenset[date]) -> date:
-    """`start` plus `n` business days (`n` ≥ 0); 0 is `start` rolled forward."""
-    if n < 0:
-        raise ValueError("n must not be negative")
-    day, _ = roll(start, holidays)
-    for _ in range(n):
-        day += timedelta(days=1)
-        day, _ = roll(day, holidays)
-    return day
 
 
 def pick_rule(rules: Iterable[Rule], form: str, period_end: date) -> Rule | None:

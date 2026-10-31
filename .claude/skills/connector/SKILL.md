@@ -25,3 +25,27 @@ The fake connector reads `fake_connector_dir`; `make seed` connects engagements 
 
 ## Tests (ADR-044)
 Golden normalisation tests, property tests (balances), recordings from synthetic data only, conformance suite, nightly sandbox contract test.
+
+## Adding a second live ledger (A-02-T38; the QuickBooks Online read is the worked example)
+1. **Connector** (`modules/connections/connectors/<provider>.py`, like `quickbooks_online.py`): the
+   ADR-037 contract above, a format parser beside `qbo_format.py`, the provider code in
+   `CONNECTORS`; grant failures map to the reauth reasons (`token_expired`, `invalid_grant`) so the
+   daily health pass (`connections/health.py`) shows **Needs reauth** and refuses retries.
+2. **Registry** (`docs/architecture/write-capabilities.yaml`, protected): a `read_connectors`
+   entry with its `adapter_key`, `category: ledger`, every `egress_hosts` host (sign-in, OAuth,
+   API), its `read_scopes` and the OAuth `read_posts`; `kernel.egress` refuses anything else.
+   Regenerate `_capabilities.py` (`make generate`); the drift test holds both together.
+3. **Adapter metadata** (`modules/integrations/<provider>_adapter.py`, like `qbo_adapter.py`):
+   key, category, connection provider, read scopes and hosts matching the registry entry;
+   registered only when the environment holds the app registration (catalogue honesty: a row
+   reads Available only where a client can really connect).
+4. **Catalogue row** (content, never code): add it to the reviewed catalogue document and load it
+   with `abacus_tools.integration_catalog` (the ops role); consent copy is read-only (DF-19: no
+   "post" copy or scope before P-16).
+5. **Switches:** the firm's `connections.live_ledger` gates start, complete and pulls (a running
+   pull ends `connector_paused`); `connections.portal_v2` gates POR-16 and reconnect requests.
+6. **Tests:** the conformance suite; `write_interception.intercept()` around every read with
+   `assert_read_only()`; recorded responses from the provider's sandbox with synthetic companies
+   only; the kill-switch test pattern (`test_a02t33_kill_switch.py`).
+7. **Runbooks:** RB-04 (provider outage) and RB-05 (expiring-connections wave) name the provider's
+   status page and its token lifetime.

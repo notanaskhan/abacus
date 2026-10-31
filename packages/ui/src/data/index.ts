@@ -53,3 +53,6 @@ export {
   type VarianceCellProps,
   varianceState,
 } from "./variance";
+
+// F-06-T19: the calc tree beside the source-workbook grid (T6e).
+export { CalcTree, type CalcTreeProps, type CalcTreeStep } from "./CalcTree";

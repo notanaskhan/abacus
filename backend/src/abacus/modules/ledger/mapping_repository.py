@@ -186,3 +186,40 @@ async def newest_edits(session: AsyncSession, mapping_set_id: UUID) -> Sequence[
 async def insert_edits(session: AsyncSession, rows: list[dict[str, object]]) -> None:
     if rows:
         await session.execute(insert(MappingSetEdit), rows)
+
+
+async def discard_drafts(session: AsyncSession, set_id: UUID) -> int:
+    """A-03-T06: a re-import discards the set's earlier draft (one live draft per set, 0521)."""
+    discarded = await session.scalars(
+        update(GroupingSetVersion)
+        .where(GroupingSetVersion.grouping_set_id == set_id, GroupingSetVersion.status == "draft")
+        .values(status="discarded")
+        .returning(GroupingSetVersion.id)
+    )
+    return len(discarded.all())
+
+
+async def version_by_number(session: AsyncSession, set_id: UUID, version_no: int) -> UUID | None:
+    return await session.scalar(
+        select(GroupingSetVersion.id).where(
+            GroupingSetVersion.grouping_set_id == set_id, GroupingSetVersion.version == version_no
+        )
+    )
+
+
+async def recent_fs_lines(
+    session: AsyncSession, version_id: UUID, user_id: UUID, limit: int
+) -> list[UUID]:
+    """The person's own newest edits onto this version's FS lines, distinct, newest first
+    (LIST_EXEMPT: the person's own choices of firm content; bounded by `limit`)."""
+    rows = (
+        await session.execute(
+            select(MappingSetEdit.fs_line_id, func.max(MappingSetEdit.created_at).label("at"))
+            .join(FsLine, FsLine.id == MappingSetEdit.fs_line_id)
+            .where(MappingSetEdit.edited_by == user_id, FsLine.version_id == version_id)
+            .group_by(MappingSetEdit.fs_line_id)
+            .order_by(func.max(MappingSetEdit.created_at).desc())
+            .limit(limit)
+        )
+    ).all()
+    return [line for line, _ in rows if line is not None]

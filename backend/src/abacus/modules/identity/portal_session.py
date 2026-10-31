@@ -546,7 +546,12 @@ async def portal_context(token: str, host: str | None) -> AuthContext | None:
         and await mfa_required(tenant_id, user_id)
     ):
         return None  # the floor now covers the person and this session never met it
-    return portal_member_context(user_id, found[0], cast(UUID, row.session_id))
+    return portal_member_context(
+        user_id,
+        found[0],
+        cast(UUID, row.session_id),
+        second_step=row.mfa_at is not None or row.device_trusted_at is not None,
+    )
 
 
 @dataclass(frozen=True)

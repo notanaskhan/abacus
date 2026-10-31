@@ -181,6 +181,7 @@ class GroupingSetVersion(Base):
     published_by: Mapped[UUID | None]
     published_at: Mapped[datetime | None]
     published_actor_kind: Mapped[str | None]
+    effective_from: Mapped[date | None]  # A-03-T06 (0521)
 
 
 class Grouping(Base):

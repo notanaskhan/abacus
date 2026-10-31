@@ -28,7 +28,11 @@ export {
   type SignOffLevel,
   type SignOffTarget,
   levelOf,
+  useBulkEligibility,
+  useBulkSignOffWrite,
   useSignOffEligibility,
   useSignOffLadder,
   useSignOffWrite,
 } from "./signoffs";
+
+export { type DecisionWrites, useDecisionCard, useDecisionWrites } from "./decisions";

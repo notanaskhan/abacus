@@ -816,6 +816,10 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.ledger.mapping.GroupingSetInvalid
+  grouping_set_not_draft:
+    status: 409
+    raised_by:
+    - abacus.modules.ledger.mapping.VersionNotDraft
   grouping_set_published:
     status: 409
     raised_by:
@@ -887,6 +891,7 @@ codes:
   import_invalid:
     status: 422
     raised_by:
+    - abacus.modules.assurance.mapping.GroupingFileInvalid
     - abacus.modules.methodology.standards_import.ImportInvalid
     summary: The workbook has problems; nothing was drafted.
   import_kind_unavailable:
