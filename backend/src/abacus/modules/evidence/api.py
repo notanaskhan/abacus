@@ -189,6 +189,7 @@ from abacus.modules.evidence.records import (
     RecordClass,
     StoredRecord,
     anchor_chain,
+    extend_record,
     get_record,
     put_record,
 )
@@ -570,6 +571,7 @@ __all__ = [
     "export_manifest_json_schema",
     "export_requester",
     "export_section_csv",
+    "extend_record",
     "extend_retention_for",
     "file_intake_object",
     "file_retrieved_copy",

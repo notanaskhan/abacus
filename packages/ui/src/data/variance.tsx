@@ -1,4 +1,4 @@
-import type { JSX } from "react";
+import type { JSX, ReactNode } from "react";
 import { cn } from "../cn";
 import { Button } from "../components/button";
 import { Tooltip } from "../components/popover";
@@ -69,10 +69,13 @@ export interface VarianceCellProps {
   variance: VarianceValue;
   /** The column's number format. */
   format: AmountStyle;
+  /** The explanation slot (F-06-T19): the consumer's own rendering of the note (an agent's draft
+   * goes through AgentText there). Replaces the plain text in the O1 note popover. */
+  explanation?: ReactNode;
 }
 
 /** Δ, Δ% and the state's glyph and word; "Ties once posted" replaces them all when posted. */
-export function VarianceCell({ variance, format }: VarianceCellProps): JSX.Element {
+export function VarianceCell({ variance, format, explanation }: VarianceCellProps): JSX.Element {
   const state = varianceState(variance);
   if (state === "posted") {
     return (
@@ -102,7 +105,7 @@ export function VarianceCell({ variance, format }: VarianceCellProps): JSX.Eleme
   if (state !== "explained" || variance.explained === undefined) return body;
   return (
     <Tooltip
-      content={variance.explained.text}
+      content={explanation ?? variance.explained.text}
       {...(variance.explained.by === undefined ? {} : { detail: variance.explained.by })}
     >
       {/* The hover target for the note: the amber corner marks that there is one. */}

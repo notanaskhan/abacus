@@ -3,9 +3,11 @@
 Each runs as the system for one envelope (`envelope:<envelope>`), in its own unit of work with
 its audit event, and is safe to retry:
 
-- `envelope_send`: the provider creates and sends once (its idempotency key is the envelope's;
-  the call is recorded write-once in `envelope_provider_calls`), the recipients are mapped, the
-  expiry set from the policy when the person left it open; returns the reminder plan.
+- `envelope_send`: only for a send whose grant the outbox relay consumed for its sender
+  (N-02-T22), the provider creates and sends once (its idempotency key is the envelope's; the call
+  is recorded write-once in `envelope_provider_calls`) and the draft becomes Sent with the
+  provider's id; the recipients are mapped, the expiry set from the policy when the person left
+  it open; returns the reminder plan.
 - `envelope_poll`: the provider's signer states (the truth), each change recorded as an
   `envelope_events` row from `provider_poll`; the envelope's status follows (sent, viewed,
   partially signed, declined, completed) and never moves back.
@@ -44,8 +46,14 @@ from abacus.modules.evidence.api import (
     retain_until_for,
     screen_and_stage,
 )
-from abacus.modules.identity.api import firm_time_zone
-from abacus.modules.signatures.events import EnvelopeCompleted
+from abacus.modules.identity.api import consumed_grant_approver, firm_time_zone
+from abacus.modules.signatures.events import (
+    EnvelopeCompleted,
+    EnvelopeDeclined,
+    EnvelopeExpired,
+    EnvelopeSignerSigned,
+    EnvelopeSignerVerificationFailed,
+)
 from abacus.modules.signatures.hub import seal_ip
 from abacus.modules.signatures.imports import RECORD_TYPE, RetentionFloorMissing
 from abacus.modules.signatures.provider import (
@@ -62,6 +70,12 @@ from abacus.modules.signatures.workflows import EnvelopeInput, ReminderDue, Send
 OPEN: Final = ("sent", "viewed", "partially_signed")
 DEFAULT_EXPIRY_DAYS: Final = 30
 DEFAULT_CAP: Final = 3
+# C7 v1.1 (N-02-T25): the signer-level events the poll emits, by the signer's new status.
+_SIGNER_EVENTS: Final = {
+    "signed": EnvelopeSignerSigned,
+    "verification_failed": EnvelopeSignerVerificationFailed,
+}
+SEND_ACTION: Final = "envelope.send"  # the grant builder.send issues
 # How far each envelope status is along; the poll never moves an envelope back.
 _RANK: Final = {"sent": 0, "viewed": 1, "partially_signed": 2, "declined": 3, "completed": 3}
 
@@ -86,7 +100,7 @@ def mask_ip(ip: str) -> str:
 _ENVELOPE = text(
     "SELECT id, status, provider, provider_envelope_id, policy_family, purpose, "
     "reminder_cadence, expires_at, sent_at, client_id, engagement_id, work_item_id, title, "
-    "source_kind, source_id, completed_at FROM envelopes WHERE id = :id"
+    "source_kind, source_id, completed_at, sent_by FROM envelopes WHERE id = :id"
 )
 _POLICY = text(
     "SELECT max_reminders, default_expiry_days FROM envelope_policies "
@@ -133,11 +147,31 @@ async def envelope_send(given: EnvelopeInput) -> SendPlan:
         hashes = tuple(str(d) for d in docs)
     if env is None or env.provider == "record" or env.sent_at is None:
         return SendPlan("not_sent", "")
-    if env.status not in OPEN:
+    if env.status != "draft" and env.status not in OPEN:
         return SendPlan(str(env.status), "")
     cap, expiry_days = await _policy(tenant, env.policy_family, env.purpose)
     expires: datetime = env.expires_at or env.sent_at + timedelta(days=expiry_days)
     if env.provider_envelope_id is None:
+        # N-02-T22 (DEC-1284): the provider is written only for a send whose grant the single gate
+        # consumed for the person who sent it; a workflow started any other way writes nothing.
+        approver = await consumed_grant_approver(
+            tenant.tenant_id, Target("envelope", envelope_id), SEND_ACTION
+        )
+        if approver is None or approver != env.sent_by:
+            async with uow(tenant) as tx:
+                await tx.session.execute(
+                    _EVENT,
+                    {
+                        "tenant": tenant.tenant_id,
+                        "envelope": envelope_id,
+                        "signer": None,
+                        "kind": "envelope.send_refused",
+                        "source": "system",
+                        "at": system_now(),
+                    },
+                )
+                tx.record("envelope.send_refused", target=Target("envelope", envelope_id))
+            return SendPlan("not_sent", "")
         spec = EnvelopeSpec(
             envelope_id=given.envelope_id,
             idempotency_key=f"envelope:{given.envelope_id}",
@@ -188,6 +222,7 @@ async def envelope_send(given: EnvelopeInput) -> SendPlan:
             await tx.session.execute(
                 text(
                     "UPDATE envelopes SET provider_envelope_id = :pid, expires_at = :expires, "
+                    "status = CASE WHEN status = 'draft' THEN 'sent' ELSE status END, "
                     "version = version + 1, updated_at = :now "
                     "WHERE id = :id AND provider_envelope_id IS NULL"
                 ),
@@ -301,6 +336,17 @@ async def envelope_poll(given: EnvelopeInput) -> str:
                     "at": now,
                 },
             )
+            if code in _SIGNER_EVENTS:
+                tx.emit(
+                    _SIGNER_EVENTS[code](
+                        envelope_id=envelope_id,
+                        signer_id=signer_id,
+                        client_id=env.client_id,
+                        engagement_id=env.engagement_id,
+                        source_kind=env.source_kind or "envelope",
+                        source_id=env.source_id or envelope_id,
+                    )
+                )
         if status != env.status:
             await tx.session.execute(
                 text(
@@ -321,6 +367,15 @@ async def envelope_poll(given: EnvelopeInput) -> str:
                     "at": now,
                 },
             )
+            if status == "declined":  # N-02-T24: the sender is told
+                tx.emit(
+                    EnvelopeDeclined(
+                        envelope_id=envelope_id,
+                        client_id=env.client_id,
+                        engagement_id=env.engagement_id,
+                        sent_by=env.sent_by,
+                    )
+                )
         tx.record(
             "envelope.polled",
             target=Target("envelope", envelope_id),
@@ -418,6 +473,14 @@ async def envelope_expire(given: EnvelopeInput) -> str:
             },
         )
         tx.record("envelope.expired", target=Target("envelope", envelope_id))
+        tx.emit(
+            EnvelopeExpired(
+                envelope_id=envelope_id,
+                client_id=env.client_id,
+                engagement_id=env.engagement_id,
+                sent_by=env.sent_by,
+            )
+        )
     return "expired"
 
 
@@ -578,6 +641,7 @@ async def envelope_complete(given: EnvelopeInput) -> str:
                 source_kind=env.source_kind or "envelope",
                 source_id=env.source_id or envelope_id,
                 imported_by=None,
+                sent_by=env.sent_by,
             )
         )
     return "recorded"

@@ -71,6 +71,46 @@ describe("E7 gate kit", () => {
     expect(onApprove).toHaveBeenCalledOnce();
   });
 
+  it("P-04-T49: every slot and Sign off… only open SHL-12; nothing signs here", () => {
+    const opened: string[] = [];
+    render(
+      <SignOffSlots
+        slots={[
+          { level: "L1", role: "Preparer", signer: "Marcus Delaney", at: "Sep 14, 9:26 AM" },
+          { level: "L2", role: "Reviewer", signer: null, at: null },
+        ]}
+        next="L2"
+        actor={HANNAH}
+        onOpenSignOff={(level) => opened.push(level)}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Preparer L1" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Sign off L2…/u }));
+    expect(opened).toEqual(["L1", "L2"]);
+  });
+
+  it("P-04-T49: the dock variant of the decision card opens the sheet and cannot decide", () => {
+    let opened = 0;
+    render(
+      <DecisionCard
+        title="Which planning materiality should the Northwind PY2025 audit use?"
+        reservedNote="Reserved to Engagement Partner · Margaret Okonkwo"
+        options={[
+          { key: "1.0", label: "1.0% — $168,100" },
+          { key: "1.5", label: "1.5% — $252,200", recommended: true },
+        ]}
+        actor={HANNAH}
+        openDecision={{ label: "Open decision", onOpen: () => (opened += 1) }}
+      />,
+    );
+    expect(screen.queryByRole("button", { name: /^Decide/u })).toBeNull();
+    for (const radio of screen.getAllByRole<HTMLInputElement>("radio")) {
+      expect(radio.disabled || radio.getAttribute("aria-disabled") === "true").toBe(true);
+    }
+    fireEvent.click(screen.getByRole("button", { name: /^Open decision/u }));
+    expect(opened).toBe(1);
+  });
+
   it("holds Sign off while a check fails", () => {
     render(
       <SignOffSlots

@@ -58,6 +58,7 @@ def test_ac14_the_worker_hosts_connections_and_agents() -> None:
         "requests",  # P-06-T07: binders close on C1's terminal transitions
         "review",  # P-04-T16: the human-gate projector (C13)
         "signatures",  # N-02-T18: an approved envelope is sent after commit
+        "tax",  # T-01: consents signed on envelope completion, the return board's projections
     )
     assert tuple(m.SUBSCRIPTIONS for m in worker_main.MODULES) == worker_main.SUBSCRIBERS
     # SPEC-022 (TASK-038): automatic retrieval when a client connects or an item is classified.
@@ -140,6 +141,10 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "inbox_attachment.received",
         "portal_intake.withdrawn",
         "envelope.send_approved",
+        "inbox_attachment.matchable",  # N-01-T22: the matcher's intake mode may propose
+        "sign_off.recorded",  # T-01: the return overview follows sign-offs
+        "binder.published",  # T-01: the return overview follows its binder
+        "mapping_set.went_stale",  # A-03: a stale mapping set is re-checked
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert (

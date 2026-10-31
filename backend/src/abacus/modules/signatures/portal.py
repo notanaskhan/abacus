@@ -71,6 +71,7 @@ from abacus.modules.identity.api import (
 )
 from abacus.modules.signatures import status_poll
 from abacus.modules.signatures.activities import envelope_poll
+from abacus.modules.signatures.events import EnvelopeDeclined
 from abacus.modules.signatures.hub import seal_ip
 from abacus.modules.signatures.imports import RECORD_TYPE
 from abacus.modules.signatures.provider import ProviderUnavailable, provider_for
@@ -321,9 +322,8 @@ async def list_mine(ctx: AuthContext, *, tab: str, cursor: str | None, limit: in
             .mappings()
             .all()
         )
-    found = [_mine(r) for r in fetched]
-    more = len(found) > limit
-    found = found[:limit]
+    more = len(fetched) > limit
+    found = [_mine(r) for r in fetched[:limit]]
     rows: list[ListRow] = []
     for m in found:
         try:
@@ -795,6 +795,10 @@ async def decline(ctx: AuthContext, envelope_id: UUID, reason: str, note: str | 
     if mine.status not in OPEN or mine.signer_status in ("signed", "declined"):
         raise EnvelopeNotOpen(facts={"status": mine.status})
     now = system_now()
+    async with tenant_session(ctx.tenant) as session:
+        sent_by = await session.scalar(
+            text("SELECT sent_by FROM envelopes WHERE id = :id"), {"id": mine.envelope_id}
+        )
     async with uow(ctx.tenant) as tx:
         await tx.session.execute(
             text(
@@ -829,6 +833,14 @@ async def decline(ctx: AuthContext, envelope_id: UUID, reason: str, note: str | 
                 },
             )
         tx.record("envelope.declined", target=Target("envelope", mine.envelope_id))
+        tx.emit(  # N-02-T24: the sender is told, as for a decline the poll reads
+            EnvelopeDeclined(
+                envelope_id=mine.envelope_id,
+                client_id=mine.client_id,
+                engagement_id=mine.engagement_id,
+                sent_by=sent_by,
+            )
+        )
     if mine.provider_envelope_id is not None:
         # the workflow sees Declined and ends
         await status_poll.hint_envelope(ctx.tenant_id, mine.envelope_id)

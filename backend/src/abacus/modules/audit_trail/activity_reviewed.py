@@ -500,6 +500,9 @@ REVIEWED_FALLBACK: Final = frozenset(
         "signer.signing_session_returned",  # N-02-T23
         "signer.signing_session_confirmed",  # N-02-T23
         "signed_copy.downloaded",  # N-02-T23
+        "envelope.superseded",  # N-02-T25: C7 v1.1, the system's amount-change marker (S17)
+        "envelope.retention_extended",  # N-02-T25: forward only
+        "envelope.send_refused",  # N-02-T22: no consumed grant, nothing sent (S17)
         "evidence.downloaded",  # N-02-T13: the evidence zip (S15)
         "inbound_message.downloaded",  # N-01-T12 to T18 (S15)
         "inbox_attachment.downloaded",  # N-01-T12 to T18 (S15)
