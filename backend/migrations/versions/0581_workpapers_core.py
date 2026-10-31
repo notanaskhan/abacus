@@ -129,7 +129,8 @@ def upgrade() -> None:
             ADD COLUMN row_key text NULL CHECK (row_key ~ '^[A-Za-z0-9_]{1,40}$'),
             ADD COLUMN col_key text NULL CHECK (col_key ~ '^[A-Za-z0-9_]{1,40}$'),
             ADD COLUMN value jsonb NULL CHECK (value IS NULL OR (jsonb_typeof(value) = 'object'
-                AND value ? 't' AND value->>'t' IN ('decimal', 'text', 'date', 'bool'))),
+                AND value ? 't'
+                AND value->>'t' IN ('decimal', 'text', 'date', 'bool', 'percent', 'empty'))),
             ADD COLUMN value_state text NOT NULL DEFAULT 'human'
                 CHECK (value_state IN ('empty', 'suggested', 'adopted', 'edited', 'human')),
             ADD COLUMN suggestion_id uuid NULL,
