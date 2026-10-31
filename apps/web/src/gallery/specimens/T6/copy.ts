@@ -15,6 +15,9 @@ export const COPY = {
   explain: "Explain…",
   tiesOncePosted: "Ties once posted",
   changedAfterSignOff: "Changed after sign-off",
+  // F-06-T20: the sign-off chips' group name and each chip's accessible name.
+  signOffs: "Sign-offs",
+  openSignOff: (name: string, level: string): string => `${name}, ${level}: open sign-off`,
   pending: "Pending",
   tally: {
     beginning: "Beginning capital",
