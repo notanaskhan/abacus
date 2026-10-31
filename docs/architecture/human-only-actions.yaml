@@ -136,7 +136,7 @@ actions:
   - action: efile_ack.recorded
     verb: confirm  # a person enters an acknowledgement with its evidence (T-01-T37, 0525)
   - action: return.delivered
-    verb: release  # client service releases the filed client copy to the portal (T-01-T41, 0526)
+    verb: release  # client service releases the filed client copy to the portal (T-01-T41, 0569)
   - action: engine_export.generated
     verb: release  # the workbook leaves for the engine after final approval (T-01-T25, 0561)
   - action: engine_export.marked_exported

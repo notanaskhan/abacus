@@ -129,6 +129,8 @@ import {
   type Home02State,
   STATES as HOME02_STATES,
   scenarios as home02Scenarios,
+  selectedGate as home02Gate,
+  summaryOf as home02Summary,
 } from "./HOME-02/scenarios";
 import { ProgramEditorPage } from "./KNW-03";
 import {
@@ -1467,7 +1469,13 @@ function Home02Frame({ state }: { state: Home02State }): JSX.Element {
   });
   return (
     <div data-artboard={state}>
-      <HOME02 toolbar={bar.toolbar} height={860} initialDone={state === "show_done"} />
+      <HOME02
+        toolbar={bar.toolbar}
+        height={860}
+        initialDone={state === "show_done"}
+        gate={home02Gate(state)}
+        summaryOf={home02Summary}
+      />
     </div>
   );
 }
