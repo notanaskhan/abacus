@@ -584,5 +584,6 @@ REVIEWED_FALLBACK: Final = frozenset(
         "recipient_details_change.submitted",
         "schedule_k_package.bounced",
         "schedule_k_package.e_furnishing_consent_recorded",
+        "letter.envelope_withdrawn",  # N-02-T35: a person lets an unsigned envelope go
     }
 )

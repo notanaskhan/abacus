@@ -357,6 +357,13 @@ codes:
     raised_by:
     - abacus.modules.organisations.consents.ConsentDeclined
     summary: 'The taxpayer declined this purpose for these years: no re-solicitation (Story 1.4).'
+  consent_in_letter:
+    status: 422
+    raised_by:
+    - abacus.modules.engagements.letters.ConsentInLetter
+    summary: '§7216 consents are their own documents, never a clause of the letter (Rev. Proc. 2013-14
+      §5.05; AC-15; N-02-T35): wording that consents to the use or disclosure of tax return information
+      is refused in a section or a variable (`facts.part`, never the text).'
   consent_open:
     status: 409
     raised_by:
@@ -1236,6 +1243,11 @@ codes:
     raised_by:
     - abacus.modules.engagements.letter_flow.LetterNotSendable
     summary: Only a partner-approved letter is sent (N-02 §3.11).
+  letter_not_withdrawable:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.letter_flow.LetterNotWithdrawable
+    summary: Only an approved or sent letter whose envelope was declined, expired or voided.
   letter_refused:
     status: 409
     raised_by:
