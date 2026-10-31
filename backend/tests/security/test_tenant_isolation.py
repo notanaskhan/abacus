@@ -94,6 +94,7 @@ TABLES: tuple[str, ...] = (
     "delivery_packets",
     "document_classifications",
     "duplicate_resolutions",
+    "efile_amount_bindings",
     "email_suppressions",
     "email_template_drafts",
     "engagement_accounts",

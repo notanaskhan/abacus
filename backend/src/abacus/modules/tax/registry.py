@@ -19,6 +19,7 @@ TABLES: frozenset[str] = frozenset(
     | {"k1_recipients", "k1_packages", "k1_package_events", "k1_documents", "k1_box_lines"}
     | {"k1_handoffs", "recipient_details_changes"}
     | {"delivery_packets"}  # T-01-T35 (0523, DEC-1565)
+    | {"efile_amount_bindings"}  # T-01-T36 (0524, DEC-1566)
 )
 # T-02-T07 (0403): `tax_returns` takes updates of its v1 columns now, so it is no longer
 # insert-only; its events and engine summaries are.
@@ -101,7 +102,13 @@ INSERT_COLUMNS["engine_acks"] = frozenset(
 INSERT_COLUMNS["delivery_packets"] = frozenset(
     {"id", "tenant_id", "return_id", "version", "items", "letter_document_id", "prepared_by"}
 )
+INSERT_COLUMNS["efile_amount_bindings"] = frozenset(
+    {"id", "tenant_id", "return_id", "envelope_id", "checkpoint_id", "figures", "figures_sha256"}
+    | {"tolerances_ref"}
+)
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
+    # T-01-T36 (0524): superseded once, never cleared (the system relocks, never unlocks).
+    "efile_amount_bindings": frozenset({"superseded_at", "superseded_reason"}),
     # T-01-T35 (0523): a draft's items and letter; status forward (a guard trigger), the approver.
     "delivery_packets": frozenset(
         {"items", "letter_document_id", "status", "approved_by", "approved_at", "row_version"}
