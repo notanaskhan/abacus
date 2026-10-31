@@ -50,7 +50,15 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.tax_board import NAMED
 from abacus_tools.synthetic.scenarios.brightwater_hale.timeline import Event
 
 SLICE: Final = "tax_content"
-NEEDS: Final = ("binders", "tax_board", "people", "standards", "email_templates", "portal")
+NEEDS: Final = (
+    "binders",
+    "tax_board",
+    "people",
+    "standards",
+    "email_templates",
+    "portal",
+    "acceptance",  # Dana Kowalski's contact on Northwind, whom the inquiries address
+)
 FLAGS: Final = ("tax.k1_release", "questionnaires.v1")
 SINK: Final = "example.test"
 
