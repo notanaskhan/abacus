@@ -20,7 +20,7 @@ update: a person resolving a step's open parse flag (its resolution columns, and
 edit; nothing else).
 
 Revision ID: 0580
-Revises: 0524
+Revises: 0568
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_only, tenant_table
 
 revision = "0580"
-down_revision = "0524"
+down_revision = "0568"
 branch_labels = None
 depends_on = None
 

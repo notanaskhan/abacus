@@ -44,6 +44,10 @@ viewer's page endpoint (T20); KNW-02 UI (T19); independent ADR-078 suite (T24).
   check on uploads. All fixed (DEC-1759); generated security tests regenerated; `test_app_gates`
   lists the import routes. **Made twice:** a PL/pgSQL trigger shared by several tables reading a
   column only one has; candidate lint: a `TG_TABLE_NAME` test must guard field reads in its own IF.
+- `2026-10-31` — batch merge: 0580 re-chained onto main's 0568; the migration down/up tests found
+  `standards_set_named` missing from the schema check's reviewed SECURITY DEFINER list (added; the
+  end review's targeted set had not included the migration suites — lesson: run every
+  `test_*migration*` suite on a branch that adds a migration).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
