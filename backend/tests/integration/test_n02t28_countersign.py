@@ -100,7 +100,7 @@ async def test_ac1_only_the_named_firm_signer_gets_the_countersign_session(
         await countersign.countersign_session(daniel, envelope)
     await seed.run(
         "UPDATE envelope_signers SET status = 'signed', signed_at = clock_timestamp(), "
-        "signature_method = 'email_code' WHERE envelope_id = $1 AND party_kind = 'contact'",
+        "signature_method = 'typed' WHERE envelope_id = $1 AND party_kind = 'contact'",
         envelope,
     )
     assert not await countersign.countersign_gate(daniel.tenant, engagement)
