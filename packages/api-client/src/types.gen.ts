@@ -86665,6 +86665,75 @@ export type PortalDetailsChangeResponses = {
 
 export type PortalDetailsChangeResponse = PortalDetailsChangeResponses[keyof PortalDetailsChangeResponses];
 
+export type PortalDetailsUploadData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Recipient Id
+         */
+        recipient_id: string;
+    };
+    query: {
+        /**
+         * Kind
+         */
+        kind: 'w9' | 'w8';
+        /**
+         * Filename
+         */
+        filename: string;
+    };
+    url: '/v1/portal/k1-recipients/{recipient_id}/details-changes:upload';
+};
+
+export type PortalDetailsUploadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * The file is too large
+     */
+    413: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PortalDetailsUploadError = PortalDetailsUploadErrors[keyof PortalDetailsUploadErrors];
+
+export type PortalDetailsUploadResponses = {
+    /**
+     * Successful Response
+     */
+    201: RecipientDetailsChangeOut;
+};
+
+export type PortalDetailsUploadResponse = PortalDetailsUploadResponses[keyof PortalDetailsUploadResponses];
+
 export type PortalK1sData = {
     body?: never;
     headers?: {
