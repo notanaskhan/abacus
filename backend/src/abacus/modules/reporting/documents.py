@@ -26,6 +26,7 @@ from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from sqlalchemy import RowMapping, text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext, tenant_session, transaction_context
@@ -120,11 +121,18 @@ def declared_values(
 
 # --- reads ---------------------------------------------------------------------------------------
 
+Reader = UnitOfWork | AsyncSession
 
-async def document_row(tx: UnitOfWork, document_id: UUID) -> RowMapping | None:
+
+def _session(tx: Reader) -> AsyncSession:
+    """Reads run in a consumer's unit of work or, for the routes (P-11-T11), a session."""
+    return tx if isinstance(tx, AsyncSession) else tx.session
+
+
+async def document_row(tx: Reader, document_id: UUID) -> RowMapping | None:
     row = (
         (
-            await tx.session.execute(
+            await _session(tx).execute(
                 text(
                     "SELECT id, kind, owner_type, owner_id, client_id, engagement_id, "
                     "work_item_id "
@@ -139,8 +147,8 @@ async def document_row(tx: UnitOfWork, document_id: UUID) -> RowMapping | None:
     return row
 
 
-async def locked(tx: UnitOfWork, document_id: UUID) -> bool:
-    found = await tx.session.scalar(
+async def locked(tx: Reader, document_id: UUID) -> bool:
+    found = await _session(tx).scalar(
         text(
             "SELECT 1 FROM generated_document_events "
             "WHERE generated_document_id = :id AND kind = 'locked' LIMIT 1"
@@ -150,10 +158,10 @@ async def locked(tx: UnitOfWork, document_id: UUID) -> bool:
     return found is not None
 
 
-async def _latest(tx: UnitOfWork, document_id: UUID) -> RowMapping | None:
+async def _latest(tx: Reader, document_id: UUID) -> RowMapping | None:
     return (
         (
-            await tx.session.execute(
+            await _session(tx).execute(
                 text(
                     "SELECT version_no, mode, content_hash, snapshot_key, snapshot_sha256, "
                     "template_version_id, layout_key, layout_version, engine_version, created_at "
@@ -168,7 +176,24 @@ async def _latest(tx: UnitOfWork, document_id: UUID) -> RowMapping | None:
     )
 
 
-async def generated_document(tx: UnitOfWork, document_id: UUID) -> GeneratedDocumentView | None:
+async def latest_version(tx: Reader, document_id: UUID) -> RowMapping | None:
+    """The latest version's id and template version (P-11-T11's regenerate)."""
+    return (
+        (
+            await _session(tx).execute(
+                text(
+                    "SELECT id, version_no, template_version_id FROM generated_document_versions "
+                    "WHERE generated_document_id = :id ORDER BY version_no DESC LIMIT 1"
+                ),
+                {"id": document_id},
+            )
+        )
+        .mappings()
+        .first()
+    )
+
+
+async def generated_document(tx: Reader, document_id: UUID) -> GeneratedDocumentView | None:
     """The document's state, computed from its versions, jobs and events (never a stored
     status)."""
     doc = await document_row(tx, document_id)
@@ -177,7 +202,7 @@ async def generated_document(tx: UnitOfWork, document_id: UUID) -> GeneratedDocu
     latest = await _latest(tx, document_id)
     events = (
         (
-            await tx.session.execute(
+            await _session(tx).execute(
                 text(
                     "SELECT kind, cause_ref, at FROM generated_document_events "
                     "WHERE generated_document_id = :id ORDER BY at"
@@ -189,7 +214,7 @@ async def generated_document(tx: UnitOfWork, document_id: UUID) -> GeneratedDocu
         .all()
     )
     locked = any(e["kind"] == "locked" for e in events)
-    pending = await tx.session.scalar(
+    pending = await _session(tx).scalar(
         text(
             "SELECT 1 FROM render_jobs WHERE generated_document_id = :id "
             "AND status IN ('queued', 'running') LIMIT 1"
@@ -303,6 +328,7 @@ async def insert_version(
     template_version_id: UUID | None,
     layout_key: str,
     snapshot_sha256: str,
+    snapshot: Mapping[str, object],
     content_hash: str,
     approval_ref: Mapping[str, str] | None,
     requested_by_kind: str,
@@ -336,6 +362,22 @@ async def insert_version(
             "ru": requested_by_user_id,
             "rr": requested_by_run_id,
             "rob": on_behalf_of_user_id,
+        },
+    )
+    # P-11-T11 (0522): the sealed values beside the version, in the same unit of work.
+    await tx.session.execute(
+        text(
+            "INSERT INTO generated_document_snapshots (tenant_id, version_id, snapshot, "
+            "snapshot_sha256) SELECT :tenant, id, CAST(:snap AS jsonb), :ssha "
+            "FROM generated_document_versions WHERE generated_document_id = :doc "
+            "AND version_no = :n"
+        ),
+        {
+            "tenant": await _tenant(tx),
+            "doc": document_id,
+            "n": version_no,
+            "snap": canonical(dict(snapshot)).decode(),
+            "ssha": snapshot_sha256,
         },
     )
     await tx.session.execute(
@@ -423,7 +465,7 @@ async def draft_with_hash(
         (
             await tx.session.execute(
                 text(
-                    "SELECT version_no, template_version_id, layout_key, snapshot_sha256 "
+                    "SELECT id, version_no, template_version_id, layout_key, snapshot_sha256 "
                     "FROM generated_document_versions WHERE generated_document_id = :id "
                     "AND mode = 'draft' AND content_hash = :h ORDER BY version_no DESC LIMIT 1"
                 ),
@@ -433,6 +475,15 @@ async def draft_with_hash(
         .mappings()
         .first()
     )
+
+
+async def snapshot_of_version(session: AsyncSession, version_id: UUID) -> dict[str, object] | None:
+    """The sealed snapshot of a version (0522), or None for a version sealed before it."""
+    found = await session.scalar(
+        text("SELECT snapshot FROM generated_document_snapshots WHERE version_id = :v"),
+        {"v": version_id},
+    )
+    return None if found is None else cast(dict[str, object], found)
 
 
 def target(document_id: UUID) -> Target:

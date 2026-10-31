@@ -171,6 +171,7 @@ TABLES: tuple[str, ...] = (
     "generated_document_events",
     "generated_document_fields",
     "generated_document_files",
+    "generated_document_snapshots",  # 0522 (P-11-T11)
     "generated_document_versions",
     "generated_documents",
     "gl_account_balances",
