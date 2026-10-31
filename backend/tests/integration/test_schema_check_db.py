@@ -1618,6 +1618,8 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"items", "letter_document_id", "status", "approved_by", "approved_at"}
             | {"row_version"}
         ),
+        # T-01-T36 (0524): a binding is only ever superseded, once (a guard trigger).
+        "efile_amount_bindings": frozenset({"superseded_at", "superseded_reason"}),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(

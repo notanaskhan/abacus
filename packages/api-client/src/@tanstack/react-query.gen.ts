@@ -17544,7 +17544,8 @@ export const assemblePacketMutation = (options?: Partial<Options<AssemblePacketD
 /**
  * Efile Envelope Route
  *
- * Draft the 8879 envelope through C7 with the amount binding (C21 tolerances).
+ * Draft the 8879 envelope through C7 with the amount binding (C21 tolerances; T-01-T36).
+ * 409 `packet_not_approved`, `envelope_exists`, `no_figures`, `no_authorization_form`.
  */
 export const efileEnvelopeMutation = (options?: Partial<Options<EfileEnvelopeData>>): UseMutationOptions<EfileEnvelopeResponse, EfileEnvelopeError, Options<EfileEnvelopeData>> => {
     const mutationOptions: UseMutationOptions<EfileEnvelopeResponse, EfileEnvelopeError, Options<EfileEnvelopeData>> = {

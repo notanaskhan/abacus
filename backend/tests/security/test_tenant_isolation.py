@@ -110,6 +110,7 @@ TABLES: tuple[str, ...] = (
     "engagement_member_events",
     "engagement_members",
     "engagements",
+    "efile_amount_bindings",  # 0524 (T-01-T36)
     "engine_acks",
     "engine_diagnostics",
     "engine_exports",

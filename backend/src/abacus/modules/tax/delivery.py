@@ -52,6 +52,7 @@ from abacus.modules.reporting import api as c11
 from abacus.modules.review.api import current_values
 from abacus.modules.tax.approval import signer_for
 from abacus.modules.tax.engine_files import engine_documents
+from abacus.modules.tax.filing import binding_state, envelope_of
 
 TARGET: Final = "tax_return"
 PACKET: Final = "delivery_packet"
@@ -151,6 +152,10 @@ class Delivery:
     packet: Packet | None
     payments: tuple[Payment, ...]
     allowed_actions: tuple[str, ...]
+    # T-01-T36: the 8879 envelope and its amount binding (None until drafted).
+    envelope_id: UUID | None = None
+    binding_id: UUID | None = None
+    binding_superseded: bool = False
 
 
 @dataclass(frozen=True)
@@ -333,7 +338,16 @@ async def delivery(ctx: AuthContext, return_id: UUID) -> Delivery:
         and await _allowed(ctx, APPROVE, resource)
     ):
         allowed.append(APPROVE)
-    return Delivery(return_id, packet, payments_of(values, facts.tax_year), tuple(allowed))
+    binding_id, superseded = await binding_state(ctx.tenant, return_id)
+    return Delivery(
+        return_id,
+        packet,
+        payments_of(values, facts.tax_year),
+        tuple(allowed),
+        envelope_id=None if binding_id is None else await envelope_of(ctx.tenant, binding_id),
+        binding_id=binding_id,
+        binding_superseded=superseded,
+    )
 
 
 # --- the filing-instructions letter (C11) -----------------------------------------------------

@@ -184523,7 +184523,7 @@
     },
     "/v1/tax-returns/{return_id}/efile-envelope": {
       "post": {
-        "description": "Draft the 8879 envelope through C7 with the amount binding (C21 tolerances).",
+        "description": "Draft the 8879 envelope through C7 with the amount binding (C21 tolerances; T-01-T36).\n409 `packet_not_approved`, `envelope_exists`, `no_figures`, `no_authorization_form`.",
         "operationId": "efile_envelope",
         "parameters": [
           {
@@ -184640,16 +184640,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Efile Envelope Route",

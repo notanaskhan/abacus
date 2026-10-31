@@ -43,7 +43,7 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
 )
-from abacus.modules.tax import approval, delivery, engine_import, export
+from abacus.modules.tax import approval, delivery, engine_import, export, filing
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=8, max_length=200)]
@@ -736,9 +736,9 @@ async def delivery_route(return_id: ReturnId, ctx: Ctx) -> DeliveryOut:
             )
             for p in found.payments
         ],
-        envelope_id=None,
-        binding_id=None,
-        binding_superseded=False,
+        envelope_id=found.envelope_id,
+        binding_id=found.binding_id,
+        binding_superseded=found.binding_superseded,
         transmitted_on=None,
         acks=[],
         allowed_actions=list(found.allowed_actions),
@@ -810,13 +810,21 @@ async def approve_packet_route(
     action="delivery_packet.prepare",
     response_model=EfileEnvelopeOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def efile_envelope_route(
     return_id: ReturnId, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> EfileEnvelopeOut:
-    """Draft the 8879 envelope through C7 with the amount binding (C21 tolerances)."""
-    await _stub(ctx, "delivery_packet.prepare", D)
+    """Draft the 8879 envelope through C7 with the amount binding (C21 tolerances; T-01-T36).
+    409 `packet_not_approved`, `envelope_exists`, `no_figures`, `no_authorization_form`."""
+    await _live(ctx, "delivery_packet.prepare", D)
+    bound = await filing.draft_envelope(ctx, return_id)
+    return EfileEnvelopeOut(
+        envelope_id=bound.envelope_id,
+        binding_id=bound.id,
+        authorization_form=bound.authorization_form,
+        tolerances_reference_set_version_id=bound.tolerances_ref,
+    )
 
 
 @engine_router.post(

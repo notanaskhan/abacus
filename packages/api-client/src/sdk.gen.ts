@@ -10602,7 +10602,8 @@ export const assemblePacket = <ThrowOnError extends boolean = false>(options: Op
 /**
  * Efile Envelope Route
  *
- * Draft the 8879 envelope through C7 with the amount binding (C21 tolerances).
+ * Draft the 8879 envelope through C7 with the amount binding (C21 tolerances; T-01-T36).
+ * 409 `packet_not_approved`, `envelope_exists`, `no_figures`, `no_authorization_form`.
  */
 export const efileEnvelope = <ThrowOnError extends boolean = false>(options: Options<EfileEnvelopeData, ThrowOnError>): RequestResult<EfileEnvelopeResponses, EfileEnvelopeErrors, ThrowOnError> => (options.client ?? client).post<EfileEnvelopeResponses, EfileEnvelopeErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
