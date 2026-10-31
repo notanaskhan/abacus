@@ -68,8 +68,6 @@ from abacus.kernel.db import TenantContext
 from abacus.kernel.error_tracking import scrub
 from abacus.kernel.logging import get_logger
 from abacus.kernel.metrics import ScrubbingMeter, meter
-from abacus.modules.requests.questionnaires_contract import AnswerIn
-from abacus.modules.tax.k1_contract import K1BoxLineOut
 
 from .support import Seeder
 
@@ -424,6 +422,8 @@ ANSWER = "Brokerage 1099-B 518204736"
 def test_t02t30_a_k1_box_line_given_to_the_logger_never_shows_its_amount(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
+    from abacus.modules.tax.k1_contract import K1BoxLineOut  # in the test: see T-02-T30's note
+
     line = K1BoxLineOut(
         document_kind="k1",
         box_code="2",
@@ -440,6 +440,8 @@ def test_t02t30_a_k1_box_line_given_to_the_logger_never_shows_its_amount(
 def test_t02t30_an_organizer_answer_given_to_the_logger_never_shows_its_value(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
+    from abacus.modules.requests.questionnaires_contract import AnswerIn
+
     answer = AnswerIn(value=ANSWER)
     with contextlib.suppress(TypeError, ValueError):
         get_logger("abacus.t02t30").info("answer.saved", answer=cast("object", answer))

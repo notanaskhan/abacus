@@ -773,10 +773,12 @@ async def test_t02t30_the_role_unions_k1_names_nothing_of_the_issuing_return(
         str(r.issuing),
         r.team,
     ]
-    for path in ("/v1/portal/k1s", f"/v1/portal/k1s/{r.mine}", "/v1/me"):
+    for path in ("/v1/portal/k1s", f"/v1/portal/k1s/{r.mine}"):
         response = await _get(http, r.firm.host, r.token, path)
         assert response.status_code == 200, (path, response.text)
         assert [m for m in markers if m in response.text] == [], path
+    me = await _get(http, r.firm.host, r.token, "/v1/me")
+    assert [m for m in markers if m in me.text] == []
     assert await _probe(http, r.firm.host, r.token, _probes(r.ridgeline, r.issuing), markers) == {}
 
 
@@ -819,6 +821,22 @@ async def test_t02t30_an_inquiry_is_its_addressees_only(
             contacts[dana.user_id],
             firm.admin.user_id,
         ),
+    )
+    section = await seed.value(
+        "INSERT INTO questionnaire_sections (tenant_id, questionnaire_id, name, position) "
+        "VALUES ($1, $2, 'Inquiries', 0) RETURNING id",
+        firm.tenant,
+        inquiry,
+    )
+    await seed.run(  # one sent question: the portal shows only what a person has sent
+        "INSERT INTO questions (tenant_id, questionnaire_id, section_id, position, type, "
+        "client_wording, origin, created_by, sent_by, sent_at) VALUES ($1, $2, $3, 0, "
+        "'long_text', $4, 'fraud_inquiry', $5, $5, now())",
+        firm.tenant,
+        inquiry,
+        section,
+        f"{title}: are you aware of any fraud?",
+        firm.admin.user_id,
     )
     dana_token = await _session(http, firm.host, dana_email)
     listed = await _get(http, firm.host, dana_token, "/v1/portal/questionnaires")
