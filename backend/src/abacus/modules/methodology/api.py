@@ -96,6 +96,7 @@ from abacus.modules.methodology.service import (
     version_in,
 )
 from abacus.modules.methodology.standards import (
+    attribute_sample_size,
     current_version,
     current_version_of_kind,
     policy_payload,
@@ -103,6 +104,8 @@ from abacus.modules.methodology.standards import (
 )
 from abacus.modules.methodology.standards_catalog import register_standards_providers
 from abacus.modules.methodology.standards_contract import (
+    AttributeSampleSizesPayload,
+    AttributeSize,
     ConfidenceDecision,
     EntryClassification,
     ExampleRow,
@@ -167,6 +170,8 @@ __all__ = [
     "AccountRule",
     "ApprovedGuidance",
     "Area",
+    "AttributeSampleSizesPayload",
+    "AttributeSize",
     "CatalogItem",
     "CatalogProvider",
     "ChangeEntry",
@@ -208,6 +213,7 @@ __all__ = [
     "Viewer",
     "approve_version",
     "area_for",
+    "attribute_sample_size",
     "classify_entry",
     "confidence_hold",
     "consent_expiry_months",
