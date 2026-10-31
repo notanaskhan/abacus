@@ -3,7 +3,7 @@ import { FeatureGate } from "../../app-core/flags";
 import type { OverlayRenderProps } from "../../app-core/overlays";
 
 // The sheets `sheets.tsx` registers, loaded when one opens: each behind its flag
-// (`review.grammar_api` for SHL-10, SHL-11 and SHL-12, `review.checkpoints` for SHL-16,
+// (`review.grammar_api` for SHL-10, SHL-11, SHL-12 and SHL-15, `review.checkpoints` for SHL-16,
 // `signatures.envelopes` for SIG-02, `tax.returns_v1` for TAX-09's engine sync) and its own
 // screen chunk.
 
@@ -24,6 +24,9 @@ const BulkSignOffSheet = lazy(async () => ({
 }));
 const DecisionSheet = lazy(async () => ({
   default: (await import("../../screens/SHL-11")).DecisionSheet,
+}));
+const IssueSheet = lazy(async () => ({
+  default: (await import("../../screens/SHL-15")).IssueSheet,
 }));
 const EnvelopeBuilder = lazy(async () => ({
   default: (await import("../../screens/SIG-02")).EnvelopeBuilder,
@@ -95,6 +98,17 @@ export default function SheetsHost(props: OverlayRenderProps): JSX.Element | nul
       <FeatureGate flag="review.grammar_api">
         <Suspense fallback={null}>
           <DecisionSheet cardId={id} open onOpenChange={onOpenChange} />
+        </Suspense>
+      </FeatureGate>
+    );
+  }
+  if (ref.key === "issue") {
+    // P-04-T54 (DEC-1752): behind `review.grammar_api` with SHL-10/11/12 until `review.issues`
+    // is registered with the issues service's live routes.
+    return (
+      <FeatureGate flag="review.grammar_api">
+        <Suspense fallback={null}>
+          <IssueSheet args={ref.args} open onOpenChange={onOpenChange} />
         </Suspense>
       </FeatureGate>
     );

@@ -42,9 +42,11 @@ from abacus.modules.identity.api import (
     Resource,
     authorise,
     current_context,
+    current_member,
     names_of,
+    set_ero,
 )
-from abacus.modules.tax import approval, delivery, engine_import, export, filing
+from abacus.modules.tax import approval, delivery, engine_import, export, filed_delivery, filing
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=8, max_length=200)]
@@ -375,6 +377,12 @@ class EfileAckOut(BaseModel):
     reject_text: Annotated[str | None, classified("restricted", tri=True)]
     received_at: Annotated[datetime, classified("confidential")]
     source: Annotated[Literal["engine_file", "manual"], classified("internal")]
+
+
+class RejectionIssueOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    issue_id: Annotated[UUID, classified("internal")]
 
 
 class DeliverablePublishOut(BaseModel):
@@ -738,7 +746,7 @@ def _packet_out(packet: delivery.Packet) -> DeliveryPacketOut:
 )
 async def delivery_route(return_id: ReturnId, ctx: Ctx) -> DeliveryOut:
     """TAX-12's checklist read model: the open packet and the engine's payment figures
-    (T-01-T35). The binding, transmission and acknowledgements arrive with T-01-T36/T37."""
+    (T-01-T35), the 8879 binding (T-01-T36), the transmission and acknowledgements (T-01-T37)."""
     await _live(ctx, "tax_return.read", D)
     found = await delivery.delivery(ctx, return_id)
     packet = found.packet
@@ -756,8 +764,8 @@ async def delivery_route(return_id: ReturnId, ctx: Ctx) -> DeliveryOut:
         envelope_id=found.envelope_id,
         binding_id=found.binding_id,
         binding_superseded=found.binding_superseded,
-        transmitted_on=None,
-        acks=[],
+        transmitted_on=await filing.transmitted_on(ctx.tenant, return_id),
+        acks=[_ack_out(a) for a in await filing.acks_of(ctx.tenant, return_id)],
         allowed_actions=list(found.allowed_actions),
     )
 
@@ -855,18 +863,49 @@ async def ero_notice_route(return_id: ReturnId, ctx: Ctx) -> EroNoticeOut:
     await _stub(ctx, "delivery_packet.prepare", D)
 
 
+def _ack_out(a: filing.Ack) -> EfileAckOut:
+    return EfileAckOut(
+        id=a.id,
+        jurisdiction=a.jurisdiction,
+        status="accepted" if a.status == "accepted" else "rejected",
+        submission_id_last4=a.submission_id_last4,
+        reject_code=a.reject_code,
+        reject_text=a.reject_text,
+        received_at=a.received_at,
+        source="manual" if a.source == "manual" else "engine_file",
+    )
+
+
 @engine_router.post(
     "/tax-returns/{return_id}/transmissions",
     action="transmission.record",
     response_model=TransmissionOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def record_transmission_route(
     return_id: ReturnId, body: TransmissionIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> TransmissionOut:
-    """The ERO's human record (never a transmission by Accrued; R-04)."""
-    await _stub(ctx, "transmission.record", D)
+    """The designated ERO's human record of a transmission made in the engine (never a
+    transmission by Accrued; R-04; T-01-T37). 409 `signatures_incomplete`, `binding_superseded`,
+    `not_synced`."""
+    await _live(ctx, "transmission.record", D)
+    found = await filing.record_transmission(
+        ctx,
+        return_id,
+        jurisdictions=list(body.jurisdictions),
+        transmitted_on=body.transmitted_on,
+        method=body.method,
+        seen_binding_id=body.seen_binding_id,
+    )
+    return TransmissionOut(
+        id=found.id,
+        return_id=found.return_id,
+        ero_user_id=found.ero_user_id,
+        jurisdictions=list(found.jurisdictions),
+        transmitted_on=found.transmitted_on,
+        recorded_at=found.recorded_at,
+    )
 
 
 @engine_router.post(
@@ -874,37 +913,102 @@ async def record_transmission_route(
     action="efile_ack.record",
     response_model=EfileAckOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def record_ack_route(
     return_id: ReturnId, body: EfileAckIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> EfileAckOut:
-    await _stub(ctx, "efile_ack.record", D)
+    """A manual acknowledgement with its evidence upload (T-01-T37). 409 `ack_exists`,
+    `import_file_unavailable`."""
+    await _live(ctx, "efile_ack.record", D)
+    return _ack_out(
+        await filing.record_ack(
+            ctx,
+            return_id,
+            jurisdiction=body.jurisdiction,
+            status=body.status,
+            submission_id_last4=body.submission_id_last4,
+            reject_code=body.reject_code,
+            received_at=body.received_at,
+            upload_id=body.upload_id,
+        )
+    )
+
+
+@engine_router.post(
+    "/tax-returns/{return_id}/acks/{ack_id}/issue",
+    action="efile_ack.record",
+    response_model=RejectionIssueOut,
+    status_code=201,
+    errors=(409,),
+)
+async def rejection_issue_route(
+    return_id: ReturnId,
+    ack_id: Annotated[UUID, Path()],
+    ctx: Ctx,
+    idempotency_key: IdempotencyKey,
+) -> RejectionIssueOut:
+    """TAX-12e's Create issue: the rejection as an engine-diagnostic issue; the return moves
+    Rejected to Fixing (T-01-T37). 409 `not_rejected`."""
+    await _live(ctx, "efile_ack.record", D)
+    return RejectionIssueOut(issue_id=await filing.rejection_issue(ctx, return_id, ack_id))
 
 
 @engine_router.post(
     "/tax-returns/{return_id}/deliverables:publish",
     action="deliverable.publish",
     response_model=DeliverablePublishOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def publish_deliverable_route(
     return_id: ReturnId, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> DeliverablePublishOut:
-    """Release the client copy to the portal (a person's act; the email is R-01's template)."""
-    await _stub(ctx, "deliverable.publish", D)
+    """Release the accepted return's client copy to the household's portal (a person's act;
+    T-01-T41). 409 `return_not_accepted`, `packet_not_approved`, `no_client_copy`."""
+    await _live(ctx, "deliverable.publish", D)
+    found = await filed_delivery.publish(ctx, return_id)
+    return DeliverablePublishOut(delivery_id=found.id, published_at=found.published_at)
+
+
+portal_filing_router = AbacusRouter(prefix="/v1/portal", tags=["portal"])
+Member = Annotated[AuthContext, Depends(current_member)]
+
+
+@portal_filing_router.get(
+    "/filed-returns/{delivery_id}/download",
+    action="portal_home.read",
+    response_model=bytes,
+)
+async def filed_return_download_route(
+    delivery_id: Annotated[UUID, Path()], ctx: Member
+) -> Response:
+    """The released client copy of a filed and accepted return, for a client whose grant covers
+    it, after the portal's second step (403 `mfa_required`); audited (T-01-T41)."""
+    copy = await filed_delivery.client_copy(ctx, delivery_id)
+    return Response(
+        copy.content,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{copy.file_name}"',
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 @engine_router.put(
     "/firm/members/{user_id}/ero",
     action="member.set_ero",
     response_model=EroDesignationOut,
-    errors=(501,),
 )
 async def set_ero_route(
     user_id: Annotated[UUID, Path()], body: EroDesignationIn, ctx: Ctx
 ) -> EroDesignationOut:
-    await _stub(ctx, "member.set_ero", D)
+    """A firm admin designates the firm's ERO, with fresh MFA (T-01-T37)."""
+    await _live(ctx, "member.set_ero", D)
+    return EroDesignationOut(
+        user_id=user_id, designated=await set_ero(ctx, user_id, body.designated)
+    )
 
 
 # --- tax.api (T-01-T27 and T-02 implement) -------------------------------------------------------

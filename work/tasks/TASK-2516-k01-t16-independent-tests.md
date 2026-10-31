@@ -1,8 +1,8 @@
 ---
 id: TASK-2516
 title: K-01-T16 Independent AC tests (ADR-078) for K-01-T12 and T14
-spec: SPEC-000  # K-01 §3.4 and §3.5 acceptance criteria
-acceptance_criteria: [AC4.4, AC4.5, AC4.6, AC5.3, AC5.7]
+spec: SPEC-008  # K-01 §3.4 and §3.5 acceptance criteria
+acceptance_criteria: [AC-1]  # and K-01 §3.4, §3.5
 risk_zone: amber
 status: in-review
 epic: K-01

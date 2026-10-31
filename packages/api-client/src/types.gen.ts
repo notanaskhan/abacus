@@ -26805,6 +26805,16 @@ export type RejectProposalIn = {
 };
 
 /**
+ * RejectionIssueOut
+ */
+export type RejectionIssueOut = {
+    /**
+     * Issue Id
+     */
+    issue_id: string;
+};
+
+/**
  * ReleaseOut
  */
 export type ReleaseOut = {
@@ -67634,10 +67644,6 @@ export type SetEroErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SetEroError = SetEroErrors[keyof SetEroErrors];
@@ -79629,6 +79635,60 @@ export type PortalViewedResponses = {
 
 export type PortalViewedResponse = PortalViewedResponses[keyof PortalViewedResponses];
 
+export type FiledReturnDownloadData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Delivery Id
+         */
+        delivery_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/filed-returns/{delivery_id}/download';
+};
+
+export type FiledReturnDownloadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type FiledReturnDownloadError = FiledReturnDownloadErrors[keyof FiledReturnDownloadErrors];
+
+export type FiledReturnDownloadResponses = {
+    /**
+     * Response Filed Return Download
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type FiledReturnDownloadResponse = FiledReturnDownloadResponses[keyof FiledReturnDownloadResponses];
+
 export type GetPortalHomeData = {
     body?: never;
     headers?: {
@@ -85411,10 +85471,6 @@ export type RecordAckErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RecordAckError = RecordAckErrors[keyof RecordAckErrors];
@@ -85427,6 +85483,70 @@ export type RecordAckResponses = {
 };
 
 export type RecordAckResponse = RecordAckResponses[keyof RecordAckResponses];
+
+export type RejectionIssueData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+        /**
+         * Ack Id
+         */
+        ack_id: string;
+    };
+    query?: never;
+    url: '/v1/tax-returns/{return_id}/acks/{ack_id}/issue';
+};
+
+export type RejectionIssueErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RejectionIssueError = RejectionIssueErrors[keyof RejectionIssueErrors];
+
+export type RejectionIssueResponses = {
+    /**
+     * Successful Response
+     */
+    201: RejectionIssueOut;
+};
+
+export type RejectionIssueResponse = RejectionIssueResponses[keyof RejectionIssueResponses];
 
 export type ReturnAssignData = {
     body: AssignmentIn;
@@ -85535,10 +85655,6 @@ export type PublishDeliverableErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PublishDeliverableError = PublishDeliverableErrors[keyof PublishDeliverableErrors];
@@ -86516,10 +86632,6 @@ export type RecordTransmissionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RecordTransmissionError = RecordTransmissionErrors[keyof RecordTransmissionErrors];

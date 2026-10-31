@@ -39,6 +39,10 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.service.AccountsMissing
     summary: 'SPEC-038 Q3: bank and payables accounts are confirmed before selecting.'
+  ack_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.AckExists
   action_cap:
     status: 409
     raised_by:
@@ -240,6 +244,10 @@ codes:
     raised_by:
     - abacus.modules.requests.binders.BinderNotPublished
     summary: Unpublish, mark-done and follow-ups act on a Published binder only.
+  binding_superseded:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.BindingSuperseded
   branding_not_set_up:
     status: 422
     raised_by:
@@ -1351,6 +1359,10 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.tax.filing.NoAuthorizationForm
+  no_client_copy:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filed_delivery.NoClientCopy
   no_connection:
     status: 409
     raised_by:
@@ -1485,6 +1497,10 @@ codes:
     raised_by:
     - abacus.modules.review.gate_actions.NotReassignable
     summary: The gate's owner registered no way to move it to someone else.
+  not_rejected:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.NotRejected
   not_self:
     status: 409
     raised_by:
@@ -1495,6 +1511,10 @@ codes:
     raised_by:
     - abacus.modules.evidence.uploads.NotStaff
     summary: Only the firm's team can add files on the client's behalf (SPEC-023 AC-1).
+  not_synced:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.NotSynced
   not_the_eqr:
     status: 409
     raised_by:
@@ -1837,6 +1857,11 @@ codes:
     raised_by:
     - abacus.modules.assurance.release.ReleaseDateFuture
     summary: The release date is after the firm's today.
+  release_in_progress:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filed_delivery.ReleaseInProgress
+    summary: '409: another publish of the same copy committed first; read the delivery again.'
   release_mode_in_app:
     status: 409
     raised_by:
@@ -1919,6 +1944,10 @@ codes:
     raised_by:
     - abacus.modules.tax.tax_profile.ReturnMismatch
     summary: The return is not this client's for the transcript's tax year.
+  return_not_accepted:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filed_delivery.ReturnNotAccepted
   return_not_filed:
     status: 409
     raised_by:
@@ -2087,6 +2116,10 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.review.service.SignOffInvalid
+  signatures_incomplete:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.SignaturesIncomplete
   signed_copy_not_ready:
     status: 409
     raised_by:

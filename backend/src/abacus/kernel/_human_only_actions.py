@@ -24,6 +24,7 @@ HUMAN_ONLY_ACTIONS: Final[frozenset[str]] = frozenset(
         "decision.decided",
         "decision.reassessed",
         "delivery_packet.approved",
+        "efile_ack.recorded",
         "engagement.acceptance_recorded",
         "engagement.accepted",
         "engagement.letter_recorded",
@@ -59,6 +60,7 @@ HUMAN_ONLY_ACTIONS: Final[frozenset[str]] = frozenset(
         "report.approved",
         "report.released",
         "retention_policy.updated",
+        "return.delivered",
         "review.decided",
         "review.released",
         "review_decision.created",
@@ -74,5 +76,6 @@ HUMAN_ONLY_ACTIONS: Final[frozenset[str]] = frozenset(
         "suggestion.dismissed",
         "suggestion.edited",
         "team.approved",
+        "transmission.recorded",
     }
 )

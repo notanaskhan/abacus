@@ -103,7 +103,15 @@ const FUNDS = ["1110", "1120", "1130", "1140", "1150", "1160"];
 describe("AUD-06 scenarios (A-02-T05)", () => {
   it("covers a–h and the five added states with each artboard's persona and clock", () => {
     expect(ARTBOARDS).toEqual(["a", "b", "c", "d", "e", "f", "g", "h"]);
-    expect(STATES).toEqual([...ARTBOARDS, "empty", "newer", "loading", "error", "not_allowed"]);
+    expect(STATES).toEqual([
+      ...ARTBOARDS,
+      "empty",
+      "newer",
+      "loading",
+      "error",
+      "fs_line",
+      "not_allowed",
+    ]);
     const who = Object.fromEntries(
       STATES.map((s) => [s, [scenarios[s].persona, scenarios[s].clock]]),
     );
