@@ -87,7 +87,8 @@ REPO = Path(__file__).resolve().parents[4]
 BASELINES = REPO / "evals" / "baselines.yaml"
 UNTRUSTED_NAMES = '<untrusted name="account_names">'
 Subset = Literal["fast", "full"]
-EvalRoute = Literal["fake", "direct"]  # SPEC-026: Bedrock waits for AWS (TASK-014)
+# SPEC-026; N-01-T26: `bedrock` is the clearance run (synthetic data, the eval account's AWS role).
+EvalRoute = Literal["fake", "direct", "bedrock"]
 # Settings that point the platform somewhere: each must be this machine, or the configured
 # evaluation database (AC-16).
 _DESTINATIONS = (
@@ -136,8 +137,10 @@ def guard_real(route: EvalRoute) -> None:
             "real-model runs need ABACUS_ENVIRONMENT=evaluation, or local with "
             "ABACUS_ALLOW_REAL_MODEL_LOCALLY=true"
         )
-    if s.anthropic_api_key is None or not s.anthropic_api_key.get_secret_value().strip():
-        raise RefusedEnvironment("real-model runs need ABACUS_ANTHROPIC_API_KEY")
+    if route == "direct" and (
+        s.anthropic_api_key is None or not s.anthropic_api_key.get_secret_value().strip()
+    ):
+        raise RefusedEnvironment("direct-route runs need ABACUS_ANTHROPIC_API_KEY")
     if not route_enabled(route):
         raise RefusedEnvironment(f"route {route!r} isn't enabled (model_routes and parity)")
 

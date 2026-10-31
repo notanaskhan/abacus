@@ -589,6 +589,12 @@ def _cell_families(text: str) -> set[Family]:
     return found
 
 
+def column_families(header: str) -> frozenset[Family]:
+    """The PII label families a column header names, as the masking reads a header (A-03-T07:
+    a population's column map refuses a Restricted column, ADR-031; DEC-1660)."""
+    return frozenset(_cell_families(header))
+
+
 def _masked_cell(text: str, families: set[Family], column: set[Family]) -> str:
     """The cell with each token that is PII by `_classify` (given the anchoring families)
     replaced by its token; `column` holds the families that come only from a column header."""

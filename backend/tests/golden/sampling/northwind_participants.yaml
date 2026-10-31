@@ -1,0 +1,39 @@
+# A-03-T09 (TASK-2610): AUD-11a card 3, transcribed from the design. Northwind Robotics 401(k)
+# Plan, census v2 (412 records), Participants Version 2: seed 0x5E2A91, "Accrued sampler v2.3 ·
+# uniform without replacement", size 25. The designed participants in draw order; the census
+# generator (test_a03t09_sampler_goldens.py) places each at the ordinal v2.3 draws for it
+# (inverse construction, A-03 §5.4), so this list is the algorithm's real output.
+source: AUD-11 a (card 3, Selected items); A-03 §3 F1; J03 step 11
+reviewed_by: notanaskhan
+engine_version: "2.3"
+method: attribute_statistical
+seed: 0x5E2A91
+seed_hex: "0x5E2A91"
+population: {generator: northwind_census_v2, records: 412}
+size: 25
+items:
+  - {position: 1, name: "Alicia Brennan", census_id: NW-1184}
+  - {position: 2, name: "Tomás Ibarra", census_id: NW-0962}
+  - {position: 3, name: "Priyanka Desai", census_id: NW-1203}
+  - {position: 4, name: "Gordon Whitfield", census_id: NW-0418}
+  - {position: 5, name: "Mei Tanaka", census_id: NW-1150}
+  - {position: 6, name: "Darnell Hughes", census_id: NW-1022}
+  - {position: 7, name: "Sofia Marchetti", census_id: NW-1219}
+  - {position: 8, name: "Kwame Mensah", census_id: NW-1196}
+  - {position: 9, name: "Rebecca Lindgren", census_id: NW-0877}
+  - {position: 10, name: "Hiroshi Nakamura", census_id: NW-1171}
+  - {position: 11, name: "Ingrid Solberg", census_id: NW-0731}
+  - {position: 12, name: "Felipe Navarro", census_id: NW-1088}
+  - {position: 13, name: "Aisha Rahman", census_id: NW-1230}
+  - {position: 14, name: "Connor Gallagher", census_id: NW-0659}
+  - {position: 15, name: "Yuki Mori", census_id: NW-1189}
+  - {position: 16, name: "Patrick Doyle", census_id: NW-0990}
+  - {position: 17, name: "Leila Farahani", census_id: NW-1142}
+  - {position: 18, name: "Andre Wilkins", census_id: NW-1065}
+  - {position: 19, name: "Natalie Brooks", census_id: NW-1211}
+  - {position: 20, name: "Vikram Sethi", census_id: NW-0804}
+  - {position: 21, name: "Chloe Dubois", census_id: NW-0712}
+  - {position: 22, name: "Benjamin Okoro", census_id: NW-1158}
+  - {position: 23, name: "Teresa Romero", census_id: NW-0935}
+  - {position: 24, name: "Ethan Caldwell", census_id: NW-1004}
+  - {position: 25, name: "Fatima Qureshi", census_id: NW-1224}

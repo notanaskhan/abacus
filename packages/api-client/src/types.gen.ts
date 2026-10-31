@@ -77420,10 +77420,6 @@ export type PopulationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PopulationError = PopulationErrors[keyof PopulationErrors];
@@ -77476,10 +77472,6 @@ export type PopulationTieCreateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PopulationTieCreateError = PopulationTieCreateErrors[keyof PopulationTieCreateErrors];
@@ -87031,10 +87023,6 @@ export type PopulationCreateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PopulationCreateError = PopulationCreateErrors[keyof PopulationCreateErrors];
