@@ -24,12 +24,12 @@ R2 in every state: PY2024 and PY2023 columns, 48×16 sparklines (`--d1`), the "O
 ## API
 | Read or write | Endpoint | Shape | Matrix action | allowed_actions and read-only reasons per role |
 |---|---|---|---|---|
-| read | `GET …/materiality/current` | `MaterialityRecordOut` | `materiality.read` | `decision.decide` only for the reserved EP; Hannah gets `decision.remind` |
+| read | `GET …/materiality/current` | `MaterialityRecordOut` | `materiality.read` | `decision.decide` only for the reserved EP; Hannah gets `decision.notify` |
 | read | `POST …/materiality/preview` | `ThresholdsOut` (the browser does no arithmetic) | `materiality.read` | — |
 | write | `POST …/materiality/proposals` | `MaterialityProposalOut` | `materiality.propose` | manager, senior |
 | write | `POST …/materiality/reassessments` | `ReassessmentRaisedOut` | `materiality.reassess` | manager, senior |
-| write | `POST /v1/decisions/{id}/decide` (C3; fresh MFA; rationale) | decision | `decision.decide` | reserved EP only; 403 for anyone else and for the agent; 422 `rationale_required` |
-| write | `POST /v1/decisions/{id}/remind` | — | `decision.remind` | manager, senior |
+| write | `POST /v1/decision-cards/{card_id}/decide` (C3; fresh MFA; rationale) | decision | `decision.decide` | reserved EP only; 403 for anyone else and for the agent; 422 `rationale_required` |
+| write | `POST /v1/decision-cards/{card_id}/notify` | — | `decision.notify` | manager, senior |
 
 ## Status
 `materiality_version` (Proposed, Decided, Reassessed at final, Revised; Superseded derived), `audit_section` ("Blocked on a partner decision", "Complete · {time}").

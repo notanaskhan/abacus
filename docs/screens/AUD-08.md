@@ -33,7 +33,7 @@
 | write | `POST …/risks/approval-requests` | `ApprovalRequestOut` (one `significant_risk` card) | `risk.route_for_approval` | manager, senior |
 | read | `POST …/risks/coverage` | `CoverageOut` | `risk.read` | — |
 | write | `POST …/risks/{rid}/drafts` `{fields}` | 202 `RunStartedOut` | `workpaper.draft` | EP, manager, senior |
-| write | `POST /v1/decisions/{id}/decide` (C3) | per-subject outcomes | `decision.decide` | reserved EP only |
+| write | `POST /v1/decision-cards/{card_id}/decide` (C3) | per-subject outcomes | `decision.decide` | reserved EP only |
 
 ## Status
 `risk_register_row` (Draft · EP approved · Revised), `risk_significance` (Mandatory · Proposed · Approved · Not significant), `risk_fraud` (Presumed · Rebuttal proposed · Rebuttal approved), `risk_linkage` (Linked · Suggested).
