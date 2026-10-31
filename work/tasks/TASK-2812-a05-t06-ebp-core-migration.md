@@ -2,7 +2,7 @@
 id: TASK-2812
 title: A-05-T06 migration 0610 ebp_core
 spec: SPEC-640
-acceptance_criteria: [AC-1]
+acceptance_criteria: [AC-4]
 risk_zone: red
 status: in-review
 epic: A-05
