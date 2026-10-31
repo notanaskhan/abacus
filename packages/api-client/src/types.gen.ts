@@ -386,6 +386,86 @@ export type AccessReviewOut = {
 };
 
 /**
+ * AccountMappingEditIn
+ */
+export type AccountMappingEditIn = {
+    /**
+     * Fs Line Id
+     */
+    fs_line_id: string | null;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+};
+
+/**
+ * AccountMappingOut
+ *
+ * One account's row: balance from the snapshot, never typed; confidence in words.
+ */
+export type AccountMappingOut = {
+    /**
+     * Account Code
+     */
+    account_code: string;
+    /**
+     * Account Name
+     */
+    account_name: string;
+    /**
+     * Balance
+     */
+    balance: string;
+    /**
+     * Citation Match Id
+     */
+    citation_match_id: string;
+    /**
+     * Confidence
+     */
+    confidence: 'high' | 'medium' | null;
+    /**
+     * Edited At
+     */
+    edited_at: string | null;
+    /**
+     * Edited By Initials
+     */
+    edited_by_initials: string | null;
+    /**
+     * Fs Line Id
+     */
+    fs_line_id: string | null;
+    /**
+     * Fs Line Label
+     */
+    fs_line_label: string | null;
+    /**
+     * Grouping Label
+     */
+    grouping_label: string | null;
+    /**
+     * Method
+     */
+    method: 'prior_year_match' | 'number_range' | 'manual' | null;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+    state: AccountMappingStateStatus;
+    /**
+     * Was Fs Line Label
+     */
+    was_fs_line_label: string | null;
+};
+
+/**
+ * AccountMappingStateStatus
+ */
+export type AccountMappingStateStatus = 'unmapped' | 'rule' | 'edited' | 'suggested' | 'adopted';
+
+/**
  * AccountOut
  */
 export type AccountOut = {
@@ -14217,6 +14297,40 @@ export type FormatOut = {
 };
 
 /**
+ * FsLineOptionOut
+ */
+export type FsLineOptionOut = {
+    /**
+     * Class
+     */
+    class: 'assets' | 'liabilities' | 'equity' | 'revenue' | 'expenses';
+    /**
+     * Grouping Key
+     */
+    grouping_key: string;
+    /**
+     * Grouping Label
+     */
+    grouping_label: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Normal Balance
+     */
+    normal_balance: 'debit' | 'credit';
+};
+
+/**
  * FsLineOut
  */
 export type FsLineOut = {
@@ -15124,6 +15238,48 @@ export type GridRowOut = {
 };
 
 /**
+ * GroupSubtotalOut
+ *
+ * A grouping's subtotal; `off` when the source TB carries a summary line that disagrees.
+ */
+export type GroupSubtotalOut = {
+    /**
+     * Grouping Key
+     */
+    grouping_key: string;
+    /**
+     * Grouping Label
+     */
+    grouping_label: string;
+    /**
+     * Off
+     */
+    off: string | null;
+    /**
+     * Source Total
+     */
+    source_total: string | null;
+    /**
+     * Subtotal
+     */
+    subtotal: string;
+};
+
+/**
+ * GroupingClassOut
+ */
+export type GroupingClassOut = {
+    /**
+     * Class
+     */
+    class: 'assets' | 'liabilities' | 'equity' | 'revenue' | 'expenses';
+    /**
+     * Groupings
+     */
+    groupings: Array<GroupingOptionOut>;
+};
+
+/**
  * GroupingImportBody
  */
 export type GroupingImportBody = {
@@ -15139,6 +15295,53 @@ export type GroupingImportBody = {
      * Name
      */
     name: string;
+};
+
+/**
+ * GroupingLinesOut
+ *
+ * The Change picker O1: grouped Assets · Liabilities · Equity · Revenue · Expenses, plus the
+ * viewer's own "Recently used" (never another person's, never a walled engagement's, INV-3).
+ */
+export type GroupingLinesOut = {
+    /**
+     * Classes
+     */
+    classes: Array<GroupingClassOut>;
+    /**
+     * Grouping Set Id
+     */
+    grouping_set_id: string;
+    /**
+     * Recently Used
+     */
+    recently_used: Array<FsLineOptionOut>;
+    /**
+     * Version Id
+     */
+    version_id: string;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
+ * GroupingOptionOut
+ */
+export type GroupingOptionOut = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Lines
+     */
+    lines: Array<FsLineOptionOut>;
 };
 
 /**
@@ -15183,6 +15386,68 @@ export type GroupingProblemOut = {
      * Row
      */
     row: number;
+};
+
+/**
+ * GroupingSetSummaryOut
+ *
+ * One firm grouping set in the catalogue, with its versions (firm content, never code).
+ */
+export type GroupingSetSummaryOut = {
+    /**
+     * Current Version No
+     */
+    current_version_no: number | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Versions
+     */
+    versions: Array<GroupingSetVersionSummaryOut>;
+};
+
+/**
+ * GroupingSetVersionSummaryOut
+ */
+export type GroupingSetVersionSummaryOut = {
+    /**
+     * Effective From
+     */
+    effective_from: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Problems
+     */
+    problems: number;
+    /**
+     * Published At
+     */
+    published_at: string | null;
+    /**
+     * Published By Name
+     */
+    published_by_name: string | null;
+    /**
+     * Status
+     */
+    status: 'draft' | 'published' | 'discarded';
+    /**
+     * Version No
+     */
+    version_no: number;
 };
 
 /**
@@ -19637,6 +19902,40 @@ export type ListPageKnowledgeItemOut = {
 };
 
 /**
+ * ListPage[MappingSetSummaryOut]
+ */
+export type ListPageMappingSetSummaryOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<MappingSetSummaryOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
  * ListPage[PortalEnvelopeRow]
  */
 export type ListPagePortalEnvelopeRow = {
@@ -20255,6 +20554,103 @@ export type MappedAccountOut = {
 };
 
 /**
+ * MappedFsLineOut
+ */
+export type MappedFsLineOut = {
+    /**
+     * Class
+     */
+    class: 'assets' | 'liabilities' | 'equity' | 'revenue' | 'expenses';
+    /**
+     * Credit
+     */
+    credit: string;
+    /**
+     * Debit
+     */
+    debit: string;
+    /**
+     * Fs Line Key
+     */
+    fs_line_key: string;
+    /**
+     * Fs Line Label
+     */
+    fs_line_label: string;
+    /**
+     * Grouping Key
+     */
+    grouping_key: string;
+    /**
+     * Grouping Label
+     */
+    grouping_label: string;
+    /**
+     * Net
+     */
+    net: string;
+    /**
+     * Normal Balance
+     */
+    normal_balance: 'debit' | 'credit';
+};
+
+/**
+ * MappedTrialBalanceOut
+ *
+ * C9 v2's one structure for A-04, A-06, T-05 and A-10: debits, credits and net per FS line,
+ * computed by code, with the grouping-set version and the mapping's content hash.
+ */
+export type MappedTrialBalanceOut = {
+    /**
+     * Content Hash
+     */
+    content_hash: string;
+    /**
+     * Credit
+     */
+    credit: string;
+    /**
+     * Debit
+     */
+    debit: string;
+    /**
+     * Grouping Set Version Id
+     */
+    grouping_set_version_id: string;
+    /**
+     * Lines
+     */
+    lines: Array<MappedFsLineOut>;
+    /**
+     * Mapping Set Id
+     */
+    mapping_set_id: string;
+    /**
+     * Trial Balance Id
+     */
+    trial_balance_id: string;
+    /**
+     * Trial Balance Version No
+     */
+    trial_balance_version_no: number;
+    /**
+     * Unmapped
+     */
+    unmapped: number;
+};
+
+/**
+ * MappingConfirmIn
+ */
+export type MappingConfirmIn = {
+    /**
+     * Seen Hash
+     */
+    seen_hash: string;
+};
+
+/**
  * MappingEditBody
  */
 export type MappingEditBody = {
@@ -20365,6 +20761,178 @@ export type MappingRowOut = {
      * Target Value
      */
     target_value: string;
+};
+
+/**
+ * MappingRunIn
+ */
+export type MappingRunIn = {
+    /**
+     * Predecessor Evidence Version Id
+     */
+    predecessor_evidence_version_id?: string | null;
+    /**
+     * Prior Source
+     */
+    prior_source?: 'prior_engagement' | 'predecessor_file' | 'none';
+    /**
+     * Trial Balance Id
+     */
+    trial_balance_id: string;
+};
+
+/**
+ * MappingRunOut
+ *
+ * The run's progress (b-prime polls it once a second until P-10's SSE).
+ */
+export type MappingRunOut = {
+    /**
+     * Failure Code
+     */
+    failure_code: string | null;
+    /**
+     * Mapping Set Id
+     */
+    mapping_set_id: string;
+    /**
+     * Run Done
+     */
+    run_done: number;
+    /**
+     * Run Status
+     */
+    run_status: 'not_started' | 'running' | 'ready' | 'failed';
+    /**
+     * Run Total
+     */
+    run_total: number;
+};
+
+/**
+ * MappingSetOut
+ *
+ * `GET /v1/mapping-sets/{msid}`: AUD-31's rows, tallies and subtotals.
+ */
+export type MappingSetOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<'mapping_set.run' | 'mapping_set.confirm' | 'account_mapping.edit' | 'sign_off.review'>;
+    /**
+     * Rows
+     */
+    rows: Array<AccountMappingOut>;
+    /**
+     * Subtotals
+     */
+    subtotals: Array<GroupSubtotalOut>;
+    summary: MappingSetSummaryOut;
+};
+
+/**
+ * MappingSetStatus
+ */
+export type MappingSetStatus = 'in_progress' | 'prepared' | 'reviewed' | 'changed_after_sign_off';
+
+/**
+ * MappingSetSummaryOut
+ */
+export type MappingSetSummaryOut = {
+    /**
+     * Client Entity Id
+     */
+    client_entity_id: string;
+    /**
+     * Content Hash
+     */
+    content_hash: string;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Entity Name
+     */
+    entity_name: string;
+    /**
+     * Grouping Set Label
+     */
+    grouping_set_label: string;
+    /**
+     * Grouping Set Version Id
+     */
+    grouping_set_version_id: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Period End
+     */
+    period_end: string;
+    /**
+     * Prior Source
+     */
+    prior_source: 'prior_engagement' | 'predecessor_file' | 'none';
+    /**
+     * Run Status
+     */
+    run_status: 'not_started' | 'running' | 'ready' | 'failed';
+    /**
+     * Sign Offs
+     */
+    sign_offs: Array<SignOffChipOut>;
+    status: MappingSetStatus;
+    tallies: MappingTalliesOut;
+    /**
+     * Trial Balance Id
+     */
+    trial_balance_id: string;
+    /**
+     * Trial Balance Version No
+     */
+    trial_balance_version_no: number;
+};
+
+/**
+ * MappingTalliesOut
+ *
+ * Code's tallies: MAPPED n of N, NEED REVIEW n, by method, TB BALANCED n of n.
+ */
+export type MappingTalliesOut = {
+    /**
+     * Accounts
+     */
+    accounts: number;
+    /**
+     * Edited
+     */
+    edited: number | null;
+    /**
+     * Mapped
+     */
+    mapped: number;
+    /**
+     * Need Review
+     */
+    need_review: number;
+    /**
+     * Number Range
+     */
+    number_range: number | null;
+    /**
+     * Prior Year Match
+     */
+    prior_year_match: number | null;
+    /**
+     * Tb Balanced
+     */
+    tb_balanced: number;
+    /**
+     * Tb Count
+     */
+    tb_count: number;
 };
 
 /**
@@ -30147,6 +30715,32 @@ export type SignItemsIn = {
      * Item Ids
      */
     item_ids: Array<string>;
+};
+
+/**
+ * SignOffChipOut
+ */
+export type SignOffChipOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Initials
+     */
+    initials: string;
+    /**
+     * Level
+     */
+    level: number;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Stale
+     */
+    stale: boolean;
 };
 
 /**
@@ -50954,6 +51548,135 @@ export type SendLetterResponses = {
 
 export type SendLetterResponse = SendLetterResponses[keyof SendLetterResponses];
 
+export type MappingSetsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: {
+        /**
+         * Client Entity Id
+         */
+        client_entity_id?: string | null;
+        /**
+         * Period End
+         */
+        period_end?: string | null;
+        /**
+         * Label
+         */
+        label?: string | null;
+    };
+    url: '/v1/engagements/{engagement_id}/mapping-sets';
+};
+
+export type MappingSetsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type MappingSetsError = MappingSetsErrors[keyof MappingSetsErrors];
+
+export type MappingSetsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageMappingSetSummaryOut;
+};
+
+export type MappingSetsResponse = MappingSetsResponses[keyof MappingSetsResponses];
+
+export type MappingRunStartData = {
+    body: MappingRunIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/mapping-sets';
+};
+
+export type MappingRunStartErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type MappingRunStartError = MappingRunStartErrors[keyof MappingRunStartErrors];
+
+export type MappingRunStartResponses = {
+    /**
+     * Successful Response
+     */
+    202: MappingRunOut;
+};
+
+export type MappingRunStartResponse = MappingRunStartResponses[keyof MappingRunStartResponses];
+
 export type MaterialityData = {
     body?: never;
     headers?: {
@@ -70360,6 +71083,59 @@ export type GroupingSetVersionsResponses = {
 
 export type GroupingSetVersionsResponse = GroupingSetVersionsResponses[keyof GroupingSetVersionsResponses];
 
+export type GroupingCatalogueData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/grouping-sets/catalogue';
+};
+
+export type GroupingCatalogueErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupingCatalogueError = GroupingCatalogueErrors[keyof GroupingCatalogueErrors];
+
+export type GroupingCatalogueResponses = {
+    /**
+     * Response Grouping Catalogue
+     *
+     * Successful Response
+     */
+    200: Array<GroupingSetSummaryOut>;
+};
+
+export type GroupingCatalogueResponse = GroupingCatalogueResponses[keyof GroupingCatalogueResponses];
+
 export type ImportGroupingSetData = {
     body: GroupingImportBody;
     headers?: {
@@ -70462,6 +71238,71 @@ export type PublishGroupingSetResponses = {
 };
 
 export type PublishGroupingSetResponse = PublishGroupingSetResponses[keyof PublishGroupingSetResponses];
+
+export type GroupingLinesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Grouping Set Id
+         */
+        grouping_set_id: string;
+        /**
+         * Version No
+         */
+        version_no: number;
+    };
+    query?: {
+        /**
+         * Q
+         */
+        q?: string | null;
+    };
+    url: '/v1/grouping-sets/{grouping_set_id}/versions/{version_no}/lines';
+};
+
+export type GroupingLinesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GroupingLinesError = GroupingLinesErrors[keyof GroupingLinesErrors];
+
+export type GroupingLinesResponses = {
+    /**
+     * Successful Response
+     */
+    200: GroupingLinesOut;
+};
+
+export type GroupingLinesResponse = GroupingLinesResponses[keyof GroupingLinesResponses];
 
 export type HomeData = {
     body?: never;
@@ -73475,6 +74316,307 @@ export type ReleaseLegalHoldResponses = {
 };
 
 export type ReleaseLegalHoldResponse = ReleaseLegalHoldResponses[keyof ReleaseLegalHoldResponses];
+
+export type MappingSetData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Mapping Set Id
+         */
+        mapping_set_id: string;
+    };
+    query?: {
+        /**
+         * Filter
+         */
+        filter?: 'needs_review' | 'unmatched' | null;
+        /**
+         * Group By
+         */
+        group_by?: 'fs_line' | null;
+    };
+    url: '/v1/mapping-sets/{mapping_set_id}';
+};
+
+export type MappingSetErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type MappingSetError = MappingSetErrors[keyof MappingSetErrors];
+
+export type MappingSetResponses = {
+    /**
+     * Successful Response
+     */
+    200: MappingSetOut;
+};
+
+export type MappingSetResponse = MappingSetResponses[keyof MappingSetResponses];
+
+export type AccountMappingEditData = {
+    body: AccountMappingEditIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Mapping Set Id
+         */
+        mapping_set_id: string;
+        /**
+         * Account Code
+         */
+        account_code: string;
+    };
+    query?: never;
+    url: '/v1/mapping-sets/{mapping_set_id}/accounts/{account_code}';
+};
+
+export type AccountMappingEditErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AccountMappingEditError = AccountMappingEditErrors[keyof AccountMappingEditErrors];
+
+export type AccountMappingEditResponses = {
+    /**
+     * Successful Response
+     */
+    200: AccountMappingOut;
+};
+
+export type AccountMappingEditResponse = AccountMappingEditResponses[keyof AccountMappingEditResponses];
+
+export type MappingConfirmData = {
+    body: MappingConfirmIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Mapping Set Id
+         */
+        mapping_set_id: string;
+    };
+    query?: never;
+    url: '/v1/mapping-sets/{mapping_set_id}/confirm';
+};
+
+export type MappingConfirmErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type MappingConfirmError = MappingConfirmErrors[keyof MappingConfirmErrors];
+
+export type MappingConfirmResponses = {
+    /**
+     * Successful Response
+     */
+    200: MappingSetSummaryOut;
+};
+
+export type MappingConfirmResponse = MappingConfirmResponses[keyof MappingConfirmResponses];
+
+export type MappingRunData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Mapping Set Id
+         */
+        mapping_set_id: string;
+    };
+    query?: never;
+    url: '/v1/mapping-sets/{mapping_set_id}/run';
+};
+
+export type MappingRunErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type MappingRunError = MappingRunErrors[keyof MappingRunErrors];
+
+export type MappingRunResponses = {
+    /**
+     * Successful Response
+     */
+    200: MappingRunOut;
+};
+
+export type MappingRunResponse = MappingRunResponses[keyof MappingRunResponses];
+
+export type MappedTrialBalanceData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Mapping Set Id
+         */
+        mapping_set_id: string;
+    };
+    query?: never;
+    url: '/v1/mapping-sets/{mapping_set_id}/trial-balance';
+};
+
+export type MappedTrialBalanceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type MappedTrialBalanceError = MappedTrialBalanceErrors[keyof MappedTrialBalanceErrors];
+
+export type MappedTrialBalanceResponses = {
+    /**
+     * Successful Response
+     */
+    200: MappedTrialBalanceOut;
+};
+
+export type MappedTrialBalanceResponse = MappedTrialBalanceResponses[keyof MappedTrialBalanceResponses];
 
 export type MeData = {
     body?: never;

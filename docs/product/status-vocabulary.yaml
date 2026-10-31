@@ -1016,6 +1016,24 @@ objects:
       "off":   {label: "off {amount}", variant: amber, terminal: false, derived: false}
       check:   {label: "Check", variant: amber, terminal: false, derived: false}
 
+  # ---- C9 v2 taxonomy and mapping (A-03 §4.2 M-B as ADR-341 §5 reshapes it; AUD-31; A-03-T03) ----
+  mapping_set:   # computed from run state, unmapped count and C3 sign-offs against content_hash and never stored; derived: false so the API enum carries the word (DEC-1555)
+    source: "A-03 §4.2 M-B; ADR-341 §5 (AUD-31 a′–f)"
+    codes:
+      in_progress:            {label: "In progress", variant: null, disc: half, terminal: false, derived: false}
+      prepared:               {label: "Prepared", variant: null, terminal: false, derived: false, context_labels: {rail: "Prepared · {initials}"}}
+      reviewed:               {label: "Reviewed", variant: null, terminal: false, derived: false, context_labels: {rail: "Reviewed · {initials}"}}
+      changed_after_sign_off: {label: "Changed after sign-off", variant: amber, terminal: false, derived: false}
+
+  account_mapping_state:   # one account's row; suggested and adopted are reserved for A-09's TB mapper and never written in A-03
+    source: "A-03 §4.2 M-B (AUD-31 a′–f)"
+    codes:
+      unmapped:  {label: "Needs review", variant: amber, terminal: false, derived: false}
+      rule:      {label: "Rule", variant: null, terminal: false, derived: false}
+      edited:    {label: "Edited", variant: null, terminal: false, derived: false}
+      suggested: {label: "Suggested", variant: null, terminal: false, derived: false}   # reserved (A-09)
+      adopted:   {label: "Adopted", variant: null, terminal: false, derived: false}     # reserved (A-09)
+
 retired:
   # --- request_item.status (9.5.6, DEC-09; migration P-44) ---
   "request_item.open":             {replacement: ["request.draft", "request.requested"], note: "draft while firm-only; requested once sent to the client"}
