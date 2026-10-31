@@ -2961,7 +2961,7 @@ export const getRotation = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * Amend Letter Route
  *
- * An addendum version (N-02-T37).
+ * An addendum version amending the signed letter (N-02-T33).
  */
 export const amendLetter = <ThrowOnError extends boolean = false>(options: Options<AmendLetterData, ThrowOnError>): RequestResult<AmendLetterResponses, AmendLetterErrors, ThrowOnError> => (options.client ?? client).post<AmendLetterResponses, AmendLetterErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -2972,7 +2972,7 @@ export const amendLetter = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * Approve Letter Route
  *
- * Partner, fresh MFA, against the content hash (N-02-T35).
+ * Partner, fresh MFA, against the content hash (N-02-T33).
  */
 export const approveLetter = <ThrowOnError extends boolean = false>(options: Options<ApproveLetterData, ThrowOnError>): RequestResult<ApproveLetterResponses, ApproveLetterErrors, ThrowOnError> => (options.client ?? client).post<ApproveLetterResponses, ApproveLetterErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -3062,7 +3062,7 @@ export const recordEngagementLetter = <ThrowOnError extends boolean = false>(opt
 /**
  * Request Approval Route
  *
- * C13 `letter_partner_approval` (N-02-T35).
+ * C13 `letter_partner_approval`: the draft waits on the engagement partners (N-02-T33).
  */
 export const requestApproval = <ThrowOnError extends boolean = false>(options: Options<RequestApprovalData, ThrowOnError>): RequestResult<RequestApprovalResponses, RequestApprovalErrors, ThrowOnError> => (options.client ?? client).post<RequestApprovalResponses, RequestApprovalErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -3073,7 +3073,7 @@ export const requestApproval = <ThrowOnError extends boolean = false>(options: O
 /**
  * Send Letter Route
  *
- * A C7 draft from the `engagement_letter` source (N-02-T35).
+ * A C7 draft from the `engagement_letter` source (N-02-T33), with `signatures.envelopes`.
  */
 export const sendLetter = <ThrowOnError extends boolean = false>(options: Options<SendLetterData, ThrowOnError>): RequestResult<SendLetterResponses, SendLetterErrors, ThrowOnError> => (options.client ?? client).post<SendLetterResponses, SendLetterErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
