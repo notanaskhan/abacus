@@ -89,6 +89,13 @@ const AUDIT_SEARCH = ["actor", "object", "action", "date", "office", "ip", "q", 
 // T-01-T13: ADM-05 at /settings/consents behind `consents.registry`; tiles, chips and search.
 const FirmSettingsConsents = lazyScreen(async () => (await import("../../screens/ADM-05")).ADM05);
 const CONSENT_SEARCH = ["status", "purpose", "client", "q"] as const;
+// T-01-T40: ADM-08 at /settings/integrations behind `tax.engine_bridge`; the segment and the
+// mapping drawer live in the URL (`?segment=`, `?ov=integration-mapping:users`).
+const FirmSettingsIntegrations = lazyScreen(
+  async () => (await import("../../screens/ADM-08")).ADM08,
+);
+const INTEGRATION_SEARCH = ["segment", "ov"] as const;
+const SEGMENTS = ["tax-engine", "ledgers", "mailboxes"] as const;
 const FirmSettingsSecurity = lazyScreen(async () => (await import("../../screens/ADM-06")).ADM06);
 const SECURITY_SEARCH = ["incident", "sessions", "export"] as const;
 
@@ -232,6 +239,43 @@ const settingsConsentsRoute = createRoute({
             search={pick(CONSENT_SEARCH, search)}
             onSearch={(next) => {
               void navigate({ to: ".", search: { ...next }, replace: true });
+            }}
+            onNavigate={(section) => {
+              void navigate({ to: "/settings/$section", params: { section } });
+            }}
+            onBack={() => {
+              router.history.back();
+            }}
+          />
+        </FeatureGate>
+      </div>
+    );
+  },
+});
+const settingsIntegrationsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/settings/integrations",
+  validateSearch: (search: Record<string, unknown>) => pick(INTEGRATION_SEARCH, search),
+  component: function SettingsIntegrationsPage(): JSX.Element {
+    const navigate = useNavigate();
+    const router = useRouter();
+    const search: Record<string, unknown> = useSearch({ strict: false });
+    const segment = SEGMENTS.find((s) => s === search.segment) ?? "tax-engine";
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <FeatureGate flag="tax.engine_bridge" fallback={<NotBuilt />}>
+          <FirmSettingsIntegrations
+            segment={segment}
+            mappingOpen={search.ov === "integration-mapping:users"}
+            onSegment={(next) => {
+              void navigate({ to: ".", search: { segment: next }, replace: true });
+            }}
+            onMapping={(open) => {
+              void navigate({
+                to: ".",
+                search: { segment, ...(open ? { ov: "integration-mapping:users" } : {}) },
+                replace: true,
+              });
             }}
             onNavigate={(section) => {
               void navigate({ to: "/settings/$section", params: { section } });
@@ -457,6 +501,7 @@ export const settingsRoutes = [
   settingsOfficesRoute,
   settingsAuditLogRoute,
   settingsConsentsRoute,
+  settingsIntegrationsRoute,
   settingsSecurityRoute,
   settingsPortalRoute,
   settingsPortalPreviewRoute,

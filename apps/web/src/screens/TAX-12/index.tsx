@@ -1,11 +1,34 @@
-import type { EnvelopeOut, FinalApprovalOut, SignerOut } from "@abacus/api-client";
+import type {
+  DeliveryOut,
+  DeliveryPacketOut,
+  EfileAckOut,
+  EnvelopeOut,
+  FinalApprovalOut,
+  SignerOut,
+} from "@abacus/api-client";
 import {
+  approvePacketMutation,
   deliveryOptions,
   finalApprovalOptions,
   getEnvelopeOptions,
+  patchPacketMutation,
+  recordTransmissionMutation,
+  regenerateLetterMutation,
   remindEnvelopesSendMutation,
 } from "@abacus/api-client/query";
-import { Button, Dialog, EmptyState, Icon, type Phase, Pill, RecordRail, toast } from "@abacus/ui";
+import {
+  Button,
+  ConfirmDialog,
+  dateTime,
+  Dialog,
+  EmptyState,
+  Icon,
+  type Phase,
+  Pill,
+  RecordRail,
+  Toggle,
+  toast,
+} from "@abacus/ui";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { COPY } from "./copy";
@@ -17,6 +40,17 @@ import { COPY } from "./copy";
 // acknowledgments) in states a, a2 (the pre-approved reminder, Grace sends) and b (blocked before
 // final approval). Accrued records; the ERO transmits in CCH Axcess (R-04, D1): the gate is a
 // person's record and stays locked until every signer has signed.
+// Part 2 (T-01-T39, fixture mode): c and c2 (the gate opens; Daniel, the ERO, records the
+// transmission through a confirm that names the four jurisdictions and the date; Grace waits with
+// Notify), d (Accepted: the acknowledgment timeline, Delivered to portal, the estimate reminders
+// row), e (Rejected with the engine's code and text, Create issue to TAX-06, and the agent's fix
+// card only in fixture builds: chapter 04 §2.1 rule 4, until T-04-T09's flag exists), and the
+// packet editor (voucher toggles, Regenerate letter, Approve for the signer or a manager).
+
+/** The agent's fix card exists only in fixture builds (no `tax_agents.enabled` until S33). */
+export const FIXTURE_BUILD = import.meta.env.VITE_FIXTURES === "1";
+const JURISDICTIONS = ["federal", "NY", "IL", "CO"];
+const TRANSMITTED_ON = "2026-09-18";
 
 type Step =
   | "final-approval"
@@ -39,7 +73,11 @@ function signedCount(envelope: EnvelopeOut | undefined): [number, number] {
 function phases(
   approval: FinalApprovalOut | undefined,
   envelope: EnvelopeOut | undefined,
+  delivery: DeliveryOut | undefined,
 ): Phase[] {
+  const acks = delivery?.acks ?? [];
+  const accepted = acks.length > 0 && acks.every((a) => a.status === "accepted");
+  const rejected = acks.some((a) => a.status === "rejected");
   const approved = approval?.approved_at != null;
   const [signed, total] = signedCount(envelope);
   const all = total > 0 && signed === total;
@@ -71,8 +109,22 @@ function phases(
       : later("authorizations", COPY.rows.authorizations, COPY.rows.authorizationsSub(0, 2)),
     later("payments", COPY.rows.payments, COPY.rows.paymentsSub, true),
     later("transmission", COPY.rows.transmission, COPY.rows.transmissionSub),
-    later("acks", COPY.rows.acks, COPY.rows.acksSub),
-    later("delivery", COPY.rows.delivery, COPY.rows.deliverySub),
+    rejected
+      ? {
+          id: "acks",
+          title: COPY.rows.acks,
+          disc: "warn",
+          live: { text: COPY.status.rejected, tone: "amber" },
+        }
+      : later(
+          "acks",
+          COPY.rows.acks,
+          accepted ? COPY.status.accepted : COPY.rows.acksSub,
+          accepted,
+        ),
+    accepted
+      ? { id: "delivery", title: COPY.rows.delivery, disc: "done", live: { text: COPY.delivered } }
+      : later("delivery", COPY.rows.delivery, COPY.rows.deliverySub),
   ];
 }
 
@@ -100,7 +152,11 @@ function SignerRow({ signer }: { signer: SignerOut }): JSX.Element {
           {signer.title ? ` (${signer.title})` : ""}
         </span>
         <span className="truncate text-[11.5px] text-ink-3">
-          {signed ? COPY.envelope.claire : COPY.envelope.jonah}
+          {signed
+            ? signer.name === "Jonah Feld"
+              ? "Signed · KBA passed 4 of 4 · Sep 17, 6:12 PM"
+              : COPY.envelope.claire
+            : COPY.envelope.jonah}
         </span>
       </span>
       <Pill variant={signed ? "green" : "amber"}>
@@ -186,15 +242,241 @@ function Reminder({
   );
 }
 
+function jurisdictionName(code: string): string {
+  return COPY.jurisdictions[code] ?? code;
+}
+
+function time(iso: string): string {
+  return dateTime(iso, { tz: "America/Chicago" });
+}
+
+function Gate({
+  envelope,
+  delivery,
+  returnId,
+}: {
+  envelope: EnvelopeOut;
+  delivery: DeliveryOut | undefined;
+  returnId: string;
+}): JSX.Element {
+  const [confirming, setConfirming] = useState(false);
+  const record = useMutation({
+    ...recordTransmissionMutation(),
+    onSuccess: () => {
+      toast.show(COPY.ero.recorded);
+    },
+  });
+  const completed = envelope.row.status === "completed";
+  const ero = delivery?.allowed_actions.includes("transmission.record") ?? false;
+  const transmitted = delivery?.transmitted_on != null;
+  return (
+    <div className="flex flex-col gap-[8px] border-t border-hair px-[14px] py-[12px]">
+      {!completed || transmitted ? (
+        <Button variant="primary" icon="lock" disabled className="w-full">
+          {COPY.gate.button}
+        </Button>
+      ) : ero ? (
+        <Button
+          variant="primary"
+          className="w-full"
+          aria-haspopup="dialog"
+          onClick={() => {
+            setConfirming(true);
+          }}
+        >
+          {COPY.gate.button}
+        </Button>
+      ) : (
+        <div className="flex items-center gap-[8px]">
+          <span className="flex-1 text-[13px]">{COPY.ero.waiting}</span>
+          <Button variant="secondary" size="sm" icon="bell">
+            {COPY.ero.notify}
+          </Button>
+        </div>
+      )}
+      <p className="text-[12px] text-ink-2">{COPY.gate.body}</p>
+      <p className="text-[11.5px] text-ink-3">{COPY.gate.who}</p>
+      <ConfirmDialog
+        open={confirming}
+        onOpenChange={setConfirming}
+        title={COPY.ero.confirmTitle}
+        confirmLabel={COPY.ero.record}
+        cancelLabel={COPY.ero.cancel}
+        destructive={false}
+        onConfirm={() => {
+          record.mutate({
+            path: { return_id: returnId },
+            body: {
+              jurisdictions: JURISDICTIONS,
+              transmitted_on: TRANSMITTED_ON,
+              method: "practitioner_pin",
+              seen_binding_id: delivery?.binding_id ?? "",
+            },
+            headers: { "Idempotency-Key": `transmission:${returnId}:${TRANSMITTED_ON}` },
+          });
+        }}
+      >
+        {COPY.ero.confirm}
+      </ConfirmDialog>
+    </div>
+  );
+}
+
+function Acks({ acks }: { acks: EfileAckOut[] }): JSX.Element {
+  if (acks.length === 0) {
+    return (
+      <p className="border-t border-hair px-[14px] py-[12px] text-[12.5px] text-ink-3">
+        {COPY.acks.none}
+      </p>
+    );
+  }
+  const rejected = acks.find((a) => a.status === "rejected");
+  return (
+    <div className="border-t border-hair">
+      <ol aria-label={COPY.acks.title}>
+        {acks.map((a) =>
+          a.status === "accepted" ? (
+            <li key={a.id} className="flex gap-[10px] px-[14px] py-[8px]">
+              <Icon name="check" size={14} />
+              <span className="w-[110px] shrink-0 text-[11.5px] text-ink-3">
+                {time(a.received_at)}
+              </span>
+              <span className="flex flex-col">
+                <span className="text-[12.5px]">
+                  {COPY.acks.accepted(jurisdictionName(a.jurisdiction))}
+                </span>
+                {a.jurisdiction === "federal" && (
+                  <span className="text-[11.5px] text-ink-3">
+                    {COPY.acks.submission(a.submission_id_last4)}
+                  </span>
+                )}
+              </span>
+            </li>
+          ) : (
+            <li key={a.id} className="bg-red-tint px-[14px] py-[8px] text-[12.5px]">
+              {COPY.acks.rejected(
+                jurisdictionName(a.jurisdiction),
+                a.reject_code ?? "",
+                a.reject_text ?? "",
+              )}
+            </li>
+          ),
+        )}
+      </ol>
+      {rejected === undefined && (
+        <p className="border-t border-hair px-[14px] py-[8px] text-[11.5px] text-ink-3">
+          {COPY.delivered} · {COPY.estimates}
+        </p>
+      )}
+      {rejected !== undefined && (
+        <div className="flex flex-col gap-[8px] px-[14px] py-[10px]">
+          {FIXTURE_BUILD && (
+            <aside
+              aria-label="Accrued Agent"
+              data-agent-fix
+              className="rounded-[10px] bg-card px-[12px] py-[10px] shadow-e1"
+            >
+              <p className="text-[12.5px]">{COPY.fix.body}</p>
+            </aside>
+          )}
+          <a
+            href="/tax-returns/feld/issues?kind=engine_diagnostic"
+            className="self-start rounded-[8px] bg-ink px-[12px] py-[6px] text-[12.5px] text-on-ink"
+          >
+            {COPY.fix.create}
+          </a>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PacketEditor({
+  packet,
+  canApprove,
+}: {
+  packet: DeliveryPacketOut;
+  canApprove: boolean;
+}): JSX.Element {
+  const [current, setCurrent] = useState(packet);
+  const patch = useMutation({ ...patchPacketMutation(), onSuccess: setCurrent });
+  const regenerate = useMutation({ ...regenerateLetterMutation(), onSuccess: setCurrent });
+  const approve = useMutation({ ...approvePacketMutation(), onSuccess: setCurrent });
+  const path = { path: { packet_id: current.id } };
+  return (
+    <div className="flex h-full flex-col">
+      <header className="flex h-[46px] items-center gap-[8px] px-[14px]">
+        <h2 className="flex-1 text-[14.5px] font-medium">{COPY.editor.title}</h2>
+        <Button
+          variant="secondary"
+          size="sm"
+          icon="refresh-cw"
+          disabled={current.status !== "draft"}
+          onClick={() => {
+            regenerate.mutate({ ...path, body: { seen_version: current.version } });
+          }}
+        >
+          {COPY.editor.regenerate}
+        </Button>
+        {canApprove && (
+          <Button
+            variant="primary"
+            size="sm"
+            disabled={current.status !== "draft"}
+            onClick={() => {
+              approve.mutate({ ...path, body: { seen_version: current.version } });
+            }}
+          >
+            {COPY.editor.approve}
+          </Button>
+        )}
+      </header>
+      <ul className="bg-shell p-[12px]">
+        {current.items.map((item) => {
+          const [name, meta] = COPY.packet.items[item.kind] ?? [item.kind, ""];
+          const toggleable = item.kind.startsWith("voucher_");
+          return (
+            <li
+              key={item.kind}
+              className="flex min-h-[36px] items-center gap-[10px] bg-card px-[14px] py-[6px] [&+&]:border-t [&+&]:border-hair"
+            >
+              <Icon name="file-text" size={14} />
+              <span className="flex-1 text-[13px]">{name}</span>
+              {meta && <span className="text-[11.5px] text-ink-3">{meta}</span>}
+              {toggleable && (
+                <Toggle
+                  label={COPY.editor.include(name)}
+                  checked={item.included}
+                  disabled={current.status !== "draft"}
+                  onChange={(on) => {
+                    patch.mutate({
+                      ...path,
+                      body: { included: { [item.kind]: on }, seen_version: current.version },
+                    });
+                  }}
+                />
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 function Authorizations({
   envelope,
+  delivery,
+  returnId,
   defaultReminderOpen,
 }: {
   envelope: EnvelopeOut;
+  delivery: DeliveryOut | undefined;
+  returnId: string;
   defaultReminderOpen: boolean;
 }): JSX.Element {
   const [reminding, setReminding] = useState(defaultReminderOpen);
-  const delivery = COPY.packet.items;
+  const packetItems = COPY.packet.items;
   return (
     <div className="flex h-full flex-col">
       <header className="flex h-[46px] items-center gap-[8px] px-[14px]">
@@ -219,7 +501,11 @@ function Authorizations({
             <header className="flex flex-col gap-[2px] px-[14px] py-[10px]">
               <span className="flex items-center gap-[8px]">
                 <span className="flex-1 text-[13.5px] font-medium">{envelope.row.title}</span>
-                <Pill variant="amber">{COPY.envelope.partly}</Pill>
+                {envelope.row.status === "completed" ? (
+                  <Pill variant="green">{COPY.status.completed}</Pill>
+                ) : (
+                  <Pill variant="amber">{COPY.envelope.partly}</Pill>
+                )}
               </span>
               <span className="text-[11.5px] text-ink-3">{COPY.envelope.sent}</span>
             </header>
@@ -234,7 +520,7 @@ function Authorizations({
           </section>
           <Card title={COPY.packet.title}>
             <ul>
-              {Object.entries(delivery).map(([kind, [name, meta]]) => (
+              {Object.entries(packetItems).map(([kind, [name, meta]]) => (
                 <li
                   key={kind}
                   className="flex min-h-[36px] items-center gap-[10px] border-t border-hair px-[14px] py-[6px]"
@@ -267,18 +553,10 @@ function Authorizations({
             </dl>
           </Card>
           <Card title={COPY.gate.title}>
-            <div className="flex flex-col gap-[8px] border-t border-hair px-[14px] py-[12px]">
-              <Button variant="primary" icon="lock" disabled className="w-full">
-                {COPY.gate.button}
-              </Button>
-              <p className="text-[12px] text-ink-2">{COPY.gate.body}</p>
-              <p className="text-[11.5px] text-ink-3">{COPY.gate.who}</p>
-            </div>
+            <Gate envelope={envelope} delivery={delivery} returnId={returnId} />
           </Card>
           <Card title={COPY.acks.title}>
-            <p className="border-t border-hair px-[14px] py-[12px] text-[12.5px] text-ink-3">
-              {COPY.acks.none}
-            </p>
+            <Acks acks={delivery?.acks ?? []} />
           </Card>
         </div>
       </div>
@@ -313,13 +591,19 @@ export function TAX12({ returnId, defaultReminderOpen = false }: Tax12Props): JS
           icon: "send",
           title: COPY.rail.card,
           sub: COPY.rail.sub,
-          state: approved ? COPY.rail.awaiting : COPY.rail.inReview,
+          state: !approved
+            ? COPY.rail.inReview
+            : (delivery.data?.acks ?? []).some((a) => a.status === "rejected")
+              ? COPY.status.rejected
+              : (delivery.data?.acks.length ?? 0) > 0
+                ? COPY.status.accepted
+                : COPY.rail.awaiting,
         }}
         sections={[
           {
             id: "checklist",
             title: COPY.rail.band,
-            phases: phases(approval.data, envelope.data),
+            phases: phases(approval.data, envelope.data, delivery.data),
           },
         ]}
         selected={step}
@@ -336,8 +620,26 @@ export function TAX12({ returnId, defaultReminderOpen = false }: Tax12Props): JS
               {COPY.canvas.blockedBody}
             </EmptyState>
           )
+        ) : step === "packet" && delivery.data?.packet_id != null ? (
+          <PacketEditor
+            packet={{
+              id: delivery.data.packet_id,
+              return_id: returnId,
+              version: 1,
+              status: delivery.data.packet_status ?? "draft",
+              items: delivery.data.items,
+              letter_document_id: null,
+              approved_by_name: null,
+            }}
+            canApprove={delivery.data.allowed_actions.includes("delivery_packet.approve")}
+          />
         ) : (
-          <Authorizations envelope={envelope.data} defaultReminderOpen={defaultReminderOpen} />
+          <Authorizations
+            envelope={envelope.data}
+            delivery={delivery.data}
+            returnId={returnId}
+            defaultReminderOpen={defaultReminderOpen}
+          />
         )}
       </main>
     </div>

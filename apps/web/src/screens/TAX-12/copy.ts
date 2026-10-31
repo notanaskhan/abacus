@@ -86,7 +86,42 @@ export const COPY = {
     body: "E-file is sent from CCH Axcess by the ERO. This stays locked until every signer completes Form 8879 — the taxpayer signs before the return is transmitted.",
     who: "Transmits: Daniel Reyes (ERO, Practitioner PIN)",
   },
-  acks: { title: "Acknowledgments", none: "No acknowledgments yet." },
+  acks: {
+    title: "Acknowledgments",
+    none: "No acknowledgments yet.",
+    accepted: (name: string) => `${name} return accepted`,
+    submission: (last4: string) => `Submission ID ••••••${last4}`,
+    rejected: (name: string, code: string, text: string) =>
+      `${name} return rejected · ${code} — ${text}`,
+  },
+  // T-01-T39: the ERO's record (c, c2), acceptance (d) and rejection (e).
+  ero: {
+    waiting: "Waiting for Daniel Reyes to transmit",
+    notify: "Notify",
+    confirmTitle: "Mark transmitted",
+    confirm:
+      "Record that the federal, New York, Illinois and Colorado returns were transmitted from CCH Axcess on Sep 18, 2026?",
+    cancel: "Cancel",
+    record: "Record transmission",
+    recorded: "Transmission recorded",
+  },
+  status: { completed: "Completed", accepted: "Accepted", rejected: "Rejected" },
+  delivered: "Delivered to portal · Sep 19, 9:10 AM",
+  estimates: "2026 estimate reminders scheduled",
+  fix: {
+    body: "Jonah Feld's 2026 IP PIN is in the CP01A letter on file. Add it in CCH Axcess and retransmit.",
+    create: "Create issue",
+  },
+  editor: {
+    title: "Delivery packet",
+    regenerate: "Regenerate letter",
+    approve: "Approve",
+    include: (name: string) => `Include ${name}`,
+  },
+  jurisdictions: { federal: "Federal", NY: "New York", IL: "Illinois", CO: "Colorado" } as Record<
+    string,
+    string
+  >,
   reminder: {
     title: "Send reminder",
     toLabel: "To",

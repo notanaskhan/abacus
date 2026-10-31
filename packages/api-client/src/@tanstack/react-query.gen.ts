@@ -2675,6 +2675,9 @@ export const decisionCardReassessMutation = (options?: Partial<Options<DecisionC
 
 /**
  * Patch Packet Route
+ *
+ * Toggle the vouchers or the invoice. 409 `packet_not_draft`, `stale_version`,
+ * `item_not_toggleable`.
  */
 export const patchPacketMutation = (options?: Partial<Options<PatchPacketData>>): UseMutationOptions<PatchPacketResponse, PatchPacketError, Options<PatchPacketData>> => {
     const mutationOptions: UseMutationOptions<PatchPacketResponse, PatchPacketError, Options<PatchPacketData>> = {
@@ -2692,6 +2695,9 @@ export const patchPacketMutation = (options?: Partial<Options<PatchPacketData>>)
 
 /**
  * Approve Packet Route
+ *
+ * DEC-38: the return's signer or a manager; a person only. 409 `packet_not_draft`,
+ * `stale_version`.
  */
 export const approvePacketMutation = (options?: Partial<Options<ApprovePacketData>>): UseMutationOptions<ApprovePacketResponse, ApprovePacketError, Options<ApprovePacketData>> => {
     const mutationOptions: UseMutationOptions<ApprovePacketResponse, ApprovePacketError, Options<ApprovePacketData>> = {
@@ -17498,6 +17504,9 @@ export const deliveryQueryKey = (options: Options<DeliveryData>) => createQueryK
 
 /**
  * Delivery Route
+ *
+ * TAX-12's checklist read model: the open packet and the engine's payment figures
+ * (T-01-T35). The binding, transmission and acknowledgements arrive with T-01-T36/T37.
  */
 export const deliveryOptions = (options: Options<DeliveryData>) => queryOptions<DeliveryResponse, DeliveryError, DeliveryResponse, ReturnType<typeof deliveryQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -17514,6 +17523,9 @@ export const deliveryOptions = (options: Options<DeliveryData>) => queryOptions<
 
 /**
  * Assemble Packet Route
+ *
+ * Assemble from the engine PDFs and the C11 letter (no model text). 409
+ * `not_final_approved`, `not_exported`, `packet_approved`, `no_letter_template`.
  */
 export const assemblePacketMutation = (options?: Partial<Options<AssemblePacketData>>): UseMutationOptions<AssemblePacketResponse, AssemblePacketError, Options<AssemblePacketData>> => {
     const mutationOptions: UseMutationOptions<AssemblePacketResponse, AssemblePacketError, Options<AssemblePacketData>> = {
@@ -17532,7 +17544,8 @@ export const assemblePacketMutation = (options?: Partial<Options<AssemblePacketD
 /**
  * Efile Envelope Route
  *
- * Draft the 8879 envelope through C7 with the amount binding (C21 tolerances).
+ * Draft the 8879 envelope through C7 with the amount binding (C21 tolerances; T-01-T36).
+ * 409 `packet_not_approved`, `envelope_exists`, `no_figures`, `no_authorization_form`.
  */
 export const efileEnvelopeMutation = (options?: Partial<Options<EfileEnvelopeData>>): UseMutationOptions<EfileEnvelopeResponse, EfileEnvelopeError, Options<EfileEnvelopeData>> => {
     const mutationOptions: UseMutationOptions<EfileEnvelopeResponse, EfileEnvelopeError, Options<EfileEnvelopeData>> = {
