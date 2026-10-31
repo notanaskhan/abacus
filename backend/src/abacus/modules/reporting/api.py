@@ -52,7 +52,14 @@ from abacus.modules.reporting.render.core import render_docx as render_docx
 from abacus.modules.reporting.render.core import render_isolated as render_isolated
 from abacus.modules.reporting.render.head import RenderRefused as _RenderingRefused
 
+# P-11-T13: the template import and publication services the routes call, for the scenario loader
+# (a firm's content goes in through these, never a migration or constant; AGENTS 16).
+from abacus.modules.reporting.templates import import_bundle as _import_bundle
+from abacus.modules.reporting.templates import publish as _publish_template
+
 consent_recipients = _consent_recipients
+import_template_bundle = _import_bundle
+publish_template = _publish_template
 RenderingRefused = _RenderingRefused
 
 # The routers the API mounts, in order (P-39; F-03-T07).
