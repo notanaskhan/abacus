@@ -56,7 +56,7 @@ from abacus.modules.reporting.contract import (
 from abacus.modules.reporting.render.head import RenderRefused
 from abacus.modules.reporting.render.html import Letterhead
 from abacus.modules.reporting.render.html import (
-    _numeric as numeric,  # pyright: ignore[reportPrivateUsage]
+    _numeric as numeric,  # pyright: ignore[reportPrivateUsage] -- html.py's figure test, shared
 )
 from abacus.modules.reporting.render.layouts import Layout, Mark
 from abacus.modules.reporting.render.text import clean
@@ -193,7 +193,7 @@ def _styles(document: DocxDocument, layout: Layout) -> None:
 
 def _rule_below(paragraph: Paragraph) -> None:
     """A hair rule under the letterhead (`pBdr/bottom`, 0.5 pt)."""
-    ppr = paragraph._p.get_or_add_pPr()  # pyright: ignore[reportPrivateUsage]
+    ppr = paragraph._p.get_or_add_pPr()  # pyright: ignore[reportPrivateUsage] -- python-docx's XML
     ppr.append(  # pyright: ignore[reportUnknownMemberType] -- lxml's element API
         parse_xml(
             f"<w:pBdr {nsdecls('w')}><w:bottom w:val='single' w:sz='4' w:space='4' "

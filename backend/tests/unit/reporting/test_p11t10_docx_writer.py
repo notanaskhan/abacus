@@ -227,7 +227,7 @@ def test_fixed_core_and_app_properties_and_zip_entries() -> None:
     props = document.core_properties
     assert (props.author, props.last_modified_by, props.revision) == ("", "", 1)
     assert props.identifier == "a" * 64
-    assert props.created == AS_OF.replace(tzinfo=None)
+    assert props.created == AS_OF
     with zipfile.ZipFile(io.BytesIO(out.docx)) as package:
         infos = package.infolist()
         assert [i.filename for i in infos] == sorted(i.filename for i in infos)
