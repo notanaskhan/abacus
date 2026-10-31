@@ -170,6 +170,7 @@ ACKS_HEADER: Final = (
 _PDF_NAME: Final = re.compile(
     r"([0-9]{4}[A-Z])_([A-Za-z0-9]{1,20})_V([0-9]{1,4})_([a-z0-9_]{1,40})\.pdf"
 )
+_K1_FAMILY: Final = re.compile(r"(k1|k3|state_k1_[a-z]{2}|letter)_[a-z0-9]{1,20}")
 _LAST4: Final = re.compile(r"[A-Za-z0-9]{4}")
 _JURISDICTION: Final = re.compile(r"federal|[A-Z]{2}")
 _WHEN: Final = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9:.+-]{5,20}Z?)?")
@@ -188,11 +189,16 @@ def parse_pdf(name: str, content: bytes) -> EnginePdf:
     found = _PDF_NAME.fullmatch(name)
     if found is None:
         raise EngineFileInvalid("bad_pdf_name")
-    if found.group(4) not in PDF_KINDS:
+    kind = found.group(4)
+    if kind not in PDF_KINDS and _K1_FAMILY.fullmatch(kind):
+        # T-02-T20: one file per recipient (`k1_p01`, `k3_p01`, `state_k1_il_p01`,
+        # `letter_p01`) files as the K-1 family; the K-1 set names each by its file name.
+        kind = "k1"
+    if kind not in PDF_KINDS:
         raise EngineFileInvalid("unknown_pdf_kind")
     if not content.startswith(b"%PDF-") or b"%%EOF" not in content[-64:]:
         raise EngineFileInvalid("not_a_pdf")
-    return EnginePdf(f"{found.group(1)}:{found.group(2)}", int(found.group(3)), found.group(4))
+    return EnginePdf(f"{found.group(1)}:{found.group(2)}", int(found.group(3)), kind)
 
 
 @dataclass(frozen=True)

@@ -626,6 +626,7 @@ class _SignerRow:
     user_id: UUID | None
     role: str
     identity_method: str
+    routing_group: int = 1
 
 
 async def _checks(ctx: AuthContext, envelope_id: UUID) -> CheckReport:
@@ -640,11 +641,11 @@ async def _checks(ctx: AuthContext, envelope_id: UUID) -> CheckReport:
             )
         ).one()
         found = [
-            _SignerRow(r.id, r.contact_id, r.user_id, r.role, r.identity_method)
+            _SignerRow(r.id, r.contact_id, r.user_id, r.role, r.identity_method, r.routing_group)
             for r in (
                 await session.execute(
                     text(
-                        "SELECT id, contact_id, user_id, role, identity_method "
+                        "SELECT id, contact_id, user_id, role, identity_method, routing_group "
                         'FROM envelope_signers WHERE envelope_id = :id ORDER BY "order"'
                     ),
                     {"id": envelope_id},
@@ -699,6 +700,12 @@ async def _checks(ctx: AuthContext, envelope_id: UUID) -> CheckReport:
             fail("signer_authority", f"signer_authority:{s.id}")
     if env.policy_family == _KBA_FAMILY and not any(s.role == "ero" for s in found):
         fail("ero_present", "ero_missing")
+    if env.policy_family == _KBA_FAMILY:
+        # N-02-T27 (Pub 1345): the taxpayer or officer signs before the ERO.
+        first_ero = min((s.routing_group for s in found if s.role == "ero"), default=None)
+        last_taxpayer = max((s.routing_group for s in found if s.role == "signer"), default=None)
+        if first_ero is not None and last_taxpayer is not None and first_ero <= last_taxpayer:
+            fail("ero_present", "ero_before_taxpayer")
     for version, exposure in (await tin_exposure(ctx.tenant, visible_versions)).items():
         if exposure == "tin_found":
             fail("no_ssn_visible", f"ssn_visible:{version}")

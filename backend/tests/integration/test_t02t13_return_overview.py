@@ -56,7 +56,7 @@ async def _summaries(b: Board, item: object) -> None:
         )
 
 
-async def _manager(b: Board, item: object) -> AuthContext:
+async def manager_on(b: Board, item: object) -> AuthContext:
     """Samuel Ito: a partner-level member with the manager role on the Feld engagement."""
     samuel = await b.person("Samuel Ito", None)
     await b.seed.run(
@@ -72,7 +72,7 @@ async def _manager(b: Board, item: object) -> AuthContext:
 async def test_ac_feld_foots_to_253_and_metadata_readers_get_no_figure(board: Board) -> None:
     feld = board.returns["Feld Household 1040"]
     await _summaries(board, feld)
-    samuel = await _manager(board, feld)
+    samuel = await manager_on(board, feld)
     felix = await board.person("Felix Andersen", "security_admin")
     with frozen(DEMO):
         found = await _as(samuel)("GET", f"/v1/tax-returns/{feld}/overview")
@@ -104,7 +104,7 @@ async def test_ac_feld_foots_to_253_and_metadata_readers_get_no_figure(board: Bo
 @pytest.mark.parametrize("event", ["start_preparation", "start_review"])
 async def test_a_person_may_request_only_the_table_s_moves(board: Board, event: str) -> None:
     feld = board.returns["Feld Household 1040"]  # in review: neither move is in the table
-    samuel = await _manager(board, feld)
+    samuel = await manager_on(board, feld)
     version = await board.seed.value(
         "SELECT row_version FROM tax_returns WHERE work_item_id = $1", feld
     )

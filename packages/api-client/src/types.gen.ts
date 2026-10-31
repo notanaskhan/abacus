@@ -11391,7 +11391,7 @@ export type EngineImportOut = {
     /**
      * Kind
      */
-    kind: 'values' | 'diagnostics' | 'pdfs' | 'acks';
+    kind: 'values' | 'diagnostics' | 'pdfs' | 'acks' | 'k1_set';
     /**
      * Return Id
      */
@@ -15921,7 +15921,7 @@ export type IgnoreThreadIn = {
     /**
      * Reason Code
      */
-    reason_code: 'wrong_year' | 'duplicate' | 'not_ours' | 'spam' | 'unreadable' | 'other';
+    reason_code: 'wrong_year' | 'wrong_tax_year' | 'duplicate' | 'not_ours' | 'spam' | 'unreadable' | 'other';
 };
 
 /**
@@ -16273,6 +16273,22 @@ export type ImportSignerIn = {
 };
 
 /**
+ * InPersonIdIn
+ *
+ * N-02-T27: the ID a person checked across the desk (type only; never its number).
+ */
+export type InPersonIdIn = {
+    /**
+     * Checked By User Id
+     */
+    checked_by_user_id: string;
+    /**
+     * Id Type
+     */
+    id_type: 'drivers_license' | 'passport' | 'state_id' | 'military_id' | 'other';
+};
+
+/**
  * InboundMessageOut
  *
  * One received message. `body` is present only with `inbox.read_content`.
@@ -16372,7 +16388,7 @@ export type InboxAttachmentOut = {
     /**
      * Ignored Reason
      */
-    ignored_reason: 'wrong_year' | 'duplicate' | 'not_ours' | 'spam' | 'unreadable' | 'other' | null;
+    ignored_reason: 'wrong_year' | 'wrong_tax_year' | 'duplicate' | 'not_ours' | 'spam' | 'unreadable' | 'other' | null;
     /**
      * Media Type
      */
@@ -17023,6 +17039,46 @@ export type InstallmentOut = {
 };
 
 /**
+ * IntakeBinderOut
+ *
+ * T-02-T18: the rail's binder card ("2025 Binder · Published Feb 3 · Kevin Osei").
+ */
+export type IntakeBinderOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Last Upload At
+     */
+    last_upload_at: string | null;
+    /**
+     * Marked Done At
+     */
+    marked_done_at: string | null;
+    /**
+     * Marked Done By Name
+     */
+    marked_done_by_name: string | null;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Published At
+     */
+    published_at: string | null;
+    /**
+     * Published By Name
+     */
+    published_by_name: string | null;
+    /**
+     * Status
+     */
+    status: string;
+};
+
+/**
  * IntakeCategoryOut
  */
 export type IntakeCategoryOut = {
@@ -17030,6 +17086,10 @@ export type IntakeCategoryOut = {
      * Key
      */
     key: string;
+    /**
+     * Label
+     */
+    label?: string | null;
     /**
      * Received
      */
@@ -17185,6 +17245,46 @@ export type IntakeProblemOut = {
 };
 
 /**
+ * IntakeQuestionnaireOut
+ *
+ * T-02-T18: a Questions band row; answers are POR-05's, read in their own drawer.
+ */
+export type IntakeQuestionnaireOut = {
+    /**
+     * Answered
+     */
+    answered: number;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: string;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Submitted At
+     */
+    submitted_at: string | null;
+    /**
+     * Submitted By Name
+     */
+    submitted_by_name: string | null;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
  * IntakeRelationshipIn
  */
 export type IntakeRelationshipIn = {
@@ -17196,6 +17296,70 @@ export type IntakeRelationshipIn = {
      * Related Entity Id
      */
     related_entity_id: string;
+};
+
+/**
+ * IntakeRequestOut
+ *
+ * T-02-T18: one request row with what answers it (file name and channel) or its asking.
+ */
+export type IntakeRequestOut = {
+    /**
+     * Binder Id
+     */
+    binder_id: string;
+    /**
+     * Category
+     */
+    category: string;
+    /**
+     * Channel
+     */
+    channel: string | null;
+    /**
+     * Due On
+     */
+    due_on: string | null;
+    /**
+     * File Name
+     */
+    file_name: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Latest Version Id
+     */
+    latest_version_id: string | null;
+    /**
+     * Linked Count
+     */
+    linked_count: number | null;
+    /**
+     * Overdue
+     */
+    overdue: boolean;
+    /**
+     * Owed By
+     */
+    owed_by: string | null;
+    /**
+     * Requested At
+     */
+    requested_at: string | null;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Uploaded On
+     */
+    uploaded_on: string | null;
 };
 
 /**
@@ -17218,6 +17382,26 @@ export type IntakeServiceIn = {
      * Type Code
      */
     type_code: string;
+};
+
+/**
+ * IntakeSuggestionOut
+ *
+ * The matcher's top proposal for a waiting file (the agent proposes; a person files).
+ */
+export type IntakeSuggestionOut = {
+    /**
+     * Confidence
+     */
+    confidence: number;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Request Id
+     */
+    request_id: string;
 };
 
 /**
@@ -17341,6 +17525,67 @@ export type IntakeViewerManifestOut = {
      * Page Refs
      */
     page_refs: Array<string>;
+};
+
+/**
+ * IntakeWaitingFileOut
+ *
+ * T-02-T18: one inbox file waiting on the client, with code's flags ("2024 ≠ 2025").
+ */
+export type IntakeWaitingFileOut = {
+    /**
+     * Attachment Id
+     */
+    attachment_id: string;
+    /**
+     * Channel
+     */
+    channel: string;
+    /**
+     * Duplicate
+     */
+    duplicate: boolean;
+    /**
+     * File Name
+     */
+    file_name: string;
+    /**
+     * Flags
+     */
+    flags: Array<string>;
+    /**
+     * Media Type
+     */
+    media_type: string;
+    /**
+     * Received At
+     */
+    received_at: string;
+    /**
+     * Sender
+     */
+    sender: string;
+    /**
+     * Size Bytes
+     */
+    size_bytes: number;
+    /**
+     * Subject
+     */
+    subject: string;
+    suggestion: IntakeSuggestionOut | null;
+    /**
+     * Tax Year
+     */
+    tax_year: number | null;
+    /**
+     * Thread Id
+     */
+    thread_id: string;
+    /**
+     * Wrong Year
+     */
+    wrong_year: boolean;
 };
 
 /**
@@ -18343,6 +18588,10 @@ export type K1PackageOut = {
      * Allowed Actions
      */
     allowed_actions: Array<string>;
+    /**
+     * Documents
+     */
+    documents?: Array<K1DocumentOut>;
     /**
      * Form
      */
@@ -31319,6 +31568,10 @@ export type SignedOutOut = {
  */
 export type SignerChip = {
     /**
+     * Locked
+     */
+    locked?: boolean;
+    /**
      * Name
      */
     name: string;
@@ -31326,6 +31579,10 @@ export type SignerChip = {
      * Signed
      */
     signed: boolean;
+    /**
+     * Signer Id
+     */
+    signer_id?: string | null;
 };
 
 /**
@@ -33660,6 +33917,11 @@ export type TaxProfileOut = {
  */
 export type TaxReturnIntakeOut = {
     /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<string>;
+    binder?: IntakeBinderOut | null;
+    /**
      * Binder Id
      */
     binder_id: string | null;
@@ -33676,9 +33938,37 @@ export type TaxReturnIntakeOut = {
      */
     questionnaire_ids: Array<string>;
     /**
+     * Questionnaires
+     */
+    questionnaires?: Array<IntakeQuestionnaireOut>;
+    /**
+     * Requests
+     */
+    requests?: Array<IntakeRequestOut>;
+    /**
+     * Requests Received
+     */
+    requests_received?: number;
+    /**
+     * Requests Total
+     */
+    requests_total?: number;
+    /**
      * Return Id
      */
     return_id: string;
+    /**
+     * Suggestions
+     */
+    suggestions?: 'shown' | 'consent_missing' | 'agents_off' | 'hidden';
+    /**
+     * Tax Year
+     */
+    tax_year?: number | null;
+    /**
+     * Waiting
+     */
+    waiting?: Array<IntakeWaitingFileOut>;
     /**
      * Waiting Files
      */
@@ -35951,7 +36241,7 @@ export type TriageDecisionIn = {
     /**
      * Reason Codes
      */
-    reason_codes?: Array<'wrong_year' | 'duplicate' | 'not_ours' | 'spam' | 'unreadable' | 'other'>;
+    reason_codes?: Array<'wrong_year' | 'wrong_tax_year' | 'duplicate' | 'not_ours' | 'spam' | 'unreadable' | 'other'>;
     /**
      * Rename To
      */
@@ -35987,7 +36277,7 @@ export type TriageDefaults = {
     /**
      * Reason Codes
      */
-    reason_codes: Array<'wrong_year' | 'duplicate' | 'not_ours' | 'spam' | 'unreadable' | 'other'>;
+    reason_codes: Array<'wrong_year' | 'wrong_tax_year' | 'duplicate' | 'not_ours' | 'spam' | 'unreadable' | 'other'>;
     /**
      * Rename To
      */
@@ -37164,13 +37454,19 @@ export type WebhookAcceptedOut = {
 /**
  * WetSignatureIn
  *
- * DF-11: the hand-signed form, uploaded and attested.
+ * DF-11: the hand-signed form, uploaded and attested (the scan staged through
+ * `POST /v1/envelopes/import/files`).
  */
 export type WetSignatureIn = {
     /**
      * Attested
      */
     attested: true;
+    in_person_id?: InPersonIdIn | null;
+    /**
+     * Received On
+     */
+    received_on?: string | null;
     /**
      * Signed On
      */
@@ -51724,7 +52020,11 @@ export type RecordEngagementLetterResponse = RecordEngagementLetterResponses[key
 
 export type RequestApprovalData = {
     body?: never;
-    headers?: {
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': string;
         /**
          * Authorization
          */
@@ -51894,10 +52194,6 @@ export type MappingSetsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MappingSetsError = MappingSetsErrors[keyof MappingSetsErrors];
@@ -51954,10 +52250,6 @@ export type MappingRunStartErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MappingRunStartError = MappingRunStartErrors[keyof MappingRunStartErrors];
@@ -61812,10 +62104,6 @@ export type ListEnvelopePoliciesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListEnvelopePoliciesError = ListEnvelopePoliciesErrors[keyof ListEnvelopePoliciesErrors];
@@ -61874,10 +62162,6 @@ export type UpdateEnvelopePolicyErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UpdateEnvelopePolicyError = UpdateEnvelopePolicyErrors[keyof UpdateEnvelopePolicyErrors];
@@ -62877,10 +63161,6 @@ export type RecordWetSignatureErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RecordWetSignatureError = RecordWetSignatureErrors[keyof RecordWetSignatureErrors];
@@ -74716,10 +74996,6 @@ export type MappingSetErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MappingSetError = MappingSetErrors[keyof MappingSetErrors];
@@ -74780,10 +75056,6 @@ export type AccountMappingEditErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AccountMappingEditError = AccountMappingEditErrors[keyof AccountMappingEditErrors];
@@ -74840,10 +75112,6 @@ export type MappingConfirmErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MappingConfirmError = MappingConfirmErrors[keyof MappingConfirmErrors];
@@ -74896,10 +75164,6 @@ export type MappingRunErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MappingRunError = MappingRunErrors[keyof MappingRunErrors];
@@ -74952,10 +75216,6 @@ export type MappedTrialBalanceErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MappedTrialBalanceError = MappedTrialBalanceErrors[keyof MappedTrialBalanceErrors];
@@ -77416,10 +77676,6 @@ export type PopulationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PopulationError = PopulationErrors[keyof PopulationErrors];
@@ -77472,10 +77728,6 @@ export type PopulationTieCreateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PopulationTieCreateError = PopulationTieCreateErrors[keyof PopulationTieCreateErrors];
@@ -85484,7 +85736,7 @@ export type UploadImportData = {
         /**
          * Kind
          */
-        kind: 'values' | 'diagnostics' | 'pdfs' | 'acks';
+        kind: 'values' | 'diagnostics' | 'pdfs' | 'acks' | 'k1_set';
     };
     url: '/v1/tax-returns/{return_id}/engine-imports';
 };
@@ -85786,10 +86038,6 @@ export type ReturnIntakeErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ReturnIntakeError = ReturnIntakeErrors[keyof ReturnIntakeErrors];
@@ -87027,10 +87275,6 @@ export type PopulationCreateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PopulationCreateError = PopulationCreateErrors[keyof PopulationCreateErrors];

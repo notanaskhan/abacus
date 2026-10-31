@@ -32,8 +32,9 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--tier", choices=["small", "medium", "large"], default=None)
     parser.add_argument("--subset", choices=["fast", "full"], default="full")
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
-    # SPEC-026: `direct` runs the real model (evaluation environment, synthetic data only).
-    parser.add_argument("--route", choices=["fake", "direct"], default="fake")
+    # SPEC-026: `direct` and `bedrock` run the real model (evaluation environment, synthetic data
+    # only); `bedrock` is the clearance run (N-01-T26) once the route passes parity.
+    parser.add_argument("--route", choices=["fake", "direct", "bedrock"], default="fake")
     # N-01-T21: the matcher's suite has an audit section and an intake section.
     parser.add_argument("--section", choices=["audit", "intake"], default="audit")
     args = parser.parse_args(argv)

@@ -4,6 +4,7 @@ import {
   type ImportSignerIn,
   importEnvelopeRecord,
   previewEmailTemplate,
+  recordWetSignature,
   remindEnvelopesPreview,
   stageEnvelopeImportFile,
 } from "@abacus/api-client";
@@ -369,6 +370,121 @@ export function ImportSheet({
           onChange={setAttested}
         />
         {failed && <p className="text-body text-red-ink">{COPY.importSheet.failed}</p>}
+      </div>
+    </SheetModal>
+  );
+}
+
+/** DF-11 (N-02-T27): the hand-signed form for a signer whose identity checks failed. The scan is
+ * staged first (scanned before storage), then recorded once, attested, by the person. */
+export function WetSignatureSheet({
+  open,
+  row,
+  signerId,
+  signerName,
+  onClose,
+}: {
+  open: boolean;
+  row: EnvelopeListRow;
+  signerId: string;
+  signerName: string;
+  onClose: () => void;
+}): JSX.Element {
+  const queryClient = useQueryClient();
+  const [scan, setScan] = useState<File | null>(null);
+  const [signedOn, setSignedOn] = useState("");
+  const [receivedOn, setReceivedOn] = useState("");
+  const [attested, setAttested] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const ready =
+    scan !== null &&
+    attested &&
+    ISO_DAY.test(signedOn) &&
+    (receivedOn === "" || ISO_DAY.test(receivedOn));
+
+  const submit = async (): Promise<void> => {
+    if (!ready) return;
+    setBusy(true);
+    setFailed(false);
+    try {
+      const { data } = await stageEnvelopeImportFile({
+        query: { filename: scan.name, client_id: row.client_id },
+        body: scan as never,
+        bodySerializer: null,
+        headers: { "Content-Type": scan.type || "application/octet-stream" },
+        throwOnError: true,
+      });
+      await recordWetSignature({
+        path: { envelope_id: row.id, signer_id: signerId },
+        body: {
+          upload_id: data.id,
+          signed_on: signedOn,
+          attested: true,
+          received_on: receivedOn === "" ? null : receivedOn,
+        },
+        headers: { "Idempotency-Key": crypto.randomUUID() },
+        throwOnError: true,
+      });
+      void queryClient.invalidateQueries({ queryKey: listEnvelopesQueryKey() });
+      void queryClient.invalidateQueries({ queryKey: envelopeSummaryQueryKey() });
+      onClose();
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <SheetModal
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+      title={COPY.df11.sheetTitle(signerName)}
+      dirty={scan !== null || signedOn !== ""}
+      footer={
+        <Button
+          variant="primary"
+          size="sm"
+          disabled={!ready || busy}
+          onClick={() => {
+            void submit();
+          }}
+        >
+          {COPY.df11.record}
+        </Button>
+      }
+    >
+      <div className="flex flex-col gap-[12px] p-[16px] text-body">
+        <Label htmlFor="sig01-wet-scan">{COPY.df11.scan}</Label>
+        <input
+          id="sig01-wet-scan"
+          type="file"
+          accept="application/pdf,image/png,image/jpeg"
+          onChange={(e) => {
+            setScan(e.target.files?.[0] ?? null);
+          }}
+        />
+        <Fieldset flush>
+          <ValueRow
+            kind="text"
+            label={COPY.df11.signedOn}
+            placeholder={COPY.importSheet.dayFormat}
+            value={signedOn}
+            onChange={setSignedOn}
+          />
+          <ValueRow
+            kind="text"
+            label={COPY.df11.receivedOn}
+            placeholder={COPY.importSheet.dayFormat}
+            value={receivedOn}
+            onChange={setReceivedOn}
+          />
+        </Fieldset>
+        <Checkbox label={COPY.df11.attest} showLabel checked={attested} onChange={setAttested} />
+        {failed && <p className="text-body text-red-ink">{COPY.df11.failed}</p>}
       </div>
     </SheetModal>
   );

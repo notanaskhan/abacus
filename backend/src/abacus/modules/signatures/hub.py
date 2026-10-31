@@ -241,6 +241,8 @@ class IpUnavailable(DomainConflict):
 class Chip:
     name: str
     signed: bool
+    signer_id: UUID | None = None  # N-02-T27: SIG-01's "Upload signed 8879…" names the signer
+    locked: bool = False  # N-02-T27: this signer's identity checks failed (DF-11)
 
 
 @dataclass(frozen=True)
@@ -536,7 +538,7 @@ async def _rows(ctx: AuthContext, session: AsyncSession, ids: list[UUID]) -> lis
     ).all()
     people = (
         await session.execute(
-            select(S.envelope_id, S.contact_id, S.user_id, S.status, S.viewed_at, S.order)
+            select(S.id, S.envelope_id, S.contact_id, S.user_id, S.status, S.viewed_at, S.order)
             .where(S.envelope_id.in_(ids))
             .order_by(S.envelope_id, S.order)
         )
@@ -569,6 +571,8 @@ async def _rows(ctx: AuthContext, session: AsyncSession, ids: list[UUID]) -> lis
                     else None
                 ),
                 p.status == "signed",
+                p.id,
+                p.status == "verification_failed",
             )
             for p in mine
         )

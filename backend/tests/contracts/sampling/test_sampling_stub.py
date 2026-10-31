@@ -61,13 +61,27 @@ def _ctx(*, client: bool = False, kind: str = "human") -> AuthContext:
     )
 
 
+# A-03-T07 made the population routes live: they no longer answer 501 (the rest stay stubs until
+# A-03-T10 and T13).
+LIVE = {
+    ("post", f"{WI}/populations"),
+    ("get", "/v1/populations/{population_id}"),
+    ("post", "/v1/populations/{population_id}/ties"),
+}
+
+
 @pytest.mark.parametrize(("method", "path"), sorted(ROUTES))
 def test_ac11_each_sampling_route_declares_its_one_action_and_documents_404_and_501(
     method: str, path: str
 ) -> None:
     operation = PATHS[path][method]
     assert operation["x-abacus-action"] == ROUTES[(method, path)]
-    assert {"404", "501"} <= set(cast(Json, operation["responses"]))
+    responses = set(cast(Json, operation["responses"]))
+    assert "404" in responses
+    if (method, path) in LIVE:
+        assert "501" not in responses
+    else:
+        assert "501" in responses
 
 
 def test_ac11_the_family_is_exactly_these_routes() -> None:

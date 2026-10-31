@@ -45,6 +45,7 @@ HUMAN_ONLY_ACTIONS: Final[frozenset[str]] = frozenset(
         "independence.statement_published",
         "legal_hold.lifted",
         "legal_hold.placed",
+        "letter.approved",
         "materiality.decided",
         "methodology_version.approved",
         "nas.evaluated",

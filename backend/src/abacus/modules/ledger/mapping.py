@@ -17,7 +17,6 @@ from __future__ import annotations
 import csv
 import hashlib
 import io
-import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -29,9 +28,17 @@ from uuid import UUID
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork
+
+# The rules moved to the pure compute package (A-03-T08); re-exported for this module's callers.
+from abacus.modules.ledger.compute.mapping import Method as Method
+from abacus.modules.ledger.compute.mapping import account_key as account_key
+from abacus.modules.ledger.compute.mapping import normalised_code as normalised_code
+from abacus.modules.ledger.compute.mapping import resolve_line as resolve_line
+from abacus.modules.ledger.compute.mapping import rule_line as rule_line
 from abacus.modules.ledger.mapping_repository import (
     catalogue_rows,
     discard_drafts,
+    edits_of,
     get_mapping_set,
     get_version,
     grouping_sets,
@@ -52,7 +59,7 @@ from abacus.modules.ledger.mapping_repository import (
     version_by_number,
     versions_of_sets,
 )
-from abacus.modules.ledger.models import MappingSet
+from abacus.modules.ledger.models import MappingSet, MappingSetEdit
 from abacus.modules.ledger.trial_balances import trial_balance_view
 
 CLASSES: Final = ("assets", "liabilities", "equity", "revenue", "expenses")
@@ -130,12 +137,6 @@ class ParsedGroupingSet:
     payload_hash: str
 
 
-def account_key(code: str) -> tuple[int, int, str]:
-    """Numeric codes compare as numbers ("900" < "1000"); others as text after them."""
-    text = code.strip()
-    return (0, int(text), "") if text.isdigit() else (1, 0, text)
-
-
 def parse_grouping_set(text: str) -> ParsedGroupingSet:
     """A grouping set from CSV: one row per FS line, or per extra range of a line."""
     rows = list(csv.reader(io.StringIO(text.lstrip("﻿"))))
@@ -209,15 +210,6 @@ def finish_grouping_set(
     return ParsedGroupingSet(
         groupings, lines, ranges, problems, hashlib.sha256(canonical.encode()).hexdigest()
     )
-
-
-def rule_line(code: str, ranges: Sequence[tuple[str, str, UUID]]) -> UUID | None:
-    """The first range (in order) holding the account code."""
-    key = account_key(code)
-    for low, high, line in ranges:
-        if account_key(low) <= key <= account_key(high):
-            return line
-    return None
 
 
 # --- views ------------------------------------------------------------------------------------
@@ -632,32 +624,6 @@ async def mapping_set_authors(
     )
 
 
-Method = Literal["manual", "prior_year", "number_range"]
-
-
-def resolve_line(
-    code: str,
-    edited: UUID | None,
-    prior: Mapping[str, str],
-    by_key: Mapping[str, UUID],
-    ranges: Sequence[tuple[str, str, UUID]],
-) -> tuple[UUID | None, Method | None]:
-    """One account's FS line and how it was found (A-03-T08): a person's edit, then the prior
-    year's line for the same normalised code, then the number ranges, else unmapped."""
-    if edited is not None:
-        return edited, "manual"
-    key = prior.get(normalised_code(code))
-    if key is not None and key in by_key:
-        return by_key[key], "prior_year"
-    found = rule_line(code, ranges)
-    return (found, "number_range") if found is not None else (None, None)
-
-
-def normalised_code(code: str) -> str:
-    """An account code as the prior-year match compares it: letters and digits, lower case."""
-    return re.sub(r"[^0-9a-z]", "", code.lower())
-
-
 async def mapping_view(
     tenant: TenantContext,
     engagement_id: UUID,
@@ -784,3 +750,126 @@ async def statements_for(
     if found is None:
         return None
     return build_statements(found.groupings, found.accounts, layer)
+
+
+# --- A-03-T08: the C9 v2 reads ----------------------------------------------------------------
+
+
+async def mapping_set_by_id(tenant: TenantContext, mapping_set_id: UUID) -> MappingSet | None:
+    """A mapping set by its id (the caller then authorises on its engagement)."""
+    async with tenant_session(tenant) as session:
+        return await get_mapping_set(session, mapping_set_id)
+
+
+@dataclass(frozen=True)
+class AccountEdits:
+    """An account's edits: how many (the `seen_version` an edit must name), the FS line before
+    the newest edit (the "was …"), and who made the newest and when."""
+
+    count: int
+    was_fs_line_id: UUID | None
+    rule_before: bool  # the newest edit replaced the rules' line (no earlier edit)
+    edited_by: UUID
+    edited_at: datetime
+
+
+async def account_edits(tenant: TenantContext, mapping_set_id: UUID) -> dict[str, AccountEdits]:
+    async with tenant_session(tenant) as session:
+        rows = await edits_of(session, mapping_set_id)
+    out: dict[str, AccountEdits] = {}
+    by_code: dict[str, list[MappingSetEdit]] = {}
+    for row in rows:
+        by_code.setdefault(row.account_code, []).append(row)
+    for code, edits in by_code.items():
+        newest = edits[-1]
+        before = edits[-2] if len(edits) > 1 else None
+        out[code] = AccountEdits(
+            len(edits),
+            before.fs_line_id if before is not None else None,
+            before is None,
+            newest.edited_by,
+            newest.created_at,
+        )
+    return out
+
+
+@dataclass(frozen=True)
+class MappedLine:
+    """One FS line of a mapped trial balance: its accounts' debits, credits and net."""
+
+    grouping_key: str
+    grouping_label: str
+    grouping_class: str
+    fs_line_id: UUID
+    fs_line_key: str
+    fs_line_label: str
+    normal_balance: str
+    debit: Decimal
+    credit: Decimal
+    net: Decimal
+
+
+@dataclass(frozen=True)
+class MappedTrialBalance:
+    mapping_set_id: UUID
+    trial_balance_id: UUID
+    trial_balance_version_no: int
+    grouping_set_version_id: UUID
+    content_hash: str
+    lines: list[MappedLine]
+    debit: Decimal
+    credit: Decimal
+    unmapped: int
+
+
+async def mapped_trial_balance(
+    tenant: TenantContext,
+    engagement_id: UUID,
+    tb_id: UUID,
+    prior: Mapping[str, str] | None = None,
+) -> MappedTrialBalance | None:
+    """C9 v2's one structure (US-6.4): debits, credits and net per FS line, in the catalogue's
+    order, by code from the snapshot's lines (ADR-050), with the version and content hash."""
+    view = await mapping_view(tenant, engagement_id, tb_id, prior)
+    if view is None:
+        return None
+    tb = await trial_balance_view(tenant, engagement_id, tb_id)
+    found = await mapping_set_by_id(tenant, view.mapping_set_id)
+    if found is None:
+        return None
+    sides = {line.account_code: (line.debit, line.credit) for line in tb.lines}
+    sums: dict[UUID, tuple[Decimal, Decimal]] = {}
+    for account in view.accounts:
+        if account.fs_line_id is None:
+            continue
+        debit, credit = sides.get(account.account_code, (_ZERO, _ZERO))
+        d, c = sums.get(account.fs_line_id, (_ZERO, _ZERO))
+        sums[account.fs_line_id] = (d + debit, c + credit)
+    lines = [
+        MappedLine(
+            g.key,
+            g.label,
+            g.class_,
+            line.id,
+            line.key,
+            line.label,
+            line.normal_balance,
+            sums[line.id][0],
+            sums[line.id][1],
+            sums[line.id][0] - sums[line.id][1],
+        )
+        for g in view.groupings
+        for line in g.lines
+        if line.id in sums
+    ]
+    return MappedTrialBalance(
+        view.mapping_set_id,
+        tb_id,
+        tb.version.version_no,
+        found.grouping_set_version_id,
+        view.content_hash,
+        lines,
+        sum((x.debit for x in lines), _ZERO),
+        sum((x.credit for x in lines), _ZERO),
+        view.unmapped,
+    )
