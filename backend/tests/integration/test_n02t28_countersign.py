@@ -77,7 +77,9 @@ async def _out_for_signature(seed: Seeder) -> tuple[AuthContext, uuid.UUID, uuid
     envelope = await letter_flow.send_letter(ctx, engagement)
     assert not await countersign.send_gate(ctx.tenant, engagement)  # waiting for its Send
     # As the provider leaves it once sent (the send path is N-02-T20's).
-    await seed.run(
+    await seed.as_actor(  # the database binds a send to the person who sends
+        ctx.tenant_id,
+        ("human", str(ctx.user_id)),
         "UPDATE envelopes SET status = 'sent', provider = 'docuseal', "
         "provider_envelope_id = 'ds-1', sent_at = clock_timestamp(), sent_by = $2 WHERE id = $1",
         envelope,
