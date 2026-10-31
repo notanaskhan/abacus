@@ -32,6 +32,7 @@ import {
   scenarios as cli08,
 } from "./scenarios/CLI-08";
 import { OPENS as ENG02_OPENS, scenarios as eng02 } from "./scenarios/ENG-02";
+import { OPENS_FOR as ENG04_OPENS, scenarios as eng04 } from "./scenarios/ENG-04";
 import { OPENS as ENG13_OPENS, scenarios as eng13 } from "./scenarios/ENG-13";
 import { scenarios as home01 } from "./scenarios/HOME-01";
 import { scenarios as knw01 } from "./scenarios/KNW-01";
@@ -98,6 +99,13 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
     opens: {},
     ids: idsOf(ENG02_OPENS, (s) => ({ engagementId: ENG02_OPENS[s] })),
   }, // P-07-T62
+  // N-02-T40: ENG-04 is ENG-02's Letter & terms tab (`/engagements/_engagementId_/letter`); the
+  // signature journeys walk its states on the real route.
+  "ENG-04": {
+    scenarios: eng04,
+    opens: {},
+    ids: idsOf(ENG04_OPENS, (s) => ({ engagementId: ENG04_OPENS[s].id })),
+  },
   "ENG-13": {
     scenarios: eng13,
     opens: {},
