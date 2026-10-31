@@ -138,6 +138,69 @@ class MatchOutput(BaseModel):
         return self
 
 
+# --- The matcher's intake mode (v3; N-01-T22; N-01 §6) ----------------------------------------
+
+# Code gives the client's destinations as D1..D60 and maps the answer back (an unknown one is
+# discarded); the model never sees a destination's id.
+DestinationRef = Annotated[str, Field(pattern=r"^D([1-9]|[1-5][0-9]|60)$")]
+_FORM_FAMILY = Annotated[str | None, Field(max_length=40), classified("internal")]
+
+
+class PageCitation(BaseModel):
+    """A quote from one page of the attachment's masked text."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    page: Annotated[int, Field(ge=1, le=1000), classified("internal")]
+    quote: Annotated[str, Field(min_length=1, max_length=1000), classified("confidential")]
+
+
+class IntakeClassification(BaseModel):
+    """What the document is, as far as its text shows; every field may be unknown."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    form_family: _FORM_FAMILY = None
+    tax_year: Annotated[int | None, Field(ge=1990, le=2100), classified("internal")] = None
+    issuer: Annotated[str | None, Field(max_length=200), classified("confidential")] = None
+    kind: Annotated[
+        Literal[
+            "tax_form", "notice", "receipt", "census", "invoice", "statement", "return", "other"
+        ],
+        classified("internal"),
+    ] = "other"
+    confidence: Annotated[float, Field(ge=0, le=1), classified("internal")] = 0.0
+
+
+class IntakeProposal(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    destination: Annotated[DestinationRef, classified("internal")]
+    confidence: Annotated[float, Field(ge=0, le=1), classified("internal")]
+    rationale: Annotated[str, Field(min_length=1, max_length=300), classified("confidential")]
+    citations: Annotated[
+        list[PageCitation], Field(min_length=1, max_length=3), classified("confidential")
+    ]
+
+
+class IntakeMatchOutput(BaseModel):
+    """The matcher's intake proposal: what an intake attachment is and up to three of its
+    client's destinations, or none; a person files (ADR-005, I-AGENT-NEVER)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    none_fit: Annotated[bool, classified("internal")]
+    classification: Annotated[IntakeClassification, classified("confidential")]
+    rationale: Annotated[str | None, Field(max_length=300), classified("confidential")] = None
+    proposals: Annotated[list[IntakeProposal], Field(max_length=3), classified("confidential")]
+
+    @model_validator(mode="after")
+    def _one_answer(self) -> IntakeMatchOutput:
+        if self.none_fit == bool(self.proposals):
+            raise ValueError("either proposals, or none_fit with no proposals")
+        return self
+
+
 # --- The guidance drafter (SPEC-035; TASK-072) -------------------------------------------------
 
 

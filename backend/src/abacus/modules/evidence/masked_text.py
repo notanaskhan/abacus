@@ -24,10 +24,12 @@ async def masked_pages(
     evidence_version_id: UUID | None = None,
     inbox_file_id: UUID | None = None,
     derivation_id: UUID | None = None,
+    inbox_attachment_id: UUID | None = None,
 ) -> dict[int, str] | None:
     """The source's scanned pages as masked text, or None when no PII scan has run on it. An
-    unlock's derived layer when `derivation_id` is named (P-03-T19: the viewer's text view)."""
-    if (evidence_version_id is None) == (inbox_file_id is None):
+    unlock's derived layer when `derivation_id` is named (P-03-T19: the viewer's text view). An
+    intake attachment's pages for the matcher's intake mode (N-01-T22)."""
+    if sum(x is not None for x in (evidence_version_id, inbox_file_id, inbox_attachment_id)) != 1:
         raise ValueError("name exactly one source")
     async with tenant_session(tenant) as session:
         run = await scan_run_for(
@@ -35,6 +37,7 @@ async def masked_pages(
             evidence_version_id=evidence_version_id,
             inbox_file_id=inbox_file_id,
             detector_version=DETECTOR_VERSION,
+            inbox_attachment_id=inbox_attachment_id,
             derivation_id=derivation_id,
         )
         if run is None:
@@ -43,6 +46,7 @@ async def masked_pages(
             session,
             evidence_version_id=evidence_version_id,
             inbox_file_id=inbox_file_id,
+            inbox_attachment_id=inbox_attachment_id,
             extractor_version=WORDS_VERSION,
             derivation_id=derivation_id,
         )
@@ -51,6 +55,7 @@ async def masked_pages(
             evidence_version_id=evidence_version_id,
             inbox_file_id=inbox_file_id,
             derivation_id=derivation_id,
+            inbox_attachment_id=inbox_attachment_id,
         )
     out: dict[int, str] = {}
     for page in pages:
@@ -60,3 +65,9 @@ async def masked_pages(
         words = projection.words(layer.words, page.page_no) or []
         out[page.page_no] = scrub_tins(" ".join(w.text for w in words))
     return out
+
+
+async def intake_masked_text(tenant: TenantContext, attachment_id: UUID) -> dict[int, str] | None:
+    """An intake attachment's masked pages, for the matcher's intake mode (N-01-T22); None until
+    AttachmentTriage's PII scan has run (fail closed: no text at all)."""
+    return await masked_pages(tenant, inbox_attachment_id=attachment_id)

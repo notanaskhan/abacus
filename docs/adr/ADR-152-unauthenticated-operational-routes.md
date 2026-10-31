@@ -1,7 +1,7 @@
 ---
 id: ADR-152
 title: Unauthenticated operational routes - /healthz and portal branding on an explicit allowlist
-status: proposed
+status: accepted
 date: 2026-10-20
 deciders: ayushkbhatia
 risk_zone: red
@@ -67,13 +67,13 @@ PUBLIC_ROUTES = ("/healthz", "/readyz", "/v1/portal/branding")
 @app.get("/v1/anything")   # outside AbacusRouter
 ```
 
-## Proposed amendment (N-02-T01, 2026-10-27; DEC-707; decide by Fri Jun 11, 2027)
-Not yet accepted: the clauses below bind nothing until this ADR's status says so.
-- **A provider webhook receiver**, `POST /v1/webhooks/docuseal` (retargeted 2026-10-30 from DocuSign Connect by ADR-342, DEC-1277), joins the ROUTE-001 exception list, outside `AbacusRouter`, unauthenticated.
-- **HMAC-verified** with the firm's DocuSeal webhook key: `X-Docuseal-Signature` is `<unix seconds>.<hex HMAC-SHA256 over "<unix seconds>.<raw body>">`, compared in constant time against every configured key (rotation); a timestamp more than five minutes from now is refused as a replay; a bad, stale or missing signature answers 401 and writes nothing but a metric (`status_poll.verify_webhook`).
-- **Hint only:** the body is never trusted for state. A valid hint (`status_poll.webhook_event`: the submission id and a stable event id only, recorded once per event by `record_provider_hint`) starts `EnvelopeStatusPoll` for the named envelope, which reads the provider's status through the W7 read-back and decides; the receiver itself changes no row.
-- **Rate-limited** per source and per envelope; **echoes nothing** (an empty 202); bodies are not logged.
-- **If refused:** N-02 runs poll-only (`EnvelopeStatusPoll` every 5 minutes for open provider envelopes, and on a portal return).
+## Amendment: the DocuSeal webhook receiver (accepted 2026-10-30; N-02-T01, DEC-707, DEC-1281)
+Proposed under N-02-T01 for DocuSign Connect, retargeted to DocuSeal by ADR-342 (DEC-1277), and accepted with this ADR.
+- **A provider webhook receiver**, `POST /v1/webhooks/docuseal/{tenant_id}/{install_id}`, joins the ROUTE-001 exception list, unauthenticated, inside `AbacusRouter` under the `PROVIDER_WEBHOOK` marker, which the router accepts on that path only (as `PORTAL_PUBLIC` for branding). The path names the firm and its DocuSeal install: each install has its own webhook in DocuSeal and its own key, and the firm's rows are read under its own row security, so the receiver can find the key before trusting anything.
+- **HMAC-verified** with the install's DocuSeal webhook key (sealed in the install's secret; DocuSeal's `whsec_…` used whole): `X-Docuseal-Signature` is `<unix seconds>.<hex HMAC-SHA256 over "<unix seconds>.<raw body>">`, compared in constant time against every configured key (rotation); a timestamp more than five minutes from now is refused as a replay; a bad, stale or missing signature, an unknown or disconnected install, W7 closed or the firm's kill switch off answers 401 and writes nothing but a metric (`status_poll.verify_webhook`).
+- **Hint only:** the body is never trusted for state. A valid hint (`status_poll.webhook_event`: the submission id and a stable event id only, recorded once per event by `record_provider_hint`) signals the named envelope's workflow, which reads the provider's status and decides; the receiver itself changes no envelope row.
+- **Rate-limited** per source (the edge's WAF rule on `/v1/webhooks/`) and per envelope (at most ten hints a minute); **echoes nothing** (an empty 202, 401 or 413); bodies and headers are not logged.
+- **Without a webhook key** in the install, the firm runs poll-only (`EnvelopeStatusPoll` every 5 minutes for open provider envelopes, and on a portal return).
 
 ## Revisit when
 A third unauthenticated route is proposed, or branding needs per-visitor data.

@@ -4,7 +4,7 @@ Contract: `docs/contracts/c7-envelopes.md`.
 Every route answers 404 with `signatures.envelopes` off and 501 `not_implemented` with it on
 until its task lands: record-mode import N-02-T08; the hub, drawer, evidence and reminders
 T11-T15; drafts, edits, validate, send, Undo and page previews T20; resend T28; portal
-signing T23-T29; policies T13.
+signing T23 (N-02-T23, DEC-1283); policies T13.
 
 Rules the shapes carry:
 - **Record mode first** (ADR-149, ADR-342): `provider` is `record`, `docuseal` or `fake`
@@ -43,7 +43,7 @@ from abacus.modules.identity.api import (
     current_context,
     current_member,
 )
-from abacus.modules.signatures import builder, hub, imports
+from abacus.modules.signatures import builder, hub, imports, portal
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 Member = Annotated[AuthContext, Depends(current_member)]
@@ -84,16 +84,6 @@ async def _stub(ctx: AuthContext, action: str) -> NoReturn:
     if ctx.client:
         raise NotFound("envelopes")
     await authorise(ctx, action, Resource.firm(ctx.tenant_id))
-    if not await flag_enabled(ctx.tenant, SIGNATURES_ENVELOPES):
-        raise NotFound(SIGNATURES_ENVELOPES.name)
-    raise NotImplementedYet
-
-
-async def _portal_stub(ctx: AuthContext) -> NoReturn:
-    """A firm principal never reaches portal signing: 404. Then the flag, then 501; the named
-    signer and `scope_only` are the implementation's checks."""
-    if not ctx.client:
-        raise NotFound("portal envelopes")
     if not await flag_enabled(ctx.tenant, SIGNATURES_ENVELOPES):
         raise NotFound(SIGNATURES_ENVELOPES.name)
     raise NotImplementedYet
@@ -1116,139 +1106,238 @@ class SignerDeclineIn(BaseModel):
 
 portal_router = AbacusRouter(prefix="/v1/portal/envelopes", tags=["portal"])
 
+_NO_STORE = {"Cache-Control": "private, no-store"}
 
-@portal_router.get(
-    "", action="portal_envelopes.read", response_model=ListPage[PortalEnvelopeRow], errors=(501,)
-)
+
+def _portal_row(r: portal.ListRow) -> PortalEnvelopeRow:
+    return PortalEnvelopeRow(
+        id=r.id,
+        title=r.title,
+        status=cast(EnvelopeStatus, r.status),
+        my_status=cast(EnvelopeSignerStatus, r.my_status),
+        due_on=r.due_on,
+    )
+
+
+def _portal_view(v: portal.View) -> PortalEnvelopeView:
+    return PortalEnvelopeView(
+        row=_portal_row(v.row),
+        documents=[
+            EnvelopeDocumentOut(
+                id=d.id,
+                order=d.order,
+                title=d.title,
+                page_count=d.page_count,
+                sha256=d.sha256,
+                read_only=d.read_only,
+                tri=d.tri,
+            )
+            for d in v.documents
+        ],
+        my_fields=[
+            FieldOut(
+                id=f.id,
+                document_id=f.document_id,
+                signer_id=v.signer_id,
+                kind=cast(FieldKind, f.kind),
+                page=f.page,
+                x=f.x,
+                y=f.y,
+                w=f.w,
+                h=f.h,
+                anchor=f.anchor,
+            )
+            for f in v.my_fields
+        ],
+        signers_signed=v.signers_signed,
+        signers_total=v.signers_total,
+        esign_consent_needed=v.esign_consent_needed,
+        disclosure_version_id=v.disclosure_version_id,
+        date_as_of=v.date_as_of,
+        paper_form_follows=v.paper_form_follows,
+        outcome=cast(Literal["signed", "declined", "abandoned"] | None, v.outcome),
+    )
+
+
+@portal_router.get("", action="portal_envelopes.read", response_model=ListPage[PortalEnvelopeRow])
 async def portal_list_route(
     ctx: Member,
     status: Literal["to_sign", "signed"] = "to_sign",
     cursor: str | None = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
 ) -> ListPage[PortalEnvelopeRow]:
-    """POR-06 list (N-02-T23)."""
-    await _portal_stub(ctx)
+    """POR-06 list (N-02-T23): the person's own signer rows, through `scope_only`."""
+    page = await portal.list_mine(ctx, tab=status, cursor=cursor, limit=limit)
+    return listing.envelope(
+        [_portal_row(r) for r in page.rows],
+        next_position=page.next_position,
+        tenant_id=ctx.tenant_id,
+        resource=portal.LIST_RESOURCE,
+        query=page.query,
+        total=(len(page.rows), page.next_position is not None),
+    )
 
 
 @portal_router.get(
-    "/{envelope_id}",
-    action="portal_envelopes.read",
-    response_model=PortalEnvelopeView,
-    errors=(501,),
+    "/{envelope_id}", action="portal_envelopes.read", response_model=PortalEnvelopeView
 )
 async def portal_view_route(envelope_id: EnvelopeId, ctx: Member) -> PortalEnvelopeView:
-    """POR-06 review (N-02-T23)."""
-    await _portal_stub(ctx)
+    """POR-06 review (N-02-T23): the documents, the person's fields and state."""
+    return _portal_view(await portal.view(ctx, envelope_id))
 
 
 @portal_router.get(
     "/{envelope_id}/documents/{document_id}/pages/{page_no}",
     action="portal_envelopes.read",
     response_model=bytes,
-    errors=(501,),
+    errors=(409,),
 )
 async def portal_page_route(
-    envelope_id: EnvelopeId, document_id: UUID, page_no: int, ctx: Member
+    envelope_id: EnvelopeId,
+    document_id: UUID,
+    page_no: Annotated[int, Path(ge=1, le=2000)],
+    ctx: Member,
 ) -> Response:
-    """A page the signer reviews (N-02-T23)."""
-    await _portal_stub(ctx)
+    """A masked page the signer reviews (N-02-T23); the read is logged."""
+    body = await portal.page(ctx, envelope_id, document_id, page_no)
+    return Response(
+        content=body,
+        media_type="image/png",
+        headers={
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "private, no-store",
+            "Content-Security-Policy": "default-src 'none'",
+        },
+    )
 
 
 @portal_router.post(
-    "/{envelope_id}/viewed",
-    action="portal_envelopes.read",
-    response_model=PortalEnvelopeRow,
-    errors=(501,),
+    "/{envelope_id}/viewed", action="portal_envelopes.read", response_model=PortalEnvelopeRow
 )
 async def portal_viewed_route(envelope_id: EnvelopeId, ctx: Member) -> PortalEnvelopeRow:
-    """Viewed (N-02-T23)."""
-    await _portal_stub(ctx)
+    """The first view, once (N-02-T23)."""
+    return _portal_row(await portal.viewed(ctx, envelope_id))
 
 
 @portal_router.post(
-    "/{envelope_id}/progress",
-    action="portal_envelopes.read",
-    response_model=PortalEnvelopeRow,
-    errors=(501,),
+    "/{envelope_id}/progress", action="portal_envelopes.read", response_model=PortalEnvelopeRow
 )
 async def portal_progress_route(
     envelope_id: EnvelopeId, body: ProgressIn, ctx: Member
 ) -> PortalEnvelopeRow:
-    """Last page seen (N-02-T23)."""
-    await _portal_stub(ctx)
+    """The furthest page seen (N-02-T23)."""
+    return _portal_row(await portal.progress(ctx, envelope_id, body.last_page_seen))
 
 
 @portal_router.post(
     "/{envelope_id}/esign-consent",
     action="portal_envelopes.sign",
     response_model=PortalEnvelopeView,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def portal_consent_route(
     envelope_id: EnvelopeId, body: ConsentIn, ctx: Member
 ) -> PortalEnvelopeView:
-    """ERSD acceptance, stored (N-02-T24)."""
-    await _portal_stub(ctx)
+    """ERSD acceptance of the firm's newest disclosure, stored per signer (N-02-T23); 409
+    `disclosure_outdated` for any other version."""
+    return _portal_view(await portal.consent(ctx, envelope_id, body.disclosure_version_id))
 
 
 @portal_router.post(
     "/{envelope_id}/signing-session",
     action="portal_envelopes.sign",
     response_model=SigningSessionOut,
-    errors=(409, 501),
+    errors=(409, 503),
 )
 async def portal_signing_session_route(
-    envelope_id: EnvelopeId, ctx: Member, idempotency_key: IdempotencyKey
+    envelope_id: EnvelopeId, ctx: Member, idempotency_key: IdempotencyKey, response: Response
 ) -> SigningSessionOut:
-    """One-time provider view; refusals in the contract (N-02-T26)."""
-    await _portal_stub(ctx)
+    """A one-time provider view for the named signer (N-02-T23): 409 `envelope_not_open`,
+    `declined`, `verification_failed`, `mfa_required`, `not_your_turn`, `before_date_as_of` or
+    `esign_consent_required`; 503 `provider_unavailable`. A replay answers the same session while
+    it is open; the link is never stored."""
+    mine = await portal.check_session(ctx, envelope_id)
+
+    async def run() -> tuple[int, dict[str, object]]:
+        made = await portal.issue_session(ctx, mine)
+        return 200, {"session_id": str(made)}
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="portal_envelopes.signing_session",
+        key=idempotency_key,
+        body={"envelope_id": str(envelope_id)},
+        run=run,
+    )
+    made = await portal.open_session(ctx, mine, UUID(str(stored.body["session_id"])))
+    response.headers.update(_NO_STORE)
+    return SigningSessionOut(
+        session_id=made.id,
+        presentation=cast(Literal["iframe", "redirect"], made.presentation),
+        url=made.url,
+        expires_at=made.expires_at,
+    )
 
 
 @portal_router.get(
     "/{envelope_id}/signing-session/{session_id}/return",
     action="portal_envelopes.sign",
     response_model=PortalEnvelopeView,
-    errors=(409, 501),
 )
 async def portal_signing_return_route(
-    envelope_id: EnvelopeId, session_id: UUID, ctx: Member
+    envelope_id: EnvelopeId, session_id: UUID, ctx: Member, response: Response
 ) -> PortalEnvelopeView:
-    """Server-checked return (N-02-T26)."""
-    await _portal_stub(ctx)
+    """The server-checked return (N-02-T23): the provider is polled before anything is shown;
+    query parameters are ignored, and `outcome` is `signed` only once the poll says so."""
+    view = await portal.signing_return(ctx, envelope_id, session_id)
+    response.headers.update(_NO_STORE)
+    return _portal_view(view)
 
 
 @portal_router.post(
     "/{envelope_id}/decline",
     action="portal_envelopes.decline",
     response_model=PortalEnvelopeView,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def portal_decline_route(
     envelope_id: EnvelopeId, body: SignerDeclineIn, ctx: Member
 ) -> PortalEnvelopeView:
-    """Decline with a reason (N-02-T28)."""
-    await _portal_stub(ctx)
+    """Decline with a reason (N-02-T23); signing sessions are refused while declined."""
+    return _portal_view(await portal.decline(ctx, envelope_id, body.reason, body.note))
 
 
 @portal_router.post(
     "/{envelope_id}/decline/withdraw",
     action="portal_envelopes.decline",
     response_model=PortalEnvelopeView,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def portal_decline_withdraw_route(
     envelope_id: EnvelopeId, ctx: Member
 ) -> PortalEnvelopeView:
-    """Withdraw a decline while open (N-02-T28)."""
-    await _portal_stub(ctx)
+    """Withdraw the person's own portal decline while the envelope is Declined (N-02-T23);
+    409 `decline_not_withdrawable` otherwise."""
+    return _portal_view(await portal.withdraw_decline(ctx, envelope_id))
 
 
 @portal_router.get(
     "/{envelope_id}/download",
     action="portal_envelopes.download",
     response_model=bytes,
-    errors=(501,),
+    errors=(409,),
 )
 async def portal_download_route(envelope_id: EnvelopeId, ctx: Member) -> Response:
-    """Signed copy plus evidence page, audited (N-02-T29)."""
-    await _portal_stub(ctx)
+    """The signed copy with its evidence pages, audited (N-02-T23); 409
+    `signed_copy_not_ready` until evidence is recorded."""
+    made = await portal.signed_copy(ctx, envelope_id)
+    return Response(
+        made.body,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{made.file_name}"',
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+            "X-Content-SHA256": made.sha256,
+        },
+    )

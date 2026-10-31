@@ -71,9 +71,12 @@ locals {
   } : {}
   # TASK-2152: the DocuSeal key, for the ops one-off alone (it seals the key into a firm's
   # install; the worker opens the sealed copy, never this secret). Only once the secret is filled.
-  esign_secrets = var.docuseal_enabled ? {
+  esign_secrets = merge(var.docuseal_enabled ? {
     ABACUS_ESIGN_INSTALL_API_KEY = "${local.secret.docuseal}:api_key::"
-  } : {}
+    } : {}, var.docuseal_webhook_enabled ? {
+    # ADR-152 (DEC-1281): the install's webhook keys, comma-separated, once the secret holds them.
+    ABACUS_ESIGN_INSTALL_WEBHOOK_KEYS = "${local.secret.docuseal}:webhook_keys::"
+  } : {})
 }
 
 module "cluster" {

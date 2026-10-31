@@ -99,6 +99,56 @@ RECONNECT_REQUEST: Final = register_email_template(
     used_by_label="CLS-11 · expired connections",
     designed=True,
 )
+# N-02-T24 (N-02 §4.8, DF-11): the signing emails beside `signature_request`. Registrations only:
+# each firm's words are imported or written in the editor (database content); until a version is
+# published every send fails closed (`template_missing`). No amount is a variable, so a reminder
+# can never carry one.
+SIGNATURE_REMINDER: Final = register_email_template(
+    "signature_reminder",
+    ("client",),
+    ("client_first_name", "firm_name", "document_title", "due_date", "portal_link"),
+    ("sign",),
+    ("SIG-01",),
+    firm_editable=True,
+    name="Signature reminder",
+    used_by_label="SIG-01 reminders",
+)
+SIGNED_COPY: Final = register_email_template(
+    "signed_copy",
+    ("client",),
+    ("client_first_name", "firm_name", "document_title", "portal_link"),
+    ("sign",),
+    ("POR-06",),
+    firm_editable=True,
+    name="Signed copy",
+    used_by_label="POR-06 · the ESIGN copy of a completed envelope",
+)
+REP_LETTER_SIGN_TODAY: Final = register_email_template(
+    "rep_letter_sign_today",
+    ("client",),
+    ("client_first_name", "firm_name", "document_title", "portal_link"),
+    ("sign",),
+    ("POR-06",),
+    firm_editable=True,
+    name="Representation letter: sign today",
+    used_by_label="POR-06 · a letter dated today",
+)
+PAPER_FORM_FOLLOWS: Final = register_email_template(
+    "paper_form_follows",
+    ("client",),
+    ("client_first_name", "firm_name", "document_title", "staff_name"),
+    (),
+    ("POR-06",),
+    firm_editable=True,
+    name="Paper form follows",
+    used_by_label="POR-06 · identity check failed (DF-11)",
+)
+SIGNING: Final[tuple[EmailTemplateRegistration, ...]] = (
+    SIGNATURE_REMINDER,
+    SIGNED_COPY,
+    REP_LETTER_SIGN_TODAY,
+    PAPER_FORM_FOLLOWS,
+)
 DESIGNED: Final[tuple[EmailTemplateRegistration, ...]] = (
     INVITATION,
     REMINDER,
