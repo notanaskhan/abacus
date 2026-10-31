@@ -92,6 +92,37 @@ export const COPY = {
     approved: (label: string, at: string): string => `Approved ${label} · ${at}`,
     failed: "The sign-off wasn't recorded. Try again.",
   },
+  // SHL-12 f (P-04-T49): the bulk sheet, verbatim from the handoff's frame 6.
+  bulk: {
+    title: (n: number): string => `Sign off ${String(n)} workpapers`,
+    workpapers: "Workpapers",
+    excludedNote: "Ineligible workpapers are excluded automatically.",
+    cta: (n: number, role: string, short: string): string =>
+      `Sign off ${String(n)} as ${role} (${short})`,
+    waiting: "Waiting on inputs",
+    openNotes: (n: number): string => (n === 1 ? "1 open note" : `${String(n)} open notes`),
+    youPrepared: "You prepared this",
+    notAllowed: "Your role can't sign this level",
+    independence: "Independence not on file",
+    signed: "Signed",
+    done: "Done",
+    toast: (n: number, short: string): string =>
+      n === 1
+        ? `Signed off 1 workpaper (${short})`
+        : `Signed off ${String(n)} workpapers (${short})`,
+    excluded: {
+      content_changed: "Changed since you opened it",
+      segregation: "You prepared this",
+      open_review_notes: "Open review notes",
+      independence_pending: "Independence not on file",
+      incomplete: "Waiting on inputs",
+      uncited_change: "Uncited change",
+      level_not_permitted: "Your role can't sign this level",
+      not_prepared: "Waiting on inputs",
+      already_signed: "Already signed",
+      sign_off_invalid: "Not signed",
+    } as Record<string, string>,
+  },
   blocked: {
     content_changed:
       "The workpaper changed after you opened it. Review the changes, then sign again.",

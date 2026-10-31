@@ -6,6 +6,8 @@ import { type GridColumn, type GridRow, GridTable } from "../data/grid";
 import { amount } from "../format";
 import type { TableColumn, TableRow } from "../data/types";
 import { MatchScope, Matchable, useMatchStore } from "../tracing/match";
+import { matchIdOf } from "../tracing/match-store";
+import { CalcTree, type CalcTreeStep } from "../data/CalcTree";
 import type { MatchId } from "../tracing/types";
 import { Held, Row, Sheet } from "./frame";
 import {
@@ -76,6 +78,61 @@ export function GridSpecimen(): JSX.Element {
             resizable={false}
           />
         </div>
+      </Row>
+    </Sheet>
+  );
+}
+
+// F-06-T19: the calc tree beside the workbook it reads. Each step is a seed line read as the
+// server would send it (no arithmetic), with its typed sheet-cell match id (INV-2).
+const tbCell = (ref: string): string =>
+  matchIdOf({ kind: "sheet_cell", file: TB_FILE, sheet: TB_SHEET, cell: ref });
+
+const CALC_STEPS: readonly CalcTreeStep[] = NORTHWIND_TB.slice(0, 3).flatMap(
+  ([code, name, debit, credit], i) => [
+    {
+      ref: `${code}-dr`,
+      depth: 0,
+      op: "",
+      label: `${code} ${name}`,
+      value: amount(debit, "cents").text,
+      src: `${TB_SHEET}!C${String(i + 2)}`,
+      match: tbCell(`C${String(i + 2)}`),
+    },
+    {
+      ref: `${code}-cr`,
+      depth: 1,
+      op: "−",
+      label: "Credit",
+      value: amount(credit, "cents").text,
+      src: `${TB_SHEET}!D${String(i + 2)}`,
+      match: tbCell(`D${String(i + 2)}`),
+    },
+  ],
+);
+
+export function CalcTreeSpecimen(): JSX.Element {
+  return (
+    <Sheet title="Calc tree" meta="role tree · rails per level · hover or focus lights the cell">
+      <Row name="Beside the workbook" meaning="Enter pins the match; Escape clears it">
+        <MatchScope>
+          <div className="flex w-[1160px] gap-[10px]">
+            <div className="w-[452px] rounded-pane bg-card shadow-e2">
+              <CalcTree label="Northwind trial balance lines" steps={CALC_STEPS} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <GridTable
+                label={TB_FILE}
+                source={TB_FILE}
+                sheet={TB_SHEET}
+                columns={TB_COLUMNS}
+                rows={TB_ROWS.slice(0, 6)}
+                headerRow
+                resizable={false}
+              />
+            </div>
+          </div>
+        </MatchScope>
       </Row>
     </Sheet>
   );

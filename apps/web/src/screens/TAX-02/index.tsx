@@ -753,6 +753,9 @@ export function TAX02({
               openOverlay(ov.SHL16("tax_return", returnId));
             }}
             sync={data.row.sync}
+            onSync={() => {
+              openOverlay(ov.TAX09(returnId)); // TAX-09: the return's engine sync (DEC-1288)
+            }}
             {...(overview.data?.engine_synced_on == null
               ? {}
               : { syncDate: formatDate(overview.data.engine_synced_on, { now }) })}

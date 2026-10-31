@@ -71,6 +71,7 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("member.set_ero", "access_control", "firm_admin"),
     ("k1_package.release", "release", "engagement_partner"),
     ("questionnaire_template.publish", "standards", "firm_partner"),
+    ("grouping_set.publish", "standards", "practice_leader"),
     ("report_template.publish", "standards", "practice_leader"),
 )
 ROUTES: tuple[tuple[str, str, str], ...] = (
@@ -130,6 +131,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/firm/security/incidents/{incident_id}/decisions", "incident.decide"),
     ("POST", "/v1/firm/security/sessions/{session_id}/sign-out", "session.end"),
     ("POST", "/v1/firm/staff/{user_id}/unlock", "staff.unlock"),
+    ("POST", "/v1/grouping-sets/versions/{version_id}/publish", "grouping_set.publish"),
     ("POST", "/v1/k1-releases/{release_id}:undo", "k1_package.release"),
     ("POST", "/v1/legal-holds", "legal_hold.place"),
     ("POST", "/v1/legal-holds/{hold_id}/release", "legal_hold.lift"),

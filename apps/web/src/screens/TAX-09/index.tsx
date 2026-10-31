@@ -26,6 +26,8 @@ import {
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type JSX, useCallback, useEffect, useRef, useState } from "react";
 import { useNow } from "../../app-core/clock";
+import type { OverlayRenderProps } from "../../app-core/overlays";
+import { hrefOf, to } from "../../routes/to";
 import { CAUSES, COPY, FIELDS } from "./copy";
 
 // TAX-09 · Tax-engine sync (T-01-T15; docs/screens/TAX-09.md): the sync chip in the return's
@@ -291,12 +293,16 @@ export interface TAX09Props {
   defaultOpen?: boolean;
   /** e opens on the import diff. */
   defaultImportOpen?: boolean;
+  /** Mounted over a real return (the `engine-sync` layer, DEC-1288): the chip and its panel
+   * only, without the artboard's subbar words, and the panel in the flow rather than floating. */
+  bare?: boolean;
 }
 
 export function TAX09({
   returnId,
   defaultOpen = false,
   defaultImportOpen = false,
+  bare = false,
 }: TAX09Props): JSX.Element {
   const now = useNow();
   const reduced = useReducedMotion();
@@ -383,9 +389,11 @@ export function TAX09({
   return (
     <div className="relative">
       <div className="flex h-[42px] items-center gap-[10px] px-[12px]">
-        <Pill variant="outline" lead={<StatusDisc state="done" size={15} />}>
-          {COPY.noChanges}
-        </Pill>
+        {!bare && (
+          <Pill variant="outline" lead={<StatusDisc state="done" size={15} />}>
+            {COPY.noChanges}
+          </Pill>
+        )}
         <SyncChip
           code={state}
           {...(vars === undefined ? {} : { vars })}
@@ -395,17 +403,23 @@ export function TAX09({
             setOpen((o) => !o);
           }}
         />
-        <span className="flex flex-1 items-center justify-center gap-[8px]">
-          <span className="text-[15px] font-medium">{COPY.title}</span>
-          <span className="text-dense text-ink-2">{COPY.client}</span>
-          <Pill variant="green-tint">{COPY.approved}</Pill>
-        </span>
+        {!bare && (
+          <span className="flex flex-1 items-center justify-center gap-[8px]">
+            <span className="text-[15px] font-medium">{COPY.title}</span>
+            <span className="text-dense text-ink-2">{COPY.client}</span>
+            <Pill variant="green-tint">{COPY.approved}</Pill>
+          </span>
+        )}
       </div>
       {open && (
         <div
-          role="dialog"
+          role={bare ? "group" : "dialog"}
           aria-label={COPY.syncLabel}
-          className="absolute top-[50px] left-[170px] z-10 flex w-[462px] flex-col gap-[6px] rounded-[15px] bg-nested p-[6px] shadow-pop"
+          className={
+            bare
+              ? "flex w-full flex-col gap-[6px] rounded-[15px] bg-nested p-[6px]"
+              : "absolute top-[50px] left-[170px] z-10 flex w-[462px] flex-col gap-[6px] rounded-[15px] bg-nested p-[6px] shadow-pop"
+          }
         >
           <Section title={COPY.actions}>
             {mayExport ? (
@@ -496,6 +510,14 @@ export function TAX09({
               <span className="size-[22px] rounded-[6px] bg-chip" />
             </span>
             <span className="flex-1">{COPY.connection}</span>
+            {/* The binders, where the return's documents are collected (TAX-09 → BND-01; DEC-1288). */}
+            <a href={hrefOf(to.BND01())} className="font-medium text-ink hover:underline">
+              {COPY.binder}
+            </a>
+            {/* Where the client's files for the return arrive (TAX-09 → INB-01). */}
+            <a href={hrefOf(to.INB01())} className="font-medium text-ink hover:underline">
+              {COPY.inbox}
+            </a>
             <Tooltip content={COPY.settingsTip}>
               <span className="font-medium text-ink">{COPY.settings} →</span>
             </Tooltip>
@@ -566,5 +588,23 @@ export function TAX09({
         />
       )}
     </div>
+  );
+}
+
+/** The `engine-sync` layer (`?ov=engine-sync:<returnId>`, `ov.TAX09`; DEC-1288): TAX-01's row chip
+ * and TAX-02's header chip open the return's sync chip and its panel as a sheet over the page. */
+export function EngineSyncLayer({ ref, close }: OverlayRenderProps): JSX.Element | null {
+  const returnId = ref.args[0];
+  if (returnId === undefined) return null;
+  return (
+    <Dialog
+      open
+      onOpenChange={(next) => {
+        if (!next) close();
+      }}
+      title={COPY.syncLabel}
+    >
+      <TAX09 returnId={returnId} bare defaultOpen />
+    </Dialog>
   );
 }
