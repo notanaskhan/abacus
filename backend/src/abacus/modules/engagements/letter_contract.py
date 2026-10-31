@@ -31,7 +31,6 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
 )
-from abacus.modules.reporting.api import DocBlock
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IfMatch = Annotated[str, Header(alias="If-Match", min_length=1, max_length=64)]
@@ -209,7 +208,9 @@ class ComposerLetterOut(BaseModel):
     # names libraries apart from template versions.
     clause_library: Annotated[str | None, classified("internal")] = None
     letterhead: Annotated[LetterheadOut | None, classified("internal")] = None
-    paper: Annotated[list[DocBlock], classified("confidential")] = []
+    # C11's DocBlocks as JSON (ENG-04 reads them as the generated client's C11 block types):
+    # `engagements` may not import `reporting`'s models (ADR-008).
+    paper: Annotated[list[dict[str, object]], classified("confidential")] = []
     signers: Annotated[list[LetterSignerOut], classified("confidential")] = []
     consents: Annotated[list[LetterConsentOut], classified("confidential")] = []
     approved_by_name: Annotated[str | None, classified("internal")]

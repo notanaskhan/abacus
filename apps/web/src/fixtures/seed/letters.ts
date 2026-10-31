@@ -6,6 +6,7 @@
 // 12,000 = 18,500, billed 9,250 + 9,250; the engineer's 9,800 shown and never added).
 import type {
   ComposerLetterOut,
+  SectionBlockOutput,
   LetterClause,
   LetterConsentOut,
   LetterFeesOut,
@@ -22,8 +23,8 @@ export const RIDGELINE_TEMPLATE_VERSION = stableId("report-template-version:bh-t
 export const RIDGELINE_DOCUMENT = stableId("generated-document:ridgeline-letter");
 export const E13_ENVELOPE = stableId("envelope:E13");
 
-type Paper = NonNullable<ComposerLetterOut["paper"]>;
-type Block = Paper[number];
+type Block = SectionBlockOutput["blocks"][number];
+type Paper = Block[];
 
 const text = (t: string) => ({ type: "text" as const, text: t });
 const v = (key: string) => ({ type: "var" as const, key });

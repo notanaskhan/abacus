@@ -100,7 +100,11 @@ from abacus.modules.engagements.intake_contract import (
     dedupe_router,
 )
 from abacus.modules.engagements.letter_contract import letter_router
-from abacus.modules.engagements.letters import ensure_kind as ensure_letter_kind
+from abacus.modules.engagements.letter_render import (
+    LetterRenderAsk,
+    LetterRendered,
+    register_letter_renderer,
+)
 from abacus.modules.engagements.pilot_w4 import w4_portal_activation
 from abacus.modules.engagements.roll_forward import (
     PriorItem,
@@ -206,6 +210,7 @@ from abacus.modules.engagements.work_items import (
     assurance_item,
     assurance_item_id,
     client_tax_years,
+    client_tri_subjects,
     create_work_item,
     end_wall_assignments,
     holds_tax_return,
@@ -409,6 +414,8 @@ __all__ = [
     "IndependenceRequested",
     "Judgment",
     "JudgmentSource",
+    "LetterRenderAsk",
+    "LetterRendered",
     "MaskedTinOut",
     "MethodologyAlreadyApplied",
     "MethodologyVersionView",
@@ -431,6 +438,7 @@ __all__ = [
     "acceptance_record",
     "add_flag",
     "add_to_team",
+    "ai_excluded",
     "all_engagement_ids",
     "answer_independence",
     "approve_eqr_eligibility",
@@ -451,6 +459,7 @@ __all__ = [
     "client_contact_organisations",
     "client_contact_organisations_of_users",
     "client_tax_years",
+    "client_tri_subjects",
     "commit_client_intake",
     "complete_manual_check",
     "conclude_independence",
@@ -467,7 +476,6 @@ __all__ = [
     "engagement_metadata",
     "engagements_in_hold_scope",
     "engagements_of_entity",
-    "ensure_letter_kind",
     "entity_of",
     "eqr_eligibility_due",
     "firm_router",
@@ -502,6 +510,7 @@ __all__ = [
     "register_evidence_readable",
     "register_gate_provider",
     "register_judgment_source",
+    "register_letter_renderer",
     "register_open_requests",
     "register_progress_source",
     "register_roll_forward_items",

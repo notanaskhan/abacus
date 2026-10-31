@@ -12,6 +12,7 @@ from uuid import UUID
 
 from sqlalchemy import text
 
+from abacus.kernel.db import transaction_context
 from abacus.kernel.uow import UnitOfWork
 from abacus.modules.evidence.api import GeneratedFile, StoredObject, record_generated
 from abacus.modules.reporting.documents import document_row
@@ -45,9 +46,7 @@ async def record_file(
     )
     if version_id is None:
         raise LookupError("generated document version not found")
-    tenant_id = cast(
-        UUID, await tx.session.scalar(text("SELECT current_setting('app.tenant_id')::uuid"))
-    )
+    tenant_id = (await transaction_context(tx.session)).tenant_id
     media = (
         "application/pdf"
         if file_format == "pdf"
@@ -72,9 +71,10 @@ async def record_file(
         text(
             "INSERT INTO generated_document_files (tenant_id, version_id, format, "
             "evidence_version_id, render_hash, page_count, byte_size) VALUES "
-            "(current_setting('app.tenant_id')::uuid, :v, :f, :e, :h, :p, :b)"
+            "(:t, :v, :f, :e, :h, :p, :b)"
         ),
         {
+            "t": tenant_id,
             "v": version_id,
             "f": file_format,
             "e": evidence_version_id,

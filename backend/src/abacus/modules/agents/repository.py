@@ -79,6 +79,7 @@ async def insert_run(
     inbox_file_id: UUID | None = None,
     methodology_version_id: UUID | None = None,
     shadow: bool = False,
+    inbox_attachment_id: UUID | None = None,
 ) -> UUID | None:
     """The new run's ID, or None if this agent already ran for this event."""
     return (
@@ -95,6 +96,7 @@ async def insert_run(
                 source_event_id=source_event_id,
                 task_scope=task_scope,
                 inbox_file_id=inbox_file_id,
+                inbox_attachment_id=inbox_attachment_id,
                 methodology_version_id=methodology_version_id,
                 shadow=shadow,
             )
@@ -1052,7 +1054,12 @@ async def list_match_results(
         )
         .where(
             InboxMatchRun.agent_run_id.in_(run_ids),
-            visible(ctx, "inbox_match.read", InboxMatchRun.engagement_id),
+            InboxMatchRun.inbox_file_id.is_not(None),  # engagement mode only (N-01-T22)
+            visible(
+                ctx,
+                "inbox_match.read",
+                cast("QueryableAttribute[UUID]", InboxMatchRun.engagement_id),
+            ),
             _shown_run(InboxMatchRun.agent_run_id),
         )
         .order_by(InboxMatchRun.agent_run_id, InboxMatchProposal.rank)
@@ -1090,7 +1097,8 @@ async def shown_picks(
     )
     found: dict[UUID, list[tuple[UUID, Decimal]]] = {}
     for file_id, item_id, confidence in rows.tuples().all():
-        found.setdefault(file_id, []).append((item_id, confidence))
+        if file_id is not None and item_id is not None:  # engagement mode: a file and a request
+            found.setdefault(file_id, []).append((item_id, confidence))
     return found
 
 
@@ -1559,7 +1567,13 @@ async def latest_matches_for_gates(
     proposal."""
     stmt = select(
         InboxMatchRun.id, InboxMatchRun.engagement_id, InboxMatchRun.inbox_file_id
-    ).where(_shown_run(InboxMatchRun.agent_run_id))
+    ).where(
+        _shown_run(InboxMatchRun.agent_run_id),
+        # Engagement mode only: an intake run (N-01-T22) has no engagement gate here; INB-02
+        # carries it.
+        InboxMatchRun.inbox_file_id.is_not(None),
+        InboxMatchRun.engagement_id.is_not(None),
+    )
     if engagement_id is not None:
         stmt = stmt.where(InboxMatchRun.engagement_id == engagement_id)
     rows = (
@@ -1585,7 +1599,11 @@ async def latest_matches_for_gates(
         .scalars()
         .all()
     )
-    return [(r[0], r[1], r[2]) for r in rows if r[0] in shown]
+    found: list[tuple[UUID, UUID, UUID]] = []
+    for match_id, engagement_id, inbox_file_id in rows:
+        if match_id in shown and engagement_id is not None and inbox_file_id is not None:
+            found.append((match_id, engagement_id, inbox_file_id))
+    return found
 
 
 async def undecided_drafts_for_gates(

@@ -58,6 +58,8 @@ from abacus.modules.signatures.sources import (
 from abacus.modules.signatures.status_poll import ACTIVITIES as STATUS_POLL_ACTIVITIES
 from abacus.modules.signatures.status_poll import SCHEDULES as STATUS_POLL_SCHEDULES
 from abacus.modules.signatures.status_poll import hint_envelope
+from abacus.modules.signatures.webhook import register_esign_webhook
+from abacus.modules.signatures.webhook_routes import webhook_router
 from abacus.modules.signatures.workflows import (
     EnvelopeInput,
     EnvelopeStatusPollWorkflow,
@@ -166,7 +168,7 @@ SUBSCRIPTIONS: dict[str, Handler] = {EnvelopeSendApproved.event_type: on_send_ap
 
 # The routers the API mounts, in order (P-39; F-03-T07). `/import` and `/summary` are declared
 # before `/{envelope_id}` inside `router`.
-ROUTERS: tuple[AbacusRouter, ...] = (router, policies_router, portal_router)
+ROUTERS: tuple[AbacusRouter, ...] = (router, policies_router, portal_router, webhook_router)
 
 __all__ = [
     "ACTIVITIES",
@@ -204,6 +206,7 @@ __all__ = [
     "hint_envelope",
     "register_envelope_source",
     "register_esign_install",
+    "register_esign_webhook",
     "register_reminder_sender",
     "registered_sources",
     "seal_ip",

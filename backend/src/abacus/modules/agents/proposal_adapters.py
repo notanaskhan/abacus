@@ -272,13 +272,16 @@ async def _project_match(ctx: AuthContext, subject: UUID) -> _Projected:
         if found is None:
             raise NotFound("proposal")
         match, picks = found
+        if match.inbox_file_id is None or match.engagement_id is None:
+            raise NotFound("proposal")  # an intake match (N-01-T22) is INB-02's, not a gate's
+        inbox_file_id, engagement_id = match.inbox_file_id, match.engagement_id
         run = await run_of(session, match.agent_run_id)
-        current = await newest_match(session, match.inbox_file_id) == match.id
+        current = await newest_match(session, inbox_file_id) == match.id
         rejected = await match_decision(session, match.id)
     await _visible_run(ctx, run)
-    resource = await _resource(ctx, match.engagement_id)
+    resource = await _resource(ctx, engagement_id)
     cited = await verified_citation_ids(ctx.tenant, "inbox_match", [match.id])
-    waiting = match.inbox_file_id in await waiting_among(ctx.tenant, [match.inbox_file_id])
+    waiting = inbox_file_id in await waiting_among(ctx.tenant, [inbox_file_id])
     state = (
         "rejected"
         if rejected is not None
@@ -294,7 +297,7 @@ async def _project_match(ctx: AuthContext, subject: UUID) -> _Projected:
                 ctx.tenant,
                 "inbox_match_decision",
                 [rejected.id],
-                engagement_id=match.engagement_id,
+                engagement_id=engagement_id,
                 client_id=resource.client_id,
             )
             note = await open_text(
@@ -347,7 +350,7 @@ async def _project_match(ctx: AuthContext, subject: UUID) -> _Projected:
         allowed_actions=await _allowed(ctx, resource, state),
     )
     first = picks[0].request_item_id if picks else None
-    return _Projected(view, match.engagement_id, match.inbox_file_id, resource, first)
+    return _Projected(view, engagement_id, inbox_file_id, resource, first)
 
 
 async def _project(ctx: AuthContext, kind: str, subject: UUID) -> _Projected:

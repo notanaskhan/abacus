@@ -708,6 +708,9 @@ PUBLIC_ROUTE_EXCEPTIONS = frozenset(
     | {"/v1/invitations/preview"}
     # P-08-T21 (DEC-139): a recipient's link renewal, always 202, under `PRE_SESSION`.
     | {"/v1/portal/links/renew"}
+    # ADR-152 amendment (DEC-1281): the DocuSeal webhook, signature-verified, under
+    # `PROVIDER_WEBHOOK`.
+    | {"/v1/webhooks/docuseal/{tenant_id}/{install_id}"}
 )
 _PUBLIC_ROUTES_FILE = "src/abacus/api/public_routes.py"
 _APP_FILE = "src/abacus/api/app.py"

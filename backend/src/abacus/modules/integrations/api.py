@@ -72,6 +72,7 @@ from abacus.modules.integrations.secrets import (
     connected_integration,
     erase_secret,
     esign_install_secret,
+    esign_webhook_secret,
     open_secret,
     store_secret,
 )
@@ -123,6 +124,7 @@ __all__ = [
     "erase_secret",
     "esign_install_secret",
     "esign_install_state",
+    "esign_webhook_secret",
     "execute_write",
     "is_available",
     "listed",

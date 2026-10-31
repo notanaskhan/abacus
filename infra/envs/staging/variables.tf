@@ -174,3 +174,9 @@ variable "docuseal_enabled" {
   type        = bool
   default     = false
 }
+
+variable "docuseal_webhook_enabled" {
+  description = "DEC-1281: also map the DocuSeal webhook keys (secret field webhook_keys) into the ops one-off task"
+  type        = bool
+  default     = false
+}

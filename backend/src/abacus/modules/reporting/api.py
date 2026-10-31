@@ -20,6 +20,7 @@ from uuid import UUID
 
 from abacus.kernel.uow import UnitOfWork
 from abacus.kernel.uow.relay import OutboxEvent
+from abacus.modules.engagements.api import register_letter_renderer
 from abacus.modules.reporting.consent import Recipients as Recipients
 from abacus.modules.reporting.consent import RecipientsUnavailable as RecipientsUnavailable
 from abacus.modules.reporting.consent import recipients as _consent_recipients
@@ -33,6 +34,7 @@ from abacus.modules.reporting.contract import (
     documents_router,
     templates_router,
 )
+from abacus.modules.reporting.engagement_letters import render_engagement_letter
 
 # T-01-T10's consumer API (re-exported).
 from abacus.modules.reporting.render.core import RenderInput as RenderInput
@@ -214,7 +216,7 @@ async def render(tx: UnitOfWork, request: RenderRequest) -> RenderTicket:
     kind = document_kind(request.kind)
     resolved = await kind.variables_provider(request.owner_ref, request.scope)
     declared = await docs.declared_keys(tx, request.template_version_id)
-    variables, missing = docs.whitelist(declared, resolved)
+    variables, missing = docs.declared_values(declared, resolved)
     if missing:
         raise RenderRefused("missing_variable", ",".join(missing))
     snapshot = docs.snapshot_of(
@@ -306,6 +308,7 @@ async def render_final(
             "kind": approval_ref.kind,
             "id": str(approval_ref.id),
             "content_hash": approval_ref.content_hash,
+            "approver_user_id": str(approved[0]),
         },
         requested_by_kind="human",
         requested_by_user_id=requester.user_id,
@@ -349,7 +352,7 @@ async def lock(tx: UnitOfWork, document_id: UUID, cause_ref: str) -> None:
     tx.record(
         "generated_document.locked",
         target=docs.target(document_id),
-        after=docs.ref(cause=cause_ref),
+        after=docs.ref(cause=docs.sha256_hex(cause_ref.encode())),
     )
 
 
@@ -393,3 +396,7 @@ SUBSCRIPTIONS: Mapping[str, Callable[[OutboxEvent], Awaitable[None]]] = _SourceS
 # The render job's workflow and activity land with the evidence write (P-11-T09).
 WORKFLOWS: dict[type, str] = {}
 ACTIVITIES: tuple[object, ...] = ()
+
+# N-02-T32 (DEC-1458): the engagement letter renders through C11 by engagements' port, since
+# engagements may not import reporting (ADR-008).
+register_letter_renderer(render_engagement_letter)

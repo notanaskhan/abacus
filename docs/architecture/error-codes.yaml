@@ -297,11 +297,6 @@ codes:
     raised_by:
     - abacus.modules.assurance.completion.CompletionInvalid
     - abacus.modules.fieldwork.completion.CompletionInvalid
-  computed_variable:
-    status: 422
-    raised_by:
-    - abacus.modules.engagements.letters.ComputedVariable
-    summary: 'A fee or billing variable was given as text: code computes those.'
   confirmed_out_of_order:
     status: 422
     raised_by:
@@ -702,11 +697,6 @@ codes:
     - abacus.modules.evidence.export_currency.ExportStale
     summary: 'Evidence or requests changed after the final export''s snapshot: export again, then record
       the archive (`facts.event_seq` names the newer event).'
-  fees_do_not_foot:
-    status: 422
-    raised_by:
-    - abacus.modules.engagements.letters.FeesDoNotFoot
-    summary: The installments' shares do not add to 100% of the fee.
   field_changed:
     status: 409
     raised_by:
@@ -1108,11 +1098,6 @@ codes:
     - abacus.modules.engagements.record.LetterExceptionsOff
     summary: '"Not required this year" needs the engagement partner and the firm setting `allow_letter_exceptions`
       on.'
-  letter_locked:
-    status: 409
-    raised_by:
-    - abacus.modules.engagements.letters.LetterLocked
-    summary: 'The letter was sent or signed, or is a recorded letter: it takes no edit.'
   letter_missing:
     status: 409
     raised_by:
@@ -1156,11 +1141,6 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.ledger.mapping.MappingExists
-  markup_not_allowed:
-    status: 422
-    raised_by:
-    - abacus.modules.engagements.letters.MarkupNotAllowed
-    summary: Overrides are plain text (no rich text until P-59).
   materiality_invalid:
     status: 422
     raised_by:
@@ -1955,7 +1935,6 @@ codes:
     - abacus.modules.engagements.drafts.DraftStaleVersion
     - abacus.modules.engagements.independence.ConclusionSuperseded
     - abacus.modules.engagements.intake.IntakeStaleVersion
-    - abacus.modules.engagements.letters.LetterStale
     - abacus.modules.engagements.roll_forward_v2.RollForwardStale
     - abacus.modules.engagements.team_errors.TeamChanged
     - abacus.modules.evidence.firm_export_schedule.ScheduleStale
@@ -2210,12 +2189,6 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.connections.ledger_import.UnknownFormat
-  unknown_letter_part:
-    status: 422
-    raised_by:
-    - abacus.modules.engagements.letters.UnknownLetterPart
-    summary: A clause, variable or section the template version does not have, or a template version
-      that is not a letter's.
   unknown_notification_kind:
     status: 422
     raised_by:

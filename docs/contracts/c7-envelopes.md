@@ -35,6 +35,7 @@ One envelope model for every signed document, whichever provider: `record` (impo
 | Portal ERSD, signing session, return | `POST /v1/portal/envelopes/{id}/esign-consent`, `/signing-session`, `GET …/signing-session/{sid}/return` | `portal_envelopes.sign` | deny |
 | Portal decline, withdraw | `POST /v1/portal/envelopes/{id}/decline`, `/decline/withdraw` | `portal_envelopes.decline` | deny |
 | Portal signed copy | `GET /v1/portal/envelopes/{id}/download` | `portal_envelopes.download` | deny |
+| DocuSeal webhook (ADR-152 amendment, DEC-1281): signature-verified with the install's key, a hint only; always an empty 202, or 401 / 413, nothing echoed | `POST /v1/webhooks/docuseal/{tenant_id}/{install_id}` | `PROVIDER_WEBHOOK` (no principal) | provider only |
 | Letter (ENG-04) | `GET /v1/engagements/{id}/letter/composer`, `PUT …/letter/composer`, `GET …/letter/compare`, `GET …/letter/pdf`, `POST …/letter/request-approval`, `…/approve`, `…/send`, `…/amend` | `letter.read`, `letter.draft`, `letter.approve`, `letter.send`, `letter.amend` | agent: `letter.draft` only |
 
 The plan's `portal.envelopes.*` are spelt `portal_envelopes.*` (one dot, DEC-139). The composer lives under `/letter/composer` because `PUT /v1/engagements/{id}/letter` is the kept record path (`letter.record`).

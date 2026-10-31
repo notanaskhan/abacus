@@ -3,6 +3,7 @@ import type {
   LetterConsentOut,
   LetterVariable,
   ParagraphBlock,
+  SectionBlockOutput,
 } from "@abacus/api-client";
 import {
   type Actor,
@@ -188,7 +189,9 @@ function ConsentRow({
   );
 }
 
-type Block = NonNullable<ComposerLetterOut["paper"]>[number];
+/** C11's blocks: the composer sends the template's DocBlocks as JSON (engagements may not import
+ * reporting's models), so the paper reads them as the client's C11 block types. */
+type Block = SectionBlockOutput["blocks"][number];
 type Runs = ParagraphBlock["runs"];
 
 interface PaperProps {
@@ -320,7 +323,7 @@ function Paper({ letter, values, onLight }: PaperProps): JSX.Element {
           ))}
         </div>
       )}
-      {(letter.paper ?? []).map((block, i) => (
+      {((letter.paper ?? []) as Block[]).map((block, i) => (
         <BlockView key={i} block={block} states={states} values={values} onLight={onLight} />
       ))}
     </PaperCard>

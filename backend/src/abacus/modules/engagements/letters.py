@@ -15,25 +15,22 @@ to Draft with its approval left on the old version (stale), as N-02-T33 builds o
 - Fees are typed lines, installments as shares and third-party fees. Code computes the total,
   each installment (the last takes the rounding remainder) and the wording; a third party's fee
   is shown and never added (ADR-050). Fee and billing variables cannot be overridden.
-- The C11 kind `engagement_letter` resolves variables through `_provider`, which answers what this
-  module resolved for the same owner in the current call (C11's provider receives no unit of
-  work; DEC-1458). Approvals are N-02-T33's: until then the kind's approval provider answers
-  None, so no final render of a letter happens.
+- The draft renders through C11 by the port in `letter_render.py`: `reporting` registers the
+  `engagement_letter` kind's renderer there, since `engagements` may not import `reporting`
+  (ADR-008); the values this module resolved go with the ask (DEC-1458). Approvals are
+  N-02-T33's: until then the kind's approval provider answers None, so no letter renders final.
 - Sent and signed letters, and recorded-mode letters, take no edit (409).
 """
 
 from __future__ import annotations
 
 import re
-from collections.abc import Generator, Iterator, Mapping
-from contextlib import contextmanager
-from contextvars import ContextVar
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Final, Literal, cast
 from uuid import UUID, uuid4
 
-from pydantic import TypeAdapter
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -44,6 +41,7 @@ from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.engagements.acceptance_tables import g1_decision
 from abacus.modules.engagements.contacts import attest_of, designations_of
+from abacus.modules.engagements.index import PARTNER_ROLES
 from abacus.modules.engagements.letter_contract import (
     ComposerLetterOut,
     InstallmentOut,
@@ -56,10 +54,12 @@ from abacus.modules.engagements.letter_contract import (
     LetterVariable,
     ThirdPartyFeeOut,
 )
+from abacus.modules.engagements.letter_render import LetterRenderAsk, render_letter
 from abacus.modules.engagements.models import Engagement
 from abacus.modules.engagements.service import get_ref, lock_ref
 from abacus.modules.identity.api import (
     AuthContext,
+    Forbidden,
     allowed_actions,
     authorise,
     engagement_team,
@@ -67,8 +67,6 @@ from abacus.modules.identity.api import (
 )
 from abacus.modules.methodology.api import ReportTemplateParts, report_template_parts
 from abacus.modules.organisations.api import client_names, signer_contacts
-from abacus.modules.reporting import api as c11
-from abacus.modules.reporting.api import DocBlock
 
 KIND: Final = "engagement_letter"
 OWNER: Final = "engagement_letter"
@@ -222,7 +220,7 @@ async def letter_facts(
 
     facts.append(Fact("client.signer", contact("signing_officer")))
     team = await engagement_team(ctx, engagement.id)
-    partner = next((m.display_name for m in team if m.role == "engagement_partner"), None)
+    partner = next((m.display_name for m in team if m.role in PARTNER_ROLES), None)
     facts.append(Fact("firm.signer", f"{partner}, Partner" if partner else None))
     cas = engagement.service_line == "cas"
     attest = bool(await attest_of(ctx.tenant, engagement.id))
@@ -261,51 +259,6 @@ async def letter_facts(
         f if f.value is not None or f.reason else Fact(f.key, None, "not_designated")
         for f in facts
     ]
-
-
-# --- the C11 kind -------------------------------------------------------------------------
-
-_resolving: ContextVar[Mapping[UUID, Mapping[str, str]] | None] = ContextVar(
-    "abacus_letter_variables", default=None
-)
-
-
-async def _provider(owner: c11.OwnerRef, scope: c11.RenderScope) -> Mapping[str, str]:
-    """What this module resolved for the owner in the current call; nothing otherwise, so every
-    declared key refuses with `missing_variable` (never a blank)."""
-    current = _resolving.get()
-    return {} if current is None or owner.type != OWNER else current.get(owner.id, {})
-
-
-async def _approval(ref: c11.ApprovalRef) -> tuple[UUID, str] | None:
-    """N-02-T33 resolves a partner's approval; until then no letter renders final."""
-    return None
-
-
-def ensure_kind() -> None:
-    """Register `engagement_letter` with C11 once per process."""
-    try:
-        c11.document_kind(KIND)
-    except c11.UnknownDocumentKind:
-        c11.register_document_kind(
-            c11.DocumentKind(
-                kind=KIND,
-                layout="letter",
-                variables_provider=_provider,
-                approval_provider=_approval,
-                retention_record_type="engagement_letter",
-                formats=("pdf", "docx"),
-            )
-        )
-
-
-@contextmanager
-def _resolved(owner: UUID, values: Mapping[str, str]) -> Generator[None]:
-    token = _resolving.set({owner: dict(values)})
-    try:
-        yield
-    finally:
-        _resolving.reset(token)
 
 
 # --- the template ---------------------------------------------------------------------------
@@ -404,9 +357,6 @@ def signers_of(variables: list[LetterVariable]) -> list[LetterSignerOut]:
     if firm:
         out.append(LetterSignerOut(order=len(out) + 1, name=firm.split(",")[0], role="firm"))
     return out
-
-
-_PAPER: Final = TypeAdapter(list[DocBlock])
 
 
 # --- reads ----------------------------------------------------------------------------------
@@ -567,7 +517,11 @@ async def _view(
         version=0 if version is None else cast(int, version["version_no"]),
         template_name=None if template is None else template[0],
         template_version_no=None if template is None else template[1],
-        paper=_PAPER.validate_python(template[2]) if template is not None else [],
+        paper=[
+            cast(dict[str, object], b)
+            for b in (template[2] if template is not None else [])
+            if isinstance(b, dict)
+        ],
         signers=signers_of(variables),
         letterhead=await _letterhead(ctx.tenant_id),
     )
@@ -630,7 +584,10 @@ async def draft_letter(
     person's edits, rendered as a C11 draft in the same unit of work."""
     if ctx.client:
         raise NotFound("letter")
-    ensure_kind()
+    if ctx.tenant.actor_kind != "human" or ctx.is_support:
+        # The draft is recorded as a person's (created_by, the C11 requester); an agent drafts
+        # through its own tool path with its run named, never through this route (INV-5).
+        raise Forbidden(DRAFT, "role")
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
         await authorise(ctx, DRAFT, ref.resource())
@@ -657,29 +614,22 @@ async def draft_letter(
         values.update(body.variables)
         values.update(fee_variables(fees))
         owner = engagement_id
-        with _resolved(owner, values):
-            ticket = await c11.render(
-                tx,
-                c11.RenderRequest(
-                    kind=KIND,
-                    owner_ref=c11.OwnerRef(OWNER, owner),
-                    scope=c11.RenderScope(client_id=engagement.client_id, engagement_id=owner),
-                    template_version_id=body.template_version_id,
-                    requested_by=c11.Requester("human", user_id=ctx.user_id),
-                    formats=("pdf", "docx"),
-                    clause_states=tuple(
-                        c11.ClauseState(k, v != "off") for k, v in sorted(states.items())
-                    ),
-                    section_overrides=tuple(
-                        c11.SectionOverride(
-                            k,
-                            tuple(p.strip() for p in v.split("\n\n") if p.strip()),
-                            ctx.user_id,
-                        )
-                        for k, v in sorted(body.section_overrides.items())
-                    ),
-                ),
-            )
+        ticket = await render_letter(
+            tx,
+            LetterRenderAsk(
+                owner_id=owner,
+                client_id=engagement.client_id,
+                engagement_id=owner,
+                template_version_id=body.template_version_id,
+                requested_by=ctx.user_id,
+                values=values,
+                clause_states={k: v != "off" for k, v in states.items()},
+                overrides={
+                    k: tuple(p.strip() for p in v.split("\n\n") if p.strip())
+                    for k, v in body.section_overrides.items()
+                },
+            ),
+        )
         declared = set(parts.variable_keys)
         stored = {k: v for k, v in values.items() if k in declared}
         version_id = uuid4()
@@ -757,7 +707,6 @@ __all__ = [
     "composed_letter",
     "compute_fees",
     "draft_letter",
-    "ensure_kind",
     "fee_variables",
     "money",
 ]

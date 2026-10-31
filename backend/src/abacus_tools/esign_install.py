@@ -8,8 +8,10 @@ hosted database.
     python -m abacus_tools.esign_install disconnect --tenant <id> --operator <handle>
     python -m abacus_tools.esign_install status --tenant <id> --operator <handle>
 
-The API key is read only from `ABACUS_ESIGN_INSTALL_API_KEY`, which the environment maps from
-its secret store into the ops task alone: never an argument (an ops request is a file in a public
+The API key is read only from `ABACUS_ESIGN_INSTALL_API_KEY`, and the install's DocuSeal webhook
+keys (optional, comma-separated while one rotates; ADR-152, DEC-1281) only from
+`ABACUS_ESIGN_INSTALL_WEBHOOK_KEYS`, which the environment maps from its secret store into the
+ops task alone: never an argument (an ops request is a file in a public
 repository), never printed, never logged. `connect` and `rotate` first ask DocuSeal whether the
 key works (`GET /user`; a refusal writes nothing), then make sure the catalogue holds the hidden
 `docuseal` row (this package's reviewed `catalogue/esignature.yaml`, through the catalogue's
@@ -47,6 +49,8 @@ from abacus.modules.platform.api import operator_context
 from abacus_tools import integration_catalog
 
 KEY_ENV: Final = "ABACUS_ESIGN_INSTALL_API_KEY"
+WEBHOOK_ENV: Final = "ABACUS_ESIGN_INSTALL_WEBHOOK_KEYS"
+_WEBHOOK_KEY = re.compile(r"[A-Za-z0-9_-]{16,200}")
 API_HOST: Final = "api.docuseal.com"  # signatures.docuseal.ALLOWED_HOSTS
 DOCUMENT: Final = Path(__file__).parent / "catalogue" / "esignature.yaml"
 _KEY = re.compile(r"[A-Za-z0-9_-]{20,200}")
@@ -67,9 +71,22 @@ def api_key(environ: dict[str, str] | None = None) -> str:
     return raw
 
 
-def secret_of(key: str) -> bytes:
+def webhook_keys(environ: dict[str, str] | None = None) -> tuple[str, ...]:
+    """The install's webhook keys from the ops task's environment (none is allowed: the firm
+    then runs poll-only), each checked for shape only (never echoed)."""
+    raw = (environ if environ is not None else dict(os.environ)).get(WEBHOOK_ENV, "")
+    keys = tuple(k.strip() for k in raw.split(",") if k.strip())
+    if any(not _WEBHOOK_KEY.fullmatch(k) for k in keys):
+        raise Refused(f"{WEBHOOK_ENV} holds a value that does not look like a webhook key")
+    return keys
+
+
+def secret_of(key: str, hooks: tuple[str, ...] = ()) -> bytes:
     """What the install seals: the account JSON `DocuSealAccount.from_secret` opens."""
-    return json.dumps({"api_key": key, "api_host": API_HOST}).encode()
+    body: dict[str, object] = {"api_key": key, "api_host": API_HOST}
+    if hooks:
+        body["webhook_keys"] = list(hooks)
+    return json.dumps(body).encode()
 
 
 async def check_key(key: str, transport: httpx.AsyncBaseTransport | None = None) -> None:
@@ -116,19 +133,21 @@ async def run(
         raise Refused("--operator is a lower-case handle, never an email address") from exc
     out: dict[str, str] = {"tenant": str(tenant_id)}
     key: str | None = None
+    hooks: tuple[str, ...] = ()
     if command in ("connect", "rotate"):
         if command == "connect" and requested_by is None:
             raise Refused("connect needs --requested-by, a member of the firm")
         if ops_dsn is None:
             raise Refused("ops_database_url (the abacus_ops role) is not set")
         key = api_key(environ)
+        hooks = webhook_keys(environ)
         await check_key(key, transport)
         out["catalogue"] = await ensure_catalogue_row(ops_dsn, operator)
     configure_engine(app_dsn)
     try:
         if command == "connect" and key is not None and requested_by is not None:
             try:
-                install = await connect_esign_install(tenant, requested_by, secret_of(key))
+                install = await connect_esign_install(tenant, requested_by, secret_of(key, hooks))
             except EsignInstallExists as exc:
                 raise Refused(
                     "the firm has a live DocuSeal install: rotate or disconnect"
@@ -138,7 +157,7 @@ async def run(
             out["install"] = str(install)
         elif command == "rotate" and key is not None:
             try:
-                out["install"] = str(await rotate_esign_secret(tenant, secret_of(key)))
+                out["install"] = str(await rotate_esign_secret(tenant, secret_of(key, hooks)))
             except NotFound as exc:
                 raise Refused("the firm has no live DocuSeal install") from exc
         elif command == "disconnect":
