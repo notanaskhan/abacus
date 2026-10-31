@@ -90,6 +90,9 @@ LIVE = frozenset(
         "/v1/portal/questionnaires/{questionnaire_id}/answers/{question_id}",
         "/v1/portal/questionnaires/{questionnaire_id}:mark-done",
         "/v1/portal/questionnaires/{questionnaire_id}:submit",
+        # T-02-T21: the release and its Undo.
+        "/v1/tax-returns/{return_id}/k1-packages:release",
+        "/v1/k1-releases/{release_id}:undo",
     }
 )
 

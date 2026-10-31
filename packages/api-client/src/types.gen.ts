@@ -74321,10 +74321,6 @@ export type UndoK1ReleaseErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UndoK1ReleaseError = UndoK1ReleaseErrors[keyof UndoK1ReleaseErrors];
@@ -86162,10 +86158,6 @@ export type ReleaseK1Errors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ReleaseK1Error = ReleaseK1Errors[keyof ReleaseK1Errors];

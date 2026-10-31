@@ -568,5 +568,17 @@ REVIEWED_FALLBACK: Final = frozenset(
         "tax_return.approved",  # reviewed 2026-10-31 (S17-S19)
         "transcript.compared",  # reviewed 2026-10-31 (S17-S19)
         "transcript.uploaded",  # reviewed 2026-10-31 (S17-S19)
+        # S19 batch 5 (T-02-T20/T21): the K-1 set, its packages and the release gate.
+        "schedule_k_set.imported",
+        "schedule_k_package.shared_internal",
+        "schedule_k_package.resend_requested",
+        "schedule_k_package.released",
+        "schedule_k_package.access_given",
+        "schedule_k_package.deliverable_emailed",
+        "schedule_k_package.handoff_replaced",
+        "schedule_k_release.requested",
+        "schedule_k_release.started",
+        "schedule_k_release.undone",
+        "schedule_k_release.contact_resolved",
     }
 )
