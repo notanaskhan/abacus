@@ -95,6 +95,20 @@ TagProvider = Callable[[TenantContext, Sequence[UUID]], Awaitable[set[UUID]]]
 _TAGS: dict[str, TagProvider] = {}
 
 
+# T-01-T14 follow-up (DEC-1288): the §7216 consents tag's counts, per binder, from the owner of
+# consents (T-01 fills it): (binder, client, season) -> (in force, asked for). Unregistered: none.
+ConsentCounts = Callable[
+    [TenantContext, Sequence[tuple[UUID, UUID, str | None]]],
+    Awaitable[dict[UUID, tuple[int, int]]],
+]
+_consents: ConsentCounts | None = None
+
+
+def register_binder_consents(provider: ConsentCounts | None) -> None:
+    global _consents
+    _consents = provider
+
+
 def register_binder_tag(code: str, provider: TagProvider) -> None:
     """Register a row tag once (the §7216 consents tag: P-07 / T-01). Codes, never prose."""
     known = _TAGS.get(code)
@@ -137,6 +151,9 @@ class BinderIndexRow:
     unpublish_reason: str | None
     tags: list[str]
     allowed_actions: list[str]
+    client_id: UUID
+    consents_signed: int | None
+    consents_total: int | None
     service: str | None
     season: str | None
     office_id: UUID | None
@@ -376,6 +393,17 @@ async def list_binders(
     done_by = [b.marked_done_by for b in binders if b.marked_done_by is not None]
     people = await names_of(done_by) if done_by else {}
     tags = await _tags(ctx.tenant, [b.id for b in binders])
+    consents = (
+        await _consents(
+            ctx.tenant,
+            [
+                (b.id, refs[b.engagement_id].client_id, r.season)
+                for r, b in zip(page, binders, strict=True)
+            ],
+        )
+        if _consents is not None and binders
+        else {}
+    )
     rows: list[BinderIndexRow] = []
     for r, binder in zip(page, binders, strict=True):
         done, every, overdue, waiting, first, last = progress.get(
@@ -403,6 +431,9 @@ async def list_binders(
                 unpublish_reason=reason,
                 tags=tags.get(binder.id, []),
                 allowed_actions=await _row_actions(ctx, binder, refs),
+                client_id=refs[binder.engagement_id].client_id,
+                consents_signed=consents[binder.id][0] if binder.id in consents else None,
+                consents_total=consents[binder.id][1] if binder.id in consents else None,
                 service=_SERVICE_OF_KIND.get(str(r.work_item_kind)),
                 season=r.season,
                 office_id=r.office_id,

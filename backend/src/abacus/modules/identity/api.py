@@ -164,6 +164,7 @@ from abacus.modules.identity.governance_errors import (
 from abacus.modules.identity.grants import (
     GrantNotYetDue,
     consume_grant,
+    consumed_grant_approver,
     issue_grant,
     latest_grant,
     void_grant,
@@ -652,6 +653,7 @@ __all__ = [
     "consent_given",
     "consent_registered",
     "consume_grant",
+    "consumed_grant_approver",
     "contact_delegations_provider",
     "contact_emails",
     "contact_user_ids",
