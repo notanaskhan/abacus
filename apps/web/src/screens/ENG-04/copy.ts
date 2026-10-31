@@ -78,5 +78,22 @@ export const COPY = {
     watermark: "DRAFT",
     cite: (label: string) => `Lights ${label}`,
   },
+  // N-02-T35: no handoff frame draws the dialog; its words follow ENG-04's spec ("Only a
+  // partner can approve.") and the consent band's.
+  approval: {
+    open: "Approve letter…",
+    title: "Approve this letter",
+    body: "Only a partner can approve. The approval holds for this version; any later change makes it a new draft.",
+    consents: "§7216 consents",
+    onFile: "On file",
+    confirm: "Approve",
+  },
+  withdraw: {
+    open: "Withdraw envelope…",
+    title: "Withdraw this envelope?",
+    body: (status: string) =>
+      `The envelope came back ${status}. The letter stays approved and Send drafts a new envelope.`,
+    confirm: "Withdraw",
+  },
   failed: "Couldn’t load the letter.",
 } as const;

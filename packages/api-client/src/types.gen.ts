@@ -6613,6 +6613,10 @@ export type ComposerLetterOut = {
      * Envelope Id
      */
     envelope_id: string | null;
+    /**
+     * Envelope Status
+     */
+    envelope_status?: string | null;
     fees?: LetterFeesOut | null;
     /**
      * Generated Document Id
@@ -17200,6 +17204,22 @@ export type IntakeCreatedOut = {
 };
 
 /**
+ * IntakeDuplicateOut
+ *
+ * A flagged duplicate upload on the request (T-02-T17): Keep newer or Discard duplicate.
+ */
+export type IntakeDuplicateOut = {
+    /**
+     * File Name
+     */
+    file_name: string;
+    /**
+     * Version Id
+     */
+    version_id: string;
+};
+
+/**
  * IntakeEntityIn
  */
 export type IntakeEntityIn = {
@@ -17336,6 +17356,7 @@ export type IntakeRequestOut = {
      * Due On
      */
     due_on: string | null;
+    duplicate?: IntakeDuplicateOut | null;
     /**
      * File Name
      */
@@ -17573,6 +17594,10 @@ export type IntakeWaitingFileOut = {
      * Media Type
      */
     media_type: string;
+    /**
+     * Message Id
+     */
+    message_id: string;
     /**
      * Received At
      */
@@ -24006,7 +24031,10 @@ export type PortalEnvelopeRow = {
  * PortalEnvelopeView
  *
  * `EnvelopeVM`: steps, documents, fields, signers, my state; `signing_session` and `outcome`
- * reserved (null in record mode and until `signatures.esign_provider`).
+ * reserved (null in record mode and until `signatures.esign_provider`). N-02-T29 (additive,
+ * DEC-1388): the envelope's policy `family`, the viewer's `identity_method`, the `signers` in
+ * order, and `signing_opens_on`, the `date_as_of` while the firm's today is before it (the
+ * session's `before_date_as_of` check), else null.
  */
 export type PortalEnvelopeView = {
     /**
@@ -24026,6 +24054,14 @@ export type PortalEnvelopeView = {
      */
     esign_consent_needed: boolean;
     /**
+     * Family
+     */
+    family: 'efile_authorization' | 'engagement_letter' | 'consent' | 'general';
+    /**
+     * Identity Method
+     */
+    identity_method: 'kba' | 'email_code' | 'in_person_id' | 'firm_sso';
+    /**
      * My Fields
      */
     my_fields: Array<FieldOut>;
@@ -24039,6 +24075,10 @@ export type PortalEnvelopeView = {
     paper_form_follows: boolean;
     row: PortalEnvelopeRow;
     /**
+     * Signers
+     */
+    signers: Array<PortalSignerOut>;
+    /**
      * Signers Signed
      */
     signers_signed: number;
@@ -24046,6 +24086,10 @@ export type PortalEnvelopeView = {
      * Signers Total
      */
     signers_total: number;
+    /**
+     * Signing Opens On
+     */
+    signing_opens_on: string | null;
     signing_session?: SigningSessionOut | null;
 };
 
@@ -25239,6 +25283,40 @@ export type PortalSignInVerifyOut = {
 };
 
 /**
+ * PortalSignerOut
+ *
+ * One signer of the envelope as the portal's signing order shows them (N-02-T29, DEC-1388):
+ * the name the firm recorded, the role, the routing group and the status. No contact detail.
+ */
+export type PortalSignerOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Me
+     */
+    me: boolean;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Role
+     */
+    role: 'signer' | 'countersigner' | 'ero';
+    /**
+     * Routing Group
+     */
+    routing_group: number;
+    /**
+     * Signed At
+     */
+    signed_at: string | null;
+    status: EnvelopeSignerStatus;
+};
+
+/**
  * PortalVisibilityIn
  */
 export type PortalVisibilityIn = {
@@ -26137,6 +26215,10 @@ export type QuestionnaireTemplateOut = {
      * Current Version
      */
     current_version: number | null;
+    /**
+     * Current Version Id
+     */
+    current_version_id?: string | null;
     /**
      * Draft Version
      */
@@ -52185,6 +52267,70 @@ export type SendLetterResponses = {
 
 export type SendLetterResponse = SendLetterResponses[keyof SendLetterResponses];
 
+export type WithdrawLetterEnvelopeData = {
+    body?: never;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/letter/withdraw-envelope';
+};
+
+export type WithdrawLetterEnvelopeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type WithdrawLetterEnvelopeError = WithdrawLetterEnvelopeErrors[keyof WithdrawLetterEnvelopeErrors];
+
+export type WithdrawLetterEnvelopeResponses = {
+    /**
+     * Successful Response
+     */
+    200: ComposerLetterOut;
+};
+
+export type WithdrawLetterEnvelopeResponse = WithdrawLetterEnvelopeResponses[keyof WithdrawLetterEnvelopeResponses];
+
 export type MappingSetsData = {
     body?: never;
     headers?: {
@@ -62502,10 +62648,6 @@ export type RemindEnvelopesPreviewErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RemindEnvelopesPreviewError = RemindEnvelopesPreviewErrors[keyof RemindEnvelopesPreviewErrors];
@@ -62561,10 +62703,6 @@ export type RemindEnvelopesSendErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RemindEnvelopesSendError = RemindEnvelopesSendErrors[keyof RemindEnvelopesSendErrors];
@@ -62780,10 +62918,6 @@ export type CountersignSessionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CountersignSessionError = CountersignSessionErrors[keyof CountersignSessionErrors];
@@ -74372,10 +74506,6 @@ export type UndoK1ReleaseErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UndoK1ReleaseError = UndoK1ReleaseErrors[keyof UndoK1ReleaseErrors];
@@ -79894,13 +80024,13 @@ export type PortalDetailsChangeErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalDetailsChangeError = PortalDetailsChangeErrors[keyof PortalDetailsChangeErrors];
@@ -79948,10 +80078,6 @@ export type PortalK1sErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalK1sError = PortalK1sErrors[keyof PortalK1sErrors];
@@ -80003,13 +80129,13 @@ export type PortalK1Errors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalK1Error = PortalK1Errors[keyof PortalK1Errors];
@@ -80063,13 +80189,13 @@ export type PortalK1AttachmentErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalK1AttachmentError = PortalK1AttachmentErrors[keyof PortalK1AttachmentErrors];
@@ -80121,13 +80247,13 @@ export type PortalK1DownloadErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalK1DownloadError = PortalK1DownloadErrors[keyof PortalK1DownloadErrors];
@@ -80179,13 +80305,13 @@ export type PortalEFurnishingErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalEFurnishingError = PortalEFurnishingErrors[keyof PortalEFurnishingErrors];
@@ -86213,10 +86339,6 @@ export type ReleaseK1Errors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ReleaseK1Error = ReleaseK1Errors[keyof ReleaseK1Errors];

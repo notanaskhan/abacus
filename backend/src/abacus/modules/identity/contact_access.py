@@ -45,6 +45,7 @@ from abacus.modules.identity.client_access import (
     GrantRole,
     ScopeKind,
     grant_in_unit_of_work,
+    scope_facts,
 )
 from abacus.modules.identity.context import AuthContext
 from abacus.modules.identity.events import (
@@ -58,6 +59,7 @@ from abacus.modules.identity.invitations import (
     INVITATION_DAYS,
     InvitationInvalid,
     create_invitation,
+    create_release_invitation,
     grant_resource,
 )
 from abacus.modules.identity.mfa_floor import portal_security_policy
@@ -299,6 +301,80 @@ async def invite_contact(
         await mfa_policy(ctx.tenant_id, sorted(roles)),
         tuple(closed),
     )
+
+
+@dataclass(frozen=True)
+class K1Access:
+    """What a K-1 release gave a recipient's contact: an active grant for a person who already
+    signs in, or a pending grant and the invitation that carries it."""
+
+    grant_id: UUID | None
+    invitation_id: UUID | None
+
+
+async def grant_k1_recipient(
+    tx: UnitOfWork,
+    tenant: TenantContext,
+    *,
+    engagement_id: UUID,
+    client_id: UUID,
+    contact_id: UUID,
+    user_id: UUID | None,
+    email: str | None,
+    package_id: UUID,
+    granted_by: UUID,
+) -> K1Access:
+    """T-02-T21 (DEC-34, DEC-1476): the `k1_recipient` role on one `k1_package`, inside the
+    release's per-recipient unit of work, attributed to the person who released (whose approval
+    grant the workflow consumed; DEC-277 waives only the MFA recency, as for acceptance). The
+    package must be the engagement's client's. A person who signs in already holds it at once
+    (None when they held it before); a contact without one gets a pending grant and an invitation
+    carrying it, so the grant is theirs when they accept."""
+    tenant_id = tenant.tenant_id
+    facts = await scope_facts(tenant, "k1_package", package_id)
+    if facts is None or facts.client_id != client_id:
+        raise ScopeOutsideClient
+    if user_id is not None:
+        granted = await grant_in_unit_of_work(
+            tx,
+            tenant_id=tenant_id,
+            target=Target("engagement", engagement_id),
+            user_id=user_id,
+            role="k1_recipient",
+            scope_kind="k1_package",
+            scope_id=package_id,
+            granted_by=granted_by,
+            contact_id=contact_id,
+        )
+        if granted is not None:
+            tx.emit(AccessChanged(user_id=user_id))
+        return K1Access(granted, None)
+    if email is None:
+        raise InvitationInvalid("email")
+    pending = await insert_pending_grant(
+        tx.session,
+        {
+            "tenant_id": tenant_id,
+            "contact_id": contact_id,
+            "role": "k1_recipient",
+            "scope_kind": "k1_package",
+            "scope_id": package_id,
+            "granted_by": granted_by,
+        },
+    )
+    await insert_grant_event(
+        tx.session, tenant_id=tenant_id, grant_id=pending, event="granted", by=granted_by
+    )
+    invitation = await create_release_invitation(
+        tx,
+        tenant_id=tenant_id,
+        engagement_id=engagement_id,
+        email=email,
+        contact_id=contact_id,
+        grant_ids=[pending],
+        invited_by=granted_by,
+    )
+    return K1Access(pending, invitation)
 
 
 async def _invitation(tx: UnitOfWork, invitation_id: UUID) -> tuple[dict[str, object], UUID]:
