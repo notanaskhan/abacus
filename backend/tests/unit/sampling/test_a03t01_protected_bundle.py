@@ -96,4 +96,3 @@ def test_ac3_sampling_reaches_methodology_review_and_requests_and_ledger_stays_b
     assert MODULE_DEPENDENCIES["ledger"] == frozenset()
     for module in ("methodology", "review", "requests"):
         assert "sampling" not in MODULE_DEPENDENCIES[module], module
-
