@@ -2,7 +2,7 @@
 id: TASK-2615
 title: K-01-T17 KNW-03 program editor e2e, J01 step 6 on KNW-03 c, KNW-01 and KNW-03 parity lock
 spec: SPEC-000  # K-01 §3.4, §3.5 and §5.5
-acceptance_criteria: [AC4.1, AC4.2, AC5.1]
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: green
 status: in-review
 epic: K-01
