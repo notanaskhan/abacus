@@ -54,6 +54,17 @@ Work items (`engagements`, C1) are the units of work inside an engagement; each 
 5. **Contract:** add `"foo"` to the `kind` `Literal` on both `WorkItemOut` and `WorkItemRowOut` in `engagements/routes.py`, then `make generate`. A new enum member is additive to frozen C1; update `docs/contracts/work-items.md` (kinds list) and the glossary's Work item row in the same commit.
 6. **Tests:** `engagements.api.create_work_item(ctx, engagement_id, "foo", name=..., details={...})` writes the work item and the subtype row in one unit of work; the cardinality breach answers 409 `work_item_exists`; an unregistered kind answers 409 `unknown_work_item_kind`; run as the app role (copy `tests/integration/test_work_item_kinds.py`).
 
+## Registering an envelope source and a gate (C7 v1.1; N-02-T45)
+A module whose records are signed (a letter, a consent set, an 8879, a rep letter, a notice response) registers an **envelope source** with `signatures`; it never writes envelopes itself. Copy `signatures/sources.py` (`engagement_letter`), `tax/consent_capture.py` (`consent_set`) or `tax/filing.py` (`tax_return`).
+
+1. **Source** at import in `m/api.py` (or a `register()` it calls): `signatures.api.register_envelope_source(EnvelopeSource(kind=..., documents=..., signers=..., retention_record_type=..., gate=..., checks=(...), completed_label=..., draft=...))`. `m` must be allowed to import `signatures` in `MODULE_DEPENDENCIES` (and `signatures` must never import `m`).
+2. **Draft provider** (`SourceDraft`): purpose and policy family (one of the four: letters, consents, e-file authorization, general), client, title, documents (`SourceDocument`: a stored evidence version or a C11 final, its anchors or placement) and signers (`SourceSigner`: contact or member, identity method within the family's policy, routing group). It authorises the caller on its own record first; the builder authorises `envelope.draft` again. `consent_set` and `tax_return` must provide one (422 `source_contract_broken` otherwise).
+3. **Checks:** pre-send problems as codes (`letter_changed`, `ero_before_taxpayer`); Send refuses while any is open.
+4. **Retention:** the record type the package is locked under (`signature_evidence`, `consent_evidence`); never shorter than the published floor. Extend, never shorten, with `extend_retention` when a later fact (an IRS acknowledgement) sets the date.
+5. **Gate:** name a gate kind if the source's completion meets one (G3 `engagement_letter`; `efile_authorization`), and answer it from `envelope_gate_facts(ctx, gate_kind, target_ref)`: met only by a completed, non-superseded envelope of the source. For a C13 human gate (a person must act) register the kind with `review.api.register_gate_kind(code, check)` in the owner module (copy `tax/approval.py`, `sampling/sample_sets.py`).
+6. **Events:** react to `envelope.completed`, `envelope.declined`, `envelope.expired`, `envelope.superseded` and the signer-level events through your module's `SUBSCRIPTIONS`, by the source kind and id they carry (identifiers only).
+7. **Tests:** a consumer suite in `backend/tests/contracts/c7_<you>/` (copy `c7_t01`): the draft prefill, a check blocking Send, the gate met only on completion, a superseded envelope unmet, a shortening `extend_retention` refused.
+
 ## Checklist before done
 - [ ] Cross-tenant test for every repository method (and the regenerated `tests/security/` cases)
 - [ ] Permission tests regenerate cleanly from the matrix

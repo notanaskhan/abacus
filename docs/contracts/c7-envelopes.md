@@ -1,12 +1,12 @@
-# C7 Envelope service (v1 draft)
+# C7 Envelope service (v1.1, frozen)
 
 | Field | Value |
 |---|---|
 | Register row | C7 |
-| Version | v1 |
-| Status | stub (N-02-T03, 2026-10-27): every route 404 with `signatures.envelopes` off, 501 with it on until its task lands. **Record mode frozen as v1** (N-02-T09, DEC-820): `POST /v1/envelopes/import`, `POST /v1/envelopes/import/files`, `register_envelope_source`, `envelope_summary_for`, `envelope_gate_facts` (G3) change only additively. **Live since N-02-T13** (DEC-1055): `GET /v1/envelopes`, `/summary`, `/{id}`, `POST /{id}/void`, `POST /{id}/signers/{sid}/reveal-ip`, `GET /{id}/evidence.zip` |
+| Version | v1.1 (frozen 2026-10-31, N-02-T45, DEC-1666) |
+| Status | **v1.1 frozen** (N-02-T45, DEC-1666): every section below is the contract; changes are additive only, through a v1.2 entry accepted at a Contract Monday. History: stub (N-02-T03, 2026-10-27): every route 404 with `signatures.envelopes` off, 501 with it on until its task lands. **Record mode frozen as v1** (N-02-T09, DEC-820): `POST /v1/envelopes/import`, `POST /v1/envelopes/import/files`, `register_envelope_source`, `envelope_summary_for`, `envelope_gate_facts` (G3) change only additively. **Live since N-02-T13** (DEC-1055): `GET /v1/envelopes`, `/summary`, `/{id}`, `POST /{id}/void`, `POST /{id}/signers/{sid}/reveal-ip`, `GET /{id}/evidence.zip` |
 | Provider epic | N-02 |
-| Consumers | F-06 (signatures shell), T-01 (8879 family, consents "1 of 2 signed"), T-02, P-07 (G3 letter gate), A-07 (governance letters), N-04 (notice responses), I-01 (activity, `signatures_out` home count), R-02 |
+| Consumers | F-06 (signatures shell), T-01 (8879 family, consents "1 of 2 signed"), T-02, P-07 (G3 letter gate), A-07 (governance letters), N-04 (notice responses), I-01 (activity, `signatures_out` home count), R-02, W-01, X-01. Hand-off notes: `docs/handoffs/N-02/` |
 | Freeze sprint | S15 Contract Monday (Mon May 17, 2027) |
 | Flags | `signatures.envelopes` (hub, import, portal reads); later `signatures.esign_provider`, `signatures.kba_8879`, `engagements.letter_composer` |
 | Spec | SPEC-381; `docs/plan/epics/N-02.md` §3, §4 |
@@ -73,3 +73,9 @@ Request approval, approve, send and amend are live behind `engagements.letter_co
 
 ## N-02-T34 additions (DEC-1460)
 Additive, each with a default, so ENG-04 draws from the composer read alone: `ComposerLetterOut.template_name`, `template_version_no`, `clause_library` (None until P-11 names libraries), `letterhead` (`firm`, `address[]`; the firm's name today, the address with ADM's firm profile), `paper` (the template version's DocBlocks; variable runs resolve against `variables`), `signers` (order, name, role client or firm, `identity` email_code, `signed`), `consents` (§7216 consents beside the letter, each its own document: `purpose`, `label`, `status` on_file or needed, `signed_on`, `expires_on`; filled from T-01's consent sets with N-02-T33), and `LetterVariable.label` (the template's label for a key it declares). Computed variables add `billing.installment_{n}` and `third_party_fee.estimate_{n}` so a template's own prose prints each amount code computed. `redline_count` is the template's non-standard clauses, plus each clause switched from its default, plus each overridden section.
+
+## N-02-T38 additions (DEC-1567)
+The evidence package: a §7216 consent's package is kept under the retention record type `consent_evidence` (signature plus three years at least), every other envelope's under `signature_evidence` (never below the firm's floor); a type with no policy falls back to `signature_evidence`. `extend_retention` moves an e-file authorization to the IRS received date plus three years when T-01 imports the accepted acknowledgement. Each package carries a legible reproduction page (per signer: date and time, masked IP and login, identity result, method, the signed image's and documents' SHA-256), drawn by C11's renderer; a renderer failure never blocks completion and records `envelope.legible_copy_failed`. A nightly job re-hashes every stored record an envelope's evidence names; a missing or changed one records `envelope.integrity_failed` once and raises `signatures_evidence_integrity_failures`.
+
+## Freeze (N-02-T45; DEC-1666)
+C7 is **v1.1, frozen**: §1 to §8 and the dated additions above (N-02-T21, T25, T27, T32, T33, T34, T38) are the contract. Consumer suites: `backend/tests/contracts/c7_n02/`, F-06-T09 (`EnvelopeVM`), T-01-T04 (`c7_t01`), T-02-T05 (envelope summary). A change is additive (a new optional field with a default, a new source kind, a new event) and needs a v1.2 entry here accepted at a Contract Monday; removing or renaming anything, or narrowing who may call it, is a v2 with a migration plan. Not frozen with v1.1 because not built: `POST /v1/envelopes/{id}/countersign/session` (N-02-T28), POR-06 part 2's 8879-PE and joint signing (N-02-T29); they arrive as v1.2 additions.
