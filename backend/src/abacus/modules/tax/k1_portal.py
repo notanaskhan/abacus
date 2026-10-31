@@ -215,8 +215,9 @@ class Expected:
 
 
 async def expected(ctx: AuthContext) -> list[Expected]:
-    """`GET /v1/portal/k1s/expected`: the recipients linked to the person's contacts whose newest
-    package is not released yet. A recipient with a released package is in `packages`."""
+    """`GET /v1/portal/k1s/expected`: the recipients whose delivery contact (the package's, else
+    the recipient's, as the release reads it) is one of the person's, and whose newest package is
+    not released yet. A recipient with a released package is in `packages`."""
     _client(ctx)
     async with tenant_session(ctx.tenant) as session:
         contacts = await contacts_of_user(session, ctx.user_id)
@@ -227,9 +228,11 @@ async def expected(ctx: AuthContext) -> list[Expected]:
                 text(
                     "SELECT DISTINCT ON (r.id) r.id, p.work_item_id, p.form, p.tax_year, "
                     "p.k3_status, p.status, coalesce(t.extended_due_on, t.original_due_on) "
-                    "AS due FROM k1_recipients r JOIN k1_packages p ON p.recipient_id = r.id "
+                    "AS due, coalesce(p.delivery_contact_id, r.contact_id) AS contact "
+                    "FROM k1_recipients r JOIN k1_packages p ON p.recipient_id = r.id "
                     "LEFT JOIN tax_returns t ON t.work_item_id = p.work_item_id "
-                    "WHERE r.contact_id = ANY(:c) ORDER BY r.id, p.version_no DESC"
+                    "WHERE coalesce(p.delivery_contact_id, r.contact_id) = ANY(:c) "
+                    "ORDER BY r.id, p.version_no DESC"
                 ),
                 {"c": list(contacts)},
             )
