@@ -4,12 +4,12 @@ title: T-01-T14 CLI-05 tax profile, part 1
 spec: SPEC-501
 acceptance_criteria: [AC-11]
 risk_zone: green
-status: in-review
+status: done
 epic: T-01
 plan_key: T-01-T14
 branch: s17-t01-t14
 created: 2026-10-30
-updated: 2026-10-30
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -31,3 +31,4 @@ after re-mask, and the consent row reads Use · AI disclosure (2 consents)."
 
 ## Progress log
 - 2026-10-30: built in S17 Lane 2 on T-01-T13; tests run in the end review.
+- 2026-11-01: merged to main in #790 (621488445).

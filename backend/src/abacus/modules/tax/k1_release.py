@@ -194,6 +194,11 @@ async def eligibility(ctx: AuthContext, return_id: UUID) -> k1.ReleaseCheck:
     return k1.ReleaseCheck(not failing, tuple(failing), found.package_ids)
 
 
+async def template_in_use(ctx: AuthContext) -> UUID | None:
+    """T-02-T25: the "Deliverable ready" version a release names (the confirm's letter)."""
+    return await template_version_in_use(ctx.tenant, TEMPLATE_KEY)
+
+
 # --- release and undo ----------------------------------------------------------------------------
 
 

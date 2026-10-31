@@ -4,12 +4,12 @@ title: N-01-T22 evidence.matcher v3 intake mode
 spec: SPEC-033  # the matcher; N-01 §6 (the agent card) for mode intake
 acceptance_criteria: [AC-7]  # the backlog row's acceptance, quoted under Objective
 risk_zone: red
-status: in-review
+status: done
 epic: N-01
 plan_key: N-01-T22
 branch: s17-n01-t22
 created: 2026-10-30
-updated: 2026-10-31
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -85,3 +85,5 @@ path lets the agent file, ignore, hold or supersede."
   `ambiguous_candidates` on a card too close to call. `proposal.recorded` stays engagement-only
   (no gate for intake); citation rows wait for an engagement-less trust-kit anchor (quotes stay
   verified on the proposal). The real-model eval still needs the eval environment.
+- 2026-11-01: merged to main in #839 (597a26b4c). Loose ends (INB-02 candidates, ambiguous_candidates flag) merged in #899 (DEC-1287);
+  citation rows on attachments and the real-model eval stay open.
