@@ -358,7 +358,7 @@ async def k1_release_check_route(
     action="k1_package.release",
     response_model=K1ReleaseOut,
     status_code=202,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def release_k1_route(
     return_id: Annotated[UUID, Path()],
@@ -385,7 +385,7 @@ async def release_k1_route(
     "/k1-releases/{release_id}:undo",
     action="k1_package.release",
     response_model=K1ReleaseOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def undo_k1_release_route(release_id: Annotated[UUID, Path()], ctx: Ctx) -> K1ReleaseOut:
     await _gate(ctx)
