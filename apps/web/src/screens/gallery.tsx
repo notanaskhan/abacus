@@ -2350,9 +2350,10 @@ registerScreen("POR-14", {
   Component: Por14Artboard,
 });
 
-// POR-06 (N-02-T26): Sign, part 1: a review, b the sign step in the provider's view, c the
-// completion after the return, `pending` the return before the server says signed, g declined,
-// `restricted`, `list`; `&w=390` draws the phone.
+// POR-06 (N-02-T26, N-02-T29): Sign: a review, b the sign step in the provider's view, c the
+// completion after the return, `pending` the return before the server says signed, d the Form
+// 8879-PE (identity questions in the provider's view), e joint filers, f a dated letter, g
+// declined, h DF-11, `restricted`, `list`; `&w=390` draws the phone.
 function Por06Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
   const state: Por06State = POR06_STATES.find((s) => s === params.st) ?? "a";
   const [ready, setReady] = useState<string | null>(null);
