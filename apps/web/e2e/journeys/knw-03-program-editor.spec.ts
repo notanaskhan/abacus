@@ -64,7 +64,9 @@ test.describe("KNW-03 program editor", () => {
       ).toBeVisible();
       await expect(page.getByRole("button", { name: "+ Step" })).toBeEnabled();
       await expect(page.locator(`tr[data-step="1"] [aria-label="${LOCK_TIP}"]`)).toHaveCount(1);
-      await expect(page.getByRole("button", { name: "Remove step 1" })).toBeDisabled();
+      await expect(
+        page.getByRole("button", { name: "Remove step 1", exact: true }),
+      ).toBeDisabled();
       await expect(page.getByRole("textbox", { name: "Step 1 text" })).toHaveCount(0);
       await expect(page.getByRole("textbox", { name: "Step 3 text" })).toBeVisible();
       await expect(page.getByRole("button", { name: /^(Publish|Approve)/u })).toHaveCount(0);

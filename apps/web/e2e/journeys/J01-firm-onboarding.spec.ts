@@ -282,7 +282,9 @@ test.describe("J01-core firm onboarding", () => {
       });
       await journey.step("J01 step 6: Draft v4 of BH-EBP-110 as Hannah Leclerc", async (page) => {
         await expect(page.getByRole("button", { name: "+ Step" })).toBeEnabled();
-        await expect(page.getByRole("button", { name: "Remove step 1" })).toBeDisabled();
+        await expect(
+          page.getByRole("button", { name: "Remove step 1", exact: true }),
+        ).toBeDisabled();
         await expect(page.getByRole("button", { name: /^(Publish|Approve)/u })).toHaveCount(0);
       });
     },
