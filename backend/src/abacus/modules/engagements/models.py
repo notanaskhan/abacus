@@ -92,6 +92,10 @@ class EngagementLetter(Base):
     firm_signer_user_id: Mapped[UUID | None] = mapped_column(server_default=FetchedValue())
     signed_copy_version_id: Mapped[UUID | None] = mapped_column(server_default=FetchedValue())
     recorded_by_user_id: Mapped[UUID | None] = mapped_column(server_default=FetchedValue())
+    # N-02-T32 (0560): the composed letter's current version; recorded letters stay as they are.
+    current_version_id: Mapped[UUID | None] = mapped_column(server_default=FetchedValue())
+    mode: Mapped[str] = mapped_column(server_default=FetchedValue())
+    envelope_id: Mapped[UUID | None] = mapped_column(server_default=FetchedValue())
 
 
 class WorkItem(Base):

@@ -160,6 +160,52 @@ def engine_return_id(
     return out.replace("{n}", str(version))
 
 
+@dataclass(frozen=True)
+class ExportSettings:
+    """What T-01-T25's export reads of the firm's file-bridge install: whether it is on, the
+    return-ID template, the client-code rule, each form's type letter and who may export."""
+
+    enabled: bool
+    return_id_template: str
+    client_code_rule: str
+    type_letters: Mapping[str, str]
+    who_may_export: str
+
+
+async def export_settings(tenant: TenantContext) -> ExportSettings:
+    """The firm's engine export settings, for tax's export after it authorised the caller. With
+    no install, or an install switched off, `enabled` is False (the per-firm kill switch)."""
+    async with tenant_session(tenant) as session:
+        install = await _install(session, ENGINE_KEY)
+        rows = (
+            list(
+                (
+                    await session.execute(
+                        select(IntegrationMapping).where(
+                            IntegrationMapping.firm_integration_id == install.id
+                        )
+                    )
+                ).scalars()
+            )
+            if install
+            else []
+        )
+    stored = {(r.kind, r.source_key): r.target_value for r in rows}
+
+    def cell(key: str) -> str:
+        c = _BY_KEY[key]
+        return c.default if c.lock_reason else stored.get((c.kind, c.source_key), c.default)
+
+    letters = {c.source_key: cell(c.key) for c in CELLS if c.kind == "type_letters"}
+    return ExportSettings(
+        enabled=install is not None and install.status == "connected",
+        return_id_template=cell("return_id_template"),
+        client_code_rule=cell("client_code_rule"),
+        type_letters=letters,
+        who_may_export=cell("who_may_export"),
+    )
+
+
 def _person(ctx: AuthContext) -> None:
     if ctx.client:
         raise NotFound("integration")

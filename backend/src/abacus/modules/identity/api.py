@@ -166,6 +166,7 @@ from abacus.modules.identity.grants import (
     consume_grant,
     consumed_grant_approver,
     issue_grant,
+    latest_grant,
     void_grant,
 )
 from abacus.modules.identity.invitations import (
@@ -708,6 +709,7 @@ __all__ = [
     "issue_invitation_token",
     "issue_sign_in_code",
     "issue_staff_invitation_token",
+    "latest_grant",
     "letter_policy",
     "locked_addresses",
     "mask_tins",

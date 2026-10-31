@@ -129,3 +129,7 @@ actions:
     verb: reject  # P-04-T32 (SHL-16 e; DEC-804, 0290)
   - action: checkpoint.restored
     verb: decide  # P-04-T32 (SHL-16 c; DEC-804, 0290): restoring is a person's decision
+  - action: engine_export.generated
+    verb: release  # the workbook leaves for the engine after final approval (T-01-T25, 0561)
+  - action: engine_export.marked_exported
+    verb: confirm  # a person confirms the file reached the engine (T-01-T25, 0561)

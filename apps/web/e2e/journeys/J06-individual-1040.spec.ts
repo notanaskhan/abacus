@@ -66,4 +66,20 @@ test.describe("J06", () => {
       await expect(page.getByText("Out of sync").first()).toBeVisible();
     });
   });
+
+  // K-02-T19: J06 due dates come from the platform reference sets (KNW-04 j, read-only).
+  test("j06 due dates: the 1040 rule Accrued applies, read-only (KNW-04 j)", async ({
+    journey,
+  }) => {
+    await journey.as("grace-holloway", "/knowledge/standards?section=deadline_rules", {
+      scenario: "KNW-04:j",
+      flags: ["knowledge.firm_standards", "rules.reference_sets"],
+    });
+    await journey.step("J06 due dates: Federal due-date rules · TY2025", async (page) => {
+      const table = page.getByRole("table", { name: "Federal due-date rules · TY2025" });
+      await expect(table).toBeVisible();
+      await expect(table.getByText("15th day of the 4th month").first()).toBeVisible();
+      await expect(page.getByRole("button", { name: "New version…" })).toHaveCount(0);
+    });
+  });
 });

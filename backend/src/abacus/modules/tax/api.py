@@ -25,6 +25,7 @@ from abacus.modules.tax.due_dates import (
     set_extended,
 )
 from abacus.modules.tax.engine_contract import engine_router
+from abacus.modules.tax.engine_sync import register as register_engine_sync
 from abacus.modules.tax.k1_contract import k1_router, portal_k1_router
 from abacus.modules.tax.kind import TaxReturnKind
 from abacus.modules.tax.overview import on_binder_published, on_sign_off_recorded
@@ -48,6 +49,8 @@ register_search_projection(SEARCH_TYPE, return_search_document)
 register_approval()
 # T-01-T43: CLI-05's authorizations, elections, transcripts and comparisons (DEC-1651).
 register_tax_profile()
+# T-01-T27: the engine-sync gate kinds (C13) and notification kinds (C16) (DEC-1463).
+register_engine_sync()
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (

@@ -121,6 +121,14 @@ from abacus.modules.evidence.gate_facts import (
     review_assignees,
     waiting_among,
 )
+
+# P-11-T09: rendered documents filed as immutable evidence versions (channel `generated`).
+from abacus.modules.evidence.generated_copies import (
+    GeneratedFile,
+    RenderHashMismatch,
+    record_generated,
+    store_generated,
+)
 from abacus.modules.evidence.hold_activities import ACTIVITIES as HOLD_ACTIVITIES
 from abacus.modules.evidence.hold_routes import router as legal_hold_router
 from abacus.modules.evidence.hold_runs import SUBSCRIPTIONS as HOLD_SUBSCRIPTIONS
@@ -276,6 +284,7 @@ from abacus.modules.evidence.service import (
 from abacus.modules.evidence.signed_copies import (
     SIGNED_AUTHORIZATIONS,
     ScreenedFile,
+    file_engine_copy,
     file_signed_copy,
     read_staged,
     screen_and_stage,
@@ -500,6 +509,7 @@ __all__ = [
     "FirmExportInput",
     "FirmExportScheduleWorkflow",
     "FirmExportWorkflow",
+    "GeneratedFile",
     "GlBalanceRow",
     "GlHeader",
     "GlRenderEntry",
@@ -524,6 +534,7 @@ __all__ = [
     "Provenance",
     "RecordClass",
     "RecordedCitation",
+    "RenderHashMismatch",
     "ReviewMaterial",
     "ScreenedFile",
     "ScreeningDecision",
@@ -573,6 +584,7 @@ __all__ = [
     "export_section_csv",
     "extend_record",
     "extend_retention_for",
+    "file_engine_copy",
     "file_intake_object",
     "file_retrieved_copy",
     "file_signed_copy",
@@ -609,6 +621,7 @@ __all__ = [
     "read_version",
     "record_agent_classification",
     "record_citations",
+    "record_generated",
     "record_intake_key",
     "register_citable",
     "register_export_audit_trail",
@@ -635,6 +648,7 @@ __all__ = [
     "stage_content",
     "stale_pdfs",
     "start_trust_layer_backfill",
+    "store_generated",
     "suggest_by_name",
     "supported_citations",
     "tin_exposure",

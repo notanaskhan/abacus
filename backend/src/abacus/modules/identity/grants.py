@@ -113,6 +113,25 @@ async def issue_grant(
     return grant_id
 
 
+_LIVE = text(
+    "SELECT id FROM approval_grants WHERE subject_type = :subject_type "
+    "AND subject_id = :subject_id AND action = :action AND voided_at IS NULL "
+    "ORDER BY used_at IS NULL DESC, not_before DESC LIMIT 1"
+)
+
+
+async def latest_grant(tenant: TenantContext, subject: Target, action: str) -> UUID | None:
+    """The subject's latest grant for `action` that was not voided (unused ones first), for a
+    consumer that hands it to `consume_grant` (T-01-T25: the export after final approval). The
+    caller has authorised its own action on the subject; whether it may still be consumed is
+    `consume_grant`'s answer, never this read's."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            _LIVE, {"subject_type": subject.type, "subject_id": subject.id, "action": action}
+        )
+    return cast(UUID | None, found)
+
+
 async def void_grant(tx: UnitOfWork, grant_id: UUID) -> bool:
     """An Undo: True if the grant was live and is now void, False if it was already used (the
     effect started; the caller answers `effect_started`) or already void. Audited when voided."""

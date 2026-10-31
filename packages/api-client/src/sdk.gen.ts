@@ -2994,7 +2994,7 @@ export const compareLetter = <ThrowOnError extends boolean = false>(options: Opt
 /**
  * Get Letter Route
  *
- * ENG-04 (N-02-T33).
+ * ENG-04's composed letter (N-02-T32) behind `engagements.letter_composer`.
  */
 export const getLetter = <ThrowOnError extends boolean = false>(options: Options<GetLetterData, ThrowOnError>): RequestResult<GetLetterResponses, GetLetterErrors, ThrowOnError> => (options.client ?? client).get<GetLetterResponses, GetLetterErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -3005,7 +3005,8 @@ export const getLetter = <ThrowOnError extends boolean = false>(options: Options
 /**
  * Draft Letter Route
  *
- * Draft edits; an edit after approval stales it (N-02-T33).
+ * Draft edits: a new version, rendered as a C11 draft (N-02-T32); an edit after approval
+ * returns the letter to Draft (N-02-T33 resolves the approval).
  */
 export const draftLetter = <ThrowOnError extends boolean = false>(options: Options<DraftLetterData, ThrowOnError>): RequestResult<DraftLetterResponses, DraftLetterErrors, ThrowOnError> => (options.client ?? client).put<DraftLetterResponses, DraftLetterErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5124,6 +5125,8 @@ export const setupFile = <ThrowOnError extends boolean = false>(options: Options
 
 /**
  * Export File Route
+ *
+ * The workbook, fingerprint-checked; the download is audited (T-01-T25).
  */
 export const exportFile = <ThrowOnError extends boolean = false>(options: Options<ExportFileData, ThrowOnError>): RequestResult<ExportFileResponses, ExportFileErrors, ThrowOnError> => (options.client ?? client).get<ExportFileResponses, ExportFileErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5134,7 +5137,8 @@ export const exportFile = <ThrowOnError extends boolean = false>(options: Option
 /**
  * Mark Exported Route
  *
- * A person confirms the file reached the engine.
+ * A person confirms the file reached the engine; the chip reads Synced (T-01-T25). 409
+ * `already_marked`, `stale_version`.
  */
 export const markExported = <ThrowOnError extends boolean = false>(options: Options<MarkExportedData, ThrowOnError>): RequestResult<MarkExportedResponses, MarkExportedErrors, ThrowOnError> => (options.client ?? client).post<MarkExportedResponses, MarkExportedErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -10593,7 +10597,9 @@ export const efileEnvelope = <ThrowOnError extends boolean = false>(options: Opt
 /**
  * Export Return Route
  *
- * Generate the workbook after final approval (consumes the write grant).
+ * Generate the workbook after final approval, consuming its grant (T-01-T25). 409
+ * `export_disabled`, `not_final_approved`, `grant_refused`, `undo_window_open`. The same
+ * checkpoint answers the same export.
  */
 export const exportReturn = <ThrowOnError extends boolean = false>(options: Options<ExportReturnData, ThrowOnError>): RequestResult<ExportReturnResponses, ExportReturnErrors, ThrowOnError> => (options.client ?? client).post<ExportReturnResponses, ExportReturnErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
