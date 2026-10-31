@@ -233,7 +233,8 @@ async def test_the_grant_is_spent_once_and_one_key_is_one_release(
         assert await k1_release.start(board.tenant, first.id) == "running"
         assert await k1_release.start(board.tenant, first.id) == "running"
         digest = k1_release.grant_digest(first.id, ridgeline, finals, TEMPLATE)
-        assert not await consume_grant(board.tenant, grant, first.id, digest)
+        # Single use: the release that spent it may replay; no other effect can spend it again.
+        assert not await consume_grant(board.tenant, grant, uuid.uuid4(), digest)
     used = await board.seed.rows("SELECT used_at FROM approval_grants WHERE id = $1", grant)
     assert used[0]["used_at"] is not None
 
@@ -275,7 +276,7 @@ async def test_a_duplicate_resolution_never_supersedes_accepted_evidence(board: 
         )
         == 0
     )
-    live = await board.seed.value(
-        "SELECT withdrawn_at IS NULL FROM evidence_versions WHERE id = $1", original
+    withdrawn = await board.seed.value(
+        "SELECT count(*) FROM evidence_withdrawals WHERE evidence_version_id = $1", original
     )
-    assert live is True
+    assert withdrawn == 0  # the accepted original is neither voided nor superseded
