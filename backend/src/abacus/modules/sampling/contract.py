@@ -494,6 +494,17 @@ async def target_gate(ctx: AuthContext, action: str) -> None:
     await _flag_or_404(ctx)
 
 
+async def population_gate(ctx: AuthContext, *, write: bool) -> None:
+    """A live population (T07): client 404; a write refused to any non-person; the flag. The
+    service then authorises the action on the population's own engagement (DEC-1553's follow-up,
+    DEC-1660)."""
+    if ctx.client:
+        raise NotFound("sample sets")
+    if write and ctx.tenant.actor_kind != "human":
+        raise Forbidden("population.create", "role")
+    await _flag_or_404(ctx)
+
+
 def _not_yet() -> NoReturn:
     raise NotImplementedYet
 
@@ -536,26 +547,33 @@ async def sample_set_create_route(
     action="population.create",
     response_model=PopulationOut,
     status_code=201,
-    errors=(501,),
+    errors=(),
 )
 async def population_create_route(
     work_item_id: UUID, body: PopulationIn, ctx: Ctx
 ) -> PopulationOut:
     """Build a population from an upload or a general-ledger query (T07): counts, total and
     SHA-256; 422 `restricted_column`, `column_map_invalid`; audited `population.created`."""
+    from abacus.modules.sampling import populations  # the service imports these models
+
     await work_item_gate(ctx, "population.create", work_item_id)
-    _not_yet()
+    if ctx.tenant.actor_kind != "human":
+        raise Forbidden("population.create", "role")
+    return await populations.create_population(ctx, work_item_id, body)
 
 
 @populations_router.get(
-    "/{population_id}", action="population.read", response_model=PopulationOut, errors=(501,)
+    "/{population_id}", action="population.read", response_model=PopulationOut, errors=()
 )
 async def population_route(population_id: UUID, ctx: Ctx) -> PopulationOut:
-    await target_gate(ctx, "population.read")
+    from abacus.modules.sampling import populations  # the service imports these models
+
     found = fx.population(population_id)
-    if found is None:
-        _not_yet()
-    return PopulationOut.model_validate(found)
+    if found is not None:
+        await target_gate(ctx, "population.read")
+        return PopulationOut.model_validate(found)
+    await population_gate(ctx, write=False)
+    return await populations.population_view(ctx, population_id)
 
 
 @populations_router.post(
@@ -563,14 +581,16 @@ async def population_route(population_id: UUID, ctx: Ctx) -> PopulationOut:
     action="population.create",
     response_model=CompletenessTieOut,
     status_code=201,
-    errors=(501,),
+    errors=(),
 )
 async def population_tie_create_route(
     population_id: UUID, body: TieIn, ctx: Ctx
 ) -> CompletenessTieOut:
     """Record a tie; code computes the result; 422 `citation_unverified` (INV-2; T07)."""
-    await target_gate(ctx, "population.create")
-    _not_yet()
+    from abacus.modules.sampling import populations  # the service imports these models
+
+    await population_gate(ctx, write=True)
+    return await populations.record_tie(ctx, population_id, body)
 
 
 @sample_sets_router.post(

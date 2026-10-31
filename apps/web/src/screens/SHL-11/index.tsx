@@ -19,6 +19,8 @@ import { useSession } from "../../app-core/session";
 import { useDecisionCard, useDecisionWrites, useGate } from "../../domain/review";
 import { COPY } from "./copy";
 
+export { DecisionInlineCard, type DecisionInlineCardProps } from "./InlineCard";
+
 // SHL-11 · Decision card (P-04-T50; P-04 §3; the handoff's SHL-11 folder): the O3 sheet at
 // `?ov=decision:<cardId>`, where a judgment reserved to a role is decided. Frames built here
 // (fixtures/seed/review.ts):
@@ -36,7 +38,7 @@ import { COPY } from "./copy";
 //
 // Radios are enabled only for the reserved person (the card's `decision.decide` action). Decide is
 // a HumanAction that sends the option, factors, rationale and the version seen; nothing here
-// decides for the agent (INV-1). The inline dock card (e) is P-04-T52's.
+// decides for the agent (INV-1). The inline dock card (e) is `InlineCard.tsx` (P-04-T52).
 
 type Card = DecisionCardOut;
 
