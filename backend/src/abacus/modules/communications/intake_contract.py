@@ -41,7 +41,7 @@ from abacus.kernel.errors import (
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.kernel.uow.idempotency import idempotent
-from abacus.modules.communications import inbox_read, intake, triage_apply
+from abacus.modules.communications import inbox_read, intake, intake_candidates, triage_apply
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
@@ -834,11 +834,27 @@ async def message_triage_route(message_id: UUID, ctx: Ctx) -> MessageTriageOut:
     made = await triage_apply.bundle(ctx, message_id)
     detail = await inbox_read.thread_detail(ctx, await triage_apply.thread_of(ctx, message_id))
     files = {a.id: a for m in detail.messages for a in m.attachments}
+    # N-01-T22 follow-up (DEC-1287): the matcher's shown proposals the reader may file to.
+    proposed = await intake_candidates.card_candidates(
+        ctx, [c.attachment_id for c in made.cards if c.attachment_id in files]
+    )
     cards = [
         AttachmentTriageOut(
             attachment=_attachment_out(files[c.attachment_id]),
             classification=None,
-            candidates=[],
+            candidates=[
+                DestinationCandidate(
+                    kind=cast(DestinationKind, p.kind),
+                    id=p.id,
+                    path=[p.label],
+                    confidence=p.confidence,
+                    source="matcher",
+                    request_state=None,
+                    requested_on=None,
+                    proposal_id=p.match_id,
+                )
+                for p in proposed.get(c.attachment_id, [])
+            ],
             supersede_candidate_version_id=None,
             defaults=TriageDefaults(
                 decision=cast(Decision, c.decision),

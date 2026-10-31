@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C20 in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | stub (A-02-T06, 2026-10-26); framework v1 tables and module (A-02-T12) and entity-scoped connection tables (A-02-T13) built 2026-10-26; write-capability registry (A-02-T15) and the five POR-16 routes live (A-02-T16) 2026-10-27; reconnect requests live (A-02-T23, 2026-10-27); pulls (T30) still a stub |
+| Status | stub (A-02-T06, 2026-10-26); framework v1 tables and module (A-02-T12) and entity-scoped connection tables (A-02-T13) built 2026-10-26; write-capability registry (A-02-T15) and the five POR-16 routes live (A-02-T16) 2026-10-27; reconnect requests live (A-02-T23, 2026-10-27); on-demand pulls live (A-02-T30); the QuickBooks Online read adapter registered behind `connections.live_ledger` (A-02-T26, T33). **v1 final (A-02-T38, 2026-10-31):** additive changes only; W-01 (catalogue v2), T-01 (W2) and C-02 (W1) extend it; N-02's W7 entry is open (DEC-1280) |
 | Provider epic | A-02 (T06 stub; T12 framework, T13 entity-scoped connections, T15 registry, T16 POR-16 service, T23 reconnect requests, T30 pulls); W-01 adds the catalogue v2 (C20 v2, S45) |
 | Consumers | POR-16 (A-02-T18 fixtures, T28 live); AUD-06 *Ask client to reconnect* and *Pull latest* (A-02-T24, T30); T-01 (CCH file bridge, `firm_integrations`, secrets); W-01 (catalogue v2); N-02 (W7 DocuSign registry entry); C-02 (W1 posting under ADR-161); C-01 (hourly sync); X-02 (POR-16 h, i); Q-01 (egress host allowlist) |
 | Freeze sprint | S10 (2027-03-08) |

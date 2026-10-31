@@ -65,6 +65,17 @@ class _Envelope:
     reminders: list[str] = field(default_factory=list[str])
 
 
+def _one_page_pdf(label: str) -> bytes:
+    """A blank one-page PDF that names itself in a comment: real enough for a reader (POR-06's
+    signed copy merges the document and its certificate, N-02-T23)."""
+    return (
+        "%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
+        "2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n"
+        "3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]>>endobj\n"
+        f"% {label}\ntrailer<</Root 1 0 R>>\n%%EOF\n"
+    ).encode()
+
+
 class FakeEsign:
     name = "fake"
 
@@ -116,8 +127,8 @@ class FakeEsign:
         found = self._envelopes[provider_envelope_id]
         if any(s.status != "signed" for s in found.signers.values()):
             raise FakeEsignError("not every signer has signed")
-        document = f"%PDF-1.7\n% fake combined document {found.envelope_id}\n%%EOF\n".encode()
-        certificate = f"%PDF-1.7\n% fake certificate {provider_envelope_id}\n%%EOF\n".encode()
+        document = _one_page_pdf(f"fake combined document {found.envelope_id}")
+        certificate = _one_page_pdf(f"fake certificate {provider_envelope_id}")
         return Completed(
             document,
             certificate,
@@ -147,6 +158,14 @@ class FakeEsign:
     async def void(self, provider_envelope_id: str, reason: str) -> None:
         self.calls.append(f"void:{reason}")
         self._envelopes[provider_envelope_id].voided = True
+
+    async def signing_url(self, provider_envelope_id: str, signer_id: str) -> str:
+        self.calls.append("signing_url")
+        found = self._envelopes[provider_envelope_id]
+        if found.voided or signer_id not in found.signers:
+            raise FakeEsignError("no such signer")
+        order = found.signers[signer_id].spec_order
+        return f"https://fake-esign.invalid/s/{provider_envelope_id}/{order}"
 
     # --- Driving signers (tests and the local stack) --------------------------------------------
 

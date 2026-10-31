@@ -359,6 +359,28 @@ async def viewer_page(ctx: AuthContext, version_id: UUID, page_no: int) -> bytes
     version = await visible_version(ctx, version_id)
     if not await may_read_unmasked(ctx):
         raise Forbidden(READ, "condition")
+    return await _masked_page(ctx, version, page_no)
+
+
+async def signer_page(ctx: AuthContext, version_id: UUID, page_no: int) -> bytes:
+    """N-02-T23 (DEC-1283): one masked page of a document a client is asked to sign, for POR-06's
+    review. Called only by signatures' portal, which has already proved the person is the
+    envelope's named signer under `portal_envelopes.read` (`scope_only`); a firm principal is
+    refused here. The masked rendition only, the read logged before the bytes leave, as above."""
+    if not ctx.client:
+        raise Forbidden(READ, "role")
+    async with tenant_session(ctx.tenant) as session:
+        version = (
+            await session.execute(
+                select(EvidenceVersion).where(EvidenceVersion.id == version_id, not_withdrawn())
+            )
+        ).scalar_one_or_none()
+    if version is None:
+        raise NotFound("evidence_version")
+    return await _masked_page(ctx, version, page_no)
+
+
+async def _masked_page(ctx: AuthContext, version: EvidenceVersion, page_no: int) -> bytes:
     derived = await _derivation_of(ctx, version.id)
     async with tenant_session(ctx.tenant) as session:
         masked = await masked_preview_for(

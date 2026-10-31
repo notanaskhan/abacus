@@ -16,7 +16,7 @@ from abacus.modules.platform.api import register_audit_value_resolver, register_
 from abacus.modules.requests.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.requests.audit_values import request_item_values
 from abacus.modules.requests.availability import register_available_datasets
-from abacus.modules.requests.binder_index import register_binder_tag
+from abacus.modules.requests.binder_index import register_binder_consents, register_binder_tag
 from abacus.modules.requests.binders import (
     SUBSCRIPTIONS,
     DropBinder,
@@ -280,6 +280,7 @@ __all__ = [
     "refuse_closed_item_in",
     "register_available_datasets",
     "register_binder_close_rule",
+    "register_binder_consents",
     "register_binder_tag",
     "register_comment_scope_check",
     "register_live_facts",
