@@ -60,4 +60,4 @@ Status words: `inbox_item` (new, waiting, filed, ignored, held, withdrawn), `inb
 `communications.api.record_inbound_message`, `register_inbound_transport` (N-03), `register_intake_destination` (N-04, C-01), `waiting_for_work_item` (T-02); `evidence.api.store_intake_object`, `file_intake_object`, `file_to_folder` (N-02), `register_folder_provider`, `register_folder_badge`, `inbox_waiting_for` v2 (P-06).
 
 ## 6. Events
-Outbox: `inbound_message.received`, `inbox_attachment.received`, `inbox_attachment.classified`, `inbox_attachment.status_changed`, `inbox_attachment.filed`, `inbox_thread.client_matched`, `portal_intake.withdrawn`. Audit: SPEC-380 §10. Payloads carry identifiers and enums only.
+Outbox: `inbound_message.received`, `inbox_attachment.received`, `inbox_attachment.classified`, `inbox_attachment.status_changed`, `inbox_attachment.filed`, `inbox_thread.client_matched`, `inbox_attachment.matchable` (N-01-T22: a classified attachment of a known client, or each classified attachment when its thread is matched; starts the matcher's intake mode), `portal_intake.withdrawn`. Audit: SPEC-380 §10. Payloads carry identifiers and enums only.

@@ -35,6 +35,7 @@ from abacus.modules.agents.guidance_draft import (
     draft_template,
 )
 from abacus.modules.agents.inbox_match import create_match_run, match
+from abacus.modules.agents.intake_match import create_intake_match_run, match_intake
 from abacus.modules.agents.knowledge import embed_next_batch, fail_document
 from abacus.modules.agents.run_records import persist_run_record
 from abacus.modules.agents.service import (
@@ -61,6 +62,8 @@ from abacus.modules.agents.workflow_types import (
     FailKnowledgeInput,
     GuidanceDraftInput,
     GuidanceDraftRunInput,
+    IntakeMatchInput,
+    IntakeMatchRunInput,
     KnowledgeInput,
     MatchInput,
     MatchRunInput,
@@ -365,6 +368,73 @@ async def match_activity(input: MatchRunInput) -> ScreeningOutcome:
         raise _as_application_error(exc, retryable=True) from None
 
 
+# --- The matcher's intake mode (N-01-T22) -------------------------------------------------------
+
+
+@activity.defn(name="inbox_match.create_intake_run")
+async def create_intake_run_activity(input: IntakeMatchInput) -> str | None:
+    try:
+        run_id = await create_intake_match_run(
+            UUID(input.tenant_id),
+            UUID(input.attachment_id),
+            UUID(input.client_id),
+            UUID(input.event_id),
+        )
+    except NotFound as exc:
+        raise _as_application_error(exc, retryable=False) from None
+    except Exception as exc:
+        raise _as_application_error(exc, retryable=True) from None
+    return str(run_id) if run_id is not None else None
+
+
+async def _match_intake(tenant_id: UUID, run_id: UUID, attachment_id: UUID) -> ScreeningOutcome:
+    try:
+        agent = await load_agent_context(tenant_id, run_id)
+    except AgentRunNotRunning:
+        return await _recorded(tenant_id, run_id)
+    except NoActiveTenant:
+        await fail_run(tenant_id, run_id, INITIATOR_INACTIVE)
+        return await _recorded(tenant_id, run_id)
+    work_class = slots.current_class()
+    if work_class is not None:
+        await slots.keep(agent.tenant, agent.engagement_id, work_class)  # firm-level: none
+    try:
+        outcome = await match_intake(agent, attachment_id)
+        await mark_queued(tenant_id, run_id, None, None)
+    except NotAdmitted as refused:
+        estimate = system_now() + timedelta(seconds=refused.retry_after)
+        await mark_queued(tenant_id, run_id, refused.reason, estimate)
+        max_wait = settings().work_classes[work_class].max_wait_seconds if work_class else 600
+        raise ApplicationError(
+            NOT_ADMITTED,
+            refused.reason,
+            refused.retry_after,
+            max_wait,
+            type=NOT_ADMITTED,
+            non_retryable=True,
+        ) from None
+    except AgentRunNotRunning:
+        return await _recorded(tenant_id, run_id)
+    return ScreeningOutcome(outcome.status, str(run_id), None, None)
+
+
+@activity.defn(name="inbox_match.match_intake")
+async def match_intake_activity(input: IntakeMatchRunInput) -> ScreeningOutcome:
+    try:
+        async with _heartbeating():
+            return await _match_intake(
+                UUID(input.tenant_id), UUID(input.run_id), UUID(input.attachment_id)
+            )
+    except ApplicationError as exc:
+        if exc.type == NOT_ADMITTED:
+            raise
+        raise _as_application_error(exc, retryable=True) from None
+    except (NotFound, *REVIEW_TERMINAL) as exc:  # the run already failed with its code
+        raise _as_application_error(exc, retryable=False) from None
+    except Exception as exc:
+        raise _as_application_error(exc, retryable=True) from None
+
+
 # --- The guidance drafter (SPEC-035; TASK-073) ---------------------------------------------------
 
 
@@ -552,6 +622,8 @@ ACTIVITIES = (
     review_activity,
     create_match_run_activity,  # SPEC-033 (TASK-066)
     match_activity,
+    create_intake_run_activity,  # N-01-T22
+    match_intake_activity,
     create_draft_run_activity,  # SPEC-035 (TASK-073)
     draft_activity,
     create_assess_run_activity,  # SPEC-037 Q4 (TASK-085)

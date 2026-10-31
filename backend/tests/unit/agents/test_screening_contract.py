@@ -75,6 +75,7 @@ def test_ac14_screening_starts_from_evidence_version_created() -> None:
         "due_dates.changed",  # SPEC-027 (TASK-051)
         "upload_checks.recorded",  # SPEC-030 (TASK-059): the upload reviewer
         "inbox_file.extracted",  # SPEC-033 (TASK-066): the matcher
+        "inbox_attachment.matchable",  # N-01-T22: the matcher's intake mode
         "follow_up.sent",  # P-06-T14: a sent follow-up's email, after the Undo window
         # P-06-T20: a review recorded, or a withdrawal: the screening aggregate recomposes.
         "upload_review.recorded",
@@ -82,13 +83,15 @@ def test_ac14_screening_starts_from_evidence_version_created() -> None:
         # Q-02-T08 (TASK-1367): a firm's changed boundary facts are forgotten in the worker too.
         "ai_boundary.facts_changed",
     }
-    # the reviewer's (SPEC-030), matcher's (033), drafter's (035), entry assessor's (TASK-085)
-    assert len(WORKFLOWS) == 7
+    # the reviewer's (SPEC-030), matcher's (033), drafter's (035), entry assessor's (TASK-085),
+    # and the matcher's intake mode (N-01-T22)
+    assert len(WORKFLOWS) == 8
     # TASK-018b: acquire_slot and release_slot join the three; SPEC-009 adds two knowledge steps;
     # SPEC-027 adds the engagement agent's two (handle; TASK-051's next tick); SPEC-030 the
     # reviewer's two (create_run, review); SPEC-033 (TASK-066) the matcher's two; SPEC-035
     # (TASK-073) the drafter's two. Q-02-T41 (TASK-1287) adds `agents.persist_run_record`.
-    assert len(ACTIVITIES) == 18
+    # N-01-T22 adds the intake mode's two (create_intake_run, match_intake).
+    assert len(ACTIVITIES) == 20
 
 
 def test_ac14_the_workflow_id_is_tenant_qualified() -> None:

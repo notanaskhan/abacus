@@ -17,6 +17,7 @@ from sqlalchemy import ColumnElement, func, insert, select, text, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import QueryableAttribute
 
+from abacus.ai_gateway import DataSubject
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.listing import (
@@ -635,3 +636,25 @@ async def client_tax_years(tenant: TenantContext, client_id: UUID) -> frozenset[
             )
         )
         return frozenset(end.year for end in ends if end is not None)
+
+
+async def client_tri_subjects(tenant: TenantContext, client_id: UUID) -> tuple[DataSubject, ...]:
+    """N-01-T22: the TRI data subjects (§7216) of the client's active tax-return work items, as
+    (filing entity, tax year); an item with no entity or period is a subject the gateway refuses
+    (C19 condition 6 fails closed). Empty when the client holds no tax return."""
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                select(WorkItem.client_entity_id, WorkItem.period_end).where(
+                    WorkItem.client_id == client_id,
+                    WorkItem.kind == "tax_return",
+                    WorkItem.status == "active",
+                )
+            )
+        ).all()
+    return tuple(
+        dict.fromkeys(
+            DataSubject(r.client_entity_id, r.period_end.year if r.period_end else None)
+            for r in rows
+        )
+    )

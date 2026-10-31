@@ -125,6 +125,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "inbox_match_runs": frozenset(
         {"id", "tenant_id", "engagement_id", "inbox_file_id", "agent_run_id", "prompt_ref"}
         | {"none_fit", "truncated"}
+        | {"inbox_attachment_id", "client_id"}  # N-01-T22: intake mode's attachment and client
     ),
     # Guidance drafts (SPEC-035; TASK-072): the drafter's, as made.
     "guidance_drafts": frozenset(
@@ -153,6 +154,8 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "inbox_match_proposals": frozenset(
         {"tenant_id", "match_id", "rank", "request_item_id", "confidence", "rationale"}
         | {"citations", "shown"}
+        # N-01-T22: intake mode's attachment and the destination it proposes.
+        | {"inbox_attachment_id", "destination_kind", "destination_id"}
     ),
     "agent_runs": frozenset(
         {"id", "tenant_id", "agent_id", "spec_version", "engagement_id", "task_scope"}
@@ -160,6 +163,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"inbox_file_id"}  # SPEC-033 (TASK-066): the matcher's file
         | {"methodology_version_id"}  # SPEC-035 Q3 (TASK-074): a firm-level run's version
         | {"shadow"}  # SPEC-036 (TASK-076): started in shadow
+        | {"inbox_attachment_id"}  # N-01-T22: an intake-mode run's attachment
     ),
     "screening_results": frozenset(
         {"id", "tenant_id", "engagement_id", "evidence_version_id", "agent_run_id"}
