@@ -1285,6 +1285,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/walls", "wall.create"),
     ("POST", "/v1/walls/{wall_id}/approve", "wall.approve"),
     ("POST", "/v1/walls/{wall_id}/remove", "wall.remove"),
+    ("POST", "/v1/webhooks/docuseal/{tenant_id}/{install_id}", "provider_webhook"),
     ("POST", "/v1/work-items/{work_item_id}/exports", "export.create"),
     ("PUT", "/v1/binders/{binder_id}/follow-up-override", "binder.update"),
     ("PUT", "/v1/binders/{binder_id}/recipients", "binder.update"),

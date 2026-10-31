@@ -32,6 +32,8 @@ with workflow.unsafe.imports_passed_through():
         FailInput,
         GuidanceDraftInput,
         GuidanceDraftRunInput,
+        IntakeMatchInput,
+        IntakeMatchRunInput,
         MatchInput,
         MatchRunInput,
         RunInput,
@@ -316,6 +318,64 @@ class InboxMatchWorkflow:
                 try:
                     outcome = await workflow.execute_activity(
                         "inbox_match.match",
+                        given,
+                        result_type=ScreeningOutcome,
+                        start_to_close_timeout=_SCREEN_TIMEOUT,
+                        heartbeat_timeout=_SCREEN_HEARTBEAT,
+                        retry_policy=_RETRY,
+                    )
+                    await _persist(run)  # Q-02-T41: after the terminal state
+                    return outcome
+                except ActivityError as err:
+                    refused = _not_admitted(err)
+                    if refused is None:
+                        raise
+                    retry_after, max_wait = refused
+                    if (workflow.now() - waiting_from).total_seconds() >= max_wait:
+                        return await _fail(run, CAPACITY_TIMEOUT)
+                    delay = max(retry_after, backoff) * (0.5 + workflow.random().random())
+                    await workflow.sleep(timedelta(seconds=min(delay, _MAX_ASK_INTERVAL)))
+                    backoff = min(backoff * 2, _MAX_ASK_INTERVAL)
+        except ActivityError as err:
+            if is_cancelled_exception(err):
+                await _fail(run, CANCELLED)
+                raise asyncio.CancelledError from err
+            return await _fail(run, _code(err))
+        except asyncio.CancelledError:
+            await _fail(run, CANCELLED)
+            raise
+        finally:
+            await _release("screening.release_slot", run)
+
+
+@workflow.defn(name="inbox_match_intake")
+class InboxMatchIntakeWorkflow:
+    """N-01-T22: the matcher's intake mode on one intake attachment of a matched client (a type of
+    its own, so the engagement mode's histories replay unchanged): create the run, hold a work
+    slot, match (waiting when not admitted), and always end a failed run."""
+
+    @workflow.run
+    async def run(self, input: IntakeMatchInput) -> ScreeningOutcome:
+        run_id = await workflow.execute_activity(
+            "inbox_match.create_intake_run",
+            input,
+            result_type=str,
+            start_to_close_timeout=_TIMEOUT,
+            retry_policy=_RETRY,
+        )
+        if not run_id:
+            return ScreeningOutcome("skipped")
+        run = RunInput(input.tenant_id, run_id)
+        given = IntakeMatchRunInput(input.tenant_id, run_id, input.attachment_id)
+        waiting_from = workflow.now()
+        try:
+            if not await wait_for_slot("screening.acquire_slot", run):
+                return await _fail(run, CAPACITY_TIMEOUT)
+            backoff = _MIN_ADMISSION_ASK
+            while True:
+                try:
+                    outcome = await workflow.execute_activity(
+                        "inbox_match.match_intake",
                         given,
                         result_type=ScreeningOutcome,
                         start_to_close_timeout=_SCREEN_TIMEOUT,

@@ -43,6 +43,7 @@ from abacus.modules.evidence.classification import (
     ClassifiedIntake,
     classify_intake,
     filed_classification_match,
+    record_agent_classification,
     version_with_fingerprint,
 )
 from abacus.modules.evidence.classifier import rules as classifier_rules
@@ -153,6 +154,7 @@ from abacus.modules.evidence.intake_sources import IntakeSource, register_intake
 from abacus.modules.evidence.item_detail import Download as DocumentDownload
 from abacus.modules.evidence.item_detail import latest_document
 from abacus.modules.evidence.masked_previews import intake_masked_pages, masked_preview_upload
+from abacus.modules.evidence.masked_text import intake_masked_text
 from abacus.modules.evidence.match_material import (
     Candidate,
     MatchMaterial,
@@ -581,6 +583,7 @@ __all__ = [
     "holds_covering",
     "included_export_versions",
     "intake_masked_pages",
+    "intake_masked_text",
     "is_version_withdrawn",
     "latest_document",
     "legal_hold_activate",
@@ -602,6 +605,7 @@ __all__ = [
     "read_content",
     "read_staged",
     "read_version",
+    "record_agent_classification",
     "record_citations",
     "record_intake_key",
     "register_citable",

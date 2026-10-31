@@ -7,6 +7,10 @@ inserts one `document_classifications` row (`proposed_by_kind = rule`) in an aud
 Text never leaves this function and is never logged; the result carries the classification's
 fields, not the words.
 
+`record_agent_classification` (N-01-T22) records the matcher's intake-mode proposal as its own
+row (`proposed_by_kind = agent`, tied to the run), inside the agent's unit of work; a rule row is
+never changed and a person confirms either.
+
 `filed_classification_match` and `version_with_fingerprint` answer communications' flag checks
 (`possible_replacement`, `duplicate_hash`) for one client: a filed version's id, never its
 content.
@@ -21,7 +25,7 @@ from uuid import UUID
 from sqlalchemy import insert, select
 
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.uow import Ref, Target, uow
+from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.evidence.classifier import Classification, classify
 from abacus.modules.evidence.models import (
     DocumentClassification,
@@ -32,6 +36,17 @@ from abacus.modules.evidence.repository import pages_of, pii_regions_of
 from abacus.modules.evidence.words import WORDS_VERSION, read_page_layer
 
 _TEXT_PAGES: Final = 2
+# `document_classifications.kind` (migration 0404).
+DOCUMENT_KINDS: Final = (
+    "tax_form",
+    "notice",
+    "receipt",
+    "census",
+    "invoice",
+    "statement",
+    "return",
+    "other",
+)
 # The taxpayer's number first (a W-2's employee SSN over its employer EIN).
 _TIN_ORDER: Final = {"ssn": 0, "itin": 0, "ein": 1}
 PDF: Final = "application/pdf"
@@ -96,6 +111,51 @@ async def classify_intake(
             after=Ref(classification_id=classification_id, pages=found.page_count),
         )
     return ClassifiedIntake(classification_id, found, any(p.has_text_layer for p in pages), last4s)
+
+
+async def record_agent_classification(
+    tx: UnitOfWork,
+    *,
+    tenant_id: UUID,
+    attachment_id: UUID,
+    agent_run_id: UUID,
+    prompt_ref: str,
+    form_family: str,
+    kind: str,
+    page_count: int,
+    tax_year: int | None,
+    issuer_name: str | None,
+    confidence: float,
+) -> UUID:
+    """The matcher's classification of an intake attachment, as a new agent row (N-01-T22)."""
+    if kind not in DOCUMENT_KINDS:
+        kind = "other"
+    classification_id = (
+        await tx.session.execute(
+            insert(DocumentClassification)
+            .values(
+                tenant_id=tenant_id,
+                subject_kind="inbox_attachment",
+                subject_id=attachment_id,
+                form_family=form_family[:40],
+                tax_year=tax_year,
+                issuer_name=issuer_name[:200] if issuer_name else None,
+                kind=kind,
+                page_count=page_count,
+                confidences={"overall": round(confidence, 3)},
+                proposed_by_kind="agent",
+                agent_run_id=agent_run_id,
+                rules_version=prompt_ref[:40],
+            )
+            .returning(DocumentClassification.id)
+        )
+    ).scalar_one()
+    tx.record(
+        "document.classified",
+        target=Target("inbox_attachment", attachment_id),
+        after=Ref(classification_id=classification_id, pages=page_count),
+    )
+    return classification_id
 
 
 async def filed_classification_match(
