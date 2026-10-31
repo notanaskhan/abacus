@@ -33,6 +33,7 @@ from abacus.modules.reporting.render.assets import fonts_manifest_sha256
 from abacus.modules.reporting.render.head import RenderRefused
 from abacus.modules.reporting.render.html import Letterhead, document_html
 from abacus.modules.reporting.render.layouts import LAYOUT_VERSION, LAYOUTS, Mark, stylesheet
+from abacus.modules.reporting.render.regions import PageSize, Region, locate
 from abacus.modules.reporting.render.text import uncovered
 
 Mode = Literal["draft", "final", "sample"]
@@ -170,6 +171,30 @@ def render_docx(request: RenderInput) -> DocxRenderOutput:
         assets=request.assets,
     )
     return DocxRenderOutput(written.docx, hashlib.sha256(written.docx).hexdigest(), written.texts)
+
+
+@dataclass(frozen=True)
+class LocatedOutput:
+    """P-11-T11: the PDF with its field regions and page sizes (the render job, the preview)."""
+
+    output: RenderOutput
+    regions: tuple[Region, ...]
+    page_sizes: tuple[PageSize, ...]
+
+
+def render_located(request: RenderInput) -> LocatedOutput:
+    """`render`, then the values found on the pages (the isolated child calls this)."""
+    output = render(request)
+    regions, sizes = locate(output.pdf, request.values)
+    return LocatedOutput(output, tuple(regions), tuple(sizes))
+
+
+def render_located_isolated(request: RenderInput) -> LocatedOutput:
+    """`render_located` in a fresh child with the renderer's limits (as `render_isolated`)."""
+    try:
+        return run_isolated_with(RENDER_LIMITS, render_located, request)
+    except IsolationFailed as error:
+        raise RenderRefused("renderer_unavailable") from error
 
 
 def render_isolated(request: RenderInput) -> RenderOutput:
