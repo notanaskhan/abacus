@@ -602,6 +602,40 @@ async def test_spec023_ac4_assigning_makes_evidence_audits_and_empties_the_inbox
     assert any("followed" in str(r["doc"]) for r in audited)
 
 
+async def test_spec023_ac4_a_file_someone_already_matched_answers_inbox_file_gone(
+    world: World,
+) -> None:
+    """N-01-T29 (TASK-2343): carried from the retired InboxPanel's "Someone already matched or
+    removed this file." A second assign and a discard after it are refused, and the file stays
+    evidence on the first item only."""
+    first = await world.seed.item(world.site, "Bank statements for December")
+    second = await world.seed.item(world.site, "Payroll summary")
+    added = await world.inbox_add(letter_pdf(), "bank-dec.pdf", world.client)
+    file_id = added.json()["id"]
+    assigned = await world.net.call(
+        "POST",
+        f"{world.base}/inbox/{file_id}/assign",
+        world.manager,
+        body={"request_item_id": str(first), "followed_suggestion": False},
+    )
+    assert assigned.status_code == 201, assigned.text
+    again = await world.net.call(
+        "POST",
+        f"{world.base}/inbox/{file_id}/assign",
+        world.manager,
+        body={"request_item_id": str(second), "followed_suggestion": False},
+    )
+    assert again.status_code == 409, again.text
+    assert again.json()["detail"] == "inbox_file_gone"
+    gone = await world.net.call("POST", f"{world.base}/inbox/{file_id}/discard", world.manager)
+    assert gone.status_code == 409, gone.text
+    assert gone.json()["detail"] == "inbox_file_gone"
+    uploads = await world.net.call(
+        "GET", f"{world.base}/request-items/{second}/uploads", world.manager
+    )
+    assert uploads.json() == []
+
+
 async def test_spec023_ac4_an_item_that_takes_no_more_evidence_refuses_the_file(
     world: World,
 ) -> None:

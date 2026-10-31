@@ -4,7 +4,8 @@
 // Tallgrass's room yet and none may be invented, so the step stays `test.fixme` naming the task
 // whose seed-derived fixtures bring it (journey-e2e skill); it runs in the fixture project once
 // they land, and full stack after T-09.
-import { DEMO_INSTANT, test } from "../harness";
+import { DEMO_INSTANT, expect, test } from "../harness";
+import { M13, artboard } from "../signatures/support";
 
 function owner(description: string): { annotation: { type: string; description: string } } {
   return { annotation: { type: "owner", description } };
@@ -21,4 +22,31 @@ test.describe("J15-advisory (R-01's portal step)", () => {
       await journey.page.goto("/requests");
     },
   );
+});
+
+// N-02-T40 (N-02 §10.1): j15 4 on the harness: Daniel's Ridgeline letter (ENG-04 a, its
+// artboard), the builder's countersigner (SIG-02 e) and Owen's Sign area (POR-06). The hosted
+// projects walk it with N-02-T42's M13 journeys.
+test.describe("J15 signatures (N-02-T40)", () => {
+  test("j15 4: Daniel sends the Ridgeline letter, Owen signs and Daniel countersigns (G3)", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", M13);
+    await journey.as("daniel-reyes", artboard("ENG-04", "a"));
+    await journey.step("j15 4: the approved Ridgeline letter (ENG-04 a)", async (page) => {
+      await expect(page.getByText("Partner approved").first()).toBeVisible();
+    });
+    await journey.as("grace-holloway", artboard("SIG-02", "e"));
+    await journey.step(
+      "j15 4: the envelope, Owen then Daniel's countersignature (SIG-02 e)",
+      async (page) => {
+        await expect(page.getByText("1 · Owen Calder").first()).toBeVisible();
+        await expect(page.getByText("2 · Daniel Reyes").first()).toBeVisible();
+      },
+    );
+    await journey.as("owen-calder", "/sign", { scenario: "POR-06:list" });
+    await journey.step("j15 4: Owen's Sign area (POR-06)", async (page) => {
+      await expect(page.getByRole("heading", { name: /Sign/ }).first()).toBeVisible();
+    });
+  });
 });

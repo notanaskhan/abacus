@@ -49,6 +49,7 @@ LIST_FIELD: Final[dict[str, str]] = {
     "aje_thresholds": "rows",
     "variance_thresholds": "rows",
     "materiality_ranges": "rows",
+    "attribute_sample_sizes": "rows",  # A-03-T10: the size table's rows; confidence in Settings
     "review_checklist": "items",
     "review_levels": "tiers",
     "return_approval_policy": "applies_to",

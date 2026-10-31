@@ -231,6 +231,12 @@ import {
   STATES as AUD31_STATES,
   scenarios as aud31Scenarios,
 } from "./AUD-31/scenarios";
+import { AUD07Frame } from "./AUD-07/artboard";
+import {
+  type Aud07State,
+  STATES as AUD07_STATES,
+  scenarios as aud07Scenarios,
+} from "./AUD-07/scenarios";
 import { AUD11Frame } from "./AUD-11/artboard";
 import {
   type Aud11State,
@@ -299,6 +305,13 @@ import {
 } from "./POR-03/scenarios";
 import { PortalRequest } from "./POR-04";
 import { POR05 } from "./POR-05";
+import { POR13 } from "./POR-13";
+import {
+  OPENING as POR13_OPENING,
+  type Por13State,
+  STATES as POR13_STATES,
+  scenarios as por13Scenarios,
+} from "./POR-13/scenarios";
 import {
   type Por05State,
   STATES as POR05_STATES,
@@ -463,6 +476,14 @@ import {
   type Tax03State,
   scenarios as tax03Scenarios,
 } from "./TAX-03/scenarios";
+import { K1PackagePage } from "./TXP-12";
+import {
+  OPENING as TXP12_OPENING,
+  OPENS as TXP12_OPENS,
+  STATES as TXP12_STATES,
+  type Txp12State,
+  scenarios as txp12Scenarios,
+} from "./TXP-12/scenarios";
 import {
   OPENS as TAX02_OPENS,
   STATES as TAX02_STATES,
@@ -1370,6 +1391,46 @@ function Tax03Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("TAX-03", { title: "Return › Intake", Component: Tax03Artboard });
 
+function Txp12Frame({ state }: { state: Txp12State }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/tax-returns" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  const opening = TXP12_OPENING[state];
+  return (
+    <div data-artboard={state}>
+      <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
+        <K1PackagePage
+          returnId={TXP12_OPENS[state]}
+          {...(opening === undefined ? {} : { opening })}
+        />
+      </AppShell>
+    </div>
+  );
+}
+
+function Txp12Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Txp12State = TXP12_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      txp12Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <Txp12Frame key={state} state={state} /> : null;
+}
+
+registerScreen("TXP-12", { title: "K-1 package", Component: Txp12Artboard });
+
 function Eng01Frame({ state }: { state: Eng01State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
   const bar = useFirmToolbar({
@@ -1693,6 +1754,26 @@ function Aud11Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("AUD-11", { title: "Sampling · Northwind participants", Component: Aud11Artboard });
+
+// AUD-07 (A-04-T10): a–e and the C-20 states, each on its own scenario.
+function Aud07Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Aud07State = AUD07_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      aud07Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <AUD07Frame key={state} state={state} /> : null;
+}
+
+registerScreen("AUD-07", { title: "Materiality · partner decision", Component: Aud07Artboard });
 
 registerScreen("AUD-02", {
   title: "Audit cockpit · Overview, Source Documents, Agent",
@@ -2584,6 +2665,32 @@ registerScreen("POR-05", {
   title: "Questions · Feld 2025 Tax Organizer",
   Component: Por05Artboard,
 });
+
+// POR-13 (T-02-T27): My K-1s, a–f; `&w=390` draws the phone. d opens the taxpayer-ID sheet.
+function Por13Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Por13State = POR13_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      por13Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  const opening = POR13_OPENING[state];
+  return (
+    <div key={state} data-artboard={state} data-surface="portal">
+      <POR13 frame mobile={params.w === "390"} {...(opening === undefined ? {} : { opening })} />
+    </div>
+  );
+}
+
+registerScreen("POR-13", { title: "K-1 recipient view · My K-1s", Component: Por13Artboard });
 
 // POR-16 (A-02-T18): Connections for Copperleaf, a–g; the sheet and the dialog open on b, e, f.
 function Por16Artboard({ params }: { params: FixtureParams }): JSX.Element | null {

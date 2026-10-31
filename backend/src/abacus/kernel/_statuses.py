@@ -416,6 +416,10 @@ class MethodologyImportStatus(StrEnum):
     CANCELLED = "cancelled"
 
 
+class MethodologySourceFileStatus(StrEnum):
+    CLEAN = "clean"
+
+
 class KnowledgeItemStatus(StrEnum):
     DRAFT = "draft"
     PUBLISHED = "published"
@@ -1307,6 +1311,9 @@ STORED: dict[str, tuple[str, ...]] = {
         "needs_review",
         "failed",
         "cancelled",
+    ),
+    "methodology_source_file": (
+        "clean",
     ),
     "knowledge_item": (
         "draft",

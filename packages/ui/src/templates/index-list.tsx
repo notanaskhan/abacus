@@ -1,4 +1,4 @@
-import { type JSX, type ReactNode, useId } from "react";
+import { Fragment, type JSX, type ReactNode, useId } from "react";
 import { cn } from "../cn";
 import { Button } from "../components/button";
 import { FilterChip, type PickerOption, SearchField } from "../components/inputs";
@@ -53,6 +53,8 @@ export interface IndexTile {
 export interface IndexColumn<Row> {
   key: string;
   header: string;
+  /** After the header's text: an info trigger with its tooltip (TXP-12's K-3 ⓘ, T-02-T25). */
+  headerAfter?: ReactNode;
   align?: "left" | "right";
   /** px; omitted is auto. */
   width?: number;
@@ -77,6 +79,8 @@ export interface IndexListProps<Row> {
 
   /** Before the chips: a small Segmented ("Service line", ENG-01). */
   segments?: ReactNode;
+  /** A record subbar above everything (TXP-12's "K-1 package" RecordHeader, T-02-T25). */
+  header?: ReactNode;
   /** A 44-high tabs bar above the filter bar (AUD-01 R2): a centred Segmented. */
   tabs?: ReactNode;
   /** The tabs bar's right end (a ViewToggle, when the screen offers one). */
@@ -113,6 +117,13 @@ export interface IndexListProps<Row> {
   empty: EmptyContent;
   /** A 36-high banner above the table, under the pane header (ENG-01b's G3 banner). */
   banner?: ReactNode;
+  /** Expandable rows (TXP-12, T-02-T25): the open row's panel renders in a full-width row under
+   * it, with `id` the screen's own so its toggle can name it in `aria-controls`. */
+  expansion?: {
+    open: string | null;
+    id: (row: Row) => string;
+    render: (row: Row) => ReactNode;
+  };
 }
 
 export function IndexList<Row>({
@@ -134,6 +145,7 @@ export function IndexList<Row>({
   summary,
   onClear,
   segments,
+  header,
   tabs,
   tabsEnd,
   groupOf,
@@ -147,6 +159,7 @@ export function IndexList<Row>({
   countText,
   footer,
   empty,
+  expansion,
 }: IndexListProps<Row>): JSX.Element {
   const titleId = useId();
   const isEmpty = state.kind === "empty";
@@ -181,6 +194,21 @@ export function IndexList<Row>({
 
   const span = columns.length + 1;
   const renderRow = (row: Row): JSX.Element => {
+    const id = rowKey(row);
+    const line = renderLine(row);
+    if (expansion?.open !== id) return line;
+    return (
+      <Fragment key={id}>
+        {line}
+        <tr id={expansion.id(row)} data-expanded={id} className="border-b-[0.5px] border-hair">
+          <td colSpan={span} className="bg-band-hd p-0">
+            {expansion.render(row)}
+          </td>
+        </tr>
+      </Fragment>
+    );
+  };
+  const renderLine = (row: Row): JSX.Element => {
     const id = rowKey(row);
     const isSelected = id === selected;
     return (
@@ -243,6 +271,7 @@ export function IndexList<Row>({
       data-template="T1"
       className="flex min-h-0 flex-1 flex-col bg-shell in-data-[shell=cols]:-mx-(--edge-app) in-data-[shell=cols]:-mt-(--gutter-pane) in-data-[shell=cols]:-mb-(--edge-app)"
     >
+      {header}
       {(tabs !== undefined || tabsEnd !== undefined) && (
         <div
           data-list="tabs"
@@ -360,6 +389,9 @@ export function IndexList<Row>({
                     )}
                   >
                     {c.header}
+                    {c.headerAfter !== undefined && (
+                      <span className="ml-[4px] inline-flex align-middle">{c.headerAfter}</span>
+                    )}
                   </th>
                 ))}
                 <th
