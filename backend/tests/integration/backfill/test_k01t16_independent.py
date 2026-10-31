@@ -39,8 +39,8 @@ from abacus.modules.identity.authz.matrix import RULES
 from .support import Json, Net, Person
 from .test_k01t05_methodology_programs import (
     _flags,  # pyright: ignore[reportPrivateUsage] -- the shared synthetic fixture builders
-    _import,  # pyright: ignore[reportPrivateUsage]
-    _workbook,  # pyright: ignore[reportPrivateUsage]
+    _import,  # pyright: ignore[reportPrivateUsage] -- K-01-T05's workbook import
+    _workbook,  # pyright: ignore[reportPrivateUsage] -- K-01-T05's BH EBP workbook
 )
 
 pytestmark = pytest.mark.asyncio
