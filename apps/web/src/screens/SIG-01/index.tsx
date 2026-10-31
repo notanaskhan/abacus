@@ -24,7 +24,7 @@ import { type JSX, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { useSession } from "../../app-core/session";
 import { COPY } from "./copy";
-import { ImportSheet, RemindDialog } from "./flows";
+import { ImportSheet, RemindDialog, WetSignatureSheet } from "./flows";
 
 // SIG-01 · Signatures hub and evidence drawer (N-02-T11; docs/screens/SIG-01.md; DEC-827). T1 over
 // C7's `GET /v1/envelopes` (by tab) and `/summary`: the tabs carry their counts, the tiles filter
@@ -86,9 +86,12 @@ function Chips({ row }: { row: EnvelopeListRow }): JSX.Element {
 }
 
 function SignerCard({ row, index }: { row: EnvelopeListRow; index: number }): JSX.Element {
+  const [uploading, setUploading] = useState(false);
   const chip = (row.signer_chips ?? [])[index];
   if (chip === undefined) return <></>;
-  const locked = row.needs_handwritten && !chip.signed;
+  // N-02-T27: the chip says which signer locked; older rows fall back to the envelope's flag.
+  const locked = !chip.signed && (chip.locked ?? row.needs_handwritten);
+  const signerId = chip.signer_id ?? null;
   return (
     <DrawerCard>
       <div className="flex items-center justify-between px-[12px] py-[10px] hairline-b">
@@ -103,10 +106,29 @@ function SignerCard({ row, index }: { row: EnvelopeListRow; index: number }): JS
       </div>
       {locked && (
         <div className="flex justify-end px-[12px] py-[10px]">
-          <Button variant="secondary" size="sm">
+          <Button
+            variant="secondary"
+            size="sm"
+            opensDialog
+            disabled={signerId === null}
+            onClick={() => {
+              setUploading(true);
+            }}
+          >
             {COPY.df11.upload}
           </Button>
         </div>
+      )}
+      {locked && signerId !== null && (
+        <WetSignatureSheet
+          open={uploading}
+          row={row}
+          signerId={signerId}
+          signerName={chip.name}
+          onClose={() => {
+            setUploading(false);
+          }}
+        />
       )}
     </DrawerCard>
   );
