@@ -49,6 +49,8 @@ from abacus.modules.evidence.api import (
 from abacus.modules.identity.api import consumed_grant_approver, firm_time_zone
 from abacus.modules.signatures.events import (
     EnvelopeCompleted,
+    EnvelopeDeclined,
+    EnvelopeExpired,
     EnvelopeSignerSigned,
     EnvelopeSignerVerificationFailed,
 )
@@ -363,6 +365,15 @@ async def envelope_poll(given: EnvelopeInput) -> str:
                     "at": now,
                 },
             )
+            if status == "declined":  # N-02-T24: the sender is told
+                tx.emit(
+                    EnvelopeDeclined(
+                        envelope_id=envelope_id,
+                        client_id=env.client_id,
+                        engagement_id=env.engagement_id,
+                        sent_by=env.sent_by,
+                    )
+                )
         tx.record(
             "envelope.polled",
             target=Target("envelope", envelope_id),
@@ -460,6 +471,14 @@ async def envelope_expire(given: EnvelopeInput) -> str:
             },
         )
         tx.record("envelope.expired", target=Target("envelope", envelope_id))
+        tx.emit(
+            EnvelopeExpired(
+                envelope_id=envelope_id,
+                client_id=env.client_id,
+                engagement_id=env.engagement_id,
+                sent_by=env.sent_by,
+            )
+        )
     return "expired"
 
 
@@ -620,6 +639,7 @@ async def envelope_complete(given: EnvelopeInput) -> str:
                 source_kind=env.source_kind or "envelope",
                 source_id=env.source_id or envelope_id,
                 imported_by=None,
+                sent_by=env.sent_by,
             )
         )
     return "recorded"

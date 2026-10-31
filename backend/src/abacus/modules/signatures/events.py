@@ -22,6 +22,8 @@ class EnvelopeCompleted(DomainEvent):
     source_kind: Annotated[str, classified("internal")]
     source_id: Annotated[UUID, classified("internal")]
     imported_by: Annotated[UUID | None, classified("internal")]
+    # N-02-T24: who sent it, for SIG-01's `envelope_completed` notification (None: imported).
+    sent_by: Annotated[UUID | None, classified("internal")] = None
 
 
 class EnvelopeSendApproved(DomainEvent):
@@ -74,3 +76,25 @@ class EnvelopeSignerVerificationFailed(DomainEvent):
     engagement_id: Annotated[UUID | None, classified("internal")]
     source_kind: Annotated[str, classified("internal")]
     source_id: Annotated[UUID, classified("internal")]
+
+
+class EnvelopeDeclined(DomainEvent):
+    """N-02-T24: a signer declined (at the provider or in the portal); the sender is told."""
+
+    event_type: ClassVar[str] = "envelope.declined"
+
+    envelope_id: Annotated[UUID, classified("internal")]
+    client_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")]
+    sent_by: Annotated[UUID | None, classified("internal")]
+
+
+class EnvelopeExpired(DomainEvent):
+    """N-02-T24: an open envelope passed its expiry; the sender is told."""
+
+    event_type: ClassVar[str] = "envelope.expired"
+
+    envelope_id: Annotated[UUID, classified("internal")]
+    client_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")]
+    sent_by: Annotated[UUID | None, classified("internal")]
