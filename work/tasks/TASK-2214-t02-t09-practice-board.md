@@ -4,12 +4,12 @@ title: T-02-T09 practice-board read models
 spec: SPEC-502
 acceptance_criteria: [AC-10, AC-11, AC-12, AC-13, AC-14]
 risk_zone: amber
-status: in-review
+status: done
 epic: T-02
 plan_key: T-02-T09
 branch: s17-t02-t09
 created: 2026-10-30
-updated: 2026-10-30
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -44,3 +44,4 @@ tiles, totals and rows exclude walled returns."
 
 ## Progress log
 - 2026-10-30: built in S17 Lane 2; tests run in the end review.
+- 2026-11-01: merged to main in #786 (d8cf79f09).

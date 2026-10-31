@@ -3081,6 +3081,114 @@
       "tier": "A",
       "strip": "[data-template='t10'] [data-shell='pane-header']",
       "deviation": "F-06-T13 review measured 2.26% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T15/T22 fixes the kit"
+    },
+    "KNW-01a.window": {
+      "page": "screens/KNW-01?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/KNW-01 Knowledge library/screenshots/KNW-01a.png",
+      "sha256": "3548d4db7ab206c6414f3f93c393efd342d15fc60b2dc1c9aace94235817dc22",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "KNW-01b.window": {
+      "page": "screens/KNW-01?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/KNW-01 Knowledge library/screenshots/KNW-01b.png",
+      "sha256": "a17bd8158e28068333884e4f201db2ea7ba5fdfff0c67fcc53b361aff6edfa94",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "KNW-01c.window": {
+      "page": "screens/KNW-01?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/KNW-01 Knowledge library/screenshots/KNW-01c.png",
+      "sha256": "02fd967c35ebae7bad1e5898d830cbe389c81676a16c4fb4071d63d522fba7de",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "KNW-01d.window": {
+      "page": "screens/KNW-01?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/KNW-01 Knowledge library/screenshots/KNW-01d.png",
+      "sha256": "fd46d5dcf2042bbd93cba56d831b5085e2b0a1622c364ea94c951e5b7ccf9b2f",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "KNW-01e.window": {
+      "page": "screens/KNW-01?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/KNW-01 Knowledge library/screenshots/KNW-01e.png",
+      "sha256": "495ab3d511ae28f4efde1393bd74efbb932d00f66a43fe1cfae32d70c40fe525",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "KNW-01f.window": {
+      "page": "screens/KNW-01?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/KNW-01 Knowledge library/screenshots/KNW-01f.png",
+      "sha256": "99a7fbd0cfd7ac45010411a6413e92e05a4c7947ceb853b190d70d10928aee1f",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "KNW-03a.window": {
+      "page": "screens/KNW-03?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/KNW-03 Program editor - BH-EBP-110 General Planning/screenshots/KNW-03a.png",
+      "sha256": "93522d9159be5b97776511a657a114abc7c6533cbc2fda724e2541ef4eb57fde",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "KNW-03b.window": {
+      "page": "screens/KNW-03?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/KNW-03 Program editor - BH-EBP-110 General Planning/screenshots/KNW-03b.png",
+      "sha256": "6b7978d8f456859911d3ba945215c9a1e77482ed84972904fe9d679d82a03b3c",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "KNW-03c.window": {
+      "page": "screens/KNW-03?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/KNW-03 Program editor - BH-EBP-110 General Planning/screenshots/KNW-03c.png",
+      "sha256": "f983c88e441e0a479b12560e6ef5dccbc778b0ad9d9d5d1810c922da2286804f",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "KNW-03d.window": {
+      "page": "screens/KNW-03?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/KNW-03 Program editor - BH-EBP-110 General Planning/screenshots/KNW-03d.png",
+      "sha256": "f3f56e2d88bfc984005cdffb9b802e2345fd80a0d7b0ea8d831c465ffd42268d",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "KNW-03e.window": {
+      "page": "screens/KNW-03?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/KNW-03 Program editor - BH-EBP-110 General Planning/screenshots/KNW-03e.png",
+      "sha256": "aa5c819c225bb98bf4b918e1de6fdb360a9637b3dd12d728331c09f50b0d75bd",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "KNW-03f.window": {
+      "page": "screens/KNW-03?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/KNW-03 Program editor - BH-EBP-110 General Planning/screenshots/KNW-03f.png",
+      "sha256": "f47c7b5c3fbea55c35b887c4bb03677f98591a77c11c688cd2c6d4367ca2c72f",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
     }
   }
 }

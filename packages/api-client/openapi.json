@@ -4533,6 +4533,189 @@
         "title": "AttestBody",
         "type": "object"
       },
+      "AttributeSampleSizesPayload-Input": {
+        "additionalProperties": false,
+        "description": "A-03-T10 (ADR-340 \u00a76; A-03 \u00a74.1): the firm's attribute sample sizes (\"BH-EBP-210 Table\n2\"). Firm content, loaded through the import; sampling reads it through `methodology.api`\nand computes the statistical cross-check beside it.",
+        "properties": {
+          "confidence_pct": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "Confidence Pct"
+          },
+          "kind": {
+            "cls": "internal",
+            "const": "attribute_sample_sizes",
+            "title": "Kind",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/AttributeSizeRow-Input"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "confidence_pct",
+          "rows"
+        ],
+        "title": "AttributeSampleSizesPayload",
+        "type": "object"
+      },
+      "AttributeSampleSizesPayload-Output": {
+        "additionalProperties": false,
+        "description": "A-03-T10 (ADR-340 \u00a76; A-03 \u00a74.1): the firm's attribute sample sizes (\"BH-EBP-210 Table\n2\"). Firm content, loaded through the import; sampling reads it through `methodology.api`\nand computes the statistical cross-check beside it.",
+        "properties": {
+          "confidence_pct": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+            "title": "Confidence Pct",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "const": "attribute_sample_sizes",
+            "title": "Kind",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/AttributeSizeRow-Output"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "confidence_pct",
+          "rows"
+        ],
+        "title": "AttributeSampleSizesPayload",
+        "type": "object"
+      },
+      "AttributeSizeRow-Input": {
+        "additionalProperties": false,
+        "description": "One row of the size table: the sample size for a risk of material misstatement and a\ntolerable and expected deviation rate, at the table's confidence.",
+        "properties": {
+          "expected_pct": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "Expected Pct"
+          },
+          "rmm": {
+            "cls": "internal",
+            "enum": [
+              "low",
+              "moderate",
+              "high"
+            ],
+            "title": "Rmm",
+            "type": "string"
+          },
+          "size": {
+            "cls": "internal",
+            "maximum": 10000.0,
+            "minimum": 1.0,
+            "title": "Size",
+            "type": "integer"
+          },
+          "tolerable_pct": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+                "type": "string"
+              }
+            ],
+            "cls": "internal",
+            "title": "Tolerable Pct"
+          }
+        },
+        "required": [
+          "rmm",
+          "tolerable_pct",
+          "expected_pct",
+          "size"
+        ],
+        "title": "AttributeSizeRow",
+        "type": "object"
+      },
+      "AttributeSizeRow-Output": {
+        "additionalProperties": false,
+        "description": "One row of the size table: the sample size for a risk of material misstatement and a\ntolerable and expected deviation rate, at the table's confidence.",
+        "properties": {
+          "expected_pct": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+            "title": "Expected Pct",
+            "type": "string"
+          },
+          "rmm": {
+            "cls": "internal",
+            "enum": [
+              "low",
+              "moderate",
+              "high"
+            ],
+            "title": "Rmm",
+            "type": "string"
+          },
+          "size": {
+            "cls": "internal",
+            "maximum": 10000.0,
+            "minimum": 1.0,
+            "title": "Size",
+            "type": "integer"
+          },
+          "tolerable_pct": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,7}0*$)\\d{0,3}\\.\\d{0,3}0*$)",
+            "title": "Tolerable Pct",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rmm",
+          "tolerable_pct",
+          "expected_pct",
+          "size"
+        ],
+        "title": "AttributeSizeRow",
+        "type": "object"
+      },
       "AuditActorOut": {
         "description": "The actor grammar's facts (INV-5): `person` and `support` name `person`; `via_agent` names\n`on_behalf_of` (and the agent by id only); `policy` names `policy_ref`; `system` names\nnothing.",
         "properties": {
@@ -40791,6 +40974,40 @@
         "title": "K1DependencyOut",
         "type": "object"
       },
+      "K1DetailsChangeTagOut": {
+        "description": "T-02-T25 (DV-10): a pending recipient-details change, the row's second line.",
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "w9",
+              "w8",
+              "address"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "submitted_at": {
+            "cls": "confidential",
+            "format": "date-time",
+            "title": "Submitted At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "submitted_at"
+        ],
+        "title": "K1DetailsChangeTagOut",
+        "type": "object"
+      },
       "K1DocumentOut": {
         "properties": {
           "evidence_version_id": {
@@ -40844,6 +41061,79 @@
         "title": "K1DocumentOut",
         "type": "object"
       },
+      "K1HandoffOut": {
+        "description": "T-02-T25: a draft shared to another return's intake (TXP-12's Internal handoff column).\nThe target is named only to a reader of it (DEC-88); otherwise \"Another return\", no id.",
+        "properties": {
+          "replaced_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Replaced At"
+          },
+          "shared_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Shared At",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "draft_shared",
+              "final_replaced"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "target_form": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Target Form"
+          },
+          "target_name": {
+            "cls": "confidential",
+            "title": "Target Name",
+            "type": "string"
+          },
+          "target_return_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Target Return Id"
+          }
+        },
+        "required": [
+          "target_return_id",
+          "target_name",
+          "target_form",
+          "status",
+          "shared_at",
+          "replaced_at"
+        ],
+        "title": "K1HandoffOut",
+        "type": "object"
+      },
       "K1HandoffStatus": {
         "enum": [
           "awaiting",
@@ -40852,8 +41142,54 @@
         "title": "K1HandoffStatus",
         "type": "string"
       },
+      "K1MaskedTinOut": {
+        "description": "A recipient's taxpayer ID, kind and last four only; the detail's, never a list row's\n(ADR-031).",
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "ssn",
+              "ein",
+              "itin"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "last4": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9]{4}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Last4",
+            "x-pii-kind": "tin"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "K1MaskedTinOut",
+        "type": "object"
+      },
       "K1PackageDetailOut": {
         "properties": {
+          "address_on_file": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Address On File"
+          },
           "documents": {
             "cls": "internal",
             "items": {
@@ -40874,6 +41210,17 @@
           "package": {
             "$ref": "#/components/schemas/K1PackageOut",
             "cls": "confidential"
+          },
+          "tin": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/K1MaskedTinOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted"
           }
         },
         "required": [
@@ -40895,6 +41242,29 @@
             "title": "Allowed Actions",
             "type": "array"
           },
+          "delivery_contact_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Delivery Contact Name"
+          },
+          "details_change": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/K1DetailsChangeTagOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
+          },
           "documents": {
             "cls": "internal",
             "default": [],
@@ -40914,11 +41284,32 @@
             "title": "Form",
             "type": "string"
           },
+          "handoffs": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/K1HandoffOut"
+            },
+            "title": "Handoffs",
+            "type": "array"
+          },
           "id": {
             "cls": "internal",
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "issuer_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Issuer Name"
           },
           "k3_status": {
             "cls": "internal",
@@ -40929,6 +41320,56 @@
             ],
             "title": "K3 Status",
             "type": "string"
+          },
+          "locality": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Locality"
+          },
+          "ownership_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Ownership Note"
+          },
+          "period_end": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Period End"
+          },
+          "period_start": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Period Start"
           },
           "recipient_id": {
             "cls": "internal",
@@ -40951,6 +41392,15 @@
             "cls": "confidential",
             "title": "Recipient Name",
             "type": "string"
+          },
+          "related_returns": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/K1RelatedReturnOut"
+            },
+            "title": "Related Returns",
+            "type": "array"
           },
           "released_at": {
             "anyOf": [
@@ -40976,6 +41426,19 @@
           "status": {
             "$ref": "#/components/schemas/K1PackageStatus",
             "cls": "internal"
+          },
+          "supersedes_package_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Supersedes Package Id"
           },
           "tax_year": {
             "cls": "internal",
@@ -41018,6 +41481,40 @@
         "title": "K1PackageStatus",
         "type": "string"
       },
+      "K1RelatedReturnOut": {
+        "description": "T-02-T25: a return of the recipient's own client for the year, a share target. Offered\nonly to a reader of both returns (DEC-88).",
+        "properties": {
+          "client_name": {
+            "cls": "confidential",
+            "title": "Client Name",
+            "type": "string"
+          },
+          "form": {
+            "cls": "internal",
+            "title": "Form",
+            "type": "string"
+          },
+          "return_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Return Id",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "return_id",
+          "client_name",
+          "form",
+          "status"
+        ],
+        "title": "K1RelatedReturnOut",
+        "type": "object"
+      },
       "K1ReleaseCheckOut": {
         "description": "Release eligibility: failing checks as codes, never prose.",
         "properties": {
@@ -41025,6 +41522,19 @@
             "cls": "internal",
             "title": "Eligible",
             "type": "boolean"
+          },
+          "email_template_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Email Template Version Id"
           },
           "failing": {
             "cls": "internal",
@@ -53902,6 +54412,63 @@
         "title": "PortalIntakeUploadStatus",
         "type": "string"
       },
+      "PortalK1ExpectedOut": {
+        "description": "T-02-T27 (POR-13 b): a K-1 the person will receive, not released yet. No amounts, no\ndocuments, no package id.",
+        "properties": {
+          "expected_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Expected On"
+          },
+          "form": {
+            "cls": "internal",
+            "enum": [
+              "1065",
+              "1120s",
+              "1041"
+            ],
+            "title": "Form",
+            "type": "string"
+          },
+          "issuer_name": {
+            "cls": "confidential",
+            "title": "Issuer Name",
+            "type": "string"
+          },
+          "k3_status": {
+            "cls": "internal",
+            "enum": [
+              "included",
+              "not_required",
+              "not_included"
+            ],
+            "title": "K3 Status",
+            "type": "string"
+          },
+          "tax_year": {
+            "cls": "internal",
+            "title": "Tax Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "issuer_name",
+          "form",
+          "tax_year",
+          "k3_status",
+          "expected_on"
+        ],
+        "title": "PortalK1ExpectedOut",
+        "type": "object"
+      },
       "PortalLinkRenewIn": {
         "additionalProperties": false,
         "properties": {
@@ -66229,6 +66796,56 @@
         "title": "SampleItemOut",
         "type": "object"
       },
+      "SampleSetCreatedOut": {
+        "description": "`POST /v1/work-items/{wid}/sample-sets`: the new set, before its first draw (DEC-1662).",
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "program_step_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Program Step Key"
+          },
+          "purpose": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Purpose"
+          },
+          "title": {
+            "cls": "confidential",
+            "maxLength": 120,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "purpose",
+          "program_step_key"
+        ],
+        "title": "SampleSetCreatedOut",
+        "type": "object"
+      },
       "SampleSetIn": {
         "additionalProperties": false,
         "properties": {
@@ -72882,7 +73499,8 @@
               "aje_thresholds",
               "variance_thresholds",
               "materiality_ranges",
-              "document_confidence"
+              "document_confidence",
+              "attribute_sample_sizes"
             ],
             "title": "Kind",
             "type": "string"
@@ -72974,6 +73592,7 @@
             "discriminator": {
               "mapping": {
                 "aje_thresholds": "#/components/schemas/AjeThresholdsPayload",
+                "attribute_sample_sizes": "#/components/schemas/AttributeSampleSizesPayload-Input",
                 "document_confidence": "#/components/schemas/DocumentConfidencePayload-Input",
                 "materiality_ranges": "#/components/schemas/MaterialityRangesPayload-Input",
                 "return_approval_policy": "#/components/schemas/ReturnApprovalPolicyPayload",
@@ -72996,6 +73615,9 @@
               },
               {
                 "$ref": "#/components/schemas/DocumentConfidencePayload-Input"
+              },
+              {
+                "$ref": "#/components/schemas/AttributeSampleSizesPayload-Input"
               },
               {
                 "$ref": "#/components/schemas/ReviewChecklistPayload"
@@ -73322,7 +73944,8 @@
               "aje_thresholds",
               "variance_thresholds",
               "materiality_ranges",
-              "document_confidence"
+              "document_confidence",
+              "attribute_sample_sizes"
             ],
             "title": "Kind",
             "type": "string"
@@ -73576,6 +74199,7 @@
             "discriminator": {
               "mapping": {
                 "aje_thresholds": "#/components/schemas/AjeThresholdsPayload",
+                "attribute_sample_sizes": "#/components/schemas/AttributeSampleSizesPayload-Output",
                 "document_confidence": "#/components/schemas/DocumentConfidencePayload-Output",
                 "materiality_ranges": "#/components/schemas/MaterialityRangesPayload-Output",
                 "return_approval_policy": "#/components/schemas/ReturnApprovalPolicyPayload",
@@ -73598,6 +74222,9 @@
               },
               {
                 "$ref": "#/components/schemas/DocumentConfidencePayload-Output"
+              },
+              {
+                "$ref": "#/components/schemas/AttributeSampleSizesPayload-Output"
               },
               {
                 "$ref": "#/components/schemas/ReviewChecklistPayload"
@@ -186104,6 +186731,107 @@
         "x-abacus-action": "portal_k1.read"
       }
     },
+    "/v1/portal/k1s/expected": {
+      "get": {
+        "description": "POR-13 b (T-02-T27): \"Not released yet \u00b7 Expected by \u2026\" with no amounts or documents.",
+        "operationId": "portal_k1s_expected",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PortalK1ExpectedOut"
+                  },
+                  "title": "Response Portal K1S Expected",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Portal K1S Expected Route",
+        "tags": [
+          "portal"
+        ],
+        "x-abacus-action": "portal_k1.read"
+      }
+    },
     "/v1/portal/k1s/{package_id}": {
       "get": {
         "description": "The statement with its box lines (TRI, the second step); the first read is Viewed.",
@@ -192680,16 +193408,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Sample Set Route",
@@ -192828,16 +193546,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Sample Version Create Route",
@@ -192974,16 +193682,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Sample Set Approve Route",
@@ -193099,16 +193797,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Sample Draw Progress Route",
@@ -193218,6 +193906,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -193227,16 +193925,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Sample Set Export Route",
@@ -193690,16 +194378,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Sample Items Route",
@@ -194586,7 +195264,8 @@
                     "aje_thresholds",
                     "variance_thresholds",
                     "materiality_ranges",
-                    "document_confidence"
+                    "document_confidence",
+                    "attribute_sample_sizes"
                   ],
                   "type": "string"
                 },
@@ -202510,16 +203189,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Sample Sets List Route",
@@ -202590,7 +203259,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SampleSetSummaryOut"
+                  "$ref": "#/components/schemas/SampleSetCreatedOut"
                 }
               }
             },
@@ -202635,16 +203304,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Sample Set Create Route",

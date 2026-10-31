@@ -15,6 +15,8 @@ export const COPY = {
   published: "Published",
   publishedFrom: (date: string): string => `Published · effective ${date}`,
   actions: { edit: "Edit", addStep: "+ Step", excel: "Open in Excel" },
+  // K-01-T17: the step number's disclosure name (screen readers; no visible text changes).
+  stepToggle: (n: number): string => `Step ${String(n)} details`,
   segments: {
     label: "Program sections",
     steps: "Steps",

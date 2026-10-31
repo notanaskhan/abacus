@@ -184,7 +184,6 @@ function StepsTable({
               key={s.id}
               data-step={s.number}
               {...(isLit ? { "data-lit": "" } : {})}
-              aria-expanded={open}
               onClick={() => {
                 onExpand(open ? null : s.number);
               }}
@@ -194,7 +193,20 @@ function StepsTable({
                 className={`px-[10px] py-[11px] tabular-nums ${isLit ? "border-l-2 border-match-line bg-match-bg" : ""}`}
               >
                 <span className="inline-flex items-center gap-[4px]">
-                  {s.number}
+                  {/* K-01-T17 (axe aria-conditional-attr): a table row takes no aria-expanded;
+                      the step number is the row's disclosure for keyboard and screen readers. */}
+                  <button
+                    type="button"
+                    aria-expanded={open}
+                    aria-label={COPY.stepToggle(s.number)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onExpand(open ? null : s.number);
+                    }}
+                    className="bg-transparent p-0 text-inherit tabular-nums"
+                  >
+                    {s.number}
+                  </button>
                   {isLit && popover(s)}
                 </span>
               </td>
@@ -263,7 +275,12 @@ function StepsTable({
                   <span className="flex flex-col gap-[2px]">
                     {trash ? (
                       <Tooltip content={COPY.draft.lockTip}>
-                        <span tabIndex={0} className="inline-flex" aria-label={COPY.draft.lockTip}>
+                        <span
+                          tabIndex={0}
+                          role="img"
+                          className="inline-flex"
+                          aria-label={COPY.draft.lockTip}
+                        >
                           <Icon name="lock" size={13} aria-hidden className="text-ink-2" />
                         </span>
                       </Tooltip>
