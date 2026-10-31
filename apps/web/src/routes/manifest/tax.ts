@@ -16,7 +16,12 @@ export const taxScreens = {
   // (link-contract rule 1) and walked on staging (DEC-195; DEC-1272).
   // T-02-T14 on fixtures behind `tax.returns_v1`; links wired (DEC-1273).
   "TAX-02": { name: "Return › Overview", status: "fixture", path: "/tax-returns/$returnId" },
-  "TAX-03": { name: "Return › Intake · Feld 2025 Form 1040", status: "planned", path: null },
+  // T-02-T19: a–f on fixtures over the live intake read (T-02-T18) behind `tax.returns_v1`.
+  "TAX-03": {
+    name: "Return › Intake · Feld 2025 Form 1040",
+    status: "fixture",
+    path: "/tax-returns/$returnId/intake",
+  },
   "TAX-04": {
     name: "Return › Review · Prepare preset · Feld 2025 Form 1040",
     status: "planned",

@@ -3,15 +3,18 @@ import { createRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import type { JSX } from "react";
 import { FeatureGate } from "../../app-core/flags";
 import { useParam } from "../params";
+import { to } from "../to";
 import { appRoute, lazyScreen } from "../root";
 
 // Tax Returns (T-02 §5.1): `/tax-returns` is TAX-01 (T-02-T12) and `/tax-returns/$returnId` the
 // `ReturnFrame` on TAX-02 (T-02-T14; every form family, DV-5), behind `tax.returns_v1`. While the
 // flag is off the area shows F-05's flag-off state, never a 404. TAX-01 keeps its tile, office
-// grouping, search and tax year in the URL (`?tile=`, `?office=`, `?q=`, `?tax_year=`).
+// grouping, search and tax year in the URL (`?tile=`, `?office=`, `?q=`, `?tax_year=`). The
+// return's Intake tab is TAX-03 at `/tax-returns/$returnId/intake` (T-02-T19).
 
 const PracticeBoard = lazyScreen(async () => (await import("../../screens/TAX-01")).TAX01);
 const ReturnOverview = lazyScreen(async () => (await import("../../screens/TAX-02")).TAX02);
+const ReturnIntake = lazyScreen(async () => (await import("../../screens/TAX-03")).TAX03);
 
 function gated(children: JSX.Element): JSX.Element {
   return (
@@ -59,8 +62,34 @@ export const taxReturnRoute = createRoute({
   path: "/tax-returns/$returnId",
   component: function TaxReturnPage(): JSX.Element {
     const returnId = useParam("returnId");
-    return gated(<ReturnOverview returnId={returnId} />);
+    const navigate = useNavigate();
+    return gated(
+      <ReturnOverview
+        returnId={returnId}
+        onTab={(tab) => {
+          if (tab === "intake") void navigate(to.TAX03({ returnId }));
+        }}
+      />,
+    );
   },
 });
 
-export const taxReturnRoutes = [taxReturnsRoute, taxReturnRoute] as const;
+// TAX-03 (T-02-T19): the return's Intake tab, `/tax-returns/$returnId/intake`.
+export const taxReturnIntakeRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/tax-returns/$returnId/intake",
+  component: function TaxReturnIntakePage(): JSX.Element {
+    const returnId = useParam("returnId");
+    const navigate = useNavigate();
+    return gated(
+      <ReturnIntake
+        returnId={returnId}
+        onTab={(tab) => {
+          if (tab === "overview") void navigate(to.TAX02({ returnId }));
+        }}
+      />,
+    );
+  },
+});
+
+export const taxReturnRoutes = [taxReturnsRoute, taxReturnRoute, taxReturnIntakeRoute] as const;
