@@ -38,6 +38,7 @@ from abacus.modules.reporting.contract import (
     documents_router,
     templates_router,
 )
+from abacus.modules.reporting.contract import TemplateImportIn as TemplateImportIn
 from abacus.modules.reporting.engagement_letters import (
     finalise_engagement_letter,
     lock_engagement_letter,

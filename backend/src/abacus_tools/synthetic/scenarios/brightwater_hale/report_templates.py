@@ -9,8 +9,9 @@ platform content, and no migration or constant in `abacus` carries a template's 
 The twelve templates: CAS, audit (EBP) and tax advisory engagement letters; the two §7216
 consents, each its own document (use; disclosure to AI service providers); the EBP
 representation letter; the AU-C 260 planning letter; the auditor's, review and compilation report
-shells; the CP2000 notice response; and the delivery cover letter. Names, clause titles and the
-sample data are the handoff's (ENG-04, AUD-21, AUD-22, AUD-23, NOT-03, TAX-12).
+shells; the CP2000 notice response; and the filing instructions letter (TAX-12's packet). Names,
+clause titles and the sample data are the handoff's (ENG-04, AUD-21, AUD-22, AUD-23, NOT-03,
+TAX-12).
 
 Opt-in (`--slice report_templates`, which brings `people` for Grace's and Margaret's roles).
 `docs/guides/template-import.md` is the pilot firm's guide to the same import.
@@ -443,13 +444,14 @@ NOTICE_RESPONSE: Final[Json] = {
 
 DELIVERY_COVER: Final[Json] = {
     "family": "delivery_cover_letter",
-    "name": "BH Delivery Cover Letter",
-    "description": "Cover letter for a filed return delivered through the portal",
+    "name": "BH Filing Instructions",
+    "description": "Filing instructions letter for a filed return delivered through the portal",
     "layout_key": "letter",
     "body": [
         _p(_v("letter.date")),
         _p(_v("client.name")),
         _p("Your ", _v("return.label"), " is enclosed for your records."),
+        _p(_v("payments.summary")),
         _p("Please keep this copy with your tax records."),
         _sign(("Brightwater Hale LLP", "firm.signer")),
         {"type": "enclosures", "items": ["Filed return"]},
@@ -458,12 +460,14 @@ DELIVERY_COVER: Final[Json] = {
         _var("letter.date", "Letter date", "date"),
         _var("client.name", "Client", "name"),
         _var("return.label", "Return"),
+        _var("payments.summary", "Payment instructions"),
         _var("firm.signer", "Firm signer", "name"),
     ],
     "sample_data": {
         "letter.date": "April 10, 2026",
         "client.name": "Sample Client",
         "return.label": "2025 Form 1040",
+        "payments.summary": "No payment is due",
         "firm.signer": "Sample Partner",
     },
 }

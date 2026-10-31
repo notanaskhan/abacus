@@ -188,8 +188,11 @@ from abacus.modules.portal.api import (
     add_portal_host,
     set_branding,
 )
-from abacus.modules.reporting.api import import_template_bundle, publish_template
-from abacus.modules.reporting.contract import TemplateImportIn
+from abacus.modules.reporting.api import (
+    TemplateImportIn,
+    import_template_bundle,
+    publish_template,
+)
 from abacus.modules.requests.api import (
     ItemPatch,
     fulfil_by_upload,
