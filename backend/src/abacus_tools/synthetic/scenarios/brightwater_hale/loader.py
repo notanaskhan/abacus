@@ -2994,7 +2994,8 @@ async def _k1_shared(conn: asyncpg.Connection, _: Scenario, event: Event) -> Non
     async with as_tenant(conn, TENANT):
         await conn.execute(
             "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
-            "VALUES ($1, $2, $3, 'manager') ON CONFLICT DO NOTHING",
+            "VALUES ($1, $2, $3, 'manager') ON CONFLICT (tenant_id, engagement_id, user_id) "
+            "DO UPDATE SET role = 'manager'",  # the board seeded him as the reviewer
             TENANT,
             UUID(ENGAGEMENT_BY_LABEL[ret.engagement].id),
             user_id_of(_SEATS[event.actor]),
