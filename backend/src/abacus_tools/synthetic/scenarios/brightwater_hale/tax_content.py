@@ -285,9 +285,10 @@ K1_SETS: Final = (
         ),
     ),
 )
-# Ridgeline's drafts shared with the partners' own 1040s (TXP-12 A, Sep 10), by Daniel Reyes, the
-# engagement partner (`k1_package.share_internal` is a manager's or partner's; DEC-88).
-SHARER: Final = "DR"
+# Ridgeline's drafts shared with the partners' own 1040s (TXP-12 A, Sep 10) by Samuel Ito, whom
+# Daniel Reyes adds to Ridgeline's team as manager first (`k1_package.share_internal` is a
+# manager's or partner's; the sharer reads both returns, DEC-88: Samuel reviews both 1040s).
+SHARER: Final = "SI"
 SHARES: Final = (("P02", "Meera Shah"), ("P05", "Jonah & Claire Feld"))
 SHARED_AT: Final = _at(9, 10, 14)
 # POR-13's portal people: their contacts are active, so a release grants them at once.
@@ -585,6 +586,17 @@ def tax_content_events() -> list[Event]:
                 client=k1_set.client,
             )
         )
+    events.append(
+        Event(
+            "k1-team:ridgeline:SI",
+            SHARED_AT - timedelta(hours=1),
+            "tax.k1_team_member_added",
+            "DR",
+            SLICE,
+            {"client": RIDGELINE, "member": SHARER, "role": "manager"},
+            client=RIDGELINE,
+        )
+    )
     for ref, target in SHARES:
         events.append(
             Event(

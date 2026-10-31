@@ -2971,6 +2971,17 @@ async def _k1_set_imported(conn: asyncpg.Connection, _: Scenario, event: Event) 
             )
 
 
+async def _k1_team_member_added(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """The engagement partner adds a member to the issuing return's team (the team service)."""
+    ret = next(r for r in RETURN_BY_LABEL.values() if r.client == str(event.data["client"]))
+    await add_to_team(
+        await _staff_context(conn, event),
+        UUID(ENGAGEMENT_BY_LABEL[ret.engagement].id),
+        user_id_of(_SEATS[str(event.data["member"])]),
+        cast(StaffRole, str(event.data["role"])),
+    )
+
+
 async def _k1_shared(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     """Samuel shares a partner's draft with their own 1040 (DEC-88), as TXP-12's share does."""
     k1_set = set_of(str(event.data["client"]))
@@ -3231,6 +3242,7 @@ HANDLERS: Final[dict[str, Handler]] = {
     "tax.k1_portal_person_added": _k1_portal_person_added,
     "tax.engine_pdf_imported": _engine_pdf_imported,
     "tax.k1_set_imported": _k1_set_imported,
+    "tax.k1_team_member_added": _k1_team_member_added,
     "tax.k1_shared": _k1_shared,
     "requests.organizer_imported": _organizer_imported,
     "requests.organizer_published": _organizer_published,
