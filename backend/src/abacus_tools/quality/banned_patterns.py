@@ -2249,8 +2249,9 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/backfill/test_t01t08_consents.py",
             # K-02-T09: 0400's privileges read from the catalog as the owner and tried as the app.
             "tests/integration/backfill/test_k02t09_reference_sets_independent.py",
-            # A-03-T05: the schema test of 0520 acts as the app.
+            # A-03-T05/T06: the schema tests of 0520 and 0521 act as the app.
             "tests/integration/backfill/test_a03t05_sampling_tables.py",
+            "tests/integration/backfill/test_a03t06_taxonomy_db.py",
             # K-02-T05: the platform reference sets (global, definer-guarded) are seeded as the
             # owner role; the service under test then reads them as the app role.
             "tests/integration/test_k02t05_reference_set_service.py",
@@ -2450,8 +2451,9 @@ RULES: list[Rule | TreeRule] = [
             # K-02-T04, T-01-T08: the schema tests of 0401 and 0402 act as the app.
             "tests/integration/backfill/test_k02t04_firm_standards.py",
             "tests/integration/backfill/test_t01t08_consents.py",
-            # A-03-T05: the schema test of 0520 acts as the app.
+            # A-03-T05/T06: the schema tests of 0520 and 0521 act as the app.
             "tests/integration/backfill/test_a03t05_sampling_tables.py",
+            "tests/integration/backfill/test_a03t06_taxonomy_db.py",
             "tests/integration/test_tenancy.py",
             # P-04-T05: `Seeder.as_actor` drives the database's own actor and clock checks.
             "tests/integration/agent_tests/support.py",

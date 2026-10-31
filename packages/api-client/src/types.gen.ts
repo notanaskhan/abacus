@@ -15386,6 +15386,10 @@ export type GroupingProblemOut = {
      * Row
      */
     row: number;
+    /**
+     * Sheet
+     */
+    sheet?: string;
 };
 
 /**
@@ -15459,6 +15463,10 @@ export type GroupingVersionOut = {
      */
     created_at: string;
     /**
+     * Effective From
+     */
+    effective_from?: string | null;
+    /**
      * Id
      */
     id: string;
@@ -15481,7 +15489,7 @@ export type GroupingVersionOut = {
     /**
      * Status
      */
-    status: 'draft' | 'published';
+    status: 'draft' | 'published' | 'discarded';
     /**
      * Version
      */
@@ -25409,6 +25417,16 @@ export type PublicationOut = {
      * By
      */
     by: string;
+};
+
+/**
+ * PublishBody
+ */
+export type PublishBody = {
+    /**
+     * Effective From
+     */
+    effective_from?: string | null;
 };
 
 /**
@@ -71117,10 +71135,6 @@ export type GroupingCatalogueErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GroupingCatalogueError = GroupingCatalogueErrors[keyof GroupingCatalogueErrors];
@@ -71185,8 +71199,73 @@ export type ImportGroupingSetResponses = {
 
 export type ImportGroupingSetResponse = ImportGroupingSetResponses[keyof ImportGroupingSetResponses];
 
-export type PublishGroupingSetData = {
+export type ImportGroupingFileData = {
     body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Key
+         */
+        key: string;
+        /**
+         * Name
+         */
+        name: string;
+    };
+    url: '/v1/grouping-sets/imports/file';
+};
+
+export type ImportGroupingFileErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * The file is too large
+     */
+    413: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ImportGroupingFileError = ImportGroupingFileErrors[keyof ImportGroupingFileErrors];
+
+export type ImportGroupingFileResponses = {
+    /**
+     * Response Import Grouping File
+     *
+     * Successful Response
+     */
+    201: Array<GroupingVersionOut>;
+};
+
+export type ImportGroupingFileResponse = ImportGroupingFileResponses[keyof ImportGroupingFileResponses];
+
+export type PublishGroupingSetData = {
+    /**
+     * Body
+     */
+    body?: PublishBody | null;
     headers?: {
         /**
          * Authorization
@@ -71287,10 +71366,6 @@ export type GroupingLinesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GroupingLinesError = GroupingLinesErrors[keyof GroupingLinesErrors];

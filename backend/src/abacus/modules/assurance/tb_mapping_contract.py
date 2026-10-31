@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Path, Query
@@ -35,6 +35,7 @@ from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.modules.assurance import tb_mapping_fixtures as fx
+from abacus.modules.assurance.mapping import catalogue, picker
 from abacus.modules.engagements.api import get_ref
 from abacus.modules.identity.api import (
     AbacusRouter,
@@ -43,6 +44,7 @@ from abacus.modules.identity.api import (
     Resource,
     authorise,
     current_context,
+    names_of,
 )
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -347,19 +349,44 @@ router = AbacusRouter(prefix="/v1", tags=["mapping"])
     "/grouping-sets/catalogue",
     action="grouping_set.read",
     response_model=list[GroupingSetSummaryOut],
-    errors=(501,),
+    errors=(),
 )
 async def grouping_catalogue_route(ctx: Ctx) -> list[GroupingSetSummaryOut]:
-    """The firm's grouping sets and their versions, for every firm role (A-03-T06)."""
+    """The firm's grouping sets and their versions, for every firm role (live, A-03-T06)."""
     await firm_gate(ctx, "grouping_set.read")
-    _not_yet()
+    found = await catalogue(ctx)
+    names = await names_of([v.published_by for v in found if v.published_by is not None])
+    sets: dict[UUID, GroupingSetSummaryOut] = {}
+    for v in found:
+        if v.set_id is None:
+            continue
+        summary = GroupingSetVersionSummaryOut(
+            id=v.id,
+            version_no=v.version,
+            status=cast(GroupingVersionStatus, v.status),
+            effective_from=v.effective_from,
+            problems=len(v.problems),
+            published_by_name=names.get(v.published_by) if v.published_by else None,
+            published_at=v.published_at,
+        )
+        held = sets.get(v.set_id)
+        versions = [*(held.versions if held else []), summary]
+        published = [s.version_no for s in versions if s.status == "published"]
+        sets[v.set_id] = GroupingSetSummaryOut(
+            id=v.set_id,
+            key=v.set_key,
+            name=v.set_name,
+            current_version_no=max(published) if published else None,
+            versions=versions,
+        )
+    return list(sets.values())
 
 
 @router.get(
     "/grouping-sets/{grouping_set_id}/versions/{version_no}/lines",
     action="grouping_set.read",
     response_model=GroupingLinesOut,
-    errors=(501,),
+    errors=(),
 )
 async def grouping_lines_route(
     grouping_set_id: UUID,
@@ -367,9 +394,45 @@ async def grouping_lines_route(
     ctx: Ctx,
     q: Annotated[str | None, Query(max_length=120)] = None,
 ) -> GroupingLinesOut:
-    """The picker: "Search groupings and FS lines", grouped by class, with Recently used."""
+    """The picker: "Search groupings and FS lines", grouped by class, with Recently used
+    (live, A-03-T06). `q` matches a grouping's or FS line's label or key, case-insensitively."""
     await firm_gate(ctx, "grouping_set.read")
-    _not_yet()
+    version_id, views, recent = await picker(ctx, grouping_set_id, version_no)
+    needle = (q or "").casefold()
+    options: dict[UUID, FsLineOptionOut] = {}
+    classes: dict[str, list[GroupingOptionOut]] = {}
+    for g in views:
+        grouping_hit = needle in g.label.casefold() or needle in g.key.casefold()
+        lines = [
+            FsLineOptionOut(
+                id=line.id,
+                key=line.key,
+                label=line.label,
+                normal_balance=cast(NormalBalance, line.normal_balance),
+                grouping_key=g.key,
+                grouping_label=g.label,
+                class_=cast(GroupingClass, g.class_),
+            )
+            for line in g.lines
+        ]
+        options.update({o.id: o for o in lines})
+        shown = [
+            o
+            for o in lines
+            if grouping_hit or needle in o.label.casefold() or needle in o.key.casefold()
+        ]
+        if shown:
+            classes.setdefault(g.class_, []).append(
+                GroupingOptionOut(key=g.key, label=g.label, lines=shown)
+            )
+    order: tuple[GroupingClass, ...] = ("assets", "liabilities", "equity", "revenue", "expenses")
+    return GroupingLinesOut(
+        grouping_set_id=grouping_set_id,
+        version_id=version_id,
+        version_no=version_no,
+        classes=[GroupingClassOut(class_=c, groupings=classes[c]) for c in order if c in classes],
+        recently_used=[options[i] for i in recent if i in options],
+    )
 
 
 @router.get(

@@ -1171,7 +1171,8 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             | {"issue_id", "issue_linked_by", "issue_linked_at"}  # 0193 (A-02-T11): issue link
         ),
         "grouping_set_versions": frozenset(  # SPEC-316 (TASK-345): published once
-            {"status", "published_by", "published_at", "published_actor_kind"}
+            # A-03-T06 (0521): the publish also sets the dated effective_from.
+            {"status", "published_by", "published_at", "published_actor_kind", "effective_from"}
         ),
         # TASK-019: who has taken a queued version (take, release, reassign).
         "review_assignments": frozenset({"assignee_user_id", "assigned_by", "assigned_at"}),
