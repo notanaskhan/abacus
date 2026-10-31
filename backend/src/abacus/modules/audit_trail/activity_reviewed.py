@@ -580,5 +580,6 @@ REVIEWED_FALLBACK: Final = frozenset(
         "schedule_k_release.started",
         "schedule_k_release.undone",
         "schedule_k_release.contact_resolved",
+        "letter.envelope_withdrawn",  # N-02-T35: a person lets an unsigned envelope go
     }
 )
