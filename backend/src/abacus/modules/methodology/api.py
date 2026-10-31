@@ -67,6 +67,9 @@ from abacus.modules.methodology.report_templates import (
 )
 from abacus.modules.methodology.report_templates import templates as report_templates_in_firm
 from abacus.modules.methodology.report_templates import (
+    version_variable_keys as report_template_variable_keys,
+)
+from abacus.modules.methodology.report_templates import (
     version_view as report_template_version,
 )
 from abacus.modules.methodology.routes import methodology_router
@@ -213,6 +216,7 @@ __all__ = [
     "register_catalog_provider",
     "register_standard_examples",
     "register_usage_counter",
+    "report_template_variable_keys",
     "report_template_version",
     "report_templates_in_firm",
     "required_review_levels",
