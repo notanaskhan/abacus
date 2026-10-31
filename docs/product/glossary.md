@@ -74,7 +74,7 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 |---|---|---|---|
 | Sample set | A selection of items chosen for testing. Re-performable: carries `seed` and `algorithm_version` (P-57). | `sample_set` (`sample_sets`, `seed`, `algorithm_version`) | `selection`, `sample_list` |
 | Sample item | One selected item, usually a transaction. | `sample_item` | `selection_row` |
-| Population | The records a sample is drawn from: an uploaded census or a general-ledger query, canonical rows with a SHA-256 and a total, immutable once built (A-03, ADR-340). | `population` (`populations`, `population_records`) | — |
+| Population | The records a sample is drawn from: an uploaded census or a general-ledger query, canonical rows with a SHA-256 and a total, immutable once built (A-03, ADR-340). | `population` (`sample_populations`, `sample_population_records`; fieldwork's journal-entry `populations`, 0057, predate A-03) | — |
 | Completeness tie | Code's comparison of a population's total to an independent figure, each side cited; reads tie, off n or Check. At least one is required before a draw and none may be off at approval. | `completeness_tie` (`completeness_ties`) | — |
 | Sample stratum | One amount band of a stratified sample: test all, draw at random, or none. | `sample_stratum` (`sample_strata`) | — |
 | Support match | The result of searching for a sample item's support: `found`, `not_found`, `doubtful`. | `support_match` | `match`, `lookup` |

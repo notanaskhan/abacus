@@ -1573,6 +1573,13 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             | {"approval_policy_version_id", "review_levels_version_id", "original_due_on"}
             | {"extended_due_on", "due_rule_version_ids", "prior_year_return_id", "row_version"}
         ),
+        # A-03-T05 (0520): a sample set's title and purpose, and a version's status moves; the
+        # drawn seed, parameters and items never change (a guard trigger freezes a version).
+        "sample_sets": frozenset({"title", "purpose", "program_step_key", "row_version"}),
+        "sample_set_versions": frozenset(
+            {"status", "items_hash", "content_hash", "failure_code", "approved_by"}
+            | {"approved_at", "approved_actor_kind", "superseded_by", "row_version"}
+        ),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
