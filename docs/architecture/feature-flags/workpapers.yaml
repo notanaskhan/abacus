@@ -1,0 +1,20 @@
+# The workpapers module's flags (ADR-089; P-39, F-03-T07). Compiled with every other module's
+# file into kernel/_flags.py by `make regenerate`.
+
+flags:
+  - name: workpapers.core
+    description: 'A-04 workpaper core (docs/contracts/workpapers-core.md): the A-04 operations under /v1/engagements/{eid}/workpapers/{id} (versions, cell edits with expected_version, export.xlsx, attention flags), PATCH /procedures/{id} tailoring and GET /program-tailoring, and the AUD-04 and AUD-05 non-agent paths. The live SPEC-308 working-paper and SPEC-300 procedure routes are not behind it. Off: 404. On: 501 not_implemented until A-04-T04 and T07. A-04-T01, DEC-1757.'
+    owner: ayushkbhatia
+    created: 2026-10-31
+    expires: 2027-04-29
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: workpapers.drafting
+    description: 'A-04 agent drafting (one flag for every mode, A-05 and A-08 included): POST …/workpapers/{id}/drafts, POST …/risks/{rid}/drafts, POST …/soc-reports/{id}/drafts, the materiality recommender, the coverage wording and the re-draft consumer. Synthetic and cleared firms only; the kill switch. Off: 404 on the draft routes and the Draft with agent controls are absent; the deterministic flow is unchanged. A-04-T01, DEC-1757.'
+    owner: ayushkbhatia
+    created: 2026-10-31
+    expires: 2027-04-29
+    override: DEC-137
+    kind: boolean
+    default: false

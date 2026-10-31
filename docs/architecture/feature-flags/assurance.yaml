@@ -34,3 +34,35 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: assurance.materiality
+    description: 'A-04 materiality (docs/contracts/audit-planning.md): POST /v1/engagements/{eid}/materiality/preview, /proposals and /reassessments, the planning_materiality decision kind and AUD-07. The live SPEC-300 GET and PUT /materiality and /materiality/decide stay unflagged until A-04-T12 moves AUD-07 onto these. Off: 404. On: 501 not_implemented until A-04-T12. A-04-T01, DEC-1757.'
+    owner: ayushkbhatia
+    created: 2026-10-31
+    expires: 2027-04-29
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: assurance.risk_register
+    description: 'A-04 risk register, linkage and fraud brainstorm: GET and PATCH /v1/engagements/{eid}/risks/{rid}, /risks/linkage, /risks/{rid}/responses, /risks/approval-requests, /risks/coverage, /fraud-brainstorm*, /fraud-inquiries, the significant_risk kind and the G4 provider (off: G4 hidden, never blocking). The live SPEC-300 GET and POST /risks stay unflagged. Off: 404. On: 501 not_implemented until A-04-T13, T18 and T19. A-04-T01, DEC-1757.'
+    owner: ayushkbhatia
+    created: 2026-10-31
+    expires: 2027-04-29
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: assurance.internal_control
+    description: 'A-04 internal control and exceptions (AUD-09): /v1/engagements/{eid}/internal-control/processes* and /internal-control/exceptions*, including routing an exception to Findings or a misstatement. Off: 404. On: 501 not_implemented until A-04-T25 and T31. A-04-T01, DEC-1757.'
+    owner: ayushkbhatia
+    created: 2026-10-31
+    expires: 2027-04-29
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: assurance.service_orgs
+    description: 'A-04 service organizations and SOC 1 (AUD-10): /v1/engagements/{eid}/soc-reports/{id}* and the service_org_reliance kind. The /service-organizations inventory is shared with AUD-04 and answers with this flag or workpapers.core on. Off: 404. On: 501 not_implemented until A-04-T07 (inventory) and T31. A-04-T01, DEC-1757.'
+    owner: ayushkbhatia
+    created: 2026-10-31
+    expires: 2027-04-29
+    override: DEC-137
+    kind: boolean
+    default: false

@@ -17,6 +17,7 @@ from abacus.modules.assurance.mapping_routes import firm_router as grouping_rout
 from abacus.modules.assurance.mapping_routes import router as mapping_router
 from abacus.modules.assurance.phase import SUBSCRIPTIONS as PHASE_SUBSCRIPTIONS
 from abacus.modules.assurance.phase import record_phase, update_profile
+from abacus.modules.assurance.planning_contract import router as planning_router
 from abacus.modules.assurance.providers import register as register_a01_providers
 from abacus.modules.assurance.release import RELEASE_MODE_SETTING, g8
 from abacus.modules.assurance.review_gates import register_review_gates
@@ -52,6 +53,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     grouping_router,
     dashboard_router,
     tb_mapping_router,  # C9 v2 (docs/contracts/ledger-mapping.md): A-03-T03 stub
+    planning_router,  # A-04-T01 audit planning stub (docs/contracts/audit-planning.md)
 )
 
 # SPEC-313 (TASK-331): trial balances appear in the sign-off matrix and count toward G5.

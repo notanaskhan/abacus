@@ -16,6 +16,26 @@ AI_POLICY_V1 = Flag(
     kind="boolean",
     default="false",
 )
+ASSURANCE_INTERNAL_CONTROL = Flag(
+    name="assurance.internal_control",
+    kind="boolean",
+    default="false",
+)
+ASSURANCE_MATERIALITY = Flag(
+    name="assurance.materiality",
+    kind="boolean",
+    default="false",
+)
+ASSURANCE_RISK_REGISTER = Flag(
+    name="assurance.risk_register",
+    kind="boolean",
+    default="false",
+)
+ASSURANCE_SERVICE_ORGS = Flag(
+    name="assurance.service_orgs",
+    kind="boolean",
+    default="false",
+)
 AUDIT_LOG_EXPLORER = Flag(
     name="audit_log.explorer",
     kind="boolean",
@@ -369,10 +389,24 @@ UPLOADS_PROCESSING = Flag(
     kind="boolean",
     default="false",
 )
+WORKPAPERS_CORE = Flag(
+    name="workpapers.core",
+    kind="boolean",
+    default="false",
+)
+WORKPAPERS_DRAFTING = Flag(
+    name="workpapers.drafting",
+    kind="boolean",
+    default="false",
+)
 
 FLAGS: dict[str, Flag] = {
     "agents.client_data_optin": AGENTS_CLIENT_DATA_OPTIN,
     "ai_policy.v1": AI_POLICY_V1,
+    "assurance.internal_control": ASSURANCE_INTERNAL_CONTROL,
+    "assurance.materiality": ASSURANCE_MATERIALITY,
+    "assurance.risk_register": ASSURANCE_RISK_REGISTER,
+    "assurance.service_orgs": ASSURANCE_SERVICE_ORGS,
     "audit_log.explorer": AUDIT_LOG_EXPLORER,
     "audit_log.values": AUDIT_LOG_VALUES,
     "audits.binder_export": AUDITS_BINDER_EXPORT,
@@ -443,4 +477,6 @@ FLAGS: dict[str, Flag] = {
     "tax.returns_v1": TAX_RETURNS_V1,
     "upload_review.enabled": UPLOAD_REVIEW_ENABLED,
     "uploads.processing": UPLOADS_PROCESSING,
+    "workpapers.core": WORKPAPERS_CORE,
+    "workpapers.drafting": WORKPAPERS_DRAFTING,
 }
