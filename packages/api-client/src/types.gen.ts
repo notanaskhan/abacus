@@ -6609,6 +6609,10 @@ export type ComposerLetterOut = {
      * Envelope Id
      */
     envelope_id: string | null;
+    /**
+     * Envelope Status
+     */
+    envelope_status?: string | null;
     fees?: LetterFeesOut | null;
     /**
      * Generated Document Id
@@ -52145,6 +52149,70 @@ export type SendLetterResponses = {
 };
 
 export type SendLetterResponse = SendLetterResponses[keyof SendLetterResponses];
+
+export type WithdrawLetterEnvelopeData = {
+    body?: never;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/letter/withdraw-envelope';
+};
+
+export type WithdrawLetterEnvelopeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type WithdrawLetterEnvelopeError = WithdrawLetterEnvelopeErrors[keyof WithdrawLetterEnvelopeErrors];
+
+export type WithdrawLetterEnvelopeResponses = {
+    /**
+     * Successful Response
+     */
+    200: ComposerLetterOut;
+};
+
+export type WithdrawLetterEnvelopeResponse = WithdrawLetterEnvelopeResponses[keyof WithdrawLetterEnvelopeResponses];
 
 export type MappingSetsData = {
     body?: never;

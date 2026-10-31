@@ -219,6 +219,9 @@ class ComposerLetterOut(BaseModel):
     approval_content_hash: Annotated[str | None, classified("internal")]
     envelope_id: Annotated[UUID | None, classified("internal")]
     allowed_actions: Annotated[list[str], classified("internal")]
+    # N-02-T35 (additive): the envelope's C7 status; `declined`, `expired` or `voided` offers the
+    # withdrawal (`letter.withdraw_envelope` in `allowed_actions`).
+    envelope_status: Annotated[str | None, classified("internal")] = None
     version: Annotated[int, classified("internal")]
 
 
@@ -363,6 +366,24 @@ async def send_letter_route(engagement_id: UUID, ctx: Ctx) -> LetterSendOut:
         from abacus.modules.engagements.letter_flow import send_letter
 
         return LetterSendOut(envelope_id=await send_letter(ctx, engagement_id))
+    await _stub(ctx, "letter.send")
+
+
+@letter_router.post(
+    "/{engagement_id}/letter/withdraw-envelope",
+    action="letter.send",
+    response_model=ComposerLetterOut,
+    errors=(409, 501),
+)
+async def withdraw_letter_envelope_route(
+    engagement_id: UUID, ctx: Ctx, if_match: IfMatch
+) -> ComposerLetterOut:
+    """N-02-T35: a declined, expired or voided letter envelope is let go; the letter is back at
+    its partner approval and Send drafts a new envelope."""
+    if not ctx.client and await flag_enabled(ctx.tenant, ENGAGEMENTS_LETTER_COMPOSER):
+        from abacus.modules.engagements.letter_flow import withdraw_envelope
+
+        return await withdraw_envelope(ctx, engagement_id, if_match)
     await _stub(ctx, "letter.send")
 
 
