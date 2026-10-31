@@ -41,9 +41,8 @@ from abacus.modules.sampling.sample_sets import (
     workbook,
 )
 
-POLICY = PolicyRef(
-    standard_key="bh-ebp-210-table-2", version_id=uuid.uuid4(), version=1, name="BH-EBP-210"
-)
+TABLE_CODE = "bh-ebp-210-table-2"
+POLICY = PolicyRef(standard_key=TABLE_CODE, version_id=uuid.uuid4(), version=1, name="BH-EBP-210")
 TABLE = AttributeSampleSizesPayload.model_validate(
     {
         "kind": "attribute_sample_sizes",
