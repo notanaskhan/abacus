@@ -24,7 +24,7 @@ from abacus.modules.tax.consent_capture import binder_consents
 from .support import Net
 
 pytestmark = pytest.mark.asyncio
-SHA: Final = "c" * 64
+SHA: Final = bytes(32)  # text_sha256 is the digest itself (bytea)
 
 
 async def _consent(
@@ -44,8 +44,8 @@ async def _consent(
             (
                 "INSERT INTO consents (tenant_id, client_id, client_entity_id, purpose, "
                 "tax_years, provider_terms_version, template_version_id, text_sha256, source, "
-                "status, created_by, signed_at, expires_at) VALUES ($1, $2, $3, $4, $5, 'v1', "
-                "gen_random_uuid(), $6, 'record', $7, $8, $9, $10)",
+                "status, created_by, signed_at, expires_at, declined_at) VALUES ($1, $2, $3, $4, "
+                "$5, 'v1', gen_random_uuid(), $6, 'record', $7, $8, $9, $10, $11)",
                 (
                     tenant,
                     client,
@@ -57,6 +57,7 @@ async def _consent(
                     who,
                     signed,
                     signed + timedelta(days=365) if signed is not None else None,
+                    datetime.now(UTC) if status == "declined" else None,
                 ),
             )
         ]
