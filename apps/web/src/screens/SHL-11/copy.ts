@@ -52,6 +52,12 @@ export const COPY = {
     requested: "Analysis requested",
     failed: "The decision wasn't recorded. Try again.",
   },
+  // e · the inline card (P-04-T52; SHL-11e): "Recommended" is the agent's tag, never a choice.
+  inline: {
+    recommended: "Recommended",
+    recommendedBy: " by Accrued Agent",
+    open: "Open decision",
+  },
   loading: "Loading the decision…",
   missing: "This decision can't be loaded.",
 } as const;

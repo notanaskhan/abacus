@@ -732,7 +732,7 @@ async def envelope_complete(given: EnvelopeInput) -> str:
     return "recorded"
 
 
-async def _completed_by_hand(tenant: TenantContext, env: Row[Any]) -> str:
+async def _completed_by_hand(tenant: TenantContext, env: Row[Any]) -> str:  # Any: _ENVELOPE row
     """Every signer signed on paper (N-02-T27): nothing to fetch; the envelope is announced."""
     async with uow(tenant) as tx:
         await tx.session.execute(

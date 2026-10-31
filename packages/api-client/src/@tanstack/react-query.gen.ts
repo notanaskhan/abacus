@@ -5062,7 +5062,7 @@ export const getRotationOptions = (options: Options<GetRotationData>) => queryOp
 /**
  * Amend Letter Route
  *
- * An addendum version (N-02-T37).
+ * An addendum version amending the signed letter (N-02-T33).
  */
 export const amendLetterMutation = (options?: Partial<Options<AmendLetterData>>): UseMutationOptions<AmendLetterResponse, AmendLetterError, Options<AmendLetterData>> => {
     const mutationOptions: UseMutationOptions<AmendLetterResponse, AmendLetterError, Options<AmendLetterData>> = {
@@ -5081,7 +5081,7 @@ export const amendLetterMutation = (options?: Partial<Options<AmendLetterData>>)
 /**
  * Approve Letter Route
  *
- * Partner, fresh MFA, against the content hash (N-02-T35).
+ * Partner, fresh MFA, against the content hash (N-02-T33).
  */
 export const approveLetterMutation = (options?: Partial<Options<ApproveLetterData>>): UseMutationOptions<ApproveLetterResponse, ApproveLetterError, Options<ApproveLetterData>> => {
     const mutationOptions: UseMutationOptions<ApproveLetterResponse, ApproveLetterError, Options<ApproveLetterData>> = {
@@ -5222,7 +5222,7 @@ export const recordEngagementLetterMutation = (options?: Partial<Options<RecordE
 /**
  * Request Approval Route
  *
- * C13 `letter_partner_approval` (N-02-T35).
+ * C13 `letter_partner_approval`: the draft waits on the engagement partners (N-02-T33).
  */
 export const requestApprovalMutation = (options?: Partial<Options<RequestApprovalData>>): UseMutationOptions<RequestApprovalResponse, RequestApprovalError, Options<RequestApprovalData>> => {
     const mutationOptions: UseMutationOptions<RequestApprovalResponse, RequestApprovalError, Options<RequestApprovalData>> = {
@@ -5241,7 +5241,7 @@ export const requestApprovalMutation = (options?: Partial<Options<RequestApprova
 /**
  * Send Letter Route
  *
- * A C7 draft from the `engagement_letter` source (N-02-T35).
+ * A C7 draft from the `engagement_letter` source (N-02-T33), with `signatures.envelopes`.
  */
 export const sendLetterMutation = (options?: Partial<Options<SendLetterData>>): UseMutationOptions<SendLetterResponse, SendLetterError, Options<SendLetterData>> => {
     const mutationOptions: UseMutationOptions<SendLetterResponse, SendLetterError, Options<SendLetterData>> = {

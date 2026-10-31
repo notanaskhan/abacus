@@ -13,11 +13,15 @@ made up to it), so the stage guard recomputes the same bytes later and compares 
 - **Override rate** (`override_rate.v1`, the only implementation; Q-04-T008's W7 reuses it over
   live decisions): (rejected + edited) ÷ decided, with a minimum of 25 decided outputs.
 
-Scored today: `evidence.screener` (its proposal against the person's review decision on the same
-screening). A DE-1 miss is a false clearance: the agent proposed `ready_for_review` and the person
-rejected or sent it back. DE-4 (scope breach) and DE-5 (reserved action) are shadow runs on a
-returned or refused item that ended with the gateway's `scope_breach` or `reserved_action`
-failure. An agent with no scored decisions cannot meet QD-10, so it cannot go live (fail closed).
+Scored: `evidence.screener` (its proposal against the person's review decision on the same
+screening), and `evidence.matcher` in intake mode (N-01-T26): each attachment's newest run against
+the person's triage decision on it. A run with a shown proposal agrees when the person filed the
+attachment to that destination; a none-fit run (nothing shown) agrees when the person ignored or
+held it. Anything else is an override. A DE-1 miss is a false clearance: the agent proposed
+`ready_for_review` and the person rejected or sent it back. DE-4 (scope breach) and DE-5
+(reserved action) are shadow runs on a returned or refused item that ended with the gateway's
+`scope_breach` or `reserved_action` failure. An agent with no scored decisions cannot meet
+QD-10, so it cannot go live (fail closed).
 """
 
 from __future__ import annotations
@@ -33,7 +37,13 @@ from uuid import UUID
 from sqlalchemy import func, select
 
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.modules.agents.models import AgentRun, ScreeningResult
+from abacus.modules.agents.models import (
+    AgentRun,
+    InboxMatchProposal,
+    InboxMatchRun,
+    ScreeningResult,
+)
+from abacus.modules.communications.api import TriageOutcome, triage_outcomes
 from abacus.modules.evidence.api import decisions_on_screenings
 
 ALGORITHM: Final = "shadow_score.v1"
@@ -43,9 +53,16 @@ MIN_DAYS: Final = 14
 MIN_DECIDED: Final = 25
 TOLERANCE: Final = Decimal("0.08")
 SCREENER: Final = "evidence.screener"
-# A screener proposal agrees with a person when it proposed what they did (SPEC-036 D3).
-AGREES: Final = {"ready_for_review": ("accept",), "needs_revision": ("reject", "send_back")}
-RETURNED: Final = frozenset({"reject", "send_back"})
+MATCHER: Final = "evidence.matcher"
+# A screener proposal agrees with a person when it proposed what they did (SPEC-036 D3). A matcher
+# run (`propose` or `none_fit`) agrees when the person `followed` it (N-01-T26).
+AGREES: Final = {
+    "ready_for_review": ("accept",),
+    "needs_revision": ("reject", "send_back"),
+    "propose": ("followed",),
+    "none_fit": ("followed",),
+}
+RETURNED: Final = frozenset({"reject", "send_back", "overridden"})
 DE4_FAILURES: Final = frozenset({"scope_breach"})
 DE5_FAILURES: Final = frozenset({"reserved_action"})
 _PLACES: Final = Decimal("0.0001")
@@ -84,6 +101,77 @@ class Pair:
     action: str
     decision: str
     failure_code: str | None = None
+
+
+def matcher_pair(
+    shown: tuple[str, UUID] | None, decided: TriageOutcome, failure_code: str | None = None
+) -> Pair:
+    """One matcher run against the person's triage decision (N-01-T26): `shown` is the run's top
+    shown destination, or None for a none-fit run."""
+    if shown is None:
+        agreed = decided.decision in ("ignore", "hold")
+        return Pair("none_fit", "followed" if agreed else "overridden", failure_code)
+    agreed = (
+        decided.decision == "file" and (decided.destination_kind, decided.destination_id) == shown
+    )
+    return Pair("propose", "followed" if agreed else "overridden", failure_code)
+
+
+async def _matcher_pairs(
+    tenant: TenantContext, *, shadow: bool, start: datetime | None, until: datetime, end: datetime
+) -> list[Pair]:
+    """Each attachment's newest intake run (shadow or live) started in [start, until] and the
+    person's latest triage decision on it by `end`."""
+    window = [
+        AgentRun.agent_id == MATCHER,
+        AgentRun.shadow.is_(shadow),
+        InboxMatchRun.inbox_attachment_id.is_not(None),
+        AgentRun.started_at <= until,
+    ]
+    if start is not None:
+        window.append(AgentRun.started_at >= start)
+    async with tenant_session(tenant) as session:
+        runs = (
+            await session.execute(
+                select(
+                    InboxMatchRun.id,
+                    InboxMatchRun.inbox_attachment_id,
+                    InboxMatchRun.none_fit,
+                    AgentRun.failure_code,
+                )
+                .join(AgentRun, AgentRun.id == InboxMatchRun.agent_run_id)
+                .where(*window)
+                .order_by(InboxMatchRun.inbox_attachment_id, InboxMatchRun.created_at.desc())
+            )
+        ).all()
+        newest: dict[UUID, tuple[UUID, bool, str | None]] = {}
+        for run_id, attachment, none_fit, failure in runs:
+            newest.setdefault(cast(UUID, attachment), (run_id, bool(none_fit), failure))
+        shown: dict[UUID, tuple[str, UUID]] = {}
+        if newest:
+            for match_id, kind, dest in (
+                await session.execute(
+                    select(
+                        InboxMatchProposal.match_id,
+                        InboxMatchProposal.destination_kind,
+                        InboxMatchProposal.destination_id,
+                    )
+                    .where(
+                        InboxMatchProposal.match_id.in_([r[0] for r in newest.values()]),
+                        InboxMatchProposal.shown.is_(True),
+                        InboxMatchProposal.destination_kind.is_not(None),
+                    )
+                    .order_by(InboxMatchProposal.match_id, InboxMatchProposal.rank)
+                )
+            ).all():
+                if kind is not None and dest is not None:
+                    shown.setdefault(match_id, (str(kind), dest))
+    decided = await triage_outcomes(tenant, list(newest), end)
+    return [
+        matcher_pair(None if none_fit else shown.get(run_id), decided[attachment], failure)
+        for attachment, (run_id, none_fit, failure) in newest.items()
+        if attachment in decided
+    ]
 
 
 @dataclass(frozen=True)
@@ -216,6 +304,8 @@ async def shadow_score(tenant: TenantContext, agent_id: str, as_of: datetime) ->
         for rid, action, failure in results
         if rid in latest and latest[rid][1] != "undone"
     ]
+    if agent_id == MATCHER:
+        pairs = await _matcher_pairs(tenant, shadow=True, start=None, until=as_of, end=as_of)
     runs = cast(int | None, counted[0])
     first = cast(datetime | None, counted[1])
     return score(
@@ -267,17 +357,24 @@ async def live_override(
         for rid, action, failure in results
         if rid in latest and latest[rid][1] != "undone"
     ]
+    if agent_id == MATCHER:
+        # The window is [start, end): a run started exactly at `end` belongs to the next one.
+        pairs = [
+            p for p in await _matcher_pairs(tenant, shadow=False, start=start, until=end, end=end)
+        ]
     agreed = sum(1 for p in pairs if p.decision in AGREES.get(p.action, ()))
     return override_rate(len(pairs) - agreed, 0, len(pairs))
 
 
 __all__ = [
     "ALGORITHM",
+    "MATCHER",
     "OVERRIDE_ALGORITHM",
     "OverrideRate",
     "Pair",
     "ShadowScore",
     "live_override",
+    "matcher_pair",
     "override_rate",
     "score",
     "shadow_score",

@@ -71,6 +71,7 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "engine_ack.rejected",
         "acceptance.sent_to_partner",  # P-07-T47 (C16 `acceptance_awaiting_partner`, to the EP)
         "acceptance.review_requested",  # P-07-T47 (`risk_partner_review_requested`)
+        "letter.approval_requested",  # N-02-T33 (`letter_approval_requested`, the partners)
         "independence.reminded",  # P-07-T47 (`independence_reminder`, to the member)
         "human_gate.reassigned",  # I-01-T07 (`gate_reassigned`, to the new person)
         "methodology.review_requested",  # K-01-T06 (`methodology_review_requested`)

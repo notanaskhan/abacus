@@ -50,7 +50,9 @@ export const audScreens = {
   "AUD-08": { name: "Risk assessment register & linkage", status: "planned", path: null },
   "AUD-09": { name: "Internal control & exceptions", status: "planned", path: null },
   "AUD-10": { name: "Service organizations & SOC 1 evaluation", status: "planned", path: null },
-  "AUD-11": { name: "Sampling", status: "planned", path: null },
+  // A-03-T11: a, b, d, the picker and the C-20 states on fixtures, the AUD-02 cockpit's Sample
+  // Selection canvas (no path of its own); c, e and f are A-03-T15's.
+  "AUD-11": { name: "Sampling", status: "fixture", path: null },
   "AUD-12": { name: "Testing workspace · details · controls · JE", status: "planned", path: null },
   "AUD-13": {
     name: "Analytics · preliminary · substantive · final",

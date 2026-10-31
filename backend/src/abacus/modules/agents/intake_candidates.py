@@ -2,7 +2,8 @@
 
 communications reads them through the slot agents fills at import
 (`register_intake_candidates`): for each attachment, its newest intake run's shown proposals, best
-first, as (destination kind, id, confidence, match id). A none-fit run has none; hidden proposals
+first, as (destination kind, id, confidence, match id). A none-fit run has none; a shadow run's are
+never offered (SPEC-036 D2; N-01-T26); hidden proposals
 (unverified quotes, or below the confidence the spec routes to a person) are never offered.
 Identifiers and numbers only; communications re-checks that the reader may file there.
 """
@@ -19,10 +20,12 @@ from sqlalchemy import text
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.communications.api import IntakeCandidate
 
+# N-01-T26 (SPEC-036 D2): a shadow run's proposals are recorded and scored, never offered.
 _NEWEST = text(
-    "SELECT DISTINCT ON (inbox_attachment_id) inbox_attachment_id, id, none_fit "
-    "FROM inbox_match_runs WHERE inbox_attachment_id = ANY(:ids) "
-    "ORDER BY inbox_attachment_id, created_at DESC, id DESC"
+    "SELECT DISTINCT ON (m.inbox_attachment_id) m.inbox_attachment_id, m.id, m.none_fit "
+    "FROM inbox_match_runs m JOIN agent_runs r ON r.id = m.agent_run_id "
+    "WHERE m.inbox_attachment_id = ANY(:ids) AND NOT r.shadow "
+    "ORDER BY m.inbox_attachment_id, m.created_at DESC, m.id DESC"
 )
 _SHOWN = text(
     "SELECT match_id, destination_kind, destination_id, confidence FROM inbox_match_proposals "

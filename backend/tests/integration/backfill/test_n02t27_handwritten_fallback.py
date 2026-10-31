@@ -20,22 +20,24 @@ from typing import TYPE_CHECKING, Final
 
 import asyncpg
 import pytest
+from tests.integration.agent_tests.support import Seeder as AgentSeeder
+from tests.integration.conftest import MigratedDatabase
 
 from abacus.kernel.config import settings
 from abacus.kernel.crypto import LocalKeyService, configure_key_service, reset_key_service
 from abacus.kernel.flags import forget_flags
+from abacus.kernel.storage import s3_client
 from abacus.modules.evidence import records, storage
 from abacus.modules.signatures import activities
 from abacus.modules.signatures.api import configure_provider
 from abacus_tools.fakes.esign import FakeEsign, FakeEsignError
 
 from .support import Net
-from .test_n02t14_envelope_workflow import Sent, provider_id, raw, sent_8879
+from .test_n02t14_envelope_workflow import Sent, provider_id, sent_8879
 
 if TYPE_CHECKING:
     from types_boto3_s3 import S3Client
 
-__all__ = ["raw"]
 
 pytestmark = pytest.mark.asyncio
 EVIDENCE: Final = "n02t27-evidence"
@@ -44,15 +46,27 @@ MASTER: Final = b"n02t27-independent-master-key-0123456789"
 SCAN: Final = b"%PDF-1.7\n% Form 8879, signed by hand by Irene Kowal\n%%EOF\n"
 
 
+@pytest.fixture(scope="module")
+def raw(s3_settings: dict[str, str]) -> Iterator[S3Client]:
+    """This suite's own buckets (T-02-T14's module makes its own)."""
+    client = s3_client(
+        endpoint_url=s3_settings["endpoint_url"],
+        access_key=s3_settings["access_key"],
+        secret_key=s3_settings["secret_key"],
+        region=s3_settings["region"],
+    )
+    for bucket in (EVIDENCE, RECORDS):
+        with contextlib.suppress(client.exceptions.BucketAlreadyOwnedByYou):
+            client.create_bucket(Bucket=bucket, ObjectLockEnabledForBucket=True)
+    yield client
+
+
 @pytest.fixture
 def fake(raw: S3Client) -> Iterator[FakeEsign]:
     settings.cache_clear()
     forget_flags()
     reset_key_service()
     configure_key_service(LocalKeyService(MASTER))
-    for bucket in (EVIDENCE, RECORDS):
-        with contextlib.suppress(raw.exceptions.BucketAlreadyOwnedByYou):
-            raw.create_bucket(Bucket=bucket, ObjectLockEnabledForBucket=True)
     storage.configure_storage(raw, EVIDENCE)
     records.configure_records(raw, RECORDS)
     provider = FakeEsign()
@@ -149,7 +163,7 @@ async def test_ac1_irenes_third_failure_closes_her_path_and_graces_upload_comple
     assert sessions == 0
 
     # Grace uploads Irene's hand-signed 8879: Irene signed, method Handwritten; E2 completes.
-    assert await _wet(sent, net.headers(sent.grace), "wet-1") == 200
+    assert await _wet(sent, net.headers(sent.grace), "wet-signature-1") == 200
     irene = await _irene(sent)
     assert (irene["status"], irene["signature_method"], irene["wet_recorded_by"]) == (
         "signed",
@@ -177,25 +191,23 @@ async def test_ac1_irenes_third_failure_closes_her_path_and_graces_upload_comple
 
 
 async def test_ac1_only_a_closed_signer_signs_on_paper_and_only_a_person_records_it(
-    net: Net, fake: FakeEsign
+    net: Net, fake: FakeEsign, migrated_db: MigratedDatabase
 ) -> None:
     sent, pid = await _out(net, fake)
     # Irene's remote path is open: no paper form yet.
-    assert await _wet(sent, net.headers(sent.grace), "wet-early") == 409
+    assert await _wet(sent, net.headers(sent.grace), "wet-signature-early") == 409
     for _ in range(3):
         fake.fail_identity(pid, str(sent.signers[1]))
     await activities.envelope_poll(sent.given)
     # The database: a hand-signed form named for Grace, written by a system actor, is refused.
     with pytest.raises(asyncpg.InsufficientPrivilegeError):
-        await net.seed.run(
-            "WITH t AS (SELECT set_config('app.tenant_id', $3::text, true), "
-            "set_config('app.actor_kind', 'system', true), "
-            "set_config('app.actor_id', 'test', true)) "
+        await AgentSeeder(migrated_db.superuser_dsn).as_actor(
+            sent.tenant_id,
+            ("system", "test"),
             "UPDATE envelope_signers SET status = 'signed', signed_at = now(), "
-            "signature_method = 'handwritten', wet_recorded_by = $1 FROM t WHERE id = $2",
+            "signature_method = 'handwritten', wet_recorded_by = $1 WHERE id = $2",
             sent.grace.user_id,
             sent.signers[1],
-            str(sent.tenant_id),
         )
 
 
@@ -225,7 +237,7 @@ async def test_ac1_the_policy_reads_the_floor_and_only_tightens(net: Net, fake: 
     refused = await net.call(
         "PUT", "/v1/envelope-policies/efile_authorization", security, body=looser
     )
-    assert (refused.status_code, refused.json()["detail"]["code"]) == (409, "policy_not_stricter")
+    assert (refused.status_code, refused.json()["detail"]) == (409, "policy_not_stricter")
     stricter = {
         **looser,
         "allowed_identity_methods": ["kba", "in_person_id"],

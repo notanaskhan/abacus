@@ -7,6 +7,7 @@ import type {
   MappingSetSummaryOut,
   SampleItemOut,
   SampleSetOut,
+  SampleSetSummaryOut,
 } from "@abacus/api-client";
 import { stableId } from "./prng";
 
@@ -257,4 +258,39 @@ export function granitePeakRun(): MappingRunOut {
     run_total: 128,
     failure_code: null,
   };
+}
+
+/** AUD-11 b (A-03-T11): Version 2 "Prepared · MD", not yet approved, so Generate is disabled. */
+export function northwindParticipantsDraft(): SampleSetOut {
+  const approved = northwindParticipants();
+  const [v2, v1] = approved.versions;
+  if (v2 === undefined || v1 === undefined) throw new Error("the seed has two versions");
+  return {
+    ...approved,
+    status: "draft",
+    versions: [{ ...v2, status: "draft", approved: null }, v1],
+    allowed_actions: ["sample_set.export", "sample_set.create", "sign_off.prepare"],
+  };
+}
+
+/** AUD-11's picker (DF-05; DV-A4): Northwind's two sample sets on the work item. */
+export function northwindSampleSets(): SampleSetSummaryOut[] {
+  return [
+    {
+      id: stableId("sample-set:northwind-participants"),
+      title: "Participants",
+      current_version_no: 2,
+      status: "approved",
+      final_size: 25,
+      population_count: 412,
+    },
+    {
+      id: stableId("sample-set:northwind-distributions"),
+      title: "Distributions",
+      current_version_no: 1,
+      status: "draft",
+      final_size: 10,
+      population_count: 64,
+    },
+  ];
 }

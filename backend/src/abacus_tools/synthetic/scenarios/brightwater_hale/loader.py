@@ -370,6 +370,7 @@ FLAGS_ON: Final = (
     # I-01-T13: HOME-01 lite on synthetic firms (GET /v1/home and the C13 gate list and counts).
     "home.dashboard",
     "review.grammar_api",
+    "review.approve_agent_output",  # P-04-T46 (DEC-1385): SHL-10 approval on synthetic firms
     "engagements.roll_forward_v2",  # P-07-T55: ENG-13 v2 on synthetic firms
     # N-02-T17: record mode (SIG-01, the import, the portal reads) on synthetic firms from S15.
     "signatures.envelopes",

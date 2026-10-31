@@ -425,6 +425,10 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "acceptance.review_requested": Kind(
         "risk_partner_review_requested", _named_partner, "acceptance_record", "record_id"
     ),
+    # N-02-T33: the engagement partners are asked to approve the letter (never the asker).
+    "letter.approval_requested": Kind(
+        "letter_approval_requested", _listed, "engagement", "engagement_id"
+    ),
     "independence.reminded": Kind("independence_reminder", _member, "engagement", "engagement_id"),
     "human_gate.reassigned": Kind(
         "gate_reassigned", _reassigned_to, "engagement", "engagement_id"
@@ -564,6 +568,9 @@ TEMPLATES: Final[dict[str, str]] = {
     "acceptance.sent_to_partner": "An acceptance on {engagement} is waiting for your decision.",
     "acceptance.review_requested": (
         "You were asked for a risk review of an acceptance on {engagement}."
+    ),
+    "letter.approval_requested": (
+        "The engagement letter for {engagement} is waiting for your approval."
     ),
     "independence.reminded": "Reminder: confirm your independence for {engagement}.",
     "human_gate.reassigned": "Something on {engagement} was reassigned to you.",

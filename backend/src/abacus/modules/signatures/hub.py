@@ -538,7 +538,7 @@ async def _rows(ctx: AuthContext, session: AsyncSession, ids: list[UUID]) -> lis
     ).all()
     people = (
         await session.execute(
-            select(S.envelope_id, S.contact_id, S.user_id, S.status, S.viewed_at, S.order)
+            select(S.id, S.envelope_id, S.contact_id, S.user_id, S.status, S.viewed_at, S.order)
             .where(S.envelope_id.in_(ids))
             .order_by(S.envelope_id, S.order)
         )

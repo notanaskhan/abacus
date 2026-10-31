@@ -109310,7 +109310,7 @@
     },
     "/v1/engagements/{engagement_id}/letter/amend": {
       "post": {
-        "description": "An addendum version (N-02-T37).",
+        "description": "An addendum version amending the signed letter (N-02-T33).",
         "operationId": "amend_letter",
         "parameters": [
           {
@@ -109437,7 +109437,7 @@
     },
     "/v1/engagements/{engagement_id}/letter/approve": {
       "post": {
-        "description": "Partner, fresh MFA, against the content hash (N-02-T35).",
+        "description": "Partner, fresh MFA, against the content hash (N-02-T33).",
         "operationId": "approve_letter",
         "parameters": [
           {
@@ -110339,7 +110339,7 @@
     },
     "/v1/engagements/{engagement_id}/letter/request-approval": {
       "post": {
-        "description": "C13 `letter_partner_approval` (N-02-T35).",
+        "description": "C13 `letter_partner_approval`: the draft waits on the engagement partners (N-02-T33).",
         "operationId": "request_approval",
         "parameters": [
           {
@@ -110349,6 +110349,17 @@
             "schema": {
               "format": "uuid",
               "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "minLength": 1,
+              "title": "If-Match",
               "type": "string"
             }
           },
@@ -110466,7 +110477,7 @@
     },
     "/v1/engagements/{engagement_id}/letter/send": {
       "post": {
-        "description": "A C7 draft from the `engagement_letter` source (N-02-T35).",
+        "description": "A C7 draft from the `engagement_letter` source (N-02-T33), with `signatures.envelopes`.",
         "operationId": "send_letter",
         "parameters": [
           {
@@ -110740,16 +110751,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Mapping Sets Route",
@@ -110875,16 +110876,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Mapping Run Start Route",
@@ -160792,16 +160783,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Mapping Set Route",
@@ -160940,16 +160921,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Account Mapping Edit Route",
@@ -161077,16 +161048,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Mapping Confirm Route",
@@ -161193,16 +161154,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Mapping Run Route",
@@ -161309,16 +161260,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Mapped Trial Balance Route",
@@ -166607,16 +166548,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Population Route",
@@ -166734,16 +166665,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Population Tie Create Route",
@@ -187881,16 +187802,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Population Create Route",
