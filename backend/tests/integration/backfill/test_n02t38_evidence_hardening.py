@@ -87,7 +87,7 @@ PAGE = b"%PDF-1.7\n% the legible evidence page (stub)\n"
 
 
 async def _completed(net: Net, fake: FakeEsign) -> t14.Sent:
-    sent = await t14._sent(net)  # pyright: ignore[reportPrivateUsage] -- N-02-T14's world
+    sent = await t14.sent_8879(net)  # N-02-T14's two-signer Form 8879
     assert (await activities.envelope_send(sent.given)).status == "sent"
     pid = cast(
         str,
