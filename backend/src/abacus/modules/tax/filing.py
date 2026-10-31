@@ -15,6 +15,15 @@ DEC-1566). RED: what a taxpayer authorised, and the only path that voids it.
   supersedes the binding and C7 marks the envelope `superseded_by_change`: the gate relocks.
   The system only relocks: nothing here clears a supersession or signs anything (0524's trigger
   refuses it too).
+- **Transmission record** (T-01-T37; §3.13; DEC-1570): the designated ERO, as the return's
+  signer, records that they transmitted it from the engine (`transmission.record`, a person at
+  every layer), only when the 8879 envelope they saw is complete and not superseded and the
+  return reads Synced; the return moves to Filed. Accrued never transmits (R-04).
+- **Acknowledgements**: the engine's e-file status report is taken up as `efile_acks` (idempotent
+  on the ack's facts), or a person enters one with an evidence upload; every jurisdiction of the
+  transmission accepted moves the return to Accepted, a rejection to Rejected
+  (`filing.acknowledged`), and an accepted federal ack extends the 8879's retention to the IRS
+  received date plus three years (Pub 1345). A rejection's issue moves Rejected to Fixing.
 """
 
 from __future__ import annotations
@@ -23,37 +32,49 @@ import hashlib
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
+from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Annotated, Final, cast
 from uuid import UUID, uuid4
 
 from sqlalchemy import text
 
+from abacus.kernel._statuses import ReturnStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.clock import today
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.errors import DomainConflict, NotFound
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.logging import get_logger
-from abacus.kernel.uow import DomainEvent, OutboxEvent, Ref, Scope, Target, uow
+from abacus.kernel.uow import DomainEvent, OutboxEvent, Ref, Scope, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import work_item_facts
+from abacus.modules.evidence.api import file_engine_copy
 from abacus.modules.identity.api import (
     AuthContext,
     Forbidden,
+    Resource,
     authorise,
     engagement_resource,
+    ero_designated,
 )
 from abacus.modules.organisations.api import filing_unit
 from abacus.modules.platform.api import form_8879_for, pub1345_tolerances
-from abacus.modules.review.api import current_checkpoint, current_values
+from abacus.modules.review.api import current_checkpoint, current_values, record_engine_issue
 from abacus.modules.signatures.api import (
     EnvelopeSource,
     SourceDocument,
     SourceDraft,
     SourceSigner,
     create_draft,
+    efile_gate,
+    extend_retention,
     register_envelope_source,
+    staged_files,
     supersede_for_amount_change,
 )
+from abacus.modules.tax import repository
+from abacus.modules.tax.engine_files import kept_until
+from abacus.modules.tax.engine_sync import return_synced
+from abacus.modules.tax.status import StaleReturn, actor_may, next_status
 
 TARGET: Final = "tax_return"
 SOURCE: Final = "tax_return"
@@ -471,8 +492,467 @@ async def envelope_of(tenant: TenantContext, binding_id: UUID) -> UUID | None:
     return None if found is None else cast(UUID, found)
 
 
+# --- the transmission record and acknowledgements (T-01-T37) ---------------------------------
+
+TRANSMIT: Final = "transmission.record"
+ACK_RECORD: Final = "efile_ack.record"
+# The contract names the federal return `US`; the engine's status report says `federal`.
+FEDERAL: Final = "federal"
+
+
+def ack_jurisdiction(code: str) -> str:
+    return FEDERAL if code == "US" else code
+
+
+class SignaturesIncomplete(DomainConflict):
+    code = "signatures_incomplete"
+
+
+class BindingSuperseded(DomainConflict):
+    code = "binding_superseded"
+
+
+class NotSynced(DomainConflict):
+    code = "not_synced"
+
+
+class NotRejected(DomainConflict):
+    code = "not_rejected"
+
+
+class TransmissionRecorded(DomainEvent):
+    """The ERO recorded a transmission made in the engine (identifiers and codes only)."""
+
+    event_type = "transmission.recorded"
+    return_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    transmission_id: Annotated[UUID, classified("internal")]
+    jurisdictions: Annotated[list[str], classified("internal")]
+
+
+class FilingAcknowledged(DomainEvent):
+    """Every jurisdiction transmitted was accepted, or one was rejected: T-02's status machine
+    moved the return (identifiers and codes only)."""
+
+    event_type = "filing.acknowledged"
+    return_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")]
+    status: Annotated[str, classified("internal")]
+    jurisdictions: Annotated[list[str], classified("internal")]
+
+
+@dataclass(frozen=True)
+class Transmission:
+    id: UUID
+    return_id: UUID
+    ero_user_id: UUID
+    jurisdictions: tuple[str, ...]
+    transmitted_on: date
+    recorded_at: datetime
+
+
+@dataclass(frozen=True)
+class Ack:
+    id: UUID
+    jurisdiction: str
+    status: str
+    submission_id_last4: str
+    reject_code: str | None
+    reject_text: str | None
+    received_at: datetime
+    source: str
+
+
+def _person(ctx: AuthContext, action: str) -> None:
+    """Layer 3 of 5: a live person, never an agent, the system or support (INV-4 first)."""
+    if ctx.client:
+        raise NotFound(TARGET)
+    if ctx.tenant.actor_kind != "human" or ctx.is_support:
+        raise Forbidden(action, "role")
+
+
+async def _on_return(ctx: AuthContext, facts: _Return, return_id: UUID) -> Resource:
+    return replace(
+        await engagement_resource(ctx.tenant, facts.engagement_id),
+        client_id=facts.client_id,
+        work_item_id=return_id,
+    )
+
+
+async def _move(
+    tx: UnitOfWork, tenant: TenantContext, return_id: UUID, event: str, reason: str | None = None
+) -> str:
+    """One status move through T-02's table inside the caller's unit of work, by its actor."""
+    if not actor_may(event, tenant.actor_kind):  # layer 4: the status machine
+        raise Forbidden(f"tax_return.{event}", "role")
+    keys = {"tenant_id": tenant.tenant_id, "work_item_id": return_id}
+    found = await repository.status_of(tx.session, keys)
+    if found is None:
+        raise NotFound(TARGET)
+    current, version = ReturnStatus(found[0]), found[1]
+    to = next_status(current, event)
+    if not await repository.move_status(
+        tx.session, {**keys, "to_status": to.value, "seen": version}
+    ):
+        raise StaleReturn(facts={"work_item_id": str(return_id)})
+    await repository.insert_status_event(
+        tx.session,
+        {
+            **keys,
+            "from_status": current.value,
+            "to_status": to.value,
+            "event": event,
+            "actor_kind": tenant.actor_kind,
+            "actor_id": tenant.actor_id,
+            "on_behalf_of": None,
+            "reason": reason,
+        },
+    )
+    tx.record(
+        "tax_return.status_changed",
+        target=Target(TARGET, return_id),
+        after=Ref(version=version + 1),
+    )
+    return to.value
+
+
+async def _status(tenant: TenantContext, return_id: UUID) -> str | None:
+    async with tenant_session(tenant) as session:
+        found = await repository.status_of(
+            session, {"tenant_id": tenant.tenant_id, "work_item_id": return_id}
+        )
+    return None if found is None else found[0]
+
+
+async def record_transmission(
+    ctx: AuthContext,
+    return_id: UUID,
+    *,
+    jurisdictions: list[str],
+    transmitted_on: date,
+    method: str,
+    seen_binding_id: UUID,
+) -> Transmission:
+    """The ERO's record of a transmission made in CCH Axcess (TAX-12 c2; §3.13). Layers: INV-4,
+    the matrix (`function_in(signer)`), a live person, the status machine, the ERO designation,
+    and 0525's `actor_kind = 'human'` CHECK."""
+    _person(ctx, TRANSMIT)
+    if not actor_may("transmission_recorded", ctx.tenant.actor_kind):
+        raise Forbidden(TRANSMIT, "role")
+    facts = await _return(ctx, return_id)
+    await authorise(ctx, TRANSMIT, await _on_return(ctx, facts, return_id))
+    if not await ero_designated(ctx.tenant, ctx.user_id):
+        raise Forbidden(TRANSMIT, "role")
+    binding_id, superseded = await binding_state(ctx.tenant, return_id)
+    if binding_id is None or superseded or binding_id != seen_binding_id:
+        raise BindingSuperseded(facts={"work_item_id": str(return_id)})
+    envelope_id = await envelope_of(ctx.tenant, binding_id)
+    gate = await efile_gate(ctx.tenant, return_id)
+    if envelope_id is None or gate is None or gate[0] != envelope_id:
+        raise SignaturesIncomplete(facts={"work_item_id": str(return_id)})
+    if not await return_synced(ctx.tenant, return_id):
+        raise NotSynced(facts={"work_item_id": str(return_id)})
+    wanted = tuple(dict.fromkeys(jurisdictions))
+    transmission_id = uuid4()
+    async with uow(ctx.tenant) as tx:
+        if await _status(ctx.tenant, return_id) == ReturnStatus.APPROVED.value:
+            # The 8879 went out after approval; the move to Awaiting signature is recorded with
+            # the transmission that proves it (the envelope is complete).
+            await _move(tx, ctx.tenant, return_id, "envelope_sent", "8879 signed")
+        await _move(tx, ctx.tenant, return_id, "transmission_recorded")
+        recorded_at = await tx.session.scalar(
+            text(
+                "INSERT INTO transmissions (id, tenant_id, return_id, binding_id, envelope_id, "
+                "ero_user_id, method, jurisdictions, transmitted_on, recorded_by, actor_kind) "
+                "VALUES (:id, :t, :r, :b, :e, :u, :m, :j, :on, :u, :kind) RETURNING recorded_at"
+            ),
+            {
+                "id": transmission_id,
+                "t": ctx.tenant_id,
+                "r": return_id,
+                "b": binding_id,
+                "e": envelope_id,
+                "u": ctx.user_id,
+                "m": method,
+                "j": list(wanted),
+                "on": transmitted_on,
+                "kind": ctx.tenant.actor_kind,
+            },
+        )
+        tx.record(
+            "transmission.recorded",
+            target=Target(TARGET, return_id),
+            after=Ref(transmission=transmission_id, binding=binding_id, jurisdictions=len(wanted)),
+            scope=Scope(engagement_id=facts.engagement_id, client_id=facts.client_id),
+        )
+        tx.emit(
+            TransmissionRecorded(
+                return_id=return_id,
+                engagement_id=facts.engagement_id,
+                transmission_id=transmission_id,
+                jurisdictions=list(wanted),
+            )
+        )
+    return Transmission(
+        transmission_id,
+        return_id,
+        ctx.user_id,
+        wanted,
+        transmitted_on,
+        cast(datetime, recorded_at),
+    )
+
+
+async def _latest_transmission(
+    tenant: TenantContext, return_id: UUID
+) -> tuple[UUID, tuple[str, ...]] | None:
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(
+                text(
+                    "SELECT id, jurisdictions FROM transmissions WHERE return_id = :r "
+                    "ORDER BY recorded_at DESC, id LIMIT 1"
+                ),
+                {"r": return_id},
+            )
+        ).first()
+    return None if row is None else (cast(UUID, row[0]), tuple(str(j) for j in row[1]))
+
+
+async def take_up_acks(ctx: AuthContext, return_id: UUID, sync_event_id: UUID) -> list[UUID]:
+    """The engine's status report (already stored as `engine_acks` by the person who uploaded
+    it) into the e-file record, once per ack however often the report comes back."""
+    latest = await _latest_transmission(ctx.tenant, return_id)
+    async with uow(ctx.tenant) as tx:
+        taken = [
+            cast(UUID, i)
+            for i in (
+                await tx.session.execute(
+                    text(
+                        "INSERT INTO efile_acks (tenant_id, return_id, transmission_id, "
+                        "jurisdiction, status, submission_id_last4, reject_code, reject_text, "
+                        "received_at, source, engine_ack_id, recorded_by) SELECT a.tenant_id, "
+                        "a.return_id, :tr, a.jurisdiction, a.status, a.submission_last4, "
+                        "a.reject_code, a.reject_text, CAST(a.status_at AS timestamptz), "
+                        "'engine_file', a.id, :u FROM engine_acks a WHERE a.sync_event_id = :e "
+                        "AND a.return_id = :r ORDER BY a.jurisdiction "
+                        "ON CONFLICT DO NOTHING RETURNING id"
+                    ),
+                    {
+                        "tr": None if latest is None else latest[0],
+                        "u": ctx.user_id,
+                        "e": sync_event_id,
+                        "r": return_id,
+                    },
+                )
+            ).scalars()
+        ]
+        # Recorded even when the report held nothing new (the same acks again: zero rows).
+        tx.record(
+            "efile_ack.imported",
+            target=Target(TARGET, return_id),
+            after=Ref(event=sync_event_id, rows=len(taken)),
+        )
+    if taken:
+        await settle(ctx.tenant_id, return_id)
+    return taken
+
+
+async def record_ack(
+    ctx: AuthContext,
+    return_id: UUID,
+    *,
+    jurisdiction: str,
+    status: str,
+    submission_id_last4: str,
+    reject_code: str | None,
+    received_at: datetime,
+    upload_id: UUID,
+) -> Ack:
+    """A person's manual acknowledgement, with the evidence they uploaded (§3.13)."""
+    _person(ctx, ACK_RECORD)
+    facts = await _return(ctx, return_id)
+    await authorise(ctx, ACK_RECORD, await _on_return(ctx, facts, return_id))
+    if status == "rejected" and not reject_code:
+        raise DomainInvalid(facts={"field": "reject_code"})
+    staged = (await staged_files(ctx, [upload_id]))[0]
+    latest = await _latest_transmission(ctx.tenant, return_id)
+    where = ack_jurisdiction(jurisdiction)
+    ack_id = uuid4()
+    async with uow(ctx.tenant) as tx:
+        version_id = await file_engine_copy(
+            tx,
+            tenant_id=ctx.tenant_id,
+            client_id=facts.client_id,
+            engagement_id=facts.engagement_id,
+            work_item_id=return_id,
+            folder_kind="correspondence",
+            title=f"E-file acknowledgement · {where}",
+            stored_key=staged.storage_key,
+            stored_version_id=staged.storage_version_id,
+            sha256=staged.sha256,
+            size_bytes=staged.size_bytes,
+            actor_id=str(ctx.user_id),
+        )
+        inserted = await tx.session.scalar(
+            text(
+                "INSERT INTO efile_acks (id, tenant_id, return_id, transmission_id, jurisdiction, "
+                "status, submission_id_last4, reject_code, received_at, source, "
+                "evidence_version_id, recorded_by) VALUES (:id, :t, :r, :tr, :j, :s, :l, :rc, "
+                ":at, 'manual', :v, :u) ON CONFLICT DO NOTHING RETURNING id"
+            ),
+            {
+                "id": ack_id,
+                "t": ctx.tenant_id,
+                "r": return_id,
+                "tr": None if latest is None else latest[0],
+                "j": where,
+                "s": status,
+                "l": submission_id_last4,
+                "rc": reject_code,
+                "at": received_at,
+                "v": version_id,
+                "u": ctx.user_id,
+            },
+        )
+        if inserted is None:
+            raise AckExists(facts={"work_item_id": str(return_id)})
+        tx.record(
+            "efile_ack.recorded",
+            target=Target(TARGET, return_id),
+            after=Ref(ack=ack_id, evidence_version=version_id),
+            scope=Scope(engagement_id=facts.engagement_id, client_id=facts.client_id),
+        )
+    await settle(ctx.tenant_id, return_id)
+    return next(a for a in await acks_of(ctx.tenant, return_id) if a.id == ack_id)
+
+
+class AckExists(DomainConflict):
+    code = "ack_exists"
+
+
+async def acks_of(tenant: TenantContext, return_id: UUID) -> list[Ack]:
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                text(
+                    "SELECT id, jurisdiction, status, submission_id_last4, reject_code, "
+                    "reject_text, received_at, source FROM efile_acks WHERE return_id = :r "
+                    "ORDER BY received_at, jurisdiction, id"
+                ),
+                {"r": return_id},
+            )
+        ).all()
+    return [
+        Ack(
+            cast(UUID, r[0]),
+            str(r[1]),
+            str(r[2]),
+            str(r[3]),
+            cast(str | None, r[4]),
+            cast(str | None, r[5]),
+            cast(datetime, r[6]),
+            str(r[7]),
+        )
+        for r in rows
+    ]
+
+
+async def transmitted_on(tenant: TenantContext, return_id: UUID) -> date | None:
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text(
+                "SELECT transmitted_on FROM transmissions WHERE return_id = :r "
+                "ORDER BY recorded_at DESC LIMIT 1"
+            ),
+            {"r": return_id},
+        )
+    return cast(date | None, found)
+
+
+async def settle(tenant_id: UUID, return_id: UUID) -> str | None:
+    """The system's reading of the acks against the latest transmission: every jurisdiction
+    accepted moves a Filed return to Accepted, a rejection to Rejected (`filing.acknowledged`);
+    an accepted federal ack extends the 8879's retention (Pub 1345). Answers the new status."""
+    system = TenantContext(tenant_id, "system", "tax:efile_acks")
+    latest = await _latest_transmission(system, return_id)
+    acks = await acks_of(system, return_id)
+    federal = [a for a in acks if a.jurisdiction == FEDERAL and a.status == "accepted"]
+    if federal:
+        until = kept_until(federal[0].received_at.date().isoformat())
+        gate = await efile_gate(system, return_id)
+        if until is not None and gate is not None:
+            await extend_retention(system, gate[0], until)
+    if latest is None or await _status(system, return_id) != ReturnStatus.FILED.value:
+        return None
+    sent = {ack_jurisdiction(j) for j in latest[1]}
+    mine = [a for a in acks if a.jurisdiction in sent]
+    rejected = sorted({a.jurisdiction for a in mine if a.status == "rejected"})
+    accepted = {a.jurisdiction for a in mine if a.status == "accepted"}
+    if rejected:
+        event, outcome, named = "ack_rejected", "rejected", rejected
+    elif sent <= accepted:
+        event, outcome, named = "ack_accepted", "accepted", sorted(sent)
+    else:
+        return None
+    engagement_id = await _engagement_of(system, return_id)
+    async with uow(system) as tx:
+        moved = await _move(tx, system, return_id, event)
+        tx.emit(
+            FilingAcknowledged(
+                return_id=return_id,
+                engagement_id=engagement_id,
+                status=outcome,
+                jurisdictions=named,
+            )
+        )
+    return moved
+
+
+async def _engagement_of(tenant: TenantContext, return_id: UUID) -> UUID | None:
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text("SELECT engagement_id FROM tax_returns WHERE work_item_id = :r"), {"r": return_id}
+        )
+    return cast(UUID | None, found)
+
+
+async def rejection_issue(ctx: AuthContext, return_id: UUID, ack_id: UUID) -> UUID:
+    """TAX-12e's Create issue: the rejection as an `engine_diagnostic` issue (once per ack's
+    code), and the return moves Rejected to Fixing (§3.13)."""
+    _person(ctx, ACK_RECORD)
+    facts = await _return(ctx, return_id)
+    await authorise(ctx, ACK_RECORD, await _on_return(ctx, facts, return_id))
+    ack = next((a for a in await acks_of(ctx.tenant, return_id) if a.id == ack_id), None)
+    if ack is None or ack.status != "rejected":
+        raise NotRejected(facts={"work_item_id": str(return_id)})
+    issue_id = await record_engine_issue(
+        ctx,
+        record_type=TARGET,
+        record_id=return_id,
+        work_item_id=return_id,
+        source_ref=f"efile:{ack.jurisdiction}:{ack.reject_code or ''}",
+        title=f"E-file rejection {ack.reject_code} · {ack.jurisdiction}",
+    )
+    if await _status(ctx.tenant, return_id) == ReturnStatus.REJECTED.value:
+        async with uow(ctx.tenant) as tx:
+            await _move(tx, ctx.tenant, return_id, "fix_started", "rejection issue raised")
+    return issue_id
+
+
 __all__ = [
+    "Ack",
+    "AckExists",
     "Binding",
+    "BindingSuperseded",
+    "FilingAcknowledged",
+    "NotRejected",
+    "NotSynced",
+    "SignaturesIncomplete",
+    "Transmission",
+    "TransmissionRecorded",
+    "ack_jurisdiction",
+    "acks_of",
     "binding_state",
     "draft_envelope",
     "drift",
@@ -481,5 +961,11 @@ __all__ = [
     "on_checkpoint_approved",
     "on_tolerances_published",
     "recheck",
+    "record_ack",
+    "record_transmission",
     "register",
+    "rejection_issue",
+    "settle",
+    "take_up_acks",
+    "transmitted_on",
 ]

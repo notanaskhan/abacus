@@ -42,6 +42,7 @@ from abacus.modules.identity.api import (
     Resource,
     authorise,
     engagement_resource,
+    ero_designated,
     names_of,
 )
 from abacus.modules.methodology.api import (
@@ -52,7 +53,7 @@ from abacus.modules.reporting import api as c11
 from abacus.modules.review.api import current_values
 from abacus.modules.tax.approval import signer_for
 from abacus.modules.tax.engine_files import engine_documents
-from abacus.modules.tax.filing import binding_state, envelope_of
+from abacus.modules.tax.filing import ACK_RECORD, TRANSMIT, binding_state, envelope_of
 
 TARGET: Final = "tax_return"
 PACKET: Final = "delivery_packet"
@@ -338,6 +339,21 @@ async def delivery(ctx: AuthContext, return_id: UUID) -> Delivery:
         and await _allowed(ctx, APPROVE, resource)
     ):
         allowed.append(APPROVE)
+    # T-01-T37: the designated ERO on the return records the transmission; the reviewers and
+    # client service enter an acknowledgement (the service re-checks every condition).
+    if (
+        person
+        and facts.status in ("approved", "awaiting_signature")
+        and await ero_designated(ctx.tenant, ctx.user_id)
+        and await _allowed(ctx, TRANSMIT, resource)
+    ):
+        allowed.append(TRANSMIT)
+    if (
+        person
+        and facts.status in ("filed", "rejected")
+        and await _allowed(ctx, ACK_RECORD, resource)
+    ):
+        allowed.append(ACK_RECORD)
     binding_id, superseded = await binding_state(ctx.tenant, return_id)
     return Delivery(
         return_id,
