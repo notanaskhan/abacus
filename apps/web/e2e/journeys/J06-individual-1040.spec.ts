@@ -83,3 +83,77 @@ test.describe("J06", () => {
     });
   });
 });
+
+// T-02-T32 (T-02 §2 "Journeys advanced"): j06 2 (Claire answers the organizer, POR-05 a → c),
+// j06 4 (TAX-03 a → b: the 1095-C in, the 2024 copy ignored as wrong year), j06 5 (the Ridgeline
+// Draft K-1 blocks Feld final approval, TAX-03 a and TAX-02 a) and j06 10 (Daniel's final approval
+// after the release, TAX-03 d and TAX-02 e; the export is T-01's). Firm steps open the screen's
+// artboard; Claire walks /questions on POR-05's own states. Staging waits on T-02's live swaps.
+const T02_OWNER = "T-02-T32: T-02's screens live on staging and the canary, Thu Aug 12, 2027";
+
+function artboard(id: string, state: string): string {
+  return `/components/screens/${id}?st=${state}`;
+}
+
+test.describe("J06 · T-02 returns, organizer and K-1 dependency", () => {
+  test.beforeEach(({ journey }) => {
+    test.fixme(journey.project !== "fixture", T02_OWNER);
+  });
+
+  test("j06 2: Claire answers the organizer and marks it done", async ({ journey }) => {
+    await journey.as("claire-feld", "/questions", { scenario: "POR-05:a" });
+    await journey.step(
+      "J06 step 2: the Feld 2025 organizer, in progress (POR-05a)",
+      async (page) => {
+        await expect(page.getByText("22 of 24 answered").first()).toBeVisible();
+        await expect(page.getByText(/Accrued/)).toHaveCount(0);
+      },
+    );
+    await journey.as("claire-feld", "/questions", { scenario: "POR-05:c" });
+    await journey.step("J06 step 2: marked done (POR-05c)", async (page) => {
+      await expect(page.getByText("Thanks — Kevin Osei has your answers.").first()).toBeVisible();
+      await expect(page.getByText(/Accrued/)).toHaveCount(0);
+    });
+  });
+
+  test("j06 4: Kevin files the 2025 1095-C and ignores the 2024 copy as wrong year", async ({
+    journey,
+  }) => {
+    await journey.as("kevin-osei", artboard("TAX-03", "a"));
+    await journey.step("J06 step 4: the Feld intake, 5 of 7 (TAX-03a)", async (page) => {
+      await expect(page.getByText("5 of 7 requests satisfied").first()).toBeVisible();
+    });
+    await journey.as("kevin-osei", artboard("TAX-03", "b"));
+    await journey.step("J06 step 4: the 1095-C filed, 6 of 7 (TAX-03b)", async (page) => {
+      await expect(page.getByText("6 of 7 requests satisfied").first()).toBeVisible();
+    });
+  });
+
+  test("j06 5: the Ridgeline Draft K-1 blocks Feld final approval", async ({ journey }) => {
+    await journey.as("kevin-osei", artboard("TAX-03", "a"));
+    await journey.step(
+      "J06 step 5: the shared draft on the Feld intake (TAX-03a)",
+      async (page) => {
+        await expect(page.getByText("Draft K-1 · pre-release").first()).toBeVisible();
+      },
+    );
+    await journey.as("daniel-reyes", artboard("TAX-02", "a"));
+    await journey.step("J06 step 5: final approval blocked (TAX-02a)", async (page) => {
+      await expect(page.getByText(/final approval is blocked until/).first()).toBeVisible();
+    });
+  });
+
+  test("j06 10: Daniel approves the Feld return after the Ridgeline release", async ({
+    journey,
+  }) => {
+    await journey.as("daniel-reyes", artboard("TAX-03", "d"));
+    await journey.step("J06 step 10: the final K-1 replaces the draft (TAX-03d)", async (page) => {
+      await expect(page.getByText("Released Sep 15").first()).toBeVisible();
+    });
+    await journey.as("daniel-reyes", artboard("TAX-02", "e"));
+    await journey.step("J06 step 10: no draft dependency remains (TAX-02e)", async (page) => {
+      await expect(page.locator("[data-artboard='e']")).toBeVisible();
+      await expect(page.getByText(/final approval is blocked until/)).toHaveCount(0);
+    });
+  });
+});
