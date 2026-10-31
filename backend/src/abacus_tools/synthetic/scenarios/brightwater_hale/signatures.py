@@ -8,7 +8,8 @@ Aurelio Santos), six completed in the last 30 days and the Raos' expired offshor
 The tiles read 8 sent, 5 viewed, 4 partially signed; by type 10 e-file, 4 letters, 2 rep, 1
 consent. Also on the timeline: Irene Kowal's three failed identity checks on Sun Sep 13 at
 8:06, 8:10 and 8:14 PM (E2 reads "Identity check locked"), Copperleaf's 2026 Close letter signed by
-Ben Ashby on Mar 2 and countersigned by Priya Raman on Mar 3, and the ERSD disclosure v1 imported
+Tess Moreno on Mar 2 and countersigned by Priya Raman on Mar 3 (Ben Ashby is its approver of
+record), and the ERSD disclosure v1 imported
 as database content (POR-06 shows it before a first signature). The Feld household's §7216
 consents are `consents_7216`'s.
 
@@ -342,8 +343,8 @@ EXPIRED: Final = (
     ),
 )
 
-# Copperleaf's 2026 Close letter (ENG-04 d): signed Mar 2 by Ben Ashby (approver of record),
-# countersigned Mar 3 by Priya Raman; older than SIG-01's 30-day Completed list.
+# Copperleaf's 2026 Close letter (ENG-04 d): signed Mar 2 by Tess Moreno, countersigned Mar 3 by
+# Priya Raman (Ben Ashby, Controller, is the approver of record); older than SIG-01's 30 days.
 COPPERLEAF: Final = HubEnvelope(
     "L1",
     "Engagement letter · 2026 Close · Copperleaf Coffee Roasters, Inc.",
@@ -352,7 +353,7 @@ COPPERLEAF: Final = HubEnvelope(
     "engagement_letter",
     "engagement_letter",
     None,
-    (_s("Ben Ashby", _d(3, 2)), _s("PR", _d(3, 3), firm=True)),
+    (_s("Tess Moreno", _d(3, 2)), _s("PR", _d(3, 3), firm=True)),
     _d(2, 27),
     _d(3, 2),
     None,
