@@ -4,10 +4,12 @@
 import { type Scenario, defineScenarios } from "../../app-core/fixture-mode";
 import { k1PackageHandlers } from "../handlers/k1-packages";
 import { portalHandlers } from "../handlers/portal";
+import { portalK1Handlers } from "../handlers/portal-k1s";
 import { portalQuestionnaireHandlers } from "../handlers/portal-questionnaires";
 import { taxReturnHandlers } from "../handlers/tax-returns";
 import { seedScenario } from "../scenario";
 import type { K1Variant } from "../seed/k1-packages";
+import type { Por13Variant } from "../seed/portal-k1s";
 import type { OverviewVariant } from "../seed/tax-return-overview";
 
 const E0_CLOCK = "2026-09-14T09:24:00-05:00";
@@ -112,11 +114,18 @@ export const por05 = defineScenarios({
   f: at05("f", "claire-feld"),
 });
 
+// T-02-T27: POR-13's K-1s by artboard (seed/portal-k1s.ts) on the portal handlers.
+const at13 = (state: string, persona: string, variant: Por13Variant, clock: string): Scenario => {
+  const base = at(state, persona, clock);
+  const portal = { ...base.handlers, ...portalHandlers({ clock }) };
+  return { ...base, handlers: { ...portal, ...portalK1Handlers(variant, portal) } };
+};
+
 export const por13 = defineScenarios({
-  a: at("a", "nora-calloway", "2026-09-29T18:40:00-05:00"),
-  b: at("b", "pell-street-member"),
-  c: at("c", "pell-street-member", "2026-09-15T09:24:00-05:00"),
-  d: at("d", "nora-calloway", "2026-09-29T18:40:00-05:00"),
-  e: at("e", "nora-calloway", "2026-10-05T09:24:00-05:00"),
-  f: at("f", "meera-shah"),
+  a: at13("a", "nora-calloway", "nora_released", "2026-09-29T18:40:00-05:00"),
+  b: at13("b", "pell-street-member", "pell_expected", E0_CLOCK),
+  c: at13("c", "pell-street-member", "pell_released", "2026-09-15T09:24:00-05:00"),
+  d: at13("d", "nora-calloway", "nora_released", "2026-09-29T18:40:00-05:00"),
+  e: at13("e", "nora-calloway", "nora_amended", "2026-10-05T09:24:00-05:00"),
+  f: at13("f", "meera-shah", "meera_expected", E0_CLOCK),
 });

@@ -688,6 +688,9 @@ class PackageView:
     handoffs: tuple[HandoffView, ...] = ()
     details_change: ChangeTag | None = None
     related_returns: tuple[RelatedReturn, ...] = ()
+    # T-02-T27 (additive): the issuing client's name, on a portal card.
+    issuer_name: str | None = None
+    address_on_file: bool | None = None
     tin_kind: str | None = None
     tin_last4: str | None = None
 

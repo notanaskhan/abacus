@@ -44,6 +44,7 @@ from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.evidence.api import version_content
 from abacus.modules.identity.api import AuthContext, portal_scopes
+from abacus.modules.organisations.api import client_record, contacts_of_user
 from abacus.modules.tax import k1_packages as k1
 
 READ: Final = "portal_k1.read"
@@ -125,10 +126,28 @@ async def _own(ctx: AuthContext, package_id: UUID) -> UUID:
 
 _PACKAGES = text(
     "SELECT p.id, p.recipient_id, r.display_name, r.recipient_kind, p.form, p.tax_year, "
-    "p.status, p.k3_status, p.state_codes, p.released_at, p.version_no FROM k1_packages p "
-    "JOIN k1_recipients r ON r.id = p.recipient_id WHERE p.id = ANY(:ids) "
+    "p.status, p.k3_status, p.state_codes, p.released_at, p.version_no, p.work_item_id, "
+    "p.supersedes_package_id, r.tin_kind, r.tin_last4, r.address IS NOT NULL AS has_address "
+    "FROM k1_packages p JOIN k1_recipients r ON r.id = p.recipient_id WHERE p.id = ANY(:ids) "
     "ORDER BY p.tax_year DESC, r.display_name, p.version_no DESC"
 )
+
+
+async def _issuers(tenant: TenantContext, returns: Sequence[UUID]) -> dict[UUID, str]:
+    """T-02-T27: each issuing return's client name, for the card's heading. The person reads
+    only packages granted to them, so the issuer is already theirs to see."""
+    out: dict[UUID, str] = {}
+    for return_id in set(returns):
+        facts = await k1.package_return_scope(tenant, return_id)
+        if facts is None:
+            continue
+        async with tenant_session(tenant) as session:
+            record = await client_record(session, facts.client_id)
+        if record is not None:
+            out[return_id] = record.name
+    return out
+
+
 _DOCUMENTS = text(
     "SELECT id, package_id, kind, jurisdiction, evidence_version_id, is_draft FROM k1_documents "
     "WHERE package_id = ANY(:ids) AND NOT is_draft ORDER BY created_at, id"
@@ -141,6 +160,7 @@ async def _views(tenant: TenantContext, ids: Sequence[UUID]) -> list[k1.PackageV
     async with tenant_session(tenant) as session:
         rows = (await session.execute(_PACKAGES, {"ids": list(ids)})).all()
         docs = (await session.execute(_DOCUMENTS, {"ids": list(ids)})).all()
+    issuers = await _issuers(tenant, [cast(UUID, r.work_item_id) for r in rows])
     by_package: dict[UUID, list[k1.DocumentView]] = {}
     for d in docs:
         by_package.setdefault(d.package_id, []).append(
@@ -161,15 +181,72 @@ async def _views(tenant: TenantContext, ids: Sequence[UUID]) -> list[k1.PackageV
             int(r.version_no),
             ("download", "update_details") if r.status != "superseded" else ("download",),
             tuple(by_package.get(r.id, [])),
+            supersedes_package_id=r.supersedes_package_id,
+            issuer_name=issuers.get(r.work_item_id),
+            # The recipient's own details (POR-13's Your details): the detail's only.
+            address_on_file=bool(r.has_address),
+            tin_kind=r.tin_kind,
+            tin_last4=r.tin_last4,
         )
         for r in rows
     ]
 
 
 async def packages(ctx: AuthContext) -> list[k1.PackageView]:
-    """`GET /v1/portal/k1s`: the person's own released packages (no amounts on a row)."""
+    """`GET /v1/portal/k1s`: the person's own released packages (no amounts and no TIN on a
+    row)."""
     _client(ctx)
-    return await _views(ctx.tenant, list(await _mine(ctx)))
+    return [
+        replace(v, tin_kind=None, tin_last4=None, address_on_file=None)
+        for v in await _views(ctx.tenant, list(await _mine(ctx)))
+    ]
+
+
+@dataclass(frozen=True)
+class Expected:
+    """A K-1 the person will receive and has not been released yet (POR-13 b): no amounts, no
+    document and no package id, only who issues it and by when."""
+
+    issuer_name: str
+    form: str
+    tax_year: int
+    k3_status: str
+    expected_on: date | None
+
+
+async def expected(ctx: AuthContext) -> list[Expected]:
+    """`GET /v1/portal/k1s/expected`: the recipients linked to the person's contacts whose newest
+    package is not released yet. A recipient with a released package is in `packages`."""
+    _client(ctx)
+    async with tenant_session(ctx.tenant) as session:
+        contacts = await contacts_of_user(session, ctx.user_id)
+        if not contacts:
+            return []
+        rows = (
+            await session.execute(
+                text(
+                    "SELECT DISTINCT ON (r.id) r.id, p.work_item_id, p.form, p.tax_year, "
+                    "p.k3_status, p.status, coalesce(t.extended_due_on, t.original_due_on) "
+                    "AS due FROM k1_recipients r JOIN k1_packages p ON p.recipient_id = r.id "
+                    "LEFT JOIN tax_returns t ON t.work_item_id = p.work_item_id "
+                    "WHERE r.contact_id = ANY(:c) ORDER BY r.id, p.version_no DESC"
+                ),
+                {"c": list(contacts)},
+            )
+        ).all()
+    waiting = [r for r in rows if r.status in ("draft", "not_prepared")]
+    issuers = await _issuers(ctx.tenant, [cast(UUID, r.work_item_id) for r in waiting])
+    return [
+        Expected(
+            issuers[r.work_item_id],
+            r.form,
+            int(r.tax_year),
+            r.k3_status,
+            cast(date | None, r.due),
+        )
+        for r in waiting
+        if r.work_item_id in issuers
+    ]
 
 
 async def _facts(tenant: TenantContext, return_id: UUID) -> tuple[UUID | None, UUID | None]:
@@ -404,10 +481,12 @@ __all__ = [
     "UPDATE",
     "DetailsChangeInvalid",
     "Download",
+    "Expected",
     "K1MfaRequired",
     "deterministic_zip",
     "download",
     "e_furnishing",
+    "expected",
     "one_document",
     "package",
     "packages",

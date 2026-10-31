@@ -40989,6 +40989,18 @@
       },
       "K1PackageDetailOut": {
         "properties": {
+          "address_on_file": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Address On File"
+          },
           "documents": {
             "cls": "internal",
             "items": {
@@ -41097,6 +41109,18 @@
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "issuer_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Issuer Name"
           },
           "k3_status": {
             "cls": "internal",
@@ -54198,6 +54222,63 @@
         ],
         "title": "PortalIntakeUploadStatus",
         "type": "string"
+      },
+      "PortalK1ExpectedOut": {
+        "description": "T-02-T27 (POR-13 b): a K-1 the person will receive, not released yet. No amounts, no\ndocuments, no package id.",
+        "properties": {
+          "expected_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Expected On"
+          },
+          "form": {
+            "cls": "internal",
+            "enum": [
+              "1065",
+              "1120s",
+              "1041"
+            ],
+            "title": "Form",
+            "type": "string"
+          },
+          "issuer_name": {
+            "cls": "confidential",
+            "title": "Issuer Name",
+            "type": "string"
+          },
+          "k3_status": {
+            "cls": "internal",
+            "enum": [
+              "included",
+              "not_required",
+              "not_included"
+            ],
+            "title": "K3 Status",
+            "type": "string"
+          },
+          "tax_year": {
+            "cls": "internal",
+            "title": "Tax Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "issuer_name",
+          "form",
+          "tax_year",
+          "k3_status",
+          "expected_on"
+        ],
+        "title": "PortalK1ExpectedOut",
+        "type": "object"
       },
       "PortalLinkRenewIn": {
         "additionalProperties": false,
@@ -186395,6 +186476,107 @@
           }
         },
         "summary": "Portal K1S Route",
+        "tags": [
+          "portal"
+        ],
+        "x-abacus-action": "portal_k1.read"
+      }
+    },
+    "/v1/portal/k1s/expected": {
+      "get": {
+        "description": "POR-13 b (T-02-T27): \"Not released yet \u00b7 Expected by \u2026\" with no amounts or documents.",
+        "operationId": "portal_k1s_expected",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PortalK1ExpectedOut"
+                  },
+                  "title": "Response Portal K1S Expected",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Portal K1S Expected Route",
         "tags": [
           "portal"
         ],

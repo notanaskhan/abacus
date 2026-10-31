@@ -153,6 +153,8 @@ class K1PackageOut(BaseModel):
     handoffs: Annotated[list[K1HandoffOut], classified("confidential")] = []
     details_change: Annotated[K1DetailsChangeTagOut | None, classified("confidential")] = None
     related_returns: Annotated[list[K1RelatedReturnOut], classified("confidential")] = []
+    # T-02-T27 (additive): the issuing client's name, a POR-13 card's heading.
+    issuer_name: Annotated[str | None, classified("confidential")] = None
 
 
 class K1PackageDetailOut(BaseModel):
@@ -161,8 +163,25 @@ class K1PackageDetailOut(BaseModel):
     package: Annotated[K1PackageOut, classified("confidential")]
     lines: Annotated[list[K1BoxLineOut], classified("restricted", tri=True)]
     documents: Annotated[list[K1DocumentOut], classified("internal")]
-    # T-02-T25 (additive): the recipient's masked TIN, the firm detail only (ADR-031).
+    # T-02-T25 (additive): the recipient's masked TIN, the detail only (ADR-031); on the portal
+    # (T-02-T27) the recipient's own, with whether an address is on file (Your details).
     tin: Annotated[K1MaskedTinOut | None, classified("restricted")] = None
+    address_on_file: Annotated[bool | None, classified("internal")] = None
+
+
+class PortalK1ExpectedOut(BaseModel):
+    """T-02-T27 (POR-13 b): a K-1 the person will receive, not released yet. No amounts, no
+    documents, no package id."""
+
+    model_config = ConfigDict(frozen=True)
+
+    issuer_name: Annotated[str, classified("confidential")]
+    form: Annotated[Literal["1065", "1120s", "1041"], classified("internal")]
+    tax_year: Annotated[int, classified("internal")]
+    k3_status: Annotated[
+        Literal["included", "not_required", "not_included"], classified("internal")
+    ]
+    expected_on: Annotated[date | None, classified("internal")]
 
 
 class K1ViewerManifestOut(BaseModel):
@@ -335,6 +354,7 @@ def _package_out(p: k1.PackageView) -> K1PackageOut:
             if p.details_change
             else None
         ),
+        issuer_name=p.issuer_name,
         related_returns=[
             K1RelatedReturnOut(
                 return_id=x.return_id, client_name=x.client_name, form=x.form, status=x.status
@@ -587,6 +607,24 @@ async def portal_k1s_route(ctx: Member) -> list[K1PackageOut]:
 
 
 @portal_k1_router.get(
+    "/k1s/expected", action="portal_k1.read", response_model=list[PortalK1ExpectedOut]
+)
+async def portal_k1s_expected_route(ctx: Member) -> list[PortalK1ExpectedOut]:
+    """POR-13 b (T-02-T27): "Not released yet · Expected by …" with no amounts or documents."""
+    await _portal_gate(ctx)
+    return [
+        PortalK1ExpectedOut(
+            issuer_name=e.issuer_name,
+            form=cast(Literal["1065", "1120s", "1041"], e.form),
+            tax_year=e.tax_year,
+            k3_status=cast(Literal["included", "not_required", "not_included"], e.k3_status),
+            expected_on=e.expected_on,
+        )
+        for e in await k1_portal.expected(ctx)
+    ]
+
+
+@portal_k1_router.get(
     "/k1s/{package_id}", action="portal_k1.read", response_model=K1PackageDetailOut, errors=(409,)
 )
 async def portal_k1_route(package_id: PackageId, ctx: Member) -> K1PackageDetailOut:
@@ -606,6 +644,8 @@ async def portal_k1_route(package_id: PackageId, ctx: Member) -> K1PackageDetail
             for line in p.lines
         ],
         documents=[_doc_out(d) for d in p.documents],
+        tin=_tin_out(p),
+        address_on_file=p.address_on_file,
     )
 
 

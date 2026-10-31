@@ -299,6 +299,13 @@ import {
 } from "./POR-03/scenarios";
 import { PortalRequest } from "./POR-04";
 import { POR05 } from "./POR-05";
+import { POR13 } from "./POR-13";
+import {
+  OPENING as POR13_OPENING,
+  type Por13State,
+  STATES as POR13_STATES,
+  scenarios as por13Scenarios,
+} from "./POR-13/scenarios";
 import {
   type Por05State,
   STATES as POR05_STATES,
@@ -2632,6 +2639,32 @@ registerScreen("POR-05", {
   title: "Questions · Feld 2025 Tax Organizer",
   Component: Por05Artboard,
 });
+
+// POR-13 (T-02-T27): My K-1s, a–f; `&w=390` draws the phone. d opens the taxpayer-ID sheet.
+function Por13Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Por13State = POR13_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      por13Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  const opening = POR13_OPENING[state];
+  return (
+    <div key={state} data-artboard={state} data-surface="portal">
+      <POR13 frame mobile={params.w === "390"} {...(opening === undefined ? {} : { opening })} />
+    </div>
+  );
+}
+
+registerScreen("POR-13", { title: "K-1 recipient view · My K-1s", Component: Por13Artboard });
 
 // POR-16 (A-02-T18): Connections for Copperleaf, a–g; the sheet and the dialog open on b, e, f.
 function Por16Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
