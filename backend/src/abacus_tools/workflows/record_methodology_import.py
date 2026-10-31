@@ -25,14 +25,14 @@ from temporalio.exceptions import ApplicationError
 from temporalio.worker import Worker
 
 from abacus.kernel.temporal import payload_codec
-from abacus.modules.agents.methodology_import_workflow import MethodologyImportWorkflow
-from abacus.modules.agents.workflow_types import (
+from abacus.modules.agents.api import (
     ImportBatchInput,
     ImportBatchOutcome,
     ImportFailInput,
     ImportFinishInput,
     ImportPagesOutcome,
     MethodologyImportInput,
+    MethodologyImportWorkflow,
 )
 from abacus_tools.stack import Stack, connect, run_with_stack
 from abacus_tools.workflows.histories import decoded_and_scrubbed

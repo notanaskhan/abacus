@@ -9,7 +9,7 @@ import pytest
 from temporalio.client import WorkflowHistory
 from temporalio.worker import Replayer
 
-from abacus.modules.agents.methodology_import_workflow import MethodologyImportWorkflow
+from abacus.modules.agents.api import MethodologyImportWorkflow
 
 HISTORIES = Path(__file__).resolve().parent / "histories"
 ALL = sorted(HISTORIES.glob("methodology-import-v*.json"))
