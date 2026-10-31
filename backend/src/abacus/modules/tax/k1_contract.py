@@ -116,7 +116,10 @@ class K1MaskedTinOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     kind: Annotated[Literal["ssn", "ein", "itin"], classified("internal")]
-    last4: Annotated[str, Field(pattern=r"^[0-9]{4}$"), classified("restricted", pii_kind="tin")]
+    # Null for an offshore reader: the central mask nulls a field that allows it (DEC-52).
+    last4: Annotated[
+        str | None, Field(pattern=r"^[0-9]{4}$"), classified("restricted", pii_kind="tin")
+    ] = None
 
 
 class K1PackageOut(BaseModel):
