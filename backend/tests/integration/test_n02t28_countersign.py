@@ -66,7 +66,7 @@ async def _other_partner(seed: Seeder, tenant: uuid.UUID, engagement: uuid.UUID)
         user,
     )
     return AuthContext(
-        TenantContext(tenant, "human", str(user)), user, membership, "staff", datetime.now(UTC)
+        TenantContext(tenant, "human", str(user)), user, membership, None, datetime.now(UTC)
     )
 
 
