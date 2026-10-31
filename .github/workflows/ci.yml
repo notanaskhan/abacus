@@ -523,6 +523,9 @@ jobs:
       # P-06-T21: the upload reviewer's fast run, on its recorded fake answers.
       - if: needs.changes.outputs.agents == 'true'
         run: make evals-review-fast
+      # A-04-T09: the materiality recommender's suite, graded by code on its fake answers.
+      - if: needs.changes.outputs.agents == 'true'
+        run: make evals-recommend-fast
 
   # One stable check for branch protection: green only when every stage 1 and 2 job passed.
   stage-2:
