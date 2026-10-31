@@ -27,6 +27,7 @@ from abacus.modules.tax.due_dates import (
 from abacus.modules.tax.engine_contract import engine_router
 from abacus.modules.tax.engine_sync import register as register_engine_sync
 from abacus.modules.tax.k1_contract import k1_router, portal_k1_router
+from abacus.modules.tax.k1_packages import draft_k1_blockers
 from abacus.modules.tax.kind import TaxReturnKind
 from abacus.modules.tax.overview import on_binder_published, on_sign_off_recorded
 from abacus.modules.tax.returns_routes import returns_router
@@ -47,6 +48,8 @@ register_office_facts("tax_returns", returns_by_office)
 register_search_projection(SEARCH_TYPE, return_search_document)
 # T-01-T18: the return's reviewable facts and the `tax_final_approval` gate kind (C13).
 register_approval()
+# T-02-T20 (DV-4): a K-1 shared to a return as a draft blocks its final approval until released.
+register_final_approval_blocker("draft_k1", draft_k1_blockers)
 # T-01-T43: CLI-05's authorizations, elections, transcripts and comparisons (DEC-1651).
 register_tax_profile()
 # T-01-T27: the engine-sync gate kinds (C13) and notification kinds (C16) (DEC-1463).

@@ -68,6 +68,12 @@ async def _prior(tenant: TenantContext, engagement_id: UUID) -> dict[str, str]:
     return {}
 
 
+async def prior_keys_for(tenant: TenantContext, engagement_id: UUID) -> dict[str, str]:
+    """The prior engagement's confirmed keys (A-03-T08: the mapped trial balance reads the same
+    prior as the view, so their content hashes agree)."""
+    return await _prior(tenant, engagement_id)
+
+
 async def mapping_with_prior(
     tenant: TenantContext, engagement_id: UUID, tb_id: UUID
 ) -> MappingView | None:

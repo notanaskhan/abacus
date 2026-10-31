@@ -285,6 +285,82 @@ class SourceDocuments:
     groups: list[SourceDocumentGroup]
 
 
+@dataclass(frozen=True)
+class BinderCard:
+    """TAX-03's binder card (T-02-T18): the work item's newest PBC binder, as published."""
+
+    id: UUID
+    name: str
+    status: str
+    published_at: datetime | None
+    published_by: UUID | None
+    marked_done_at: datetime | None
+    marked_done_by: UUID | None
+    last_upload_at: datetime | None
+
+
+async def binder_card(ctx: AuthContext, work_item_id: UUID) -> BinderCard | None:
+    """The work item's newest PBC binder the reader may read (any status), or None. The caller
+    has authorised on the work item's engagement."""
+    async with tenant_session(ctx.tenant) as session:
+        found = (
+            await session.execute(
+                select(RequestList)
+                .where(
+                    RequestList.work_item_id == work_item_id,
+                    RequestList.kind == PBC,
+                    visible(ctx, "request_item.read", RequestList.engagement_id),
+                )
+                .order_by(RequestList.part.desc(), RequestList.created_at.desc())
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+        if found is None:
+            return None
+        last = await session.scalar(
+            select(func.max(Fulfilment.created_at))
+            .join(RequestItem, RequestItem.id == Fulfilment.request_item_id)
+            .where(RequestItem.request_list_id == found.id, live_fulfilment())
+        )
+    return BinderCard(
+        found.id,
+        found.name,
+        found.status,
+        found.published_at,
+        found.published_by,
+        found.marked_done_at,
+        found.marked_done_by,
+        last,
+    )
+
+
+async def k1_request_for(
+    tenant: TenantContext, work_item_id: UUID, issuer_name: str
+) -> UUID | None:
+    """T-02-T20: the receiving return's one open request for a K-1 from this issuer ("Schedule
+    K-1 from Ridgeline Property Partners, LP"), by code; None when none or several match."""
+    pattern = f"%{issuer_name.replace('%', '').replace('_', '')}%"
+    async with tenant_session(tenant) as session:
+        found = (
+            (
+                await session.execute(
+                    select(RequestItem.id)
+                    .join(RequestList, RequestList.id == RequestItem.request_list_id)
+                    .where(
+                        RequestList.work_item_id == work_item_id,
+                        RequestItem.status.in_(OPEN),
+                        RequestItem.title.ilike("%K-1%"),
+                        RequestItem.title.ilike(pattern),
+                    )
+                    .limit(2)
+                )
+            )
+            .scalars()
+            .all()
+        )
+    return found[0] if len(found) == 1 else None
+
+
 async def pbc_binders(ctx: AuthContext, work_item_id: UUID) -> list[UUID]:
     """The work item's asked PBC binders the reader may read, in binder order: the engagement
     export's scope (A-01-T18; DEC-379: a binder id outside these is refused at create). The

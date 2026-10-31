@@ -2,7 +2,8 @@
 
 Every route answers 404 for a client principal (INV-4), then the matrix (403), then 404 with
 `tax.returns_v1` off. The board's list, summary and bulk assignment are live (T-02-T09); the
-record, overview, intake, single assignment and transitions answer 501 until T-02-T13.
+record, overview, intake, single assignment and transitions answer 501 until T-02-T13; the
+intake is live from T-02-T18 (`intake.py`).
 """
 
 from __future__ import annotations
@@ -25,7 +26,7 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
 )
-from abacus.modules.tax import board, overview
+from abacus.modules.tax import board, intake, overview
 from abacus.modules.tax.returns_contract import (
     AssignmentIn,
     BulkAssignIn,
@@ -159,10 +160,12 @@ async def return_overview_route(return_id: ReturnId, ctx: Ctx) -> TaxReturnOverv
     "/{return_id}/intake",
     action="tax_return.read",
     response_model=TaxReturnIntakeOut,
-    errors=(501,),
+    errors=(),
 )
 async def return_intake_route(return_id: ReturnId, ctx: Ctx) -> TaxReturnIntakeOut:
-    await _stub(ctx, "tax_return.read")
+    """TAX-03's intake (T-02-T18): binder, requests, waiting files, questions, hand-offs."""
+    await _gate(ctx, "tax_return.read")
+    return await intake.intake(ctx, return_id)
 
 
 @returns_router.post(

@@ -100,11 +100,23 @@ from abacus.modules.engagements.intake_contract import (
     dedupe_router,
 )
 from abacus.modules.engagements.letter_contract import letter_router
+from abacus.modules.engagements.letter_flow import (
+    LETTER_PARTNER_APPROVAL,
+    LetterEnvelope,
+    letter_for_envelope,
+    letter_partner_approvals_due,
+    letter_send_problems,
+)
+from abacus.modules.engagements.letter_flow import SUBSCRIPTIONS as _LETTER_SUBSCRIPTIONS
 from abacus.modules.engagements.letter_render import (
+    LetterFinalAsk,
     LetterRenderAsk,
     LetterRendered,
+    register_letter_finaliser,
+    register_letter_locker,
     register_letter_renderer,
 )
+from abacus.modules.engagements.letter_send import register_letter_sender
 from abacus.modules.engagements.pilot_w4 import w4_portal_activation
 from abacus.modules.engagements.roll_forward import (
     PriorItem,
@@ -379,7 +391,9 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 
 # P-07-T52: the bulk import's workflow, activities and daily erase make engagements a module with
 # worker parts; it subscribes to nothing.
-SUBSCRIPTIONS: dict[str, Callable[[OutboxEvent], Awaitable[None]]] = {}
+SUBSCRIPTIONS: dict[str, Callable[[OutboxEvent], Awaitable[None]]] = {
+    **_LETTER_SUBSCRIPTIONS,  # N-02-T33: C7 moves the letter to Sent and Signed
+}
 
 register_pilot_metric_source("w4", w4_portal_activation)  # Q-04-T008 (DEC-825)
 
@@ -390,6 +404,7 @@ __all__ = [
     "EQR_ELIGIBILITY_DUE",
     "INDEPENDENCE_CONCLUSION_DUE",
     "INDEPENDENCE_CONFIRMATION_DUE",
+    "LETTER_PARTNER_APPROVAL",
     "ROUTERS",
     "SCHEDULES",
     "SUBSCRIPTIONS",
@@ -414,6 +429,8 @@ __all__ = [
     "IndependenceRequested",
     "Judgment",
     "JudgmentSource",
+    "LetterEnvelope",
+    "LetterFinalAsk",
     "LetterRenderAsk",
     "LetterRendered",
     "MaskedTinOut",
@@ -491,6 +508,9 @@ __all__ = [
     "independence_confirmations_due",
     "is_archived",
     "judgments_of",
+    "letter_for_envelope",
+    "letter_partner_approvals_due",
+    "letter_send_problems",
     "letters_sent",
     "lock_assurance_item",
     "lock_engagement",
@@ -510,7 +530,10 @@ __all__ = [
     "register_evidence_readable",
     "register_gate_provider",
     "register_judgment_source",
+    "register_letter_finaliser",
+    "register_letter_locker",
     "register_letter_renderer",
+    "register_letter_sender",
     "register_open_requests",
     "register_progress_source",
     "register_roll_forward_items",

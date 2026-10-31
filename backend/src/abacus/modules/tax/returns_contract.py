@@ -332,6 +332,94 @@ class IntakeCategoryOut(BaseModel):
     key: Annotated[str, classified("internal")]
     requested: Annotated[int, classified("internal")]
     received: Annotated[int, classified("internal")]
+    # T-02-T18 (additive): the category's words, as the binder names it.
+    label: Annotated[str | None, classified("internal")] = None
+
+
+class IntakeBinderOut(BaseModel):
+    """T-02-T18: the rail's binder card ("2025 Binder · Published Feb 3 · Kevin Osei")."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    name: Annotated[str, classified("internal")]
+    status: Annotated[str, classified("internal")]
+    published_at: Annotated[datetime | None, classified("internal")]
+    published_by_name: Annotated[str | None, classified("confidential")]
+    marked_done_at: Annotated[datetime | None, classified("internal")]
+    marked_done_by_name: Annotated[str | None, classified("confidential")]
+    last_upload_at: Annotated[datetime | None, classified("internal")]
+
+
+class IntakeRequestOut(BaseModel):
+    """T-02-T18: one request row with what answers it (file name and channel) or its asking."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    binder_id: Annotated[UUID, classified("internal")]
+    category: Annotated[str, classified("internal")]
+    title: Annotated[str, classified("confidential")]
+    status: Annotated[str, classified("internal")]
+    overdue: Annotated[bool, classified("internal")]
+    requested_at: Annotated[datetime | None, classified("internal")]
+    due_on: Annotated[date | None, classified("internal")]
+    latest_version_id: Annotated[UUID | None, classified("internal")]
+    file_name: Annotated[str | None, classified("confidential")]
+    uploaded_on: Annotated[date | None, classified("internal")]
+    channel: Annotated[str | None, classified("internal")]
+    linked_count: Annotated[int | None, classified("internal")]
+    owed_by: Annotated[str | None, classified("confidential")]
+
+
+class IntakeSuggestionOut(BaseModel):
+    """The matcher's top proposal for a waiting file (the agent proposes; a person files)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    request_id: Annotated[UUID, classified("internal")]
+    label: Annotated[str, classified("confidential")]
+    confidence: Annotated[int, classified("internal")]  # 0-100
+
+
+class IntakeWaitingFileOut(BaseModel):
+    """T-02-T18: one inbox file waiting on the client, with code's flags ("2024 ≠ 2025")."""
+
+    model_config = ConfigDict(frozen=True)
+
+    attachment_id: Annotated[UUID, classified("internal")]
+    thread_id: Annotated[UUID, classified("internal")]
+    file_name: Annotated[str, classified("confidential")]
+    media_type: Annotated[str, classified("internal")]
+    size_bytes: Annotated[int, classified("internal")]
+    channel: Annotated[str, classified("internal")]
+    sender: Annotated[str, classified("confidential")]
+    subject: Annotated[str, classified("confidential")]
+    received_at: Annotated[datetime, classified("internal")]
+    # The extracted tax year when the viewer may see extracted values (absent for client service).
+    tax_year: Annotated[int | None, classified("internal")]
+    wrong_year: Annotated[bool, classified("internal")]
+    duplicate: Annotated[bool, classified("internal")]
+    flags: Annotated[list[str], classified("internal")]
+    suggestion: Annotated[IntakeSuggestionOut | None, classified("internal")]
+
+
+class IntakeQuestionnaireOut(BaseModel):
+    """T-02-T18: a Questions band row; answers are POR-05's, read in their own drawer."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    kind: Annotated[str, classified("internal")]
+    title: Annotated[str, classified("confidential")]
+    status: Annotated[str, classified("internal")]
+    answered: Annotated[int, classified("internal")]
+    total: Annotated[int, classified("internal")]
+    submitted_at: Annotated[datetime | None, classified("internal")]
+    submitted_by_name: Annotated[str | None, classified("confidential")]
+
+
+SuggestionsState = Literal["shown", "consent_missing", "agents_off", "hidden"]
 
 
 class TaxReturnIntakeOut(BaseModel):
@@ -345,6 +433,17 @@ class TaxReturnIntakeOut(BaseModel):
     waiting_files: Annotated[int, classified("internal")]
     questionnaire_ids: Annotated[list[UUID], classified("internal")]
     k1_handoffs: Annotated[list[K1DependencyOut], classified("confidential")]
+    # T-02-T18 additions, each with a default.
+    tax_year: Annotated[int | None, classified("internal")] = None
+    binder: Annotated[IntakeBinderOut | None, classified("internal")] = None
+    requests_total: Annotated[int, classified("internal")] = 0
+    requests_received: Annotated[int, classified("internal")] = 0
+    requests: Annotated[list[IntakeRequestOut], classified("confidential")] = []
+    waiting: Annotated[list[IntakeWaitingFileOut], classified("confidential")] = []
+    # Whether the dock shows the matcher's suggestions, or the DF-04 line and why (DV-7).
+    suggestions: Annotated[SuggestionsState, classified("internal")] = "agents_off"
+    questionnaires: Annotated[list[IntakeQuestionnaireOut], classified("confidential")] = []
+    allowed_actions: Annotated[list[str], classified("internal")] = []
 
 
 class AssignmentIn(BaseModel):

@@ -21,15 +21,13 @@ Leclerc's screening flag from AUD-03: approve and the request reads "Received"; 
 client input" and it returns). The agent never approves, signs or decides (INV-1); this flag only
 shows a person the proposal to decide on.
 
-## 0. Before the window: blocker to clear
+## 0. The flag
 
-**The flag the plan names does not exist yet.** P-04 §2 lists `review.approve_agent_output` as a
-rollout flag, but `docs/architecture/feature-flags/review.yaml` holds only `review.grammar_api` and
-`review.checkpoints`, and SHL-10's routes (`review/contract.py`) answer behind `review.grammar_api`.
-Flipping `review.grammar_api` for a firm would turn on every C3 surface, not only SHL-10. Before Jul 13
-(DEC-1384): add `review.approve_agent_output` (boolean, default false, `owner`, an expiry after Oct 20
-and outside Sep 1 – Oct 20), gate SHL-10's proposal approve and reject on it, regenerate, and replace
-`review.grammar_api` in §3 below with it. Until then, this runbook cannot run as written.
+`review.approve_agent_output` (review registry, boolean, default off; DEC-1385) gates SHL-10's
+decisions: with it off, approve, reject, route and follow-up answer 404 and the proposal view offers
+none of them; reading a proposal stays behind `review.grammar_api`, and Undo stays open inside its
+window. Both flags must be on for the firm. The registry entry expires Apr 29, 2027 (DEC-137): renew
+it before then with an expiry after Oct 20 and outside Sep 1 – Oct 20, or this flip cannot run.
 
 ## 1. Preconditions (each recorded in the ops request)
 
@@ -56,13 +54,13 @@ and outside Sep 1 – Oct 20), gate SHL-10's proposal approve and reject on it, 
 ## 3. The flip (per firm, inside the window)
 
 ```bash
-make flag FIRM=<firm-id> FLAG=review.grammar_api VALUE=true OPERATOR=<you> \
+make flag FIRM=<firm-id> FLAG=review.approve_agent_output VALUE=true OPERATOR=<you> \
   REASON="P-04-T46 SHL-10 live approval" APPROVED_BY=<other founder> \
   ROLLBACK="flag off; decisions persist" REQUEST=<ops-request file> \
   EVAL_REPORT=<report paths> SHADOW_RUN=<sha256>@<as_of>
 ```
 
-(`FLAG=review.approve_agent_output` once §0 is done.)
+`review.grammar_api` is already on for the firm (C3's reads); turn it on first if it is not.
 
 ## 4. Verify (within 15 minutes)
 
@@ -74,6 +72,6 @@ make flag FIRM=<firm-id> FLAG=review.grammar_api VALUE=true OPERATOR=<you> \
 
 ## 5. Roll back
 
-`make flag FIRM=<firm-id> FLAG=<the flag> VALUE=false OPERATOR=<you> REASON="<why>" APPROVED_BY=<other founder> ROLLBACK="n/a" HOTFIX="<reason>"`
-outside the window. SHL-10 stops offering proposals at once; decisions already made stay. Record a
+`make flag FIRM=<firm-id> FLAG=review.approve_agent_output VALUE=false OPERATOR=<you> REASON="<why>" APPROVED_BY=<other founder> ROLLBACK="n/a" HOTFIX="<reason>"`
+outside the window. SHL-10 stops offering decisions at once (the proposal still reads); decisions already made stay. Record a
 DEC row with the reason.
