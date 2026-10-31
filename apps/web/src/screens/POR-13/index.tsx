@@ -196,7 +196,7 @@ function ExpectedCard({ expected }: { expected: PortalK1ExpectedOut }): JSX.Elem
 /** e: the earlier package, struck, under the amended one. */
 function SupersededCard({ row }: { row: K1PackageOut }): JSX.Element {
   return (
-    <Card struck>
+    <Card>
       <header className="flex items-start justify-between gap-[12px]">
         <h3 className="text-body font-medium text-ink-2 line-through">
           {COPY.heading(row.issuer_name ?? "", row.tax_year, row.form)}
