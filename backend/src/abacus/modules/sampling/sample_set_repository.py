@@ -187,16 +187,18 @@ async def insert_version(session: AsyncSession, values: Values) -> None:
 
 
 async def mark_draft(session: AsyncSession, values: Values) -> bool:
-    return (await session.execute(_MARK_DRAFT, dict(values))).rowcount == 1
+    result = await session.execute(_MARK_DRAFT, dict(values))
+    return (getattr(result, "rowcount", 0) or 0) == 1
 
 
 async def mark_failed(session: AsyncSession, version_id: UUID, failure_code: str) -> bool:
-    found = await session.execute(_MARK_FAILED, {"id": version_id, "failure_code": failure_code})
-    return found.rowcount == 1
+    result = await session.execute(_MARK_FAILED, {"id": version_id, "failure_code": failure_code})
+    return (getattr(result, "rowcount", 0) or 0) == 1
 
 
 async def approve(session: AsyncSession, values: Values) -> bool:
-    return (await session.execute(_APPROVE, dict(values))).rowcount == 1
+    result = await session.execute(_APPROVE, dict(values))
+    return (getattr(result, "rowcount", 0) or 0) == 1
 
 
 async def supersede_approved(

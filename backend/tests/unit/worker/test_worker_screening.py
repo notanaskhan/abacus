@@ -55,6 +55,7 @@ def test_ac14_the_worker_hosts_connections_and_agents() -> None:
         "platform",  # Q-01-T45: tenant provisioning
         "portal",  # R-01-T13: the request owner hears of a third party's upload
         "practice",  # I-01-T12 (DEC-900): Home's client-activity projector and prune
+        "reporting",  # P-11-T11: the render job and the out-of-date consumer
         "requests",  # P-06-T07: binders close on C1's terminal transitions
         "review",  # P-04-T16: the human-gate projector (C13)
         "sampling",  # A-03-T10: the sample draw workflow

@@ -12,6 +12,7 @@ from decimal import Decimal
 import pytest
 from openpyxl import load_workbook
 
+from abacus.kernel._statuses import SampleSetVersionStatus
 from abacus.modules.methodology.api import (
     AttributeSampleSizesPayload,
     PolicyRef,
@@ -168,7 +169,7 @@ def _view(title: str = "Participants") -> SampleSetOut:
         purpose=None,
         program_step_key=None,
         version_no=2,
-        status="draft",
+        status=SampleSetVersionStatus.DRAFT,
         population=population,
         parameters=ParametersOut(
             method="attribute_nonstatistical",

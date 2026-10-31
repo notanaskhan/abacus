@@ -61,12 +61,21 @@ def _ctx(*, client: bool = False, kind: str = "human") -> AuthContext:
     )
 
 
-# A-03-T07 made the population routes live: they no longer answer 501 (the rest stay stubs until
-# A-03-T10 and T13).
+# A-03-T07 made the population routes live and A-03-T10 the sample-set routes: they no longer
+# answer 501 (the item-request fan-out stays a stub until A-03-T13).
+SS = "/v1/sample-sets/{sample_set_id}"
 LIVE = {
     ("post", f"{WI}/populations"),
     ("get", "/v1/populations/{population_id}"),
     ("post", "/v1/populations/{population_id}/ties"),
+    ("get", f"{WI}/sample-sets"),
+    ("post", f"{WI}/sample-sets"),
+    ("post", f"{SS}/versions"),
+    ("get", SS),
+    ("get", f"{SS}/versions/{{version_no}}/draw"),
+    ("get", f"{SS}/versions/{{version_no}}/items"),
+    ("post", f"{SS}/versions/{{version_no}}/approve"),
+    ("get", f"{SS}/versions/{{version_no}}/export.xlsx"),
 }
 
 
@@ -166,9 +175,11 @@ async def test_ac11_a_target_write_refuses_a_non_person_and_authorises_its_read(
     assert seen == []
     await contract.target_gate(_ctx(), "sample_set.approve")
     assert seen == ["sample_set.read"]
-    with pytest.raises(NotImplementedYet):
+    # A-03-T10: the live approval refuses a non-person before any read; the service then
+    # authorises on the set's own engagement.
+    with pytest.raises(Forbidden):
         await contract.sample_set_approve_route(
-            fx.PARTICIPANTS, 2, contract.ApproveIn(seen_hash="x"), _ctx()
+            fx.PARTICIPANTS, 2, contract.ApproveIn(seen_hash="x"), _ctx(kind="agent")
         )
 
 
@@ -206,10 +217,12 @@ async def test_ac11_the_fixture_reads_answer_and_others_501(
     assert gl.items_total == 40 and str(gl.items_amount) == "3698700.00"
     census = await contract.population_route(fx.CENSUS_V2, ctx)
     assert [t.result for t in census.ties] == ["tie", "tie"]
+    # The fan-out is T13's: still 501 on every id.
+    body = contract.ItemRequestsIn.model_validate(
+        {"templates": [{"description": "Enrollment form"}], "due_on": "2026-10-01"}
+    )
     with pytest.raises(NotImplementedYet):
-        await contract.sample_set_route(uuid.uuid4(), ctx)
-    with pytest.raises(NotImplementedYet):
-        await contract.sample_items_route(fx.GL_SAMPLE, 1, ctx)
+        await contract.sample_item_requests_preview_route(uuid.uuid4(), 1, body, ctx)
 
 
 def test_ac12_the_status_families_are_generated() -> None:

@@ -29,7 +29,7 @@ from abacus.modules.sampling import draw as draw_module
 from abacus.modules.sampling import populations, sample_sets
 from abacus.modules.sampling.draw_types import SampleDrawInput
 
-from .support import Net, Person, Seeder, Site
+from .support import Net, Person, Role, Seeder, Site
 from .tb_support import work_item
 
 Json = dict[str, Any]  # Any: JSON bodies
@@ -40,7 +40,7 @@ MAP = {
     "date": "Hire date",
     "amount": "Compensation",
 }
-PREPARER = STATEMENTS[0].version
+PREPARER = STATEMENTS[1].version
 STATISTICAL = {
     "method": "attribute_statistical",
     "parameters": {"tolerable_rate": "0.10", "expected_rate": "0", "confidence": "0.90"},
@@ -82,18 +82,20 @@ class Team:
         self.site, self.marcus, self.hannah, self.item = site, marcus, hannah, item
 
 
-async def _team(seed: Seeder) -> Team:
+async def _team(seed: Seeder, marcus_role: Role = "senior") -> Team:
     tenant = await seed.firm()
     marcus = await seed.person(tenant)
     hannah = await seed.person(tenant)
     site = await seed.site(tenant, marcus.user_id, "sampling")
-    await seed.member(site, marcus, "senior")
+    await seed.member(site, marcus, marcus_role)
     await seed.member(site, hannah, "manager")
-    await seed.run(
-        "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
-        "VALUES ($1, 'sampling.sample_sets', 'true', 'a03', 'TASK-2614')",
-        tenant,
-    )
+    for flag in ("sampling.sample_sets", "review.grammar_api"):  # the L1 goes through review
+        await seed.run(
+            "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
+            "VALUES ($1, $2, 'true', 'a03', 'TASK-2614')",
+            tenant,
+            flag,
+        )
     return Team(site, marcus, hannah, await work_item(seed, site, marcus.user_id))
 
 
@@ -253,8 +255,7 @@ async def test_ac_a_replay_of_the_same_key_draws_nothing(net: Net, seed: Seeder)
 
 
 async def test_ac1_marcus_cannot_approve_a_version_marcus_prepared(net: Net, seed: Seeder) -> None:
-    team = await _team(seed)
-    await seed.member(team.site, team.marcus, "manager")  # even as a manager
+    team = await _team(seed, "manager")  # even as a manager
     pid = await _population(net, team)
     sid = await _set(net, team)
     n = await _draw(net, team, sid, pid)

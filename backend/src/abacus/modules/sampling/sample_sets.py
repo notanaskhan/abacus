@@ -43,7 +43,9 @@ from uuid import UUID, uuid4
 
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
+from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 
+from abacus.kernel._statuses import SampleSetVersionStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.clock import now, today
 from abacus.kernel.db import TenantContext, tenant_session
@@ -358,7 +360,7 @@ async def sample_sets_of(ctx: AuthContext, work_item_id: UUID) -> list[SampleSet
                 id=cast(UUID, s["id"]),
                 title=str(s["title"]),
                 current_version_no=int(current["version_no"]),
-                status=current["status"],
+                status=cast(SampleSetVersionStatus, current["status"]),
                 final_size=int(current["final_size"]),
                 population_count=int(population["record_count"]),
             )
@@ -434,7 +436,7 @@ async def _size(
             tolerable_rate=p.tolerable_rate,
             expected_rate=expected,
             confidence=p.confidence,
-            as_of=today(),
+            as_of=await today(tenant),
         )
     except LookupError:
         raise SizeTableMissing from None
@@ -540,6 +542,8 @@ async def draw(
             _workflow(),
             given,
             id=f"sample_draw:{ctx.tenant_id}:{sample_set_id}:{version_no}",
+            id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE,
+            id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
         )
     except Exception:
         await _fail(ctx.tenant, version_id, "dispatch_failed")
@@ -564,6 +568,9 @@ async def start_version(
 ) -> VersionStartedOut:
     """`POST /v1/sample-sets/{sid}/versions`: 202 with the status URL; a replay of the same key
     and body answers the first version and draws nothing."""
+
+    # A replay answers what the first draw answered; the caller is still authorised for it.
+    await _set(ctx, sample_set_id, "sample_set.create")
 
     async def run() -> tuple[int, dict[str, object]]:
         version_no, _ = await draw(ctx, sample_set_id, body)
@@ -727,7 +734,7 @@ async def sample_set_view(
         version_rows.append(
             SampleSetVersionOut(
                 version_no=int(v["version_no"]),
-                status=v["status"],
+                status=cast(SampleSetVersionStatus, v["status"]),
                 population_id=pid,
                 population_label=str(population.record_unit),
                 record_count=int(populations[pid]["record_count"]),
@@ -752,7 +759,7 @@ async def sample_set_view(
         purpose=cast(str | None, found.row["purpose"]),
         program_step_key=cast(str | None, found.row["program_step_key"]),
         version_no=int(chosen["version_no"]),
-        status=chosen["status"],
+        status=cast(SampleSetVersionStatus, chosen["status"]),
         population=population,
         parameters=ParametersOut(
             method=chosen["method"],
@@ -790,7 +797,7 @@ async def draw_progress(ctx: AuthContext, sample_set_id: UUID, version_no: int) 
         items = await repo.items(session, cast(UUID, version["id"]))
     return DrawProgressOut(
         version_no=version_no,
-        status=version["status"],
+        status=cast(SampleSetVersionStatus, version["status"]),
         items_done=len(items),
         items_total=int(version["final_size"]) if version["status"] == "drawing" else len(items),
         failure_code=cast(str | None, version["failure_code"]),
@@ -863,7 +870,7 @@ async def approve(
             {
                 "id": vid,
                 "approved_by": ctx.user_id,
-                "approved_at": now(),
+                "approved_at": await now(ctx.tenant),
                 "row_version": int(version["row_version"]),
             },
         ):
