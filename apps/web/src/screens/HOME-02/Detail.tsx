@@ -4,22 +4,34 @@ import type {
   HumanGateOut,
   TeamRosterMemberOut,
 } from "@abacus/api-client";
-import { humanGateCountsQueryKey, humanGateListQueryKey } from "@abacus/api-client/query";
+import {
+  humanGateCandidatesOptions,
+  humanGateCountsQueryKey,
+  humanGateListQueryKey,
+  humanGateReassignMutation,
+  humanGateSnoozeMutation,
+} from "@abacus/api-client/query";
 import {
   type Actor,
   AgentMonogram,
   AgentText,
   Button,
+  DEFAULT_TZ,
   HumanAction,
   Icon,
+  Menu,
   Pill,
   RadioGroup,
   Tag,
   date as formatDate,
+  hourIn,
+  isoDate,
   time,
+  toast,
+  zonedInstant,
 } from "@abacus/ui";
-import { useQueryClient } from "@tanstack/react-query";
-import { type JSX, type ReactNode, useId } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type JSX, type ReactNode, useId, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { useOpenOverlay } from "../../app-core/open";
 import { useOpenSourceViewer } from "../../app-core/overlay-host";
@@ -62,8 +74,6 @@ import { type GateSource, classOf, useGateSources } from "./sources";
 // carries no verb. Reassign… and Snooze until… are T19's (drawn where the gate allows them). The
 // body and the footer are separate components over the same queries (React Query shares them);
 // the decision draft is the screen's, so both halves read one choice.
-
-const SHL10 = (ref: string): OverlayRef => ({ key: "approve", args: [ref] });
 
 /** The reserved person's choice while they decide, held by the screen so the body (radios,
  * rationale) and the pinned footer (Decide) read the same draft. */
@@ -191,23 +201,171 @@ function Footer({ children, line }: { children: ReactNode; line?: string }): JSX
 const roleOf = (role: string): { line: string; value: string } =>
   COPY.roles[role] ?? { line: role, value: role };
 
-/** Reassign… and Snooze until…, where the gate allows them (I-01-T19 wires the picker and menu). */
+/** Today and tomorrow in `tz`, and whether 2 PM there has passed (AC8.3 hides "Today 2 PM"). */
+export function snoozeDays(
+  now: Date,
+  tz: string,
+): { today: string; tomorrow: string; late: boolean } {
+  return {
+    today: isoDate(now, tz),
+    tomorrow: isoDate(now.getTime() + 86_400_000, tz),
+    late: hourIn(now, tz) >= 14,
+  };
+}
+
+/** Reassign… and Snooze until…, where the gate allows them (I-01-T19, AC8.2–AC8.4). Both wait
+ * for the server (DEC-24): the row leaves the queue and every count only when the write answers,
+ * and a refusal (`not_reassignable`, `snooze_past_due`, `gate_overdue`) leaves everything as it
+ * was. An overdue gate offers no snooze. */
 function GateMoves({ gate }: { gate: HumanGateOut }): JSX.Element | null {
+  const now = useNow();
+  const queryClient = useQueryClient();
+  const [picking, setPicking] = useState(false);
+  const [day, setDay] = useState("");
+  const [askCandidates, setAskCandidates] = useState(false);
   const allowed = gate.allowed_actions ?? [];
+  const tz = useSession().tz ?? DEFAULT_TZ;
+  const days = snoozeDays(now, tz);
+  const overdue = gate.due_on !== null && gate.due_on < days.today;
   const reassign = allowed.includes("human_gate.reassign");
-  const snooze = allowed.includes("human_gate.snooze");
-  if (!PLANNED_VISIBLE || (!reassign && !snooze)) return null;
+  const snooze = allowed.includes("human_gate.snooze") && !overdue;
+  const candidates = useQuery({
+    ...humanGateCandidatesOptions({ path: { gate_id: gate.id } }),
+    enabled: reassign && askCandidates,
+  });
+  const refresh = (): void => {
+    void queryClient.invalidateQueries({ queryKey: humanGateListQueryKey() });
+    void queryClient.invalidateQueries({ queryKey: humanGateCountsQueryKey() });
+  };
+  const snoozeWrite = useMutation({ ...humanGateSnoozeMutation(), onSuccess: refresh });
+  const reassignWrite = useMutation({ ...humanGateReassignMutation(), onSuccess: refresh });
+  if (!reassign && !snooze) return null;
+  const failed = (): void => {
+    toast.show({ kind: "error", text: COPY.moves.failed });
+  };
+  const until = (iso: string): void => {
+    snoozeWrite.mutate(
+      { path: { gate_id: gate.id }, body: { until: iso } },
+      {
+        onSuccess: (out) => {
+          const at = new Date(out.until);
+          toast.show({
+            kind: "success",
+            text: COPY.moves.snoozed(`${formatDate(at.toISOString(), { now })} ${time(at)}`),
+          });
+        },
+        onError: failed,
+      },
+    );
+  };
+  const sections = [
+    [
+      ...(days.late
+        ? []
+        : [
+            {
+              label: COPY.moves.today,
+              onSelect: () => {
+                until(zonedInstant(days.today, 14, tz));
+              },
+            },
+          ]),
+      {
+        label: COPY.moves.tomorrow,
+        onSelect: () => {
+          until(zonedInstant(days.tomorrow, 9, tz));
+        },
+      },
+      {
+        label: COPY.moves.pick,
+        opensDialog: true,
+        onSelect: () => {
+          setPicking(true);
+        },
+      },
+    ],
+  ];
+  const people = candidates.data?.candidates ?? [];
   return (
-    <span className="flex justify-center gap-[16px]">
-      {reassign && (
-        <Button variant="ghost" size="sm" opensDialog disabled>
-          {COPY.detailPane.reassign}
-        </Button>
-      )}
-      {snooze && (
-        <Button variant="ghost" size="sm" opensDialog disabled>
-          {COPY.detailPane.snooze}
-        </Button>
+    <span className="flex flex-col items-center gap-[8px]">
+      <span className="flex justify-center gap-[16px]">
+        {reassign && (
+          <Menu
+            label={COPY.moves.reassignMenu}
+            onOpenChange={(open) => {
+              if (open) setAskCandidates(true);
+            }}
+            trigger={
+              <Button variant="ghost" size="sm" opensDialog disabled={reassignWrite.isPending}>
+                {COPY.detailPane.reassign}
+              </Button>
+            }
+            sections={[
+              people.length === 0
+                ? [{ label: COPY.moves.noCandidates, disabled: true, onSelect: () => undefined }]
+                : people.map((c) => ({
+                    label: c.display_name ?? c.user_id,
+                    onSelect: () => {
+                      reassignWrite.mutate(
+                        {
+                          path: { gate_id: gate.id },
+                          body: { to_user_id: c.user_id, seen_version: gate.version ?? 1 },
+                        },
+                        {
+                          onSuccess: () => {
+                            toast.show({
+                              kind: "success",
+                              text: COPY.moves.reassigned(c.display_name ?? ""),
+                            });
+                          },
+                          onError: failed,
+                        },
+                      );
+                    },
+                  })),
+            ]}
+          />
+        )}
+        {snooze && (
+          <Menu
+            label={COPY.moves.snoozeMenu}
+            trigger={
+              <Button variant="ghost" size="sm" opensDialog disabled={snoozeWrite.isPending}>
+                {COPY.detailPane.snooze}
+              </Button>
+            }
+            sections={sections}
+          />
+        )}
+      </span>
+      {picking && snooze && (
+        <span className="flex items-center gap-[8px]" data-home02="snooze-pick">
+          <label className="text-dense text-ink-2" htmlFor={`snooze-${gate.id}`}>
+            {COPY.moves.pickLabel}
+          </label>
+          <input
+            id={`snooze-${gate.id}`}
+            type="date"
+            min={days.tomorrow}
+            {...(gate.due_on === null ? {} : { max: gate.due_on })}
+            value={day}
+            onChange={(event) => {
+              setDay(event.target.value);
+            }}
+            className="h-[29px] rounded-pill bg-nested px-[10px] text-body"
+          />
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={day === "" || snoozeWrite.isPending}
+            onClick={() => {
+              setPicking(false);
+              until(zonedInstant(day, 9, tz));
+            }}
+          >
+            {COPY.moves.pickConfirm}
+          </Button>
+        </span>
       )}
     </span>
   );
@@ -433,7 +591,7 @@ function blockedText(check: EligibilityCheckOut): string {
 function blockerOverlay(check: EligibilityCheckOut | undefined): OverlayRef | undefined {
   const ref = check?.refs[0];
   if (ref === undefined) return undefined;
-  if (ref.type === "agent_proposal" || ref.type === "proposal") return SHL10(ref.id);
+  if (ref.type === "agent_proposal" || ref.type === "proposal") return ov.SHL10(ref.id);
   if (ref.type === "decision_card") return ov.SHL11(ref.id);
   return undefined;
 }
@@ -585,7 +743,7 @@ function ProposalFooter({ gate }: DetailProps): JSX.Element | null {
   if (proposal === undefined) return null;
   const allowed = proposal.allowed_actions;
   const open = (): void => {
-    openOverlay(SHL10(proposal.ref));
+    openOverlay(ov.SHL10(proposal.ref));
   };
   return (
     <Footer line={COPY.detailPane.agentCannotApprove}>

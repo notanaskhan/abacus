@@ -4,12 +4,12 @@ title: T-02-T10 due dates and BH-TAX-02 pinning
 spec: SPEC-502
 acceptance_criteria: [AC-18, AC-19, AC-20]
 risk_zone: amber
-status: in-review
+status: done
 epic: T-02
 plan_key: T-02-T10
 branch: s17-t02-t10
 created: 2026-10-30
-updated: 2026-10-30
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -42,3 +42,4 @@ version ids and a filed return keeps its pinned dates after a correction."
 
 ## Progress log
 - 2026-10-30: built in S17 Lane 2 on K-02-T08; tests run in the end review.
+- 2026-11-01: merged to main in #788 (ec9d5c58e).

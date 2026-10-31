@@ -11,13 +11,16 @@ would leave them, below the triggers.
 from __future__ import annotations
 
 import uuid
-from typing import cast
+from collections.abc import Iterator
+from typing import Final, cast
 
 import httpx
 import pytest
+from types_boto3_s3 import S3Client
 
 from abacus_tools.synthetic.scenarios.brightwater_hale.methodology import spec_of, workbook
 
+from .ledger_support import bucket, wire_storage
 from .support import Json, Net, Person
 from .test_k01t05_methodology_programs import (
     _flags,  # pyright: ignore[reportPrivateUsage] -- K-01-T05's flag seeding
@@ -29,6 +32,20 @@ pytestmark = pytest.mark.asyncio
 FLAGS = ("methodology.programs", "methodology.lifecycle", "methodology.import_review")
 TEMPLATE = "BH Audit Methodology · EBP"
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+# The import's files go to evidence storage through the platform file store (DEC-1759): the
+# suite's own bucket, so nothing reaches for a default endpoint.
+BUCKET: Final = f"backfill-k01t18-{uuid.uuid4().hex[:10]}"
+MASTER: Final = b"backfill-k01t18-import-master-key-01234567"
+
+
+@pytest.fixture(scope="module")
+def raw(s3_settings: dict[str, str]) -> S3Client:
+    return bucket(s3_settings, BUCKET)
+
+
+@pytest.fixture(autouse=True)
+def wired(raw: S3Client) -> Iterator[None]:
+    yield from wire_storage(raw, BUCKET, MASTER)
 
 
 async def _new_import(net: Net, who: Person, key: str) -> Json:

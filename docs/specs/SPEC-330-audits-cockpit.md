@@ -105,10 +105,11 @@ their tests (`Board.test.tsx`, `spec021.test.tsx`, `spec022.test.tsx`, `spec030r
 `/engagements/$id/requests` and `/engagements/$id/items/$itemId` now only redirect to AUD-03 on the
 engagement's assurance work item (`?item=` for one request); with `audits.cockpit` off they show
 F-05's flag-off state, and an engagement with no assurance work item opens its record (DEC-442).
-`EvidencePreview.tsx` (SourceHover, InboxAIMatch), `DecisionActions.tsx` (Review), `CheckResults.tsx`
-(POR-04's planned pre-check reuse, R-01 §8) and `InboxPanel.tsx` stay: something live still
-imports them, or a later task reuses them, and their own tests (`spec029*`, `spec023`,
-`spec033*`) keep running unchanged.
+`EvidencePreview.tsx` (SourceHover), `DecisionActions.tsx` (Review) and `CheckResults.tsx`
+(POR-04's planned pre-check reuse, R-01 §8) stay: something live still imports them, or a later
+task reuses them, and their own tests (`spec029*`) keep running unchanged. `InboxPanel.tsx`,
+`InboxAIMatch.tsx` and `matchingMessages.ts` were retired by N-01-T29 (DEC-1390): no route mounted
+them; their tests (`spec023`, `spec033matching`, `spec033matcher`) map below.
 
 Each old assertion maps to the test that now carries it, or is retired with its behaviour
 (DEC-442). "AUD-03 …" and "SHL-20 …" name tests in `screens/AUD-03/AUD-03.test.tsx` and
@@ -128,7 +129,7 @@ Each old assertion maps to the test that now carries it, or is retired with its 
 | spec022 · ac5 | filters narrow by text; the URL carries them; no-match state | T21 "SPEC-022 ac5: the search narrows the rows …" · `?q=`, `?sort=`, `?item=` in `routes/firm/audits.tsx` |
 | spec022 · ac2 | tier override and Automatic | retired by design (no tier on AUD-03, DEC-442) |
 | spec022 · board | the legacy board answers with the flag off | T21 "SPEC-022 (flag off): … the flag-off state, never a board" |
-| spec023 · ac2 ac3 ac4 ac6 | the inbox: add files, suggestions with a score, match, removed, refused | `legacy/spec023.test.tsx` unchanged (InboxPanel stays); AUD-03c carries the matcher's held proposal ("match 62%") |
+| spec023 · ac2 ac3 ac4 ac6 | the inbox: add files, suggestions with a score, match, removed, refused | retired with InboxPanel (N-01-T29, DEC-1390); the rules are the server's, see the N-01-T29 rows below; AUD-03c carries the matcher's held proposal ("match 62%") |
 | Board.test · ac18 | engagement and item with status, source and screening | AUD-03a/b (row status, file, screening glyph) · AUD-03 acceptance (R2) "Linked (n) and the screening glyph" |
 | Board.test · ac18 | hostile rationale, quote, note, citation as text only | SHL-20 "flag reasons … as agent text" (AgentText); `agent-text.test.tsx` |
 | Board.test · ac18 | Screening… while running; nothing without evidence | SHL-20 "c: the spinner line …" · AUD-03 acceptance (R2) "requested rows show — and no glyph" |
@@ -140,3 +141,25 @@ Each old assertion maps to the test that now carries it, or is retired with its 
 | Board.test · TASK-105 | counts by status; a request opens beside the list | AUD-03 group counts · AUD-03a (the selected row opens the viewer dock) |
 | Board.test · TASK-110 | a citation opens the source at its cell | SHL-20 "View opens SHL-08 on the flagged file with its region lit" |
 | spec030 · ac6 ac10 | the AI review panel: flags with quotes, Review now, unavailable, data boundary, states | the C-34 screening card on AUD-03: SHL-20 a–f, "View opens SHL-08 …", "Rerun …", "c: …"; the data-boundary wording is the screener's (Q-02) |
+
+### N-01-T29: the engagement inbox panel (DEC-1390)
+
+No route mounted `InboxPanel` (the engagement drop zone's old panel) or `InboxAIMatch`; the firm
+files attachments in INB-02 and the client uploads in POR-03. Each assertion of their tests maps
+to the test that carries the rule now. "q03t047 …" names `backend/tests/integration/backfill/
+test_q03t047_requests_client_hub.py`, "q03t033 …" `test_q03t033_matcher.py`, "uploads …"
+`test_client_uploads_and_processing.py`.
+
+| Old test (file · AC) | Assertion | Now carried by |
+|---|---|---|
+| spec023 · ac2 | several files added at once; a refused one explained | q03t047 "spec023_ac2 dropped files wait unassigned and a duplicate is refused" · uploads "ac9 too large, wrong type by content and duplicate are refused"; INB-01's log sheet "says a refused file in the design's words" (`domain/inbox/LogIntakeSheet.test.tsx`) |
+| spec023 · ac3 ac4 | a suggestion with its score and matched words; assigning it records a followed suggestion with its source and rank | q03t047 "spec023_ac3 suggestions show score and words and a contributor sees only theirs" · q03t033 "ac6 the audit records a followed content or file-name suggestion" |
+| spec023 · ac4 ac5 | match by choosing a request; remove a file | q03t047 "spec023_ac4 assigning makes evidence, audits and empties the inbox" · "spec023_ac5 a discarded file leaves the inbox and becomes no evidence"; INB-02 "b: … Apply stays disabled until one is chosen" |
+| spec023 · ac4 | "Someone already matched or removed this file." | q03t047 "spec023_ac4 a file someone already matched answers inbox_file_gone" (new in N-01-T29) |
+| spec023 · ac6 | the panel shows nothing when the inbox is refused | retired with the panel (no screen draws it); q03t033 "ac5 a walled member and another firm get 404" |
+| spec033matching · ac1 | the fixed reason labels; a content suggestion with its reasons, source and rank | q03t033 "ac1 an extracted statement is suggested by its contents with fixed reasons" · "ac1 the code rules keep their reasons beside a matcher pick" · "ac6 the audit records …"; the labels' only reader was the panel |
+| spec033matcher · ac3 | each proposal with its rationale and verified quote | q03t033 "ac3 only verified in-list proposals above the floor are shown" · "ac3 a verified proposal under half confidence is not shown"; AUD-03c on the firm side |
+| spec033matcher · ac4 | no suggestion for real client data, and why | q03t033 "ac4 a real firm is refused at the boundary and keeps its content suggestions" |
+| spec033matcher · ac3 | "None of the requests fit" with its reason | q03t033 "ac3 none fit is shown with its rationale and no proposal" |
+| spec033matcher · ac3 | ask the matcher when nothing ran; a refusal explained | q03t033 "ac3 suggest with AI is for partner, manager, senior and staff" · "ac3 suggest with AI without a real route is ai_match_unavailable" |
+| spec033matcher · ac5 | the client sees "Suggested" with no AI words and never asks for matches | q03t033 "ac5 a client gets the pick without rationale or quotes and no firm read" (the server never returns them to a client role) · POR-03 "POR-03c: the estimated payments read Suggested — Brightwater Hale will confirm" |

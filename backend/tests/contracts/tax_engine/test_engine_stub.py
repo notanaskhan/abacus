@@ -80,13 +80,6 @@ ROUTES = [
     ("post", "/v1/engine-exports/{export_id}/mark-exported", "tax_return.export"),
     ("post", "/v1/tax-returns/{return_id}/ero-notices", "delivery_packet.prepare"),
 ]
-ROUTES = [
-    ("post", "/v1/tax-returns/{return_id}/engine-exports", "tax_return.export"),
-    ("get", "/v1/engine-exports/{export_id}/file", "tax_return.export"),
-    ("post", "/v1/engine-exports/{export_id}/mark-exported", "tax_return.export"),
-    ("post", "/v1/tax-returns/{return_id}/ero-notices", "delivery_packet.prepare"),
-    ("post", "/v1/tax-returns/{return_id}/deliverables:publish", "deliverable.publish"),
-]
 
 
 @pytest.mark.parametrize(("method", "path", "action"), ROUTES)

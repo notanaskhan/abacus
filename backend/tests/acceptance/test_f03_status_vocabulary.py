@@ -488,6 +488,14 @@ LOWER_CASE_BY_SOURCE = {"tie", "off {amount}"}
 CAPITALISED_BY_SOURCE = {
     "TB-linked",
     "Interim",  # AUD-06 g spells the chip "TB: Interim · 8/31/2026" (A-02-T02; verbatim, DEC-15)
+    # The product's name for its one agent: AUD-08 and TPL-20 cells "Suggested by Accrued Agent"
+    # (A-04-T01; verbatim, DEC-15).
+    "Accrued",
+    "Agent",
+    # AUD-07's version pill after the dot: "Version 1 · Proposed", "Version 2 · Decided"
+    # (A-04-T01; verbatim, DEC-15).
+    "Proposed",
+    "Decided",
 }
 
 # ---------------------------------------------------------------------------------------------
