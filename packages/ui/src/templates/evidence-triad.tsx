@@ -350,6 +350,9 @@ export interface EvidenceTriadProps {
   /** The viewer pane's content: a SourceViewer, which draws its own header and toolbar. */
   viewer: ReactNode;
   sheet: TriadSheet;
+  /** K-01-T19 (KNW-02 c, d): one wide pane in place of the viewer and the sheet, beside the
+   * tree (the Prepare preset's 214 tree), with its centred title. */
+  wide?: { title: string; children: ReactNode };
   /** One store for the three panes (a test, a page that drives it). */
   store?: MatchStore<CitationPayload>;
   frame?: boolean;
@@ -370,6 +373,7 @@ export function EvidenceTriad({
   tree,
   viewer,
   sheet,
+  wide,
   store,
   frame = false,
   embedded = false,
@@ -454,7 +458,24 @@ export function EvidenceTriad({
     >
       <MatchScope {...(store === undefined ? {} : { store })}>
         <div data-triad={current} className="flex min-h-0 min-w-0 flex-1">
-          {current === "two" ? (
+          {wide !== undefined ? (
+            <div
+              data-split="wide"
+              className="flex w-full min-w-0 gap-(--gutter-pane)"
+              {...(height === undefined ? {} : { style: { height: height - 154 } })}
+            >
+              <div data-split-pane="0" className="flex w-[298px] flex-none">
+                {treePane}
+              </div>
+              <div data-split-pane="1" className="flex min-w-0 flex-1">
+                <Pane title={wide.title} className="min-h-0">
+                  <div data-triad-pane="wide" className="min-h-0 flex-1 overflow-auto">
+                    {wide.children}
+                  </div>
+                </Pane>
+              </div>
+            </div>
+          ) : current === "two" ? (
             <div
               data-split="two"
               className="flex w-full min-w-0 gap-(--gutter-pane)"

@@ -227,3 +227,20 @@ def test_ac28_c11_v1_is_frozen() -> None:
     snapshot = BACKEND / "tests/contracts/c11_renderer/v1.json"
     frozen = json.loads(snapshot.read_text())
     assert {"GeneratedDocumentOut", "ReportTemplateVersionOut", "ParagraphBlock"} <= set(frozen)
+
+
+@pytest.mark.parametrize(
+    "asset",
+    [
+        "http://169.254.169.254/latest/meta-data/",
+        "https://cdn.example.com/logo.png",
+        "file:///etc/passwd",
+        "data:image/png;base64,AA",
+    ],
+)
+def test_ac9_a_url_named_as_an_asset_is_refused_as_an_asset(asset: str) -> None:
+    """P-11-T14 (independent suite): a URL in an image block's asset reference reads
+    `asset_not_allowed`, refused before any engine runs."""
+    with pytest.raises(RenderRefused) as refused:
+        build_html(_input([{"type": "image", "asset_id": asset}]))
+    assert refused.value.code == "asset_not_allowed"

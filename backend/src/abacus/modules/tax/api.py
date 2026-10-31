@@ -25,9 +25,10 @@ from abacus.modules.tax.due_dates import (
     rule_texts,
     set_extended,
 )
-from abacus.modules.tax.engine_contract import engine_router
+from abacus.modules.tax.engine_contract import engine_router, portal_filing_router
 from abacus.modules.tax.engine_import import import_file as import_engine_file
 from abacus.modules.tax.engine_sync import register as register_engine_sync
+from abacus.modules.tax.filed_delivery import FiledReturn, filed_returns
 from abacus.modules.tax.k1_contract import k1_router, portal_k1_router
 from abacus.modules.tax.k1_packages import draft_k1_blockers, package_scope
 from abacus.modules.tax.k1_packages import share_internal as share_k1_internal
@@ -73,6 +74,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     engine_router,  # the engine bridge and the e-file record (T-01-T02 stub)
     k1_router,  # K-1 packages (T-02-T02 stub)
     portal_k1_router,  # POR-13 (T-02-T02 stub)
+    portal_filing_router,  # T-01-T41: the filed client copy's download
 )
 
 
@@ -109,6 +111,7 @@ __all__ = [
     "TRANSITIONS",
     "WORKFLOWS",
     "ApprovalBlocker",
+    "FiledReturn",
     "K1DeliveryInput",
     "K1ReleaseFailure",
     "K1ReleaseInput",
@@ -116,6 +119,7 @@ __all__ = [
     "StaleReturn",
     "TransitionRefused",
     "apply_transition",
+    "filed_returns",
     "final_approval_eligibility",
     "import_engine_file",
     "next_status",

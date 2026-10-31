@@ -39,6 +39,10 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.service.AccountsMissing
     summary: 'SPEC-038 Q3: bank and payables accounts are confirmed before selecting.'
+  ack_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.AckExists
   action_cap:
     status: 409
     raised_by:
@@ -55,6 +59,11 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.completion.AdjustmentState
     summary: Approve once; record the client's answer once, after approval.
+  against_other_template:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.imports.AgainstOtherTemplate
+    summary: A version is diffed only against another version of its own template.
   ai_assessor_unavailable:
     status: 409
     raised_by:
@@ -240,6 +249,10 @@ codes:
     raised_by:
     - abacus.modules.requests.binders.BinderNotPublished
     summary: Unpublish, mark-done and follow-ups act on a Published binder only.
+  binding_superseded:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.BindingSuperseded
   branding_not_set_up:
     status: 422
     raised_by:
@@ -797,12 +810,32 @@ codes:
     raised_by:
     - abacus.modules.evidence.service.ReturnSpansRequests
     summary: 'A screening return names a file that also answers another request: review it there.'
+  file_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.imports.FileExists
+    summary: A file of this role is already on the import; files are written once.
   file_refused:
     status: 422
     raised_by:
     - abacus.modules.connections.ledger_import.FileRefused
     - abacus.modules.evidence.uploads.UploadRefused
     summary: The malware scanner refused the file (SPEC-029 AC-1; ADR-110). Nothing is stored.
+  file_role_mismatch:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.imports.FileRoleMismatch
+    summary: The file's extension is not its role's (`.docx`, `.pdf`, `.xlsx`).
+  file_too_large:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.imports.FileTooLarge
+    summary: The file is over the methodology size limit.
+  files_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.imports.FilesMissing
+    summary: The import has no workbook and no document to read yet.
   final_approval_blocked:
     status: 409
     raised_by:
@@ -832,11 +865,21 @@ codes:
     raised_by:
     - abacus.modules.review.issue_resolutions.FixRunnerUnavailable
     summary: 'No fix runner is registered: nothing is recorded (fail closed).'
+  flag_not_open:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.imports.FlagNotOpen
+    summary: The step has no open parse flag.
   flag_requires_hold:
     status: 409
     raised_by:
     - abacus.modules.communications.triage_apply.FlagRequiresHold
     summary: A code flag on this file only allows Hold (`force_hold`).
+  flags_open:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.lifecycle.FlagsOpen
+    summary: 'A parse flag on a step is not resolved yet (K-01-T18, AC3.4): confirm or edit it.'
   follow_up_already_sent:
     status: 409
     raised_by:
@@ -975,6 +1018,11 @@ codes:
     raised_by:
     - abacus.modules.signatures.imports.ImportFileUnavailable
     summary: A named file is not the importer's own staged file, or another import used it.
+  import_frozen:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.imports.ImportFrozen
+    summary: 'The import is not waiting for files (or has finished): this step does not apply.'
   import_invalid:
     status: 422
     raised_by:
@@ -1001,6 +1049,12 @@ codes:
     raised_by:
     - abacus.modules.signatures.imports.ImportScopeMismatch
     summary: The engagement, work item or a signer belongs to another client (`facts.field`).
+  importer_not_enabled:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.imports.ImporterNotEnabled
+    summary: 'Reading a Word or PDF methodology needs the Methodology importer, which is not on for this
+      firm (K-01 AC7.7): import the workbook alone.'
   inbox_file_gone:
     status: 409
     raised_by:
@@ -1351,6 +1405,10 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.tax.filing.NoAuthorizationForm
+  no_client_copy:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filed_delivery.NoClientCopy
   no_connection:
     status: 409
     raised_by:
@@ -1485,6 +1543,10 @@ codes:
     raised_by:
     - abacus.modules.review.gate_actions.NotReassignable
     summary: The gate's owner registered no way to move it to someone else.
+  not_rejected:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.NotRejected
   not_self:
     status: 409
     raised_by:
@@ -1495,6 +1557,10 @@ codes:
     raised_by:
     - abacus.modules.evidence.uploads.NotStaff
     summary: Only the firm's team can add files on the client's behalf (SPEC-023 AC-1).
+  not_synced:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.NotSynced
   not_the_eqr:
     status: 409
     raised_by:
@@ -1837,6 +1903,11 @@ codes:
     raised_by:
     - abacus.modules.assurance.release.ReleaseDateFuture
     summary: The release date is after the firm's today.
+  release_in_progress:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filed_delivery.ReleaseInProgress
+    summary: '409: another publish of the same copy committed first; read the delivery again.'
   release_mode_in_app:
     status: 409
     raised_by:
@@ -1919,6 +1990,10 @@ codes:
     raised_by:
     - abacus.modules.tax.tax_profile.ReturnMismatch
     summary: The return is not this client's for the transcript's tax year.
+  return_not_accepted:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filed_delivery.ReturnNotAccepted
   return_not_filed:
     status: 409
     raised_by:
@@ -2087,6 +2162,10 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.review.service.SignOffInvalid
+  signatures_incomplete:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.SignaturesIncomplete
   signed_copy_not_ready:
     status: 409
     raised_by:
@@ -2230,6 +2309,11 @@ codes:
     - abacus.modules.methodology.standards_contract.StandardRowMissing
     summary: 'The policy version has no row for what was asked (an engagement kind, a tier, a context):
       a consumer asked a question the firm''s standard does not answer.'
+  standards_set_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.imports.StandardsSetInvalid
+    summary: The standards set is not a published platform set.
   standards_set_refused:
     status: 422
     raised_by:
@@ -2347,6 +2431,11 @@ codes:
     raised_by:
     - abacus.modules.engagements.service.TemplateTypeMismatch
     summary: The template doesn't serve this engagement's type (SPEC-024 AC-6).
+  text_required:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.imports.TextRequired
+    summary: An edit that resolves a flag carries the step's new text.
   thread_changed:
     status: 409
     raised_by:
@@ -2508,6 +2597,12 @@ codes:
     raised_by:
     - abacus.modules.agents.proposal_slots.UnregisteredTarget
     summary: Nobody accepts suggestions on this target type.
+  unverified_sources:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.lifecycle.UnverifiedSources
+    summary: A step's source quote was not found on its cited page and no person has confirmed or edited
+      the step (K-01-T18, AC3.4, AC7.5).
   upload_empty:
     status: 422
     raised_by:

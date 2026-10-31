@@ -293,6 +293,7 @@ from abacus.modules.evidence.signed_copies import (
     file_signed_copy,
     read_staged,
     screen_and_stage,
+    screen_for_store,
     version_titles,
 )
 from abacus.modules.evidence.storage import (
@@ -349,6 +350,7 @@ from abacus.modules.identity.api import AbacusRouter, register_member_removed
 from abacus.modules.ledger.api import TrialBalanceVersionCreated
 from abacus.modules.platform.api import (
     register_audit_value_resolver,
+    register_file_store,
     register_wisp_document_reader,
 )
 from abacus.modules.requests.api import register_upload_facts
@@ -689,3 +691,5 @@ register_member_removed(release_member_assignments)
 register_evidence_readable(readable_version)
 # G-02-T20: the WISP pack reads each document through the item download, as its requester.
 register_wisp_document_reader(latest_document)
+# K-01-T18 (DEC-1759): methodology stores its source files through the platform's file store.
+register_file_store(screen_for_store, read_staged)
