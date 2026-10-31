@@ -192,6 +192,7 @@ describe("TAX-09 over a return (the engine-sync layer, DEC-1288)", () => {
     expect(within(sheet).getByRole("link", { name: "Binder" }).getAttribute("href")).toBe(
       "/binders",
     );
+    expect(within(sheet).getByRole("link", { name: "Inbox" }).getAttribute("href")).toBe("/inbox");
     fireEvent.keyDown(sheet, { key: "Escape" });
     await waitFor(() => {
       expect(closed).toBe(true);

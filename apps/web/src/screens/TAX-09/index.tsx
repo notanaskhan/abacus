@@ -510,10 +510,13 @@ export function TAX09({
               <span className="size-[22px] rounded-[6px] bg-chip" />
             </span>
             <span className="flex-1">{COPY.connection}</span>
-            {/* The return's binder, where the engine's import files are collected (TAX-09 →
-                BND-01; DEC-1288). */}
+            {/* The binders, where the return's documents are collected (TAX-09 → BND-01; DEC-1288). */}
             <a href={hrefOf(to.BND01())} className="font-medium text-ink hover:underline">
               {COPY.binder}
+            </a>
+            {/* Where the client's files for the return arrive (TAX-09 → INB-01). */}
+            <a href={hrefOf(to.INB01())} className="font-medium text-ink hover:underline">
+              {COPY.inbox}
             </a>
             <Tooltip content={COPY.settingsTip}>
               <span className="font-medium text-ink">{COPY.settings} →</span>

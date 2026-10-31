@@ -35,6 +35,8 @@ export const COPY = {
   settings: "Settings",
   /** The footer's link to the binders index (TAX-09 → BND-01). */
   binder: "Binder",
+  /** The footer's link to the inbox (TAX-09 → INB-01). */
+  inbox: "Inbox",
   settingsTip: "Opens WB-11 · Integration detail",
   markTitle: "Mark exported",
   markBody: (file: string): string =>
