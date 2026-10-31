@@ -30,6 +30,7 @@ import {
   visibleBands,
 } from "../../domain/home";
 import { COPY } from "./copy";
+import { type DecisionDraft, GateDetailBody, GateDetailFooter } from "./Detail";
 import { MY_WORK, openHref, openOverlayOf } from "./hosts";
 
 // HOME-02 · My approvals & review queue, the queue (I-01-T16; docs/screens/HOME-02.md) on T9
@@ -37,12 +38,14 @@ import { MY_WORK, openHref, openOverlayOf } from "./hosts";
 // with Approvals active, Sort │ Deadline, Select), the 310 queue under "Waiting on you" with Show
 // done, 49 px bands in the fixed band order with the counts endpoint's numbers, 50–72 px rows with
 // the class glyph and "<due> · <words>" sub-lines (risk in words, never colour alone), the selected
-// row in sel-bg, J/K and Enter, `?gate=` and the empty state (f). The detail (I-01-T17), evidence
-// (T18) and bulk Select (T19) fill the other panes later; here the detail names the selected gate
-// and its "Open" goes to the gate's own host (`hosts.ts`: its `subject_route` through the manifest's
-// builders, a return's final approval on TAX-02), and the segmented's "My work" to HOME-01. A row
-// is a link to where the gate is decided, never a decision control (INV-1). Behind `home.approvals`
-// (created here).
+// row in sel-bg, J/K and Enter, `?gate=` and the empty state (f). The detail pane renders the
+// selected gate by class (I-01-T17, `Detail.tsx`): the inline decision card, a sign-off blocked or
+// ready, an agent output, approvals and sends, and the generic fallback; every verb there is the
+// person's HumanAction, opening its overlay. A gate decided here stays in the detail (b) after it
+// leaves the queue, and `?gate=` on a done gate finds it among the done rows. Evidence (T18) and
+// bulk Select (T19) fill the rest later. Enter and the generic "Open" go to the gate's own host
+// (`hosts.ts`), and the segmented's "My work" to HOME-01. A row is a link to where the gate is
+// decided, never a decision control (INV-1). Behind `home.approvals` (created here).
 
 const POLL = {
   refetchInterval: HOME_POLL_MS,
@@ -121,6 +124,8 @@ export function HOME02({
   const [done, setDone] = useState(initialDone);
   const [chosen, setChosen] = useState<string | null>(gateParam);
   const [said, setSaid] = useState("");
+  const [drafts, setDrafts] = useState<Readonly<Record<string, DecisionDraft>>>({});
+  const held = useRef<HumanGateOut | null>(null);
   const queueRef = useRef<HTMLDivElement>(null);
   const counts = useQuery({ ...humanGateCountsOptions(), ...POLL });
   const list = useQuery({
@@ -144,8 +149,27 @@ export function HOME02({
           ]
         : groupsOf(counts.data, gates, today, now);
   const order = groups.flatMap((g) => g.items);
-  const selectedId = order.some((i) => i.id === chosen) ? chosen : (order[0]?.id ?? null);
-  const selected = gates.find((g) => g.id === selectedId);
+  const listed = order.some((i) => i.id === chosen);
+  // `?gate=` naming a done gate (b): look among the done rows once the open list has loaded.
+  const doneRows = useQuery({
+    ...humanGateListOptions({
+      query: { assignee: "me", state: "done", sort: "deadline", limit: 200 },
+    }),
+    enabled:
+      !done &&
+      chosen !== null &&
+      list.data !== undefined &&
+      !listed &&
+      held.current?.id !== chosen,
+  });
+  const fromDone = doneRows.data?.items.find((g) => g.id === chosen);
+  if (fromDone !== undefined && held.current?.id !== fromDone.id) held.current = fromDone;
+  const keep = !listed && chosen !== null && held.current?.id === chosen;
+  const selectedId = listed || keep ? chosen : (order[0]?.id ?? null);
+  const selected =
+    gates.find((g) => g.id === selectedId) ?? (keep ? held.current : null) ?? undefined;
+  // A gate decided here leaves the queue on the next read; the detail keeps showing it (b).
+  if (selected !== undefined && listed) held.current = selected;
   const layer = selected === undefined ? undefined : overlayOf(selected);
   const href = selected === undefined || layer !== undefined ? undefined : hrefOf(selected);
   const open = useOpenHref();
@@ -263,19 +287,17 @@ export function HOME02({
       </div>
     );
 
-  const detailBody =
-    selected === undefined ? null : (
-      <div className="flex flex-col">
-        <h3 className="bg-shell px-[14px] py-[12px] text-record leading-[1.3] font-medium">
-          {selected.title ?? selected.subkind}
-        </h3>
-        {selected.context != null && (
-          <p className="px-[14px] py-[10px] text-dense leading-[1.55] text-ink-2">
-            {selected.context}
-          </p>
-        )}
-      </div>
-    );
+  const detailProps =
+    selected === undefined
+      ? undefined
+      : {
+          gate: selected,
+          href: hrefOf(selected),
+          draft: drafts[selected.id] ?? { words: "" },
+          onDraft: (draft: DecisionDraft) => {
+            setDrafts((d) => ({ ...d, [selected.id]: draft }));
+          },
+        };
 
   return (
     <div data-screen="HOME-02" className="flex min-h-0 flex-1 flex-col">
@@ -305,32 +327,13 @@ export function HOME02({
         }}
         detail={{
           title: COPY.detail,
-          body: detailBody,
-          ...(layer !== undefined
-            ? {
-                footer: (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    aria-haspopup="dialog"
-                    data-overlay={layer.key}
-                    onClick={() => {
-                      openOverlay(layer);
-                    }}
-                  >
-                    {COPY.open}
-                  </Button>
-                ),
-              }
-            : href === undefined
-              ? {}
-              : {
-                  footer: (
-                    <Button variant="secondary" size="sm" asChild>
-                      <a href={href}>{COPY.open}</a>
-                    </Button>
-                  ),
-                }),
+          body:
+            detailProps === undefined ? null : (
+              <GateDetailBody key={detailProps.gate.id} {...detailProps} />
+            ),
+          ...(detailProps === undefined
+            ? {}
+            : { footer: <GateDetailFooter key={detailProps.gate.id} {...detailProps} /> }),
         }}
         evidence={[
           <section
