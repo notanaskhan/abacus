@@ -139,15 +139,16 @@ async def test_mark_exported_is_a_persons_and_once(
     planted = replace(feld.samuel, tenant=_agent(feld.tenant))
     with pytest.raises(Forbidden):
         await export.mark_exported(planted, uuid.UUID(str(made["id"])), 1)
-    async with feld.seed.held() as db:
-        await db.execute("SELECT set_config('app.actor_kind', 'system', false)")
-        with pytest.raises(asyncpg.InsufficientPrivilegeError):
-            await db.execute(
-                "UPDATE engine_exports SET marked_exported_at = now(), marked_exported_by = $1 "
-                "WHERE id = $2",
-                feld.samuel.user_id,
-                uuid.UUID(str(made["id"])),
-            )
+    # The database: a system actor cannot mark it (the guard trigger reads the actor).
+    with pytest.raises(asyncpg.InsufficientPrivilegeError):
+        await feld.seed.as_actor(
+            feld.tenant,
+            ("system", "probe"),
+            "UPDATE engine_exports SET marked_exported_at = now(), marked_exported_by = $1 "
+            "WHERE id = $2",
+            feld.samuel.user_id,
+            uuid.UUID(str(made["id"])),
+        )
     stale = await feld.call(
         "POST", f"/v1/engine-exports/{made['id']}/mark-exported", json={"seen_version": 7}
     )
