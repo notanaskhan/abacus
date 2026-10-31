@@ -10,6 +10,7 @@ no locale, no randomness, no system font.
 
 `RenderInput` is plain data (picklable): blocks as JSON, values as strings already formatted by
 code (`format.py`, P-11-T08), the mode's mark and the content hash that names the PDF.
+`render_docx` (P-11-T10) writes the DOCX from the same input after the same refusals.
 RenderWorkflow (P-11-T08) owns everything around it: snapshots, versions, evidence, events.
 """
 
@@ -61,6 +62,15 @@ class RenderInput:
     library: Mapping[str, list[object]] = field(default_factory=dict[str, list[object]])
     letterhead: Letterhead | None = None
     assets: Mapping[str, bytes] = field(default_factory=dict[str, bytes])
+
+
+@dataclass(frozen=True)
+class DocxRenderOutput:
+    """P-11-T10: the DOCX of the same input, its hash and the strings it placed."""
+
+    docx: bytes
+    render_hash: str
+    texts: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -136,6 +146,30 @@ def render(request: RenderInput) -> RenderOutput:
 
     pdf = render_pdf(document, css, content_hash=request.content_hash, assets=dict(request.assets))
     return RenderOutput(pdf, _pages(pdf), hashlib.sha256(pdf).hexdigest(), citations)
+
+
+def render_docx(request: RenderInput) -> DocxRenderOutput:
+    """P-11-T10: the DOCX from the same blocks and values. `build_html` runs first so a DOCX
+    refuses exactly as the PDF does (`unknown_layout`, `unknown_block`, `missing_variable`,
+    `missing_glyph`); python-docx needs no Pango, so this may run outside the isolated child."""
+    build_html(request)
+    from abacus.modules.reporting.render.docx import write_docx
+
+    layout = LAYOUTS[request.layout_key]
+    written = write_docx(
+        layout,
+        _blocks(request.blocks),
+        request.values,
+        title=request.title,
+        as_of=request.as_of,
+        mark=mark_for(request.mode),
+        content_hash=request.content_hash,
+        clause_states=request.clause_states,
+        library={k: _blocks(v) for k, v in request.library.items()},
+        letterhead=request.letterhead,
+        assets=request.assets,
+    )
+    return DocxRenderOutput(written.docx, hashlib.sha256(written.docx).hexdigest(), written.texts)
 
 
 def render_isolated(request: RenderInput) -> RenderOutput:

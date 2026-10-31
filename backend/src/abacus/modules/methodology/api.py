@@ -49,6 +49,9 @@ from abacus.modules.methodology.report_templates import (
     published_consent_template,
 )
 from abacus.modules.methodology.report_templates import TemplateBundle as ReportTemplateBundle
+from abacus.modules.methodology.report_templates import (
+    TemplateParts as ReportTemplateParts,
+)
 from abacus.modules.methodology.report_templates import TemplateSummary as ReportTemplateSummary
 from abacus.modules.methodology.report_templates import (
     TemplateVersionView as ReportTemplateVersionView,
@@ -66,6 +69,12 @@ from abacus.modules.methodology.report_templates import (
     publish_version as publish_report_template,
 )
 from abacus.modules.methodology.report_templates import templates as report_templates_in_firm
+from abacus.modules.methodology.report_templates import (
+    version_parts as report_template_parts,
+)
+from abacus.modules.methodology.report_templates import (
+    version_variable_keys as report_template_variable_keys,
+)
 from abacus.modules.methodology.report_templates import (
     version_view as report_template_version,
 )
@@ -171,6 +180,7 @@ __all__ = [
     "PublishedConsentTemplate",
     "ReportTemplateBundle",
     "ReportTemplateConsentTerms",
+    "ReportTemplateParts",
     "ReportTemplatePublicationView",
     "ReportTemplateSummary",
     "ReportTemplateVersionView",
@@ -213,6 +223,8 @@ __all__ = [
     "register_catalog_provider",
     "register_standard_examples",
     "register_usage_counter",
+    "report_template_parts",
+    "report_template_variable_keys",
     "report_template_version",
     "report_templates_in_firm",
     "required_review_levels",
