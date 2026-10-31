@@ -86,8 +86,10 @@ async def _gate(ctx: AuthContext) -> None:
 _FIRM_SIGNER = text(
     "SELECT e.id AS envelope_id, e.number, e.title, e.status, e.client_id, e.engagement_id, "
     "e.work_item_id, e.due_on, e.date_as_of, e.signer_order, e.provider, e.provider_envelope_id, "
+    "e.policy_family, "
     's.id AS signer_id, s."order", s.routing_group, s.status AS signer_status, s.viewed_at, '
-    "s.user_id FROM envelopes e JOIN envelope_signers s ON s.envelope_id = e.id "
+    "s.identity_method, s.user_id FROM envelopes e "
+    "JOIN envelope_signers s ON s.envelope_id = e.id "
     "WHERE e.id = :id AND s.party_kind = 'user' AND s.role = 'countersigner' "
     'ORDER BY s."order" LIMIT 1'
 )
@@ -123,6 +125,8 @@ async def countersign_session(ctx: AuthContext, envelope_id: UUID) -> portal.Ses
         routing_group=int(cast(int, row["routing_group"])),
         signer_status=str(row["signer_status"]),
         viewed_at=None,
+        policy_family=str(row["policy_family"]),
+        identity_method=str(row["identity_method"]),
     )
     if mine.status not in _OPEN:
         raise portal.EnvelopeNotOpen(facts={"status": mine.status})
