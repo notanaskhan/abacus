@@ -1,5 +1,6 @@
 """Public interface of the organisations module; other modules import only this (ADR-008)."""
 
+from abacus.kernel.audit_owners import register_client_owners
 from abacus.kernel.dispatch import WorkClass, register_work_classes
 from abacus.kernel.uow.placement import register_client_placer
 from abacus.modules.identity.api import (
@@ -13,6 +14,7 @@ from abacus.modules.identity.api import (
 from abacus.modules.organisations.activities import ACTIVITIES as CONSENT_ACTIVITIES
 from abacus.modules.organisations.activities import SCHEDULES as CONSENT_SCHEDULES
 from abacus.modules.organisations.audit_placement import client_offices
+from abacus.modules.organisations.audit_targets import CLIENT_KINDS, audit_clients
 from abacus.modules.organisations.conflicts import (
     check_clear_for,
     clear_conflict_result,
@@ -215,6 +217,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 register_office_list(firm_offices)
 # G-02-T08 gap (DEC-458): a client's primary office for its audit events.
 register_client_placer(client_offices)
+# T-01-T10, T-01-T16: a consent event belongs to its client (the explorer hides walled ones).
+register_client_owners(CLIENT_KINDS, audit_clients)
 # G-01-T05: ADM-02 reads and replaces a person's teams through this; G-01-T08: and the
 # service lines their service-line teams hold.
 register_member_teams(member_teams, set_member_teams, service_line_teams)  # T08: AC7.4
