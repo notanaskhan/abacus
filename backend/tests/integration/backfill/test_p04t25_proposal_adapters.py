@@ -47,6 +47,11 @@ async def firm(net: Net) -> Firm:
         "VALUES ($1, 'review.grammar_api', 'true', 'test-seed', 'P-04-T25')",
         tenant_id,
     )
+    await seed.run(
+        "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
+        "VALUES ($1, 'review.approve_agent_output', 'true', 'test-seed', 'P-04-T25')",
+        tenant_id,
+    )
     return Firm(net, tenant_id, await seed.person(tenant_id), await seed.person(tenant_id))
 
 
