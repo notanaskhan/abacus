@@ -1,11 +1,12 @@
-// TAX-12 · Delivery & e-file, part 1 (T-01-T24). One test per built artboard (a, a2, b) on its
-// fixture scenario, plus the row's acceptance: the gate is disabled while 1 of 2 has signed, and the
-// payment figures foot to 253 and 1,269.
+// TAX-12 · Delivery & e-file, parts 1 and 2 (T-01-T24, T-01-T39). One test per built artboard (a,
+// a2, b, c, c2, d, e) on its fixture scenario, plus the rows' acceptance: the gate is disabled while
+// 1 of 2 has signed; the payment figures foot to 253 and 1,269; the confirm names the four
+// jurisdictions and Sep 18, 2026; and the agent's fix card is absent outside fixture builds.
 import { client } from "@abacus/api-client/client";
 import { toastStore } from "@abacus/ui";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { installFixtureMode } from "../../app-core/fixture-mode";
 import { FELD_NY, FELD_REFUND, FELD_RETURN_ID } from "../../fixtures/seed/tax-compliance";
 import { newQueryClient } from "../../testing/support";
@@ -78,6 +79,71 @@ describe("TAX-12 delivery", () => {
     expect(screen.getByText(COPY.canvas.blockedBody)).toBeTruthy();
     expect(screen.getByText(COPY.rows.blockedK1)).toBeTruthy();
     expect(screen.queryByRole("region", { name: COPY.gate.title })).toBeNull();
+  });
+
+  it("c · ready to transmit: Grace waits for Daniel Reyes with Notify", async () => {
+    show("c");
+    const gate = within(await screen.findByRole("region", { name: COPY.gate.title }));
+    expect(await gate.findByText(COPY.ero.waiting)).toBeTruthy();
+    expect(gate.getByRole("button", { name: COPY.ero.notify })).toBeTruthy();
+    expect(gate.queryByRole("button", { name: COPY.gate.button })).toBeNull();
+    expect(screen.getByText(COPY.status.completed)).toBeTruthy();
+  });
+
+  it("c2 · Daniel records the transmission through a confirm", async () => {
+    show("c2");
+    const gate = within(await screen.findByRole("region", { name: COPY.gate.title }));
+    const mark = await gate.findByRole<HTMLButtonElement>("button", { name: COPY.gate.button });
+    expect(mark.disabled).toBe(false);
+    fireEvent.click(mark);
+    const dialog = await screen.findByRole("alertdialog");
+    expect(within(dialog).getByText(COPY.ero.confirm)).toBeTruthy();
+    for (const place of ["federal", "New York", "Illinois", "Colorado", "Sep 18, 2026"]) {
+      expect(COPY.ero.confirm).toContain(place);
+    }
+    fireEvent.click(within(dialog).getByRole("button", { name: COPY.ero.record }));
+    await waitFor(() => {
+      expect(toastStore.list().map((t) => t.text)).toContain(COPY.ero.recorded);
+    });
+  });
+
+  it("d · Accepted: four acknowledgments, delivered to the portal, estimates scheduled", async () => {
+    show("d");
+    const acks = within(await screen.findByRole("list", { name: COPY.acks.title }));
+    for (const name of ["Federal", "Illinois", "Colorado", "New York"]) {
+      expect(acks.getByText(COPY.acks.accepted(name))).toBeTruthy();
+    }
+    expect(acks.getByText(COPY.acks.submission("2614"))).toBeTruthy();
+    expect(screen.getAllByText(COPY.delivered, { exact: false }).length).toBeGreaterThan(0);
+    expect(screen.getByText(new RegExp(COPY.estimates))).toBeTruthy();
+    expect(screen.getAllByText(COPY.status.accepted).length).toBeGreaterThan(0);
+  });
+
+  it("e · Rejected with the engine's code and text, and Create issue", async () => {
+    show("e");
+    expect(
+      await screen.findByText(
+        COPY.acks.rejected(
+          "Federal",
+          "IND-181-01",
+          "the primary taxpayer's Identity Protection PIN is missing or incorrect",
+        ),
+      ),
+    ).toBeTruthy();
+    expect(screen.getByRole("link", { name: COPY.fix.create })).toBeTruthy();
+    expect(screen.getAllByText(COPY.status.rejected).length).toBeGreaterThan(0);
+  });
+
+  it("e · the agent's fix card renders only in fixture builds", async () => {
+    vi.resetModules();
+    vi.stubEnv("VITE_FIXTURES", "");
+    const production = await import(".");
+    expect(production.FIXTURE_BUILD).toBe(false);
+    vi.stubEnv("VITE_FIXTURES", "1");
+    vi.resetModules();
+    const fixtures = await import(".");
+    expect(fixtures.FIXTURE_BUILD).toBe(true);
+    vi.unstubAllEnvs();
   });
 
   it("never says Accrued or the agent transmits or files", () => {
