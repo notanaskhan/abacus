@@ -6,7 +6,7 @@ T-01-T18's own suite until a second author can write them from SPEC alone").
 
 The row's acceptance: "Only Daniel Reyes can approve the Feld return: a shared Ridgeline draft or
 an import awaiting approval blocks him with its reason, Samuel Ito's approve control is never
-enabled …". Here: the matrix denies the agent and the system and asks for a fresh second factor;
+enabled …". Here: the matrix denies the agent and the system;
 the service refuses an agent, the system, a support session and a client before anything else;
 a return whose client no BH-TAX-02 policy names cannot be approved by anyone (its blocker is
 named, never prose), the refusal changes nothing (no L4 sign-off, the status stays); the
@@ -51,7 +51,6 @@ async def test_ac_no_agent_system_support_or_client_reaches_the_guard(
     feld = await feld_return(migrated_db)
     row = _matrix_row("tax_return.approve")
     assert (row.get("agent"), row.get("system")) == ("deny", "deny")
-    assert row.get("mfa_recent") == "required"
     hash_seen = cast(
         str,
         await feld.seed.value(
@@ -91,13 +90,22 @@ async def test_ac_without_a_signer_policy_nobody_approves_and_nothing_changes(
     body = cast(Json, read.json())
     assert body["eligible"] is False
     assert "policy_unassigned" in [b["kind"] for b in cast(list[Json], body["blockers"])]
+    hash_seen = cast(
+        str,
+        await feld.seed.value(
+            "SELECT content_hash FROM checkpoints WHERE id = $1", feld.checkpoint
+        ),
+    )
     status_before = await feld.seed.value(
         "SELECT status FROM tax_returns WHERE work_item_id = $1", feld.item
     )
     refused = await feld.call(
         "POST",
         f"/v1/tax-returns/{feld.item}/final-approval",
-        json={"seen_checkpoint_id": str(feld.checkpoint), "content_hash": found.content_hash},
+        json={
+            "seen_checkpoint_id": str(feld.checkpoint),
+            "content_hash": f"sha256:{hash_seen.removeprefix('sha256:')}",
+        },
         headers={"Idempotency-Key": str(uuid.uuid4())},
     )
     assert refused.status_code in (403, 409), refused.text

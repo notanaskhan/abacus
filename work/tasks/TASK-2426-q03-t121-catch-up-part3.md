@@ -1,6 +1,6 @@
 ---
 id: TASK-2426
-title: Q-03-T121 ADR-078 catch-up 2027 Q3 part 3: T-01-T18 independent suite
+title: "Q-03-T121 ADR-078 catch-up 2027 Q3 part 3, T-01-T18 independent suite"
 spec: SPEC-000  # the backlog row; ADR-078
 acceptance_criteria: [AC-1]
 risk_zone: red
