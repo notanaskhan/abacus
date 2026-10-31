@@ -133,10 +133,10 @@ def test_t04_the_three_flags_exist_and_default_off() -> None:
 
 
 def test_t04_the_examples_foot() -> None:
-    late = ebp.LateRemittanceOut.model_validate(ebp._LATE)  # pyright: ignore[reportPrivateUsage]
+    late = ebp.LateRemittanceOut.model_validate(ebp._LATE)  # pyright: ignore[reportPrivateUsage] -- the stub's own example
     assert late.amount == Decimal("33540.00")
     assert (late.business_days, late.calendar_days) == (9, 10)
-    net = ebp.FiguresOut.model_validate(ebp._NET_ASSETS)  # pyright: ignore[reportPrivateUsage]
+    net = ebp.FiguresOut.model_validate(ebp._NET_ASSETS)  # pyright: ignore[reportPrivateUsage] -- the stub's own example
     assert (
         sum((r.amount or Decimal(0) for r in net.rows), Decimal(0))
         == net.total
