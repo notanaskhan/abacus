@@ -179,7 +179,17 @@ async def run(tenant_id: UUID, document_id: UUID, version_no: int) -> None:
         await _fail(system, row, document_id, version_no, refused.code)
         return
     stored: list[tuple[str, StoredObject, str, int]] = [
-        (fmt, await store_generated(tenant_id, content), digest, pages)
+        (
+            fmt,
+            await store_generated(
+                tenant_id,
+                content,
+                record_type=_record_type(kind),
+                engagement_id=cast(UUID | None, row["engagement_id"]),
+            ),
+            digest,
+            pages,
+        )
         for fmt, content, digest, pages in files
     ]
     requested_by = cast(UUID | None, row["requested_by_user_id"] or row["on_behalf_of_user_id"])
@@ -197,6 +207,16 @@ async def run(tenant_id: UUID, document_id: UUID, version_no: int) -> None:
                 requested_by=requested_by,
             )
         await _record_regions(tx, tenant_id, version_id, document_id, located, _labels(parts))
+
+
+def _record_type(kind: str) -> str:
+    """The kind's retention record type (P-11 §4.2 AC6.1): its files are locked for it."""
+    from abacus.modules.reporting.api import UnknownDocumentKind, document_kind
+
+    try:
+        return document_kind(kind).retention_record_type
+    except UnknownDocumentKind:
+        return ""
 
 
 def _wants_docx(kind: str) -> bool:

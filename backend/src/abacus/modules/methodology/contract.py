@@ -315,6 +315,10 @@ class VersionStateOut(BaseModel):
     # sends back (`checklist_changed` when it moved).
     checklist: Annotated[list[ChecklistItemOut], classified("internal")] = []
     checklist_hash: Annotated[ContentHash | None, classified("internal")] = None
+    # K-01-T18 (additive; KNW-02 d): the QM reference and the mapped set's code and label.
+    quality_management_ref: Annotated[str | None, classified("internal")] = None
+    standards_set_code: Annotated[str | None, classified("internal")] = None
+    standards_set_label: Annotated[str | None, classified("internal")] = None
 
 
 class SubmitVersionIn(BaseModel):
@@ -348,6 +352,16 @@ async def _gate(ctx: AuthContext, flag: Flag, action: str) -> None:
         raise NotFound(flag.name)
 
 
+async def version_state_out(ctx: AuthContext, v: lifecycle.VersionState) -> VersionStateOut:
+    """A version's lifecycle row for the viewer (K-01-T18's import routes answer it too)."""
+    return await _state_out(ctx, v)
+
+
+async def require_live(ctx: AuthContext, flag: Flag, action: str) -> None:
+    """`_gate` for the module's other routers (K-01-T18)."""
+    await _gate(ctx, flag, action)
+
+
 async def _state_out(ctx: AuthContext, v: lifecycle.VersionState) -> VersionStateOut:
     may = await allowed_actions(ctx, Resource.firm(ctx.tenant_id), ["methodology.manage", APPROVE])
     acts = [
@@ -374,6 +388,9 @@ async def _state_out(ctx: AuthContext, v: lifecycle.VersionState) -> VersionStat
         allowed_actions=acts,
         checklist=[ChecklistItemOut(code=i.code, ok=i.ok, n=i.n) for i in v.checklist],
         checklist_hash=v.checklist_hash,
+        quality_management_ref=v.quality_management_ref,
+        standards_set_code=v.standards_set_code,
+        standards_set_label=v.standards_set_label,
     )
 
 

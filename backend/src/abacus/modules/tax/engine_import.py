@@ -217,6 +217,10 @@ async def import_file(
         routed = await engine_files.import_other(
             ctx, return_id, engagement_id, kind, file_name, content
         )
+        if kind == "acks":  # T-01-T37: the e-file record takes the report's acks up
+            from abacus.modules.tax import filing
+
+            await filing.take_up_acks(ctx, return_id, routed)
         return ImportView(routed, return_id, kind, "routed", (), datetime.min, 1, ())
     view = await _import_parsed(ctx, return_id, engagement_id, kind, file_name, content)
     if kind == "diagnostics":  # T-01-T26: an error raises one issue per code and field

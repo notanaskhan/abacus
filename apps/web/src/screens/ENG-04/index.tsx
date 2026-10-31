@@ -1,5 +1,6 @@
 import type {
   ComposerLetterOut,
+  DiffOpOut,
   LetterConsentOut,
   LetterVariable,
   ParagraphBlock,
@@ -8,12 +9,15 @@ import type {
 import {
   type Actor,
   Button,
+  ConfirmDialog,
   DEFAULT_TZ,
+  Dialog,
   HumanAction,
   Icon,
   PaperCard,
   Pane,
   Pill,
+  Segmented,
   SplitLayout,
   Tag,
   Toggle,
@@ -24,7 +28,13 @@ import {
 import { type JSX, type ReactNode, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { useSession } from "../../app-core/session";
-import { useComposedLetter, useLetterWrites, withClause } from "../../domain/engagements";
+import { RevealStepUp } from "../../domain/audits";
+import {
+  useComposedLetter,
+  useLetterCompare,
+  useLetterWrites,
+  withClause,
+} from "../../domain/engagements";
 import { COPY } from "./copy";
 
 // ENG-04 · Engagement letter composer, part 1 (N-02-T34; docs/screens/ENG-04.md; N-02 §3.11): T10
@@ -37,7 +47,16 @@ import { COPY } from "./copy";
 // off clause struck through, a non-standard clause on an amber rule with its tag, and a citation
 // marker beside each value that lights its variable row. Frames built: a (partner approved), b
 // (Draft, watermarked, "Request partner approval…") and c (Sent, read-only, "View envelope ›").
-// Send is a person's click (INV-1) and opens the C7 draft in SIG-02.
+// Send is a person's click (INV-1) and opens the C7 draft in SIG-02. N-02-T35: the engagement
+// partner approves in a dialog that lists the §7216 consents (each its own document; a needed one
+// holds the approval), stepping up when the second factor is stale; an envelope that came back
+// declined, expired or voided is withdrawn by a person, and Send drafts a new one.
+//
+// Part 2 (N-02-T37): d signed and locked (the signers and their days, the approver of record, the
+// SSARS routing note, Edit disabled and Amend… (addendum)), e the audit variant (the sent date on
+// the status, the AU-C 210 clauses, the §103(a)(3)(C) election), f the bundled consents (each
+// consent its own document, in tabs beside the letter, with its template and signers), and Compare
+// to standard: C11's word-level diff over the paper, insertions underlined, deletions struck.
 
 type Target =
   { screen: "KNW-03" } | { screen: "CLI-05" } | { screen: "SIG-01"; envelopeId: string };
@@ -48,6 +67,8 @@ export interface LetterComposerProps {
   /** SIG-02's builder for the C7 draft Send created. */
   onOpenEnvelope?: (envelopeId: string) => void;
   onNavigate?: (target: Target) => void;
+  /** d: Amend… (addendum) on a signed letter. */
+  onAmend?: () => void;
   height?: number;
 }
 
@@ -147,14 +168,44 @@ function LinkValue({ text, onOpen }: { text: string; onOpen?: () => void }): JSX
   );
 }
 
-function StatusValue({ letter }: { letter: ComposerLetterOut }): JSX.Element {
+function StatusValue({
+  letter,
+  now,
+  tz,
+}: {
+  letter: ComposerLetterOut;
+  now: Date;
+  tz: string;
+}): JSX.Element {
   const word = status("letter", letter.status);
   const signers = letter.signers ?? [];
+  const signed = signers.filter((s) => s.signed).length;
+  if (letter.status === "signed") {
+    return (
+      <Pill variant={word.variant ?? "green"} data-locked="true">
+        <Icon name="lock" size={12} className="mr-[4px]" />
+        {word.label}
+      </Pill>
+    );
+  }
   const label =
-    letter.status === "sent"
-      ? `${word.label} · ${COPY.signedCount(signers.filter((s) => s.signed).length, signers.length)}`
-      : word.label;
+    letter.status !== "sent"
+      ? word.label
+      : letter.sent_at == null
+        ? `${word.label} · ${COPY.signedCount(signed, signers.length)}`
+        : COPY.sentOn(date(letter.sent_at, { now, tz }), signed, signers.length);
   return <Pill variant={word.variant ?? "neutral"}>{label}</Pill>;
+}
+
+/** d: who signed and countersigned, and when (from the signers' days). */
+export function signedMeta(letter: ComposerLetterOut, now: Date, tz: string): string | undefined {
+  if (letter.status !== "signed") return undefined;
+  const signers = letter.signers ?? [];
+  const client = signers.find((x) => x.role === "client" && x.signed_on != null);
+  const firm = signers.find((x) => x.role === "firm" && x.signed_on != null);
+  if (client?.signed_on == null || firm?.signed_on == null) return undefined;
+  const on = (day: string): string => date(`${day}T12:00:00Z`, { now, tz, withYear: true });
+  return COPY.signedMeta(client.name, on(client.signed_on), firm.name, on(firm.signed_on));
 }
 
 function ConsentRow({
@@ -198,13 +249,35 @@ interface PaperProps {
   letter: ComposerLetterOut;
   values: ReadonlyMap<string, string>;
   onLight: (key: string | null) => void;
+  /** Compare to standard: each section's diff ops by block id (C11 compare). */
+  diff?: ReadonlyMap<string, readonly DiffOpOut[]> | undefined;
+}
+
+function DiffView({ ops }: { ops: readonly DiffOpOut[] }): JSX.Element {
+  return (
+    <p data-diff className="mb-[8px] text-[12px] leading-[1.55]">
+      {ops.map((o, i) =>
+        o.op === "insert" ? (
+          <ins key={i} data-op="insert" className="text-green-ink underline">
+            {o.text}
+          </ins>
+        ) : o.op === "delete" ? (
+          <del key={i} data-op="delete" className="text-ink-4 line-through">
+            {o.text}
+          </del>
+        ) : (
+          <span key={i}>{o.text}</span>
+        ),
+      )}
+    </p>
+  );
 }
 
 function RunsView({
   runs,
   values,
   onLight,
-}: { runs: Runs } & Omit<PaperProps, "letter">): JSX.Element {
+}: { runs: Runs } & Omit<PaperProps, "letter" | "diff">): JSX.Element {
   return (
     <>
       {runs.map((run, i) => {
@@ -264,6 +337,7 @@ function BlockView({
       const clause = block.blocks.find((b) => b.type === "clause");
       const off = clause?.type === "clause" && states.get(clause.clause_id) === "off";
       const flagged = clause?.type === "clause" && clause.non_standard;
+      const ops = rest.diff?.get(block.id);
       return (
         <section
           data-section={block.id}
@@ -276,9 +350,11 @@ function BlockView({
             {block.title}
             {flagged && <Tag className="bg-amber-tint text-amber-ink">{COPY.nonStandard}</Tag>}
           </h4>
-          {block.blocks.map((b, i) => (
-            <BlockView key={i} block={b} states={states} {...rest} />
-          ))}
+          {ops === undefined ? (
+            block.blocks.map((b, i) => <BlockView key={i} block={b} states={states} {...rest} />)
+          ) : (
+            <DiffView ops={ops} />
+          )}
         </section>
       );
     }
@@ -308,7 +384,13 @@ function BlockView({
   }
 }
 
-function Paper({ letter, values, onLight }: PaperProps): JSX.Element {
+function Paper({
+  letter,
+  values,
+  onLight,
+  diff,
+  blocks,
+}: PaperProps & { blocks: readonly Block[] }): JSX.Element {
   const states = new Map(letter.clauses.map((c) => [c.key, c.state]));
   const head = letter.letterhead;
   return (
@@ -323,8 +405,15 @@ function Paper({ letter, values, onLight }: PaperProps): JSX.Element {
           ))}
         </div>
       )}
-      {((letter.paper ?? []) as Block[]).map((block, i) => (
-        <BlockView key={i} block={block} states={states} values={values} onLight={onLight} />
+      {blocks.map((block, i) => (
+        <BlockView
+          key={i}
+          block={block}
+          states={states}
+          values={values}
+          onLight={onLight}
+          diff={diff}
+        />
       ))}
     </PaperCard>
   );
@@ -335,16 +424,24 @@ export function LetterComposer({
   engagementName,
   onOpenEnvelope,
   onNavigate,
+  onAmend,
   height,
 }: LetterComposerProps): JSX.Element {
   const query = useComposedLetter(engagementId);
   const letter = query.data;
   const writes = useLetterWrites(letter);
+  const [comparing, setComparing] = useState(false);
+  const [tab, setTab] = useState<string>(COPY.paper.title);
+  const compared = useLetterCompare(letter, comparing);
   const session = useSession();
   const now = useNow();
   const tz = session.tz ?? DEFAULT_TZ;
   const [lit, setLit] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
+  // N-02-T35: the partner's approval dialog, its step-up, and the withdrawal confirm.
+  const [approving, setApproving] = useState(false);
+  const [stepUp, setStepUp] = useState(false);
+  const [withdrawing, setWithdrawing] = useState(false);
 
   if (letter === undefined) {
     return (
@@ -369,6 +466,16 @@ export function LetterComposer({
   const client = firstWord(letter.variables.find((v) => v.key === "client.name")?.value ?? "");
   const consents = letter.consents ?? [];
   const needed = consents.find((c) => c.status === "needed");
+  const documents = letter.documents ?? [];
+  const documentSigners = [
+    ...new Set(documents.flatMap((d) => (d.signers ?? []).map((x) => x.name))),
+  ];
+  const shown = documents.find((d) => d.title === tab);
+  const diff =
+    comparing && compared.data !== undefined && shown === undefined
+      ? new Map(compared.data.blocks.map((b) => [b.block_id, b.ops]))
+      : undefined;
+  const locked = letter.status === "signed";
   const approvedAt =
     letter.approved_at == null
       ? null
@@ -400,8 +507,8 @@ export function LetterComposer({
             />
           </Row>
         )}
-        <Row label={COPY.keys.status}>
-          <StatusValue letter={letter} />
+        <Row label={COPY.keys.status} helper={signedMeta(letter, now, tz)}>
+          <StatusValue letter={letter} now={now} tz={tz} />
         </Row>
         {letter.approved_by_name != null && approvedAt !== null && (
           <Row label={COPY.keys.approved}>
@@ -436,6 +543,11 @@ export function LetterComposer({
             </Row>
           );
         })}
+        {letter.routing_note != null && (
+          <li data-routing-note className="px-[12px] py-[8px] text-meta text-ink-3 hairline-t">
+            {letter.routing_note}
+          </li>
+        )}
       </Band>
       <Band title={COPY.bands.clauses}>
         {letter.clauses.map((c, i) => (
@@ -469,18 +581,24 @@ export function LetterComposer({
             onOpen={() => onNavigate?.({ screen: "CLI-05" })}
           />
         ))}
-        <Row
-          label={COPY.consents.bundle}
-          helper={
-            needed === undefined
-              ? COPY.consents.separate
-              : `${COPY.consents.separate} ${COPY.consents.sentAlone(
-                  firstWord(needed.label.split(" · ").at(-1) ?? ""),
-                )}`
-          }
-        >
-          <Toggle label={COPY.consents.bundle} checked={false} disabled />
-        </Row>
+        {documents.length > 0 ? (
+          <li data-bundled className="px-[12px] py-[8px] text-body text-ink hairline-t">
+            {COPY.consents.bundled(documents.length, documentSigners)}
+          </li>
+        ) : (
+          <Row
+            label={COPY.consents.bundle}
+            helper={
+              needed === undefined
+                ? COPY.consents.separate
+                : `${COPY.consents.separate} ${COPY.consents.sentAlone(
+                    firstWord(needed.label.split(" · ").at(-1) ?? ""),
+                  )}`
+            }
+          >
+            <Toggle label={COPY.consents.bundle} checked={false} disabled />
+          </Row>
+        )}
       </Band>
       <Band title={COPY.bands.signers}>
         {(letter.signers ?? []).map((s) => (
@@ -499,11 +617,12 @@ export function LetterComposer({
 
   const right = (
     <>
-      {letter.status === "partner_approved" && can("letter.draft") && (
+      {((letter.status === "partner_approved" && can("letter.draft")) || locked) && (
         <Button
           variant="secondary"
           size="sm"
           icon="pencil"
+          disabled={locked}
           onClick={() => {
             setEditing(true);
           }}
@@ -511,7 +630,21 @@ export function LetterComposer({
           {COPY.paper.edit}
         </Button>
       )}
-      <Button variant="ghost" size="sm" disabled>
+      {locked && can("letter.amend") && (
+        // The handoff's label ends "(addendum)", not "…": the dialog is named by aria-haspopup.
+        <Button variant="secondary" size="sm" aria-haspopup="dialog" onClick={onAmend}>
+          {COPY.paper.amend}
+        </Button>
+      )}
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-pressed={comparing}
+        disabled={letter.generated_document_id == null || shown !== undefined}
+        onClick={() => {
+          setComparing((on) => !on);
+        }}
+      >
         {COPY.paper.compare}
       </Button>
       {draft && can("letter.draft") && (
@@ -525,6 +658,32 @@ export function LetterComposer({
           }}
         >
           {COPY.paper.requestApproval}
+        </Button>
+      )}
+      {draft && can("letter.approve") && (
+        <HumanAction
+          verb="Approve"
+          actor={actor}
+          label={COPY.approval.open}
+          variant="primary"
+          size="sm"
+          disabled={writes.pending}
+          onClick={() => {
+            setApproving(true);
+          }}
+        />
+      )}
+      {can("letter.withdraw_envelope") && (
+        <Button
+          variant="secondary"
+          size="sm"
+          opensDialog
+          disabled={writes.pending}
+          onClick={() => {
+            setWithdrawing(true);
+          }}
+        >
+          {COPY.withdraw.open}
         </Button>
       )}
       {letter.status === "partner_approved" && can("letter.send") && (
@@ -560,9 +719,69 @@ export function LetterComposer({
     <div
       data-screen="ENG-04"
       data-status={letter.status}
-      data-read-only={letter.status === "sent" || letter.status === "signed" ? "true" : undefined}
+      data-read-only={letter.status === "sent" || locked ? "true" : undefined}
+      data-comparing={diff === undefined ? undefined : "true"}
       className="flex min-h-0 min-w-0 flex-1"
     >
+      <Dialog
+        open={approving}
+        onOpenChange={setApproving}
+        title={COPY.approval.title}
+        description={COPY.approval.body}
+        action={
+          <HumanAction
+            verb="Approve"
+            actor={actor}
+            label={COPY.approval.confirm}
+            variant="primary"
+            size="sm"
+            disabled={writes.pending || consents.some((c) => c.status === "needed")}
+            onClick={() => {
+              writes.approve().then(
+                () => {
+                  setApproving(false);
+                },
+                (error: unknown) => {
+                  // The approval asks a fresh second factor (`letter.approve`, mfa_recent).
+                  if (
+                    (error as { facts?: { reason?: unknown } } | null)?.facts?.reason ===
+                    "mfa_required"
+                  ) {
+                    setStepUp(true);
+                  }
+                },
+              );
+            }}
+          />
+        }
+      >
+        <ul aria-label={COPY.approval.consents} className="flex flex-col gap-[6px]">
+          {consents.map((c) => (
+            <li key={c.label} className="flex items-center justify-between gap-[8px] text-dense">
+              <span>{c.label}</span>
+              {c.status === "on_file" ? (
+                <Pill variant="green-tint">{COPY.approval.onFile}</Pill>
+              ) : (
+                <Pill variant="amber">{COPY.consents.needed}</Pill>
+              )}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-[10px] text-meta text-ink-3">{COPY.consents.separate}</p>
+      </Dialog>
+      <RevealStepUp open={stepUp} onOpenChange={setStepUp} />
+      <ConfirmDialog
+        open={withdrawing}
+        onOpenChange={setWithdrawing}
+        title={COPY.withdraw.title}
+        confirmLabel={COPY.withdraw.confirm}
+        destructive={false}
+        onConfirm={() => {
+          void writes.withdraw();
+        }}
+      >
+        {COPY.withdraw.body(letter.envelope_status ?? "")}
+      </ConfirmDialog>
       <SplitLayout
         preset="document"
         height={height ?? "viewport"}
@@ -574,8 +793,30 @@ export function LetterComposer({
             {structure}
           </Pane>,
           <Pane key="paper" title={COPY.paper.title} titleAlign="center" well right={right}>
-            <div className="flex min-h-full flex-col p-[14px]">
-              <Paper letter={letter} values={values} onLight={setLit} />
+            <div className="flex min-h-full flex-col gap-[10px] p-[14px]">
+              {documents.length > 0 && (
+                <div className="flex flex-col items-center gap-[4px]">
+                  <Segmented
+                    label={COPY.keys.documents}
+                    size="small"
+                    options={[COPY.paper.title, ...documents.map((d) => d.title)]}
+                    active={shown === undefined ? COPY.paper.title : shown.title}
+                    onChange={setTab}
+                  />
+                  {shown !== undefined && (
+                    <span data-document-template className="text-meta text-ink-3">
+                      {COPY.templateName(shown.template_name, shown.template_version_no)}
+                    </span>
+                  )}
+                </div>
+              )}
+              <Paper
+                letter={letter}
+                values={values}
+                onLight={setLit}
+                diff={diff}
+                blocks={(shown === undefined ? letter.paper : shown.paper) ?? []}
+              />
             </div>
           </Pane>,
         ]}

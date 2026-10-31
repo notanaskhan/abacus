@@ -18,8 +18,11 @@ TABLES: frozenset[str] = frozenset(
     # T-02-T20 (0565, DEC-1471): K-1 packages.
     | {"k1_recipients", "k1_packages", "k1_package_events", "k1_documents", "k1_box_lines"}
     | {"k1_handoffs", "recipient_details_changes"}
+    | {"k1_releases", "k1_release_deliveries"}  # T-02-T21 (0566, DEC-1476): the release
     | {"delivery_packets"}  # T-01-T35 (0523, DEC-1565)
     | {"efile_amount_bindings"}  # T-01-T36 (0524, DEC-1566)
+    | {"transmissions", "efile_acks"}  # T-01-T37 (0568, DEC-1570)
+    | {"filed_return_deliveries"}  # T-01-T41 (0569, DEC-1571)
 )
 # T-02-T07 (0403): `tax_returns` takes updates of its v1 columns now, so it is no longer
 # insert-only; its events and engine summaries are.
@@ -28,6 +31,8 @@ INSERT_ONLY: frozenset[str] = frozenset(
     | {"transcripts", "transcript_lines", "transcript_comparisons"}  # T-01-T43 (0550)
     | {"write_operations"}  # T-01-T25 (0561): one row per write, a grant consumed once
     | {"engine_acks"}  # T-01-T26 (0562): the e-file status report, as received
+    | {"transmissions", "efile_acks"}  # T-01-T37 (0568): the ERO's record and the acks
+    | {"filed_return_deliveries"}  # T-01-T41 (0569): a release, never changed
     | {"k1_package_events", "k1_documents", "k1_box_lines"}  # T-02-T20 (0565)
 )
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -106,6 +111,19 @@ INSERT_COLUMNS["efile_amount_bindings"] = frozenset(
     {"id", "tenant_id", "return_id", "envelope_id", "checkpoint_id", "figures", "figures_sha256"}
     | {"tolerances_ref"}
 )
+INSERT_COLUMNS["transmissions"] = frozenset(
+    {"id", "tenant_id", "return_id", "binding_id", "envelope_id", "ero_user_id", "method"}
+    | {"jurisdictions", "transmitted_on", "recorded_by", "actor_kind"}
+)
+INSERT_COLUMNS["efile_acks"] = frozenset(
+    {"id", "tenant_id", "return_id", "transmission_id", "jurisdiction", "status"}
+    | {"submission_id_last4", "reject_code", "reject_text", "received_at", "source"}
+    | {"engine_ack_id", "evidence_version_id", "recorded_by"}
+)
+INSERT_COLUMNS["filed_return_deliveries"] = frozenset(
+    {"id", "tenant_id", "return_id", "engagement_id", "client_id", "packet_id"}
+    | {"evidence_version_id", "published_by", "actor_kind"}
+)
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     # T-01-T36 (0524): superseded once, never cleared (the system relocks, never unlocks).
     "efile_amount_bindings": frozenset({"superseded_at", "superseded_reason"}),
@@ -138,12 +156,22 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     # T-02-T20 (0565): what a recipient, package, hand-off or details change may change.
     "k1_recipients": frozenset(
         {"display_name", "recipient_kind", "is_entity", "tin_last4", "tin_kind", "address"}
-        | {"ownership_note"}
+        | {"ownership_note", "contact_id"}  # T-02-T21 (0566): the contact delivered to
     ),
-    "k1_packages": frozenset({"status", "delivery_contact_id", "e_furnishing_consent"}),
+    "k1_packages": frozenset(
+        {"status", "delivery_contact_id", "e_furnishing_consent", "released_at"}  # + 0566
+    ),
     "k1_handoffs": frozenset(
         {"status", "replaced_at", "final_values", "target_evidence_version_id"}
         | {"target_request_item_id"}
     ),
     "recipient_details_changes": frozenset({"status", "decided_by", "decided_at", "reason"}),
+    # T-02-T21 (0566): a release changes only its status; the ledger stamps each step once.
+    "k1_releases": frozenset(
+        {"status", "undone_at", "undone_by", "started_at", "completed_at", "failure_code"}
+    ),
+    "k1_release_deliveries": frozenset(
+        {"contact_id", "access_grant_id", "invitation_id", "access_at", "released_at"}
+        | {"message_id", "emailed_at", "handoffs_at"}
+    ),
 }

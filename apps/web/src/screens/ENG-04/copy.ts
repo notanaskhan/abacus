@@ -16,11 +16,18 @@ export const COPY = {
     status: "Status",
     approved: "Approved",
     redline: "Redline",
+    documents: "Documents",
   },
   templateName: (name: string, n: number) => `${name} v${String(n)}`,
   approved: (name: string, when: string) => `${name} · ${when}`,
   redline: (n: number) => `${String(n)} non-standard clause${n === 1 ? "" : "s"}`,
   signedCount: (signed: number, total: number) => `${String(signed)} of ${String(total)} signed`,
+  /** e: "Sent Sep 8 · 0 of 2 signed". */
+  sentOn: (on: string, signed: number, total: number) =>
+    `Sent ${on} · ${String(signed)} of ${String(total)} signed`,
+  /** d: "Signed by Tess Moreno · Mar 2, 2026 · countersigned by Priya Raman · Mar 3, 2026". */
+  signedMeta: (client: string, on: string, firm: string, countersignedOn: string) =>
+    `Signed by ${client} · ${on} · countersigned by ${firm} · ${countersignedOn}`,
   /** The variables ENG-04 names itself; a template's own keys carry the template's label. */
   variables: {
     "client.signer": "Client signer",
@@ -37,6 +44,7 @@ export const COPY = {
     cas_only: "CAS only",
     attest_only: "attest clients only",
     ebp_only: "EBP audits only",
+    no_nonattest: "no nonattest services",
   } as Readonly<Record<string, string>>,
   aiDefault: "Firm default · ADM-04",
   nonStandard: "Non-standard",
@@ -46,6 +54,11 @@ export const COPY = {
     notOnFile: (client: string, party: string) =>
       `Not on file. No ${client} return information goes to ${party} (POR-14) until it is signed.`,
     bundle: "Bundle a new consent document",
+    /** f: "Use · AI disclosure — 2 separate consent documents · 2 signers (Claire Feld, Jonah Feld)". */
+    bundled: (documents: number, signers: readonly string[]) =>
+      `Use · AI disclosure — ${String(documents)} separate consent documents · ${String(
+        signers.length,
+      )} signers (${signers.join(", ")})`,
     separate: "Consents are separate documents, never clauses.",
     sentAlone: (party: string) =>
       `The ${party} disclosure consent is sent on its own before the engineer data request.`,
@@ -60,9 +73,27 @@ export const COPY = {
     compare: "Compare to standard",
     send: "Send for signature…",
     requestApproval: "Request partner approval…",
+    amend: "Amend… (addendum)",
     viewEnvelope: "View envelope ›",
     watermark: "DRAFT",
     cite: (label: string) => `Lights ${label}`,
+  },
+  // N-02-T35: no handoff frame draws the dialog; its words follow ENG-04's spec ("Only a
+  // partner can approve.") and the consent band's.
+  approval: {
+    open: "Approve letter…",
+    title: "Approve this letter",
+    body: "Only a partner can approve. The approval holds for this version; any later change makes it a new draft.",
+    consents: "§7216 consents",
+    onFile: "On file",
+    confirm: "Approve",
+  },
+  withdraw: {
+    open: "Withdraw envelope…",
+    title: "Withdraw this envelope?",
+    body: (status: string) =>
+      `The envelope came back ${status}. The letter stays approved and Send drafts a new envelope.`,
+    confirm: "Withdraw",
   },
   failed: "Couldn’t load the letter.",
 } as const;

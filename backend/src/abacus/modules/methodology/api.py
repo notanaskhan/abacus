@@ -27,6 +27,7 @@ from abacus.modules.methodology.contract import (
     methodology_lifecycle_router,
     programs_router,
 )
+from abacus.modules.methodology.import_routes import methodology_import_router
 from abacus.modules.methodology.lifecycle import (
     approve_version,
     submit_version,
@@ -162,6 +163,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     programs_router,
     knowledge_router,
     standards_router,  # C21 part B (K-02-T08; import and export K-02-T11)
+    methodology_import_router,  # K-01-T18: import review (KNW-02 c, d)
 )
 
 __all__ = [
