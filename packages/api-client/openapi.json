@@ -55886,6 +55886,21 @@
         "title": "RejectProposalIn",
         "type": "object"
       },
+      "RejectionIssueOut": {
+        "properties": {
+          "issue_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Issue Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "issue_id"
+        ],
+        "title": "RejectionIssueOut",
+        "type": "object"
+      },
       "ReleaseOut": {
         "properties": {
           "at": {
@@ -144979,6 +144994,7 @@
     },
     "/v1/firm/members/{user_id}/ero": {
       "put": {
+        "description": "A firm admin designates the firm's ERO, with fresh MFA (T-01-T37).",
         "operationId": "set_ero",
         "parameters": [
           {
@@ -145084,16 +145100,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Set Ero Route",
@@ -184146,6 +184152,7 @@
     },
     "/v1/tax-returns/{return_id}/acks": {
       "post": {
+        "description": "A manual acknowledgement with its evidence upload (T-01-T37). 409 `ack_exists`,\n`import_file_unavailable`.",
         "operationId": "record_ack",
         "parameters": [
           {
@@ -184272,8 +184279,96 @@
               }
             },
             "description": "Invalid request"
+          }
+        },
+        "summary": "Record Ack Route",
+        "tags": [
+          "tax-engine"
+        ],
+        "x-abacus-action": "efile_ack.record"
+      }
+    },
+    "/v1/tax-returns/{return_id}/acks/{ack_id}/issue": {
+      "post": {
+        "description": "TAX-12e's Create issue: the rejection as an engine-diagnostic issue; the return moves\nRejected to Fixing (T-01-T37). 409 `not_rejected`.",
+        "operationId": "rejection_issue",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
           },
-          "501": {
+          {
+            "in": "path",
+            "name": "ack_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ack Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RejectionIssueOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
             "content": {
               "application/json": {
                 "schema": {
@@ -184281,10 +184376,50 @@
                 }
               }
             },
-            "description": "Contract stub: not implemented yet"
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
           }
         },
-        "summary": "Record Ack Route",
+        "summary": "Rejection Issue Route",
         "tags": [
           "tax-engine"
         ],
@@ -184567,7 +184702,7 @@
     },
     "/v1/tax-returns/{return_id}/delivery": {
       "get": {
-        "description": "TAX-12's checklist read model: the open packet and the engine's payment figures\n(T-01-T35). The binding, transmission and acknowledgements arrive with T-01-T36/T37.",
+        "description": "TAX-12's checklist read model: the open packet and the engine's payment figures\n(T-01-T35), the 8879 binding (T-01-T36), the transmission and acknowledgements (T-01-T37).",
         "operationId": "delivery",
         "parameters": [
           {
@@ -186547,7 +186682,7 @@
     },
     "/v1/tax-returns/{return_id}/transmissions": {
       "post": {
-        "description": "The ERO's human record (never a transmission by Accrued; R-04).",
+        "description": "The designated ERO's human record of a transmission made in the engine (never a\ntransmission by Accrued; R-04; T-01-T37). 409 `signatures_incomplete`, `binding_superseded`,\n`not_synced`.",
         "operationId": "record_transmission",
         "parameters": [
           {
@@ -186674,16 +186809,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Record Transmission Route",

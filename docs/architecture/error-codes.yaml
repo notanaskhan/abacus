@@ -39,6 +39,10 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.service.AccountsMissing
     summary: 'SPEC-038 Q3: bank and payables accounts are confirmed before selecting.'
+  ack_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.AckExists
   action_cap:
     status: 409
     raised_by:
@@ -240,6 +244,10 @@ codes:
     raised_by:
     - abacus.modules.requests.binders.BinderNotPublished
     summary: Unpublish, mark-done and follow-ups act on a Published binder only.
+  binding_superseded:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.BindingSuperseded
   branding_not_set_up:
     status: 422
     raised_by:
@@ -1485,6 +1493,10 @@ codes:
     raised_by:
     - abacus.modules.review.gate_actions.NotReassignable
     summary: The gate's owner registered no way to move it to someone else.
+  not_rejected:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.NotRejected
   not_self:
     status: 409
     raised_by:
@@ -1495,6 +1507,10 @@ codes:
     raised_by:
     - abacus.modules.evidence.uploads.NotStaff
     summary: Only the firm's team can add files on the client's behalf (SPEC-023 AC-1).
+  not_synced:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.NotSynced
   not_the_eqr:
     status: 409
     raised_by:
@@ -2087,6 +2103,10 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.review.service.SignOffInvalid
+  signatures_incomplete:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.filing.SignaturesIncomplete
   signed_copy_not_ready:
     status: 409
     raised_by:

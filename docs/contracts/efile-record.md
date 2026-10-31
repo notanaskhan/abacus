@@ -22,6 +22,7 @@ Accrued records the e-file lifecycle; it **never transmits** (R-04). The ERO tra
 | Tell the ERO it is ready | `POST /v1/tax-returns/{id}/ero-notices` | `delivery_packet.prepare` |
 | The ERO's record (409 `signatures_incomplete`, `binding_superseded`, `not_synced`) | `POST /v1/tax-returns/{id}/transmissions` | `transmission.record` (`function_in(signer)`; `ero_designated` in the service; human only) |
 | Manual ack with evidence | `POST /v1/tax-returns/{id}/acks` | `efile_ack.record` |
+| A rejection as an issue; Rejected to Fixing (409 `not_rejected`; T-01-T37, DEC-1570) | `POST /v1/tax-returns/{id}/acks/{ack_id}/issue` | `efile_ack.record` |
 | Release the client copy | `POST /v1/tax-returns/{id}/deliverables:publish` | `deliverable.publish` |
 | ERO designation | `PUT /v1/firm/members/{id}/ero` | `member.set_ero` (firm admin, fresh MFA) |
 
