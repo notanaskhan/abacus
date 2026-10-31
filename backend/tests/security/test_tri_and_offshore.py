@@ -58,6 +58,9 @@ TIN_ROUTES = {
     ("GET", "/v1/inbox/messages/{message_id}/triage"): "masked",
     # T-01-T01 (C19 stub): the tax profile carries the masked TIN, through the offshore mask.
     ("GET", "/v1/client-entities/{client_entity_id}/tax-profile"): "masked",
+    # T-02-T25 (DEC-1575): a K-1 package's detail carries the recipient's masked TIN.
+    ("GET", "/v1/k1-packages/{package_id}"): "masked",
+    ("GET", "/v1/portal/k1s/{package_id}"): "masked",
 }
 
 
