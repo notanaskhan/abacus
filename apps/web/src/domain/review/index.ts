@@ -28,6 +28,8 @@ export {
   type SignOffLevel,
   type SignOffTarget,
   levelOf,
+  useBulkEligibility,
+  useBulkSignOffWrite,
   useSignOffEligibility,
   useSignOffLadder,
   useSignOffWrite,

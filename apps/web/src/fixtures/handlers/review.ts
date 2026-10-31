@@ -28,7 +28,11 @@ const NOT_FOUND = { detail: "not_found" };
 /** Whether a frame answers this request: its route, and the record its path names (if any). */
 function answers(frame: ReviewFrame, request: FixtureRequest): boolean {
   const params = frame.params ?? {};
-  return Object.entries(params).every(([key, value]) => request.params[key] === value);
+  const query = frame.query ?? {};
+  return (
+    Object.entries(params).every(([key, value]) => request.params[key] === value) &&
+    Object.entries(query).every(([key, value]) => request.query.get(key) === value)
+  );
 }
 
 /** One route's handler over the frames that draw it, first match wins; none: 404. */
