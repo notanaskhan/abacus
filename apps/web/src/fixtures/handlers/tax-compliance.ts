@@ -3,6 +3,15 @@
 // with each screen's build task.
 import type { ConsentOut } from "@abacus/api-client";
 import { type FixtureHandler, json } from "../../app-core/fixture-mode";
+import {
+  ENGINE_KEY,
+  LEDGERS_KEY,
+  MAILBOXES_KEY,
+  engineSettings,
+  ledgerSettings,
+  mailboxSettings,
+  testResult,
+} from "../seed/integration-settings";
 import { REGISTRY_CONSENTS, REGISTRY_TOTAL, consentDetail, renewalDraft } from "../seed/consents";
 import { ENGINE_SYNC, FELD_IMPORT, FELD_IMPORT_ID } from "../seed/engine-sync";
 import {
@@ -119,6 +128,23 @@ export function taxComplianceHandlers(state = "a"): Record<string, FixtureHandle
       }
       return json({ entity_id: entityId, kind: "ssn", value, remask_after_seconds: 10 });
     },
+    // T-01-T40: ADM-08's integration settings, by artboard (f carries the mapping conflict).
+    "GET /v1/firm/integrations/{key}/settings": ({ params }) =>
+      params.key === ENGINE_KEY
+        ? json(engineSettings(state))
+        : params.key === LEDGERS_KEY
+          ? json(ledgerSettings(state))
+          : params.key === MAILBOXES_KEY
+            ? json(mailboxSettings())
+            : json(NOT_FOUND, 404),
+    "PUT /v1/firm/integrations/{key}/settings": ({ params }) =>
+      params.key === ENGINE_KEY ? json(engineSettings(state)) : json(ledgerSettings(state)),
+    "PUT /v1/firm/integrations/{key}/status-mirror": () =>
+      state === "f"
+        ? json({ detail: "mapping_conflict" }, 409)
+        : json({ rows: {}, seen_version: 3 }),
+    "POST /v1/firm/integrations/{key}/test": ({ params }) =>
+      json(testResult(params.key ?? "", state)),
     // T-01-T24: TAX-12's delivery, final approval and the 8879 envelope (C7's view), by artboard.
     "GET /v1/tax-returns/{return_id}/delivery": ({ params }) =>
       params.return_id === FELD_RETURN_ID ? json(feldDelivery(state)) : json(NOT_FOUND, 404),
