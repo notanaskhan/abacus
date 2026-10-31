@@ -166,7 +166,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         # G-01-T05 (0142): a person's template and attributes; firm roles stay behind definers.
         | {"role_template", "level", "job_title", "office_id", "service_lines", "access_ends_on"}
         | {"offshore", "version"}
-        | {"ero_designated"}  # T-01-T37 (0525): the firm admin's ERO designation
+        | {"ero_designated"}  # T-01-T37 (0568): the firm admin's ERO designation
     ),
     "support_sessions": frozenset(  # SPEC-012: lifecycle only
         {"status", "approved_by_kind", "approved_by", "starts_at", "expires_at", "ended_at"}

@@ -22,14 +22,14 @@ Acceptance (backlog row): "Claire Feld sees 2025 Form 1040 filed and accepted wi
 her home after two-step, and Meera Shah sees nothing of the Feld household."
 
 ## Plan (amber)
-- Migration 0526 `filed_return_deliveries` (insert-only, human-actor CHECK); `return.delivered`
+- Migration 0569 `filed_return_deliveries` (insert-only, human-actor CHECK); `return.delivered`
   in the human-only list.
 - `tax/filed_delivery.py`: `publish`, `filed_returns`, `client_copy`; tax.api exports.
 - `portal/home_sources/tax_filings.py` registered in `home.py`.
 - Routes: publish live; `GET /v1/portal/filed-returns/{delivery_id}/download`.
 - Registries and tenant list; `make generate`.
 - Tests: `test_t01t41_filed_return_delivery.py`.
-- Rollback: downgrade 0526; revert the routes.
+- Rollback: downgrade 0569; revert the routes.
 
 ## Notes
 - Stacked on T-01-T37 (`s20c-t01-t37`).

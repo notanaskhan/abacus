@@ -14411,6 +14411,18 @@
             "cls": "internal",
             "title": "Envelope Id"
           },
+          "envelope_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Envelope Status"
+          },
           "fees": {
             "anyOf": [
               {
@@ -36361,6 +36373,28 @@
         "title": "IntakeCreatedOut",
         "type": "object"
       },
+      "IntakeDuplicateOut": {
+        "description": "A flagged duplicate upload on the request (T-02-T17): Keep newer or Discard duplicate.",
+        "properties": {
+          "file_name": {
+            "cls": "confidential",
+            "title": "File Name",
+            "type": "string"
+          },
+          "version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version_id",
+          "file_name"
+        ],
+        "title": "IntakeDuplicateOut",
+        "type": "object"
+      },
       "IntakeEntityIn": {
         "additionalProperties": false,
         "properties": {
@@ -36628,6 +36662,17 @@
             ],
             "cls": "internal",
             "title": "Due On"
+          },
+          "duplicate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IntakeDuplicateOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
           },
           "file_name": {
             "anyOf": [
@@ -37095,6 +37140,12 @@
             "title": "Media Type",
             "type": "string"
           },
+          "message_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Message Id",
+            "type": "string"
+          },
           "received_at": {
             "cls": "internal",
             "format": "date-time",
@@ -37154,6 +37205,7 @@
         "required": [
           "attachment_id",
           "thread_id",
+          "message_id",
           "file_name",
           "media_type",
           "size_bytes",
@@ -50139,7 +50191,7 @@
         "type": "object"
       },
       "PortalEnvelopeView": {
-        "description": "`EnvelopeVM`: steps, documents, fields, signers, my state; `signing_session` and `outcome`\nreserved (null in record mode and until `signatures.esign_provider`).",
+        "description": "`EnvelopeVM`: steps, documents, fields, signers, my state; `signing_session` and `outcome`\nreserved (null in record mode and until `signatures.esign_provider`). N-02-T29 (additive,\nDEC-1388): the envelope's policy `family`, the viewer's `identity_method`, the `signers` in\norder, and `signing_opens_on`, the `date_as_of` while the firm's today is before it (the\nsession's `before_date_as_of` check), else null.",
         "properties": {
           "date_as_of": {
             "anyOf": [
@@ -50180,6 +50232,28 @@
             "title": "Esign Consent Needed",
             "type": "boolean"
           },
+          "family": {
+            "cls": "internal",
+            "enum": [
+              "efile_authorization",
+              "engagement_letter",
+              "consent",
+              "general"
+            ],
+            "title": "Family",
+            "type": "string"
+          },
+          "identity_method": {
+            "cls": "internal",
+            "enum": [
+              "kba",
+              "email_code",
+              "in_person_id",
+              "firm_sso"
+            ],
+            "title": "Identity Method",
+            "type": "string"
+          },
           "my_fields": {
             "cls": "internal",
             "items": {
@@ -50214,6 +50288,14 @@
             "$ref": "#/components/schemas/PortalEnvelopeRow",
             "cls": "internal"
           },
+          "signers": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/PortalSignerOut"
+            },
+            "title": "Signers",
+            "type": "array"
+          },
           "signers_signed": {
             "cls": "internal",
             "title": "Signers Signed",
@@ -50223,6 +50305,19 @@
             "cls": "internal",
             "title": "Signers Total",
             "type": "integer"
+          },
+          "signing_opens_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Signing Opens On"
           },
           "signing_session": {
             "anyOf": [
@@ -50245,7 +50340,11 @@
           "esign_consent_needed",
           "disclosure_version_id",
           "date_as_of",
-          "paper_form_follows"
+          "paper_form_follows",
+          "family",
+          "identity_method",
+          "signers",
+          "signing_opens_on"
         ],
         "title": "PortalEnvelopeView",
         "type": "object"
@@ -52649,6 +52748,70 @@
         "title": "PortalSignInVerifyOut",
         "type": "object"
       },
+      "PortalSignerOut": {
+        "description": "One signer of the envelope as the portal's signing order shows them (N-02-T29, DEC-1388):\nthe name the firm recorded, the role, the routing group and the status. No contact detail.",
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "me": {
+            "cls": "internal",
+            "title": "Me",
+            "type": "boolean"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "cls": "internal",
+            "enum": [
+              "signer",
+              "countersigner",
+              "ero"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "routing_group": {
+            "cls": "internal",
+            "title": "Routing Group",
+            "type": "integer"
+          },
+          "signed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Signed At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EnvelopeSignerStatus",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "role",
+          "routing_group",
+          "status",
+          "signed_at",
+          "me"
+        ],
+        "title": "PortalSignerOut",
+        "type": "object"
+      },
       "PortalVisibilityIn": {
         "additionalProperties": false,
         "properties": {
@@ -54414,6 +54577,19 @@
             ],
             "cls": "internal",
             "title": "Current Version"
+          },
+          "current_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Current Version Id"
           },
           "draft_version": {
             "anyOf": [
@@ -111174,6 +111350,144 @@
         "x-abacus-action": "letter.send"
       }
     },
+    "/v1/engagements/{engagement_id}/letter/withdraw-envelope": {
+      "post": {
+        "description": "N-02-T35: a declined, expired or voided letter envelope is let go; the letter is back at\nits partner approval and Send drafts a new envelope.",
+        "operationId": "withdraw_letter_envelope",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "minLength": 1,
+              "title": "If-Match",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComposerLetterOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Withdraw Letter Envelope Route",
+        "tags": [
+          "engagements"
+        ],
+        "x-abacus-action": "letter.send"
+      }
+    },
     "/v1/engagements/{engagement_id}/mapping-sets": {
       "get": {
         "description": "One mapping set per trial balance of record (ADR-341 \u00a74).",
@@ -133645,7 +133959,7 @@
     },
     "/v1/envelopes/remind/preview": {
       "post": {
-        "description": "Template preview, nothing sent (N-02-T14).",
+        "description": "Who would get a reminder now, under each policy's cap; nothing sent (N-02-T28).",
         "operationId": "remind_envelopes_preview",
         "parameters": [
           {
@@ -133741,16 +134055,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Remind Envelopes Preview Route",
@@ -133762,7 +134066,7 @@
     },
     "/v1/envelopes/remind/send": {
       "post": {
-        "description": "A person sends the template reminder (DEC-74; N-02-T14).",
+        "description": "A person sends the previewed `signature_reminder` version (DEC-74; N-02-T28); 409\n`stale_version` when another version is in use now.",
         "operationId": "remind_envelopes_send",
         "parameters": [
           {
@@ -133879,16 +134183,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Remind Envelopes Send Route",
@@ -134240,7 +134534,7 @@
     },
     "/v1/envelopes/{envelope_id}/countersign/session": {
       "post": {
-        "description": "The provider view for the named firm signer (N-02-T28).",
+        "description": "The provider view for the named firm signer only; any other person 403 (N-02-T28).",
         "operationId": "countersign_session",
         "parameters": [
           {
@@ -134346,16 +134640,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Countersign Session Route",
@@ -159838,16 +160122,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Undo K1 Release Route",
@@ -171939,6 +172213,7 @@
     },
     "/v1/portal/k1-recipients/{recipient_id}/details-changes": {
       "post": {
+        "description": "A signed W-9 or W-8, or a structured address, for a person at the firm to decide.",
         "operationId": "portal_details_change",
         "parameters": [
           {
@@ -172035,6 +172310,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -172044,16 +172329,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal Details Change Route",
@@ -172065,7 +172340,7 @@
     },
     "/v1/portal/k1s": {
       "get": {
-        "description": "POR-13: the recipient's own packages, released and later only.",
+        "description": "POR-13: the recipient's own packages, released and later only (T-02-T26).",
         "operationId": "portal_k1s",
         "parameters": [
           {
@@ -172155,16 +172430,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal K1S Route",
@@ -172176,6 +172441,7 @@
     },
     "/v1/portal/k1s/{package_id}": {
       "get": {
+        "description": "The statement with its box lines (TRI, the second step); the first read is Viewed.",
         "operationId": "portal_k1",
         "parameters": [
           {
@@ -172262,6 +172528,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -172271,16 +172547,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal K1 Route",
@@ -172390,6 +172656,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -172399,16 +172675,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal K1 Attachment Route",
@@ -172420,7 +172686,7 @@
     },
     "/v1/portal/k1s/{package_id}/download": {
       "get": {
-        "description": "A deterministic zip; an access event per download.",
+        "description": "A deterministic zip of the final documents; an access event per download.",
         "operationId": "portal_k1_download",
         "parameters": [
           {
@@ -172509,6 +172775,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -172518,16 +172794,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal K1 Download Route",
@@ -172635,6 +172901,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -172644,16 +172920,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal E Furnishing Route",
@@ -186006,6 +186272,7 @@
     },
     "/v1/tax-returns/{return_id}/k1-packages:release": {
       "post": {
+        "description": "T-02-T21: a single-use grant held 10 s for Undo; then `K1ReleaseWorkflow` delivers.",
         "operationId": "release_k1",
         "parameters": [
           {
@@ -186132,16 +186399,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Release K1 Route",

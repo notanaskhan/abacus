@@ -3,7 +3,7 @@
 - **Publish** (`deliverable.publish`, client service or a manager on the return, a person): once
   the return is Accepted and its delivery packet approved, the packet's client copy (the engine's
   `client_copy` PDF, an evidence version) is released to the household's portal scope: one
-  insert-only `filed_return_deliveries` row (0526), `return.delivered` audited (human-only) and
+  insert-only `filed_return_deliveries` row (0569), `return.delivered` audited (human-only) and
   announced. Publishing again is the same release.
 - **Portal home** (`portal/home_sources/tax_filings.py`): an Earlier row "2025 Form 1040 filed and
   accepted" per released return among the work items the home already authorised for the scope

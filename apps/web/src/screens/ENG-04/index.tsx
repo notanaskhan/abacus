@@ -8,7 +8,9 @@ import type {
 import {
   type Actor,
   Button,
+  ConfirmDialog,
   DEFAULT_TZ,
+  Dialog,
   HumanAction,
   Icon,
   PaperCard,
@@ -24,6 +26,7 @@ import {
 import { type JSX, type ReactNode, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { useSession } from "../../app-core/session";
+import { RevealStepUp } from "../../domain/audits";
 import { useComposedLetter, useLetterWrites, withClause } from "../../domain/engagements";
 import { COPY } from "./copy";
 
@@ -37,7 +40,10 @@ import { COPY } from "./copy";
 // off clause struck through, a non-standard clause on an amber rule with its tag, and a citation
 // marker beside each value that lights its variable row. Frames built: a (partner approved), b
 // (Draft, watermarked, "Request partner approval…") and c (Sent, read-only, "View envelope ›").
-// Send is a person's click (INV-1) and opens the C7 draft in SIG-02.
+// Send is a person's click (INV-1) and opens the C7 draft in SIG-02. N-02-T35: the engagement
+// partner approves in a dialog that lists the §7216 consents (each its own document; a needed one
+// holds the approval), stepping up when the second factor is stale; an envelope that came back
+// declined, expired or voided is withdrawn by a person, and Send drafts a new one.
 
 type Target =
   { screen: "KNW-03" } | { screen: "CLI-05" } | { screen: "SIG-01"; envelopeId: string };
@@ -345,6 +351,10 @@ export function LetterComposer({
   const tz = session.tz ?? DEFAULT_TZ;
   const [lit, setLit] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
+  // N-02-T35: the partner's approval dialog, its step-up, and the withdrawal confirm.
+  const [approving, setApproving] = useState(false);
+  const [stepUp, setStepUp] = useState(false);
+  const [withdrawing, setWithdrawing] = useState(false);
 
   if (letter === undefined) {
     return (
@@ -527,6 +537,32 @@ export function LetterComposer({
           {COPY.paper.requestApproval}
         </Button>
       )}
+      {draft && can("letter.approve") && (
+        <HumanAction
+          verb="Approve"
+          actor={actor}
+          label={COPY.approval.open}
+          variant="primary"
+          size="sm"
+          disabled={writes.pending}
+          onClick={() => {
+            setApproving(true);
+          }}
+        />
+      )}
+      {can("letter.withdraw_envelope") && (
+        <Button
+          variant="secondary"
+          size="sm"
+          opensDialog
+          disabled={writes.pending}
+          onClick={() => {
+            setWithdrawing(true);
+          }}
+        >
+          {COPY.withdraw.open}
+        </Button>
+      )}
       {letter.status === "partner_approved" && can("letter.send") && (
         <HumanAction
           verb="Send"
@@ -563,6 +599,65 @@ export function LetterComposer({
       data-read-only={letter.status === "sent" || letter.status === "signed" ? "true" : undefined}
       className="flex min-h-0 min-w-0 flex-1"
     >
+      <Dialog
+        open={approving}
+        onOpenChange={setApproving}
+        title={COPY.approval.title}
+        description={COPY.approval.body}
+        action={
+          <HumanAction
+            verb="Approve"
+            actor={actor}
+            label={COPY.approval.confirm}
+            variant="primary"
+            size="sm"
+            disabled={writes.pending || consents.some((c) => c.status === "needed")}
+            onClick={() => {
+              writes.approve().then(
+                () => {
+                  setApproving(false);
+                },
+                (error: unknown) => {
+                  // The approval asks a fresh second factor (`letter.approve`, mfa_recent).
+                  if (
+                    (error as { facts?: { reason?: unknown } } | null)?.facts?.reason ===
+                    "mfa_required"
+                  ) {
+                    setStepUp(true);
+                  }
+                },
+              );
+            }}
+          />
+        }
+      >
+        <ul aria-label={COPY.approval.consents} className="flex flex-col gap-[6px]">
+          {consents.map((c) => (
+            <li key={c.label} className="flex items-center justify-between gap-[8px] text-dense">
+              <span>{c.label}</span>
+              {c.status === "on_file" ? (
+                <Pill variant="green-tint">{COPY.approval.onFile}</Pill>
+              ) : (
+                <Pill variant="amber">{COPY.consents.needed}</Pill>
+              )}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-[10px] text-meta text-ink-3">{COPY.consents.separate}</p>
+      </Dialog>
+      <RevealStepUp open={stepUp} onOpenChange={setStepUp} />
+      <ConfirmDialog
+        open={withdrawing}
+        onOpenChange={setWithdrawing}
+        title={COPY.withdraw.title}
+        confirmLabel={COPY.withdraw.confirm}
+        destructive={false}
+        onConfirm={() => {
+          void writes.withdraw();
+        }}
+      >
+        {COPY.withdraw.body(letter.envelope_status ?? "")}
+      </ConfirmDialog>
       <SplitLayout
         preset="document"
         height={height ?? "viewport"}

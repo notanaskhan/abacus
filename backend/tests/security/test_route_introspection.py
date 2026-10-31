@@ -752,6 +752,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/engagements/{engagement_id}/letter/file", "letter.record"),
     ("POST", "/v1/engagements/{engagement_id}/letter/request-approval", "letter.draft"),
     ("POST", "/v1/engagements/{engagement_id}/letter/send", "letter.send"),
+    ("POST", "/v1/engagements/{engagement_id}/letter/withdraw-envelope", "letter.send"),
     ("POST", "/v1/engagements/{engagement_id}/mapping-sets", "mapping_set.run"),
     ("POST", "/v1/engagements/{engagement_id}/materiality/decide", "materiality.decide"),
     ("POST", "/v1/engagements/{engagement_id}/methodology", "engagement.apply_methodology"),

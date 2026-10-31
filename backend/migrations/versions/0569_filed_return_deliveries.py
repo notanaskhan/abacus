@@ -3,14 +3,14 @@
 `filed_return_deliveries` (insert-only): client service released an accepted return's client
 copy (the approved packet's `client_copy` engine PDF, an evidence version) to the household's
 portal scope. A person's act only: `actor_kind = 'human'` is a CHECK, and `return.delivered`
-joins `abacus_human_only_actions()` (the downgrade restores 0525's list). When R-02's C10
+joins `abacus_human_only_actions()` (the downgrade restores 0568's list). When R-02's C10
 deliverables registry lands, each row is registered there by its id (the migration path: the
 row keeps the engagement, client, return and version C10 needs). Tax's table, forced RLS.
 
 Classification (ADR-031): ids Internal; `published_at` Confidential.
 
-Revision ID: 0526
-Revises: 0525
+Revision ID: 0569
+Revises: 0568
 """
 
 from __future__ import annotations
@@ -19,8 +19,8 @@ from alembic import op
 
 from abacus.kernel.db.migration import insert_columns, insert_only, tenant_table
 
-revision = "0526"
-down_revision = "0525"
+revision = "0569"
+down_revision = "0568"
 branch_labels = None
 depends_on = None
 
@@ -96,6 +96,8 @@ _HUMAN_ONLY = [
     "review_decision.undone",
     "risk.approved",
     "sample.approved",
+    "schedule_k_release.requested",
+    "schedule_k_release.undone",
     "service_line_policy.updated",
     "sign_off.recorded",
     "statement.approved",
@@ -164,6 +166,8 @@ _BEFORE = [
     "review_decision.undone",
     "risk.approved",
     "sample.approved",
+    "schedule_k_release.requested",
+    "schedule_k_release.undone",
     "service_line_policy.updated",
     "sign_off.recorded",
     "statement.approved",

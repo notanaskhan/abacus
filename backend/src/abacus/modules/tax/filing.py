@@ -635,7 +635,7 @@ async def record_transmission(
 ) -> Transmission:
     """The ERO's record of a transmission made in CCH Axcess (TAX-12 c2; §3.13). Layers: INV-4,
     the matrix (`function_in(signer)`), a live person, the status machine, the ERO designation,
-    and 0525's `actor_kind = 'human'` CHECK."""
+    and 0568's `actor_kind = 'human'` CHECK."""
     _person(ctx, TRANSMIT)
     if not actor_may("transmission_recorded", ctx.tenant.actor_kind):
         raise Forbidden(TRANSMIT, "role")

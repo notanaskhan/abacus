@@ -71,6 +71,10 @@ const VIEW: PortalEnvelopeView = {
     url: "https://provider.example/s/1",
     expires_at: "2026-09-14T15:00:00Z",
   },
+  family: "efile_authorization",
+  identity_method: "kba",
+  signers: [],
+  signing_opens_on: null,
 };
 
 const EXTRA = {
