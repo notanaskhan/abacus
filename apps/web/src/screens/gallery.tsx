@@ -1,5 +1,6 @@
 import { publishPortalSettings } from "@abacus/api-client";
 import { AppShell, time, toast } from "@abacus/ui";
+import { KNW03_TAILORING } from "../fixtures/seed/knw03";
 import { type JSX, useEffect, useState } from "react";
 import { installFixtureMode } from "../app-core/fixture-mode";
 import { useSession } from "../app-core/session";
@@ -1187,6 +1188,8 @@ function Knw03Frame({ state }: { state: Knw03State }): JSX.Element {
         initialSegment={open.segment}
         {...(open.step === undefined ? {} : { step: open.step })}
         {...(open.from === undefined ? {} : { from: open.from })}
+        {...(open.run === undefined ? {} : { run: open.run })}
+        {...(open.tailoredFor === undefined ? {} : { tailoring: KNW03_TAILORING })}
         popoverOpen={open.popover === true}
         toolbar={bar.toolbar}
         frame
