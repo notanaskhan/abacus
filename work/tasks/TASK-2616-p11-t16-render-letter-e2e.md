@@ -1,8 +1,8 @@
 ---
 id: TASK-2616
 title: P-11-T16 full-stack E2E render-letter.fullstack.spec.ts
-spec: SPEC-000  # P-11 §1 and AC3.4; ENG-04, SHL-08
-acceptance_criteria: [AC3.4]
+spec: SPEC-520
+acceptance_criteria: [AC-6, AC-17, AC-18]
 risk_zone: green
 status: in-review
 epic: P-11
