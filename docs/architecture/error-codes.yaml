@@ -1442,6 +1442,12 @@ codes:
     raised_by:
     - abacus.modules.organisations.org_structure.OneHq
     summary: A firm has one headquarters office (AC7.2); clear the current one first.
+  one_purpose_per_document:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.consent_capture.OnePurposePerDocument
+    summary: 'A document would carry more than one purpose (Treas. Reg. §301.7216-3; T-01-T30): a template
+      whose terms name another purpose, or one template version asked to serve two.'
   open_review_notes:
     status: 409
     raised_by:

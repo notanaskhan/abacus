@@ -111,6 +111,13 @@ class ConsentRetentionMissing(DomainConflict):
     code = "consent_retention_missing"
 
 
+class OnePurposePerDocument(DomainInvalid):
+    """A document would carry more than one purpose (Treas. Reg. §301.7216-3; T-01-T30): a
+    template whose terms name another purpose, or one template version asked to serve two."""
+
+    code = "one_purpose_per_document"
+
+
 class RenewalSpansEntities(DomainInvalid):
     """One renewal drafts one envelope, so its consents belong to one taxpayer."""
 
@@ -210,6 +217,18 @@ async def _template(ctx: AuthContext, purpose: str) -> PublishedConsentTemplate:
     found = await published_consent_template(ctx, purpose)
     if found is None:
         raise ConsentTemplateMissing(facts={"purpose": purpose})
+    terms = found.version.consent
+    if terms is None or terms.purpose != purpose:
+        raise OnePurposePerDocument(facts={"purpose": purpose})
+    return found
+
+
+async def _templates(ctx: AuthContext, purposes: Sequence[str]) -> list[PublishedConsentTemplate]:
+    """One template version per purpose, each its own document: a version serving two purposes
+    is a combined use-and-disclosure document and is refused (T-01-T30)."""
+    found = [await _template(ctx, p) for p in purposes]
+    if len({t.version.version_id for t in found}) != len(found):
+        raise OnePurposePerDocument(facts={"purposes": len(found)})
     return found
 
 
@@ -268,10 +287,8 @@ class Capture:
         on = (await now(ctx.tenant)).date()
         for purpose in purposes:
             check_scope(purpose, asked.scope, years, on)
-        rendered = [
-            await _render(ctx, unit, await _template(ctx, p), years, asked.scope or {}, on)
-            for p in purposes
-        ]
+        templates = await _templates(ctx, purposes)
+        rendered = [await _render(ctx, unit, t, years, asked.scope or {}, on) for t in templates]
         return await _envelope(ctx, unit, years, rendered)
 
     async def renew(self, ctx: AuthContext, body: object) -> object:
@@ -284,17 +301,10 @@ class Capture:
         unit = await filing_unit(ctx, entities.pop())
         years = list(years_seen.pop())
         on = (await now(ctx.tenant)).date()
+        templates = await _templates(ctx, [b.purpose for b in basis])
         rendered = [
-            await _render(
-                ctx,
-                unit,
-                await _template(ctx, b.purpose),
-                years,
-                b.scope,
-                on,
-                renewal_of=b.consent_id,
-            )
-            for b in basis
+            await _render(ctx, unit, t, years, b.scope, on, renewal_of=b.consent_id)
+            for t, b in zip(templates, basis, strict=True)
         ]
         return await _envelope(ctx, unit, years, rendered)
 
