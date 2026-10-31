@@ -5196,7 +5196,7 @@ export const rejectImport = <ThrowOnError extends boolean = false>(options: Opti
 /**
  * List Envelope Policies Route
  *
- * The firm's policies (N-02-T13).
+ * The firm's policies: each family's row, else the published floor (N-02-T27).
  */
 export const listEnvelopePolicies = <ThrowOnError extends boolean = false>(options?: Options<ListEnvelopePoliciesData, ThrowOnError>): RequestResult<ListEnvelopePoliciesResponses, ListEnvelopePoliciesErrors, ThrowOnError> => (options?.client ?? client).get<ListEnvelopePoliciesResponses, ListEnvelopePoliciesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5207,7 +5207,7 @@ export const listEnvelopePolicies = <ThrowOnError extends boolean = false>(optio
 /**
  * Update Envelope Policy Route
  *
- * Stricter-only (AC-9; N-02-T13).
+ * Stricter-only against the floor (AC-9; N-02-T27).
  */
 export const updateEnvelopePolicy = <ThrowOnError extends boolean = false>(options: Options<UpdateEnvelopePolicyData, ThrowOnError>): RequestResult<UpdateEnvelopePolicyResponses, UpdateEnvelopePolicyErrors, ThrowOnError> => (options.client ?? client).put<UpdateEnvelopePolicyResponses, UpdateEnvelopePolicyErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5428,7 +5428,7 @@ export const revealSignerIp = <ThrowOnError extends boolean = false>(options: Op
 /**
  * Record Wet Signature Route
  *
- * DF-11: the hand-signed 8879 (N-02-T27).
+ * DF-11: the hand-signed 8879 (N-02-T27): the signer signed, method Handwritten.
  */
 export const recordWetSignature = <ThrowOnError extends boolean = false>(options: Options<RecordWetSignatureData, ThrowOnError>): RequestResult<RecordWetSignatureResponses, RecordWetSignatureErrors, ThrowOnError> => (options.client ?? client).post<RecordWetSignatureResponses, RecordWetSignatureErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

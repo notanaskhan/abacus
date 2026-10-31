@@ -1554,6 +1554,11 @@ codes:
     - abacus.modules.identity.governance_errors.SecurityPolicyLoosened
     summary: A firm may only make its sign-in, session and portal limits stricter than the platform's
       (AC-17, AC-19); `facts.field` names the field.
+  policy_not_stricter:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.fallback.PolicyNotStricter
+    summary: A policy change may only tighten the published floor (AC-9).
   portal_host_invalid:
     status: 422
     raised_by:
@@ -2040,6 +2045,7 @@ codes:
     - abacus.modules.requests.portal_questionnaires.AnswerStale
     - abacus.modules.review.gate_actions.GateStaleVersion
     - abacus.modules.signatures.builder.StaleEnvelope
+    - abacus.modules.signatures.fallback.PolicyStale
     - abacus.modules.tax.engine_import.ImportStale
     - abacus.modules.tax.export.ExportStale
     - abacus.modules.tax.status.StaleReturn
@@ -2374,6 +2380,12 @@ codes:
     raised_by:
     - abacus.modules.identity.walls.WallExists
     summary: The person is already walled off from this client.
+  wet_signature_not_allowed:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.fallback.WetSignatureNotAllowed
+    summary: 'This signer cannot sign on paper now: only a signer whose identity check failed, or one
+      named for in-person ID, on an open envelope whose earlier signers have signed.'
   work_item_exists:
     status: 409
     raised_by:

@@ -226,6 +226,8 @@ export function signaturesHandlers(
         201,
       ),
     "POST /v1/envelopes/import": ({ body }) => json(importedOut(body as ImportRecordIn), 201),
+    // N-02-T27 (DF-11): the hand-signed form recorded; the drawer re-reads the list after it.
+    "POST /v1/envelopes/{envelope_id}/signers/{signer_id}/wet-signature": () => json({}),
   };
 }
 

@@ -356,6 +356,10 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "envelope.completed": Kind("envelope_completed", _envelope_sender, "envelope", "envelope_id"),
     "envelope.declined": Kind("envelope_declined", _envelope_sender, "envelope", "envelope_id"),
     "envelope.expired": Kind("envelope_expired", _envelope_sender, "envelope", "envelope_id"),
+    # N-02-T27 (DF-11): a signer's identity checks failed; they need a handwritten signature.
+    "envelope.signer_verification_failed": Kind(
+        "envelope_signer_verification_failed", _envelope_sender, "envelope", "envelope_id"
+    ),
     # Q-02-T33: the incident register (the platform module's events; firm-level).
     "incident.recorded": Kind(
         "incident_recorded", _incident_recorded, "security_incident", "incident_id", None
@@ -525,6 +529,9 @@ TEMPLATES: Final[dict[str, str]] = {
     "envelope.completed": "Every signer has signed an envelope on {subject}.",
     "envelope.declined": "A signer declined an envelope on {subject}.",
     "envelope.expired": "An envelope on {subject} expired before everyone signed.",
+    "envelope.signer_verification_failed": (
+        "A signer on {subject} failed identity checks and needs a handwritten signature."
+    ),
     "incident.recorded": "A security incident was recorded: {subject}.",
     "incident.propagated": "Accrued reported a security incident affecting your firm: {subject}.",
     "wall.created": "An ethical wall is waiting for your approval.",

@@ -30,10 +30,10 @@ import ipaddress
 import json
 from dataclasses import asdict
 from datetime import datetime, timedelta
-from typing import Final
+from typing import Any, Final
 from uuid import UUID
 
-from sqlalchemy import text
+from sqlalchemy import Row, text
 from temporalio import activity
 
 from abacus.kernel.clock import system_now
@@ -53,6 +53,13 @@ from abacus.modules.signatures.events import (
     EnvelopeExpired,
     EnvelopeSignerSigned,
     EnvelopeSignerVerificationFailed,
+)
+from abacus.modules.signatures.fallback import (
+    KBA_LIMIT,
+    EnvelopeFacts,
+    SignerSeen,
+    kba_failures_seen,
+    kba_limit,
 )
 from abacus.modules.signatures.hub import seal_ip
 from abacus.modules.signatures.imports import RECORD_TYPE, RetentionFloorMissing
@@ -98,7 +105,7 @@ def mask_ip(ip: str) -> str:
 
 
 _ENVELOPE = text(
-    "SELECT id, status, provider, provider_envelope_id, policy_family, purpose, "
+    "SELECT id, tenant_id, status, provider, provider_envelope_id, policy_family, purpose, "
     "reminder_cadence, expires_at, sent_at, client_id, engagement_id, work_item_id, title, "
     "source_kind, source_id, completed_at, sent_by FROM envelopes WHERE id = :id"
 )
@@ -112,6 +119,7 @@ _SIGNERS = text(
     "kba_failures, decline_reason, provider_recipient_id FROM envelope_signers "
     'WHERE envelope_id = :id ORDER BY "order"'
 )
+_FINAL: Final = frozenset({"signed", "declined", "verification_failed"})
 _EVENT = text(
     "INSERT INTO envelope_events (tenant_id, envelope_id, signer_id, kind, source, occurred_at) "
     "VALUES (:tenant, :envelope, :signer, :kind, :source, :at)"
@@ -292,20 +300,64 @@ async def envelope_poll(given: EnvelopeInput) -> str:
         for s in await (await provider_for(tenant.tenant_id)).status(env.provider_envelope_id)
     }
     now = system_now()
+    # N-02-T27: KBA failures the provider reports, counted per signer against the policy's limit.
+    seen = [
+        SignerSeen(
+            signer_id,
+            str(row.status),
+            int(row.kba_failures),
+            states[signer_id].kba_failures,
+            str(row.identity_method),
+        )
+        for signer_id, row in people.items()
+        if signer_id in states and states[signer_id].kba_failures > int(row.kba_failures)
+    ]
+    limit = await kba_limit(tenant, str(env.policy_family)) if seen else KBA_LIMIT
+    closing = {
+        s.signer_id
+        for s in seen
+        if s.status not in _FINAL
+        and min(s.reported, KBA_LIMIT) >= limit
+        and env.policy_family == "efile_authorization"
+    }
     after: list[tuple[str, int]] = []
     changed: list[tuple[UUID, str]] = []
     for signer_id, row in people.items():
         state = states.get(signer_id)
-        status = row.status if state is None else state.status
+        if row.status in _FINAL or signer_id in closing:
+            # Signed (remotely or by hand), declined, or closed after its identity checks: the
+            # poll never moves it again (DF-11: no unlock, no new link).
+            status = "verification_failed" if signer_id in closing else str(row.status)
+        else:
+            status = row.status if state is None else state.status
+            if status == "verification_failed":
+                status = str(row.status)  # only our own count closes a signer (below the limit)
+            if state is not None and status != row.status:
+                changed.append((signer_id, status))
         after.append((status, int(row.routing_group)))
-        if state is not None and state.status != row.status:
-            changed.append((signer_id, state.status))
     status = _envelope_status(after)
     if _RANK.get(status, 0) < _RANK.get(str(env.status), 0):
         status = str(env.status)
-    if not changed and status == env.status:
+    if not changed and not seen and status == env.status:
         return status
     async with uow(tenant) as tx:
+        if seen:
+            await kba_failures_seen(
+                tx,
+                EnvelopeFacts(
+                    env.tenant_id,
+                    envelope_id,
+                    env.client_id,
+                    env.engagement_id,
+                    env.source_kind,
+                    env.source_id,
+                    str(env.policy_family),
+                    env.sent_by,
+                ),
+                seen,
+                limit,
+                now,
+            )
         for signer_id, code in changed:
             state = states[signer_id]
             await tx.session.execute(
@@ -320,7 +372,7 @@ async def envelope_poll(given: EnvelopeInput) -> str:
                     "status": code,
                     "viewed": state.viewed_at,
                     "signed": state.signed_at,
-                    "kba": state.kba_failures,
+                    "kba": min(max(state.kba_failures, int(people[signer_id].kba_failures)), 3),
                     "reason": state.decline_reason,
                     "id": signer_id,
                 },
@@ -510,7 +562,36 @@ async def envelope_complete(given: EnvelopeInput) -> str:
         recorded = int(
             (
                 await session.execute(
-                    text("SELECT count(*) FROM signature_evidence WHERE envelope_id = :id"),
+                    text(
+                        "SELECT count(*) FROM envelope_events WHERE envelope_id = :id "
+                        "AND kind = 'envelope.evidence_recorded'"
+                    ),
+                    {"id": envelope_id},
+                )
+            ).scalar_one()
+        )
+        # N-02-T27: a hand-signed signer's evidence is already recorded (`fallback`); the
+        # provider answers only for the signers who signed there.
+        by_hand = set(
+            (
+                await session.execute(
+                    text(
+                        "SELECT signer_id FROM signature_evidence WHERE envelope_id = :id "
+                        "AND signature_method = 'handwritten'"
+                    ),
+                    {"id": envelope_id},
+                )
+            )
+            .scalars()
+            .all()
+        )
+        remote = int(
+            (
+                await session.execute(
+                    text(
+                        "SELECT count(*) FROM envelope_signers WHERE envelope_id = :id "
+                        "AND signature_method IS DISTINCT FROM 'handwritten'"
+                    ),
                     {"id": envelope_id},
                 )
             ).scalar_one()
@@ -519,6 +600,8 @@ async def envelope_complete(given: EnvelopeInput) -> str:
         return str(env.status)
     if recorded:
         return "recorded"  # a retry after the unit of work committed
+    if not remote:
+        return await _completed_by_hand(tenant, env)
     got = await (await provider_for(tenant.tenant_id)).completed(env.provider_envelope_id)
     line = (
         await service_line_of(tenant, env.engagement_id) if env.engagement_id is not None else None
@@ -533,6 +616,8 @@ async def envelope_complete(given: EnvelopeInput) -> str:
     rows: list[dict[str, object]] = []
     packages: list[str] = []
     for item in got.signers:
+        if UUID(item.signer_id) in by_hand:
+            continue
         image = await put_record(tenant.tenant_id, RECORD_TYPE, item.signed_image, keep)
         sealed = await seal_ip(tenant.tenant_id, UUID(item.signer_id), item.ip)
         masked = mask_ip(item.ip)
@@ -640,6 +725,41 @@ async def envelope_complete(given: EnvelopeInput) -> str:
                 provider=env.provider,
                 source_kind=env.source_kind or "envelope",
                 source_id=env.source_id or envelope_id,
+                imported_by=None,
+                sent_by=env.sent_by,
+            )
+        )
+    return "recorded"
+
+
+async def _completed_by_hand(tenant: TenantContext, env: Row[Any]) -> str:
+    """Every signer signed on paper (N-02-T27): nothing to fetch; the envelope is announced."""
+    async with uow(tenant) as tx:
+        await tx.session.execute(
+            _EVENT,
+            {
+                "tenant": tenant.tenant_id,
+                "envelope": env.id,
+                "signer": None,
+                "kind": "envelope.evidence_recorded",
+                "source": "system",
+                "at": system_now(),
+            },
+        )
+        tx.record(
+            "envelope.evidence_recorded",
+            target=Target("envelope", env.id),
+            after=Ref(signers=0),
+        )
+        tx.emit(
+            EnvelopeCompleted(
+                envelope_id=env.id,
+                client_id=env.client_id,
+                engagement_id=env.engagement_id,
+                purpose=env.purpose,
+                provider=env.provider,
+                source_kind=env.source_kind or "envelope",
+                source_id=env.source_id or env.id,
                 imported_by=None,
                 sent_by=env.sent_by,
             )

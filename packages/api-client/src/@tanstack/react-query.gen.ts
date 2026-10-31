@@ -8607,7 +8607,7 @@ export const listEnvelopePoliciesQueryKey = (options?: Options<ListEnvelopePolic
 /**
  * List Envelope Policies Route
  *
- * The firm's policies (N-02-T13).
+ * The firm's policies: each family's row, else the published floor (N-02-T27).
  */
 export const listEnvelopePoliciesOptions = (options?: Options<ListEnvelopePoliciesData>) => queryOptions<ListEnvelopePoliciesResponse, ListEnvelopePoliciesError, ListEnvelopePoliciesResponse, ReturnType<typeof listEnvelopePoliciesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -8625,7 +8625,7 @@ export const listEnvelopePoliciesOptions = (options?: Options<ListEnvelopePolici
 /**
  * Update Envelope Policy Route
  *
- * Stricter-only (AC-9; N-02-T13).
+ * Stricter-only against the floor (AC-9; N-02-T27).
  */
 export const updateEnvelopePolicyMutation = (options?: Partial<Options<UpdateEnvelopePolicyData>>): UseMutationOptions<UpdateEnvelopePolicyResponse, UpdateEnvelopePolicyError, Options<UpdateEnvelopePolicyData>> => {
     const mutationOptions: UseMutationOptions<UpdateEnvelopePolicyResponse, UpdateEnvelopePolicyError, Options<UpdateEnvelopePolicyData>> = {
@@ -8991,7 +8991,7 @@ export const revealSignerIpMutation = (options?: Partial<Options<RevealSignerIpD
 /**
  * Record Wet Signature Route
  *
- * DF-11: the hand-signed 8879 (N-02-T27).
+ * DF-11: the hand-signed 8879 (N-02-T27): the signer signed, method Handwritten.
  */
 export const recordWetSignatureMutation = (options?: Partial<Options<RecordWetSignatureData>>): UseMutationOptions<RecordWetSignatureResponse, RecordWetSignatureError, Options<RecordWetSignatureData>> => {
     const mutationOptions: UseMutationOptions<RecordWetSignatureResponse, RecordWetSignatureError, Options<RecordWetSignatureData>> = {
