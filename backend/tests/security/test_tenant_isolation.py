@@ -222,6 +222,8 @@ TABLES: tuple[str, ...] = (
     "k1_package_events",
     "k1_packages",
     "k1_recipients",
+    "k1_release_deliveries",
+    "k1_releases",
     "knowledge_chunks",
     "knowledge_documents",
     "ledger_imports",
