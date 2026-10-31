@@ -38,7 +38,7 @@ export const shlScreens = {
   // P-06-T13: a, b, e, f on fixtures as `?ov=request:…` over BND-02; P-06-T24: d, the close
   // variant, on the same overlay over a close_intake binder until C-01's CLS-03; c is A-03's.
   "SHL-14": { name: "Request composer drawer", status: "fixture", path: null },
-  "SHL-15": { name: "Issue composer & fix instructions", status: "planned", path: null },
+  "SHL-15": { name: "Issue composer & fix instructions", status: "fixture", path: null },
   // P-04-T43: a–f on fixtures as `?ov=checkpoints:<type>:<id>` behind `review.checkpoints`.
   // TAX-02's Checkpoints chip opens it through `ov.SHL16` (DEC-1273).
   "SHL-16": { name: "Checkpoint diff drawer", status: "fixture", path: null },

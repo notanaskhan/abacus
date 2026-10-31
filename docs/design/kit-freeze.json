@@ -1,0 +1,14 @@
+{
+  "_comment": "F-06-T22 freeze check (F-06.md \u00a710; R4 change window): the T6 and T10 kits on the live path, pinned. Between `from` and `until` a change to any pinned file fails packages/ui's kit-freeze test; refresh the pins (`pnpm --filter @abacus/ui exec vitest run src/templates/kit-freeze.test.ts` prints them) in the last batch before `from`, never inside the window.",
+  "from": "2027-09-01",
+  "until": "2027-10-20",
+  "files": {
+    "packages/ui/src/templates/document-on-well/DocumentOnWell.tsx": "a573213c13a5d7db482c25311b320233a3411689a0d005d0bcd41cb6d355a725",
+    "packages/ui/src/templates/document-on-well/DocBlocks.tsx": "a2872757d3f970c799419f0ea6357c1fee641b3da486a8cc0b5f7151586e8520",
+    "packages/ui/src/templates/document-on-well/StructurePane.tsx": "d5a610617390aa860f0642eada4378ab798fc0d266d129705dc36efe14cd75e1",
+    "packages/ui/src/templates/document-on-well/types.ts": "95cdd6ec5e59988c12d3e26219c69ce2a93dc88d3c985b2703d14d40810dc77f",
+    "packages/ui/src/templates/workbook/WorkbookLayout.tsx": "a2d09679f3e6207950f84bdf0cb6106b02d06b959aca5122e8721bc987d041ab",
+    "packages/ui/src/templates/workbook/types.ts": "26ed4a9254ed4ef52e745b2662d591bbf76136878d4e2f78c023377bc37d8c45",
+    "packages/ui/src/gates/sign-off-slots.tsx": "45099122e94fe693d058f6d7392d70db1cf1828107cb20ec8b990fd05e706899"
+  }
+}

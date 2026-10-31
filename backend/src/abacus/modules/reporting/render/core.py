@@ -107,6 +107,10 @@ def _blocks(raw: list[object]) -> list[DocBlock]:
     try:
         return _BLOCKS.validate_python(raw)
     except ValidationError as error:
+        # AC-9: an asset named by anything but its id (a URL, a path, `data:`) is refused as an
+        # asset, before any fetch (P-11-T14 found it read `unknown_block`).
+        if any(e["loc"] and e["loc"][-1] == "asset_id" for e in error.errors()):
+            raise RenderRefused("asset_not_allowed") from error
         raise RenderRefused("unknown_block") from error
 
 

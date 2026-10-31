@@ -2,7 +2,7 @@
 id: TASK-2517
 title: T-01-T35 Delivery checklist and packet (TAX-12 a, b)
 spec: SPEC-501  # T-01 §3.11; tax-engine-bridge; efile-record
-acceptance_criteria: [AC-3.11]
+acceptance_criteria: [AC-7]  # and T-01 §3.11
 risk_zone: red
 status: in-review
 epic: T-01
