@@ -84,7 +84,10 @@ FlagKind = Literal[
 ]
 FlagSeverity = Literal["info", "block_bulk", "force_hold"]
 SuggestionSource = Literal["rule", "content", "matcher", "none"]
-IgnoreReason = Literal["wrong_year", "duplicate", "not_ours", "spam", "unreadable", "other"]
+# T-02-T18 adds `wrong_tax_year` (TAX-03's "Ignore · wrong year"; T-02 §3.4); `wrong_year` stays.
+IgnoreReason = Literal[
+    "wrong_year", "wrong_tax_year", "duplicate", "not_ours", "spam", "unreadable", "other"
+]
 BulkOutcome = Literal["ok", "has_flags", "low_confidence", "proposal_changed"]
 Fingerprint = Annotated[str, Field(pattern=r"^sha256:[0-9a-f]{64}$")]
 

@@ -56,7 +56,13 @@ from abacus.modules.communications.follow_ups import (
     compose_follow_up,
     deliver_follow_up,
 )
-from abacus.modules.communications.inbox_read import inbox_waiting, waiting_for_work_item
+from abacus.modules.communications.inbox_read import (
+    FlagView,
+    WaitingAttachment,
+    inbox_waiting,
+    waiting_for_client,
+    waiting_for_work_item,
+)
 from abacus.modules.communications.intake import (
     Inbound,
     Recorded,
@@ -64,7 +70,9 @@ from abacus.modules.communications.intake import (
     record_inbound_message,
 )
 from abacus.modules.communications.intake_candidates import (
+    CardCandidate,
     IntakeCandidate,
+    card_candidates,
     on_intake_recorded,
     register_intake_candidates,
 )
@@ -185,6 +193,7 @@ from abacus.modules.communications.triage_apply import (
     Placement,
     register_intake_destination,
 )
+from abacus.modules.communications.triage_outcomes import TriageOutcome, triage_outcomes
 from abacus.modules.communications.triage_workflow import (
     AttachmentTriageWorkflow,
     TriageInput,
@@ -284,6 +293,7 @@ __all__ = [
     "TEMPLATE_VARIABLES",
     "WORKFLOWS",
     "AttachmentTriageWorkflow",
+    "CardCandidate",
     "ComposedFollowUp",
     "DnsRecord",
     "Draft",
@@ -292,6 +302,7 @@ __all__ = [
     "EmailTemplateRegistration",
     "FakeSesEventQueue",
     "FakeSesTransport",
+    "FlagView",
     "FolderDestination",
     "FollowUpPolicy",
     "FollowUpPolicyFields",
@@ -344,10 +355,13 @@ __all__ = [
     "TemplateVariable",
     "Transport",
     "TriageInput",
+    "TriageOutcome",
     "ValueFinding",
     "Violation",
+    "WaitingAttachment",
     "add_attachment",
     "attachment_triage_id",
+    "card_candidates",
     "check_scope",
     "client_mail_open",
     "compose_follow_up",
@@ -397,7 +411,9 @@ __all__ = [
     "sink_domain",
     "template_key",
     "templated_outcome",
+    "triage_outcomes",
     "viewer_scoped",
+    "waiting_for_client",
     "waiting_for_work_item",
     "write_follow_up_policy",
 ]

@@ -7,7 +7,7 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/AUD-11 Sampling/` (README.md, spec.md, revision-1.md, revision-2.md R2; revision wins) · HANDOFF_VERSION 2026-10-17 |
 | Epic and tasks | A-03 · contract A-03-T02 (`docs/contracts/sampling.md`, this file); sampler A-03-T04; migration A-03-T05; populations A-03-T07; sample sets A-03-T10; a, b, d and the picker A-03-T11; c, e, f and SHL-14 c A-03-T15; content A-03-T16; parity and E2E A-03-T19 |
-| Manifest status | planned (`routes/manifest/aud.ts`) until A-03-T11 |
+| Manifest status | fixture (`routes/manifest/aud.ts`, A-03-T11): a, b, d, the picker and the C-20 states; live once A-03-T10 serves sample sets |
 
 ## States
 | Artboard | Viewer (persona) | Clock | Data condition that produces it | Status |

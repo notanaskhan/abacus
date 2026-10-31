@@ -43,7 +43,7 @@ from abacus.modules.identity.api import (
     current_context,
     current_member,
 )
-from abacus.modules.signatures import builder, hub, imports, portal
+from abacus.modules.signatures import builder, fallback, hub, imports, portal
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 Member = Annotated[AuthContext, Depends(current_member)]
@@ -169,6 +169,9 @@ class SignerChip(BaseModel):
 
     name: Annotated[str, classified("confidential")]
     signed: Annotated[bool, classified("internal")]
+    # N-02-T27 (additive): the signer, and whether their identity checks closed remote signing.
+    signer_id: Annotated[UUID | None, classified("internal")] = None
+    locked: Annotated[bool, classified("internal")] = False
 
 
 class EnvelopeListRow(BaseModel):
@@ -438,14 +441,30 @@ class ImportFileOut(BaseModel):
     sha256: Annotated[str, classified("internal")]
 
 
+class InPersonIdIn(BaseModel):
+    """N-02-T27: the ID a person checked across the desk (type only; never its number)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    id_type: Annotated[
+        Literal["drivers_license", "passport", "state_id", "military_id", "other"],
+        classified("internal"),
+    ]
+    checked_by_user_id: Annotated[UUID, classified("internal")]
+
+
 class WetSignatureIn(BaseModel):
-    """DF-11: the hand-signed form, uploaded and attested."""
+    """DF-11: the hand-signed form, uploaded and attested (the scan staged through
+    `POST /v1/envelopes/import/files`)."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     upload_id: Annotated[UUID, classified("internal")]
     signed_on: Annotated[date, classified("internal")]
     attested: Annotated[Literal[True], classified("internal")]
+    # N-02-T27 additions (optional): when the paper form arrived, and an in-person ID check.
+    received_on: Annotated[date | None, classified("internal")] = None
+    in_person_id: Annotated[InPersonIdIn | None, classified("internal")] = None
 
 
 class SigningSessionOut(BaseModel):
@@ -518,7 +537,10 @@ def _row_out(row: hub.EnvelopeRow) -> EnvelopeListRow:
         due_on=row.due_on,
         needs_handwritten=row.needs_handwritten,
         allowed_actions=list(row.allowed_actions),
-        signer_chips=[SignerChip(name=c.name, signed=c.signed) for c in row.signer_chips],
+        signer_chips=[
+            SignerChip(name=c.name, signed=c.signed, signer_id=c.signer_id, locked=c.locked)
+            for c in row.signer_chips
+        ],
         viewed_at=row.viewed_at,
         work_item_label=row.work_item_label,
         drafted_by_name=row.drafted_by_name,
@@ -998,7 +1020,7 @@ async def envelope_evidence_route(envelope_id: EnvelopeId, ctx: Ctx) -> Response
     "/{envelope_id}/signers/{signer_id}/wet-signature",
     action="envelope.record_wet_signature",
     response_model=EnvelopeOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def record_wet_signature_route(
     envelope_id: EnvelopeId,
@@ -1007,8 +1029,40 @@ async def record_wet_signature_route(
     ctx: Ctx,
     idempotency_key: IdempotencyKey,
 ) -> EnvelopeOut:
-    """DF-11: the hand-signed 8879 (N-02-T27)."""
-    await _stub(ctx, "envelope.record_wet_signature")
+    """DF-11: the hand-signed 8879 (N-02-T27): the signer signed, method Handwritten."""
+    if ctx.client:
+        raise NotFound("envelopes")
+
+    async def run() -> tuple[int, dict[str, object]]:
+        await fallback.record_wet_signature(
+            ctx,
+            envelope_id,
+            signer_id,
+            fallback.WetSignature(
+                upload_id=body.upload_id,
+                signed_on=body.signed_on,
+                received_on=body.received_on,
+                in_person_id=None
+                if body.in_person_id is None
+                else fallback.InPersonId(
+                    body.in_person_id.id_type, body.in_person_id.checked_by_user_id
+                ),
+            ),
+        )
+        return 200, _drawer_out(await hub.drawer(ctx, envelope_id)).model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="envelope.record_wet_signature",
+        key=idempotency_key,
+        body={
+            "envelope_id": str(envelope_id),
+            "signer_id": str(signer_id),
+            **body.model_dump(mode="json"),
+        },
+        run=run,
+    )
+    return EnvelopeOut.model_validate(stored.body)
 
 
 @router.post(
@@ -1022,25 +1076,55 @@ async def countersign_session_route(envelope_id: EnvelopeId, ctx: Ctx) -> Signin
     await _stub(ctx, "envelope.countersign")
 
 
-@policies_router.get(
-    "", action="envelope_policy.read", response_model=list[EnvelopePolicyOut], errors=(501,)
-)
+@policies_router.get("", action="envelope_policy.read", response_model=list[EnvelopePolicyOut])
 async def list_envelope_policies_route(ctx: Ctx) -> list[EnvelopePolicyOut]:
-    """The firm's policies (N-02-T13)."""
-    await _stub(ctx, "envelope_policy.read")
+    """The firm's policies: each family's row, else the published floor (N-02-T27)."""
+    if ctx.client:
+        raise NotFound("envelopes")
+    return [_policy_out(p) for p in await fallback.list_policies(ctx)]
 
 
 @policies_router.put(
     "/{family}",
     action="envelope_policy.manage",
     response_model=EnvelopePolicyOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def update_envelope_policy_route(
     family: PolicyFamily, body: EnvelopePolicyIn, ctx: Ctx
 ) -> EnvelopePolicyOut:
-    """Stricter-only (AC-9; N-02-T13)."""
-    await _stub(ctx, "envelope_policy.manage")
+    """Stricter-only against the floor (AC-9; N-02-T27)."""
+    if ctx.client:
+        raise NotFound("envelopes")
+    changed = await fallback.update_policy(
+        ctx,
+        family,
+        fallback.PolicyChange(
+            allowed_identity_methods=tuple(body.allowed_identity_methods),
+            default_identity_method=body.default_identity_method,
+            kba_max_attempts=body.kba_max_attempts,
+            max_reminders=body.max_reminders,
+            default_expiry_days=body.default_expiry_days,
+            countersign_required=body.countersign_required,
+            version=body.version,
+        ),
+    )
+    return _policy_out(changed)
+
+
+def _policy_out(p: fallback.Policy) -> EnvelopePolicyOut:
+    return EnvelopePolicyOut(
+        policy_family=p.policy_family,
+        allowed_identity_methods=[cast(IdentityMethod, m) for m in p.allowed_identity_methods],
+        default_identity_method=cast(IdentityMethod, p.default_identity_method),
+        kba_max_attempts=p.kba_max_attempts,
+        failure_path=p.failure_path,
+        reminder_cadences=list(p.reminder_cadences),
+        max_reminders=p.max_reminders,
+        default_expiry_days=p.default_expiry_days,
+        countersign_required=p.countersign_required,
+        version=p.version,
+    )
 
 
 # --- Portal routes (POR-06) --------------------------------------------------------------------

@@ -15,6 +15,9 @@ TABLES: frozenset[str] = frozenset(
     | {"transcripts", "transcript_lines", "transcript_comparisons"}
     | {"write_operations", "engine_exports"}  # T-01-T25 (0561, DEC-1462)
     | {"engine_acks"}  # T-01-T26 (0562, DEC-1464)
+    # T-02-T20 (0565, DEC-1471): K-1 packages.
+    | {"k1_recipients", "k1_packages", "k1_package_events", "k1_documents", "k1_box_lines"}
+    | {"k1_handoffs", "recipient_details_changes"}
 )
 # T-02-T07 (0403): `tax_returns` takes updates of its v1 columns now, so it is no longer
 # insert-only; its events and engine summaries are.
@@ -23,6 +26,7 @@ INSERT_ONLY: frozenset[str] = frozenset(
     | {"transcripts", "transcript_lines", "transcript_comparisons"}  # T-01-T43 (0550)
     | {"write_operations"}  # T-01-T25 (0561): one row per write, a grant consumed once
     | {"engine_acks"}  # T-01-T26 (0562): the e-file status report, as received
+    | {"k1_package_events", "k1_documents", "k1_box_lines"}  # T-02-T20 (0565)
 )
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "tax_returns": frozenset(
@@ -116,4 +120,15 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "tax_elections": frozenset(
         {"amount", "status_code", "decided_by_return_id", "updated_by", "row_version"}
     ),
+    # T-02-T20 (0565): what a recipient, package, hand-off or details change may change.
+    "k1_recipients": frozenset(
+        {"display_name", "recipient_kind", "is_entity", "tin_last4", "tin_kind", "address"}
+        | {"ownership_note"}
+    ),
+    "k1_packages": frozenset({"status", "delivery_contact_id", "e_furnishing_consent"}),
+    "k1_handoffs": frozenset(
+        {"status", "replaced_at", "final_values", "target_evidence_version_id"}
+        | {"target_request_item_id"}
+    ),
+    "recipient_details_changes": frozenset({"status", "decided_by", "decided_at", "reason"}),
 }

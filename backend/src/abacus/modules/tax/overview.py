@@ -15,8 +15,8 @@ SPEC-502; DEC-1368).
   (`not_started` → `gathering`); the preparer's L1 sign-off on the return marks it prepared
   (`preparing` → `prepared`). A move the table does not hold is skipped, never forced.
 
-The issues top-n and the K-1 dependency rows are empty until C3's issue reads and T-02's K-1
-hand-offs reach this module (no invented rows: an empty list draws no band).
+The issues top-n are empty until C3's issue reads reach this module; the K-1 dependency rows are
+T-02-T20's hand-offs (no invented rows: an empty list draws no band).
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ from uuid import UUID
 
 from sqlalchemy import text
 
-from abacus.kernel._statuses import ReturnStatus
+from abacus.kernel._statuses import K1HandoffStatus, ReturnStatus
 from abacus.kernel.clock import FIRM_ZONE
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
@@ -47,10 +47,11 @@ from abacus.modules.identity.api import (
 )
 from abacus.modules.organisations.api import consent_state
 from abacus.modules.review.api import Json, content_hash, sign_off_states
-from abacus.modules.tax import board
+from abacus.modules.tax import board, k1_packages
 from abacus.modules.tax.returns_contract import (
     EngineSummaryLineOut,
     FilingRowOut,
+    K1DependencyOut,
     LadderStepOut,
     PersonChipOut,
     PipelineStepOut,
@@ -133,6 +134,11 @@ async def _load(ctx: AuthContext, return_id: UUID) -> Loaded:
 async def _resource(ctx: AuthContext, loaded: Loaded) -> Resource:
     base = await engagement_resource(ctx.tenant, loaded.facts.engagement_id)
     return replace(base, work_item_id=loaded.facts.work_item_id)
+
+
+# T-02-T18: the intake read model loads and scopes the return the same way.
+load_return = _load
+return_resource = _resource
 
 
 async def record(ctx: AuthContext, return_id: UUID) -> TaxReturnRecordOut:
@@ -328,7 +334,15 @@ async def overview(ctx: AuthContext, return_id: UUID) -> TaxReturnOverviewOut:
         engine_version=found[0] if found else None,
         engine_summary=_lines(found[1]) if found else [],
         open_issues=0,
-        k1_dependencies=[],
+        k1_dependencies=[  # T-02-T20: DV-4's derived rows, the source link per DEC-88
+            K1DependencyOut(
+                source_return_id=d.source_return_id,
+                issuer_name=d.issuer_name,
+                status=K1HandoffStatus(d.status),
+                blocking=d.blocking,
+            )
+            for d in await k1_packages.dependencies(ctx, return_id)
+        ],
         consent_ok=consent_ok,
         allowed_actions=sorted(a for a in may if a != CONTENT),
         filing=filing,

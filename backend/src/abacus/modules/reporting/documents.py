@@ -282,6 +282,18 @@ async def next_version(tx: UnitOfWork, document_id: UUID) -> int:
     return int(cast(int, current)) + 1
 
 
+async def version_id(tx: UnitOfWork, document_id: UUID, version_no: int) -> UUID:
+    """A version's id by its number (N-02-T33: the final an approved letter's envelope names)."""
+    found = await tx.session.scalar(
+        text(
+            "SELECT id FROM generated_document_versions "
+            "WHERE generated_document_id = :id AND version_no = :n"
+        ),
+        {"id": document_id, "n": version_no},
+    )
+    return cast(UUID, found)
+
+
 async def insert_version(
     tx: UnitOfWork,
     *,

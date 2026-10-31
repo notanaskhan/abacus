@@ -58,7 +58,9 @@ from abacus.modules.evidence.api import (
     words_upload,
 )
 from abacus.modules.requests.api import NewRequestItem, add_request_item, request_items_for
+from abacus_tools.evals.gate import COST_TOLERANCE
 from abacus_tools.evals.regions import check_reports, region_counts, resolved_share
+from abacus_tools.evals.runner import baseline
 from abacus_tools.evals.taxonomy import ADVERSARIAL_CATEGORIES, FAILURE_CATEGORIES
 from abacus_tools.evals.upload_review import ADMISSION_TRIES, MAX_ERRORED, contained
 from abacus_tools.evals.upload_review import (
@@ -450,6 +452,21 @@ def verdict(
     return ("passed" if not reasons else "failed"), reasons, metrics
 
 
+def intake_cost_gate(
+    costs: Sequence[Decimal], baseline: Decimal | None, *, real: bool
+) -> list[str]:
+    """N-01-T26: the intake section's cost against the protected baseline (`evals/baselines.yaml`,
+    v3's $0.015 a file), failing past +10 % (`gate.COST_TOLERANCE`). A real-model run with no
+    baseline fails `cost_regression:no_baseline`; a fake run spends nothing to compare."""
+    if not real:
+        return []
+    if baseline is None:
+        return ["cost_regression:no_baseline"]
+    if costs and Decimal(str(statistics.median(costs))) > baseline * (1 + COST_TOLERANCE):
+        return ["cost_regression"]
+    return []
+
+
 # --- Intake mode on a real route (N-01-T22) ----------------------------------------------------
 
 
@@ -787,6 +804,14 @@ async def evaluate(
                 "eval.match.attempt", case=case.id, stage=result.stage, top=result.pipeline[:1]
             )
     status, reasons, metrics = verdict(suite, attempts, thresholds)
+    if intake:
+        # N-01-T26: intake is mode v3, budgeted $0.015 a file, gated on its protected baseline
+        # (the suite's `cost_per_file` is the audit section's v2 budget).
+        spent = [s.cost_usd for _, s in attempts if s.stage != "errored"]
+        reasons = [r for r in reasons if r != "cost_per_file"] + intake_cost_gate(
+            spent, baseline(suite.agent, tier), real=route != "fake"
+        )
+        status = "passed" if not reasons else "failed"
     if aborted:
         status, reasons = "aborted_cost", [*reasons, "cost_limit"]
     report: dict[str, object] = {
