@@ -24,10 +24,14 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import insert
 
+from abacus.kernel.clock import system_now
+from abacus.kernel.db import TenantContext
 from abacus.kernel.uow import Ref, Target, UnitOfWork
+from abacus.modules.engagements.api import service_line_of
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.events import EvidenceVersionCreated
 from abacus.modules.evidence.models import EvidenceItem, EvidenceVersion
+from abacus.modules.evidence.retention import retain_until_for
 
 DELIVERABLES = "deliverables"
 PDF = "application/pdf"
@@ -51,10 +55,26 @@ class GeneratedFile:
 
 
 async def store_generated(
-    tenant_id: UUID, content: bytes, *, retain_until: datetime | None = None
+    tenant_id: UUID,
+    content: bytes,
+    *,
+    retain_until: datetime | None = None,
+    record_type: str = "",
+    engagement_id: UUID | None = None,
 ) -> storage.StoredObject:
     """Store rendered bytes under Object Lock before the unit of work that records them (as
-    `storage.put` asks); the lock is never shorter than the record type's retention."""
+    `storage.put` asks); the lock is never shorter than the record type's retention. A document
+    kind's `record_type` sets it from the firm's policy and the published floor for the
+    engagement's service line, anchored at the render (provisional, as uploads are; an anchor
+    event extends it later)."""
+    if record_type:
+        tenant = TenantContext(tenant_id, "system", "reporting.render")
+        line = (
+            await service_line_of(tenant, engagement_id) if engagement_id is not None else None
+        ) or "any"
+        policy = await retain_until_for(tenant, record_type, line, system_now())
+        if policy is not None and (retain_until is None or policy > retain_until):
+            retain_until = policy
     return await storage.put(tenant_id, content, retain_until=retain_until)
 
 
