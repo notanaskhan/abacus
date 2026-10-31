@@ -74,6 +74,13 @@ export function hrefOf(target: Link, search: Readonly<Record<string, string>> = 
 export const ov = {
   /** SHL-16, the checkpoint drawer over its target (`?ov=checkpoints:<type>:<id>`). */
   SHL16: (type: string, id: string): OverlayRef => ({ key: "checkpoints", args: [type, id] }),
+  /** SHL-11, the decision sheet over its host (`?ov=decision:<cardId>`; P-04-T52). */
+  SHL11: (cardId: string): OverlayRef => ({ key: "decision", args: [cardId] }),
+  /** SHL-12, the sign-off sheet over its target (`?ov=signoff:<type>:<id>[:<level>]`; P-04-T52). */
+  SHL12: (type: string, id: string, level?: string): OverlayRef => ({
+    key: "signoff",
+    args: level === undefined ? [type, id] : [type, id, level],
+  }),
   /** TAX-09, a return's tax-engine sync over TAX-01 or TAX-02 (`?ov=engine-sync:<returnId>`). */
   TAX09: (returnId: string): OverlayRef => ({ key: "engine-sync", args: [returnId] }),
 } as const;

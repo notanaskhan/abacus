@@ -42,6 +42,7 @@ from abacus.modules.identity.api import (
     Resource,
     authorise,
     current_context,
+    names_of,
 )
 from abacus.modules.tax import approval, engine_import, export
 
@@ -60,7 +61,7 @@ SyncState = Literal[
     "import_pending_approval",
     "failed",
 ]
-ImportKind = Literal["values", "diagnostics", "pdfs", "acks"]
+ImportKind = Literal["values", "diagnostics", "pdfs", "acks", "k1_set"]
 ImportStatus = Literal["scanning", "pending_approval", "approved", "rejected", "routed"]
 PacketStatus = Literal["draft", "approved", "superseded"]
 Last4 = Annotated[str, Field(pattern=r"^[0-9A-Za-z]{4}$")]
@@ -165,6 +166,9 @@ class EngineSyncOut(BaseModel):
     policy_code: Annotated[str | None, classified("internal")] = None  # "BH-TAX-02"
     draft_k1_source: Annotated[str | None, classified("confidential")] = None
     synced_at: Annotated[datetime | None, classified("confidential")] = None
+    # T-01-T33 (additive): the checkpoint Export generates from (the return's current one), so
+    # TAX-09 posts the live id rather than a specimen's.
+    checkpoint_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class EngineExportOut(BaseModel):
@@ -525,6 +529,15 @@ async def engine_sync_route(return_id: ReturnId, ctx: Ctx) -> EngineSyncOut:
     """TAX-09's chip, history and diagnostics, derived (T-01-T19)."""
     await _live(ctx, "tax_return.read", B)
     v = await engine_import.sync_view(ctx, return_id)
+    found = await approval.eligibility(ctx, return_id)
+    names = await names_of([found.signer]) if found.signer is not None else {}
+    # Export opens only after final approval: until then that is its first blocker (TAX-09 b).
+    blockers = (
+        []
+        if await export.exportable(ctx.tenant, return_id)
+        else [ApprovalBlockerOut(kind="final_approval_required", ref_id=None)]
+    )
+    blockers += [ApprovalBlockerOut(kind=b.kind, ref_id=b.ref_id) for b in found.blockers]
     return EngineSyncOut(
         return_id=v.return_id,
         state=v.state,
@@ -555,6 +568,10 @@ async def engine_sync_route(return_id: ReturnId, ctx: Ctx) -> EngineSyncOut:
         ],
         allowed_actions=list(v.allowed_actions),
         synced_at=v.synced_at,
+        # T-01-T33: Export's blockers, its approver and checkpoint, from final approval's facts.
+        blockers=blockers,
+        approver_name=names.get(found.signer) if found.signer is not None else None,
+        checkpoint_id=found.checkpoint_id,
     )
 
 

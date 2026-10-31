@@ -356,6 +356,10 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "envelope.completed": Kind("envelope_completed", _envelope_sender, "envelope", "envelope_id"),
     "envelope.declined": Kind("envelope_declined", _envelope_sender, "envelope", "envelope_id"),
     "envelope.expired": Kind("envelope_expired", _envelope_sender, "envelope", "envelope_id"),
+    # N-02-T27 (DF-11): a signer's identity checks failed; they need a handwritten signature.
+    "envelope.signer_verification_failed": Kind(
+        "envelope_signer_verification_failed", _envelope_sender, "envelope", "envelope_id"
+    ),
     # Q-02-T33: the incident register (the platform module's events; firm-level).
     "incident.recorded": Kind(
         "incident_recorded", _incident_recorded, "security_incident", "incident_id", None
@@ -420,6 +424,10 @@ CATALOGUE: Final[dict[str, Kind]] = {
     ),
     "acceptance.review_requested": Kind(
         "risk_partner_review_requested", _named_partner, "acceptance_record", "record_id"
+    ),
+    # N-02-T33: the engagement partners are asked to approve the letter (never the asker).
+    "letter.approval_requested": Kind(
+        "letter_approval_requested", _listed, "engagement", "engagement_id"
     ),
     "independence.reminded": Kind("independence_reminder", _member, "engagement", "engagement_id"),
     "human_gate.reassigned": Kind(
@@ -525,6 +533,9 @@ TEMPLATES: Final[dict[str, str]] = {
     "envelope.completed": "Every signer has signed an envelope on {subject}.",
     "envelope.declined": "A signer declined an envelope on {subject}.",
     "envelope.expired": "An envelope on {subject} expired before everyone signed.",
+    "envelope.signer_verification_failed": (
+        "A signer on {subject} failed identity checks and needs a handwritten signature."
+    ),
     "incident.recorded": "A security incident was recorded: {subject}.",
     "incident.propagated": "Accrued reported a security incident affecting your firm: {subject}.",
     "wall.created": "An ethical wall is waiting for your approval.",
@@ -557,6 +568,9 @@ TEMPLATES: Final[dict[str, str]] = {
     "acceptance.sent_to_partner": "An acceptance on {engagement} is waiting for your decision.",
     "acceptance.review_requested": (
         "You were asked for a risk review of an acceptance on {engagement}."
+    ),
+    "letter.approval_requested": (
+        "The engagement letter for {engagement} is waiting for your approval."
     ),
     "independence.reminded": "Reminder: confirm your independence for {engagement}.",
     "human_gate.reassigned": "Something on {engagement} was reassigned to you.",

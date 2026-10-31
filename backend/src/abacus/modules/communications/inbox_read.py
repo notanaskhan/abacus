@@ -21,15 +21,17 @@ from __future__ import annotations
 import hashlib
 import io
 import zipfile
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time
-from typing import Final, cast
+from typing import Any, Final, cast
 from uuid import UUID
 
 from sqlalchemy import (
     ColumnElement,
     DateTime,
     Integer,
+    Row,
     Text,
     and_,
     case,
@@ -876,6 +878,66 @@ async def waiting_for_work_item(tenant: TenantContext, work_item_id: UUID) -> in
                 )
             ).scalar_one()
         )
+
+
+@dataclass(frozen=True)
+class WaitingAttachment:
+    """T-02-T18 (TAX-03's dock): one attachment waiting on a client, with its latest code flags
+    and the message it came with. The caller authorised a work item of this client."""
+
+    id: UUID
+    thread_id: UUID
+    file_name: str
+    media_type: str
+    size_bytes: int
+    channel: str
+    sender_display: str
+    subject_display: str
+    received_at: datetime
+    flags: tuple[FlagView, ...]
+
+
+_WAITING = text(
+    "SELECT a.id, a.thread_id, a.file_name, a.media_type, a.size_bytes, m.channel, "
+    "m.sender_display, m.subject_display, m.received_at FROM inbox_attachments a "
+    "JOIN inbound_messages m ON m.id = a.message_id "
+    "WHERE a.client_id = :client AND a.status = 'waiting' "
+    "ORDER BY m.received_at, a.created_at, a.id"
+)
+_LATEST_FLAGS = text(
+    "SELECT f.attachment_id, f.kind, f.severity, f.ref_evidence_version_id, f.facts "
+    "FROM inbox_attachment_flags f WHERE f.attachment_id = ANY(:ids) AND f.run_no = ("
+    "SELECT max(g.run_no) FROM inbox_attachment_flags g WHERE g.attachment_id = f.attachment_id)"
+)
+
+
+async def waiting_for_client(tenant: TenantContext, client_id: UUID) -> list[WaitingAttachment]:
+    async with tenant_session(tenant) as session:
+        rows = (await session.execute(_WAITING, {"client": client_id})).all()
+        raised: Sequence[Row[Any]] = (  # Any: the flag columns, typed by the table
+            (await session.execute(_LATEST_FLAGS, {"ids": [r.id for r in rows]})).all()
+            if rows
+            else []
+        )
+    return [
+        WaitingAttachment(
+            r.id,
+            r.thread_id,
+            r.file_name,
+            r.media_type,
+            int(r.size_bytes),
+            r.channel,
+            r.sender_display,
+            r.subject_display,
+            r.received_at,
+            tuple(
+                FlagView(f.kind, f.severity, f.ref_evidence_version_id, _facts(f.facts))
+                for f in raised
+                if f.attachment_id == r.id
+            ),
+        )
+        for r in rows
+    ]
 
 
 async def inbox_waiting(viewer: object, office_id: UUID | None) -> HomeCount:

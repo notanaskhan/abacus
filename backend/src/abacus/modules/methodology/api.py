@@ -125,6 +125,13 @@ from abacus.modules.methodology.standards_contract import (
     validate_materiality,
     variance_exceeded,
 )
+from abacus.modules.methodology.standards_loading import (
+    create_standard,
+    import_standard_workbook,
+    publish_standard,
+    standard_by_key,
+    standard_workbook,
+)
 from abacus.modules.methodology.standards_routes import standards_router
 from abacus.modules.methodology.workbook import (
     AccountRule,
@@ -204,11 +211,13 @@ __all__ = [
     "classify_entry",
     "confidence_hold",
     "consent_expiry_months",
+    "create_standard",
     "current_report_template_version",
     "current_version",
     "current_version_of_kind",
     "deprecate_report_template",
     "import_report_template",
+    "import_standard_workbook",
     "import_template",
     "latest_versions",
     "materiality_range_for",
@@ -219,6 +228,7 @@ __all__ = [
     "policy_payload",
     "publish_drafted_version",
     "publish_report_template",
+    "publish_standard",
     "published_consent_template",
     "register_catalog_provider",
     "register_standard_examples",
@@ -230,6 +240,8 @@ __all__ = [
     "required_review_levels",
     "return_approval_policy",
     "ssars_framework_for",
+    "standard_by_key",
+    "standard_workbook",
     "step_at",
     "submit_version",
     "templates_in_firm",

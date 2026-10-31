@@ -55,9 +55,21 @@ variable "auth_rate_limit_paths" {
 }
 
 variable "upload_path_regex" {
-  description = "Paths where the common rule set's body-size rule stays count: evidence and portal uploads (rule 2)."
+  description = "File routes (lower-cased path): exempt from rule 21's body-size block, rate-limited by rule 3 and capped by rule 22. Evidence and portal uploads, staff-logged intake files, every raw-body import (N-01-T24) and portal drops (R-01-T35)."
   type        = string
-  default     = "^/v1/.*upload"
+  default     = "^/v1/(?:.*upload|.*import|inbox/intake/[^/]+/files$|portal/binders/[^/]+/drops$)"
+}
+
+variable "upload_rate_limit" {
+  description = "Requests per IP per window on the file routes (rule 3; N-01-T24)"
+  type        = number
+  default     = 300
+}
+
+variable "upload_max_content_length_regex" {
+  description = "A Content-Length on a file route this regex matches is refused at the edge with 413 (rule 22): 64,000,000 bytes or more, above the scanner's 60 MiB stream limit and every route's own cap."
+  type        = string
+  default     = "^(?:[0-9]{9,}|6[4-9][0-9]{6}|[7-9][0-9]{7})$"
 }
 
 variable "log_destination_arn" {

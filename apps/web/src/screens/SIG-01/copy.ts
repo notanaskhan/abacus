@@ -51,6 +51,15 @@ export const COPY = {
   df11: {
     needsHandwritten: "Needs a handwritten signature",
     upload: "Upload signed 8879…",
+    // N-02-T27: the hand-signed form's sheet (no artboard; DF-11's words where it has them).
+    sheetTitle: (name: string): string => `Hand-signed form · ${name}`,
+    scan: "Scanned signed form",
+    signedOn: "Signed on",
+    receivedOn: "Received on",
+    attest:
+      "I confirm this form was signed by hand by the person named, on the date shown, and received by the firm.",
+    record: "Record handwritten signature",
+    failed: "The signature wasn't recorded. Check the file and try again.",
   },
   menu: { label: "Envelope actions", void: "Void…" },
   // N-02-T15 (DEC-1057). f: the handoff's bar ("3 selected · Remind 3…") and the contract's
