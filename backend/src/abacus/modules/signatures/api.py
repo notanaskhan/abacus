@@ -25,7 +25,11 @@ from abacus.kernel.audit_owners import register_client_owners
 from abacus.kernel.db import tenant_session
 from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
 from abacus.kernel.uow import Handler, OutboxEvent
+from abacus.modules.audit_trail.api import register_activity_kinds
 from abacus.modules.identity.api import AbacusRouter, AuthContext, register_mfa_requirement
+from abacus.modules.platform.api import register_home_count
+from abacus.modules.review.api import register_gate_kind
+from abacus.modules.signatures import countersign
 from abacus.modules.signatures.activities import ACTIVITIES as ENVELOPE_ACTIVITIES
 from abacus.modules.signatures.audit_targets import CLIENT_KINDS, audit_clients
 from abacus.modules.signatures.builder import create_draft
@@ -171,6 +175,11 @@ async def envelope_gate_facts(ctx: AuthContext, gate_kind: str, target_ref: UUID
 
 
 register_letter_source()
+# N-02-T28: the envelope gate kinds (C13), HOME-01's Signatures out tile, the activity entries.
+register_gate_kind(countersign.SEND_GATE, countersign.send_gate)
+register_gate_kind(countersign.COUNTERSIGN_GATE, countersign.countersign_gate)
+register_home_count("signatures_out", countersign.signatures_out)
+register_activity_kinds(countersign.ACTIVITY_KINDS)
 # The trail places an envelope, and a consumed import file, on its client (SPEC-304; DEC-121).
 register_client_owners(CLIENT_KINDS, audit_clients)
 

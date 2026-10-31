@@ -2210,6 +2210,7 @@ codes:
     - abacus.modules.requests.portal_questionnaires.AnswerStale
     - abacus.modules.review.gate_actions.GateStaleVersion
     - abacus.modules.signatures.builder.StaleEnvelope
+    - abacus.modules.signatures.countersign.TemplateStale
     - abacus.modules.signatures.fallback.PolicyStale
     - abacus.modules.tax.delivery.StaleVersion
     - abacus.modules.tax.engine_import.ImportStale

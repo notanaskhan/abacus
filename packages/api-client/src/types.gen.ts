@@ -62597,10 +62597,6 @@ export type RemindEnvelopesPreviewErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RemindEnvelopesPreviewError = RemindEnvelopesPreviewErrors[keyof RemindEnvelopesPreviewErrors];
@@ -62656,10 +62652,6 @@ export type RemindEnvelopesSendErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RemindEnvelopesSendError = RemindEnvelopesSendErrors[keyof RemindEnvelopesSendErrors];
@@ -62875,10 +62867,6 @@ export type CountersignSessionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CountersignSessionError = CountersignSessionErrors[keyof CountersignSessionErrors];

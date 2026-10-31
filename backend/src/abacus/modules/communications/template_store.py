@@ -129,6 +129,13 @@ async def version_in_use(tenant: TenantContext, key: str) -> UUID | None:
     return None if found is None else found.version_id
 
 
+async def version_number_in_use(tenant: TenantContext, key: str) -> int | None:
+    """N-02-T28: the number POR-20 shows for the version in use (a person's preview names it)."""
+    async with tenant_session(tenant) as session:
+        found = await resolve(session, tenant.tenant_id, key)
+    return None if found is None else found.version
+
+
 async def version_at(
     session: AsyncSession, tenant_id: UUID, key: str, version: int
 ) -> StoredVersion | None:
