@@ -35,7 +35,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Final, Literal
+from typing import Final, Literal, cast
 from uuid import UUID, uuid4
 
 from sqlalchemy import insert, select
@@ -511,6 +511,59 @@ async def current_version_id(tenant: TenantContext, template_id: UUID) -> UUID |
     async with tenant_session(tenant) as session:
         current = current_of(await _publications(session, template_id))
     return current.version_id if current is not None else None
+
+
+async def version_variable_keys(session: AsyncSession, version_id: UUID) -> tuple[str, ...] | None:
+    """For the renderer (P-11-T08), in the caller's unit of work: the variable keys a template
+    version declares, in its order; None when the version is not this firm's (RLS). The renderer
+    resolves only these (a whitelist)."""
+    row = await session.get(ReportTemplateVersion, version_id)
+    if row is None:
+        return None
+    keys: list[str] = []
+    for item in row.variables:
+        if isinstance(item, dict):
+            key = cast(dict[str, object], item).get("key")
+            if isinstance(key, str):
+                keys.append(key)
+    return tuple(keys)
+
+
+@dataclass(frozen=True)
+class TemplateParts:
+    """A template version's parts, for a consumer composing from it (N-02-T32's letter)."""
+
+    version_id: UUID
+    layout_key: str
+    body: list[object]
+    clauses: list[object]
+    variable_keys: tuple[str, ...]
+    # N-02-T34: what ENG-04's structure pane names ("BH Tax Advisory Letter v4") and the labels.
+    template_name: str = ""
+    version_no: int = 0
+    variables: tuple[object, ...] = ()
+
+
+async def version_parts(session: AsyncSession, version_id: UUID) -> TemplateParts | None:
+    """In the caller's unit of work: the version's layout, body, clause library and declared
+    keys; None when the version is not this firm's (RLS)."""
+    row = await session.get(ReportTemplateVersion, version_id)
+    if row is None:
+        return None
+    keys = await version_variable_keys(session, version_id) or ()
+    name = await session.scalar(
+        select(ReportTemplate.name).where(ReportTemplate.id == row.template_id)
+    )
+    return TemplateParts(
+        row.id,
+        row.layout_key,
+        list(row.body),
+        list(row.clauses),
+        keys,
+        template_name=name or "",
+        version_no=row.version_no,
+        variables=tuple(row.variables),
+    )
 
 
 # --- T-01-T10: what consent capture reads -------------------------------------------------------

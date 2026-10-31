@@ -5,14 +5,22 @@ import type {
 } from "@abacus/api-client";
 import { exportVersion } from "@abacus/api-client";
 import {
+  addStepMutation,
+  agentRunOptions,
+  editStepMutation,
   getVersionOptions,
   listCitationsOptions,
   listTemplatesOptions,
   programOptions,
+  programQueryKey,
   programStepsOptions,
+  programStepsQueryKey,
+  removeStepMutation,
+  submitVersionMutation,
   versionProgramsOptions,
 } from "@abacus/api-client/query";
 import {
+  AgentText,
   Button,
   CitationPopover,
   DASH,
@@ -27,12 +35,14 @@ import {
   RecordHeader,
   Segmented,
   StatusDisc,
+  Tooltip,
   type ToolbarProps,
   type ViewState,
   date as formatDate,
+  time,
   toast,
 } from "@abacus/ui";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, type ReactNode, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
@@ -47,9 +57,23 @@ import { COPY } from "./copy";
 // (the Change log: v2 → v3 computed here by comparing the two versions' steps). "Open in Excel"
 // downloads K-01-T12's export. Editing (c), tailoring (d) and Fix in Knowledge (f) are later rows:
 // Edit and + Step are drawn disabled only where planned screens are.
+//
+// K-01-T15 adds c, d and f. c: a draft (status draft) opens in edit mode for its drafter: the
+// optional steps' text edits in place (If-Match row_version), + Step adds a row, removal is per
+// optional step, mandatory steps stay locked with the QM-owner tooltip, and the banner offers
+// Submit for approval…. d: A-04's tailoring (fixture-only until its read lands) adds the
+// engagement chip and each tailored step's tag; trash stays disabled. f: `from=run` lights the
+// step and quotes the run's error through AgentText; Retry waits for P-09.
 
 export type Knw03Segment = "steps" | "guidance" | "pbc" | "rules" | "changes";
 const SEGMENTS: readonly Knw03Segment[] = ["steps", "guidance", "pbc", "rules", "changes"];
+
+/** d: A-04's tailoring of a program on one engagement (its program-tailoring read; fixture-only
+ * until A-04's contract is live): the engagement's name and each tailored step's words. */
+export interface Tailoring {
+  engagement: string;
+  steps: Readonly<Record<string, { kind: "tailored" | "decided"; text: string } | undefined>>;
+}
 
 export interface StepChange {
   kind: "added" | "changed" | "removed";
@@ -112,6 +136,10 @@ function StepsTable({
   expanded,
   onExpand,
   popover,
+  editing = false,
+  tailoring,
+  onEditText,
+  onRemove,
 }: {
   steps: readonly StepOut[];
   pbc: readonly string[];
@@ -121,8 +149,15 @@ function StepsTable({
   expanded: number | null;
   onExpand: (n: number | null) => void;
   popover: (step: StepOut) => ReactNode;
+  /** c: a draft's optional steps are editable and removable; mandatory ones stay locked. */
+  editing?: boolean;
+  /** d: A-04's tailoring of this program on an engagement, by step key. */
+  tailoring?: Tailoring | undefined;
+  onEditText?: (step: StepOut, text: string) => void;
+  onRemove?: (step: StepOut) => void;
 }): JSX.Element {
   const th = "h-[30px] bg-band-hd px-[10px] text-left text-th font-normal text-ink-2 hairline-b";
+  const trash = editing || tailoring !== undefined;
   return (
     <table className="w-full table-fixed text-cell">
       <thead>
@@ -136,6 +171,7 @@ function StepsTable({
           <th className={`${th} w-[52px]`}>{COPY.columns.rules}</th>
           <th className={`${th} w-[104px]`}>{COPY.columns.skill}</th>
           <th className={`${th} w-[64px]`}>{COPY.columns.lock}</th>
+          {trash && <th className={`${th} w-[40px]`} aria-label={COPY.columns.remove} />}
         </tr>
       </thead>
       <tbody>
@@ -163,7 +199,34 @@ function StepsTable({
                 </span>
               </td>
               <td className="px-[10px] py-[11px]">
-                <span className="line-clamp-2 text-dense">{s.text}</span>
+                {editing && s.allowed_actions.includes("methodology.edit_step") ? (
+                  <input
+                    aria-label={COPY.draft.stepLabel(s.number)}
+                    defaultValue={s.text}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
+                    onBlur={(e) => {
+                      const text = e.currentTarget.value.trim();
+                      if (text !== "" && text !== s.text) onEditText?.(s, text);
+                    }}
+                    className="w-full rounded-[6px] bg-transparent px-[4px] text-dense outline-none focus:bg-nested"
+                  />
+                ) : (
+                  <span className="line-clamp-2 text-dense">{s.text}</span>
+                )}
+                {tailoring?.steps[s.step_key] !== undefined && (
+                  <span className="mt-[4px] inline-flex" data-tailoring={s.step_key}>
+                    <Pill
+                      variant={
+                        tailoring.steps[s.step_key]?.kind === "tailored" ? "amber" : "neutral"
+                      }
+                      size="sm"
+                    >
+                      {tailoring.steps[s.step_key]?.text}
+                    </Pill>
+                  </span>
+                )}
                 {newKeys.has(s.step_key) && (
                   <span className="mt-[4px] inline-flex">
                     <Pill variant="green-tint" size="sm">
@@ -198,12 +261,20 @@ function StepsTable({
               <td className="px-[10px] py-[11px]">
                 {s.mandatory ? (
                   <span className="flex flex-col gap-[2px]">
-                    <Icon
-                      name="lock"
-                      size={13}
-                      aria-label={COPY.mandatory}
-                      className="text-ink-2"
-                    />
+                    {trash ? (
+                      <Tooltip content={COPY.draft.lockTip}>
+                        <span tabIndex={0} className="inline-flex" aria-label={COPY.draft.lockTip}>
+                          <Icon name="lock" size={13} aria-hidden className="text-ink-2" />
+                        </span>
+                      </Tooltip>
+                    ) : (
+                      <Icon
+                        name="lock"
+                        size={13}
+                        aria-label={COPY.mandatory}
+                        className="text-ink-2"
+                      />
+                    )}
                     {s.lock_note != null && (
                       <span className="text-[11px] leading-[1.2] text-ink-3">{s.lock_note}</span>
                     )}
@@ -212,6 +283,21 @@ function StepsTable({
                   <span className="text-ink-4">{DASH}</span>
                 )}
               </td>
+              {trash && (
+                <td className="px-[6px] py-[9px]">
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    icon="trash-2"
+                    aria-label={COPY.draft.remove(s.number)}
+                    disabled={!editing || !s.allowed_actions.includes("methodology.remove_step")}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemove?.(s);
+                    }}
+                  />
+                </td>
+              )}
             </tr>,
             open ? (
               <tr
@@ -220,7 +306,7 @@ function StepsTable({
                 className="bg-band-hd hairline-b"
               >
                 <td />
-                <td colSpan={8} className="px-[10px] pt-[4px] pb-[12px]">
+                <td colSpan={trash ? 9 : 8} className="px-[10px] pt-[4px] pb-[12px]">
                   <p className="text-dense leading-[1.45]">{s.text}</p>
                   {s.guidance.length > 0 && <Blocks blocks={s.guidance} />}
                   <p className="mt-[6px] text-meta text-ink-3">
@@ -299,9 +385,13 @@ export interface KNW03Props {
   programId: string;
   segment?: Knw03Segment;
   onSegment?: (segment: Knw03Segment) => void;
-  /** `?step=`: the step to light, with `from=citation` (a). */
+  /** `?step=`: the step to light, with `from=citation` (a) or `from=run` (f, Fix in Knowledge). */
   step?: number;
-  from?: "citation";
+  from?: "citation" | "run";
+  /** f: the failed run the arrival quotes (C6 v1). */
+  run?: string;
+  /** d: A-04's tailoring of this program on an engagement. */
+  tailoring?: Tailoring;
   /** b: the SHL-07 popover held open on the lit step (the gallery's artboard). */
   popoverOpen?: boolean;
   onProgram?: (programId: string) => void;
@@ -316,6 +406,8 @@ export function KNW03({
   onSegment,
   step,
   from,
+  run,
+  tailoring,
   popoverOpen = false,
   onProgram,
   onBack,
@@ -354,7 +446,39 @@ export function KNW03({
     ...programStepsOptions({ path: { program_id: priorProgram?.id ?? "" } }),
     enabled: priorProgram !== undefined,
   });
-  const lit = from === "citation" && step !== undefined ? step : null;
+  const lit = (from === "citation" || from === "run") && step !== undefined ? step : null;
+  const queryClient = useQueryClient();
+  const versionState = program.data?.version;
+  const isDraft = versionState?.status === "draft";
+  const [editing, setEditing] = useState(true);
+  const draftEditing =
+    isDraft && editing && versionState.allowed_actions.includes("methodology.edit");
+  const failedRun = useQuery({
+    ...agentRunOptions({ path: { run_id: run ?? "" } }),
+    enabled: from === "run" && run !== undefined,
+  });
+  const refreshSteps = (): void => {
+    void queryClient.invalidateQueries({
+      queryKey: programStepsQueryKey({ path: { program_id: programId } }),
+    });
+    void queryClient.invalidateQueries({
+      queryKey: programQueryKey({ path: { program_id: programId } }),
+    });
+  };
+  const addStep = useMutation({ ...addStepMutation(), onSuccess: refreshSteps });
+  const editStep = useMutation({ ...editStepMutation(), onSuccess: refreshSteps });
+  const removeStep = useMutation({ ...removeStepMutation(), onSuccess: refreshSteps });
+  const submit = useMutation({
+    ...submitVersionMutation(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: programQueryKey({ path: { program_id: programId } }),
+      });
+    },
+  });
+  const failed = (text: string) => (): void => {
+    toast.show({ kind: "error", text });
+  };
   const litStep = (steps.data ?? []).find((s) => s.number === lit);
   const citations = useQuery({
     ...listCitationsOptions({
@@ -398,13 +522,16 @@ export function KNW03({
       title={current?.template_name ?? ""}
       context={label}
       state={
-        program.data?.version.status === "published" && program.data.version.effective_from != null
-          ? COPY.publishedFrom(
-              formatDate(program.data.version.effective_from, { now, withYear: true }),
-            )
-          : ""
+        isDraft
+          ? COPY.draft.pill
+          : program.data?.version.status === "published" &&
+              program.data.version.effective_from != null
+            ? COPY.publishedFrom(
+                formatDate(program.data.version.effective_from, { now, withYear: true }),
+              )
+            : ""
       }
-      stateTone="green-tint"
+      stateTone={isDraft ? "amber" : "green-tint"}
       backLabel={COPY.back}
       {...(onBack === undefined ? {} : { onBack })}
     />
@@ -504,8 +631,68 @@ export function KNW03({
       expanded={expanded}
       onExpand={setExpanded}
       popover={popover}
+      editing={draftEditing}
+      tailoring={tailoring}
+      onEditText={(st, text) => {
+        editStep
+          .mutateAsync({
+            path: { version_id: versionId, step_id: st.id },
+            headers: { "If-Match": st.row_version },
+            body: { text },
+          })
+          .catch(failed(COPY.draft.saveFailed));
+      }}
+      onRemove={(st) => {
+        removeStep
+          .mutateAsync({
+            path: { version_id: versionId, step_id: st.id },
+            headers: { "If-Match": st.row_version },
+          })
+          .catch(failed(COPY.draft.saveFailed));
+      }}
     />
   );
+  const draftNumber = current?.version ?? 0;
+  const runOut = failedRun.data?.run;
+  const banner: ReactNode = isDraft ? (
+    <div
+      data-knw03="draft-banner"
+      className="mx-[12px] mt-[10px] flex min-h-[40px] items-center gap-[8px] rounded-nested bg-nested px-[12px] text-dense text-ink-2"
+    >
+      <Icon name="pencil" size={14} className="flex-none" />
+      <span className="flex-1">{COPY.draft.banner(draftNumber)}</span>
+      {versionState.allowed_actions.includes("methodology.submit") && (
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={submit.isPending}
+          onClick={() => {
+            submit
+              .mutateAsync({
+                path: { version_id: versionId },
+                body: { row_version: versionState.row_version },
+              })
+              .then(() => {
+                toast.show({ kind: "success", text: COPY.draft.submitted(draftNumber) });
+              })
+              .catch(failed(COPY.draft.submitFailed));
+          }}
+        >
+          {COPY.draft.submit}
+        </Button>
+      )}
+    </div>
+  ) : runOut?.state === "failed" && runOut.state_reason != null ? (
+    <div
+      role="status"
+      data-knw03="run-error"
+      className="mx-[12px] mt-[10px] flex min-h-[36px] items-start gap-[8px] rounded-nested bg-amber-tint px-[12px] py-[8px] text-dense text-amber-ink"
+    >
+      <Icon name="triangle-alert" size={14} className="mt-[2px] flex-none" />
+      {/* The run's error is the agent's words: plain text through AgentText, never markup. */}
+      <AgentText inline text={runOut.state_reason} className="text-dense text-amber-ink" />
+    </div>
+  ) : null;
   const body =
     segment === "changes" ? (
       <ChangeLog changes={changes} />
@@ -537,6 +724,31 @@ export function KNW03({
     .find((t) => t !== undefined);
   const dock = (
     <div className="flex flex-col gap-[12px] p-[10px]">
+      {runOut?.state === "failed" && (
+        <section
+          aria-label={COPY.run.label}
+          data-knw03="run-card"
+          className="flex flex-col gap-[6px] rounded-pane bg-card p-[14px] shadow-e1"
+        >
+          <span className="flex items-center gap-[8px] text-body font-medium">
+            <StatusDisc state="fail" />
+            {COPY.run.failed(runOut.agent_label, time(runOut.started_at))}
+          </span>
+          <span className="pl-[23px] text-meta text-ink-3">
+            {runOut.subject === null
+              ? COPY.run.noEvidence
+              : `${runOut.subject} · ${COPY.run.noEvidence}`}
+          </span>
+          {/* Retry belongs to P-09's dock; until then the card offers only the draft. */}
+          {PLANNED_VISIBLE && (
+            <span className="pl-[23px]">
+              <Button variant="secondary" size="sm" disabled title={COPY.run.linkHint}>
+                {COPY.run.linkTemplate}
+              </Button>
+            </span>
+          )}
+        </section>
+      )}
       {guided !== undefined && (
         <section
           aria-label={guidanceTitle ?? COPY.dock}
@@ -563,15 +775,50 @@ export function KNW03({
 
   const actions = (
     <span className="flex items-center gap-[8px]">
-      {PLANNED_VISIBLE && (
+      {tailoring !== undefined && (
+        <Pill variant="neutral" size="sm">
+          {COPY.tailored.chip(tailoring.engagement)}
+        </Pill>
+      )}
+      {isDraft && versionState.allowed_actions.includes("methodology.edit") ? (
         <>
-          <Button variant="secondary" size="sm" icon="pencil" disabled>
-            {COPY.actions.edit}
+          <Button
+            variant={editing ? "tonal" : "secondary"}
+            size="sm"
+            icon={editing ? "check" : "pencil"}
+            onClick={() => {
+              setEditing(!editing);
+            }}
+          >
+            {editing ? COPY.draft.done : COPY.actions.edit}
           </Button>
-          <Button variant="secondary" size="sm" disabled>
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={!draftEditing || addStep.isPending}
+            onClick={() => {
+              addStep
+                .mutateAsync({
+                  path: { version_id: versionId, program_id: programId },
+                  body: { text: COPY.draft.newStep, level: "planning" },
+                })
+                .catch(failed(COPY.draft.saveFailed));
+            }}
+          >
             {COPY.actions.addStep}
           </Button>
         </>
+      ) : (
+        PLANNED_VISIBLE && (
+          <>
+            <Button variant="secondary" size="sm" icon="pencil" disabled>
+              {COPY.actions.edit}
+            </Button>
+            <Button variant="secondary" size="sm" disabled>
+              {COPY.actions.addStep}
+            </Button>
+          </>
+        )
       )}
       <Button
         variant="secondary"
@@ -622,7 +869,12 @@ export function KNW03({
                 {COPY.footer(program.data.step_count, program.data.mandatory_count)}
               </span>
             ),
-          children: body,
+          children: (
+            <>
+              {banner}
+              {body}
+            </>
+          ),
         }}
         dock={{ view: "Notes", views: ["Notes"], title: COPY.dock, children: dock }}
         defaultDockOpen

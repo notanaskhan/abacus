@@ -2994,7 +2994,7 @@ export const compareLetter = <ThrowOnError extends boolean = false>(options: Opt
 /**
  * Get Letter Route
  *
- * ENG-04 (N-02-T33).
+ * ENG-04's composed letter (N-02-T32) behind `engagements.letter_composer`.
  */
 export const getLetter = <ThrowOnError extends boolean = false>(options: Options<GetLetterData, ThrowOnError>): RequestResult<GetLetterResponses, GetLetterErrors, ThrowOnError> => (options.client ?? client).get<GetLetterResponses, GetLetterErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -3005,7 +3005,8 @@ export const getLetter = <ThrowOnError extends boolean = false>(options: Options
 /**
  * Draft Letter Route
  *
- * Draft edits; an edit after approval stales it (N-02-T33).
+ * Draft edits: a new version, rendered as a C11 draft (N-02-T32); an edit after approval
+ * returns the letter to Draft (N-02-T33 resolves the approval).
  */
 export const draftLetter = <ThrowOnError extends boolean = false>(options: Options<DraftLetterData, ThrowOnError>): RequestResult<DraftLetterResponses, DraftLetterErrors, ThrowOnError> => (options.client ?? client).put<DraftLetterResponses, DraftLetterErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

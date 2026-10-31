@@ -32,6 +32,8 @@ export const engScreens = {
     status: "planned",
     path: "/engagements/new",
   },
+  // N-02-T34 built a–c on fixtures as ENG-02's Letter & terms tab behind
+  // `engagements.letter_composer` (/engagements/$engagementId/letter); planned until N-02-T37.
   "ENG-04": {
     name: "Engagement letter composer · Ridgeline cost segregation & §754 analysis",
     status: "planned",
