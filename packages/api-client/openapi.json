@@ -58648,6 +58648,12 @@
       },
       "ReassignCandidateOut": {
         "properties": {
+          "display_name": {
+            "cls": "internal",
+            "default": "",
+            "title": "Display Name",
+            "type": "string"
+          },
           "role": {
             "cls": "internal",
             "title": "Role",
