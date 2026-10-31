@@ -192,7 +192,8 @@ describe("AUD-31", () => {
 
   it("C-20: off, error, not allowed", async () => {
     show("off");
-    expect(await screen.findByText(/Trial balance mapping/u)).toBeTruthy();
+    // The pane title and the C-20 state both name the screen.
+    expect((await screen.findAllByText(/Trial balance mapping/u)).length).toBeGreaterThan(0);
     expect(screen.queryByRole("table", { name: "Trial balance mapping" })).toBeNull();
     cleanup();
     restore?.();

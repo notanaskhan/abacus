@@ -349,7 +349,8 @@ export function MappingTableSpecimen(): JSX.Element {
                 method: "Description",
                 confidence: "Low",
                 confidenceTone: "amber",
-                reason: "No prior-year account; description 'Tooling deposits' suggests Other assets.",
+                reason:
+                  "No prior-year account; description 'Tooling deposits' suggests Other assets.",
               },
               {
                 id: "2215",
