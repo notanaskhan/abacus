@@ -31,6 +31,12 @@ EXCLUDE: tuple[str, ...] = ()
 # (path glob, rule id, reason): findings that are known local fixtures, never real secrets.
 ALLOW: tuple[tuple[str, str, str], ...] = (
     (
+        "backend/tests/unit/methodology/test_k01t20_extraction.py",
+        "PII-001",
+        "a synthetic SSN-shaped value in a generated PDF, proving the importer's PII hold stops a"
+        " file before any model call (K-01-T20); never a real person's number",
+    ),
+    (
         "backend/tests/unit/sampling/test_a03t07_populations.py",
         "PII-001",
         "synthetic SSN-shaped values under an innocent header, proving a population's column map"
