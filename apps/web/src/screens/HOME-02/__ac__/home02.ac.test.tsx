@@ -161,7 +161,8 @@ describe("3 · bulk refuses blocked and open-note items (AC8.1)", () => {
     expect(disabled.map((b) => b.getAttribute("aria-label"))).toEqual(
       [7, 8].map((n) => `Select ${titleOf(n)}`),
     );
-    for (const b of disabled) expect(b.getAttribute("data-issue-check")).toBe("blocked");
+    for (const b of disabled)
+      expect(b.closest("[data-issue-check]")?.getAttribute("data-issue-check")).toBe("blocked");
     // Decisions, the final approval and the send carry no checkbox at all.
     for (const n of [1, 2, 3, 10, 11]) {
       expect(screen.queryByRole("checkbox", { name: `Select ${titleOf(n)}` })).toBeNull();
