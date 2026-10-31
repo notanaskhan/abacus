@@ -56,3 +56,9 @@ Box amounts TRI; names and addresses confidential; TIN last four only.
 - `K1PackageOut` (firm rows; the portal leaves them empty): `period_start`, `period_end`, `ownership_note`, `locality`, `delivery_contact_name`, `supersedes_package_id`, `handoffs[]` (`target_return_id` null and `target_name` "Another return" for a target the reader cannot read, `target_form`, `status` `draft_shared`/`final_replaced`, `shared_at`, `replaced_at`), `details_change` (a pending change: `id`, `kind`, `submitted_at`) and `related_returns[]` (the recipient's own client's returns for the year that the caller reads: `return_id`, `client_name`, `form`, `status`).
 - `K1PackageDetailOut.tin`: `kind` and `last4` (Restricted, `pii_kind` tin). No list row carries a TIN (ADR-031).
 - `K1ReleaseCheckOut.email_template_version_id`: the "Deliverable ready" version a release must cite.
+
+## T-02-T27 additions (DEC-1576)
+- `K1PackageOut.issuer_name`: the issuing client's name (portal rows and details).
+- Portal `GET /v1/portal/k1s/{pid}`: `tin` (the recipient's own, masked) and `address_on_file`; a row carries neither.
+- `GET /v1/portal/k1s/expected` (`portal_k1.read`): `PortalK1ExpectedOut[]` (`issuer_name`, `form`, `tax_year`, `k3_status`, `expected_on`) for the recipients whose delivery contact is one of the person's and whose newest package is not released yet, on a return a grant of theirs already reaches. No amounts, documents or package id (POR-13 b).
+- DEC-1577: every portal K-1 route authorises its action on the issuing return (`authorise_with_scope`, the person's own `k1_recipient` grant as the scope); a person whose grants reach no issuing return gets 404 from the list and `expected`.

@@ -19369,6 +19369,10 @@ export type K1MaskedTinOut = {
  */
 export type K1PackageDetailOut = {
     /**
+     * Address On File
+     */
+    address_on_file?: boolean | null;
+    /**
      * Documents
      */
     documents: Array<K1DocumentOut>;
@@ -19411,6 +19415,10 @@ export type K1PackageOut = {
      * Id
      */
     id: string;
+    /**
+     * Issuer Name
+     */
+    issuer_name?: string | null;
     /**
      * K3 Status
      */
@@ -25873,6 +25881,35 @@ export type PortalHomeWorkCardOut = {
  * PortalIntakeUploadStatus
  */
 export type PortalIntakeUploadStatus = 'sent' | 'received' | 'withdrawn';
+
+/**
+ * PortalK1ExpectedOut
+ *
+ * T-02-T27 (POR-13 b): a K-1 the person will receive, not released yet. No amounts, no
+ * documents, no package id.
+ */
+export type PortalK1ExpectedOut = {
+    /**
+     * Expected On
+     */
+    expected_on: string | null;
+    /**
+     * Form
+     */
+    form: '1065' | '1120s' | '1041';
+    /**
+     * Issuer Name
+     */
+    issuer_name: string;
+    /**
+     * K3 Status
+     */
+    k3_status: 'included' | 'not_required' | 'not_included';
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+};
 
 /**
  * PortalLinkRenewIn
@@ -86422,6 +86459,55 @@ export type PortalK1sResponses = {
 };
 
 export type PortalK1sResponse = PortalK1sResponses[keyof PortalK1sResponses];
+
+export type PortalK1sExpectedData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/portal/k1s/expected';
+};
+
+export type PortalK1sExpectedErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PortalK1sExpectedError = PortalK1sExpectedErrors[keyof PortalK1sExpectedErrors];
+
+export type PortalK1sExpectedResponses = {
+    /**
+     * Response Portal K1S Expected
+     *
+     * Successful Response
+     */
+    200: Array<PortalK1ExpectedOut>;
+};
+
+export type PortalK1sExpectedResponse = PortalK1sExpectedResponses[keyof PortalK1sExpectedResponses];
 
 export type PortalK1Data = {
     body?: never;
