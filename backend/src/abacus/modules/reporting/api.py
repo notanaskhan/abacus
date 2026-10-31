@@ -301,6 +301,7 @@ async def render_final(
             "kind": approval_ref.kind,
             "id": str(approval_ref.id),
             "content_hash": approval_ref.content_hash,
+            "approver_user_id": str(approved[0]),
         },
         requested_by_kind="human",
         requested_by_user_id=requester.user_id,
@@ -340,7 +341,7 @@ async def lock(tx: UnitOfWork, document_id: UUID, cause_ref: str) -> None:
     tx.record(
         "generated_document.locked",
         target=docs.target(document_id),
-        after=docs.ref(cause=cause_ref),
+        after=docs.ref(cause=docs.sha256_hex(cause_ref.encode())),
     )
 
 
