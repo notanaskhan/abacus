@@ -13,6 +13,7 @@ from decimal import Decimal
 
 from abacus.modules.ledger.compute.mapping import (
     CONFIDENCE,
+    Method,
     account_key,
     normalised_code,
     resolve_line,
@@ -50,7 +51,7 @@ def test_ac1_every_account_is_rule_mapped_or_needs_review_never_suggested() -> N
     codes = granite_peak_codes()
     assert len(codes) == 128
     resolved = [resolve_line(c, None, PRIOR, BY_KEY, RANGES) for c in codes]
-    methods = [m for _, m in resolved]
+    methods: list[Method | None] = [m for _, m in resolved]
     assert set(methods) <= {"prior_year", "number_range", None}
     assert "suggested" not in {str(m) for m in methods}
     t = tallies(methods, [Decimal(0)] * len(codes))
