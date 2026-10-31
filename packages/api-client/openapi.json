@@ -171978,6 +171978,7 @@
     },
     "/v1/portal/k1-recipients/{recipient_id}/details-changes": {
       "post": {
+        "description": "A signed W-9 or W-8, or a structured address, for a person at the firm to decide.",
         "operationId": "portal_details_change",
         "parameters": [
           {
@@ -172074,6 +172075,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -172083,16 +172094,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal Details Change Route",
@@ -172104,7 +172105,7 @@
     },
     "/v1/portal/k1s": {
       "get": {
-        "description": "POR-13: the recipient's own packages, released and later only.",
+        "description": "POR-13: the recipient's own packages, released and later only (T-02-T26).",
         "operationId": "portal_k1s",
         "parameters": [
           {
@@ -172194,16 +172195,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal K1S Route",
@@ -172215,6 +172206,7 @@
     },
     "/v1/portal/k1s/{package_id}": {
       "get": {
+        "description": "The statement with its box lines (TRI, the second step); the first read is Viewed.",
         "operationId": "portal_k1",
         "parameters": [
           {
@@ -172301,6 +172293,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -172310,16 +172312,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal K1 Route",
@@ -172429,6 +172421,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -172438,16 +172440,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal K1 Attachment Route",
@@ -172459,7 +172451,7 @@
     },
     "/v1/portal/k1s/{package_id}/download": {
       "get": {
-        "description": "A deterministic zip; an access event per download.",
+        "description": "A deterministic zip of the final documents; an access event per download.",
         "operationId": "portal_k1_download",
         "parameters": [
           {
@@ -172548,6 +172540,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -172557,16 +172559,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal K1 Download Route",
@@ -172674,6 +172666,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -172683,16 +172685,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Portal E Furnishing Route",

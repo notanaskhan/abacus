@@ -523,6 +523,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.tax.k1_packages.DetailsChangeDecided
+  details_change_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.k1_portal.DetailsChangeInvalid
+    summary: A W-9 or W-8 names the uploaded file; an address its structured fields (`facts.field`).
   disclosure_outdated:
     status: 409
     raised_by:
@@ -1317,6 +1322,8 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.signatures.portal.MfaRequired
+    - abacus.modules.tax.k1_portal.K1MfaRequired
+    summary: 'K-1s carry amounts (TRI): the portal session''s second step first (DEC-34).'
   model_text_not_permitted:
     status: 409
     raised_by:

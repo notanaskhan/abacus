@@ -905,6 +905,44 @@ async def on_resend_requested(event: OutboxEvent) -> None:
     )
 
 
+# --- a bounced "Deliverable ready" (POR-13's Bounced, TXP-12 B) ---------------------------------
+
+
+async def on_message_bounced(event: OutboxEvent) -> None:
+    """A release's email bounced: the package reads Bounced until a person resends it."""
+    message_id = UUID(str(event.payload["message_id"]))
+    system = TenantContext(event.tenant_id, "system", f"k1_bounce:{message_id}")
+    async with uow(system) as tx:
+        found = (
+            await tx.session.execute(
+                text(
+                    "SELECT d.package_id, r.work_item_id FROM k1_release_deliveries d "
+                    "JOIN k1_releases r ON r.id = d.release_id WHERE d.message_id = :m"
+                ),
+                {"m": message_id},
+            )
+        ).first()
+        if found is None:
+            return  # not a K-1 email
+        moved = (
+            await tx.session.execute(
+                text(
+                    "UPDATE k1_packages SET status = 'bounced' WHERE id = :p "
+                    "AND status IN ('released', 'viewed') RETURNING id"
+                ),
+                {"p": found.package_id},
+            )
+        ).first()
+        if moved is None:
+            return
+        await k1.record_event(tx, event.tenant_id, found.package_id, "bounced", None, {})
+        tx.record(
+            "schedule_k_package.bounced",
+            target=Target(KIND, found.work_item_id),
+            after=Ref(package=found.package_id, message=message_id),
+        )
+
+
 # --- activities ----------------------------------------------------------------------------------
 
 
@@ -953,6 +991,7 @@ ACTIVITIES = (
 SUBSCRIPTIONS = {
     K1ReleaseRequested.event_type: on_requested,
     k1.K1ResendRequested.event_type: on_resend_requested,
+    "message.bounced": on_message_bounced,  # T-02-T26: POR-13's Bounced
 }
 
 __all__ = [

@@ -79917,13 +79917,13 @@ export type PortalDetailsChangeErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalDetailsChangeError = PortalDetailsChangeErrors[keyof PortalDetailsChangeErrors];
@@ -79971,10 +79971,6 @@ export type PortalK1sErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalK1sError = PortalK1sErrors[keyof PortalK1sErrors];
@@ -80026,13 +80022,13 @@ export type PortalK1Errors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalK1Error = PortalK1Errors[keyof PortalK1Errors];
@@ -80086,13 +80082,13 @@ export type PortalK1AttachmentErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalK1AttachmentError = PortalK1AttachmentErrors[keyof PortalK1AttachmentErrors];
@@ -80144,13 +80140,13 @@ export type PortalK1DownloadErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalK1DownloadError = PortalK1DownloadErrors[keyof PortalK1DownloadErrors];
@@ -80202,13 +80198,13 @@ export type PortalEFurnishingErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PortalEFurnishingError = PortalEFurnishingErrors[keyof PortalEFurnishingErrors];

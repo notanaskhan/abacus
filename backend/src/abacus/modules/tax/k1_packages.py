@@ -586,6 +586,11 @@ async def record_event(
     await _event(tx, tenant_id, package_id, kind, actor, facts)
 
 
+async def package_return_scope(tenant: TenantContext, return_id: UUID) -> ScopeFacts | None:
+    """The issuing return inside its engagement and client (POR-13's access events)."""
+    return await resolve_scope(tenant, "work_item", return_id)
+
+
 async def package_scope(tenant: TenantContext, package_id: UUID) -> ScopeFacts | None:
     """A `k1_package` grant's scope (DEC-34): the issuing return inside its engagement and
     client. The grant reaches that one package only: the portal reads check the grant's own
@@ -994,7 +999,13 @@ async def _recipient_return(ctx: AuthContext, recipient_id: UUID) -> UUID:
 
 async def details_changes(ctx: AuthContext, recipient_id: UUID) -> list[DetailsChange]:
     await _issuer(ctx, await _recipient_return(ctx, recipient_id), REVIEW)
-    async with tenant_session(ctx.tenant) as session:
+    return await details_changes_of(ctx.tenant, recipient_id)
+
+
+async def details_changes_of(tenant: TenantContext, recipient_id: UUID) -> list[DetailsChange]:
+    """A recipient's details changes, newest first, for a caller that checked its own access
+    (the firm's review above; the recipient's own package in POR-13, T-02-T26)."""
+    async with tenant_session(tenant) as session:
         rows = (
             await session.execute(
                 text(

@@ -44,3 +44,10 @@ Box amounts TRI; names and addresses confidential; TIN last four only.
 - After the window, `K1ReleaseWorkflow` per package: the contact, a `k1_recipient` grant on the package (a pending grant and a contact invitation when the contact has no portal person yet), `released`, one "Deliverable ready" email (`deliverable_ready`, no amounts) and the hand-off drafts on other returns replaced by the final with its K-1 box values in `final_values`. The release ends `completed`, or `failed` with a code.
 - `schedule_k_package.resend_requested` gives the corrected contact the grant or invitation and a new "Deliverable ready" email.
 - A `k1_recipient` grant's `k1_package` scope resolves to the issuing return (the portal reads check the grant's own package, T26).
+
+## T-02-T26 additions (DEC-1478)
+- `GET /v1/portal/k1s`: the person's own released packages (`K1PackageOut`, no amounts). `GET /v1/portal/k1s/{pid}`: the statement with box lines and final documents; 409 `mfa_required` without the second step; the first read moves the package to `viewed`.
+- `GET …/k1s/{pid}/download` (a deterministic zip) and `…/attachments/{doc}` (one PDF): an access event `schedule_k.read` (flag `tri`) each, and `downloaded`.
+- `POST /v1/portal/k1-recipients/{rid}/details-changes` (201): `address` with `line1`, `city`, `postal_code`, `country` (and optional `line2`, `state`), or `w9`/`w8` with `upload_id`; 422 `details_change_invalid`.
+- `POST /v1/portal/k1s/{pid}/e-furnishing-consent`: `given` or `declined` with the disclosure version.
+- Another recipient's package, a draft or an unknown id: 404. A firm principal: 404.
