@@ -90,8 +90,8 @@ export function PaperCard({
 }
 
 /** Three skeleton paragraphs, a heading bar over three lines each (T10a): the agent's draft on a
- * paper (`drafting`), or the template being
- * rendered on a letter or email without model text (`rendering`, ADR P-25 off). */
+ * paper (`drafting`), or the template being rendered on a letter or email without model text
+ * (`rendering`, ADR P-25 off). */
 function DraftingSkeleton({ mark }: { mark: "drafting" | "rendering" }): JSX.Element {
   const paragraph = (widths: readonly string[], key: string): JSX.Element => (
     <div key={key} className="flex flex-col gap-[8px]">
