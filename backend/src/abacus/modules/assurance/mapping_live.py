@@ -175,6 +175,10 @@ async def mapping_sets(ctx: AuthContext, engagement_id: UUID) -> ListPage[Mappin
 async def run_start(ctx: AuthContext, engagement_id: UUID, body: MappingRunIn) -> MappingRunOut:
     """Start the rules on a TB of record, on the firm's newest published grouping set. Computing
     on read, the run is ready at once (DEC-1661)."""
+    # The TB must be this engagement's before anything about it is said (no 409 oracle).
+    tbs = {t.id for t in await engagement_trial_balances(ctx.tenant, engagement_id)}
+    if body.trial_balance_id not in tbs:
+        raise NotFound("trial_balance")
     if await mapping_with_prior(ctx.tenant, engagement_id, body.trial_balance_id) is not None:
         raise MappingExistsForTb
     versions = await published_versions(ctx.tenant)

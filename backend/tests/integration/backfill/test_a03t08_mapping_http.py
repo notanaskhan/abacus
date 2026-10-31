@@ -178,3 +178,15 @@ async def test_a_person_off_the_engagement_never_reads_the_set(net: Net) -> None
     stranger = await net.seed.person(world.tenant_id)
     read = await net.call("GET", f"/v1/mapping-sets/{ran.json()['mapping_set_id']}", stranger)
     assert read.status_code in (403, 404), read.text
+
+
+async def test_another_engagements_trial_balance_is_not_found_not_conflict(net: Net) -> None:
+    world, tb_id, base = await _world(net)
+    await net.call("POST", base, world.senior, body={"trial_balance_id": str(tb_id)})
+    other = await net.seed.site(world.tenant_id, world.admin.user_id, "elsewhere")
+    await net.seed.member(other, world.senior, "senior")
+    elsewhere = f"/v1/engagements/{other.engagement_id}/mapping-sets"
+    refused = await net.call(
+        "POST", elsewhere, world.senior, body={"trial_balance_id": str(tb_id)}
+    )
+    assert refused.status_code == 404, refused.text
