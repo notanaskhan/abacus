@@ -69,7 +69,7 @@ async def _binder(b: Board, item: uuid.UUID) -> dict[str, uuid.UUID]:
     for position, (name, requests) in enumerate(CATEGORIES):
         category = await b.seed.value(
             "INSERT INTO request_categories (tenant_id, request_list_id, name, position, family) "
-            "VALUES ($1, $2, $3, $4, 'tax_category') RETURNING id",
+            "VALUES ($1, $2, $3, $4, 'tax_portal') RETURNING id",
             b.tenant,
             binder,
             name,

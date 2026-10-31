@@ -285,6 +285,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.workpapers.tie_out.CitationRequired
+  citation_unverified:
+    status: 422
+    raised_by:
+    - abacus.modules.sampling.populations.CitationUnverified
+    summary: A comparison cites something not verified and live on the engagement (INV-2).
   client_contact:
     status: 409
     raised_by:
@@ -296,6 +301,12 @@ codes:
     - abacus.modules.organisations.service.ClientRecordInvalid
     summary: A value the client record's constraints refuse (an office or partner of another firm, a
       malformed fiscal year end).
+  column_map_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.sampling.populations.ColumnMapInvalid
+    summary: The column map names an unknown field, no record key, a column the sheet does not have,
+      one column twice, or an amount column holding something other than an amount.
   completion_blocked:
     status: 409
     raised_by:
@@ -306,6 +317,11 @@ codes:
     raised_by:
     - abacus.modules.assurance.completion.CompletionInvalid
     - abacus.modules.fieldwork.completion.CompletionInvalid
+  computed_variable:
+    status: 422
+    raised_by:
+    - abacus.modules.engagements.letters.ComputedVariable
+    summary: 'A fee or billing variable was given as text: code computes those.'
   confirmed_out_of_order:
     status: 422
     raised_by:
@@ -402,6 +418,7 @@ codes:
   content_changed:
     status: 409
     raised_by:
+    - abacus.modules.assurance.mapping_live.ContentChanged
     - abacus.modules.review.sign_offs.ContentChanged
     - abacus.modules.tax.approval.ContentChanged
     summary: 'The target changed since the signer saw it: nothing is written.'
@@ -550,6 +567,11 @@ codes:
     - abacus.modules.requests.binders.DueDateRequired
     summary: Every request a publish sends needs a due date, its own or the binder's default; the facts
       name the requests without one.
+  duplicate_record_key:
+    status: 422
+    raised_by:
+    - abacus.modules.sampling.populations.DuplicateRecordKey
+    summary: 'Two records'' keys normalise alike: a population''s key is unique (ADR-340 §2).'
   duplicate_resolved:
     status: 409
     raised_by:
@@ -730,6 +752,11 @@ codes:
     - abacus.modules.evidence.export_currency.ExportStale
     summary: 'Evidence or requests changed after the final export''s snapshot: export again, then record
       the archive (`facts.event_seq` names the newer event).'
+  fees_do_not_foot:
+    status: 422
+    raised_by:
+    - abacus.modules.engagements.letters.FeesDoNotFoot
+    summary: The installments' shares do not add to 100% of the fee.
   field_changed:
     status: 409
     raised_by:
@@ -1142,10 +1169,35 @@ codes:
     - abacus.modules.engagements.record.LetterExceptionsOff
     summary: '"Not required this year" needs the engagement partner and the firm setting `allow_letter_exceptions`
       on.'
+  letter_locked:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.letters.LetterLocked
+    summary: 'The letter was sent or signed, or is a recorded letter: it takes no edit.'
   letter_missing:
     status: 409
     raised_by:
     - abacus.modules.engagements.setup.LetterMissing
+  letter_not_amendable:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.letter_flow.LetterNotAmendable
+    summary: Only a signed letter takes an addendum.
+  letter_not_approvable:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.letter_flow.LetterNotApprovable
+    summary: The letter is not a draft awaiting approval (or not a composed letter at all).
+  letter_not_sendable:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.letter_flow.LetterNotSendable
+    summary: Only a partner-approved letter is sent (N-02 §3.11).
+  letter_signer_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.letter_flow.LetterSignerMissing
+    summary: Send needs the client's signing officer designated (ENG-02) and an approving partner.
   level_not_available:
     status: 409
     raised_by:
@@ -1181,10 +1233,20 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.ledger.mapping.MappingInvalid
+  mapping_run_in_progress:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.mapping_live.MappingExistsForTb
+    summary: 'The rules already ran on this trial balance of record: one set per TB (ADR-341 §4).'
   mapping_set_exists:
     status: 409
     raised_by:
     - abacus.modules.ledger.mapping.MappingExists
+  markup_not_allowed:
+    status: 422
+    raised_by:
+    - abacus.modules.engagements.letters.MarkupNotAllowed
+    summary: Overrides are plain text (no rich text until P-59).
   materiality_invalid:
     status: 422
     raised_by:
@@ -1554,6 +1616,16 @@ codes:
     - abacus.modules.identity.governance_errors.SecurityPolicyLoosened
     summary: A firm may only make its sign-in, session and portal limits stricter than the platform's
       (AC-17, AC-19); `facts.field` names the field.
+  policy_not_stricter:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.fallback.PolicyNotStricter
+    summary: A policy change may only tighten the published floor (AC-9).
+  population_unreadable:
+    status: 422
+    raised_by:
+    - abacus.modules.sampling.populations.PopulationUnreadable
+    summary: The evidence version could not be read as a sheet, or yields no records.
   portal_host_invalid:
     status: 422
     raised_by:
@@ -1710,6 +1782,12 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.requests.client_responses.ResponseInvalid
+  restricted_column:
+    status: 422
+    raised_by:
+    - abacus.modules.sampling.populations.RestrictedColumn
+    summary: 'A mapped column is Restricted (SSN, ITIN, DOB, bank account or routing number): never copied
+      (ADR-031).'
   result_invalid:
     status: 422
     raised_by:
@@ -2013,6 +2091,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.agents.ai_policy_service.StaleDraft
+    - abacus.modules.assurance.mapping_live.StaleVersion
     - abacus.modules.assurance.phase.ProfileStale
     - abacus.modules.communications.follow_up_policy.FollowUpPolicyStale
     - abacus.modules.communications.template_service.TemplateDraftStale
@@ -2021,6 +2100,7 @@ codes:
     - abacus.modules.engagements.drafts.DraftStaleVersion
     - abacus.modules.engagements.independence.ConclusionSuperseded
     - abacus.modules.engagements.intake.IntakeStaleVersion
+    - abacus.modules.engagements.letters.LetterStale
     - abacus.modules.engagements.roll_forward_v2.RollForwardStale
     - abacus.modules.engagements.team_errors.TeamChanged
     - abacus.modules.evidence.firm_export_schedule.ScheduleStale
@@ -2040,6 +2120,7 @@ codes:
     - abacus.modules.requests.portal_questionnaires.AnswerStale
     - abacus.modules.review.gate_actions.GateStaleVersion
     - abacus.modules.signatures.builder.StaleEnvelope
+    - abacus.modules.signatures.fallback.PolicyStale
     - abacus.modules.tax.engine_import.ImportStale
     - abacus.modules.tax.export.ExportStale
     - abacus.modules.tax.status.StaleReturn
@@ -2281,6 +2362,12 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.connections.ledger_import.UnknownFormat
+  unknown_letter_part:
+    status: 422
+    raised_by:
+    - abacus.modules.engagements.letters.UnknownLetterPart
+    summary: A clause, variable or section the template version does not have, or a template version
+      that is not a letter's.
   unknown_notification_kind:
     status: 422
     raised_by:
@@ -2374,6 +2461,12 @@ codes:
     raised_by:
     - abacus.modules.identity.walls.WallExists
     summary: The person is already walled off from this client.
+  wet_signature_not_allowed:
+    status: 409
+    raised_by:
+    - abacus.modules.signatures.fallback.WetSignatureNotAllowed
+    summary: 'This signer cannot sign on paper now: only a signer whose identity check failed, or one
+      named for in-person ID, on an open envelope whose earlier signers have signed.'
   work_item_exists:
     status: 409
     raised_by:

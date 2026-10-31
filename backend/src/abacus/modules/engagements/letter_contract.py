@@ -3,10 +3,11 @@
 
 The composer lives under `/letter/composer` because `PUT /v1/engagements/{id}/letter` is the kept
 record path (`letter.record`, `routes.py`). Every route answers 404 with `signatures.envelopes`
-off and 501 with it on, except the composer's GET and PUT, which `engagements.letter_composer`
-turns on (N-02-T32, `letters.py`). The agent may draft (`letter.draft`); approval is the
-partner's against the content hash with a fresh second factor, and sending creates a C7 draft
-from the `engagement_letter` source. §7216 consents are
+off and 501 with it on, except the composer's GET and PUT (N-02-T32, `letters.py`) and
+request-approval, approve, send and amend (N-02-T33, `letter_flow.py`), which
+`engagements.letter_composer` turns on (send also needs `signatures.envelopes`). The agent may
+draft (`letter.draft`); approval is the partner's against the content hash with a fresh second
+factor, and sending creates a C7 draft from the `engagement_letter` source. §7216 consents are
 separate documents, never clauses (AC-15). No model drafts letter text (DEC-79 off).
 """
 
@@ -318,8 +319,14 @@ async def letter_pdf_route(engagement_id: UUID, ctx: Ctx) -> Response:
     response_model=ComposerLetterOut,
     errors=(409, 501),
 )
-async def request_approval_route(engagement_id: UUID, ctx: Ctx) -> ComposerLetterOut:
-    """C13 `letter_partner_approval` (N-02-T35)."""
+async def request_approval_route(
+    engagement_id: UUID, ctx: Ctx, if_match: IfMatch
+) -> ComposerLetterOut:
+    """C13 `letter_partner_approval`: the draft waits on the engagement partners (N-02-T33)."""
+    if not ctx.client and await flag_enabled(ctx.tenant, ENGAGEMENTS_LETTER_COMPOSER):
+        from abacus.modules.engagements.letter_flow import request_approval
+
+        return await request_approval(ctx, engagement_id, if_match)
     await _stub(ctx, "letter.draft")
 
 
@@ -332,7 +339,11 @@ async def request_approval_route(engagement_id: UUID, ctx: Ctx) -> ComposerLette
 async def approve_letter_route(
     engagement_id: UUID, ctx: Ctx, if_match: IfMatch
 ) -> ComposerLetterOut:
-    """Partner, fresh MFA, against the content hash (N-02-T35)."""
+    """Partner, fresh MFA, against the content hash (N-02-T33)."""
+    if not ctx.client and await flag_enabled(ctx.tenant, ENGAGEMENTS_LETTER_COMPOSER):
+        from abacus.modules.engagements.letter_flow import approve_letter
+
+        return await approve_letter(ctx, engagement_id, if_match)
     await _stub(ctx, "letter.approve")
 
 
@@ -343,7 +354,15 @@ async def approve_letter_route(
     errors=(409, 501),
 )
 async def send_letter_route(engagement_id: UUID, ctx: Ctx) -> LetterSendOut:
-    """A C7 draft from the `engagement_letter` source (N-02-T35)."""
+    """A C7 draft from the `engagement_letter` source (N-02-T33), with `signatures.envelopes`."""
+    if (
+        not ctx.client
+        and await flag_enabled(ctx.tenant, ENGAGEMENTS_LETTER_COMPOSER)
+        and await flag_enabled(ctx.tenant, SIGNATURES_ENVELOPES)
+    ):
+        from abacus.modules.engagements.letter_flow import send_letter
+
+        return LetterSendOut(envelope_id=await send_letter(ctx, engagement_id))
     await _stub(ctx, "letter.send")
 
 
@@ -355,5 +374,9 @@ async def send_letter_route(engagement_id: UUID, ctx: Ctx) -> LetterSendOut:
     errors=(409, 501),
 )
 async def amend_letter_route(engagement_id: UUID, ctx: Ctx) -> ComposerLetterOut:
-    """An addendum version (N-02-T37)."""
+    """An addendum version amending the signed letter (N-02-T33)."""
+    if not ctx.client and await flag_enabled(ctx.tenant, ENGAGEMENTS_LETTER_COMPOSER):
+        from abacus.modules.engagements.letter_flow import amend_letter
+
+        return await amend_letter(ctx, engagement_id)
     await _stub(ctx, "letter.amend")

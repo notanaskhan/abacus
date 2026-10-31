@@ -193,6 +193,7 @@ from abacus.modules.communications.triage_apply import (
     Placement,
     register_intake_destination,
 )
+from abacus.modules.communications.triage_outcomes import TriageOutcome, triage_outcomes
 from abacus.modules.communications.triage_workflow import (
     AttachmentTriageWorkflow,
     TriageInput,
@@ -354,6 +355,7 @@ __all__ = [
     "TemplateVariable",
     "Transport",
     "TriageInput",
+    "TriageOutcome",
     "ValueFinding",
     "Violation",
     "WaitingAttachment",
@@ -409,6 +411,7 @@ __all__ = [
     "sink_domain",
     "template_key",
     "templated_outcome",
+    "triage_outcomes",
     "viewer_scoped",
     "waiting_for_client",
     "waiting_for_work_item",

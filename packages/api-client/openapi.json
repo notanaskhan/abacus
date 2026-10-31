@@ -34464,6 +34464,36 @@
         "title": "ImportSignerIn",
         "type": "object"
       },
+      "InPersonIdIn": {
+        "additionalProperties": false,
+        "description": "N-02-T27: the ID a person checked across the desk (type only; never its number).",
+        "properties": {
+          "checked_by_user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Checked By User Id",
+            "type": "string"
+          },
+          "id_type": {
+            "cls": "internal",
+            "enum": [
+              "drivers_license",
+              "passport",
+              "state_id",
+              "military_id",
+              "other"
+            ],
+            "title": "Id Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id_type",
+          "checked_by_user_id"
+        ],
+        "title": "InPersonIdIn",
+        "type": "object"
+      },
       "InboundMessageOut": {
         "description": "One received message. `body` is present only with `inbox.read_content`.",
         "properties": {
@@ -66005,6 +66035,12 @@
       "SignerChip": {
         "description": "One signer as SIG-01's chip draws them (\"\u2713 Thomas\" \u00b7 \"\u25cb Irene\").",
         "properties": {
+          "locked": {
+            "cls": "internal",
+            "default": false,
+            "title": "Locked",
+            "type": "boolean"
+          },
           "name": {
             "cls": "confidential",
             "title": "Name",
@@ -66014,6 +66050,19 @@
             "cls": "internal",
             "title": "Signed",
             "type": "boolean"
+          },
+          "signer_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Signer Id"
           }
         },
         "required": [
@@ -78578,13 +78627,37 @@
       },
       "WetSignatureIn": {
         "additionalProperties": false,
-        "description": "DF-11: the hand-signed form, uploaded and attested.",
+        "description": "DF-11: the hand-signed form, uploaded and attested (the scan staged through\n`POST /v1/envelopes/import/files`).",
         "properties": {
           "attested": {
             "cls": "internal",
             "const": true,
             "title": "Attested",
             "type": "boolean"
+          },
+          "in_person_id": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InPersonIdIn"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "received_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Received On"
           },
           "signed_on": {
             "cls": "internal",
@@ -109800,7 +109873,7 @@
     },
     "/v1/engagements/{engagement_id}/letter/amend": {
       "post": {
-        "description": "An addendum version (N-02-T37).",
+        "description": "An addendum version amending the signed letter (N-02-T33).",
         "operationId": "amend_letter",
         "parameters": [
           {
@@ -109927,7 +110000,7 @@
     },
     "/v1/engagements/{engagement_id}/letter/approve": {
       "post": {
-        "description": "Partner, fresh MFA, against the content hash (N-02-T35).",
+        "description": "Partner, fresh MFA, against the content hash (N-02-T33).",
         "operationId": "approve_letter",
         "parameters": [
           {
@@ -110829,7 +110902,7 @@
     },
     "/v1/engagements/{engagement_id}/letter/request-approval": {
       "post": {
-        "description": "C13 `letter_partner_approval` (N-02-T35).",
+        "description": "C13 `letter_partner_approval`: the draft waits on the engagement partners (N-02-T33).",
         "operationId": "request_approval",
         "parameters": [
           {
@@ -110839,6 +110912,17 @@
             "schema": {
               "format": "uuid",
               "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "minLength": 1,
+              "title": "If-Match",
               "type": "string"
             }
           },
@@ -110956,7 +111040,7 @@
     },
     "/v1/engagements/{engagement_id}/letter/send": {
       "post": {
-        "description": "A C7 draft from the `engagement_letter` source (N-02-T35).",
+        "description": "A C7 draft from the `engagement_letter` source (N-02-T33), with `signatures.envelopes`.",
         "operationId": "send_letter",
         "parameters": [
           {
@@ -111230,16 +111314,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Mapping Sets Route",
@@ -111365,16 +111439,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Mapping Run Start Route",
@@ -132713,7 +132777,7 @@
     },
     "/v1/envelope-policies": {
       "get": {
-        "description": "The firm's policies (N-02-T13).",
+        "description": "The firm's policies: each family's row, else the published floor (N-02-T27).",
         "operationId": "list_envelope_policies",
         "parameters": [
           {
@@ -132803,16 +132867,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Envelope Policies Route",
@@ -132824,7 +132878,7 @@
     },
     "/v1/envelope-policies/{family}": {
       "put": {
-        "description": "Stricter-only (AC-9; N-02-T13).",
+        "description": "Stricter-only against the floor (AC-9; N-02-T27).",
         "operationId": "update_envelope_policy",
         "parameters": [
           {
@@ -132945,16 +132999,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Update Envelope Policy Route",
@@ -135072,7 +135116,7 @@
     },
     "/v1/envelopes/{envelope_id}/signers/{signer_id}/wet-signature": {
       "post": {
-        "description": "DF-11: the hand-signed 8879 (N-02-T27).",
+        "description": "DF-11: the hand-signed 8879 (N-02-T27): the signer signed, method Handwritten.",
         "operationId": "record_wet_signature",
         "parameters": [
           {
@@ -135209,16 +135253,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Record Wet Signature Route",
@@ -161312,16 +161346,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Mapping Set Route",
@@ -161460,16 +161484,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Account Mapping Edit Route",
@@ -161597,16 +161611,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Mapping Confirm Route",
@@ -161713,16 +161717,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Mapping Run Route",
@@ -161829,16 +161823,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Mapped Trial Balance Route",
@@ -167127,16 +167111,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Population Route",
@@ -167254,16 +167228,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Population Tie Create Route",
@@ -188392,16 +188356,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Population Create Route",

@@ -102,6 +102,8 @@ from abacus.modules.evidence.export_sections import (
 from abacus.modules.evidence.export_sections import (
     section_csv as export_section_csv,
 )
+from abacus.modules.evidence.extraction import Extraction, extract_isolated
+from abacus.modules.evidence.extraction import Table as ExtractedTable
 from abacus.modules.evidence.files_contract import files_router
 from abacus.modules.evidence.firm_export_activities import ACTIVITIES as FIRM_EXPORT_ACTIVITIES
 from abacus.modules.evidence.firm_export_activities import (
@@ -172,7 +174,7 @@ from abacus.modules.evidence.match_material import (
 )
 from abacus.modules.evidence.matching import MIN_SCORE as SUGGESTION_MIN_SCORE
 from abacus.modules.evidence.matching import suggest as suggest_by_name
-from abacus.modules.evidence.pii import pii_scan_upload
+from abacus.modules.evidence.pii import column_families, masked_rows, pii_scan_upload
 from abacus.modules.evidence.pii_facts import tin_exposure
 from abacus.modules.evidence.portal_files import (
     PortalFile,
@@ -487,7 +489,7 @@ __all__ = [
     "CitationVerdict",
     "ClassifiedIntake",
     "ContentTooLarge",
-    "DocumentDownload",  # G-02-T20: the WISP pack's documents
+    "DocumentDownload",  # G-02-T20: the WISP pack's documents",
     "EffectivePolicy",
     "EngagementArchived",
     "EngagementExportInput",
@@ -503,6 +505,8 @@ __all__ = [
     "ExportExpirySweepWorkflow",
     "ExportPackageFacts",
     "ExportStale",
+    "ExtractedTable",
+    "Extraction",
     "Filed",
     "FinalExport",
     "FinalExportRequired",
@@ -570,6 +574,7 @@ __all__ = [
     "classifier_rules",
     "classify_intake",
     "client_pre_checks",
+    "column_families",
     "column_letters",
     "configure_storage",
     "decide",
@@ -586,6 +591,7 @@ __all__ = [
     "export_section_csv",
     "extend_record",
     "extend_retention_for",
+    "extract_isolated",
     "file_engine_copy",
     "file_intake_object",
     "file_retrieved_copy",
@@ -608,6 +614,7 @@ __all__ = [
     "live_intake_keys",
     "mark_sources_superseded",
     "masked_preview_upload",
+    "masked_rows",
     "match_material",
     "normalised_text",
     "page_quote_reason",

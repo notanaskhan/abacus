@@ -15,7 +15,8 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { type JSX, type KeyboardEvent, useRef, useState } from "react";
 import { useNow } from "../../app-core/clock";
-import { useOpenHref } from "../../app-core/open";
+import { useOpenHref, useOpenOverlay } from "../../app-core/open";
+import type { OverlayRef } from "../../app-core/overlays";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { useSession } from "../../app-core/session";
 import {
@@ -29,7 +30,7 @@ import {
   visibleBands,
 } from "../../domain/home";
 import { COPY } from "./copy";
-import { MY_WORK, openHref } from "./hosts";
+import { MY_WORK, openHref, openOverlayOf } from "./hosts";
 
 // HOME-02 · My approvals & review queue, the queue (I-01-T16; docs/screens/HOME-02.md) on T9
 // QueueDetailLayout preset close-review: the subbar ("Approvals" + the viewer, the Home segmented
@@ -96,6 +97,9 @@ export interface HOME02Props {
   onGate?: (gate: string | null) => void;
   /** Enter on a row, and "Open": the gate's host as an href (default: its `subject_route`). */
   hrefOf?: (gate: HumanGateOut) => string | undefined;
+  /** Enter on a row, and "Open", for a decision or sign-off row: its sheet as a `?ov=` layer over
+   * the queue (P-04-T52), ahead of `hrefOf`. */
+  overlayOf?: (gate: HumanGateOut) => OverlayRef | undefined;
   /** The gallery's frame: the firm toolbar drawn inside the window. */
   toolbar?: ToolbarProps;
   height?: number;
@@ -106,6 +110,7 @@ export function HOME02({
   gate: gateParam = null,
   onGate,
   hrefOf = openHref,
+  overlayOf = openOverlayOf,
   toolbar,
   height,
   initialDone = false,
@@ -141,8 +146,10 @@ export function HOME02({
   const order = groups.flatMap((g) => g.items);
   const selectedId = order.some((i) => i.id === chosen) ? chosen : (order[0]?.id ?? null);
   const selected = gates.find((g) => g.id === selectedId);
-  const href = selected === undefined ? undefined : hrefOf(selected);
+  const layer = selected === undefined ? undefined : overlayOf(selected);
+  const href = selected === undefined || layer !== undefined ? undefined : hrefOf(selected);
   const open = useOpenHref();
+  const openOverlay = useOpenOverlay();
 
   const select = (id: string | null, focus = false): void => {
     setChosen(id);
@@ -162,6 +169,9 @@ export function HOME02({
       if (next === undefined) return;
       event.preventDefault();
       select(next.id, true);
+    } else if (event.key === "Enter" && layer !== undefined) {
+      event.preventDefault();
+      openOverlay(layer);
     } else if (event.key === "Enter" && href !== undefined) {
       event.preventDefault();
       open(href);
@@ -296,15 +306,31 @@ export function HOME02({
         detail={{
           title: COPY.detail,
           body: detailBody,
-          ...(href === undefined
-            ? {}
-            : {
+          ...(layer !== undefined
+            ? {
                 footer: (
-                  <Button variant="secondary" size="sm" asChild>
-                    <a href={href}>{COPY.open}</a>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    aria-haspopup="dialog"
+                    data-overlay={layer.key}
+                    onClick={() => {
+                      openOverlay(layer);
+                    }}
+                  >
+                    {COPY.open}
                   </Button>
                 ),
-              }),
+              }
+            : href === undefined
+              ? {}
+              : {
+                  footer: (
+                    <Button variant="secondary" size="sm" asChild>
+                      <a href={href}>{COPY.open}</a>
+                    </Button>
+                  ),
+                }),
         }}
         evidence={[
           <section

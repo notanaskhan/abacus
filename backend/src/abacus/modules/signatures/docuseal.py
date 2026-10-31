@@ -103,6 +103,8 @@ _SIGNING_DATE: Final = "{{date}}"  # DocuSeal fills the day the signer completes
 # our portal (MFA and ERSD consent) before the signing URL is fetched, so DocuSeal adds nothing.
 # In-person ID is the handwritten path and never reaches DocuSeal; SMS is never sent.
 _IDENTITY: Final = frozenset({"kba", "email_code", "firm_sso"})
+# The submission events that record a failed identity check [verify] (F-09-T63).
+_KBA_FAILED: Final = frozenset({"fail_verification", "verification_failed"})
 
 
 class DocuSealError(ServiceUnavailable):
@@ -454,6 +456,11 @@ class DocuSealProvider:
 
     async def status(self, provider_envelope_id: str) -> tuple[SignerState, ...]:
         submission = await self._submission(provider_envelope_id)
+        failures: dict[str, int] = {}
+        for e in cast(list[Json], submission.get("submission_events") or []):
+            if e.get("event_type") in _KBA_FAILED:
+                key = str(e.get("submitter_id"))
+                failures[key] = failures.get(key, 0) + 1
         out: list[SignerState] = []
         for s in cast(list[Json], submission.get("submitters") or []):
             if not s.get("external_id"):
@@ -465,8 +472,9 @@ class DocuSealProvider:
                     status=status,
                     viewed_at=_when(s.get("opened_at")),
                     signed_at=_when(s.get("completed_at")),
-                    # A failed KBA keeps the form open; its report waits on F-09-T63 [verify].
-                    kba_failures=0,
+                    # N-02-T27: each failed identity check DocuSeal logs on the submission
+                    # (event names [verify], F-09-T63); our poll closes the signer at the limit.
+                    kba_failures=min(failures.get(str(s.get("id")), 0), 3),
                     decline_reason="other" if status == "declined" else None,
                 )
             )

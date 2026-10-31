@@ -16273,6 +16273,22 @@ export type ImportSignerIn = {
 };
 
 /**
+ * InPersonIdIn
+ *
+ * N-02-T27: the ID a person checked across the desk (type only; never its number).
+ */
+export type InPersonIdIn = {
+    /**
+     * Checked By User Id
+     */
+    checked_by_user_id: string;
+    /**
+     * Id Type
+     */
+    id_type: 'drivers_license' | 'passport' | 'state_id' | 'military_id' | 'other';
+};
+
+/**
  * InboundMessageOut
  *
  * One received message. `body` is present only with `inbox.read_content`.
@@ -31548,6 +31564,10 @@ export type SignedOutOut = {
  */
 export type SignerChip = {
     /**
+     * Locked
+     */
+    locked?: boolean;
+    /**
      * Name
      */
     name: string;
@@ -31555,6 +31575,10 @@ export type SignerChip = {
      * Signed
      */
     signed: boolean;
+    /**
+     * Signer Id
+     */
+    signer_id?: string | null;
 };
 
 /**
@@ -37426,13 +37450,19 @@ export type WebhookAcceptedOut = {
 /**
  * WetSignatureIn
  *
- * DF-11: the hand-signed form, uploaded and attested.
+ * DF-11: the hand-signed form, uploaded and attested (the scan staged through
+ * `POST /v1/envelopes/import/files`).
  */
 export type WetSignatureIn = {
     /**
      * Attested
      */
     attested: true;
+    in_person_id?: InPersonIdIn | null;
+    /**
+     * Received On
+     */
+    received_on?: string | null;
     /**
      * Signed On
      */
@@ -51986,7 +52016,11 @@ export type RecordEngagementLetterResponse = RecordEngagementLetterResponses[key
 
 export type RequestApprovalData = {
     body?: never;
-    headers?: {
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': string;
         /**
          * Authorization
          */
@@ -52156,10 +52190,6 @@ export type MappingSetsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MappingSetsError = MappingSetsErrors[keyof MappingSetsErrors];
@@ -52216,10 +52246,6 @@ export type MappingRunStartErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MappingRunStartError = MappingRunStartErrors[keyof MappingRunStartErrors];
@@ -62074,10 +62100,6 @@ export type ListEnvelopePoliciesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListEnvelopePoliciesError = ListEnvelopePoliciesErrors[keyof ListEnvelopePoliciesErrors];
@@ -62136,10 +62158,6 @@ export type UpdateEnvelopePolicyErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type UpdateEnvelopePolicyError = UpdateEnvelopePolicyErrors[keyof UpdateEnvelopePolicyErrors];
@@ -63139,10 +63157,6 @@ export type RecordWetSignatureErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type RecordWetSignatureError = RecordWetSignatureErrors[keyof RecordWetSignatureErrors];
@@ -74978,10 +74992,6 @@ export type MappingSetErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MappingSetError = MappingSetErrors[keyof MappingSetErrors];
@@ -75042,10 +75052,6 @@ export type AccountMappingEditErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AccountMappingEditError = AccountMappingEditErrors[keyof AccountMappingEditErrors];
@@ -75102,10 +75108,6 @@ export type MappingConfirmErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MappingConfirmError = MappingConfirmErrors[keyof MappingConfirmErrors];
@@ -75158,10 +75160,6 @@ export type MappingRunErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MappingRunError = MappingRunErrors[keyof MappingRunErrors];
@@ -75214,10 +75212,6 @@ export type MappedTrialBalanceErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type MappedTrialBalanceError = MappedTrialBalanceErrors[keyof MappedTrialBalanceErrors];
@@ -77678,10 +77672,6 @@ export type PopulationErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PopulationError = PopulationErrors[keyof PopulationErrors];
@@ -77734,10 +77724,6 @@ export type PopulationTieCreateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PopulationTieCreateError = PopulationTieCreateErrors[keyof PopulationTieCreateErrors];
@@ -87285,10 +87271,6 @@ export type PopulationCreateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PopulationCreateError = PopulationCreateErrors[keyof PopulationCreateErrors];
