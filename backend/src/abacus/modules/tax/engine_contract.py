@@ -42,10 +42,11 @@ from abacus.modules.identity.api import (
     Resource,
     authorise,
     current_context,
+    current_member,
     names_of,
     set_ero,
 )
-from abacus.modules.tax import approval, delivery, engine_import, export, filing
+from abacus.modules.tax import approval, delivery, engine_import, export, filed_delivery, filing
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=8, max_length=200)]
@@ -957,13 +958,42 @@ async def rejection_issue_route(
     "/tax-returns/{return_id}/deliverables:publish",
     action="deliverable.publish",
     response_model=DeliverablePublishOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def publish_deliverable_route(
     return_id: ReturnId, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> DeliverablePublishOut:
-    """Release the client copy to the portal (a person's act; the email is R-01's template)."""
-    await _stub(ctx, "deliverable.publish", D)
+    """Release the accepted return's client copy to the household's portal (a person's act;
+    T-01-T41). 409 `return_not_accepted`, `packet_not_approved`, `no_client_copy`."""
+    await _live(ctx, "deliverable.publish", D)
+    found = await filed_delivery.publish(ctx, return_id)
+    return DeliverablePublishOut(delivery_id=found.id, published_at=found.published_at)
+
+
+portal_filing_router = AbacusRouter(prefix="/v1/portal", tags=["portal"])
+Member = Annotated[AuthContext, Depends(current_member)]
+
+
+@portal_filing_router.get(
+    "/filed-returns/{delivery_id}/download",
+    action="portal_home.read",
+    response_model=bytes,
+)
+async def filed_return_download_route(
+    delivery_id: Annotated[UUID, Path()], ctx: Member
+) -> Response:
+    """The released client copy of a filed and accepted return, for a client whose grant covers
+    it, after the portal's second step (403 `mfa_required`); audited (T-01-T41)."""
+    copy = await filed_delivery.client_copy(ctx, delivery_id)
+    return Response(
+        copy.content,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{copy.file_name}"',
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 @engine_router.put(

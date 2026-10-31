@@ -79635,6 +79635,60 @@ export type PortalViewedResponses = {
 
 export type PortalViewedResponse = PortalViewedResponses[keyof PortalViewedResponses];
 
+export type FiledReturnDownloadData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Delivery Id
+         */
+        delivery_id: string;
+    };
+    query?: never;
+    url: '/v1/portal/filed-returns/{delivery_id}/download';
+};
+
+export type FiledReturnDownloadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type FiledReturnDownloadError = FiledReturnDownloadErrors[keyof FiledReturnDownloadErrors];
+
+export type FiledReturnDownloadResponses = {
+    /**
+     * Response Filed Return Download
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type FiledReturnDownloadResponse = FiledReturnDownloadResponses[keyof FiledReturnDownloadResponses];
+
 export type GetPortalHomeData = {
     body?: never;
     headers?: {
@@ -85601,10 +85655,6 @@ export type PublishDeliverableErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PublishDeliverableError = PublishDeliverableErrors[keyof PublishDeliverableErrors];

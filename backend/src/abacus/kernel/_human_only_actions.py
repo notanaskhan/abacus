@@ -60,6 +60,7 @@ HUMAN_ONLY_ACTIONS: Final[frozenset[str]] = frozenset(
         "report.approved",
         "report.released",
         "retention_policy.updated",
+        "return.delivered",
         "review.decided",
         "review.released",
         "review_decision.created",
