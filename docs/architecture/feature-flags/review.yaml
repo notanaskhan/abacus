@@ -10,6 +10,14 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: review.approve_agent_output
+    description: 'SHL-10 live approval of agent output (P-04 §2, P-04-T46): a person approves, approves with edits, rejects, routes or follows up an agent proposal. Off: those four decision routes answer 404 and the proposal view offers none of them (reading a proposal stays behind review.grammar_api; Undo stays open inside its window). Flipped per pilot firm on Tue Jul 13, 2027 (docs/runbooks/review-approvals-flip.md); renewed before Sep 1 with an expiry after Oct 20, or retired.'
+    owner: ayushkbhatia
+    created: 2026-10-31
+    expires: 2027-04-29
+    override: DEC-137
+    kind: boolean
+    default: false
   - name: review.checkpoints
     description: 'SHL-16 checkpoint diff drawer (P-04-T43) and SHL-09 on returns: `?ov=checkpoints:<target_type>:<target_id>`. Off: the overlay renders nothing and the Checkpoints chip is not offered. Tax-pilot firms: shadow Tue Jul 27, live Tue Aug 17, 2027 (P-04 §2); renewed before expiry or retired with the pilot.'
     owner: ayushkbhatia
