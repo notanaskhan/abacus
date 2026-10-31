@@ -204,3 +204,54 @@ class EntryAssessRunInput:
     tenant_id: str
     run_id: str
     selected_item_id: str
+
+
+# --- K-01-T21: the methodology importer (identifiers in and out, WF-001) -------------------------
+
+
+@dataclass(frozen=True)
+class MethodologyImportInput:
+    """One import's document parse, started by `requested_by` from `POST …/imports/{id}/start`."""
+
+    tenant_id: str
+    import_id: str
+    requested_by: str
+
+
+@dataclass(frozen=True)
+class ImportPagesOutcome:
+    """`page_count` pages read in the isolated child; `held` when the PII hold stopped it."""
+
+    page_count: int
+    held: bool
+
+
+@dataclass(frozen=True)
+class ImportBatchInput:
+    tenant_id: str
+    import_id: str
+    requested_by: str
+    first_page: int
+    last_page: int
+
+
+@dataclass(frozen=True)
+class ImportBatchOutcome:
+    """The batch's run, or `stop` when the import was cancelled or a terminal error ended it."""
+
+    run_id: str | None
+    stop: bool
+
+
+@dataclass(frozen=True)
+class ImportFinishInput:
+    tenant_id: str
+    import_id: str
+    run_ids: list[str]
+
+
+@dataclass(frozen=True)
+class ImportFailInput:
+    tenant_id: str
+    import_id: str
+    code: str

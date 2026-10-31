@@ -77,6 +77,7 @@ class AgentSpec(BaseModel):
             "IntakeMatchInput",
             "GuidanceDraftInput",
             "EntryAssessInput",
+            "MethodologyImportInput",
         ],
         classified("internal"),
     ]
@@ -89,6 +90,7 @@ class AgentSpec(BaseModel):
             "IntakeMatchOutput",
             "GuidanceDraft",
             "EntryAssessment",
+            "ImportBatchOutput",
         ],
         classified("internal"),
     ]

@@ -1,0 +1,32 @@
+# The methodology importer (K-01-T21; K-01 §6; DEC-1856). Source of truth: compiled into _specs.py
+# by `python -m abacus_tools.codegen.agent_specs`; a test fails if they drift.
+id: methodology.importer
+version: 1
+purpose: Read a firm's methodology document and list its programs and numbered steps as printed, for a person to review and approve.
+shape: single_call
+prompt: methodology.import_parse@v1
+tier: medium
+escalation_tier: medium
+input_schema: MethodologyImportInput
+output_schema: ImportBatchOutput
+# methodology.parse: draft rows for its own import only (K-01 §4.3).
+task_scope: [methodology.read, methodology.parse]
+tools: []
+limits:
+  max_output_tokens: 6000
+  # Per batch of eight pages; a 96-page manual is 12 calls (K-01 §6.4).
+  max_cost_usd: "0.08"
+  max_steps: 1
+  max_seconds: 120
+autonomy: propose
+# Every imported version lands in Needs review; low confidence is a flag, never hidden.
+confidence_routing:
+  below: "0"
+  route: hidden
+untrusted_inputs: [document]
+evaluation_suite: evals/methodology_import
+# K-01 §4.4: background work, deferrable under pressure.
+work_class: background
+essential: false
+cheaper_tiers: []
+routes: [bedrock, direct]
