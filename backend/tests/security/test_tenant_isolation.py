@@ -91,6 +91,7 @@ TABLES: tuple[str, ...] = (
     "decision_card_versions",
     "decision_cards",
     "decisions",
+    "delivery_packets",
     "document_classifications",
     "duplicate_resolutions",
     "email_suppressions",
