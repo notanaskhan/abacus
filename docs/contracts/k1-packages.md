@@ -51,3 +51,8 @@ Box amounts TRI; names and addresses confidential; TIN last four only.
 - `POST /v1/portal/k1-recipients/{rid}/details-changes` (201): `address` with `line1`, `city`, `postal_code`, `country` (and optional `line2`, `state`), or `w9`/`w8` with `upload_id`; 422 `details_change_invalid`.
 - `POST /v1/portal/k1s/{pid}/e-furnishing-consent`: `given` or `declined` with the disclosure version.
 - Another recipient's package, a draft or an unknown id: 404. A firm principal: 404.
+
+## T-02-T25 additions (DEC-1575)
+- `K1PackageOut` (firm rows; the portal leaves them empty): `period_start`, `period_end`, `ownership_note`, `locality`, `delivery_contact_name`, `supersedes_package_id`, `handoffs[]` (`target_return_id` null and `target_name` "Another return" for a target the reader cannot read, `target_form`, `status` `draft_shared`/`final_replaced`, `shared_at`, `replaced_at`), `details_change` (a pending change: `id`, `kind`, `submitted_at`) and `related_returns[]` (the recipient's own client's returns for the year that the caller reads: `return_id`, `client_name`, `form`, `status`).
+- `K1PackageDetailOut.tin`: `kind` and `last4` (Restricted, `pii_kind` tin). No list row carries a TIN (ADR-031).
+- `K1ReleaseCheckOut.email_template_version_id`: the "Deliverable ready" version a release must cite.

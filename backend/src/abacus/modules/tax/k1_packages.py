@@ -63,6 +63,7 @@ from abacus.modules.identity.api import (
     engagement_resource,
     resolve_scope,
 )
+from abacus.modules.organisations.api import client_of_entity, contact_facts
 from abacus.modules.requests.api import fulfil_by_rule, k1_request_for
 from abacus.modules.tax import engine_repository as repo
 from abacus.modules.tax.approval import Blocker
@@ -629,6 +630,39 @@ class LineView:
 
 
 @dataclass(frozen=True)
+class HandoffView:
+    """A row's internal hand-off (TXP-12's column); the target only for a reader of it
+    (DEC-88)."""
+
+    target_return_id: UUID | None
+    target_name: str
+    target_form: str | None
+    status: str
+    shared_at: object
+    replaced_at: object
+
+
+@dataclass(frozen=True)
+class RelatedReturn:
+    """A return of the recipient's own client for the same year, readable by the caller: a
+    share target (TXP-12's Share draft internally…)."""
+
+    return_id: UUID
+    client_name: str
+    form: str
+    status: str
+
+
+@dataclass(frozen=True)
+class ChangeTag:
+    """A pending recipient-details change, the row's second line (DV-10)."""
+
+    id: UUID
+    kind: str
+    submitted_at: object
+
+
+@dataclass(frozen=True)
 class PackageView:
     id: UUID
     recipient_id: UUID
@@ -644,14 +678,133 @@ class PackageView:
     allowed_actions: tuple[str, ...]
     documents: tuple[DocumentView, ...] = ()
     lines: tuple[LineView, ...] = ()
+    # T-02-T25 (additive; firm rows only, the portal leaves them empty): TXP-12's row lines.
+    period_start: date | None = None
+    period_end: date | None = None
+    ownership_note: str | None = None
+    locality: str | None = None
+    delivery_contact_name: str | None = None
+    supersedes_package_id: UUID | None = None
+    handoffs: tuple[HandoffView, ...] = ()
+    details_change: ChangeTag | None = None
+    related_returns: tuple[RelatedReturn, ...] = ()
+    tin_kind: str | None = None
+    tin_last4: str | None = None
 
 
 _PACKAGES = text(
     "SELECT p.id, p.recipient_id, r.display_name, r.recipient_kind, p.form, p.tax_year, "
-    "p.status, p.k3_status, p.state_codes, p.released_at, p.version_no FROM k1_packages p "
+    "p.status, p.k3_status, p.state_codes, p.released_at, p.version_no, p.period_start, "
+    "p.period_end, r.ownership_note, r.address ->> 'city' AS city, "
+    "r.address ->> 'state' AS state, coalesce(p.delivery_contact_id, r.contact_id) AS contact, "
+    "p.supersedes_package_id, r.client_entity_id FROM k1_packages p "
     "JOIN k1_recipients r ON r.id = p.recipient_id "
     "WHERE p.work_item_id = :w ORDER BY r.display_name, p.version_no DESC"
 )
+
+
+def _locality(city: str | None, state: str | None) -> str | None:
+    parts = [x for x in (city, state) if x]
+    return ", ".join(parts) or None
+
+
+async def _handoffs(
+    ctx: AuthContext, session: AsyncSession, ids: Sequence[UUID]
+) -> dict[UUID, list[HandoffView]]:
+    """Each package's hand-offs to other returns; a target the reader cannot read is "Another
+    return" with no link (DEC-88)."""
+    if not ids:
+        return {}
+    rows = (
+        await session.execute(
+            text(
+                "SELECT h.package_id, h.target_work_item_id, h.status, h.shared_at, "
+                "h.replaced_at, t.form FROM k1_handoffs h LEFT JOIN tax_returns t "
+                "ON t.work_item_id = h.target_work_item_id WHERE h.package_id = ANY(:ids) "
+                "AND h.status <> 'withdrawn' ORDER BY h.shared_at, h.id"
+            ),
+            {"ids": list(ids)},
+        )
+    ).all()
+    if not rows:
+        return {}
+    visible = {f.work_item_id: f.client_name for f in await work_item_facts(ctx, KIND)}
+    out: dict[UUID, list[HandoffView]] = {}
+    for r in rows:
+        target = cast(UUID, r.target_work_item_id)
+        seen = target in visible
+        out.setdefault(r.package_id, []).append(
+            HandoffView(
+                target if seen else None,
+                visible[target] if seen else "Another return",
+                cast(str | None, r.form) if seen else None,
+                r.status,
+                r.shared_at,
+                r.replaced_at,
+            )
+        )
+    return out
+
+
+async def _related(
+    ctx: AuthContext,
+    session: AsyncSession,
+    return_id: UUID,
+    tax_year: int,
+    entities: Sequence[UUID],
+) -> dict[UUID, list[RelatedReturn]]:
+    """Each recipient entity's own returns for `tax_year` that the caller reads, the issuing
+    return aside (DEC-88: a target is offered only to a reader of both)."""
+    if not entities:
+        return {}
+    clients = {e: await client_of_entity(ctx.tenant, e) for e in entities}
+    wanted = {c for c in clients.values() if c is not None}
+    if not wanted:
+        return {}
+    facts = [
+        f
+        for f in await work_item_facts(ctx, KIND)
+        if f.client_id in wanted and f.work_item_id != return_id
+    ]
+    if not facts:
+        return {}
+    rows = (
+        await session.execute(
+            text(
+                "SELECT work_item_id, form, status FROM tax_returns "
+                "WHERE work_item_id = ANY(:ids) AND tax_year = :y"
+            ),
+            {"ids": [f.work_item_id for f in facts], "y": tax_year},
+        )
+    ).all()
+    found = {r.work_item_id: r for r in rows}
+    out: dict[UUID, list[RelatedReturn]] = {}
+    for entity, client in clients.items():
+        for f in facts:
+            row = found.get(f.work_item_id)
+            if f.client_id == client and row is not None:
+                out.setdefault(entity, []).append(
+                    RelatedReturn(f.work_item_id, f.client_name, row.form, row.status)
+                )
+    return out
+
+
+async def _pending_changes(
+    session: AsyncSession, recipients: Sequence[UUID]
+) -> dict[UUID, ChangeTag]:
+    if not recipients:
+        return {}
+    rows = (
+        await session.execute(
+            text(
+                "SELECT DISTINCT ON (recipient_id) id, recipient_id, kind, submitted_at "
+                "FROM recipient_details_changes WHERE recipient_id = ANY(:ids) "
+                "AND status = 'pending' ORDER BY recipient_id, submitted_at DESC, id"
+            ),
+            {"ids": list(recipients)},
+        )
+    ).all()
+    return {r.recipient_id: ChangeTag(r.id, r.kind, r.submitted_at) for r in rows}
 
 
 async def _documents(session: AsyncSession, ids: Sequence[UUID]) -> dict[UUID, list[DocumentView]]:
@@ -689,6 +842,22 @@ async def packages_of(
             )
         ).all()
         docs = await _documents(session, [r.id for r in rows])
+        handoffs = await _handoffs(ctx, session, [r.id for r in rows])
+        changes = await _pending_changes(session, list({r.recipient_id for r in rows}))
+        related = await _related(
+            ctx,
+            session,
+            return_id,
+            int(rows[0].tax_year) if rows else 0,
+            list({cast(UUID, r.client_entity_id) for r in rows if r.client_entity_id}),
+        )
+        found = await contact_facts(
+            session, list({cast(UUID, r.contact) for r in rows if r.contact is not None})
+        )
+    # A delivery contact is named only when its client is the issuer's or one the reader sees
+    # (walls, INV-3): a walled client's contact leaves no name behind.
+    seen = {f.client_id for f in await work_item_facts(ctx, KIND)} | {issuer.client_id}
+    contacts = {cid: c for cid, c in found.items() if c.client_id in seen}
     out: list[PackageView] = []
     counts: dict[str, int] = {}
     for r in rows:
@@ -709,6 +878,19 @@ async def packages_of(
                 int(r.version_no),
                 tuple(sorted(mine)),
                 tuple(docs.get(r.id, [])),
+                period_start=r.period_start,
+                period_end=r.period_end,
+                ownership_note=r.ownership_note,
+                locality=_locality(r.city, r.state),
+                delivery_contact_name=(
+                    contacts[r.contact].display_name if r.contact in contacts else None
+                ),
+                supersedes_package_id=r.supersedes_package_id,
+                handoffs=tuple(handoffs.get(r.id, [])),
+                details_change=changes.get(r.recipient_id),
+                related_returns=tuple(related.get(r.client_entity_id, ()))
+                if r.client_entity_id
+                else (),
             )
         )
     return out, counts
@@ -735,6 +917,15 @@ async def package(ctx: AuthContext, package_id: UUID) -> PackageView:
     found = next((p for p in rows if p.id == package_id), None)
     if found is None:
         raise NotFound("k1_package")
+    async with tenant_session(ctx.tenant) as session:
+        tin = (
+            await session.execute(
+                text("SELECT tin_kind, tin_last4 FROM k1_recipients WHERE id = :r"),
+                {"r": found.recipient_id},
+            )
+        ).one()
+    # The masked TIN is the recipient detail's, never a list row's (ADR-031).
+    found = replace(found, tin_kind=tin.tin_kind, tin_last4=tin.tin_last4)
     if not content:
         return found
     async with tenant_session(ctx.tenant) as session:

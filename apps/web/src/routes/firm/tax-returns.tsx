@@ -15,6 +15,7 @@ import { appRoute, lazyScreen } from "../root";
 const PracticeBoard = lazyScreen(async () => (await import("../../screens/TAX-01")).TAX01);
 const ReturnOverview = lazyScreen(async () => (await import("../../screens/TAX-02")).TAX02);
 const ReturnIntake = lazyScreen(async () => (await import("../../screens/TAX-03")).TAX03);
+const K1Package = lazyScreen(async () => (await import("../../screens/TXP-12")).TXP12);
 
 function gated(children: JSX.Element): JSX.Element {
   return (
@@ -92,4 +93,37 @@ export const taxReturnIntakeRoute = createRoute({
   },
 });
 
-export const taxReturnRoutes = [taxReturnsRoute, taxReturnRoute, taxReturnIntakeRoute] as const;
+// TXP-12 (T-02-T25): the issuing return's K-1 package, `/tax-returns/$returnId/k1`, behind both
+// `tax.returns_v1` and `tax.k1_release` (the firm's K-1 routes answer 404 while it is off). The
+// Return chip switches the issuing return (1065, 1120-S, 1041) by its path.
+export const taxReturnK1Route = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/tax-returns/$returnId/k1",
+  component: function TaxReturnK1Page(): JSX.Element {
+    const returnId = useParam("returnId");
+    const navigate = useNavigate();
+    return gated(
+      <FeatureGate
+        flag="tax.k1_release"
+        fallback={<FlagOffState flag="tax.k1_release" label="K-1 package" />}
+      >
+        <K1Package
+          returnId={returnId}
+          onReturn={(next) => {
+            void navigate(to.TXP12({ returnId: next }));
+          }}
+          onBack={() => {
+            void navigate(to.TAX02({ returnId }));
+          }}
+        />
+      </FeatureGate>,
+    );
+  },
+});
+
+export const taxReturnRoutes = [
+  taxReturnsRoute,
+  taxReturnRoute,
+  taxReturnIntakeRoute,
+  taxReturnK1Route,
+] as const;
