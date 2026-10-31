@@ -36361,6 +36361,28 @@
         "title": "IntakeCreatedOut",
         "type": "object"
       },
+      "IntakeDuplicateOut": {
+        "description": "A flagged duplicate upload on the request (T-02-T17): Keep newer or Discard duplicate.",
+        "properties": {
+          "file_name": {
+            "cls": "confidential",
+            "title": "File Name",
+            "type": "string"
+          },
+          "version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version_id",
+          "file_name"
+        ],
+        "title": "IntakeDuplicateOut",
+        "type": "object"
+      },
       "IntakeEntityIn": {
         "additionalProperties": false,
         "properties": {
@@ -36628,6 +36650,17 @@
             ],
             "cls": "internal",
             "title": "Due On"
+          },
+          "duplicate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IntakeDuplicateOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
           },
           "file_name": {
             "anyOf": [
@@ -37095,6 +37128,12 @@
             "title": "Media Type",
             "type": "string"
           },
+          "message_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Message Id",
+            "type": "string"
+          },
           "received_at": {
             "cls": "internal",
             "format": "date-time",
@@ -37154,6 +37193,7 @@
         "required": [
           "attachment_id",
           "thread_id",
+          "message_id",
           "file_name",
           "media_type",
           "size_bytes",
@@ -50139,7 +50179,7 @@
         "type": "object"
       },
       "PortalEnvelopeView": {
-        "description": "`EnvelopeVM`: steps, documents, fields, signers, my state; `signing_session` and `outcome`\nreserved (null in record mode and until `signatures.esign_provider`).",
+        "description": "`EnvelopeVM`: steps, documents, fields, signers, my state; `signing_session` and `outcome`\nreserved (null in record mode and until `signatures.esign_provider`). N-02-T29 (additive,\nDEC-1388): the envelope's policy `family`, the viewer's `identity_method`, the `signers` in\norder, and `signing_opens_on`, the `date_as_of` while the firm's today is before it (the\nsession's `before_date_as_of` check), else null.",
         "properties": {
           "date_as_of": {
             "anyOf": [
@@ -50180,6 +50220,28 @@
             "title": "Esign Consent Needed",
             "type": "boolean"
           },
+          "family": {
+            "cls": "internal",
+            "enum": [
+              "efile_authorization",
+              "engagement_letter",
+              "consent",
+              "general"
+            ],
+            "title": "Family",
+            "type": "string"
+          },
+          "identity_method": {
+            "cls": "internal",
+            "enum": [
+              "kba",
+              "email_code",
+              "in_person_id",
+              "firm_sso"
+            ],
+            "title": "Identity Method",
+            "type": "string"
+          },
           "my_fields": {
             "cls": "internal",
             "items": {
@@ -50214,6 +50276,14 @@
             "$ref": "#/components/schemas/PortalEnvelopeRow",
             "cls": "internal"
           },
+          "signers": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/PortalSignerOut"
+            },
+            "title": "Signers",
+            "type": "array"
+          },
           "signers_signed": {
             "cls": "internal",
             "title": "Signers Signed",
@@ -50223,6 +50293,19 @@
             "cls": "internal",
             "title": "Signers Total",
             "type": "integer"
+          },
+          "signing_opens_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Signing Opens On"
           },
           "signing_session": {
             "anyOf": [
@@ -50245,7 +50328,11 @@
           "esign_consent_needed",
           "disclosure_version_id",
           "date_as_of",
-          "paper_form_follows"
+          "paper_form_follows",
+          "family",
+          "identity_method",
+          "signers",
+          "signing_opens_on"
         ],
         "title": "PortalEnvelopeView",
         "type": "object"
@@ -52649,6 +52736,70 @@
         "title": "PortalSignInVerifyOut",
         "type": "object"
       },
+      "PortalSignerOut": {
+        "description": "One signer of the envelope as the portal's signing order shows them (N-02-T29, DEC-1388):\nthe name the firm recorded, the role, the routing group and the status. No contact detail.",
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "me": {
+            "cls": "internal",
+            "title": "Me",
+            "type": "boolean"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "cls": "internal",
+            "enum": [
+              "signer",
+              "countersigner",
+              "ero"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "routing_group": {
+            "cls": "internal",
+            "title": "Routing Group",
+            "type": "integer"
+          },
+          "signed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Signed At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EnvelopeSignerStatus",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "role",
+          "routing_group",
+          "status",
+          "signed_at",
+          "me"
+        ],
+        "title": "PortalSignerOut",
+        "type": "object"
+      },
       "PortalVisibilityIn": {
         "additionalProperties": false,
         "properties": {
@@ -54414,6 +54565,19 @@
             ],
             "cls": "internal",
             "title": "Current Version"
+          },
+          "current_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Current Version Id"
           },
           "draft_version": {
             "anyOf": [

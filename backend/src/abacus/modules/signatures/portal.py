@@ -66,9 +66,11 @@ from abacus.modules.identity.api import (
     Forbidden,
     authorise,
     firm_time_zone,
+    names_of,
     portal_scopes,
     scope_facts,
 )
+from abacus.modules.organisations.api import contact_facts
 from abacus.modules.signatures import status_poll
 from abacus.modules.signatures.activities import envelope_poll
 from abacus.modules.signatures.events import EnvelopeDeclined
@@ -165,13 +167,16 @@ class Mine:
     routing_group: int
     signer_status: str
     viewed_at: datetime | None
+    policy_family: str
+    identity_method: str
 
 
 _MINE = text(
     "SELECT e.id AS envelope_id, e.number, e.title, e.status, e.client_id, e.engagement_id, "
-    "e.work_item_id, e.due_on, e.date_as_of, e.signer_order, e.provider, "
+    "e.work_item_id, e.due_on, e.date_as_of, e.signer_order, e.provider, e.policy_family, "
     's.id AS signer_id, s."order", s.routing_group, s.status AS signer_status, s.viewed_at, '
-    "e.provider_envelope_id FROM envelopes e JOIN envelope_signers s ON s.envelope_id = e.id "
+    "s.identity_method, e.provider_envelope_id "
+    "FROM envelopes e JOIN envelope_signers s ON s.envelope_id = e.id "
     "WHERE s.party_kind = 'contact' AND s.contact_id = ANY(:contacts) AND e.status <> 'draft' "
     "AND (CAST(:id AS uuid) IS NULL OR e.id = :id)"
 )
@@ -196,6 +201,8 @@ def _mine(r: RowMapping) -> Mine:
         routing_group=int(cast(int, r["routing_group"])),
         signer_status=str(r["signer_status"]),
         viewed_at=cast(datetime | None, r["viewed_at"]),
+        policy_family=str(r["policy_family"]),
+        identity_method=str(r["identity_method"]),
     )
 
 
@@ -382,8 +389,67 @@ class View:
     disclosure_version_id: UUID | None
     date_as_of: date | None
     paper_form_follows: bool
+    family: str
+    identity_method: str
+    signers: list[Signer]
+    signing_opens_on: date | None
     signing_session: Session | None = None
     outcome: str | None = None
+
+
+@dataclass(frozen=True)
+class Signer:
+    """One signer in the envelope's order (N-02-T29): the name the firm recorded, never contact
+    detail."""
+
+    id: UUID
+    name: str
+    role: str
+    routing_group: int
+    status: str
+    signed_at: datetime | None
+
+
+_SIGNERS = text(
+    "SELECT id, contact_id, user_id, role, routing_group, status, signed_at FROM envelope_signers "
+    'WHERE envelope_id = :id ORDER BY routing_group, "order"'
+)
+
+
+async def _signers(session: AsyncSession, envelope_id: UUID) -> list[Signer]:
+    rows = (await session.execute(_SIGNERS, {"id": envelope_id})).all()
+    contacts = await contact_facts(
+        session, [r.contact_id for r in rows if r.contact_id is not None]
+    )
+    users = await names_of(list({r.user_id for r in rows if r.user_id is not None}))
+    out: list[Signer] = []
+    for r in rows:
+        name = (
+            contacts[r.contact_id].display_name
+            if r.contact_id is not None and r.contact_id in contacts
+            else users.get(r.user_id)
+            if r.user_id is not None
+            else None
+        )
+        out.append(
+            Signer(
+                r.id,
+                name or "Signer",
+                str(r.role),
+                int(r.routing_group),
+                str(r.status),
+                cast(datetime | None, r.signed_at),
+            )
+        )
+    return out
+
+
+async def _opens_on(ctx: AuthContext, mine: Mine) -> date | None:
+    """The `before_date_as_of` check, read ahead: the date while the firm's today is before it."""
+    if mine.date_as_of is None:
+        return None
+    zone = ZoneInfo(await firm_time_zone(ctx.tenant))
+    return mine.date_as_of if await today(ctx.tenant, zone) < mine.date_as_of else None
 
 
 _NEWEST_DISCLOSURE = text("SELECT id FROM esign_disclosures ORDER BY version_no DESC LIMIT 1")
@@ -442,6 +508,8 @@ async def _view(ctx: AuthContext, mine: Mine, *, outcome: str | None = None) -> 
         titles = await version_titles(
             session, [d.evidence_version_id for d in docs if d.evidence_version_id is not None]
         )
+        signers = await _signers(session, mine.envelope_id)
+    opens_on = await _opens_on(ctx, mine)
     return View(
         row=_row(mine),
         signer_id=mine.signer_id,
@@ -479,6 +547,10 @@ async def _view(ctx: AuthContext, mine: Mine, *, outcome: str | None = None) -> 
         disclosure_version_id=disclosure,
         date_as_of=mine.date_as_of,
         paper_form_follows=mine.signer_status == "verification_failed",
+        family=mine.policy_family,
+        identity_method=mine.identity_method,
+        signers=signers,
+        signing_opens_on=opens_on,
         outcome=outcome,
     )
 
