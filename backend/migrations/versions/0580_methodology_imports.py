@@ -15,8 +15,9 @@ Four `methodology` tables, every one tenant-scoped with forced RLS:
 
 `standards_set_named(id)` (SECURITY DEFINER) lets the app read one platform standards set's code
 and label by id, for KNW-02 d. `methodology_version_events.kind` gains `import_started` and
-`flag_resolved`, and 0224's `methodology_content_frozen()` lets a version in review take one update: a person resolving a
-step's open parse flag (its resolution columns, and the text for an edit; nothing else).
+`flag_resolved`, and 0224's `methodology_content_frozen()` lets a version in review take one
+update: a person resolving a step's open parse flag (its resolution columns, and the text for an
+edit; nothing else).
 
 Revision ID: 0580
 Revises: 0524
