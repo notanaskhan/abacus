@@ -21,6 +21,7 @@ from typing import cast
 import asyncpg
 import pytest
 
+from abacus.kernel.clock import frozen
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import DomainConflict
 from abacus.kernel.uow import OutboxEvent
@@ -45,17 +46,11 @@ pytestmark = pytest.mark.usefixtures("engines", "fresh_registry")
 
 
 async def _approvable(
-    seed: Seeder, *, decided: timedelta = timedelta(days=-1)
+    seed: Seeder, *, drafted: timedelta = timedelta(0)
 ) -> tuple[AuthContext, uuid.UUID, uuid.UUID]:
-    """Ridgeline drafted once, G1 decided (yesterday), Daniel independent, envelopes on."""
+    """Ridgeline (its G1 decided when seeded) drafted once, Daniel independent, envelopes on;
+    `drafted` moves the draft's letter date from today."""
     ctx, engagement, template_version = await ridgeline(seed)
-    await seed.open_engagement(
-        ctx.tenant_id,
-        engagement,
-        decided_by=ctx.user_id,
-        concluded=False,
-        decided_at=datetime.now(UTC) + decided,
-    )
     await seed.run(
         "INSERT INTO independence_confirmations (tenant_id, engagement_id, user_id, status, "
         "statement_version, answered_at) VALUES ($1, $2, $3, 'confirmed', 'v1', "
@@ -69,7 +64,8 @@ async def _approvable(
         "VALUES ($1, 'signatures.envelopes', 'true', 'n02t33', 'TASK-2420')",
         ctx.tenant_id,
     )
-    await letters.draft_letter(ctx, engagement, draft_of(template_version), '"0"')
+    with frozen(datetime.now(UTC) + drafted):
+        await letters.draft_letter(ctx, engagement, draft_of(template_version), '"0"')
     return ctx, engagement, template_version
 
 
@@ -185,7 +181,8 @@ async def test_ac1_only_the_partner_approves_and_the_database_holds_it(seed: See
 
 
 async def test_ac1_g1_must_come_on_or_before_the_letter_date(seed: Seeder) -> None:
-    ctx, engagement, _ = await _approvable(seed, decided=timedelta(days=3))
+    # Drafted three days before G1 was decided: the letter's date is before acceptance.
+    ctx, engagement, _ = await _approvable(seed, drafted=timedelta(days=-3))
     with pytest.raises(DomainConflict) as refused:
         await letter_flow.approve_letter(ctx, engagement, '"1"')
     assert refused.value.code == "letter_before_acceptance"
@@ -199,7 +196,7 @@ async def test_ac1_the_request_waits_on_each_partner_and_clears_on_approval(
     due = await letter_flow.letter_partner_approvals_due(ctx.tenant, engagement)
     assert [(g.assignee_user_id, g.role) for g in due] == [(ctx.user_id, "engagement_partner")]
     events = await seed.rows(
-        "SELECT payload FROM outbox_events WHERE tenant_id = $1 "
+        "SELECT payload FROM outbox WHERE tenant_id = $1 "
         "AND event_type = 'letter.approval_requested'",
         ctx.tenant_id,
     )
@@ -227,7 +224,7 @@ async def test_ac1_c7_moves_the_letter_to_sent_then_signed_and_it_takes_an_adden
     await letter_flow.on_envelope_event(completed)  # redelivery is a no-op
     signed = await letters.composed_letter(ctx, engagement)
     assert signed.status == "signed"
-    assert signed.allowed_actions == ["letter.read", "letter.amend"]
+    assert sorted(signed.allowed_actions) == ["letter.amend", "letter.read"]
     locks = await seed.value(
         "SELECT count(*) FROM generated_document_events e JOIN engagement_letter_versions v "
         "ON v.generated_document_id = e.generated_document_id "

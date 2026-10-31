@@ -322,7 +322,10 @@ async def test_a_sent_letter_takes_no_edit(seed: Seeder) -> None:
             engagement,
         ),
     )
-    await seed.run(
+    # 0563 (N-02-T33): only the approving person's own transaction approves a version.
+    await seed.as_actor(
+        ctx.tenant_id,
+        ("human", str(ctx.user_id)),
         "UPDATE engagement_letter_versions SET status = 'partner_approved', approved_by = $1, "
         "approved_at = now(), approval_content_hash = $2 WHERE engagement_id = $3",
         ctx.user_id,

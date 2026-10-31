@@ -129,6 +129,7 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "independence.declined",
         "independence.concluded",
         "eqr.eligibility_approved",
+        "letter.approved",  # N-02-T33: the letter_partner_approval gate closes
         # A-02-T16: grant revocation; A-02-T17: a changed tie-out check makes sign-offs stale.
         "connection_grant.revocation_requested",
         "tie_out_check.changed",

@@ -3,11 +3,11 @@
 `engagement_letter_versions` gains the approval request (`approval_requested_at`,
 `approval_requested_by`: who asked the engagement partner, and when; the C13 gate
 `letter_partner_approval` waits while it stands on a draft) and `final_document_version_id` (the
-C11 final the approval rendered, which Send names; set with the approval and never rewritten). The guard trigger (0560) is replaced
-to add INV-1's database layer: a version moves to `partner_approved` only in a transaction whose
-actor is a person (`app.actor_kind = 'human'`), and the approver named is that person
-(`app.actor_id`). `letter.approved` joins `abacus_human_only_actions()` (63 entries; the
-downgrade restores 0561's 62).
+C11 final the approval rendered, which Send names; set with the approval and never rewritten). The
+guard trigger (0560) is replaced to add INV-1's database layer: a version moves to
+`partner_approved` only in a transaction whose actor is a person (`app.actor_kind = 'human'`), and
+the approver named is that person (`app.actor_id`). `letter.approved` joins
+`abacus_human_only_actions()` (63 entries; the downgrade restores 0561's 62).
 
 Revision ID: 0563
 Revises: 0562
