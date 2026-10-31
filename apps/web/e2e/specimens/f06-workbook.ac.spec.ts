@@ -3,7 +3,7 @@
 // what needs a browser. Reduced motion leaves no running animation (the 45 ms row stagger is
 // gone), the pane scroller and the calc tree work by keyboard, building enables no sign-off, and
 // the chips read P before R. Fixture mode on the gallery at E0; axe on each board.
-// Run: `pnpm -C apps/web exec playwright test --project fixture e2e/specimens/f06-workbook.ac.spec.ts`.
+// Run: `ABACUS_VISUAL=1 pnpm exec playwright test --project=chromium e2e/specimens/f06-workbook.ac.spec.ts`.
 import { type Page, expect, test } from "@playwright/test";
 import { axeStep } from "../harness/axe";
 
