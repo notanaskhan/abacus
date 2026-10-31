@@ -1581,12 +1581,7 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     "collaboration": _BASE | {"engagements"},
     # N-02-T38 (DEC-1567): + reporting, whose renderer draws the evidence package's legible page;
     # reporting never imports signatures.
-    # N-02-T28 (DEC-1479): + review (the C13 gate kinds `envelope_send`, `envelope_countersign`),
-    # communications (a person's reminder through `send_templated`) and audit_trail (the
-    # envelope's activity entries); none of the three imports signatures.
-    "signatures": _BASE
-    | {"engagements", "organisations", "evidence", "reporting"}
-    | {"review", "communications", "audit_trail"},
+    "signatures": _BASE | {"engagements", "organisations", "evidence", "reporting"},
     # SPEC-037 (TASK-083): populations and selection are pure functions over ledger snapshots.
     # A-03-T01 (DEC-1550; A-03 §4.1): + methodology (the size table), review (approval as an L2
     # sign-off) and requests (the item-request fan-out); none of them imports sampling.
