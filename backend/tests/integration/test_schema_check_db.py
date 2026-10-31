@@ -1171,7 +1171,8 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             | {"issue_id", "issue_linked_by", "issue_linked_at"}  # 0193 (A-02-T11): issue link
         ),
         "grouping_set_versions": frozenset(  # SPEC-316 (TASK-345): published once
-            {"status", "published_by", "published_at", "published_actor_kind"}
+            # A-03-T06 (0521): the publish also sets the dated effective_from.
+            {"status", "published_by", "published_at", "published_actor_kind", "effective_from"}
         ),
         # TASK-019: who has taken a queued version (take, release, reassign).
         "review_assignments": frozenset({"assignee_user_id", "assigned_by", "assigned_at"}),
@@ -1605,6 +1606,13 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"amount", "decided_by_return_id", "row_version", "status_code", "updated_by"}
         ),  # 0550
         "tax_profile_files": frozenset({"consumed_by"}),  # 0550
+        # A-03-T05 (0520): a sample set's title and purpose, and a version's status moves; the
+        # drawn seed, parameters and items never change (a guard trigger freezes a version).
+        "sample_sets": frozenset({"title", "purpose", "program_step_key", "row_version"}),
+        "sample_set_versions": frozenset(
+            {"status", "items_hash", "content_hash", "failure_code", "approved_by"}
+            | {"approved_at", "approved_actor_kind", "superseded_by", "row_version"}
+        ),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(

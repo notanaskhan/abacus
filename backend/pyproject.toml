@@ -123,6 +123,7 @@ known-first-party = ["abacus", "abacus_tools"]
 "src/abacus_tools/synthetic/**" = ["S311"]  # seeded, non-cryptographic by design (ADR-085)
 "src/abacus_tools/loadtest/run.py" = ["S311"]  # a seeded, repeatable request mix (Q-03-T035)
 "src/abacus/modules/sampling/selection.py" = ["S311"]  # seeded audit sampling, re-performable (ADR-132)
+"src/abacus/modules/sampling/compute/draw.py" = ["S311"]  # sampler v2.3: getrandbits from a recorded seed, re-performable (ADR-340)
 "src/abacus/kernel/_statuses.py" = ["S105"]  # generated status codes such as wrong_password
 "tests/**" = ["S101"]
 "tests/acceptance/support.py" = ["S106"]  # throwaway credentials for stubbed AWS clients that never connect
@@ -241,6 +242,27 @@ forbidden_modules = ["abacus.ai_gateway", "abacus.modules.agents"]
 # Direct imports only: identity (which every module imports for authz) reaches the gateway for
 # the firm's AI settings, so an indirect path is not a leak of client data.
 allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "Compute packages import only kernel.numeric and kernel.calendar (A-03-T21; chapter 03 §10.1)"
+type = "forbidden"
+source_modules = ["abacus.modules.sampling.compute", "abacus.modules.ledger.compute"]
+forbidden_modules = [
+    "abacus.api",
+    "abacus.worker",
+    "abacus.ai_gateway",
+    "abacus.kernel",
+    "abacus.modules",
+    "abacus_tools",
+]
+# The two kernel helpers, and a compute package's own submodules, are the only allowed edges.
+ignore_imports = [
+    "abacus.modules.*.compute.** -> abacus.kernel.numeric",
+    "abacus.modules.*.compute.** -> abacus.kernel.calendar",
+    "abacus.modules.sampling.compute.** -> abacus.modules.sampling.compute.**",
+    "abacus.modules.ledger.compute.** -> abacus.modules.ledger.compute.**",
+]
+unmatched_ignore_imports_alerting = "none"
 
 [[tool.importlinter.contracts]]
 name = "In-module layering: routes -> service -> repository (ADR-012)"
