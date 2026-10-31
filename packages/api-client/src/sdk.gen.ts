@@ -5958,7 +5958,8 @@ export const workpaperDetail = <ThrowOnError extends boolean = false>(options: O
  * Workpaper Cells Edit Route
  *
  * Edit cells through `review.api.record_value`; 409 `version_conflict`, 422
- * `reason_required`; a later edit makes an L2 sign-off stale (AC1.3, AC1.6; T04).
+ * `reason_required`; a later edit makes an L2 sign-off stale (AC1.3, AC1.6; T04). A replay of
+ * the key with the same body finds the version already moved and answers 409 too.
  */
 export const workpaperCellsEdit = <ThrowOnError extends boolean = false>(options: Options<WorkpaperCellsEditData, ThrowOnError>): RequestResult<WorkpaperCellsEditResponses, WorkpaperCellsEditErrors, ThrowOnError> => (options.client ?? client).patch<WorkpaperCellsEditResponses, WorkpaperCellsEditErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

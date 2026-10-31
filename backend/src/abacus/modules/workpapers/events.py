@@ -19,6 +19,18 @@ class WorkpaperContentChanged(DomainEvent):
     engagement_id: Annotated[UUID, classified("internal")]
 
 
+class WorkpaperVersionCreated(DomainEvent):
+    """A-04-T04 (DEC-1762): an edit made the paper's next numbered version. Consumers (the
+    cockpit rail, A-04's re-draft consumer) read the paper; staleness stays computed."""
+
+    event_type: ClassVar[str] = "workpaper.version_created"
+
+    workpaper_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    work_item_id: Annotated[UUID, classified("internal")]
+    version_no: Annotated[int, classified("internal")]
+
+
 class TieOutCheckChanged(DomainEvent):
     """A tie-out check on a trial balance was defined, edited or linked to an issue (A-02-T17):
     the trial balance's signed content includes its checks, so P-04-T19's stale detector tells

@@ -11,9 +11,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.modules.identity.api import AuthContext, visible
 from abacus.modules.workpapers.models import (
+    AttentionFlag,
     Workpaper,
     WorkpaperCell,
     WorkpaperCellCitation,
+    WorkpaperSection,
     WorkpaperVersion,
 )
 
@@ -162,4 +164,115 @@ async def engagement_papers(session: AsyncSession, engagement_id: UUID) -> Seque
         )
         .scalars()
         .all()
+    )
+
+
+# --- A-04-T04: the record projection's reads (LIST_EXEMPT: the caller authorised on the
+# engagement first) ------------------------------------------------------------------------------
+
+
+async def sections_of(session: AsyncSession, workpaper_id: UUID) -> Sequence[WorkpaperSection]:
+    """By position."""
+    return (
+        (
+            await session.execute(
+                select(WorkpaperSection)
+                .where(WorkpaperSection.workpaper_id == workpaper_id)
+                .order_by(WorkpaperSection.position, WorkpaperSection.sheet_key)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def cells_up_to(
+    session: AsyncSession, workpaper_id: UUID, version_no: int | None
+) -> Sequence[WorkpaperCell]:
+    """Each cell's newest row as it stood at `version_no` (rows written before 0581 carry no
+    version and belong to every version); None is now."""
+    query = select(WorkpaperCell).where(WorkpaperCell.workpaper_id == workpaper_id)
+    if version_no is not None:
+        query = query.where(
+            (WorkpaperCell.updated_version_no.is_(None))
+            | (WorkpaperCell.updated_version_no <= version_no)
+        )
+    return (
+        (
+            await session.execute(
+                query.distinct(WorkpaperCell.sheet_key, WorkpaperCell.cell_key).order_by(
+                    WorkpaperCell.sheet_key,
+                    WorkpaperCell.cell_key,
+                    WorkpaperCell.created_at.desc(),
+                    WorkpaperCell.id.desc(),
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def flags_of(session: AsyncSession, workpaper_id: UUID) -> Sequence[AttentionFlag]:
+    """Oldest first."""
+    return (
+        (
+            await session.execute(
+                select(AttentionFlag)
+                .where(AttentionFlag.workpaper_id == workpaper_id)
+                .order_by(AttentionFlag.created_at, AttentionFlag.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def core_papers(
+    session: AsyncSession, ctx: AuthContext, engagement_id: UUID
+) -> Sequence[Workpaper]:
+    """The engagement's A-04 papers (those with a kind), by code, through `visible()`."""
+    return (
+        (
+            await session.execute(
+                select(Workpaper)
+                .where(
+                    Workpaper.engagement_id == engagement_id,
+                    Workpaper.kind.is_not(None),
+                    visible(ctx, "workpaper.read", Workpaper.engagement_id),
+                )
+                .order_by(Workpaper.code)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def sections_for(
+    session: AsyncSession, workpaper_ids: Sequence[UUID]
+) -> Sequence[WorkpaperSection]:
+    if not workpaper_ids:
+        return []
+    return (
+        (
+            await session.execute(
+                select(WorkpaperSection)
+                .where(WorkpaperSection.workpaper_id.in_(workpaper_ids))
+                .order_by(WorkpaperSection.position, WorkpaperSection.sheet_key)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def version_at(
+    session: AsyncSession, workpaper_id: UUID, version_no: int
+) -> WorkpaperVersion | None:
+    return await session.scalar(
+        select(WorkpaperVersion).where(
+            WorkpaperVersion.workpaper_id == workpaper_id,
+            WorkpaperVersion.version_no == version_no,
+        )
     )

@@ -69430,10 +69430,6 @@ export type WorkpaperStatesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type WorkpaperStatesError = WorkpaperStatesErrors[keyof WorkpaperStatesErrors];
@@ -69660,10 +69656,6 @@ export type WorkpaperCellsEditErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type WorkpaperCellsEditError = WorkpaperCellsEditErrors[keyof WorkpaperCellsEditErrors];
@@ -69909,10 +69901,6 @@ export type WorkpaperExportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type WorkpaperExportError = WorkpaperExportErrors[keyof WorkpaperExportErrors];
@@ -70124,10 +70112,6 @@ export type WorkpaperRecordErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type WorkpaperRecordError = WorkpaperRecordErrors[keyof WorkpaperRecordErrors];
@@ -70464,10 +70448,6 @@ export type WorkpaperVersionsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type WorkpaperVersionsError = WorkpaperVersionsErrors[keyof WorkpaperVersionsErrors];

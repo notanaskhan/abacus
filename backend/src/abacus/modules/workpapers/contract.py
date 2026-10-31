@@ -13,8 +13,9 @@ Paths that would sit under a live route's parameter are moved so nothing is stub
 (`GET …/program-tailoring`).
 
 The gate, in order: a client principal 404 (INV-4); the route's action on the engagement (walls
-404, independence 403); 404 with the flag off; then 501 `not_implemented` until A-04-T04 (record,
-versions, cells, export), T07 (procedures and tailoring), T11 (drafts) and T19 (flags).
+404, independence 403); 404 with the flag off. A-04-T04 serves the states, the record, versions,
+cell edits and the export (`core.py`); the rest answer 501 `not_implemented` until T07
+(procedures and tailoring), T11 (drafts) and T19 (flags).
 
 Cell values are typed strings (`{t: "decimal", v: "48600.00"}`): code computes, the browser never
 sums (ADR-050). A cell written by the agent is a suggestion until a person adopts it (ADR-005).
@@ -26,7 +27,7 @@ from datetime import datetime
 from typing import Annotated, Literal, NoReturn
 from uuid import UUID
 
-from fastapi import Depends, Header, Query
+from fastapi import Depends, Header, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import WORKPAPERS_CORE, WORKPAPERS_DRAFTING
@@ -313,19 +314,19 @@ _wp = "/workpapers/{workpaper_id}"
     "/workpaper-states",
     action="workpaper.read",
     response_model=ListPage[WorkpaperStateOut],
-    errors=(501,),
 )
 async def workpaper_states_route(
     engagement_id: UUID, ctx: Ctx, kind: WorkpaperKind | None = None
 ) -> ListPage[WorkpaperStateOut]:
     """Every A-04 workpaper with its section states for the cockpit rail (T04)."""
+    from abacus.modules.workpapers import core  # the service imports these models
+
     await gate(ctx, engagement_id, "workpaper.read", WORKPAPERS_CORE)
-    _not_yet()
+    rows = await core.states(ctx, engagement_id, kind)
+    return ListPage[WorkpaperStateOut](items=rows, total=len(rows))
 
 
-@router.get(
-    f"{_wp}/record", action="workpaper.read", response_model=WorkpaperRecordOut, errors=(501,)
-)
+@router.get(f"{_wp}/record", action="workpaper.read", response_model=WorkpaperRecordOut)
 async def workpaper_record_route(
     engagement_id: UUID,
     workpaper_id: UUID,
@@ -335,29 +336,32 @@ async def workpaper_record_route(
 ) -> WorkpaperRecordOut:
     """The projection: sections, cells with tick and suggestion state, citation ids, flags, the
     sign-off ladder and allowed_actions (T04)."""
+    from abacus.modules.workpapers import core
+
     await gate(ctx, engagement_id, "workpaper.read", WORKPAPERS_CORE)
-    _not_yet()
+    return await core.record(ctx, engagement_id, workpaper_id, tab=tab, version=version)
 
 
 @router.get(
     f"{_wp}/versions",
     action="workpaper.read",
     response_model=list[WorkpaperVersionOut],
-    errors=(501,),
 )
 async def workpaper_versions_route(
     engagement_id: UUID, workpaper_id: UUID, ctx: Ctx
 ) -> list[WorkpaperVersionOut]:
     """Versions with producer and cause (T04)."""
+    from abacus.modules.workpapers import core
+
     await gate(ctx, engagement_id, "workpaper.read", WORKPAPERS_CORE)
-    _not_yet()
+    return await core.versions(ctx, engagement_id, workpaper_id)
 
 
 @router.patch(
     f"{_wp}/cells",
     action="workpaper.edit",
     response_model=WorkpaperRecordOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def workpaper_cells_edit_route(
     engagement_id: UUID,
@@ -367,9 +371,13 @@ async def workpaper_cells_edit_route(
     idempotency_key: IdempotencyKey,
 ) -> WorkpaperRecordOut:
     """Edit cells through `review.api.record_value`; 409 `version_conflict`, 422
-    `reason_required`; a later edit makes an L2 sign-off stale (AC1.3, AC1.6; T04)."""
+    `reason_required`; a later edit makes an L2 sign-off stale (AC1.3, AC1.6; T04). A replay of
+    the key with the same body finds the version already moved and answers 409 too."""
+    from abacus.modules.workpapers import core
+
     await gate(ctx, engagement_id, "workpaper.edit", WORKPAPERS_CORE)
-    _not_yet()
+    version_no = await core.edit_cells(ctx, engagement_id, workpaper_id, body)
+    return await core.record(ctx, engagement_id, workpaper_id, tab=None, version=version_no)
 
 
 @router.post(
@@ -392,17 +400,28 @@ async def workpaper_draft_route(
     _not_yet()
 
 
-@router.get(f"{_wp}/export.xlsx", action="workpaper.export", response_model=bytes, errors=(501,))
+@router.get(f"{_wp}/export.xlsx", action="workpaper.export", response_model=bytes)
 async def workpaper_export_route(
     engagement_id: UUID,
     workpaper_id: UUID,
     ctx: Ctx,
     version: Annotated[int | None, Query(ge=1)] = None,
-) -> bytes:
+) -> Response:
     """Byte-identical XLSX for identical data; client strings as text (ADR-052); audited
     `workpaper.exported` (AC1.7; T04)."""
+    from abacus.modules.workpapers import core
+
     await gate(ctx, engagement_id, "workpaper.export", WORKPAPERS_CORE)
-    _not_yet()
+    data, name = await core.export_xlsx(ctx, engagement_id, workpaper_id, version)
+    return Response(
+        content=data,
+        media_type=core.XLSX,
+        headers={
+            "Content-Disposition": f'attachment; filename="{name}"',
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 @router.post(

@@ -4,7 +4,7 @@
 |---|---|
 | Register row | internal workpaper core API (A-04 §8.2; consumed by A-05 and A-08 as their cell store) in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | stub (A-04-T01, 2026-10-31); live per route with A-04-T04 (record, versions, cells, export), T07 (procedures and tailoring), T11 (drafts) and T19 (attention flags) |
+| Status | live for states, record, versions, cells and export (A-04-T04, 2026-11-01; DEC-1762); stub for procedures and tailoring (T07), drafts (T11) and attention flags (T19) |
 | Provider epic | A-04 |
 | Consumers | AUD-04, AUD-05, AUD-09 (the cell store), AUD-02 rail (section states), KNW-03 d (tailoring), SHL-07 and SHL-08 (citations), SHL-09 (field history), SHL-12 (sign-off ladder); A-05 EBP workpapers, A-08 fieldwork |
 | Flags | `workpapers.core` (every route); `workpapers.drafting` too for `POST …/drafts` (default off; DEC-137 override, expires 2027-04-29) |
@@ -78,19 +78,41 @@ complete), generated from `docs/product/status-vocabulary.yaml`; sections use th
 ## 5. Errors
 `version_conflict`, `drafting_not_enabled`, `pack_configuration_error` (with the exact AUD-09 d
 text), `mandatory_step`, `flag_already_converted` (409); `reason_required`, `rationale_required`
-(422). Each lands with the task that raises it; the stub raises only 404 and 501
-`not_implemented`.
+(422). Each lands with the task that raises it. A-04-T04 raises `version_conflict` (a stale
+`expected_version`, with `current_version` in the facts; a replayed edit finds the version moved
+and answers it too) and `reason_required` (overriding a cell whose value is the agent's, or a
+suggestion, with no reason); the stubbed routes still answer 501 `not_implemented`.
 
 ## 6. Human-only actions and audit events
 Human only: every write in §2 (the agent writes suggestions through its own channel, ADR-005).
-Audit: `workpaper.created`, `workpaper_version.created`, `workpaper.exported`,
+Audit: `workpaper.created`, `workpaper.cells_edited` (an edit as the next version, A-04-T04),
+`workpaper.exported` (with the file's SHA-256),
 `attention_flag.raised/converted/reminded/resolved`, `procedure.tailored`,
 `section_draft.started/failed`. Outbox: `workpaper.version_created` (staleness and the re-draft
 consumer).
 
-## 7. Stub behaviour (A-04-T01)
-Client principal 404 → the route's action on the engagement → 404 with `workpapers.core` off (and
-`workpapers.drafting` off for drafts) → 501 `not_implemented`.
+## 7. Behaviour
+Every route: client principal 404 → the route's action on the engagement → 404 with
+`workpapers.core` off (and `workpapers.drafting` off for drafts). Then (A-04-T04, DEC-1762):
+
+- **Record** (`GET …/record?tab=&version=`): an A-04 paper (one with a kind) at the current
+  version or an earlier one, as it stood (each cell row carries the version it was written in);
+  `content_hash` is that version's; the ladder is staleness against the current content; an
+  earlier version allows only `workpaper.export`. A SPEC-308 paper with no kind is 404 here.
+- **Cells** (`PATCH …/cells`): each cell through `review.api.record_value` (field target
+  `workpaper_cell`, key `<sheet>!<cell>`, `main` keys bare; a plain entry's note is "Entered on the
+  workpaper", an override's the person's reason) and as the cell's next row; the edit is the next
+  version (`cause` edit), emits `workpaper.content_changed` (the stale detector) and
+  `workpaper.version_created`, and answers the new record.
+- **Export**: a cover sheet (code, title, kind, area, version, content hash), then one sheet per
+  sheet key; fixed workbook properties and ZIP entry times; a value beginning `=`, `+`, `-`, `@`,
+  tab or return is written as text; `Cache-Control: no-store`.
+- **Citable** `workpaper_cell` (C4): locator `{sheet_id, sheet_key = main, row_key, column_key,
+  sheet_version?}`, an A1 cell by column letters and row number ("Exceptions!D2" is `exceptions`,
+  `2`, `D`); `match_id` `wp:<sheet_id>!<sheet_key>.<row_key>.<column_key>`; the paper must be
+  the anchor's engagement's (else `source_not_visible`) and readable by the actor; a claimed value
+  is compared as an amount by code, a quote space- and case-folded.
+- Procedures and tailoring, drafts and flags: 501 `not_implemented` until T07, T11 and T19.
 
 ## 8. Example (Brightwater Hale, Northwind Robotics 401(k) Plan, PY2025)
 The Keystone Retirement Services cell on General Audit Planning (AUD-04 a) after a `gap` draft:
