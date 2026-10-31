@@ -43,6 +43,7 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
     names_of,
+    set_ero,
 )
 from abacus.modules.tax import approval, delivery, engine_import, export, filing
 
@@ -375,6 +376,12 @@ class EfileAckOut(BaseModel):
     reject_text: Annotated[str | None, classified("restricted", tri=True)]
     received_at: Annotated[datetime, classified("confidential")]
     source: Annotated[Literal["engine_file", "manual"], classified("internal")]
+
+
+class RejectionIssueOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    issue_id: Annotated[UUID, classified("internal")]
 
 
 class DeliverablePublishOut(BaseModel):
@@ -738,7 +745,7 @@ def _packet_out(packet: delivery.Packet) -> DeliveryPacketOut:
 )
 async def delivery_route(return_id: ReturnId, ctx: Ctx) -> DeliveryOut:
     """TAX-12's checklist read model: the open packet and the engine's payment figures
-    (T-01-T35). The binding, transmission and acknowledgements arrive with T-01-T36/T37."""
+    (T-01-T35), the 8879 binding (T-01-T36), the transmission and acknowledgements (T-01-T37)."""
     await _live(ctx, "tax_return.read", D)
     found = await delivery.delivery(ctx, return_id)
     packet = found.packet
@@ -756,8 +763,8 @@ async def delivery_route(return_id: ReturnId, ctx: Ctx) -> DeliveryOut:
         envelope_id=found.envelope_id,
         binding_id=found.binding_id,
         binding_superseded=found.binding_superseded,
-        transmitted_on=None,
-        acks=[],
+        transmitted_on=await filing.transmitted_on(ctx.tenant, return_id),
+        acks=[_ack_out(a) for a in await filing.acks_of(ctx.tenant, return_id)],
         allowed_actions=list(found.allowed_actions),
     )
 
@@ -855,18 +862,49 @@ async def ero_notice_route(return_id: ReturnId, ctx: Ctx) -> EroNoticeOut:
     await _stub(ctx, "delivery_packet.prepare", D)
 
 
+def _ack_out(a: filing.Ack) -> EfileAckOut:
+    return EfileAckOut(
+        id=a.id,
+        jurisdiction=a.jurisdiction,
+        status="accepted" if a.status == "accepted" else "rejected",
+        submission_id_last4=a.submission_id_last4,
+        reject_code=a.reject_code,
+        reject_text=a.reject_text,
+        received_at=a.received_at,
+        source="manual" if a.source == "manual" else "engine_file",
+    )
+
+
 @engine_router.post(
     "/tax-returns/{return_id}/transmissions",
     action="transmission.record",
     response_model=TransmissionOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def record_transmission_route(
     return_id: ReturnId, body: TransmissionIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> TransmissionOut:
-    """The ERO's human record (never a transmission by Accrued; R-04)."""
-    await _stub(ctx, "transmission.record", D)
+    """The designated ERO's human record of a transmission made in the engine (never a
+    transmission by Accrued; R-04; T-01-T37). 409 `signatures_incomplete`, `binding_superseded`,
+    `not_synced`."""
+    await _live(ctx, "transmission.record", D)
+    found = await filing.record_transmission(
+        ctx,
+        return_id,
+        jurisdictions=list(body.jurisdictions),
+        transmitted_on=body.transmitted_on,
+        method=body.method,
+        seen_binding_id=body.seen_binding_id,
+    )
+    return TransmissionOut(
+        id=found.id,
+        return_id=found.return_id,
+        ero_user_id=found.ero_user_id,
+        jurisdictions=list(found.jurisdictions),
+        transmitted_on=found.transmitted_on,
+        recorded_at=found.recorded_at,
+    )
 
 
 @engine_router.post(
@@ -874,12 +912,45 @@ async def record_transmission_route(
     action="efile_ack.record",
     response_model=EfileAckOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def record_ack_route(
     return_id: ReturnId, body: EfileAckIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> EfileAckOut:
-    await _stub(ctx, "efile_ack.record", D)
+    """A manual acknowledgement with its evidence upload (T-01-T37). 409 `ack_exists`,
+    `import_file_unavailable`."""
+    await _live(ctx, "efile_ack.record", D)
+    return _ack_out(
+        await filing.record_ack(
+            ctx,
+            return_id,
+            jurisdiction=body.jurisdiction,
+            status=body.status,
+            submission_id_last4=body.submission_id_last4,
+            reject_code=body.reject_code,
+            received_at=body.received_at,
+            upload_id=body.upload_id,
+        )
+    )
+
+
+@engine_router.post(
+    "/tax-returns/{return_id}/acks/{ack_id}/issue",
+    action="efile_ack.record",
+    response_model=RejectionIssueOut,
+    status_code=201,
+    errors=(409,),
+)
+async def rejection_issue_route(
+    return_id: ReturnId,
+    ack_id: Annotated[UUID, Path()],
+    ctx: Ctx,
+    idempotency_key: IdempotencyKey,
+) -> RejectionIssueOut:
+    """TAX-12e's Create issue: the rejection as an engine-diagnostic issue; the return moves
+    Rejected to Fixing (T-01-T37). 409 `not_rejected`."""
+    await _live(ctx, "efile_ack.record", D)
+    return RejectionIssueOut(issue_id=await filing.rejection_issue(ctx, return_id, ack_id))
 
 
 @engine_router.post(
@@ -899,12 +970,15 @@ async def publish_deliverable_route(
     "/firm/members/{user_id}/ero",
     action="member.set_ero",
     response_model=EroDesignationOut,
-    errors=(501,),
 )
 async def set_ero_route(
     user_id: Annotated[UUID, Path()], body: EroDesignationIn, ctx: Ctx
 ) -> EroDesignationOut:
-    await _stub(ctx, "member.set_ero", D)
+    """A firm admin designates the firm's ERO, with fresh MFA (T-01-T37)."""
+    await _live(ctx, "member.set_ero", D)
+    return EroDesignationOut(
+        user_id=user_id, designated=await set_ero(ctx, user_id, body.designated)
+    )
 
 
 # --- tax.api (T-01-T27 and T-02 implement) -------------------------------------------------------

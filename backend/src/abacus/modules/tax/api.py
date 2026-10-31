@@ -7,10 +7,10 @@ Pre-registered (F-03-T08; ADR-140). T-01-T02: the engine-bridge and e-file-recor
 from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.kernel.uow import OutboxEvent
 from abacus.modules.engagements.api import register_work_item_kind
-from abacus.modules.identity.api import AbacusRouter
+from abacus.modules.identity.api import AbacusRouter, register_scope_resolver
 from abacus.modules.organisations.api import register_office_facts
 from abacus.modules.platform.api import register_search_projection
-from abacus.modules.tax import consent_capture, filing
+from abacus.modules.tax import consent_capture, filing, k1_release
 from abacus.modules.tax.approval import Blocker as ApprovalBlocker
 from abacus.modules.tax.approval import eligibility as final_approval_eligibility
 from abacus.modules.tax.approval import register as register_approval
@@ -26,9 +26,17 @@ from abacus.modules.tax.due_dates import (
     set_extended,
 )
 from abacus.modules.tax.engine_contract import engine_router
+from abacus.modules.tax.engine_import import import_file as import_engine_file
 from abacus.modules.tax.engine_sync import register as register_engine_sync
 from abacus.modules.tax.k1_contract import k1_router, portal_k1_router
-from abacus.modules.tax.k1_packages import draft_k1_blockers
+from abacus.modules.tax.k1_packages import draft_k1_blockers, package_scope
+from abacus.modules.tax.k1_packages import share_internal as share_k1_internal
+from abacus.modules.tax.k1_release_workflow import (
+    K1DeliveryInput,
+    K1ReleaseFailure,
+    K1ReleaseInput,
+    K1ReleaseWorkflow,
+)
 from abacus.modules.tax.kind import TaxReturnKind
 from abacus.modules.tax.overview import on_binder_published, on_sign_off_recorded
 from abacus.modules.tax.returns_routes import returns_router
@@ -52,6 +60,8 @@ register_search_projection(SEARCH_TYPE, return_search_document)
 register_approval()
 # T-02-T20 (DV-4): a K-1 shared to a return as a draft blocks its final approval until released.
 register_final_approval_blocker("draft_k1", draft_k1_blockers)
+# T-02-T21 (DEC-34): a `k1_recipient` grant's `k1_package` scope (own-only in the portal reads).
+register_scope_resolver("k1_package", package_scope)
 # T-01-T43: CLI-05's authorizations, elections, transcripts and comparisons (DEC-1651).
 register_tax_profile()
 # T-01-T27: the engine-sync gate kinds (C13) and notification kinds (C16) (DEC-1463).
@@ -84,11 +94,12 @@ SUBSCRIPTIONS = {
     # T-02-T13: the record projection (a published binder opens intake; the L1 marks prepared).
     "binder.published": on_binder_published,
     "sign_off.recorded": on_sign_off_recorded,
+    # T-02-T21: a release starts its workflow; a resend gives the corrected contact access.
+    **k1_release.SUBSCRIPTIONS,
 }
-# The worker collects every module's parts once it has subscriptions; tax has no workflows or
-# activities of its own yet (an absent attribute stopped the worker at start).
-WORKFLOWS: dict[type, str] = {}
-ACTIVITIES: tuple[object, ...] = ()
+# T-02-T21: `K1ReleaseWorkflow` and its activities (the worker composes every module's parts).
+WORKFLOWS: dict[type, str] = {**k1_release.WORKFLOWS}
+ACTIVITIES: tuple[object, ...] = k1_release.ACTIVITIES
 
 __all__ = [
     "ACTIVITIES",
@@ -98,14 +109,20 @@ __all__ = [
     "TRANSITIONS",
     "WORKFLOWS",
     "ApprovalBlocker",
+    "K1DeliveryInput",
+    "K1ReleaseFailure",
+    "K1ReleaseInput",
+    "K1ReleaseWorkflow",
     "StaleReturn",
     "TransitionRefused",
     "apply_transition",
     "final_approval_eligibility",
+    "import_engine_file",
     "next_status",
     "recompute_unfiled",
     "record_sync_state",
     "register_final_approval_blocker",
     "rule_texts",
     "set_extended",
+    "share_k1_internal",
 ]
