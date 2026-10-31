@@ -54,6 +54,16 @@ Work items (`engagements`, C1) are the units of work inside an engagement; each 
 5. **Contract:** add `"foo"` to the `kind` `Literal` on both `WorkItemOut` and `WorkItemRowOut` in `engagements/routes.py`, then `make generate`. A new enum member is additive to frozen C1; update `docs/contracts/work-items.md` (kinds list) and the glossary's Work item row in the same commit.
 6. **Tests:** `engagements.api.create_work_item(ctx, engagement_id, "foo", name=..., details={...})` writes the work item and the subtype row in one unit of work; the cardinality breach answers 409 `work_item_exists`; an unregistered kind answers 409 `unknown_work_item_kind`; run as the app role (copy `tests/integration/test_work_item_kinds.py`).
 
+## Adding a document kind (C11; P-11-T17)
+A document kind is something `reporting` renders for another module (an engagement letter, a K-1 package, a notice response). The owner module never imports `reporting` when its own dependencies forbid it: it asks through a port it declares (`engagements.api.register_letter_renderer`), and `reporting` registers the kind. To add `foo_letter` owned by module `m`:
+
+1. **Kind** in `reporting/<foo>.py` (copy `reporting/engagement_letters.py`): `c11.register_document_kind(DocumentKind(kind=..., layout=..., variables_provider=..., approval_provider=..., source_events=(...), retention_record_type=..., formats=(...)))`, once per process (`ensure_kind`). `kind` joins the `GeneratedDocumentKind` literal in `reporting/contract.py` (additive to frozen C11; `make generate`).
+2. **Variables provider:** answers every declared template variable for the owner, formatted by code (ADR-050); an unresolved key is refused as `missing_variable`, never rendered blank. A provider that answers only inside its consumer's call (a context variable) keeps regenerate on the sealed values.
+3. **Approval provider:** answers the approver and the content hash only for the approval the owner is recording in the same call; without it no final render exists (`final_requires_approval`).
+4. **Source events:** the outbox events whose change makes a document out of date (`out_of_date` through `reporting.api.SUBSCRIPTIONS`). Name them, or a data change never reaches the document (DEC-1664: `engagement_letter` names none yet).
+5. **Retention:** the record type through `evidence.register_retention_record_type`; rendered files are stored under Object Lock (`evidence.api.store_generated`).
+6. **Template content** loads through the report-template import (database content, never a constant); a golden render fixture for the kind joins `backend/tests/golden_render/` with both founders approving any re-baseline (RB-43 §5).
+7. **Tests:** a missing variable refuses; an agent's render is a draft; a final render without the matching approval is refused; a locked document answers `document_locked`; a source event marks the document out of date within one relay cycle.
 ## Registering an envelope source and a gate (C7 v1.1; N-02-T45)
 A module whose records are signed (a letter, a consent set, an 8879, a rep letter, a notice response) registers an **envelope source** with `signatures`; it never writes envelopes itself. Copy `signatures/sources.py` (`engagement_letter`), `tax/consent_capture.py` (`consent_set`) or `tax/filing.py` (`tax_return`).
 

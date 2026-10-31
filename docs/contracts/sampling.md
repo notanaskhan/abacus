@@ -61,8 +61,10 @@ bank account) are refused at parse (422 `restricted_column`) and never copied.
 
 ## 5. Errors
 `completeness_tie_required`, `population_not_tied`, `override_not_acknowledged`,
-`content_changed`, `sample_not_approved` (409); `restricted_column`, `column_map_invalid`,
-`citation_unverified`, `population_unreadable`, `duplicate_record_key` (422; A-03-T07, DEC-1660);
+`content_changed`, `version_not_draft` (A-03-T10), `sample_not_approved` (409);
+`restricted_column`, `column_map_invalid`, `citation_unverified`, `population_unreadable`,
+`duplicate_record_key` (422; A-03-T07, DEC-1660); `override_not_below`, `parameters_invalid`,
+`size_table_missing`, `size_exceeds_population` (422; A-03-T10, DEC-1662);
 `seed_not_allowed`, `not_preparer_of_target` (403). Facts carry identifiers only
 (`restricted_column` and `column_map_invalid` name the field: `record_key`, `name`, `date`,
 `amount`).
@@ -72,7 +74,12 @@ Human only: `sample_set.approve` (L2 through `review.api`), and every write in �
 `population.created`, `population.tie_recorded`, `sample_set.created`, `sample_set.drawn` (seed,
 sampler_version, method, size), `sample_set.override_requested`, `sample_set.override_approved`,
 `sample_set.approved`, `sample_set.superseded`, `sample_set.exported`,
-`sample_set.requests_generated`. Outbox: `sample_set.approved`, `population.created`.
+`sample_set.requests_generated`, and (A-03-T10) `sample_set.draw_completed`,
+`sample_set.draw_failed`. The audit `Ref` carries identifiers, integers and hashes only, so
+`sample_set.drawn` records the seed, size and inputs hash (the hash covers the method and the
+sampler version). Outbox: `sample_set.approved`, `sample_set.approval_requested` (C16
+`sample_set_approval_requested` to the engagement's partner and managers), `population.created`
+(not yet emitted, DEC-1660).
 
 ## 7. Stub behaviour (A-03-T02; DEC-1553)
 Client principal 404 → the action authorised (work-item routes on the work item's engagement;
@@ -81,7 +88,25 @@ engagement, a non-person refused on a write) → 404 with the flag off → the B
 fixture for the fixture ids in `sampling/contract_fixtures.py` (Northwind Participants Version 2
 and its census; Granite Peak's disbursements) → 501 `not_implemented` otherwise.
 
+### 7.1 Live routes (A-03-T10; DEC-1662)
+Every sample-set route but the item-request fan-out (T13) is live. A route keyed by a sample set
+refuses a client (404) and a non-person write, checks the flag, then authorises its action on the
+set's own engagement (walls 404, INV-3). The fixture ids still answer the fixture. The create route
+answers `SampleSetCreatedOut` (the set has no version yet, so it is not a picker row); the picker
+lists sets with at least one drawn version and shows each one's newest version that did not fail.
+`POST …/versions` takes an `Idempotency-Key`: a replay answers the first version and draws
+nothing. The draw runs in `SampleDrawWorkflow` (interactive queue); `…/draw` reports `drawing` until
+it is `draft` (or `failed` with a code). Approval authorises `sample_set.approve` with the version's
+preparers (who drew it and every L1 signer) on the resource, so a preparer gets 403
+(`not_preparer_of_target`); then 409 `version_not_draft`, `content_changed`, `population_not_tied`,
+`override_not_acknowledged`, in that order. Sign-off target type: `sample_set_version` (L1 the
+preparer through `POST /v1/sign-offs`, L2 the approval); gate kind `sample_set_approval`.
+
 ## 8. Module API
 `sampling.api`: `attribute_size`, `udl`, `udl_percent`, `projected_misstatement`, `SAMPLER_VERSIONS`,
-`SAMPLER_CURRENT` today; `population_view`, `sample_version_view`, `approved_items`, `draw` with
-T07/T10.
+`SAMPLER_CURRENT`; `population_view` (T07); `draw(ctx, sample_set_id, body, scenario_seed=)` (T10:
+the scenario loader's seed on a synthetic firm only, 403 `seed_not_allowed` otherwise),
+`section_state` and `AUDIT_SECTION` (the Fieldwork › Sample Selection rail row assurance
+registers). `methodology.api.attribute_sample_size(tenant_id, rmm=, tolerable_rate=,
+expected_rate=, confidence=, as_of=)` reads K-02's `attribute_sample_sizes` table (C21 part B).
+`sample_version_view` and `approved_items` arrive with their first consumer (T13).

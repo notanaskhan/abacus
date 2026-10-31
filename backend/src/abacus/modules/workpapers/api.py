@@ -11,6 +11,7 @@ from abacus.modules.review.api import (
     register_reviewable_facts,
 )
 from abacus.modules.workpapers.audit_targets import AUDIT_KINDS, audit_owners
+from abacus.modules.workpapers.contract import router as a04_router
 from abacus.modules.workpapers.routes import checks_router, router
 from abacus.modules.workpapers.service import (
     CodeTaken,
@@ -31,7 +32,11 @@ from abacus.modules.workpapers.tie_out import (
 register_engagement_owners(AUDIT_KINDS, audit_owners)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
-ROUTERS: tuple[AbacusRouter, ...] = (router, checks_router)
+ROUTERS: tuple[AbacusRouter, ...] = (
+    router,
+    checks_router,
+    a04_router,  # A-04-T01 workpaper core stub (docs/contracts/workpapers-core.md)
+)
 
 # SPEC-313 (TASK-331): papers appear in the sign-off matrix and count toward G5.
 register_reviewable("workpaper", workpaper_reviewables)

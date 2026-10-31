@@ -42,7 +42,9 @@ describe("TAX-02 production build", () => {
     expect(screen.queryByText("Checkpoints")).toBeNull();
     expect(screen.getByRole("button", { name: COPY.actions.assign })).toBeTruthy();
     expect(screen.getByText(COPY.actions.openEngine)).toBeTruthy();
-    expect(screen.queryByRole("tab", { name: /Intake|Review|Issues|Activity/ })).toBeNull();
+    expect(screen.queryByRole("tab", { name: /Review|Issues|Activity/ })).toBeNull();
+    // TAX-03 is built (T-02-T19): the Intake tab is live in production.
+    expect(screen.getByRole("tab", { name: /Intake/ })).toBeTruthy();
   });
 
   it("b: the agents-off empty state has no Run draft", async () => {

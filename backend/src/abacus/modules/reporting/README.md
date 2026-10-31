@@ -22,3 +22,15 @@ documents and versions, line items, linked values, tracked changes; the renderer
 - `fonts/`: Arimo, Gelasio, Geist Mono (OFL 1.1) with their licences.
 
 Byte stability: `make golden-render` (two fresh containers, no network).
+
+Operations (P-11-T17): `docs/runbooks/RB-43-document-services.md` (failed renders and their codes,
+engine upgrade and golden re-baseline with both approvals, template rollback by republishing a
+prior version). The kill switch is `reporting.generated_documents` (owner ayushkbhatia; expiry in
+its flag file). Adding a document kind: `.claude/skills/backend-module/SKILL.md`.
+
+Live since P-11-T08 and T11: `documents.py` (generated documents, versions, sealed snapshots,
+events), `render_job.py` (the render job: compose, render isolated, store, record files, or fail
+with a code), `files.py` (rendered files as evidence versions and the field-region manifest),
+`reads.py` (the live routes: read, versions, fields, compare, changes, regenerate with an
+`Idempotency-Key`, template list and SAMPLE preview), `compose.py`, `consent.py` (the §7216 consent
+floor), `engagement_letters.py` (C11's `engagement_letter` kind for ENG-04).

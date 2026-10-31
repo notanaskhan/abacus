@@ -23,6 +23,7 @@ from abacus.kernel.uow import Ref, Target, UnitOfWork
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.models import EvidenceItem, EvidenceVersion
 from abacus.modules.evidence.uploads import checked, clean_name
+from abacus.modules.platform.api import StoredFile
 
 SIGNED_AUTHORIZATIONS = "signed_authorizations"
 
@@ -43,6 +44,18 @@ async def screen_and_stage(
     media_type, digest = await asyncio.to_thread(checked, content, file_name)
     stored = await storage.put(tenant_id, content, retain_until=retain_until)
     return ScreenedFile(clean_name(file_name), media_type, digest, stored)
+
+
+async def screen_for_store(tenant_id: UUID, content: bytes, file_name: str) -> StoredFile:
+    """`screen_and_stage` as the platform file store's screen (K-01-T18; DEC-1759)."""
+    screened = await screen_and_stage(tenant_id, content, file_name, None)
+    return StoredFile(
+        file_name=screened.file_name,
+        media_type=screened.media_type,
+        sha256=screened.sha256,
+        key=screened.stored.key,
+        version_id=screened.stored.version_id,
+    )
 
 
 async def read_staged(

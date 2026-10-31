@@ -19,5 +19,4 @@ column (the row's acceptance).
 | X-01 | [X-01.md](X-01.md) | `system_description_approval` source | — |
 
 Writing a source: `.claude/skills/backend-module/SKILL.md` "Registering an envelope source and a
-gate". Runbook: RB-18. Not in v1.1 (v1.2 additions when built): the firm countersignature session
-(N-02-T28) and POR-06 part 2 (N-02-T29).
+gate". Runbook: RB-18. The countersignature session (N-02-T28) and POR-06 part 2 (N-02-T29) are part of v1.1.

@@ -166,10 +166,88 @@ class ProgramStep(Base):
     proposed_by_run_id: Mapped[UUID | None]
     parse_flag: Mapped[str | None]
     flag_resolution: Mapped[str | None]
+    # K-01-T18: who resolved the parse flag, and when (0224's columns).
+    flag_resolved_by: Mapped[UUID | None]
+    flag_resolved_at: Mapped[datetime | None]
     # K-01-T05 (0224): who last edited a draft step, and when (K-01-T14 writes them).
     edited_by: Mapped[UUID | None]
     edited_at: Mapped[datetime | None]
     row_version: Mapped[int] = mapped_column(server_default=FetchedValue())
+
+
+class MethodologyImport(Base):
+    """K-01-T18 (0580): one upload of a firm's methodology files, to a version in review."""
+
+    __tablename__ = "methodology_imports"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    template_id: Mapped[UUID]
+    version_id: Mapped[UUID | None]
+    status: Mapped[str] = mapped_column(server_default=FetchedValue())
+    started_by: Mapped[UUID]
+    started_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    agent_run_id: Mapped[UUID | None]
+    pages_done: Mapped[int] = mapped_column(server_default=FetchedValue())
+    pages_total: Mapped[int | None]
+    failure_code: Mapped[str | None]
+    idempotency_key: Mapped[str]
+
+
+class MethodologySourceFile(Base):
+    """K-01-T18 (0580), insert-only: a stored, scanned source file. `storage_key` and
+    `storage_version_id` are never serialised."""
+
+    __tablename__ = "methodology_source_files"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
+    tenant_id: Mapped[UUID]
+    import_id: Mapped[UUID]
+    version_id: Mapped[UUID | None]
+    role: Mapped[str]
+    rendition_of_file_id: Mapped[UUID | None]
+    filename: Mapped[str]
+    media_type: Mapped[str]
+    storage_key: Mapped[str]
+    storage_version_id: Mapped[str]
+    sha256: Mapped[str]
+    bytes: Mapped[int]
+    page_count: Mapped[int | None]
+    sheet_count: Mapped[int | None]
+    scan_status: Mapped[str]
+    created_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+
+
+class MethodologySourcePage(Base):
+    """K-01-T18 (0580), insert-only: a document page's size and word boxes (K-01-T20 fills)."""
+
+    __tablename__ = "methodology_source_pages"
+
+    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
+    file_id: Mapped[UUID] = mapped_column(primary_key=True)
+    page: Mapped[int] = mapped_column(primary_key=True)
+    width: Mapped[float]
+    height: Mapped[float]
+    words: Mapped[list[object]] = mapped_column(JSONB)
+
+
+class ProgramStepSource(Base):
+    """K-01-T18 (0580), insert-only: where a step came from and whether code verified its quote."""
+
+    __tablename__ = "program_step_sources"
+
+    tenant_id: Mapped[UUID] = mapped_column(primary_key=True)
+    step_id: Mapped[UUID] = mapped_column(primary_key=True)
+    source_file_id: Mapped[UUID] = mapped_column(primary_key=True)
+    page_from: Mapped[int] = mapped_column(primary_key=True)
+    page_to: Mapped[int]
+    bbox: Mapped[list[object] | None] = mapped_column(JSONB)
+    quote: Mapped[str | None]
+    verified: Mapped[bool]
+    verify_reason: Mapped[str | None]
+    verified_at: Mapped[datetime | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
 
 
 class ProgramStepPbcLink(Base):

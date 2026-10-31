@@ -53,7 +53,12 @@ export const txpScreens = {
     status: "planned",
     path: null,
   },
-  "TXP-12": { name: "K-1 package · Ridgeline 2025 Form 1065", status: "planned", path: null },
+  // T-02-T25: A–F on fixtures over T-02-T20/T21's routes behind `tax.k1_release`.
+  "TXP-12": {
+    name: "K-1 package · Ridgeline 2025 Form 1065",
+    status: "fixture",
+    path: "/tax-returns/$returnId/k1",
+  },
   "TXP-13": {
     name: "Other entity workpapers · 1120-S · 1120 · 990",
     status: "planned",

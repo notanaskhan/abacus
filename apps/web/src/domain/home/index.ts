@@ -8,6 +8,14 @@ export {
   summaryParts,
   visibleBands,
 } from "./gateClasses";
+export type {
+  EvidenceCalcLine,
+  EvidenceCell,
+  EvidenceRow,
+  EvidenceSummary,
+  EvidenceSummaryOf,
+  EvidenceTable,
+} from "../../app-core/evidence-summary";
 export { HOME_SEGMENTS, HomeSegmented, homeSegmentOptions } from "./HomeSegmented";
 export { HOME_MESSAGES } from "./messages";
 export {
