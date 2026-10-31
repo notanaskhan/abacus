@@ -144,7 +144,9 @@ async def test_ac1_the_evidence_fingerprint_equals_the_render_hash(seed: Seeder)
         (render_hash, "generated", "uploaded")
     ]
     files = await seed.rows(
-        "SELECT render_hash, evidence_version_id, byte_size FROM generated_document_files"
+        "SELECT render_hash, evidence_version_id, byte_size FROM generated_document_files "
+        "WHERE tenant_id = $1",
+        tenant,
     )
     assert [(bytes(f["render_hash"]).hex(), f["evidence_version_id"]) for f in files] == [
         (render_hash, version_id)
@@ -177,7 +179,12 @@ async def test_ac1_bytes_that_are_not_the_renders_are_refused(seed: Seeder) -> N
                 title="Probe notice response",
                 requested_by=user,
             )
-    assert await seed.value("SELECT count(*) FROM generated_document_files") == 0
+    assert (
+        await seed.value(
+            "SELECT count(*) FROM generated_document_files WHERE tenant_id = $1", tenant
+        )
+        == 0
+    )
 
 
 async def test_ac3_no_path_rewrites_a_generated_version(seed: Seeder) -> None:
@@ -207,5 +214,6 @@ async def test_ac3_no_path_rewrites_a_generated_version(seed: Seeder) -> None:
     with pytest.raises(Exception):  # noqa: B017 -- insert-only for the app role
         async with uow(ctx) as tx:
             await tx.session.execute(
-                text("UPDATE generated_document_files SET page_count = 2"),
+                text("UPDATE generated_document_files SET page_count = 2 WHERE tenant_id = :t"),
+                {"t": tenant},
             )

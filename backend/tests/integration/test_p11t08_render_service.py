@@ -15,13 +15,14 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Iterator, Mapping
+from types import SimpleNamespace
 from typing import cast
 
 import pytest
 
 from abacus.kernel.config import settings
-from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
-from abacus.kernel.uow import uow
+from abacus.kernel.db import TenantContext, configure_engine, dispose_engine, tenant_session
+from abacus.kernel.uow import UnitOfWork, uow
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.reporting import api as c11
 from abacus.modules.reporting import documents as docs
@@ -138,7 +139,7 @@ async def test_ac2_an_agents_render_is_always_a_draft(seed: Seeder, values: Valu
                 approval_ref=c11.ApprovalRef("probe", uuid.uuid4(), "0" * 64),
             )
         )
-    async with uow(TenantContext(tenant, "agent", str(user))) as tx:
+    async with uow(TenantContext(tenant, "agent", f"agent:drafter:{run}", user)) as tx:
         ticket = await c11.render(tx, _request(client, uuid.uuid4(), agent))
     row = await seed.rows(
         "SELECT mode, requested_by_kind, requested_by_run_id FROM generated_document_versions "
@@ -221,8 +222,10 @@ async def test_ac4_a_source_change_marks_the_document_out_of_date(
         ticket.generated_document_id,
     )
     assert [(e["kind"], e["changed_keys"]) for e in events] == [("out_of_date", [SOURCE_EVENT])]
-    async with uow(ctx) as tx:
-        view = await docs.generated_document(tx, ticket.generated_document_id)
+    # A read: through the tenant's session (a unit of work commits only with an audit event).
+    async with tenant_session(ctx) as session:
+        reader = cast(UnitOfWork, SimpleNamespace(session=session))
+        view = await docs.generated_document(reader, ticket.generated_document_id)
     assert view is not None
     assert view.out_of_date is True
 

@@ -28,7 +28,7 @@ from uuid import UUID
 from sqlalchemy import RowMapping, text
 
 from abacus.kernel.classification import classified
-from abacus.kernel.db import TenantContext, transaction_context
+from abacus.kernel.db import TenantContext, tenant_session, transaction_context
 from abacus.kernel.uow import DomainEvent, Ref, Scope, Target, UnitOfWork, uow
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.methodology.api import report_template_variable_keys
@@ -471,10 +471,10 @@ async def mark_out_of_date_from(event: OutboxEvent, kinds: tuple[str, ...]) -> N
     if not owners:
         return
     system = TenantContext(event.tenant_id, "system", "reporting.out_of_date")
-    async with uow(system) as tx:
+    async with tenant_session(system) as session:
         rows = (
             (
-                await tx.session.execute(
+                await session.execute(
                     text(
                         "SELECT d.id, d.client_id, d.engagement_id FROM generated_documents d "
                         "WHERE d.kind = ANY(:kinds) AND d.owner_id = ANY(:owners) "
@@ -488,6 +488,9 @@ async def mark_out_of_date_from(event: OutboxEvent, kinds: tuple[str, ...]) -> N
             .mappings()
             .all()
         )
+    if not rows:  # a redelivery, or nothing of these kinds: nothing to write or audit
+        return
+    async with uow(system) as tx:
         for row in rows:
             document_id = cast(UUID, row["id"])
             await add_event(
@@ -502,7 +505,7 @@ async def mark_out_of_date_from(event: OutboxEvent, kinds: tuple[str, ...]) -> N
             tx.record(
                 "generated_document.marked_out_of_date",
                 target=Target(TARGET, document_id),
-                after=Ref(cause=event.event_type),
+                after=Ref(event=event.event_id),
                 scope=Scope(
                     engagement_id=cast(UUID | None, row["engagement_id"]),
                     client_id=cast(UUID, row["client_id"]),
