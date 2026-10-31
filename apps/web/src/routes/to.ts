@@ -72,6 +72,8 @@ export function hrefOf(target: Link, search: Readonly<Record<string, string>> = 
  * (`?ov=<key>:<args>`, app-core/overlays), so link-contract.test.ts sees `ov.<ID>(…)` as it sees
  * `to.<ID>(…)`. One builder per overlay screen a built screen opens. */
 export const ov = {
+  /** SHL-10, the approve sheet over its host (`?ov=approve:<proposalRef>`; P-04-T41/T42). */
+  SHL10: (proposalRef: string): OverlayRef => ({ key: "approve", args: [proposalRef] }),
   /** SHL-16, the checkpoint drawer over its target (`?ov=checkpoints:<type>:<id>`). */
   SHL16: (type: string, id: string): OverlayRef => ({ key: "checkpoints", args: [type, id] }),
   /** SHL-11, the decision sheet over its host (`?ov=decision:<cardId>`; P-04-T52). */
