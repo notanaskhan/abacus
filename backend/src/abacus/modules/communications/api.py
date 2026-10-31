@@ -180,6 +180,9 @@ from abacus.modules.communications.template_service import template_state as ema
 from abacus.modules.communications.template_store import (
     version_in_use as template_version_in_use,
 )
+from abacus.modules.communications.template_store import (
+    version_number_in_use as template_version_number_in_use,
+)
 from abacus.modules.communications.templates_contract import (
     FollowUpPolicyFields,
     NextSendOut,
@@ -414,6 +417,7 @@ __all__ = [
     "sink_domain",
     "template_key",
     "template_version_in_use",
+    "template_version_number_in_use",
     "templated_outcome",
     "triage_outcomes",
     "viewer_scoped",

@@ -48,6 +48,7 @@ from abacus.modules.communications.api import (
     SendScope,
     send_templated,
     template_version_in_use,
+    template_version_number_in_use,
 )
 from abacus.modules.identity.api import AuthContext, Forbidden, authorise, firm_name
 from abacus.modules.platform.api import HomeCount
@@ -203,12 +204,16 @@ async def remind_preview(ctx: AuthContext, envelope_ids: Sequence[UUID]) -> Remi
 
 
 async def _version_ok(ctx: AuthContext, version_id: UUID | None, version: int | None) -> None:
+    """The previewed `signature_reminder` version (its id, or the number POR-20 shows) must be the
+    one in use now; naming neither is refused too (security review, S19 batch 5)."""
     in_use = await template_version_in_use(ctx.tenant, REMINDER_KEY)
-    if in_use is None:
+    if in_use is None or (version_id is None and version is None):
         raise TemplateStale(facts={"template": REMINDER_KEY})
     if version_id is not None and version_id != in_use:
         raise TemplateStale(facts={"template": REMINDER_KEY})
-    if version_id is None and version is None:
+    if version is not None and version != await template_version_number_in_use(
+        ctx.tenant, REMINDER_KEY
+    ):
         raise TemplateStale(facts={"template": REMINDER_KEY})
 
 
