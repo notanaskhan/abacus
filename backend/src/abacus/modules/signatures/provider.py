@@ -17,6 +17,7 @@ from datetime import datetime
 from typing import Protocol
 from uuid import UUID
 
+from abacus.kernel.config import settings
 from abacus.kernel.errors import ServiceUnavailable
 
 
@@ -40,6 +41,9 @@ class EnvelopeSpec:
     idempotency_key: str  # a retried create reads back by this, never creates twice
     document_sha256s: tuple[str, ...]
     signers: tuple[SignerSpec, ...]
+    # N-02-T23 (DEC-1283): where the provider sends a signer once they finish, POR-06's return
+    # route; it shows nothing until our poll confirms (the provider's redirect is never trusted).
+    return_url: str | None = None
 
 
 @dataclass(frozen=True)
@@ -96,6 +100,11 @@ class EsignProvider(Protocol):
 
     async def void(self, provider_envelope_id: str, reason: str) -> None: ...
 
+    async def signing_url(self, provider_envelope_id: str, signer_id: str) -> str:
+        """N-02-T23: the signer's own provider view, a bearer link handed only to that signer's
+        authenticated portal session and never stored."""
+        ...
+
 
 _provider: EsignProvider | None = None
 FirmProvider = Callable[[UUID], Awaitable[EsignProvider]]
@@ -129,3 +138,10 @@ async def provider_for(tenant_id: UUID) -> EsignProvider:
     if _firm_provider is None:
         raise ProviderUnavailable
     return await _firm_provider(tenant_id)
+
+
+def sign_return_url(envelope_id: UUID) -> str:
+    """N-02-T23 (DEC-1283): POR-06's return route for an envelope, where the provider sends each
+    signer once they finish (`/portal/sign/$envelopeId/return`, DF-12). It carries nothing: the
+    page asks the server, which polls the provider before answering."""
+    return f"{settings().app_base_url.rstrip('/')}/portal/sign/{envelope_id}/return"

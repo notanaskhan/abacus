@@ -31,8 +31,8 @@ Owner is the builder for every row. `Last rehearsed` stays `never` until a rehea
 | RB-01 | Deploy and rollback | ADR-098 | R0 | never | SLO-01, SLO-10 | drafted |
 | RB-02 | Failed migration | ADR-098 | R0 | never | none yet | drafted |
 | RB-03 | Model provider outage: throttling or outage on the approved route; degrade and queue, never reroute client data | ADR-098, ADR-072, ADR-113 | R1 | never | SLO-04 | drafted |
-| RB-04 | Connector provider outage | ADR-098 | First live connector | never | SLO-08, SLO-09 | stub (A-02 writes it) |
-| RB-05 | Expiring-connections wave (reconnect requests to clients) | ADR-098 | First live connector | never | SLO-09 | stub (A-02 writes it) |
+| RB-04 | Connector provider outage | ADR-098 | First live connector | never | SLO-08, SLO-09 | drafted (A-02-T38) |
+| RB-05 | Expiring-connections wave (reconnect requests to clients) | ADR-098 | First live connector | never | SLO-09 | drafted (A-02-T39) |
 | RB-06 | Queue backlog per work class | ADR-098, ADR-071 | R1 | never | SLO-05 | drafted |
 | RB-07 | AI cost spike (anomaly job, budgets) | ADR-098, ADR-069 | R1 | never | cost anomaly | drafted |
 | RB-08 | **Suspected cross-firm exposure (SEV1)** | ADR-098, ADR-097 | R1 (tabletop, M4-08) | never | audit and isolation alarms | drafted |

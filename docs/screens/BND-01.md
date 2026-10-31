@@ -77,7 +77,7 @@ Row text (binder names, clients, work items, status sub-lines, last-activity lin
 | A row | BND-02 `to.BND02({ binderId })` ("Opens BND-02 · 2025 Binder · Jonah & Claire Feld (click to select)") | planned (P-06-T12 builds BND-02) |
 | Last client activity cell, when the activity was an email | INB-04 ("Opens the Inbox thread (INB-04)") | planned (N-03) |
 | "Open season setup" (d) | ENG-07 ("Opens ENG-07 · season setup and roll-forward") | planned (T-08, S50) |
-| Ferris tag "§7216 consents 1 of 2" | CLI-05 ("Opens CLI-05 · consents") | planned (P-07) |
+| Ferris tag "§7216 consents 1 of 2" | CLI-05 ("Opens CLI-05 · consents") | wired (DEC-1288: `consents_signed`/`consents_total`, T-01's provider) |
 | ··· "Open in Files" | FIL-01 | planned (spec-level only; not in `handoff-links.json`) |
 | "Send reminders…", bulk "Send reminder…" | the follow-up sheet (O3, local state) | in-screen |
 | "+ New binder" | a sheet (client, work item, template; local state) | in-screen |
