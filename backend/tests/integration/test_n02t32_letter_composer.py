@@ -282,23 +282,36 @@ async def test_unknown_parts_markup_and_stale_versions_are_refused(seed: Seeder)
         )
     with pytest.raises(letters.LetterStale):
         await letters.draft_letter(ctx, engagement, _draft(template_version), '"3"')
-    assert await seed.value("SELECT count(*) FROM engagement_letter_versions") == 0
+    assert (
+        await seed.value(
+            "SELECT count(*) FROM engagement_letter_versions WHERE engagement_id = $1", engagement
+        )
+        == 0
+    )
 
 
 async def test_a_sent_letter_takes_no_edit(seed: Seeder) -> None:
     ctx, engagement, template_version = await _ridgeline(seed)
     await letters.draft_letter(ctx, engagement, _draft(template_version), '"0"')
     hash_ = cast(
-        str, await seed.value("SELECT content_hash FROM engagement_letter_versions LIMIT 1")
+        str,
+        await seed.value(
+            "SELECT content_hash FROM engagement_letter_versions WHERE engagement_id = $1",
+            engagement,
+        ),
     )
     await seed.run(
         "UPDATE engagement_letter_versions SET status = 'partner_approved', approved_by = $1, "
-        "approved_at = now(), approval_content_hash = $2",
+        "approved_at = now(), approval_content_hash = $2 WHERE engagement_id = $3",
         ctx.user_id,
         hash_,
+        engagement,
     )
     await seed.run(
-        "UPDATE engagement_letter_versions SET status = 'sent', envelope_id = $1", uuid.uuid4()
+        "UPDATE engagement_letter_versions SET status = 'sent', envelope_id = $1 "
+        "WHERE engagement_id = $2",
+        uuid.uuid4(),
+        engagement,
     )
     with pytest.raises(letters.LetterLocked):
         await letters.draft_letter(ctx, engagement, _draft(template_version), '"1"')
