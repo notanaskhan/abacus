@@ -7,7 +7,7 @@
 //   2  the rationale is required before Decide (AC7.1, DEV rationale always required)
 //   3  bulk refuses blocked and open-note items: checkboxes only on bulk_eligible rows, blocked rows
 //      disabled, "4 selected · Sign off 4 as Partner" into SHL-12 f with per-item results (AC8.1)
-//   4  reassign lists only the server's candidates; reassign and snooze wait for the server
+//   4  reassign lists only the server's candidates (menus open on ArrowDown, as Radix does in jsdom); reassign and snooze wait for the server
 //      (never optimistic, DEC-24, AC8.2–AC8.4); a snoozed gate leaves the queue and every count
 //   5  attribution through formatActor (INV-5)
 //   6  allowlisted activity events only (HOME-01, I-01-T12 / T23)
@@ -105,7 +105,12 @@ function held(): { handler: FixtureHandler; answer: (r: Response) => void } {
   const pending = new Promise<Response>((resolve) => {
     answer = resolve;
   });
-  return { handler: () => pending, answer: (r) => { answer(r); } };
+  return {
+    handler: () => pending,
+    answer: (r) => {
+      answer(r);
+    },
+  };
 }
 
 describe("1 · INV-1: no gate verb on agent-owned elements", () => {
@@ -156,7 +161,7 @@ describe("3 · bulk refuses blocked and open-note items (AC8.1)", () => {
     expect(disabled.map((b) => b.getAttribute("aria-label"))).toEqual(
       [7, 8].map((n) => `Select ${titleOf(n)}`),
     );
-    for (const b of disabled) expect(b.getAttribute("data-home02-check")).toBe("blocked");
+    for (const b of disabled) expect(b.getAttribute("data-issue-check")).toBe("blocked");
     // Decisions, the final approval and the send carry no checkbox at all.
     for (const n of [1, 2, 3, 10, 11]) {
       expect(screen.queryByRole("checkbox", { name: `Select ${titleOf(n)}` })).toBeNull();
@@ -198,7 +203,9 @@ describe("4 · reassign and snooze wait for the server (AC8.2–AC8.4)", () => {
     const reply = held();
     show("d", { "POST /v1/human-gates/{gate_id}/snooze": reply.handler });
     await queue();
-    fireEvent.click(await screen.findByRole("button", { name: "Snooze until…" }));
+    fireEvent.keyDown(await screen.findByRole("button", { name: "Snooze until…" }), {
+      key: "ArrowDown",
+    });
     fireEvent.click(await screen.findByRole("menuitem", { name: "Tomorrow 9 AM" }));
     // Never optimistic: the row and the count stand while the request is open.
     expect(rowOf(titleOf(4))).not.toBeNull();
@@ -212,7 +219,9 @@ describe("4 · reassign and snooze wait for the server (AC8.2–AC8.4)", () => {
   it("d: the snooze menu offers Today 2 PM before 2 PM, Tomorrow 9 AM and Pick date", async () => {
     show("d");
     await queue();
-    fireEvent.click(await screen.findByRole("button", { name: "Snooze until…" }));
+    fireEvent.keyDown(await screen.findByRole("button", { name: "Snooze until…" }), {
+      key: "ArrowDown",
+    });
     const items = (await screen.findAllByRole("menuitem")).map((m) => m.textContent.trim());
     expect(items).toEqual(["Today 2 PM", "Tomorrow 9 AM", "Pick date…"]);
   });
@@ -221,7 +230,9 @@ describe("4 · reassign and snooze wait for the server (AC8.2–AC8.4)", () => {
     const reply = held();
     show("d", { "POST /v1/human-gates/{gate_id}/reassign": reply.handler });
     await queue();
-    fireEvent.click(await screen.findByRole("button", { name: "Reassign…" }));
+    fireEvent.keyDown(await screen.findByRole("button", { name: "Reassign…" }), {
+      key: "ArrowDown",
+    });
     const options = (await screen.findAllByRole("menuitem")).map((m) => m.textContent.trim());
     expect(options).toEqual(["Priya Raman"]);
     fireEvent.click(screen.getByRole("menuitem", { name: "Priya Raman" }));
