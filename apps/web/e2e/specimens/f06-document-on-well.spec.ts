@@ -1,7 +1,7 @@
 // ac-test-author: ayushkbhatia
 // F-06-T14 (F-06.md §10 item 1, Stories 4.1 to 4.3; SPEC-400 AC-19, AC-21): the T10 steps of the
 // f06-document-on-well walk in fixture mode on the gallery at E0, axe on each step (serious and
-// critical block). TPL-10's steps (b → a, approve → c) and T10c–e join with F-06-T15 and T16.
+// critical block). F-06-T22 adds T10c–e (approved, locked, email) and TPL-10a–d.
 // Run: `ABACUS_VISUAL=1 pnpm exec playwright test --project=chromium e2e/specimens/f06-document-on-well.spec.ts`.
 import { type Page, expect, test } from "@playwright/test";
 import { axeStep } from "../harness/axe";
@@ -51,3 +51,42 @@ test("test_ac21_t10b_approve_is_a_named_persons_control", async ({ page }) => {
   await expect(approve).toHaveAttribute("data-human-verb", "Approve");
   await expect(page.locator("[data-actor='agent'] [data-human-verb]")).toHaveCount(0);
 });
+
+// ---- F-06-T22: T10c–e and TPL-10a–d, axe on every state ----------------------------------------
+
+test("test_t22_t10c_approved_letter_shows_who_and_no_approve", async ({ page }) => {
+  await board(page, "c");
+  await expect(page.getByText("Samuel Ito · Sep 12")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Approve…" })).toHaveCount(0);
+  await expect(page.locator("[data-document='paper'] [data-actor='agent']")).toHaveCount(0);
+  await axeStep(page, "f06-document-on-well T10c", { include: "[data-artboard]" });
+  await assertInvariants(page, { step: "f06-document-on-well T10c", persona: SAMUEL });
+});
+
+test("test_t22_t10d_locked_letter_says_why_and_edits_nothing", async ({ page }) => {
+  await board(page, "d");
+  await expect(page.getByText("Out for signature since Sep 10")).toBeVisible();
+  await expect(page.locator("[data-document='clauses'] [role='switch']").first()).toBeDisabled();
+  await axeStep(page, "f06-document-on-well T10d", { include: "[data-artboard]" });
+  await assertInvariants(page, { step: "f06-document-on-well T10d", persona: SAMUEL });
+});
+
+test("test_t22_t10e_email_draft_one_dark_call_to_action", async ({ page }) => {
+  await board(page, "e");
+  await expect(page.locator("[data-document='watermark']")).toHaveText("DRAFT");
+  await expect(page.locator("[data-email='cta']")).toHaveCount(1);
+  await expect(page.locator("[data-document='paper'] [data-actor='agent']")).toHaveCount(0);
+  await axeStep(page, "f06-document-on-well T10e", { include: "[data-artboard]" });
+  await assertInvariants(page, { step: "f06-document-on-well T10e", persona: SAMUEL });
+});
+
+for (const st of ["a", "b", "c", "d"] as const) {
+  test(`test_t22_tpl10${st}_axe_and_invariants`, async ({ page }) => {
+    await page.clock.setFixedTime(E0);
+    await page.goto(`/components/screens/TPL-10?st=${st}&frame=1&static=1`);
+    await expect(page.locator(`[data-artboard='${st}'] [data-template='t10']`)).toBeVisible();
+    await expect(page.locator("[data-actor='agent'] [data-human-verb]")).toHaveCount(0);
+    await axeStep(page, `f06-document-on-well TPL-10${st}`, { include: "[data-artboard]" });
+    await assertInvariants(page, { step: `f06-document-on-well TPL-10${st}`, persona: SAMUEL });
+  });
+}
