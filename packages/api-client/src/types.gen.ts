@@ -23315,6 +23315,26 @@ export type MethodologyImportOut = {
 };
 
 /**
+ * MethodologyPageWordsOut
+ *
+ * One page's words with their boxes for the KNW-02 viewer (TIN forms masked).
+ */
+export type MethodologyPageWordsOut = {
+    /**
+     * Page
+     */
+    page: number;
+    /**
+     * Page Count
+     */
+    page_count: number;
+    /**
+     * Words
+     */
+    words: Array<PageWordOut>;
+};
+
+/**
  * MethodologyVersionOut
  */
 export type MethodologyVersionOut = {
@@ -24201,6 +24221,25 @@ export type PageBreakBlock = {
  * PageLineOut
  */
 export type PageLineOut = {
+    /**
+     * Box
+     */
+    box: [
+        number,
+        number,
+        number,
+        number
+    ];
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * PageWordOut
+ */
+export type PageWordOut = {
     /**
      * Box
      */
@@ -82408,6 +82447,136 @@ export type MethodologyFileDownloadResponses = {
 };
 
 export type MethodologyFileDownloadResponse = MethodologyFileDownloadResponses[keyof MethodologyFileDownloadResponses];
+
+export type MethodologyFilePageData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+        /**
+         * File Id
+         */
+        file_id: string;
+        /**
+         * Page No
+         */
+        page_no: number;
+    };
+    query?: never;
+    url: '/v1/methodology/versions/{version_id}/files/{file_id}/pages/{page_no}';
+};
+
+export type MethodologyFilePageErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type MethodologyFilePageError = MethodologyFilePageErrors[keyof MethodologyFilePageErrors];
+
+export type MethodologyFilePageResponses = {
+    /**
+     * Response Methodology File Page
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type MethodologyFilePageResponse = MethodologyFilePageResponses[keyof MethodologyFilePageResponses];
+
+export type MethodologyFilePageWordsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+        /**
+         * File Id
+         */
+        file_id: string;
+        /**
+         * Page No
+         */
+        page_no: number;
+    };
+    query?: never;
+    url: '/v1/methodology/versions/{version_id}/files/{file_id}/pages/{page_no}/words';
+};
+
+export type MethodologyFilePageWordsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type MethodologyFilePageWordsError = MethodologyFilePageWordsErrors[keyof MethodologyFilePageWordsErrors];
+
+export type MethodologyFilePageWordsResponses = {
+    /**
+     * Successful Response
+     */
+    200: MethodologyPageWordsOut;
+};
+
+export type MethodologyFilePageWordsResponse = MethodologyFilePageWordsResponses[keyof MethodologyFilePageWordsResponses];
 
 export type TemplateDraftsData = {
     body?: never;
