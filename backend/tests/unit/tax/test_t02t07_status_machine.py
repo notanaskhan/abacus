@@ -57,7 +57,10 @@ def test_ac8_every_status_in_the_table_is_a_registry_code() -> None:
     [
         ("start_review", "human", True),
         ("final_approved", "human", True),
-        ("transmission_recorded", "system", True),
+        # T-01-T37 (T-01 §3.13; DEC-1570): the ERO's record is a person's; the system is refused.
+        ("transmission_recorded", "system", False),
+        ("transmission_recorded", "human", True),
+        ("ack_accepted", "system", True),
         ("final_approved", "system", False),
         ("start_review", "agent", False),
         ("final_approved", "agent", False),

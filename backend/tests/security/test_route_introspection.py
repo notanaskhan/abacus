@@ -1304,6 +1304,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/support/sessions/{session_id}/approve", "staff"),
     ("POST", "/v1/support/sessions/{session_id}/end", "staff"),
     ("POST", "/v1/tax-returns/{return_id}/acks", "efile_ack.record"),
+    ("POST", "/v1/tax-returns/{return_id}/acks/{ack_id}/issue", "efile_ack.record"),
     ("POST", "/v1/tax-returns/{return_id}/assignments", "tax_return.assign"),
     ("POST", "/v1/tax-returns/{return_id}/deliverables:publish", "deliverable.publish"),
     ("POST", "/v1/tax-returns/{return_id}/delivery-packet:assemble", "delivery_packet.prepare"),
