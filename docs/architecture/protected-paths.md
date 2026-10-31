@@ -33,3 +33,10 @@ The policy files keep their meaning and are changed deliberately, in the same ch
 
 ## Tax red files (T-01-T07, DEC-1158)
 The solo edition keeps no approval hook (SU-06), so red files are named here and in the module README rather than enforced by `.claude/hooks/_protected.py`: `backend/src/abacus/modules/organisations/consent*.py`, `organisations/tax_profile.py`, and `backend/src/abacus/modules/tax/{approval,export,filing,tri,tax_profile}.py` (`tax_profile.py`: T-01-T43, DEC-1651) (`approval.py` is the only writer of a tax return's `final_approval` sign-off, enforced by TAXAPPROVE-001). Changing one needs the security review of a red diff. NEVER-ERO-001 refuses any IRS e-file channel or ERO/transmitter identifier in product code.
+
+## Sampler compute and the frozen corpus (A-03-T01, DEC-1550; ADR-340)
+A frozen sampler version can never be "fixed" by a session: new behaviour ships only as a new
+`SAMPLER_VERSIONS` entry. These are red files, named here and in `sampling/README.md`:
+`backend/src/abacus/modules/sampling/compute/**` and `backend/tests/golden/sampling/corpus/**`.
+The compute packages (`sampling/compute`, `ledger/compute`) import only `abacus.kernel.numeric`
+and `abacus.kernel.calendar`; the import-linter contract that says so is switched on by A-03-T21.

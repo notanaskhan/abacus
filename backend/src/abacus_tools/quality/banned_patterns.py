@@ -1581,7 +1581,9 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     "collaboration": _BASE | {"engagements"},
     "signatures": _BASE | {"engagements", "organisations", "evidence"},
     # SPEC-037 (TASK-083): populations and selection are pure functions over ledger snapshots.
-    "sampling": _BASE | {"engagements", "ledger", "evidence"},
+    # A-03-T01 (DEC-1550; A-03 §4.1): + methodology (the size table), review (approval as an L2
+    # sign-off) and requests (the item-request fan-out); none of them imports sampling.
+    "sampling": _BASE | {"engagements", "ledger", "evidence", "methodology", "review", "requests"},
     "connections": _BASE | {"engagements", "organisations", "ledger", "evidence", "requests"},
     # The outbound scope checker reads each owner's facts through its API (SPEC-006, TASK-021 D2).
     # SPEC-032 (TASK-062 D1): it registers itself as the check on comments shared with a client.
