@@ -16711,6 +16711,12 @@
             "title": "Ai Use Signed",
             "type": "integer"
           },
+          "blocked_clients": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Blocked Clients",
+            "type": "integer"
+          },
           "declined": {
             "cls": "internal",
             "title": "Declined",
@@ -25733,6 +25739,19 @@
             "cls": "internal",
             "title": "Key",
             "type": "string"
+          },
+          "last_sync_return_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Last Sync Return Id"
           },
           "mappings": {
             "cls": "confidential",

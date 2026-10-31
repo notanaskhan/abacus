@@ -38,6 +38,7 @@ export const COPY = {
   binder: "Binder",
   /** The footer's link to the inbox (TAX-09 → INB-01). */
   inbox: "Inbox",
+  delivery: "Delivery & e-file",
   settingsTip: "Opens WB-11 · Integration detail",
   markTitle: "Mark exported",
   markBody: (file: string): string =>

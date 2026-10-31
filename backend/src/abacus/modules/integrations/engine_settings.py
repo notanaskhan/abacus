@@ -113,6 +113,22 @@ EngineFileCheck = Callable[[TenantContext], Awaitable[FormatCheck]]
 _CHECKS: list[EngineFileCheck] = []
 
 
+LastEngineSync = Callable[[TenantContext], Awaitable[UUID | None]]
+_LAST_SYNC: list[LastEngineSync] = []
+
+
+def register_last_engine_sync(provider: LastEngineSync) -> None:
+    """T-01-T51: the module that keeps the engine's sync events answers which return synced last
+    (tax), so ADM-08's Last sync opens that return's TAX-09; integrations never reads tax."""
+    _LAST_SYNC[:] = [provider]
+
+
+async def last_engine_sync(tenant: TenantContext) -> UUID | None:
+    """The return whose sync with the engine was the firm's latest, or None (nothing registered,
+    or no sync yet). An identifier only: TAX-09 authorises the return when it opens."""
+    return await _LAST_SYNC[0](tenant) if _LAST_SYNC else None
+
+
 def register_engine_file_check(check: EngineFileCheck) -> None:
     """The module that holds the engine's files checks the latest one (tax, T-01-T19)."""
     if _CHECKS and _CHECKS[0] is not check:
@@ -482,7 +498,9 @@ __all__ = [
     "SettingsView",
     "engine_return_id",
     "format_check",
+    "last_engine_sync",
     "register_engine_file_check",
+    "register_last_engine_sync",
     "save_cells",
     "save_mapping",
     "settings_view",

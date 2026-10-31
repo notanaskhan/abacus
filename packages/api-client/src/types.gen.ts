@@ -7715,6 +7715,10 @@ export type ConsentSummaryOut = {
      */
     ai_use_signed: number;
     /**
+     * Blocked Clients
+     */
+    blocked_clients?: number;
+    /**
      * Declined
      */
     declined: number;
@@ -11932,6 +11936,10 @@ export type EngineSettingsOut = {
      * Key
      */
     key: string;
+    /**
+     * Last Sync Return Id
+     */
+    last_sync_return_id?: string | null;
     /**
      * Mappings
      */

@@ -3,7 +3,7 @@ import type {
   EngagementGateOut,
   EngagementTypeEntryOut,
 } from "@abacus/api-client";
-import { createEngagementDraftMutation } from "@abacus/api-client/query";
+import { createEngagementDraftMutation, entityConsentsOptions } from "@abacus/api-client/query";
 import {
   Button,
   type CatalogueGroup,
@@ -22,7 +22,7 @@ import {
   time,
   toast,
 } from "@abacus/ui";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { type JSX, useEffect, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { useEntitlement } from "../../app-core/flags";
@@ -150,6 +150,12 @@ export function ENG03({
   const [duplicate, setDuplicate] = useState<string | null>(null);
   const draft = draftQ.data;
   const client = useClientRecord(draft?.client_id ?? "");
+  const entityId = draft?.client_entity_id ?? null;
+  const liveConsents = useQuery({
+    ...entityConsentsOptions({ path: { client_entity_id: entityId ?? "" } }),
+    enabled: consents === undefined && entityId != null,
+    retry: false,
+  });
   if (draft === undefined) return null;
 
   const step = draft.step;
@@ -232,6 +238,18 @@ export function ENG03({
   const groups = catalogueGroups(types);
   const entityName =
     client.data?.entities.find((e) => e.id === draft.client_entity_id)?.name ?? null;
+  // T-01-T51 (e): the taxpayer's §7216 consents from C19; the fixture's preview still wins.
+  const shownConsents: ConsentPreview | undefined =
+    consents ??
+    (liveConsents.data === undefined || liveConsents.data.length === 0
+      ? undefined
+      : {
+          summary: COPY.consents.summary(
+            liveConsents.data.map((c) => COPY.consents.purposes[c.purpose] ?? c.purpose),
+            liveConsents.data.filter((c) => c.status === "signed").length,
+          ),
+          family: entityName ?? "",
+        });
   const displayLine =
     [draft.payload.name, entityName].filter((v) => v != null && v !== "").join(" · ") || COPY.none;
   const create = async (confirmDuplicate: boolean): Promise<void> => {
@@ -475,15 +493,15 @@ export function ENG03({
                 </ValueRow>
               )}
             </Fieldset>
-            {PLANNED_VISIBLE && consents !== undefined && kind === "tax_return" && (
+            {shownConsents !== undefined && kind === "tax_return" && (
               <Fieldset title={COPY.consents.card} flush>
                 <ValueRow
                   kind="info"
                   label={COPY.consents.key}
-                  help={COPY.consents.helper(consents.family)}
+                  help={COPY.consents.helper(shownConsents.family)}
                   helpTone="amber"
                 >
-                  {consents.summary}
+                  {shownConsents.summary}
                 </ValueRow>
               </Fieldset>
             )}
