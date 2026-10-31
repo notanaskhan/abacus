@@ -566,6 +566,9 @@ class TemplateParts:
     template_name: str = ""
     version_no: int = 0
     variables: tuple[object, ...] = ()
+    # P-11-T11: the template the version belongs to and its synthetic sample data (the preview).
+    template_id: UUID | None = None
+    sample_data: dict[str, str] | None = None
 
 
 async def version_parts(session: AsyncSession, version_id: UUID) -> TemplateParts | None:
@@ -587,6 +590,8 @@ async def version_parts(session: AsyncSession, version_id: UUID) -> TemplatePart
         template_name=name or "",
         version_no=row.version_no,
         variables=tuple(row.variables),
+        template_id=row.template_id,
+        sample_data={str(k): str(v) for k, v in dict(row.sample_data or {}).items()},
     )
 
 

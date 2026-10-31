@@ -71346,10 +71346,6 @@ export type GetGeneratedDocumentErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetGeneratedDocumentError = GetGeneratedDocumentErrors[keyof GetGeneratedDocumentErrors];
@@ -71402,10 +71398,6 @@ export type GetGeneratedDocumentChangesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetGeneratedDocumentChangesError = GetGeneratedDocumentChangesErrors[keyof GetGeneratedDocumentChangesErrors];
@@ -71466,14 +71458,6 @@ export type RegenerateGeneratedDocumentErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
-    /**
-     * Service unavailable
-     */
-    503: ErrorOut;
 };
 
 export type RegenerateGeneratedDocumentError = RegenerateGeneratedDocumentErrors[keyof RegenerateGeneratedDocumentErrors];
@@ -71535,10 +71519,6 @@ export type CompareGeneratedDocumentErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type CompareGeneratedDocumentError = CompareGeneratedDocumentErrors[keyof CompareGeneratedDocumentErrors];
@@ -71595,10 +71575,6 @@ export type GetGeneratedDocumentFieldsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetGeneratedDocumentFieldsError = GetGeneratedDocumentFieldsErrors[keyof GetGeneratedDocumentFieldsErrors];
@@ -82238,10 +82214,6 @@ export type PreviewReportTemplateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
     /**
      * Service unavailable
      */
