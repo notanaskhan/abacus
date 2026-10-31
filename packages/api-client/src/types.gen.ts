@@ -6590,9 +6590,17 @@ export type ComposerLetterOut = {
      */
     approved_by_name: string | null;
     /**
+     * Clause Library
+     */
+    clause_library?: string | null;
+    /**
      * Clauses
      */
     clauses: Array<LetterClause>;
+    /**
+     * Consents
+     */
+    consents?: Array<LetterConsentOut>;
     /**
      * Engagement Id
      */
@@ -6601,15 +6609,43 @@ export type ComposerLetterOut = {
      * Envelope Id
      */
     envelope_id: string | null;
+    fees?: LetterFeesOut | null;
+    /**
+     * Generated Document Id
+     */
+    generated_document_id?: string | null;
+    letterhead?: LetterheadOut | null;
     /**
      * Mode
      */
     mode: 'composed' | 'recorded';
+    /**
+     * Paper
+     */
+    paper?: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Redline Count
+     */
+    redline_count?: number;
+    /**
+     * Signers
+     */
+    signers?: Array<LetterSignerOut>;
     status: LetterStatus;
+    /**
+     * Template Name
+     */
+    template_name?: string | null;
     /**
      * Template Version Id
      */
     template_version_id: string | null;
+    /**
+     * Template Version No
+     */
+    template_version_no?: number | null;
     /**
      * Variables
      */
@@ -12478,6 +12514,22 @@ export type FactSeg = {
 };
 
 /**
+ * FeeLineIn
+ *
+ * One part of the fee (`$6,500 for the section 754 work`).
+ */
+export type FeeLineIn = {
+    /**
+     * Amount Cents
+     */
+    amount_cents: number;
+    /**
+     * Label
+     */
+    label: string;
+};
+
+/**
  * FieldEditIn
  *
  * `PUT …/value`: a person's edit. The citation note is required (the `fvv_human_edits_cite`
@@ -16937,6 +16989,40 @@ export type InformationReturnThresholdsPayload = {
 };
 
 /**
+ * InstallmentIn
+ *
+ * One billing installment as a share of the fee, in basis points (5000 is 50%).
+ */
+export type InstallmentIn = {
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Share Bp
+     */
+    share_bp: number;
+};
+
+/**
+ * InstallmentOut
+ */
+export type InstallmentOut = {
+    /**
+     * Amount Cents
+     */
+    amount_cents: number;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Share Bp
+     */
+    share_bp: number;
+};
+
+/**
  * IntakeCategoryOut
  */
 export type IntakeCategoryOut = {
@@ -18988,6 +19074,10 @@ export type LetterClause = {
      */
     key: string;
     /**
+     * Non Standard
+     */
+    non_standard?: boolean;
+    /**
      * State
      */
     state: 'on' | 'off' | 'required';
@@ -19018,6 +19108,35 @@ export type LetterCompareOut = {
 };
 
 /**
+ * LetterConsentOut
+ *
+ * N-02-T34: a §7216 consent beside the letter: always its own document, never a clause
+ * (Rev. Proc. 2013-14 §5.05; AC-15). Filled from T-01's consent sets with N-02-T33.
+ */
+export type LetterConsentOut = {
+    /**
+     * Expires On
+     */
+    expires_on?: string | null;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Purpose
+     */
+    purpose: string;
+    /**
+     * Signed On
+     */
+    signed_on?: string | null;
+    /**
+     * Status
+     */
+    status: 'on_file' | 'needed';
+};
+
+/**
  * LetterDraftIn
  *
  * `PUT …/letter/composer` (If-Match): draft edits.
@@ -19029,6 +19148,7 @@ export type LetterDraftIn = {
     clause_states: {
         [key: string]: 'on' | 'off' | 'required';
     };
+    fees: LetterFeesIn;
     /**
      * Section Overrides
      */
@@ -19045,6 +19165,59 @@ export type LetterDraftIn = {
     variables: {
         [key: string]: string;
     };
+};
+
+/**
+ * LetterFeesIn
+ *
+ * The fee terms a person sets in Draft; every total is computed by code (ADR-050).
+ */
+export type LetterFeesIn = {
+    /**
+     * Basis
+     */
+    basis?: 'fixed' | 'estimate';
+    /**
+     * Installments
+     */
+    installments?: Array<InstallmentIn>;
+    /**
+     * Lines
+     */
+    lines: Array<FeeLineIn>;
+    /**
+     * Third Party
+     */
+    third_party?: Array<ThirdPartyFeeIn>;
+};
+
+/**
+ * LetterFeesOut
+ *
+ * The computed fee: the lines, their total, each installment's amount (the last carries the
+ * rounding remainder) and the third-party fees shown beside it, not added.
+ */
+export type LetterFeesOut = {
+    /**
+     * Basis
+     */
+    basis: 'fixed' | 'estimate';
+    /**
+     * Installments
+     */
+    installments: Array<InstallmentOut>;
+    /**
+     * Lines
+     */
+    lines: Array<FeeLineIn>;
+    /**
+     * Third Party
+     */
+    third_party: Array<ThirdPartyFeeOut>;
+    /**
+     * Total Cents
+     */
+    total_cents: number;
 };
 
 /**
@@ -19125,6 +19298,34 @@ export type LetterSendOut = {
 };
 
 /**
+ * LetterSignerOut
+ *
+ * N-02-T34: who signs, in order: the client signer, then the firm's countersignature.
+ */
+export type LetterSignerOut = {
+    /**
+     * Identity
+     */
+    identity?: 'email_code';
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Order
+     */
+    order: number;
+    /**
+     * Role
+     */
+    role: 'client' | 'firm';
+    /**
+     * Signed
+     */
+    signed?: boolean;
+};
+
+/**
  * LetterStatus
  */
 export type LetterStatus = 'not_started' | 'draft' | 'partner_approved' | 'sent' | 'signed' | 'not_required' | 'superseded';
@@ -19132,7 +19333,8 @@ export type LetterStatus = 'not_started' | 'draft' | 'partner_approved' | 'sent'
 /**
  * LetterVariable
  *
- * A typed variable from facts; a person may override it with plain text.
+ * A typed variable from facts; a person may override it with plain text. Fee and billing
+ * values are computed by code and never overridden (`source` "computed").
  */
 export type LetterVariable = {
     /**
@@ -19140,13 +19342,37 @@ export type LetterVariable = {
      */
     key: string;
     /**
+     * Label
+     */
+    label?: string | null;
+    /**
+     * Reason
+     */
+    reason?: string | null;
+    /**
      * Source
      */
-    source: 'facts' | 'override';
+    source: 'facts' | 'override' | 'computed';
     /**
      * Value
      */
     value: string | null;
+};
+
+/**
+ * LetterheadOut
+ *
+ * N-02-T34: the firm's name and address lines over the paper (no colour, T10).
+ */
+export type LetterheadOut = {
+    /**
+     * Address
+     */
+    address?: Array<string>;
+    /**
+     * Firm
+     */
+    firm: string;
 };
 
 /**
@@ -34769,6 +34995,40 @@ export type TextSeg = {
      * Text
      */
     text: string;
+};
+
+/**
+ * ThirdPartyFeeIn
+ *
+ * A fee another party bills directly (the engineer's): shown, never added to the total.
+ */
+export type ThirdPartyFeeIn = {
+    /**
+     * Estimated Cents
+     */
+    estimated_cents: number;
+    /**
+     * Payee
+     */
+    payee: string;
+};
+
+/**
+ * ThirdPartyFeeOut
+ */
+export type ThirdPartyFeeOut = {
+    /**
+     * Estimated Cents
+     */
+    estimated_cents: number;
+    /**
+     * Included In Total
+     */
+    included_in_total?: false;
+    /**
+     * Payee
+     */
+    payee: string;
 };
 
 /**

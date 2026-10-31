@@ -1,5 +1,6 @@
 import { publishPortalSettings } from "@abacus/api-client";
 import { AppShell, time, toast } from "@abacus/ui";
+import { KNW03_TAILORING } from "../fixtures/seed/knw03";
 import { type JSX, useEffect, useState } from "react";
 import { installFixtureMode } from "../app-core/fixture-mode";
 import { useSession } from "../app-core/session";
@@ -382,6 +383,13 @@ import {
   type Shl10State,
   scenarios as shl10Scenarios,
 } from "./SHL-10/scenarios";
+import { LetterComposer } from "./ENG-04";
+import {
+  type Eng04State,
+  OPENS as ENG04_OPENS,
+  STATES as ENG04_STATES,
+  scenarios as eng04Scenarios,
+} from "./ENG-04/scenarios";
 import { EnvelopeBuilder } from "./SIG-02";
 import {
   OPENS as SIG02_OPENS,
@@ -1180,6 +1188,8 @@ function Knw03Frame({ state }: { state: Knw03State }): JSX.Element {
         initialSegment={open.segment}
         {...(open.step === undefined ? {} : { step: open.step })}
         {...(open.from === undefined ? {} : { from: open.from })}
+        {...(open.run === undefined ? {} : { run: open.run })}
+        {...(open.tailoredFor === undefined ? {} : { tailoring: KNW03_TAILORING })}
         popoverOpen={open.popover === true}
         toolbar={bar.toolbar}
         frame
@@ -1967,6 +1977,35 @@ function Shl16Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("SHL-16", { title: "Checkpoint diff drawer", Component: Shl16Artboard });
+
+// ENG-04 (N-02-T34): the letter composer, a–c, as ENG-02's Letter & terms tab body.
+function Eng04Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Eng04State = ENG04_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      eng04Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div key={state} data-artboard={state} className="flex h-[700px]">
+      <LetterComposer
+        engagementId={ENG04_OPENS}
+        engagementName="Ridgeline cost segregation & §754 analysis"
+        height={700}
+      />
+    </div>
+  );
+}
+
+registerScreen("ENG-04", { title: "Engagement letter composer", Component: Eng04Artboard });
 
 // SIG-02 (N-02-T21): the envelope builder, a, e and f, over an empty frame.
 function Sig02Artboard({ params }: { params: FixtureParams }): JSX.Element | null {

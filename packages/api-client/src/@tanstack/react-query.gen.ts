@@ -5122,7 +5122,7 @@ export const getLetterQueryKey = (options: Options<GetLetterData>) => createQuer
 /**
  * Get Letter Route
  *
- * ENG-04 (N-02-T33).
+ * ENG-04's composed letter (N-02-T32) behind `engagements.letter_composer`.
  */
 export const getLetterOptions = (options: Options<GetLetterData>) => queryOptions<GetLetterResponse, GetLetterError, GetLetterResponse, ReturnType<typeof getLetterQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -5140,7 +5140,8 @@ export const getLetterOptions = (options: Options<GetLetterData>) => queryOption
 /**
  * Draft Letter Route
  *
- * Draft edits; an edit after approval stales it (N-02-T33).
+ * Draft edits: a new version, rendered as a C11 draft (N-02-T32); an edit after approval
+ * returns the letter to Draft (N-02-T33 resolves the approval).
  */
 export const draftLetterMutation = (options?: Partial<Options<DraftLetterData>>): UseMutationOptions<DraftLetterResponse, DraftLetterError, Options<DraftLetterData>> => {
     const mutationOptions: UseMutationOptions<DraftLetterResponse, DraftLetterError, Options<DraftLetterData>> = {
