@@ -86,6 +86,18 @@ export const ov = {
     key: "request",
     args: [requestId, binderId],
   }),
+  /** SHL-15, the issue composer (P-04-T54): fix instructions on one issue (`?ov=issue:<id>`). */
+  SHL15: (issueId: string): OverlayRef => ({ key: "issue", args: [issueId] }),
+  /** SHL-15, a new issue on a record (`?ov=issue:new:<type>:<id>[:<engagementId>]`). */
+  SHL15New: (type: string, id: string, engagementId?: string): OverlayRef => ({
+    key: "issue",
+    args: engagementId === undefined ? ["new", type, id] : ["new", type, id, engagementId],
+  }),
+  /** SHL-15 e, one instruction for several issues (`?ov=issue:bulk:<type>:<id>:<id>,<id>`). */
+  SHL15Bulk: (type: string, id: string, issueIds: readonly string[]): OverlayRef => ({
+    key: "issue",
+    args: ["bulk", type, id, issueIds.join(",")],
+  }),
   /** TAX-09, a return's tax-engine sync over TAX-01 or TAX-02 (`?ov=engine-sync:<returnId>`). */
   TAX09: (returnId: string): OverlayRef => ({ key: "engine-sync", args: [returnId] }),
 } as const;
