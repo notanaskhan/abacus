@@ -5,6 +5,7 @@ import { Button } from "../components/button";
 import { SearchField } from "../components/inputs";
 import { DoneCount } from "../components/pill";
 import { EmptyState } from "../components/states";
+import { DecisionCard } from "../gates/decision-card";
 import { prose } from "../format";
 import { PaneAction } from "../layout/pane";
 import { RecordRail } from "../record";
@@ -30,9 +31,17 @@ import { pbcGroups } from "./workpaper-data";
 // documents are the seed's PBC list, and the trial balance tie reads the seed's figures. Every
 // board is live: pick rail rows, collapse bands, search and sort the documents, open one in the
 // viewer, Run and Retry. Dock content in a, c and d is the C-12 run kit's and the SHL-11 decision
-// card's (P-04, P-09): until they land it is masked for parity (`data-parity-mask`).
+// card's (P-04, P-09). F-05 R4: the run thread stays masked for parity (`data-parity-mask`) until
+// C-12 lands (P-09); the decision card is unmasked with P-04-T49: in c the dock shows SHL-11's
+// inline card (frame 5) for Materiality, read-only, with "Open decision" (the sheet decides).
 
 const PERSON = { kind: "human", name: STAFF.hannah } as const;
+// SHL-11 frame 5's question and two compact options, verbatim (P-04-T49; F-05 R4 unmask).
+const MATERIALITY_QUESTION = "Which planning materiality should the Northwind PY2025 audit use?";
+const MATERIALITY_OPTIONS = [
+  { key: "1.0", label: "1.0% — $168,100" },
+  { key: "1.5", label: "1.5% — $252,200", recommended: true },
+] as const;
 const TOOLBAR = {
   nav: guards.nav.map((label) => ({ label })),
   firm: FIRM,
@@ -361,6 +370,18 @@ function Cockpit({ board }: { board: Board }): JSX.Element {
       </div>
     ) : (
       <>
+        {sel === "mat" && (
+          <div className="px-[10px] pt-[10px]">
+            <DecisionCard
+              title={MATERIALITY_QUESTION}
+              reservedNote={`Reserved to Engagement Partner · ${STAFF.margaret}`}
+              options={MATERIALITY_OPTIONS}
+              actor={PERSON}
+              recommendationLabel="Recommended by Accrued Agent"
+              openDecision={{ label: "Open decision", onOpen: () => undefined }}
+            />
+          </div>
+        )}
         <Thread failed={failed} />
         {failed && (
           <div className="px-[10px] pb-[10px]">

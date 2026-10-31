@@ -15,6 +15,9 @@ export const COPY = {
   explain: "Explain…",
   tiesOncePosted: "Ties once posted",
   changedAfterSignOff: "Changed after sign-off",
+  // F-06-T20: the sign-off chips' group name and each chip's accessible name.
+  signOffs: "Sign-offs",
+  openSignOff: (name: string, level: string): string => `${name}, ${level}: open sign-off`,
   pending: "Pending",
   tally: {
     beginning: "Beginning capital",
@@ -33,4 +36,7 @@ export const COPY = {
     byMovement: "Tax basis · threshold 25,000 a line, 100,000 on capital totals",
   },
   tables: { byPartner: "Capital by partner", byMovement: "Capital by movement" },
+  // F-06-T19 (T6e): the calculation pane's title and the source workbook's status footer.
+  calcTitle: "Ending Capital · Calder Family Trust",
+  sheetMeta: "Sheet Capital · updated Sep 11 by Olivia Brandt",
 } as const;
