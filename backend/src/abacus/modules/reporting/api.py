@@ -20,7 +20,11 @@ from uuid import UUID
 
 from abacus.kernel.uow import UnitOfWork
 from abacus.kernel.uow.relay import OutboxEvent
-from abacus.modules.engagements.api import register_letter_renderer
+from abacus.modules.engagements.api import (
+    register_letter_finaliser,
+    register_letter_locker,
+    register_letter_renderer,
+)
 from abacus.modules.reporting.consent import Recipients as Recipients
 from abacus.modules.reporting.consent import RecipientsUnavailable as RecipientsUnavailable
 from abacus.modules.reporting.consent import recipients as _consent_recipients
@@ -34,7 +38,11 @@ from abacus.modules.reporting.contract import (
     documents_router,
     templates_router,
 )
-from abacus.modules.reporting.engagement_letters import render_engagement_letter
+from abacus.modules.reporting.engagement_letters import (
+    finalise_engagement_letter,
+    lock_engagement_letter,
+    render_engagement_letter,
+)
 from abacus.modules.reporting.render.core import DocxRenderOutput as DocxRenderOutput
 
 # T-01-T10's consumer API (re-exported).
@@ -402,3 +410,5 @@ ACTIVITIES: tuple[object, ...] = ()
 # N-02-T32 (DEC-1458): the engagement letter renders through C11 by engagements' port, since
 # engagements may not import reporting (ADR-008).
 register_letter_renderer(render_engagement_letter)
+register_letter_finaliser(finalise_engagement_letter)  # N-02-T33: the approval renders final
+register_letter_locker(lock_engagement_letter)  # N-02-T33: a completed envelope locks it

@@ -41,6 +41,7 @@ export const COPY = {
   decisions: { file: "File", ignore: "Ignore", hold: "Hold — ask client" },
   reasons: {
     wrong_year: "Wrong year",
+    wrong_tax_year: "Wrong tax year", // T-02-T18: TAX-03's "Ignore · wrong year"
     duplicate: "duplicate",
     not_ours: "Not ours",
     spam: "Spam",

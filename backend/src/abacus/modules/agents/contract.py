@@ -11,13 +11,13 @@ figures, so they are Restricted and never in a list.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Literal
+from typing import Annotated, Final, Literal
 from uuid import UUID
 
 from fastapi import Depends, Header, Path
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import REVIEW_GRAMMAR_API
+from abacus.kernel._flags import REVIEW_APPROVE_AGENT_OUTPUT, REVIEW_GRAMMAR_API
 from abacus.kernel._statuses import ProposalStatus, SuggestionStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound
@@ -69,6 +69,35 @@ async def _live(ctx: AuthContext) -> None:
     """A live route behind the same flag: off, it answers 404 like its stub did."""
     if not await flag_enabled(ctx.tenant, REVIEW_GRAMMAR_API):
         raise NotFound("review.grammar_api")
+
+
+# P-04-T46 (P-04 §2; DEC-1385): a person decides on agent output only where the firm has turned
+# SHL-10's live approval on. Reading a proposal and Undo inside its window stay behind the C3 flag.
+DECISIONS: Final = frozenset(
+    {
+        "proposal.approve",
+        "proposal.reject",
+        "proposal.route",
+        "proposal.follow_up",
+        "proposal.decide_change_set",
+    }
+)
+
+
+async def _deciding(ctx: AuthContext) -> None:
+    """A decision route: the C3 flag, then the firm's SHL-10 approval flag (off: 404)."""
+    await _live(ctx)
+    if not await flag_enabled(ctx.tenant, REVIEW_APPROVE_AGENT_OUTPUT):
+        raise NotFound("review.approve_agent_output")
+
+
+async def _shown(ctx: AuthContext, out: AgentProposalOut) -> AgentProposalOut:
+    """The view offers no decision while the firm's SHL-10 approval is off."""
+    if await flag_enabled(ctx.tenant, REVIEW_APPROVE_AGENT_OUTPUT):
+        return out
+    return out.model_copy(
+        update={"allowed_actions": [a for a in out.allowed_actions if a not in DECISIONS]}
+    )
 
 
 def _uuid(ref: str) -> UUID:
@@ -251,8 +280,8 @@ async def agent_proposal_route(ref: ProposalRef, ctx: Ctx) -> AgentProposalOut:
     await _live(ctx)
     typed = parse(ref)
     if typed is not None:
-        return _proposal_out(await adapter_view(ctx, *typed))
-    return _proposal_out(await proposal_view(ctx, _uuid(ref)))
+        return await _shown(ctx, _proposal_out(await adapter_view(ctx, *typed)))
+    return await _shown(ctx, _proposal_out(await proposal_view(ctx, _uuid(ref))))
 
 
 @proposals_router.post(
@@ -266,7 +295,7 @@ async def proposal_approve_route(
 ) -> AgentProposalOut:
     """Approve, or approve with edits (human only). Over the viewer's limit: 403 with the
     approver to route to. A typed ref approves through the specialist's existing path."""
-    await _live(ctx)
+    await _deciding(ctx)
     typed = parse(proposal_id)
     if typed is not None:
         if body.edits:
@@ -290,7 +319,7 @@ async def proposal_reject_route(
     proposal_id: ProposalRef, body: RejectProposalIn, ctx: Ctx
 ) -> AgentProposalOut:
     """SHL-10 f: reject with a reason (human only)."""
-    await _live(ctx)
+    await _deciding(ctx)
     typed = parse(proposal_id)
     if typed is not None:
         return _proposal_out(
@@ -323,7 +352,7 @@ async def proposal_route_to_route(
     proposal_id: UUID, body: RouteProposalIn, ctx: Ctx
 ) -> AgentProposalOut:
     """SHL-10 d: send it to a named approver ("Send to Priya Raman for approval")."""
-    await _live(ctx)
+    await _deciding(ctx)
     return _proposal_out(
         await route_proposal(
             ctx,
@@ -348,7 +377,7 @@ async def proposal_follow_up_route(
 ) -> AgentProposalOut:
     """ "Ask follow-up": a follow-up recorded for the originating thread or run. A retry with
     the same `Idempotency-Key` records nothing again."""
-    await _live(ctx)
+    await _deciding(ctx)
     return _proposal_out(
         await record_follow_up(
             ctx, proposal_id, text=body.text, idempotency_key=str(idempotency_key)

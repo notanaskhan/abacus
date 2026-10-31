@@ -17,9 +17,11 @@ to Draft with its approval left on the old version (stale), as N-02-T33 builds o
   is shown and never added (ADR-050). Fee and billing variables cannot be overridden.
 - The draft renders through C11 by the port in `letter_render.py`: `reporting` registers the
   `engagement_letter` kind's renderer there, since `engagements` may not import `reporting`
-  (ADR-008); the values this module resolved go with the ask (DEC-1458). Approvals are
-  N-02-T33's: until then the kind's approval provider answers None, so no letter renders final.
-- Sent and signed letters, and recorded-mode letters, take no edit (409).
+  (ADR-008); the values this module resolved go with the ask (DEC-1458). Approval, Send and
+  Amend are N-02-T33's (`letter_flow.py`): an addendum keeps its kind and the version it amends
+  through its drafts, and renders as its own C11 document (`letter_owner`).
+- Sent and signed letters, a partner-approved letter with an envelope drafted, and recorded-mode
+  letters take no edit (409).
 """
 
 from __future__ import annotations
@@ -72,6 +74,9 @@ KIND: Final = "engagement_letter"
 OWNER: Final = "engagement_letter"
 READ: Final = "letter.read"
 DRAFT: Final = "letter.draft"
+APPROVE: Final = "letter.approve"
+SEND: Final = "letter.send"
+AMEND: Final = "letter.amend"
 EDITABLE: Final = frozenset({"draft", "partner_approved"})
 # Computed by code from the fee terms: never a person's text (ADR-050).
 COMPUTED: Final = ("fee.", "billing.", "third_party_fee.")
@@ -536,11 +541,26 @@ async def composed_letter(ctx: AuthContext, engagement_id: UUID) -> ComposerLett
     async with tenant_session(ctx.tenant) as session:
         engagement = await _engagement(session, engagement_id)
         view = await _view(ctx, session, engagement, await _current(session, engagement_id))
-    actions = await allowed_actions(ctx, ref.resource(), (READ, DRAFT))
-    editable = view.mode == "composed" and view.status in EDITABLE
+    actions = await allowed_actions(ctx, ref.resource(), (READ, DRAFT, APPROVE, SEND, AMEND))
+    composed = view.mode == "composed" and view.version_no is not None
+    by_status = {
+        READ: True,
+        DRAFT: view.mode == "composed"
+        and view.status in EDITABLE
+        and not (view.status == LetterStatus.PARTNER_APPROVED and view.envelope_id is not None),
+        APPROVE: composed and view.status == LetterStatus.DRAFT,
+        SEND: composed and view.status == LetterStatus.PARTNER_APPROVED,
+        AMEND: composed and view.status == LetterStatus.SIGNED,
+    }
     return view.model_copy(
-        update={"allowed_actions": [a for a in actions if a == READ or editable]}
+        update={"allowed_actions": [a for a in actions if by_status.get(a, False)]}
     )
+
+
+def letter_owner(engagement_id: UUID, amends_version_id: UUID | None) -> UUID:
+    """The C11 owner a version renders under: the engagement for the original letter, the
+    amended version for an addendum (the signed letter's document stays locked)."""
+    return engagement_id if amends_version_id is None else amends_version_id
 
 
 # --- the draft ------------------------------------------------------------------------------
@@ -596,7 +616,10 @@ async def draft_letter(
         if current.mode != "composed":
             raise LetterLocked(facts={"engagement_id": str(engagement_id), "mode": current.mode})
         prior = current.version
-        if prior is not None and str(prior["status"]) not in EDITABLE:
+        if prior is not None and (
+            str(prior["status"]) not in EDITABLE or prior["envelope_id"] is not None
+        ):
+            # N-02-T33: once Send drafted an envelope, the approved letter is what it carries.
             raise LetterLocked(
                 facts={"engagement_id": str(engagement_id), "status": str(prior["status"])}
             )
@@ -613,13 +636,14 @@ async def draft_letter(
         values = {f.key: f.value for f in facts if f.value is not None}
         values.update(body.variables)
         values.update(fee_variables(fees))
-        owner = engagement_id
+        kind = "original" if prior is None else str(prior["kind"])
+        amends = None if prior is None else cast(UUID | None, prior["amends_version_id"])
         ticket = await render_letter(
             tx,
             LetterRenderAsk(
-                owner_id=owner,
+                owner_id=letter_owner(engagement_id, amends),
                 client_id=engagement.client_id,
-                engagement_id=owner,
+                engagement_id=engagement_id,
                 template_version_id=body.template_version_id,
                 requested_by=ctx.user_id,
                 values=values,
@@ -636,9 +660,10 @@ async def draft_letter(
         await tx.session.execute(
             text(
                 "INSERT INTO engagement_letter_versions (id, tenant_id, engagement_id, "
-                "version_no, kind, template_version_id, clause_states, variables, "
-                "section_overrides, fee_terms, generated_document_id, content_hash, status, "
-                "created_by, created_by_kind) VALUES (:id, :t, :e, :n, 'original', :tv, "
+                "version_no, kind, amends_version_id, template_version_id, clause_states, "
+                "variables, section_overrides, fee_terms, generated_document_id, content_hash, "
+                "status, created_by, created_by_kind) VALUES (:id, :t, :e, :n, :kind, :amends, "
+                ":tv, "
                 "CAST(:cs AS jsonb), CAST(:vars AS jsonb), CAST(:so AS jsonb), "
                 "CAST(:ft AS jsonb), :doc, :hash, 'draft', :by, 'human')"
             ),
@@ -647,6 +672,8 @@ async def draft_letter(
                 "t": ctx.tenant_id,
                 "e": engagement_id,
                 "n": at + 1,
+                "kind": kind,
+                "amends": amends,
                 "tv": body.template_version_id,
                 "cs": _json(states),
                 "vars": _json(stored),
@@ -708,5 +735,6 @@ __all__ = [
     "compute_fees",
     "draft_letter",
     "fee_variables",
+    "letter_owner",
     "money",
 ]

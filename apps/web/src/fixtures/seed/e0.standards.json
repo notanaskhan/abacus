@@ -1,0 +1,418 @@
+{
+  "scenario": {
+    "version": "bh-2026.10.3",
+    "hash": "2b09e6fb01617c990e6e72feac508159fe5a03c6ff4f80bbb8d4a539c6f8d6a2",
+    "snapshot": "E0",
+    "slices": [
+      "portal",
+      "tax_board",
+      "standards"
+    ]
+  },
+  "persona": "priya-raman",
+  "request": "GET /v1/standards",
+  "body": {
+    "counts": {},
+    "facets": {},
+    "items": [
+      {
+        "allowed_actions": [
+          "firm_standard.read"
+        ],
+        "current_version": {
+          "current": true,
+          "effective_from": "2026-09-06",
+          "id": "84a04df0-df86-47e4-84e8-3005c1956ee1",
+          "published_at": "2026-09-06T15:10:00Z",
+          "published_by": {
+            "name": "Daniel Reyes",
+            "user_id": "4ffb03c8-d2e3-4256-8aad-3fc651778a3e"
+          },
+          "status": "published",
+          "tax_year": 2025,
+          "version": 6
+        },
+        "draft_version": {
+          "current": false,
+          "effective_from": null,
+          "id": "95dfced4-a933-4578-9d0b-77a19ef2c39a",
+          "published_at": null,
+          "published_by": null,
+          "status": "draft",
+          "tax_year": 2026,
+          "version": 7
+        },
+        "entries": 38,
+        "id": "9ea13fc9-a5c8-4cdf-840c-fd5e961f128b",
+        "key": "bh-1040-review-checklist",
+        "kind": "review_checklist",
+        "name": "1040 Review Checklist",
+        "owner": {
+          "name": "Daniel Reyes",
+          "user_id": "4ffb03c8-d2e3-4256-8aad-3fc651778a3e"
+        },
+        "usage_count": null
+      },
+      {
+        "allowed_actions": [
+          "firm_standard.read"
+        ],
+        "current_version": {
+          "current": true,
+          "effective_from": "2026-09-02",
+          "id": "6bd8b897-ea4a-4850-95e0-e95cd66bcc01",
+          "published_at": "2026-09-02T15:10:04Z",
+          "published_by": {
+            "name": "Daniel Reyes",
+            "user_id": "4ffb03c8-d2e3-4256-8aad-3fc651778a3e"
+          },
+          "status": "published",
+          "tax_year": 2025,
+          "version": 2
+        },
+        "draft_version": null,
+        "entries": 31,
+        "id": "05a28178-4b87-4d80-a31d-beeba6466d93",
+        "key": "bh-1041-review-checklist",
+        "kind": "review_checklist",
+        "name": "1041 Review Checklist",
+        "owner": {
+          "name": "Daniel Reyes",
+          "user_id": "4ffb03c8-d2e3-4256-8aad-3fc651778a3e"
+        },
+        "usage_count": null
+      },
+      {
+        "allowed_actions": [
+          "firm_standard.read"
+        ],
+        "current_version": {
+          "current": true,
+          "effective_from": "2026-09-04",
+          "id": "752dd235-3802-4009-ade8-2b38d89d1b43",
+          "published_at": "2026-09-04T15:10:01Z",
+          "published_by": {
+            "name": "Daniel Reyes",
+            "user_id": "4ffb03c8-d2e3-4256-8aad-3fc651778a3e"
+          },
+          "status": "published",
+          "tax_year": 2025,
+          "version": 4
+        },
+        "draft_version": null,
+        "entries": 42,
+        "id": "1d4784a0-3e68-4858-9043-037480e39197",
+        "key": "bh-1065-review-checklist",
+        "kind": "review_checklist",
+        "name": "1065 Review Checklist",
+        "owner": {
+          "name": "Daniel Reyes",
+          "user_id": "4ffb03c8-d2e3-4256-8aad-3fc651778a3e"
+        },
+        "usage_count": null
+      },
+      {
+        "allowed_actions": [
+          "firm_standard.read"
+        ],
+        "current_version": {
+          "current": true,
+          "effective_from": "2026-09-02",
+          "id": "3d85f597-eecd-40a6-bb98-deb8f147bc22",
+          "published_at": "2026-09-02T15:10:03Z",
+          "published_by": {
+            "name": "Daniel Reyes",
+            "user_id": "4ffb03c8-d2e3-4256-8aad-3fc651778a3e"
+          },
+          "status": "published",
+          "tax_year": 2025,
+          "version": 2
+        },
+        "draft_version": null,
+        "entries": 33,
+        "id": "9c33caa3-01f1-45ab-904d-dc96a12b82cc",
+        "key": "bh-1120-review-checklist",
+        "kind": "review_checklist",
+        "name": "1120 Review Checklist",
+        "owner": {
+          "name": "Daniel Reyes",
+          "user_id": "4ffb03c8-d2e3-4256-8aad-3fc651778a3e"
+        },
+        "usage_count": null
+      },
+      {
+        "allowed_actions": [
+          "firm_standard.read"
+        ],
+        "current_version": {
+          "current": true,
+          "effective_from": "2026-09-03",
+          "id": "e1b7906b-6517-4854-8b62-55a9402a8596",
+          "published_at": "2026-09-03T15:10:02Z",
+          "published_by": {
+            "name": "Daniel Reyes",
+            "user_id": "4ffb03c8-d2e3-4256-8aad-3fc651778a3e"
+          },
+          "status": "published",
+          "tax_year": 2025,
+          "version": 3
+        },
+        "draft_version": null,
+        "entries": 36,
+        "id": "8bc3032b-db9a-4393-a66f-231e5d536be5",
+        "key": "bh-1120-s-review-checklist",
+        "kind": "review_checklist",
+        "name": "1120-S Review Checklist",
+        "owner": {
+          "name": "Daniel Reyes",
+          "user_id": "4ffb03c8-d2e3-4256-8aad-3fc651778a3e"
+        },
+        "usage_count": null
+      },
+      {
+        "allowed_actions": [
+          "firm_standard.read"
+        ],
+        "current_version": {
+          "current": true,
+          "effective_from": "2026-09-01",
+          "id": "63dc4df8-fb58-4284-909d-b32bc9f198ec",
+          "published_at": "2026-09-01T15:10:05Z",
+          "published_by": {
+            "name": "Daniel Reyes",
+            "user_id": "4ffb03c8-d2e3-4256-8aad-3fc651778a3e"
+          },
+          "status": "published",
+          "tax_year": 2025,
+          "version": 1
+        },
+        "draft_version": null,
+        "entries": 29,
+        "id": "20046547-dd23-494f-9a29-55680b83b718",
+        "key": "bh-990-review-checklist",
+        "kind": "review_checklist",
+        "name": "990 Review Checklist",
+        "owner": {
+          "name": "Daniel Reyes",
+          "user_id": "4ffb03c8-d2e3-4256-8aad-3fc651778a3e"
+        },
+        "usage_count": null
+      },
+      {
+        "allowed_actions": [
+          "firm_standard.read"
+        ],
+        "current_version": {
+          "current": true,
+          "effective_from": "2026-09-01",
+          "id": "e56d86c1-3cf5-49c9-a28f-d3b1c0690e21",
+          "published_at": "2026-09-01T15:10:07Z",
+          "published_by": {
+            "name": "Daniel Reyes",
+            "user_id": "4ffb03c8-d2e3-4256-8aad-3fc651778a3e"
+          },
+          "status": "published",
+          "tax_year": null,
+          "version": 1
+        },
+        "draft_version": null,
+        "entries": 4,
+        "id": "bc8f8804-fd38-4c9b-9381-3f1c0600167c",
+        "key": "bh-tax-02",
+        "kind": "return_approval_policy",
+        "name": "Return approval",
+        "owner": {
+          "name": "Daniel Reyes",
+          "user_id": "4ffb03c8-d2e3-4256-8aad-3fc651778a3e"
+        },
+        "usage_count": null
+      },
+      {
+        "allowed_actions": [
+          "firm_standard.read"
+        ],
+        "current_version": {
+          "current": true,
+          "effective_from": "2026-09-02",
+          "id": "2ee0db29-949f-429d-ac9a-1a08ebcb8da6",
+          "published_at": "2026-09-02T15:10:06Z",
+          "published_by": {
+            "name": "Daniel Reyes",
+            "user_id": "4ffb03c8-d2e3-4256-8aad-3fc651778a3e"
+          },
+          "status": "published",
+          "tax_year": null,
+          "version": 2
+        },
+        "draft_version": null,
+        "entries": 3,
+        "id": "84ef26fd-bbe0-4854-bd9f-1e2a78613123",
+        "key": "bh-review-levels",
+        "kind": "review_levels",
+        "name": "Review levels",
+        "owner": {
+          "name": "Daniel Reyes",
+          "user_id": "4ffb03c8-d2e3-4256-8aad-3fc651778a3e"
+        },
+        "usage_count": null
+      },
+      {
+        "allowed_actions": [
+          "firm_standard.read",
+          "firm_standard.draft",
+          "firm_standard.import",
+          "firm_standard.publish"
+        ],
+        "current_version": {
+          "current": true,
+          "effective_from": "2026-09-01",
+          "id": "59973342-f547-4266-94a6-a2fdaa4802d2",
+          "published_at": "2026-09-01T15:10:12Z",
+          "published_by": {
+            "name": "Priya Raman",
+            "user_id": "ff3fd070-b167-493e-99be-63ec48c9f033"
+          },
+          "status": "published",
+          "tax_year": null,
+          "version": 1
+        },
+        "draft_version": null,
+        "entries": null,
+        "id": "fc64cf89-1aad-4e8d-a8b3-d2b8224e9280",
+        "key": "bh-ssars-cas",
+        "kind": "ssars_cas_settings",
+        "name": "SSARS & CAS",
+        "owner": {
+          "name": "Priya Raman",
+          "user_id": "ff3fd070-b167-493e-99be-63ec48c9f033"
+        },
+        "usage_count": null
+      },
+      {
+        "allowed_actions": [
+          "firm_standard.read",
+          "firm_standard.draft",
+          "firm_standard.import",
+          "firm_standard.publish"
+        ],
+        "current_version": {
+          "current": true,
+          "effective_from": "2026-09-02",
+          "id": "e3ee7862-2d9f-448a-872d-72ac912523e4",
+          "published_at": "2026-09-02T15:10:08Z",
+          "published_by": {
+            "name": "Priya Raman",
+            "user_id": "ff3fd070-b167-493e-99be-63ec48c9f033"
+          },
+          "status": "published",
+          "tax_year": null,
+          "version": 2
+        },
+        "draft_version": null,
+        "entries": 7,
+        "id": "e99d7e82-ba1c-4f04-9436-4bba9b1c4c09",
+        "key": "bh-aje-thresholds",
+        "kind": "aje_thresholds",
+        "name": "AJE thresholds",
+        "owner": {
+          "name": "Priya Raman",
+          "user_id": "ff3fd070-b167-493e-99be-63ec48c9f033"
+        },
+        "usage_count": null
+      },
+      {
+        "allowed_actions": [
+          "firm_standard.read"
+        ],
+        "current_version": {
+          "current": true,
+          "effective_from": "2026-09-01",
+          "id": "c5e86f95-4984-47a7-814b-24c35c729687",
+          "published_at": "2026-09-01T15:10:11Z",
+          "published_by": {
+            "name": "Margaret Okonkwo",
+            "user_id": "40b8ea53-b369-4daa-a11b-b009713cb844"
+          },
+          "status": "published",
+          "tax_year": null,
+          "version": 1
+        },
+        "draft_version": null,
+        "entries": null,
+        "id": "093478bf-522e-43bc-b446-78ff7765d9ca",
+        "key": "bh-document-confidence",
+        "kind": "document_confidence",
+        "name": "Document confidence",
+        "owner": {
+          "name": "Margaret Okonkwo",
+          "user_id": "40b8ea53-b369-4daa-a11b-b009713cb844"
+        },
+        "usage_count": null
+      },
+      {
+        "allowed_actions": [
+          "firm_standard.read"
+        ],
+        "current_version": {
+          "current": true,
+          "effective_from": "2026-09-02",
+          "id": "23d8cc06-5818-44db-b3c3-309eec661150",
+          "published_at": "2026-09-02T15:10:10Z",
+          "published_by": {
+            "name": "Margaret Okonkwo",
+            "user_id": "40b8ea53-b369-4daa-a11b-b009713cb844"
+          },
+          "status": "published",
+          "tax_year": null,
+          "version": 2
+        },
+        "draft_version": null,
+        "entries": 3,
+        "id": "a1a79f34-a79e-4f79-9ca4-21b668c90525",
+        "key": "bh-materiality-ranges",
+        "kind": "materiality_ranges",
+        "name": "Materiality ranges",
+        "owner": {
+          "name": "Margaret Okonkwo",
+          "user_id": "40b8ea53-b369-4daa-a11b-b009713cb844"
+        },
+        "usage_count": null
+      },
+      {
+        "allowed_actions": [
+          "firm_standard.read",
+          "firm_standard.draft",
+          "firm_standard.import",
+          "firm_standard.publish"
+        ],
+        "current_version": {
+          "current": true,
+          "effective_from": "2026-09-03",
+          "id": "7b4e4526-1680-44ea-9b28-f887745a15d2",
+          "published_at": "2026-09-03T15:10:09Z",
+          "published_by": {
+            "name": "Priya Raman",
+            "user_id": "ff3fd070-b167-493e-99be-63ec48c9f033"
+          },
+          "status": "published",
+          "tax_year": null,
+          "version": 3
+        },
+        "draft_version": null,
+        "entries": 3,
+        "id": "2fee1a66-7e78-441c-8a5f-8f13f9acdf8a",
+        "key": "bh-variance-thresholds",
+        "kind": "variance_thresholds",
+        "name": "Variance thresholds",
+        "owner": {
+          "name": "Priya Raman",
+          "user_id": "ff3fd070-b167-493e-99be-63ec48c9f033"
+        },
+        "usage_count": null
+      }
+    ],
+    "next_cursor": null,
+    "total": 13,
+    "total_capped": false
+  }
+}

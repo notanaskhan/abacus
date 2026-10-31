@@ -2961,7 +2961,7 @@ export const getRotation = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * Amend Letter Route
  *
- * An addendum version (N-02-T37).
+ * An addendum version amending the signed letter (N-02-T33).
  */
 export const amendLetter = <ThrowOnError extends boolean = false>(options: Options<AmendLetterData, ThrowOnError>): RequestResult<AmendLetterResponses, AmendLetterErrors, ThrowOnError> => (options.client ?? client).post<AmendLetterResponses, AmendLetterErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -2972,7 +2972,7 @@ export const amendLetter = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * Approve Letter Route
  *
- * Partner, fresh MFA, against the content hash (N-02-T35).
+ * Partner, fresh MFA, against the content hash (N-02-T33).
  */
 export const approveLetter = <ThrowOnError extends boolean = false>(options: Options<ApproveLetterData, ThrowOnError>): RequestResult<ApproveLetterResponses, ApproveLetterErrors, ThrowOnError> => (options.client ?? client).post<ApproveLetterResponses, ApproveLetterErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -3062,7 +3062,7 @@ export const recordEngagementLetter = <ThrowOnError extends boolean = false>(opt
 /**
  * Request Approval Route
  *
- * C13 `letter_partner_approval` (N-02-T35).
+ * C13 `letter_partner_approval`: the draft waits on the engagement partners (N-02-T33).
  */
 export const requestApproval = <ThrowOnError extends boolean = false>(options: Options<RequestApprovalData, ThrowOnError>): RequestResult<RequestApprovalResponses, RequestApprovalErrors, ThrowOnError> => (options.client ?? client).post<RequestApprovalResponses, RequestApprovalErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -3073,7 +3073,7 @@ export const requestApproval = <ThrowOnError extends boolean = false>(options: O
 /**
  * Send Letter Route
  *
- * A C7 draft from the `engagement_letter` source (N-02-T35).
+ * A C7 draft from the `engagement_letter` source (N-02-T33), with `signatures.envelopes`.
  */
 export const sendLetter = <ThrowOnError extends boolean = false>(options: Options<SendLetterData, ThrowOnError>): RequestResult<SendLetterResponses, SendLetterErrors, ThrowOnError> => (options.client ?? client).post<SendLetterResponses, SendLetterErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5196,7 +5196,7 @@ export const rejectImport = <ThrowOnError extends boolean = false>(options: Opti
 /**
  * List Envelope Policies Route
  *
- * The firm's policies (N-02-T13).
+ * The firm's policies: each family's row, else the published floor (N-02-T27).
  */
 export const listEnvelopePolicies = <ThrowOnError extends boolean = false>(options?: Options<ListEnvelopePoliciesData, ThrowOnError>): RequestResult<ListEnvelopePoliciesResponses, ListEnvelopePoliciesErrors, ThrowOnError> => (options?.client ?? client).get<ListEnvelopePoliciesResponses, ListEnvelopePoliciesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5207,7 +5207,7 @@ export const listEnvelopePolicies = <ThrowOnError extends boolean = false>(optio
 /**
  * Update Envelope Policy Route
  *
- * Stricter-only (AC-9; N-02-T13).
+ * Stricter-only against the floor (AC-9; N-02-T27).
  */
 export const updateEnvelopePolicy = <ThrowOnError extends boolean = false>(options: Options<UpdateEnvelopePolicyData, ThrowOnError>): RequestResult<UpdateEnvelopePolicyResponses, UpdateEnvelopePolicyErrors, ThrowOnError> => (options.client ?? client).put<UpdateEnvelopePolicyResponses, UpdateEnvelopePolicyErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -5428,7 +5428,7 @@ export const revealSignerIp = <ThrowOnError extends boolean = false>(options: Op
 /**
  * Record Wet Signature Route
  *
- * DF-11: the hand-signed 8879 (N-02-T27).
+ * DF-11: the hand-signed 8879 (N-02-T27): the signer signed, method Handwritten.
  */
 export const recordWetSignature = <ThrowOnError extends boolean = false>(options: Options<RecordWetSignatureData, ThrowOnError>): RequestResult<RecordWetSignatureResponses, RecordWetSignatureErrors, ThrowOnError> => (options.client ?? client).post<RecordWetSignatureResponses, RecordWetSignatureErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -8040,6 +8040,8 @@ export const k1Document = <ThrowOnError extends boolean = false>(options: Option
 
 /**
  * Resend K1 Route
+ *
+ * The corrected contact; T21's workflow sends the new invitation.
  */
 export const resendK1 = <ThrowOnError extends boolean = false>(options: Options<ResendK1Data, ThrowOnError>): RequestResult<ResendK1Responses, ResendK1Errors, ThrowOnError> => (options.client ?? client).post<ResendK1Responses, ResendK1Errors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -9755,6 +9757,8 @@ export const sendQuestion = <ThrowOnError extends boolean = false>(options: Opti
 
 /**
  * Accept Details Change Route
+ *
+ * DV-10: recorded for the firm to apply in CCH (no full TIN is stored).
  */
 export const acceptDetailsChange = <ThrowOnError extends boolean = false>(options: Options<AcceptDetailsChangeData, ThrowOnError>): RequestResult<AcceptDetailsChangeResponses, AcceptDetailsChangeErrors, ThrowOnError> => (options.client ?? client).post<AcceptDetailsChangeResponses, AcceptDetailsChangeErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -10673,6 +10677,8 @@ export const approveReturn = <ThrowOnError extends boolean = false>(options: Opt
 
 /**
  * Return Intake Route
+ *
+ * TAX-03's intake (T-02-T18): binder, requests, waiting files, questions, hand-offs.
  */
 export const returnIntake = <ThrowOnError extends boolean = false>(options: Options<ReturnIntakeData, ThrowOnError>): RequestResult<ReturnIntakeResponses, ReturnIntakeErrors, ThrowOnError> => (options.client ?? client).get<ReturnIntakeResponses, ReturnIntakeErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -10682,6 +10688,8 @@ export const returnIntake = <ThrowOnError extends boolean = false>(options: Opti
 
 /**
  * List K1 Packages Route
+ *
+ * TXP-12: rows with documents (the expanded row); `counts` are the tiles by status.
  */
 export const listK1Packages = <ThrowOnError extends boolean = false>(options: Options<ListK1PackagesData, ThrowOnError>): RequestResult<ListK1PackagesResponses, ListK1PackagesErrors, ThrowOnError> => (options.client ?? client).get<ListK1PackagesResponses, ListK1PackagesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -10713,6 +10721,8 @@ export const releaseK1 = <ThrowOnError extends boolean = false>(options: Options
 
 /**
  * Share K1 Route
+ *
+ * DEC-88: a hand-off, an `internal_handoff` copy and a final-approval dependency each.
  */
 export const shareK1 = <ThrowOnError extends boolean = false>(options: Options<ShareK1Data, ThrowOnError>): RequestResult<ShareK1Responses, ShareK1Errors, ThrowOnError> => (options.client ?? client).post<ShareK1Responses, ShareK1Errors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

@@ -5062,7 +5062,7 @@ export const getRotationOptions = (options: Options<GetRotationData>) => queryOp
 /**
  * Amend Letter Route
  *
- * An addendum version (N-02-T37).
+ * An addendum version amending the signed letter (N-02-T33).
  */
 export const amendLetterMutation = (options?: Partial<Options<AmendLetterData>>): UseMutationOptions<AmendLetterResponse, AmendLetterError, Options<AmendLetterData>> => {
     const mutationOptions: UseMutationOptions<AmendLetterResponse, AmendLetterError, Options<AmendLetterData>> = {
@@ -5081,7 +5081,7 @@ export const amendLetterMutation = (options?: Partial<Options<AmendLetterData>>)
 /**
  * Approve Letter Route
  *
- * Partner, fresh MFA, against the content hash (N-02-T35).
+ * Partner, fresh MFA, against the content hash (N-02-T33).
  */
 export const approveLetterMutation = (options?: Partial<Options<ApproveLetterData>>): UseMutationOptions<ApproveLetterResponse, ApproveLetterError, Options<ApproveLetterData>> => {
     const mutationOptions: UseMutationOptions<ApproveLetterResponse, ApproveLetterError, Options<ApproveLetterData>> = {
@@ -5222,7 +5222,7 @@ export const recordEngagementLetterMutation = (options?: Partial<Options<RecordE
 /**
  * Request Approval Route
  *
- * C13 `letter_partner_approval` (N-02-T35).
+ * C13 `letter_partner_approval`: the draft waits on the engagement partners (N-02-T33).
  */
 export const requestApprovalMutation = (options?: Partial<Options<RequestApprovalData>>): UseMutationOptions<RequestApprovalResponse, RequestApprovalError, Options<RequestApprovalData>> => {
     const mutationOptions: UseMutationOptions<RequestApprovalResponse, RequestApprovalError, Options<RequestApprovalData>> = {
@@ -5241,7 +5241,7 @@ export const requestApprovalMutation = (options?: Partial<Options<RequestApprova
 /**
  * Send Letter Route
  *
- * A C7 draft from the `engagement_letter` source (N-02-T35).
+ * A C7 draft from the `engagement_letter` source (N-02-T33), with `signatures.envelopes`.
  */
 export const sendLetterMutation = (options?: Partial<Options<SendLetterData>>): UseMutationOptions<SendLetterResponse, SendLetterError, Options<SendLetterData>> => {
     const mutationOptions: UseMutationOptions<SendLetterResponse, SendLetterError, Options<SendLetterData>> = {
@@ -8607,7 +8607,7 @@ export const listEnvelopePoliciesQueryKey = (options?: Options<ListEnvelopePolic
 /**
  * List Envelope Policies Route
  *
- * The firm's policies (N-02-T13).
+ * The firm's policies: each family's row, else the published floor (N-02-T27).
  */
 export const listEnvelopePoliciesOptions = (options?: Options<ListEnvelopePoliciesData>) => queryOptions<ListEnvelopePoliciesResponse, ListEnvelopePoliciesError, ListEnvelopePoliciesResponse, ReturnType<typeof listEnvelopePoliciesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -8625,7 +8625,7 @@ export const listEnvelopePoliciesOptions = (options?: Options<ListEnvelopePolici
 /**
  * Update Envelope Policy Route
  *
- * Stricter-only (AC-9; N-02-T13).
+ * Stricter-only against the floor (AC-9; N-02-T27).
  */
 export const updateEnvelopePolicyMutation = (options?: Partial<Options<UpdateEnvelopePolicyData>>): UseMutationOptions<UpdateEnvelopePolicyResponse, UpdateEnvelopePolicyError, Options<UpdateEnvelopePolicyData>> => {
     const mutationOptions: UseMutationOptions<UpdateEnvelopePolicyResponse, UpdateEnvelopePolicyError, Options<UpdateEnvelopePolicyData>> = {
@@ -8991,7 +8991,7 @@ export const revealSignerIpMutation = (options?: Partial<Options<RevealSignerIpD
 /**
  * Record Wet Signature Route
  *
- * DF-11: the hand-signed 8879 (N-02-T27).
+ * DF-11: the hand-signed 8879 (N-02-T27): the signer signed, method Handwritten.
  */
 export const recordWetSignatureMutation = (options?: Partial<Options<RecordWetSignatureData>>): UseMutationOptions<RecordWetSignatureResponse, RecordWetSignatureError, Options<RecordWetSignatureData>> => {
     const mutationOptions: UseMutationOptions<RecordWetSignatureResponse, RecordWetSignatureError, Options<RecordWetSignatureData>> = {
@@ -13321,6 +13321,8 @@ export const k1DocumentOptions = (options: Options<K1DocumentData>) => queryOpti
 
 /**
  * Resend K1 Route
+ *
+ * The corrected contact; T21's workflow sends the new invitation.
  */
 export const resendK1Mutation = (options?: Partial<Options<ResendK1Data>>): UseMutationOptions<ResendK1Response, ResendK1Error, Options<ResendK1Data>> => {
     const mutationOptions: UseMutationOptions<ResendK1Response, ResendK1Error, Options<ResendK1Data>> = {
@@ -16154,6 +16156,8 @@ export const sendQuestionMutation = (options?: Partial<Options<SendQuestionData>
 
 /**
  * Accept Details Change Route
+ *
+ * DV-10: recorded for the firm to apply in CCH (no full TIN is stored).
  */
 export const acceptDetailsChangeMutation = (options?: Partial<Options<AcceptDetailsChangeData>>): UseMutationOptions<AcceptDetailsChangeResponse, AcceptDetailsChangeError, Options<AcceptDetailsChangeData>> => {
     const mutationOptions: UseMutationOptions<AcceptDetailsChangeResponse, AcceptDetailsChangeError, Options<AcceptDetailsChangeData>> = {
@@ -17667,6 +17671,8 @@ export const returnIntakeQueryKey = (options: Options<ReturnIntakeData>) => crea
 
 /**
  * Return Intake Route
+ *
+ * TAX-03's intake (T-02-T18): binder, requests, waiting files, questions, hand-offs.
  */
 export const returnIntakeOptions = (options: Options<ReturnIntakeData>) => queryOptions<ReturnIntakeResponse, ReturnIntakeError, ReturnIntakeResponse, ReturnType<typeof returnIntakeQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -17685,6 +17691,8 @@ export const listK1PackagesQueryKey = (options: Options<ListK1PackagesData>) => 
 
 /**
  * List K1 Packages Route
+ *
+ * TXP-12: rows with documents (the expanded row); `counts` are the tiles by status.
  */
 export const listK1PackagesOptions = (options: Options<ListK1PackagesData>) => queryOptions<ListK1PackagesResponse, ListK1PackagesError, ListK1PackagesResponse, ReturnType<typeof listK1PackagesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -17736,6 +17744,8 @@ export const releaseK1Mutation = (options?: Partial<Options<ReleaseK1Data>>): Us
 
 /**
  * Share K1 Route
+ *
+ * DEC-88: a hand-off, an `internal_handoff` copy and a final-approval dependency each.
  */
 export const shareK1Mutation = (options?: Partial<Options<ShareK1Data>>): UseMutationOptions<ShareK1Response, ShareK1Error, Options<ShareK1Data>> => {
     const mutationOptions: UseMutationOptions<ShareK1Response, ShareK1Error, Options<ShareK1Data>> = {

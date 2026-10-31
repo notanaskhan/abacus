@@ -4,7 +4,9 @@
     "hash": "2b09e6fb01617c990e6e72feac508159fe5a03c6ff4f80bbb8d4a539c6f8d6a2",
     "snapshot": "E0",
     "slices": [
-      "portal"
+      "portal",
+      "tax_board",
+      "standards"
     ]
   },
   "persona": "daniel-reyes",
@@ -49,7 +51,13 @@
           "value": "2+"
         }
       ],
-      "preparer": [],
+      "preparer": [
+        {
+          "label": "Kevin Osei",
+          "n": 1,
+          "value": "de60652d-5fa5-4b5e-97de-c1e84edd71ac"
+        }
+      ],
       "season": [
         {
           "label": "TY2025",
@@ -75,9 +83,12 @@
           "follow_up.draft",
           "follow_up.send"
         ],
+        "client_id": "a8515410-7743-41d5-9543-d4d534d67d6c",
         "client_name": "Jonah & Claire Feld",
         "closed_at": null,
         "closed_reason": null,
+        "consents_signed": null,
+        "consents_total": null,
         "done_count": 5,
         "engagement_id": "f62c2ff4-9d6b-4a84-8cd2-5dc675d49e3f",
         "id": "0d4d161a-5a7d-4ccc-b33a-31acd012168d",
@@ -90,7 +101,7 @@
         "office_id": "9c11ca50-e962-4df7-8bb8-5c2e68d764bc",
         "overdue_count": 1,
         "part": 1,
-        "preparer_user_id": null,
+        "preparer_user_id": "de60652d-5fa5-4b5e-97de-c1e84edd71ac",
         "published_at": "2026-02-03T15:00:00Z",
         "requested_count": 2,
         "requested_from": "2026-02-03",

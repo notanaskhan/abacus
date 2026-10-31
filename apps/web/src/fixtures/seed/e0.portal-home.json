@@ -4,7 +4,9 @@
     "hash": "2b09e6fb01617c990e6e72feac508159fe5a03c6ff4f80bbb8d4a539c6f8d6a2",
     "snapshot": "E0",
     "slices": [
-      "portal"
+      "portal",
+      "tax_board",
+      "standards"
     ]
   },
   "persona": "claire-feld",

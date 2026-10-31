@@ -61,7 +61,7 @@ SyncState = Literal[
     "import_pending_approval",
     "failed",
 ]
-ImportKind = Literal["values", "diagnostics", "pdfs", "acks"]
+ImportKind = Literal["values", "diagnostics", "pdfs", "acks", "k1_set"]
 ImportStatus = Literal["scanning", "pending_approval", "approved", "rejected", "routed"]
 PacketStatus = Literal["draft", "approved", "superseded"]
 Last4 = Annotated[str, Field(pattern=r"^[0-9A-Za-z]{4}$")]

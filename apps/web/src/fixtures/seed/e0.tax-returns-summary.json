@@ -1,0 +1,80 @@
+{
+  "scenario": {
+    "version": "bh-2026.10.3",
+    "hash": "2b09e6fb01617c990e6e72feac508159fe5a03c6ff4f80bbb8d4a539c6f8d6a2",
+    "snapshot": "E0",
+    "slices": [
+      "portal",
+      "tax_board",
+      "standards"
+    ]
+  },
+  "persona": "grace-holloway",
+  "request": "GET /v1/tax-returns/summary",
+  "body": {
+    "done": 145,
+    "extended": 161,
+    "offices": [
+      {
+        "done": 36,
+        "office_id": "9c11ca50-e962-4df7-8bb8-5c2e68d764bc",
+        "open": 26
+      },
+      {
+        "done": 62,
+        "office_id": "a3e7b570-c69c-47e1-8ea5-420ddd563de2",
+        "open": 36
+      },
+      {
+        "done": 47,
+        "office_id": "b2402247-4390-44e8-b336-5943843778aa",
+        "open": 17
+      }
+    ],
+    "open": 79,
+    "tax_year": 2025,
+    "tiles": [
+      {
+        "count": 2,
+        "status": "not_started"
+      },
+      {
+        "count": 8,
+        "status": "gathering"
+      },
+      {
+        "count": 9,
+        "status": "preparing"
+      },
+      {
+        "count": 17,
+        "status": "prepared"
+      },
+      {
+        "count": 15,
+        "status": "in_review"
+      },
+      {
+        "count": 11,
+        "status": "action_required"
+      },
+      {
+        "count": 7,
+        "status": "approved"
+      },
+      {
+        "count": 10,
+        "status": "awaiting_signature"
+      },
+      {
+        "count": 6,
+        "status": "filed"
+      },
+      {
+        "count": 139,
+        "status": "accepted"
+      }
+    ],
+    "total": 224
+  }
+}

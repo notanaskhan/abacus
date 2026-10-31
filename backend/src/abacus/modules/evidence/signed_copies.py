@@ -190,10 +190,85 @@ async def file_engine_copy(
     return version_id
 
 
+async def file_handoff_copy(
+    tx: UnitOfWork,
+    *,
+    source_version_id: UUID,
+    tenant_id: UUID,
+    client_id: UUID,
+    engagement_id: UUID,
+    work_item_id: UUID,
+    title: str,
+    actor_id: str,
+) -> UUID:
+    """T-02-T20: a K-1 shared to another return's intake, filed there as a new evidence item
+    whose first version (channel `internal_handoff`) names the same stored bytes (write-once,
+    so nothing is copied); returns the version id."""
+    source = (
+        await tx.session.execute(
+            select(
+                EvidenceVersion.fingerprint,
+                EvidenceVersion.storage_key,
+                EvidenceVersion.storage_version_id,
+                EvidenceVersion.size_bytes,
+                EvidenceVersion.media_type,
+            ).where(EvidenceVersion.id == source_version_id)
+        )
+    ).one_or_none()
+    if source is None:
+        raise storage.IntegrityError("the shared version is not this tenant's")
+    item_id, version_id = uuid4(), uuid4()
+    await tx.session.execute(
+        insert(EvidenceItem).values(
+            id=item_id,
+            tenant_id=tenant_id,
+            engagement_id=engagement_id,
+            client_id=client_id,
+            work_item_id=work_item_id,
+            scope="engagement",
+            folder_kind="source_documents",  # a K-1 received is a source document here
+            title=title,
+            created_by_kind="human",
+            created_by_id=actor_id,
+        )
+    )
+    tx.record(
+        "evidence_item.created",
+        target=Target("evidence_item", item_id),
+        after=Ref(client_id=client_id),
+    )
+    await tx.session.execute(
+        insert(EvidenceVersion).values(
+            id=version_id,
+            tenant_id=tenant_id,
+            engagement_id=engagement_id,
+            evidence_item_id=item_id,
+            version_no=1,
+            fingerprint=source.fingerprint,
+            storage_key=source.storage_key,
+            storage_version_id=source.storage_version_id,
+            size_bytes=source.size_bytes,
+            media_type=source.media_type,
+            source="internal_handoff",
+            method="imported",
+            pulled_at=system_now(),
+            channel="internal_handoff",
+            display_name=title,
+        )
+    )
+    tx.record(
+        "evidence_version.created",
+        target=Target("evidence_version", version_id),
+        after=Ref(evidence_item_id=item_id, fingerprint=source.fingerprint),
+    )
+    return version_id
+
+
 __all__ = [
     "SIGNED_AUTHORIZATIONS",
     "ScreenedFile",
     "file_engine_copy",
+    "file_handoff_copy",
     "file_signed_copy",
     "read_staged",
     "screen_and_stage",

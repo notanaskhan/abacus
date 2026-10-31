@@ -1,0 +1,20 @@
+# A-03-T09 (TASK-2610): the sampler's statistics, transcribed from A-03 §3 F1 and AUD-11 a/d.
+# Exact Decimal; percentages half up to one decimal as the screens show them.
+source: A-03 §3 F1 (size, UDL, projection); AUD-11 a (Method & parameters), d (size override)
+reviewed_by: notanaskhan
+attribute_size:
+  - {confidence: "0.90", tolerable_rate: "0.10", expected_rate: "0.00", size: 22}
+udl_percent:
+  - {deviations: 0, size: 25, confidence: "0.90", percent: "8.8"}
+  - {deviations: 2, size: 25, confidence: "0.90", percent: "19.9"}
+projection:
+  # $2,140 misstated in 25 items from a population of 412, by count (ratio estimate).
+  - {misstatement: "2140.00", sample_count: 25, population_count: 412, projected: "35267.20"}
+# QA-3 (source conflict, settled before encoding; DEC-1659): the design's "$35,300" is a display
+# rounding, not the computed value. The golden pins the computed 35,267.20, never the display.
+# Rounding to the nearest $100 is a presentation rule that A-06 (SUM) applies only once the audit
+# CPA confirms the firm's convention in docs/quality/golden-reviews/sampling@2.3.md.
+qa3:
+  computed: "35267.20"
+  design_display: "$35,300"
+  decision: DEC-1659

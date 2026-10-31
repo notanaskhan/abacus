@@ -52,6 +52,7 @@ export function withClause(letter: ComposerLetterOut, key: string, on: boolean):
 export function useLetterWrites(letter: ComposerLetterOut | undefined) {
   const queryClient = useQueryClient();
   const at = { path: { engagement_id: letter?.engagement_id ?? "" } };
+  const ifMatch = { "If-Match": `"${String(letter?.version ?? 0)}"` };
   const put = (next: ComposerLetterOut): void => {
     queryClient.setQueryData(getLetterQueryKey(at), next);
   };
@@ -60,12 +61,9 @@ export function useLetterWrites(letter: ComposerLetterOut | undefined) {
   const send = useMutation(sendLetterMutation());
   return {
     draft: (body: LetterDraftIn) =>
-      draft.mutateAsync({
-        ...at,
-        body,
-        headers: { "If-Match": `"${String(letter?.version ?? 0)}"` },
-      }),
-    requestApproval: () => request.mutateAsync(at),
+      draft.mutateAsync({ ...at, body, headers: ifMatch }),
+    // N-02-T33: the request names the version it asks about, like an edit.
+    requestApproval: () => request.mutateAsync({ ...at, headers: ifMatch }),
     send: () => send.mutateAsync(at),
     pending: draft.isPending || request.isPending || send.isPending,
   };

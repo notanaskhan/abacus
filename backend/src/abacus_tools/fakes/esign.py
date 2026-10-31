@@ -125,7 +125,9 @@ class FakeEsign:
     async def completed(self, provider_envelope_id: str) -> Completed:
         self.calls.append("completed")
         found = self._envelopes[provider_envelope_id]
-        if any(s.status != "signed" for s in found.signers.values()):
+        if any(s.status not in ("signed", "verification_failed") for s in found.signers.values()):
+            # N-02-T27: a signer locked after three identity checks signs on paper; the package
+            # carries the others' evidence (the real provider's behaviour is [verify], F-09-T63).
             raise FakeEsignError("not every signer has signed")
         document = _one_page_pdf(f"fake combined document {found.envelope_id}")
         certificate = _one_page_pdf(f"fake certificate {provider_envelope_id}")
@@ -149,6 +151,7 @@ class FakeEsign:
                     device_label="iPhone",
                 )
                 for signer, s in sorted(found.signers.items(), key=lambda kv: kv[1].spec_order)
+                if s.status == "signed"
             ),
         )
 
