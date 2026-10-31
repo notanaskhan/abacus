@@ -1,8 +1,8 @@
 ---
 id: TASK-2618
 title: N-02-T45 C7 v1.1 frozen, signatures README, W7 notes, envelope-source skill, hand-off notes
-spec: SPEC-381
-acceptance_criteria: []
+spec: SPEC-000  # N-02 §8 and §10
+acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: red
 status: in-review
 epic: N-02
