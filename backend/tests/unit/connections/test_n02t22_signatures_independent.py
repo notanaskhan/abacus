@@ -54,7 +54,6 @@ from abacus.modules.signatures.status_poll import verify_webhook
 
 from .write_interception import intercept
 
-pytestmark = pytest.mark.asyncio
 Json = dict[str, Any]  # Any: DocuSeal-shaped JSON, built key by key
 PDF = b"%PDF-1.7\n% independent 8879\n%%EOF\n"
 SHA = hashlib.sha256(PDF).hexdigest()
