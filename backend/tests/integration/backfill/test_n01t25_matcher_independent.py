@@ -22,25 +22,64 @@ from __future__ import annotations
 
 import ast
 import uuid
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Final
+from typing import TYPE_CHECKING, Final, cast
 
 import pytest
 
 import abacus.modules.agents as agents_package
+from abacus.ai_gateway import ModelRequest
+from abacus.kernel.config import settings
+from abacus.kernel.crypto import LocalKeyService, configure_key_service, reset_key_service
+from abacus.kernel.flags import forget_flags
+from abacus.kernel.storage import s3_client
+from abacus.modules.evidence import storage
 from abacus.modules.identity.authz.matrix import RULES
 
 from .support import Net
 from .test_n01t22_intake_match import (  # T22's fake-model harness (ADR-076)
+    QUOTE,
     Stub,
     _firm,  # pyright: ignore[reportPrivateUsage] -- T22's firm builder, shared harness
     answer,
 )
-from .test_n01t22_intake_match import raw as raw
 from .test_n01t22_intake_match import stub as stub
-from .test_n01t22_intake_match import wired as wired
+
+if TYPE_CHECKING:
+    from types_boto3_s3 import S3Client
 
 pytestmark = pytest.mark.asyncio
+EVIDENCE: Final = "n01t25m-evidence"
+MASTER: Final = b"n01t25-matcher-master-key-0123456789abc"
+
+
+@pytest.fixture(scope="module")
+def raw(s3_settings: dict[str, str]) -> Iterator[S3Client]:
+    """This suite's own bucket (T22's module creates its own)."""
+    client = s3_client(
+        endpoint_url=s3_settings["endpoint_url"],
+        access_key=s3_settings["access_key"],
+        secret_key=s3_settings["secret_key"],
+        region=s3_settings["region"],
+    )
+    client.create_bucket(Bucket=EVIDENCE, ObjectLockEnabledForBucket=True)
+    yield client
+
+
+@pytest.fixture(autouse=True)
+def wired(raw: S3Client) -> Iterator[None]:
+    settings.cache_clear()
+    forget_flags()
+    reset_key_service()
+    configure_key_service(LocalKeyService(MASTER))
+    storage.configure_storage(raw, EVIDENCE)
+    yield
+    storage.reset_storage()
+    reset_key_service()
+    forget_flags()
+
+
 DECISIONS: Final = ("inbox.file", "inbox.triage", "inbox.ask_client")
 
 
@@ -151,8 +190,24 @@ async def test_ac_a_reference_never_given_never_becomes_a_proposal(
     firm = await _firm(net)
     other = await net.seed.site(firm.tenant_id, firm.partner.user_id, "Whitley")
     await net.seed.member(other, firm.partner, "engagement_partner")
-    # The model answers with its own reference and one it invented (the other client's item).
-    stub.answer = answer(firm.request_marker, extra_ref=f"D{uuid.uuid4().int % 900 + 100}")
+    # The model answers with its own reference and one it invented (as if the other client's
+    # item), low enough that nothing escalates: only the discard is measured.
+    invented = "D60"  # well formed (D1 to D60), never given: the world offers a handful
+    own = answer(firm.request_marker)
+
+    def with_invented(request: ModelRequest) -> dict[str, object]:
+        body = own(request)
+        cast(list[dict[str, object]], body["proposals"]).append(
+            {
+                "destination": invented,
+                "confidence": 0.3,
+                "rationale": "Another place.",
+                "citations": [{"page": 1, "quote": QUOTE}],
+            }
+        )
+        return body
+
+    stub.answer = with_invented
     attachment = await firm.receive()
     _, status = await firm.match(attachment)
     assert status == "completed"
