@@ -9,20 +9,26 @@ Samuel Ito as manager with the manager-reviewer function. Rows are read back as 
 from __future__ import annotations
 
 import uuid
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from datetime import UTC, datetime, timedelta
-from typing import cast
+from typing import TYPE_CHECKING, Final, cast
 
 import httpx
 import pytest
 
 from abacus.api import create_app
 from abacus.kernel.config import settings
+from abacus.kernel.crypto import LocalKeyService, configure_key_service, reset_key_service
 from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
+from abacus.kernel.storage import s3_client
+from abacus.modules.evidence import storage
 from abacus.modules.identity.api import AuthContext, current_context
 
 from .agent_tests.support import Seeder
 from .conftest import MigratedDatabase
+
+if TYPE_CHECKING:
+    from types_boto3_s3 import S3Client
 
 Json = dict[str, object]
 Call = Callable[..., Awaitable[httpx.Response]]
@@ -35,11 +41,36 @@ V3 = (
     + "2025I:FeldJ,V3,f8879.signature_method,8879,Part II,practitioner_pin\n"
     + "2025I:FeldJ,V3,il1040_schnr.il_source_income,IL-1040 Sch NR,47,141634\n"
 ).encode()
+EVIDENCE: Final = "t01t19-evidence"
+MASTER: Final = b"t01t19-engine-import-master-key-0123456"
 ACCEPTED = [
     "f1040es_2026.voucher_amount",
     "il1040_schnr.il_source_income",
     "co_dr0104pn.co_source_income",
 ]
+
+
+@pytest.fixture(scope="module")
+def raw(s3_settings: dict[str, str]) -> Iterator[S3Client]:
+    client = s3_client(
+        endpoint_url=s3_settings["endpoint_url"],
+        access_key=s3_settings["access_key"],
+        secret_key=s3_settings["secret_key"],
+        region=s3_settings["region"],
+    )
+    client.create_bucket(Bucket=EVIDENCE, ObjectLockEnabledForBucket=True)
+    yield client
+
+
+@pytest.fixture(autouse=True)
+def wired(raw: S3Client) -> Iterator[None]:
+    """The upload stores the engine file; without this it reaches for the default endpoint."""
+    reset_key_service()
+    configure_key_service(LocalKeyService(MASTER))
+    storage.configure_storage(raw, EVIDENCE)
+    yield
+    storage.reset_storage()
+    reset_key_service()
 
 
 @pytest.fixture(autouse=True)

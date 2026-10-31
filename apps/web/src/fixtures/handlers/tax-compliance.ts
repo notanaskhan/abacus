@@ -3,12 +3,25 @@
 // with each screen's build task.
 import type { ConsentOut } from "@abacus/api-client";
 import { type FixtureHandler, json } from "../../app-core/fixture-mode";
+import {
+  ENGINE_KEY,
+  LEDGERS_KEY,
+  MAILBOXES_KEY,
+  engineSettings,
+  ledgerSettings,
+  mailboxSettings,
+  testResult,
+} from "../seed/integration-settings";
+import { stableId } from "../seed/prng";
 import { REGISTRY_CONSENTS, REGISTRY_TOTAL, consentDetail, renewalDraft } from "../seed/consents";
 import { ENGINE_SYNC, FELD_IMPORT, FELD_IMPORT_ID } from "../seed/engine-sync";
 import {
   FELD_ENVELOPE_ID,
+  FELD_PACKET_ID,
+  FELD_TRANSMISSION_ID,
   feldDelivery,
   feldEnvelope,
+  feldPacket,
   feldFinalApproval,
 } from "../seed/tax/feld-delivery";
 import { CONSENT_SUMMARY, FELD_RETURN_ID } from "../seed/tax-compliance";
@@ -119,13 +132,58 @@ export function taxComplianceHandlers(state = "a"): Record<string, FixtureHandle
       }
       return json({ entity_id: entityId, kind: "ssn", value, remask_after_seconds: 10 });
     },
+    // T-01-T40: ADM-08's integration settings, by artboard (f carries the mapping conflict).
+    "GET /v1/firm/integrations/{key}/settings": ({ params }) =>
+      params.key === ENGINE_KEY
+        ? json(engineSettings(state))
+        : params.key === LEDGERS_KEY
+          ? json(ledgerSettings(state))
+          : params.key === MAILBOXES_KEY
+            ? json(mailboxSettings())
+            : json(NOT_FOUND, 404),
+    "PUT /v1/firm/integrations/{key}/settings": ({ params }) =>
+      params.key === ENGINE_KEY ? json(engineSettings(state)) : json(ledgerSettings(state)),
+    "PUT /v1/firm/integrations/{key}/status-mirror": () =>
+      state === "f"
+        ? json({ detail: "mapping_conflict" }, 409)
+        : json({ rows: {}, seen_version: 3 }),
+    "POST /v1/firm/integrations/{key}/test": ({ params }) =>
+      json(testResult(params.key ?? "", state)),
     // T-01-T24: TAX-12's delivery, final approval and the 8879 envelope (C7's view), by artboard.
     "GET /v1/tax-returns/{return_id}/delivery": ({ params }) =>
       params.return_id === FELD_RETURN_ID ? json(feldDelivery(state)) : json(NOT_FOUND, 404),
     "GET /v1/tax-returns/{return_id}/final-approval": ({ params }) =>
       params.return_id === FELD_RETURN_ID ? json(feldFinalApproval(state)) : json(NOT_FOUND, 404),
     "GET /v1/envelopes/{envelope_id}": ({ params }) =>
-      params.envelope_id === FELD_ENVELOPE_ID ? json(feldEnvelope()) : json(NOT_FOUND, 404),
+      params.envelope_id === FELD_ENVELOPE_ID ? json(feldEnvelope(state)) : json(NOT_FOUND, 404),
+    // T-01-T39 c2: Daniel records what he transmitted from CCH Axcess (a person's record, R-04).
+    "POST /v1/tax-returns/{return_id}/transmissions": ({ params, body }) => {
+      if (params.return_id !== FELD_RETURN_ID) return json(NOT_FOUND, 404);
+      const asked = body as { jurisdictions: string[]; transmitted_on: string };
+      return json(
+        {
+          id: FELD_TRANSMISSION_ID,
+          return_id: FELD_RETURN_ID,
+          ero_user_id: stableId("user:daniel-reyes"),
+          jurisdictions: asked.jurisdictions,
+          transmitted_on: asked.transmitted_on,
+          recorded_at: "2026-09-18T11:06:00-05:00",
+        },
+        201,
+      );
+    },
+    // The packet editor (TAX-12 B): vouchers toggle, the letter regenerates, a manager approves.
+    "PATCH /v1/delivery-packets/{packet_id}": ({ params, body }) => {
+      if (params.packet_id !== FELD_PACKET_ID) return json(NOT_FOUND, 404);
+      const included = (body as { included: Record<string, boolean> }).included;
+      return json(feldPacket(state, included));
+    },
+    "POST /v1/delivery-packets/{packet_id}/letter:regenerate": ({ params }) =>
+      params.packet_id === FELD_PACKET_ID ? json(feldPacket(state)) : json(NOT_FOUND, 404),
+    "POST /v1/delivery-packets/{packet_id}/approve": ({ params }) =>
+      params.packet_id === FELD_PACKET_ID
+        ? json({ ...feldPacket(state), status: "approved", approved_by_name: "Daniel Reyes" })
+        : json(NOT_FOUND, 404),
     // a2: Grace sends the pre-approved reminder (a person's click, INV-1).
     "POST /v1/envelopes/remind/send": ({ body }) =>
       json({ count: (body as { envelope_ids: string[] }).envelope_ids.length, skipped: [] }),

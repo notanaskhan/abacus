@@ -2,6 +2,8 @@
 // New portal personas: `nora-calloway` and `pell-street-member` ("Pell Street Ventures LLC ·
 // authorized member"; no invented name). Each screen's build re-exports its own scenarios.
 import { type Scenario, defineScenarios } from "../../app-core/fixture-mode";
+import { portalHandlers } from "../handlers/portal";
+import { portalQuestionnaireHandlers } from "../handlers/portal-questionnaires";
 import { taxReturnHandlers } from "../handlers/tax-returns";
 import { seedScenario } from "../scenario";
 import type { OverviewVariant } from "../seed/tax-return-overview";
@@ -80,13 +82,26 @@ export const txp12 = defineScenarios({
   f: at("f", "samuel-ito"),
 });
 
+// T-02-T24: POR-05's questionnaires by artboard on top of the tax handlers.
+const at05 = (state: string, persona: string): Scenario => {
+  const base = at(state, persona);
+  return {
+    ...base,
+    handlers: {
+      ...base.handlers,
+      ...portalHandlers({ clock: E0_CLOCK }),
+      ...portalQuestionnaireHandlers(state),
+    },
+  };
+};
+
 export const por05 = defineScenarios({
-  a: at("a", "claire-feld"),
-  b: at("b", "claire-feld"),
-  c: at("c", "claire-feld"),
-  d: at("d", "dana-kowalski"),
-  e: at("e", "luis-ferrante"),
-  f: at("f", "claire-feld"),
+  a: at05("a", "claire-feld"),
+  b: at05("b", "claire-feld"),
+  c: at05("c", "claire-feld"),
+  d: at05("d", "dana-kowalski"),
+  e: at05("e", "luis-ferrante"),
+  f: at05("f", "claire-feld"),
 });
 
 export const por13 = defineScenarios({

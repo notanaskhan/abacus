@@ -11,6 +11,7 @@ from __future__ import annotations
 import io
 from dataclasses import replace
 from datetime import UTC, datetime
+from typing import Final
 
 import pdfplumber
 import pytest
@@ -61,12 +62,30 @@ def test_ac6_the_same_input_renders_the_same_bytes() -> None:
     assert first.page_count == 3
 
 
+MARK_SIZE: Final = 36.0  # points; the watermark is ~64 pt, body text and headings far smaller
+
+
+def _marks(pdf: bytes) -> list[str]:
+    """Each page's diagonal mark: its display-size characters (the mark is set far above any
+    heading), left to right. Text extraction splits the diagonal word across lines (its order
+    depends on the fonts installed), so the mark is read from the characters, not the text."""
+    with pdfplumber.open(io.BytesIO(pdf)) as document:
+        return [
+            "".join(
+                str(c["text"])
+                for c in sorted(page.chars, key=lambda c: float(c["x0"]))
+                if float(c["size"]) >= MARK_SIZE
+            )
+            for page in document.pages
+        ]
+
+
 def test_ac7_every_draft_page_carries_the_watermark_and_a_final_none() -> None:
-    draft = _texts(render(_letter("draft")).pdf)
-    assert draft and all("DRAFT" in page for page in draft)
-    final = _texts(render(_letter("final")).pdf)
-    assert not any("DRAFT" in page for page in final)
-    assert all("SAMPLE" in page for page in _texts(render(_letter("sample")).pdf))
+    draft = _marks(render(_letter("draft")).pdf)
+    assert draft and all(mark == "DRAFT" for mark in draft)
+    final = _marks(render(_letter("final")).pdf)
+    assert final and all(mark == "" for mark in final)
+    assert all(mark == "SAMPLE" for mark in _marks(render(_letter("sample")).pdf))
 
 
 def test_ac8_hostile_text_is_extracted_as_its_characters() -> None:
