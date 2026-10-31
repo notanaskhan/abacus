@@ -71,7 +71,11 @@ def drafted(monkeypatch: pytest.MonkeyPatch) -> list[object]:
     monkeypatch.setattr(capture, "filing_unit", unit)
     monkeypatch.setattr(capture, "refuse_declined", nothing)
     monkeypatch.setattr(capture, "now", clock)
-    monkeypatch.setattr(capture, "check_scope", lambda *a, **k: None)
+
+    def no_scope_check(*args: object, **kwargs: object) -> None:
+        return None
+
+    monkeypatch.setattr(capture, "check_scope", no_scope_check)
     monkeypatch.setattr(capture, "_render", render)
     return reached
 
