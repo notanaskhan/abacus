@@ -96,6 +96,8 @@ describe("KNW-03 c · editing a draft (Hannah Leclerc, v4)", () => {
 
   it("+ Step adds row 17; an edit sends the new text; removal and Submit (with row_version) reach the server", async () => {
     const calls = show("c");
+    // The draft must have loaded: before it, the header draws the read-only + Step.
+    await screen.findByText(COPY.draft.banner(4));
     fireEvent.click(await screen.findByRole("button", { name: COPY.actions.addStep }));
     await waitFor(() => {
       expect(row(17)).not.toBeNull();
