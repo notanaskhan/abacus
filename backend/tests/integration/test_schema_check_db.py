@@ -2255,6 +2255,7 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"reference_set_resolve", "reference_set_list", "reference_set_history"}
         | {"reference_set_draft", "reference_set_publish", "reference_set_withdraw"}
         | {"active_tenant_ids", "standards_sets_apply"}
+        | {"standards_set_named"}  # 0580 (K-01-T18, DEC-1759): one global standards set by id
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
 

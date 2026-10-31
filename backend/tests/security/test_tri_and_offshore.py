@@ -25,7 +25,7 @@ from pydantic import BaseModel
 from sqlalchemy import ColumnElement, literal
 
 from abacus.api import create_app
-from abacus.kernel.classification import classified, pii_paths
+from abacus.kernel.classification import classified, pii_paths, tri_paths
 from abacus.kernel.db import TenantContext
 from abacus.modules.identity import slots
 from abacus.modules.identity.api import (
@@ -58,6 +58,9 @@ TIN_ROUTES = {
     ("GET", "/v1/inbox/messages/{message_id}/triage"): "masked",
     # T-01-T01 (C19 stub): the tax profile carries the masked TIN, through the offshore mask.
     ("GET", "/v1/client-entities/{client_entity_id}/tax-profile"): "masked",
+    # T-02-T25 (DEC-1575): a K-1 package's detail carries the recipient's masked TIN.
+    ("GET", "/v1/k1-packages/{package_id}"): "masked",
+    ("GET", "/v1/portal/k1s/{package_id}"): "masked",
 }
 
 
@@ -306,3 +309,66 @@ def test_i_offshore_every_served_tin_field_is_masked_or_refused() -> None:
     assert found == TIN_ROUTES
     reveal = RULES["tin.reveal"]
     assert reveal.not_offshore
+
+
+# --- T-02-T30 (TASK-2533): K-1 and organizer fields ---------------------------------------------
+# Written from T-02 §3.6 to §3.8 and `docs/contracts/k1-packages.md` §3 ("box amounts TRI; names
+# and addresses confidential; TIN last four only"): the amounts and the organizer's answers are
+# TRI, a list row carries neither amounts nor a TIN, and an offshore reader of a K-1's detail
+# gets its TIN null through the central mask. The product contracts are imported inside each test:
+# importing the tax module registers the firm's consent provider, which `b_consented` above
+# installs its stand-in for, so a module-level import would collide at collection.
+
+
+def test_t02t30_k1_amounts_and_organizer_answers_are_tri_and_rows_carry_neither() -> None:
+    from abacus.modules.requests.questionnaires_contract import AnswerIn, QuestionnaireOut
+    from abacus.modules.tax.k1_contract import (
+        K1PackageDetailOut,
+        K1PackageOut,
+        PortalK1ExpectedOut,
+    )
+
+    assert any("amount" in path for path in tri_paths(K1PackageDetailOut))
+    assert any("answer" in path for path in tri_paths(QuestionnaireOut))
+    assert any("value" in path for path in tri_paths(AnswerIn))
+    assert pii_paths(K1PackageDetailOut, "tin")
+    for row in (K1PackageOut, PortalK1ExpectedOut):
+        assert tri_paths(row) == (), row.__name__
+        assert pii_paths(row, "tin") == (), row.__name__
+
+
+def _k1_detail() -> BaseModel:
+    from abacus.kernel._statuses import K1PackageStatus
+    from abacus.modules.tax.k1_contract import K1MaskedTinOut, K1PackageDetailOut, K1PackageOut
+
+    return K1PackageDetailOut(
+        package=K1PackageOut(
+            id=uuid.uuid4(),
+            recipient_id=uuid.uuid4(),
+            recipient_name="Pell Street Ventures LLC",
+            recipient_kind="lp",
+            form="1065",
+            tax_year=2025,
+            status=K1PackageStatus.RELEASED,
+            k3_status="included",
+            state_codes=["IL"],
+            released_at=None,
+            version_no=1,
+            allowed_actions=[],
+        ),
+        lines=[],
+        documents=[],
+        tin=K1MaskedTinOut(kind="ein", last4="7741"),
+    )
+
+
+async def test_t02t30_an_offshore_reader_of_a_k1_gets_its_tin_null(env: Env) -> None:
+    remy = _ctx(await _offshore(env))
+    masked = cast(
+        dict[str, dict[str, object] | None], (await mask_tins_for(remy, _k1_detail())).model_dump()
+    )
+    tin = masked["tin"]
+    assert tin is None or tin["last4"] is None
+    manager = await env.net.seed.person(env.tenant_id)
+    detail = _k1_detail()
+    assert await mask_tins_for(_ctx(manager), detail) == detail
