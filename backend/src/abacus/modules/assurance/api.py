@@ -30,6 +30,7 @@ from abacus.modules.assurance.sections import (
     register_index_tag,
     register_run_summary,
 )
+from abacus.modules.assurance.tb_mapping_contract import router as tb_mapping_router
 
 # A-02-T10: the live C9 routes are declared on `tb_router` in `tb_read_model`, so it is
 # imported from there (loading the module registers them before the API mounts the router).
@@ -48,6 +49,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     mapping_router,
     grouping_router,
     dashboard_router,
+    tb_mapping_router,  # C9 v2 (docs/contracts/ledger-mapping.md): A-03-T03 stub
 )
 
 # SPEC-313 (TASK-331): trial balances appear in the sign-off matrix and count toward G5.

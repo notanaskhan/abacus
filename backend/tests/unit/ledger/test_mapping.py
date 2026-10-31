@@ -57,7 +57,8 @@ def test_ac1_problems_are_named_by_row_and_code() -> None:
     assert (4, "normal_balance_invalid") in codes
     assert (5, "duplicate_key") in codes
     assert (7, "range_invalid") in codes
-    assert (0, "overlapping_range") in codes
+    # SPEC-580 AC-17 (A-03-T06, DEC-1556): the overlap is reported on the later range's own row.
+    assert (6, "overlapping_range") in codes
     assert [p.code for p in parse_grouping_set("a,b\n1,2\n").problems] == ["header"]
 
 

@@ -9,8 +9,9 @@ DEC-1463). RED: it decides what a person sees about what left the firm.
 - **Gate kinds** (C13 `register_gate_kind`): `import_pending_approval` is met when no return on the
   engagement has an import waiting on a person; `ready_to_transmit` when every return is approved
   or later and synced (marked exported, nothing changed since).
-- **Notification kinds** (C16): `ready_to_transmit`, `efile_relocked` and `ack_rejected`, and
-  the engine's source for the catalogue's existing `export_failed`, each from its outbox event,
+- **Notification kinds** (C16, registered in the notifications catalogue): `ready_to_transmit`,
+  `efile_relocked` and `ack_rejected`, and the engine's source for the existing `export_failed`,
+  each from its outbox event,
   to the people the producer names (`recipient_user_ids`, never the actor). `efile_relocked` and
   `ack_rejected` fan out once their
   producers land (T-02's e-file lock and T-01-T26's acknowledgements).
@@ -30,7 +31,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.uow import DomainEvent
-from abacus.modules.notifications.api import NotificationKind, register_kind, register_kind_source
 from abacus.modules.review.api import register_gate_kind
 
 SyncState = Literal[
@@ -206,52 +206,11 @@ class ReadyToTransmit(DomainEvent):
     )
 
 
-def _uuids(payload: dict[str, object], key: str) -> list[UUID]:
-    raw = payload.get(key)
-    items = cast(list[object], raw) if isinstance(raw, list) else []
-    out: list[UUID] = []
-    for item in items:
-        try:
-            out.append(UUID(str(item)))
-        except ValueError:
-            continue
-    return out
-
-
-async def _named(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
-    """The people the producer named, never the person who acted."""
-    del tenant_id
-    by = payload.get("by_user")
-    return sorted({u for u in _uuids(payload, "recipient_user_ids") if str(u) != str(by)})
-
-
-# `export_failed` is the catalogue's (Q-02's engagement export); the engine adds a source to it.
-KINDS: Final = (
-    NotificationKind("ready_to_transmit", "approval", "Send"),
-    NotificationKind("efile_relocked", "system", "Lock"),
-    NotificationKind("ack_rejected", "system", "ShieldAlert"),
-)
-SOURCES: Final = (
-    ("export_failed", "engine_sync.failed"),
-    ("ready_to_transmit", "tax_return.ready_to_transmit"),
-    ("efile_relocked", "tax_return.efile_relocked"),
-    ("ack_rejected", "engine_ack.rejected"),
-)
-_registered = False
-
-
 def register() -> None:
-    """At import: the two gate kinds, the four notification kinds and their sources."""
-    global _registered
+    """At import: the two gate kinds (C13). The notification kinds and their sources are the
+    notifications catalogue's (tax may not import notifications, ADR-008)."""
     register_gate_kind("import_pending_approval", no_pending_import)
     register_gate_kind("ready_to_transmit", ready_to_transmit)
-    for kind in KINDS:
-        register_kind(kind)
-    if _registered:
-        return
-    for code, event in SOURCES:
-        register_kind_source(code, event, _named, ("tax_return", "work_item_id"))
-    _registered = True
 
 
 __all__ = [
