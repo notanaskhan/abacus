@@ -213,6 +213,24 @@ async def feld_return(migrated_db: MigratedDatabase) -> Feld:
 async def final_approval_of(feld: Feld, *, open_for: timedelta = timedelta(days=1)) -> uuid.UUID:
     """What T-01-T18's approval leaves behind: the return Approved and one grant on the hash."""
     seed = feld.seed
+    # The approver: the engagement partner as the return's signer (only they hold
+    # `tax_return.approve`, which the grant's consumer checks the approver still holds).
+    daniel = await _person(seed, feld.tenant, "Daniel Reyes")
+    await seed.run(
+        "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
+        "VALUES ($1, $2, $3, 'engagement_partner')",
+        feld.tenant,
+        feld.engagement,
+        daniel.user_id,
+    )
+    await seed.run(
+        "INSERT INTO work_item_assignments (tenant_id, work_item_id, engagement_id, user_id, "
+        "function, assigned_by) VALUES ($1, $2, $3, $4, 'signer', $4)",
+        feld.tenant,
+        feld.item,
+        feld.engagement,
+        daniel.user_id,
+    )
     await seed.run("UPDATE tax_returns SET status = 'approved' WHERE work_item_id = $1", feld.item)
     digest = cast(
         str,
@@ -224,13 +242,13 @@ async def final_approval_of(feld: Feld, *, open_for: timedelta = timedelta(days=
             "INSERT INTO approval_grants (tenant_id, subject_type, subject_id, action, "
             "approver_user_id, engagement_id, work_item_id, payload_sha256, not_before, "
             "expires_at) VALUES ($1, 'tax_return', $2, 'tax_return.approve', $3, $4, $2, $5, "
-            "abacus_now() - interval '1 minute', abacus_now() + $6::interval) RETURNING id",
+            "abacus_now() - interval '1 minute', abacus_now() + $6) RETURNING id",
             feld.tenant,
             feld.item,
-            feld.samuel.user_id,
+            daniel.user_id,
             feld.engagement,
             digest.removeprefix("sha256:"),
-            f"{int(open_for.total_seconds())} seconds",
+            open_for,
         ),
     )
 
