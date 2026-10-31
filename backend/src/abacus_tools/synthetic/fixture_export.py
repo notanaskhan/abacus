@@ -343,9 +343,7 @@ def scenario_files() -> dict[str, str]:
     from abacus_tools.synthetic.scenarios.brightwater_hale.signatures import hub_rows
 
     body = {"scenario": SCENARIO_VERSION, "slice": "signatures", "snapshot": "E0", **hub_rows()}
-    return {
-        "scenario.signatures-hub.json": json.dumps(body, indent=2, ensure_ascii=False) + "\n"
-    }
+    return {"scenario.signatures-hub.json": json.dumps(body, indent=2, ensure_ascii=False) + "\n"}
 
 
 def write_scenario_files(out: Path) -> list[Path]:
