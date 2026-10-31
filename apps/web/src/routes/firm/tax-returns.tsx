@@ -3,15 +3,19 @@ import { createRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import type { JSX } from "react";
 import { FeatureGate } from "../../app-core/flags";
 import { useParam } from "../params";
+import { to } from "../to";
 import { appRoute, lazyScreen } from "../root";
 
 // Tax Returns (T-02 §5.1): `/tax-returns` is TAX-01 (T-02-T12) and `/tax-returns/$returnId` the
 // `ReturnFrame` on TAX-02 (T-02-T14; every form family, DV-5), behind `tax.returns_v1`. While the
 // flag is off the area shows F-05's flag-off state, never a 404. TAX-01 keeps its tile, office
-// grouping, search and tax year in the URL (`?tile=`, `?office=`, `?q=`, `?tax_year=`).
+// grouping, search and tax year in the URL (`?tile=`, `?office=`, `?q=`, `?tax_year=`). The
+// return's Intake tab is TAX-03 at `/tax-returns/$returnId/intake` (T-02-T19).
 
 const PracticeBoard = lazyScreen(async () => (await import("../../screens/TAX-01")).TAX01);
 const ReturnOverview = lazyScreen(async () => (await import("../../screens/TAX-02")).TAX02);
+const ReturnIntake = lazyScreen(async () => (await import("../../screens/TAX-03")).TAX03);
+const K1Package = lazyScreen(async () => (await import("../../screens/TXP-12")).TXP12);
 
 function gated(children: JSX.Element): JSX.Element {
   return (
@@ -59,8 +63,67 @@ export const taxReturnRoute = createRoute({
   path: "/tax-returns/$returnId",
   component: function TaxReturnPage(): JSX.Element {
     const returnId = useParam("returnId");
-    return gated(<ReturnOverview returnId={returnId} />);
+    const navigate = useNavigate();
+    return gated(
+      <ReturnOverview
+        returnId={returnId}
+        onTab={(tab) => {
+          if (tab === "intake") void navigate(to.TAX03({ returnId }));
+        }}
+      />,
+    );
   },
 });
 
-export const taxReturnRoutes = [taxReturnsRoute, taxReturnRoute] as const;
+// TAX-03 (T-02-T19): the return's Intake tab, `/tax-returns/$returnId/intake`.
+export const taxReturnIntakeRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/tax-returns/$returnId/intake",
+  component: function TaxReturnIntakePage(): JSX.Element {
+    const returnId = useParam("returnId");
+    const navigate = useNavigate();
+    return gated(
+      <ReturnIntake
+        returnId={returnId}
+        onTab={(tab) => {
+          if (tab === "overview") void navigate(to.TAX02({ returnId }));
+        }}
+      />,
+    );
+  },
+});
+
+// TXP-12 (T-02-T25): the issuing return's K-1 package, `/tax-returns/$returnId/k1`, behind both
+// `tax.returns_v1` and `tax.k1_release` (the firm's K-1 routes answer 404 while it is off). The
+// Return chip switches the issuing return (1065, 1120-S, 1041) by its path.
+export const taxReturnK1Route = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/tax-returns/$returnId/k1",
+  component: function TaxReturnK1Page(): JSX.Element {
+    const returnId = useParam("returnId");
+    const navigate = useNavigate();
+    return gated(
+      <FeatureGate
+        flag="tax.k1_release"
+        fallback={<FlagOffState flag="tax.k1_release" label="K-1 package" />}
+      >
+        <K1Package
+          returnId={returnId}
+          onReturn={(next) => {
+            void navigate(to.TXP12({ returnId: next }));
+          }}
+          onBack={() => {
+            void navigate(to.TAX02({ returnId }));
+          }}
+        />
+      </FeatureGate>,
+    );
+  },
+});
+
+export const taxReturnRoutes = [
+  taxReturnsRoute,
+  taxReturnRoute,
+  taxReturnIntakeRoute,
+  taxReturnK1Route,
+] as const;

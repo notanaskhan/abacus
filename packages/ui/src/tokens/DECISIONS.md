@@ -682,3 +682,15 @@ Under the same parity-tier reading as the M5 lock (DEC-192: Tier B pixels for fr
 | 2026-10-30 | Calculation   | The board's Calculation option is disabled until F-06-T19 draws the calc tree; the kit renders statement panes only                                                                                            |
 | 2026-10-30 | Placeholder   | The T6 board's own canvas data (`t6data`, `t6tally`: Ridgeline GP, Calder, Marrow Point, Okafor), as T10's; TPL-06 draws the seeded capital accounts (F-06-T20)                                                |
 | 2026-10-30 | Parity masks  | The handoff screenshots predate the tally cards' 45 ms reveal (empty strip): `[data-tally-strip]` masked on the T6 windows until F-06-T22 recaptures; the spinner and skeletons masked on T6c                  |
+
+### Tier-3 lock: T6, T10, TPL-06, TPL-10 (F-06-T22)
+
+| Date       | Item         | Decision                                                                                                                                                                                              |
+| ---------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-31 | Reading      | The Decision Day parity-tier reading holds (DEC-1754): full frames at Tier B, chrome strips at Tier A, computed geometry at Tier D                                                                    |
+| 2026-10-31 | Frames       | T6a–e, T10a–e, TPL-06a–e and TPL-10a–d `locked` at Tier B in `docs/design/parity-manifest.json`, sources pinned by SHA-256                                                                            |
+| 2026-10-31 | T10c–e       | Drawn on the T10 board from the canvas data (Feld transmittal approved by Samuel Ito, Harborview K-1 cover locked "Out for signature since Sep 10", Whitley reminder email draft); template text only |
+| 2026-10-31 | Masks        | Workbook frames mask `[data-tally-strip]` (the handoff capture predates the cards' reveal) and `[data-spinner]`; the strip's height is held at Tier D instead; document frames mask `[data-spinner]`  |
+| 2026-10-31 | Paper header | The T10 paper-header strip stays reported (the F-06-T13 review's 2.26 % kit-chrome deviation) on every T10 and TPL-10 state until the kit's header is redrawn                                         |
+| 2026-10-31 | Tier D added | `e2e/visual/tier-d-workbook.spec.ts` (tabsbar 50, control bar 44, tally 52, panes y244–848 for T6 and TPL-06 a–e); `tier-d-document.spec.ts` gains T10c–e (clause rows 34) and TPL-10a–d              |
+| 2026-10-31 | Freeze       | `docs/design/kit-freeze.json` pins the T6 and T10 kits and SignOffSlots; `kit-freeze.test.ts` fails on a change between Sep 1 and Oct 20, 2027; refresh the pins in the last batch before Sep 1       |

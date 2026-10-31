@@ -11,23 +11,29 @@ T-02 §3.4 TAX-03 e; DEC-1371). PROTECTED (evidence, red).
   back to requested if it was the only one), never deleting it; `keep_newer` supersedes the older
   version the same way and keeps the flagged one. An accepted version is never discarded or
   superseded (409 `evidence_accepted`); a version is resolved once (409 `duplicate_resolved`). One
-  insert-only `duplicate_resolutions` row records the decision.
+  insert-only `duplicate_resolutions` row records the decision as the pair it settled: the version
+  voided (`version_id`) and the one kept, which 0468 requires to differ (DEC-1481); either names
+  the flagged version, so a resolution is found by both.
 """
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import Final, Literal
 from uuid import UUID
 
-from sqlalchemy import insert, select
+from sqlalchemy import ColumnElement, insert, or_, select
 
 from abacus.kernel._flags import EVIDENCE_DUPLICATE_REVIEW
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import get_ref, lock_ref
 from abacus.modules.evidence.models import (
     DuplicateResolution,
+    EvidenceItem,
     EvidenceVersion,
     ReviewDecision,
     UploadCheck,
@@ -159,9 +165,7 @@ async def resolve(
         if flagged is None:
             raise NotADuplicate(facts={"evidence_version_id": str(version_id)})
         done = (
-            await tx.session.execute(
-                select(DuplicateResolution.id).where(DuplicateResolution.version_id == version_id)
-            )
+            await tx.session.execute(select(DuplicateResolution.id).where(_settles(version_id)))
         ).first()
         if done is not None:
             raise DuplicateResolved(facts={"evidence_version_id": str(version_id)})
@@ -192,7 +196,7 @@ async def resolve(
             insert(DuplicateResolution).values(
                 tenant_id=ctx.tenant_id,
                 engagement_id=engagement_id,
-                version_id=version_id,
+                version_id=dropped,
                 kept_version_id=kept,
                 decision=decision,
                 decided_by=ctx.user_id,
@@ -208,6 +212,73 @@ async def resolve(
     return kept
 
 
+def _settles(version: object) -> ColumnElement[bool]:
+    """A resolution of the pair `version` belongs to: it was voided, or it was kept."""
+    return or_(
+        DuplicateResolution.version_id == version,
+        DuplicateResolution.kept_version_id == version,
+    )
+
+
+@dataclass(frozen=True)
+class PendingDuplicate:
+    """A flagged, unresolved duplicate (TAX-03 e): the copy it repeats and both stored names."""
+
+    version_id: UUID
+    file_name: str
+    original_version_id: UUID
+    original_file_name: str
+
+
+async def pending_duplicates(
+    tenant: TenantContext, version_ids: Sequence[UUID]
+) -> dict[UUID, PendingDuplicate]:
+    """Of versions the caller already read, those flagged `duplicate_hash` and not yet resolved,
+    with the earlier live version of the same bytes in the engagement (T-02-T19)."""
+    if not version_ids:
+        return {}
+    async with tenant_session(tenant) as session:
+        flagged = (
+            await session.execute(
+                select(
+                    EvidenceVersion.id,
+                    EvidenceVersion.engagement_id,
+                    EvidenceVersion.fingerprint,
+                    EvidenceVersion.created_at,
+                    EvidenceItem.title,
+                )
+                .join(EvidenceItem, EvidenceItem.id == EvidenceVersion.evidence_item_id)
+                .join(UploadCheck, UploadCheck.evidence_version_id == EvidenceVersion.id)
+                .where(
+                    EvidenceVersion.id.in_(sorted(set(version_ids))),
+                    UploadCheck.check_code == CHECK,
+                    not_withdrawn(),
+                    ~select(DuplicateResolution.id).where(_settles(EvidenceVersion.id)).exists(),
+                )
+            )
+        ).all()
+        out: dict[UUID, PendingDuplicate] = {}
+        for vid, engagement_id, fingerprint, created_at, title in flagged:
+            original = (
+                await session.execute(
+                    select(EvidenceVersion.id, EvidenceItem.title)
+                    .join(EvidenceItem, EvidenceItem.id == EvidenceVersion.evidence_item_id)
+                    .where(
+                        EvidenceVersion.engagement_id == engagement_id,
+                        EvidenceVersion.fingerprint == fingerprint,
+                        EvidenceVersion.created_at < created_at,
+                        EvidenceVersion.id != vid,
+                        not_withdrawn(),
+                    )
+                    .order_by(EvidenceVersion.created_at)
+                    .limit(1)
+                )
+            ).first()
+            if original is not None:
+                out[vid] = PendingDuplicate(vid, title, original[0], original[1])
+    return out
+
+
 __all__ = [
     "ACTION",
     "CHECK",
@@ -215,8 +286,10 @@ __all__ = [
     "DuplicateAccepted",
     "DuplicateResolved",
     "NotADuplicate",
+    "PendingDuplicate",
     "accepts_duplicates",
     "flag",
+    "pending_duplicates",
     "repeated",
     "resolve",
 ]

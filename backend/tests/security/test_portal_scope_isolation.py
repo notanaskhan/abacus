@@ -27,6 +27,8 @@ import time
 import uuid
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
+from datetime import UTC, datetime
+from decimal import Decimal
 from typing import cast
 
 import httpx
@@ -638,3 +640,217 @@ def test_r01_the_judgement_catches_a_planted_cross_scope_room_read() -> None:
     )
     assert _leaks(_response(200, room), [marker]) == ["status 200", f"names {marker}"]
     assert _leaks(_response(404, '{"detail":"not_found"}'), [marker]) == []
+
+
+# --- T-02-T30 (TASK-2533): K-1 recipients, the role union's K-1, an inquiry's addressee ----------
+# Written from T-02 §3.5 to §3.7, `docs/contracts/k1-packages.md` ("a recipient sees only their own
+# packages, released and later; drafts never reach the portal"; another recipient's package, a
+# draft or an unknown id: 404) and `docs/contracts/questionnaires.md` (an inquiry is its
+# addressee's only). Delta #2's build, the K-1 room and POR-05, is what these probes cover.
+
+T02_FLAGS = ("tax.k1_release", "questionnaires.v1")
+
+
+async def _t02_flags(seed: Seeder, firm: Firm) -> None:
+    for flag in T02_FLAGS:
+        await seed.run(
+            "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
+            "VALUES ($1, $2, 'true', 'test-seed', 'T-02-T30')",
+            firm.tenant,
+            flag,
+        )
+
+
+async def _k1(
+    seed: Seeder, firm: Firm, item: uuid.UUID, name: str, amount: str, *, released: bool = True
+) -> uuid.UUID:
+    """One recipient's package on the issuing return, released (or a draft), with one box."""
+    recipient = await seed.value(
+        "INSERT INTO k1_recipients (tenant_id, work_item_id, engine_ref, display_name, "
+        "recipient_kind) VALUES ($1, $2, $3, $4, 'lp') RETURNING id",
+        firm.tenant,
+        item,
+        f"P{uuid.uuid4().hex[:6]}",
+        name,
+    )
+    package = cast(
+        uuid.UUID,
+        await seed.value(
+            "INSERT INTO k1_packages (tenant_id, recipient_id, work_item_id, form, tax_year, "
+            "status, is_final_set, released_at, version_no) VALUES ($1, $2, $3, '1065', 2025, "
+            "$4, true, $5, 1) RETURNING id",
+            firm.tenant,
+            recipient,
+            item,
+            "released" if released else "draft",
+            datetime.now(UTC) if released else None,
+        ),
+    )
+    await seed.run(
+        "INSERT INTO k1_box_lines (tenant_id, package_id, document_kind, box_code, description, "
+        "amount, position) VALUES ($1, $2, 'k1', '2', 'Net rental real estate income', $3, 0)",
+        firm.tenant,
+        package,
+        Decimal(amount),
+    )
+    return package
+
+
+@dataclass(frozen=True)
+class K1Room:
+    firm: Firm
+    ridgeline: Site
+    issuing: uuid.UUID
+    team: str
+    mine: uuid.UUID
+    theirs: uuid.UUID
+    draft: uuid.UUID
+    token: str
+    own_1040: uuid.UUID
+
+
+THEIR_NAME = "Pell Street II LLC"
+THEIR_AMOUNT = "731337"  # the other recipient's box 2: never in this person's answers
+MY_AMOUNT = "400270"
+
+
+async def _k1_room(seed: Seeder, http: httpx.AsyncClient) -> K1Room:
+    firm = await _firm(seed, "k1room")
+    await _t02_flags(seed, firm)
+    ridgeline = await seed.site(firm.tenant, firm.admin.user_id, "Ridgeline")
+    own = await seed.site(firm.tenant, firm.admin.user_id, "Shah")
+    issuing = await _work_item(seed, firm, ridgeline, f"Form 1065 {ridgeline.marker}")
+    own_1040 = await _work_item(seed, firm, own, f"2025 Form 1040 {own.marker}")
+    team = await _staff(seed, firm, ridgeline, "engagement_partner")
+    mine = await _k1(seed, firm, issuing, "Pell Street Ventures LLC", MY_AMOUNT)
+    theirs = await _k1(seed, firm, issuing, THEIR_NAME, THEIR_AMOUNT)
+    draft = await _k1(seed, firm, issuing, "Ridgeline GP LLC", "25000", released=False)
+    person, email = await _client_person(seed, firm)
+    other, _ = await _client_person(seed, firm)
+    await _grant(seed, firm, person, "k1_recipient", "k1_package", mine)
+    await _grant(seed, firm, person, "k1_recipient", "k1_package", draft)  # granted, yet a draft
+    await _grant(seed, firm, other, "k1_recipient", "k1_package", theirs)
+    await _grant(seed, firm, person, "taxpayer", "work_item", own_1040)  # the role union
+    token = await _session(http, firm.host, email)
+    return K1Room(firm, ridgeline, issuing, team, mine, theirs, draft, token, own_1040)
+
+
+async def test_t02t30_a_k1_recipient_reads_only_their_own_released_package(
+    seed: Seeder, http: httpx.AsyncClient
+) -> None:
+    r = await _k1_room(seed, http)
+    listed = await _get(http, r.firm.host, r.token, "/v1/portal/k1s")
+    assert listed.status_code == 200, listed.text
+    assert [p["id"] for p in cast(list[dict[str, object]], listed.json())] == [str(r.mine)]
+    own = await _get(http, r.firm.host, r.token, f"/v1/portal/k1s/{r.mine}")
+    assert own.status_code == 200, own.text
+    assert MY_AMOUNT in own.text
+    markers = [THEIR_NAME, THEIR_AMOUNT, str(r.theirs), str(r.draft)]
+    paths = [
+        f"/v1/portal/k1s/{r.theirs}",
+        f"/v1/portal/k1s/{r.theirs}/download",
+        f"/v1/portal/k1s/{r.theirs}/attachments/{uuid.uuid4()}",
+        f"/v1/portal/k1s/{r.draft}",
+        f"/v1/portal/k1s/{r.draft}/download",
+        f"/v1/portal/k1s/{uuid.uuid4()}",
+    ]
+    assert await _probe(http, r.firm.host, r.token, paths, markers) == {}
+    for path in ("/v1/portal/k1s", f"/v1/portal/k1s/{r.mine}"):
+        body = (await _get(http, r.firm.host, r.token, path)).text
+        assert [m for m in markers if m in body] == [], path
+
+
+async def test_t02t30_the_role_unions_k1_names_nothing_of_the_issuing_return(
+    seed: Seeder, http: httpx.AsyncClient
+) -> None:
+    r = await _k1_room(seed, http)
+    # The card names its issuer by design (POR-13); the return, its engagement, its entity and
+    # its team are never in a recipient's answers.
+    markers = [
+        str(r.ridgeline.engagement_id),
+        str(r.ridgeline.entity_id),
+        str(r.ridgeline.item_id),
+        str(r.issuing),
+        r.team,
+    ]
+    for path in ("/v1/portal/k1s", f"/v1/portal/k1s/{r.mine}"):
+        response = await _get(http, r.firm.host, r.token, path)
+        assert response.status_code == 200, (path, response.text)
+        assert [m for m in markers if m in response.text] == [], path
+    me = await _get(http, r.firm.host, r.token, "/v1/me")
+    assert [m for m in markers if m in me.text] == []
+    assert await _probe(http, r.firm.host, r.token, _probes(r.ridgeline, r.issuing), markers) == {}
+
+
+async def test_t02t30_an_inquiry_is_its_addressees_only(
+    seed: Seeder, http: httpx.AsyncClient
+) -> None:
+    firm = await _firm(seed, "inquiry")
+    await _t02_flags(seed, firm)
+    site = await seed.site(firm.tenant, firm.admin.user_id, "Northwind")
+    item = await _work_item(seed, firm, site, f"Fraud inquiries {site.marker}")
+    dana, dana_email = await _client_person(seed, firm)
+    luis, luis_email = await _client_person(seed, firm)
+    contacts: dict[uuid.UUID, uuid.UUID] = {}
+    for who, email in ((dana, dana_email), (luis, luis_email)):
+        await _grant(seed, firm, who, "contributor", "engagement", site.engagement_id)
+        contacts[who.user_id] = cast(
+            uuid.UUID,
+            await seed.value(
+                "INSERT INTO contacts (tenant_id, client_id, display_name, email, contact_kind, "
+                "portal_state, user_id) VALUES ($1, $2, $3, $4, 'client_person', 'active', $5) "
+                "RETURNING id",
+                firm.tenant,
+                site.client_id,
+                f"Contact {uuid.uuid4().hex[:6]}",
+                email,
+                who.user_id,
+            ),
+        )
+    title = f"Fraud risk inquiry {uuid.uuid4().hex[:8]}"
+    inquiry = cast(
+        uuid.UUID,
+        await seed.value(
+            "INSERT INTO questionnaires (tenant_id, engagement_id, work_item_id, kind, title, "
+            "addressed_to_contact_id, created_by) VALUES ($1, $2, $3, 'inquiry', $4, $5, $6) "
+            "RETURNING id",
+            firm.tenant,
+            site.engagement_id,
+            item,
+            title,
+            contacts[dana.user_id],
+            firm.admin.user_id,
+        ),
+    )
+    section = await seed.value(
+        "INSERT INTO questionnaire_sections (tenant_id, questionnaire_id, name, position) "
+        "VALUES ($1, $2, 'Inquiries', 0) RETURNING id",
+        firm.tenant,
+        inquiry,
+    )
+    await seed.run(  # one sent question: the portal shows only what a person has sent
+        "INSERT INTO questions (tenant_id, questionnaire_id, section_id, position, type, "
+        "client_wording, origin, created_by, sent_by, sent_at) VALUES ($1, $2, $3, 0, "
+        "'long_text', $4, 'fraud_inquiry', $5, $5, now())",
+        firm.tenant,
+        inquiry,
+        section,
+        f"{title}: are you aware of any fraud?",
+        firm.admin.user_id,
+    )
+    dana_token = await _session(http, firm.host, dana_email)
+    listed = await _get(http, firm.host, dana_token, "/v1/portal/questionnaires")
+    assert listed.status_code == 200, listed.text
+    assert str(inquiry) in listed.text
+    luis_token = await _session(http, firm.host, luis_email)
+    markers = [title, str(inquiry)]
+    paths = [f"/v1/portal/questionnaires/{inquiry}"]
+    assert await _probe(http, firm.host, luis_token, paths, markers) == {}
+    theirs = await _get(http, firm.host, luis_token, "/v1/portal/questionnaires")
+    assert [m for m in markers if m in theirs.text] == []
+
+
+def test_t02t30_the_judgement_catches_a_planted_cross_scope_k1_read() -> None:
+    planted = _response(200, '{"lines":[{"box_code":"2","amount":"' + THEIR_AMOUNT + '.00"}]}')
+    assert _leaks(planted, [THEIR_AMOUNT]) == ["status 200", f"names {THEIR_AMOUNT}"]
+    assert _leaks(_response(404, '{"detail":"not found"}'), [THEIR_AMOUNT]) == []

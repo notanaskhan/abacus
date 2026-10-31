@@ -42,6 +42,8 @@ FIRM_LEVEL: Final = frozenset(
         "staff_invitation",
         "support_session",
         "methodology_version",
+        "methodology_import",  # K-01-T18: a firm's methodology upload
+        "methodology_source_file",  # K-01-T18: its stored files
         "grouping_set_version",  # the firm's chart groupings (SPEC-316), shared by engagements
         "knowledge_document",
         "feature_flag",

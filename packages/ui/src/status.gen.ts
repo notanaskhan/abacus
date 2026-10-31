@@ -1816,6 +1816,14 @@ export const STATUS_REGISTRY = {
       "derived": false
     }
   },
+  "methodology_source_file": {
+    "clean": {
+      "label": "Scanned",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
   "knowledge_item": {
     "draft": {
       "label": "Draft",
@@ -3622,6 +3630,366 @@ export const STATUS_REGISTRY = {
     "adopted": {
       "label": "Adopted",
       "variant": null,
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "workpaper_value_state": {
+    "empty": {
+      "label": "Empty",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "suggested": {
+      "label": "Suggested",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "cell": "Suggested by Accrued Agent"
+      }
+    },
+    "adopted": {
+      "label": "Adopted",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "edited": {
+      "label": "Edited",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "human": {
+      "label": "Entered",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "attention_flag": {
+    "open": {
+      "label": "PBC GAP",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "converted": {
+      "label": "Converted",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "resolved": {
+      "label": "Resolved",
+      "variant": null,
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "audit_procedure": {
+    "not_started": {
+      "label": "Not started",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "ring"
+    },
+    "in_progress": {
+      "label": "In progress",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "half"
+    },
+    "in_review": {
+      "label": "In review",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "complete": {
+      "label": "Complete",
+      "variant": null,
+      "terminal": true,
+      "derived": false,
+      "disc": "check_olive"
+    }
+  },
+  "materiality_version": {
+    "proposed": {
+      "label": "Proposed",
+      "variant": "state",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "header": "Version {n} · Proposed"
+      }
+    },
+    "decided": {
+      "label": "Decided",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "header": "Version {n} · Decided"
+      }
+    },
+    "reassessed": {
+      "label": "Reassessed at final",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "revised": {
+      "label": "Revised",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "soon",
+      "terminal": true,
+      "derived": true
+    }
+  },
+  "risk_register_row": {
+    "draft": {
+      "label": "Draft",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "ep_approved": {
+      "label": "EP approved",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "revised": {
+      "label": "Revised",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "risk_significance": {
+    "none": {
+      "label": "Not significant",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "mandatory": {
+      "label": "Significant · mandatory",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "proposed": {
+      "label": "Proposed",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "approved": {
+      "label": "Approved · {initials}",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "not_significant": {
+      "label": "Not significant",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "risk_fraud": {
+    "none": {
+      "label": "None",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "presumed": {
+      "label": "Presumed",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "rebuttal_proposed": {
+      "label": "Rebuttal proposed",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "rebuttal_approved": {
+      "label": "Rebuttal approved · {initials}",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "risk_linkage": {
+    "linked": {
+      "label": "Linked",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "suggested": {
+      "label": "Suggested",
+      "variant": "outline",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "fraud_minutes": {
+    "draft": {
+      "label": "Draft",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "awaiting_approval": {
+      "label": "Awaiting approval",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "approved": {
+      "label": "Approved · {initials}",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "fraud_inquiry": {
+    "requested": {
+      "label": "Requested",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "answered": {
+      "label": "Answered",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "service_organization": {
+    "pending": {
+      "label": "Pending",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "gap_found": {
+      "label": "Gap found",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "bridge_letter_received": {
+      "label": "Bridge letter received",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "reliance_concluded": {
+      "label": "Reliance concluded",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "certification_accepted": {
+      "label": "Certification accepted",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "no_reliance": {
+      "label": "No reliance",
+      "variant": null,
+      "terminal": true,
+      "derived": false
+    },
+    "not_relevant": {
+      "label": "Not relevant",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "soc_reliance": {
+    "pending": {
+      "label": "Pending",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "relied": {
+      "label": "Relied",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "not_relied": {
+      "label": "Not relied",
+      "variant": null,
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "cuec": {
+    "evidence_missing": {
+      "label": "Evidence missing",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "evidenced": {
+      "label": "Evidenced",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "control_design": {
+    "effective": {
+      "label": "Effective",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "deficient": {
+      "label": "Deficient",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "not_assessed": {
+      "label": "Not assessed",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "control_exception_disposition": {
+    "exception_for_resolution": {
+      "label": "Exception for resolution",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "proposed": {
+      "label": "Proposed",
+      "variant": "amber",
       "terminal": false,
       "derived": false
     }

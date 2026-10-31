@@ -127,7 +127,7 @@ export function ClauseToggles({
       {clauses.map((clause) => (
         <li
           key={clause.id}
-          className="flex min-h-[34px] items-center gap-[10px] px-[12px] py-[6px] hairline-t"
+          className="flex min-h-[34px] items-center gap-[10px] px-[12px] py-[5px] hairline-t"
         >
           <Toggle
             label={clause.label}
@@ -135,10 +135,11 @@ export function ClauseToggles({
             disabled={clause.required === true || disabledReason !== undefined}
             onChange={(on) => onToggle?.(clause.id, on)}
           />
-          <span className="flex min-w-0 flex-1 flex-col">
-            <span className="text-body text-ink">{clause.label}</span>
+          {/* T10 spec: one 34h row, the label and then a 12.5 ink-3 reason (F-06-T22 review). */}
+          <span className="flex min-w-0 flex-1 items-center justify-between gap-[8px]">
+            <span className="truncate text-body text-ink">{clause.label}</span>
             {clause.reason !== undefined && (
-              <span className="text-meta text-ink-3">{clause.reason}</span>
+              <span className="shrink-0 truncate text-dense text-ink-3">{clause.reason}</span>
             )}
           </span>
         </li>

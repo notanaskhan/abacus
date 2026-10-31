@@ -9,6 +9,7 @@
 // sends the Request Chaser's drafted follow-up (the agent drafts, a person sends; DEC-74), on
 // BND-01's own scenario in the fixture project until `binders.engine` is on in E0 (P-06-T16).
 import { DEMO_INSTANT, expect, test } from "../harness";
+import { M13, artboard } from "../signatures/support";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -109,6 +110,27 @@ test.describe("J16 daily practice", () => {
         await sheet.getByRole("button", { name: "Send 1 follow-up" }).click();
         await expect(page.getByText(/^1 follow-up sent by /).first()).toBeVisible();
       });
+    });
+  });
+});
+
+// N-02-T40 (N-02 §10.1): j16 7 on the harness: Grace's reminders from a preview (SIG-01 f) and
+// the Harborview 8879-PE in the builder (SIG-02 a). The hosted projects walk it with N-02-T42.
+test.describe("J16 signatures (N-02-T40)", () => {
+  test("j16 7: Grace reminds three signers from a preview and sends the Harborview 8879-PE as E18", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", M13);
+    await journey.as("grace-holloway", artboard("SIG-01", "f"));
+    await journey.step(
+      "j16 7: three selected, the preview before Send (SIG-01 f)",
+      async (page) => {
+        await expect(page.getByText(/3 selected/).first()).toBeVisible();
+      },
+    );
+    await journey.as("grace-holloway", artboard("SIG-02", "a"));
+    await journey.step("j16 7: Harborview's 8879-PE ready to send (SIG-02 a)", async (page) => {
+      await expect(page.getByText("Amounts match the exported return").first()).toBeVisible();
     });
   });
 });

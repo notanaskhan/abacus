@@ -5,16 +5,33 @@
 
 import type { ComposerLetterOut, LetterDraftIn, LetterFeesIn } from "@abacus/api-client";
 import {
+  compareGeneratedDocumentOptions,
   draftLetterMutation,
   getLetterOptions,
   getLetterQueryKey,
+  approveLetterMutation,
   requestApprovalMutation,
   sendLetterMutation,
+  withdrawLetterEnvelopeMutation,
 } from "@abacus/api-client/query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useComposedLetter(engagementId: string) {
   return useQuery(getLetterOptions({ path: { engagement_id: engagementId } }));
+}
+
+/** N-02-T37: Compare to standard, C11's word-level diff of the letter's generated version by
+ * block and clause; read only while the overlay is on. */
+export function useLetterCompare(letter: ComposerLetterOut | undefined, on: boolean) {
+  const document = letter?.generated_document_id ?? null;
+  const version = letter?.version_no ?? null;
+  return useQuery({
+    ...compareGeneratedDocumentOptions({
+      path: { document_id: document ?? "", version_no: version ?? 1 },
+      query: { to: "standard" },
+    }),
+    enabled: on && document !== null && version !== null,
+  });
 }
 
 /** The fee terms the letter was composed with, as a draft edit sends them back. */
@@ -59,12 +76,21 @@ export function useLetterWrites(letter: ComposerLetterOut | undefined) {
   const draft = useMutation({ ...draftLetterMutation(), onSuccess: put });
   const request = useMutation({ ...requestApprovalMutation(), onSuccess: put });
   const send = useMutation(sendLetterMutation());
+  // N-02-T35: the partner's approval (fresh second factor) and the withdrawal of an ended envelope.
+  const approve = useMutation({ ...approveLetterMutation(), onSuccess: put });
+  const withdraw = useMutation({ ...withdrawLetterEnvelopeMutation(), onSuccess: put });
   return {
-    draft: (body: LetterDraftIn) =>
-      draft.mutateAsync({ ...at, body, headers: ifMatch }),
+    draft: (body: LetterDraftIn) => draft.mutateAsync({ ...at, body, headers: ifMatch }),
     // N-02-T33: the request names the version it asks about, like an edit.
     requestApproval: () => request.mutateAsync({ ...at, headers: ifMatch }),
     send: () => send.mutateAsync(at),
-    pending: draft.isPending || request.isPending || send.isPending,
+    approve: () => approve.mutateAsync({ ...at, headers: ifMatch }),
+    withdraw: () => withdraw.mutateAsync({ ...at, headers: ifMatch }),
+    pending:
+      draft.isPending ||
+      request.isPending ||
+      send.isPending ||
+      approve.isPending ||
+      withdraw.isPending,
   };
 }

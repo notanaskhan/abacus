@@ -14,7 +14,8 @@ DEC-651).
   them held it or none did. Each superseded version emits `methodology_version.superseded`. An
   agent, the system or support asking is refused and audited (`decision.refused_non_human`); a
   person without the action is refused and audited (`methodology_version.approve_refused`), each
-  in its own unit of work so the refusal is kept.
+  in its own unit of work so the refusal is kept. K-01-T18: an open parse flag is 409
+  `flags_open`, an unverified source on a step no person has confirmed 409 `unverified_sources`.
 - **Effective on a date** (`version_effective_on`): the template's published or superseded
   version whose dates cover the day, for the engagement's pin at its acceptance date.
 """
@@ -28,7 +29,7 @@ from datetime import date, datetime, timedelta
 from typing import Final
 from uuid import UUID
 
-from sqlalchemy import Insert, func, insert, or_, select, update
+from sqlalchemy import Insert, func, insert, or_, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.db import TenantContext, tenant_session
@@ -45,6 +46,7 @@ from abacus.modules.methodology.models import (
     MethodologyVersionState,
     Program,
     ProgramStep,
+    ProgramStepSource,
 )
 
 MANAGE: Final = "methodology.manage"
@@ -75,6 +77,19 @@ class ChecklistUnmet(DomainConflict):
     """An approval checklist item is not met (`facts.item`)."""
 
     code = "checklist_unmet"
+
+
+class FlagsOpen(DomainConflict):
+    """A parse flag on a step is not resolved yet (K-01-T18, AC3.4): confirm or edit it."""
+
+    code = "flags_open"
+
+
+class UnverifiedSources(DomainConflict):
+    """A step's source quote was not found on its cited page and no person has confirmed or
+    edited the step (K-01-T18, AC3.4, AC7.5)."""
+
+    code = "unverified_sources"
 
 
 class EffectiveTooEarly(DomainInvalid):
@@ -109,6 +124,10 @@ class VersionState:
     row_version: int
     checklist: list[ChecklistItem]
     checklist_hash: str
+    # K-01-T18 (KNW-02 d): the QM reference and the mapped set's code and label.
+    quality_management_ref: str | None = None
+    standards_set_code: str | None = None
+    standards_set_label: str | None = None
 
 
 async def checklist_of(session: AsyncSession, version_id: UUID) -> list[ChecklistItem]:
@@ -187,7 +206,24 @@ async def _view(session: AsyncSession, version_id: UUID) -> VersionState:
         row_version=state.row_version,
         checklist=items,
         checklist_hash=hash_of(items),
+        quality_management_ref=state.quality_management_ref,
+        **await _standards_set(session, state.standards_set_id),
     )
+
+
+async def _standards_set(session: AsyncSession, set_id: UUID | None) -> dict[str, str | None]:
+    """The mapped set's code and label (0580's reader: platform rows, by id)."""
+    if set_id is None:
+        return {"standards_set_code": None, "standards_set_label": None}
+    found = (
+        await session.execute(
+            text("SELECT code, label FROM standards_set_named(:id)"), {"id": set_id}
+        )
+    ).one_or_none()
+    return {
+        "standards_set_code": None if found is None else str(found[0]),
+        "standards_set_label": None if found is None else str(found[1]),
+    }
 
 
 async def view_in(session: AsyncSession, version_id: UUID) -> VersionState:
@@ -270,6 +306,38 @@ async def approve_guard(ctx: AuthContext, version_id: UUID) -> None:
         raise
 
 
+async def review_guard(session: AsyncSession, version_id: UUID) -> None:
+    """K-01-T18 (AC3.4): nothing is approvable while a parse flag is open, or while a step's
+    source quote is unverified and no person has confirmed or edited that step."""
+    open_flags = (
+        await session.execute(
+            select(func.count())
+            .select_from(ProgramStep)
+            .where(
+                ProgramStep.version_id == version_id,
+                ProgramStep.parse_flag.is_not(None),
+                ProgramStep.flag_resolution.is_(None),
+            )
+        )
+    ).scalar_one()
+    if open_flags:
+        raise FlagsOpen(facts={"version_id": str(version_id), "count": int(open_flags)})
+    unverified = (
+        await session.execute(
+            select(func.count())
+            .select_from(ProgramStepSource)
+            .join(ProgramStep, ProgramStep.id == ProgramStepSource.step_id)
+            .where(
+                ProgramStep.version_id == version_id,
+                ProgramStepSource.verified.is_(False),
+                ProgramStep.flag_resolution.is_(None),
+            )
+        )
+    ).scalar_one()
+    if unverified:
+        raise UnverifiedSources(facts={"version_id": str(version_id), "count": int(unverified)})
+
+
 async def approve_version(
     ctx: AuthContext,
     version_id: UUID,
@@ -285,6 +353,7 @@ async def approve_version(
             raise VersionStale(facts={"version_id": str(version_id)})
         if state.status != "needs_review":
             raise VersionFrozen(facts={"status": state.status})
+        await review_guard(tx.session, version_id)
         items = await checklist_of(tx.session, version_id)
         if hash_of(items) != checklist_hash:
             raise ChecklistChanged(facts={"version_id": str(version_id)})
