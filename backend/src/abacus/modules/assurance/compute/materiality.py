@@ -30,7 +30,7 @@ import json
 from collections.abc import Sequence
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal, localcontext
-from typing import Final, Literal
+from typing import Final, Literal, cast
 
 from abacus.kernel.numeric import CONTEXT, quantize_half_up
 
@@ -175,7 +175,8 @@ def _text(value: object) -> object:
         normal = value.normalize(CONTEXT)
         return format(normal, "f")
     if isinstance(value, (list, tuple)):
-        return [_text(v) for v in value]
+        items: Sequence[object] = cast("Sequence[object]", value)
+        return [_text(v) for v in items]
     return value
 
 

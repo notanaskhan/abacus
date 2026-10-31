@@ -153,7 +153,7 @@ def test_ac3_3_preview_bounds_are_inclusive_and_match_thresholds() -> None:
             ct_pct=D("5"),
             policy=EBP,
         )
-        assert m.preview(**args) == m.thresholds(**args)  # type: ignore[arg-type]
+        assert m.preview(**args) == m.thresholds(**args)  # type: ignore[arg-type] -- the kwargs dict is homogeneous by construction
 
 
 def test_ac3_6_final_basis_difference() -> None:

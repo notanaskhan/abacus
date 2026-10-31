@@ -2,7 +2,7 @@
 id: TASK-2800
 title: A-04-T08 materiality engine (assurance/compute/materiality.py)
 spec: SPEC-620
-acceptance_criteria: [AC3.1, AC3.2, AC3.3, AC3.6, AC3.8]
+acceptance_criteria: [AC-15, AC-17]  # SPEC-620: AC3.1-AC3.3 and AC3.6-AC3.8
 risk_zone: amber
 status: in-review
 epic: A-04
