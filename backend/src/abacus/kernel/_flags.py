@@ -294,6 +294,11 @@ RETRIEVAL_AUTO = Flag(
     kind="boolean",
     default="false",
 )
+REVIEW_APPROVE_AGENT_OUTPUT = Flag(
+    name="review.approve_agent_output",
+    kind="boolean",
+    default="false",
+)
 REVIEW_CHECKPOINTS = Flag(
     name="review.checkpoints",
     kind="boolean",
@@ -423,6 +428,7 @@ FLAGS: dict[str, Flag] = {
     "questionnaires.v1": QUESTIONNAIRES_V1,
     "reporting.generated_documents": REPORTING_GENERATED_DOCUMENTS,
     "retrieval.auto": RETRIEVAL_AUTO,
+    "review.approve_agent_output": REVIEW_APPROVE_AGENT_OUTPUT,
     "review.checkpoints": REVIEW_CHECKPOINTS,
     "review.grammar_api": REVIEW_GRAMMAR_API,
     "rules.reference_sets": RULES_REFERENCE_SETS,

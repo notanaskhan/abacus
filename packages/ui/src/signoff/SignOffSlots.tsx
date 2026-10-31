@@ -1,5 +1,6 @@
 import type { JSX } from "react";
 import { cn } from "../cn";
+import { AGENT_NAME } from "../attribution/actor";
 import { Icon } from "../icons";
 import { Pill } from "../components/pill";
 
@@ -51,8 +52,11 @@ export function SignOffSlotChips({
   onOpenSignOff,
   className,
 }: SignOffSlotChipsProps): JSX.Element | null {
-  if (slots.length === 0) return null;
-  const ordered = [...slots].sort((a, b) => levelNo(a.level) - levelNo(b.level));
+  // F-06-T21 (DEC-1657): a slot named for the agent is dropped, so a malformed payload never
+  // draws the agent a signature (ADR-005).
+  const people = slots.filter((s) => s.name !== AGENT_NAME);
+  if (people.length === 0) return null;
+  const ordered = [...people].sort((a, b) => levelNo(a.level) - levelNo(b.level));
   const reviewer = ordered.find((s) => s.level === reviewLevel && s.stale !== true);
   return (
     <span
