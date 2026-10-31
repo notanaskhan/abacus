@@ -152,6 +152,23 @@ describe("POR-13 My K-1s", () => {
     expect(within(dialog).queryByRole("textbox")).toBeNull();
   });
 
+  it("d · the chosen file goes up as the recipient's own upload, W-9 or W-8", async () => {
+    const seen = show("d");
+    const dialog = await screen.findByRole("dialog");
+    const send = within(dialog).getByRole("button", { name: COPY.tinSheet.submit });
+    expect(send).toHaveProperty("disabled", true);
+    fireEvent.click(within(dialog).getByRole("radio", { name: COPY.tinSheet.w8 }));
+    const input = dialog.querySelector("input[type=file]");
+    const file = new File(["%PDF-1.7"], "w8-signed.pdf", { type: "application/pdf" });
+    fireEvent.change(input as HTMLInputElement, { target: { files: [file] } });
+    fireEvent.click(within(dialog).getByRole("button", { name: COPY.tinSheet.submit }));
+    await waitFor(() => {
+      expect(writes(seen).map((c) => c.path)).toEqual([
+        expect.stringMatching(/\/details-changes:upload$/),
+      ]);
+    });
+  });
+
   it("e · the amended K-1 over the struck, superseded one", async () => {
     show("e");
     expect(await screen.findByText("Superseded (amended K-1)")).toBeTruthy();

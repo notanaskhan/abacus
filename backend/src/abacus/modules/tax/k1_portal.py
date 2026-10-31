@@ -33,16 +33,22 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from datetime import date
 from typing import Final, cast
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import text
 
 from abacus.kernel import clock
 from abacus.kernel.access import AccessSubject, record_reads, register_access_kind
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
+from abacus.kernel.errors import DomainConflict, DomainInvalid, DomainTooLarge, NotFound
 from abacus.kernel.uow import Ref, Target, uow
-from abacus.modules.evidence.api import version_content
+from abacus.modules.evidence.api import (
+    NewItem,
+    Provenance,
+    add_version,
+    screen_and_stage_detached,
+    version_content,
+)
 from abacus.modules.identity.api import (
     AuthContext,
     Forbidden,
@@ -430,16 +436,52 @@ def _address(raw: Mapping[str, str] | None) -> dict[str, str]:
     return out
 
 
-async def submit_details_change(
-    ctx: AuthContext,
-    recipient_id: UUID,
-    kind: str,
-    upload_id: UUID | None,
-    address: Mapping[str, str] | None,
+MAX_FORM_BYTES: Final = 10 * 1024 * 1024  # a signed W-9 or W-8: a few pages
+
+
+class FormTooLarge(DomainTooLarge):
+    """413: a signed form over 10 MB."""
+
+    code = "form_too_large"
+
+
+async def upload_details_change(
+    ctx: AuthContext, recipient_id: UUID, kind: str, file_name: str, content: bytes
 ) -> k1.DetailsChange:
-    """`POST /v1/portal/k1-recipients/{rid}/details-changes`: pending for the firm (DV-10)."""
+    """`POST /v1/portal/k1-recipients/{rid}/details-changes:upload` (S20e; DV-10): a signed W-9
+    or W-8, the raw file as the body. It is scanned and typed (refused closed), stored as the
+    client's own upload under its own key (ADR-162 §5) in the issuing return's engagement, and
+    becomes a pending change for a person at the firm. The number is never typed (POR-13 d)."""
     _client(ctx)
     _second_step(ctx)
+    if kind not in ("w9", "w8"):
+        raise DetailsChangeInvalid(facts={"field": "kind"})
+    if not content:
+        raise DetailsChangeInvalid(facts={"field": "file"})
+    if len(content) > MAX_FORM_BYTES:
+        raise FormTooLarge(facts={"max_bytes": MAX_FORM_BYTES})
+    owned = await _recipient_return(ctx, recipient_id)
+    facts = await k1.package_return_scope(ctx.tenant, owned)
+    if facts is None or facts.engagement_id is None:
+        raise NotFound("k1_recipient")
+    version_id = uuid4()
+    screened, key = await screen_and_stage_detached(ctx.tenant_id, version_id, content, file_name)
+    async with uow(ctx.tenant) as tx:
+        version = await add_version(
+            tx,
+            engagement_id=facts.engagement_id,
+            item=NewItem(f"Form {'W-9' if kind == 'w9' else 'W-8'} · {screened.file_name}"),
+            stored=screened.stored,
+            media_type=screened.media_type,
+            provenance=Provenance(source="client_upload", method="uploaded"),
+            detached=(version_id, key),
+        )
+    return await _record_change(ctx, recipient_id, owned, kind, version.id, None)
+
+
+async def _recipient_return(ctx: AuthContext, recipient_id: UUID) -> UUID:
+    """The issuing return of one of the person's released packages of `recipient_id`, under
+    `portal_k1.update_details`; else 404."""
     mine = await _mine(ctx)
     async with tenant_session(ctx.tenant) as session:
         owned = await session.scalar(
@@ -450,15 +492,37 @@ async def submit_details_change(
         )
     if owned is None or not await _authorised(ctx, cast(UUID, owned), UPDATE):
         raise NotFound("k1_recipient")
-    stored_address: dict[str, str] | None = None
-    if kind == "address":
-        stored_address = _address(address)
-        upload_id = None
-    elif kind in ("w9", "w8"):
-        if upload_id is None or address is not None:
-            raise DetailsChangeInvalid(facts={"field": "upload_id"})
-    else:
+    return cast(UUID, owned)
+
+
+async def submit_details_change(
+    ctx: AuthContext,
+    recipient_id: UUID,
+    kind: str,
+    upload_id: UUID | None,
+    address: Mapping[str, str] | None,
+) -> k1.DetailsChange:
+    """`POST /v1/portal/k1-recipients/{rid}/details-changes`: a structured address, pending for
+    the firm (DV-10). A W-9 or W-8 arrives through `upload_details_change`, which stores the file
+    itself: naming an evidence version here is refused (S20e review: any version id was taken)."""
+    _client(ctx)
+    _second_step(ctx)
+    owned = await _recipient_return(ctx, recipient_id)
+    if kind in ("w9", "w8"):
+        raise DetailsChangeInvalid(facts={"field": "upload"})
+    if kind != "address" or upload_id is not None:
         raise DetailsChangeInvalid(facts={"field": "kind"})
+    return await _record_change(ctx, recipient_id, owned, kind, None, _address(address))
+
+
+async def _record_change(
+    ctx: AuthContext,
+    recipient_id: UUID,
+    owned: UUID,
+    kind: str,
+    upload_id: UUID | None,
+    stored_address: dict[str, str] | None,
+) -> k1.DetailsChange:
     async with uow(ctx.tenant) as tx:
         change = await tx.session.scalar(
             text(
@@ -477,7 +541,7 @@ async def submit_details_change(
         )
         tx.record(
             "recipient_details_change.submitted",
-            target=Target(k1.KIND, cast(UUID, owned)),
+            target=Target(k1.KIND, owned),
             after=Ref(recipient=recipient_id, change=cast(UUID, change)),
         )
     found = next(
@@ -523,6 +587,7 @@ __all__ = [
     "DetailsChangeInvalid",
     "Download",
     "Expected",
+    "FormTooLarge",
     "K1MfaRequired",
     "deterministic_zip",
     "download",
@@ -532,4 +597,5 @@ __all__ = [
     "package",
     "packages",
     "submit_details_change",
+    "upload_details_change",
 ]
