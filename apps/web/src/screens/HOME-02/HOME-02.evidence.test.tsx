@@ -17,6 +17,8 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { installFixtureMode } from "../../app-core/fixture-mode";
 import { DECISION_754_CITATIONS, TRANSFER } from "../../fixtures/seed/approvals-detail";
+import "../../routes/firm/sheets"; // registers the `?ov=` keys the panes open
+import "../../routes/firm/viewer"; // registers `viewer`, SHL-08
 import { newQueryClient } from "../../testing/support";
 import { HOME02 } from ".";
 import { type Home02State, scenarios, selectedGate, summaryOf } from "./scenarios";
@@ -162,9 +164,20 @@ describe("HOME-02 evidence pane", () => {
 
   it("without an owner's summary a gate shows its cited sources only", async () => {
     restore = installFixtureMode(scenarios.a);
+    const root = createRootRoute({ component: Outlet });
+    const router = createRouter({
+      routeTree: root.addChildren([
+        createRoute({
+          getParentRoute: () => root,
+          path: "/",
+          component: () => <HOME02 gate={selectedGate("a")} />,
+        }),
+      ]),
+      history: createMemoryHistory({ initialEntries: ["/"] }),
+    });
     render(
       <QueryClientProvider client={newQueryClient()}>
-        <HOME02 gate={selectedGate("a")} />
+        <RouterProvider router={router} />
       </QueryClientProvider>,
     );
     await waitFor(() => {
