@@ -20,3 +20,16 @@ P-06 §0 and §4.9, ADR-089: `binders.engine`, `screening.card` and `evidence.wi
 | `evidence.withdrawal` | notanaskhan | 2027-04-21 | **Thu Feb 25, 2027** | **Renew** to Wed May 26, 2027 | It must be on before PW2 (Tue Jul 13, 2027). Renew again before May 26 (to at most Tue Aug 24, 2027, past PW2); retire after PW2 once it is on for every firm. Off only stops new withdrawals: a purge already started keeps running (RB-32) |
 
 A renewal restarts `created` on the day it is made and may reach at most 90 days (ADR-089); record the outcome of each row here.
+
+## The N-01 inbox, files and intake flags (N-01-T29)
+
+N-01 §0, ADR-089: `inbox.firm_intake`, `files.browser`, `portal.intake_upload` and `matching.firm_intake` each carry a calendared renewal or retirement. All four were created 2026-10-27 and expire 2027-04-21 under the DEC-137 override (`communications.yaml`, `evidence.yaml`, `portal.yaml`, `agents.yaml`), so they ride the same S9 renewal bundle as the flags above: one protected bundle, one deploy. The epic's own dates (created Apr 20 – Jun 15, 2027; retired Jul 6 and Aug 10) assumed flags created in 2027; the conditions below keep its order on today's expiries. Recorded 2026-11-01 (DEC-1390).
+
+| Flag | Owner | Expires | Due | Action | Condition |
+|---|---|---|---|---|---|
+| `inbox.firm_intake` | ayushkbhatia | 2027-04-21 | **Thu Feb 25, 2027** | **Renew** to Wed May 26, 2027 | Gates `/v1/inbox*` and the Inbox area's live data. Real firms arrive Jun 1, 2027 (M9), so on May 26 renew again to at most Tue Aug 24, 2027. Retire (delete the flag and its 404 branches in one change, as N-01 §0 planned for the Jul 6 train) once it is on for every live firm |
+| `files.browser` | ayushkbhatia | 2027-04-21 | **Thu Feb 25, 2027** | **Renew** to Wed May 26, 2027 | Gates `/v1/files*`, the evidence drawer and the CLI-02 Files tab. Same path as `inbox.firm_intake`: renew on May 26 to at most Aug 24; retire once on for every live firm |
+| `portal.intake_upload` | ayushkbhatia | 2027-04-21 | **Thu Feb 25, 2027** | **Renew** to Wed May 26, 2027 | Gates the portal's intake uploads (POR-03 "Upload something else"). Flipped per firm in the Tue Jul 13, 2027 window, which M10's checklist gates on "delta #1 closed": with penetration tests deferred (DEC-1389) that clause stays open, so no firm flips until a decision books the test or waives the clause. Renew on May 26 to at most Aug 24; retire in a train before Sep 1 once on for every live firm, or renew past the window |
+| `matching.firm_intake` | ayushkbhatia | 2027-04-21 | **Thu Feb 25, 2027** | **Renew** to Wed May 26, 2027 | The matcher's intake mode per firm (N-01-T26's clearance comes first). Renew on May 26 to Tue Aug 24, then in the Aug 17–24 batch, before Sep 1, to at most Mon Nov 22, 2027, so it never expires inside Sep 1 – Oct 20 (the epic's "renewed in the Tue Aug 3 train to Mon Nov 1", kept in substance) |
+
+A renewal restarts `created` on the day it is made and may reach at most 90 days (ADR-089); record the outcome of each row here.

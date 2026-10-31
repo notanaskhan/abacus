@@ -140,10 +140,12 @@ def test_no_resource_without_item_facts_passes_delegated_only() -> None:
 
 
 def test_the_third_party_holds_delegated_only_cells_and_nothing_else() -> None:
+    # A matrix row may spell `third_party: deny` (A-03, sampling, A-04 write every client principal
+    # out); an explicit deny holds nothing, so only the cells that grant something are counted.
     held = {
         action: rule.decisions["third_party"]
         for action, rule in RULES.items()
-        if "third_party" in rule.decisions
+        if rule.decisions.get("third_party", "deny") != "deny"
     }
     assert held == {
         "portal_documents.read": "delegated_only",
