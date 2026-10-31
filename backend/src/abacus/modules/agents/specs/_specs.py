@@ -117,7 +117,7 @@ SPECS: dict[str, dict[str, object]] = {   'evidence.matcher': {   'autonomy': 'p
                                 'evaluation_suite': 'evals/methodology_import',
                                 'id': 'methodology.importer',
                                 'input_schema': 'MethodologyImportInput',
-                                'limits': {   'max_cost_usd': '0.08',
+                                'limits': {   'max_cost_usd': '0.20',
                                               'max_output_tokens': 6000,
                                               'max_seconds': 120,
                                               'max_steps': 1},

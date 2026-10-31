@@ -233,6 +233,8 @@ class ImportBatchInput:
     requested_by: str
     first_page: int
     last_page: int
+    # The previous batch's run: the program in force on this batch's context page (end review).
+    previous_run_id: str | None = None
 
 
 @dataclass(frozen=True)

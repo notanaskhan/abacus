@@ -323,13 +323,23 @@ def assign_flags(kept: Sequence[ParsedStep]) -> list[str | None]:
 
 
 def ordered(programs: Sequence[ParsedProgram], steps: Sequence[ParsedStep]) -> list[ParsedStep]:
-    """Steps by program (in the order the programs were read) and number; a step read twice (a
-    page at a batch boundary) is kept once, the first reading."""
-    position = {p.code: i for i, p in enumerate(programs)}
+    """Steps by program (in the order the programs were read) and number. A step read twice (a
+    batch's last page, read again as the next batch's context) is kept once: the fuller reading,
+    the one that runs to the later page, since the first batch could not see where it ended."""
+    position: dict[str, int] = {}
+    for p in programs:  # a heading read twice (a batch's context page) keeps its first place
+        position.setdefault(p.code, len(position))
     seen: set[tuple[str, int]] = set()
     kept: list[ParsedStep] = []
     for step in sorted(
-        steps, key=lambda s: (position.get(s.program_code, len(position)), s.number, s.page)
+        steps,
+        key=lambda s: (
+            position.get(s.program_code, len(position)),
+            s.number,
+            s.page,
+            -s.page_to,
+            -len(s.text),
+        ),
     ):
         key = (step.program_code, step.number)
         if key in seen:
@@ -460,7 +470,7 @@ async def finish_document_import(
             agent.tenant_id,
             row.template_id,
             version_id,
-            row.started_by,
+            None,  # the importer's session: an event's actor must be the session's (0180)
             "document_import",
         )
         await tx.session.execute(
@@ -473,9 +483,10 @@ async def finish_document_import(
                 tenant_id=agent.tenant_id,
                 version_id=version_id,
                 kind="import_started",
-                actor_user_id=row.started_by,
+                actor_user_id=None,
                 facts={
                     "import_id": str(import_id),
+                    "initiated_by": str(row.started_by),
                     "steps": len(rows),
                     "flags": sum(counts.values()),
                 },

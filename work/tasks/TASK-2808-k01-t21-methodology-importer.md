@@ -36,6 +36,13 @@ updated: 2026-11-01
 ## Progress log
 - `2026-11-01` — built; ruff and pyright clean; `make regenerate` run. Tests at the S23 end
   review; security review of this red diff there.
+- `2026-11-01` — end review. Four defects found by the new tests and fixed: batch boundaries lost
+  steps (context page + carried program), the split flag was lost (fuller reading kept), the
+  importer's run broke `agent_runs_firm_level` (migration 0611) and its version events broke
+  `methodology_version_events_own_actor` (no actor, initiator in facts); the $0.08 cap refused
+  every batch ($0.20, provisional). Integration `tests/integration/backfill/test_k01t21_document_import.py`
+  (3) and replay histories (4) added. Unit 1046 + integration 3 + replay 5 pass. Merge note:
+  0611 re-chains onto main's head (after 0610 if #988 lands first).
 
 ## Decisions made during this task
 DEC-1856.

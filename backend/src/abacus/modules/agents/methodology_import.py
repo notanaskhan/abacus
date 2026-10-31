@@ -93,6 +93,13 @@ def batches(page_count: int, size: int = BATCH_PAGES) -> list[tuple[int, int]]:
     return [(first, min(first + size - 1, page_count)) for first in range(1, page_count + 1, size)]
 
 
+def context_pages(first: int, last: int) -> tuple[int, int]:
+    """The pages a batch reads: its own, and the page before as context, so a program whose
+    heading sits on the previous batch's last page keeps it (an end-review fix: 58 of 67 steps
+    without it). A step read twice is kept once (`methodology.api.ordered`)."""
+    return (max(first - 1, 1), last)
+
+
 def page_lines(words: Sequence[tuple[str, tuple[float, float, float, float]]]) -> str:
     """A page's text in reading order: words on one top are a line, lines top to bottom."""
     rows: dict[int, list[tuple[float, str]]] = {}
@@ -213,19 +220,51 @@ async def extract_pages(input: MethodologyImportInput) -> ImportPagesOutcome:
 
 
 def build_context(
-    template: str, first: int, last: int, count: int, pages: dict[int, str]
+    template: str,
+    first: int,
+    last: int,
+    count: int,
+    pages: dict[int, str],
+    continuing: str | None = None,
 ) -> AssembledContext:
+    """The batch's pages in one untrusted block. `continuing` is the program the previous batch
+    ended in, read from that batch's own output, so it stays inside the untrusted block too (an
+    end-review fix: a program longer than a batch lost its steps past the first batch)."""
+    entries: list[dict[str, object]] = []
+    if continuing is not None:  # in force where the first page given starts
+        entries.append({"continuing_program": continuing})
+    entries.extend({"page": n, "text": pages[n]} for n in sorted(pages))
     return (
         ContextBuilder()
         .text(
             "engagement", f"Methodology template {template}. Pages {first} to {last} of {count}."
         )
-        .task(
-            {"document": [{"page": n, "text": pages[n]} for n in sorted(pages)]},
-            untrusted=["document"],
-        )
+        .task({"document": entries}, untrusted=["document"])
         .build()
     )
+
+
+def carried_program(previous: ImportBatchOutput, page: int) -> str | None:
+    """The program in force where `page` (the previous batch's last page, this batch's context
+    page) starts: the program of its first step, else of the last step before it, else the last
+    program the previous batch named."""
+    on_page = [s for s in previous.steps if s.page == page]
+    if on_page:
+        return on_page[0].program_code
+    before = [s for s in previous.steps if s.page < page]
+    if before:
+        return before[-1].program_code
+    return previous.programs[-1].code if previous.programs else None
+
+
+async def _continuing(tenant_id: UUID, previous: str | None, page: int) -> str | None:
+    if previous is None:
+        return None
+    async with tenant_session(_reader(tenant_id, "agents:importer")) as session:
+        run = await get_run(session, UUID(previous))
+    if run is None or run.agent_id != IMPORTER or run.output is None:
+        return None
+    return carried_program(ImportBatchOutput.model_validate(run.output), page)
 
 
 async def parse_batch(input: ImportBatchInput) -> ImportBatchOutcome:
@@ -237,7 +276,8 @@ async def parse_batch(input: ImportBatchInput) -> ImportBatchOutcome:
     agent = await load_agent_context(tenant_id, run_id)
     importer = spec(IMPORTER)
     source = await import_source(agent, import_id)
-    words = await stored_pages(agent.tenant, source.file_id, input.first_page, input.last_page)
+    read_from, read_to = context_pages(input.first_page, input.last_page)
+    words = await stored_pages(agent.tenant, source.file_id, read_from, read_to)
     total = max(words) if words else input.last_page
     context = build_context(
         source.template_name,
@@ -245,6 +285,7 @@ async def parse_batch(input: ImportBatchInput) -> ImportBatchOutcome:
         input.last_page,
         total,
         {n: page_lines(w) for n, w in words.items()},
+        await _continuing(tenant_id, input.previous_run_id, read_from),
     )
     try:
         result = await call(
@@ -367,6 +408,9 @@ def fake_parse(request: ModelRequest) -> str:
     program: str | None = None
     current: dict[str, object] | None = None
     for entry in pages:
+        if "continuing_program" in entry:
+            program = str(entry["continuing_program"])
+            continue
         number = cast(int, entry["page"])
         for line in str(entry["text"]).splitlines():
             line = line.strip()

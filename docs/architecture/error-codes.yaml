@@ -1034,6 +1034,11 @@ codes:
     raised_by:
     - abacus.modules.tax.engine_import.KindNotBuilt
     summary: '422: PDFs and acknowledgements arrive with the delivery and e-file tasks.'
+  import_not_parsing:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.document_import.ImportNotParsing
+    summary: The import is no longer parsing (cancelled, failed or finished).
   import_pending:
     status: 409
     raised_by:

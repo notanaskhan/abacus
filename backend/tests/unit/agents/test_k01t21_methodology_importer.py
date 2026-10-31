@@ -35,13 +35,17 @@ def _import() -> tuple[list[mi.ParsedStep], list[mi.ParsedProgram]]:
     pages = {p.page: [(w.text, w.box) for w in p.words] for p in words.pages}
     steps: list[mi.ParsedStep] = []
     programs: list[mi.ParsedProgram] = []
-    for first, last in mi.batches(words.page_count):
+    previous: ImportBatchOutput | None = None
+    for first, last in mi.batches(words.page_count, size=4):
+        read_from, read_to = mi.context_pages(first, last)
+        continuing = None if previous is None else mi.carried_program(previous, read_from)
         context = mi.build_context(
             "BH Audit Methodology · EBP",
             first,
             last,
             words.page_count,
-            {n: mi.page_lines(pages[n]) for n in range(first, last + 1)},
+            {n: mi.page_lines(pages[n]) for n in range(read_from, read_to + 1)},
+            continuing,
         )
         text = context.render()
         assert text.count(mi.UNTRUSTED_DOCUMENT) == 1
@@ -49,7 +53,8 @@ def _import() -> tuple[list[mi.ParsedStep], list[mi.ParsedProgram]]:
         output = ImportBatchOutput.model_validate_json(mi.fake_parse(request))
         run = uuid4()
         programs += [mi.ParsedProgram(p.code, p.name) for p in output.programs]
-        steps += [mi._parsed(s, run, pages) for s in output.steps]  # pyright: ignore[reportPrivateUsage]
+        steps += [mi._parsed(s, run, pages) for s in output.steps]  # pyright: ignore[reportPrivateUsage] -- the finish step's own parser
+        previous = output
     return steps, programs
 
 
@@ -57,7 +62,7 @@ def test_ac_the_seeded_upload_parses_to_67_steps_with_3_flags_all_verified() -> 
     steps, programs = _import()
     kept = ordered(programs, steps)
     assert len(kept) == 67
-    assert [p.code for p in programs] == [
+    assert list(dict.fromkeys(p.code for p in programs)) == [
         f"BH-EBP-{c}" for c in (110, 140, 210, 310, 410, 510, 610)
     ]
     assert all(s.verified for s in kept)
@@ -108,6 +113,11 @@ def test_instructions_in_the_document_stay_inside_the_untrusted_block() -> None:
     assert json.loads(block.split("</untrusted>", 1)[0])[0]["page"] == 1
 
 
+def test_a_batch_reads_the_page_before_as_context() -> None:
+    assert mi.context_pages(1, 8) == (1, 8)
+    assert mi.context_pages(9, 16) == (8, 16)
+
+
 def test_batches_of_eight_pages() -> None:
     assert mi.batches(96)[-1] == (89, 96)
     assert len(mi.batches(96)) == 12
@@ -126,4 +136,4 @@ async def test_an_uncleared_non_synthetic_firm_is_not_admitted(
         tenant = object()
 
     assert mi.cleared_for_client_data(mi.IMPORTER) is False
-    assert await mi.admitted(_Ctx()) is False  # type: ignore[arg-type]
+    assert await mi.admitted(_Ctx()) is False  # type: ignore[arg-type] -- only `tenant` is read

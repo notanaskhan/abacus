@@ -186,12 +186,14 @@ class PageRegions:
 async def page_words(ctx: AuthContext, version_id: UUID, file_id: UUID, page: int) -> PageRegions:
     """One page's words with their boxes (fractions of the page), TIN forms masked (audited)."""
     content = await _pdf_source(ctx, version_id, file_id)
-    words: PdfWords = await asyncio.to_thread(read_words_isolated, content)
+    # One page is read, not the file (an end-review fix: a 400-page manual per request was a
+    # cost any reader could impose); `page_count` is still the file's.
+    words: PdfWords = await asyncio.to_thread(read_words_isolated, content, MAX_PAGES, page, page)
     if words.problem is not None:
         _raise_for(words.problem, words.page_count)
-    if not 1 <= page <= words.page_count:
+    if not 1 <= page <= words.page_count or not words.pages:
         raise PageOutOfRange(facts={"page_count": words.page_count})
-    found = words.pages[page - 1]
+    found = words.pages[0]
     await _audit(ctx, file_id, version_id, page, words=True)
     return PageRegions(
         page,

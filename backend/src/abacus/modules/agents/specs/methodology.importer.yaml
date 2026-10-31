@@ -14,8 +14,10 @@ task_scope: [methodology.read, methodology.parse]
 tools: []
 limits:
   max_output_tokens: 6000
-  # Per batch of eight pages; a 96-page manual is 12 calls (K-01 §6.4).
-  max_cost_usd: "0.08"
+  # Per batch of eight pages; a 96-page manual is 12 calls (K-01 §6.4). Provisional until the S24
+  # Bedrock run sets it (K-01 §6): 6,000 output tokens at the medium tier alone cost about $0.09,
+  # so the first cap ($0.08) refused every batch (end review).
+  max_cost_usd: "0.20"
   max_steps: 1
   max_seconds: 120
 autonomy: propose

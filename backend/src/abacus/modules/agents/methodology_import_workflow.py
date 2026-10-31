@@ -68,7 +68,12 @@ class MethodologyImportWorkflow:
                 outcome = await workflow.execute_activity(
                     "agents.importer_parse_batch",
                     ImportBatchInput(
-                        input.tenant_id, input.import_id, input.requested_by, first, last
+                        input.tenant_id,
+                        input.import_id,
+                        input.requested_by,
+                        first,
+                        last,
+                        run_ids[-1] if run_ids else None,
                     ),
                     result_type=ImportBatchOutcome,
                     start_to_close_timeout=_BATCH_TIMEOUT,
