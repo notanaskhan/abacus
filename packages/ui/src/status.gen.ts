@@ -3993,6 +3993,181 @@ export const STATUS_REGISTRY = {
       "terminal": false,
       "derived": false
     }
+  },
+  "ebp_provider_check": {
+    "received": {
+      "label": "Received",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "waiting_on_inputs": {
+      "label": "Waiting on inputs",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    },
+    "correction_requested": {
+      "label": "Correction requested",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "ebp_late_remittance": {
+    "found": {
+      "label": "Late deposit found",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "pending_vfcp_scc": {
+      "label": "Pending — VFCP Self-Correction Component",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "corrected": {
+      "label": "Corrected",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "ebp_form5330": {
+    "exposure": {
+      "label": "Exposure",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "not_required": {
+      "label": "Not required",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "filed": {
+      "label": "Filed",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "ebp_certification_point": {
+    "not_evaluated": {
+      "label": "Not evaluated",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    },
+    "evaluated": {
+      "label": "Evaluated",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "ebp_form5500_line": {
+    "tie": {
+      "label": "Tie",
+      "variant": "green",
+      "terminal": true,
+      "derived": true
+    },
+    "reconciling_item": {
+      "label": "Reconciling item",
+      "variant": "state",
+      "terminal": false,
+      "derived": true
+    },
+    "inconsistent": {
+      "label": "Inconsistent",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": true
+    }
+  },
+  "ebp_part_iv": {
+    "consistent": {
+      "label": "Consistent",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": true
+    },
+    "inconsistent": {
+      "label": "Inconsistent",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": true
+    }
+  },
+  "ebp_test_result": {
+    "untested": {
+      "label": "Untested",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    },
+    "testing": {
+      "label": "Testing",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "pass": {
+      "label": "Pass",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "exception": {
+      "label": "Exception",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "needs_human": {
+      "label": "Needs human",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "no_effect": {
+      "label": "No effect",
+      "variant": "neutral",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "aud27_item": {
+    "unevaluated": {
+      "label": "Unevaluated",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "evaluated": {
+      "label": "Evaluated",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "pending_ep": "Evaluated · pending EP"
+      }
+    },
+    "exception": {
+      "label": "Exception",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "screened_out": {
+      "label": "Screened out",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
   }
 } as const;
 
