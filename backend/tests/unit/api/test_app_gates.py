@@ -339,6 +339,11 @@ NOT_CREATING = {
     "/v1/portal/envelopes/{envelope_id}/signing-session",
     "/v1/portal/envelopes/{envelope_id}/viewed",
     "/v1/portal/intake-uploads/{upload_id}/withdraw",
+    # K-01-T18 (DEC-1755): starting and cancelling an import, and resolving a parse flag, move an
+    # existing record, so 200.
+    "/v1/methodology/imports/{import_id}/start",
+    "/v1/methodology/imports/{import_id}/cancel",
+    "/v1/methodology/versions/{version_id}/steps/{step_id}/flag-resolution",
 }
 
 
@@ -402,6 +407,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/request-items",
         # K-01-T01 (C21 stub): a methodology draft and a program step.
         "/v1/methodology/versions/{version_id}/drafts",
+        # K-01-T18: a methodology import.
+        "/v1/methodology/imports",
         # T-02-T02: a template import, an organizer, a questionnaire, a question, a portal
         # attachment and a recipient's details change.
         "/v1/questionnaire-templates:import",
