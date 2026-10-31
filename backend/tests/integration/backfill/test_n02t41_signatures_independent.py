@@ -188,13 +188,9 @@ async def test_reminders_are_a_persons_and_stop_at_the_cap(net: Net, fake: FakeE
     )
     assert preview.status_code == 200, preview.text
     assert preview.json()["count"] >= 1
-    cap = cast(
-        int,
-        await net.seed.value(
-            "SELECT max_reminders FROM envelope_policies WHERE policy_family = "
-            "'efile_authorization' ORDER BY purpose NULLS LAST LIMIT 1"
-        ),
-    )
+    listed = await net.call("GET", "/v1/envelope-policies", sent.grace)
+    efile = next(p for p in listed.json() if p["policy_family"] == "efile_authorization")
+    cap = int(efile["max_reminders"])
     for _ in range(cap):
         await net.seed.run(
             "INSERT INTO envelope_events (tenant_id, envelope_id, kind, source, occurred_at) "
