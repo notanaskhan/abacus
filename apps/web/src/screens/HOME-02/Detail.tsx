@@ -75,8 +75,6 @@ import { type GateSource, classOf, useGateSources } from "./sources";
 // body and the footer are separate components over the same queries (React Query shares them);
 // the decision draft is the screen's, so both halves read one choice.
 
-const SHL10 = (ref: string): OverlayRef => ({ key: "approve", args: [ref] });
-
 /** The reserved person's choice while they decide, held by the screen so the body (radios,
  * rationale) and the pinned footer (Decide) read the same draft. */
 export interface DecisionDraft {
@@ -593,7 +591,7 @@ function blockedText(check: EligibilityCheckOut): string {
 function blockerOverlay(check: EligibilityCheckOut | undefined): OverlayRef | undefined {
   const ref = check?.refs[0];
   if (ref === undefined) return undefined;
-  if (ref.type === "agent_proposal" || ref.type === "proposal") return SHL10(ref.id);
+  if (ref.type === "agent_proposal" || ref.type === "proposal") return ov.SHL10(ref.id);
   if (ref.type === "decision_card") return ov.SHL11(ref.id);
   return undefined;
 }
@@ -745,7 +743,7 @@ function ProposalFooter({ gate }: DetailProps): JSX.Element | null {
   if (proposal === undefined) return null;
   const allowed = proposal.allowed_actions;
   const open = (): void => {
-    openOverlay(SHL10(proposal.ref));
+    openOverlay(ov.SHL10(proposal.ref));
   };
   return (
     <Footer line={COPY.detailPane.agentCannotApprove}>

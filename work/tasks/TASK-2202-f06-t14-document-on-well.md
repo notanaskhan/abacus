@@ -4,13 +4,13 @@ title: F-06-T14 T10 DocumentOnWell layout, T10a/b
 spec: SPEC-400
 acceptance_criteria: [AC-19, AC-21]
 risk_zone: amber
-status: in-review
+status: done
 epic: F-06
 plan_key: F-06-T14
 branch: s17-f06-t14
 worktree: /Users/ayushkbhatia/Accrued/abacus-s17
 created: 2026-10-29
-updated: 2026-10-29
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -48,6 +48,7 @@ AC-21 → "Approve only calls onApprove", "an agent actor never gets…", `test_
 
 ## Progress log
 - `2026-10-29` — Built on `s17-f06-t14` (build-only; tests run at the S17 end review).
+- 2026-11-01: merged to main in #742 (ad71fd8dc).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

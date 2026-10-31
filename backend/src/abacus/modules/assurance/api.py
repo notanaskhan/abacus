@@ -10,6 +10,9 @@ from abacus.modules.assurance.audits_contract import audits_router
 from abacus.modules.assurance.completion import g6, g7
 from abacus.modules.assurance.completion_routes import dashboard_router
 from abacus.modules.assurance.completion_routes import router as completion_router
+
+# A-04-T08/T09: the pure materiality engine, for the recommender's evaluation (BOUND-001).
+from abacus.modules.assurance.compute import materiality as materiality_engine
 from abacus.modules.assurance.home_counts import register_home_counts
 from abacus.modules.assurance.mapping import SUBSCRIPTIONS as MAPPING_SUBSCRIPTIONS
 from abacus.modules.assurance.mapping import mapping_facts, mapping_reviewables
@@ -102,6 +105,7 @@ __all__ = [
     "RunSummary",
     "SectionState",
     "completion_router",
+    "materiality_engine",
     "record_phase",
     "register_audit_section",
     "register_audit_segment",

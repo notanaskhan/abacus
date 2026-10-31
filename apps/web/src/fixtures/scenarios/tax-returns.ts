@@ -2,10 +2,14 @@
 // New portal personas: `nora-calloway` and `pell-street-member` ("Pell Street Ventures LLC ·
 // authorized member"; no invented name). Each screen's build re-exports its own scenarios.
 import { type Scenario, defineScenarios } from "../../app-core/fixture-mode";
+import { k1PackageHandlers } from "../handlers/k1-packages";
 import { portalHandlers } from "../handlers/portal";
+import { portalK1Handlers } from "../handlers/portal-k1s";
 import { portalQuestionnaireHandlers } from "../handlers/portal-questionnaires";
 import { taxReturnHandlers } from "../handlers/tax-returns";
 import { seedScenario } from "../scenario";
+import type { K1Variant } from "../seed/k1-packages";
+import type { Por13Variant } from "../seed/portal-k1s";
 import type { OverviewVariant } from "../seed/tax-return-overview";
 
 const E0_CLOCK = "2026-09-14T09:24:00-05:00";
@@ -68,18 +72,24 @@ export const tax03 = defineScenarios({
   f: at("f", "kevin-osei"),
 });
 
+// TXP-12 (T-02-T25): each artboard's K-1 rows and release check (seed/k1-packages.ts).
+const at12 = (state: string, variant: K1Variant, clock = E0_CLOCK): Scenario => {
+  const base = at(state, "samuel-ito", clock);
+  return { ...base, handlers: { ...base.handlers, ...k1PackageHandlers(variant, base.handlers) } };
+};
+
 export const txp12 = defineScenarios({
-  a: at("a", "samuel-ito"),
-  a2: at("a2", "samuel-ito"),
-  a3: at("a3", "samuel-ito"),
-  a4: at("a4", "samuel-ito"),
-  a5: at("a5", "samuel-ito", "2026-09-15T10:28:00-05:00"),
-  b: at("b", "samuel-ito", "2026-09-15T10:30:00-05:00"),
-  b2: at("b2", "samuel-ito", "2026-09-15T10:30:00-05:00"),
-  c: at("c", "samuel-ito"),
-  d: at("d", "samuel-ito"),
-  e: at("e", "samuel-ito", "2026-10-05T09:24:00-05:00"),
-  f: at("f", "samuel-ito"),
+  a: at12("a", "drafts"),
+  a2: at12("a2", "drafts"),
+  a3: at12("a3", "drafts"),
+  a4: at12("a4", "drafts"),
+  a5: at12("a5", "approved", "2026-09-15T10:28:00-05:00"),
+  b: at12("b", "released", "2026-09-15T10:30:00-05:00"),
+  b2: at12("b2", "released", "2026-09-15T10:30:00-05:00"),
+  c: at12("c", "drafts"),
+  d: at12("d", "drafts"),
+  e: at12("e", "amended", "2026-10-05T09:24:00-05:00"),
+  f: at12("f", "drafts"),
 });
 
 // T-02-T24: POR-05's questionnaires by artboard on top of the tax handlers.
@@ -104,11 +114,18 @@ export const por05 = defineScenarios({
   f: at05("f", "claire-feld"),
 });
 
+// T-02-T27: POR-13's K-1s by artboard (seed/portal-k1s.ts) on the portal handlers.
+const at13 = (state: string, persona: string, variant: Por13Variant, clock: string): Scenario => {
+  const base = at(state, persona, clock);
+  const portal = { ...base.handlers, ...portalHandlers({ clock }) };
+  return { ...base, handlers: { ...portal, ...portalK1Handlers(variant, portal) } };
+};
+
 export const por13 = defineScenarios({
-  a: at("a", "nora-calloway", "2026-09-29T18:40:00-05:00"),
-  b: at("b", "pell-street-member"),
-  c: at("c", "pell-street-member", "2026-09-15T09:24:00-05:00"),
-  d: at("d", "nora-calloway", "2026-09-29T18:40:00-05:00"),
-  e: at("e", "nora-calloway", "2026-10-05T09:24:00-05:00"),
-  f: at("f", "meera-shah"),
+  a: at13("a", "nora-calloway", "nora_released", "2026-09-29T18:40:00-05:00"),
+  b: at13("b", "pell-street-member", "pell_expected", E0_CLOCK),
+  c: at13("c", "pell-street-member", "pell_released", "2026-09-15T09:24:00-05:00"),
+  d: at13("d", "nora-calloway", "nora_released", "2026-09-29T18:40:00-05:00"),
+  e: at13("e", "nora-calloway", "nora_amended", "2026-10-05T09:24:00-05:00"),
+  f: at13("f", "meera-shah", "meera_expected", E0_CLOCK),
 });

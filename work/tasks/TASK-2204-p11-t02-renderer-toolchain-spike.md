@@ -4,13 +4,13 @@ title: P-11-T02 renderer toolchain and byte-stability spike
 spec: SPEC-520
 acceptance_criteria: [AC-30, AC-6, AC-20]
 risk_zone: red
-status: in-review
+status: done
 epic: P-11
 plan_key: P-11-T02
 branch: s17-p11-t02
 worktree: /Users/ayushkbhatia/Accrued/abacus-s17
 created: 2026-10-29
-updated: 2026-10-29
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -68,6 +68,7 @@ the image, so the in-process test compares two runs and the committed hash is ch
   `283cbed1…`, DOCX `b1c8f354…`; recorded in `tests/golden_render/letter.*.sha256`; the in-image
   suite passes 8/8 (dates from `as_of`, URL refusals incl. the metadata address, `file:`, `data:`,
   unknown asset). AC-30 met in two containers; the CI half runs with the `render-golden` job.
+- 2026-11-01: merged to main in #744 (dc8d4667d).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

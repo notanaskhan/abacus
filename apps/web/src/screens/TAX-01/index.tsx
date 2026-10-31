@@ -27,6 +27,7 @@ import {
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { useNow } from "../../app-core/clock";
+import { useDraftK1Source } from "../../domain/tax";
 import { useOpenHref, useOpenOverlay } from "../../app-core/open";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { hrefOf, ov, to } from "../../routes/to";
@@ -278,9 +279,7 @@ export function TAX01({
             >
               <div className="flex flex-col gap-[6px] p-[12px] text-body text-ink-2">
                 <p>{COPY.draftK1Detail}</p>
-                <Tooltip content={COPY.openTxp12Tip}>
-                  <span className="font-medium text-ink">{COPY.openTxp12}</span>
-                </Tooltip>
+                <DraftK1Link returnId={r.id} />
               </div>
             </Popover>
           )}
@@ -601,6 +600,26 @@ export function TAX01({
         </div>
       )}
     </div>
+  );
+}
+
+/** The issuing return's K-1 package (TXP-12), read when the popover opens (DEC-88). */
+function DraftK1Link({ returnId }: { returnId: string }): JSX.Element {
+  const source = useDraftK1Source(returnId);
+  if (source === null) {
+    return (
+      <Tooltip content={COPY.openTxp12Tip}>
+        <span className="font-medium text-ink">{COPY.openTxp12}</span>
+      </Tooltip>
+    );
+  }
+  return (
+    <a
+      href={hrefOf(to.TXP12({ returnId: source }))}
+      className="font-medium text-ink hover:underline"
+    >
+      {COPY.openTxp12} ›
+    </a>
   );
 }
 

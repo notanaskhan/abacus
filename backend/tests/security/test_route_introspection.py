@@ -492,6 +492,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/portal/home", "portal_home.read"),
     ("GET", "/v1/portal/intake-uploads", "portal_intake.read_own"),
     ("GET", "/v1/portal/k1s", "portal_k1.read"),
+    ("GET", "/v1/portal/k1s/expected", "portal_k1.read"),
     ("GET", "/v1/portal/k1s/{package_id}", "portal_k1.read"),
     ("GET", "/v1/portal/k1s/{package_id}/attachments/{document_id}", "portal_k1.download"),
     ("GET", "/v1/portal/k1s/{package_id}/download", "portal_k1.download"),

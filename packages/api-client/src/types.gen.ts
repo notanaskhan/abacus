@@ -2162,6 +2162,100 @@ export type AttestBody = {
 };
 
 /**
+ * AttributeSampleSizesPayload
+ *
+ * A-03-T10 (ADR-340 §6; A-03 §4.1): the firm's attribute sample sizes ("BH-EBP-210 Table
+ * 2"). Firm content, loaded through the import; sampling reads it through `methodology.api`
+ * and computes the statistical cross-check beside it.
+ */
+export type AttributeSampleSizesPayloadInput = {
+    /**
+     * Confidence Pct
+     */
+    confidence_pct: number | string;
+    /**
+     * Kind
+     */
+    kind: 'attribute_sample_sizes';
+    /**
+     * Rows
+     */
+    rows: Array<AttributeSizeRowInput>;
+};
+
+/**
+ * AttributeSampleSizesPayload
+ *
+ * A-03-T10 (ADR-340 §6; A-03 §4.1): the firm's attribute sample sizes ("BH-EBP-210 Table
+ * 2"). Firm content, loaded through the import; sampling reads it through `methodology.api`
+ * and computes the statistical cross-check beside it.
+ */
+export type AttributeSampleSizesPayloadOutput = {
+    /**
+     * Confidence Pct
+     */
+    confidence_pct: string;
+    /**
+     * Kind
+     */
+    kind: 'attribute_sample_sizes';
+    /**
+     * Rows
+     */
+    rows: Array<AttributeSizeRowOutput>;
+};
+
+/**
+ * AttributeSizeRow
+ *
+ * One row of the size table: the sample size for a risk of material misstatement and a
+ * tolerable and expected deviation rate, at the table's confidence.
+ */
+export type AttributeSizeRowInput = {
+    /**
+     * Expected Pct
+     */
+    expected_pct: number | string;
+    /**
+     * Rmm
+     */
+    rmm: 'low' | 'moderate' | 'high';
+    /**
+     * Size
+     */
+    size: number;
+    /**
+     * Tolerable Pct
+     */
+    tolerable_pct: number | string;
+};
+
+/**
+ * AttributeSizeRow
+ *
+ * One row of the size table: the sample size for a risk of material misstatement and a
+ * tolerable and expected deviation rate, at the table's confidence.
+ */
+export type AttributeSizeRowOutput = {
+    /**
+     * Expected Pct
+     */
+    expected_pct: string;
+    /**
+     * Rmm
+     */
+    rmm: 'low' | 'moderate' | 'high';
+    /**
+     * Size
+     */
+    size: number;
+    /**
+     * Tolerable Pct
+     */
+    tolerable_pct: string;
+};
+
+/**
  * AuditActorOut
  *
  * The actor grammar's facts (INV-5): `person` and `support` name `person`; `via_agent` names
@@ -19264,6 +19358,26 @@ export type K1DependencyOut = {
 };
 
 /**
+ * K1DetailsChangeTagOut
+ *
+ * T-02-T25 (DV-10): a pending recipient-details change, the row's second line.
+ */
+export type K1DetailsChangeTagOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'w9' | 'w8' | 'address';
+    /**
+     * Submitted At
+     */
+    submitted_at: string;
+};
+
+/**
  * K1DocumentOut
  */
 export type K1DocumentOut = {
@@ -19290,14 +19404,68 @@ export type K1DocumentOut = {
 };
 
 /**
+ * K1HandoffOut
+ *
+ * T-02-T25: a draft shared to another return's intake (TXP-12's Internal handoff column).
+ * The target is named only to a reader of it (DEC-88); otherwise "Another return", no id.
+ */
+export type K1HandoffOut = {
+    /**
+     * Replaced At
+     */
+    replaced_at: string | null;
+    /**
+     * Shared At
+     */
+    shared_at: string;
+    /**
+     * Status
+     */
+    status: 'draft_shared' | 'final_replaced';
+    /**
+     * Target Form
+     */
+    target_form: string | null;
+    /**
+     * Target Name
+     */
+    target_name: string;
+    /**
+     * Target Return Id
+     */
+    target_return_id: string | null;
+};
+
+/**
  * K1HandoffStatus
  */
 export type K1HandoffStatus = 'awaiting' | 'received';
 
 /**
+ * K1MaskedTinOut
+ *
+ * A recipient's taxpayer ID, kind and last four only; the detail's, never a list row's
+ * (ADR-031).
+ */
+export type K1MaskedTinOut = {
+    /**
+     * Kind
+     */
+    kind: 'ssn' | 'ein' | 'itin';
+    /**
+     * Last4
+     */
+    last4?: string | null;
+};
+
+/**
  * K1PackageDetailOut
  */
 export type K1PackageDetailOut = {
+    /**
+     * Address On File
+     */
+    address_on_file?: boolean | null;
     /**
      * Documents
      */
@@ -19307,6 +19475,7 @@ export type K1PackageDetailOut = {
      */
     lines: Array<K1BoxLineOut>;
     package: K1PackageOut;
+    tin?: K1MaskedTinOut | null;
 };
 
 /**
@@ -19320,6 +19489,11 @@ export type K1PackageOut = {
      */
     allowed_actions: Array<string>;
     /**
+     * Delivery Contact Name
+     */
+    delivery_contact_name?: string | null;
+    details_change?: K1DetailsChangeTagOut | null;
+    /**
      * Documents
      */
     documents?: Array<K1DocumentOut>;
@@ -19328,13 +19502,37 @@ export type K1PackageOut = {
      */
     form: '1065' | '1120s' | '1041';
     /**
+     * Handoffs
+     */
+    handoffs?: Array<K1HandoffOut>;
+    /**
      * Id
      */
     id: string;
     /**
+     * Issuer Name
+     */
+    issuer_name?: string | null;
+    /**
      * K3 Status
      */
     k3_status: 'included' | 'not_required' | 'not_included';
+    /**
+     * Locality
+     */
+    locality?: string | null;
+    /**
+     * Ownership Note
+     */
+    ownership_note?: string | null;
+    /**
+     * Period End
+     */
+    period_end?: string | null;
+    /**
+     * Period Start
+     */
+    period_start?: string | null;
     /**
      * Recipient Id
      */
@@ -19348,6 +19546,10 @@ export type K1PackageOut = {
      */
     recipient_name: string;
     /**
+     * Related Returns
+     */
+    related_returns?: Array<K1RelatedReturnOut>;
+    /**
      * Released At
      */
     released_at: string | null;
@@ -19356,6 +19558,10 @@ export type K1PackageOut = {
      */
     state_codes: Array<string>;
     status: K1PackageStatus;
+    /**
+     * Supersedes Package Id
+     */
+    supersedes_package_id?: string | null;
     /**
      * Tax Year
      */
@@ -19372,6 +19578,31 @@ export type K1PackageOut = {
 export type K1PackageStatus = 'not_prepared' | 'draft' | 'released' | 'viewed' | 'downloaded' | 'bounced' | 'superseded';
 
 /**
+ * K1RelatedReturnOut
+ *
+ * T-02-T25: a return of the recipient's own client for the year, a share target. Offered
+ * only to a reader of both returns (DEC-88).
+ */
+export type K1RelatedReturnOut = {
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Form
+     */
+    form: string;
+    /**
+     * Return Id
+     */
+    return_id: string;
+    /**
+     * Status
+     */
+    status: string;
+};
+
+/**
  * K1ReleaseCheckOut
  *
  * Release eligibility: failing checks as codes, never prose.
@@ -19381,6 +19612,10 @@ export type K1ReleaseCheckOut = {
      * Eligible
      */
     eligible: boolean;
+    /**
+     * Email Template Version Id
+     */
+    email_template_version_id?: string | null;
     /**
      * Failing
      */
@@ -22856,6 +23091,10 @@ export type MaterialityRecordOut = {
      */
     allowed_actions: Array<'materiality.propose' | 'materiality.reassess' | 'decision.decide' | 'decision.notify' | 'risk.edit' | 'risk.link' | 'risk.route_for_approval' | 'fraud_session.edit' | 'fraud_minutes.approve' | 'control.edit' | 'deficiency.propose_severity' | 'exception.route' | 'service_org.edit' | 'soc_report.evaluate' | 'workpaper.draft'>;
     /**
+     * Benchmark Caption
+     */
+    benchmark_caption?: Array<string>;
+    /**
      * Benchmarks
      */
     benchmarks: Array<BenchmarkOut>;
@@ -22865,6 +23104,10 @@ export type MaterialityRecordOut = {
      */
     pending_card_id: string | null;
     /**
+     * Period End
+     */
+    period_end?: string | null;
+    /**
      * Policy Version Id
      */
     policy_version_id: string | null;
@@ -22872,6 +23115,10 @@ export type MaterialityRecordOut = {
      * Qualitative Factors
      */
     qualitative_factors: Array<QualitativeFactorOut>;
+    /**
+     * Specific Note
+     */
+    specific_note?: string | null;
     /**
      * Versions
      */
@@ -25742,6 +25989,35 @@ export type PortalHomeWorkCardOut = {
 export type PortalIntakeUploadStatus = 'sent' | 'received' | 'withdrawn';
 
 /**
+ * PortalK1ExpectedOut
+ *
+ * T-02-T27 (POR-13 b): a K-1 the person will receive, not released yet. No amounts, no
+ * documents, no package id.
+ */
+export type PortalK1ExpectedOut = {
+    /**
+     * Expected On
+     */
+    expected_on: string | null;
+    /**
+     * Form
+     */
+    form: '1065' | '1120s' | '1041';
+    /**
+     * Issuer Name
+     */
+    issuer_name: string;
+    /**
+     * K3 Status
+     */
+    k3_status: 'included' | 'not_required' | 'not_included';
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+};
+
+/**
  * PortalLinkRenewIn
  */
 export type PortalLinkRenewIn = {
@@ -26792,6 +27068,10 @@ export type PriorYearOut = {
      * Overall Used
      */
     overall_used: string | null;
+    /**
+     * Rate Used Pct
+     */
+    rate_used_pct?: string | null;
     /**
      * Year
      */
@@ -31543,6 +31823,30 @@ export type SampleItemOut = {
 };
 
 /**
+ * SampleSetCreatedOut
+ *
+ * `POST /v1/work-items/{wid}/sample-sets`: the new set, before its first draw (DEC-1662).
+ */
+export type SampleSetCreatedOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Program Step Key
+     */
+    program_step_key: string | null;
+    /**
+     * Purpose
+     */
+    purpose: string | null;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * SampleSetIn
  */
 export type SampleSetIn = {
@@ -34697,7 +35001,7 @@ export type StandardCreateIn = {
     /**
      * Kind
      */
-    kind: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence';
+    kind: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence' | 'attribute_sample_sizes';
     /**
      * Name
      */
@@ -34748,6 +35052,8 @@ export type StandardDraftPatchIn = {
     } & MaterialityRangesPayloadInput) | ({
         kind: 'document_confidence';
     } & DocumentConfidencePayloadInput) | ({
+        kind: 'attribute_sample_sizes';
+    } & AttributeSampleSizesPayloadInput) | ({
         kind: 'review_checklist';
     } & ReviewChecklistPayload) | ({
         kind: 'review_levels';
@@ -34901,7 +35207,7 @@ export type StandardOut = {
     /**
      * Kind
      */
-    kind: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence';
+    kind: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence' | 'attribute_sample_sizes';
     /**
      * Name
      */
@@ -35034,6 +35340,8 @@ export type StandardVersionOut = {
     } & MaterialityRangesPayloadOutput) | ({
         kind: 'document_confidence';
     } & DocumentConfidencePayloadOutput) | ({
+        kind: 'attribute_sample_sizes';
+    } & AttributeSampleSizesPayloadOutput) | ({
         kind: 'review_checklist';
     } & ReviewChecklistPayload) | ({
         kind: 'review_levels';
@@ -86294,6 +86602,55 @@ export type PortalK1sResponses = {
 
 export type PortalK1sResponse = PortalK1sResponses[keyof PortalK1sResponses];
 
+export type PortalK1sExpectedData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/portal/k1s/expected';
+};
+
+export type PortalK1sExpectedErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PortalK1sExpectedError = PortalK1sExpectedErrors[keyof PortalK1sExpectedErrors];
+
+export type PortalK1sExpectedResponses = {
+    /**
+     * Response Portal K1S Expected
+     *
+     * Successful Response
+     */
+    200: Array<PortalK1ExpectedOut>;
+};
+
+export type PortalK1sExpectedResponse = PortalK1sExpectedResponses[keyof PortalK1sExpectedResponses];
+
 export type PortalK1Data = {
     body?: never;
     headers?: {
@@ -89268,10 +89625,6 @@ export type SampleSetErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SampleSetError = SampleSetErrors[keyof SampleSetErrors];
@@ -89332,10 +89685,6 @@ export type SampleVersionCreateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SampleVersionCreateError = SampleVersionCreateErrors[keyof SampleVersionCreateErrors];
@@ -89396,10 +89745,6 @@ export type SampleSetApproveErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SampleSetApproveError = SampleSetApproveErrors[keyof SampleSetApproveErrors];
@@ -89456,10 +89801,6 @@ export type SampleDrawProgressErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SampleDrawProgressError = SampleDrawProgressErrors[keyof SampleDrawProgressErrors];
@@ -89513,13 +89854,13 @@ export type SampleSetExportErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SampleSetExportError = SampleSetExportErrors[keyof SampleSetExportErrors];
@@ -89719,10 +90060,6 @@ export type SampleItemsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SampleItemsError = SampleItemsErrors[keyof SampleItemsErrors];
@@ -90137,7 +90474,7 @@ export type ListStandardsData = {
         /**
          * Kind
          */
-        kind?: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence' | null;
+        kind?: 'review_checklist' | 'review_levels' | 'return_approval_policy' | 'ssars_cas_settings' | 'aje_thresholds' | 'variance_thresholds' | 'materiality_ranges' | 'document_confidence' | 'attribute_sample_sizes' | null;
     };
     url: '/v1/standards';
 };
@@ -93705,10 +94042,6 @@ export type SampleSetsListErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SampleSetsListError = SampleSetsListErrors[keyof SampleSetsListErrors];
@@ -93761,10 +94094,6 @@ export type SampleSetCreateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SampleSetCreateError = SampleSetCreateErrors[keyof SampleSetCreateErrors];
@@ -93773,7 +94102,7 @@ export type SampleSetCreateResponses = {
     /**
      * Successful Response
      */
-    201: SampleSetSummaryOut;
+    201: SampleSetCreatedOut;
 };
 
 export type SampleSetCreateResponse = SampleSetCreateResponses[keyof SampleSetCreateResponses];
