@@ -26,9 +26,11 @@ from abacus.modules.tax.due_dates import (
     set_extended,
 )
 from abacus.modules.tax.engine_contract import engine_router
+from abacus.modules.tax.engine_import import import_file as import_engine_file
 from abacus.modules.tax.engine_sync import register as register_engine_sync
 from abacus.modules.tax.k1_contract import k1_router, portal_k1_router
 from abacus.modules.tax.k1_packages import draft_k1_blockers, package_scope
+from abacus.modules.tax.k1_packages import share_internal as share_k1_internal
 from abacus.modules.tax.k1_release_workflow import (
     K1DeliveryInput,
     K1ReleaseFailure,
@@ -115,10 +117,12 @@ __all__ = [
     "TransitionRefused",
     "apply_transition",
     "final_approval_eligibility",
+    "import_engine_file",
     "next_status",
     "recompute_unfiled",
     "record_sync_state",
     "register_final_approval_blocker",
     "rule_texts",
     "set_extended",
+    "share_k1_internal",
 ]
