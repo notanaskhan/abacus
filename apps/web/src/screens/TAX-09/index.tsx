@@ -26,6 +26,7 @@ import {
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type JSX, useCallback, useEffect, useRef, useState } from "react";
 import { useNow } from "../../app-core/clock";
+import { useDraftK1Source } from "../../domain/tax";
 import type { OverlayRenderProps } from "../../app-core/overlays";
 import { hrefOf, to } from "../../routes/to";
 import { CAUSES, COPY, FIELDS } from "./copy";
@@ -306,6 +307,7 @@ export function TAX09({
   const now = useNow();
   const reduced = useReducedMotion();
   const sync = useQuery(engineSyncOptions({ path: { return_id: returnId } }));
+  const k1SourceOf = useDraftK1Source(returnId, sync.data?.draft_k1_source != null);
   const exporting = useMutation(exportReturnMutation());
   const marking = useMutation(markExportedMutation());
   const uploading = useMutation(uploadImportMutation());
@@ -356,6 +358,8 @@ export function TAX09({
     data.allowed_actions.includes("tax_return.export") &&
     blockers.length === 0 &&
     checkpoint !== null;
+  // T-02-T25: the draft K-1's issuing return opens its K-1 package (TXP-12), when readable.
+  const k1Source = data.draft_k1_source == null ? null : k1SourceOf;
   const blocked = COPY.blocked(
     data.approver_name ?? "",
     data.policy_code ?? "",
@@ -435,7 +439,17 @@ export function TAX09({
                 onClick={runExport}
               />
             ) : (
-              <Item icon="upload" title={COPY.exportTitle} body={blocked} disabled />
+              <>
+                <Item icon="upload" title={COPY.exportTitle} body={blocked} disabled />
+                {k1Source !== null && (
+                  <a
+                    href={hrefOf(to.TXP12({ returnId: k1Source }))}
+                    className="px-[12px] text-dense font-medium text-ink hover:underline"
+                  >
+                    {COPY.openK1Package} ›
+                  </a>
+                )}
+              </>
             )}
             <Item
               icon="cloud-download"
