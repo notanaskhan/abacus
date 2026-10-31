@@ -60,7 +60,7 @@ def tax_host_literals(root: Path) -> Iterator[tuple[Path, int, str]]:
         for node in ast.walk(tree):
             text = node.value if isinstance(node, ast.Constant) else None
             if isinstance(text, str) and _TAX_HOST.search(text):
-                yield path, node.lineno, text
+                yield path, getattr(node, "lineno", 0), text
 
 
 # --- NEVER-ERO-001 ------------------------------------------------------------------------------
