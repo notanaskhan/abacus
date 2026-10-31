@@ -15,6 +15,9 @@ const CheckpointDrawer = lazy(async () => ({
 const SignOffSheet = lazy(async () => ({
   default: (await import("../../screens/SHL-12")).SignOffSheet,
 }));
+const BulkSignOffSheet = lazy(async () => ({
+  default: (await import("../../screens/SHL-12")).BulkSignOffSheet,
+}));
 const DecisionSheet = lazy(async () => ({
   default: (await import("../../screens/SHL-11")).DecisionSheet,
 }));
@@ -48,6 +51,23 @@ export default function SheetsHost({ ref, close }: OverlayRenderProps): JSX.Elem
         <Suspense fallback={null}>
           <SignOffSheet
             target={{ type: id, id: targetId }}
+            {...(level === undefined ? {} : { level })}
+            open
+            onOpenChange={onOpenChange}
+          />
+        </Suspense>
+      </FeatureGate>
+    );
+  }
+  if (ref.key === "signoffs") {
+    const ids = (ref.args[1] ?? "").split(",").filter((t) => t !== "");
+    const level = ref.args[2];
+    if (ids.length === 0) return null;
+    return (
+      <FeatureGate flag="review.grammar_api">
+        <Suspense fallback={null}>
+          <BulkSignOffSheet
+            targets={ids.map((targetId) => ({ type: id, id: targetId }))}
             {...(level === undefined ? {} : { level })}
             open
             onOpenChange={onOpenChange}

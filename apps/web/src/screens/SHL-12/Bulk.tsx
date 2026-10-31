@@ -13,6 +13,7 @@ import { useSession } from "../../app-core/session";
 import {
   type SignOffLevel,
   type SignOffTarget,
+  levelOf,
   useBulkEligibility,
   useBulkSignOffWrite,
   useGate,
@@ -28,7 +29,8 @@ import { COPY } from "./copy";
 
 export interface BulkSignOffSheetProps {
   targets: readonly SignOffTarget[];
-  level: SignOffLevel;
+  /** "L2", "L2_reviewer" (the `?ov=` argument); the reviewer level when absent. */
+  level?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** The header's right ("Northwind · PY2025"). */
@@ -83,7 +85,7 @@ const shortHash = (h: string): string => {
 
 export function BulkSignOffSheet({
   targets,
-  level,
+  level: asked,
   open,
   onOpenChange,
   meta,
@@ -91,6 +93,7 @@ export function BulkSignOffSheet({
   onSigned,
 }: BulkSignOffSheetProps): JSX.Element {
   const session = useSession();
+  const level: SignOffLevel = levelOf(asked) ?? "L2_reviewer";
   const reads = useBulkEligibility(targets, level);
   const loaded = reads.every((r) => r.data !== undefined);
   const rows = reads.flatMap((r) => (r.data === undefined ? [] : [rowOf(r.data)]));
