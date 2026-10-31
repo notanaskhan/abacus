@@ -43,7 +43,13 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.evidence.api import version_content
-from abacus.modules.identity.api import AuthContext, portal_scopes
+from abacus.modules.identity.api import (
+    AuthContext,
+    Forbidden,
+    authorise_with_scope,
+    engagement_resource,
+    portal_scopes,
+)
 from abacus.modules.organisations.api import client_record, contacts_of_user
 from abacus.modules.tax import k1_packages as k1
 
@@ -115,11 +121,31 @@ async def _mine(ctx: AuthContext) -> dict[UUID, UUID]:
     return {cast(UUID, r.id): cast(UUID, r.work_item_id) for r in rows}
 
 
-async def _own(ctx: AuthContext, package_id: UUID) -> UUID:
-    """The issuing return of one of the person's released packages, or 404."""
+async def _authorised(ctx: AuthContext, return_id: UUID, action: str) -> bool:
+    """`action` on the issuing return (`scope_only`, INV-4), the check every portal K-1 read and
+    write records (review, S20d: the routes held none, so the route guard answered 500). A
+    `k1_recipient` grant holds no matrix cell (DEC-211), so the person's own grant on a package
+    of this return is the scope (`authorise_with_scope`, as the intake scope is); a full-client
+    grant on the return passes through the matrix. A refusal reads as absent."""
+    facts = await k1.package_return_scope(ctx.tenant, return_id)
+    if facts is None or facts.engagement_id is None:
+        return False
+    in_scope = return_id in set((await _mine(ctx)).values())
+    try:
+        base = await engagement_resource(ctx.tenant, facts.engagement_id)
+        await authorise_with_scope(
+            ctx, action, replace(base, work_item_id=return_id), in_scope=in_scope
+        )
+    except (Forbidden, NotFound):
+        return False
+    return True
+
+
+async def _own(ctx: AuthContext, package_id: UUID, action: str = READ) -> UUID:
+    """The issuing return of one of the person's released packages, under `action`; else 404."""
     _client(ctx)
     found = (await _mine(ctx)).get(package_id)
-    if found is None:
+    if found is None or not await _authorised(ctx, found, action):
         raise NotFound("k1_package")
     return found
 
@@ -196,9 +222,13 @@ async def packages(ctx: AuthContext) -> list[k1.PackageView]:
     """`GET /v1/portal/k1s`: the person's own released packages (no amounts and no TIN on a
     row)."""
     _client(ctx)
+    mine = await _mine(ctx)
+    allowed = [p for p, r in mine.items() if await _authorised(ctx, r, READ)]
+    if not allowed:
+        raise NotFound("portal_scope")  # no K-1 of theirs: nothing to list, nothing checked
     return [
         replace(v, tin_kind=None, tin_last4=None, address_on_file=None)
-        for v in await _views(ctx.tenant, list(await _mine(ctx)))
+        for v in await _views(ctx.tenant, allowed)
     ]
 
 
@@ -217,12 +247,13 @@ class Expected:
 async def expected(ctx: AuthContext) -> list[Expected]:
     """`GET /v1/portal/k1s/expected`: the recipients whose delivery contact (the package's, else
     the recipient's, as the release reads it) is one of the person's, and whose newest package is
-    not released yet. A recipient with a released package is in `packages`."""
+    not released yet, on a return the person's grants already reach (`scope_only`, INV-4). A
+    recipient with a released package is in `packages`; a person no grant covers gets 404."""
     _client(ctx)
     async with tenant_session(ctx.tenant) as session:
         contacts = await contacts_of_user(session, ctx.user_id)
         if not contacts:
-            return []
+            raise NotFound("portal_scope")
         rows = (
             await session.execute(
                 text(
@@ -237,7 +268,14 @@ async def expected(ctx: AuthContext) -> list[Expected]:
                 {"c": list(contacts)},
             )
         ).all()
-    waiting = [r for r in rows if r.status in ("draft", "not_prepared")]
+    covered = {r for r in (await _mine(ctx)).values() if await _authorised(ctx, r, READ)}
+    if not covered:
+        raise NotFound("portal_scope")  # no grant reaches any issuing return: nothing to name
+    waiting = [
+        r
+        for r in rows
+        if r.status in ("draft", "not_prepared") and cast(UUID, r.work_item_id) in covered
+    ]
     issuers = await _issuers(ctx.tenant, [cast(UUID, r.work_item_id) for r in waiting])
     return [
         Expected(
@@ -348,7 +386,7 @@ def deterministic_zip(files: Sequence[tuple[str, bytes]]) -> bytes:
 
 async def download(ctx: AuthContext, package_id: UUID) -> Download:
     """`GET /v1/portal/k1s/{id}/download`: every final document, one zip, an access event."""
-    return_id = await _own(ctx, package_id)
+    return_id = await _own(ctx, package_id, DOWNLOAD)
     _second_step(ctx)
     [view] = await _views(ctx.tenant, [package_id])
     docs = sorted(view.documents, key=lambda d: (_ORDER.get(d.kind, 9), d.jurisdiction or ""))
@@ -366,7 +404,7 @@ async def download(ctx: AuthContext, package_id: UUID) -> Download:
 
 async def one_document(ctx: AuthContext, package_id: UUID, document_id: UUID) -> Download:
     """`GET …/attachments/{doc}`: one final document, an access event."""
-    return_id = await _own(ctx, package_id)
+    return_id = await _own(ctx, package_id, DOWNLOAD)
     _second_step(ctx)
     [view] = await _views(ctx.tenant, [package_id])
     doc = next((d for d in view.documents if d.id == document_id), None)
@@ -410,7 +448,7 @@ async def submit_details_change(
             ),
             {"r": recipient_id, "ids": list(mine)},
         )
-    if owned is None:
+    if owned is None or not await _authorised(ctx, cast(UUID, owned), UPDATE):
         raise NotFound("k1_recipient")
     stored_address: dict[str, str] | None = None
     if kind == "address":
@@ -452,7 +490,7 @@ async def e_furnishing(
     ctx: AuthContext, package_id: UUID, decision: str, disclosure_version_id: UUID
 ) -> tuple[str, date]:
     """`POST …/e-furnishing-consent`: the recipient's consent or refusal, with the disclosure."""
-    return_id = await _own(ctx, package_id)
+    return_id = await _own(ctx, package_id, UPDATE)
     _second_step(ctx)
     if decision not in ("given", "declined"):
         raise DetailsChangeInvalid(facts={"field": "decision"})

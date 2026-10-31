@@ -60,4 +60,5 @@ Box amounts TRI; names and addresses confidential; TIN last four only.
 ## T-02-T27 additions (DEC-1576)
 - `K1PackageOut.issuer_name`: the issuing client's name (portal rows and details).
 - Portal `GET /v1/portal/k1s/{pid}`: `tin` (the recipient's own, masked) and `address_on_file`; a row carries neither.
-- `GET /v1/portal/k1s/expected` (`portal_k1.read`): `PortalK1ExpectedOut[]` (`issuer_name`, `form`, `tax_year`, `k3_status`, `expected_on`) for the recipients linked to the person's contacts whose newest package is not released yet. No amounts, documents or package id (POR-13 b).
+- `GET /v1/portal/k1s/expected` (`portal_k1.read`): `PortalK1ExpectedOut[]` (`issuer_name`, `form`, `tax_year`, `k3_status`, `expected_on`) for the recipients whose delivery contact is one of the person's and whose newest package is not released yet, on a return a grant of theirs already reaches. No amounts, documents or package id (POR-13 b).
+- DEC-1577: every portal K-1 route authorises its action on the issuing return (`authorise_with_scope`, the person's own `k1_recipient` grant as the scope); a person whose grants reach no issuing return gets 404 from the list and `expected`.
