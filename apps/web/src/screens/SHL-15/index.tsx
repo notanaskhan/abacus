@@ -23,7 +23,6 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { type JSX, type ReactNode, useId, useState } from "react";
 import { useOpenOverlay } from "../../app-core/open";
-import type { OverlayRef } from "../../app-core/overlays";
 import { useSession } from "../../app-core/session";
 import { useEngagementTeam } from "../../domain/engagements";
 import {
@@ -35,6 +34,7 @@ import {
   useProposal,
   useRecordIssues,
 } from "../../domain/review";
+import { ov } from "../../routes/to";
 import { COPY } from "./copy";
 
 // SHL-15 · Issue composer & fix instructions (P-04-T54; P-04 §3 F7; the handoff's SHL-15 folder):
@@ -57,8 +57,6 @@ import { COPY } from "./copy";
 // values as ghosts with Accept (SHL-10), d the agent's explanation with its citations. Agent text
 // renders through AgentText and carries no control; nothing here resolves, approves or edits a
 // value (INV-1).
-
-const SHL10 = (ref: string): OverlayRef => ({ key: "approve", args: [ref] });
 
 const kindWord = (kind: string): string => COPY.kinds[kind] ?? kind;
 const first = (name: string): string => name.split(" ")[0] ?? name;
@@ -834,7 +832,7 @@ function Proposed({ proposalId }: { proposalId: string }): JSX.Element | null {
             variant="ghost"
             aria-haspopup="dialog"
             onClick={() => {
-              openOverlay(SHL10(proposal.ref));
+              openOverlay(ov.SHL10(proposal.ref));
             }}
           >
             {COPY.accept}

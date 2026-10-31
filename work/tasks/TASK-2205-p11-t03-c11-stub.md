@@ -4,13 +4,13 @@ title: P-11-T03 C11 stub (DocBlocks, RenderRequest, GeneratedDocumentOut, FieldR
 spec: SPEC-520
 acceptance_criteria: [AC-31]
 risk_zone: amber
-status: in-review
+status: done
 epic: P-11
 plan_key: P-11-T03
 branch: s17-p11-t03
 worktree: /Users/ayushkbhatia/Accrued/abacus-s17
 created: 2026-10-29
-updated: 2026-10-29
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -42,6 +42,7 @@ Brightwater Hale seed (the Copperleaf engagement letter); the C7-style stub test
   client, actions), fixture handlers, `tests/contracts/c11_renderer/test_c11_stubs.py`,
   `reporting` marked landed in the pre-registration test, C11 doc and README. Tests run at the
   S17 end review.
+- 2026-11-01: merged to main in #745 (bd7b06d47).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |
