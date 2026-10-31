@@ -2,7 +2,7 @@
 id: TASK-2813
 title: A-05-T07 Northwind EBP scenario slice 1
 spec: SPEC-640
-acceptance_criteria: [AC-1]
+acceptance_criteria: [AC-5]
 risk_zone: amber
 status: in-review
 epic: A-05
