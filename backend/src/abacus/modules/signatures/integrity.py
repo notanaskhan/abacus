@@ -124,11 +124,11 @@ def legible_page(
                 content_hash=digest,
             )
         )
-    except RenderingRefused as refused:
-        _log.warning("signatures.legible_copy_refused", code=refused.code)
+    except RenderingRefused:
+        _log.warning("signatures.legible_copy_refused")
         return None
     except (OSError, ImportError):  # the renderer's libraries are missing on this host
-        _log.warning("signatures.legible_copy_refused", code="renderer_unavailable")
+        _log.warning("signatures.legible_copy_refused", reason="renderer_unavailable")
         return None
     return out.pdf
 
