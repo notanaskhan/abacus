@@ -30,6 +30,12 @@ preview toggle; baselines (the PNGs are never committed).
 
 ## Progress log
 - `2026-10-31` — built; tsc, eslint, prettier clean. The visual project (ABACUS_VISUAL=1, handoff dir) runs at the S22 end review; any frame over Tier B there gets a mask or a recorded deviation.
+- `2026-10-31` — S22 end review: Tier D found T10 c–e clause rows at 47 then 35 (the kit stacked
+  the reason under the label, and the kit Toggle is 22 high, not the spec's 20); the row now holds
+  the label and the 12.5 ink-3 reason on one line at `py-[5px]`, 34 high as T10 spec.md says.
+  The T10 d e2e matched the sr-only twin of its note (`.first()`); prettier on DECISIONS.md. Tier
+  D 19/19, the specimen e2e 21/21, the kit 309/309. Tier A/B parity needs the cropped baselines
+  (not on this machine) and runs in CI's visual job.
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

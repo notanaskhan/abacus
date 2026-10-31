@@ -65,7 +65,8 @@ test("test_t22_t10c_approved_letter_shows_who_and_no_approve", async ({ page }) 
 
 test("test_t22_t10d_locked_letter_says_why_and_edits_nothing", async ({ page }) => {
   await board(page, "d");
-  await expect(page.getByText("Out for signature since Sep 10")).toBeVisible();
+  // The visible note; its sr-only twin describes the disabled controls.
+  await expect(page.getByText("Out for signature since Sep 10").first()).toBeVisible();
   await expect(page.locator("[data-document='clauses'] [role='switch']").first()).toBeDisabled();
   await axeStep(page, "f06-document-on-well T10d", { include: "[data-artboard]" });
   await assertInvariants(page, { step: "f06-document-on-well T10d", persona: SAMUEL });
