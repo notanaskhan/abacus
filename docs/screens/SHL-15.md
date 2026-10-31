@@ -34,6 +34,12 @@ Code: `src/domain/review/issues.ts`, `src/screens/SHL-15/{index.tsx, copy.ts, sc
 | write | `POST /v1/issues/{id}/fix-instructions`, `POST /v1/issues/fix-instructions:bulk` | 409 `fix_runner_unavailable` → agents-off |
 | read | `GET /v1/proposals/{ref}` | a″'s proposed values; Accept opens SHL-10 |
 
+## Links
+| From | To (manifest builder) | Planned or live |
+|---|---|---|
+| "Review" / Accept on the proposed value (a″) | SHL-10 `ov.approve(proposalRef)` | live (P-04) |
+| A cited value | SHL-08 `useOpenSourceViewer` with the cited region lit | live (P-03) |
+
 ## Deviations
 | ID | What differs from the handoff | Why | Decision |
 |---|---|---|---|
