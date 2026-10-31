@@ -125,6 +125,9 @@ export const COPY = {
     confirm: (n: number) => `Share ${String(n)} draft${n === 1 ? "" : "s"}`,
     none: "No related returns in the firm for these recipients.",
     done: (n: number) => `${String(n)} draft${n === 1 ? "" : "s"} shared`,
+    partial: (n: number) =>
+      `${String(n)} draft${n === 1 ? "" : "s"} shared; the rest were refused. Check the rows.`,
+    failed: "The drafts weren't shared. Try again.",
   },
   release: {
     title: "Release K-1s",
