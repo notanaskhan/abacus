@@ -224,6 +224,13 @@ import {
   scenarios as aud03Scenarios,
 } from "./AUD-03/scenarios";
 import { AUD06Frame } from "./AUD-06/artboard";
+import { AUD31 } from "./AUD-31";
+import {
+  type Aud31State,
+  GRANITE_MAPPING_ENGAGEMENT,
+  STATES as AUD31_STATES,
+  scenarios as aud31Scenarios,
+} from "./AUD-31/scenarios";
 import { AUD11Frame } from "./AUD-11/artboard";
 import {
   type Aud11State,
@@ -2068,6 +2075,32 @@ function Shl15Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("SHL-15", { title: "Issue composer & fix instructions", Component: Shl15Artboard });
+
+// AUD-31 (A-03-T12): Granite Peak's single-entity mapping, f at parity and the composed a′–e′, in
+// the Focus layout under the firm toolbar.
+function Aud31Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Aud31State = AUD31_STATES.find((s) => s === params.st) ?? "f";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      aud31Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div key={state} data-artboard={state} className="flex h-[860px] w-[1400px] flex-col">
+      <AUD31 engagementId={GRANITE_MAPPING_ENGAGEMENT} height={860} />
+    </div>
+  );
+}
+
+registerScreen("AUD-31", { title: "Trial balance mapping", Component: Aud31Artboard });
 
 // SHL-12 (P-04-T48): the sign-off sheet a, b, c, d, e, g, h over an empty frame; a′ is the frame
 // after signing: the sheet closed, the header's "✓ MD ✓ HL" and the toast.
