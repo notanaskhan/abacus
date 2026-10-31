@@ -43,7 +43,7 @@ _TABLES = (
     "ebp_plans",
 )
 _INSERT_ONLY = ("ebp_provider_checks", "ebp_provision_conflicts")
-_PROVISION_KEY = "^[a-z][a-z0-9_]{0,63}$"
+_PROVISION_SHAPE = "^[a-z][a-z0-9_]{0,63}$"
 _INSERTS: dict[str, tuple[str, ...]] = {
     "ebp_plans": (
         "tenant_id",
@@ -262,7 +262,7 @@ def upgrade() -> None:
         CREATE TABLE ebp_provisions (
             id uuid PRIMARY KEY DEFAULT gen_random_uuid(),{_SCOPE}
             workpaper_version_id uuid NOT NULL,
-            provision_key text NOT NULL CHECK (provision_key ~ '{_PROVISION_KEY}'),
+            provision_key text NOT NULL CHECK (provision_key ~ '{_PROVISION_SHAPE}'),
             value jsonb NOT NULL,
             reference text NULL CHECK (char_length(reference) <= 300),
             citation_id uuid NULL,
