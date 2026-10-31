@@ -60,6 +60,7 @@ from abacus.modules.identity.api import (
 from abacus.modules.integrations.api import engine_return_id, export_settings, write_capability
 from abacus.modules.review.api import current_checkpoint, current_values
 from abacus.modules.tax import engine_repository as repo
+from abacus.modules.tax.engine_sync import ReadyToTransmit
 
 TARGET: Final = "tax_return"
 EXPORT: Final = "tax_return.export"
@@ -234,7 +235,7 @@ def export_id_for(return_id: UUID, checkpoint_id: UUID) -> UUID:
 
 _EXPORT_ROW = text(
     "SELECT id, return_id, checkpoint_id, file_name, sha256, generated_at, marked_exported_at, "
-    "row_version, file_key, file_version, file_size, engine_return_id, version "
+    "row_version, file_key, file_version, file_size, engine_return_id, version, generated_by "
     "FROM engine_exports WHERE id = :id"
 )
 
@@ -407,19 +408,19 @@ async def export_return(ctx: AuthContext, return_id: UUID, checkpoint_id: UUID) 
     return _view(found)
 
 
-async def _owned(ctx: AuthContext, export_id: UUID) -> repo.TextRow:
+async def _owned(ctx: AuthContext, export_id: UUID) -> tuple[repo.TextRow, UUID]:
     _person(ctx)
     row = await _export_row(ctx.tenant, export_id)
     if row is None:
         raise NotFound("engine_export")
-    resource, _e, _c = await _resource(ctx, cast(UUID, row.return_id))
+    resource, engagement_id, _c = await _resource(ctx, cast(UUID, row.return_id))
     await authorise(ctx, EXPORT, resource)
-    return row
+    return row, engagement_id
 
 
 async def download(ctx: AuthContext, export_id: UUID) -> tuple[str, bytes]:
     """The workbook, fingerprint-checked on read, and an audit event naming who took it."""
-    row = await _owned(ctx, export_id)
+    row, _engagement_id = await _owned(ctx, export_id)
     content = await read_staged(
         ctx.tenant_id, row.file_key, row.file_version, row.sha256, int(row.file_size)
     )
@@ -434,7 +435,7 @@ async def download(ctx: AuthContext, export_id: UUID) -> tuple[str, bytes]:
 
 async def mark_exported(ctx: AuthContext, export_id: UUID, seen_version: int) -> ExportView:
     """A person confirms the file reached the engine: the chip reads Synced."""
-    row = await _owned(ctx, export_id)
+    row, engagement_id = await _owned(ctx, export_id)
     if row.marked_exported_at is not None:
         raise AlreadyMarked(facts={"export_id": str(export_id)})
     async with uow(ctx.tenant) as tx:
@@ -469,6 +470,15 @@ async def mark_exported(ctx: AuthContext, export_id: UUID, seen_version: int) ->
             "engine_export.marked_exported",
             target=Target(TARGET, row.return_id),
             after=Ref(export=export_id),
+        )
+        # T-01-T27: `ready_to_transmit` to whoever generated the file, if someone else marked it.
+        tx.emit(
+            ReadyToTransmit(
+                work_item_id=row.return_id,
+                engagement_id=engagement_id,
+                by_user=ctx.user_id,
+                recipient_user_ids=[row.generated_by],
+            )
         )
     found = await _export_row(ctx.tenant, export_id)
     if found is None:

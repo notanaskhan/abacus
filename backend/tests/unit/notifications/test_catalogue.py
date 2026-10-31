@@ -64,6 +64,11 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "sign_off.requested",  # P-04-T26 (`sign_off_requested`, to the people named)
         "issue.assigned",  # P-04-T26 (`issue_assigned`, to the assignee; P-04-T30 emits it)
         "checkpoint.created",  # P-04-T26 (`import_pending_approval`, an import's reviewers)
+        # T-01-T27 (DEC-1463): the tax engine bridge, to the people the producer names
+        "engine_sync.failed",
+        "tax_return.ready_to_transmit",
+        "tax_return.efile_relocked",
+        "engine_ack.rejected",
         "acceptance.sent_to_partner",  # P-07-T47 (C16 `acceptance_awaiting_partner`, to the EP)
         "acceptance.review_requested",  # P-07-T47 (`risk_partner_review_requested`)
         "independence.reminded",  # P-07-T47 (`independence_reminder`, to the member)
