@@ -23,6 +23,7 @@ TABLES: frozenset[str] = frozenset(
     | {"efile_amount_bindings"}  # T-01-T36 (0524, DEC-1566)
     | {"transmissions", "efile_acks"}  # T-01-T37 (0568, DEC-1570)
     | {"filed_return_deliveries"}  # T-01-T41 (0569, DEC-1571)
+    | {"k1_furnishing_disclosures"}  # S20e (0590, DEC-1579): the e-furnishing disclosure
 )
 # T-02-T07 (0403): `tax_returns` takes updates of its v1 columns now, so it is no longer
 # insert-only; its events and engine summaries are.
@@ -33,6 +34,7 @@ INSERT_ONLY: frozenset[str] = frozenset(
     | {"engine_acks"}  # T-01-T26 (0562): the e-file status report, as received
     | {"transmissions", "efile_acks"}  # T-01-T37 (0568): the ERO's record and the acks
     | {"filed_return_deliveries"}  # T-01-T41 (0569): a release, never changed
+    | {"k1_furnishing_disclosures"}  # S20e (0590): a version, never changed
     | {"k1_package_events", "k1_documents", "k1_box_lines"}  # T-02-T20 (0565)
 )
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -123,6 +125,9 @@ INSERT_COLUMNS["efile_acks"] = frozenset(
 INSERT_COLUMNS["filed_return_deliveries"] = frozenset(
     {"id", "tenant_id", "return_id", "engagement_id", "client_id", "packet_id"}
     | {"evidence_version_id", "published_by", "actor_kind"}
+)
+INSERT_COLUMNS["k1_furnishing_disclosures"] = frozenset(
+    {"id", "tenant_id", "version_no", "body", "body_sha256", "imported_by"}
 )
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     # T-01-T36 (0524): superseded once, never cleared (the system relocks, never unlocks).

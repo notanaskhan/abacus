@@ -554,6 +554,10 @@ codes:
     raised_by:
     - abacus.modules.tax.k1_portal.DetailsChangeInvalid
     summary: A W-9 or W-8 names the uploaded file; an address its structured fields (`facts.field`).
+  disclosure_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.k1_disclosures.DisclosureInvalid
   disclosure_outdated:
     status: 409
     raised_by:
@@ -617,6 +621,16 @@ codes:
     raised_by:
     - abacus.modules.evidence.uploads.DuplicateUpload
     summary: The same file (same SHA-256) is already on this item.
+  e_furnishing_consent_required:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.k1_disclosures.ConsentRequired
+    summary: A disclosure is published and the recipient has not consented on this package.
+  e_furnishing_declined:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.k1_disclosures.FurnishingDeclined
+    summary: 'The recipient declined electronic furnishing: the firm furnishes by its own channel.'
   edited_draft_refused:
     status: 422
     raised_by:
@@ -2289,6 +2303,11 @@ codes:
     raised_by:
     - abacus.modules.agents.stage_admin.StageNotReady
     summary: '`live` needs 50 shadow runs of the agent for the firm over 14 days (SPEC-036 Q1).'
+  stale_disclosure:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.k1_disclosures.StaleDisclosure
+    summary: 'The consent names a version that is not the newest: read the newest and decide again.'
   stale_version:
     status: 409
     raised_by:
