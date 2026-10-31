@@ -2987,6 +2987,18 @@ async def _k1_shared(conn: asyncpg.Connection, _: Scenario, event: Event) -> Non
     )
     if package is None:
         raise LookupError(f"no draft K-1 for {event.data['ref']}")
+    # The sharer is the issuing return's manager: team membership is scenario structure, seeded
+    # as the tax board seeds its preparer and reviewer (`k1_package.share_internal` is a
+    # manager's or partner's).
+    ret = next(r for r in RETURN_BY_LABEL.values() if r.client == k1_set.client)
+    async with as_tenant(conn, TENANT):
+        await conn.execute(
+            "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
+            "VALUES ($1, $2, $3, 'manager') ON CONFLICT DO NOTHING",
+            TENANT,
+            UUID(ENGAGEMENT_BY_LABEL[ret.engagement].id),
+            user_id_of(_SEATS[event.actor]),
+        )
     await share_k1_internal(
         await _staff_context(conn, event),
         item,

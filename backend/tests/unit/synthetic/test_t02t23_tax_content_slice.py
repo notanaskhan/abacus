@@ -48,7 +48,7 @@ def test_ac1_the_k1_sets_hold_five_two_and_two_recipients() -> None:
         "Pell Street II LLC",
         "Jonah Feld",
     ]
-    assert [ref for ref, _ in SHARES] == ["P05"]  # the Feld 1040 (Shah's waits, DEC-1477)
+    assert [ref for ref, _ in SHARES] == ["P02", "P05"]  # Shah and Feld 1040s
 
 
 def test_ac1_bluestem_foots_70_30_and_calloway_two_to_one() -> None:

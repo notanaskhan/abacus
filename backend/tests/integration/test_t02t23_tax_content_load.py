@@ -4,7 +4,7 @@ import and decision paths at E0.
 The row's acceptance: "Every POR-05, TXP-12 and POR-13 figure foots in seed tests and no content is
 loaded by a migration." Here the loaded tenant agrees with the slice's own figures: nine K-1
 packages (Ridgeline 5 drafts, Bluestem 2 finals, Calloway 2 drafts) whose recipients name their
-delivery contacts, Jonah Feld's Ridgeline draft shared with the Feld 1040, the organizer at 22
+delivery contacts, Ridgeline's two drafts shared with the Feld and Shah 1040s, the organizer at 22
 of 24 on the Feld 2025 return, Kevin's team question, Dana's four inquiries and Luis's two
 questions sent; Nora Calloway and the Pell Street member sign in as client users.
 The load gets its own database (the session's `migrated_db` holds other loads)."""
@@ -71,7 +71,7 @@ async def test_ac1_the_loaded_tenant_foots_to_the_slice(loaded: Database) -> Non
         "SELECT count(*) FROM k1_handoffs WHERE tenant_id = $1 AND status = 'draft_shared'",
         TENANT,
     )
-    assert shared == 1  # Jonah Feld's draft on the Feld 1040
+    assert shared == 2
     answered = await seed.value(
         "SELECT count(DISTINCT a.question_id) FROM answer_versions a JOIN questions x "
         "ON x.id = a.question_id JOIN questionnaires q ON q.id = x.questionnaire_id "
