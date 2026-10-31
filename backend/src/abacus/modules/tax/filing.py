@@ -377,9 +377,8 @@ async def recheck(tenant_id: UUID, return_id: UUID | None = None) -> list[UUID]:
                 await session.execute(
                     text(
                         "SELECT b.id, b.return_id, b.envelope_id, b.figures, r.tax_year, "
-                        "r.engagement_id, w.client_id FROM efile_amount_bindings b "
+                        "r.engagement_id FROM efile_amount_bindings b "
                         "JOIN tax_returns r ON r.work_item_id = b.return_id "
-                        "JOIN work_items w ON w.id = b.return_id "
                         "WHERE b.superseded_at IS NULL AND (CAST(:r AS uuid) IS NULL "
                         "OR b.return_id = :r)"
                     ),
@@ -420,10 +419,8 @@ async def recheck(tenant_id: UUID, return_id: UUID | None = None) -> list[UUID]:
                 "efile_binding.superseded",
                 target=Target(TARGET, cast(UUID, row["return_id"])),
                 after=Ref(binding=binding_id, tolerances=tolerances.reference_set_version_id),
-                scope=Scope(
-                    engagement_id=cast(UUID | None, row["engagement_id"]),
-                    client_id=cast(UUID, row["client_id"]),
-                ),
+                # The unit of work derives the client from the engagement (`placement`).
+                scope=Scope(engagement_id=cast(UUID | None, row["engagement_id"])),
             )
             tx.emit(
                 EfileRelocked(
