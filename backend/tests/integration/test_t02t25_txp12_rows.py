@@ -94,6 +94,15 @@ async def test_a_handoff_target_is_named_only_to_a_reader_of_it(board: Board) ->
         samuel, ridgeline, [uuid.UUID(cast(str, rows[0]["id"]))], [feld]
     )
     other = await board.person("Olivia Brandt", None)
+    # Walled from the Feld client: Feld's return is not hers to read (INV-3).
+    await board.seed.run(
+        "INSERT INTO ethical_walls (tenant_id, user_id, client_id, created_by) "
+        "VALUES ($1, $2, (SELECT client_id FROM work_items WHERE id = $3), $4)",
+        board.tenant,
+        other.user_id,
+        feld,
+        board.partner,
+    )
     await board.seed.run(
         "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) SELECT $1, "
         "engagement_id, $3, 'manager' FROM tax_returns WHERE work_item_id = $2",
@@ -106,7 +115,7 @@ async def test_a_handoff_target_is_named_only_to_a_reader_of_it(board: Board) ->
     assert handoff["target_return_id"] is None
     assert handoff["target_name"] == "Another return"
     assert handoff["target_form"] is None
-    assert "Feld" not in json.dumps(seen)
+    assert "Feld Household" not in json.dumps(seen)  # the recipient "Jonah Feld" is Ridgeline's
     assert seen[0]["related_returns"] == []
 
 
