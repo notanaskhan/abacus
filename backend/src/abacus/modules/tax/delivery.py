@@ -28,7 +28,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Final, Literal, cast
 from uuid import UUID, uuid4
 
-from sqlalchemy import CursorResult, RowMapping, text
+from sqlalchemy import CursorResult, RowMapping, TextClause, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.clock import today
@@ -266,15 +266,22 @@ def _items_json(items: tuple[Item, ...]) -> str:
     )
 
 
-_SELECT: Final = (
+_BY_ID: Final = text(
     "SELECT id, return_id, version, status, items, letter_document_id, approved_by, row_version "
-    "FROM delivery_packets "
+    "FROM delivery_packets WHERE id = :v"
+)
+_OPEN_FOR_RETURN: Final = text(
+    "SELECT id, return_id, version, status, items, letter_document_id, approved_by, row_version "
+    "FROM delivery_packets WHERE return_id = :v AND status <> 'superseded' "
+    "ORDER BY version DESC LIMIT 1"
 )
 
 
-async def _packet_row(tenant: TenantContext, where: str, value: UUID) -> RowMapping | None:
+async def _packet_row(
+    tenant: TenantContext, statement: TextClause, value: UUID
+) -> RowMapping | None:
     async with tenant_session(tenant) as session:
-        return (await session.execute(text(_SELECT + where), {"v": value})).mappings().first()
+        return (await session.execute(statement, {"v": value})).mappings().first()
 
 
 async def _packet_of(row: RowMapping) -> Packet:
@@ -293,18 +300,14 @@ async def _packet_of(row: RowMapping) -> Packet:
 
 
 async def _reread(ctx: AuthContext, packet_id: UUID) -> Packet:
-    row = await _packet_row(ctx.tenant, "WHERE id = :v", packet_id)
+    row = await _packet_row(ctx.tenant, _BY_ID, packet_id)
     if row is None:
         raise NotFound(PACKET)
     return await _packet_of(row)
 
 
 async def _open(tenant: TenantContext, return_id: UUID) -> RowMapping | None:
-    return await _packet_row(
-        tenant,
-        "WHERE return_id = :v AND status <> 'superseded' ORDER BY version DESC LIMIT 1",
-        return_id,
-    )
+    return await _packet_row(tenant, _OPEN_FOR_RETURN, return_id)
 
 
 async def delivery(ctx: AuthContext, return_id: UUID) -> Delivery:
@@ -532,7 +535,7 @@ async def assemble(ctx: AuthContext, return_id: UUID) -> Packet:
 
 async def _draft_for(ctx: AuthContext, packet_id: UUID, action: str) -> tuple[RowMapping, _Return]:
     _person(ctx, action)
-    row = await _packet_row(ctx.tenant, "WHERE id = :v", packet_id)
+    row = await _packet_row(ctx.tenant, _BY_ID, packet_id)
     if row is None:
         raise NotFound(PACKET)
     return_id = cast(UUID, row["return_id"])
@@ -543,16 +546,26 @@ async def _draft_for(ctx: AuthContext, packet_id: UUID, action: str) -> tuple[Ro
     return row, facts
 
 
+_SET_ITEMS: Final = text(
+    "UPDATE delivery_packets SET items = CAST(:items AS jsonb), row_version = row_version + 1 "
+    "WHERE id = :id AND row_version = :seen AND status = 'draft'"
+)
+_SET_LETTER: Final = text(
+    "UPDATE delivery_packets SET letter_document_id = :d, row_version = row_version + 1 "
+    "WHERE id = :id AND row_version = :seen AND status = 'draft'"
+)
+_SET_APPROVED: Final = text(
+    "UPDATE delivery_packets SET status = 'approved', approved_by = :by, "
+    "approved_at = abacus_now(), row_version = row_version + 1 "
+    "WHERE id = :id AND row_version = :seen AND status = 'draft'"
+)
+
+
 async def _bump(
-    session: AsyncSession, packet_id: UUID, seen: int, sets: str, **params: object
+    session: AsyncSession, packet_id: UUID, seen: int, statement: TextClause, **params: object
 ) -> None:
-    moved = await session.execute(
-        text(
-            f"UPDATE delivery_packets SET {sets}, row_version = row_version + 1 "  # noqa: S608 -- fixed column lists
-            "WHERE id = :id AND row_version = :seen AND status = 'draft'"
-        ),
-        {"id": packet_id, "seen": seen, **params},
-    )
+    """One of the fixed updates, on the draft at the version seen (409 `stale_version`)."""
+    moved = await session.execute(statement, {"id": packet_id, "seen": seen, **params})
     if cast(CursorResult[object], moved).rowcount != 1:
         raise StaleVersion(facts={"packet_id": str(packet_id)})
 
@@ -574,7 +587,7 @@ async def toggle(
             tx.session,
             packet_id,
             seen_version,
-            "items = CAST(:items AS jsonb)",
+            _SET_ITEMS,
             items=_items_json(changed),
         )
         tx.record(
@@ -596,7 +609,7 @@ async def regenerate_letter(ctx: AuthContext, packet_id: UUID, seen_version: int
         document_id = await _render_letter(
             tx, ctx, packet_id, facts, letter_values, template_version
         )
-        await _bump(tx.session, packet_id, seen_version, "letter_document_id = :d", d=document_id)
+        await _bump(tx.session, packet_id, seen_version, _SET_LETTER, d=document_id)
         tx.record(
             "delivery_packet.letter_regenerated",
             target=Target(PACKET, packet_id),
@@ -614,7 +627,7 @@ async def approve(ctx: AuthContext, packet_id: UUID, seen_version: int) -> Packe
             tx.session,
             packet_id,
             seen_version,
-            "status = 'approved', approved_by = :by, approved_at = abacus_now()",
+            _SET_APPROVED,
             by=ctx.user_id,
         )
         tx.record(
