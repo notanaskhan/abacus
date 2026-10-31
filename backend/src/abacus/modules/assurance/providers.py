@@ -24,6 +24,7 @@ from uuid import UUID
 
 from sqlalchemy import Row, select
 
+from abacus.kernel._statuses import AuditSectionStatus
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.modules.assurance.sections import (
@@ -37,6 +38,8 @@ from abacus.modules.assurance.sections import (
 from abacus.modules.engagements.api import assurance_index, letters_sent, version_detail
 from abacus.modules.identity.api import EQR_ROLES, engagement_team_query, names_of
 from abacus.modules.requests.api import pbc_counts_of
+from abacus.modules.sampling.api import AUDIT_SECTION as SAMPLE_SECTION
+from abacus.modules.sampling.api import section_state as sample_section_state
 
 # Team row order (AUD-02 "MO · TW · HL · MD · AC"): partner, quality reviewer, manager, senior,
 # staff.
@@ -167,6 +170,12 @@ async def activity_row(tenant: TenantContext, work_item_id: UUID) -> SectionStat
     return SectionState(None, "link")
 
 
+async def sample_selection_row(tenant: TenantContext, work_item_id: UUID) -> SectionState | None:
+    """A-03-T10: Fieldwork, Sample Selection, its state by code from sampling."""
+    state, line = await sample_section_state(tenant, work_item_id)
+    return SectionState(AuditSectionStatus(state), "idle_pill", sub_line=line)
+
+
 # --- Index tags ---------------------------------------------------------------------------------
 
 
@@ -233,6 +242,17 @@ def register() -> None:
             required_action=needs,
             action_scope="firm" if needs else "engagement",
         )
+    # A-03-T10: sampling declares its Fieldwork row (P-39: sampling cannot import assurance).
+    register_audit_section(
+        str(SAMPLE_SECTION["key"]),
+        "fieldwork",
+        int(SAMPLE_SECTION["order"]),
+        str(SAMPLE_SECTION["route"]),
+        sample_selection_row,
+        title=str(SAMPLE_SECTION["title"]),
+        link="live",
+        required_action=str(SAMPLE_SECTION["required_action"]),
+    )
     register_index_tag("letter_sent", letter_sent_tags, "metadata")
     register_index_tag("eqr", eqr_tags, "metadata")
     register_index_tag("no_report", no_report_tags, "metadata")

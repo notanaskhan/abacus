@@ -151,3 +151,15 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         }
     ),
 }
+
+# A-03-T10 (A-03 §4.1; P-39): the Fieldwork, Sample Selection rail row (AUD-02). Sampling cannot
+# import assurance, so the row is declared here and assurance registers it at boot with
+# `sampling.api.section_state` as its state.
+AUDIT_SECTION: dict[str, str | int] = {
+    "key": "sample_selection",
+    "band": "fieldwork",
+    "order": 30,
+    "route": "AUD-11",
+    "title": "Sample Selection",
+    "required_action": "sample_set.read",
+}
