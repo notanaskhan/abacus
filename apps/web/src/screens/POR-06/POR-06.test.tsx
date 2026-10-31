@@ -1,4 +1,4 @@
-// POR-06 · Sign, part 1 (N-02-T26; SPEC-381 AC-10, AC-12; docs/screens/POR-06.md). One test per
+// POR-06 · Sign, parts 1 and 2 (N-02-T26, N-02-T29; SPEC-381 AC-10 to AC-12; docs/screens/POR-06.md). One test per
 // artboard on its fixture scenario at 1400 and 390, and the task's acceptance: "Scenario tests for
 // a, b, c and g pass at 1400 and 390, and Completed never renders from a return parameter alone."
 // Pages come into view through a stubbed IntersectionObserver (jsdom has none); the provider's
@@ -194,6 +194,136 @@ describe.each(WIDTHS)("POR-06 at %s", (_width, mobile) => {
   });
 });
 
+// N-02-T29 (SPEC-381 AC-11; DF-11, DF-12; DEC-1388): "Scenario tests for d, e, f and h pass, h
+// offers no retry".
+describe.each(WIDTHS)("POR-06 part 2 at %s", (_width, mobile) => {
+  it("test_ac11_d_identity_questions_run_in_the_providers_view", async () => {
+    vi.stubGlobal("IntersectionObserver", SeeEverything);
+    const seen = show("d", { mobile });
+    const go = await continueButton();
+    await waitFor(() => {
+      expect(go.disabled).toBe(false);
+    });
+    // No identity question is asked on the firm's page (DF-12): the provider asks them.
+    expect(screen.queryByText("Which street have you lived on?")).toBeNull();
+    fireEvent.click(go);
+    const consent = await screen.findByRole("region", { name: "Agree to sign electronically" });
+    fireEvent.click(
+      within(consent).getByRole("checkbox", {
+        name: "I agree to sign electronically and that my electronic signature is binding",
+      }),
+    );
+    fireEvent.click(within(consent).getByRole("button", { name: "Agree and continue" }));
+    const frame = await waitFor(() => {
+      const found = document.querySelector("[data-signing='provider-frame']");
+      expect(found).not.toBeNull();
+      return found as HTMLIFrameElement;
+    });
+    expect(frame.getAttribute("title")).toBe("Sign: Form 8879-PE — 2025 e-file authorization");
+    expect(seen.calls.some((c) => c.path.endsWith("/signing-session"))).toBe(true);
+  });
+
+  it("test_ac11_e_joint_filers_claire_signed_jonah_has_a_separate_link", async () => {
+    show("e", { mobile });
+    const card = await waitFor(() => {
+      const found = document.querySelector("[data-signing='completion']");
+      expect(found).not.toBeNull();
+      return found as HTMLElement;
+    });
+    expect(within(card).getByText("Signed. Thank you, Claire.")).toBeTruthy();
+    expect(
+      within(card).getByText(
+        "Each spouse verifies and signs separately. Jonah has a separate link.",
+      ),
+    ).toBeTruthy();
+    // The server's count: Claire, Jonah and the ERO.
+    expect(within(card).getByText("1 of 3 signed")).toBeTruthy();
+  });
+
+  it("test_ac11_f_the_letters_date_holds_signing_whatever_was_read", async () => {
+    vi.stubGlobal("IntersectionObserver", SeeEverything);
+    const seen = show("f", { mobile });
+    await screen.findByText(
+      "This letter is dated October 9, 2026 — the date of Brightwater Hale's report. Please sign on that date.",
+    );
+    await waitFor(() => {
+      expect(
+        seen.calls.some(
+          (c) =>
+            c.path.endsWith("/progress") &&
+            (c.body as { last_page_seen?: number }).last_page_seen === 2,
+        ),
+      ).toBe(true);
+    });
+    const go = await continueButton();
+    expect(go.disabled).toBe(true);
+    expect(go.getAttribute("aria-describedby")).toBe("por06-dated");
+    expect(seen.calls.some((c) => c.path.endsWith("/signing-session"))).toBe(false);
+  });
+
+  it("test_ac11_h_identity_check_failed_a_paper_form_and_no_retry", async () => {
+    const seen = show("h", { mobile });
+    await screen.findByText("We couldn't verify your identity.");
+    expect(screen.getByText("Brightwater Hale will send you a paper form to sign.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /try again|retry/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Continue to sign" })).toBeNull();
+    expect(screen.queryByText(/tries? left/i)).toBeNull();
+    expect(document.querySelector("[data-signing='provider-frame']")).toBeNull();
+    expect(seen.calls.some((c) => c.path.endsWith("/signing-session"))).toBe(false);
+  });
+});
+
+describe("POR-06 part 2 at 1400: the steps and signers", () => {
+  it("d: identity questions, the authorizing card, Daniel Reyes the ERO after Owen", async () => {
+    show("d");
+    const steps = await screen.findByRole("complementary", { name: "Steps" });
+    expect(within(steps).getByText("Identity questions", { selector: "span" })).toBeTruthy();
+    const card = within(steps).getByRole("region", { name: "Identity questions" });
+    expect(
+      within(card).getByText(
+        "IRS rules require identity verification before you sign an e-file authorization remotely. Questions come from public records; your answers aren't stored.",
+      ),
+    ).toBeTruthy();
+    const owen = document.querySelector("[data-signer-row]");
+    expect(owen?.textContent).toBe("Owen Calder (you) — To sign");
+    expect(screen.getByText(/ERO · Brightwater Hale/)).toBeTruthy();
+  });
+
+  it("e: a chip per spouse; Claire's with her signing date", async () => {
+    show("e");
+    await screen.findByText("Signed. Thank you, Claire.");
+    const rows = [...document.querySelectorAll("[data-signer-row]")].map((r) => r.textContent);
+    expect(rows).toEqual([
+      "Claire Feld (you) — Signed Oct 2, 9:10 AM",
+      "Jonah Feld — Separate link",
+      "Daniel Reyes — ERO · Brightwater Hale",
+    ]);
+  });
+
+  it("f: Sign opens on the letter's date, from the server", async () => {
+    show("f");
+    const steps = await screen.findByRole("complementary", { name: "Steps" });
+    expect(within(steps).getByText("Opens October 9, 2026")).toBeTruthy();
+  });
+
+  it("the steps for identity questions: Verify is the provider's, done once signed", () => {
+    const kba = { kba: true };
+    expect(stepsOf("review", 0, 1, kba).map((s) => s.state)).toEqual([
+      "todo",
+      "current",
+      "todo",
+      "todo",
+    ]);
+    expect(stepsOf("provider", 1, 1, kba).map((s) => s.state)).toEqual([
+      "current",
+      "done",
+      "todo",
+      "todo",
+    ]);
+    expect(stepsOf("signed", 1, 1, kba).every((s) => s.state === "done")).toBe(true);
+  });
+});
+
 describe("POR-06 decline (g) from review", () => {
   it("test_ac12_g_a_reason_is_required_and_sends_c7s_code", async () => {
     const seen = show("a");
@@ -264,6 +394,10 @@ describe("phases and steps", () => {
       paper_form_follows: false,
       signing_session: E13_SESSION,
       outcome: "signed",
+      family: "engagement_letter",
+      identity_method: "email_code",
+      signers: [],
+      signing_opens_on: null,
     };
     // A view that says "outcome: signed" while the signer is still viewed is not signed.
     expect(phaseOf({ ...base, row: { ...base.row } }, false)).toBe("provider");

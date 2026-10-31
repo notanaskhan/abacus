@@ -18,6 +18,11 @@ export const COPY = {
   stepSubs: {
     // The portal's own sign-in verified the person by email code (DF-11: letters and consents).
     verify: "Email code",
+    // N-02-T29 (POR-06d, DF-11, DF-12): the 8879 family verifies by identity questions, which the
+    // provider asks in its own view.
+    kba: "Identity questions",
+    // POR-06f: the server's date gate (`signing_opens_on`).
+    opens: (day: string): string => `Opens ${day}`,
     reviewing: (page: number, total: number): string => `Page ${String(page)} of ${String(total)}`,
     reviewed: (total: number): string => `${String(total)} ${total === 1 ? "page" : "pages"}`,
   },
@@ -60,6 +65,30 @@ export const COPY = {
   verifyFailedTitle: "We couldn't verify your identity.",
   verifyFailedBody: (firm: string): string => `${firm} will send you a paper form to sign.`,
   stepNames: { verify: "Verify", review: "Review", sign: "Sign", done: "Done" },
+  // N-02-T29, POR-06d: the authorizing card on an e-file authorization (handoff d's note under the
+  // identity questions; DF-12 moves the questions into the provider's view).
+  kbaCard: {
+    title: "Identity questions",
+    body: "IRS rules require identity verification before you sign an e-file authorization remotely. Questions come from public records; your answers aren't stored.",
+  },
+  // POR-06e: a joint return's other spouse signs with a link of their own. (DEC-1388: the
+  // handoff's "Jonah gets his own link." without the pronoun.)
+  separately: (other: string): string =>
+    `Each spouse verifies and signs separately. ${other} has a separate link.`,
+  // POR-06f: the dated letter's note. (DEC-1388: the handoff's "we'll send a reminder that
+  // morning" is left out; no reminder is scheduled on the letter's date.)
+  datedNote: (day: string, firm: string): string =>
+    `This letter is dated ${day} — the date of ${firm}'s report. Please sign on that date.`,
+  // (DEC-1388) the signers card's lines: the server's status and role in client words.
+  signer: {
+    signed: (when: string): string => `Signed ${when}`,
+    toSign: "To sign",
+    separate: "Separate link",
+    ero: (firm: string): string => `ERO · ${firm}`,
+    countersigns: (firm: string): string => `Countersigns · ${firm}`,
+    declined: "Declined",
+    paperForm: "Needs a handwritten signature",
+  },
   signOut: "Sign out",
   userMenu: "Account",
 } as const;

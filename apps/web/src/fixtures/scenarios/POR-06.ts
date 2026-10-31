@@ -4,6 +4,10 @@
 // provider completed (the server says signed: the completion card); `pending` the return before
 // it has (never Completed); g declined (Withdraw decline); `restricted` a person who is not a signer
 // (every read 404); `list` the Sign area's list.
+//
+// N-02-T29: d Owen's Form 8879-PE (identity questions in the provider's view); e the Feld joint
+// 8879 as Claire sees it after signing (Jonah signs with his own link); f Dana's representation
+// letter before its date (the server holds signing until Oct 9); h DF-11, identity check failed.
 
 import type { PortalEnvelopeView } from "@abacus/api-client";
 import { type Scenario, defineScenarios } from "../../app-core/fixture-mode";
@@ -13,7 +17,19 @@ import {
   E13_ID,
   E13_SESSION,
   E13_VIEW,
+  E14_FAILED_VIEW,
+  E14_ID,
+  E14_VIEW,
+  E15_ID,
+  E15_VIEW,
+  E16_ID,
+  E16_VIEW,
   POR06_CLOCK,
+  POR06_D_CLOCK,
+  POR06_E_CLOCK,
+  POR06_E_PERSONA,
+  POR06_F_CLOCK,
+  POR06_F_PERSONA,
   POR06_PERSONA,
   POR06_SIGNED_CLOCK,
 } from "../seed/portal-envelopes";
@@ -34,9 +50,14 @@ const DECLINED: PortalEnvelopeView = {
   outcome: "declined",
 };
 
-const at = (state: string, options: PortalEnvelopeOptions, clock = POR06_CLOCK): Scenario => ({
+const at = (
+  state: string,
+  options: PortalEnvelopeOptions,
+  clock = POR06_CLOCK,
+  persona = POR06_PERSONA,
+): Scenario => ({
   state,
-  persona: POR06_PERSONA,
+  persona,
   clock,
   handlers: { ...portalHandlers({ clock }), ...portalEnvelopeHandlers(options) },
 });
@@ -46,7 +67,11 @@ const BUILD = {
   b: () => at("b", { view: IN_PROVIDER }),
   c: () => at("c", { view: IN_PROVIDER, signs: true }, POR06_SIGNED_CLOCK),
   pending: () => at("pending", { view: IN_PROVIDER }),
+  d: () => at("d", { view: E14_VIEW }, POR06_D_CLOCK),
+  e: () => at("e", { view: E15_VIEW, signedRows: [] }, POR06_E_CLOCK, POR06_E_PERSONA),
+  f: () => at("f", { view: E16_VIEW, signedRows: [] }, POR06_F_CLOCK, POR06_F_PERSONA),
   g: () => at("g", { view: DECLINED }),
+  h: () => at("h", { view: E14_FAILED_VIEW }),
   restricted: () => at("restricted", { restricted: true }),
   list: () => at("list", {}),
 } as const;
@@ -58,7 +83,11 @@ export const scenarios = defineScenarios({
   b: BUILD.b(),
   c: BUILD.c(),
   pending: BUILD.pending(),
+  d: BUILD.d(),
+  e: BUILD.e(),
+  f: BUILD.f(),
   g: BUILD.g(),
+  h: BUILD.h(),
   restricted: BUILD.restricted(),
   list: BUILD.list(),
 });
@@ -76,7 +105,11 @@ export const ARTBOARD: Readonly<Record<Por06State, Por06Artboard>> = {
   b: ENVELOPE,
   c: RETURN,
   pending: RETURN,
+  d: { page: "envelope", envelopeId: E14_ID },
+  e: { page: "envelope", envelopeId: E15_ID },
+  f: { page: "envelope", envelopeId: E16_ID },
   g: ENVELOPE,
+  h: { page: "envelope", envelopeId: E14_ID },
   restricted: ENVELOPE,
   list: { page: "list" },
 };

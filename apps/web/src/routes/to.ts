@@ -81,6 +81,11 @@ export const ov = {
     key: "signoff",
     args: level === undefined ? [type, id] : [type, id, level],
   }),
+  /** SHL-14, the request composer drawer over its host (`?ov=request:<id|new>:<binderId>`). */
+  SHL14: (requestId: string, binderId: string): OverlayRef => ({
+    key: "request",
+    args: [requestId, binderId],
+  }),
   /** TAX-09, a return's tax-engine sync over TAX-01 or TAX-02 (`?ov=engine-sync:<returnId>`). */
   TAX09: (returnId: string): OverlayRef => ({ key: "engine-sync", args: [returnId] }),
 } as const;
