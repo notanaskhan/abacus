@@ -37,6 +37,7 @@ from abacus.modules.identity.api import (
     AuthContext,
     current_context,
     current_member,
+    mask_tins_for,
 )
 from abacus.modules.tax import k1_packages as k1
 from abacus.modules.tax import k1_portal, k1_release
@@ -387,20 +388,24 @@ async def list_k1_packages_route(
 async def k1_package_route(package_id: PackageId, ctx: Ctx) -> K1PackageDetailOut:
     await _gate(ctx)
     p = await k1.package(ctx, package_id)
-    return K1PackageDetailOut(
-        package=_package_out(p),
-        lines=[
-            K1BoxLineOut(
-                document_kind=cast(DocumentKind, line.document_kind),
-                box_code=line.box_code,
-                description=line.description,
-                amount=line.amount,
-                is_total=line.is_total,
-            )
-            for line in p.lines
-        ],
-        documents=[_doc_out(d) for d in p.documents],
-        tin=_tin_out(p),
+    # The masked TIN reaches an offshore reader null (DEC-52; AC9.4): the one central mask.
+    return await mask_tins_for(
+        ctx,
+        K1PackageDetailOut(
+            package=_package_out(p),
+            lines=[
+                K1BoxLineOut(
+                    document_kind=cast(DocumentKind, line.document_kind),
+                    box_code=line.box_code,
+                    description=line.description,
+                    amount=line.amount,
+                    is_total=line.is_total,
+                )
+                for line in p.lines
+            ],
+            documents=[_doc_out(d) for d in p.documents],
+            tin=_tin_out(p),
+        ),
     )
 
 
@@ -593,19 +598,22 @@ async def portal_k1_route(package_id: PackageId, ctx: Member) -> K1PackageDetail
     """The statement with its box lines (TRI, the second step); the first read is Viewed."""
     await _portal_gate(ctx)
     p = await k1_portal.package(ctx, package_id)
-    return K1PackageDetailOut(
-        package=_package_out(p),
-        lines=[
-            K1BoxLineOut(
-                document_kind=cast(DocumentKind, line.document_kind),
-                box_code=line.box_code,
-                description=line.description,
-                amount=line.amount,
-                is_total=line.is_total,
-            )
-            for line in p.lines
-        ],
-        documents=[_doc_out(d) for d in p.documents],
+    return await mask_tins_for(
+        ctx,
+        K1PackageDetailOut(
+            package=_package_out(p),
+            lines=[
+                K1BoxLineOut(
+                    document_kind=cast(DocumentKind, line.document_kind),
+                    box_code=line.box_code,
+                    description=line.description,
+                    amount=line.amount,
+                    is_total=line.is_total,
+                )
+                for line in p.lines
+            ],
+            documents=[_doc_out(d) for d in p.documents],
+        ),
     )
 
 
