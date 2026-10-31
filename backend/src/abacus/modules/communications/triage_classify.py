@@ -8,7 +8,8 @@ classification. An attachment of an unmatched thread is classified, but the clie
 (duplicate of a filed version, wrong year, TIN, replacement) wait for a client: a later run
 (after Match client) adds them.
 
-Destination candidates come from the matcher (N-01-T22, S17); until it proposes, there are none
+Destination candidates come from the matcher (N-01-T22): a classified attachment of a known client
+emits `inbox_attachment.matchable`, which starts its intake mode. Until it proposes there are none
 and `ambiguous_candidates` never fires.
 """
 
@@ -23,6 +24,7 @@ from temporalio import activity
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.uow import Ref, Target, uow
+from abacus.modules.communications.events import InboxAttachmentMatchable
 from abacus.modules.communications.triage_flags import (
     CHECKER_VERSION,
     FlagFacts,
@@ -150,6 +152,9 @@ async def attachment_classified(given: TriageInput) -> int:
                 run_no=run_no, classification_id=classified.classification_id, flags=len(flags)
             ),
         )
+        # N-01-T22: a classified attachment of a known client may be matched to a destination.
+        if row.client_id is not None:
+            tx.emit(InboxAttachmentMatchable(attachment_id=attachment_id, client_id=row.client_id))
     return len(flags)
 
 
