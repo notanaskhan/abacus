@@ -797,7 +797,7 @@ function Expanded({ pkg }: { pkg: K1PackageOut }): JSX.Element {
     `${/^[0-9]/.test(code) ? `Box ${code}` : label} ${amount(value, "whole").text}`;
   return (
     <div className="flex flex-col gap-[8px] px-[46px] py-[12px] text-dense text-ink-2">
-      {tin != null && (
+      {tin?.last4 != null && (
         <p>
           <span className="text-ink-3">{COPY.expanded.tin} </span>
           {tin.kind === "ein" ? einMask(tin.last4) : ssnMask(tin.last4)}

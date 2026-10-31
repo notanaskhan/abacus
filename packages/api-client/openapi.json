@@ -40973,16 +40973,22 @@
             "type": "string"
           },
           "last4": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9]{4}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "cls": "restricted",
-            "pattern": "^[0-9]{4}$",
             "title": "Last4",
-            "type": "string",
             "x-pii-kind": "tin"
           }
         },
         "required": [
-          "kind",
-          "last4"
+          "kind"
         ],
         "title": "K1MaskedTinOut",
         "type": "object"

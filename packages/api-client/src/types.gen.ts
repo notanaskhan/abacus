@@ -19361,7 +19361,7 @@ export type K1MaskedTinOut = {
     /**
      * Last4
      */
-    last4: string;
+    last4?: string | null;
 };
 
 /**
