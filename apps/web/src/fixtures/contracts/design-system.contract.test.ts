@@ -33,12 +33,15 @@ import type {
   ListPageIssueItemOut,
   ListPageK1PackageOut,
   ListPageKnowledgeItemOut,
+  ListPageMappingSetSummaryOut,
   ListPagePortalEnvelopeRow,
   ListPageReferenceSetOut,
   ListPageReferenceSetVersionOut,
   ListPageReportTemplateOut,
   ListPageReviewNoteItemOut,
   ListPageReviewQueueItemOut,
+  ListPageSampleItemOut,
+  ListPageSampleSetSummaryOut,
   ListPageStandardOut,
   ListPageTaxReturnRowOut,
   ListPageWallEventOut,
@@ -128,12 +131,15 @@ const LIST_PAGES = {
   ListPage_IssueItemOut_: (p: ListPageIssueItemOut) => envelope(p),
   ListPage_K1PackageOut_: (p: ListPageK1PackageOut) => envelope(p), // T-02: TXP-12
   ListPage_KnowledgeItemOut_: (p: ListPageKnowledgeItemOut) => envelope(p), // K-01: KNW-01
+  ListPage_MappingSetSummaryOut_: (p: ListPageMappingSetSummaryOut) => envelope(p), // A-03: AUD-31
   ListPage_PortalEnvelopeRow_: (p: ListPagePortalEnvelopeRow) => envelope(p), // N-02: POR-06
   ListPage_ReferenceSetOut_: (p: ListPageReferenceSetOut) => envelope(p), // K-02: KNW-04
   ListPage_ReferenceSetVersionOut_: (p: ListPageReferenceSetVersionOut) => envelope(p), // K-02: KNW-04
   ListPage_ReportTemplateOut_: (p: ListPageReportTemplateOut) => envelope(p), // P-11: C11 templates
   ListPage_ReviewNoteItemOut_: (p: ListPageReviewNoteItemOut) => envelope(p),
   ListPage_ReviewQueueItemOut_: (p: ListPageReviewQueueItemOut) => envelope(p), // K-01: KNW-01
+  ListPage_SampleItemOut_: (p: ListPageSampleItemOut) => envelope(p), // A-03: AUD-11
+  ListPage_SampleSetSummaryOut_: (p: ListPageSampleSetSummaryOut) => envelope(p), // A-03: AUD-11
   ListPage_StandardOut_: (p: ListPageStandardOut) => envelope(p), // K-02: KNW-04
   ListPage_TaxReturnRowOut_: (p: ListPageTaxReturnRowOut) => envelope(p), // T-02: TAX-01
   ListPage_WallEventOut_: (p: ListPageWallEventOut) => envelope(p), // G-01-T02

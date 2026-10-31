@@ -16,9 +16,17 @@ actions:
   report.release:           {engagement_partner: allow, agent: deny, independence: required}   # G8; the server re-checks G5-G7 in the same unit. A-07 adds fresh MFA with the step-up flow
   archive.lock:             {engagement_partner: allow, manager: allow, agent: deny, independence: required}   # G9; afterwards the engagement is archived and read-only
   # --- Account mapping and draft statements (SPEC-316; TASK-345; A-03) ---
-  grouping_set.import:      {firm_admin: allow, practice_leader: allow, quality_partner: allow}   # firm content through the import endpoint (never seeded); lists versions too
-  grouping_set.publish:     {practice_leader: allow, quality_partner: allow, mfa_recent: required}   # a draft with no problems; frozen once published
-  mapping_set.edit:         {engagement_partner: allow, manager: allow, senior: allow, agent: deny, independence: required}   # start the mapping and map accounts; the agent's suggestions arrive with A-09
+  grouping_set.import:      {firm_admin: allow, practice_leader: allow, quality_partner: allow, agent: deny, system: deny}   # firm content through the import endpoint (never seeded); lists versions too
+  grouping_set.publish:     {practice_leader: allow, quality_partner: allow, agent: deny, system: deny, mfa_recent: required}   # a draft with no problems; frozen once published; human only (published_actor_kind)
+  mapping_set.edit:         {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny, independence: required}   # live v0 routes (SPEC-316): start the mapping and map accounts; A-03-T08 moves them to mapping_set.run and account_mapping.edit (DEC-1550)
+  # --- C9 v2 taxonomy and mapping (A-03 §4.3, §4.7; A-03-T01, DEC-1550; ADR-341) ---
+  # Routes live here because ledger has none (Q-15). Every write: agent, support and portal deny;
+  # the system holds only mapping_set.run (the trial_balance.version_created subscriber's start).
+  grouping_set.read:        {firm_admin: allow, practice_leader: allow, quality_partner: allow, security_admin: allow, firm_partner: allow, firm_manager: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, specialist: allow, client_service: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: task_scope, system: deny}   # catalogue and picker (Recently used is the viewer's own)
+  mapping_set.read:         {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, specialist: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: task_scope, system: deny, independence: required}   # rows, tallies, run progress, mapped trial balance
+  mapping_set.run:          {engagement_partner: allow, manager: allow, senior: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: allow, independence: required}   # start or re-run the rules; the system only as the subscriber's dispatch on adoption
+  mapping_set.confirm:      {engagement_partner: allow, manager: allow, senior: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny, independence: required}   # L1 Prepared through review.api; DB CHECK confirmed_actor_kind = 'human'
+  account_mapping.edit:     {engagement_partner: allow, manager: allow, senior: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny, independence: required}   # one account's FS line, insert-only edit (ADR-341 §5)
   # --- The engagement dashboard (SPEC-317; TASK-346; K-04 ENG-12) ---
   dashboard.read:           {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, independence: required}   # team members only; client and agent principals deny
   # --- Audits cockpit, record mode (A-01 §4.4; A-01-T02 stub, DEC-261) ---

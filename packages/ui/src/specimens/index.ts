@@ -114,7 +114,13 @@ import { T8Specimen } from "./t8";
 import { Tpl08Specimen } from "./tpl08";
 import { Tpl09Specimen } from "./tpl09";
 import { T5Specimen, Tpl05Specimen } from "./t5";
-import { FieldRowsSpecimen, GridSpecimen, LeadsheetSpecimen, VirtualGridSpecimen } from "./data-3";
+import {
+  CalcTreeSpecimen,
+  FieldRowsSpecimen,
+  GridSpecimen,
+  LeadsheetSpecimen,
+  VirtualGridSpecimen,
+} from "./data-3";
 import { SectionBandSpecimen, SourceDocsSpecimen, WorkpaperPaneSpecimen } from "./workpaper";
 
 // The specimen registry behind the /components gallery (SPEC-048, F-05-T09). This entry is
@@ -410,6 +416,7 @@ export const SPECIMENS: readonly Specimen[] = [
   { id: "c-01-account-tree", kit: "C-01", title: "AccountTree", Component: AccountTreeSpecimen },
   // DataTable grammars 3 (F-05-T52): grid, leadsheet, field rows, virtualisation
   { id: "c-01-grid", kit: "C-01", title: "Grid grammar", Component: GridSpecimen },
+  { id: "c-01-calc-tree", kit: "C-01", title: "Calc tree", Component: CalcTreeSpecimen },
   { id: "c-01-leadsheet", kit: "C-01", title: "Leadsheet grammar", Component: LeadsheetSpecimen },
   { id: "c-01-fields", kit: "C-01", title: "Field rows", Component: FieldRowsSpecimen },
   { id: "c-01-virtual", kit: "C-01", title: "Virtualisation", Component: VirtualGridSpecimen },

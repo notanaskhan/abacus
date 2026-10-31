@@ -1581,7 +1581,9 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     "collaboration": _BASE | {"engagements"},
     "signatures": _BASE | {"engagements", "organisations", "evidence"},
     # SPEC-037 (TASK-083): populations and selection are pure functions over ledger snapshots.
-    "sampling": _BASE | {"engagements", "ledger", "evidence"},
+    # A-03-T01 (DEC-1550; A-03 §4.1): + methodology (the size table), review (approval as an L2
+    # sign-off) and requests (the item-request fan-out); none of them imports sampling.
+    "sampling": _BASE | {"engagements", "ledger", "evidence", "methodology", "review", "requests"},
     "connections": _BASE | {"engagements", "organisations", "ledger", "evidence", "requests"},
     # The outbound scope checker reads each owner's facts through its API (SPEC-006, TASK-021 D2).
     # SPEC-032 (TASK-062 D1): it registers itself as the check on comments shared with a client.
@@ -2247,6 +2249,9 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/backfill/test_t01t08_consents.py",
             # K-02-T09: 0400's privileges read from the catalog as the owner and tried as the app.
             "tests/integration/backfill/test_k02t09_reference_sets_independent.py",
+            # A-03-T05/T06: the schema tests of 0520 and 0521 act as the app.
+            "tests/integration/backfill/test_a03t05_sampling_tables.py",
+            "tests/integration/backfill/test_a03t06_taxonomy_db.py",
             # K-02-T05: the platform reference sets (global, definer-guarded) are seeded as the
             # owner role; the service under test then reads them as the app role.
             "tests/integration/test_k02t05_reference_set_service.py",
@@ -2446,6 +2451,9 @@ RULES: list[Rule | TreeRule] = [
             # K-02-T04, T-01-T08: the schema tests of 0401 and 0402 act as the app.
             "tests/integration/backfill/test_k02t04_firm_standards.py",
             "tests/integration/backfill/test_t01t08_consents.py",
+            # A-03-T05/T06: the schema tests of 0520 and 0521 act as the app.
+            "tests/integration/backfill/test_a03t05_sampling_tables.py",
+            "tests/integration/backfill/test_a03t06_taxonomy_db.py",
             "tests/integration/test_tenancy.py",
             # P-04-T05: `Seeder.as_actor` drives the database's own actor and clock checks.
             "tests/integration/agent_tests/support.py",

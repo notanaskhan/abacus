@@ -11,33 +11,42 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Sequence
+from datetime import date
 from typing import Annotated, ClassVar, Final
 from uuid import UUID
 
 from sqlalchemy.exc import IntegrityError
 
 from abacus.kernel.classification import classified
+from abacus.kernel.clock import today
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import DomainConflict, NotFound
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import DomainEvent, Ref, Scope, Target, uow
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.engagements.api import get_ref, lock_ref, prior_engagement_of
 from abacus.modules.identity.api import AuthContext, Resource, authorise
 from abacus.modules.ledger.api import (
+    GroupingView,
     MappingView,
     Statements,
     VersionView,
     create_mapping_set,
     edit_mappings,
     engagement_trial_balances,
+    grouping_catalogue,
     grouping_set_versions,
+    grouping_version_id,
     import_grouping_set,
+    import_parsed_grouping_set,
     mapping_set_authors,
     mapping_set_of,
     mapping_view,
+    parse_grouping_set,
+    parse_grouping_workbook,
     prior_keys,
     publish_version,
     published_versions,
+    recently_used,
     statements_for,
 )
 from abacus.modules.review.api import Reviewable, ReviewableFacts, record_sign_off, stale_of
@@ -84,12 +93,63 @@ async def import_csv(ctx: AuthContext, key: str, name: str, text: str) -> UUID:
         )
 
 
-async def publish(ctx: AuthContext, version_id: UUID) -> None:
+async def publish(ctx: AuthContext, version_id: UUID, effective_from: date | None = None) -> None:
+    """A person publishes with fresh MFA (the matrix) and an effective date; v0's callers send
+    none and the firm's business date is used (A-03-T06, DEC-1556)."""
     async with uow(ctx.tenant) as tx:
         await authorise(ctx, "grouping_set.publish", Resource.firm(ctx.tenant_id))
         await publish_version(
-            tx, version_id=version_id, user_id=ctx.user_id, actor_kind=ctx.tenant.actor_kind
+            tx,
+            version_id=version_id,
+            user_id=ctx.user_id,
+            actor_kind=ctx.tenant.actor_kind,
+            effective_from=effective_from or await today(ctx.tenant),
         )
+
+
+async def import_file(
+    ctx: AuthContext, key: str, name: str, content: bytes, media_type: str
+) -> UUID:
+    """C9 v2 import (A-03-T06): an XLSX workbook (three sheets) or a CSV, as a raw body, into a
+    draft with its problems by sheet, row and code."""
+    if media_type.startswith(XLSX):
+        parsed = parse_grouping_workbook(content)
+    else:
+        try:
+            text = content.decode("utf-8-sig")
+        except UnicodeDecodeError as error:
+            raise GroupingFileInvalid("encoding") from error
+        parsed = parse_grouping_set(text)
+    async with uow(ctx.tenant) as tx:
+        await authorise(ctx, "grouping_set.import", Resource.firm(ctx.tenant_id))
+        return await import_parsed_grouping_set(
+            tx, tenant_id=ctx.tenant_id, key=key, name=name, parsed=parsed, user_id=ctx.user_id
+        )
+
+
+class GroupingFileInvalid(DomainInvalid):
+    code = "import_invalid"
+
+
+XLSX: Final = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+
+async def catalogue(ctx: AuthContext) -> list[VersionView]:
+    """Every firm role reads the catalogue (`grouping_set.read`; the taxonomy is firm content)."""
+    await authorise(ctx, "grouping_set.read", Resource.firm(ctx.tenant_id))
+    return await grouping_set_versions(ctx.tenant)
+
+
+async def picker(
+    ctx: AuthContext, set_id: UUID, version_no: int
+) -> tuple[UUID, list[GroupingView], list[UUID]]:
+    """A version's groupings and the person's own Recently used FS lines (INV-3)."""
+    await authorise(ctx, "grouping_set.read", Resource.firm(ctx.tenant_id))
+    version_id = await grouping_version_id(ctx.tenant, set_id, version_no)
+    if version_id is None:
+        raise NotFound("grouping_set_version")
+    views = await grouping_catalogue(ctx.tenant, version_id)
+    return version_id, views, await recently_used(ctx.tenant, version_id, ctx.user_id)
 
 
 async def mapping_for(

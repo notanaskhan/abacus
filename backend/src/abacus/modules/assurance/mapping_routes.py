@@ -3,18 +3,20 @@
 from __future__ import annotations
 
 from dataclasses import asdict
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import Depends
+from fastapi import Depends, Query, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
+from abacus.kernel.errors import DomainTooLarge
 from abacus.modules.assurance.mapping import (
     edit,
     import_csv,
+    import_file,
     mapping_for,
     publish,
     sign_mapping,
@@ -30,6 +32,13 @@ router = AbacusRouter(
     prefix="/v1/engagements/{engagement_id}/trial-balances/{tb_id}", tags=["mapping"]
 )
 Ctx = Annotated[AuthContext, Depends(current_context)]
+MAX_IMPORT_BYTES = 2_000_000
+
+
+class GroupingFileTooLarge(DomainTooLarge):
+    code = "file_too_large"
+
+
 Class = Literal["assets", "liabilities", "equity", "revenue", "expenses"]
 
 
@@ -39,6 +48,7 @@ class GroupingProblemOut(BaseModel):
     row: Annotated[int, classified("internal")]
     code: Annotated[str, classified("internal")]
     detail: Annotated[str, classified("internal")]
+    sheet: Annotated[str, classified("internal")] = ""  # A-03-T06: a workbook's sheet
 
 
 class GroupingVersionOut(BaseModel):
@@ -48,10 +58,11 @@ class GroupingVersionOut(BaseModel):
     set_key: Annotated[str, classified("internal")]
     set_name: Annotated[str, classified("internal")]
     version: Annotated[int, classified("internal")]
-    status: Annotated[Literal["draft", "published"], classified("internal")]
+    status: Annotated[Literal["draft", "published", "discarded"], classified("internal")]
     problems: Annotated[list[GroupingProblemOut], classified("internal")]
     created_at: Annotated[datetime, classified("internal")]
     published_at: Annotated[datetime | None, classified("internal")]
+    effective_from: Annotated[date | None, classified("internal")] = None  # A-03-T06 (0521)
 
 
 class GroupingImportBody(BaseModel):
@@ -221,14 +232,45 @@ async def import_grouping_set_route(
 
 
 @firm_router.post(
+    "/imports/file",
+    action="grouping_set.import",
+    response_model=list[GroupingVersionOut],
+    status_code=201,
+    errors=(413,),
+)
+async def import_grouping_file_route(
+    request: Request,
+    ctx: Ctx,
+    key: Annotated[str, Query(pattern=r"^[a-z0-9][a-z0-9_-]{0,39}$")],
+    name: Annotated[str, Query(min_length=1, max_length=120)],
+) -> list[GroupingVersionOut]:
+    """C9 v2 (A-03-T06): the firm's taxonomy as a raw XLSX workbook (Groupings, FS lines, Number
+    ranges) or CSV body; problems by sheet, row and code; the set's earlier draft is discarded."""
+    content = await request.body()
+    if len(content) > MAX_IMPORT_BYTES:
+        raise GroupingFileTooLarge(str(MAX_IMPORT_BYTES))
+    await import_file(ctx, key, name, content, request.headers.get("content-type", ""))
+    return [_version_out(v) for v in await versions(ctx)]
+
+
+class PublishBody(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    effective_from: Annotated[date | None, classified("internal")] = None
+
+
+@firm_router.post(
     "/versions/{version_id}/publish",
     action="grouping_set.publish",
     response_model=list[GroupingVersionOut],
     status_code=201,
 )
-async def publish_grouping_set_route(version_id: UUID, ctx: Ctx) -> list[GroupingVersionOut]:
-    """SPEC-316 AC-2: publish a draft with no problems."""
-    await publish(ctx, version_id)
+async def publish_grouping_set_route(
+    version_id: UUID, ctx: Ctx, body: PublishBody | None = None
+) -> list[GroupingVersionOut]:
+    """SPEC-316 AC-2: publish a draft with no problems; A-03-T06 adds the effective date (the
+    firm's business date when none is sent) and refuses a discarded draft (409)."""
+    await publish(ctx, version_id, body.effective_from if body else None)
     return [_version_out(v) for v in await versions(ctx)]
 
 

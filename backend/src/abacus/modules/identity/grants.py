@@ -59,6 +59,11 @@ _CONSUME = text(
     "WHERE id = :id AND used_at IS NULL AND voided_at IS NULL AND payload_sha256 = :digest "
     "AND abacus_now() >= not_before AND abacus_now() < expires_at RETURNING id"
 )
+_SPENT = text(
+    "SELECT approver_user_id FROM approval_grants WHERE subject_type = :subject_type "
+    "AND subject_id = :subject_id AND action = :action AND used_at IS NOT NULL "
+    "AND voided_at IS NULL ORDER BY used_at DESC LIMIT 1"
+)
 _VOID = text(
     "UPDATE approval_grants SET voided_at = abacus_now() "
     "WHERE id = :id AND used_at IS NULL AND voided_at IS NULL RETURNING id"
@@ -182,3 +187,19 @@ async def consume_grant(
     async with tenant_session(system) as session:
         again = (await session.execute(_READ, {"id": grant_id})).first()
     return again is not None and again.consumer_ref == consumer_ref
+
+
+async def consumed_grant_approver(tenant_id: UUID, subject: Target, action: str) -> UUID | None:
+    """N-02-T22 (DEC-1284): the approver of the newest grant for `action` on `subject` that the
+    single gate consumed (and nobody voided), or None. An effect's own worker asks this before it
+    writes outside the firm, so a workflow started any other way finds no grant and writes
+    nothing."""
+    system = TenantContext(tenant_id, "system", f"approval_grant:{subject.type}:{subject.id}")
+    async with tenant_session(system) as session:
+        found = (
+            await session.execute(
+                _SPENT,
+                {"subject_type": subject.type, "subject_id": subject.id, "action": action},
+            )
+        ).scalar_one_or_none()
+    return cast(UUID | None, found)
