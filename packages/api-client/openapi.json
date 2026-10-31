@@ -14391,6 +14391,30 @@
             "cls": "internal",
             "title": "Envelope Id"
           },
+          "fees": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LetterFeesOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
+          },
+          "generated_document_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Generated Document Id"
+          },
           "mode": {
             "cls": "internal",
             "enum": [
@@ -14399,6 +14423,12 @@
             ],
             "title": "Mode",
             "type": "string"
+          },
+          "redline_count": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Redline Count",
+            "type": "integer"
           },
           "status": {
             "$ref": "#/components/schemas/LetterStatus",
@@ -26810,6 +26840,32 @@
         "title": "FactSeg",
         "type": "object"
       },
+      "FeeLineIn": {
+        "additionalProperties": false,
+        "description": "One part of the fee (`$6,500 for the section 754 work`).",
+        "properties": {
+          "amount_cents": {
+            "cls": "confidential",
+            "maximum": 10000000000.0,
+            "minimum": 0.0,
+            "title": "Amount Cents",
+            "type": "integer"
+          },
+          "label": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "amount_cents"
+        ],
+        "title": "FeeLineIn",
+        "type": "object"
+      },
       "FieldEditIn": {
         "additionalProperties": false,
         "description": "`PUT \u2026/value`: a person's edit. The citation note is required (the `fvv_human_edits_cite`\nCHECK); a stale `seen_seq` answers 409 `field_changed`.",
@@ -35833,6 +35889,58 @@
         "title": "InformationReturnThresholdsPayload",
         "type": "object"
       },
+      "InstallmentIn": {
+        "additionalProperties": false,
+        "description": "One billing installment as a share of the fee, in basis points (5000 is 50%).",
+        "properties": {
+          "label": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "share_bp": {
+            "cls": "confidential",
+            "maximum": 10000.0,
+            "minimum": 1.0,
+            "title": "Share Bp",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "label",
+          "share_bp"
+        ],
+        "title": "InstallmentIn",
+        "type": "object"
+      },
+      "InstallmentOut": {
+        "properties": {
+          "amount_cents": {
+            "cls": "confidential",
+            "title": "Amount Cents",
+            "type": "integer"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "share_bp": {
+            "cls": "confidential",
+            "title": "Share Bp",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "label",
+          "share_bp",
+          "amount_cents"
+        ],
+        "title": "InstallmentOut",
+        "type": "object"
+      },
       "IntakeCategoryOut": {
         "properties": {
           "key": {
@@ -40204,6 +40312,12 @@
             "title": "Key",
             "type": "string"
           },
+          "non_standard": {
+            "cls": "internal",
+            "default": false,
+            "title": "Non Standard",
+            "type": "boolean"
+          },
           "state": {
             "cls": "internal",
             "enum": [
@@ -40278,6 +40392,10 @@
             "title": "Clause States",
             "type": "object"
           },
+          "fees": {
+            "$ref": "#/components/schemas/LetterFeesIn",
+            "cls": "confidential"
+          },
           "section_overrides": {
             "additionalProperties": {
               "maxLength": 4000,
@@ -40296,6 +40414,8 @@
           },
           "variables": {
             "additionalProperties": {
+              "maxLength": 500,
+              "minLength": 1,
               "type": "string"
             },
             "cls": "confidential",
@@ -40306,9 +40426,113 @@
         "required": [
           "template_version_id",
           "clause_states",
-          "variables"
+          "variables",
+          "fees"
         ],
         "title": "LetterDraftIn",
+        "type": "object"
+      },
+      "LetterFeesIn": {
+        "additionalProperties": false,
+        "description": "The fee terms a person sets in Draft; every total is computed by code (ADR-050).",
+        "properties": {
+          "basis": {
+            "cls": "internal",
+            "default": "fixed",
+            "enum": [
+              "fixed",
+              "estimate"
+            ],
+            "title": "Basis",
+            "type": "string"
+          },
+          "installments": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/InstallmentIn"
+            },
+            "maxItems": 12,
+            "title": "Installments",
+            "type": "array"
+          },
+          "lines": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/FeeLineIn"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Lines",
+            "type": "array"
+          },
+          "third_party": {
+            "cls": "confidential",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ThirdPartyFeeIn"
+            },
+            "maxItems": 5,
+            "title": "Third Party",
+            "type": "array"
+          }
+        },
+        "required": [
+          "lines"
+        ],
+        "title": "LetterFeesIn",
+        "type": "object"
+      },
+      "LetterFeesOut": {
+        "description": "The computed fee: the lines, their total, each installment's amount (the last carries the\nrounding remainder) and the third-party fees shown beside it, not added.",
+        "properties": {
+          "basis": {
+            "cls": "internal",
+            "enum": [
+              "fixed",
+              "estimate"
+            ],
+            "title": "Basis",
+            "type": "string"
+          },
+          "installments": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/InstallmentOut"
+            },
+            "title": "Installments",
+            "type": "array"
+          },
+          "lines": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/FeeLineIn"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "third_party": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/ThirdPartyFeeOut"
+            },
+            "title": "Third Party",
+            "type": "array"
+          },
+          "total_cents": {
+            "cls": "confidential",
+            "title": "Total Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "basis",
+          "lines",
+          "total_cents",
+          "installments",
+          "third_party"
+        ],
+        "title": "LetterFeesOut",
         "type": "object"
       },
       "LetterPolicyIn": {
@@ -40478,18 +40702,31 @@
         "type": "string"
       },
       "LetterVariable": {
-        "description": "A typed variable from facts; a person may override it with plain text.",
+        "description": "A typed variable from facts; a person may override it with plain text. Fee and billing\nvalues are computed by code and never overridden (`source` \"computed\").",
         "properties": {
           "key": {
             "cls": "internal",
             "title": "Key",
             "type": "string"
           },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reason"
+          },
           "source": {
             "cls": "internal",
             "enum": [
               "facts",
-              "override"
+              "override",
+              "computed"
             ],
             "title": "Source",
             "type": "string"
@@ -73105,6 +73342,59 @@
           "text"
         ],
         "title": "TextSeg",
+        "type": "object"
+      },
+      "ThirdPartyFeeIn": {
+        "additionalProperties": false,
+        "description": "A fee another party bills directly (the engineer's): shown, never added to the total.",
+        "properties": {
+          "estimated_cents": {
+            "cls": "confidential",
+            "maximum": 10000000000.0,
+            "minimum": 0.0,
+            "title": "Estimated Cents",
+            "type": "integer"
+          },
+          "payee": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Payee",
+            "type": "string"
+          }
+        },
+        "required": [
+          "payee",
+          "estimated_cents"
+        ],
+        "title": "ThirdPartyFeeIn",
+        "type": "object"
+      },
+      "ThirdPartyFeeOut": {
+        "properties": {
+          "estimated_cents": {
+            "cls": "confidential",
+            "title": "Estimated Cents",
+            "type": "integer"
+          },
+          "included_in_total": {
+            "cls": "internal",
+            "const": false,
+            "default": false,
+            "title": "Included In Total",
+            "type": "boolean"
+          },
+          "payee": {
+            "cls": "confidential",
+            "title": "Payee",
+            "type": "string"
+          }
+        },
+        "required": [
+          "payee",
+          "estimated_cents"
+        ],
+        "title": "ThirdPartyFeeOut",
         "type": "object"
       },
       "ThreadReadIn": {
@@ -109121,7 +109411,7 @@
     },
     "/v1/engagements/{engagement_id}/letter/composer": {
       "get": {
-        "description": "ENG-04 (N-02-T33).",
+        "description": "ENG-04's composed letter (N-02-T32) behind `engagements.letter_composer`.",
         "operationId": "get_letter",
         "parameters": [
           {
@@ -109236,7 +109526,7 @@
         "x-abacus-action": "letter.read"
       },
       "put": {
-        "description": "Draft edits; an edit after approval stales it (N-02-T33).",
+        "description": "Draft edits: a new version, rendered as a C11 draft (N-02-T32); an edit after approval\nreturns the letter to Draft (N-02-T33 resolves the approval).",
         "operationId": "draft_letter",
         "parameters": [
           {

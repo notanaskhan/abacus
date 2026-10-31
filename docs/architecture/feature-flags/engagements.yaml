@@ -10,3 +10,11 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: engagements.letter_composer
+    description: 'ENG-04''s composed letter (N-02-T32; C7 v1 §2; DEC-1458): GET and PUT /v1/engagements/{id}/letter/composer read and draft a letter from a firm template version and the engagement''s facts, rendered through C11. Off: those routes keep the signatures.envelopes stub (404, or 501 with it on). Approval, send and amend stay stubs until N-02-T33. Off until a founder switches it on per firm.'
+    owner: ayushkbhatia
+    created: 2026-10-30
+    expires: 2027-04-28
+    override: DEC-137
+    kind: boolean
+    default: false

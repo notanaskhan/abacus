@@ -100,6 +100,11 @@ from abacus.modules.engagements.intake_contract import (
     dedupe_router,
 )
 from abacus.modules.engagements.letter_contract import letter_router
+from abacus.modules.engagements.letter_render import (
+    LetterRenderAsk,
+    LetterRendered,
+    register_letter_renderer,
+)
 from abacus.modules.engagements.pilot_w4 import w4_portal_activation
 from abacus.modules.engagements.roll_forward import (
     PriorItem,
@@ -409,6 +414,8 @@ __all__ = [
     "IndependenceRequested",
     "Judgment",
     "JudgmentSource",
+    "LetterRenderAsk",
+    "LetterRendered",
     "MaskedTinOut",
     "MethodologyAlreadyApplied",
     "MethodologyVersionView",
@@ -503,6 +510,7 @@ __all__ = [
     "register_evidence_readable",
     "register_gate_provider",
     "register_judgment_source",
+    "register_letter_renderer",
     "register_open_requests",
     "register_progress_source",
     "register_roll_forward_items",

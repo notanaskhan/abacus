@@ -20,6 +20,7 @@ from uuid import UUID
 
 from abacus.kernel.uow import UnitOfWork
 from abacus.kernel.uow.relay import OutboxEvent
+from abacus.modules.engagements.api import register_letter_renderer
 from abacus.modules.reporting.consent import Recipients as Recipients
 from abacus.modules.reporting.consent import RecipientsUnavailable as RecipientsUnavailable
 from abacus.modules.reporting.consent import recipients as _consent_recipients
@@ -32,6 +33,7 @@ from abacus.modules.reporting.contract import (
     documents_router,
     templates_router,
 )
+from abacus.modules.reporting.engagement_letters import render_engagement_letter
 
 # T-01-T10's consumer API (re-exported).
 from abacus.modules.reporting.render.core import RenderInput as RenderInput
@@ -127,6 +129,8 @@ class RenderTicket:
     generated_document_id: UUID
     version_no: int
     status: Literal["drafting"] = "drafting"
+    # The draft's content hash (additive, N-02-T32): what a consumer's approval names.
+    content_hash: str = ""
 
 
 # A kind's providers: variables resolved from the database for a scope; an approval resolved to
@@ -261,7 +265,9 @@ async def render(tx: UnitOfWork, request: RenderRequest) -> RenderTicket:
         engagement_id=request.scope.engagement_id,
         client_id=request.scope.client_id,
     )
-    return RenderTicket(generated_document_id=document_id, version_no=version_no)
+    return RenderTicket(
+        generated_document_id=document_id, version_no=version_no, content_hash=content_hash
+    )
 
 
 async def render_final(
@@ -317,7 +323,11 @@ async def render_final(
         engagement_id=cast(UUID | None, doc["engagement_id"]),
         client_id=cast(UUID, doc["client_id"]),
     )
-    return RenderTicket(generated_document_id=document_id, version_no=version_no)
+    return RenderTicket(
+        generated_document_id=document_id,
+        version_no=version_no,
+        content_hash=approval_ref.content_hash,
+    )
 
 
 async def lock(tx: UnitOfWork, document_id: UUID, cause_ref: str) -> None:
@@ -385,3 +395,7 @@ SUBSCRIPTIONS: Mapping[str, Callable[[OutboxEvent], Awaitable[None]]] = _SourceS
 # The render job's workflow and activity land with the evidence write (P-11-T09).
 WORKFLOWS: dict[type, str] = {}
 ACTIVITIES: tuple[object, ...] = ()
+
+# N-02-T32 (DEC-1458): the engagement letter renders through C11 by engagements' port, since
+# engagements may not import reporting (ADR-008).
+register_letter_renderer(render_engagement_letter)
