@@ -19,7 +19,6 @@ from abacus.modules.signatures import api
 from abacus.modules.signatures.consumers import SourceContractBroken, check_contract
 from abacus.modules.signatures.sources import EnvelopeSource, register_envelope_source
 
-pytestmark = pytest.mark.asyncio
 V1 = ("register_envelope_source", "envelope_summary_for", "envelope_gate_facts", "create_draft")
 V11 = (
     "supersede_for_amount_change",
