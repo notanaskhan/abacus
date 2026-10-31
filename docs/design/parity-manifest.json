@@ -2687,6 +2687,87 @@
       "crop": "window",
       "tier": "B",
       "locked": true
+    },
+    "KNW-04a.window": {
+      "page": "screens/KNW-04?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/KNW-04 Firm standards and thresholds - Brightwater Hale/screenshots/KNW-04a.png",
+      "sha256": "b8150e61aa69489da58c195e2766d6b24477a61548b160c38b8a1ca660fb292a",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "K-02-T19: report-only (Tier C); the parity report measures it once KNW-04 leaves `planned` (DEC-195)"
+    },
+    "KNW-04b.window": {
+      "page": "screens/KNW-04?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/KNW-04 Firm standards and thresholds - Brightwater Hale/screenshots/KNW-04b.png",
+      "sha256": "6f09578dfe2a01dbfaa2ea0e9c158c8e8582f08ea97610756f2d504f233020bd",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "K-02-T19: report-only (Tier C); the parity report measures it once KNW-04 leaves `planned` (DEC-195)"
+    },
+    "KNW-04c.window": {
+      "page": "screens/KNW-04?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/KNW-04 Firm standards and thresholds - Brightwater Hale/screenshots/KNW-04c.png",
+      "sha256": "e797e67543e03c8ca5da98583bfa2ff3f5fda50b0b85e17d2c9daf806900d10d",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "K-02-T19: report-only (Tier C); the parity report measures it once KNW-04 leaves `planned` (DEC-195)"
+    },
+    "KNW-04d.window": {
+      "page": "screens/KNW-04?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/KNW-04 Firm standards and thresholds - Brightwater Hale/screenshots/KNW-04d.png",
+      "sha256": "fad38379fe76f2b6c72c6d2d839f6b783b43d9e6fa188bb6c00b931111ed752a",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "K-02-T19: report-only (Tier C); the parity report measures it once KNW-04 leaves `planned` (DEC-195)"
+    },
+    "KNW-04e.window": {
+      "page": "screens/KNW-04?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/KNW-04 Firm standards and thresholds - Brightwater Hale/screenshots/KNW-04e.png",
+      "sha256": "82eee5c716eb2a3351c8b338bac27129095fe64bee6a723eb6defc6f56572ff0",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "K-02-T19: report-only (Tier C); the parity report measures it once KNW-04 leaves `planned` (DEC-195)"
+    },
+    "KNW-04f.window": {
+      "page": "screens/KNW-04?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/KNW-04 Firm standards and thresholds - Brightwater Hale/screenshots/KNW-04f.png",
+      "sha256": "2c05fbaf9b9a9ad1b1f4f7a8d54d3705ef4693737c97627f3c0c40b26d7a740f",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "K-02-T19: report-only (Tier C); the parity report measures it once KNW-04 leaves `planned` (DEC-195)"
+    },
+    "KNW-04g.window": {
+      "page": "screens/KNW-04?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/KNW-04 Firm standards and thresholds - Brightwater Hale/screenshots/KNW-04g.png",
+      "sha256": "a569b4db395cd8477428aba28937c0c52efe6020dac6ea05046bfd661cc72e16",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "K-02-T19: report-only (Tier C); the parity report measures it once KNW-04 leaves `planned` (DEC-195)"
+    },
+    "KNW-04h.window": {
+      "page": "screens/KNW-04?st=h",
+      "selector": "[data-artboard=\"h\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/KNW-04 Firm standards and thresholds - Brightwater Hale/screenshots/KNW-04h.png",
+      "sha256": "c3f7e39cd7b44dae8ef70cd82903642652d4c9539f05b077ae5592dc234fe973",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "K-02-T19: report-only (Tier C); the parity report measures it once KNW-04 leaves `planned` (DEC-195)"
+    },
+    "KNW-04i.window": {
+      "page": "screens/KNW-04?st=i",
+      "selector": "[data-artboard=\"i\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/KNW-04 Firm standards and thresholds - Brightwater Hale/screenshots/KNW-04i.png",
+      "sha256": "0481ae3dff03309d32d6b65e013a73057d2ab699db7f421a5afcb934442f2ec6",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "K-02-T19: report-only (Tier C); the parity report measures it once KNW-04 leaves `planned` (DEC-195)"
     }
   }
 }

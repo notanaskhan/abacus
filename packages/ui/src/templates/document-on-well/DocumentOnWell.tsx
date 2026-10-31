@@ -1,5 +1,5 @@
 import { type JSX, type ReactNode, useId } from "react";
-import { formatActor } from "../../attribution/actor";
+import { formatActor, isPerson } from "../../attribution/actor";
 import { HumanAction } from "../../attribution/human-action";
 import { Button } from "../../components/button";
 import { Spinner } from "../../components/motion";
@@ -89,8 +89,10 @@ export function PaperCard({
   );
 }
 
-/** Three skeleton paragraphs: a heading bar over three lines, three times (T10a). */
-function DraftingSkeleton(): JSX.Element {
+/** Three skeleton paragraphs, a heading bar over three lines each (T10a): the agent's draft on a
+ * paper (`drafting`), or the template being rendered on a letter or email without model text
+ * (`rendering`, ADR P-25 off). */
+function DraftingSkeleton({ mark }: { mark: "drafting" | "rendering" }): JSX.Element {
   const paragraph = (widths: readonly string[], key: string): JSX.Element => (
     <div key={key} className="flex flex-col gap-[8px]">
       <Skeleton immediate className="h-[11px] w-[38%]" />
@@ -100,7 +102,7 @@ function DraftingSkeleton(): JSX.Element {
     </div>
   );
   return (
-    <div data-document="drafting" aria-hidden="true" className="flex flex-col gap-[20px]">
+    <div data-document={mark} aria-hidden="true" className="flex flex-col gap-[20px]">
       {paragraph(["w-[92%]", "w-full", "w-[74%]"], "p1")}
       {paragraph(["w-full", "w-[86%]", "w-[62%]"], "p2")}
       {paragraph(["w-full", "w-[92%]", "w-[48%]"], "p3")}
@@ -223,16 +225,22 @@ export function DocumentOnWell({
   );
 
   // The header's left: the status pill and its sub-line, when the document says more than its
-  // title (TPL-10: "Draft" with "Adopted by Olivia Brandt"; approved; locked).
+  // title (TPL-10: "Draft" with "Adopted by Olivia Brandt"; approved; locked). Only a person
+  // approves (INV-1), so an approval naming the agent, a policy or the system names no one: no
+  // approval ever reads "by Accrued Agent" (INV-5; F-06-T17).
+  const approvedBy =
+    document.approvedBy !== undefined && isPerson(document.approvedBy.actor)
+      ? document.approvedBy
+      : undefined;
   const statusLine =
     document.adoptedBy !== undefined ||
-    document.approvedBy !== undefined ||
+    approvedBy !== undefined ||
     document.lockedReason !== undefined ? (
       <span data-document="status" className="flex min-w-0 items-center gap-[8px] pl-[6px]">
         <RegistryStatus object="generated_document" code={document.status} withDisc={false} />
         <span className="truncate text-meta text-ink-3">
-          {document.approvedBy !== undefined
-            ? `${formatActor(document.approvedBy.actor)} · ${document.approvedBy.when}`
+          {approvedBy !== undefined
+            ? `${formatActor(approvedBy.actor)} · ${approvedBy.when}`
             : (document.lockedReason ??
               (document.adoptedBy === undefined ? "" : document.adoptedBy))}
         </span>
@@ -269,7 +277,7 @@ export function DocumentOnWell({
         className="flex min-h-full flex-col p-[14px]"
       >
         <PaperCard {...(document.watermark && !drafting ? { watermark: copy.watermark } : {})}>
-          {drafting ? <DraftingSkeleton /> : children}
+          {drafting ? <DraftingSkeleton mark={agentRun ? "drafting" : "rendering"} /> : children}
         </PaperCard>
       </div>
     </Pane>,
