@@ -143,6 +143,7 @@ def _sql(expression: ColumnElement[bool]) -> str:
 
 def test_ac7_the_client_data_actions_are_marked() -> None:
     assert MARKED == [
+        "account_mapping.edit",  # A-03-T01 (DEC-1550)
         "adjustment.approve",  # SPEC-301 (TASK-302)
         "adjustment.propose",
         "adjustment.record_response",
@@ -194,6 +195,8 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "finding.raise",  # SPEC-043 (TASK-107)
         # P-06-T14: the send is client data, per person; a draft is not (SPEC-027 AC-8, DEC-220).
         "follow_up.send",
+        "generated_document.read",  # P-11 (C11)
+        "generated_document.regenerate",  # P-11 (C11)
         "guidance_draft.decide",  # SPEC-035 (TASK-073)
         "guidance_draft.read",
         "guidance_draft.request",
@@ -207,12 +210,17 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "ledger.pull",  # A-02 §4.4 (TASK-1185)
         "ledger_import.upload",  # SPEC-028 (TASK-052)
         "letter.approve",  # N-02-T02
+        "mapping_set.confirm",  # A-03-T01 (DEC-1550)
         "mapping_set.edit",  # SPEC-316 (TASK-345)
+        "mapping_set.read",  # A-03-T01 (DEC-1550)
+        "mapping_set.run",  # A-03-T01 (DEC-1550)
         "materiality.decide",  # SPEC-300 (TASK-301)
         "materiality.set",  # SPEC-037 (TASK-083)
         "message.send",  # ADR-164 item 2 (P-07-T24): client-facing
         "misstatement.set",  # SPEC-043 (TASK-107)
         "pii.reveal",  # P-03-T02 (C4 v1)
+        "population.create",  # A-03-T01 (DEC-1550)
+        "population.read",  # A-03-T01 (DEC-1550)
         "procedure.configure",
         "procedure.read",
         "procedure.run",
@@ -241,6 +249,10 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "run_content.read",  # DEC-87 (TASK-5002)
         "run_trace.export",  # SPEC-318 (TASK-461)
         "sample.approve",  # SPEC-040 (TASK-100)
+        "sample_set.approve",  # A-03-T01 (DEC-1550)
+        "sample_set.export",  # A-03-T01 (DEC-1550)
+        "sample_set.generate_requests",  # A-03-T01 (DEC-1550)
+        "sample_set.read",  # A-03-T01 (DEC-1550)
         "screening.feedback",  # P-06-T15 (SHL-20 f)
         "screening.request",
         "sign_off.bulk",  # P-04-T07 (TASK-413)

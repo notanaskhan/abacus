@@ -20,7 +20,7 @@ import io
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from itertools import pairwise
 from typing import Final, Literal
@@ -31,6 +31,7 @@ from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork
 from abacus.modules.ledger.mapping_repository import (
     catalogue_rows,
+    discard_drafts,
     get_mapping_set,
     get_version,
     grouping_sets,
@@ -46,7 +47,9 @@ from abacus.modules.ledger.mapping_repository import (
     newest_edits,
     next_version_no,
     publish,
+    recent_fs_lines,
     set_by_key,
+    version_by_number,
     versions_of_sets,
 )
 from abacus.modules.ledger.models import MappingSet
@@ -80,6 +83,10 @@ class AlreadyPublished(DomainConflict):
     code = "grouping_set_published"
 
 
+class VersionNotDraft(DomainConflict):
+    code = "grouping_set_not_draft"  # A-03-T06: a discarded version is never published
+
+
 class MappingExists(DomainConflict):
     code = "mapping_set_exists"
 
@@ -111,6 +118,7 @@ class Problem:
     row: int
     code: str
     detail: str
+    sheet: str = ""  # A-03-T06: the workbook sheet ("" for a CSV)
 
 
 @dataclass(frozen=True)
@@ -122,7 +130,7 @@ class ParsedGroupingSet:
     payload_hash: str
 
 
-def _account_key(code: str) -> tuple[int, int, str]:
+def account_key(code: str) -> tuple[int, int, str]:
     """Numeric codes compare as numbers ("900" < "1000"); others as text after them."""
     text = code.strip()
     return (0, int(text), "") if text.isdigit() else (1, 0, text)
@@ -137,6 +145,7 @@ def parse_grouping_set(text: str) -> ParsedGroupingSet:
     groupings: dict[str, ParsedGrouping] = {}
     lines: dict[str, ParsedLine] = {}
     ranges: list[tuple[str, str, str]] = []
+    range_rows: list[int] = []
     for number, raw in enumerate(rows[1 : MAX_ROWS + 1], start=2):
         cells = [c.strip() for c in raw] + [""] * (len(HEADER) - len(raw))
         g_key, g_label, cls, l_key, l_label, normal, a_from, a_to = cells[: len(HEADER)]
@@ -164,35 +173,49 @@ def parse_grouping_set(text: str) -> ParsedGroupingSet:
         lines.setdefault(l_key, ParsedLine(l_key, l_label or l_key, g_key, normal.lower()))
         if a_from or a_to:
             low, high = a_from or a_to, a_to or a_from
-            if _account_key(low) > _account_key(high):
+            if account_key(low) > account_key(high):
                 problems.append(Problem(number, "range_invalid", f"{low}-{high}"))
                 continue
             ranges.append((low, high, l_key))
+            range_rows.append(number)
     if len(rows) - 1 > MAX_ROWS:
         problems.append(Problem(MAX_ROWS + 2, "too_many_rows", str(MAX_ROWS)))
-    ordered = sorted(ranges, key=lambda r: _account_key(r[0]))
-    for a, b in pairwise(ordered):
-        if _account_key(b[0]) <= _account_key(a[1]):
-            problems.append(Problem(0, "overlapping_range", f"{a[0]}-{a[1]} and {b[0]}-{b[1]}"))
+    return finish_grouping_set(
+        list(groupings.values()), list(lines.values()), ranges, range_rows, problems
+    )
+
+
+def finish_grouping_set(
+    groupings: list[ParsedGrouping],
+    lines: list[ParsedLine],
+    ranges: list[tuple[str, str, str]],
+    range_rows: list[int],
+    problems: list[Problem],
+    sheet: str = "",
+) -> ParsedGroupingSet:
+    """Overlapping ranges, each reported on the later range's own row (A-03-T06), and the
+    payload hash of the canonical content."""
+    order = sorted(range(len(ranges)), key=lambda i: account_key(ranges[i][0]))
+    for i, j in pairwise(order):
+        a, b = ranges[i], ranges[j]
+        if account_key(b[0]) <= account_key(a[1]):
+            detail = f"{a[0]}-{a[1]} and {b[0]}-{b[1]}"
+            problems.append(Problem(range_rows[j], "overlapping_range", detail, sheet))
     canonical = "\n".join(
-        [f"g|{g.key}|{g.label}|{g.class_}" for g in groupings.values()]
-        + [f"l|{v.key}|{v.label}|{v.grouping}|{v.normal_balance}" for v in lines.values()]
+        [f"g|{g.key}|{g.label}|{g.class_}" for g in groupings]
+        + [f"l|{v.key}|{v.label}|{v.grouping}|{v.normal_balance}" for v in lines]
         + [f"r|{a}|{b}|{k}" for a, b, k in ranges]
     )
     return ParsedGroupingSet(
-        list(groupings.values()),
-        list(lines.values()),
-        ranges,
-        problems,
-        hashlib.sha256(canonical.encode()).hexdigest(),
+        groupings, lines, ranges, problems, hashlib.sha256(canonical.encode()).hexdigest()
     )
 
 
 def rule_line(code: str, ranges: Sequence[tuple[str, str, UUID]]) -> UUID | None:
     """The first range (in order) holding the account code."""
-    key = _account_key(code)
+    key = account_key(code)
     for low, high, line in ranges:
-        if _account_key(low) <= key <= _account_key(high):
+        if account_key(low) <= key <= account_key(high):
             return line
     return None
 
@@ -228,6 +251,10 @@ class VersionView:
     problems: list[Problem]
     created_at: datetime
     published_at: datetime | None
+    # A-03-T06 (C9 v2 catalogue): additive, defaulted so v0's callers are unchanged.
+    set_id: UUID | None = None
+    effective_from: date | None = None
+    published_by: UUID | None = None
 
 
 @dataclass(frozen=True)
@@ -364,10 +391,30 @@ async def import_grouping_set(
     tx: UnitOfWork, *, tenant_id: UUID, key: str, name: str, text: str, user_id: UUID
 ) -> UUID:
     """A draft version from CSV, with its problems; rows are written only when there are none."""
+    return await import_parsed_grouping_set(
+        tx,
+        tenant_id=tenant_id,
+        key=key,
+        name=name,
+        parsed=parse_grouping_set(text),
+        user_id=user_id,
+    )
+
+
+async def import_parsed_grouping_set(
+    tx: UnitOfWork,
+    *,
+    tenant_id: UUID,
+    key: str,
+    name: str,
+    parsed: ParsedGroupingSet,
+    user_id: UUID,
+) -> UUID:
+    """A draft version from a parsed CSV or workbook (A-03-T06). The set's earlier draft is
+    discarded in the same unit, so a set holds one live draft (0521)."""
     key, name = key.strip().lower(), name.strip()
     if not key or not 1 <= len(name) <= 120:
         raise GroupingSetInvalid("name")
-    parsed = parse_grouping_set(text)
     found = await set_by_key(tx.session, key)
     set_id = (
         found.id
@@ -376,13 +423,17 @@ async def import_grouping_set(
             tx.session, tenant_id=tenant_id, key=key, name=name, created_by=user_id
         )
     )
+    discarded = await discard_drafts(tx.session, set_id) if found is not None else 0
     version_id = await insert_version(
         tx.session,
         tenant_id=tenant_id,
         grouping_set_id=set_id,
         version=await next_version_no(tx.session, set_id),
         payload_hash=parsed.payload_hash,
-        problems=[{"row": p.row, "code": p.code, "detail": p.detail} for p in parsed.problems],
+        problems=[
+            {"row": p.row, "code": p.code, "detail": p.detail, "sheet": p.sheet}
+            for p in parsed.problems
+        ],
         created_by=user_id,
     )
     if not parsed.problems:
@@ -426,19 +477,27 @@ async def import_grouping_set(
     tx.record(
         "grouping_set.imported",
         target=Target("grouping_set_version", version_id),
-        after=Ref(problems=len(parsed.problems)),
+        after=Ref(problems=len(parsed.problems), discarded=discarded),
     )
     return version_id
 
 
 async def publish_version(
-    tx: UnitOfWork, *, version_id: UUID, user_id: UUID, actor_kind: str
+    tx: UnitOfWork,
+    *,
+    version_id: UUID,
+    user_id: UUID,
+    actor_kind: str,
+    effective_from: date,
 ) -> None:
+    """A person publishes a clean draft with its effective date; it freezes (0079, 0521)."""
     found = await get_version(tx.session, version_id)
     if found is None:
         raise NotFound("grouping_set_version")
     if found.status == "published":
         raise AlreadyPublished(str(version_id))
+    if found.status != "draft":
+        raise VersionNotDraft(str(version_id))
     if found.problems:
         raise VersionHasProblems(str(len(found.problems)))
     await publish(
@@ -447,6 +506,7 @@ async def publish_version(
         status="published",
         published_by=user_id,
         published_actor_kind=actor_kind,
+        effective_from=effective_from,
     )
     tx.record("grouping_set.published", target=Target("grouping_set_version", version_id))
 
@@ -462,12 +522,38 @@ async def grouping_set_versions(tenant: TenantContext) -> list[VersionView]:
             sets[v.grouping_set_id].name,
             v.version,
             v.status,
-            [Problem(int(p["row"]), str(p["code"]), str(p["detail"])) for p in v.problems],
+            [
+                Problem(int(p["row"]), str(p["code"]), str(p["detail"]), str(p.get("sheet", "")))
+                for p in v.problems
+            ],
             v.created_at,
             v.published_at,
+            set_id=v.grouping_set_id,
+            effective_from=v.effective_from,
+            published_by=v.published_by,
         )
         for v in versions
     ]
+
+
+async def grouping_catalogue(tenant: TenantContext, version_id: UUID) -> list[GroupingView]:
+    """C9 v2 (A-03-T06): a version's groupings with their FS lines, in order."""
+    views, _ = await _catalogue(tenant, version_id)
+    return views
+
+
+async def grouping_version_id(tenant: TenantContext, set_id: UUID, version_no: int) -> UUID | None:
+    async with tenant_session(tenant) as session:
+        return await version_by_number(session, set_id, version_no)
+
+
+async def recently_used(
+    tenant: TenantContext, version_id: UUID, user_id: UUID, limit: int = 5
+) -> list[UUID]:
+    """The FS lines of this version the person most recently chose, newest first: their own
+    edits only, so no other person's work and no engagement shows through (INV-3)."""
+    async with tenant_session(tenant) as session:
+        return await recent_fs_lines(session, version_id, user_id, limit)
 
 
 async def _catalogue(

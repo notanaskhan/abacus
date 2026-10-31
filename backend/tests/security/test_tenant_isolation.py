@@ -69,6 +69,7 @@ TABLES: tuple[str, ...] = (
     "comment_reads",
     "comment_redactions",
     "comments",
+    "completeness_ties",
     "completion_records",
     "conflict_checks",
     "conflict_result_events",
@@ -108,6 +109,7 @@ TABLES: tuple[str, ...] = (
     "engagement_members",
     "engagements",
     "engine_diagnostics",
+    "engine_exports",
     "engine_import_diffs",
     "engine_return_links",
     "engine_sync_events",
@@ -292,6 +294,12 @@ TABLES: tuple[str, ...] = (
     "roll_forward_drafts",
     "safeguards_control_statuses",
     "safeguards_programs",
+    "sample_items",
+    "sample_population_records",
+    "sample_populations",
+    "sample_set_versions",
+    "sample_sets",
+    "sample_strata",
     "screening_feedback",
     "screening_records",
     "screening_rerun_requests",
@@ -356,6 +364,7 @@ TABLES: tuple[str, ...] = (
     "workpaper_sections",
     "workpaper_versions",
     "workpapers",
+    "write_operations",
 )
 
 

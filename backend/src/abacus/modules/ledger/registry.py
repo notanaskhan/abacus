@@ -113,5 +113,6 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     # SPEC-316: a draft version is published once (a trigger freezes it afterwards).
     "grouping_set_versions": frozenset(
         {"status", "published_by", "published_at", "published_actor_kind"}
+        | {"effective_from"}  # A-03-T06 (0521): the effective date a person publishes with
     ),
 }

@@ -17,6 +17,8 @@ Not a module (ADR-101). Every module uses it; it never imports a module.
 | `kernel.slots` | `acquire(tenant, holder, engagement_id, work_class)`, `renew`, `release(tenant_id, holder)`, `current_holder()`, `current_class()` | Work slots: per-firm and per-engagement caps with fair hand-out (ADR-071, SPEC-003). A platform ledger reached only through SECURITY DEFINER functions (migration 0013); commits without audit events (founder decision 2026-10-07), the one exception to UOW-001/UOW-002. |
 | `kernel.dispatch` | `dispatch(Workflow, input, id=..., ...)`, `register_work_classes(WORKFLOWS)`, `queue_for(work_class)` | The only way to start a workflow: it runs on its work class's queue, `<base>-<class>` (ADR-071, SPEC-003). DISPATCH-001 bans `start_workflow` and `task_queue=` elsewhere. |
 | `kernel.error_tracking` | `configure_error_tracking("abacus-api")`, `report(exc, route=…)`, `ReportingInterceptor()` | Sentry only with a DSN; every event rebuilt from an allowlist (`scrub`) (ADR-022, ADR-031, TASK-013). |
+| `kernel.numeric` *(red, protected)* | `CONTEXT`, `quantize_half_up(value, places)`, `allocate(total, weights, places, half_up_shares=False)` | A-03-T21: one Decimal context (precision 28, ROUND_HALF_UP); `allocate` splits by largest remainder so shares always foot. Pure; one of the two kernel modules the compute packages may import. |
+| `kernel.calendar` *(red, protected)* | `is_business_day`, `roll`, `add_business_days` over a holiday set passed in | A-03-T21: business-day arithmetic with no holiday data in the kernel (DEC-76); K-02's `practice/compute/calendar.py` re-imports it. |
 | `kernel.config` | `settings()` | Local and test default to `docker compose`; elsewhere every connection setting is required. |
 
 Database roles (`backend/migrations/bootstrap.sql`, protected): `abacus_owner` owns tables and runs migrations; `abacus_app` is what the API and worker use — not an owner, no `BYPASSRLS`; `abacus_relay` bypasses row-level security but can only read the outbox and mark delivery. Row-level security is forced, so the owner is bound by it too.
@@ -45,3 +47,11 @@ The app role sets its own session settings, so the database checks on tenant and
 
 ## Actor kinds
 `TenantContext.actor_kind` is one of `human`, `agent`, `system` or `support` (a break-glass staff member, SPEC-012). Audit events record it.
+
+## Compute packages (A-03-T21; chapter 03 §10.1)
+
+`sampling/compute` and `ledger/compute` hold pure computation a CPA re-performs (sampler versions,
+mapping rules). They import only the standard library, `kernel.numeric` and `kernel.calendar`:
+the import-linter contract "Compute packages import only kernel.numeric and kernel.calendar"
+fails any other import, and `tests/unit/kernel/test_a03t21_compute_contract.py` scans their
+imports. Both kernel modules are protected (`docs/architecture/protected-paths.md`).
