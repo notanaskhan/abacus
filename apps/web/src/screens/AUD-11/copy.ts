@@ -13,6 +13,12 @@ export const COPY = {
     source: "Source",
     sources: ["Upload", "General ledger", "HR or ticketing system"] as const,
     hrTooltip: "Ask the client to connect their HR system: Request a connection (POR-16)",
+    // A-03-T15 (R2 f): a population pulled from the ledger connection.
+    connection: "Connection",
+    query: "Query",
+    snapshot: "Snapshot",
+    pulled: (on: string, hash: string): string => `Pulled ${on} · read-only snapshot · ${hash}`,
+    amount: "Amount",
     file: "File",
     fileDetail: (v: number, on: string, by: string): string =>
       `v${String(v)}, uploaded ${on} by ${by}`,
@@ -51,6 +57,52 @@ export const COPY = {
       threshold_random_stratified: "threshold, then uniform without replacement",
     } as Record<string, string>,
     sampler: (v: string, how: string): string => `Accrued sampler v${v} · ${how}`,
+  },
+  strata: {
+    title: "Strata",
+    stratum: "Stratum",
+    range: "Range",
+    population: "Population",
+    rule: "Testing",
+    all: "all tested",
+    random: (n: number): string => `${String(n)} random`,
+    none: "none",
+    atLeast: (amount: string): string => `≥ ${amount}`,
+    below: (amount: string): string => `< ${amount}`,
+    between: (low: string, high: string): string => `${low}–${high}`,
+    // R2 f: "24 + 16 = 40" — the server's per-stratum counts and its total, never a sum here.
+    size: (parts: readonly number[], total: number): string =>
+      `${parts.map(String).join(" + ")} = ${String(total)}`,
+  },
+  // AUD-11 e (DV-A1): a person's draw, never the agent's.
+  drawing: {
+    label: "Drawing",
+    progress: (done: number, total: number): string => `${String(done)} of ${String(total)} drawn`,
+    failed: (code: string): string => `The draw failed (${code}).`,
+  },
+  // AUD-11 c: the generate sheet (O3).
+  generate: {
+    title: "Generate item requests",
+    per: (n: number): string => `Per participant (${String(n)})`,
+    request: (n: number): string => `Request ${String(n)}`,
+    requestPlaceholder: "Required",
+    recipientLabel: "To",
+    choose: "Choose…",
+    thirdParty: "Third party",
+    add: "Add request",
+    remove: "Remove last",
+    due: "Due",
+    datePlaceholder: "YYYY-MM-DD",
+    wave: "Wave",
+    sampleWave: "Sample-driven",
+    preview: (total: string, por03: string, por14: string): string =>
+      `${total} requests · ${por03} to POR-03 · ${por14} to POR-14`,
+    previewEmpty: "Name each request, who it goes to and a due date to see the count.",
+    recipient: (who: string, n: string, surface: string): string =>
+      `${who} sees ${n} requests (${surface})`,
+    create: (n: string): string => `Create ${n} requests`,
+    created: (n: string): string => `${n} requests created in Sample-driven`,
+    failed: "The requests couldn't be created. Nothing was sent.",
   },
   override: {
     banner: (n: number): string =>

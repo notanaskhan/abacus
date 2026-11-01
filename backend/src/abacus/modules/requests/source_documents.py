@@ -266,6 +266,11 @@ class SourceDocumentRow:
     linked_count: int | None
 
 
+# A-03-T15: the band the sample fan-out's requests sit in, after the categories (AUD-03).
+_SAMPLE: Final = UUID(int=1)
+SAMPLE_BAND: Final = "Sample-driven"
+
+
 @dataclass(frozen=True)
 class SourceDocumentGroup:
     category_id: UUID | None
@@ -456,13 +461,15 @@ async def source_documents(
     bands: dict[UUID | None, list[SourceDocumentRow]] = {}
     totals: dict[UUID | None, list[str]] = {}
     for item in items:
-        totals.setdefault(item.category_id, []).append(item.status)
+        # A-03-T15: the sample fan-out's requests are their own band, last (AUD-03).
+        key = _SAMPLE if item.wave == "sample" else item.category_id
+        totals.setdefault(key, []).append(item.status)
         title = item.title or item.description
         if needle and needle not in title.lower():
             continue
         due = item.due_on or defaults.get(item.request_list_id)
         f = facts[item.id]
-        bands.setdefault(item.category_id, []).append(
+        bands.setdefault(key, []).append(
             SourceDocumentRow(
                 request_item_id=item.id,
                 binder_id=item.request_list_id,
@@ -486,10 +493,14 @@ async def source_documents(
     keys: list[UUID | None] = [c for c in category_order if c in totals]
     if None in totals:
         keys.append(None)
+    if _SAMPLE in totals:
+        keys.append(_SAMPLE)
     groups = [
         SourceDocumentGroup(
-            category_id=key,
-            label=by_id[key].name if key is not None else "Other",
+            category_id=None if key == _SAMPLE else key,
+            label=(
+                SAMPLE_BAND if key == _SAMPLE else by_id[key].name if key is not None else "Other"
+            ),
             received=sum(1 for s in totals[key] if s == "received"),
             total=sum(1 for s in totals[key] if _counted(s)),
             rows=bands.get(key, []),

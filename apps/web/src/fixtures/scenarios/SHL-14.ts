@@ -6,6 +6,8 @@
 //
 //   a  `?ov=request:new` on the Northwind PY2025 binder, due from the binder default (Sep 21)
 //   b  the existing "Bridge letter — Keystone, Oct–Dec 2025", requested Sep 1, due Sep 25
+//   c  (A-03-T15) a with the Sample wave on: Northwind's approved Participants sample (25), one
+//      request to Dana Kowalski per participant, "Create 25 requests"
 //   e  a on a binder with no default due date: nothing to send without one
 //   f  the Granite Peak FY2026 SURL Draft, drafted by the agent, assigned to Luis Ferrante
 //   d  (P-06-T24) Raj Malhotra on Copperleaf's August `close_intake` binder: "Square payouts —
@@ -13,7 +15,7 @@
 //
 // d's binder is the backend seed's own (`abacus_tools/synthetic/scenarios/brightwater_hale/
 // binders.py`, P-06-T08): "Requests", 8 recurring + 1 ad hoc = 9 requests, 7 received, in the
-// seed's five categories, with the seed's ids. c is A-03's (the sampling engine). They live under
+// seed's five categories, with the seed's ids. c is A-03-T15's (the sampling fan-out). They live under
 // fixtures/ (dev and test only); screens/SHL-14/scenarios.ts re-exports them.
 
 import type {
@@ -38,10 +40,12 @@ import {
   defineScenarios,
   json,
 } from "../../app-core/fixture-mode";
+import { generateHandlers, samplingHandlers } from "../handlers/sampling";
 import { seedScenario } from "../scenario";
 import { getSeed } from "../seed";
 import { DEMO_INSTANT } from "../seed/clock";
 import { stableId } from "../seed/prng";
+import { northwindParticipants, northwindSampleSets } from "../seed/sampling";
 import { SEND_BACK_REASONS } from "../seed/screening";
 
 const E0 = seedScenario();
@@ -582,9 +586,24 @@ function at(
   return { state, persona, clock, handlers: handlers(data) };
 }
 
+/** c (A-03-T15): a's binder with Northwind's approved sample behind the Sample wave. */
+function sampleWave(): Scenario {
+  const base = at("c", "marcus-delaney", CLOCK_A, [northwind(NORTHWIND_BINDER, "2026-09-21")]);
+  const participants = northwindParticipants();
+  return {
+    ...base,
+    handlers: {
+      ...samplingHandlers({ sets: northwindSampleSets(), set: participants }),
+      ...generateHandlers(participants, []),
+      ...base.handlers,
+    },
+  };
+}
+
 export const scenarios = defineScenarios({
   a: at("a", "marcus-delaney", CLOCK_A, [northwind(NORTHWIND_BINDER, "2026-09-21")]),
   b: at("b", "marcus-delaney", CLOCK_A, [northwind(NORTHWIND_BINDER, "2026-09-21")]),
+  c: sampleWave(),
   e: at("e", "marcus-delaney", CLOCK_A, [northwind(NORTHWIND_NO_DEFAULT, null)]),
   f: at("f", "cole-hart", CLOCK_F, [granitePeak()]),
   d: at("d", "raj-malhotra", CLOCK_A, [copperleafClose()]),
@@ -596,14 +615,35 @@ const bridgeId =
   (seed.requestItems[NORTHWIND] ?? []).find((i) => i.description === BRIDGE_TITLE)?.id ?? null;
 
 /** What each state opens: the binder and the request (null composes a new one). */
-export const OPENS: Readonly<Record<Shl14State, { binderId: string; requestId: string | null }>> =
-  {
-    a: { binderId: NORTHWIND_BINDER, requestId: null },
-    b: { binderId: NORTHWIND_BINDER, requestId: bridgeId },
-    e: { binderId: NORTHWIND_NO_DEFAULT, requestId: null },
-    f: { binderId: GRANITE_BINDER, requestId: stableId("request:granite-peak:surl") },
-    d: { binderId: COPPERLEAF_BINDER, requestId: SQUARE_REQUEST },
-  };
+export const OPENS: Readonly<
+  Record<
+    Shl14State,
+    {
+      binderId: string;
+      requestId: string | null;
+      workItemId?: string;
+      initial?: { title?: string; wave?: "sample"; assignee?: string };
+    }
+  >
+> = {
+  a: { binderId: NORTHWIND_BINDER, requestId: null },
+  b: { binderId: NORTHWIND_BINDER, requestId: bridgeId },
+  c: {
+    binderId: NORTHWIND_BINDER,
+    requestId: null,
+    workItemId: northwindParticipants().work_item_id,
+    initial: {
+      title: "Enrollment and opt-out forms — sampled participants",
+      wave: "sample",
+      ...(contactIdOf(NORTHWIND, "Dana Kowalski") === null
+        ? {}
+        : { assignee: contactIdOf(NORTHWIND, "Dana Kowalski") ?? "" }),
+    },
+  },
+  e: { binderId: NORTHWIND_NO_DEFAULT, requestId: null },
+  f: { binderId: GRANITE_BINDER, requestId: stableId("request:granite-peak:surl") },
+  d: { binderId: COPPERLEAF_BINDER, requestId: SQUARE_REQUEST },
+};
 
 /** The E0 day the seed stands at, for the scenario tests. */
 export const E0_INSTANT = DEMO_INSTANT;

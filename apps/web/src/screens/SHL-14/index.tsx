@@ -34,6 +34,7 @@ import {
   useRequestItems,
   useStaffNames,
 } from "../../domain/requests";
+import { useSampleWave } from "./SampleWave";
 import { COPY } from "./copy";
 
 // SHL-14 · Request composer drawer (P-06-T13; docs/screens/SHL-14.md): the O2 drawer 480 with the
@@ -60,6 +61,10 @@ type Tab = "details" | "comments" | "activity";
 
 export interface RequestComposerProps {
   binderId: string;
+  /** The audit's work item (A-03-T15): its approved samples back the Sample wave (SHL-14 c). */
+  workItemId?: string;
+  /** The fields a new request opens with (SHL-14 c's artboard: the Sample wave and its words). */
+  initial?: { title?: string; wave?: Wave; assignee?: string };
   /** Null composes a new request. */
   requestId: string | null;
   open: boolean;
@@ -77,6 +82,8 @@ function errorCode(error: unknown): string | null {
 
 export function RequestComposer({
   binderId,
+  workItemId,
+  initial,
   requestId,
   open,
   onOpenChange,
@@ -103,12 +110,12 @@ export function RequestComposer({
   // d: a request on a close-intake binder reviews its upload rather than composing (P-06-T24).
   const closeRow = binder?.kind === "close_intake" && !isDraft ? row : undefined;
   const [tab, setTab] = useState<Tab>("details");
-  const [title, setTitle] = useState<string | null>(null);
+  const [title, setTitle] = useState<string | null>(initial?.title ?? null);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [description, setDescription] = useState<string | null>(null);
   const [due, setDue] = useState<string | null>(null);
-  const [wave, setWave] = useState<Wave | null>(null);
-  const [assignee, setAssignee] = useState<string | null>(null);
+  const [wave, setWave] = useState<Wave | null>(initial?.wave ?? null);
+  const [assignee, setAssignee] = useState<string | null>(initial?.assignee ?? null);
   const [owner, setOwner] = useState<string | null>(null);
   const [thirdParty, setThirdParty] = useState(false);
   const [delegate, setDelegate] = useState<string | null>(null);
@@ -212,6 +219,18 @@ export function RequestComposer({
     </StatusPill>
   ) : null;
 
+  const sample = useSampleWave({
+    on: isNew && wave === "sample",
+    workItemId,
+    title: vTitle,
+    assignee: vAssignee,
+    assigneeName,
+    delegate,
+    thirdParty,
+    due: vDue,
+    onCreated: close,
+  });
+
   const done = binder?.done_count ?? 0;
   const total = binder?.total_count ?? 0;
   const footer = (
@@ -300,7 +319,7 @@ export function RequestComposer({
           {binder !== undefined && <span className="text-meta text-ink-3">{binder.name}</span>}
         </span>
       }
-      footer={closeFooter ?? footer}
+      footer={closeFooter ?? sample.footer ?? footer}
     >
       <div className="flex h-[40px] flex-none items-center justify-center bg-card hairline-b">
         <Segmented
@@ -382,6 +401,7 @@ export function RequestComposer({
               />
             </ValueRow>
           </Fieldset>
+          {sample.fields}
           <Fieldset title={COPY.card.people} flush>
             <ValueRow
               kind="select"

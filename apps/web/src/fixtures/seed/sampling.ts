@@ -3,6 +3,9 @@
 // against the OpenAPI document by the contract tests. Values only from the handoff (AUD-11 a, f;
 // AUD-31 f); what the design does not show stays null. Brightwater Hale, synthetic.
 import type {
+  ClientContactOut,
+  CompletenessTieOut,
+  DrawProgressOut,
   MappingRunOut,
   MappingSetSummaryOut,
   SampleItemOut,
@@ -291,6 +294,230 @@ export function northwindSampleSets(): SampleSetSummaryOut[] {
       status: "draft",
       final_size: 10,
       population_count: 64,
+    },
+  ];
+}
+
+// --- A-03-T15: AUD-11 c, e and f -----------------------------------------------------------------
+
+/** AUD-11 c: who the five requests per participant go to (the GENERATE SHEET's recipients). */
+export const DANA = stableId("contact:northwind:dana-kowalski");
+export const SAM = stableId("contact:keystone:sam-ortiz");
+
+export function generateContacts(): ClientContactOut[] {
+  return [
+    {
+      kind: "member",
+      id: DANA,
+      role: "client_admin",
+      email: "dana.kowalski@northwindrobotics.example",
+      expires_at: null,
+      display_name: "Dana Kowalski",
+    },
+    {
+      kind: "member",
+      id: SAM,
+      role: "third_party",
+      email: "sam.ortiz@keystone-rs.example",
+      expires_at: null,
+      display_name: "Sam Ortiz",
+    },
+  ];
+}
+
+/** AUD-11 c: the sheet's five templates per participant, verbatim from the handoff. */
+export const GENERATE_TEMPLATES: ReadonlyArray<{
+  description: string;
+  contactId: string;
+  thirdParty: boolean;
+}> = [
+  { description: "New-hire record (PayGrid)", contactId: DANA, thirdParty: false },
+  { description: "Deferral election or opt-out form", contactId: DANA, thirdParty: false },
+  { description: "Paystub, Dec 12, 2025 payroll", contactId: DANA, thirdParty: false },
+  { description: "Pay rate authorization", contactId: DANA, thirdParty: false },
+  { description: "Q4 2025 participant statement", contactId: SAM, thirdParty: true },
+];
+export const GENERATE_DUE = "2026-10-01";
+
+/** AUD-11 e: Version 3 drawing — a person's draw, the first eight participants in. */
+export function northwindParticipantsDrawing(): SampleSetOut {
+  const approved = northwindParticipants();
+  const [v2, v1] = approved.versions;
+  if (v2 === undefined || v1 === undefined) throw new Error("the seed has two versions");
+  return {
+    ...approved,
+    version_no: 3,
+    status: "drawing",
+    items_hash: null,
+    content_hash: null,
+    versions: [
+      {
+        ...v2,
+        version_no: 3,
+        status: "drawing",
+        prepared: null,
+        approved: null,
+        created_at: ct("2026-09-24T09:24:00"),
+      },
+      v2,
+      v1,
+    ],
+    allowed_actions: [],
+  };
+}
+
+export function drawProgress(done: number): DrawProgressOut {
+  return {
+    version_no: 3,
+    status: "drawing",
+    items_done: done,
+    items_total: 25,
+    failure_code: null,
+    items: participantItems().slice(0, done),
+  };
+}
+
+/** AUD-11 f (R2): Granite Peak FY2026 · BH-FS-430, a general-ledger population and its strata. */
+export function graniteDisbursements(): SampleSetOut {
+  const engagement = stableId("engagement:granite-peak:fy2026");
+  const workItem = stableId("work-item:granite-peak:fy2026");
+  const population = stableId("population:granite-peak-disbursements");
+  const tie = (n: number, label: string, amount: string | null): CompletenessTieOut => ({
+    id: stableId(`tie:granite-peak:${String(n)}`),
+    position: n,
+    label,
+    left_amount: amount,
+    comparisons: amount === null ? [] : [{ label, amount, citation: null, ledger_ref: null }],
+    difference: amount === null ? null : "0.00",
+    result: "tie",
+    explanation: null,
+    engine_version: "2.3",
+    inputs_hash: SHA(`tie:granite-peak:${String(n)}`),
+  });
+  return {
+    id: stableId("sample-set:granite-peak-disbursements"),
+    engagement_id: engagement,
+    work_item_id: workItem,
+    title: "Disbursements",
+    purpose: null,
+    program_step_key: null,
+    version_no: 1,
+    status: "draft",
+    population: {
+      id: population,
+      engagement_id: engagement,
+      work_item_id: workItem,
+      source: {
+        kind: "general_ledger",
+        evidence_version_id: null,
+        file_name: null,
+        file_version_no: null,
+        uploaded_by_name: null,
+        uploaded_on: null,
+        gl_snapshot_id: stableId("gl-snapshot:granite-peak-fy2026"),
+        connection_label: "NetSuite · Granite Peak Outdoor Supply",
+        query: null,
+        query_label: "Disbursements Jul 1 – Sep 18, 2026",
+        pulled_at: ct("2026-09-24T10:18:00"),
+      },
+      record_count: 1912,
+      record_unit: "payments",
+      amount_total: "38640200.00",
+      sha256: SHA("granite-peak-disbursements-fy2026"),
+      sampling_unit: "payment",
+      deviation_definition: null,
+      ties: [
+        tie(1, "Front Range Bank operating account cash disbursements", "38640200.00"),
+        tie(2, "No gaps in check numbers · ACH batch totals agree", null),
+      ],
+      created_by_name: "Simone Baptiste",
+      created_at: ct("2026-09-24T10:18:00"),
+    },
+    parameters: {
+      method: "threshold_random_stratified",
+      rmm: null,
+      tolerable_rate: null,
+      expected_rate: null,
+      confidence: null,
+      computed_size: 40,
+      statistical_crosscheck_size: null,
+      override_size: null,
+      override_rationale: null,
+      final_size: 40,
+      seed: 0x7c31b4,
+      seed_hex: "0x7C31B4",
+      seed_source: "scenario",
+      sampler_version: "2.3",
+      citations: [],
+    },
+    strata: [
+      {
+        position: 1,
+        min_amount: "50000.00",
+        max_amount: null,
+        test_rule: "all",
+        random_count: null,
+        population_count: 24,
+        population_amount: null,
+        selected_count: 24,
+      },
+      {
+        position: 2,
+        min_amount: "7750.00",
+        max_amount: "49999.99",
+        test_rule: "random",
+        random_count: 16,
+        population_count: 1102,
+        population_amount: null,
+        selected_count: 16,
+      },
+      {
+        position: 3,
+        min_amount: null,
+        max_amount: "7750.00",
+        test_rule: "none",
+        random_count: null,
+        population_count: 786,
+        population_amount: null,
+        selected_count: 0,
+      },
+    ],
+    items_total: 40,
+    items_amount: "3698700.00",
+    versions: [
+      {
+        version_no: 1,
+        status: "draft",
+        population_id: population,
+        population_label: "Disbursements Jul 1 – Sep 18, 2026",
+        record_count: 1912,
+        tie_result: "tie",
+        tie_difference: "0.00",
+        seed_hex: "0x7C31B4",
+        final_size: 40,
+        override_pending: false,
+        created_by_name: "Simone Baptiste",
+        created_at: ct("2026-09-24T10:20:00"),
+        prepared: null,
+        approved: null,
+      },
+    ],
+    inputs_hash: SHA("disbursements:v1:inputs"),
+    items_hash: SHA("disbursements:v1:items"),
+    content_hash: SHA("disbursements:v1:content"),
+    allowed_actions: ["sample_set.export", "sample_set.create"],
+  };
+}
+
+export function graniteSampleSets(): SampleSetSummaryOut[] {
+  return [
+    {
+      id: stableId("sample-set:granite-peak-disbursements"),
+      title: "Disbursements",
+      current_version_no: 1,
+      status: "draft",
+      final_size: 40,
+      population_count: 1912,
     },
   ];
 }

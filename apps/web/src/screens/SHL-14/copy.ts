@@ -86,4 +86,20 @@ export const COPY = {
     markIncorporated: "Mark incorporated",
     return: "Return…",
   },
+  // SHL-14 c (A-03-T15; the handoff's state 3): the Sample wave over an approved sample.
+  sample: {
+    title: "New sample requests",
+    picker: "Sample",
+    none: "No approved sample on this audit",
+    option: (title: string, version: number, size: string) =>
+      `${title} · Version ${String(version)} · ${size} items`,
+    linked: "Linked",
+    linkedValue: (title: string, seed: string) => `${title} · sample seed ${seed}`,
+    count: (n: string) => `${n} participants`,
+    more: (n: number) => `+ ${String(n)} more`,
+    preview: (first: string, n: string) => `${first} sees one card with ${n} items`,
+    footer: (n: string) => `Creates ${n} requests in 'Sample-driven'`,
+    create: (n: string) => `Create ${n} requests`,
+    created: (n: string) => `${n} requests created in Sample-driven`,
+  },
 } as const;
