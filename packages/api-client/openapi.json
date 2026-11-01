@@ -58192,9 +58192,10 @@
           "level": {
             "cls": "internal",
             "enum": [
-              "required",
-              "recommended",
-              "optional"
+              "foundation",
+              "planning",
+              "testing",
+              "completion"
             ],
             "title": "Level",
             "type": "string"

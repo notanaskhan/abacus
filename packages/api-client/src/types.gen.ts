@@ -27793,7 +27793,7 @@ export type ProgramProcedureOut = {
     /**
      * Level
      */
-    level: 'required' | 'recommended' | 'optional';
+    level: 'foundation' | 'planning' | 'testing' | 'completion';
     linked_work: LinkedWorkOut | null;
     /**
      * Mandatory

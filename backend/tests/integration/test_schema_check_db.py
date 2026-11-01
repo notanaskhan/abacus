@@ -1170,6 +1170,11 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"current_version_no"}
             | {"issue_id", "issue_linked_by", "issue_linked_at"}  # 0193 (A-02-T11): issue link
         ),
+        # 0581 (A-04-T03, DEC-1761): a flag converts or resolves; a procedure is tailored.
+        "attention_flags": frozenset({"state", "converted_to_kind", "converted_to_id"}),
+        "program_procedures": frozenset(
+            {"tailored", "tailored_rationale", "status", "linked_work"}
+        ),
         "grouping_set_versions": frozenset(  # SPEC-316 (TASK-345): published once
             # A-03-T06 (0521): the publish also sets the dated effective_from.
             {"status", "published_by", "published_at", "published_actor_kind", "effective_from"}

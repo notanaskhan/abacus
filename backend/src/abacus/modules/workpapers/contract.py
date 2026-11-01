@@ -54,7 +54,8 @@ ValueSource = Literal["agent", "human", "formula", "tb_linked", "engine_import"]
 ProducedBy = Literal["agent", "human"]
 VersionCause = Literal["draft", "adopt", "edit", "restore"]
 DraftMode = Literal["gap", "risk_narrative", "risk", "ic", "soc1"]
-ProcedureLevel = Literal["required", "recommended", "optional"]
+# A procedure keeps its program step's level (0581, DEC-1761).
+ProcedureLevel = Literal["foundation", "planning", "testing", "completion"]
 LinkedWorkKind = Literal["workpaper", "sheet", "screens"]
 # What the person may do on this record; the screen shows only these controls.
 WorkpaperAction = Literal[
