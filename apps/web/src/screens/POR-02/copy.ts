@@ -158,6 +158,7 @@ export const COPY = {
   earlier: {
     title: "Earlier",
     view: "View",
+    failed: "Couldn't download the return. Try again.",
     row: {
       extension_filed: (facts: Readonly<Record<string, string | number | boolean>>) =>
         `${String(facts.tax_year ?? "")} extension (Form ${String(facts.form ?? "")}) filed`,

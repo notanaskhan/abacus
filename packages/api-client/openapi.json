@@ -16884,6 +16884,12 @@
             "title": "Ai Use Signed",
             "type": "integer"
           },
+          "blocked_clients": {
+            "cls": "internal",
+            "default": 0,
+            "title": "Blocked Clients",
+            "type": "integer"
+          },
           "declined": {
             "cls": "internal",
             "title": "Declined",
@@ -25957,6 +25963,19 @@
             "cls": "internal",
             "title": "Key",
             "type": "string"
+          },
+          "last_sync_return_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Last Sync Return Id"
           },
           "mappings": {
             "cls": "confidential",
@@ -41510,6 +41529,58 @@
         "title": "K1DetailsChangeTagOut",
         "type": "object"
       },
+      "K1DisclosureIn": {
+        "additionalProperties": false,
+        "properties": {
+          "body": {
+            "cls": "internal",
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          }
+        },
+        "required": [
+          "body"
+        ],
+        "title": "K1DisclosureIn",
+        "type": "object"
+      },
+      "K1DisclosureOut": {
+        "description": "S20e (DV-12): the firm's counsel-approved electronic-furnishing text, one version.",
+        "properties": {
+          "body": {
+            "cls": "internal",
+            "title": "Body",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "imported_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Imported At",
+            "type": "string"
+          },
+          "version_no": {
+            "cls": "internal",
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "version_no",
+          "body",
+          "imported_at"
+        ],
+        "title": "K1DisclosureOut",
+        "type": "object"
+      },
       "K1DocumentOut": {
         "properties": {
           "evidence_version_id": {
@@ -41775,6 +41846,23 @@
             },
             "title": "Documents",
             "type": "array"
+          },
+          "e_furnishing_consent": {
+            "anyOf": [
+              {
+                "enum": [
+                  "unknown",
+                  "given",
+                  "declined"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "E Furnishing Consent"
           },
           "form": {
             "cls": "internal",
@@ -50054,6 +50142,36 @@
         "title": "MethodologyImportOut",
         "type": "object"
       },
+      "MethodologyPageWordsOut": {
+        "description": "One page's words with their boxes for the KNW-02 viewer (TIN forms masked).",
+        "properties": {
+          "page": {
+            "cls": "internal",
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_count": {
+            "cls": "internal",
+            "title": "Page Count",
+            "type": "integer"
+          },
+          "words": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/PageWordOut"
+            },
+            "title": "Words",
+            "type": "array"
+          }
+        },
+        "required": [
+          "page",
+          "page_count",
+          "words"
+        ],
+        "title": "MethodologyPageWordsOut",
+        "type": "object"
+      },
       "MethodologyVersionOut": {
         "properties": {
           "areas": {
@@ -51797,6 +51915,42 @@
           "box"
         ],
         "title": "PageLineOut",
+        "type": "object"
+      },
+      "PageWordOut": {
+        "properties": {
+          "box": {
+            "cls": "internal",
+            "maxItems": 4,
+            "minItems": 4,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Box",
+            "type": "array"
+          },
+          "text": {
+            "cls": "confidential",
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "box"
+        ],
+        "title": "PageWordOut",
         "type": "object"
       },
       "ParagraphBlock": {
@@ -178442,6 +178596,113 @@
         "x-abacus-action": "issue.verify"
       }
     },
+    "/v1/k1-furnishing-disclosures": {
+      "post": {
+        "description": "S20e (DV-12): a firm admin's new version of the counsel-approved text (content, never a\nseed for a real firm).",
+        "operationId": "import_k1_disclosure",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/K1DisclosureIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/K1DisclosureOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Import K1 Disclosure Route",
+        "tags": [
+          "k1-packages"
+        ],
+        "x-abacus-action": "k1_disclosure.import"
+      }
+    },
     "/v1/k1-packages/{package_id}": {
       "get": {
         "operationId": "k1_package",
@@ -184115,6 +184376,284 @@
           }
         },
         "summary": "Methodology File Download Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "methodology.read"
+      }
+    },
+    "/v1/methodology/versions/{version_id}/files/{file_id}/pages/{page_no}": {
+      "get": {
+        "description": "One page of a PDF source as a PNG, read in the isolated child (audited; `no-store`): 409\n`page_preview_unavailable` for a DOCX, 422 `page_out_of_range`, `source_encrypted`,\n`source_malformed`.",
+        "operationId": "methodology_file_page",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "file_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "File Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "page_no",
+            "required": true,
+            "schema": {
+              "maximum": 400,
+              "minimum": 1,
+              "title": "Page No",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "contentMediaType": "application/octet-stream",
+                  "title": "Response Methodology File Page",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Methodology File Page Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "methodology.read"
+      }
+    },
+    "/v1/methodology/versions/{version_id}/files/{file_id}/pages/{page_no}/words": {
+      "get": {
+        "description": "One page's words and their boxes, for the viewer's regions and MatchProvider tracing.",
+        "operationId": "methodology_file_page_words",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "file_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "File Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "page_no",
+            "required": true,
+            "schema": {
+              "maximum": 400,
+              "minimum": 1,
+              "title": "Page No",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MethodologyPageWordsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Methodology File Page Words Route",
         "tags": [
           "methodology"
         ],
@@ -192363,9 +192902,106 @@
         "x-abacus-action": "portal_intake.withdraw"
       }
     },
+    "/v1/portal/k1-furnishing-disclosure": {
+      "get": {
+        "description": "S20e (DV-12): the newest disclosure a recipient reads before consenting; 404 while none\nis published.",
+        "operationId": "portal_k1_disclosure",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/K1DisclosureOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Portal K1 Disclosure Route",
+        "tags": [
+          "portal"
+        ],
+        "x-abacus-action": "portal_k1.read"
+      }
+    },
     "/v1/portal/k1-recipients/{recipient_id}/details-changes": {
       "post": {
-        "description": "A signed W-9 or W-8, or a structured address, for a person at the firm to decide.",
+        "description": "A structured address for a person at the firm to decide; a W-9 or W-8 goes through\n`\u2026/details-changes:upload` (422 `details_change_invalid` here).",
         "operationId": "portal_details_change",
         "parameters": [
           {
@@ -192484,6 +193120,157 @@
           }
         },
         "summary": "Portal Details Change Route",
+        "tags": [
+          "portal"
+        ],
+        "x-abacus-action": "portal_k1.update_details"
+      }
+    },
+    "/v1/portal/k1-recipients/{recipient_id}/details-changes:upload": {
+      "post": {
+        "description": "POR-13 d (S20e): a signed W-9 or W-8, the raw file as the body; scanned before storage,\nrefused closed, stored as the recipient's own upload; pending for a person at the firm.",
+        "operationId": "portal_details_upload",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recipient_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Recipient Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "enum": [
+                "w9",
+                "w8"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filename",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Filename",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipientDetailsChangeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "The file is too large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Portal Details Upload Route",
         "tags": [
           "portal"
         ],

@@ -290,13 +290,21 @@ export function ADM05({
         ...g,
         sections: g.sections.filter(
           (s) =>
-            ["general", "people", "offices", "security", "audit-log", "consents"].includes(s.id) ||
-            PLANNED_VISIBLE,
+            [
+              "general",
+              "people",
+              "offices",
+              "security",
+              "audit-log",
+              "consents",
+              "integrations",
+            ].includes(s.id) || PLANNED_VISIBLE,
         ),
       })).filter((g) => g.sections.length > 0)}
       active="consents"
       onSelect={(id) => {
         if (id === "general") home();
+        else if (id === "integrations") open(hrefOf(to.ADM08()));
         else if (id !== "consents") onNavigate?.(id);
       }}
       dirty={false}

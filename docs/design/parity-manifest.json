@@ -3552,6 +3552,329 @@
       "sha256": "170362b5515935a922fcfbfce1a48ee700256fd599d9f6954e1111106dc45b93",
       "crop": "window",
       "tier": "C"
+    },
+    "adm-05a.window": {
+      "page": "screens/ADM-05?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-05 Consent registry --7216-/screenshots/ADM-05a.png",
+      "sha256": "ccb1e62d1fbae2b71228c5d1dbc43caff47a690c4e1f69e55a012e77ae4dcea0",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-05b.window": {
+      "page": "screens/ADM-05?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-05 Consent registry --7216-/screenshots/ADM-05b.png",
+      "sha256": "3af63b66c467a29f8f334c918a1c20fe150cbe08d6faa15caa14427aac3ff156",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-05c.window": {
+      "page": "screens/ADM-05?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-05 Consent registry --7216-/screenshots/ADM-05c.png",
+      "sha256": "2df44288be80eb5bd22482476f90561882b80a56d06a79f359dc899250a1b43a",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-05d.window": {
+      "page": "screens/ADM-05?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-05 Consent registry --7216-/screenshots/ADM-05d.png",
+      "sha256": "89fc71db06659100747ea1544f43af0cd74834b3406f16e347f19900a893640c",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-05e.window": {
+      "page": "screens/ADM-05?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-05 Consent registry --7216-/screenshots/ADM-05e.png",
+      "sha256": "11c89e5962692f10328c238ff9339542cb9dc1fe9a0323031848761471b76eff",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-05f.window": {
+      "page": "screens/ADM-05?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-05 Consent registry --7216-/screenshots/ADM-05f.png",
+      "sha256": "4d64407d70b3dde45bad682d632025bfd171c9cafb04131530aedb74dbeeddc0",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-05g.window": {
+      "page": "screens/ADM-05?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-05 Consent registry --7216-/screenshots/ADM-05g.png",
+      "sha256": "abb1914c3109b00b79454e46ae97ca0537dbb820a3b3ddcb080f1172eaa716e4",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-05h.window": {
+      "page": "screens/ADM-05?st=h",
+      "selector": "[data-artboard=\"h\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/ADM-05 Consent registry --7216-/screenshots/ADM-05h.png",
+      "sha256": "5b56f8986354aeaafe914530e942ad76ca22082e302614e911bf25b8f6090e96",
+      "crop": "window",
+      "tier": "C"
+    },
+    "adm-08a.window": {
+      "page": "screens/ADM-08?st=a",
+      "selector": "[data-artboard=\"a\"]",
+      "source": "handoff/screens/ADM-08 Integration settings/screenshots/ADM-08a.png",
+      "sha256": "2ae04686bc582594fd2f32620c1000993de589a947f737ec3e286830b942b6d9",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "T-01-T52: the artboard draws the screen without the app shell (the gallery frame), so the window crop is compared report-only at Tier C (DEC-1670)"
+    },
+    "adm-08b.window": {
+      "page": "screens/ADM-08?st=b",
+      "selector": "[data-artboard=\"b\"]",
+      "source": "handoff/screens/ADM-08 Integration settings/screenshots/ADM-08b.png",
+      "sha256": "575dcfdcd3738d1fca77a7169bec067ad40041974457cf9d3ae9aef488fc04c3",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "T-01-T52: the artboard draws the screen without the app shell (the gallery frame), so the window crop is compared report-only at Tier C (DEC-1670)"
+    },
+    "adm-08c.window": {
+      "page": "screens/ADM-08?st=c",
+      "selector": "[data-artboard=\"c\"]",
+      "source": "handoff/screens/ADM-08 Integration settings/screenshots/ADM-08c.png",
+      "sha256": "35ade753456b8dc1721a7f3657eb4ebd7a7ddb0e0acfaaeea8e98beb829c8d4a",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "T-01-T52: the artboard draws the screen without the app shell (the gallery frame), so the window crop is compared report-only at Tier C (DEC-1670)"
+    },
+    "adm-08d.window": {
+      "page": "screens/ADM-08?st=d",
+      "selector": "[data-artboard=\"d\"]",
+      "source": "handoff/screens/ADM-08 Integration settings/screenshots/ADM-08d.png",
+      "sha256": "727557bdcc310d788b2c050faea9f572c3e929a220cc9ad703c4aa404c3f7221",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "T-01-T52: the artboard draws the screen without the app shell (the gallery frame), so the window crop is compared report-only at Tier C (DEC-1670)"
+    },
+    "adm-08e.window": {
+      "page": "screens/ADM-08?st=e",
+      "selector": "[data-artboard=\"e\"]",
+      "source": "handoff/screens/ADM-08 Integration settings/screenshots/ADM-08e.png",
+      "sha256": "030cd22580d16aebc5ad0335c8f92cda6922930ba2c999e0b35b9b8c77396e1b",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "T-01-T52: the artboard draws the screen without the app shell (the gallery frame), so the window crop is compared report-only at Tier C (DEC-1670)"
+    },
+    "adm-08f.window": {
+      "page": "screens/ADM-08?st=f",
+      "selector": "[data-artboard=\"f\"]",
+      "source": "handoff/screens/ADM-08 Integration settings/screenshots/ADM-08f.png",
+      "sha256": "34587ee0f48eaa364d4bed094f89bdfef75e1947cb59ed910ad6294b8a6ec178",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "T-01-T52: the artboard draws the screen without the app shell (the gallery frame), so the window crop is compared report-only at Tier C (DEC-1670)"
+    },
+    "adm-08g.window": {
+      "page": "screens/ADM-08?st=g",
+      "selector": "[data-artboard=\"g\"]",
+      "source": "handoff/screens/ADM-08 Integration settings/screenshots/ADM-08g.png",
+      "sha256": "7807cc6c4a9fa89008c6dc4dfa80244f3a984afebf0ce0d333bc5ab5151c9e36",
+      "crop": "window",
+      "tier": "C",
+      "deviation": "T-01-T52: the artboard draws the screen without the app shell (the gallery frame), so the window crop is compared report-only at Tier C (DEC-1670)"
+    },
+    "cli-05a.window": {
+      "page": "screens/CLI-05?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-05 Tax profile- authorizations and consents - with Transcripts/screenshots/CLI-05a.png",
+      "sha256": "25112be313e901b6d44a7aacd0e99f268bbc70351a1f6020b37e06337574b488",
+      "crop": "window",
+      "tier": "C"
+    },
+    "cli-05b.window": {
+      "page": "screens/CLI-05?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-05 Tax profile- authorizations and consents - with Transcripts/screenshots/CLI-05b.png",
+      "sha256": "dcdbab692827916dd56089b35860ad3d59cf8c6121cade770037ea1d6fa71553",
+      "crop": "window",
+      "tier": "C"
+    },
+    "cli-05c.window": {
+      "page": "screens/CLI-05?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-05 Tax profile- authorizations and consents - with Transcripts/screenshots/CLI-05c.png",
+      "sha256": "6a32d0eb50ec27b862edb9d44fb1882e3d43bb0e95be33be249102d5d7e85b19",
+      "crop": "window",
+      "tier": "C"
+    },
+    "cli-05d.window": {
+      "page": "screens/CLI-05?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-05 Tax profile- authorizations and consents - with Transcripts/screenshots/CLI-05d.png",
+      "sha256": "1f435d1a00eacfe3d93b51c2260bc8947b47ed4ddb83f73123ee1fba732eb20f",
+      "crop": "window",
+      "tier": "C"
+    },
+    "cli-05e.window": {
+      "page": "screens/CLI-05?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-05 Tax profile- authorizations and consents - with Transcripts/screenshots/CLI-05e.png",
+      "sha256": "a939be0568a44ccf9f6ef3e5b314bf0ed55ccb9790d673c24737eac5e27d0fb6",
+      "crop": "window",
+      "tier": "C"
+    },
+    "cli-05f.window": {
+      "page": "screens/CLI-05?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-05 Tax profile- authorizations and consents - with Transcripts/screenshots/CLI-05f.png",
+      "sha256": "e5328ab9bc3af79f6e5fd6ef5a636045b686f237e1d80293ceba23331608dc66",
+      "crop": "window",
+      "tier": "C"
+    },
+    "cli-05g.window": {
+      "page": "screens/CLI-05?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/CLI-05 Tax profile- authorizations and consents - with Transcripts/screenshots/CLI-05g.png",
+      "sha256": "d2481b280a1ed373a3eb8ed57490e759188cf2121c4037cbc92c633d605868d7",
+      "crop": "window",
+      "tier": "C"
+    },
+    "tax-09a.window": {
+      "page": "screens/TAX-09?st=a",
+      "selector": "[data-artboard=\"a\"]",
+      "source": "handoff/screens/TAX-09 Return - Tax-engine sync - Feld 2025 Form 1040/screenshots/TAX-09a.png",
+      "sha256": "cd6dd5c2a99d8e08942bcea22c75df82fe59a5f65a30a0356e67b6aa4156a94f",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "deviation": "T-01-T52: the artboard draws the screen without the app shell (the gallery frame), so the window crop is compared report-only at Tier C (DEC-1670)"
+    },
+    "tax-09a2.window": {
+      "page": "screens/TAX-09?st=a2",
+      "selector": "[data-artboard=\"a2\"]",
+      "source": "handoff/screens/TAX-09 Return - Tax-engine sync - Feld 2025 Form 1040/screenshots/TAX-09a2.png",
+      "sha256": "6d49eb1996ea24f65078c7a7263e1ffd600564e909806c344ea2bf6a4e38a6ff",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "deviation": "T-01-T52: the artboard draws the screen without the app shell (the gallery frame), so the window crop is compared report-only at Tier C (DEC-1670)"
+    },
+    "tax-09b.window": {
+      "page": "screens/TAX-09?st=b",
+      "selector": "[data-artboard=\"b\"]",
+      "source": "handoff/screens/TAX-09 Return - Tax-engine sync - Feld 2025 Form 1040/screenshots/TAX-09b.png",
+      "sha256": "c137fe1796e0976fbf030f99a88bf05d52df49a8dcf9da0e475c5c2ea54b4dd8",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "deviation": "T-01-T52: the artboard draws the screen without the app shell (the gallery frame), so the window crop is compared report-only at Tier C (DEC-1670)"
+    },
+    "tax-09c.window": {
+      "page": "screens/TAX-09?st=c",
+      "selector": "[data-artboard=\"c\"]",
+      "source": "handoff/screens/TAX-09 Return - Tax-engine sync - Feld 2025 Form 1040/screenshots/TAX-09c.png",
+      "sha256": "9d04dfca0f6c219a69b3c0468ab6c521ea027339c9f5d1f39cf7f632c0c2846f",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "deviation": "T-01-T52: the artboard draws the screen without the app shell (the gallery frame), so the window crop is compared report-only at Tier C (DEC-1670)"
+    },
+    "tax-09d.window": {
+      "page": "screens/TAX-09?st=d",
+      "selector": "[data-artboard=\"d\"]",
+      "source": "handoff/screens/TAX-09 Return - Tax-engine sync - Feld 2025 Form 1040/screenshots/TAX-09d.png",
+      "sha256": "9c06078e97e380a3a5bdfc86d41c15c8daf884f512c0689faf064d4331566aaf",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "deviation": "T-01-T52: the artboard draws the screen without the app shell (the gallery frame), so the window crop is compared report-only at Tier C (DEC-1670)"
+    },
+    "tax-09d2.window": {
+      "page": "screens/TAX-09?st=d2",
+      "selector": "[data-artboard=\"d2\"]",
+      "source": "handoff/screens/TAX-09 Return - Tax-engine sync - Feld 2025 Form 1040/screenshots/TAX-09d2.png",
+      "sha256": "cb3ae357f88062da8b1489f1921a9936a90ebb8ca732a6ccba10b1ea2e902877",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "deviation": "T-01-T52: the artboard draws the screen without the app shell (the gallery frame), so the window crop is compared report-only at Tier C (DEC-1670)"
+    },
+    "tax-09e.window": {
+      "page": "screens/TAX-09?st=e",
+      "selector": "[data-artboard=\"e\"]",
+      "source": "handoff/screens/TAX-09 Return - Tax-engine sync - Feld 2025 Form 1040/screenshots/TAX-09e.png",
+      "sha256": "dd9d53445bec5c6e9b7623e4232587111d65620a1ebdd0eacdaf2ef186273461",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "deviation": "T-01-T52: the artboard draws the screen without the app shell (the gallery frame), so the window crop is compared report-only at Tier C (DEC-1670)"
+    },
+    "tax-12a.window": {
+      "page": "screens/TAX-12?st=a",
+      "selector": "[data-artboard=\"a\"]",
+      "source": "handoff/screens/TAX-12 Return - Delivery and e-file - Feld 2025 Form 1040/screenshots/TAX-12a.png",
+      "sha256": "1855293947f8bcf7a8c2b013e1fd53de390e14e45fdade2a6dae6c392492e169",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "deviation": "T-01-T52: the artboard draws the screen without the app shell (the gallery frame), so the window crop is compared report-only at Tier C (DEC-1670)"
+    },
+    "tax-12a2.window": {
+      "page": "screens/TAX-12?st=a2",
+      "selector": "[data-artboard=\"a2\"]",
+      "source": "handoff/screens/TAX-12 Return - Delivery and e-file - Feld 2025 Form 1040/screenshots/TAX-12a2.png",
+      "sha256": "24f0bd1deb24aefa0c3f49bc73e47567476c7d5bda5e06f94a9da5a98fd022d0",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "deviation": "T-01-T52: the artboard draws the screen without the app shell (the gallery frame), so the window crop is compared report-only at Tier C (DEC-1670)"
+    },
+    "tax-12b.window": {
+      "page": "screens/TAX-12?st=b",
+      "selector": "[data-artboard=\"b\"]",
+      "source": "handoff/screens/TAX-12 Return - Delivery and e-file - Feld 2025 Form 1040/screenshots/TAX-12b.png",
+      "sha256": "9fc3af9a4cb29a776af5bf94c7440129850ac73f664072a063a6bc80aae6b4e7",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "deviation": "T-01-T52: the artboard draws the screen without the app shell (the gallery frame), so the window crop is compared report-only at Tier C (DEC-1670)"
+    },
+    "tax-12c.window": {
+      "page": "screens/TAX-12?st=c",
+      "selector": "[data-artboard=\"c\"]",
+      "source": "handoff/screens/TAX-12 Return - Delivery and e-file - Feld 2025 Form 1040/screenshots/TAX-12c.png",
+      "sha256": "2b4b10a7738c457b8cf477a851872b13ef9145f8bcfd0b1766fdf8538a3938a1",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "deviation": "T-01-T52: the artboard draws the screen without the app shell (the gallery frame), so the window crop is compared report-only at Tier C (DEC-1670)"
+    },
+    "tax-12c2.window": {
+      "page": "screens/TAX-12?st=c2",
+      "selector": "[data-artboard=\"c2\"]",
+      "source": "handoff/screens/TAX-12 Return - Delivery and e-file - Feld 2025 Form 1040/screenshots/TAX-12c2.png",
+      "sha256": "d4db474bd684e4125d07f6d11a10baa3a368dfe9e529e046812eca3017196eeb",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "deviation": "T-01-T52: the artboard draws the screen without the app shell (the gallery frame), so the window crop is compared report-only at Tier C (DEC-1670)"
+    },
+    "tax-12d.window": {
+      "page": "screens/TAX-12?st=d",
+      "selector": "[data-artboard=\"d\"]",
+      "source": "handoff/screens/TAX-12 Return - Delivery and e-file - Feld 2025 Form 1040/screenshots/TAX-12d.png",
+      "sha256": "494ee001cad8e154e9e056612027f461c00faaaa8373f1e3c964ff83e10bffd5",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "deviation": "T-01-T52: the artboard draws the screen without the app shell (the gallery frame), so the window crop is compared report-only at Tier C (DEC-1670)"
+    },
+    "tax-12e.window": {
+      "page": "screens/TAX-12?st=e",
+      "selector": "[data-artboard=\"e\"]",
+      "source": "handoff/screens/TAX-12 Return - Delivery and e-file - Feld 2025 Form 1040/screenshots/TAX-12e.png",
+      "sha256": "62910edf7b494a64182e679011e24acad9fecd4e3ef9125ea5262ee69017dc70",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "deviation": "T-01-T52: the artboard draws the screen without the app shell (the gallery frame), so the window crop is compared report-only at Tier C (DEC-1670)"
     }
   }
 }

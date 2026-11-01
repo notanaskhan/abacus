@@ -65,6 +65,17 @@ export const COPY = {
     key: "Consents",
     helper: (family: string) =>
       `Agents cannot read ${family} return information until both spouses sign.`,
+    // T-01-T51: the live summary, worded by code from C19's rows.
+    summary: (purposes: readonly string[], signed: number) =>
+      `${[...new Set(purposes)].join(" · ")} (${String(purposes.length)} ${purposes.length === 1 ? "consent" : "consents"}) · ${String(signed)} of ${String(purposes.length)} signed`,
+    purposes: {
+      use: "Use",
+      ai_disclosure: "AI disclosure",
+      offshore_disclosure: "Offshore disclosure",
+      third_party_disclosure: "Third-party disclosure",
+      other_services_use: "Other services",
+      firm_defined: "Firm-defined",
+    } as Record<string, string>,
   },
   /** Monthly close: planned until C-01 (fixture builds only). */
   closePlan: {

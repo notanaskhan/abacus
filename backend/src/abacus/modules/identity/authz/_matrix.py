@@ -2196,6 +2196,14 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "independence": "required",
     },
+    "k1_disclosure.import": {
+        "firm_admin": "allow",
+        "client_admin": "deny",
+        "client_contributor": "deny",
+        "agent": "deny",
+        "system": "deny",
+        "mfa_recent": "required",
+    },
     "k1_package.read": {
         "engagement_partner": "allow",
         "manager": "allow",

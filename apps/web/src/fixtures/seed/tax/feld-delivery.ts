@@ -119,12 +119,15 @@ export function feldDelivery(state: string): DeliveryOut {
     binding_superseded: false,
     transmitted_on: transmitted ? FELD_TRANSMITTED_ON : null,
     acks: state === "d" ? [...FELD_ACKS_ACCEPTED] : state === "e" ? [FELD_ACK_REJECTED] : [],
-    // c2: Daniel Reyes, the ERO, may record the transmission; Grace prepares.
+    // c2: Daniel Reyes, the ERO, may record the transmission; Grace prepares. e: Daniel raises
+    // the rejection as an issue (client service holds no `issue.create`).
     allowed_actions: blocked
       ? []
       : state === "c2"
         ? ["transmission.record"]
-        : ["delivery_packet.prepare"],
+        : state === "e"
+          ? ["efile_ack.record", "issue.create"]
+          : ["delivery_packet.prepare"],
   };
 }
 

@@ -38,3 +38,32 @@ test.describe("J13", () => {
     });
   });
 });
+
+// T-02-T32 (T-02 §2): j13 7-8, the K-1 release clears the draft chips on the Feld intake and Daniel
+// gives the Feld final approval (TAX-03 d, TAX-02 e), on the screens' artboards in the fixture
+// project; staging waits on T-02's live swaps.
+test.describe("J13 · T-02 release and final approval", () => {
+  test.beforeEach(({ journey }) => {
+    test.fixme(
+      journey.project !== "fixture",
+      "T-02-T32: T-02's screens live on staging and the canary, Thu Aug 12, 2027",
+    );
+  });
+
+  test("j13 7-8: the release clears the draft chips and Daniel approves the Feld 1040", async ({
+    journey,
+  }) => {
+    await journey.as("daniel-reyes", "/components/screens/TAX-03?st=d");
+    await journey.step(
+      "J13 step 7: the draft chip gives way to the final (TAX-03d)",
+      async (page) => {
+        await expect(page.getByText("Released Sep 15").first()).toBeVisible();
+      },
+    );
+    await journey.as("daniel-reyes", "/components/screens/TAX-02?st=e");
+    await journey.step("J13 step 8: Feld final approval unblocked (TAX-02e)", async (page) => {
+      await expect(page.locator("[data-artboard='e']")).toBeVisible();
+      await expect(page.getByText(/final approval is blocked until/)).toHaveCount(0);
+    });
+  });
+});
