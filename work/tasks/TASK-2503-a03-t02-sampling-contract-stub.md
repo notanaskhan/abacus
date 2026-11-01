@@ -4,7 +4,7 @@ title: A-03-T02 sampling API contract stub and screen contracts (AUD-11, AUD-31,
 spec: SPEC-580
 acceptance_criteria: [AC-11, AC-12]
 risk_zone: amber
-status: in-review
+status: done
 epic: A-03
 plan_key: A-03-T02
 branch: s20-a03-t02

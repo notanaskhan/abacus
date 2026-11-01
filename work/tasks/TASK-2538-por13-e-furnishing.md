@@ -4,7 +4,7 @@ title: "POR-13 electronic-furnishing consent (DV-12) with the firm's disclosure 
 spec: SPEC-502  # AC-5; T-02 §3.7, DV-12; docs/screens/POR-13.md
 acceptance_criteria: [AC-5]
 risk_zone: amber
-status: in-review
+status: done
 epic: T-02
 plan_key: T-02-T27
 branch: s20e-por13-efurnishing

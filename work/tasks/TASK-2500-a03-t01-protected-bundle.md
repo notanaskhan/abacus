@@ -4,7 +4,7 @@ title: A-03-T01 S20 protected bundle for A-03
 spec: SPEC-580
 acceptance_criteria: [AC-1, AC-2, AC-3]
 risk_zone: red
-status: in-review
+status: done
 epic: A-03
 plan_key: A-03-T01
 branch: s20-a03-t01
