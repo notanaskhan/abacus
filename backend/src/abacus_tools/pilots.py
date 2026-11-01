@@ -26,8 +26,11 @@ from abacus.modules.identity.api import member_context
 from abacus.modules.platform.api import (
     PilotMode,
     compute_pilot_week,
+    cross_firm,
     enrol_pilot,
     set_pilot_mode,
+    wedge_read,
+    wedge_report,
 )
 
 
@@ -55,7 +58,14 @@ def main(argv: list[str] | None = None) -> int:
     metrics = sub.add_parser("metrics")
     metrics.add_argument("--firm", type=UUID, required=True)
     metrics.add_argument("--week", type=date.fromisoformat, required=True)
+    # Q-04-T050: the W4/W5 read for the sprint review, one row per firm and signal (Markdown).
+    read = sub.add_parser("read")
+    read.add_argument("--firm", type=UUID, action="append", required=True)
+    read.add_argument("--week", type=date.fromisoformat, required=True)
     args = parser.parse_args(argv)
+    if args.command == "read":
+        print(asyncio.run(_read(cast(list[UUID], args.firm), args.week)), end="")
+        return 0
     if args.command == "metrics":
         print(asyncio.run(compute_pilot_week(args.firm, args.week)))
         return 0
@@ -70,6 +80,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     mode_ = cast(PilotMode, args.mode)
     return asyncio.run(_mode(tenant, args.enrolment, mode_, args.confirmed_by))
+
+
+async def _read(firms: list[UUID], week: date) -> str:
+    reads = [await wedge_read(firm, week) for firm in firms]
+    return wedge_report(cross_firm(reads))
 
 
 async def _mode(
