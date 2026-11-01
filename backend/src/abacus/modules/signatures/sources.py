@@ -207,6 +207,18 @@ async def letter_envelope(tenant: TenantContext, engagement_id: UUID) -> UUID | 
         return await session.scalar(_LETTER_ENVELOPE, {"engagement": engagement_id})
 
 
+_COMPLETED_AT = text("SELECT completed_at FROM envelopes WHERE id = :id")
+
+
+async def letter_signed_at(tenant: TenantContext, engagement_id: UUID) -> datetime | None:
+    """T-01-T51 (POR-02 Earlier): when the engagement's G3 letter envelope completed, or None."""
+    envelope_id = await letter_envelope(tenant, engagement_id)
+    if envelope_id is None:
+        return None
+    async with tenant_session(tenant) as session:
+        return await session.scalar(_COMPLETED_AT, {"id": envelope_id})
+
+
 async def letter_gate(tenant: TenantContext, engagement_id: UUID) -> GateFact:
     """G3: a qualifying letter envelope, or engagements' recorded letter."""
     if await letter_envelope(tenant, engagement_id) is not None:
