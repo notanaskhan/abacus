@@ -4,6 +4,7 @@
 // project the step walks BND-02's own scenario (`?screen=`, G-01-T16); the other
 // projects wait for `binders.engine` on in E0 and the BND-02 live swap (P-06-T16) and keep it fixme.
 import { expect, test } from "../harness";
+import { M13, openEnvelope } from "../signatures/support";
 
 const LIVE = "binders.engine is off in E0; the BND-02 live swap is P-06-T16's";
 
@@ -219,6 +220,45 @@ test.describe("J06 · T-02 returns, organizer and K-1 dependency", () => {
     await journey.step("J06 step 10: no draft dependency remains (TAX-02e)", async (page) => {
       await expect(page.locator("[data-artboard='e']")).toBeVisible();
       await expect(page.getByText(/final approval is blocked until/)).toHaveCount(0);
+    });
+  });
+});
+
+// N-02-T42 (N-02 §10.1, M13): j06 11, the Feld joint 8879. Claire has signed and Jonah has not, so
+// one of two keeps transmission locked (POR-06 e); three failed identity checks route the signer
+// to a handwritten signature (POR-06 h, DF-11). T-01's `j06 D3` and `relock` steps are T-01-T46's.
+test.describe("J06 · N-02 the joint 8879", () => {
+  test.beforeEach(({ journey }) => {
+    test.fixme(journey.project !== "fixture", M13);
+  });
+
+  test("j06 11a: Claire signs the joint 8879 and one of two keeps transmission locked", async ({
+    journey,
+  }) => {
+    await journey.as("claire-feld", "/sign", {
+      scenario: "POR-06:e",
+      clock: "2026-10-02T09:10:00-05:00",
+    });
+    await journey.step(
+      "j06 11a: Claire signed, Jonah has his own link (POR-06 e)",
+      async (page) => {
+        await openEnvelope(page, /^Form 8879 · 2025 · Jonah & Claire Feld/);
+        // One of the two spouses (the ERO's signature is the third): transmission stays locked.
+        await expect(page.getByText("1 of 3 signed").first()).toBeVisible();
+        await expect(page.getByText("Jonah Feld — Separate link").first()).toBeVisible();
+        await expect(page.getByText(/Accrued/)).toHaveCount(0);
+      },
+    );
+  });
+
+  test("j06 11b: three failed identity checks route to a handwritten signature", async ({
+    journey,
+  }) => {
+    await journey.as("owen-calder", "/sign", { scenario: "POR-06:h" });
+    await journey.step("j06 11b: identity not verified, a paper form (POR-06 h)", async (page) => {
+      await openEnvelope(page, /^Form 8879-PE · 2025/);
+      await expect(page.getByText("We couldn't verify your identity.").first()).toBeVisible();
+      await expect(page.getByText(/paper form to sign/).first()).toBeVisible();
     });
   });
 });
