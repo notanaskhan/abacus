@@ -1287,7 +1287,7 @@ async def risk_register_route(engagement_id: UUID, ctx: Ctx) -> RegisterOut:
     action="risk.edit",
     response_model=RiskDrawerOut,
     status_code=201,
-    errors=(409, 422),
+    errors=(409,),
 )
 async def risk_create_route(
     engagement_id: UUID, body: RiskCreateIn, ctx: Ctx, idempotency_key: IdempotencyKey
@@ -1366,9 +1366,7 @@ async def risk_drawer_route(engagement_id: UUID, risk_id: UUID, ctx: Ctx) -> Ris
     return await _drawer_out(ctx, engagement_id, risk_id)
 
 
-@router.patch(
-    "/risks/{risk_id}", action="risk.edit", response_model=RiskDrawerOut, errors=(409, 422)
-)
+@router.patch("/risks/{risk_id}", action="risk.edit", response_model=RiskDrawerOut, errors=(409,))
 async def risk_edit_route(
     engagement_id: UUID,
     risk_id: UUID,
