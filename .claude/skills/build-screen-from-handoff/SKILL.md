@@ -86,3 +86,13 @@ Invent data, states or screens; port kit sample data; edit generated files (pack
 _flags.py); import firm shell code into portal code; render agent text raw;
 let a click, drag, trigger or column sign off, approve, release, send or post; add a 14th nav item, a persona, a peer
 benchmark or licensed publisher content (D1–D10, X-01…X-08).
+
+## Kits with written hand-offs (F-06-T23)
+Before composing a screen on T6, T10, T16 or the portal at 390, read its hand-off page: it maps the
+consumer's payload to the kit's props and names the callbacks the screen wires. Never build a kit
+workaround for a missing field: it is an additive contract change.
+- T6 WorkbookLayout: `docs/design/kits/workbook.md` (EBP-04/05/08/09, AUD-08, AUD-16, TXP-07).
+- T10 DocumentOnWell: `docs/design/kits/document-on-well.md` (ENG-04, NOT-03, AUD-21, POR-20).
+- T16 SigningCeremony and TPL-01: `docs/design/kits/signing.md` (POR-06, SIG-01, TAX-01).
+- T7-M portal mobile: `docs/design/kits/portal-mobile.md` (POR-19 and every POR screen at 390;
+  TPL-19 frames 3, 4, 8 and permission-off are deferred, DEC-97).

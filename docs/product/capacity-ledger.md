@@ -128,3 +128,8 @@ Counting the two partial rows at half, throughput is 93%. Beyond S2, F-05's S0 t
 | F-02…F-05 delivered (done rows) | 24.25 | 22.75 | 20.5 | 10.0 | 6.5 | 9.5 |
 
 The residual overcommit the plan names (106–121% of AY capacity in S1 to S4) did not bind: the solo build delivered S1 to S6 of these four epics in calendar weeks, ahead of chapter 01's dates, which are unchanged.
+
+
+## F-06 actuals (F-06-T23, 2026-11-01)
+
+F-06 (T6, T10, T16 and the TPL-01, 06, 10, 16, 19 specimens) is built on main through the T22 lock (planned 22.75 task-equivalents in 24 rows); this row adds the kits' written hand-offs (`docs/design/kits/{signing,workbook,document-on-well,portal-mobile}.md`) and the build-screen skill's pointer to them. The epic shipped inside S14 to S22 in the solo build's calendar weeks, ahead of chapter 01's dates; no F-06 cut was invoked. TPL-19 frames 3, 4, 8 and the permission-off variant are deferred to R-03 (DEC-97; `docs/plan/deferrals/R-03-tpl19.md`).

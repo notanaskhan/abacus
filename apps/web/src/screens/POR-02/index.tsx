@@ -5,6 +5,7 @@ import type {
   PortalHomeTodoOut,
   PortalHomeWorkCardOut,
 } from "@abacus/api-client";
+import { filedReturnDownload } from "@abacus/api-client";
 import {
   Button,
   DEFAULT_TZ,
@@ -23,6 +24,7 @@ import {
   count,
   date,
   portalNav,
+  toast,
   usePortalBrand,
   weekdayDate,
 } from "@abacus/ui";
@@ -38,6 +40,45 @@ import {
   usePortalToolbar,
 } from "../../domain/portal";
 import { COPY } from "./copy";
+
+/** An Earlier row's View for a filed return: the client copy as a download (T-01-T41's route). */
+function FiledReturnView({ deliveryId }: { deliveryId: string }): JSX.Element {
+  const [busy, setBusy] = useState(false);
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      className="text-cell font-medium text-ink hover:underline"
+      onClick={() => {
+        setBusy(true);
+        void filedReturnDownload({
+          path: { delivery_id: deliveryId },
+          parseAs: "blob",
+          throwOnError: true,
+        })
+          .then(({ data, response }) => {
+            const name =
+              /filename="([^"]+)"/.exec(response.headers.get("Content-Disposition") ?? "")?.[1] ??
+              "return.pdf";
+            const url = URL.createObjectURL(data);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = name;
+            link.click();
+            URL.revokeObjectURL(url);
+          })
+          .catch(() => {
+            toast.show(COPY.earlier.failed);
+          })
+          .finally(() => {
+            setBusy(false);
+          });
+      }}
+    >
+      {COPY.earlier.view}
+    </button>
+  );
+}
 
 // POR-02 · Portal home (P-08-T15 part 1, P-08-T23 part 2; docs/screens/POR-02.md). T7 split over
 // `GET /v1/portal/home` for the chosen scope, and T7-M at 390: the rail (household card, team rows
@@ -738,10 +779,17 @@ function Main({
                   <span className="min-w-0 flex-1 text-body">
                     {when === null ? words : `${words} · ${when}`}
                   </span>
-                  {PLANNED_VISIBLE && (
-                    <span title={COPY.planned} className="text-cell text-ink-3">
-                      {COPY.earlier.view}
-                    </span>
+                  {e.kind === "return_filed" &&
+                  typeof e.facts?.delivery_id === "string" &&
+                  e.facts.download_ready === true ? (
+                    // T-01-T51: View downloads the released client copy (C10, after the second step).
+                    <FiledReturnView deliveryId={e.facts.delivery_id} />
+                  ) : (
+                    PLANNED_VISIBLE && (
+                      <span title={COPY.planned} className="text-cell text-ink-3">
+                        {COPY.earlier.view}
+                      </span>
+                    )
                   )}
                 </li>
               );

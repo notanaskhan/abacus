@@ -50,7 +50,7 @@ COLUMNS: Final = (
     "Resolution",
 )
 _ISSUE: Final = re.compile(r"#\d+")
-_PILOT: Final = re.compile(r"PF-[ATC]\d{1,2}")
+_PILOT: Final = re.compile(r"PF-[ATCX]\d{1,2}")
 _STATE: Final = re.compile(r"[a-z]\d?|—")
 # The usability severities the session logs use (P-08-T29): S1 blocks the task, S2 slows it or
 # causes a recovered error, S3 is cosmetic or wording. Not ADR-097's incident SEV levels.

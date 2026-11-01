@@ -50,6 +50,7 @@ from abacus.modules.communications.sending_domains import (
     sender_for,
 )
 from abacus.modules.communications.template_registry import (
+    SEND_AUTHORITIES,
     VARIABLES,
     EmailTemplateRegistration,
     RecipientRef,
@@ -162,9 +163,17 @@ def _render(
         return None
 
 
-async def _authorise_send(ctx: AuthContext, ref: EngagementRef) -> None:
-    """A person sends: `message.send` on the engagement the message is about."""
-    await authorise(ctx, "message.send", ref.resource())
+async def _authorise_send(
+    ctx: AuthContext, ref: EngagementRef, key: str, authority: str | None
+) -> None:
+    """A person sends: `message.send` on the engagement the message is about, or, for a send
+    that is part of another act (`SEND_AUTHORITIES`, DEC-1580), that act's action on it."""
+    if authority is None:
+        await authorise(ctx, "message.send", ref.resource())
+    elif (key, authority) in SEND_AUTHORITIES:
+        await authorise(ctx, authority, ref.resource())
+    else:
+        raise Forbidden("message.send", "role")
 
 
 async def _authorise_system(person: AuthContext, ref: EngagementRef) -> None:
@@ -200,6 +209,7 @@ async def send(
     *,
     scope: SendScope,
     idempotency_key: str,
+    authority: str | None = None,
 ) -> SendOutcome:
     if isinstance(ctx, SystemSendContext):
         person, _ = await _system_sender(ctx, key)
@@ -227,7 +237,7 @@ async def send(
         if isinstance(ctx, SystemSendContext):
             await _authorise_system(checker, replayed)
         else:
-            await _authorise_send(ctx, replayed)
+            await _authorise_send(ctx, replayed, key, authority)
         return outcome
     registration = registration_of(key)
     if registration is not None and not registration.firm_editable:
@@ -242,7 +252,7 @@ async def send(
         if isinstance(ctx, SystemSendContext):
             await _authorise_system(checker, ref)
         else:
-            await _authorise_send(ctx, ref)
+            await _authorise_send(ctx, ref, key, authority)
         # Security review H: only someone the engagement concerns may be written to about it.
         # The re-review: and only for a key whose audience matches how they relate to it (a
         # third party never gets `deliverable_ready`).
@@ -353,5 +363,5 @@ async def templated_outcome(
     if found is None:
         return None
     outcome, engagement_id = found
-    await _authorise_send(ctx, await get_ref(ctx, engagement_id))
+    await _authorise_send(ctx, await get_ref(ctx, engagement_id), key, None)
     return outcome

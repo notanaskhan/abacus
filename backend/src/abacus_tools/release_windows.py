@@ -15,6 +15,9 @@ The rules (P-29; Q-04 §4.9):
 - A window applies to a firm from its `real_data_since`: season windows (Jan 1 - Apr 20) to every
   live firm, autumn windows (Sep 1 - Oct 20) to firms live on tax or EBP work. With no live firm,
   every guard is inert (DEC-68).
+- A firm marked `synthetic: true` (the test pilot firm PF-X1, DEC-1530) never has real data, so
+  `real_data_since` is refused on it and no window ever applies to it; its flips still take the
+  pilot rules (an approver and a rollback), which is what the rehearsal is for.
 - Platform rules (promotion, migrations, deadline weeks) apply when **any** live firm is in a
   window; flip rules apply per firm (OQ-2).
 - A deadline is shifted past weekends and legal holidays (IRC §7503; DC Emancipation Day moves
@@ -48,7 +51,8 @@ REPO = BACKEND.parent
 WINDOWS_FILE: Final = REPO / "deploy" / "windows.yaml"
 CT: Final = ZoneInfo("America/Chicago")
 
-# A pilot code (PF-A1, PF-T1, PF-C1) or a cohort code (PC28-07): never a firm's name (DEC-806).
+# A pilot code (PF-A1, PF-T1, PF-C1; PF-X1 the synthetic test firm, DEC-1530) or a cohort code
+# (PC28-07): never a firm's name (DEC-806).
 CODE: Final = re.compile(r"PF-[A-Z][0-9]{1,3}|PC[0-9]{2}-[0-9]{2,3}")
 _WINDOW_ID: Final = re.compile(r"(season|autumn)-(20[0-9]{2})")
 _HHMM: Final = re.compile(r"([01][0-9]|2[0-3]):[0-5][0-9]")
@@ -93,9 +97,12 @@ class Firm:
     code: str
     real_data_since: date | None
     autumn_window: bool
+    synthetic: bool = False  # the test pilot firm (DEC-1530): never live, never frozen
 
     def live_on(self, day: date) -> bool:
-        return self.real_data_since is not None and self.real_data_since <= day
+        return (
+            not self.synthetic and self.real_data_since is not None and self.real_data_since <= day
+        )
 
 
 @dataclass(frozen=True)
@@ -291,7 +298,13 @@ def _firms(raw: object, problems: list[str]) -> tuple[Firm, ...]:
             problems.append(f"{where}: a mapping")
             continue
         item = cast(dict[str, object], entry)
-        unknown = set(item) - {"tenant_id", "code", "real_data_since", "autumn_window"}
+        unknown = set(item) - {
+            "tenant_id",
+            "code",
+            "real_data_since",
+            "autumn_window",
+            "synthetic",
+        }
         if unknown:
             problems.append(f"{where}: unknown keys {sorted(unknown)}")
         try:
@@ -322,7 +335,14 @@ def _firms(raw: object, problems: list[str]) -> tuple[Firm, ...]:
         if not isinstance(autumn, bool):
             problems.append(f"{where} ({code}): autumn_window is true or false")
             continue
-        firms.append(Firm(tenant, code, since, autumn))
+        synthetic = item.get("synthetic", False)
+        if not isinstance(synthetic, bool):
+            problems.append(f"{where} ({code}): synthetic is true or false")
+            continue
+        if synthetic and since_raw is not None:
+            problems.append(f"{where} ({code}): a synthetic firm has no real_data_since")
+            continue
+        firms.append(Firm(tenant, code, since, autumn, synthetic))
     return tuple(firms)
 
 
