@@ -25,6 +25,32 @@ export const COPY = {
     other: "Approval",
   },
   error: "The queue couldn't load.",
+  // I-01-T19: Select, the bulk bar and the moves (AC8.1–AC8.4).
+  bulk: {
+    check: (title: string): string => `Select ${title}`,
+    selected: (n: number): string => `${String(n)} selected`,
+    signOff: (n: number, role: string): string => `Sign off ${String(n)} as ${role}`,
+    roles: {
+      L1_preparer: "Preparer",
+      L2_reviewer: "Reviewer",
+      L3_manager: "Manager",
+      L4_partner: "Partner",
+      L5_eqr: "EQR",
+    } as Readonly<Record<string, string>>,
+  },
+  moves: {
+    today: "Today 2 PM",
+    tomorrow: "Tomorrow 9 AM",
+    pick: "Pick date…",
+    pickLabel: "Snooze until",
+    pickConfirm: "Snooze",
+    snoozed: (when: string): string => `Snoozed until ${when}`,
+    reassigned: (name: string): string => `Reassigned to ${name}`,
+    noCandidates: "No one else can take this", // (undesigned)
+    failed: "That didn't go through. Try again.", // (undesigned)
+    reassignMenu: "Reassign to",
+    snoozeMenu: "Snooze until",
+  },
   detailPane: {
     loading: "Loading…",
     missing: "This item couldn't load.", // (undesigned)

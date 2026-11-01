@@ -31,6 +31,18 @@ EXCLUDE: tuple[str, ...] = ()
 # (path glob, rule id, reason): findings that are known local fixtures, never real secrets.
 ALLOW: tuple[tuple[str, str, str], ...] = (
     (
+        "backend/tests/unit/methodology/test_k01t20_extraction.py",
+        "PII-001",
+        "a synthetic SSN-shaped value in a generated PDF, proving the importer's PII hold stops a"
+        " file before any model call (K-01-T20); never a real person's number",
+    ),
+    (
+        "apps/web/src/fixtures/seed/aud07.ts",
+        "SECRET-003",
+        "the decision card's `key` fields name context chips and materiality options (rate_1_5),"
+        " never a credential (A-04-T10)",
+    ),
+    (
         "evals/decision_recommendation/suite.yaml",
         "SECRET-003",
         "the recommender's structured output field `recommended_option_key` names a materiality"

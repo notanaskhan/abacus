@@ -16,6 +16,11 @@ AI_POLICY_V1 = Flag(
     kind="boolean",
     default="false",
 )
+ASSURANCE_ESTIMATES_RP = Flag(
+    name="assurance.estimates_rp",
+    kind="boolean",
+    default="false",
+)
 ASSURANCE_INTERNAL_CONTROL = Flag(
     name="assurance.internal_control",
     kind="boolean",
@@ -103,6 +108,16 @@ CONSENTS_REGISTRY = Flag(
 )
 CONTACTS_V2 = Flag(
     name="contacts.v2",
+    kind="boolean",
+    default="false",
+)
+EBP_FORM5500_TIEOUT = Flag(
+    name="ebp.form5500_tieout",
+    kind="boolean",
+    default="false",
+)
+EBP_MODULES = Flag(
+    name="ebp.modules",
     kind="boolean",
     default="false",
 )
@@ -403,6 +418,7 @@ WORKPAPERS_DRAFTING = Flag(
 FLAGS: dict[str, Flag] = {
     "agents.client_data_optin": AGENTS_CLIENT_DATA_OPTIN,
     "ai_policy.v1": AI_POLICY_V1,
+    "assurance.estimates_rp": ASSURANCE_ESTIMATES_RP,
     "assurance.internal_control": ASSURANCE_INTERNAL_CONTROL,
     "assurance.materiality": ASSURANCE_MATERIALITY,
     "assurance.risk_register": ASSURANCE_RISK_REGISTER,
@@ -421,6 +437,8 @@ FLAGS: dict[str, Flag] = {
     "connections.portal_v2": CONNECTIONS_PORTAL_V2,
     "consents.registry": CONSENTS_REGISTRY,
     "contacts.v2": CONTACTS_V2,
+    "ebp.form5500_tieout": EBP_FORM5500_TIEOUT,
+    "ebp.modules": EBP_MODULES,
     "engagement_agent.enabled": ENGAGEMENT_AGENT_ENABLED,
     "engagements.letter_composer": ENGAGEMENTS_LETTER_COMPOSER,
     "engagements.roll_forward_v2": ENGAGEMENTS_ROLL_FORWARD_V2,
