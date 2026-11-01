@@ -229,8 +229,17 @@ def _ts_fields(fields: dict[str, object]) -> dict[str, object]:
     return {rename.get(k, k): fields[k] for k in keep if k in fields}
 
 
+# INV-4: a label naming the product is a template over `PRODUCT` (packages/ui/src/product.ts),
+# which the portal build swaps for an empty name, so the portal bundle never carries it.
+_PRODUCT_NAME = re.compile(r'"((?:[^"\\]|\\.)*?\bAccrued\b(?:[^"\\]|\\.)*)"')
+
+
+def _product(match: re.Match[str]) -> str:
+    return "`" + match.group(1).replace("Accrued", "${PRODUCT}") + "`"
+
+
 def _ts_const(name: str, value: object) -> str:
-    body = json.dumps(value, indent=2, ensure_ascii=False)
+    body = _PRODUCT_NAME.sub(_product, json.dumps(value, indent=2, ensure_ascii=False))
     return f"export const {name} = {body} as const;\n"
 
 
@@ -244,6 +253,7 @@ def render_ts(
         "// GENERATED from docs/product/status-vocabulary.yaml. Do not edit.\n"
         "// Regenerate: python -m abacus_tools.codegen.status_vocabulary "
         "(C2; F-03-T09, F-05-T12).\n\n"
+        'import { PRODUCT } from "./product";\n\n'
         + _ts_const("STATUS_REGISTRY", registry)
         + "\n// Where each word of the handoff status.js went: a registry code, or retired.\n"
         + _ts_const("HANDOFF_WORDS", handoff)

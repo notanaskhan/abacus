@@ -81,6 +81,23 @@ function portalIcons(): Plugin {
   };
 }
 
+// INV-4: the portal build swaps the UI kit's product name for an empty one, so firm copy that a
+// shared module carries but the portal never renders ships without "Accrued"
+// (scripts/portal-dist-check.mjs holds the bundle to it; `packages/ui/src/product.ts`).
+function portalProduct(): Plugin {
+  return {
+    name: "abacus-portal-product",
+    enforce: "pre",
+    resolveId(source, importer) {
+      if (importer === undefined || !/(?:^|\/)product$/.test(source)) return null;
+      if (!/[\\/]packages[\\/]ui[\\/]src[\\/]/.test(importer)) return null;
+      const target = path.resolve(path.dirname(importer), `${source}.ts`);
+      if (!/[\\/]packages[\\/]ui[\\/]src[\\/]product\.ts$/.test(target)) return null;
+      return path.join(path.dirname(target), "portal-product.ts");
+    },
+  };
+}
+
 export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, ".", ["VITE_", "ABACUS_PORT_OFFSET"]);
   // `vite build --mode portal` (P-08-T07; `build:portal`): the client portal's own entry,
@@ -98,7 +115,7 @@ export default defineConfig(({ mode, command }) => {
       tailwindcss(),
       contentSecurityPolicy(),
       fontPreload(),
-      ...(portal ? [portalIcons()] : []),
+      ...(portal ? [portalIcons(), portalProduct()] : []),
     ],
     define: {
       "import.meta.env.VITE_UI_GALLERY": JSON.stringify(gallery),

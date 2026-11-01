@@ -22,12 +22,13 @@ export const COPY = {
   complete: "Thanks — Kevin Osei has your answers.",
   addressedToYou: "Addressed to you",
   dueOn: (on: string) => `Due ${on}`,
-  onlyTeam: "Your answers go only to the Brightwater Hale audit team.",
+  // INV-4: the firm is the portal's own brand, never a name in the bundle (T-02 portal build).
+  onlyTeam: (firm: string) => `Your answers go only to the ${firm} audit team.`,
   submit: "Submit answers",
-  analyticsFrom: "From Hannah Leclerc · Brightwater Hale",
+  analyticsFrom: (firm: string) => `From ${firm}`,
   attach: "Attach a file (optional)",
   empty: "No questions right now.",
-  emptyBody: "Brightwater Hale will add questions here when they need your input.",
+  emptyBody: (firm: string) => `${firm} will add questions here when they need your input.`,
   next: "Next question",
   reloaded: "This answer changed on another device. We reloaded it.",
 } as const;
