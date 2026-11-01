@@ -129,6 +129,62 @@ CENSUS_V2_COUNT, CENSUS_V1_COUNT, DISTRIBUTIONS_COUNT = 412, 409, 64
 CENSUS_TOTAL: Final = Decimal("14560000.00")  # = PayGrid YTD register (AUD-11 a)
 CENSUS_V1_OFF: Final = Decimal("182300.00")  # Version 1's census is short by this
 HEADER: Final = ("Census row", "Participant ID", "Name", "Hire date", "Compensation")
+# The population's column map over the census (the record key is the census row, DEC-1659).
+COLUMN_MAP: Final = {
+    "record_key": "Census row",
+    "name": "Name",
+    "date": "Hire date",
+    "amount": "Compensation",
+}
+CENSUS_FILE: Final = "Northwind Census PY2025 (sampling).xlsx"
+SAMPLING_UNIT: Final = "participant (census record)"
+DEVIATION: Final = "any attribute in EBP-03/EBP-04 not agreed to source"
+# AUD-11 a's completeness ties: (label, comparisons) — the register, then the W-3.
+REGISTER: Final = ("PayGrid YTD register", (("PayGrid YTD register", Decimal("14560000.00")),))
+W3: Final = (
+    "W-3 Box 1 + Box 12 D",
+    (("W-3 Box 1", Decimal("13813400.00")), ("W-3 Box 12 D", Decimal("746600.00"))),
+)
+
+# BH FS groupings v1 (AUD-31; DEC-1753): the groupings in the statement's order, one FS line per
+# Granite Peak TB line named as AUD-31 names it, and the number ranges its accounts fall in.
+GROUPING_SET_KEY: Final = "bh-fs-groupings"
+GROUPING_SET_NAME: Final = "BH FS groupings"
+_GROUPINGS: Final[tuple[tuple[str, str, str, str, str, str, int, int], ...]] = (
+    ("cash", "Cash", "assets", "cash", "Cash", "debit", 1000, 1199),
+    ("accounts_receivable", "Accounts receivable", "assets", "accounts_receivable",
+     "Accounts receivable", "debit", 1200, 1399),
+    ("inventory", "Inventory", "assets", "inventory", "Inventory", "debit", 1400, 1599),
+    ("ppe", "Property, plant & equipment", "assets", "ppe_net", "PP&E, net", "debit", 1600, 1899),
+    ("other_assets", "Other assets", "assets", "other_assets", "Other assets", "debit",
+     1900, 1999),
+    ("accounts_payable", "Accounts payable", "liabilities", "accounts_payable",
+     "Accounts payable", "credit", 2000, 2099),
+    ("accrued_liabilities", "Accrued liabilities", "liabilities", "accrued_liabilities",
+     "Accrued liabilities", "credit", 2100, 2299),
+    ("debt", "Debt", "liabilities", "revolver", "Revolver — Front Range Bank", "credit",
+     2300, 2499),
+    ("debt", "Debt", "liabilities", "term_loan", "Term loan", "credit", 2500, 2999),
+    ("equity", "Equity", "equity", "equity_opening", "Equity, July 1, 2025", "credit", 3000, 3999),
+    ("revenue", "Revenue", "revenue", "revenue", "Revenue", "credit", 4000, 4999),
+    ("cogs", "Cost of goods sold", "expenses", "cogs", "Cost of goods sold", "debit", 5000, 5999),
+    ("operating_expenses", "Operating expenses", "expenses", "operating_expenses",
+     "Operating expenses", "debit", 6000, 6999),
+    ("interest", "Interest", "expenses", "interest", "Interest expense", "debit", 7000, 7999),
+)  # fmt: skip
+
+
+def grouping_set_csv() -> str:
+    """BH FS groupings v1 as the firm's taxonomy import reads it (SPEC-316 CSV)."""
+    head = (
+        "grouping_key,grouping_label,class,fs_line_key,fs_line_label,normal_balance,"
+        "account_from,account_to"
+    )
+    rows = [
+        ",".join((key, f'"{label}"', klass, line_key, f'"{line}"', side, str(low), str(high)))
+        for key, label, klass, line_key, line, side, low, high in _GROUPINGS
+    ]
+    return "\n".join((head, *rows)) + "\n"
 
 
 @dataclass(frozen=True)
@@ -212,13 +268,21 @@ def distributions() -> list[Record]:
 
 
 __all__ = [
+    "CENSUS_FILE",
     "CENSUS_ORDINALS",
+    "COLUMN_MAP",
+    "DEVIATION",
     "GL_RANDOM_ORDINALS",
     "GL_STRATA",
+    "GROUPING_SET_KEY",
+    "GROUPING_SET_NAME",
     "HEADER",
     "PARTICIPANTS",
+    "REGISTER",
+    "SAMPLING_UNIT",
     "SEEDS",
     "SURL",
+    "W3",
     "CensusRow",
     "census",
     "census_records",
@@ -226,4 +290,5 @@ __all__ = [
     "census_xlsx",
     "disbursements",
     "distributions",
+    "grouping_set_csv",
 ]

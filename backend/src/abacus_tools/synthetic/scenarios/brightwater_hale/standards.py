@@ -296,8 +296,26 @@ STANDARDS: Final[tuple[Spec, ...]] = (
 )
 
 
+# A-03-T16 (DEC-1767): BH-EBP-210 Table 2, the firm's attribute sample sizes, loaded by the
+# `sampling` slice (not the standards slice: KNW-04's E0 list stays as designed). Only the row
+# the design shows is canon: moderate RMM, 10 % tolerable, 0 % expected, at 90 % confidence, 25.
+TABLE_2: Final = Spec(
+    "bh-ebp-210-table-2",
+    "attribute_sample_sizes",
+    "BH-EBP-210 Table 2 · attribute sample sizes",
+    "MO",
+    (
+        {
+            "kind": "attribute_sample_sizes",
+            "confidence_pct": "90",
+            "rows": [{"rmm": "moderate", "tolerable_pct": "10", "expected_pct": "0", "size": 25}],
+        },
+    ),
+)
+
+
 def spec_of(key: str) -> Spec:
-    return next(s for s in STANDARDS if s.key == key)
+    return next(s for s in (*STANDARDS, TABLE_2) if s.key == key)
 
 
 @register_slice(SLICE)
@@ -372,6 +390,7 @@ __all__ = [
     "NEEDS",
     "SLICE",
     "STANDARDS",
+    "TABLE_2",
     "Spec",
     "payload_of",
     "spec_of",

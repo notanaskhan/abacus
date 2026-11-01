@@ -25,7 +25,16 @@ from abacus.modules.sampling.compute import (
     udl,
     udl_percent,
 )
-from abacus.modules.sampling.contract import ROUTERS
+from abacus.modules.sampling.contract import (
+    ROUTERS,
+    ParametersIn,
+    PopulationIn,
+    SampleSetIn,
+    TieComparisonIn,
+    TieIn,
+    UploadSourceIn,
+    VersionIn,
+)
 from abacus.modules.sampling.draw_activities import ACTIVITIES
 from abacus.modules.sampling.draw_types import SampleDrawInput
 from abacus.modules.sampling.draw_workflow import SampleDrawWorkflow
@@ -52,7 +61,12 @@ from abacus.modules.sampling.population import (
 )
 
 # A-03-T07: populations and completeness ties (the routes call the service; T10 reads them).
-from abacus.modules.sampling.populations import TIE_VERSION, population_view
+from abacus.modules.sampling.populations import (
+    TIE_VERSION,
+    create_population,
+    population_view,
+    record_tie,
+)
 from abacus.modules.sampling.registry import AUDIT_SECTION
 
 # A-03-T10: sample sets, the draw and the approval.
@@ -60,6 +74,7 @@ from abacus.modules.sampling.sample_sets import (
     GATE_KIND,
     TARGET,
     approval_gate,
+    create_sample_set,
     draw,
     reviewable_facts,
     reviewables,
@@ -107,22 +122,32 @@ __all__ = [
     "Bill",
     "Entry",
     "Parameters",
+    "ParametersIn",
     "Population",
+    "PopulationIn",
     "RecipientNotContact",
     "Record",
     "SampleDrawInput",
     "SampleDrawWorkflow",
     "SampleNotApproved",
+    "SampleSetIn",
     "Selected",
     "StratumRule",
+    "TieComparisonIn",
+    "TieIn",
+    "UploadSourceIn",
+    "VersionIn",
     "attribute_size",
     "bills_by_party",
     "build_payments",
     "build_population",
+    "create_population",
+    "create_sample_set",
     "draw",
     "manual_kinds_for",
     "population_view",
     "projected_misstatement",
+    "record_tie",
     "recorded_bill",
     "section_state",
     "seeded_v1",

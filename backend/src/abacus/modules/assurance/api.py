@@ -16,7 +16,9 @@ from abacus.modules.assurance.compute import materiality as materiality_engine
 from abacus.modules.assurance.ebp_contract import router as ebp_router
 from abacus.modules.assurance.home_counts import register_home_counts
 from abacus.modules.assurance.mapping import SUBSCRIPTIONS as MAPPING_SUBSCRIPTIONS
+from abacus.modules.assurance.mapping import import_csv as import_grouping_csv
 from abacus.modules.assurance.mapping import mapping_facts, mapping_reviewables
+from abacus.modules.assurance.mapping import publish as publish_grouping_version
 from abacus.modules.assurance.mapping_routes import firm_router as grouping_router
 from abacus.modules.assurance.mapping_routes import router as mapping_router
 from abacus.modules.assurance.phase import SUBSCRIPTIONS as PHASE_SUBSCRIPTIONS
@@ -107,7 +109,9 @@ __all__ = [
     "RunSummary",
     "SectionState",
     "completion_router",
+    "import_grouping_csv",
     "materiality_engine",
+    "publish_grouping_version",
     "record_phase",
     "register_audit_section",
     "register_audit_segment",

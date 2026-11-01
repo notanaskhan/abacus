@@ -478,7 +478,8 @@ async def draw(
 ) -> tuple[int, UUID]:
     """Insert a `drawing` version and start its workflow; (version number, version id).
 
-    `scenario_seed` is the scenario loader's (A-03-T16) on a synthetic firm only."""
+    `scenario_seed` is the scenario loader's (A-03-T16) on a synthetic firm only; with it the
+    draw runs inline (the loader has no worker) and the version is a draft when this returns."""
     if ctx.tenant.actor_kind != "human":
         raise Forbidden("sample_set.create", "role")
     found = await _set(ctx, sample_set_id, "sample_set.create")
@@ -548,6 +549,13 @@ async def draw(
                 target=Target(TARGET, version_id),
                 after=Ref(version=version_no, size=override.size, computed=size.computed),
             )
+    if scenario_seed is not None:
+        # A-03-T16 (DEC-1767): the scenario loader replays without a worker, so it draws inline,
+        # through the activity's own function (repeat-safe; synthetic firms only, as the seed).
+        from abacus.modules.sampling.draw import run_draw
+
+        await run_draw(ctx.tenant_id, version_id)
+        return version_no, version_id
     given = SampleDrawInput(str(ctx.tenant_id), str(version_id), str(ctx.user_id))
     try:
         await dispatch(

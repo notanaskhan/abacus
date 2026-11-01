@@ -100,7 +100,12 @@ from abacus.kernel.db import TenantContext
 from abacus.kernel.dispatch import dispatch
 from abacus.kernel.temporal import temporal_client
 from abacus.kernel.uow import Target, uow
-from abacus.modules.assurance.api import record_phase, update_profile
+from abacus.modules.assurance.api import (
+    import_grouping_csv,
+    publish_grouping_version,
+    record_phase,
+    update_profile,
+)
 from abacus.modules.communications.api import (
     Inbound,
     TemplateContent,
@@ -210,6 +215,19 @@ from abacus.modules.requests.api import (
     send_question,
     update_item,
 )
+from abacus.modules.sampling.api import (
+    ParametersIn,
+    PopulationIn,
+    SampleSetIn,
+    TieComparisonIn,
+    TieIn,
+    UploadSourceIn,
+    VersionIn,
+    create_population,
+    create_sample_set,
+    record_tie,
+)
+from abacus.modules.sampling.api import draw as draw_sample
 from abacus.modules.tax.api import import_engine_file, share_k1_internal
 from abacus_tools import deploy_lock
 from abacus_tools.db_connect import connect as connect_db
@@ -217,6 +235,7 @@ from abacus_tools.fakes.identity import ISSUER
 from abacus_tools.flags import set_flag
 from abacus_tools.local.db_guard import violations
 from abacus_tools.synthetic.documents import positioned_pdf
+from abacus_tools.synthetic.scenarios.brightwater_hale import sampling_content
 from abacus_tools.synthetic.scenarios.brightwater_hale.acceptance import (
     CONTACTS,
     THORNBURY_ANSWERS,
@@ -368,6 +387,18 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.report_templates import (
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.report_templates import (
     bundle as report_template_bundle,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.sampling_slice import (
+    NEEDS as SAMPLING_NEEDS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.sampling_slice import (
+    SET_PURPOSE as SAMPLING_SET_PURPOSE,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.sampling_slice import (
+    SET_TITLE as SAMPLING_SET_TITLE,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.sampling_slice import (
+    SLICE as SAMPLING_SLICE,
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.scenario import (
     FIRM_ID,
@@ -1685,6 +1716,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     COMPLIANCE_SLICE: COMPLIANCE_NEEDS,
     METHODOLOGY_SLICE: METHODOLOGY_NEEDS,  # K-01-T10: Grace imports, Margaret approves
     EBP_SLICE: EBP_NEEDS,  # A-05-T07: Dana's EBP source documents on Northwind
+    SAMPLING_SLICE: SAMPLING_NEEDS,  # A-03-T16: Table 2, BH FS groupings, Northwind's sample
     REPORT_TEMPLATES_SLICE: REPORT_TEMPLATES_NEEDS,  # P-11-T13: Grace imports, Margaret publishes
     CONNECTIONS_SLICE: CONNECTIONS_NEEDS,  # A-02-T27: Copperleaf's POR-16a connections
     ACCEPTANCE_SLICE: ACCEPTANCE_NEEDS,
@@ -1879,6 +1911,7 @@ async def _client_invitation_created(conn: asyncpg.Connection, _: Scenario, even
 # with the audit row its service writes; files go through `evidence.api` (`stage_content`,
 # `add_version`) in a unit of work as the person who sent them.
 _PDF: Final = "application/pdf"
+_XLSX: Final = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 
 async def _item_retitled(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
@@ -2113,6 +2146,179 @@ async def _ebp_documents_uploaded(_: asyncpg.Connection, __: Scenario, event: Ev
                 provenance=Provenance(source="client_upload", method="uploaded"),
                 requested_by=dana,
             )
+
+
+# --- the sampling slice (A-03-T16 part two; DEC-1767) --------------------------------------------
+# Through the services as the people the design names: Margaret imports and publishes BH FS
+# groupings v1; Dana uploads the census versions; Marcus builds each population, records its ties,
+# creates the Participants set and draws with the scenario seeds (inline: the loader has no
+# worker). Version 2's L1 and approval wait on Northwind's G2 (DEC-1767).
+
+_SAMPLING_TIES: Final = {"register": sampling_content.REGISTER, "w3": sampling_content.W3}
+
+
+async def _northwind_work_item(conn: asyncpg.Connection) -> tuple[UUID, UUID]:
+    engagement = engagement_id_of(BY_LABEL["A1"])
+    item = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM work_items WHERE engagement_id = $1 AND kind = 'assurance'",
+        engagement,
+    )
+    if item is None:
+        raise LookupError("Northwind's assurance work item is audit_core's and is missing")
+    return engagement, cast(UUID, item)
+
+
+async def _grouping_set_imported(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    await import_grouping_csv(
+        await _staff_context(conn, event),
+        sampling_content.GROUPING_SET_KEY,
+        sampling_content.GROUPING_SET_NAME,
+        sampling_content.grouping_set_csv(),
+    )
+
+
+async def _grouping_set_published(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    version = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT v.id FROM grouping_set_versions v JOIN grouping_sets s "
+        "ON s.id = v.grouping_set_id WHERE s.key = $1 ORDER BY v.version DESC LIMIT 1",
+        sampling_content.GROUPING_SET_KEY,
+    )
+    await publish_grouping_version(
+        await _staff_context(conn, event),
+        cast(UUID, version),
+        effective_from=event.at.astimezone(_CT).date(),
+    )
+
+
+async def _sampling_census_uploaded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Dana Kowalski uploads the census: a new item for v1, its next version for v2."""
+    census = int(cast(int, event.data["census"]))
+    rows = sampling_content.census_v1() if census == 1 else sampling_content.census()
+    dana = UUID(_PORTAL["Dana Kowalski"].id)
+    engagement = (await _northwind_work_item(conn))[0]
+    existing = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM evidence_items WHERE engagement_id = $1 AND title = $2",
+        engagement,
+        sampling_content.CENSUS_FILE,
+    )
+    stored = await stage_content(TENANT, sampling_content.census_xlsx(rows))
+    async with uow(TenantContext(TENANT, "human", str(dana))) as tx:
+        await add_version(
+            tx,
+            engagement_id=engagement,
+            item=cast(UUID, existing) if existing else NewItem(title=sampling_content.CENSUS_FILE),
+            stored=stored,
+            media_type=_XLSX,
+            provenance=Provenance(source="client_upload", method="uploaded"),
+            requested_by=dana,
+        )
+
+
+async def _census_version(conn: asyncpg.Connection, census: int) -> UUID:
+    engagement = (await _northwind_work_item(conn))[0]
+    found = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT v.id FROM evidence_versions v JOIN evidence_items i ON i.id = v.evidence_item_id "
+        "WHERE i.engagement_id = $1 AND i.title = $2 AND v.version_no = $3",
+        engagement,
+        sampling_content.CENSUS_FILE,
+        census,
+    )
+    if found is None:
+        raise LookupError(f"census v{census} has not been uploaded")
+    return cast(UUID, found)
+
+
+async def _population_of(conn: asyncpg.Connection, census: int) -> UUID:
+    """The work item's populations in the order they were built: census v1's, then v2's."""
+    item = (await _northwind_work_item(conn))[1]
+    rows = await tenant_rows(
+        conn,
+        TENANT,
+        "SELECT id FROM sample_populations WHERE work_item_id = $1 ORDER BY created_at, id",
+        item,
+    )
+    return cast(UUID, rows[census - 1]["id"])
+
+
+async def _participants_set(conn: asyncpg.Connection) -> UUID:
+    item = (await _northwind_work_item(conn))[1]
+    found = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM sample_sets WHERE work_item_id = $1 AND title = $2",
+        item,
+        SAMPLING_SET_TITLE,
+    )
+    return cast(UUID, found)
+
+
+async def _population_built(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    census = int(cast(int, event.data["census"]))
+    item = (await _northwind_work_item(conn))[1]
+    await create_population(
+        await _staff_context(conn, event),
+        item,
+        PopulationIn(
+            source=UploadSourceIn(
+                evidence_version_id=await _census_version(conn, census),
+                column_map=dict(sampling_content.COLUMN_MAP),
+            ),
+            sampling_unit=sampling_content.SAMPLING_UNIT,
+            deviation_definition=sampling_content.DEVIATION,
+        ),
+    )
+
+
+async def _sampling_tie_recorded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    census = int(cast(int, event.data["census"]))
+    label, comparisons = _SAMPLING_TIES[str(event.data["tie"])]
+    await record_tie(
+        await _staff_context(conn, event),
+        await _population_of(conn, census),
+        TieIn(
+            label=label,
+            comparisons=[
+                TieComparisonIn(label=name, amount=amount) for name, amount in comparisons
+            ],
+        ),
+    )
+
+
+async def _sample_set_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    item = (await _northwind_work_item(conn))[1]
+    await create_sample_set(
+        await _staff_context(conn, event),
+        item,
+        SampleSetIn(title=SAMPLING_SET_TITLE, purpose=SAMPLING_SET_PURPOSE),
+    )
+
+
+async def _sample_version_drawn(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Moderate RMM, 10 % tolerable, 0 % expected, 90 % confidence: Table 2 gives 25."""
+    census = int(cast(int, event.data["census"]))
+    await draw_sample(
+        await _staff_context(conn, event),
+        await _participants_set(conn),
+        VersionIn(
+            population_id=await _population_of(conn, census),
+            method="attribute_nonstatistical",
+            parameters=ParametersIn(
+                rmm="moderate",
+                tolerable_rate=Decimal("0.10"),
+                expected_rate=Decimal("0"),
+                confidence=Decimal("0.90"),
+            ),
+        ),
+        scenario_seed=int(cast(int, event.data["seed"])),
+    )
 
 
 # --- service-backed events ---------------------------------------------------------------------
@@ -3437,6 +3643,14 @@ HANDLERS: Final[dict[str, Handler]] = {
     "requests.request_drafted": _request_drafted,
     "evidence.engagement_files_uploaded": _engagement_files_uploaded,
     "evidence.ebp_documents_uploaded": _ebp_documents_uploaded,  # A-05-T07
+    # A-03-T16 part two (DEC-1767): the sampling slice.
+    "ledger.grouping_set_imported": _grouping_set_imported,
+    "ledger.grouping_set_published": _grouping_set_published,
+    "evidence.sampling_census_uploaded": _sampling_census_uploaded,
+    "sampling.population_built": _population_built,
+    "sampling.tie_recorded": _sampling_tie_recorded,
+    "sampling.sample_set_created": _sample_set_created,
+    "sampling.version_drawn": _sample_version_drawn,
     # P-08-T14 (`--slice portal`): branding before its host; people after the work items they name.
     "portal.branding_set": _branding_set,
     "portal.host_added": _host_added,
