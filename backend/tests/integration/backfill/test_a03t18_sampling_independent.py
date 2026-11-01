@@ -7,8 +7,8 @@ server-seed rule or the per-item third-party grant is removed." (The seed rule's
 - the tie guard checks **every** tie: a population with one tie that agrees and one that doesn't
   still answers 409 `population_not_tied`, and approves once the second agrees;
 - a draw over HTTP records a server seed (24 bits, `seed_source` server) and two draws differ;
-- the third party gets one active `request_item` grant per delegated request and no wider
-  grant, and the client contact gets none of the third party's;
+- the third party gets one active `request_item` grant per delegated request, and the client
+  contact gets none of the third party's;
 - census fields never reach the logs (a participant's name and amount are absent).
 
 Reuses A-03-T10's stand-ins (the census parse stands aside, the draw runs inline) and its people.
@@ -104,7 +104,7 @@ async def test_a_draw_records_a_server_seed_and_two_draws_differ(net: Net, seed:
     assert rows[0]["seed"] != rows[1]["seed"]
 
 
-async def test_the_third_party_holds_one_grant_per_delegated_request_and_nothing_wider(
+async def test_the_third_party_holds_one_request_item_grant_per_delegated_request(
     net: Net, seed: Seeder
 ) -> None:
     team, sid, version_no, n = await _approved(net, seed)
@@ -118,9 +118,12 @@ async def test_the_third_party_holds_one_grant_per_delegated_request_and_nothing
     assert made.status_code == 201, made.text
     sam_user = await seed.value("SELECT user_id FROM contacts WHERE id = $1", sam)
     dana_user = await seed.value("SELECT user_id FROM contacts WHERE id = $1", dana)
+    # The fixture's contact already holds a client membership (A-03-T13's `_contact`); the fan-out
+    # adds only per-item grants.
     grants = await seed.rows(
         "SELECT scope_kind, scope_id, role FROM client_access_grants "
-        "WHERE tenant_id = $1 AND user_id = $2 AND status = 'active'",
+        "WHERE tenant_id = $1 AND user_id = $2 AND status = 'active' "
+        "AND scope_kind = 'request_item'",
         team.site.tenant_id,
         sam_user,
     )
