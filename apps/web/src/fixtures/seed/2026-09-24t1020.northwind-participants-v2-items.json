@@ -1,0 +1,246 @@
+{
+  "scenario": {
+    "version": "bh-2026.10.3",
+    "hash": "2b09e6fb01617c990e6e72feac508159fe5a03c6ff4f80bbb8d4a539c6f8d6a2",
+    "snapshot": "2026-09-24T10:20",
+    "slices": [
+      "sampling"
+    ]
+  },
+  "persona": "marcus-delaney",
+  "request": "GET /v1/sample-sets/{sample_set_id}/versions/{version_no}/items",
+  "body": {
+    "counts": {},
+    "facets": {},
+    "items": [
+      {
+        "amount": "49356.00",
+        "hire_date": "2020-01-06",
+        "name": "Alicia Brennan",
+        "position": 1,
+        "record_key": "NWC-0215",
+        "selection_reason": "random",
+        "stratum_position": null
+      },
+      {
+        "amount": "24597.00",
+        "hire_date": "2020-01-06",
+        "name": "Tomás Ibarra",
+        "position": 2,
+        "record_key": "NWC-0166",
+        "selection_reason": "random",
+        "stratum_position": null
+      },
+      {
+        "amount": "34249.00",
+        "hire_date": "2020-01-06",
+        "name": "Priyanka Desai",
+        "position": 3,
+        "record_key": "NWC-0324",
+        "selection_reason": "random",
+        "stratum_position": null
+      },
+      {
+        "amount": "33987.00",
+        "hire_date": "2020-01-06",
+        "name": "Gordon Whitfield",
+        "position": 4,
+        "record_key": "NWC-0328",
+        "selection_reason": "random",
+        "stratum_position": null
+      },
+      {
+        "amount": "48046.00",
+        "hire_date": "2020-01-06",
+        "name": "Mei Tanaka",
+        "position": 5,
+        "record_key": "NWC-0195",
+        "selection_reason": "random",
+        "stratum_position": null
+      },
+      {
+        "amount": "24990.00",
+        "hire_date": "2020-01-06",
+        "name": "Darnell Hughes",
+        "position": 6,
+        "record_key": "NWC-0160",
+        "selection_reason": "random",
+        "stratum_position": null
+      },
+      {
+        "amount": "32588.00",
+        "hire_date": "2020-01-06",
+        "name": "Sofia Marchetti",
+        "position": 7,
+        "record_key": "NWC-0044",
+        "selection_reason": "random",
+        "stratum_position": null
+      },
+      {
+        "amount": "40883.00",
+        "hire_date": "2020-01-06",
+        "name": "Kwame Mensah",
+        "position": 8,
+        "record_key": "NWC-0391",
+        "selection_reason": "random",
+        "stratum_position": null
+      },
+      {
+        "amount": "21977.00",
+        "hire_date": "2020-01-06",
+        "name": "Rebecca Lindgren",
+        "position": 9,
+        "record_key": "NWC-0206",
+        "selection_reason": "random",
+        "stratum_position": null
+      },
+      {
+        "amount": "31671.00",
+        "hire_date": "2020-01-06",
+        "name": "Hiroshi Nakamura",
+        "position": 10,
+        "record_key": "NWC-0058",
+        "selection_reason": "random",
+        "stratum_position": null
+      },
+      {
+        "amount": "54989.00",
+        "hire_date": "2020-01-06",
+        "name": "Ingrid Solberg",
+        "position": 11,
+        "record_key": "NWC-0301",
+        "selection_reason": "random",
+        "stratum_position": null
+      },
+      {
+        "amount": "18702.00",
+        "hire_date": "2020-01-06",
+        "name": "Felipe Navarro",
+        "position": 12,
+        "record_key": "NWC-0256",
+        "selection_reason": "random",
+        "stratum_position": null
+      },
+      {
+        "amount": "50011.00",
+        "hire_date": "2020-01-06",
+        "name": "Aisha Rahman",
+        "position": 13,
+        "record_key": "NWC-0225",
+        "selection_reason": "random",
+        "stratum_position": null
+      },
+      {
+        "amount": "30623.00",
+        "hire_date": "2020-01-06",
+        "name": "Connor Gallagher",
+        "position": 14,
+        "record_key": "NWC-0074",
+        "selection_reason": "random",
+        "stratum_position": null
+      },
+      {
+        "amount": "35035.00",
+        "hire_date": "2020-01-06",
+        "name": "Yuki Mori",
+        "position": 15,
+        "record_key": "NWC-0312",
+        "selection_reason": "random",
+        "stratum_position": null
+      },
+      {
+        "amount": "16082.00",
+        "hire_date": "2020-01-06",
+        "name": "Patrick Doyle",
+        "position": 16,
+        "record_key": "NWC-0296",
+        "selection_reason": "random",
+        "stratum_position": null
+      },
+      {
+        "amount": "45819.00",
+        "hire_date": "2020-01-06",
+        "name": "Leila Farahani",
+        "position": 17,
+        "record_key": "NWC-0161",
+        "selection_reason": "random",
+        "stratum_position": null
+      },
+      {
+        "amount": "26300.00",
+        "hire_date": "2020-01-06",
+        "name": "Andre Wilkins",
+        "position": 18,
+        "record_key": "NWC-0140",
+        "selection_reason": "random",
+        "stratum_position": null
+      },
+      {
+        "amount": "44771.00",
+        "hire_date": "2020-01-06",
+        "name": "Natalie Brooks",
+        "position": 19,
+        "record_key": "NWC-0145",
+        "selection_reason": "random",
+        "stratum_position": null
+      },
+      {
+        "amount": "33332.00",
+        "hire_date": "2020-01-06",
+        "name": "Vikram Sethi",
+        "position": 20,
+        "record_key": "NWC-0338",
+        "selection_reason": "random",
+        "stratum_position": null
+      },
+      {
+        "amount": "51059.00",
+        "hire_date": "2020-01-06",
+        "name": "Chloe Dubois",
+        "position": 21,
+        "record_key": "NWC-0241",
+        "selection_reason": "random",
+        "stratum_position": null
+      },
+      {
+        "amount": "37173.00",
+        "hire_date": "2020-01-06",
+        "name": "Benjamin Okoro",
+        "position": 22,
+        "record_key": "NWC-0029",
+        "selection_reason": "random",
+        "stratum_position": null
+      },
+      {
+        "amount": "38745.00",
+        "hire_date": "2020-01-06",
+        "name": "Teresa Romero",
+        "position": 23,
+        "record_key": "NWC-0053",
+        "selection_reason": "random",
+        "stratum_position": null
+      },
+      {
+        "amount": "42062.00",
+        "hire_date": "2020-01-06",
+        "name": "Ethan Caldwell",
+        "position": 24,
+        "record_key": "NWC-0409",
+        "selection_reason": "random",
+        "stratum_position": null
+      },
+      {
+        "amount": "25383.00",
+        "hire_date": "2020-01-06",
+        "name": "Fatima Qureshi",
+        "position": 25,
+        "record_key": "NWC-0154",
+        "selection_reason": "random",
+        "stratum_position": null
+      }
+    ],
+    "next_cursor": null,
+    "total": 25,
+    "total_capped": false
+  }
+}

@@ -145,6 +145,12 @@ async def test_ac1_the_predecessor_file_maps_by_prior_year_then_ranges(net: Net)
     }
     summary = body["summary"]
     assert summary["prior_source"] == "predecessor_file"
+    entity = await net.seed.value(
+        "SELECT ce.name FROM client_entities ce JOIN engagements e "
+        "ON e.client_entity_id = ce.id WHERE e.id = $1",
+        world.site.engagement_id,
+    )
+    assert summary["entity_name"] == entity  # DEC-1770: the entity's name, not the TB's label
     tallies = summary["tallies"]
     assert (tallies["prior_year_match"], tallies["number_range"], tallies["need_review"]) == (
         3,
