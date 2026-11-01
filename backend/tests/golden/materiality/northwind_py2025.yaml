@@ -1,0 +1,37 @@
+# A-04-T17 (TASK-2905): Northwind Robotics 401(k) Plan PY2025, transcribed from A-04 §3.3 AC3.1,
+# AC3.2 and AC3.6 and the AUD-07 handoff. Exact Decimal; never computed here.
+source: A-04 §3.3 AC3.1, AC3.2, AC3.6; AUD-07 a, c, d
+reviewed_by: notanaskhan
+policy: {low: "1.0", high: "2.0", pm_low: "50", pm_high: "75", ct: "5", increment: "100"}
+benchmarks:
+  - key: net_assets
+    label: Net assets available for benefits
+    amount: "16812400"
+    range: ["1.0", "2.0"]
+    low: "168100.00"
+    high: "336200.00"
+  - key: contributions
+    label: Contributions (participant, employer, rollovers)
+    amount: "1318300"
+    range: ["3.0", "5.0"]
+    low: "39500.00"
+    high: "65900.00"
+  - key: benefit_payments
+    label: Benefit payments to participants
+    amount: "812650"
+    range: ["3.0", "5.0"]
+    low: "24400.00"
+    high: "40600.00"
+options:
+  - {key: rate_1_0, rate: "1.0", overall: "168100.00", pm: "126075.00", ct: "8405.00"}
+  - {key: rate_1_5, rate: "1.5", overall: "252200.00", pm: "189150.00", ct: "12610.00"}
+versions:
+  # v1 proposed at 9:27 AM; v2 decided by the engagement partner at 11:12 AM (AC3.4).
+  v2: {rate: "1.5", overall: "252200.00", pm: "189150.00", ct: "12610.00"}
+  # v3 on Oct 6: the Final layer after AJE-1, at the decided rate (AC3.6): No change.
+  v3_final: {amount: "16861000", at_rate: "252900.00", difference: "700.00", difference_pct: "0.3"}
+prior_years:
+  # AC3.2: the table and the caption; today's thresholds never move with them.
+  - {year: PY2024, amount: "14228500", rate: "1.5", overall_used: "213400.00"}
+  - {year: PY2023, amount: "11902700", rate: "1.5", overall_used: "178500.00"}
+growth_pct: "18.2"

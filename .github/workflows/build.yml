@@ -155,8 +155,11 @@ jobs:
           esac
           status=""
           for _ in $(seq 1 60); do
+            # One page only: the CLI paginates the findings and prints the queried status once per
+            # page, so an image with many findings read "ACTIVE<newline>ACTIVE" and never matched.
             status=$(aws ecr describe-image-scan-findings --repository-name "$repo" \
-              --image-id imageDigest="$scanned" --query 'imageScanStatus.status' --output text 2>/dev/null || true)
+              --image-id imageDigest="$scanned" --query 'imageScanStatus.status' --output text \
+              --no-paginate 2>/dev/null | head -n 1 || true)
             [ "$status" = "COMPLETE" ] || [ "$status" = "ACTIVE" ] && break
             sleep 20
           done
