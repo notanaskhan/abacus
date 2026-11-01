@@ -475,6 +475,16 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/methodology/versions/{version_id}/diff", "methodology.read"),
     ("GET", "/v1/methodology/versions/{version_id}/export.xlsx", "methodology.read"),
     ("GET", "/v1/methodology/versions/{version_id}/files/{file_id}/download", "methodology.read"),
+    (
+        "GET",
+        "/v1/methodology/versions/{version_id}/files/{file_id}/pages/{page_no}",
+        "methodology.read",
+    ),
+    (
+        "GET",
+        "/v1/methodology/versions/{version_id}/files/{file_id}/pages/{page_no}/words",
+        "methodology.read",
+    ),
     ("GET", "/v1/methodology/versions/{version_id}/guidance-drafts", "template_guidance.read"),
     ("GET", "/v1/methodology/versions/{version_id}/programs", "methodology.read"),
     ("GET", "/v1/methodology/versions/{version_id}/state", "methodology.read"),

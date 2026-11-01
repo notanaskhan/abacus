@@ -1717,6 +1717,16 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.tax.delivery.PacketNotDraft
+  page_out_of_range:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.extraction.PageOutOfRange
+    summary: No such page (`facts.page_count`).
+  page_preview_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.methodology.extraction.PagePreviewUnavailable
+    summary: Only a PDF source has page images (a DOCX is read as text).
   parameters_invalid:
     status: 422
     raised_by:
@@ -2264,6 +2274,21 @@ codes:
     raised_by:
     - abacus.modules.signatures.consumers.SourceContractBroken
     summary: A contracted source drafted outside its purposes or policy family.
+  source_encrypted:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.extraction.SourceEncrypted
+    summary: 'The PDF needs a password: the firm uploads it unlocked.'
+  source_malformed:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.extraction.SourceMalformed
+    summary: The PDF could not be read (damaged, not a PDF, or it broke the isolated reader).
+  source_too_long:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.extraction.SourceTooLong
+    summary: More pages than the importer reads (`facts.max_pages`).
   sso_exempt_needs_hardware_key:
     status: 409
     raised_by:

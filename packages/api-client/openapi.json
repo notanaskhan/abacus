@@ -50054,6 +50054,36 @@
         "title": "MethodologyImportOut",
         "type": "object"
       },
+      "MethodologyPageWordsOut": {
+        "description": "One page's words with their boxes for the KNW-02 viewer (TIN forms masked).",
+        "properties": {
+          "page": {
+            "cls": "internal",
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_count": {
+            "cls": "internal",
+            "title": "Page Count",
+            "type": "integer"
+          },
+          "words": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/PageWordOut"
+            },
+            "title": "Words",
+            "type": "array"
+          }
+        },
+        "required": [
+          "page",
+          "page_count",
+          "words"
+        ],
+        "title": "MethodologyPageWordsOut",
+        "type": "object"
+      },
       "MethodologyVersionOut": {
         "properties": {
           "areas": {
@@ -51797,6 +51827,42 @@
           "box"
         ],
         "title": "PageLineOut",
+        "type": "object"
+      },
+      "PageWordOut": {
+        "properties": {
+          "box": {
+            "cls": "internal",
+            "maxItems": 4,
+            "minItems": 4,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Box",
+            "type": "array"
+          },
+          "text": {
+            "cls": "confidential",
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "box"
+        ],
+        "title": "PageWordOut",
         "type": "object"
       },
       "ParagraphBlock": {
@@ -184115,6 +184181,284 @@
           }
         },
         "summary": "Methodology File Download Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "methodology.read"
+      }
+    },
+    "/v1/methodology/versions/{version_id}/files/{file_id}/pages/{page_no}": {
+      "get": {
+        "description": "One page of a PDF source as a PNG, read in the isolated child (audited; `no-store`): 409\n`page_preview_unavailable` for a DOCX, 422 `page_out_of_range`, `source_encrypted`,\n`source_malformed`.",
+        "operationId": "methodology_file_page",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "file_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "File Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "page_no",
+            "required": true,
+            "schema": {
+              "maximum": 400,
+              "minimum": 1,
+              "title": "Page No",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "contentMediaType": "application/octet-stream",
+                  "title": "Response Methodology File Page",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Methodology File Page Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "methodology.read"
+      }
+    },
+    "/v1/methodology/versions/{version_id}/files/{file_id}/pages/{page_no}/words": {
+      "get": {
+        "description": "One page's words and their boxes, for the viewer's regions and MatchProvider tracing.",
+        "operationId": "methodology_file_page_words",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "file_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "File Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "page_no",
+            "required": true,
+            "schema": {
+              "maximum": 400,
+              "minimum": 1,
+              "title": "Page No",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MethodologyPageWordsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Methodology File Page Words Route",
         "tags": [
           "methodology"
         ],
