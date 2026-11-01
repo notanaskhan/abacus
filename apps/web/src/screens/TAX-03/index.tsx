@@ -1096,6 +1096,8 @@ export function TAX03({
   };
   const tabs = (
     <Tabsbar
+      // The return frame's tabsbar is 44 with the default segmented (handoff spec §3; T-02-T33).
+      className="h-(--tabs-h-compact)"
       label="Return"
       options={[
         option("overview", true),
