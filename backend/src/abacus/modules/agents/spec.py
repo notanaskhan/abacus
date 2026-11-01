@@ -79,6 +79,7 @@ class AgentSpec(BaseModel):
             "EntryAssessInput",
             "MethodologyImportInput",
             "SectionDraftInput",
+            "DecisionRecommendInput",
         ],
         classified("internal"),
     ]
@@ -93,6 +94,7 @@ class AgentSpec(BaseModel):
             "EntryAssessment",
             "ImportBatchOutput",
             "SectionDraft",
+            "Recommendation",
         ],
         classified("internal"),
     ]

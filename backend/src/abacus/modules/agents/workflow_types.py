@@ -221,6 +221,16 @@ class SectionDraftInput:
     section_key: str  # "" for the whole paper
 
 
+@dataclass(frozen=True)
+class DecisionRecommendInput:
+    """A-04-T15 (DEC-1953): one recommendation run for a card a proposer is raising. The run row
+    holds the engagement and the initiator; it runs in the proposer's request (interactive)."""
+
+    tenant_id: str
+    run_id: str
+    work_item_id: str
+
+
 # --- K-01-T21: the methodology importer (identifiers in and out, WF-001) -------------------------
 
 

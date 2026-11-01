@@ -23,7 +23,7 @@ Client principals never reach any of it (the contract's gate, INV-4).
 from __future__ import annotations
 
 import re
-from collections.abc import Awaitable, Callable, Iterator, Sequence
+from collections.abc import Awaitable, Callable, Generator, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
@@ -36,11 +36,15 @@ from sqlalchemy import FetchedValue, func, insert, select
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
+from abacus.kernel._flags import WORKPAPERS_DRAFTING
 from abacus.kernel.clock import now, today
 from abacus.kernel.db import Base, TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
+from abacus.kernel.flags import flag_enabled
 from abacus.kernel.numeric import quantize_half_up
 from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork, uow
+from abacus.modules.agents.api import OptionFact, PriorFact, RecommendFacts
+from abacus.modules.agents.api import recommend as recommend_option
 from abacus.modules.assurance.compute import materiality as engine
 from abacus.modules.assurance.events import (
     MaterialityDecided,
@@ -53,7 +57,7 @@ from abacus.modules.engagements.api import (
     get_ref,
     prior_engagement_of,
 )
-from abacus.modules.identity.api import AuthContext, allowed_actions, names_of
+from abacus.modules.identity.api import AgentContext, AuthContext, allowed_actions, names_of
 from abacus.modules.ledger.api import mapped_trial_balance, trial_balance_view
 from abacus.modules.methodology.api import (
     MaterialityRangesPayload,
@@ -513,7 +517,7 @@ _IN_FLIGHT: ContextVar[ComputedCard | None] = ContextVar("materiality_card", def
 
 
 @contextmanager
-def _computed(card: ComputedCard) -> Iterator[None]:
+def _computed(card: ComputedCard) -> Generator[None]:
     token = _IN_FLIGHT.set(card)
     try:
         yield
@@ -575,6 +579,34 @@ class Proposal:
     version: MaterialityVersion
     card_id: UUID
     options: tuple[engine.Option, ...]
+    recommended_key: str | None = None  # the agent's tag (A-04-T15), never a choice
+
+
+class RecommendationNotEnabled(DomainConflict):
+    """A recommendation needs `workpapers.drafting` on (A-04-T15)."""
+
+    code = "drafting_not_enabled"
+
+
+def _recommend_facts(
+    policy: FirmPolicy,
+    read: BenchmarkRead,
+    computed: Sequence[engine.Option],
+    priors: Sequence[PriorYearFact],
+) -> RecommendFacts:
+    return RecommendFacts(
+        benchmark_key=policy.benchmark_key,
+        benchmark_label=policy.benchmark_label,
+        benchmark_amount=read.amount,
+        policy_low_pct=policy.policy.low_pct,
+        policy_high_pct=policy.policy.high_pct,
+        options=tuple(
+            OptionFact(o.key, t.rate_pct, t.overall, t.pm, t.ct, t.pm_pct, t.ct_pct)
+            for o in computed
+            if (t := o.thresholds) is not None
+        ),
+        priors=tuple(PriorFact(p.year, p.amount, p.rate_used_pct) for p in priors),
+    )
 
 
 async def propose(
@@ -584,12 +616,15 @@ async def propose(
     tb_id: UUID,
     key: str,
     rate_pct: Decimal | None,
+    recommend: bool = False,
 ) -> Proposal:
     """`POST …/materiality/proposals` (the route authorised `materiality.propose`): compute the
     options on the Unadjusted layer, raise the card, write v-next "Proposed" naming it."""
     work_item = await _work_item(ctx, engagement_id)
     if await awaiting_cards(ctx.tenant, work_item, KINDS):
         raise ProposalPending
+    if recommend and not await flag_enabled(ctx.tenant, WORKPAPERS_DRAFTING):
+        raise RecommendationNotEnabled
     policy = await firm_policy(ctx.tenant, work_item, await today(ctx.tenant))
     if key != policy.benchmark_key:
         raise BenchmarkNotFound(facts={"field": "benchmark_key"})
@@ -644,13 +679,41 @@ async def propose(
             CardContext("period_end", "Period end", read.period_end.isoformat()),
         ),
     )
-    with _computed(card):
-        card_id = await raise_decision_card(
-            ctx,
+    question = f"materiality.{key}"
+
+    async def _tagged(agent: AgentContext, option: str, suggestion: UUID) -> UUID:
+        # The agent raises the card through its task scope with its tag (A-04-T15, INV-1).
+        return await raise_decision_card(
+            agent,
             engagement_id=engagement_id,
             kind=PROPOSE_KIND,
-            question_key=f"materiality.{key}",
+            question_key=question,
             work_item_id=work_item,
+            recommended_option_key=option,
+            recommendation_suggestion_id=suggestion,
+        )
+
+    with _computed(card):
+        recommended = None
+        if recommend:
+            priors = await prior_years(ctx.tenant, engagement_id, key)
+            recommended = await recommend_option(
+                ctx,
+                engagement_id=engagement_id,
+                work_item_id=work_item,
+                facts=_recommend_facts(policy, read, computed, priors),
+                raise_card=_tagged,
+            )
+        card_id = (
+            recommended.card_id
+            if recommended is not None
+            else await raise_decision_card(
+                ctx,
+                engagement_id=engagement_id,
+                kind=PROPOSE_KIND,
+                question_key=question,
+                work_item_id=work_item,
+            )
         )
     benchmarks = [_benchmark_json(key, policy.benchmark_label, read, policy.policy)]
     async with uow(ctx.tenant) as tx:
@@ -675,7 +738,12 @@ async def propose(
             scope=Scope(engagement_id=engagement_id, work_item_id=work_item),
         )
     found = await _version(ctx.tenant, version)
-    return Proposal(found, card_id, tuple(computed))
+    return Proposal(
+        found,
+        card_id,
+        tuple(computed),
+        recommended.option_key if recommended is not None else None,
+    )
 
 
 async def _version(tenant: TenantContext, version_id: UUID) -> MaterialityVersion:
@@ -749,7 +817,8 @@ async def _insert(
 
 def thresholds_of(version: MaterialityVersion) -> engine.Thresholds:
     """A stored version as the engine's figures (its own stamp)."""
-    row = next((b for b in version.benchmarks if b.get("key") == version.benchmark_key), {})
+    empty: dict[str, Any] = {}  # Any: JSON
+    row = next((b for b in version.benchmarks if b.get("key") == version.benchmark_key), empty)
     amount = Decimal(str(row.get("amount", "0")))
     low = Decimal(str(row.get("range_low_pct", version.rate_pct)))
     high = Decimal(str(row.get("range_high_pct", version.rate_pct)))
@@ -977,7 +1046,7 @@ async def _apply_reassessment(tx: UnitOfWork, ctx: AuthContext, decided: Applied
     if revise:
         thresholds = _from_figures(figures)
         impacted = await impact_of(ctx.tenant, decided.work_item_id)
-        row = next(
+        row: dict[str, object] = next(
             (dict(b) for b in standing.benchmarks if b.get("key") == standing.benchmark_key),
             {"key": standing.benchmark_key, "label": standing.benchmark_key, "use": "overall"},
         )

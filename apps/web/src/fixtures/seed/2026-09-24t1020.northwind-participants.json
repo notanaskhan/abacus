@@ -1,0 +1,174 @@
+{
+  "scenario": {
+    "version": "bh-2026.10.3",
+    "hash": "2b09e6fb01617c990e6e72feac508159fe5a03c6ff4f80bbb8d4a539c6f8d6a2",
+    "snapshot": "2026-09-24T10:20",
+    "slices": [
+      "sampling"
+    ]
+  },
+  "persona": "marcus-delaney",
+  "request": "GET /v1/sample-sets/{sample_set_id}",
+  "body": {
+    "allowed_actions": [
+      "sample_set.create",
+      "sample_set.export",
+      "sample_set.generate_requests",
+      "population.create",
+      "sign_off.prepare"
+    ],
+    "content_hash": "169a51532fe82a15cabeca1c9f93dea30b49f558b0196b72a7a3450f28da56e3",
+    "engagement_id": "36cf7ac7-6f57-4dd7-b71d-2ebff60c6928",
+    "id": "29842b3a-7a2c-4966-a7c8-0efc39da442e",
+    "inputs_hash": "09502b8fb07310b1f24ed6301c4bee5a71023aecb27f7f11d1a67e24d086ca2e",
+    "items_amount": "892430.00",
+    "items_hash": "50c118ef075f08b3306ebefbc96571af8db695e953e66e02ee5a24970a210f74",
+    "items_total": 25,
+    "parameters": {
+      "citations": [
+        {
+          "citation_id": null,
+          "label": "BH-EBP-210 Table 2 · attribute sample sizes v1",
+          "verified": true
+        }
+      ],
+      "computed_size": 25,
+      "confidence": "0.90",
+      "expected_rate": "0",
+      "final_size": 25,
+      "method": "attribute_nonstatistical",
+      "override_rationale": null,
+      "override_size": null,
+      "rmm": "moderate",
+      "sampler_version": "2.3",
+      "seed": 6171281,
+      "seed_hex": "0x5E2A91",
+      "seed_source": "scenario",
+      "statistical_crosscheck_size": 22,
+      "tolerable_rate": "0.10"
+    },
+    "population": {
+      "amount_total": "14560000.00",
+      "created_at": "2026-09-16T20:00:00Z",
+      "created_by_name": "Marcus Delaney",
+      "deviation_definition": "any attribute in EBP-03/EBP-04 not agreed to source",
+      "engagement_id": "36cf7ac7-6f57-4dd7-b71d-2ebff60c6928",
+      "id": "72992b13-cafe-456a-b135-bb35d50600f1",
+      "record_count": 412,
+      "record_unit": "participants",
+      "sampling_unit": "participant (census record)",
+      "sha256": "0bca3bd05b3d81adf71a08b40be050a2ab3671aa988714aaaba79c32901d7d08",
+      "source": {
+        "connection_label": null,
+        "evidence_version_id": "a397bbb8-d8d5-4549-bc00-47f75f2ca6dc",
+        "file_name": null,
+        "file_version_no": null,
+        "gl_snapshot_id": null,
+        "kind": "upload",
+        "pulled_at": null,
+        "query": null,
+        "query_label": null,
+        "uploaded_by_name": null,
+        "uploaded_on": null
+      },
+      "ties": [
+        {
+          "comparisons": [
+            {
+              "amount": "14560000.00",
+              "citation": null,
+              "label": "PayGrid YTD register",
+              "ledger_ref": null
+            }
+          ],
+          "difference": "0.00",
+          "engine_version": "tie-1",
+          "explanation": null,
+          "id": "ca025b6c-d27e-4770-9ef1-3f71adb0e66c",
+          "inputs_hash": "7965813e8f98e3dff52f7f0c527da22e9df9d822435f41cba587e1c838550ff0",
+          "label": "PayGrid YTD register",
+          "left_amount": "14560000.00",
+          "position": 1,
+          "result": "tie"
+        },
+        {
+          "comparisons": [
+            {
+              "amount": "13813400.00",
+              "citation": null,
+              "label": "W-3 Box 1",
+              "ledger_ref": null
+            },
+            {
+              "amount": "746600.00",
+              "citation": null,
+              "label": "W-3 Box 12 D",
+              "ledger_ref": null
+            }
+          ],
+          "difference": "0.00",
+          "engine_version": "tie-1",
+          "explanation": null,
+          "id": "5fc9848d-827b-4b4d-a341-a3385e36e7a6",
+          "inputs_hash": "ba2c78d40433e50140e5810c7b4229ecf965bdc90bf34d6d0c864f2e0c5dbddd",
+          "label": "W-3 Box 1 + Box 12 D",
+          "left_amount": "14560000.00",
+          "position": 2,
+          "result": "tie"
+        }
+      ],
+      "work_item_id": "9db16eb5-3a68-439d-99e7-51437d1fbe09"
+    },
+    "program_step_key": null,
+    "purpose": "Eligibility, contribution and pay-rate tests on the same 25 participants",
+    "status": "approved",
+    "strata": [],
+    "title": "Participants",
+    "version_no": 2,
+    "versions": [
+      {
+        "approved": null,
+        "created_at": "2026-09-15T21:40:00Z",
+        "created_by_name": "Marcus Delaney",
+        "final_size": 25,
+        "override_pending": false,
+        "population_id": "487e407a-a973-441b-b6d2-5cb4c4c44701",
+        "population_label": "participants",
+        "prepared": null,
+        "record_count": 409,
+        "seed_hex": "0x3C77D0",
+        "status": "draft",
+        "tie_difference": "-182300.00",
+        "tie_result": "off",
+        "version_no": 1
+      },
+      {
+        "approved": {
+          "at": "2026-09-16T21:05:00Z",
+          "initials": "HL",
+          "name": "Hannah Leclerc",
+          "user_id": "30834580-ffec-4e9b-b897-75580f46e9f1"
+        },
+        "created_at": "2026-09-16T20:10:00Z",
+        "created_by_name": "Marcus Delaney",
+        "final_size": 25,
+        "override_pending": false,
+        "population_id": "72992b13-cafe-456a-b135-bb35d50600f1",
+        "population_label": "participants",
+        "prepared": {
+          "at": "2026-09-16T20:12:00Z",
+          "initials": "MD",
+          "name": "Marcus Delaney",
+          "user_id": "631bf60c-1b93-4665-836b-4912edef713c"
+        },
+        "record_count": 412,
+        "seed_hex": "0x5E2A91",
+        "status": "approved",
+        "tie_difference": null,
+        "tie_result": "tie",
+        "version_no": 2
+      }
+    ],
+    "work_item_id": "9db16eb5-3a68-439d-99e7-51437d1fbe09"
+  }
+}

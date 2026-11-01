@@ -290,6 +290,9 @@ GL_SAMPLING_UNIT: Final = "payment"
 GL_DEVIATION: Final = "any payment not agreed to an approved invoice and its receipt"
 DISBURSEMENTS_TITLE: Final = "Disbursements"
 FIRST_CHECK: Final = 40211
+# AUD-31 f's run line: "prior-year codes from the FY2025 mapping" (DEC-1769). Granite Peak is a
+# first-year audit, so the FY2025 mapping is the predecessor auditor's sheet, uploaded by Simone.
+PREDECESSOR_FILE: Final = "Granite Peak FY2025 account mapping (predecessor).csv"
 
 
 def granite_accounts() -> list[TrialBalanceLine]:
@@ -313,6 +316,24 @@ def granite_accounts() -> list[TrialBalanceLine]:
                 )
             )
     return out
+
+
+def granite_predecessor_csv() -> bytes:
+    """The FY2025 mapping (DEC-1769, synthetic): every FY2026 account but the newest of each line
+    split into eight or more (6 accounts opened in FY2026), under its line's BH FS-line label
+    (keyed by the range's low end, which is the A-02 §5.3 line's code). Those six fall to the
+    number ranges; the other 122 map by prior year."""
+    labels = {str(low): line for *_, line, _, low, _ in _GROUPINGS}
+    rows = ["Account,Account name,FS line"]
+    accounts = iter(granite_accounts())
+    for line in GRANITE_PEAK_FY2026.lines:
+        count = GRANITE_SPLIT[line.account_code]
+        for k in range(1, count + 1):
+            account = next(accounts)
+            if count < 8 or k < count:
+                label = labels[line.account_code]
+                rows.append(f'{account.account_code},"{account.account_name}","{label}"')
+    return ("\n".join(rows) + "\n").encode("utf-8")
 
 
 def _paid(text: str) -> date:
@@ -387,6 +408,7 @@ __all__ = [
     "GROUPING_SET_NAME",
     "HEADER",
     "PARTICIPANTS",
+    "PREDECESSOR_FILE",
     "REGISTER",
     "SAMPLING_UNIT",
     "SEEDS",
@@ -401,5 +423,6 @@ __all__ = [
     "distributions",
     "granite_accounts",
     "granite_gl",
+    "granite_predecessor_csv",
     "grouping_set_csv",
 ]

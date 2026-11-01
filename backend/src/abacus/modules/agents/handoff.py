@@ -368,3 +368,37 @@ class SectionDraft(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     cells: Annotated[list[DraftedCell], Field(max_length=200), classified("confidential")] = []
+
+
+# --- A-04-T15: the materiality recommender (decisions.recommender; DEC-1953) ---------------------
+
+RecommendFactRef = Annotated[
+    str,
+    Field(
+        pattern=r"^(?:benchmark_key|benchmark_amount|policy|option:[a-z0-9_]{1,40}|factor:\d{1,2}|"
+        r"prior:PY\d{4})$"
+    ),
+]
+
+
+class RecommendationReason(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    text: Annotated[str, Field(min_length=1, max_length=600), classified("confidential")]
+    facts: Annotated[
+        list[RecommendFactRef], Field(min_length=1, max_length=8), classified("internal")
+    ]
+
+
+class Recommendation(BaseModel):
+    """One code-computed option key and up to three reasons by fact reference: a tag on the
+    partner's card, never a choice (INV-1; A-04 §6.1)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    recommended_option_key: Annotated[
+        str, Field(pattern=r"^[a-z][a-z0-9_]{0,39}$"), classified("internal")
+    ]
+    reasons: Annotated[
+        list[RecommendationReason], Field(min_length=1, max_length=3), classified("confidential")
+    ]

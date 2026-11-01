@@ -46,6 +46,10 @@ from abacus.modules.assurance.sections import (
     register_index_tag,
     register_run_summary,
 )
+from abacus.modules.assurance.materiality import AUDIT_KINDS as MATERIALITY_KINDS
+from abacus.modules.assurance.materiality import audit_owners as materiality_owners
+from abacus.modules.assurance.materiality import register as register_materiality_kinds
+from abacus.modules.assurance.materiality import register_materiality_dependents
 from abacus.modules.assurance.service_orgs import AUDIT_KINDS as SERVICE_ORG_KINDS
 from abacus.modules.assurance.service_orgs import audit_owners as service_org_owners
 from abacus.modules.assurance.tb_mapping_contract import MappingConfirmIn, MappingRunIn
