@@ -2,7 +2,7 @@
 id: TASK-2910
 title: A-05-T13 mode ebp_provisions (prompt, provision registry, code comparison)
 spec: SPEC-640
-acceptance_criteria: [A-05 F2]
+acceptance_criteria: [AC-11]
 risk_zone: red
 status: in-review
 epic: A-05

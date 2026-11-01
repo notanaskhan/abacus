@@ -390,7 +390,7 @@ class RecommendationReason(BaseModel):
     ]
 
 
-class Recommendation(BaseModel):
+class DecisionSuggestion(BaseModel):
     """One code-computed option key and up to three reasons by fact reference: a tag on the
     partner's card, never a choice (INV-1; A-04 §6.1)."""
 

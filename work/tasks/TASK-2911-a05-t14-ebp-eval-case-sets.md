@@ -2,7 +2,7 @@
 id: TASK-2911
 title: A-05-T14 EBP case sets in evals/workpapers_section_drafter
 spec: SPEC-640
-acceptance_criteria: [A-05 §6]
+acceptance_criteria: [AC-12]
 risk_zone: red
 status: in-review
 epic: A-05

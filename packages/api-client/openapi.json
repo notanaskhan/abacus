@@ -1472,6 +1472,119 @@
         "title": "ActivityRefOut",
         "type": "object"
       },
+      "AdjustedLineOut": {
+        "properties": {
+          "account_code": {
+            "cls": "internal",
+            "title": "Account Code",
+            "type": "string"
+          },
+          "account_name": {
+            "cls": "internal",
+            "title": "Account Name",
+            "type": "string"
+          },
+          "aje": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Aje"
+          },
+          "final": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Final"
+          },
+          "rje": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Rje"
+          },
+          "unadjusted": {
+            "anyOf": [
+              {
+                "cls": "confidential",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unadjusted"
+          }
+        },
+        "required": [
+          "account_code",
+          "account_name",
+          "unadjusted",
+          "aje",
+          "rje",
+          "final"
+        ],
+        "title": "AdjustedLineOut",
+        "type": "object"
+      },
+      "AdjustedTbOut": {
+        "description": "C8's read: the adjusted TB by layer, code's (EBP-06, T-05, A-09, AUD-20).",
+        "properties": {
+          "layer": {
+            "cls": "internal",
+            "enum": [
+              "unadjusted",
+              "aje",
+              "rje",
+              "final"
+            ],
+            "title": "Layer",
+            "type": "string"
+          },
+          "lines": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/AdjustedLineOut"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "pending_entries": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Pending Entries",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "layer",
+          "lines",
+          "pending_entries"
+        ],
+        "title": "AdjustedTbOut",
+        "type": "object"
+      },
       "AdjustmentIn": {
         "additionalProperties": false,
         "properties": {
@@ -1573,7 +1686,7 @@
           "lines": {
             "cls": "confidential",
             "items": {
-              "$ref": "#/components/schemas/LineOut"
+              "$ref": "#/components/schemas/abacus__modules__fieldwork__routes__LineOut"
             },
             "title": "Lines",
             "type": "array"
@@ -1639,6 +1752,27 @@
           "response_note"
         ],
         "title": "AdjustmentOut",
+        "type": "object"
+      },
+      "AdjustmentSendOut": {
+        "properties": {
+          "approval_batch_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Approval Batch Id",
+            "type": "string"
+          },
+          "undo_until": {
+            "cls": "internal",
+            "title": "Undo Until",
+            "type": "string"
+          }
+        },
+        "required": [
+          "approval_batch_id",
+          "undo_until"
+        ],
+        "title": "AdjustmentSendOut",
         "type": "object"
       },
       "AdoptBody": {
@@ -7364,6 +7498,55 @@
         "title": "BasisIn",
         "type": "object"
       },
+      "BatchIn": {
+        "additionalProperties": false,
+        "properties": {
+          "entry_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Entry Ids",
+            "type": "array"
+          },
+          "policy_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Policy Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entry_ids",
+          "policy_version_id"
+        ],
+        "title": "BatchIn",
+        "type": "object"
+      },
+      "BatchOut": {
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "cls": "internal",
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label"
+        ],
+        "title": "BatchOut",
+        "type": "object"
+      },
       "BenchmarkOut": {
         "description": "A statement-grammar row: amounts with no \"$\" (AUD-07 a; R2 prior years).",
         "properties": {
@@ -12517,6 +12700,60 @@
           }
         },
         "title": "ClientDataSection",
+        "type": "object"
+      },
+      "ClientDecisionIn": {
+        "additionalProperties": false,
+        "properties": {
+          "by_contact_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "By Contact Id",
+            "type": "string"
+          },
+          "decided_on": {
+            "cls": "internal",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "title": "Decided On",
+            "type": "string"
+          },
+          "decision": {
+            "cls": "internal",
+            "enum": [
+              "client_accepted",
+              "client_declined",
+              "client_question"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "decision",
+          "by_contact_id",
+          "decided_on",
+          "evidence_version_id"
+        ],
+        "title": "ClientDecisionIn",
         "type": "object"
       },
       "ClientEngagementBriefOut": {
@@ -18091,6 +18328,66 @@
         "title": "ControlExceptionOut",
         "type": "object"
       },
+      "ConvertToMisstatementIn": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                    "type": "string"
+                  }
+                ],
+                "cls": "confidential"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "projection_ref": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Projection Ref"
+          },
+          "seen_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Seen Version",
+            "type": "integer"
+          },
+          "type": {
+            "cls": "internal",
+            "enum": [
+              "factual",
+              "judgmental",
+              "projected"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "seen_version"
+        ],
+        "title": "ConvertToMisstatementIn",
+        "type": "object"
+      },
       "CorrectionIn": {
         "additionalProperties": false,
         "description": "A person records a correction (EBP-04 f); time alone never corrects.",
@@ -19262,6 +19559,21 @@
           "item_status"
         ],
         "title": "DecisionOut",
+        "type": "object"
+      },
+      "DecisionRaisedOut": {
+        "properties": {
+          "decision_card_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Decision Card Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision_card_id"
+        ],
+        "title": "DecisionRaisedOut",
         "type": "object"
       },
       "DecisionRecommendationOut": {
@@ -26525,6 +26837,197 @@
         "title": "EntryCitationOut",
         "type": "object"
       },
+      "EntryIn": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Description"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "aje",
+              "rje",
+              "paje",
+              "tje",
+              "elimination"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "lines": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/LineIn"
+            },
+            "maxItems": 200,
+            "minItems": 2,
+            "title": "Lines",
+            "type": "array"
+          },
+          "misstatement_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Misstatement Id"
+          }
+        },
+        "required": [
+          "kind",
+          "lines"
+        ],
+        "title": "EntryIn",
+        "type": "object"
+      },
+      "EntryOut": {
+        "description": "An entry as AUD-16 b, b2 and c draw it (AJE-1: Dr 1250 48,600 / Cr 4100 33,540 / Cr 4200\n15,060, Review required because Northwind is an attest client).",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "enum": [
+                "proposed_entry.update",
+                "proposed_entry.send_to_client",
+                "proposed_entry.reject",
+                "proposed_entry.record_client_decision",
+                "approval_batch.create"
+              ],
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "amount": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Amount",
+            "type": "string"
+          },
+          "approval_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Approval Label"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Description"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_attest_client": {
+            "cls": "internal",
+            "title": "Is Attest Client",
+            "type": "boolean"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "aje",
+              "rje",
+              "paje",
+              "tje",
+              "elimination"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "lines": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/abacus__modules__adjustments__contract__LineOut"
+            },
+            "maxItems": 200,
+            "title": "Lines",
+            "type": "array"
+          },
+          "ref": {
+            "cls": "internal",
+            "title": "Ref",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "proposed",
+              "within_threshold",
+              "review_required",
+              "approved",
+              "rejected",
+              "client_approved",
+              "client_declined"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "threshold_result": {
+            "cls": "internal",
+            "enum": [
+              "within_threshold",
+              "review_required"
+            ],
+            "title": "Threshold Result",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "ref",
+          "kind",
+          "description",
+          "amount",
+          "status",
+          "threshold_result",
+          "is_attest_client",
+          "lines",
+          "approval_label",
+          "version",
+          "allowed_actions"
+        ],
+        "title": "EntryOut",
+        "type": "object"
+      },
       "EnvelopeDocumentOut": {
         "description": "One document of the envelope.",
         "properties": {
@@ -28296,6 +28799,41 @@
         "title": "FactSeg",
         "type": "object"
       },
+      "FactorIn": {
+        "additionalProperties": false,
+        "properties": {
+          "citation_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "note": {
+            "cls": "confidential",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Note",
+            "type": "string"
+          },
+          "value": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "note"
+        ],
+        "title": "FactorIn",
+        "type": "object"
+      },
       "FeeLineIn": {
         "additionalProperties": false,
         "description": "One part of the fee (`$6,500 for the section 754 work`).",
@@ -29921,6 +30459,96 @@
         "title": "FinalApprovalOut",
         "type": "object"
       },
+      "FindingDetailOut": {
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "enum": [
+                "finding.update",
+                "finding.convert",
+                "finding.resolve",
+                "finding.mark_not_applicable",
+                "finding.request_decision",
+                "misstatement.update",
+                "misstatement.pass_to_sum",
+                "sum.update_factors",
+                "sum.request_conclusion",
+                "sum.snapshot",
+                "sum.export"
+              ],
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "citation_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "decision_card_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Decision Card Id"
+          },
+          "evaluation": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "cls": "confidential",
+            "title": "Evaluation",
+            "type": "object"
+          },
+          "finding": {
+            "$ref": "#/components/schemas/FindingRowOut",
+            "cls": "confidential"
+          },
+          "issue_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Issue Id",
+            "type": "string"
+          },
+          "why_surfaced": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Why Surfaced"
+          }
+        },
+        "required": [
+          "finding",
+          "issue_id",
+          "why_surfaced",
+          "citation_ids",
+          "evaluation",
+          "decision_card_id",
+          "allowed_actions"
+        ],
+        "title": "FindingDetailOut",
+        "type": "object"
+      },
       "FindingHitOut": {
         "properties": {
           "engagement_id": {
@@ -29947,62 +30575,6 @@
           "title"
         ],
         "title": "FindingHitOut",
-        "type": "object"
-      },
-      "FindingIn": {
-        "additionalProperties": false,
-        "properties": {
-          "description": {
-            "anyOf": [
-              {
-                "maxLength": 2000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "confidential",
-            "title": "Description"
-          },
-          "item_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Item Id"
-          },
-          "procedure_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Procedure Id"
-          },
-          "title": {
-            "cls": "confidential",
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Title",
-            "type": "string"
-          }
-        },
-        "required": [
-          "title"
-        ],
-        "title": "FindingIn",
         "type": "object"
       },
       "FindingOut": {
@@ -30052,7 +30624,7 @@
           "misstatement": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/MisstatementOut"
+                "$ref": "#/components/schemas/abacus__modules__fieldwork__routes__MisstatementOut"
               },
               {
                 "type": "null"
@@ -30102,6 +30674,158 @@
           "deficiency"
         ],
         "title": "FindingOut",
+        "type": "object"
+      },
+      "FindingRowOut": {
+        "properties": {
+          "coso_component": {
+            "anyOf": [
+              {
+                "enum": [
+                  "control_environment",
+                  "risk_assessment",
+                  "control_activities",
+                  "information_communication",
+                  "monitoring"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Coso Component"
+          },
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by_name": {
+            "cls": "internal",
+            "title": "Created By Name",
+            "type": "string"
+          },
+          "deficiency_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "exception_for_resolution",
+                  "proposed",
+                  "concluded",
+                  "communicated"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Deficiency Status"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "control_deficiency",
+              "misstatement",
+              "compliance",
+              "other"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "ref": {
+            "cls": "internal",
+            "pattern": "^F-[0-9]{2,4}$",
+            "title": "Ref",
+            "type": "string"
+          },
+          "route": {
+            "cls": "internal",
+            "enum": [
+              "under_evaluation",
+              "converted_to_misstatement",
+              "converted_to_deficiency"
+            ],
+            "title": "Route",
+            "type": "string"
+          },
+          "severity_concluded": {
+            "anyOf": [
+              {
+                "enum": [
+                  "deficiency",
+                  "significant_deficiency",
+                  "material_weakness"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Severity Concluded"
+          },
+          "severity_proposed": {
+            "anyOf": [
+              {
+                "enum": [
+                  "deficiency",
+                  "significant_deficiency",
+                  "material_weakness"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Severity Proposed"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          },
+          "workpaper_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Workpaper Ref"
+          }
+        },
+        "required": [
+          "id",
+          "ref",
+          "title",
+          "kind",
+          "route",
+          "deficiency_status",
+          "severity_proposed",
+          "severity_concluded",
+          "coso_component",
+          "workpaper_ref",
+          "created_by_name",
+          "created_at"
+        ],
+        "title": "FindingRowOut",
         "type": "object"
       },
       "FirmClientOut": {
@@ -44353,32 +45077,51 @@
         "title": "LineBody",
         "type": "object"
       },
-      "LineOut": {
+      "LineIn": {
+        "additionalProperties": false,
         "properties": {
           "account_code": {
-            "cls": "confidential",
+            "cls": "internal",
+            "maxLength": 64,
+            "minLength": 1,
             "title": "Account Code",
             "type": "string"
           },
           "credit": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
             "cls": "confidential",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Credit",
-            "type": "string"
+            "default": "0",
+            "title": "Credit"
           },
           "debit": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
             "cls": "confidential",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Debit",
-            "type": "string"
+            "default": "0",
+            "title": "Debit"
           }
         },
         "required": [
-          "account_code",
-          "debit",
-          "credit"
+          "account_code"
         ],
-        "title": "LineOut",
+        "title": "LineIn",
         "type": "object"
       },
       "LineValueIn": {
@@ -45515,6 +46258,66 @@
         "title": "ListPage[DecisionCardItemOut]",
         "type": "object"
       },
+      "ListPage_EntryOut_": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "facets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Facet"
+              },
+              "type": "array"
+            },
+            "cls": "internal",
+            "title": "Facets",
+            "type": "object"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/EntryOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_capped": {
+            "cls": "internal",
+            "default": false,
+            "title": "Total Capped",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListPage[EntryOut]",
+        "type": "object"
+      },
       "ListPage_EnvelopeListRow_": {
         "properties": {
           "counts": {
@@ -45573,6 +46376,66 @@
           "total"
         ],
         "title": "ListPage[EnvelopeListRow]",
+        "type": "object"
+      },
+      "ListPage_FindingRowOut_": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "facets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Facet"
+              },
+              "type": "array"
+            },
+            "cls": "internal",
+            "title": "Facets",
+            "type": "object"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/FindingRowOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_capped": {
+            "cls": "internal",
+            "default": false,
+            "title": "Total Capped",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListPage[FindingRowOut]",
         "type": "object"
       },
       "ListPage_FraudInquiryOut_": {
@@ -46053,6 +46916,66 @@
           "total"
         ],
         "title": "ListPage[MappingSetSummaryOut]",
+        "type": "object"
+      },
+      "ListPage_MisstatementOut_": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "facets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Facet"
+              },
+              "type": "array"
+            },
+            "cls": "internal",
+            "title": "Facets",
+            "type": "object"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/abacus__modules__assurance__findings_contract__MisstatementOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_capped": {
+            "cls": "internal",
+            "default": false,
+            "title": "Total Capped",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListPage[MisstatementOut]",
         "type": "object"
       },
       "ListPage_PortalEnvelopeRow_": {
@@ -48726,12 +49649,35 @@
       },
       "MaterialityProposalIn": {
         "additionalProperties": false,
+        "description": "`tb_snapshot_id` names the engagement's trial balance (C9) read at the Unadjusted layer.\n`rate_pct` adds a rate the proposer typed, inside the firm range, as a third option (A-04-T12,\nDEC-1950: the card's options are fixed when it is raised).",
         "properties": {
           "benchmark_key": {
             "cls": "internal",
             "pattern": "^[a-z_]{1,64}$",
             "title": "Benchmark Key",
             "type": "string"
+          },
+          "rate_pct": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "maximum": 100.0,
+                    "minimum": 0.0,
+                    "type": "number"
+                  },
+                  {
+                    "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,8}0*$)\\d{0,3}\\.\\d{0,4}0*$)",
+                    "type": "string"
+                  }
+                ],
+                "cls": "internal"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rate Pct"
           },
           "recommend": {
             "cls": "internal",
@@ -50377,64 +51323,6 @@
           "amount"
         ],
         "title": "MisstatementIn",
-        "type": "object"
-      },
-      "MisstatementOut": {
-        "properties": {
-          "account_code": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "confidential",
-            "title": "Account Code"
-          },
-          "amount": {
-            "cls": "confidential",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Amount",
-            "type": "string"
-          },
-          "corrected": {
-            "cls": "internal",
-            "title": "Corrected",
-            "type": "boolean"
-          },
-          "kind": {
-            "cls": "internal",
-            "enum": [
-              "factual",
-              "judgmental",
-              "projected"
-            ],
-            "title": "Kind",
-            "type": "string"
-          },
-          "recorded_at": {
-            "cls": "internal",
-            "format": "date-time",
-            "title": "Recorded At",
-            "type": "string"
-          },
-          "recorded_by_name": {
-            "cls": "internal",
-            "title": "Recorded By Name",
-            "type": "string"
-          }
-        },
-        "required": [
-          "kind",
-          "amount",
-          "account_code",
-          "corrected",
-          "recorded_by_name",
-          "recorded_at"
-        ],
-        "title": "MisstatementOut",
         "type": "object"
       },
       "MyAnnualIndependenceOut": {
@@ -53109,7 +53997,8 @@
               "kind": "ein",
               "last4": "6620",
               "presence": "on_file"
-            }
+            },
+            "version": 1
           }
         ],
         "properties": {
@@ -53242,15 +54131,27 @@
             "type": "string"
           },
           "sponsor_ein": {
-            "$ref": "#/components/schemas/MaskedTinOut",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MaskedTinOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "cls": "restricted",
             "x-pii-kind": "tin"
+          },
+          "version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
           }
         },
         "required": [
           "plan_name",
           "plan_number",
-          "sponsor_ein",
           "plan_year_start",
           "plan_year_end",
           "plan_type",
@@ -53261,6 +54162,7 @@
           "filer_status",
           "form5500_due_on",
           "audit_kind",
+          "version",
           "allowed_actions"
         ],
         "title": "PlanOut",
@@ -59017,7 +59919,28 @@
       },
       "ProviderIn": {
         "additionalProperties": false,
+        "description": "A-05-T10 (additive): the SOC report's period and, last four digits only, the service\nagreement's and the draft Schedule C's EIN (the full EIN waits for A-05-T18; DEC-1955).",
         "properties": {
+          "agreement_ein_last4": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9]{4}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Agreement Ein Last4",
+            "x-pii-kind": "tin"
+          },
+          "certifies": {
+            "cls": "internal",
+            "default": false,
+            "title": "Certifies",
+            "type": "boolean"
+          },
           "name": {
             "cls": "internal",
             "maxLength": 300,
@@ -59029,6 +59952,63 @@
             "maxLength": 40,
             "title": "Role",
             "type": "string"
+          },
+          "schedule_c_ein_last4": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9]{4}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Schedule C Ein Last4",
+            "x-pii-kind": "tin"
+          },
+          "soc_period_end": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Soc Period End"
+          },
+          "soc_period_start": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Soc Period Start"
+          },
+          "soc_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "soc1_type1",
+                  "soc1_type2",
+                  "none"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Soc Type"
           }
         },
         "required": [
@@ -59910,6 +60890,36 @@
           "requires_note"
         ],
         "title": "ReasonCodeOut",
+        "type": "object"
+      },
+      "ReasonIn": {
+        "additionalProperties": false,
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "cls": "confidential",
+                "maxLength": 2000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "reason_code": {
+            "cls": "internal",
+            "pattern": "^[a-z][a-z0-9_]{0,59}$",
+            "title": "Reason Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason_code"
+        ],
+        "title": "ReasonIn",
         "type": "object"
       },
       "ReasonOut": {
@@ -61251,50 +62261,6 @@
           "allowed_actions"
         ],
         "title": "RegisterRiskOut",
-        "type": "object"
-      },
-      "RejectIn": {
-        "additionalProperties": false,
-        "description": "Reject or send back: a reason code from the catalogue is required (AC-7, AC-8).",
-        "properties": {
-          "note": {
-            "anyOf": [
-              {
-                "maxLength": 2000,
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "confidential",
-            "title": "Note"
-          },
-          "reason_code": {
-            "cls": "public",
-            "pattern": "^[a-z][a-z_]{0,49}$",
-            "title": "Reason Code",
-            "type": "string"
-          },
-          "seen_proposal": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Seen Proposal"
-          }
-        },
-        "required": [
-          "reason_code"
-        ],
-        "title": "RejectIn",
         "type": "object"
       },
       "RejectProposalIn": {
@@ -65058,6 +66024,111 @@
         "title": "RiskBody",
         "type": "object"
       },
+      "RiskCreateIn": {
+        "additionalProperties": false,
+        "description": "A new risk (A-04-T13, additive): its code is the next one, RMM is the firm matrix's.",
+        "properties": {
+          "area_label": {
+            "cls": "internal",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Area Label",
+            "type": "string"
+          },
+          "assertions": {
+            "cls": "internal",
+            "items": {
+              "enum": [
+                "existence",
+                "occurrence",
+                "completeness",
+                "rights_obligations",
+                "accuracy",
+                "valuation",
+                "cutoff",
+                "classification",
+                "presentation"
+              ],
+              "type": "string"
+            },
+            "maxItems": 12,
+            "title": "Assertions",
+            "type": "array"
+          },
+          "control_risk": {
+            "cls": "internal",
+            "enum": [
+              "low",
+              "moderate",
+              "high",
+              "max"
+            ],
+            "title": "Control Risk",
+            "type": "string"
+          },
+          "inherent_factors": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/InherentFactorOut"
+            },
+            "maxItems": 5,
+            "title": "Inherent Factors",
+            "type": "array"
+          },
+          "inherent_risk": {
+            "cls": "internal",
+            "enum": [
+              "low",
+              "moderate",
+              "high"
+            ],
+            "title": "Inherent Risk",
+            "type": "string"
+          },
+          "level": {
+            "cls": "internal",
+            "enum": [
+              "financial_statement",
+              "assertion"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "presumption_kind": {
+            "cls": "internal",
+            "default": "none",
+            "enum": [
+              "none",
+              "management_override",
+              "revenue_recognition"
+            ],
+            "title": "Presumption Kind",
+            "type": "string"
+          },
+          "rationale": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Rationale"
+          }
+        },
+        "required": [
+          "level",
+          "area_label",
+          "assertions",
+          "inherent_risk",
+          "control_risk"
+        ],
+        "title": "RiskCreateIn",
+        "type": "object"
+      },
       "RiskDraftIn": {
         "additionalProperties": false,
         "properties": {
@@ -65612,6 +66683,78 @@
           "by_name"
         ],
         "title": "RiskVersionOut",
+        "type": "object"
+      },
+      "RmmMatrixPayload": {
+        "additionalProperties": false,
+        "description": "A-04-T13 (A-04 AC4.2; DEC-1951): the firm's RMM matrix (\"BH matrix v1\"). Firm content,\nloaded through the import; the risk register reads it through `methodology.api` and stamps\neach row with the version (code combines, never a model: ADR-050).",
+        "properties": {
+          "kind": {
+            "cls": "internal",
+            "const": "rmm_matrix",
+            "title": "Kind",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/RmmMatrixRow"
+            },
+            "maxItems": 12,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "rows"
+        ],
+        "title": "RmmMatrixPayload",
+        "type": "object"
+      },
+      "RmmMatrixRow": {
+        "additionalProperties": false,
+        "description": "One cell of the matrix: the RMM for an inherent and a control risk.",
+        "properties": {
+          "control_risk": {
+            "cls": "internal",
+            "enum": [
+              "low",
+              "moderate",
+              "high",
+              "max"
+            ],
+            "title": "Control Risk",
+            "type": "string"
+          },
+          "inherent_risk": {
+            "cls": "internal",
+            "enum": [
+              "low",
+              "moderate",
+              "high"
+            ],
+            "title": "Inherent Risk",
+            "type": "string"
+          },
+          "rmm": {
+            "cls": "internal",
+            "enum": [
+              "low",
+              "moderate",
+              "high"
+            ],
+            "title": "Rmm",
+            "type": "string"
+          }
+        },
+        "required": [
+          "inherent_risk",
+          "control_risk",
+          "rmm"
+        ],
+        "title": "RmmMatrixRow",
         "type": "object"
       },
       "RoleOut": {
@@ -70493,6 +71636,50 @@
         "title": "SendDraftIn",
         "type": "object"
       },
+      "SendIn": {
+        "additionalProperties": false,
+        "properties": {
+          "entry_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Entry Ids",
+            "type": "array"
+          },
+          "recipient_contact_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Recipient Contact Id",
+            "type": "string"
+          },
+          "seen_versions": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Seen Versions",
+            "type": "object"
+          },
+          "wording_template_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Wording Template Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entry_ids",
+          "recipient_contact_id",
+          "wording_template_version_id",
+          "seen_versions"
+        ],
+        "title": "SendIn",
+        "type": "object"
+      },
       "SendOut": {
         "description": "A send waiting its Undo window (ADR-161).",
         "properties": {
@@ -72917,6 +74104,25 @@
         "title": "SignupOut",
         "type": "object"
       },
+      "SnapshotIn": {
+        "additionalProperties": false,
+        "properties": {
+          "purpose": {
+            "cls": "internal",
+            "enum": [
+              "conclusion",
+              "rep_letter_attachment"
+            ],
+            "title": "Purpose",
+            "type": "string"
+          }
+        },
+        "required": [
+          "purpose"
+        ],
+        "title": "SnapshotIn",
+        "type": "object"
+      },
       "SnapshotOut": {
         "properties": {
           "id": {
@@ -74889,7 +76095,8 @@
               "variance_thresholds",
               "materiality_ranges",
               "document_confidence",
-              "attribute_sample_sizes"
+              "attribute_sample_sizes",
+              "rmm_matrix"
             ],
             "title": "Kind",
             "type": "string"
@@ -74987,6 +76194,7 @@
                 "return_approval_policy": "#/components/schemas/ReturnApprovalPolicyPayload",
                 "review_checklist": "#/components/schemas/ReviewChecklistPayload",
                 "review_levels": "#/components/schemas/ReviewLevelsPayload",
+                "rmm_matrix": "#/components/schemas/RmmMatrixPayload",
                 "ssars_cas_settings": "#/components/schemas/SsarsCasSettingsPayload",
                 "variance_thresholds": "#/components/schemas/VarianceThresholdsPayload-Input"
               },
@@ -75007,6 +76215,9 @@
               },
               {
                 "$ref": "#/components/schemas/AttributeSampleSizesPayload-Input"
+              },
+              {
+                "$ref": "#/components/schemas/RmmMatrixPayload"
               },
               {
                 "$ref": "#/components/schemas/ReviewChecklistPayload"
@@ -75334,7 +76545,8 @@
               "variance_thresholds",
               "materiality_ranges",
               "document_confidence",
-              "attribute_sample_sizes"
+              "attribute_sample_sizes",
+              "rmm_matrix"
             ],
             "title": "Kind",
             "type": "string"
@@ -75594,6 +76806,7 @@
                 "return_approval_policy": "#/components/schemas/ReturnApprovalPolicyPayload",
                 "review_checklist": "#/components/schemas/ReviewChecklistPayload",
                 "review_levels": "#/components/schemas/ReviewLevelsPayload",
+                "rmm_matrix": "#/components/schemas/RmmMatrixPayload",
                 "ssars_cas_settings": "#/components/schemas/SsarsCasSettingsPayload",
                 "variance_thresholds": "#/components/schemas/VarianceThresholdsPayload-Output"
               },
@@ -75614,6 +76827,9 @@
               },
               {
                 "$ref": "#/components/schemas/AttributeSampleSizesPayload-Output"
+              },
+              {
+                "$ref": "#/components/schemas/RmmMatrixPayload"
               },
               {
                 "$ref": "#/components/schemas/ReviewChecklistPayload"
@@ -76593,6 +77809,75 @@
         "title": "StepResolveOut",
         "type": "object"
       },
+      "StepSourceOut": {
+        "description": "K-01-T23 (KNW-02 a, a2): where an imported step came from; `match_id` ties its row to the\npage region both ways (C4's tracing grammar; the server's id, never derived from text).",
+        "properties": {
+          "bbox": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Bbox"
+          },
+          "file_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "File Id",
+            "type": "string"
+          },
+          "match_id": {
+            "cls": "internal",
+            "title": "Match Id",
+            "type": "string"
+          },
+          "page_from": {
+            "cls": "internal",
+            "title": "Page From",
+            "type": "integer"
+          },
+          "page_to": {
+            "cls": "internal",
+            "title": "Page To",
+            "type": "integer"
+          },
+          "quote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Quote"
+          },
+          "verified": {
+            "cls": "internal",
+            "title": "Verified",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "match_id",
+          "file_id",
+          "page_from",
+          "page_to",
+          "bbox",
+          "quote",
+          "verified"
+        ],
+        "title": "StepSourceOut",
+        "type": "object"
+      },
       "StratumIn": {
         "additionalProperties": false,
         "properties": {
@@ -76955,6 +78240,168 @@
         ],
         "title": "SuggestionStatus",
         "type": "string"
+      },
+      "SumOut": {
+        "description": "Code's SUM (AC-6): the browser renders these numbers and computes none of them.",
+        "examples": [
+          {
+            "above_pm": false,
+            "aggregate": "34150.00",
+            "approaching_pm": false,
+            "column_set": "ebp_net_assets",
+            "ct_tick_pct": "5.0",
+            "engine_version": "1",
+            "fill_pct_of_overall": "13.5",
+            "inputs_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "iron_curtain": "22250.00",
+            "pct_of_pm": "18.1",
+            "pm_tick_pct": "75.0",
+            "rollover": "34150.00"
+          }
+        ],
+        "properties": {
+          "above_pm": {
+            "cls": "internal",
+            "title": "Above Pm",
+            "type": "boolean"
+          },
+          "aggregate": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Aggregate",
+            "type": "string"
+          },
+          "approaching_pm": {
+            "cls": "internal",
+            "title": "Approaching Pm",
+            "type": "boolean"
+          },
+          "column_set": {
+            "cls": "internal",
+            "enum": [
+              "ebp_net_assets",
+              "commercial"
+            ],
+            "title": "Column Set",
+            "type": "string"
+          },
+          "ct_tick_pct": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Ct Tick Pct",
+            "type": "string"
+          },
+          "engine_version": {
+            "cls": "internal",
+            "title": "Engine Version",
+            "type": "string"
+          },
+          "fill_pct_of_overall": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Fill Pct Of Overall",
+            "type": "string"
+          },
+          "inputs_hash": {
+            "cls": "internal",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Inputs Hash",
+            "type": "string"
+          },
+          "iron_curtain": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Iron Curtain",
+            "type": "string"
+          },
+          "pct_of_pm": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Pct Of Pm",
+            "type": "string"
+          },
+          "pm_tick_pct": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Pm Tick Pct",
+            "type": "string"
+          },
+          "rollover": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Rollover",
+            "type": "string"
+          }
+        },
+        "required": [
+          "column_set",
+          "rollover",
+          "iron_curtain",
+          "aggregate",
+          "pct_of_pm",
+          "fill_pct_of_overall",
+          "ct_tick_pct",
+          "pm_tick_pct",
+          "approaching_pm",
+          "above_pm",
+          "engine_version",
+          "inputs_hash"
+        ],
+        "title": "SumOut",
+        "type": "object"
+      },
+      "SumSnapshotOut": {
+        "properties": {
+          "decision_card_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Decision Card Id"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "inputs_hash": {
+            "cls": "internal",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Inputs Hash",
+            "type": "string"
+          },
+          "purpose": {
+            "cls": "internal",
+            "enum": [
+              "conclusion",
+              "rep_letter_attachment"
+            ],
+            "title": "Purpose",
+            "type": "string"
+          },
+          "version_no": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "version_no",
+          "purpose",
+          "inputs_hash",
+          "decision_card_id"
+        ],
+        "title": "SumSnapshotOut",
+        "type": "object"
       },
       "SummaryOut": {
         "properties": {
@@ -87213,7 +88660,16 @@
               "general_audit_planning",
               "risk_assessment",
               "internal_control",
-              "service_organizations"
+              "service_organizations",
+              "ebp_plan",
+              "ebp_provisions",
+              "ebp_eligibility",
+              "ebp_contributions",
+              "ebp_distributions_loans",
+              "ebp_investments",
+              "ebp_form5500",
+              "ebp_participant_accounts",
+              "ebp_admin_expenses"
             ],
             "title": "Kind",
             "type": "string"
@@ -87312,7 +88768,16 @@
               "general_audit_planning",
               "risk_assessment",
               "internal_control",
-              "service_organizations"
+              "service_organizations",
+              "ebp_plan",
+              "ebp_provisions",
+              "ebp_eligibility",
+              "ebp_contributions",
+              "ebp_distributions_loans",
+              "ebp_investments",
+              "ebp_form5500",
+              "ebp_participant_accounts",
+              "ebp_admin_expenses"
             ],
             "title": "Kind",
             "type": "string"
@@ -87486,6 +88951,83 @@
           "rows"
         ],
         "title": "YourWorkOut",
+        "type": "object"
+      },
+      "abacus__modules__adjustments__contract__LineOut": {
+        "properties": {
+          "account_code": {
+            "cls": "internal",
+            "title": "Account Code",
+            "type": "string"
+          },
+          "account_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Account Name"
+          },
+          "credit": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Credit",
+            "type": "string"
+          },
+          "debit": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Debit",
+            "type": "string"
+          },
+          "fs_line_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Fs Line Key"
+          },
+          "line_no": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Line No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "line_no",
+          "account_code",
+          "account_name",
+          "fs_line_key",
+          "debit",
+          "credit"
+        ],
+        "title": "LineOut",
+        "type": "object"
+      },
+      "abacus__modules__adjustments__contract__RejectIn": {
+        "additionalProperties": false,
+        "properties": {
+          "reason_code": {
+            "cls": "internal",
+            "pattern": "^[a-z][a-z0-9_]{0,59}$",
+            "title": "Reason Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason_code"
+        ],
+        "title": "RejectIn",
         "type": "object"
       },
       "abacus__modules__agents__routes__ApprovalIn": {
@@ -87908,6 +89450,188 @@
         "title": "RevealIn",
         "type": "object"
       },
+      "abacus__modules__assurance__findings_contract__FindingIn": {
+        "additionalProperties": false,
+        "properties": {
+          "citation_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "coso_component": {
+            "anyOf": [
+              {
+                "enum": [
+                  "control_environment",
+                  "risk_assessment",
+                  "control_activities",
+                  "information_communication",
+                  "monitoring"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Coso Component"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "control_deficiency",
+              "misstatement",
+              "compliance",
+              "other"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "title": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "kind"
+        ],
+        "title": "FindingIn",
+        "type": "object"
+      },
+      "abacus__modules__assurance__findings_contract__MisstatementOut": {
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "enum": [
+                "finding.update",
+                "finding.convert",
+                "finding.resolve",
+                "finding.mark_not_applicable",
+                "finding.request_decision",
+                "misstatement.update",
+                "misstatement.pass_to_sum",
+                "sum.update_factors",
+                "sum.request_conclusion",
+                "sum.snapshot",
+                "sum.export"
+              ],
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "amount": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Amount",
+            "type": "string"
+          },
+          "finding_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Finding Ref"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "nature": {
+            "cls": "internal",
+            "enum": [
+              "misstatement",
+              "reclassification"
+            ],
+            "title": "Nature",
+            "type": "string"
+          },
+          "origin_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Origin Ref"
+          },
+          "proposed_entry_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Proposed Entry Ref"
+          },
+          "ref": {
+            "cls": "internal",
+            "title": "Ref",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "candidate",
+              "confirmed",
+              "below_ct",
+              "proposed_to_client",
+              "booked",
+              "passed_on_sum"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "type": {
+            "cls": "internal",
+            "enum": [
+              "factual",
+              "judgmental",
+              "projected"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "ref",
+          "origin_ref",
+          "type",
+          "nature",
+          "status",
+          "amount",
+          "finding_ref",
+          "proposed_entry_ref",
+          "allowed_actions"
+        ],
+        "title": "MisstatementOut",
+        "type": "object"
+      },
       "abacus__modules__connections__routes__ProviderOut": {
         "properties": {
           "datasets": {
@@ -88100,6 +89824,50 @@
         "title": "CitationOut",
         "type": "object"
       },
+      "abacus__modules__evidence__routes__RejectIn": {
+        "additionalProperties": false,
+        "description": "Reject or send back: a reason code from the catalogue is required (AC-7, AC-8).",
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Note"
+          },
+          "reason_code": {
+            "cls": "public",
+            "pattern": "^[a-z][a-z_]{0,49}$",
+            "title": "Reason Code",
+            "type": "string"
+          },
+          "seen_proposal": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Seen Proposal"
+          }
+        },
+        "required": [
+          "reason_code"
+        ],
+        "title": "RejectIn",
+        "type": "object"
+      },
       "abacus__modules__fieldwork__routes__ApprovalIn": {
         "additionalProperties": false,
         "properties": {
@@ -88179,6 +89947,148 @@
           }
         },
         "title": "ApproveIn",
+        "type": "object"
+      },
+      "abacus__modules__fieldwork__routes__FindingIn": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Description"
+          },
+          "item_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Item Id"
+          },
+          "procedure_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Procedure Id"
+          },
+          "title": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "FindingIn",
+        "type": "object"
+      },
+      "abacus__modules__fieldwork__routes__LineOut": {
+        "properties": {
+          "account_code": {
+            "cls": "confidential",
+            "title": "Account Code",
+            "type": "string"
+          },
+          "credit": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Credit",
+            "type": "string"
+          },
+          "debit": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Debit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "account_code",
+          "debit",
+          "credit"
+        ],
+        "title": "LineOut",
+        "type": "object"
+      },
+      "abacus__modules__fieldwork__routes__MisstatementOut": {
+        "properties": {
+          "account_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Account Code"
+          },
+          "amount": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Amount",
+            "type": "string"
+          },
+          "corrected": {
+            "cls": "internal",
+            "title": "Corrected",
+            "type": "boolean"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "factual",
+              "judgmental",
+              "projected"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "recorded_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "recorded_by_name": {
+            "cls": "internal",
+            "title": "Recorded By Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "amount",
+          "account_code",
+          "corrected",
+          "recorded_by_name",
+          "recorded_at"
+        ],
+        "title": "MisstatementOut",
         "type": "object"
       },
       "abacus__modules__fieldwork__routes__PopulationOut": {
@@ -88485,6 +90395,14 @@
             "cls": "internal",
             "title": "Rules Count",
             "type": "integer"
+          },
+          "sources": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/StepSourceOut"
+            },
+            "title": "Sources",
+            "type": "array"
           },
           "standard_refs": {
             "cls": "internal",
@@ -89525,6 +91443,143 @@
           "agents"
         ],
         "x-abacus-action": "agent_run.read"
+      }
+    },
+    "/v1/approval-batches": {
+      "post": {
+        "operationId": "approval_batch",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Approval Batch Route",
+        "tags": [
+          "adjustments"
+        ],
+        "x-abacus-action": "approval_batch.create"
       }
     },
     "/v1/audit-events": {
@@ -92748,7 +94803,7 @@
     },
     "/v1/audits/{work_item_id}/ebp/plan": {
       "get": {
-        "description": "Plan facts and the filer status card (EBP-01; T08).",
+        "description": "Plan facts and the filer status card (EBP-01; T10); 404 `ebp_plan` until recorded.",
         "operationId": "ebp_plan",
         "parameters": [
           {
@@ -92853,7 +94908,7 @@
         "x-abacus-action": "ebp.read"
       },
       "patch": {
-        "description": "A person's edit through `review.api.record_value`; 422 `citation_note_required`,\n`plan_number_invalid` (T08).",
+        "description": "A person's edit through `review.api.record_value`; the first save records the plan; 422\n`citation_note_required`, `plan_number_invalid` (with the Form 5500 helper); 409\n`version_conflict` (T10).",
         "operationId": "ebp_plan_edit",
         "parameters": [
           {
@@ -92980,16 +95035,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Ebp Plan Edit Route",
@@ -93369,6 +95414,7 @@
     },
     "/v1/audits/{work_item_id}/ebp/providers": {
       "get": {
+        "description": "The plan's providers with their checks' notes, by code (T10).",
         "operationId": "ebp_providers",
         "parameters": [
           {
@@ -93473,6 +95519,7 @@
         "x-abacus-action": "ebp.read"
       },
       "post": {
+        "description": "Add a provider; code runs its checks (SOC gap; Schedule C EIN ending against the\nagreement's, routed to the TPA) (T10).",
         "operationId": "ebp_provider_create",
         "parameters": [
           {
@@ -93580,6 +95627,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -93589,16 +95646,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Ebp Provider Create Route",
@@ -116800,7 +118847,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RejectIn"
+                "$ref": "#/components/schemas/abacus__modules__evidence__routes__RejectIn"
               }
             }
           },
@@ -116946,7 +118993,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RejectIn"
+                "$ref": "#/components/schemas/abacus__modules__evidence__routes__RejectIn"
               }
             }
           },
@@ -118049,7 +120096,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FindingIn"
+                "$ref": "#/components/schemas/abacus__modules__fieldwork__routes__FindingIn"
               }
             }
           },
@@ -126435,16 +128482,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Materiality Current Route",
@@ -126693,16 +128730,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Materiality Preview Route",
@@ -126714,7 +128741,7 @@
     },
     "/v1/engagements/{engagement_id}/materiality/proposals": {
       "post": {
-        "description": "Compute the options and raise the `planning_materiality` card; the agent's recommendation\nis a tag on an option, never a choice (T12, T15).",
+        "description": "Compute the options and raise the `planning_materiality` card; the agent's recommendation\nis a tag on an option, never a choice (T12, T15). 409 `proposal_pending`.",
         "operationId": "materiality_proposal",
         "parameters": [
           {
@@ -126841,16 +128868,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Materiality Proposal Route",
@@ -126862,7 +128879,7 @@
     },
     "/v1/engagements/{engagement_id}/materiality/reassessments": {
       "post": {
-        "description": "Final-basis compute and the reassessment card: No change or Revise (AC3.6, AC3.7; T12).",
+        "description": "Final-basis compute and the reassessment card: No change or Revise (AC3.6, AC3.7; T12);\n409 `nothing_decided`, `proposal_pending`, `layer_unavailable` before an adjustment source.",
         "operationId": "materiality_reassess",
         "parameters": [
           {
@@ -126989,16 +129006,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Materiality Reassess Route",
@@ -140875,16 +142882,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Risk Coverage Route",
@@ -140992,16 +142989,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Risk Linkage Route",
@@ -141109,16 +143096,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Risk Register Route",
@@ -141126,6 +143103,142 @@
           "assurance"
         ],
         "x-abacus-action": "risk.read"
+      },
+      "post": {
+        "description": "Add a risk: the next code, RMM by code from the firm's matrix; a presumed fraud risk is\nsignificant by rule (T13). 409 `rmm_matrix_missing`.",
+        "operationId": "risk_create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RiskCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskDrawerOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Risk Create Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "risk.edit"
       }
     },
     "/v1/engagements/{engagement_id}/risks/{risk_id}": {
@@ -141236,16 +143349,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Risk Drawer Route",
@@ -141255,7 +143358,7 @@
         "x-abacus-action": "risk.read"
       },
       "patch": {
-        "description": "Edit fields through `record_value`; RMM recomputed by code; 409 `version_conflict` (T13).",
+        "description": "Edit fields through `record_value`; RMM recomputed by code; 409 `version_conflict`; 422\n`presumption_not_rebuttable` on management override (AC4.5; T13).",
         "operationId": "risk_edit",
         "parameters": [
           {
@@ -141392,16 +143495,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Risk Edit Route",
@@ -141702,7 +143795,7 @@
     },
     "/v1/engagements/{engagement_id}/risks/{risk_id}/responses": {
       "delete": {
-        "description": "Unlink a response (the linkage row is closed, not deleted) (T13).",
+        "description": "Unlink a response (the linkage row is closed, not deleted); 409 `not_linked` (T13).",
         "operationId": "risk_unlink",
         "parameters": [
           {
@@ -141824,6 +143917,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -141833,16 +143936,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Risk Unlink Route",
@@ -141989,16 +144082,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Risk Link Route",
@@ -148981,7 +151064,16 @@
                     "general_audit_planning",
                     "risk_assessment",
                     "internal_control",
-                    "service_organizations"
+                    "service_organizations",
+                    "ebp_plan",
+                    "ebp_provisions",
+                    "ebp_eligibility",
+                    "ebp_contributions",
+                    "ebp_distributions_loans",
+                    "ebp_investments",
+                    "ebp_form5500",
+                    "ebp_participant_accounts",
+                    "ebp_admin_expenses"
                   ],
                   "type": "string"
                 },
@@ -157293,6 +159385,692 @@
           "files"
         ],
         "x-abacus-action": "evidence.read_metadata"
+      }
+    },
+    "/v1/findings/{finding_id}": {
+      "get": {
+        "operationId": "audit_finding",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "finding_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Finding Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FindingDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Audit Finding Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "finding.read"
+      }
+    },
+    "/v1/findings/{finding_id}/convert-to-deficiency": {
+      "post": {
+        "operationId": "finding_to_deficiency",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "finding_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Finding Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FindingDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Finding To Deficiency Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "finding.convert"
+      }
+    },
+    "/v1/findings/{finding_id}/convert-to-misstatement": {
+      "post": {
+        "description": "A projected misstatement takes its figure from `sampling.compute.projection` (T09).",
+        "operationId": "finding_to_misstatement",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "finding_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Finding Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConvertToMisstatementIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/abacus__modules__assurance__findings_contract__MisstatementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Finding To Misstatement Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "finding.convert"
+      }
+    },
+    "/v1/findings/{finding_id}/request-decision": {
+      "post": {
+        "description": "Raise the `deficiency_severity` card reserved to the EP (AUD-15 a, b; T13).",
+        "operationId": "finding_request_decision",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "finding_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Finding Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionRaisedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Finding Request Decision Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "finding.request_decision"
+      }
+    },
+    "/v1/findings/{finding_id}/resolve": {
+      "post": {
+        "operationId": "finding_resolve",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "finding_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Finding Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReasonIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FindingDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Finding Resolve Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "finding.resolve"
       }
     },
     "/v1/firm/agents": {
@@ -184894,6 +187672,113 @@
         "x-abacus-action": "template_guidance.decide"
       }
     },
+    "/v1/methodology/versions/{version_id}/import": {
+      "get": {
+        "description": "K-01-T23: the newest import that made the version (KNW-02 b's RunCard polls it; a and a2\nread its files); 404 for a workbook-only version.",
+        "operationId": "version_import",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MethodologyImportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Version Import Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "methodology.read"
+      }
+    },
     "/v1/methodology/versions/{version_id}/programs": {
       "get": {
         "description": "KNW-02's Programs tree (K-01-T07 stub, DEC-957; built with K-01-T12): a version's\nprograms in order, with counts and open flags.",
@@ -186282,6 +189167,154 @@
           "methodology"
         ],
         "x-abacus-action": "methodology.read"
+      }
+    },
+    "/v1/misstatements/{misstatement_id}/pass-to-sum": {
+      "post": {
+        "description": "DF-28: the EP passes a declined misstatement on SUM with a reason (T09).",
+        "operationId": "misstatement_pass",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "misstatement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Misstatement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReasonIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/abacus__modules__assurance__findings_contract__MisstatementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Misstatement Pass Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "misstatement.pass_to_sum"
       }
     },
     "/v1/notifications": {
@@ -196323,6 +199356,301 @@
         "x-abacus-action": "proposal.read"
       }
     },
+    "/v1/proposed-entries/{entry_id}/client-decision:record": {
+      "post": {
+        "description": "Record mode: the client's decision from email, with the email as evidence.",
+        "operationId": "proposed_entry_record",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entry_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Entry Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientDecisionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Proposed Entry Record Route",
+        "tags": [
+          "adjustments"
+        ],
+        "x-abacus-action": "proposed_entry.record_client_decision"
+      }
+    },
+    "/v1/proposed-entries/{entry_id}/reject": {
+      "post": {
+        "operationId": "proposed_entry_reject",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entry_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Entry Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/abacus__modules__adjustments__contract__RejectIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Proposed Entry Reject Route",
+        "tags": [
+          "adjustments"
+        ],
+        "x-abacus-action": "proposed_entry.reject"
+      }
+    },
     "/v1/questionnaire-templates": {
       "get": {
         "operationId": "questionnaire_list_templates",
@@ -201762,7 +205090,8 @@
                     "variance_thresholds",
                     "materiality_ranges",
                     "document_confidence",
-                    "attribute_sample_sizes"
+                    "attribute_sample_sizes",
+                    "rmm_matrix"
                   ],
                   "type": "string"
                 },
@@ -209211,6 +212540,138 @@
         "x-abacus-action": "work_item.read_metadata"
       }
     },
+    "/v1/work-items/{work_item_id}/adjusted-tb": {
+      "get": {
+        "operationId": "adjusted_tb",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "layer",
+            "required": false,
+            "schema": {
+              "default": "final",
+              "enum": [
+                "unadjusted",
+                "aje",
+                "rje",
+                "final"
+              ],
+              "title": "Layer",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdjustedTbOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Adjusted Tb Route",
+        "tags": [
+          "adjustments"
+        ],
+        "x-abacus-action": "adjusted_tb.read"
+      }
+    },
     "/v1/work-items/{work_item_id}/exports": {
       "get": {
         "description": "The export sheet's history for the work item, newest first (A-01-T18).",
@@ -209471,6 +212932,401 @@
         "x-abacus-action": "export.create"
       }
     },
+    "/v1/work-items/{work_item_id}/findings": {
+      "get": {
+        "description": "Severity bands with counts and the awaiting-decision badge (AUD-15 a; T11).",
+        "operationId": "audit_findings",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPage_FindingRowOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Audit Findings Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "finding.read"
+      },
+      "post": {
+        "description": "Record a finding on a new P-04 issue; an agent's lands Proposed with citations verified\n(422 `uncited_change`; T11).",
+        "operationId": "audit_finding_create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/abacus__modules__assurance__findings_contract__FindingIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FindingDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Audit Finding Create Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "finding.create"
+      }
+    },
+    "/v1/work-items/{work_item_id}/misstatements": {
+      "get": {
+        "operationId": "misstatements",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "view",
+            "required": false,
+            "schema": {
+              "default": "proposed",
+              "enum": [
+                "proposed",
+                "reclass",
+                "passed",
+                "below_ct"
+              ],
+              "title": "View",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPage_MisstatementOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Misstatements Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "misstatement.read"
+      }
+    },
     "/v1/work-items/{work_item_id}/populations": {
       "post": {
         "description": "Build a population from an upload or a general-ledger query (T07): counts, total and\nSHA-256; 422 `restricted_column`, `column_map_invalid`; audited `population.created`.",
@@ -209586,6 +213442,439 @@
           "sampling"
         ],
         "x-abacus-action": "population.create"
+      }
+    },
+    "/v1/work-items/{work_item_id}/proposed-entries": {
+      "get": {
+        "operationId": "proposed_entries",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "aje",
+                    "rje",
+                    "paje",
+                    "tje",
+                    "elimination"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPage_EntryOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Proposed Entries Route",
+        "tags": [
+          "adjustments"
+        ],
+        "x-abacus-action": "proposed_entry.read"
+      },
+      "post": {
+        "description": "A balanced entry (`unbalanced_entry` at commit); an attest client's is Review required.",
+        "operationId": "proposed_entry_create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntryIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Proposed Entry Create Route",
+        "tags": [
+          "adjustments"
+        ],
+        "x-abacus-action": "proposed_entry.create"
+      }
+    },
+    "/v1/work-items/{work_item_id}/proposed-entries:approve-and-send": {
+      "post": {
+        "description": "Approve, batch and send through C18; the client sees nothing for 10 seconds (Undo).",
+        "operationId": "proposed_entries_send",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdjustmentSendOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Proposed Entries Send Route",
+        "tags": [
+          "adjustments"
+        ],
+        "x-abacus-action": "proposed_entry.send_to_client"
       }
     },
     "/v1/work-items/{work_item_id}/sample-sets": {
@@ -209808,6 +214097,575 @@
           "sampling"
         ],
         "x-abacus-action": "sample_set.create"
+      }
+    },
+    "/v1/work-items/{work_item_id}/sum": {
+      "get": {
+        "description": "Code's SUM under both views (AUD-16 a; T13).",
+        "operationId": "sum",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "view",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "ebp_net_assets",
+                    "commercial"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "View"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SumOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Sum Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "sum.read"
+      }
+    },
+    "/v1/work-items/{work_item_id}/sum/qualitative-factors/{factor}": {
+      "put": {
+        "description": "A qualitative factor through `review.api.record_value` with its citation (T13).",
+        "operationId": "sum_factor",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "factor",
+            "required": true,
+            "schema": {
+              "title": "Factor",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FactorIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SumOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Sum Factor Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "sum.update_factors"
+      }
+    },
+    "/v1/work-items/{work_item_id}/sum/request-conclusion": {
+      "post": {
+        "description": "A frozen snapshot and the `sum_conclusion` card (409 `snapshot_changed`; T13).",
+        "operationId": "sum_request_conclusion",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionRaisedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Sum Request Conclusion Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "sum.request_conclusion"
+      }
+    },
+    "/v1/work-items/{work_item_id}/sum/snapshots": {
+      "post": {
+        "operationId": "sum_snapshot",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SnapshotIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SumSnapshotOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Sum Snapshot Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "sum.snapshot"
       }
     }
   },

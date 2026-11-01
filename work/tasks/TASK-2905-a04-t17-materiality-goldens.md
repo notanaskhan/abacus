@@ -2,7 +2,7 @@
 id: TASK-2905
 title: A-04-T17 golden fixtures and independent acceptance tests for the materiality engine and service
 spec: SPEC-620
-acceptance_criteria: [A-04 §3.3, §3.9]
+acceptance_criteria: [AC-15, AC-18]
 risk_zone: amber
 status: in-review
 epic: A-04

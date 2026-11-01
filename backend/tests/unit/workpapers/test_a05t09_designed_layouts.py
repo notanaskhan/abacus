@@ -62,7 +62,7 @@ def test_every_seeded_anchor_resolves_to_exactly_one_cell_in_the_export(paper: o
 
     assert isinstance(paper, DesignedPaper)
     layout = paper.layout()
-    cells = []
+    cells: list[WorkpaperCellOut] = []
     expected: dict[tuple[str, str], str] = {}
     for name, address in paper.anchors.items():
         for n, (sheet_key, key) in enumerate(resolve(layout, address)):
@@ -95,7 +95,7 @@ def test_every_seeded_anchor_resolves_to_exactly_one_cell_in_the_export(paper: o
         assert sheet[key].value == value, (paper.code, sheet_key, key)
     # Exactly one: no other cell on the paper's sheets holds an anchor's value.
     placed = [
-        c.value
+        str(c.value)
         for title in titles.values()
         for row in book[title].iter_rows()
         for c in row

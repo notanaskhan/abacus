@@ -100,7 +100,7 @@ async def world(net: object) -> tuple[Books, uuid.UUID]:
         owner, standard.id, effective_from=await today(owner.tenant), change_summary="Version 1"
     )
     snap = await snapshot(found.tenant_id, found.senior.user_id, found.site.entity_id, NORTHWIND)
-    tb_id = await found.adopted(snapshot_id=snap, prior=None, label="northwind")
+    tb_id = await found.adopted(snapshot_id=snap, prior=None, label="standard")
     return found, tb_id
 
 
@@ -125,12 +125,13 @@ async def _propose(world: Books, tb_id: uuid.UUID) -> Json:
 
 
 def _decide(**over: object) -> Json:
-    return {
+    body: Json = {
         "option_key": "rate_1_5",
-        "factors": [],
+        "factors": list[str](),
         "rationale": "1.5% of net assets: participants rely on the statements.",
         "seen_version": 1,
-    } | over
+    }
+    return body | over
 
 
 async def test_ac3_1_options_by_code_on_the_unadjusted_trial_balance(
@@ -138,7 +139,10 @@ async def test_ac3_1_options_by_code_on_the_unadjusted_trial_balance(
 ) -> None:
     books_, tb_id = world
     proposed = await _propose(books_, tb_id)
-    options = {cast(str, o["key"]): cast(Json, o["thresholds"]) for o in proposed["options"]}  # type: ignore[union-attr]
+    options = {
+        cast(str, o["key"]): cast(Json, o["thresholds"])
+        for o in cast(list[Json], proposed["options"])
+    }
     assert set(options) == {"rate_1_0", "rate_1_5"}
     assert options["rate_1_0"]["overall"] == "168100.00"
     assert (
@@ -248,12 +252,16 @@ async def test_ac3_6_a_reassessment_needs_the_final_layer(
         {"tb_snapshot_id": str(tb_id)},
         headers=_keyed(),
     )
-    # No adjustment source has registered yet (A-06 lights the Final layer, C8).
-    assert (found.status_code, found.json()["detail"]) == (409, "layer_unavailable")
+    # A-06 registers the adjustment source (C8), so the Final layer reads: with no proposed
+    # entry it equals the unadjusted net assets and the decided overall stands.
+    assert found.status_code == 201, found.text
+    reassessment = cast(Json, cast(Json, found.json())["reassessment"])
+    assert reassessment["final_amount"] == "16812400.00"
+    assert (reassessment["at_rate"], reassessment["difference"]) == ("252200.00", "0.00")
 
 
 async def test_ac3_9_no_client_reaches_materiality(world: tuple[Books, uuid.UUID]) -> None:
     books_, _ = world
-    client = await books_.seed.client_contact(books_.site)  # pyright: ignore[reportAttributeAccessIssue] -- the harness's portal person
+    client = await books_.seed.client_contact(books_.site)
     found = await books_.call("GET", _path(books_, "/current"), client)
     assert found.status_code == 404

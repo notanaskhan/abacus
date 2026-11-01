@@ -43,7 +43,7 @@ from abacus.ai_gateway import (
 )
 from abacus.ai_gateway.routes import route_enabled
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
-from abacus.modules.agents.handoff import Recommendation
+from abacus.modules.agents.handoff import DecisionSuggestion
 from abacus.modules.agents.proposals import create_suggestion
 from abacus.modules.agents.repository import finish_run, insert_run
 from abacus.modules.agents.service import (
@@ -158,7 +158,7 @@ def numbers_in(text: str) -> set[Decimal]:
     return out
 
 
-def check(answer: Recommendation, facts: RecommendFacts) -> str | None:
+def check(answer: DecisionSuggestion, facts: RecommendFacts) -> str | None:
     """None when code accepts the answer; else why it is not shown (the run's reason)."""
     by_key = {o.key: o for o in facts.options}
     chosen = by_key.get(answer.recommended_option_key)
@@ -229,9 +229,9 @@ def build_context(facts: RecommendFacts) -> AssembledContext:
     )
 
 
-async def ask(
+async def consult_model(
     attribution: Attribution, facts: RecommendFacts
-) -> tuple[Recommendation | None, AssembledContext]:
+) -> tuple[DecisionSuggestion | None, AssembledContext]:
     """One model call through the gateway (the product run and the evaluation share it)."""
     recommender = spec(RECOMMENDER)
     context = build_context(facts)
@@ -240,7 +240,7 @@ async def ask(
             purpose=recommender.purpose,
             prompt=recommender.prompt,
             tier=recommender.tier,
-            output_schema=Recommendation,
+            output_schema=DecisionSuggestion,
             budget_usd=recommender.limits.max_cost_usd,
             attribution=attribution,
             context=context,
@@ -304,7 +304,7 @@ async def recommend(
     engagement = await get_ref(agent, engagement_id)
     await authorise(agent, "materiality.read", engagement.resource())
     try:
-        answer, context = await ask(
+        answer, context = await consult_model(
             Attribution(agent.tenant, engagement_id, RECOMMENDER, run_id), facts
         )
     except Exception:
@@ -357,8 +357,9 @@ def fake_recommend(request: ModelRequest) -> str:
     """The fake model's answer, read from the task by code (local runs and tests only): the
     option at the range's midpoint, else the lowest in range, with reasons by reference."""
     task = cast(
-        dict[str, Any], json.loads(request.user.split("## task\n", 1)[1].split("\n", 1)[0])
-    )  # Any: JSON
+        dict[str, Any],  # Any: JSON
+        json.loads(request.user.split("## task\n", 1)[1].split("\n", 1)[0]),
+    )
     policy = cast(dict[str, str], task["policy"])
     low, high = Decimal(policy["low_pct"]), Decimal(policy["high_pct"])
     options = [(str(o["key"]), Decimal(str(o["rate_pct"]))) for o in task["options"]]

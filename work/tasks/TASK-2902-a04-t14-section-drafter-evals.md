@@ -2,7 +2,7 @@
 id: TASK-2902
 title: A-04-T14 eval suite evals/workpapers_section_drafter v1 (planning modes)
 spec: SPEC-620
-acceptance_criteria: [A-04 §6.3]
+acceptance_criteria: [AC-25]
 risk_zone: red
 status: in-review
 epic: A-04

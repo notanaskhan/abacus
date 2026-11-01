@@ -2,7 +2,7 @@
 id: TASK-2916
 title: A-06-T04 migration 0644 assurance_completion
 spec: SPEC-642
-acceptance_criteria: [SPEC-642 AC-1, AC-5]
+acceptance_criteria: [AC-1]
 risk_zone: amber
 status: in-review
 epic: A-06

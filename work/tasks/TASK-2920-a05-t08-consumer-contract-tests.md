@@ -2,7 +2,7 @@
 id: TASK-2920
 title: A-05-T08 consumer contract tests on behalf of A-05 (C3, C8, C9)
 spec: SPEC-640
-acceptance_criteria: [A-05 §8.1]
+acceptance_criteria: [AC-6]
 risk_zone: amber
 status: in-review
 epic: A-05

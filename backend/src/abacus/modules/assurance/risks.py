@@ -290,9 +290,9 @@ def _number(code: str) -> int:
     return int(found.group(1)) if found else 0
 
 
-def _factors_json(factors: Sequence[tuple[str, str]]) -> list[dict[str, Any]]:
+def _factors_json(factors: Sequence[tuple[str, str]]) -> list[dict[str, Any]]:  # Any: JSON
     seen: set[str] = set()
-    out: list[dict[str, Any]] = []
+    out: list[dict[str, Any]] = []  # Any: JSON
     for factor, rating in factors:
         if factor not in FACTORS or rating not in ("low", "moderate", "high") or factor in seen:
             raise RiskInvalid(facts={"field": "inherent_factors"})
@@ -711,7 +711,7 @@ def _registered(kind: str, ref: str) -> bool:
     if kind != "workpaper":
         return True
     wanted = ref.upper()
-    return any(s.route.upper() == wanted and s.link == "built" for s in registered_sections())
+    return any(s.route.upper() == wanted and s.link == "live" for s in registered_sections())
 
 
 async def linkage(ctx: AuthContext, engagement_id: UUID) -> LinkageMatrix:
@@ -737,7 +737,7 @@ async def linkage(ctx: AuthContext, engagement_id: UUID) -> LinkageMatrix:
     )
 
 
-async def link(
+async def link_response(
     ctx: AuthContext, engagement_id: UUID, risk_id: UUID, *, target_kind: str, target_ref: str
 ) -> None:
     """`POST …/risks/{rid}/responses` (the route authorised `risk.link`): a live link; a

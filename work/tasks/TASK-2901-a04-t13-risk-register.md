@@ -2,7 +2,7 @@
 id: TASK-2901
 title: A-04-T13 risk register service (AUD-05, AUD-08)
 spec: SPEC-620
-acceptance_criteria: [AC4.1, AC4.2, AC4.3, AC4.5, AC4.6, AC4.7]
+acceptance_criteria: [AC-19, AC-20, AC-21]
 risk_zone: amber
 status: in-review
 epic: A-04

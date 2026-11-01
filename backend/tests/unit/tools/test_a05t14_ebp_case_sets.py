@@ -19,7 +19,7 @@ def test_ebp_case_sets_live_in_the_one_suite_with_frozen_thresholds() -> None:
     line = next(t for t in SUITE.thresholds if t.metric == "line_agreement")
     assert (line.minimum, line.modes) == (0.98, ["ebp_provisions", "ebp_attribute"])
     for mode in ("ebp_provisions", "ebp_attribute"):
-        summary = sd.run(SUITE, mode=mode)  # type: ignore[arg-type]
+        summary = sd.run(SUITE, mode=mode)
         assert summary.status == "passed", summary.failed_thresholds
 
 

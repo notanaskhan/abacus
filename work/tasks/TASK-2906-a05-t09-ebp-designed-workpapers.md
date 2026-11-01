@@ -1,8 +1,8 @@
 ---
 id: TASK-2906
 title: A-05-T09 register the nine EBP designed workpapers
-spec: SPEC-641
-acceptance_criteria: [SPEC-641 §5]
+spec: SPEC-640  # and SPEC-641 (the cell-address scheme)
+acceptance_criteria: [AC-7]
 risk_zone: amber
 status: in-review
 epic: A-05

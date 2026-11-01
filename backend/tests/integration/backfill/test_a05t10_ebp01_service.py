@@ -55,7 +55,7 @@ async def _patch(world: Books, fields: dict[str, str], seen: int = 1, who: objec
     response = await world.call(
         "PATCH",
         _path(world, "/plan"),
-        who or world.senior,  # type: ignore[arg-type]
+        who or world.senior,  # type: ignore[arg-type] -- a Person or the world's senior
         {"fields": fields, "citation_note": NOTE, "seen_version": seen},
         headers=_keyed(),
     )
@@ -144,7 +144,9 @@ async def test_one_soc_gap_on_keystone_and_one_ein_mismatch_routed_to_summit(
     )
     assert routed == summit.json()["id"]
     listed = cast(Json, (await world.call("GET", _path(world, "/providers"), world.staff)).json())
-    row = next(p for p in cast(list[Json], listed["items"]) if p["name"].startswith("Keystone"))  # type: ignore[union-attr]
+    row = next(
+        p for p in cast(list[Json], listed["items"]) if cast(str, p["name"]).startswith("Keystone")
+    )
     assert row["status"] == "correction_requested"
     assert row["soc_report"] == "SOC 1 Type 2, Jan 1 to Sep 30, 2025"
     assert "4402" in cast(str, row["check_note"]) and "Summit" in cast(str, row["check_note"])

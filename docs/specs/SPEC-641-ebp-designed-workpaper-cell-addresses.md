@@ -1,3 +1,15 @@
+---
+id: SPEC-641
+title: Designed workpaper cell addresses (EBP-01 to EBP-09)
+status: approved
+owner: ayushkbhatia
+risk_zone: amber
+related_adrs: [ADR-160]
+related_specs: [SPEC-640]
+created: 2026-11-01
+updated: 2026-11-01
+---
+
 # SPEC-641 · Designed workpaper cell addresses (EBP-01 to EBP-09)
 
 | Field | Value |
