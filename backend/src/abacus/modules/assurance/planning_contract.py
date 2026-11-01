@@ -65,7 +65,7 @@ from abacus.kernel.clock import system_now
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.kernel.listing import ListPage
-from abacus.modules.engagements.api import assurance_item_id, get_ref
+from abacus.modules.engagements.api import get_ref
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
@@ -80,7 +80,6 @@ if TYPE_CHECKING:
     from abacus.modules.assurance.compute.materiality import Option as MaterialityOption
     from abacus.modules.assurance.compute.materiality import Thresholds as MaterialityThresholds
     from abacus.modules.assurance.materiality import MaterialityVersion as MaterialityVersionRow
-    from abacus.modules.assurance.risks import RiskRow as RiskRowModel
     from abacus.modules.assurance.service_orgs import ServiceOrganization as ServiceOrganizationRow
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -453,25 +452,6 @@ class RiskDrawerOut(BaseModel):
     versions: Annotated[list[RiskVersionOut], classified("internal")]
     routed_to_name: Annotated[str | None, classified("internal")]
     routed_at: Annotated[datetime | None, classified("internal")]
-
-
-class RiskCreateIn(BaseModel):
-    """A new risk (A-04-T13, additive): its code is the next one, RMM is the firm matrix's."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    level: Annotated[Literal["financial_statement", "assertion"], classified("internal")]
-    area_label: Annotated[str, Field(min_length=1, max_length=120), classified("internal")]
-    assertions: Annotated[list[Assertion], Field(max_length=12), classified("internal")]
-    inherent_risk: Annotated[Rating, classified("internal")]
-    control_risk: Annotated[ControlRating, classified("internal")]
-    presumption_kind: Annotated[
-        Literal["none", "management_override", "revenue_recognition"], classified("internal")
-    ] = "none"
-    inherent_factors: Annotated[
-        list[InherentFactorOut], Field(max_length=5), classified("internal")
-    ] = Field(default_factory=list)
-    rationale: Annotated[str | None, Field(max_length=4_000), classified("confidential")] = None
 
 
 class RiskEditIn(BaseModel):
@@ -1037,14 +1017,16 @@ def _version_out(
     )
 
 
-def _options_out(options: Sequence[MaterialityOption], computed_at: datetime) -> list[OptionOut]:
+def _options_out(
+    options: Sequence[MaterialityOption], computed_at: datetime, recommended: str | None
+) -> list[OptionOut]:
     return [
         OptionOut(
             key=o.key,
             thresholds=None
             if o.thresholds is None
             else _thresholds_out(o.thresholds, computed_at),
-            recommended=False,  # the agent's tag arrives with A-04-T15 (INV-1: never a choice)
+            recommended=o.key == recommended,  # the agent's tag (A-04-T15), never a choice
         )
         for o in options
     ]
@@ -1153,7 +1135,7 @@ async def materiality_proposal_route(
     return MaterialityProposalOut(
         version=_version_out(found.version, newest, record.names),
         decision_card_id=found.card_id,
-        options=_options_out(found.options, found.version.computed_at),
+        options=_options_out(found.options, found.version.computed_at, found.recommended_key),
     )
 
 
@@ -1186,139 +1168,18 @@ async def materiality_reassess_route(
     )
 
 
-def _risk_out(r: RiskRowModel, linked: bool, actions: list[str]) -> RegisterRiskOut:
-    return RegisterRiskOut(
-        id=r.id,
-        code=r.code,
-        level=cast(Literal["financial_statement", "assertion"], r.level),
-        area_key=r.area_key,
-        area_label=r.area_label,
-        assertions=cast(list[Assertion], list(r.assertions)),
-        inherent_risk=cast(Rating, r.inherent_risk),
-        control_risk=cast(ControlRating, r.control_risk),
-        rmm=cast(Rating, r.rmm),
-        rmm_policy_version_id=r.rmm_policy_version_id,
-        significance=cast(RiskSignificanceStatus, r.significance),
-        fraud=cast(RiskFraudStatus, r.fraud),
-        presumption_kind=cast(
-            Literal["none", "management_override", "revenue_recognition"], r.presumption_kind
-        ),
-        inherent_factors=[
-            InherentFactorOut.model_validate({"factor": f["factor"], "rating": f["rating"]})
-            for f in r.inherent_factors
-        ],
-        status=cast(RiskRegisterRowStatus, r.status),
-        unaddressed=not linked,
-        version_no=r.version_no,
-        content_hash=r.content_hash,
-        allowed_actions=cast(list[PlanningAction], actions),
-    )
-
-
-async def _drawer_out(ctx: AuthContext, engagement_id: UUID, risk_id: UUID) -> RiskDrawerOut:
-    from abacus.modules.assurance import risks
-
-    found = await risks.drawer(ctx, engagement_id, risk_id)
-    return RiskDrawerOut(
-        risk=_risk_out(found.risk, found.linked, found.actions),
-        rationale=found.risk.rationale,
-        rationale_suggestion_id=found.rationale_suggestion_id,
-        citation_ids=list(found.citation_ids),
-        versions=[
-            RiskVersionOut(version_no=v.version_no, at=v.at, by_name=v.by_name)
-            for v in found.versions
-        ],
-        routed_to_name=None,  # the significant_risk card (A-04-T18)
-        routed_at=None,
-    )
-
-
-async def _linkage_out(ctx: AuthContext, engagement_id: UUID) -> LinkageOut:
-    from abacus.modules.assurance import risks
-
-    found = await risks.linkage(ctx, engagement_id)
-    return LinkageOut(
-        risk_codes=found.codes,
-        targets=[
-            LinkTargetOut(
-                kind=cast(Literal["program_step", "workpaper", "procedure"], t.kind),
-                ref=t.ref,
-                label=t.label,
-                registered=t.registered,
-            )
-            for t in found.targets
-        ],
-        cells=[
-            LinkCellOut(risk_code=c, target_ref=ref, state=cast(RiskLinkageStatus, st))
-            for c, ref, st in found.cells
-        ],
-    )
-
-
-@router.get("/risks/register", action="risk.read", response_model=RegisterOut)
+@router.get("/risks/register", action="risk.read", response_model=RegisterOut, errors=(501,))
 async def risk_register_route(engagement_id: UUID, ctx: Ctx) -> RegisterOut:
     """The register with its code tally; no "$" anywhere (AC4.1; T13)."""
     await _gate(ctx, engagement_id, "risk.read", _RR)
-    from abacus.modules.assurance import risks
-
-    found = await risks.register(ctx, engagement_id)
-    t = found.tally
-    return RegisterOut(
-        tally=TallyOut(
-            risks=t.risks,
-            significant=t.significant,
-            significant_proposed=t.significant_proposed,
-            fraud=t.fraud,
-            high_rmm=t.high_rmm,
-            unaddressed=t.unaddressed,
-            ep_approval=t.ep_approval,
-        ),
-        risks=[_risk_out(r, r.id in found.linked, found.actions) for r in found.rows],
-        register_hash=found.register_hash,
-        approved_card_id=next(
-            (r.approved_card_id for r in found.rows if r.approved_card_id is not None), None
-        ),
-        allowed_actions=cast(list[PlanningAction], found.actions),
-    )
+    _not_yet()
 
 
-@router.post(
-    "/risks/register",
-    action="risk.edit",
-    response_model=RiskDrawerOut,
-    status_code=201,
-    errors=(409,),
-)
-async def risk_create_route(
-    engagement_id: UUID, body: RiskCreateIn, ctx: Ctx, idempotency_key: IdempotencyKey
-) -> RiskDrawerOut:
-    """Add a risk: the next code, RMM by code from the firm's matrix; a presumed fraud risk is
-    significant by rule (T13). 409 `rmm_matrix_missing`."""
-    await _gate(ctx, engagement_id, "risk.edit", _RR)
-    from abacus.modules.assurance import risks
-
-    created = await risks.create(
-        ctx,
-        engagement_id,
-        risks.NewRisk(
-            level=body.level,
-            area_label=body.area_label,
-            assertions=body.assertions,
-            inherent_risk=body.inherent_risk,
-            control_risk=body.control_risk,
-            presumption_kind=body.presumption_kind,
-            inherent_factors=[(f.factor, f.rating) for f in body.inherent_factors],
-            rationale=body.rationale,
-        ),
-    )
-    return await _drawer_out(ctx, engagement_id, created.id)
-
-
-@router.get("/risks/linkage", action="risk.read", response_model=LinkageOut)
+@router.get("/risks/linkage", action="risk.read", response_model=LinkageOut, errors=(501,))
 async def risk_linkage_route(engagement_id: UUID, ctx: Ctx) -> LinkageOut:
     """Risks against responses; targets A-05 has not registered are planned (AC4.6; T13)."""
     await _gate(ctx, engagement_id, "risk.read", _RR)
-    return await _linkage_out(ctx, engagement_id)
+    _not_yet()
 
 
 @router.post(
@@ -1336,37 +1197,23 @@ async def risk_approval_request_route(
     _not_yet()
 
 
-@router.post("/risks/coverage", action="risk.read", response_model=CoverageOut)
+@router.post("/risks/coverage", action="risk.read", response_model=CoverageOut, errors=(501,))
 async def risk_coverage_route(engagement_id: UUID, ctx: Ctx) -> CoverageOut:
     """The coverage check by code; the agent's wording only with `workpapers.drafting` (T13)."""
     await _gate(ctx, engagement_id, "risk.read", _RR)
-    from abacus.modules.assurance import materiality, risks
-
-    item = await assurance_item_id(ctx.tenant, engagement_id)
-    standing = (
-        materiality.in_force(await materiality.versions_of(ctx.tenant, item))
-        if item is not None
-        else None
-    )
-    found = await risks.coverage(
-        ctx, engagement_id, performance=standing.pm if standing is not None else None
-    )
-    return CoverageOut(
-        material_areas=found.material_areas,
-        covered=found.covered,
-        unaddressed_codes=found.unaddressed_codes,
-        wording_run_id=None,
-    )
+    _not_yet()
 
 
-@router.get("/risks/{risk_id}", action="risk.read", response_model=RiskDrawerOut)
+@router.get("/risks/{risk_id}", action="risk.read", response_model=RiskDrawerOut, errors=(501,))
 async def risk_drawer_route(engagement_id: UUID, risk_id: UUID, ctx: Ctx) -> RiskDrawerOut:
     """The drawer: SAS 145 factors, rationale, citations, versions (AC4.3; T13)."""
     await _gate(ctx, engagement_id, "risk.read", _RR)
-    return await _drawer_out(ctx, engagement_id, risk_id)
+    _not_yet()
 
 
-@router.patch("/risks/{risk_id}", action="risk.edit", response_model=RiskDrawerOut, errors=(409,))
+@router.patch(
+    "/risks/{risk_id}", action="risk.edit", response_model=RiskDrawerOut, errors=(409, 501)
+)
 async def risk_edit_route(
     engagement_id: UUID,
     risk_id: UUID,
@@ -1374,30 +1221,9 @@ async def risk_edit_route(
     ctx: Ctx,
     idempotency_key: IdempotencyKey,
 ) -> RiskDrawerOut:
-    """Edit fields through `record_value`; RMM recomputed by code; 409 `version_conflict`; 422
-    `presumption_not_rebuttable` on management override (AC4.5; T13)."""
+    """Edit fields through `record_value`; RMM recomputed by code; 409 `version_conflict` (T13)."""
     await _gate(ctx, engagement_id, "risk.edit", _RR)
-    from abacus.modules.assurance import risks
-
-    await risks.edit(
-        ctx,
-        engagement_id,
-        risk_id,
-        risks.Edit(
-            assertions=body.assertions,
-            inherent_risk=body.inherent_risk,
-            control_risk=body.control_risk,
-            inherent_factors=None
-            if body.inherent_factors is None
-            else [(f.factor, f.rating) for f in body.inherent_factors],
-            rationale=body.rationale,
-            significance=body.significance,
-            fraud=body.fraud,
-        ),
-        expected_version=body.expected_version,
-        reason=body.reason,
-    )
-    return await _drawer_out(ctx, engagement_id, risk_id)
+    _not_yet()
 
 
 @router.post(
@@ -1405,7 +1231,7 @@ async def risk_edit_route(
     action="risk.link",
     response_model=LinkageOut,
     status_code=201,
-    errors=(409,),
+    errors=(409, 501),
 )
 async def risk_link_route(
     engagement_id: UUID,
@@ -1416,16 +1242,11 @@ async def risk_link_route(
 ) -> LinkageOut:
     """Link a response; 409 `already_linked` (T13)."""
     await _gate(ctx, engagement_id, "risk.link", _RR)
-    from abacus.modules.assurance import risks
-
-    await risks.link(
-        ctx, engagement_id, risk_id, target_kind=body.target_kind, target_ref=body.target_ref
-    )
-    return await _linkage_out(ctx, engagement_id)
+    _not_yet()
 
 
 @router.delete(
-    "/risks/{risk_id}/responses", action="risk.link", response_model=LinkageOut, errors=(409,)
+    "/risks/{risk_id}/responses", action="risk.link", response_model=LinkageOut, errors=(501,)
 )
 async def risk_unlink_route(
     engagement_id: UUID,
@@ -1434,12 +1255,9 @@ async def risk_unlink_route(
     target_kind: Literal["program_step", "workpaper", "procedure"],
     target_ref: Annotated[str, Query(min_length=1, max_length=128)],
 ) -> LinkageOut:
-    """Unlink a response (the linkage row is closed, not deleted); 409 `not_linked` (T13)."""
+    """Unlink a response (the linkage row is closed, not deleted) (T13)."""
     await _gate(ctx, engagement_id, "risk.link", _RR)
-    from abacus.modules.assurance import risks
-
-    await risks.unlink(ctx, engagement_id, risk_id, target_kind=target_kind, target_ref=target_ref)
-    return await _linkage_out(ctx, engagement_id)
+    _not_yet()
 
 
 @router.post(

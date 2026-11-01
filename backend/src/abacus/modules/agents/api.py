@@ -16,6 +16,14 @@ from abacus.modules.agents.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.agents.citations import SheetLayoutError
 from abacus.modules.agents.citations import verify as verify_citations
 from abacus.modules.agents.contract import proposals_router, suggestions_router
+from abacus.modules.agents.decision_recommend import (
+    RECOMMENDER,
+    OptionFact,
+    PriorFact,
+    Recommended,
+    RecommendFacts,
+    recommend,
+)
 from abacus.modules.agents.engagement_agent import start_agents
 from abacus.modules.agents.engagement_agent_workflow import HANDLE as ENGAGEMENT_AGENT_HANDLE
 from abacus.modules.agents.engagement_agent_workflow import (
@@ -265,6 +273,7 @@ __all__ = [
     "ENGAGEMENT_AGENT_HANDLE",
     "ENGAGEMENT_AGENT_NEXT_TICK",
     "MATCHER",
+    "RECOMMENDER",
     "REVIEWER",
     "ROUTERS",
     "SCREENER",
@@ -313,13 +322,17 @@ __all__ = [
     "MethodologyImportWorkflow",
     "NamedReport",
     "NextTickInput",
+    "OptionFact",
     "OverrideRate",
     "PackProblem",
     "PackRefused",
+    "PriorFact",
     "ProposalChanged",
     "ProposalInvalid",
     "ProposedRow",
     "ProposedValue",
+    "RecommendFacts",
+    "Recommended",
     "ReviewOutcome",
     "ReviewUnavailable",
     "RunInput",
@@ -374,6 +387,7 @@ __all__ = [
     "match",
     "match_intake",
     "override_rate",
+    "recommend",
     "register_change_set_applier",
     "register_engagement_run_agent",
     "register_proposal_adapter",

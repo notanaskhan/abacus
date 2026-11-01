@@ -5,7 +5,7 @@ The audit line's read models and actions: the AUD-06 trial balance first (SPEC-3
 
 # A-03-T08: the C9 v2 routes call this lazily; imported here so its error codes are catalogued.
 from abacus.kernel.audit_owners import register_engagement_owners
-from abacus.modules.agents.api import register_suggestion_applier
+from abacus.modules.agents.api import register_suggestion_applier, register_suggestion_target
 from abacus.modules.assurance import mapping_live as mapping_live
 from abacus.modules.assurance.archive_gate import g9
 from abacus.modules.assurance.audits_contract import audits_router
@@ -58,7 +58,7 @@ from abacus.modules.assurance.tb_mapping_contract import router as tb_mapping_ro
 from abacus.modules.assurance.tb_read_model import tb_router
 from abacus.modules.assurance.trial_balance import adopt as adopt_trial_balance
 from abacus.modules.assurance.trial_balance import tb_facts, tb_reviewables
-from abacus.modules.engagements.api import register_gate_provider
+from abacus.modules.engagements.api import register_gate_provider, work_item_engagement
 from abacus.modules.identity.api import AbacusRouter, register_firm_setting
 from abacus.modules.review.api import register_reviewable, register_reviewable_facts
 
@@ -121,6 +121,8 @@ register_engagement_owners(MATERIALITY_KINDS, materiality_owners)
 # written by their owner when a person adopts them (AC4.7).
 register_engagement_owners(RISK_KINDS, risk_owners)
 register_suggestion_applier("risk", apply_risk_suggestion, engagement_of=risk_engagement)
+# A-04-T15 (DEC-1953): the recommender's suggestion names the work item's materiality.
+register_suggestion_target("materiality", engagement_of=work_item_engagement)
 
 __all__ = [
     "ACTIVITIES",
