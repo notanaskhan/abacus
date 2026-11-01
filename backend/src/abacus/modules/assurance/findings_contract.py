@@ -254,7 +254,7 @@ _WI = "/work-items/{work_item_id}"
 @router.get(
     f"{_WI}/findings", action="finding.read", response_model=ListPage[FindingRowOut], errors=(501,)
 )
-async def findings_route(work_item_id: UUID, ctx: Ctx) -> ListPage[FindingRowOut]:
+async def audit_findings_route(work_item_id: UUID, ctx: Ctx) -> ListPage[FindingRowOut]:
     """Severity bands with counts and the awaiting-decision badge (AUD-15 a; T11)."""
     await _gate(ctx, work_item_id, "finding.read")
     _not_yet()
@@ -267,7 +267,7 @@ async def findings_route(work_item_id: UUID, ctx: Ctx) -> ListPage[FindingRowOut
     status_code=201,
     errors=(409, 501),
 )
-async def finding_create_route(
+async def audit_finding_create_route(
     work_item_id: UUID, body: FindingIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> FindingDetailOut:
     """Record a finding on a new P-04 issue; an agent's lands Proposed with citations verified
@@ -279,7 +279,7 @@ async def finding_create_route(
 @router.get(
     "/findings/{finding_id}", action="finding.read", response_model=FindingDetailOut, errors=(501,)
 )
-async def finding_route(finding_id: UUID, ctx: Ctx) -> FindingDetailOut:
+async def audit_finding_route(finding_id: UUID, ctx: Ctx) -> FindingDetailOut:
     await _gate_flag(ctx)
     _not_yet()
 
