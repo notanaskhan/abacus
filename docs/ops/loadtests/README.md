@@ -82,6 +82,7 @@ recorded in the vault, never here.
 |---|---|---|---|
 | `monday_9am` | 46 users arrive over 10 minutes, then an hour of Home, Waiting on you, lists with counts and record reads | nothing | list p95 500 ms, record p95 300 ms |
 | `deadline_surge` | portal sign-in starts and branding at the peak, staff working requests | nothing; uploads, 8879 sends and K-1 releases are not in it yet (the profile header says why) | portal and request targets under the burst |
+| `signing_surge` | an hour of 8879 sends (E18), envelope reads and clients opening their Sign area (N-02-T47) | distinct drafts per send (Q-03-T131): after E18 goes once, sends answer 409 through the same checks | send and portal envelope view p95 500 ms; the provider queue drains in the hour, backing off on a 429 at its Retry-After |
 | `pbc_import_fairness` | one firm's 300-item import, another firm reading | seed load firm 1 first | the other firm's p95 at target |
 | `sse_soak` | 60 clients for 2 hours on the polling fallback (no stream route until P-15) | when P-15 ships: add the stream entry and run a deploy mid-soak | memory flat in OTel; polling within 5 s |
 | `backfill_business_hours` | the Monday mix plus Temporal visibility reads | start the throttled backfill on the batch class through its ops command, at minute 5 | interactive targets unaffected |

@@ -28,6 +28,8 @@ import base64
 import hashlib
 import ipaddress
 import json
+from collections.abc import Generator
+from contextlib import contextmanager
 from dataclasses import asdict
 from datetime import datetime, timedelta
 from typing import Any, Final
@@ -35,6 +37,7 @@ from uuid import UUID
 
 from sqlalchemy import Row, text
 from temporalio import activity
+from temporalio.exceptions import ApplicationError
 
 from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext, tenant_session
@@ -65,6 +68,7 @@ from abacus.modules.signatures.hub import seal_ip
 from abacus.modules.signatures.imports import RECORD_TYPE, RetentionFloorMissing
 from abacus.modules.signatures.provider import (
     EnvelopeSpec,
+    ProviderRateLimited,
     ProviderUnavailable,
     SignerSpec,
     SignerState,
@@ -134,6 +138,25 @@ async def _policy(tenant: TenantContext, family: str, purpose: str) -> tuple[int
     if found is None:
         return DEFAULT_CAP, DEFAULT_EXPIRY_DAYS
     return int(found.max_reminders), int(found.default_expiry_days)
+
+
+@contextmanager
+def _honour_rate_limit() -> Generator[None]:
+    """N-02-T47: a provider 429 becomes Temporal's next retry no sooner than its Retry-After,
+    so a deadline-day surge drains at the provider's pace instead of retrying at once."""
+    try:
+        yield
+    except ProviderRateLimited as exc:
+        raise ApplicationError(
+            "provider_rate_limited",
+            type="ProviderRateLimited",
+            next_retry_delay=timedelta(seconds=exc.retry_after),
+        ) from exc
+
+
+async def _status(tenant_id: UUID, provider_envelope_id: str) -> list[SignerState]:
+    with _honour_rate_limit():
+        return list(await (await provider_for(tenant_id)).status(provider_envelope_id))
 
 
 @activity.defn(name="signatures.envelope_send")
@@ -208,7 +231,8 @@ async def envelope_send(given: EnvelopeInput) -> SendPlan:
                 )
                 tx.record("envelope.provider_unavailable", target=Target("envelope", envelope_id))
             return SendPlan("not_sent", "")
-        made = await adapter.create_and_send(spec)
+        with _honour_rate_limit():
+            made = await adapter.create_and_send(spec)
         request = hashlib.sha256(json.dumps(asdict(spec), sort_keys=True).encode()).hexdigest()
         now = system_now()
         async with uow(tenant) as tx:
@@ -296,8 +320,7 @@ async def envelope_poll(given: EnvelopeInput) -> str:
     if env.status not in OPEN or env.provider_envelope_id is None:
         return str(env.status)
     states: dict[UUID, SignerState] = {
-        UUID(s.signer_id): s
-        for s in await (await provider_for(tenant.tenant_id)).status(env.provider_envelope_id)
+        UUID(s.signer_id): s for s in await _status(tenant.tenant_id, env.provider_envelope_id)
     }
     now = system_now()
     # N-02-T27: KBA failures the provider reports, counted per signer against the policy's limit.
@@ -496,7 +519,8 @@ async def envelope_expire(given: EnvelopeInput) -> str:
     if env.status not in OPEN:
         return str(env.status)
     if env.provider_envelope_id is not None:
-        await (await provider_for(tenant.tenant_id)).void(env.provider_envelope_id, "expired")
+        with _honour_rate_limit():
+            await (await provider_for(tenant.tenant_id)).void(env.provider_envelope_id, "expired")
     now = system_now()
     async with uow(tenant) as tx:
         await tx.session.execute(
@@ -602,7 +626,8 @@ async def envelope_complete(given: EnvelopeInput) -> str:
         return "recorded"  # a retry after the unit of work committed
     if not remote:
         return await _completed_by_hand(tenant, env)
-    got = await (await provider_for(tenant.tenant_id)).completed(env.provider_envelope_id)
+    with _honour_rate_limit():
+        got = await (await provider_for(tenant.tenant_id)).completed(env.provider_envelope_id)
     line = (
         await service_line_of(tenant, env.engagement_id) if env.engagement_id is not None else None
     ) or "any"

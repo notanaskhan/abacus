@@ -26,6 +26,8 @@ line:
   ai_gateway: 82
   audit_trail: 93
   compute: 100
+  # N-02-T47 (DEC-1673): a new red module; raised to its first measured baseline, target 97 / 90.
+  signatures: 0
 branch:
   identity/authz: 52
   kernel/db: 77
@@ -35,3 +37,4 @@ branch:
   ai_gateway: 73
   audit_trail: 76
   compute: 100
+  signatures: 0

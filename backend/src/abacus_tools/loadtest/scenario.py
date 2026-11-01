@@ -36,6 +36,8 @@ class Step(_Strict):
     body: Annotated[str | None, Field(pattern=_NAME)] = None
     expect: tuple[int, ...] = (200,)
     auth: bool = True
+    # N-02-T47: a fresh `Idempotency-Key` per request, for routes that require one (a send).
+    idempotency: bool = False
 
     @model_validator(mode="after")
     def _one_body(self) -> Step:
