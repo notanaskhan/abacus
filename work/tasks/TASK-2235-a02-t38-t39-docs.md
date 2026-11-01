@@ -4,12 +4,12 @@ title: A-02-T38/T39 docs — RB-04, RB-05, READMEs, C9/C20 v1 final, connector s
 spec: SPEC-333  # A-02; C9, C20
 acceptance_criteria: [AC-11]  # A-02 AC-11 (reconnect requests, RB-05); the rows quoted below
 risk_zone: red
-status: in-review
+status: done
 epic: A-02
 plan_key: A-02-T38
 branch: s17-a02-docs
 created: 2026-10-31
-updated: 2026-10-31
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -26,3 +26,4 @@ hand-off note and RB-05 has been rehearsed once on staging."
 - 2026-10-31: written. Human to-dos: AY approves the connector skill change (the row asks for
   it); link each hand-off note from its epic's issue; rehearse RB-05 once on staging and log it;
   the capacity ledger line for A-02 is the plan owner's.
+- 2026-11-01: merged to main in #902 (3c147bd99).

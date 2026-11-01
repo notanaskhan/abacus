@@ -25,6 +25,7 @@ from abacus.kernel import slots
 from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 from abacus.kernel.errors import NotFound
+from abacus.modules.agents import methodology_import
 from abacus.modules.agents.engagement_agent import handle as engagement_agent_handle
 from abacus.modules.agents.engagement_agent import next_tick as engagement_agent_next_tick
 from abacus.modules.agents.entry_assess import assess, create_assess_run
@@ -62,17 +63,24 @@ from abacus.modules.agents.workflow_types import (
     FailKnowledgeInput,
     GuidanceDraftInput,
     GuidanceDraftRunInput,
+    ImportBatchInput,
+    ImportBatchOutcome,
+    ImportFailInput,
+    ImportFinishInput,
+    ImportPagesOutcome,
     IntakeMatchInput,
     IntakeMatchRunInput,
     KnowledgeInput,
     MatchInput,
     MatchRunInput,
+    MethodologyImportInput,
     RunInput,
     ScreeningInput,
     ScreeningOutcome,
     SlotGrant,
 )
 from abacus.modules.identity.api import NoActiveTenant
+from abacus.modules.methodology.api import ImportNotParsing
 
 INITIATOR_INACTIVE = "initiator_inactive"
 
@@ -616,6 +624,35 @@ async def fail_knowledge_activity(input: FailKnowledgeInput) -> None:
     await fail_document(UUID(input.tenant_id), UUID(input.document_id), input.code)
 
 
+# --- The methodology importer (K-01-T21) --------------------------------------------------------
+
+
+@activity.defn(name="methodology.extract_pages")
+async def importer_extract_activity(input: MethodologyImportInput) -> ImportPagesOutcome:
+    return await methodology_import.extract_pages(input)
+
+
+@activity.defn(name="agents.importer_parse_batch")
+async def importer_batch_activity(input: ImportBatchInput) -> ImportBatchOutcome:
+    try:
+        return await methodology_import.parse_batch(input)
+    except ImportNotParsing:
+        return ImportBatchOutcome(None, stop=True)
+
+
+@activity.defn(name="methodology.finish_import")
+async def importer_finish_activity(input: ImportFinishInput) -> str:
+    try:
+        return await methodology_import.finish(input)
+    except ImportNotParsing:
+        return "stopped"
+
+
+@activity.defn(name="methodology.fail_import")
+async def importer_fail_activity(input: ImportFailInput) -> None:
+    await methodology_import.fail(input)
+
+
 ACTIVITIES = (
     create_run_activity,
     create_review_run_activity,  # SPEC-030 (TASK-059)
@@ -637,4 +674,8 @@ ACTIVITIES = (
     fail_knowledge_activity,
     engagement_agent_handle,  # SPEC-027 (TASK-050)
     engagement_agent_next_tick,  # SPEC-027 (TASK-051)
+    importer_extract_activity,  # K-01-T21
+    importer_batch_activity,
+    importer_finish_activity,
+    importer_fail_activity,
 )

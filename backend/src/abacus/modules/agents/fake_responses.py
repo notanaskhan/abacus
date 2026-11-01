@@ -85,4 +85,9 @@ def install_review(fake: FakeModel, answers: Mapping[tuple[str, str], str]) -> F
 
 def install(fake: FakeModel) -> FakeModel:
     fake.respond(SCREEN_PROMPT, screening_responder)
+    # K-01-T21: the methodology importer's answers are read from the document block by code.
+    from abacus.modules.agents.methodology_import import PROMPT as IMPORT_PROMPT
+    from abacus.modules.agents.methodology_import import fake_parse
+
+    fake.respond(IMPORT_PROMPT, fake_parse)
     return fake

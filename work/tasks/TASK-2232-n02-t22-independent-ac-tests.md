@@ -4,12 +4,12 @@ title: N-02-T22 independent AC tests for T18-T20 (DocuSeal)
 spec: SPEC-381  # N-02 §3.5; ADR-078 independent tests; ADR-342
 acceptance_criteria: [AC-16]
 risk_zone: red
-status: in-review
+status: done
 epic: N-02
 plan_key: N-02-T22
 branch: s17-n02-t22
 created: 2026-10-30
-updated: 2026-10-30
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -43,3 +43,4 @@ reaches the adapter."
 
 ## Progress log
 - 2026-10-30: built (DEC-1284). Tests written, run at the end review.
+- 2026-11-01: merged to main in #891 (c6c378126).

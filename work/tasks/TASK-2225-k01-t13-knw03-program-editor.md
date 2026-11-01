@@ -4,12 +4,12 @@ title: K-01-T13 KNW-03 program editor a, b, e on T2 RecordCockpit
 spec: SPEC-000  # K-01 §3.4 AC4.1–AC4.3 and the KNW-03 handoff; no SPEC defines the screen
 acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: green
-status: in-review
+status: done
 epic: K-01
 plan_key: K-01-T13
 branch: s17-k01-t13
 created: 2026-10-30
-updated: 2026-10-30
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -31,3 +31,4 @@ citation, and every BH-EBP-110 row reads a dash in Rules and Skill."
 
 ## Progress log
 - 2026-10-30: built in S17 Lane 2 off main; tests and Tier C run in the end review.
+- 2026-11-01: merged to main in #797 (eebfdeb42).
