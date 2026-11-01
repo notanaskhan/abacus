@@ -1111,7 +1111,7 @@ async def materiality_preview_route(
     action="materiality.propose",
     response_model=MaterialityProposalOut,
     status_code=201,
-    errors=(409, 422),
+    errors=(409,),
 )
 async def materiality_proposal_route(
     engagement_id: UUID, body: MaterialityProposalIn, ctx: Ctx, idempotency_key: IdempotencyKey
@@ -1142,7 +1142,7 @@ async def materiality_proposal_route(
     action="materiality.reassess",
     response_model=ReassessmentRaisedOut,
     status_code=201,
-    errors=(409, 422),
+    errors=(409,),
 )
 async def materiality_reassess_route(
     engagement_id: UUID, body: ReassessmentIn, ctx: Ctx, idempotency_key: IdempotencyKey
