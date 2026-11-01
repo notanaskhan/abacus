@@ -130,7 +130,10 @@ describe("TAX-12 delivery", () => {
         ),
       ),
     ).toBeTruthy();
-    expect(screen.getByRole("link", { name: COPY.fix.create })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: COPY.fix.create }));
+    await waitFor(() => {
+      expect(toastStore.list().map((t) => t.text)).toContain(COPY.fix.created);
+    });
     expect(screen.getAllByText(COPY.status.rejected).length).toBeGreaterThan(0);
   });
 

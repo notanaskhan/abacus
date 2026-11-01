@@ -14,6 +14,7 @@ import {
   patchPacketMutation,
   recordTransmissionMutation,
   regenerateLetterMutation,
+  rejectionIssueMutation,
   remindEnvelopesSendMutation,
 } from "@abacus/api-client/query";
 import {
@@ -322,7 +323,22 @@ function Gate({
   );
 }
 
-function Acks({ acks }: { acks: EfileAckOut[] }): JSX.Element {
+function Acks({
+  acks,
+  returnId,
+  canCreateIssue,
+}: {
+  acks: EfileAckOut[];
+  returnId: string;
+  canCreateIssue: boolean;
+}): JSX.Element {
+  // T-01-T37: the rejection becomes an engine-diagnostic issue; the button shows only to someone
+  // the matrix lets create one (client service enters acks but holds no `issue.create`).
+  const raise = useMutation({
+    ...rejectionIssueMutation(),
+    onSuccess: () => toast.show(COPY.fix.created),
+    onError: () => toast.show(COPY.fix.failed),
+  });
   if (acks.length === 0) {
     return (
       <p className="border-t border-hair px-[14px] py-[12px] text-[12.5px] text-ink-3">
@@ -379,12 +395,20 @@ function Acks({ acks }: { acks: EfileAckOut[] }): JSX.Element {
               <p className="text-[12.5px]">{COPY.fix.body}</p>
             </aside>
           )}
-          <a
-            href="/tax-returns/feld/issues?kind=engine_diagnostic"
-            className="self-start rounded-[8px] bg-ink px-[12px] py-[6px] text-[12.5px] text-on-ink"
-          >
-            {COPY.fix.create}
-          </a>
+          {canCreateIssue && (
+            <Button
+              className="self-start"
+              disabled={raise.isPending || raise.isSuccess}
+              onClick={() =>
+                raise.mutate({
+                  path: { return_id: returnId, ack_id: rejected.id },
+                  headers: { "Idempotency-Key": `rejection-issue:${rejected.id}` },
+                })
+              }
+            >
+              {COPY.fix.create}
+            </Button>
+          )}
         </div>
       )}
     </div>
@@ -556,7 +580,11 @@ function Authorizations({
             <Gate envelope={envelope} delivery={delivery} returnId={returnId} />
           </Card>
           <Card title={COPY.acks.title}>
-            <Acks acks={delivery?.acks ?? []} />
+            <Acks
+              acks={delivery?.acks ?? []}
+              returnId={returnId}
+              canCreateIssue={delivery?.allowed_actions.includes("issue.create") ?? false}
+            />
           </Card>
         </div>
       </div>
