@@ -30,7 +30,8 @@ export interface ScreenResult extends ScreenRow {
 
 const LETTERS = "abcdefghijklmnopqrstuvwxyz";
 
-/** `a–g`, `a, b, d`, `a b c g`, `a2`, `host` → the states the cell names. */
+/** `a–g`, `a, b, d`, `a b c g`, `a2`, `host` → the states the cell names; a prime is written as
+ * its scenario key (`ap` for a′, `app` for a″, P-04-T58). */
 export function statesOf(cell: string): string[] {
   const out: string[] = [];
   for (const part of cell.split(/[,\s]+/).filter((p) => p.length > 0)) {
@@ -39,7 +40,7 @@ export function statesOf(cell: string): string[] {
       const from = LETTERS.indexOf(range[1]);
       const to = LETTERS.indexOf(range[2]);
       for (let i = from; i <= to; i += 1) out.push(LETTERS.charAt(i));
-    } else if (/^([a-z]\d?|host)$/.test(part)) {
+    } else if (/^([a-z]\d?|[a-z]p{1,2}|host)$/.test(part)) {
       out.push(part);
     }
   }
@@ -122,6 +123,10 @@ export const BUILT_PLANNED: readonly string[] = [
   "ADM-04",
   "ADM-06",
   "ADM-07",
+  // P-04-T58: SHL-11 and SHL-12 are built on fixtures but stay `planned` until their host
+  // screens open them (A-04's AUD-07, the workpaper headers); the suites measure them all the same.
+  "SHL-11",
+  "SHL-12",
 ];
 
 /** Every artboard of every `fixture` or `live` screen, and of `also`, in screen then state order.

@@ -43,3 +43,12 @@ Loading: "Loading the proposal". Error: "This proposal isn't available." Not-all
 |---|---|---|
 | Evidence rows (Opens SHL-08 with the cited box lit) | SHL-08 | live in fixture mode: `?ov=viewer:<evidence_version_id>` |
 | Opens SHL-19 on this set | SHL-19 | planned (handoff link; tooltip-only) |
+
+## Parity
+| Artboard | Tier (A/B/C/D) | Diff % | Notes |
+|---|---|---|---|
+| a, c, f | C (locked) | not run (P-04-T58: the Playwright visual project runs at the S24 batch end) | P-04 lock; axe and keyboard in `apps/web/e2e/screens/SHL-review.spec.ts` |
+| b, d, e, ep, g | C | not run (P-04-T58: the Playwright visual project runs at the S24 batch end) | report-only (ep is e′); axe and keyboard in `apps/web/e2e/screens/SHL-review.spec.ts` |
+| host | D | not run | O3 sheet 500, top 52, dialog radius 14 (`e2e/visual/tier-d-review.spec.ts`) |
+
+Gate: chapter 04 §9.3 keeps Tier C report-only, so the locks are listed and reported, not blocking (DEC-1970). Keyboard: Escape closes the topmost layer and focus returns to the opener.

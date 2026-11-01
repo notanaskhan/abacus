@@ -35,3 +35,12 @@ Code: `src/domain/review/checkpoints.ts`, `src/screens/SHL-16/{index.tsx, copy.t
 ## Open
 - Diff rows lighting their fields in the underlay need a typed locator per row (INV-2); the detail carries `field_key` only. As SHL-10.
 - The Assistant segment opens TAX-08 (planned): drawn disabled where planned screens are.
+
+## Parity
+| Artboard | Tier (A/B/C/D) | Diff % | Notes |
+|---|---|---|---|
+| a, b | C (locked) | not run (P-04-T58: the Playwright visual project runs at the S24 batch end) | P-04 lock; axe and keyboard in `apps/web/e2e/screens/SHL-review.spec.ts` |
+| c, d, e, f | C | not run (P-04-T58: the Playwright visual project runs at the S24 batch end) | report-only (the import variant has no artboard); axe and keyboard in `apps/web/e2e/screens/SHL-review.spec.ts` |
+| host | D | not run | O2 drawer 480 (`e2e/visual/tier-d-review.spec.ts`) |
+
+Gate: chapter 04 §9.3 keeps Tier C report-only, so the locks are listed and reported, not blocking (DEC-1970). Keyboard: Escape closes the topmost layer and focus returns to the opener.

@@ -56,9 +56,11 @@ Field value states (`workpaper_value_state`): updated, edited, estimate, unsuppo
 | DV-3 | Sign off field signs at the level the host passes (`level`, reviewer by default) | the tray does not read the ladder | DEC-1854 |
 
 ## Parity
-| Artboard | Tier | Diff % | Notes |
+| Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a–f | C | — | reported at the S23 end review |
+| a–f | C | not run (P-04-T58: the Playwright visual project runs at the S24 batch end) | report-only; axe and keyboard in `apps/web/e2e/screens/SHL-review.spec.ts` |
+
+Gate: chapter 04 §9.3 keeps Tier C report-only, so the locks are listed and reported, not blocking (DEC-1970). Keyboard: Escape closes the topmost layer and focus returns to the opener.
 
 ## Open gaps
 None.
