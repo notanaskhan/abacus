@@ -1045,6 +1045,18 @@ export const STATUS_REGISTRY = {
       "terminal": false,
       "derived": false
     },
+    "client_declined": {
+      "label": "Client declined",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "rejected": {
+      "label": "Rejected",
+      "variant": "soon",
+      "terminal": true,
+      "derived": false
+    },
     "posted": {
       "label": "Posted",
       "variant": "green-tint",
@@ -1063,6 +1075,106 @@ export const STATUS_REGISTRY = {
     "reversed": {
       "label": "Reversed",
       "variant": "soon",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "finding_route": {
+    "under_evaluation": {
+      "label": "Under evaluation",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "converted_to_misstatement": {
+      "label": "Converted to misstatement",
+      "variant": "neutral",
+      "terminal": true,
+      "derived": false
+    },
+    "converted_to_deficiency": {
+      "label": "Converted to deficiency",
+      "variant": "neutral",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "statement_document": {
+    "draft": {
+      "label": "Draft",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "in_review": {
+      "label": "In review",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "final": {
+      "label": "Final",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "signed_off": {
+      "label": "Signed off",
+      "variant": "green",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "fs_approval": {
+    "none": {
+      "label": "Not sent",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "sent_for_approval": {
+      "label": "Sent for approval",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "approved_by_management": {
+      "label": "Approved by management",
+      "variant": "green",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "disclosure_answer": {
+    "yes": {
+      "label": "Yes",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "no": {
+      "label": "No",
+      "variant": null,
+      "terminal": false,
+      "derived": false
+    },
+    "na": {
+      "label": "N/A",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "consultation": {
+    "open": {
+      "label": "Open",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "concluded": {
+      "label": "Concluded",
+      "variant": "green-tint",
       "terminal": true,
       "derived": false
     }

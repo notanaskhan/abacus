@@ -323,7 +323,10 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Audit (record) | Work-item kind `assurance`. | `assurance_work_items` | — |
 | Phase | Planning · Fieldwork · In review · Completion. Not a milestone. | `assurance_work_items.phase` | — |
 | Materiality | A decision card reserved to the EP. | `materiality_versions` | — |
-| Finding / misstatement / deficiency | One root, two children (DEC-83). | `findings`, `misstatements`, `deficiencies` | — |
+| Finding / misstatement / deficiency | One root, two children (DEC-83). A-06's records are `audit_findings` and `audit_misstatements` beside SPEC-043's fieldwork `findings` and `misstatements` (DEC-1960). | `audit_findings`, `audit_misstatements`, `deficiencies` | — |
+| Passed on SUM | A misstatement the client declined to correct that the engagement partner leaves uncorrected and accumulates on the SUM, with a reason (DF-28). Not "waived". | `audit_misstatements.status = passed_on_sum` | waived |
+| SUM (summary of uncorrected misstatements) | Code's evaluation of uncorrected misstatements under rollover and iron curtain against materiality (AU-C 450), frozen as a snapshot for the EP's conclusion. | `sum_snapshots` | — |
+| Consultation | A recorded question to a named colleague and its conclusion, concluded only by the person consulted (DEC-83 minimal). | `consultations` | — |
 | Confirmation | Link-principal responses (POR-17). | `confirmations` | — |
 | Component / component auditor | POR-23. | `components`, `component_auditors`, `component_instructions`, `component_deliverables` | — |
 | Report / representation letter / governance communication | G7 and G8. | `audit_reports`, `report_releases`, `representation_letters`, `governance_communications` | — |
