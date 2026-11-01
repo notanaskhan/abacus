@@ -26,9 +26,9 @@ from abacus.ai_gateway import FakeModel, ModelRequest, configure_provider
 from abacus.kernel.db import TenantContext
 from abacus.kernel.flags import forget_flags
 from abacus.modules.agents import section_draft
+from abacus.modules.agents.api import PackRefused
 from abacus.modules.agents.service import load_agent_context
 from abacus.modules.methodology.api import version_steps
-from abacus.modules.workpapers.api import PackConfigurationError
 from abacus_tools.synthetic.scenarios.brightwater_hale.methodology import spec_of, workbook
 
 from .tb_support import Books, Json, books
@@ -255,7 +255,7 @@ async def test_ac_the_seeded_pack_error_fails_the_run_before_any_model_call(
     assert status == 202, body
     run_id = uuid.UUID(cast(str, body["run_id"]))
     agent = await load_agent_context(books_.tenant_id, run_id)
-    with pytest.raises(PackConfigurationError):
+    with pytest.raises(PackRefused):
         await section_draft.draft(agent, paper, "ic", "planning")
     assert CALLS == []  # no model call
     run = (

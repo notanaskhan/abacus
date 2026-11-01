@@ -1743,6 +1743,7 @@ codes:
   pack_configuration_error:
     status: 409
     raised_by:
+    - abacus.modules.agents.section_sources.PackRefused
     - abacus.modules.workpapers.procedures.PackConfigurationError
     summary: The pinned version points at a template neither it nor the firm's library holds (AC6.1).
       `message` is AUD-09 d's sentence; the facts name the step and the reference.

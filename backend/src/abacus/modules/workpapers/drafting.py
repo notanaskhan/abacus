@@ -9,26 +9,35 @@ a draft (A-04 §3.1 AC1.1, §6 AC6.1; DEC-1868).
   changed the value), records the value through `review.api.record_value` (cause
   `suggestion_adopted` or `edit`) and makes the paper's next version (cause `adopt`), so an earlier
   sign-off reads stale. The agent never writes a cell (AC1.1).
-- **Start** (`start_section_draft`): the route's slot. Agents registers the drafter at import; with
-  none registered the route answers 503 before anything is written (fail closed).
+- **Pack** (`pack_problem`, `bound`): the steps a paper is bound to and the first reference they
+  can't resolve, for the drafter's code check before any model call (AC6.1).
+Workpapers registers these with agents (`register_section_source`) and registers the applier
+(`register_suggestion_applier`): workpapers depends on agents, never the reverse (BOUND-002).
 """
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from collections.abc import Sequence
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.errors import DomainUnavailable, NotFound
+from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork
+from abacus.modules.agents.api import (
+    AdoptedValue,
+    PackProblem,
+    SectionSource,
+    SourceCell,
+    SourcePaper,
+)
 from abacus.modules.engagements.api import lock_ref
 from abacus.modules.identity.api import AuthContext, authorise
+from abacus.modules.methodology.api import VersionStep
 from abacus.modules.review.api import record_value
 from abacus.modules.workpapers.core import CELL_TARGET
 from abacus.modules.workpapers.events import WorkpaperContentChanged, WorkpaperVersionCreated
 from abacus.modules.workpapers.models import WorkpaperCell
+from abacus.modules.workpapers.procedures import bound_steps, pack_errors
 from abacus.modules.workpapers.repository import (
     cells_up_to,
     citations_of,
@@ -47,38 +56,6 @@ from abacus.modules.workpapers.service import (
     tb_link,
 )
 
-if TYPE_CHECKING:
-    from abacus.modules.agents.api import AdoptedValue
-
-
-@dataclass(frozen=True)
-class DraftCell:
-    sheet_key: str
-    cell_key: str
-    row_key: str | None
-    col_key: str | None
-    value: dict[str, object] | None  # `{t, v}`; None for an empty cell
-
-
-@dataclass(frozen=True)
-class DraftPaper:
-    workpaper_id: UUID
-    engagement_id: UUID
-    work_item_id: UUID
-    code: str
-    title: str
-    kind: str
-    version_no: int
-    step_keys: tuple[str, ...]
-    section_key: str | None
-    cells: tuple[DraftCell, ...]
-
-
-class DrafterMissing(DomainUnavailable):
-    """No section drafter is registered here."""
-
-    code = "drafter_unavailable"
-
 
 def _in_section(cell: WorkpaperCell, section_key: str | None) -> bool:
     return section_key is None or section_key in (cell.section_key, cell.sheet_key)
@@ -86,7 +63,7 @@ def _in_section(cell: WorkpaperCell, section_key: str | None) -> bool:
 
 async def draft_paper(
     tenant: TenantContext, engagement_id: UUID, workpaper_id: UUID, section_key: str | None
-) -> DraftPaper:
+) -> SourcePaper:
     """The paper as the drafter reads it (404 for a paper with no kind, another engagement's, or
     a section it doesn't have)."""
     async with tenant_session(tenant) as session:
@@ -98,7 +75,7 @@ async def draft_paper(
             raise NotFound("workpaper_section")
         cells = await cells_up_to(session, paper.id, None)
         version_no = await next_version_no(session, paper.id) - 1
-    return DraftPaper(
+    return SourcePaper(
         paper.id,
         paper.engagement_id,
         paper.work_item_id,
@@ -109,7 +86,7 @@ async def draft_paper(
         tuple(paper.program_step_keys),
         section_key,
         tuple(
-            DraftCell(c.sheet_key, c.cell_key, c.row_key, c.col_key, c.value)
+            SourceCell(c.sheet_key, c.cell_key, c.row_key, c.col_key, c.value)
             for c in sorted(cells, key=lambda c: (c.sheet_key, c.cell_key))
             if _in_section(c, section_key)
         ),
@@ -210,40 +187,29 @@ async def apply_cell_suggestion(tx: UnitOfWork, ctx: AuthContext, adopted: Adopt
     )
 
 
-# --- the route's slot ----------------------------------------------------------------------------
-
-# (ctx, engagement, paper, mode, section, idempotency key) -> the run's id.
-SectionDrafter = Callable[[AuthContext, UUID, UUID, str, str | None, str], Awaitable[UUID]]
-_DRAFTER: list[SectionDrafter] = []
+def bound(steps: Sequence[VersionStep], paper: SourcePaper) -> list[VersionStep]:
+    """The steps a draft of this paper is bound to (`procedures.bound_steps`)."""
+    return bound_steps(steps, step_keys=paper.step_keys, kind=paper.kind)
 
 
-def register_section_drafter(drafter: SectionDrafter) -> None:
-    if _DRAFTER and _DRAFTER[0] is not drafter:
-        raise ValueError("a section drafter is already registered")
-    _DRAFTER[:] = [drafter]
+async def pack_problem(
+    tenant: TenantContext, version_id: UUID, paper: SourcePaper
+) -> PackProblem | None:
+    """The first reference the paper's bound steps can't resolve (AUD-09 d's words), or None."""
+    errors = await pack_errors(tenant, version_id, step_keys=paper.step_keys, kind=paper.kind)
+    if not errors:
+        return None
+    first = errors[0]
+    return PackProblem(first.message, first.program_code, first.number, first.ref)
 
 
-async def start_section_draft(
-    ctx: AuthContext,
-    engagement_id: UUID,
-    workpaper_id: UUID,
-    mode: str,
-    section_key: str | None,
-    idempotency_key: str,
-) -> UUID:
-    if not _DRAFTER:
-        raise DrafterMissing
-    return await _DRAFTER[0](ctx, engagement_id, workpaper_id, mode, section_key, idempotency_key)
-
+SOURCE = SectionSource(draft_paper, bound, pack_problem)
 
 __all__ = [
-    "DraftCell",
-    "DraftPaper",
-    "DrafterMissing",
-    "SectionDrafter",
+    "SOURCE",
     "apply_cell_suggestion",
+    "bound",
     "draft_paper",
+    "pack_problem",
     "paper_engagement",
-    "register_section_drafter",
-    "start_section_draft",
 ]

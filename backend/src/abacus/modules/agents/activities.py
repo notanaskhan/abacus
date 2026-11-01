@@ -40,6 +40,7 @@ from abacus.modules.agents.intake_match import create_intake_match_run, match_in
 from abacus.modules.agents.knowledge import embed_next_batch, fail_document
 from abacus.modules.agents.run_records import persist_run_record
 from abacus.modules.agents.section_draft import draft as draft_section
+from abacus.modules.agents.section_sources import PackRefused
 from abacus.modules.agents.service import (
     TERMINAL,
     AgentRunNotRunning,
@@ -83,7 +84,6 @@ from abacus.modules.agents.workflow_types import (
 )
 from abacus.modules.identity.api import NoActiveTenant
 from abacus.modules.methodology.api import ImportNotParsing
-from abacus.modules.workpapers.api import PackConfigurationError
 
 INITIATOR_INACTIVE = "initiator_inactive"
 
@@ -646,7 +646,7 @@ async def section_draft_activity(input: SectionDraftInput) -> ScreeningOutcome:
         if exc.type == NOT_ADMITTED:
             raise
         raise _as_application_error(exc, retryable=True) from None
-    except (NotFound, PackConfigurationError) as exc:  # the run already failed with its code
+    except (NotFound, PackRefused) as exc:  # the run already failed with its code
         raise _as_application_error(exc, retryable=False) from None
     except Exception as exc:
         raise _as_application_error(exc, retryable=True) from None

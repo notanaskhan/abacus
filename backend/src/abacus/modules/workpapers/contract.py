@@ -422,9 +422,9 @@ async def workpaper_draft_route(
     real firm the drafter isn't cleared for. A pack configuration error fails the run before any
     model call (`pack_configuration_error`, AC6.1; T11)."""
     await gate(ctx, engagement_id, "workpaper.draft", WORKPAPERS_CORE, WORKPAPERS_DRAFTING)
-    from abacus.modules.workpapers import drafting
+    from abacus.modules.agents.api import start_section_draft
 
-    run_id = await drafting.start_section_draft(
+    run_id = await start_section_draft(
         ctx, engagement_id, workpaper_id, body.mode, body.section_key, idempotency_key
     )
     return WorkpaperDraftStartedOut(run_id=run_id)

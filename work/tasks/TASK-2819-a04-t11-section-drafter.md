@@ -62,3 +62,4 @@ DEC-1868.
     - The replay history goes to T41.
     - Mode prompts and mappings go to T22–T35.
     - The eval suite goes to T14.
+- `2026-11-01`: end pass. BOUND-002 refused agents → workpapers, so the dependency is inverted: an agents source slot, workpapers registers the source and the applier, and the route calls agents.

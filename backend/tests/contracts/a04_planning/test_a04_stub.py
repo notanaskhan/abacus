@@ -260,14 +260,14 @@ async def test_t01_the_gate_authorises_then_reads_the_flag_then_answers_501(
     assert calls == ["authorise:materiality.read:engagement", "flag:assurance.materiality"]
     state["on"] = True
     calls.clear()
-    from abacus.modules.workpapers import drafting
+    from abacus.modules.agents import api as agents_api
 
     run = uuid.uuid4()
 
     async def started(*_: object) -> uuid.UUID:
         return run
 
-    monkeypatch.setattr(drafting, "start_section_draft", started)
+    monkeypatch.setattr(agents_api, "start_section_draft", started)
     out = await core.workpaper_draft_route(
         uuid.uuid4(), uuid.uuid4(), core.WorkpaperDraftIn(mode="gap"), _ctx(), "k-1"
     )

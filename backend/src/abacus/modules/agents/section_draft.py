@@ -11,8 +11,8 @@ slot and runs `draft`, whose steps are, in order:
    own typed figures as facts (`F<n>`, the prior version), and the section's cells, delimited as
    untrusted (ADR-051, ADR-052). Modes add their documents and facts with their mappings (T22-T35).
 2. **validate_pack** (code, before any model call): the bound steps' template references resolve
-   (`workpapers.api.validate_pack`); otherwise the run fails `pack_configuration_error` with
-   AUD-09 d's sentence recorded, and nothing is written (AC6.1).
+   (workpapers' `pack_problem`, through the source slot); otherwise the run fails
+   `pack_configuration_error` with AUD-09 d's sentence recorded, and nothing is written (AC6.1).
 3. **call_model**: one gateway call with the mode's registered prompt, tier, budget and the
    `SectionDraft` schema.
 4. **verify_citations**: every citation is written as a v2 row through C4's verifiers, as the
@@ -61,7 +61,6 @@ from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
 from abacus.modules.agents.draft_start import DraftingUnavailable
 from abacus.modules.agents.handoff import DraftCitation, DraftedCell, SectionDraft
-from abacus.modules.agents.proposal_slots import register_suggestion_applier
 from abacus.modules.agents.proposals import ProposalInvalid, create_suggestion
 from abacus.modules.agents.repository import (
     finish_run,
@@ -69,6 +68,12 @@ from abacus.modules.agents.repository import (
     lock_run,
     run_for_event,
     runs_since,
+)
+from abacus.modules.agents.section_sources import (
+    CELL_TARGET,
+    PackRefused,
+    SourcePaper,
+    section_source,
 )
 from abacus.modules.agents.service import (
     AgentRunNotRunning,
@@ -86,17 +91,6 @@ from abacus.modules.engagements.api import get_ref, lock_ref
 from abacus.modules.evidence.api import CitationClaim
 from abacus.modules.identity.api import AgentContext, AuthContext, authorise
 from abacus.modules.methodology.api import VersionStep, version_steps
-from abacus.modules.workpapers.api import (
-    CELL_TARGET,
-    DraftPaper,
-    PackConfigurationError,
-    apply_cell_suggestion,
-    bound_steps,
-    draft_paper,
-    paper_engagement,
-    register_section_drafter,
-    validate_pack,
-)
 
 DRAFTER: Final = "workpapers.section_drafter"
 MODES: Final = frozenset({"gap", "risk_narrative", "risk", "ic", "soc1"})
@@ -144,7 +138,7 @@ class Fact:
 
 @dataclass(frozen=True)
 class DraftContext:
-    paper: DraftPaper
+    paper: SourcePaper
     version_id: UUID
     steps: tuple[VersionStep, ...]  # S1 is steps[0]
     facts: tuple[Fact, ...]
@@ -203,7 +197,7 @@ async def start(
     if not model_available():
         raise DraftingUnavailable(str(engagement_id))
     await get_ref(ctx, engagement_id)
-    paper = await draft_paper(ctx.tenant, engagement_id, workpaper_id, section_key)
+    paper = await section_source().paper(ctx.tenant, engagement_id, workpaper_id, section_key)
     event = uuid5(
         NAMESPACE_URL,
         f"abacus:section_draft:{ctx.tenant_id}:{workpaper_id}:{section_key}:{idempotency_key}",
@@ -277,7 +271,7 @@ async def start(
 # --- load_context --------------------------------------------------------------------------------
 
 
-def _facts(paper: DraftPaper) -> tuple[Fact, ...]:
+def _facts(paper: SourcePaper) -> tuple[Fact, ...]:
     """The paper's own typed figures and dates (the prior version), in cell order."""
     found: list[Fact] = []
     for c in paper.cells:
@@ -300,9 +294,10 @@ async def load_context(
     await authorise(agent, "procedure.read", engagement.resource())
     if engagement.methodology_version_id is None:
         raise NotFound("methodology_version")
-    paper = await draft_paper(agent.tenant, agent.engagement, workpaper_id, section_key)
+    source = section_source()
+    paper = await source.paper(agent.tenant, agent.engagement, workpaper_id, section_key)
     version = await version_steps(agent.tenant, engagement.methodology_version_id)
-    steps = bound_steps(version.steps, step_keys=paper.step_keys, kind=paper.kind)
+    steps = source.bound(version.steps, paper)
     return DraftContext(
         paper, engagement.methodology_version_id, tuple(steps[:MAX_STEPS]), _facts(paper)
     )
@@ -405,7 +400,7 @@ async def draft(
     """The run's draft; a terminal error ends the run as failed with its code."""
     try:
         return await _draft(agent, workpaper_id, mode, section_key)
-    except PackConfigurationError as exc:
+    except PackRefused as exc:
         await _fail_pack(agent, workpaper_id, exc)
         raise
     except NotFound:
@@ -413,7 +408,7 @@ async def draft(
         raise
 
 
-async def _fail_pack(agent: AgentContext, workpaper_id: UUID, exc: PackConfigurationError) -> None:
+async def _fail_pack(agent: AgentContext, workpaper_id: UUID, exc: PackRefused) -> None:
     """AC6.1: the run fails with the error's code; its output keeps AUD-09 d's sentence."""
     async with uow(_reader(agent.tenant_id, f"agent-run:{agent.agent_run_id}")) as tx:
         if await finish_run(
@@ -439,12 +434,9 @@ async def _draft(
     prompt_ref, budget = mode_call(drafter, mode)
     context = await load_context(agent, workpaper_id, section_key)
     # Code's pack validation, before any model call (AC6.1).
-    await validate_pack(
-        agent.tenant,
-        context.version_id,
-        step_keys=context.paper.step_keys,
-        kind=context.paper.kind,
-    )
+    problem = await section_source().pack_problem(agent.tenant, context.version_id, context.paper)
+    if problem is not None:
+        raise PackRefused(problem)
     assembled = build_context(mode, context, list(drafter.untrusted_inputs))
     result = await call(
         GatewayCall(
@@ -553,10 +545,6 @@ async def _draft(
             )
     return DraftOutcome(run.id, "completed", tuple(suggestions), tuple(unsupported))
 
-
-# The route's slot and the cell owner's applier (adoption is the person's, through workpapers).
-register_section_drafter(start)
-register_suggestion_applier(CELL_TARGET, apply_cell_suggestion, engagement_of=paper_engagement)
 
 __all__ = [
     "DRAFTER",
