@@ -641,5 +641,11 @@ REVIEWED_FALLBACK: Final = frozenset(
         "risk.rebuttal_proposed",
         "risk.linked",
         "risk.unlinked",
+        # A-05-T10: EBP-01's plan facts, providers, code checks and the plan number.
+        "ebp_plan.created",
+        "ebp_plan.edited",
+        "ebp_provider.created",
+        "ebp_check.recorded",
+        "client_entity.plan_number_set",
     }
 )

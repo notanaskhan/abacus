@@ -16,6 +16,8 @@ from abacus.modules.assurance.completion_routes import router as completion_rout
 from abacus.modules.assurance.compute import materiality as materiality_engine
 from abacus.modules.assurance.ebp_contract import router as ebp_router
 from abacus.modules.assurance.ebp_designed import register as register_ebp_designed
+from abacus.modules.assurance.ebp_plan import AUDIT_KINDS as EBP_PLAN_KINDS
+from abacus.modules.assurance.ebp_plan import audit_owners as ebp_plan_owners
 from abacus.modules.assurance.home_counts import register_home_counts
 from abacus.modules.assurance.mapping import SUBSCRIPTIONS as MAPPING_SUBSCRIPTIONS
 from abacus.modules.assurance.mapping import import_csv as import_grouping_csv
@@ -23,12 +25,6 @@ from abacus.modules.assurance.mapping import mapping_facts, mapping_reviewables
 from abacus.modules.assurance.mapping import publish as publish_grouping_version
 from abacus.modules.assurance.mapping_routes import firm_router as grouping_router
 from abacus.modules.assurance.mapping_routes import router as mapping_router
-from abacus.modules.assurance.materiality import AUDIT_KINDS as MATERIALITY_KINDS
-from abacus.modules.assurance.materiality import audit_owners as materiality_owners
-from abacus.modules.assurance.materiality import propose as propose_materiality
-from abacus.modules.assurance.materiality import reassess as reassess_materiality
-from abacus.modules.assurance.materiality import register as register_materiality_kinds
-from abacus.modules.assurance.materiality import register_materiality_dependents
 from abacus.modules.assurance.phase import SUBSCRIPTIONS as PHASE_SUBSCRIPTIONS
 from abacus.modules.assurance.phase import record_phase, update_profile
 from abacus.modules.assurance.planning_contract import router as planning_router
@@ -47,10 +43,6 @@ from abacus.modules.assurance.sections import (
     register_index_tag,
     register_run_summary,
 )
-from abacus.modules.assurance.materiality import AUDIT_KINDS as MATERIALITY_KINDS
-from abacus.modules.assurance.materiality import audit_owners as materiality_owners
-from abacus.modules.assurance.materiality import register as register_materiality_kinds
-from abacus.modules.assurance.materiality import register_materiality_dependents
 from abacus.modules.assurance.service_orgs import AUDIT_KINDS as SERVICE_ORG_KINDS
 from abacus.modules.assurance.service_orgs import audit_owners as service_org_owners
 from abacus.modules.assurance.tb_mapping_contract import MappingConfirmIn, MappingRunIn
@@ -117,11 +109,10 @@ register_review_gates()
 
 # A-05-T09 (DEC-1954): the nine EBP designed workpapers' rail rows, layouts and export section.
 register_ebp_designed()
+# A-05-T10 (DEC-1955): EBP-01's plan, providers and checks placed for the trail.
+register_engagement_owners(EBP_PLAN_KINDS, ebp_plan_owners)
 # A-04-T07: the trail places a service organization on its engagement (SPEC-304; DEC-121).
 register_engagement_owners(SERVICE_ORG_KINDS, service_org_owners)
-# A-04-T12 (DEC-1950): the materiality cards' kinds and appliers; versions placed for the trail.
-register_materiality_kinds()
-register_engagement_owners(MATERIALITY_KINDS, materiality_owners)
 
 __all__ = [
     "ACTIVITIES",
@@ -139,14 +130,11 @@ __all__ = [
     "import_grouping_csv",
     "mapping_live",
     "materiality_engine",
-    "propose_materiality",  # P-04-T36: the scenario loader proposes as the person named
     "publish_grouping_version",
-    "reassess_materiality",
     "record_phase",
     "register_audit_section",
     "register_audit_segment",
     "register_index_tag",
-    "register_materiality_dependents",
     "register_run_summary",
     "router",
     "update_profile",
