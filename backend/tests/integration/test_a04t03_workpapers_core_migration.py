@@ -82,9 +82,14 @@ async def _paper(seed: Seeder) -> tuple[Paper, Person]:
     entity = await seed.entity(tenant)
     engagement = await seed.engagement(tenant, entity, person.user_id)
     client = await seed.value("SELECT client_id FROM client_entities WHERE id = $1", entity)
+    # The engagement's one assurance work item (the seed may already have made it).
+    found = await seed.value(
+        "SELECT id FROM work_items WHERE engagement_id = $1 AND kind = 'assurance'", engagement
+    )
     item = cast(
         uuid.UUID,
-        await seed.value(
+        found
+        or await seed.value(
             "INSERT INTO work_items (tenant_id, engagement_id, client_id, client_entity_id, "
             "kind, name, created_by) VALUES ($1, $2, $3, $4, 'assurance', 'Northwind 2025', $5) "
             "RETURNING id",
