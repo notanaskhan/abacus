@@ -4,7 +4,7 @@ title: P-04-T49 SHL-12 f bulk sign-off, sign-off slots that open SHL-12, TPL-02 
 spec: SPEC-000
 acceptance_criteria: [AC-1]
 risk_zone: green
-status: in-review
+status: done
 epic: P-04
 plan_key: P-04-T49
 branch: s20-p04-t49

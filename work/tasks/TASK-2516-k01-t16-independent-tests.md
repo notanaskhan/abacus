@@ -4,7 +4,7 @@ title: K-01-T16 Independent AC tests (ADR-078) for K-01-T12 and T14
 spec: SPEC-008  # K-01 §3.4 and §3.5 acceptance criteria
 acceptance_criteria: [AC-1]  # and K-01 §3.4, §3.5
 risk_zone: amber
-status: in-review
+status: done
 epic: K-01
 plan_key: K-01-T16
 branch: s20b-k01-t16
