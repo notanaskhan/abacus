@@ -272,7 +272,7 @@ function Questions({
                 >
                   <span className="flex-1">{name}</span>
                   {n === rows.length ? (
-                    <span aria-label={`${name} complete`}>
+                    <span role="img" aria-label={`${name} complete`}>
                       <Icon name="check" size={14} />
                     </span>
                   ) : (
