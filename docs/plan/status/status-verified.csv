@@ -123,3 +123,4 @@ F-04-T03,done,"apps/web/src/app-core/clock.tsx, clock.test.ts, clock-provider.te
 F-03-T38,done,docs/adr/ADR-158-client-scoped-files-cross-engagement-fulfilment.md (re-verified 2026-10-29)
 Q-02-T14,done,"docs/adr/ADR-159 (hash chain, archive seal) (re-verified 2026-10-29)"
 A-01-T28,done,"#730 (ca8cd6e1) and the A-01-T28 close-out PR: parity masks, DEC-908 insets and tight rows; AUD-01 a-f and AUD-03 a, b, c, e, g locked; axe and keyboard 22/22, Tier D; the rest moved to A-01-T33 (S34, DEC-909)"
+T-01-T29,partial,"TASK-2472 (DEC-1532): nine journey tests written; 8 of 9 walk green in the fixture project; full stack waits for the T-01 slices on the nightly seed, staging for ABACUS_STAGING_URL (F-04-T28); j12 TRI waits for a POR-01 TRI state or the sink mailbox (F-04-T22)"
