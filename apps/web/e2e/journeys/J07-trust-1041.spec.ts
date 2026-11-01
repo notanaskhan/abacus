@@ -21,7 +21,11 @@ test.describe("J07", () => {
     await journey.step("J07 step 8: Nora's released K-1 (POR-13a)", async (page) => {
       await expect(page.getByText("160,000").first()).toBeVisible();
       await expect(page.getByText(/Theo/)).toHaveCount(0);
-      await expect(page.getByText(/Form 1041/)).toHaveCount(0);
+      // Her own Schedule K-1 (Form 1041), one package, and never the trust's return.
+      await expect(page.getByRole("heading", { name: /Schedule K-1 \(Form 1041\)$/ })).toHaveCount(
+        1,
+      );
+      await expect(page.getByText(/Form 1041 return|U\.S\. Income Tax Return/)).toHaveCount(0);
       await expect(page.getByText(/Accrued/)).toHaveCount(0);
     });
   });
