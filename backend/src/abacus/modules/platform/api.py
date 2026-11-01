@@ -98,6 +98,18 @@ from abacus.modules.platform.pilot_metrics import (
 from abacus.modules.platform.pilot_metrics import (
     ratio as pilot_ratio,
 )
+from abacus.modules.platform.pilot_read import (
+    FirmRead,
+    cross_firm,
+    wedge_read,
+    week_snapshots,
+)
+from abacus.modules.platform.pilot_read import (
+    Snapshot as PilotSnapshot,
+)
+from abacus.modules.platform.pilot_read import (
+    report as wedge_report,
+)
 from abacus.modules.platform.pilots import Mode as PilotMode
 from abacus.modules.platform.pilots import PilotModeRefused
 from abacus.modules.platform.pilots import enrol as enrol_pilot
@@ -304,6 +316,7 @@ __all__ = [
     "Entitlement",
     "EntitlementRequired",
     "FanOutInput",
+    "FirmRead",
     "Form8879For",
     "Heartbeat",
     "HomeCount",
@@ -327,6 +340,7 @@ __all__ = [
     "PilotMetricsWorkflow",
     "PilotMode",
     "PilotModeRefused",
+    "PilotSnapshot",
     "PilotWeek",
     "PropagationStarted",
     "ProvisionTenantInput",
@@ -365,6 +379,7 @@ __all__ = [
     "configure_heartbeat",
     "configure_tenant_key_ops",
     "control_active",
+    "cross_firm",
     "enrol_pilot",
     "entitlement",
     "expected_route",
@@ -409,4 +424,7 @@ __all__ = [
     "start_provisioning",
     "start_reference_fanout",
     "tenant_key_workflow_id",
+    "wedge_read",
+    "wedge_report",
+    "week_snapshots",
 ]

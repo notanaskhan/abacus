@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Version | v1 |
-| Status | stub (T-01-T02, 2026-10-29): every route 501 behind its flag |
+| Status | **frozen at v1** (T-01-T53, 2026-11-01, DEC-1678); live behind `tax.engine_bridge` (export, mark exported, imports, final approval). Breaking changes need v2 |
 | Provider epic | T-01 |
 | Consumers | T-02 (TAX-02 sync chip, status machine), P-04 (SHL-12 h final approval), T-08, W-01 |
 | Flags | `tax.engine_bridge` |

@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C19 (`docs/contracts/README.md`) |
 | Version | v1 |
-| Status | stub (T-01-T01, 2026-10-29): every route 501 behind its flag; module API raises `NotImplementedError` |
+| Status | **frozen at v1** (T-01-T53, 2026-11-01, DEC-1678); live behind `consents.registry` and `clients.tax_profile`; gateway condition 6 is code, always on. Breaking changes need v2; additions follow handshake rule 5 |
 | Provider epic | T-01 |
 | Consumers | T-02 (TAX-02 consent chip), T-03 to T-08, N-04, W-02, I-02, G-02 (ADM-04 D), P-07 (CLI-02 b), P-06 (BND-01 tag), the AI gateway (condition 6) |
 | Freeze sprint | S17 |

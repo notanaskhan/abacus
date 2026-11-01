@@ -68,6 +68,11 @@ The pilot signals are read from code, never estimated: thresholds are in
 their windows open), and W4–W7 are computed weekly per firm by `PilotMetricsWorkflow`
 (Q-04-T008). Retros (M10, M12, M14 and each season) read the same snapshots.
 
+**Support-hours log** (Q-04-T054): `docs/ops/pilot/support-hours.csv`, one row per sprint, ISO
+week and lane (`AY` or `N`): hours spent on pilot support and the SEV1/SEV2/SEV3 counts opened that
+week. Numbers only, never a firm's client data. `make m12-pack` reads it against the sprint's
+support-reserve rows; M14's retro (Q-04-T087) reads it again.
+
 RK-07 fires when support hours exceed the sprint's reserve rows two sprints running, the SEV3
 backlog exceeds 5, or the first-response target is missed twice in a month: onboarding of the next
 firm pauses and the next cut tier is invoked (never the hardening reserve).
