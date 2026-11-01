@@ -122,11 +122,13 @@ def _visible_item(ctx: AuthContext, action: str) -> ColumnElement[bool]:
 
 def _shown_version() -> ColumnElement[bool]:
     """Not withdrawn by the client (P-06-T19)."""
-    return (
-        ~select(EvidenceWithdrawal.evidence_version_id)
+    # Named first: mutmut 3.8 drops the parentheses of a `return (~…)` it mutates (Q-03-T147).
+    withdrawn = (
+        select(EvidenceWithdrawal.evidence_version_id)
         .where(EvidenceWithdrawal.evidence_version_id == EvidenceVersion.id)
         .exists()
     )
+    return ~withdrawn
 
 
 # --- Tree ----------------------------------------------------------------------------------------
