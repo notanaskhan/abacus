@@ -9,7 +9,7 @@
 | Epic and tasks | T-01 · contract T-01-T05; fixtures T09; build T20, T21 |
 | Spec and ADRs | SPEC-501 AC-11; ADR-231; R-04 |
 | Flags | `tax.engine_bridge` |
-| Manifest status | planned; built on fixtures with T-01-T09's scenarios, `live` with its build tasks (pilot posture: agents off) |
+| Manifest status | `fixture` at `/settings/integrations` since T-01-T51 (DEC-1667), its links to ADM-01, ADM-05, INB-01 and TAX-09 wired; Tier C rows report-only until the artboard is framed (DEC-1670). `live` is the `tax.engine_bridge` flip in the M11 train |
 
 ## States
 | Artboard | Viewer | Clock (CT) | Data condition | Parity tier | Status |
@@ -71,6 +71,9 @@ Gradients, emoji, blue, heavy shadows, invented colours or data, boxed inputs, t
 |---|---|---|---|
 | D1 | File-bridge mode only: no API credentials field; W2 is a file the firm carries | ADR-231, P-18 | DEC-1158 |
 | D2 | Ledger and mailbox segments render A-02's and N-01's fixture rows until their epics wire them | fixture | T-01 §2.2 |
+| T54-1 | Window crops report-only: the gallery artboard draws the screen without the app shell | until the artboard is framed | DEC-1670 |
+
+Every deviation above is closed: each has its decision recorded (T-01-T54, 2026-11-01).
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
