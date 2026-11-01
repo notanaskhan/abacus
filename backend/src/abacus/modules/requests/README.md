@@ -111,6 +111,15 @@ The agents module drafts follow-ups and reads the requests only through this. A 
 ## A client's withdrawal, the requests side (P-06-T19; ADR-162)
 `service.withdraw_upload(tx, …)` runs inside evidence's withdrawal unit of work. It voids the version's fulfilments of the items the client may withdraw from, audits `fulfilment.withdrawn` and `request_item.upload_withdrawn` (identifiers only, never the file name), and returns to `requested` each item the version was the only fulfilment of.
 
+## Questionnaires (T-02-T16, T-02-T22; `questionnaires.md`, live)
+
+Organizer templates import as CSV (`questionnaire_templates.py`; markup, formulas and template
+expressions refused, dry run first) and publish as versions; a questionnaire attaches a version to
+a binder (`questionnaires.py`); the portal reads and autosaves answers optimistically
+(`portal_questionnaires.py`, `If-Match`, 409 on a stale version). A question a person adds is a
+draft until sent and never reaches the portal; an inquiry lists only for its addressee. Answers
+are client content: stored and served verbatim, never interpreted (ADR-052).
+
 ## Not built (P-06 close-out, 2026-10-26)
 - `PUT /v1/binders/{id}/follow-up-override` still answers 501: the column exists and `BinderOut` carries it, but nothing writes it.
 - The OQ-1 preparer path (DEC-136): `binder.publish` on a `tax_return` binder has DEC-38's cells only, so the return's preparer cannot publish on the live stack.

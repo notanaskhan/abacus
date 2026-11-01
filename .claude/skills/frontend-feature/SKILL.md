@@ -76,6 +76,16 @@ The client portal is a second Vite entry, not an area of the firm tree. To add a
   then the portal's bundle budget) and the L7 crawl.
 - Then follow the `portal-screen` skill for branding, shells and the three widths.
 
+## The return frame and the reduced portal shell (T-02-T35)
+
+- **Return frame.** TAX-02, TAX-03, TXP-12, TAX-09 and TAX-12 sit inside `ReturnFrame` on T2
+  `RecordCockpit`: the subbar (42), the return's tabsbar (44) and the sync chip. A new return tab
+  adds its route under `/tax-returns/$returnId/…` and its tab entry; it never draws its own header.
+  In the gallery the artboard passes `toolbar` so the cockpit draws `AppShell` (window parity).
+- **Reduced portal shell.** A K-1-only person sees the `k1` shell (DEC-129). A portal screen
+  that a K-1 recipient can reach reads `me.portal.shell` (and its `nav`) and draws only that; the
+  fixture personas `nora-calloway` and `pell-street-member` exercise it (POR-13 a and c).
+
 ## Frozen contracts (P-07-T64, DEC-1054)
 
 A frozen contract (`docs/contracts/*.md` with **frozen**, snapshot under `backend/tests/contracts/<family>/v<n>.json`) takes additions only. A rename, retype, newly required field or removed enum member ships the next version with overlap: `python -m abacus_tools.contracts --freeze <family> v<n+1>`, never an edit of the old snapshot.
