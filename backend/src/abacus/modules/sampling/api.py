@@ -18,6 +18,8 @@ from abacus.modules.sampling.compute import (
 )
 from abacus.modules.sampling.compute import (
     SAMPLER_VERSIONS,
+    Record,
+    StratumRule,
     attribute_size,
     projected_misstatement,
     udl,
@@ -107,10 +109,12 @@ __all__ = [
     "Parameters",
     "Population",
     "RecipientNotContact",
+    "Record",
     "SampleDrawInput",
     "SampleDrawWorkflow",
     "SampleNotApproved",
     "Selected",
+    "StratumRule",
     "attribute_size",
     "bills_by_party",
     "build_payments",

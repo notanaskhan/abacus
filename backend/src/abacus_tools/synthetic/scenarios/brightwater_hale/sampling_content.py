@@ -28,7 +28,7 @@ from typing import Final
 
 from openpyxl import Workbook
 
-from abacus.modules.sampling.compute import Record, StratumRule
+from abacus.modules.sampling.api import Record, StratumRule
 
 # The scenario's seeds (A-03 §5.4): each draw passes its own through the loader.
 SEEDS: Final = {
