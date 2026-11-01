@@ -82,6 +82,71 @@ test.describe("J06", () => {
       await expect(page.getByRole("button", { name: "New version…" })).toHaveCount(0);
     });
   });
+
+  // T-01-T46 (Playwright part 2): delivery and e-file on TAX-12's artboards and the relock on
+  // TAX-09's (gallery routes in fixture mode; full stack and staging nightly once E0 carries the
+  // delivery slice).
+  test("j06 D: one of two signed keeps transmission locked; the ERO records it; acks accepted", async ({
+    journey,
+  }) => {
+    await journey.as("grace-holloway", "/components/screens/TAX-12?st=a", {
+      clock: "2026-09-17T09:30:00-05:00",
+    });
+    await journey.step("J06 D: 1 of 2 signed, Mark transmitted locked", async (page) => {
+      await expect(page.getByText(/1 of 2 signed/u).first()).toBeVisible();
+      await expect(
+        page.getByRole("button", { name: "Mark transmitted in CCH Axcess" }),
+      ).toBeDisabled();
+    });
+    await journey.as("daniel-reyes", "/components/screens/TAX-12?st=c2", {
+      clock: "2026-09-18T11:06:00-05:00",
+    });
+    await journey.step("J06 D: both signed, the ERO may record the transmission", async (page) => {
+      await expect(
+        page.getByRole("button", { name: "Mark transmitted in CCH Axcess" }),
+      ).toBeEnabled();
+    });
+    await journey.as("grace-holloway", "/components/screens/TAX-12?st=d", {
+      clock: "2026-09-19T09:12:00-05:00",
+    });
+    await journey.step(
+      "J06 D: acknowledgments accepted and delivered to the portal",
+      async (page) => {
+        await expect(page.getByText(/return accepted/u).first()).toBeVisible();
+        await expect(page.getByText(/Delivered to portal/u).first()).toBeVisible();
+        await expect(page.getByRole("button", { name: /^(Approve|Send|Sign)$/u })).toHaveCount(0);
+      },
+    );
+  });
+
+  test("j06 relock: an approved import past tolerance supersedes the 8879", async ({
+    journey,
+  }) => {
+    await journey.as("samuel-ito", "/components/screens/TAX-09?st=e", {
+      clock: "2026-09-10T09:30:00-05:00",
+    });
+    await journey.step("J06 relock: the import diff names the moved figures", async (page) => {
+      await expect(page.locator("[data-artboard='e']")).toBeVisible();
+      await expect(
+        page.getByRole("button", { name: /Approve checkpoint|Approve import/u }).first(),
+      ).toBeVisible();
+    });
+  });
+
+  test.fixme(
+    "j28 3: Isaac Moreau exports the Granite Peak FY2026 Form 1120 after final approval",
+    {
+      annotation: {
+        type: "owner",
+        description:
+          "T-01 · T-01-T46: the 1120 export needs a Granite Peak business-return scenario (T-03 forms); TAX-09 fixtures carry the Feld 1040 only",
+      },
+    },
+    async ({ journey }) => {
+      // Isaac Moreau joins the harness personas with the Granite Peak business-return slice.
+      await journey.as("daniel-reyes", "/tax-returns");
+    },
+  );
 });
 
 // T-02-T32 (T-02 §2 "Journeys advanced"): j06 2 (Claire answers the organizer, POR-05 a → c),

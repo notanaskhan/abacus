@@ -32,8 +32,9 @@ BACKEND = REPO / "backend"
 SPECS_DIR = Path(_specs.__file__).parent
 SCREENER_YAML = SPECS_DIR / "evidence.screener.yaml"
 # Specs whose evaluation suite is delivered by a later increment, by evaluation_suite path.
-# 011b delivered `evals/screening`, so nothing is owed any more.
-OWED_TO_011B: set[str] = set()
+# 011b delivered `evals/screening`. K-01-T21's importer is owed `evals/methodology_import` by
+# K-01-T22 (S24, ADR-078: the suite is written in the other session before the prompt clears).
+OWED_TO_011B: set[str] = {"evals/methodology_import"}
 # The loader that runs at import, reached by name: tests drive it with patched SPECS.
 load_specs = cast(Callable[[], dict[str, AgentSpec]], vars(spec_module)["_load"])
 

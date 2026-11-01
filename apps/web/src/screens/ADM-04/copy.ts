@@ -99,8 +99,11 @@ export const COPY = {
   data: {
     title: "Client data & §7216",
     consent: "Require §7216 AI consent before agents read return information",
-    consentHelp:
-      "Agents cannot read return information today for 3 clients: Morgan & Kai Ferris (1 of 2 signed) · Harold Stein (declined) · Estate of Walter Thornbury (not requested).",
+    // T-01-T51: the count from C19's summary; the names live in the registry (ADM-05).
+    consentHelp: (n: number) =>
+      n === 0
+        ? "Agents can read return information for every client with a consent on file."
+        : `Agents cannot read return information today for ${String(n)} ${n === 1 ? "client" : "clients"}.`,
     registry: "Consent registry ›",
     template: "Consent template",
     templateValue:

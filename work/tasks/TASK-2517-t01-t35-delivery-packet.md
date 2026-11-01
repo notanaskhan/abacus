@@ -4,7 +4,7 @@ title: T-01-T35 Delivery checklist and packet (TAX-12 a, b)
 spec: SPEC-501  # T-01 §3.11; tax-engine-bridge; efile-record
 acceptance_criteria: [AC-7]  # and T-01 §3.11
 risk_zone: red
-status: in-review
+status: done
 epic: T-01
 plan_key: T-01-T35
 branch: s20b-t01-t35

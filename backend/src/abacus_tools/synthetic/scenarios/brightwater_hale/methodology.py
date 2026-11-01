@@ -29,6 +29,7 @@ from typing import Final
 
 from openpyxl import Workbook
 
+from abacus_tools.synthetic.documents import positioned_pdf
 from abacus_tools.synthetic.scenarios.brightwater_hale.scenario import SETUP_AT
 from abacus_tools.synthetic.scenarios.brightwater_hale.slices import register_slice
 from abacus_tools.synthetic.scenarios.brightwater_hale.timeline import Event
@@ -175,3 +176,50 @@ def spec_of(family: str, number: int) -> VersionSpec:
 
 
 __all__ = ["EBP_V3_CHANGED", "NEEDS", "SLICE", "VERSIONS", "VersionSpec", "spec_of", "workbook"]
+
+
+# --- K-01-T21: the EBP v3 methodology as a PDF, for the importer on the fake model ---------------
+
+LINES_PER_PAGE: Final = 9
+# The three steps a reviewer is asked to check (KNW-02 a's 3 flags): one runs onto the next page,
+# one is worded "(as applicable)" (the fake importer is unsure of it), one cites a step the
+# document does not have.
+SPLIT_STEP: Final = (210, 3)
+UNSURE_STEP: Final = (410, 4)
+DANGLING_STEP: Final = (610, 5)
+
+
+def ebp_v3_step_text(program: int, n: int) -> str:
+    text = f"Perform procedure {n} of BH-EBP-{program} and document the result"
+    if (program, n) == UNSURE_STEP:
+        return f"{text} (as applicable)"
+    if (program, n) == DANGLING_STEP:
+        return f"{text} and agree it to BH-EBP-999 step 1"
+    if (program, n) == (310, 2):
+        return f"{text} and agree it to BH-EBP-110 step 7"
+    return text
+
+
+def ebp_v3_document_pdf() -> bytes:
+    """BH Audit Methodology EBP v3 (67 steps in seven programs) as a text PDF: a heading line
+    `BH-EBP-110 Procedures` per program, a line `n. text` per step, nine lines a page; the split
+    step's last words open the next page. Synthetic, Brightwater Hale only."""
+    lines: list[tuple[str, bool]] = []  # (text, break the page after it)
+    for program, count in zip(EBP_PROGRAMS, EBP_V3, strict=True):
+        lines.append((f"BH-EBP-{program} Procedures", False))
+        for n in range(1, count + 1):
+            text = ebp_v3_step_text(program, n)
+            if (program, n) == SPLIT_STEP:
+                head, _, tail = text.rpartition(" and ")
+                lines.append((f"{n}. {head}", True))
+                lines.append((f"and {tail}", False))
+            else:
+                lines.append((f"{n}. {text}", False))
+    pages: list[list[tuple[float, float, str]]] = [[]]
+    for text, breaks in lines:
+        if len(pages[-1]) >= LINES_PER_PAGE:
+            pages.append([])
+        pages[-1].append((72.0, 720.0 - 20.0 * len(pages[-1]), text))
+        if breaks:
+            pages.append([])
+    return positioned_pdf([p for p in pages if p])

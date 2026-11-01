@@ -84,14 +84,15 @@ def test_ac14_screening_starts_from_evidence_version_created() -> None:
         "ai_boundary.facts_changed",
     }
     # the reviewer's (SPEC-030), matcher's (033), drafter's (035), entry assessor's (TASK-085),
-    # and the matcher's intake mode (N-01-T22)
-    assert len(WORKFLOWS) == 8
+    # the matcher's intake mode (N-01-T22), and the methodology importer (K-01-T21)
+    assert len(WORKFLOWS) == 9
     # TASK-018b: acquire_slot and release_slot join the three; SPEC-009 adds two knowledge steps;
     # SPEC-027 adds the engagement agent's two (handle; TASK-051's next tick); SPEC-030 the
     # reviewer's two (create_run, review); SPEC-033 (TASK-066) the matcher's two; SPEC-035
     # (TASK-073) the drafter's two. Q-02-T41 (TASK-1287) adds `agents.persist_run_record`.
-    # N-01-T22 adds the intake mode's two (create_intake_run, match_intake).
-    assert len(ACTIVITIES) == 20
+    # N-01-T22 adds the intake mode's two (create_intake_run, match_intake). K-01-T21 adds the
+    # methodology importer's four (extract_pages, parse_batch, finish, fail).
+    assert len(ACTIVITIES) == 24
 
 
 def test_ac14_the_workflow_id_is_tenant_qualified() -> None:

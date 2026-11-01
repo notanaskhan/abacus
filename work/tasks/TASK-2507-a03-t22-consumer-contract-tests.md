@@ -4,7 +4,7 @@ title: A-03-T22 consumer contract tests for C9 v2 and the sampling API stub
 spec: SPEC-580
 acceptance_criteria: [AC-18]
 risk_zone: amber
-status: in-review
+status: done
 epic: A-03
 plan_key: A-03-T22
 branch: s20-a03-t22

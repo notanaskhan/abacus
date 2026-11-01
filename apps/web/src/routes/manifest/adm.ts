@@ -37,7 +37,9 @@ export const admScreens = {
     path: "/settings/security",
   },
   "ADM-07": { name: "Audit log explorer", status: "planned", path: "/settings/audit-log" },
-  "ADM-08": { name: "Integration settings", status: "planned", path: null },
+  // T-01-T40 built a–g at /settings/integrations behind `tax.engine_bridge`; T-01-T51 routed it in the
+  // manifest and wired its links to ADM-01, ADM-05, TAX-09 and INB-01 (link-contract rule 1).
+  "ADM-08": { name: "Integration settings", status: "fixture", path: "/settings/integrations" },
   "ADM-09": { name: "Developer (API, webhooks, MCP)", status: "planned", path: null },
   // R-01-T28: built a–g on fixtures at /settings/portal; planned until walked on staging (DEC-195),
   // as ADM-02 and ADM-06 are.

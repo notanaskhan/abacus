@@ -4,7 +4,7 @@ title: T-02-T29 ADR-078 independent AC tests for T-02's tax-return backend
 spec: SPEC-502  # AC-8, AC-10, AC-11, AC-19, AC-20; T-02 §3.1 to §3.4
 acceptance_criteria: [AC-8, AC-10, AC-11, AC-19, AC-20]
 risk_zone: amber
-status: in-review
+status: done
 epic: T-02
 plan_key: T-02-T29
 branch: s20c-t02-t29

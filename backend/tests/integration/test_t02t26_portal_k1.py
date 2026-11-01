@@ -153,7 +153,17 @@ async def test_a_details_change_and_the_consent_are_the_recipients(
         {"line1": "1 Main St", "city": "Brooklyn", "postal_code": "11201", "country": "US"},
     )
     assert change.status == "pending"
-    decision, _on = await k1_portal.e_furnishing(first, finals[0], "given", uuid.uuid4())
+    # S20e (DEC-1579): a consent names the firm's newest published disclosure.
+    disclosure = await board.seed.value(
+        "INSERT INTO k1_furnishing_disclosures (tenant_id, version_no, body, body_sha256, "
+        "imported_by) VALUES ($1, 1, 'Synthetic disclosure text.', repeat('a', 64), $2) "
+        "RETURNING id",
+        board.tenant,
+        board.partner,
+    )
+    decision, _on = await k1_portal.e_furnishing(
+        first, finals[0], "given", cast(uuid.UUID, disclosure)
+    )
     assert decision == "given"
     assert (
         await board.seed.value(
