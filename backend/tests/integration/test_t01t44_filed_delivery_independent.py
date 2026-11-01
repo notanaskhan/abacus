@@ -112,11 +112,14 @@ async def test_ac_the_second_step_gates_the_download_and_each_download_is_audite
         assert got.content.startswith(b"%PDF-")
         assert await _downloads(feld, claire.user_id) == n
     audited = await feld.seed.rows(
-        "SELECT after FROM audit_events WHERE action = 'filed_return.downloaded' "
+        "SELECT after_ref FROM audit_events WHERE action = 'filed_return.downloaded' "
         "AND actor_id = $1",
         str(claire.user_id),
     )
-    assert all("PDF" not in str(a["after"]) and "1040" not in str(a["after"]) for a in audited)
+    assert len(audited) == 2  # one audit event per download
+    assert all(
+        "PDF" not in str(a["after_ref"]) and "1040" not in str(a["after_ref"]) for a in audited
+    )
 
 
 async def test_a_firm_member_never_downloads_through_the_portal_route(
