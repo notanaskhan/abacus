@@ -4,7 +4,7 @@
 |---|---|
 | Register row | internal sampling API (A-03 §8.1; not a numbered C-contract) in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | stub (A-03-T02); live per route with A-03-T07, T10 and T13 |
+| Status | live (A-03-T07, T10; the item-request fan-out A-03-T13, 2026-11-01, DEC-1763) |
 | Provider epic | A-03 |
 | Consumers | AUD-11, SHL-14 c, AUD-02 rail, AUD-03 "Sample-driven" band; A-05 (EBP-03/04/05), A-06 (`projection`), A-08 (MUS, AUD-12), K-03 (Sheet row source), A-11 (C17 tools) |
 | Freeze sprint | S20 (the stub merges by Thu Jul 29, 2027) |
@@ -89,7 +89,7 @@ fixture for the fixture ids in `sampling/contract_fixtures.py` (Northwind Partic
 and its census; Granite Peak's disbursements) → 501 `not_implemented` otherwise.
 
 ### 7.1 Live routes (A-03-T10; DEC-1662)
-Every sample-set route but the item-request fan-out (T13) is live. A route keyed by a sample set
+Every sample-set route is live (the fan-out since T13, §7.2). A route keyed by a sample set
 refuses a client (404) and a non-person write, checks the flag, then authorises its action on the
 set's own engagement (walls 404, INV-3). The fixture ids still answer the fixture. The create route
 answers `SampleSetCreatedOut` (the set has no version yet, so it is not a picker row); the picker
@@ -102,6 +102,23 @@ preparers (who drew it and every L1 signer) on the resource, so a preparer gets 
 `override_not_acknowledged`, in that order. Sign-off target type: `sample_set_version` (L1 the
 preparer through `POST /v1/sign-offs`, L2 the approval); gate kind `sample_set_approval`.
 
+### 7.2 The item-request fan-out (A-03-T13; DEC-1763)
+Both routes refuse a client (404) and a non-person, check the flag, then authorise
+`sample_set.generate_requests` on the set's engagement. Only an approved version fans out (409
+`sample_not_approved`, preview and create alike). Each template names exactly one recipient: a
+client contact (`contact_id`, POR-03) or a third-party contact (`third_party_contact_id`, POR-14);
+anyone who is not the engagement's client's contact is 422 `recipient_not_contact`, and a third
+party without a portal sign-in is 409 `contact_not_portal_user` before anything is written. One
+request per (template, item): description "<template> · <record key>", audit area the set's
+title, `wave` `sample`, the due date, `linked_ref {type: sample_item, sample_set_version_id,
+position, record_key, recipient_contact_id, batch_id}`. Create writes them all through
+`requests.api.create_items_bulk` in one unit of work (each audited `request_item.created`; one
+`sample_set.requests_generated {count, por03, por14, batch_id}`), then delegates each third-party
+request through P-06's `delegate_item` (its per-item grant). The preview counts by surface and by
+recipient and names no seed, size, parameter or hash (INV-4). `Idempotency-Key` on create: a
+replay answers the first response and writes nothing. The requests are created, not sent: P-06's
+send groups their emails by `batch_id`, one per recipient (A-03 R14).
+
 ## 8. Module API
 `sampling.api`: `attribute_size`, `udl`, `udl_percent`, `projected_misstatement`, `SAMPLER_VERSIONS`,
 `SAMPLER_CURRENT`; `population_view` (T07); `draw(ctx, sample_set_id, body, scenario_seed=)` (T10:
@@ -109,4 +126,6 @@ the scenario loader's seed on a synthetic firm only, 403 `seed_not_allowed` othe
 `section_state` and `AUDIT_SECTION` (the Fieldwork › Sample Selection rail row assurance
 registers). `methodology.api.attribute_sample_size(tenant_id, rmm=, tolerable_rate=,
 expected_rate=, confidence=, as_of=)` reads K-02's `attribute_sample_sizes` table (C21 part B).
-`sample_version_view` and `approved_items` arrive with their first consumer (T13).
+`sample_version_view` and `approved_items` arrive with their first consumer (the fan-out reads
+the version's items inside the module). `requests.api.create_items_bulk(tx, ctx, engagement_id,
+items, wave=, due_on=, batch_id=)` is the requests side (A-03-T13).

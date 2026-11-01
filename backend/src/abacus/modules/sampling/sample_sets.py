@@ -320,6 +320,18 @@ async def _version(ctx: AuthContext, sample_set_id: UUID, version_no: int) -> Ro
     return found
 
 
+# A-03-T13: the fan-out (`item_requests.py`) gates and reads a set as these routes do.
+SetFound = _Set
+
+
+async def set_for(ctx: AuthContext, sample_set_id: UUID, action: str) -> _Set:
+    return await _set(ctx, sample_set_id, action)
+
+
+async def version_row(ctx: AuthContext, sample_set_id: UUID, version_no: int) -> Row:
+    return await _version(ctx, sample_set_id, version_no)
+
+
 async def _may(ctx: AuthContext, action: str, resource: Resource) -> bool:
     try:
         await authorise(ctx, action, resource)

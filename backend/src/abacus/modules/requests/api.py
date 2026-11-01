@@ -58,8 +58,10 @@ from abacus.modules.requests.follow_up_reads import (
 from abacus.modules.requests.home_counts import register_home_counts
 from abacus.modules.requests.lifecycle import (
     ConsentRequired,
+    ContactNotPortalUser,
     ItemPatch,
     contact_delegations,
+    delegate_item,
     end_contact_delegations,
     record_contact_delegations,
     register_live_facts,
@@ -122,6 +124,7 @@ from abacus.modules.requests.roll_forward import (
 )
 from abacus.modules.requests.routes import firm_router, methodology_router, router
 from abacus.modules.requests.service import (
+    BulkItem,
     FulfilledVersion,
     FulfilmentRef,
     ItemKind,
@@ -139,6 +142,7 @@ from abacus.modules.requests.service import (
     apply_drafted_guidance,
     awaiting_review,
     awaiting_review_count,
+    create_items_bulk,
     drop_items,
     drop_target,
     fulfil_by_rule,
@@ -233,8 +237,10 @@ __all__ = [
     "BinderCard",
     "BinderClosed",
     "BinderProgress",
+    "BulkItem",
     "ClientHome",
     "ConsentRequired",
+    "ContactNotPortalUser",
     "DelegateUpload",
     "DropBinder",
     "DueDatesChanged",
@@ -278,7 +284,9 @@ __all__ = [
     "check_return_comment",
     "classify",
     "client_home",
+    "create_items_bulk",
     "create_questionnaire",
+    "delegate_item",
     "delegate_upload",
     "document_kind",
     "draft_question",

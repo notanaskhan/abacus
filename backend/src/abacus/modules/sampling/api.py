@@ -27,6 +27,10 @@ from abacus.modules.sampling.contract import ROUTERS
 from abacus.modules.sampling.draw_activities import ACTIVITIES
 from abacus.modules.sampling.draw_types import SampleDrawInput
 from abacus.modules.sampling.draw_workflow import SampleDrawWorkflow
+
+# A-03-T13: the item-request fan-out (its routes import it lazily; imported here so its errors
+# are the module's own at start-up).
+from abacus.modules.sampling.item_requests import RecipientNotContact, SampleNotApproved
 from abacus.modules.sampling.payments import (
     PAYMENTS_RULE_VERSION,
     Band,
@@ -102,8 +106,10 @@ __all__ = [
     "Entry",
     "Parameters",
     "Population",
+    "RecipientNotContact",
     "SampleDrawInput",
     "SampleDrawWorkflow",
+    "SampleNotApproved",
     "Selected",
     "attribute_size",
     "bills_by_party",
