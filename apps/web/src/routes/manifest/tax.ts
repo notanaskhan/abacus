@@ -63,10 +63,12 @@ export const taxScreens = {
     path: null,
     entry: true,
   },
+  // T-01-T24/T39 built a–e; T-01-T51 swapped it onto the live delivery, envelope and sync reads
+  // and routed it; links to TAX-02 and TAX-09 are wired (link-contract rule 1).
   "TAX-12": {
     name: "Return › Delivery & e-file · Feld 2025 Form 1040",
-    status: "planned",
-    path: null,
+    status: "fixture",
+    path: "/tax-returns/$returnId/delivery",
   },
   "TAX-13": { name: "Extensions, estimates & payments · TY2025", status: "planned", path: null },
   "TAX-14": {

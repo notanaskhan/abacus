@@ -4,7 +4,7 @@ title: N-02-T41 independent AC tests for N-02-T27, N-02-T28 and N-02-T38
 spec: SPEC-381  # N-02 §3.3, §3.7, §3.13; C7 v1.1 (the rows it tests: N-02-T27, T28, T38)
 acceptance_criteria: [AC-1, AC-17]
 risk_zone: red
-status: in-review
+status: done
 epic: N-02
 plan_key: N-02-T41
 branch: s20d-n02-t41

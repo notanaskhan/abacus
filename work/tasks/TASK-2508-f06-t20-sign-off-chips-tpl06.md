@@ -4,7 +4,7 @@ title: F-06-T20 C-25 sign-off chips, TPL-06 a–e Ridgeline capital accounts spe
 spec: SPEC-400
 acceptance_criteria: [AC-30, AC-33, AC-34]
 risk_zone: amber
-status: in-review
+status: done
 epic: F-06
 plan_key: F-06-T20
 branch: s20-f06-t20

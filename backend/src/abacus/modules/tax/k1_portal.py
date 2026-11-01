@@ -33,16 +33,22 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from datetime import date
 from typing import Final, cast
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import text
 
 from abacus.kernel import clock
 from abacus.kernel.access import AccessSubject, record_reads, register_access_kind
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
+from abacus.kernel.errors import DomainConflict, DomainInvalid, DomainTooLarge, NotFound
 from abacus.kernel.uow import Ref, Target, uow
-from abacus.modules.evidence.api import version_content
+from abacus.modules.evidence.api import (
+    NewItem,
+    Provenance,
+    add_version,
+    screen_and_stage_detached,
+    version_content,
+)
 from abacus.modules.identity.api import (
     AuthContext,
     Forbidden,
@@ -51,6 +57,7 @@ from abacus.modules.identity.api import (
     portal_scopes,
 )
 from abacus.modules.organisations.api import client_record, contacts_of_user
+from abacus.modules.tax import k1_disclosures
 from abacus.modules.tax import k1_packages as k1
 
 READ: Final = "portal_k1.read"
@@ -153,7 +160,8 @@ async def _own(ctx: AuthContext, package_id: UUID, action: str = READ) -> UUID:
 _PACKAGES = text(
     "SELECT p.id, p.recipient_id, r.display_name, r.recipient_kind, p.form, p.tax_year, "
     "p.status, p.k3_status, p.state_codes, p.released_at, p.version_no, p.work_item_id, "
-    "p.supersedes_package_id, r.tin_kind, r.tin_last4, r.address IS NOT NULL AS has_address "
+    "p.supersedes_package_id, r.tin_kind, r.tin_last4, r.address IS NOT NULL AS has_address, "
+    "p.e_furnishing_consent "
     "FROM k1_packages p JOIN k1_recipients r ON r.id = p.recipient_id WHERE p.id = ANY(:ids) "
     "ORDER BY p.tax_year DESC, r.display_name, p.version_no DESC"
 )
@@ -211,6 +219,7 @@ async def _views(tenant: TenantContext, ids: Sequence[UUID]) -> list[k1.PackageV
             issuer_name=issuers.get(r.work_item_id),
             # The recipient's own details (POR-13's Your details): the detail's only.
             address_on_file=bool(r.has_address),
+            e_furnishing_consent=r.e_furnishing_consent,
             tin_kind=r.tin_kind,
             tin_last4=r.tin_last4,
         )
@@ -384,10 +393,32 @@ def deterministic_zip(files: Sequence[tuple[str, bytes]]) -> bytes:
     return buffer.getvalue()
 
 
+async def _consent_of(tenant: TenantContext, package_id: UUID) -> str:
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text("SELECT e_furnishing_consent FROM k1_packages WHERE id = :p"), {"p": package_id}
+        )
+    return str(found or "unknown")
+
+
+async def furnishing_disclosure(ctx: AuthContext) -> k1_disclosures.Disclosure:
+    """`GET /v1/portal/k1-furnishing-disclosure` (S20e; DV-12): the firm's newest text, for a
+    person whose grants reach an issuing return; 404 when none is published or nothing is
+    reached."""
+    _client(ctx)
+    covered = [r for r in set((await _mine(ctx)).values()) if await _authorised(ctx, r, READ)]
+    found = await k1_disclosures.current(ctx.tenant)
+    if not covered or found is None:
+        raise NotFound("k1_furnishing_disclosure")
+    return found
+
+
 async def download(ctx: AuthContext, package_id: UUID) -> Download:
-    """`GET /v1/portal/k1s/{id}/download`: every final document, one zip, an access event."""
+    """`GET /v1/portal/k1s/{id}/download`: every final document, one zip, an access event; once
+    the firm publishes a disclosure, only after the recipient's consent (DV-12)."""
     return_id = await _own(ctx, package_id, DOWNLOAD)
     _second_step(ctx)
+    await k1_disclosures.consent_gate(ctx.tenant, await _consent_of(ctx.tenant, package_id))
     [view] = await _views(ctx.tenant, [package_id])
     docs = sorted(view.documents, key=lambda d: (_ORDER.get(d.kind, 9), d.jurisdiction or ""))
     await _read_logged(ctx, package_id, return_id)
@@ -406,6 +437,7 @@ async def one_document(ctx: AuthContext, package_id: UUID, document_id: UUID) ->
     """`GET …/attachments/{doc}`: one final document, an access event."""
     return_id = await _own(ctx, package_id, DOWNLOAD)
     _second_step(ctx)
+    await k1_disclosures.consent_gate(ctx.tenant, await _consent_of(ctx.tenant, package_id))
     [view] = await _views(ctx.tenant, [package_id])
     doc = next((d for d in view.documents if d.id == document_id), None)
     if doc is None:
@@ -430,16 +462,52 @@ def _address(raw: Mapping[str, str] | None) -> dict[str, str]:
     return out
 
 
-async def submit_details_change(
-    ctx: AuthContext,
-    recipient_id: UUID,
-    kind: str,
-    upload_id: UUID | None,
-    address: Mapping[str, str] | None,
+MAX_FORM_BYTES: Final = 10 * 1024 * 1024  # a signed W-9 or W-8: a few pages
+
+
+class FormTooLarge(DomainTooLarge):
+    """413: a signed form over 10 MB."""
+
+    code = "form_too_large"
+
+
+async def upload_details_change(
+    ctx: AuthContext, recipient_id: UUID, kind: str, file_name: str, content: bytes
 ) -> k1.DetailsChange:
-    """`POST /v1/portal/k1-recipients/{rid}/details-changes`: pending for the firm (DV-10)."""
+    """`POST /v1/portal/k1-recipients/{rid}/details-changes:upload` (S20e; DV-10): a signed W-9
+    or W-8, the raw file as the body. It is scanned and typed (refused closed), stored as the
+    client's own upload under its own key (ADR-162 §5) in the issuing return's engagement, and
+    becomes a pending change for a person at the firm. The number is never typed (POR-13 d)."""
     _client(ctx)
     _second_step(ctx)
+    if kind not in ("w9", "w8"):
+        raise DetailsChangeInvalid(facts={"field": "kind"})
+    if not content:
+        raise DetailsChangeInvalid(facts={"field": "file"})
+    if len(content) > MAX_FORM_BYTES:
+        raise FormTooLarge(facts={"max_bytes": MAX_FORM_BYTES})
+    owned = await _recipient_return(ctx, recipient_id)
+    facts = await k1.package_return_scope(ctx.tenant, owned)
+    if facts is None or facts.engagement_id is None:
+        raise NotFound("k1_recipient")
+    version_id = uuid4()
+    screened, key = await screen_and_stage_detached(ctx.tenant_id, version_id, content, file_name)
+    async with uow(ctx.tenant) as tx:
+        version = await add_version(
+            tx,
+            engagement_id=facts.engagement_id,
+            item=NewItem(f"Form {'W-9' if kind == 'w9' else 'W-8'} · {screened.file_name}"),
+            stored=screened.stored,
+            media_type=screened.media_type,
+            provenance=Provenance(source="client_upload", method="uploaded"),
+            detached=(version_id, key),
+        )
+    return await _record_change(ctx, recipient_id, owned, kind, version.id, None)
+
+
+async def _recipient_return(ctx: AuthContext, recipient_id: UUID) -> UUID:
+    """The issuing return of one of the person's released packages of `recipient_id`, under
+    `portal_k1.update_details`; else 404."""
     mine = await _mine(ctx)
     async with tenant_session(ctx.tenant) as session:
         owned = await session.scalar(
@@ -450,15 +518,37 @@ async def submit_details_change(
         )
     if owned is None or not await _authorised(ctx, cast(UUID, owned), UPDATE):
         raise NotFound("k1_recipient")
-    stored_address: dict[str, str] | None = None
-    if kind == "address":
-        stored_address = _address(address)
-        upload_id = None
-    elif kind in ("w9", "w8"):
-        if upload_id is None or address is not None:
-            raise DetailsChangeInvalid(facts={"field": "upload_id"})
-    else:
+    return cast(UUID, owned)
+
+
+async def submit_details_change(
+    ctx: AuthContext,
+    recipient_id: UUID,
+    kind: str,
+    upload_id: UUID | None,
+    address: Mapping[str, str] | None,
+) -> k1.DetailsChange:
+    """`POST /v1/portal/k1-recipients/{rid}/details-changes`: a structured address, pending for
+    the firm (DV-10). A W-9 or W-8 arrives through `upload_details_change`, which stores the file
+    itself: naming an evidence version here is refused (S20e review: any version id was taken)."""
+    _client(ctx)
+    _second_step(ctx)
+    owned = await _recipient_return(ctx, recipient_id)
+    if kind in ("w9", "w8"):
+        raise DetailsChangeInvalid(facts={"field": "upload"})
+    if kind != "address" or upload_id is not None:
         raise DetailsChangeInvalid(facts={"field": "kind"})
+    return await _record_change(ctx, recipient_id, owned, kind, None, _address(address))
+
+
+async def _record_change(
+    ctx: AuthContext,
+    recipient_id: UUID,
+    owned: UUID,
+    kind: str,
+    upload_id: UUID | None,
+    stored_address: dict[str, str] | None,
+) -> k1.DetailsChange:
     async with uow(ctx.tenant) as tx:
         change = await tx.session.scalar(
             text(
@@ -477,7 +567,7 @@ async def submit_details_change(
         )
         tx.record(
             "recipient_details_change.submitted",
-            target=Target(k1.KIND, cast(UUID, owned)),
+            target=Target(k1.KIND, owned),
             after=Ref(recipient=recipient_id, change=cast(UUID, change)),
         )
     found = next(
@@ -494,6 +584,7 @@ async def e_furnishing(
     _second_step(ctx)
     if decision not in ("given", "declined"):
         raise DetailsChangeInvalid(facts={"field": "decision"})
+    await k1_disclosures.check_consent_version(ctx.tenant, disclosure_version_id)
     async with uow(ctx.tenant) as tx:
         await tx.session.execute(
             text("UPDATE k1_packages SET e_furnishing_consent = :d WHERE id = :p"),
@@ -523,13 +614,16 @@ __all__ = [
     "DetailsChangeInvalid",
     "Download",
     "Expected",
+    "FormTooLarge",
     "K1MfaRequired",
     "deterministic_zip",
     "download",
     "e_furnishing",
     "expected",
+    "furnishing_disclosure",
     "one_document",
     "package",
     "packages",
     "submit_details_change",
+    "upload_details_change",
 ]

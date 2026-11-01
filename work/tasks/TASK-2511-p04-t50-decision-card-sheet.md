@@ -4,7 +4,7 @@ title: P-04-T50 SHL-11 Decision card sheet (frames a, b, c, d, f, g, h; ?ov=deci
 spec: SPEC-000
 acceptance_criteria: [AC-1]
 risk_zone: amber
-status: in-review
+status: done
 epic: P-04
 plan_key: P-04-T50
 branch: s20-p04-t50

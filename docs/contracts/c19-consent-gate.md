@@ -62,3 +62,5 @@ Consent rows `confidential`; return and transcript figures TRI (`restricted`, `x
 - **SSN unlock:** `seal_tin` accepts an SSN or ITIN on a real firm once the three C19 checks are registered. CLI-06's draft-text guard (no SSN or ITIN in an intake draft's free text) and the client import's drop rule are unchanged.
 - **Tags:** `MaskedTinOut.last4` and `TinRevealOut.value` carry `x-tri`.
 
+## T-01-T51 additions (DEC-1667)
+Additive: `ConsentSummaryOut.blocked_clients` (default 0), the clients in the reader's scope whose consent to use is not in force (no `use` consent signed or expiring), so the agents cannot read their return information (ADM-04 D). A count only, like the rest of the summary; the names stay in the registry (ADM-05). A client with no consent row at all is not counted (it has no set to read). CLI-02 b's §7216 consents row and ENG-03 e's consents card read `GET /v1/client-entities/{id}/consents`; the BND-01 tag reads the binder row's `consents_signed`/`consents_total`.

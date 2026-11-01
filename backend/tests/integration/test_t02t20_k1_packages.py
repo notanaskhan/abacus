@@ -224,7 +224,7 @@ async def test_ac1_a_full_tin_refuses_the_set_and_a_later_set_supersedes_the_dra
 ) -> None:
     ridgeline, _feld, samuel = await _ridgeline_with_drafts(board)
     with pytest.raises(ValueError, match="full_tin"):
-        parse_k1_set(_set(tin="123-45-6789"))
+        parse_k1_set(_set(tin="900-12-3456"))  # a reserved 9xx area: never a real SSN
     await _apply(board, samuel, ridgeline, _set(final=True))
     rows = await board.seed.rows(
         "SELECT r.engine_ref, p.version_no, p.status, p.is_final_set FROM k1_packages p "
