@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Path, Query
@@ -35,11 +35,12 @@ from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
     Forbidden,
+    allowed_actions,
     authorise,
     current_context,
     mask_tins_for,
 )
-from abacus.modules.organisations.api import MaskedTinOut
+from abacus.modules.organisations.api import MaskedTinOut, entity_name
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -129,7 +130,8 @@ class PlanOut(BaseModel):
     plan_name: Label
     plan_number: Annotated[str | None, Field(pattern=r"^[0-9]{3}$"), classified("internal")]
     # The platform's masked shape (kind and last four; Restricted, P-12): never a plain EIN.
-    sponsor_ein: Annotated[MaskedTinOut, classified("restricted", pii_kind="tin")]
+    # None until the sponsor's EIN is captured (A-05-T18; DEC-1955).
+    sponsor_ein: Annotated[MaskedTinOut | None, classified("restricted", pii_kind="tin")] = None
     plan_year_start: Annotated[date, classified("internal")]
     plan_year_end: Annotated[date, classified("internal")]
     plan_type: Annotated[Literal["401k"], classified("internal")]
@@ -189,10 +191,25 @@ class ProvidersOut(BaseModel):
 
 
 class ProviderIn(BaseModel):
+    """A-05-T10 (additive): the SOC report's period and, last four digits only, the service
+    agreement's and the draft Schedule C's EIN (the full EIN waits for A-05-T18; DEC-1955)."""
+
     model_config = ConfigDict(extra="forbid")
 
     name: Label
     role: Annotated[str, Field(max_length=40), classified("internal")]
+    soc_type: Annotated[
+        Literal["soc1_type1", "soc1_type2", "none"] | None, classified("internal")
+    ] = None
+    soc_period_start: Annotated[date | None, classified("internal")] = None
+    soc_period_end: Annotated[date | None, classified("internal")] = None
+    certifies: Annotated[bool, classified("internal")] = False
+    agreement_ein_last4: Annotated[
+        str | None, Field(pattern=r"^[0-9]{4}$"), classified("restricted", pii_kind="tin")
+    ] = None
+    schedule_c_ein_last4: Annotated[
+        str | None, Field(pattern=r"^[0-9]{4}$"), classified("restricted", pii_kind="tin")
+    ] = None
 
 
 class InviteIn(BaseModel):
@@ -544,33 +561,135 @@ _A = ASSURANCE_ESTIMATES_RP
 
 
 # EBP-01
+async def _plan_out(ctx: AuthContext, work_item_id: UUID) -> PlanOut:
+    from abacus.modules.assurance import ebp_plan
+
+    found = await ebp_plan.plan_view(
+        ctx,
+        work_item_id,
+        plan_name=await _plan_name(ctx, work_item_id),
+        holidays=frozenset(),  # K-02's holiday set joins with its read API (DEC-1955)
+    )
+    p, status = found.plan, found.status
+    item = await assurance_item(ctx.tenant, work_item_id)
+    ref = await get_ref(ctx, item.engagement_id)
+    can = await allowed_actions(ctx, ref.resource(), ("ebp_plan.edit",))
+    return await mask_tins_for(
+        ctx,
+        PlanOut(
+            plan_name=found.plan_name,
+            plan_number=found.plan_number,
+            plan_year_start=p.plan_year_start,
+            plan_year_end=p.plan_year_end,
+            plan_type="401k",
+            safe_harbor=cast(Literal["none", "qaca", "basic", "nonelective"], p.safe_harbor),
+            recordkeeper_id=p.recordkeeper_plan_id,
+            participants_boy=p.participants_boy_with_balances or 0,
+            participants_eoy=p.participants_eoy or 0,
+            filer_status=status.filer_status if status is not None else "small_plan",
+            form5500_due_on=status.form5500_due_on if status is not None else p.plan_year_end,
+            audit_kind=found.audit_kind,
+            allowed_actions=cast(list[EbpAction], list(can)),
+        ),
+    )
+
+
+async def _plan_name(ctx: AuthContext, work_item_id: UUID) -> str:
+    item = await assurance_item(ctx.tenant, work_item_id)
+    ref = await get_ref(ctx, item.engagement_id)
+    return await entity_name(ctx.tenant, ref.client_entity_id) or "Plan"
+
+
 @router.get("/ebp/plan", action="ebp.read", response_model=PlanOut)
 async def ebp_plan_route(work_item_id: UUID, ctx: Ctx) -> PlanOut:
-    """Plan facts and the filer status card (EBP-01; T08)."""
+    """Plan facts and the filer status card (EBP-01; T10); 404 `ebp_plan` until recorded."""
     await _gate(ctx, work_item_id, "ebp.read", _E)
     # The sponsor's masked EIN reaches an offshore reader null (DEC-52): the one central mask.
-    return await mask_tins_for(ctx, _example(PlanOut, _PLAN))
+    return await _plan_out(ctx, work_item_id)
 
 
-@router.patch("/ebp/plan", action="ebp_plan.edit", response_model=PlanOut, errors=(409, 501))
+@router.patch("/ebp/plan", action="ebp_plan.edit", response_model=PlanOut, errors=(409,))
 async def ebp_plan_edit_route(
     work_item_id: UUID, body: PlanEditIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> PlanOut:
-    """A person's edit through `review.api.record_value`; 422 `citation_note_required`,
-    `plan_number_invalid` (T08)."""
+    """A person's edit through `review.api.record_value`; the first save records the plan; 422
+    `citation_note_required`, `plan_number_invalid` (with the Form 5500 helper); 409
+    `version_conflict` (T10)."""
     await _gate(ctx, work_item_id, "ebp_plan.edit", _E)
-    _not_yet()
+    from abacus.modules.assurance import ebp_plan
+
+    item = await assurance_item(ctx.tenant, work_item_id)
+    ref = await get_ref(ctx, item.engagement_id)
+    await ebp_plan.edit_plan(
+        ctx,
+        work_item_id,
+        fields=body.fields,
+        citation_note=body.citation_note,
+        seen_version=body.seen_version,
+        plan_entity_id=ref.client_entity_id,
+    )
+    return await _plan_out(ctx, work_item_id)
+
+
+_ROLE_OUT: dict[str, str] = {
+    "trustee_custodian": "trustee",
+    "payroll": "other",
+    "sdba_broker": "other",
+}
 
 
 @router.get("/ebp/providers", action="ebp.read", response_model=ProvidersOut)
 async def ebp_providers_route(work_item_id: UUID, ctx: Ctx) -> ProvidersOut:
+    """The plan's providers with their checks' notes, by code (T10)."""
     await _gate(ctx, work_item_id, "ebp.read", _E)
+    from abacus.modules.assurance import ebp_plan
+
+    rows = await ebp_plan.providers(ctx.tenant, work_item_id)
+    notes = ebp_plan.check_notes(
+        await ebp_plan.checks(ctx.tenant, work_item_id), {p.id: p.org_name for p in rows}
+    )
+    item = await assurance_item(ctx.tenant, work_item_id)
+    ref = await get_ref(ctx, item.engagement_id)
+    can = await allowed_actions(
+        ctx, ref.resource(), ("ebp_provider.manage", "ebp_provider.invite")
+    )
     return await mask_tins_for(
         ctx,
         ProvidersOut(
-            items=[_example(ProviderOut, _PROVIDER)], allowed_actions=["ebp_provider.manage"]
+            items=[
+                ProviderOut(
+                    id=p.id,
+                    name=p.org_name,
+                    role=cast(
+                        Literal[
+                            "recordkeeper",
+                            "trustee",
+                            "custodian",
+                            "tpa",
+                            "investment_adviser",
+                            "other",
+                        ],
+                        _ROLE_OUT.get(p.role, p.role),
+                    ),
+                    ein=None,
+                    status=cast(ProviderStatus, p.status),
+                    soc_report=_soc_text(p.soc_type, p.soc_period_start, p.soc_period_end),
+                    check_note=notes.get(p.id),
+                )
+                for p in rows
+            ],
+            allowed_actions=cast(list[EbpAction], list(can)),
         ),
     )
+
+
+def _soc_text(kind: str | None, start: date | None, end: date | None) -> str | None:
+    if kind not in ("soc1_type1", "soc1_type2"):
+        return None
+    label = "SOC 1 Type 2" if kind == "soc1_type2" else "SOC 1 Type 1"
+    if start is None or end is None:
+        return label
+    return f"{label}, {start:%b} {start.day} to {end:%b} {end.day}, {end.year}"
 
 
 @router.post(
@@ -578,13 +697,31 @@ async def ebp_providers_route(work_item_id: UUID, ctx: Ctx) -> ProvidersOut:
     action="ebp_provider.manage",
     response_model=AcceptedOut,
     status_code=201,
-    errors=(501,),
+    errors=(409,),
 )
 async def ebp_provider_create_route(
     work_item_id: UUID, body: ProviderIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> AcceptedOut:
+    """Add a provider; code runs its checks (SOC gap; Schedule C EIN ending against the
+    agreement's, routed to the TPA) (T10)."""
     await _gate(ctx, work_item_id, "ebp_provider.manage", _E)
-    _not_yet()
+    from abacus.modules.assurance import ebp_plan
+
+    created = await ebp_plan.add_provider(
+        ctx,
+        work_item_id,
+        ebp_plan.NewProvider(
+            org_name=body.name,
+            role=body.role,
+            soc_type=body.soc_type,
+            soc_period_start=body.soc_period_start,
+            soc_period_end=body.soc_period_end,
+            certifies=body.certifies,
+            agreement_ein_last4=body.agreement_ein_last4,
+            schedule_c_ein_last4=body.schedule_c_ein_last4,
+        ),
+    )
+    return AcceptedOut(id=created.id)
 
 
 @router.post(
