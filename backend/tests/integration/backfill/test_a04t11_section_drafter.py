@@ -240,7 +240,9 @@ async def test_ac_an_uncleared_real_firm_gets_409_drafting_not_enabled(
     assert (status, body["detail"]) == (409, "drafting_not_enabled")
     assert (
         await books_.seed.value(
-            "SELECT count(*) FROM agent_runs WHERE agent_id = 'workpapers.section_drafter'"
+            "SELECT count(*) FROM agent_runs WHERE tenant_id = $1 "
+            "AND agent_id = 'workpapers.section_drafter'",
+            books_.tenant_id,
         )
         == 0
     )
