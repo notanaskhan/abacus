@@ -61,6 +61,12 @@ TIN_ROUTES = {
     # T-02-T25 (DEC-1575): a K-1 package's detail carries the recipient's masked TIN.
     ("GET", "/v1/k1-packages/{package_id}"): "masked",
     ("GET", "/v1/portal/k1s/{package_id}"): "masked",
+    # A-05-T04 (DEC-1858, DEC-1865): the plan's sponsor EIN, a provider's EIN and a census SSN,
+    # each the masked shape through the central mask (the plan's PATCH answers 501 until T08).
+    ("GET", "/v1/audits/{work_item_id}/ebp/plan"): "masked",
+    ("PATCH", "/v1/audits/{work_item_id}/ebp/plan"): "masked",
+    ("GET", "/v1/audits/{work_item_id}/ebp/providers"): "masked",
+    ("GET", "/v1/audits/{work_item_id}/ebp/participants"): "masked",
 }
 
 

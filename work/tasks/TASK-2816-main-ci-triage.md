@@ -36,3 +36,7 @@ DEC-1865.
 - `2026-11-01` — failures collected from runs 41246875286, 41255139625 and 41255976428 and
   reproduced on main 328696038; fixed as DEC-1865 records. Seven status fields of other lanes are
   recorded as F-03-T10 findings for their owners, not fixed here.
+- `2026-11-01` — second round from the full suites: backend unit, property, acceptance, connectors,
+  contracts and workflows (43,072 passed, the rest fixed), web 2,943 and ui 1,293 passing, the
+  failing integration and security files passing except R-01-T24's order-dependent case, the
+  N-01 fixture journeys and TPL-19's visual frames passing locally. DEC-1865 records both rounds.

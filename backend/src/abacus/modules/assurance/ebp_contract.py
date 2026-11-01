@@ -37,6 +37,7 @@ from abacus.modules.identity.api import (
     Forbidden,
     authorise,
     current_context,
+    mask_tins_for,
 )
 from abacus.modules.organisations.api import MaskedTinOut
 
@@ -547,7 +548,8 @@ _A = ASSURANCE_ESTIMATES_RP
 async def ebp_plan_route(work_item_id: UUID, ctx: Ctx) -> PlanOut:
     """Plan facts and the filer status card (EBP-01; T08)."""
     await _gate(ctx, work_item_id, "ebp.read", _E)
-    return _example(PlanOut, _PLAN)
+    # The sponsor's masked EIN reaches an offshore reader null (DEC-52): the one central mask.
+    return await mask_tins_for(ctx, _example(PlanOut, _PLAN))
 
 
 @router.patch("/ebp/plan", action="ebp_plan.edit", response_model=PlanOut, errors=(409, 501))
@@ -563,8 +565,11 @@ async def ebp_plan_edit_route(
 @router.get("/ebp/providers", action="ebp.read", response_model=ProvidersOut)
 async def ebp_providers_route(work_item_id: UUID, ctx: Ctx) -> ProvidersOut:
     await _gate(ctx, work_item_id, "ebp.read", _E)
-    return ProvidersOut(
-        items=[_example(ProviderOut, _PROVIDER)], allowed_actions=["ebp_provider.manage"]
+    return await mask_tins_for(
+        ctx,
+        ProvidersOut(
+            items=[_example(ProviderOut, _PROVIDER)], allowed_actions=["ebp_provider.manage"]
+        ),
     )
 
 
@@ -642,8 +647,11 @@ async def ebp_participants_route(
 ) -> ParticipantsOut:
     """Masked participants, tokens only (DEC-1858; T15)."""
     await _gate(ctx, work_item_id, "ebp.read", _E)
-    return ParticipantsOut(
-        items=[_example(ParticipantOut, _PARTICIPANT)], next_cursor=None, total=301
+    return await mask_tins_for(
+        ctx,
+        ParticipantsOut(
+            items=[_example(ParticipantOut, _PARTICIPANT)], next_cursor=None, total=301
+        ),
     )
 
 
