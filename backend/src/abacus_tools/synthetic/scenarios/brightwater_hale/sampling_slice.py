@@ -14,13 +14,13 @@ and Northwind's Participants sample, through the services as the people the desi
 - **Granite Peak FY2026** (AUD-31 f, AUD-11 f; TASK-2717, DEC-1768): on Sep 10 Margaret adds
   Caleb Dunn to the team, its five members confirm their independence, she names Luis Ferrante
   the SKE designee and concludes (G2). On Sep 11 Simone Baptiste records the NetSuite trial
-  balance (128 accounts) and adopts it, which starts the rules on BH FS groupings v1, and Caleb
-  confirms the mapping (L1). On Sep 24 at 10:18 AM Simone records the subsequent-period GL, builds
-  the disbursements population (1,912 payments, $38,640,200.00), creates "Disbursements" and
-  draws Version 1 with seed 0x7C31B4 (24 + 16 = 40).
+  balance (128 accounts) and adopts it, uploads the predecessor auditor's FY2025 mapping and
+  starts the rules on BH FS groupings v1 with it (DEC-1769: 122 by prior year, 6 by number
+  range), and Caleb confirms the mapping (L1). On Sep 24 at 10:18 AM Simone records the
+  subsequent-period GL, builds the disbursements population (1,912 payments, $38,640,200.00),
+  creates "Disbursements" and draws Version 1 with seed 0x7C31B4 (24 + 16 = 40).
 
-The FY2025 prior mapping (no FY2025 engagement exists), the Distributions set, `make fixtures
-export` and the fixture equivalence test are TASK-2717's remaining list. Opt-in (`--slice
+The Distributions set (no designed method) is TASK-2717's remaining list. Opt-in (`--slice
 sampling`, which brings `people`, `standards` and `acceptance`).
 """
 
@@ -33,7 +33,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import CT
 from abacus_tools.synthetic.scenarios.brightwater_hale.sampling_content import SEEDS
 from abacus_tools.synthetic.scenarios.brightwater_hale.scenario import SETUP_AT
 from abacus_tools.synthetic.scenarios.brightwater_hale.slices import register_slice
-from abacus_tools.synthetic.scenarios.brightwater_hale.standards import TABLE_2
+from abacus_tools.synthetic.scenarios.brightwater_hale.standards import RMM_MATRIX, TABLE_2, Spec
 from abacus_tools.synthetic.scenarios.brightwater_hale.timeline import Event
 
 SLICE: Final = "sampling"
@@ -111,6 +111,12 @@ def granite_events() -> list[Event]:
         ),
         _granite("tb", _at(11, 8, 30), "ledger.granite_tb_recorded", "SB"),
         _granite("tb-adopted", _at(11, 8, 40), "assurance.granite_tb_adopted", "SB"),
+        _granite(
+            "predecessor-mapping",
+            _at(11, 8, 40) + timedelta(seconds=30),
+            "evidence.granite_predecessor_uploaded",
+            "SB",
+        ),
         _granite("mapping-run", _at(11, 8, 41), "assurance.granite_mapping_started", "SB"),
         _granite("mapping-confirmed", _at(11, 15, 0), "assurance.granite_mapping_confirmed", "CD"),
         _granite("gl", _at(24, 10, 18), "ledger.granite_gl_recorded", "SB"),
@@ -130,6 +136,37 @@ def granite_events() -> list[Event]:
         ),
     ]
     return events
+
+
+def _policy(spec: Spec, at: datetime) -> list[Event]:
+    """A firm policy created, imported and published by its owner (A-04-T13: BH matrix v1)."""
+    key = {"key": spec.key}
+    return [
+        Event(
+            f"standard-create:{spec.key}",
+            at,
+            "standards.created",
+            spec.owner,
+            SLICE,
+            {**key, "kind": spec.kind, "name": spec.name, "owner": spec.owner},
+        ),
+        Event(
+            f"standard-import:{spec.key}:v1",
+            at + timedelta(seconds=30),
+            "standards.version_imported",
+            spec.owner,
+            SLICE,
+            {**key, "version": 1},
+        ),
+        Event(
+            f"standard-publish:{spec.key}:v1",
+            at + timedelta(seconds=60),
+            "standards.version_published",
+            spec.owner,
+            SLICE,
+            {**key, "version": 1},
+        ),
+    ]
 
 
 @register_slice(SLICE)
@@ -165,6 +202,7 @@ def sampling_events() -> list[Event]:
             SLICE,
             {**table, "version": 1},
         ),
+        *_policy(RMM_MATRIX, firm + timedelta(minutes=12)),
         _event(
             "groupings-import", firm + timedelta(minutes=15), "ledger.grouping_set_imported", "MO"
         ),

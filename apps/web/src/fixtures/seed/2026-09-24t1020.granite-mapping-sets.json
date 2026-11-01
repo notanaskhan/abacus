@@ -1,0 +1,55 @@
+{
+  "scenario": {
+    "version": "bh-2026.10.3",
+    "hash": "2b09e6fb01617c990e6e72feac508159fe5a03c6ff4f80bbb8d4a539c6f8d6a2",
+    "snapshot": "2026-09-24T10:20",
+    "slices": [
+      "sampling"
+    ]
+  },
+  "persona": "caleb-dunn",
+  "request": "GET /v1/engagements/{engagement_id}/mapping-sets",
+  "body": {
+    "counts": {},
+    "facets": {},
+    "items": [
+      {
+        "client_entity_id": "e232a055-9b15-42c4-a852-c77b10572ba6",
+        "content_hash": "ecffa7242ce54a9ab48bb6053871bf05b8e090126eaf54a58bebb11471bffa1a",
+        "engagement_id": "2b1d69b0-8366-41ca-8e20-799dd1ef0487",
+        "entity_name": "Granite Peak Outdoor Supply, Inc.",
+        "grouping_set_label": "BH FS groupings v1",
+        "grouping_set_version_id": "d36594b5-a3a1-45fc-b1fa-e6ee5860d587",
+        "id": "faad5231-4288-4258-b97b-24e6be12a847",
+        "period_end": "2026-06-30",
+        "prior_source": "predecessor_file",
+        "run_status": "ready",
+        "sign_offs": [
+          {
+            "at": "2026-09-11T20:00:00Z",
+            "initials": "CD",
+            "level": 1,
+            "name": "Caleb Dunn",
+            "stale": false
+          }
+        ],
+        "status": "prepared",
+        "tallies": {
+          "accounts": 128,
+          "edited": 0,
+          "mapped": 128,
+          "need_review": 0,
+          "number_range": 6,
+          "prior_year_match": 122,
+          "tb_balanced": 1,
+          "tb_count": 1
+        },
+        "trial_balance_id": "61567a9b-cf1a-40a6-b3b2-3f6211463d53",
+        "trial_balance_version_no": 1
+      }
+    ],
+    "next_cursor": null,
+    "total": 1,
+    "total_capped": false
+  }
+}

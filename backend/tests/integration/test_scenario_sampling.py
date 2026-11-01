@@ -9,22 +9,29 @@ AUD-11 a's (the handoff and the A-03-T09 goldens), not the code's:
   Sep 15 (DEC-1767), so Version 2 is prepared by Marcus Delaney (L1) and approved by Hannah
   Leclerc (L2), its 25 the design's in draw order.
 - Granite Peak FY2026 (TASK-2717; DEC-1768): the 128-account NetSuite TB (71,910,000 each side)
-  adopted and mapped on BH FS groupings v1, confirmed by Caleb Dunn (L1) once G2 is met; the
+  adopted and mapped on BH FS groupings v1 with the predecessor's FY2025 mapping (122 keys,
+  DEC-1769), confirmed by Caleb Dunn (L1) once G2 is met; the
   subsequent-period GL's disbursements, 1,912 payments, $38,640,200.00, tie to the operating
   account with no gap in check numbers; "Disbursements" Version 1 (seed 0x7C31B4, draft) is
   24 + 16 = 40 items, $3,698,700.00, the SURL payments in draw order. The load runs to
   AUD-11 f's clock (Sep 24, 10:20 AM).
 
-The load gets its own database: the session's `migrated_db` holds the loader test's E0."""
+The load gets its own database (the session's `migrated_db` holds the loader test's E0) and its
+own bucket on the session's S3 (the census and predecessor uploads are evidence)."""
 
 from __future__ import annotations
 
 from collections.abc import Iterator
 from decimal import Decimal
+from typing import TYPE_CHECKING, Final
 
 import pytest
 
+from abacus.kernel.config import settings
+from abacus.kernel.crypto import LocalKeyService, configure_key_service, reset_key_service
 from abacus.kernel.db import configure_engine
+from abacus.kernel.storage import s3_client
+from abacus.modules.evidence import storage
 from abacus_tools.quality.schema_check import Database, provisioned_database
 from abacus_tools.synthetic.scenarios.brightwater_hale import loader, sampling_content
 from abacus_tools.synthetic.scenarios.brightwater_hale.scenario import build
@@ -32,7 +39,11 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.scenario import build
 from .agent_tests.support import Seeder
 from .conftest import MigratedDatabase
 
+if TYPE_CHECKING:
+    from types_boto3_s3 import S3Client
+
 pytestmark = pytest.mark.asyncio
+BUCKET: Final = "a03t16-sampling-evidence"
 TENANT = loader.TENANT
 NORTHWIND = loader.engagement_id_of(loader.BY_LABEL["A1"])
 GRANITE = loader.engagement_id_of(loader.BY_LABEL["A2"])
@@ -47,8 +58,26 @@ def own_db(migrated_db: MigratedDatabase) -> Iterator[Database]:
     configure_engine(migrated_db.app_url)
 
 
+@pytest.fixture
+def wired(s3_settings: dict[str, str]) -> Iterator[None]:
+    client: S3Client = s3_client(
+        endpoint_url=s3_settings["endpoint_url"],
+        access_key=s3_settings["access_key"],
+        secret_key=s3_settings["secret_key"],
+        region=s3_settings["region"],
+    )
+    client.create_bucket(Bucket=BUCKET, ObjectLockEnabledForBucket=True)
+    settings.cache_clear()
+    reset_key_service()
+    configure_key_service(LocalKeyService(b"a03t16-sampling-master-key-0123456789ab"))
+    storage.configure_storage(client, BUCKET)
+    yield
+    storage.reset_storage()
+    reset_key_service()
+
+
 async def test_the_sampling_slice_loads_the_participants_sample_through_services(
-    own_db: Database,
+    own_db: Database, wired: None
 ) -> None:
     configure_engine(own_db.app_url)
     seed = Seeder(own_db.superuser_dsn)
@@ -127,6 +156,17 @@ async def test_the_sampling_slice_loads_the_participants_sample_through_services
         GRANITE,
     )
     assert [tuple(r) for r in mapping] == [(1, loader.user_id_of(seats["CD"]))]
+    prior = await seed.rows(
+        "SELECT m.prior_source, i.title, "
+        "(SELECT count(*) FROM jsonb_object_keys(m.predecessor_keys)) AS keys "
+        "FROM mapping_sets m JOIN evidence_versions v "
+        "ON v.id = m.predecessor_evidence_version_id JOIN evidence_items i "
+        "ON i.id = v.evidence_item_id WHERE m.engagement_id = $1",
+        GRANITE,
+    )
+    assert [tuple(r) for r in prior] == [
+        ("predecessor_file", sampling_content.PREDECESSOR_FILE, 122)
+    ]
     gl = await seed.rows(
         "SELECT p.record_count, p.amount_total, t.result, t.difference "
         "FROM sample_populations p JOIN completeness_ties t ON t.population_id = p.id "

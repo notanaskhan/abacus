@@ -2531,12 +2531,45 @@ async def _granite_tb_adopted(conn: asyncpg.Connection, _: Scenario, event: Even
     )
 
 
+async def _granite_predecessor_uploaded(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    """Simone uploads the predecessor auditor's FY2025 mapping to the engagement (DEC-1769)."""
+    by = user_id_of(_SEATS[event.actor])
+    stored = await stage_content(TENANT, sampling_content.granite_predecessor_csv())
+    async with uow(TenantContext(TENANT, "human", str(by))) as tx:
+        await add_version(
+            tx,
+            engagement_id=(await _granite_engagement(conn))[0],
+            item=NewItem(title=sampling_content.PREDECESSOR_FILE),
+            stored=stored,
+            media_type="text/csv",
+            provenance=Provenance(source="upload", method="uploaded"),
+        )
+
+
 async def _granite_mapping_started(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
-    """The rules on the firm's one published grouping set, by the version's adopter."""
+    """The rules on the firm's one published grouping set, the prior year from the predecessor's
+    FY2025 mapping (AUD-31 f's run line), by the version's adopter."""
+    engagement = (await _granite_engagement(conn))[0]
+    file = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT v.id FROM evidence_versions v JOIN evidence_items i ON i.id = v.evidence_item_id "
+        "WHERE i.engagement_id = $1 AND i.title = $2",
+        engagement,
+        sampling_content.PREDECESSOR_FILE,
+    )
+    if file is None:
+        raise LookupError("Granite Peak's FY2025 predecessor mapping has not been uploaded")
     await mapping_live.run_start(
         await _staff_context(conn, event),
-        (await _granite_engagement(conn))[0],
-        MappingRunIn(trial_balance_id=await _granite_tb(conn)),
+        engagement,
+        MappingRunIn(
+            trial_balance_id=await _granite_tb(conn),
+            prior_source="predecessor_file",
+            predecessor_evidence_version_id=cast(UUID, file),
+        ),
     )
 
 
@@ -4151,6 +4184,7 @@ HANDLERS: Final[dict[str, Handler]] = {
     "organisations.granite_contact_created": _granite_contact_created,
     "ledger.granite_tb_recorded": _granite_tb_recorded,
     "assurance.granite_tb_adopted": _granite_tb_adopted,
+    "evidence.granite_predecessor_uploaded": _granite_predecessor_uploaded,
     "assurance.granite_mapping_started": _granite_mapping_started,
     "assurance.granite_mapping_confirmed": _granite_mapping_confirmed,
     "ledger.granite_gl_recorded": _granite_gl_recorded,

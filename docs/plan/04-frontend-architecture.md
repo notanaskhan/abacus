@@ -22,7 +22,7 @@
 10. **Copy and voice:** each screen gets a copy module, enforced by lint and test rules L1–L12. Firm-editable text (email templates, checklists, methodology) lives in the database behind admin screens, never in a commit.
 11. **Tests:** Vitest, an in-app `/components` gallery (not Storybook), Playwright regression, a visual-parity harness against the handoff PNGs with tiered thresholds (A–D), axe on every specimen and state, and journey E2E for J01–J28.
 12. **Claude Code:** a `build-screen-from-handoff` skill plus companion skills, reviewer agents and hooks. Each screen gets a **screen contract** in `docs/screens/<ID>.md`, and every revision acceptance checklist becomes tests.
-13. **Budgets:** firm initial JS ≤ 250 KB gzip, portal ≤ 150 KB gzip, each screen chunk ≤ 120 KB gzip. `vite build` for both entries and a budget check join CI stage 1.
+13. **Budgets:** firm initial JS ≤ 250 KB gzip, portal ≤ 150 KB gzip, each screen chunk ≤ 135 KB gzip (120 KB until DEC-1682, 2026-11-01). `vite build` for both entries and a budget check join CI stage 1.
 14. **The repo's 51 screen files** get the codemod and the new shell now, so nothing looks like Atelier. They are then *replaced* by Accrued screens epic by epic, with their logic extracted into `domain/*`. A full restyle pass on screens about to be replaced would be wasted work.
 
 **Where the repo starts** (verified on the clone): React 19.3, Vite 8, TanStack Router 1.170 (code-based, one 346-line eager `router.tsx`), TanStack Query 5, Tailwind 4.3, `@hey-api/openapi-ts` 0.99 (139 paths, 158 operations), Radix Dialog, Label and Slot, `lucide-react` 1.52, Fontsource Source Sans 3 and Newsreader. `apps/web/src/screens` holds 51 `.tsx` screens and 8 `.ts` message and helper modules. `packages/ui` is 452 lines with 17 exports. The CSP is `default-src 'self'` with no remote fonts. Tests: 291 Vitest cases and one Playwright journey, which has been red since 8 Oct. CI never runs `vite build`.
@@ -1461,7 +1461,7 @@ The release-plan chapter should replace these numbers with throughput measured i
 |---|---|---|
 | Firm initial JS (entry + vendor, gzip) | **≤ 250 KB** | `scripts/bundle-budget.mjs` (reads `.vite/manifest.json`, gzips with `zlib`; no dependency) in stage 1 |
 | Portal initial JS (gzip) | **≤ 150 KB** (phones on cellular) | same |
-| Route chunk per screen (gzip, excluding engines) | **≤ 120 KB** | same |
+| Route chunk per screen (gzip, excluding engines) | **≤ 135 KB** (120 KB until DEC-1682) | same |
 | Engine chunks (gzip, inferred) | grid (react-table + virtual) ≤ 60 KB · dnd ≤ 40 KB · editor (TipTap/ProseMirror) ≤ 180 KB · charts ≤ 30 KB · viewer ≤ 40 KB | same |
 | CSS (gzip) | ≤ 60 KB; `fonts-doc.css` only in document chunks | same |
 | Fonts | Preload only Geist 400/500 Latin woff2; Geist Mono eager but not preloaded; Arimo and Gelasio lazy | review + Playwright request log |

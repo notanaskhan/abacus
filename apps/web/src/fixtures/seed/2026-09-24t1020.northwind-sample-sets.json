@@ -1,0 +1,29 @@
+{
+  "scenario": {
+    "version": "bh-2026.10.3",
+    "hash": "2b09e6fb01617c990e6e72feac508159fe5a03c6ff4f80bbb8d4a539c6f8d6a2",
+    "snapshot": "2026-09-24T10:20",
+    "slices": [
+      "sampling"
+    ]
+  },
+  "persona": "marcus-delaney",
+  "request": "GET /v1/work-items/{work_item_id}/sample-sets",
+  "body": {
+    "counts": {},
+    "facets": {},
+    "items": [
+      {
+        "current_version_no": 2,
+        "final_size": 25,
+        "id": "29842b3a-7a2c-4966-a7c8-0efc39da442e",
+        "population_count": 412,
+        "status": "approved",
+        "title": "Participants"
+      }
+    ],
+    "next_cursor": null,
+    "total": 1,
+    "total_capped": false
+  }
+}

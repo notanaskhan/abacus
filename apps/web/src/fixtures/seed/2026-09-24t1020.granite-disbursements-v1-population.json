@@ -1,0 +1,82 @@
+{
+  "scenario": {
+    "version": "bh-2026.10.3",
+    "hash": "2b09e6fb01617c990e6e72feac508159fe5a03c6ff4f80bbb8d4a539c6f8d6a2",
+    "snapshot": "2026-09-24T10:20",
+    "slices": [
+      "sampling"
+    ]
+  },
+  "persona": "simone-baptiste",
+  "request": "GET /v1/populations/{population_id}",
+  "body": {
+    "amount_total": "38640200.00",
+    "created_at": "2026-09-24T15:18:20Z",
+    "created_by_name": "Simone Baptiste",
+    "deviation_definition": "any payment not agreed to an approved invoice and its receipt",
+    "engagement_id": "2b1d69b0-8366-41ca-8e20-799dd1ef0487",
+    "id": "25abf946-e66a-4913-805f-edd9da199ea7",
+    "record_count": 1912,
+    "record_unit": "payments",
+    "sampling_unit": "payment",
+    "sha256": "2f95a440a3c0938347cdc0fd37d0ff071bf7df8a63548806789990db20ad4a70",
+    "source": {
+      "connection_label": null,
+      "evidence_version_id": null,
+      "file_name": null,
+      "file_version_no": null,
+      "gl_snapshot_id": "f12d8a3c-38f3-4632-b49c-2cb641b9ecd0",
+      "kind": "general_ledger",
+      "pulled_at": "2026-09-24T15:18:00Z",
+      "query": {
+        "account_codes": [
+          "1010"
+        ],
+        "kinds": [
+          "Payment",
+          "Bill payment"
+        ],
+        "posted_from": "2026-07-01",
+        "posted_to": "2026-09-18",
+        "side": "credit"
+      },
+      "query_label": null,
+      "uploaded_by_name": null,
+      "uploaded_on": null
+    },
+    "ties": [
+      {
+        "comparisons": [
+          {
+            "amount": "38640200.00",
+            "citation": null,
+            "label": "All credits to 1010, 2026-07-01 to 2026-09-18",
+            "ledger_ref": "1010 2026-07-01 to 2026-09-18"
+          }
+        ],
+        "difference": "0.00",
+        "engine_version": "tie-1",
+        "explanation": null,
+        "id": "7ccd2105-1e78-4b70-af97-c0700b57d57e",
+        "inputs_hash": "a9dfc06103aaa05983ec1f8cc50e65a2e7bfef5fee3e228b6bf76fa9b5f4e2c4",
+        "label": "Population = credits to 1010",
+        "left_amount": "38640200.00",
+        "position": 1,
+        "result": "tie"
+      },
+      {
+        "comparisons": [],
+        "difference": null,
+        "engine_version": "tie-1",
+        "explanation": null,
+        "id": "62f1da0b-d297-421d-b0b1-78ffe6b849f0",
+        "inputs_hash": "45cca9e9f079b1ac5b76e9be8cf8871e0ccf39103d59bbb7f69312ff103ae816",
+        "label": "No gaps in check numbers",
+        "left_amount": null,
+        "position": 2,
+        "result": "tie"
+      }
+    ],
+    "work_item_id": "7517d605-795f-4893-93da-af3e8342cc8e"
+  }
+}
