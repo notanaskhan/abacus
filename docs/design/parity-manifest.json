@@ -3189,6 +3189,342 @@
       "crop": "window",
       "tier": "C",
       "locked": true
+    },
+    "SIG-01a.window": {
+      "page": "screens/SIG-01?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/SIG-01 Signatures hub - evidence drawer/screenshots/SIG-01a.png",
+      "sha256": "7378999ee3bfea98fb1247b93adee5e5bc15f7f816125e6d383930d82516e530",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-signing=\"provider-frame\"]",
+        "[data-signing=\"evidence\"] img",
+        "[data-signing=\"verification-failed\"]"
+      ],
+      "locked": true
+    },
+    "SIG-01b.window": {
+      "page": "screens/SIG-01?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/SIG-01 Signatures hub - evidence drawer/screenshots/SIG-01b.png",
+      "sha256": "63fedcec561bb96bf0cd44df74afab213392de13aa74ef470448a53df7aeb707",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-signing=\"provider-frame\"]",
+        "[data-signing=\"evidence\"] img",
+        "[data-signing=\"verification-failed\"]"
+      ],
+      "locked": true
+    },
+    "SIG-01c.window": {
+      "page": "screens/SIG-01?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/SIG-01 Signatures hub - evidence drawer/screenshots/SIG-01c.png",
+      "sha256": "d07b2e6c6a1b1776a2c4311ab05f4af2e58a34a4234ad8a1cd9c88b1ed8ddc04",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-signing=\"provider-frame\"]",
+        "[data-signing=\"evidence\"] img",
+        "[data-signing=\"verification-failed\"]"
+      ],
+      "locked": true
+    },
+    "SIG-01d.window": {
+      "page": "screens/SIG-01?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/SIG-01 Signatures hub - evidence drawer/screenshots/SIG-01d.png",
+      "sha256": "c6b8c48c69d27b6b28ec736b915cccad1713744118457dbb78b56ac17c575eba",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-signing=\"provider-frame\"]",
+        "[data-signing=\"evidence\"] img",
+        "[data-signing=\"verification-failed\"]"
+      ],
+      "locked": true
+    },
+    "SIG-01e.window": {
+      "page": "screens/SIG-01?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/SIG-01 Signatures hub - evidence drawer/screenshots/SIG-01e.png",
+      "sha256": "d3def68381b515deb5b409379a4331b0a2e83fd97f1a3baea5b4a47ef19012fd",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-signing=\"provider-frame\"]",
+        "[data-signing=\"evidence\"] img",
+        "[data-signing=\"verification-failed\"]"
+      ],
+      "locked": true
+    },
+    "SIG-01f.window": {
+      "page": "screens/SIG-01?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/SIG-01 Signatures hub - evidence drawer/screenshots/SIG-01f.png",
+      "sha256": "8e47dc71b0b0b136f3b393ecdba5a8ac7f5a7520a82ffa013aa05b9e9a228e9d",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-signing=\"provider-frame\"]",
+        "[data-signing=\"evidence\"] img",
+        "[data-signing=\"verification-failed\"]"
+      ],
+      "locked": true
+    },
+    "SIG-01g.window": {
+      "page": "screens/SIG-01?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/SIG-01 Signatures hub - evidence drawer/screenshots/SIG-01g.png",
+      "sha256": "2f56bd2ed24b0e724d530682d3e9f5ee3a540842d780c9aa0fae01797167d876",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-signing=\"provider-frame\"]",
+        "[data-signing=\"evidence\"] img",
+        "[data-signing=\"verification-failed\"]"
+      ],
+      "locked": true
+    },
+    "SIG-02a.window": {
+      "page": "screens/SIG-02?st=a",
+      "selector": "[data-artboard=\"a\"]",
+      "source": "handoff/screens/SIG-02 Envelope builder - Form 8879-PE - Harborview/screenshots/SIG-02a.png",
+      "sha256": "1951b499f68b3bc1b5eb8cb374cd70150a677c49ef516273d0661c032eaf563b",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-signing=\"provider-frame\"]",
+        "[data-signing=\"evidence\"] img",
+        "[data-signing=\"verification-failed\"]"
+      ],
+      "locked": true
+    },
+    "SIG-02e.window": {
+      "page": "screens/SIG-02?st=e",
+      "selector": "[data-artboard=\"e\"]",
+      "source": "handoff/screens/SIG-02 Envelope builder - Form 8879-PE - Harborview/screenshots/SIG-02e.png",
+      "sha256": "5e989cb90a519026e6d25eafd89d5902f884ffcf154e9f7a28c026bb4f19511b",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-signing=\"provider-frame\"]",
+        "[data-signing=\"evidence\"] img",
+        "[data-signing=\"verification-failed\"]"
+      ],
+      "locked": true
+    },
+    "SIG-02f.window": {
+      "page": "screens/SIG-02?st=f",
+      "selector": "[data-artboard=\"f\"]",
+      "source": "handoff/screens/SIG-02 Envelope builder - Form 8879-PE - Harborview/screenshots/SIG-02f.png",
+      "sha256": "d04f50811c0b831114ea60ff2f2068d84ef9fdabaddda19a8ea93d36d8ad8eb0",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-signing=\"provider-frame\"]",
+        "[data-signing=\"evidence\"] img",
+        "[data-signing=\"verification-failed\"]"
+      ],
+      "locked": true
+    },
+    "POR-06a.window": {
+      "page": "screens/POR-06?st=a",
+      "selector": "[data-artboard=\"a\"]",
+      "source": "handoff/screens/POR-06 Sign - Ridgeline engagement letter/screenshots/POR-06a.png",
+      "sha256": "f5b76133cb5415cc772210d07272dbf8278fbc274763960995c753c52c9066e8",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-signing=\"provider-frame\"]",
+        "[data-signing=\"evidence\"] img",
+        "[data-signing=\"verification-failed\"]"
+      ],
+      "locked": true
+    },
+    "POR-06b.window": {
+      "page": "screens/POR-06?st=b",
+      "selector": "[data-artboard=\"b\"]",
+      "source": "handoff/screens/POR-06 Sign - Ridgeline engagement letter/screenshots/POR-06b.png",
+      "sha256": "32c1a367f502e80bef09d1ced4654089173885a03bb0e0f7cecbe9dbed32722f",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-signing=\"provider-frame\"]",
+        "[data-signing=\"evidence\"] img",
+        "[data-signing=\"verification-failed\"]"
+      ],
+      "locked": true
+    },
+    "POR-06c.window": {
+      "page": "screens/POR-06?st=c",
+      "selector": "[data-artboard=\"c\"]",
+      "source": "handoff/screens/POR-06 Sign - Ridgeline engagement letter/screenshots/POR-06c.png",
+      "sha256": "285ac4eb53354897069b5793080360d274b330cd7a4747f20759b027ca5d63de",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-signing=\"provider-frame\"]",
+        "[data-signing=\"evidence\"] img",
+        "[data-signing=\"verification-failed\"]"
+      ],
+      "locked": true
+    },
+    "POR-06d.window": {
+      "page": "screens/POR-06?st=d",
+      "selector": "[data-artboard=\"d\"]",
+      "source": "handoff/screens/POR-06 Sign - Ridgeline engagement letter/screenshots/POR-06d.png",
+      "sha256": "7c8a94307761f56e4d2373ebb2c766172bde73a408ae280246b5745710b9b846",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-signing=\"provider-frame\"]",
+        "[data-signing=\"evidence\"] img",
+        "[data-signing=\"verification-failed\"]"
+      ],
+      "locked": true
+    },
+    "POR-06e.window": {
+      "page": "screens/POR-06?st=e",
+      "selector": "[data-artboard=\"e\"]",
+      "source": "handoff/screens/POR-06 Sign - Ridgeline engagement letter/screenshots/POR-06e.png",
+      "sha256": "04afb2501f9511224feea8ee836df0210dae9b018b6c0e7d3b8e46ed33e7eb1f",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-signing=\"provider-frame\"]",
+        "[data-signing=\"evidence\"] img",
+        "[data-signing=\"verification-failed\"]"
+      ],
+      "locked": true
+    },
+    "POR-06f.window": {
+      "page": "screens/POR-06?st=f",
+      "selector": "[data-artboard=\"f\"]",
+      "source": "handoff/screens/POR-06 Sign - Ridgeline engagement letter/screenshots/POR-06f.png",
+      "sha256": "c0b7efc7c1f95f7f3a6033b6ced5d60b9cd0cd939416825779c6a99b4fa47490",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-signing=\"provider-frame\"]",
+        "[data-signing=\"evidence\"] img",
+        "[data-signing=\"verification-failed\"]"
+      ],
+      "locked": true
+    },
+    "POR-06g.window": {
+      "page": "screens/POR-06?st=g",
+      "selector": "[data-artboard=\"g\"]",
+      "source": "handoff/screens/POR-06 Sign - Ridgeline engagement letter/screenshots/POR-06g.png",
+      "sha256": "8fdfcb101740723fa69e4951ee1662b9ade4db3a0a28701795b1a7108e8e905f",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-signing=\"provider-frame\"]",
+        "[data-signing=\"evidence\"] img",
+        "[data-signing=\"verification-failed\"]"
+      ],
+      "locked": true
+    },
+    "POR-06h.window": {
+      "page": "screens/POR-06?st=h",
+      "selector": "[data-artboard=\"h\"]",
+      "source": "handoff/screens/POR-06 Sign - Ridgeline engagement letter/screenshots/POR-06h.png",
+      "sha256": "b0f99791677d03b513cfb1f6854955f4b46163a9f50eb4a0c52722c11c1f3537",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-signing=\"provider-frame\"]",
+        "[data-signing=\"evidence\"] img",
+        "[data-signing=\"verification-failed\"]"
+      ],
+      "locked": true
+    },
+    "ENG-04a.window": {
+      "page": "screens/ENG-04?st=a",
+      "selector": "[data-artboard=\"a\"]",
+      "source": "handoff/screens/ENG-04 Engagement letter composer - Ridgeline cost segregation and -754/screenshots/ENG-04a.png",
+      "sha256": "f20f7be73e123fc2bbab5a6102f1413dea0c1f4da3da8eb447d101e71392c9b1",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-signing=\"provider-frame\"]",
+        "[data-signing=\"evidence\"] img",
+        "[data-signing=\"verification-failed\"]"
+      ],
+      "locked": true
+    },
+    "ENG-04b.window": {
+      "page": "screens/ENG-04?st=b",
+      "selector": "[data-artboard=\"b\"]",
+      "source": "handoff/screens/ENG-04 Engagement letter composer - Ridgeline cost segregation and -754/screenshots/ENG-04b.png",
+      "sha256": "5e663e5fbf183c4c9620ca0e310fa218c11474a7b12b036696c7fe8cbf7111bc",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-signing=\"provider-frame\"]",
+        "[data-signing=\"evidence\"] img",
+        "[data-signing=\"verification-failed\"]"
+      ],
+      "locked": true
+    },
+    "ENG-04c.window": {
+      "page": "screens/ENG-04?st=c",
+      "selector": "[data-artboard=\"c\"]",
+      "source": "handoff/screens/ENG-04 Engagement letter composer - Ridgeline cost segregation and -754/screenshots/ENG-04c.png",
+      "sha256": "4d4aae60f82ba82cc5e9ef595ac9ebc90d22dc66219706608a63be301a532561",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-signing=\"provider-frame\"]",
+        "[data-signing=\"evidence\"] img",
+        "[data-signing=\"verification-failed\"]"
+      ],
+      "locked": true
+    },
+    "ENG-04d.window": {
+      "page": "screens/ENG-04?st=d",
+      "selector": "[data-artboard=\"d\"]",
+      "source": "handoff/screens/ENG-04 Engagement letter composer - Ridgeline cost segregation and -754/screenshots/ENG-04d.png",
+      "sha256": "44e65f8453ad6c77bdfd0eb6c9079096771445cbc4d2f5152aa0193cb22164cc",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-signing=\"provider-frame\"]",
+        "[data-signing=\"evidence\"] img",
+        "[data-signing=\"verification-failed\"]"
+      ],
+      "locked": true
+    },
+    "ENG-04e.window": {
+      "page": "screens/ENG-04?st=e",
+      "selector": "[data-artboard=\"e\"]",
+      "source": "handoff/screens/ENG-04 Engagement letter composer - Ridgeline cost segregation and -754/screenshots/ENG-04e.png",
+      "sha256": "bb5aa9a80cc491e0f5e5dcffcbeaa77d5905087247d0436f0ec5df99def770f7",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-signing=\"provider-frame\"]",
+        "[data-signing=\"evidence\"] img",
+        "[data-signing=\"verification-failed\"]"
+      ],
+      "locked": true
+    },
+    "ENG-04f.window": {
+      "page": "screens/ENG-04?st=f",
+      "selector": "[data-artboard=\"f\"]",
+      "source": "handoff/screens/ENG-04 Engagement letter composer - Ridgeline cost segregation and -754/screenshots/ENG-04f.png",
+      "sha256": "abecd408382a9355f8d2bc688fbcbb334ce5e3a947ddd10f16219902bcff6998",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-signing=\"provider-frame\"]",
+        "[data-signing=\"evidence\"] img",
+        "[data-signing=\"verification-failed\"]"
+      ],
+      "locked": true
     }
   }
 }
