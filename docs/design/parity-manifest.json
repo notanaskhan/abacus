@@ -4289,6 +4289,368 @@
       "tier": "C",
       "locked": true,
       "deviation": "T-01-T52: the artboard draws the screen without the app shell (the gallery frame), so the window crop is compared report-only at Tier C (DEC-1670)"
+    },
+    "shl-09a.window": {
+      "page": "screens/SHL-09?st=a",
+      "selector": "[data-artboard=\"a\"]",
+      "source": "handoff/screens/SHL-09 Field provenance popover/screenshots/SHL-09a.png",
+      "sha256": "e6de728a9ae38dd9aea63b398808f3522a6d8716f54770f00b54965005aca748",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-09b.window": {
+      "page": "screens/SHL-09?st=b",
+      "selector": "[data-artboard=\"b\"]",
+      "source": "handoff/screens/SHL-09 Field provenance popover/screenshots/SHL-09b.png",
+      "sha256": "b532a62caea723c2049551d9991d600eed88206273a483119f1fd803bb5f3da0",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-09c.window": {
+      "page": "screens/SHL-09?st=c",
+      "selector": "[data-artboard=\"c\"]",
+      "source": "handoff/screens/SHL-09 Field provenance popover/screenshots/SHL-09c.png",
+      "sha256": "ddb7b78eeca0fcaef166049da00e9e850e27f58e89c5c1544fd88a5a42733048",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-09d.window": {
+      "page": "screens/SHL-09?st=d",
+      "selector": "[data-artboard=\"d\"]",
+      "source": "handoff/screens/SHL-09 Field provenance popover/screenshots/SHL-09d.png",
+      "sha256": "494627e4236df94081da710e7615b501183daf000313027ebcc0a2aa46053f9c",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-09e.window": {
+      "page": "screens/SHL-09?st=e",
+      "selector": "[data-artboard=\"e\"]",
+      "source": "handoff/screens/SHL-09 Field provenance popover/screenshots/SHL-09e.png",
+      "sha256": "119b779614a8be3a1d54d411027e596c8f08887f516a62ee3d792c5e06109d56",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-09f.window": {
+      "page": "screens/SHL-09?st=f",
+      "selector": "[data-artboard=\"f\"]",
+      "source": "handoff/screens/SHL-09 Field provenance popover/screenshots/SHL-09f.png",
+      "sha256": "67c5fdc53f704b6fd1e4ca615efdb88402f365ace703d59280b76c9a9a946d4b",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-10a.window": {
+      "page": "screens/SHL-10?st=a",
+      "selector": "[data-artboard=\"a\"]",
+      "source": "handoff/screens/SHL-10 Approve agent output/screenshots/SHL-10a.png",
+      "sha256": "1dd931c23428bdfe00f2803b53f392b076bed85bc5abccd7d8d3faeb8346310e",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "shl-10b.window": {
+      "page": "screens/SHL-10?st=b",
+      "selector": "[data-artboard=\"b\"]",
+      "source": "handoff/screens/SHL-10 Approve agent output/screenshots/SHL-10b.png",
+      "sha256": "c11d5041016dd2f1a2c1fe58121fc677a5c57b55c3bf830191cf05dff4ab3f9a",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-10c.window": {
+      "page": "screens/SHL-10?st=c",
+      "selector": "[data-artboard=\"c\"]",
+      "source": "handoff/screens/SHL-10 Approve agent output/screenshots/SHL-10c.png",
+      "sha256": "08009e877708589458c885506d2473b3bb5a18cbc8a6cf3b1f5ac4b6f15efe0b",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "shl-10d.window": {
+      "page": "screens/SHL-10?st=d",
+      "selector": "[data-artboard=\"d\"]",
+      "source": "handoff/screens/SHL-10 Approve agent output/screenshots/SHL-10d.png",
+      "sha256": "d5294ac38228f8e91c2ee0406c1424f6f32025f1f18ef2a9f9c3d24fff944b9b",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-10e.window": {
+      "page": "screens/SHL-10?st=e",
+      "selector": "[data-artboard=\"e\"]",
+      "source": "handoff/screens/SHL-10 Approve agent output/screenshots/SHL-10e.png",
+      "sha256": "d97c987dc9320b25297dd5e93d32c4989d6ae55b11c48e825f1166a43f5d4b02",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-10ep.window": {
+      "page": "screens/SHL-10?st=ep",
+      "selector": "[data-artboard=\"ep\"]",
+      "source": "handoff/screens/SHL-10 Approve agent output/screenshots/SHL-10ep.png",
+      "sha256": "a3a2a81ac8a0ec8bb13f4e7692796a4d960c0995f8c4986e1c42184a098a19c5",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-10f.window": {
+      "page": "screens/SHL-10?st=f",
+      "selector": "[data-artboard=\"f\"]",
+      "source": "handoff/screens/SHL-10 Approve agent output/screenshots/SHL-10f.png",
+      "sha256": "d43ea85ba3f63de8af61f63b6ec702b150924996b933dcc3887bef520abb412e",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "shl-10g.window": {
+      "page": "screens/SHL-10?st=g",
+      "selector": "[data-artboard=\"g\"]",
+      "source": "handoff/screens/SHL-10 Approve agent output/screenshots/SHL-10g.png",
+      "sha256": "ad13d654e05866a17144ca33a5a94049005cb42143b5360a287995fd3825ace5",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-11a.window": {
+      "page": "screens/SHL-11?st=a",
+      "selector": "[data-artboard=\"a\"]",
+      "source": "handoff/screens/SHL-11 Decision card/screenshots/SHL-11a.png",
+      "sha256": "c4315125e238e005637cd9eb3e0e70c7ba71f5bd679a5694f2eec545ac0d6d5d",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "shl-11b.window": {
+      "page": "screens/SHL-11?st=b",
+      "selector": "[data-artboard=\"b\"]",
+      "source": "handoff/screens/SHL-11 Decision card/screenshots/SHL-11b.png",
+      "sha256": "1cb129a03b9fae09320329e50dc74499d7ff0de8696dce4256dd340404ba6a4f",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-11c.window": {
+      "page": "screens/SHL-11?st=c",
+      "selector": "[data-artboard=\"c\"]",
+      "source": "handoff/screens/SHL-11 Decision card/screenshots/SHL-11c.png",
+      "sha256": "77e6d7b1afbb513a81210148b7186b06a0333fc506c2c4adc8d8d8d8343472c2",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "shl-11d.window": {
+      "page": "screens/SHL-11?st=d",
+      "selector": "[data-artboard=\"d\"]",
+      "source": "handoff/screens/SHL-11 Decision card/screenshots/SHL-11d.png",
+      "sha256": "8fc5a04cdaceab54b49b9c374ec6ec962672ad4f7cf5932bc91c31d5f40386e0",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-11e.window": {
+      "page": "screens/SHL-11?st=e",
+      "selector": "[data-artboard=\"e\"]",
+      "source": "handoff/screens/SHL-11 Decision card/screenshots/SHL-11e.png",
+      "sha256": "8e91a289e8d63ae82668a5abc0a9c03ed9211480874c6b3e0649f797d2ed051d",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-11f.window": {
+      "page": "screens/SHL-11?st=f",
+      "selector": "[data-artboard=\"f\"]",
+      "source": "handoff/screens/SHL-11 Decision card/screenshots/SHL-11f.png",
+      "sha256": "c63d0fe32425afc42cbfba7652e61b14db1f4b430f3375e14b88328bdc338956",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-11g.window": {
+      "page": "screens/SHL-11?st=g",
+      "selector": "[data-artboard=\"g\"]",
+      "source": "handoff/screens/SHL-11 Decision card/screenshots/SHL-11g.png",
+      "sha256": "e2bdc2a03cc8aa64180bdfb4131b9ebb715a3006c113c4b559cbef75fc4cff21",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-11h.window": {
+      "page": "screens/SHL-11?st=h",
+      "selector": "[data-artboard=\"h\"]",
+      "source": "handoff/screens/SHL-11 Decision card/screenshots/SHL-11h.png",
+      "sha256": "24397406ee5b5acc419de15eb6ab198cc333372af02e7bb9e5382767085670bc",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-12a.window": {
+      "page": "screens/SHL-12?st=a",
+      "selector": "[data-artboard=\"a\"]",
+      "source": "handoff/screens/SHL-12 Sign-off modal/screenshots/SHL-12a.png",
+      "sha256": "b2bb7f077b5415c575c1e8b9c3b580b185d1c6f1910ef34beadb11b742fbb274",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "shl-12ap.window": {
+      "page": "screens/SHL-12?st=ap",
+      "selector": "[data-artboard=\"ap\"]",
+      "source": "handoff/screens/SHL-12 Sign-off modal/screenshots/SHL-12ap.png",
+      "sha256": "2797904bf6aaf35833055a1a6c8a1f3d7c595416c35600fc26d24d5d781ff6cf",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-12b.window": {
+      "page": "screens/SHL-12?st=b",
+      "selector": "[data-artboard=\"b\"]",
+      "source": "handoff/screens/SHL-12 Sign-off modal/screenshots/SHL-12b.png",
+      "sha256": "ee9ccb9432914258d67d76f93157d7e43ee07ba8dba09e718825d04a0eaeb814",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "shl-12c.window": {
+      "page": "screens/SHL-12?st=c",
+      "selector": "[data-artboard=\"c\"]",
+      "source": "handoff/screens/SHL-12 Sign-off modal/screenshots/SHL-12c.png",
+      "sha256": "8b4c0b18c4fbbe69fb96feb033ebf1afbf94453d1149f551a92ed3514521d1cb",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-12d.window": {
+      "page": "screens/SHL-12?st=d",
+      "selector": "[data-artboard=\"d\"]",
+      "source": "handoff/screens/SHL-12 Sign-off modal/screenshots/SHL-12d.png",
+      "sha256": "680733d2971d8ae99a0aa1c3424e7b43b62457002d640d2cef17c971ed24c82b",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-12e.window": {
+      "page": "screens/SHL-12?st=e",
+      "selector": "[data-artboard=\"e\"]",
+      "source": "handoff/screens/SHL-12 Sign-off modal/screenshots/SHL-12e.png",
+      "sha256": "1ce60acb7e2fd47ad120a1f88a09ccbbe796113f53d6601b712db2bee641373b",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "shl-12f.window": {
+      "page": "screens/SHL-12?st=f",
+      "selector": "[data-artboard=\"f\"]",
+      "source": "handoff/screens/SHL-12 Sign-off modal/screenshots/SHL-12f.png",
+      "sha256": "1186d6190e42e1a21b3a04a1701b512b3a0967cc2160797728dca8e60936d481",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-12g.window": {
+      "page": "screens/SHL-12?st=g",
+      "selector": "[data-artboard=\"g\"]",
+      "source": "handoff/screens/SHL-12 Sign-off modal/screenshots/SHL-12g.png",
+      "sha256": "b03f846242e5a4e79fffdcf2e455621e89b87f0fb13acfd29217caa2969e1a62",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-12h.window": {
+      "page": "screens/SHL-12?st=h",
+      "selector": "[data-artboard=\"h\"]",
+      "source": "handoff/screens/SHL-12 Sign-off modal/screenshots/SHL-12h.png",
+      "sha256": "c3f61c10653e1822ee68bbf9c00ed02fcc50fe45eae56a667135d59b1a71c65b",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-15a.window": {
+      "page": "screens/SHL-15?st=a",
+      "selector": "[data-artboard=\"a\"]",
+      "source": "handoff/screens/SHL-15 Issue composer and fix instructions/screenshots/SHL-15a.png",
+      "sha256": "58cbeca6c34c0f0f4e993c9d94b043d1f582b8a4c507177b08a1123b3d06a5d7",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-15ap.window": {
+      "page": "screens/SHL-15?st=ap",
+      "selector": "[data-artboard=\"ap\"]",
+      "source": "handoff/screens/SHL-15 Issue composer and fix instructions/screenshots/SHL-15ap.png",
+      "sha256": "1bdc1f999294c4cb40709ad46f67190985d7416ecf42c337fe24229a8482ebd8",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-15app.window": {
+      "page": "screens/SHL-15?st=app",
+      "selector": "[data-artboard=\"app\"]",
+      "source": "handoff/screens/SHL-15 Issue composer and fix instructions/screenshots/SHL-15app.png",
+      "sha256": "1c2cc7ca80b63c5a8c25f6f166f853d5a40304e966667cf8ce156c6b196c5837",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-15b.window": {
+      "page": "screens/SHL-15?st=b",
+      "selector": "[data-artboard=\"b\"]",
+      "source": "handoff/screens/SHL-15 Issue composer and fix instructions/screenshots/SHL-15b.png",
+      "sha256": "0347cbc80fa6cd78d678fb045d0b3d73b86bfca7fe84bf66914a929386f4a8a9",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-15c.window": {
+      "page": "screens/SHL-15?st=c",
+      "selector": "[data-artboard=\"c\"]",
+      "source": "handoff/screens/SHL-15 Issue composer and fix instructions/screenshots/SHL-15c.png",
+      "sha256": "5c1aab3bb0e7b8ab765b0bde8c7fda7cd3c935ad6106cdeba8119fe64c5ca405",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-15d.window": {
+      "page": "screens/SHL-15?st=d",
+      "selector": "[data-artboard=\"d\"]",
+      "source": "handoff/screens/SHL-15 Issue composer and fix instructions/screenshots/SHL-15d.png",
+      "sha256": "5919eac2a70c98edf5824644fb7cc2843a768f49e8814955c3c0f9c95b8d8c3d",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-15e.window": {
+      "page": "screens/SHL-15?st=e",
+      "selector": "[data-artboard=\"e\"]",
+      "source": "handoff/screens/SHL-15 Issue composer and fix instructions/screenshots/SHL-15e.png",
+      "sha256": "9b157327112072a22d0730dc2da0c6124fe26de0594c2fbe6bd9accc9132cb86",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-16a.window": {
+      "page": "screens/SHL-16?st=a",
+      "selector": "[data-artboard=\"a\"]",
+      "source": "handoff/screens/SHL-16 Checkpoint diff drawer/screenshots/SHL-16a.png",
+      "sha256": "96260f4cc1b75b80f7c8e566d833bfc1fba20b86c789a481cfd9d5350b5f1ea2",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "shl-16b.window": {
+      "page": "screens/SHL-16?st=b",
+      "selector": "[data-artboard=\"b\"]",
+      "source": "handoff/screens/SHL-16 Checkpoint diff drawer/screenshots/SHL-16b.png",
+      "sha256": "06ebea38acbff6f3f5e4e1f524fe1b18763e63d2d20a4713d6cbc44f073bee23",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "shl-16c.window": {
+      "page": "screens/SHL-16?st=c",
+      "selector": "[data-artboard=\"c\"]",
+      "source": "handoff/screens/SHL-16 Checkpoint diff drawer/screenshots/SHL-16c.png",
+      "sha256": "a4859a9499a6125e13fd380652470c7887f2ac86342c96d1216c1726ef755a47",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-16d.window": {
+      "page": "screens/SHL-16?st=d",
+      "selector": "[data-artboard=\"d\"]",
+      "source": "handoff/screens/SHL-16 Checkpoint diff drawer/screenshots/SHL-16d.png",
+      "sha256": "e3ae679a224000e113b5451768c7eca0f0cc0f900a2ae0c3ccc951dcbb02480f",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-16e.window": {
+      "page": "screens/SHL-16?st=e",
+      "selector": "[data-artboard=\"e\"]",
+      "source": "handoff/screens/SHL-16 Checkpoint diff drawer/screenshots/SHL-16e.png",
+      "sha256": "0d8a49a5da9e314bb652a5750a7ef371d3fd3610b0c0203737c1bb2522c38518",
+      "crop": "window",
+      "tier": "C"
+    },
+    "shl-16f.window": {
+      "page": "screens/SHL-16?st=f",
+      "selector": "[data-artboard=\"f\"]",
+      "source": "handoff/screens/SHL-16 Checkpoint diff drawer/screenshots/SHL-16f.png",
+      "sha256": "6560d3f9f81767b92bd88d65083e194bd74c04792468dc118b2a3839ac213879",
+      "crop": "window",
+      "tier": "C"
     }
   }
 }

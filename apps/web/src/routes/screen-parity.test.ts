@@ -37,6 +37,7 @@ describe("screen parity rows (F-04-T33)", () => {
     expect(statesOf("a b c g")).toEqual(["a", "b", "c", "g"]);
     expect(statesOf("a2")).toEqual(["a2"]);
     expect(statesOf("host")).toEqual(["host"]);
+    expect(statesOf("a, ap, app, b")).toEqual(["a", "ap", "app", "b"]);
   });
 
   it("counts a lock only once it holds", () => {
@@ -95,6 +96,30 @@ describe("screen parity rows (F-04-T33)", () => {
     ).toEqual(["a", "b", "c", "d", "g", "e", "f"]);
     expect(rows.some((r) => r.artboard === "POR-03c2" && r.locked)).toBe(true);
     expect(rows.some((r) => r.artboard === "POR-20a")).toBe(true);
+  });
+
+  it("lists the 44 review-grammar artboards with P-04's Tier C locks (P-04-T58)", () => {
+    const contract = (id: string): string | null => {
+      const path = `../../docs/screens/${id}.md`;
+      return existsSync(path) ? readFileSync(path, "utf8") : null;
+    };
+    const { rows } = screenRows(MANIFEST, contract, BUILT_PLANNED);
+    const review = ["SHL-09", "SHL-10", "SHL-11", "SHL-12", "SHL-15", "SHL-16"];
+    const ours = rows.filter((r) => review.includes(r.screen) && r.state !== "host");
+    expect(ours).toHaveLength(44);
+    expect(ours.filter((r) => r.locked).map((r) => r.artboard)).toEqual([
+      "SHL-10a",
+      "SHL-10c",
+      "SHL-10f",
+      "SHL-11a",
+      "SHL-11c",
+      "SHL-12a",
+      "SHL-12b",
+      "SHL-12e",
+      "SHL-16a",
+      "SHL-16b",
+    ]);
+    for (const row of ours) expect(row.baselineKey).toBe(`${row.artboard.toLowerCase()}.window`);
   });
 
   it("reads the registry's statuses from its source exactly as the registry holds them", () => {

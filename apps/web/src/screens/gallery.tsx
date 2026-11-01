@@ -419,6 +419,13 @@ import {
   scenarios as shl20Scenarios,
 } from "./SHL-20/scenarios";
 import { ApproveSheet } from "./SHL-10";
+import { DecisionInlineCard, DecisionSheet } from "./SHL-11";
+import {
+  CARD_ID as SHL11_CARD_ID,
+  STATES as SHL11_STATES,
+  type Shl11State,
+  scenarios as shl11Scenarios,
+} from "./SHL-11/scenarios";
 import {
   BulkInstructionsSheet,
   FixInstructionsSheet,
@@ -2103,6 +2110,38 @@ function Shl10Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("SHL-10", { title: "Approve agent output", Component: Shl10Artboard });
+
+// SHL-11 (P-04-T58): the decision card a–d, f–h as the sheet and e as the 330 inline dock card,
+// over an empty frame, so the parity, axe and keyboard suites reach every artboard.
+function Shl11Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Shl11State = SHL11_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      shl11Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  return (
+    <div key={state} data-artboard={state} className="h-[900px]">
+      {state === "e" ? (
+        <div className="p-[20px]">
+          <DecisionInlineCard cardId={SHL11_CARD_ID} onOpen={() => undefined} />
+        </div>
+      ) : (
+        <DecisionSheet cardId={SHL11_CARD_ID} open onOpenChange={() => undefined} />
+      )}
+    </div>
+  );
+}
+
+registerScreen("SHL-11", { title: "Decision card", Component: Shl11Artboard });
 
 // SHL-15 (P-04-T54): the issue composer a, b, c, e and agents-off over an empty frame; a′, a″ and d
 // are the T9 detail block of the 18A issue.

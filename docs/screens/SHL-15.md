@@ -47,3 +47,10 @@ Code: `src/domain/review/issues.ts`, `src/screens/SHL-15/{index.tsx, copy.ts, sc
 | DV-2 | Instructions are plain text: no rich-text toolbar | the API stores `text`; formatting would not survive | DEC-1752 |
 | DV-3 | Gated by `review.grammar_api`, not a new `review.issues` flag | the flag is not registered; it arrives with the issue hosts | DEC-1752 |
 | DV-4 | "Mark as Resolved" and "Explain…" on the T9 detail are the hosts' (TAX-06, AUD-15) | they act on the host's selection | DEC-1752 |
+
+## Parity
+| Artboard | Tier (A/B/C/D) | Diff % | Notes |
+|---|---|---|---|
+| a, ap, app, b, c, d, e | C | not run (P-04-T58: the Playwright visual project runs at the S24 batch end) | report-only (ap a′, app a″; agents_off has no artboard); axe and keyboard in `apps/web/e2e/screens/SHL-review.spec.ts` |
+
+Gate: chapter 04 §9.3 keeps Tier C report-only, so the locks are listed and reported, not blocking (DEC-1970). Keyboard: Escape closes the topmost layer and focus returns to the opener.
