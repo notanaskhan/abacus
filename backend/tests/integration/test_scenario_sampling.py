@@ -9,7 +9,8 @@ AUD-11 a's (the handoff and the A-03-T09 goldens), not the code's:
   Sep 15 (DEC-1767), so Version 2 is prepared by Marcus Delaney (L1) and approved by Hannah
   Leclerc (L2), its 25 the design's in draw order.
 - Granite Peak FY2026 (TASK-2717; DEC-1768): the 128-account NetSuite TB (71,910,000 each side)
-  adopted and mapped on BH FS groupings v1, confirmed by Caleb Dunn (L1) once G2 is met; the
+  adopted and mapped on BH FS groupings v1 with the predecessor's FY2025 mapping (122 keys,
+  DEC-1769), confirmed by Caleb Dunn (L1) once G2 is met; the
   subsequent-period GL's disbursements, 1,912 payments, $38,640,200.00, tie to the operating
   account with no gap in check numbers; "Disbursements" Version 1 (seed 0x7C31B4, draft) is
   24 + 16 = 40 items, $3,698,700.00, the SURL payments in draw order. The load runs to
@@ -127,6 +128,17 @@ async def test_the_sampling_slice_loads_the_participants_sample_through_services
         GRANITE,
     )
     assert [tuple(r) for r in mapping] == [(1, loader.user_id_of(seats["CD"]))]
+    prior = await seed.rows(
+        "SELECT m.prior_source, i.title, "
+        "(SELECT count(*) FROM jsonb_object_keys(m.predecessor_keys)) AS keys "
+        "FROM mapping_sets m JOIN evidence_versions v "
+        "ON v.id = m.predecessor_evidence_version_id JOIN evidence_items i "
+        "ON i.id = v.evidence_item_id WHERE m.engagement_id = $1",
+        GRANITE,
+    )
+    assert [tuple(r) for r in prior] == [
+        ("predecessor_file", sampling_content.PREDECESSOR_FILE, 122)
+    ]
     gl = await seed.rows(
         "SELECT p.record_count, p.amount_total, t.result, t.difference "
         "FROM sample_populations p JOIN completeness_ties t ON t.population_id = p.id "

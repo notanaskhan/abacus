@@ -10,7 +10,7 @@ reviewable (L1 needs every account mapped), and the statements are read with
 from __future__ import annotations
 
 import uuid
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import date
 from typing import Annotated, ClassVar, Final
 from uuid import UUID
@@ -65,30 +65,43 @@ from abacus.modules.review.api import (
 TARGET = "mapping_set"
 
 
-async def _prior(tenant: TenantContext, engagement_id: UUID) -> dict[str, str]:
-    """A-03-T08: the prior year's mapping as normalised code to FS-line key, from the engagement
-    this one rolled forward from (its first mapped trial balance). Only line keys cross over,
-    never figures, and only into the mapping of an engagement the caller was authorised on."""
+async def _prior(
+    tenant: TenantContext, engagement_id: UUID, tb_id: UUID | None = None
+) -> dict[str, str]:
+    """A-03-T08: the prior year's mapping as normalised code to FS-line key. With a trial
+    balance, its set's source decides (DEC-1769): the predecessor file's keys as parsed when the
+    run started, nothing for `none`, else the engagement this one rolled forward from (its first
+    mapped trial balance). Only line keys cross over, never figures, and only into the mapping
+    of an engagement the caller was authorised on."""
+    found = await mapping_set_of(tenant, tb_id) if tb_id is not None else None
+    if found is not None and found.prior_source == "predecessor_file":
+        return dict(found.predecessor_keys or {})
+    if found is not None and found.prior_source == "none":
+        return {}
     prior = await prior_engagement_of(tenant, engagement_id)
     if prior is None:
         return {}
     for tb in await engagement_trial_balances(tenant, prior):
-        found = await mapping_view(tenant, prior, tb.id)
-        if found is not None:
-            return prior_keys(found)
+        view = await mapping_view(tenant, prior, tb.id)
+        if view is not None:
+            return prior_keys(view)
     return {}
 
 
-async def prior_keys_for(tenant: TenantContext, engagement_id: UUID) -> dict[str, str]:
-    """The prior engagement's confirmed keys (A-03-T08: the mapped trial balance reads the same
-    prior as the view, so their content hashes agree)."""
-    return await _prior(tenant, engagement_id)
+async def prior_keys_for(
+    tenant: TenantContext, engagement_id: UUID, tb_id: UUID | None = None
+) -> dict[str, str]:
+    """The prior keys the view reads (A-03-T08: the mapped trial balance reads the same prior as
+    the view, so their content hashes agree)."""
+    return await _prior(tenant, engagement_id, tb_id)
 
 
 async def mapping_with_prior(
     tenant: TenantContext, engagement_id: UUID, tb_id: UUID
 ) -> MappingView | None:
-    return await mapping_view(tenant, engagement_id, tb_id, await _prior(tenant, engagement_id))
+    return await mapping_view(
+        tenant, engagement_id, tb_id, await _prior(tenant, engagement_id, tb_id)
+    )
 
 
 class Unmapped(DomainConflict):
@@ -179,7 +192,14 @@ async def mapping_for(
     return found, (await published_versions(ctx.tenant) if found is None else [])
 
 
-async def start(ctx: AuthContext, engagement_id: UUID, tb_id: UUID, version_id: UUID) -> None:
+async def start(
+    ctx: AuthContext,
+    engagement_id: UUID,
+    tb_id: UUID,
+    version_id: UUID,
+    prior_source: str = "prior_engagement",
+    predecessor: tuple[UUID, Mapping[str, str]] | None = None,
+) -> None:
     if tb_id not in {t.id for t in await engagement_trial_balances(ctx.tenant, engagement_id)}:
         raise NotFound("trial_balance")
     async with uow(ctx.tenant) as tx:
@@ -192,6 +212,9 @@ async def start(ctx: AuthContext, engagement_id: UUID, tb_id: UUID, version_id: 
             tb_id=tb_id,
             version_id=version_id,
             user_id=ctx.user_id,
+            prior_source=prior_source,
+            predecessor_evidence_version_id=None if predecessor is None else predecessor[0],
+            predecessor=None if predecessor is None else predecessor[1],
         )
 
 
@@ -246,7 +269,7 @@ async def statements(
 ) -> Statements | None:
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, "trial_balance.read", ref.resource())
-    prior = await _prior(ctx.tenant, engagement_id)
+    prior = await _prior(ctx.tenant, engagement_id, tb_id)
     return await statements_for(ctx.tenant, engagement_id, tb_id, layer, prior)
 
 
