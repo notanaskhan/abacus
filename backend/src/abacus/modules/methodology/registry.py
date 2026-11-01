@@ -96,6 +96,7 @@ INSERT_COLUMNS["program_steps"] = frozenset(
     | {"standard_refs", "level", "mandatory", "lock_note", "guidance", "prepopulates"}
     | {"depends_on_step_keys", "publisher_step_id", "origin", "proposed_by_run_id"}
     | {"parse_confidence", "parse_flag"}
+    | {"template_refs"}  # A-04-T07 (0614): the templates a step points at
 )
 INSERT_COLUMNS["program_step_pbc_links"] = frozenset(
     {"tenant_id", "version_id", "step_id", "request_position"}
@@ -138,6 +139,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         {"number", "text", "assertions", "standard_refs", "level", "guidance", "prepopulates"}
         | {"depends_on_step_keys", "flag_resolution", "flag_resolved_by", "flag_resolved_at"}
         | {"edited_by", "edited_at", "row_version"}
+        | {"template_refs"}  # A-04-T07 (0614)
         # K-01-T14 (0464): mandatory locks, set by a person only (the lock trigger).
         | {"mandatory", "lock_note"}
     ),

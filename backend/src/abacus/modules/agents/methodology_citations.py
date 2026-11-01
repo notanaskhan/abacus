@@ -7,7 +7,9 @@ at v3 verifies against v3's step, and the same key at v2 resolves to its v2 step
 lineage anchor, K-01-T05).
 
 - The verifier authorises `methodology.read` at the actor's firm before it reads (a refusal is
-  `source_not_visible`); a version or key that has no step is `source_not_found`.
+  `source_not_visible`); a version or key that has no step is `source_not_found`. An engagement
+  agent never relates to the firm (identity's rule), so it authorises on its own engagement and
+  may cite only the version that engagement pins (A-04-T11's section drafter; DEC-1868).
 - A claimed quote must be in the step text, contiguously, compared space- and case-folded.
 - Display names the program and step by code and number: "BH-EBP-110 · step 4".
 """
@@ -22,7 +24,9 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import UnitOfWork
+from abacus.modules.engagements.api import get_ref
 from abacus.modules.evidence.api import (
     CitationAnchor,
     CitationClaim,
@@ -31,7 +35,7 @@ from abacus.modules.evidence.api import (
     normalised_text,
     register_citable,
 )
-from abacus.modules.identity.api import Actor, Forbidden, Resource, authorise
+from abacus.modules.identity.api import Actor, AgentContext, Forbidden, Resource, authorise
 from abacus.modules.methodology.api import step_at
 
 VERIFIER_VERSION: Final = "v1"
@@ -58,8 +62,14 @@ async def verify_methodology_step(
         return CitationVerdict("locator_invalid", SOURCE, NIL)
     version_id, key = parsed
     try:
-        await authorise(actor, "methodology.read", Resource.firm(actor.tenant.tenant_id))
-    except Forbidden:
+        if isinstance(actor, AgentContext) and actor.engagement_id is not None:
+            ref = await get_ref(actor, actor.engagement_id)
+            if ref.methodology_version_id != version_id:
+                return CitationVerdict("source_not_visible", SOURCE, version_id)
+            await authorise(actor, "methodology.read", ref.resource())
+        else:
+            await authorise(actor, "methodology.read", Resource.firm(actor.tenant.tenant_id))
+    except (Forbidden, NotFound):
         return CitationVerdict("source_not_visible", SOURCE, version_id)
     found = await step_at(tx.session, key, version_id)
     if found is None:

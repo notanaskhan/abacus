@@ -3363,6 +3363,10 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "allow",
         "agent": "task_scope",
     },
+    "section_draft.run": {
+        "system": "allow",
+        "agent": "task_scope",
+    },
     "security.manage": {
         "security_admin": "allow",
         "agent": "deny",
@@ -3943,6 +3947,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "senior": "allow",
         "staff": "allow",
         "reviewer": "allow",
+        "agent": "task_scope",
         "independence": "required",
     },
     "workpaper.sign_ready": {

@@ -6005,7 +6005,8 @@ export const cite = <ThrowOnError extends boolean = false>(options: Options<Cite
  * Workpaper Draft Route
  *
  * Start a section draft (`workpapers.section_drafter`); 409 `drafting_not_enabled` for a
- * firm without clearance, `pack_configuration_error` before any model call (T11).
+ * real firm the drafter isn't cleared for. A pack configuration error fails the run before any
+ * model call (`pack_configuration_error`, AC6.1; T11).
  */
 export const workpaperDraft = <ThrowOnError extends boolean = false>(options: Options<WorkpaperDraftData, ThrowOnError>): RequestResult<WorkpaperDraftResponses, WorkpaperDraftErrors, ThrowOnError> => (options.client ?? client).post<WorkpaperDraftResponses, WorkpaperDraftErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

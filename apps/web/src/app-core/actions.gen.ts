@@ -389,6 +389,7 @@ export const ACTIONS = [
   "screening.record",
   "screening.request",
   "screening.run",
+  "section_draft.run",
   "security.manage",
   "security.read",
   "security_role.assign",

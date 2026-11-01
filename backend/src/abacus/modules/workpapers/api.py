@@ -4,6 +4,7 @@ Working papers (A-04; SPEC-308): the grid, formulas, citations and sign-offs.
 """
 
 from abacus.kernel.audit_owners import register_engagement_owners
+from abacus.modules.agents.api import register_section_source, register_suggestion_applier
 from abacus.modules.evidence.api import register_citable
 from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.review.api import (
@@ -19,6 +20,22 @@ from abacus.modules.workpapers.core import (
     cell_facts,
     display_workpaper_cell,
     verify_workpaper_cell,
+)
+from abacus.modules.workpapers.drafting import (
+    SOURCE as SECTION_SOURCE,
+)
+from abacus.modules.workpapers.drafting import (
+    apply_cell_suggestion,
+    draft_paper,
+    paper_engagement,
+)
+from abacus.modules.workpapers.procedures import (
+    WORKPAPER_KINDS,
+    PackConfigurationError,
+    PackError,
+    bound_steps,
+    pack_errors,
+    validate_pack,
 )
 from abacus.modules.workpapers.routes import checks_router, router
 from abacus.modules.workpapers.service import (
@@ -57,16 +74,30 @@ register_field_owner(TB_FIELD_OWNER)
 register_field_owner(CELL_OWNER)
 register_reviewable_facts(CELL_TARGET, cell_facts)
 register_citable("workpaper_cell", verify_workpaper_cell, display_workpaper_cell)
+# A-04-T11 (DEC-1868): the section drafter reads papers through this source, and a person's
+# adoption of its `workpaper_cell` suggestion lands through this applier.
+register_section_source(SECTION_SOURCE)
+register_suggestion_applier(CELL_TARGET, apply_cell_suggestion, engagement_of=paper_engagement)
 
 __all__ = [
+    "CELL_TARGET",
     "ROUTERS",
+    "WORKPAPER_KINDS",
     "CodeTaken",
     "IssueLink",
     "NoAssuranceItem",
+    "PackConfigurationError",
+    "PackError",
     "WorkpaperInvalid",
+    "apply_cell_suggestion",
+    "bound_steps",
     "checks_for",
     "checks_router",
+    "draft_paper",
     "link_issue",
+    "pack_errors",
+    "paper_engagement",
     "router",
     "tie_digests",
+    "validate_pack",
 ]

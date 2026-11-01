@@ -1174,6 +1174,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "attention_flags": frozenset({"state", "converted_to_kind", "converted_to_id"}),
         "program_procedures": frozenset(
             {"tailored", "tailored_rationale", "status", "linked_work"}
+            | {"row_version"}  # 0614 (A-04-T07, DEC-1867): a tailoring names its version
         ),
         "grouping_set_versions": frozenset(  # SPEC-316 (TASK-345): published once
             # A-03-T06 (0521): the publish also sets the dated effective_from.
@@ -1390,6 +1391,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             | {"depends_on_step_keys", "flag_resolution", "flag_resolved_by", "flag_resolved_at"}
             | {"edited_by", "edited_at", "row_version"}
             | {"mandatory", "lock_note"}  # K-01-T14 (0464): a lock and its note
+            | {"template_refs"}  # 0614 (A-04-T07, DEC-1867): the templates a step points at
         ),
         # K-01-T02 (0180): guarded lifecycle transitions (ED-111: declared without this row).
         "methodology_version_states": frozenset(
@@ -1738,6 +1740,58 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"completed_at", "failure_code", "started_at", "status", "undone_at", "undone_by"}
         ),
         "recipient_details_changes": frozenset({"decided_at", "decided_by", "reason", "status"}),
+        # A-04-T06 (0613, DEC-1866): a risk's fields with its hash and version, a linkage's
+        # state, an organization's evidence and status, the session's minutes, an answer.
+        "risk_register_rows": frozenset(
+            {
+                "approved_card_id",
+                "area_label",
+                "assertions",
+                "content_hash",
+                "control_risk",
+                "fraud",
+                "inherent_factors",
+                "inherent_risk",
+                "rationale",
+                "rmm",
+                "rmm_policy_version_id",
+                "significance",
+                "status",
+                "updated_at",
+                "version_no",
+            }
+        ),
+        "risk_linkages": frozenset({"removed_at", "state", "suggestion_id"}),
+        "service_organizations": frozenset(
+            {
+                "evidence_type",
+                "relevant",
+                "row_version",
+                "services",
+                "soc_report_id",
+                "status",
+                "subservice_orgs",
+                "third_party_contact_id",
+                "updated_at",
+            }
+        ),
+        "fraud_brainstorm_sessions": frozenset(
+            {
+                "attendees",
+                "discussion",
+                "excluded",
+                "held_at",
+                "led_by_user_id",
+                "medium",
+                "minutes_hash",
+                "minutes_source",
+                "minutes_status",
+                "minutes_text",
+                "presumed_risk_conclusions",
+                "updated_at",
+            }
+        ),
+        "fraud_inquiries": frozenset({"answered_at"}),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(

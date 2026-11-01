@@ -311,3 +311,60 @@ class EntryAssessment(BaseModel):
     verdict: Annotated[Literal["explained", "not_explained", "unclear"], classified("internal")]
     rationale: Annotated[str, Field(min_length=1, max_length=400), classified("confidential")]
     citations: Annotated[list[EntryCitation], Field(max_length=5), classified("confidential")] = []
+
+
+# --- A-04-T11: the section drafter (workpapers.section_drafter; DEC-1868) ----------------------
+
+FactRef = Annotated[str, Field(pattern=r"^F[1-9][0-9]{0,2}$")]
+StepRef = Annotated[str, Field(pattern=r"^S[1-9][0-9]{0,2}$")]
+DraftCellKey = Annotated[
+    str, Field(pattern=r"^([a-z][a-z0-9_]{0,39}!)?[A-Z]{1,2}[1-9][0-9]{0,3}$")
+]
+
+
+class DraftCitation(BaseModel):
+    """Where a drafted value comes from: a step of the pinned version (`S<n>`, as the context
+    lists them) or a page of one of the documents (`D<n>`), with the exact words."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    step: Annotated[StepRef | None, classified("internal")] = None
+    document: Annotated[DocumentRef | None, classified("internal")] = None
+    page: Annotated[int | None, Field(ge=1, le=1000), classified("internal")] = None
+    quote: Annotated[str, Field(min_length=1, max_length=300), classified("confidential")]
+
+    @model_validator(mode="after")
+    def _one_source(self) -> DraftCitation:
+        if (self.step is None) == (self.document is None):
+            raise ValueError("a citation names a step or a document")
+        if self.document is not None and self.page is None:
+            raise ValueError("a document citation names its page")
+        return self
+
+
+class DraftedCell(BaseModel):
+    """One proposed cell value. A number is never written by the model: a figure is a fact the
+    context gives (`fact`, by reference); text may hold only numbers its sources show."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    cell: Annotated[DraftCellKey, classified("internal")]
+    text: Annotated[
+        str | None, Field(min_length=1, max_length=2000), classified("confidential")
+    ] = None
+    fact: Annotated[FactRef | None, classified("internal")] = None
+    citations: Annotated[list[DraftCitation], Field(max_length=4), classified("confidential")] = []
+
+    @model_validator(mode="after")
+    def _one_value(self) -> DraftedCell:
+        if (self.text is None) == (self.fact is None):
+            raise ValueError("a drafted cell is text or a fact")
+        return self
+
+
+class SectionDraft(BaseModel):
+    """A section's proposed values: suggestions for a person to adopt (ADR-005, AC1.1)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    cells: Annotated[list[DraftedCell], Field(max_length=200), classified("confidential")] = []

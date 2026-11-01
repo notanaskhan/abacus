@@ -39,6 +39,8 @@ from abacus.modules.agents.inbox_match import create_match_run, match
 from abacus.modules.agents.intake_match import create_intake_match_run, match_intake
 from abacus.modules.agents.knowledge import embed_next_batch, fail_document
 from abacus.modules.agents.run_records import persist_run_record
+from abacus.modules.agents.section_draft import draft as draft_section
+from abacus.modules.agents.section_sources import PackRefused
 from abacus.modules.agents.service import (
     TERMINAL,
     AgentRunNotRunning,
@@ -77,6 +79,7 @@ from abacus.modules.agents.workflow_types import (
     RunInput,
     ScreeningInput,
     ScreeningOutcome,
+    SectionDraftInput,
     SlotGrant,
 )
 from abacus.modules.identity.api import NoActiveTenant
@@ -597,6 +600,58 @@ async def assess_activity(input: EntryAssessRunInput) -> ScreeningOutcome:
         raise _as_application_error(exc, retryable=True) from None
 
 
+# --- The section drafter (A-04-T11; DEC-1868) ---------------------------------------------------
+
+
+async def _draft_section(input: SectionDraftInput) -> ScreeningOutcome:
+    tenant_id, run_id = UUID(input.tenant_id), UUID(input.run_id)
+    try:
+        agent = await load_agent_context(tenant_id, run_id)
+    except AgentRunNotRunning:
+        return await _recorded(tenant_id, run_id)
+    except NoActiveTenant:
+        await fail_run(tenant_id, run_id, INITIATOR_INACTIVE)
+        return await _recorded(tenant_id, run_id)
+    work_class = slots.current_class()
+    if work_class is not None:
+        await slots.keep(agent.tenant, agent.engagement, work_class)
+    try:
+        outcome = await draft_section(
+            agent, UUID(input.workpaper_id), input.mode, input.section_key or None
+        )
+        await mark_queued(tenant_id, run_id, None, None)
+    except NotAdmitted as refused:
+        estimate = system_now() + timedelta(seconds=refused.retry_after)
+        await mark_queued(tenant_id, run_id, refused.reason, estimate)
+        max_wait = settings().work_classes[work_class].max_wait_seconds if work_class else 600
+        raise ApplicationError(
+            NOT_ADMITTED,
+            refused.reason,
+            refused.retry_after,
+            max_wait,
+            type=NOT_ADMITTED,
+            non_retryable=True,
+        ) from None
+    except AgentRunNotRunning:
+        return await _recorded(tenant_id, run_id)
+    return ScreeningOutcome(outcome.status, str(run_id), None, None)
+
+
+@activity.defn(name="section_draft.draft")
+async def section_draft_activity(input: SectionDraftInput) -> ScreeningOutcome:
+    try:
+        async with _heartbeating():
+            return await _draft_section(input)
+    except ApplicationError as exc:
+        if exc.type == NOT_ADMITTED:
+            raise
+        raise _as_application_error(exc, retryable=True) from None
+    except (NotFound, PackRefused) as exc:  # the run already failed with its code
+        raise _as_application_error(exc, retryable=False) from None
+    except Exception as exc:
+        raise _as_application_error(exc, retryable=True) from None
+
+
 # --- Run records (Q-02-T41; ADR-169 §3) ------------------------------------------------------
 
 
@@ -665,6 +720,7 @@ ACTIVITIES = (
     draft_activity,
     create_assess_run_activity,  # SPEC-037 Q4 (TASK-085)
     assess_activity,
+    section_draft_activity,  # A-04-T11
     acquire_slot_activity,
     release_slot_activity,
     screen_activity,

@@ -41,6 +41,7 @@ actions:
   suggestion.create:        {agent: task_scope}
   entry_assessment.request: {engagement_partner: allow, manager: allow, senior: allow, staff: allow, independence: required}   # SPEC-037 Q4 (TASK-085): "Assess with AI"
   entry_assessment.run:     {system: allow, agent: task_scope}   # TASK-085: the entry assessor records its assessments
+  section_draft.run:        {system: allow, agent: task_scope}   # A-04-T11 (DEC-1868): the section drafter cites and writes suggestions on its run's paper
   entry_assessment.adopt:   {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # SPEC-044 (TASK-109) AC-4: a person adopts the agent's proposals as results
   suggestion.resolve:       {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny, independence: required}   # P-04-T08: POST /v1/suggestions/{id}/adopt|dismiss, a person's act (ADR-161)
   # --- Proposals (C3 stub 2, P-04-T08; ADR-161). Every resolution is a person's: agent and system
