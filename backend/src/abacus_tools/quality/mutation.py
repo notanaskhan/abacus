@@ -150,7 +150,12 @@ def narrow(pyproject_text: str, files: Sequence[str]) -> str:
 
 def prepare(backend: Path = BACKEND) -> list[str]:
     """Link each top-level repository entry into backend/ (skipping names backend/ already has);
-    the runner's checkout only. Returns the names linked."""
+    the runner's checkout only. Returns the names linked.
+
+    `backend/backend` links to backend/ itself (Q-03-T147): from mutmut's copy a tool's
+    `Path(__file__).parents[n]` lands on backend/ where it expects the repository, so a
+    `REPO / "backend" / ...` path must still resolve. pathlib's `rglob` and `os.walk` follow no
+    directory symlinks, so the loop is never walked."""
     linked: list[str] = []
     for entry in sorted(backend.parent.iterdir()):
         target = backend / entry.name
@@ -158,6 +163,10 @@ def prepare(backend: Path = BACKEND) -> list[str]:
             continue
         target.symlink_to(Path("..") / entry.name)
         linked.append(entry.name)
+    itself = backend / backend.name
+    if not itself.exists() and not itself.is_symlink():
+        itself.symlink_to(Path("."))
+        linked.append(backend.name)
     return linked
 
 
