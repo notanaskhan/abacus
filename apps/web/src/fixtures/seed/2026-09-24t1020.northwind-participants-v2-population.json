@@ -1,0 +1,84 @@
+{
+  "scenario": {
+    "version": "bh-2026.10.3",
+    "hash": "2b09e6fb01617c990e6e72feac508159fe5a03c6ff4f80bbb8d4a539c6f8d6a2",
+    "snapshot": "2026-09-24T10:20",
+    "slices": [
+      "sampling"
+    ]
+  },
+  "persona": "marcus-delaney",
+  "request": "GET /v1/populations/{population_id}",
+  "body": {
+    "amount_total": "14560000.00",
+    "created_at": "2026-09-16T20:00:00Z",
+    "created_by_name": "Marcus Delaney",
+    "deviation_definition": "any attribute in EBP-03/EBP-04 not agreed to source",
+    "engagement_id": "36cf7ac7-6f57-4dd7-b71d-2ebff60c6928",
+    "id": "72992b13-cafe-456a-b135-bb35d50600f1",
+    "record_count": 412,
+    "record_unit": "participants",
+    "sampling_unit": "participant (census record)",
+    "sha256": "0bca3bd05b3d81adf71a08b40be050a2ab3671aa988714aaaba79c32901d7d08",
+    "source": {
+      "connection_label": null,
+      "evidence_version_id": "a397bbb8-d8d5-4549-bc00-47f75f2ca6dc",
+      "file_name": null,
+      "file_version_no": null,
+      "gl_snapshot_id": null,
+      "kind": "upload",
+      "pulled_at": null,
+      "query": null,
+      "query_label": null,
+      "uploaded_by_name": null,
+      "uploaded_on": null
+    },
+    "ties": [
+      {
+        "comparisons": [
+          {
+            "amount": "14560000.00",
+            "citation": null,
+            "label": "PayGrid YTD register",
+            "ledger_ref": null
+          }
+        ],
+        "difference": "0.00",
+        "engine_version": "tie-1",
+        "explanation": null,
+        "id": "ca025b6c-d27e-4770-9ef1-3f71adb0e66c",
+        "inputs_hash": "7965813e8f98e3dff52f7f0c527da22e9df9d822435f41cba587e1c838550ff0",
+        "label": "PayGrid YTD register",
+        "left_amount": "14560000.00",
+        "position": 1,
+        "result": "tie"
+      },
+      {
+        "comparisons": [
+          {
+            "amount": "13813400.00",
+            "citation": null,
+            "label": "W-3 Box 1",
+            "ledger_ref": null
+          },
+          {
+            "amount": "746600.00",
+            "citation": null,
+            "label": "W-3 Box 12 D",
+            "ledger_ref": null
+          }
+        ],
+        "difference": "0.00",
+        "engine_version": "tie-1",
+        "explanation": null,
+        "id": "5fc9848d-827b-4b4d-a341-a3385e36e7a6",
+        "inputs_hash": "ba2c78d40433e50140e5810c7b4229ecf965bdc90bf34d6d0c864f2e0c5dbddd",
+        "label": "W-3 Box 1 + Box 12 D",
+        "left_amount": "14560000.00",
+        "position": 2,
+        "result": "tie"
+      }
+    ],
+    "work_item_id": "9db16eb5-3a68-439d-99e7-51437d1fbe09"
+  }
+}

@@ -14,13 +14,13 @@ and Northwind's Participants sample, through the services as the people the desi
 - **Granite Peak FY2026** (AUD-31 f, AUD-11 f; TASK-2717, DEC-1768): on Sep 10 Margaret adds
   Caleb Dunn to the team, its five members confirm their independence, she names Luis Ferrante
   the SKE designee and concludes (G2). On Sep 11 Simone Baptiste records the NetSuite trial
-  balance (128 accounts) and adopts it, which starts the rules on BH FS groupings v1, and Caleb
-  confirms the mapping (L1). On Sep 24 at 10:18 AM Simone records the subsequent-period GL, builds
-  the disbursements population (1,912 payments, $38,640,200.00), creates "Disbursements" and
-  draws Version 1 with seed 0x7C31B4 (24 + 16 = 40).
+  balance (128 accounts) and adopts it, uploads the predecessor auditor's FY2025 mapping and
+  starts the rules on BH FS groupings v1 with it (DEC-1769: 122 by prior year, 6 by number
+  range), and Caleb confirms the mapping (L1). On Sep 24 at 10:18 AM Simone records the
+  subsequent-period GL, builds the disbursements population (1,912 payments, $38,640,200.00),
+  creates "Disbursements" and draws Version 1 with seed 0x7C31B4 (24 + 16 = 40).
 
-The FY2025 prior mapping (no FY2025 engagement exists), the Distributions set, `make fixtures
-export` and the fixture equivalence test are TASK-2717's remaining list. Opt-in (`--slice
+The Distributions set (no designed method) is TASK-2717's remaining list. Opt-in (`--slice
 sampling`, which brings `people`, `standards` and `acceptance`).
 """
 
@@ -111,6 +111,12 @@ def granite_events() -> list[Event]:
         ),
         _granite("tb", _at(11, 8, 30), "ledger.granite_tb_recorded", "SB"),
         _granite("tb-adopted", _at(11, 8, 40), "assurance.granite_tb_adopted", "SB"),
+        _granite(
+            "predecessor-mapping",
+            _at(11, 8, 40) + timedelta(seconds=30),
+            "evidence.granite_predecessor_uploaded",
+            "SB",
+        ),
         _granite("mapping-run", _at(11, 8, 41), "assurance.granite_mapping_started", "SB"),
         _granite("mapping-confirmed", _at(11, 15, 0), "assurance.granite_mapping_confirmed", "CD"),
         _granite("gl", _at(24, 10, 18), "ledger.granite_gl_recorded", "SB"),

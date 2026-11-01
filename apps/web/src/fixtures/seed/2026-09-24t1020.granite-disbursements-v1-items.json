@@ -1,0 +1,381 @@
+{
+  "scenario": {
+    "version": "bh-2026.10.3",
+    "hash": "2b09e6fb01617c990e6e72feac508159fe5a03c6ff4f80bbb8d4a539c6f8d6a2",
+    "snapshot": "2026-09-24T10:20",
+    "slices": [
+      "sampling"
+    ]
+  },
+  "persona": "simone-baptiste",
+  "request": "GET /v1/sample-sets/{sample_set_id}/versions/{version_no}/items",
+  "body": {
+    "counts": {},
+    "facets": {},
+    "items": [
+      {
+        "amount": "186400.00",
+        "hire_date": "2026-07-02",
+        "name": "Talus Climbing Gear, Inc.",
+        "position": 1,
+        "record_key": "L0000002",
+        "selection_reason": "threshold",
+        "stratum_position": 1
+      },
+      {
+        "amount": "248900.00",
+        "hire_date": "2026-07-06",
+        "name": "Cascade Footwear Group",
+        "position": 2,
+        "record_key": "L0000004",
+        "selection_reason": "threshold",
+        "stratum_position": 1
+      },
+      {
+        "amount": "57250.00",
+        "hire_date": "2026-07-08",
+        "name": "Mesa Packaging Supply",
+        "position": 3,
+        "record_key": "L0000006",
+        "selection_reason": "threshold",
+        "stratum_position": 1
+      },
+      {
+        "amount": "132600.00",
+        "hire_date": "2026-07-14",
+        "name": "Alpine Thread Mills",
+        "position": 4,
+        "record_key": "L0000008",
+        "selection_reason": "threshold",
+        "stratum_position": 1
+      },
+      {
+        "amount": "68400.00",
+        "hire_date": "2026-07-22",
+        "name": "Front Range Freight Co.",
+        "position": 5,
+        "record_key": "L0000010",
+        "selection_reason": "threshold",
+        "stratum_position": 1
+      },
+      {
+        "amount": "214800.00",
+        "hire_date": "2026-07-24",
+        "name": "Peakline Apparel Co.",
+        "position": 6,
+        "record_key": "L0000012",
+        "selection_reason": "threshold",
+        "stratum_position": 1
+      },
+      {
+        "amount": "96300.00",
+        "hire_date": "2026-07-27",
+        "name": "Basecamp Optics, Inc.",
+        "position": 7,
+        "record_key": "L0000014",
+        "selection_reason": "threshold",
+        "stratum_position": 1
+      },
+      {
+        "amount": "74500.00",
+        "hire_date": "2026-07-31",
+        "name": "Clear Creek Properties, LLC",
+        "position": 8,
+        "record_key": "L0000016",
+        "selection_reason": "threshold",
+        "stratum_position": 1
+      },
+      {
+        "amount": "171200.00",
+        "hire_date": "2026-08-04",
+        "name": "Talus Climbing Gear, Inc.",
+        "position": 9,
+        "record_key": "L0000018",
+        "selection_reason": "threshold",
+        "stratum_position": 1
+      },
+      {
+        "amount": "71900.00",
+        "hire_date": "2026-08-19",
+        "name": "Front Range Freight Co.",
+        "position": 10,
+        "record_key": "L0000020",
+        "selection_reason": "threshold",
+        "stratum_position": 1
+      },
+      {
+        "amount": "305600.00",
+        "hire_date": "2026-08-21",
+        "name": "Cascade Footwear Group",
+        "position": 11,
+        "record_key": "L0000022",
+        "selection_reason": "threshold",
+        "stratum_position": 1
+      },
+      {
+        "amount": "58800.00",
+        "hire_date": "2026-08-25",
+        "name": "Highline Retail Systems, Inc.",
+        "position": 12,
+        "record_key": "L0000024",
+        "selection_reason": "threshold",
+        "stratum_position": 1
+      },
+      {
+        "amount": "189700.00",
+        "hire_date": "2026-09-02",
+        "name": "Peakline Apparel Co.",
+        "position": 13,
+        "record_key": "L0000026",
+        "selection_reason": "threshold",
+        "stratum_position": 1
+      },
+      {
+        "amount": "66250.00",
+        "hire_date": "2026-09-16",
+        "name": "Front Range Freight Co.",
+        "position": 14,
+        "record_key": "L0000028",
+        "selection_reason": "threshold",
+        "stratum_position": 1
+      },
+      {
+        "amount": "162400.00",
+        "hire_date": "2026-09-16",
+        "name": "Talus Climbing Gear, Inc.",
+        "position": 15,
+        "record_key": "L0000030",
+        "selection_reason": "threshold",
+        "stratum_position": 1
+      },
+      {
+        "amount": "118300.00",
+        "hire_date": "2026-09-16",
+        "name": "Alpine Thread Mills",
+        "position": 16,
+        "record_key": "L0000032",
+        "selection_reason": "threshold",
+        "stratum_position": 1
+      },
+      {
+        "amount": "142600.00",
+        "hire_date": "2026-09-16",
+        "name": "Ridgeway Tent & Tarp Co.",
+        "position": 17,
+        "record_key": "L0000034",
+        "selection_reason": "threshold",
+        "stratum_position": 1
+      },
+      {
+        "amount": "61300.00",
+        "hire_date": "2026-09-17",
+        "name": "Mesa Packaging Supply",
+        "position": 18,
+        "record_key": "L0000036",
+        "selection_reason": "threshold",
+        "stratum_position": 1
+      },
+      {
+        "amount": "88450.00",
+        "hire_date": "2026-09-17",
+        "name": "Basecamp Optics, Inc.",
+        "position": 19,
+        "record_key": "L0000038",
+        "selection_reason": "threshold",
+        "stratum_position": 1
+      },
+      {
+        "amount": "203900.00",
+        "hire_date": "2026-09-17",
+        "name": "Peakline Apparel Co.",
+        "position": 20,
+        "record_key": "L0000040",
+        "selection_reason": "threshold",
+        "stratum_position": 1
+      },
+      {
+        "amount": "52700.00",
+        "hire_date": "2026-09-18",
+        "name": "Highline Retail Systems, Inc.",
+        "position": 21,
+        "record_key": "L0000042",
+        "selection_reason": "threshold",
+        "stratum_position": 1
+      },
+      {
+        "amount": "74500.00",
+        "hire_date": "2026-09-18",
+        "name": "Clear Creek Properties, LLC",
+        "position": 22,
+        "record_key": "L0000044",
+        "selection_reason": "threshold",
+        "stratum_position": 1
+      },
+      {
+        "amount": "158200.00",
+        "hire_date": "2026-09-18",
+        "name": "Talus Climbing Gear, Inc.",
+        "position": 23,
+        "record_key": "L0000046",
+        "selection_reason": "threshold",
+        "stratum_position": 1
+      },
+      {
+        "amount": "281450.00",
+        "hire_date": "2026-09-18",
+        "name": "Cascade Footwear Group",
+        "position": 24,
+        "record_key": "L0000048",
+        "selection_reason": "threshold",
+        "stratum_position": 1
+      },
+      {
+        "amount": "18400.00",
+        "hire_date": "2026-07-03",
+        "name": "Mesa Packaging Supply",
+        "position": 25,
+        "record_key": "L0001304",
+        "selection_reason": "random",
+        "stratum_position": 2
+      },
+      {
+        "amount": "12650.00",
+        "hire_date": "2026-07-09",
+        "name": "Front Range Freight Co.",
+        "position": 26,
+        "record_key": "L0001042",
+        "selection_reason": "random",
+        "stratum_position": 2
+      },
+      {
+        "amount": "9875.00",
+        "hire_date": "2026-07-15",
+        "name": "Basecamp Optics, Inc.",
+        "position": 27,
+        "record_key": "L0000788",
+        "selection_reason": "random",
+        "stratum_position": 2
+      },
+      {
+        "amount": "23940.00",
+        "hire_date": "2026-07-21",
+        "name": "Granite Rock Logistics",
+        "position": 28,
+        "record_key": "L0000808",
+        "selection_reason": "random",
+        "stratum_position": 2
+      },
+      {
+        "amount": "31200.00",
+        "hire_date": "2026-07-28",
+        "name": "Summit Signage Co.",
+        "position": 29,
+        "record_key": "L0001824",
+        "selection_reason": "random",
+        "stratum_position": 2
+      },
+      {
+        "amount": "8600.00",
+        "hire_date": "2026-08-03",
+        "name": "Evergreen Janitorial Services",
+        "position": 30,
+        "record_key": "L0001772",
+        "selection_reason": "random",
+        "stratum_position": 2
+      },
+      {
+        "amount": "49750.00",
+        "hire_date": "2026-08-07",
+        "name": "Ridgeway Tent & Tarp Co.",
+        "position": 31,
+        "record_key": "L0001604",
+        "selection_reason": "random",
+        "stratum_position": 2
+      },
+      {
+        "amount": "27300.00",
+        "hire_date": "2026-08-12",
+        "name": "Alpine Thread Mills",
+        "position": 32,
+        "record_key": "L0001040",
+        "selection_reason": "random",
+        "stratum_position": 2
+      },
+      {
+        "amount": "15980.00",
+        "hire_date": "2026-08-18",
+        "name": "Highline Retail Systems, Inc.",
+        "position": 33,
+        "record_key": "L0000238",
+        "selection_reason": "random",
+        "stratum_position": 2
+      },
+      {
+        "amount": "21460.00",
+        "hire_date": "2026-08-24",
+        "name": "Peak Power Utilities",
+        "position": 34,
+        "record_key": "L0001968",
+        "selection_reason": "random",
+        "stratum_position": 2
+      },
+      {
+        "amount": "36120.00",
+        "hire_date": "2026-08-28",
+        "name": "Mesa Packaging Supply",
+        "position": 35,
+        "record_key": "L0002022",
+        "selection_reason": "random",
+        "stratum_position": 2
+      },
+      {
+        "amount": "19875.00",
+        "hire_date": "2026-09-02",
+        "name": "Front Range Freight Co.",
+        "position": 36,
+        "record_key": "L0001328",
+        "selection_reason": "random",
+        "stratum_position": 2
+      },
+      {
+        "amount": "47600.00",
+        "hire_date": "2026-09-08",
+        "name": "Talus Climbing Gear, Inc.",
+        "position": 37,
+        "record_key": "L0001934",
+        "selection_reason": "random",
+        "stratum_position": 2
+      },
+      {
+        "amount": "12300.00",
+        "hire_date": "2026-09-10",
+        "name": "Northgate Insurance Brokers",
+        "position": 38,
+        "record_key": "L0000494",
+        "selection_reason": "random",
+        "stratum_position": 2
+      },
+      {
+        "amount": "28450.00",
+        "hire_date": "2026-09-14",
+        "name": "Basecamp Optics, Inc.",
+        "position": 39,
+        "record_key": "L0002228",
+        "selection_reason": "random",
+        "stratum_position": 2
+      },
+      {
+        "amount": "48800.00",
+        "hire_date": "2026-09-17",
+        "name": "Cascade Footwear Group",
+        "position": 40,
+        "record_key": "L0001550",
+        "selection_reason": "random",
+        "stratum_position": 2
+      }
+    ],
+    "next_cursor": null,
+    "total": 40,
+    "total_capped": false
+  }
+}
