@@ -10,6 +10,10 @@ Pure: no database, no clock, no other module. `ledger.mapping` reads the rows an
   net to zero: debits equal credits).
 - **Subtotals** (`subtotals`): each grouping's mapped accounts summed; where the source TB carries
   a summary line for that grouping, the difference reads `off` (never adjusted).
+- **Predecessor file** (`predecessor_keys`, DEC-1769): a predecessor auditor's mapping sheet as
+  the prior year: an account column and an FS-line column (its key or its label in the set's
+  grouping version), read as normalised code to FS-line key. A line the version does not name is
+  left out, so that account falls to the number ranges; nothing is guessed.
 """
 
 from __future__ import annotations
@@ -42,6 +46,43 @@ def account_key(code: str) -> tuple[int, int, str]:
 def normalised_code(code: str) -> str:
     """An account code as the prior-year match compares it: letters and digits, lower case."""
     return re.sub(r"[^0-9a-z]", "", code.lower())
+
+
+# Header words for the predecessor file's two columns (compared case- and space-insensitively).
+CODE_HEADERS: Final = frozenset({"account", "accountcode", "accountnumber", "accountno", "code"})
+LINE_HEADERS: Final = frozenset(
+    {"fsline", "fslinekey", "financialstatementline", "fscaption", "mappedto", "mapping"}
+)
+
+
+class PredecessorColumns(ValueError):
+    """The sheet has no account column or no FS-line column."""
+
+
+def _word(cell: str) -> str:
+    return re.sub(r"[^0-9a-z]", "", cell.lower())
+
+
+def predecessor_keys(rows: Sequence[Sequence[str]], lines: Mapping[str, str]) -> dict[str, str]:
+    """The sheet (its first non-blank row the header) as normalised code to FS-line key. `lines`
+    maps each FS line's key and its label to its key; both sides compare folded (letters and
+    digits, lower case), so "PP&E, net" and "ppe_net" find the same line."""
+    folded = {_word(name): key for name, key in lines.items()}
+    body = [list(r) for r in rows if any(c.strip() for c in r)]
+    if not body:
+        raise PredecessorColumns("empty")
+    header = [_word(c) for c in body[0]]
+    code_at = next((n for n, h in enumerate(header) if h in CODE_HEADERS), None)
+    line_at = next((n for n, h in enumerate(header) if h in LINE_HEADERS), None)
+    if code_at is None or line_at is None:
+        raise PredecessorColumns("columns")
+    out: dict[str, str] = {}
+    for row in body[1:]:
+        code = normalised_code(row[code_at]) if code_at < len(row) else ""
+        key = folded.get(_word(row[line_at])) if line_at < len(row) else None
+        if code and key is not None:
+            out[code] = key
+    return out
 
 
 def rule_line(code: str, ranges: Sequence[tuple[str, str, UUID]]) -> UUID | None:

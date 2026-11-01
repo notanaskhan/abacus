@@ -37,6 +37,12 @@ ALLOW: tuple[tuple[str, str, str], ...] = (
         " never a credential (K-02-T18)",
     ),
     (
+        "apps/web/src/fixtures/seed/2026-09-24t1020.*-items.json",
+        "SECRET-003",
+        "a sample item's `record_key` names its population record (census row NWC-0215, GL line"
+        " L0000002), never a credential (A-03-T16, DEC-1770)",
+    ),
+    (
         "apps/web/src/fixtures/seed/e0.tax-returns.json",
         "PII-003",
         "a UUID's digit run read as a card number; the seed holds no card data",

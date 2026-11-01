@@ -231,6 +231,10 @@ class MappingSet(Base):
     grouping_set_version_id: Mapped[UUID]
     created_by: Mapped[UUID]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    # 0582 (DEC-1769): where the prior year's lines come from; set at insert, never changed.
+    prior_source: Mapped[str] = mapped_column(server_default=FetchedValue())
+    predecessor_evidence_version_id: Mapped[UUID | None]
+    predecessor_keys: Mapped[dict[str, str] | None] = mapped_column(JSONB(none_as_null=True))
 
 
 class MappingSetEdit(Base):
