@@ -37,7 +37,8 @@ from typing import Final, cast
 
 ROOT: Final = Path(__file__).resolve().parents[2].parent
 DOSSIERS: Final = ROOT / "docs" / "ops" / "go-live"
-PILOT: Final = re.compile(r"PF-[ATC]\d{1,2}|PC\d{2}-\d{2}")
+# X is the synthetic test pilot firm, PF-X1 (DEC-1530); A, T and C are real pilot firms.
+PILOT: Final = re.compile(r"PF-[ATCX]\d{1,2}|PC\d{2}-\d{2}")
 _EMAIL: Final = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
 _PHONE: Final = re.compile(r"(?<![\d-])\+?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}(?!\d)")
 REPORT_MAX_AGE: Final = timedelta(days=7)

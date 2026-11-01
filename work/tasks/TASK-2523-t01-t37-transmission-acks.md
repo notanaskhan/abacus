@@ -4,7 +4,7 @@ title: T-01-T37 Transmission record and acknowledgements
 spec: SPEC-501  # T-01 §3.13; docs/contracts/efile-record.md
 acceptance_criteria: [AC-7]  # and T-01 §3.13
 risk_zone: red
-status: in-review
+status: done
 epic: T-01
 plan_key: T-01-T37
 branch: s20c-t01-t37

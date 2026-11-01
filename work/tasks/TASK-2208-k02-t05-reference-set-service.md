@@ -4,12 +4,12 @@ title: K-02-T05 reference-set service
 spec: SPEC-500
 acceptance_criteria: [AC-15, AC-16, AC-17, AC-18, AC-19, AC-20]
 risk_zone: amber
-status: in-review
+status: done
 epic: K-02
 plan_key: K-02-T05
 branch: s17-k02-t05
 created: 2026-10-30
-updated: 2026-10-30
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -53,3 +53,4 @@ draft holding a PCAOB or issuer set, or removing an existing code, is refused (X
 
 ## Progress log
 - 2026-10-30: built in S17 Lane 2; tests written, run in the end review (build first).
+- 2026-11-01: merged to main in #772 (e61ebba63).

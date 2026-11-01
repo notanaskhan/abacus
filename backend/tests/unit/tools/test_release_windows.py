@@ -45,6 +45,7 @@ AUDIT_ONLY = {"tenant_id": B1, "code": "PF-A2", "real_data_since": "2027-06-01"}
 
 
 def test_the_committed_file_is_valid_and_lists_no_live_firm_yet() -> None:
+    """Only the synthetic test pilot firm PF-X1 is listed (DEC-1530), and it is never live."""
     cal = rw.load()
     assert [w.id for w in cal.windows] == [
         "autumn-2027",
@@ -53,7 +54,8 @@ def test_the_committed_file_is_valid_and_lists_no_live_firm_yet() -> None:
         "season-2029",
         "autumn-2029",
     ]
-    assert cal.firms == ()
+    assert [(f.code, f.synthetic, f.real_data_since) for f in cal.firms] == [("PF-X1", True, None)]
+    assert not any(f.live_on(date(2028, 1, 2)) for f in cal.firms)
     assert rw.main(["check"]) == 0
 
 

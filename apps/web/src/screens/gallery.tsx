@@ -148,6 +148,14 @@ import {
   STATES as KNW03_STATES,
   scenarios as knw03Scenarios,
 } from "./KNW-03/scenarios";
+import { ProvenanceTray } from "./SHL-09";
+import {
+  DOCUMENTS as SHL09_DOCUMENTS,
+  OPENS as SHL09_OPENS,
+  STATES as SHL09_STATES,
+  type Shl09State,
+  scenarios as shl09Scenarios,
+} from "./SHL-09/scenarios";
 import { CheckpointDrawer } from "./SHL-16";
 import {
   OPENS as SHL16_OPENS,
@@ -240,6 +248,12 @@ import {
   STATES as AUD31_STATES,
   scenarios as aud31Scenarios,
 } from "./AUD-31/scenarios";
+import { AUD07Frame } from "./AUD-07/artboard";
+import {
+  type Aud07State,
+  STATES as AUD07_STATES,
+  scenarios as aud07Scenarios,
+} from "./AUD-07/scenarios";
 import { AUD11Frame } from "./AUD-11/artboard";
 import {
   type Aud11State,
@@ -1758,6 +1772,26 @@ function Aud11Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 
 registerScreen("AUD-11", { title: "Sampling · Northwind participants", Component: Aud11Artboard });
 
+// AUD-07 (A-04-T10): a–e and the C-20 states, each on its own scenario.
+function Aud07Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Aud07State = AUD07_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      aud07Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? <AUD07Frame key={state} state={state} /> : null;
+}
+
+registerScreen("AUD-07", { title: "Materiality · partner decision", Component: Aud07Artboard });
+
 registerScreen("AUD-02", {
   title: "Audit cockpit · Overview, Source Documents, Agent",
   Component: Aud02Artboard,
@@ -2243,6 +2277,37 @@ function Shl16Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("SHL-16", { title: "Checkpoint diff drawer", Component: Shl16Artboard });
+
+// SHL-09 (P-04-T55): the field provenance tray a–f where its O1 popover sits over the worksheet.
+function Shl09Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Shl09State = SHL09_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      shl09Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  if (ready !== state) return null;
+  const open = SHL09_OPENS[state];
+  return (
+    <div key={state} data-artboard={state} className="relative h-[900px]">
+      <ProvenanceTray
+        field={{ type: open.type, id: open.id, fieldKey: open.fieldKey }}
+        documents={SHL09_DOCUMENTS}
+        initialCollapsed={open.collapsed === true}
+        className="absolute top-[190px] left-[500px]"
+      />
+    </div>
+  );
+}
+
+registerScreen("SHL-09", { title: "Field provenance popover", Component: Shl09Artboard });
 
 // ENG-04 (N-02-T34, N-02-T37): the letter composer, a–f, as ENG-02's Letter & terms tab body.
 function Eng04Artboard({ params }: { params: FixtureParams }): JSX.Element | null {

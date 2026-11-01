@@ -26,14 +26,17 @@ describe("screen scenarios on the firm entry", () => {
       "ADM-02",
       "ADM-03",
       "ADM-04", // G-02-T26
+      "ADM-05", // T-01-T29: j06 A3, A4 and j14 8
       "ADM-06",
       "ADM-07",
+      "ADM-08", // T-01-T29: j14 4
       "ADM-10", // R-01-T28
       "AUD-01",
       "AUD-03",
       "BND-01",
       "BND-02",
       "CLI-04", // P-07-T53
+      "CLI-05", // T-01-T29: j06 A3 and A4
       "CLI-06", // P-07-T62
       "CLI-07", // P-07-T53
       "CLI-08", // P-07-T53
@@ -46,7 +49,18 @@ describe("screen scenarios on the firm entry", () => {
       "SHL-04",
       "SHL-14",
       "TAX-02", // P-04-T47: j06 coordination
+      "TAX-09", // T-01-T29: j06 D1 and D2
     ]);
+  });
+
+  it("opens the T-01-T29 states on their records: Ferris's profile, the Feld return", () => {
+    const ferris = screenScenario("?screen=CLI-05&st=f");
+    expect(ferris?.ids.clientId).toMatch(/^[0-9a-f-]{36}$/u);
+    expect(ferris?.opens).toMatch(/^\?entity=[0-9a-f-]{36}$/u);
+    expect(screenScenario("?screen=TAX-09&st=b")?.ids.returnId).toMatch(/^[0-9a-f-]{36}$/u);
+    expect(screenScenario("?screen=ADM-08&st=g")?.opens).toBe(
+      "?segment=tax-engine&ov=integration-mapping:users",
+    );
   });
 
   it("names the ids a state opens, leaving out the ones it has none for (P-06-T25)", () => {
