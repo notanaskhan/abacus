@@ -149156,16 +149156,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Workpaper States Route",
@@ -149520,7 +149510,7 @@
     },
     "/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/cells": {
       "patch": {
-        "description": "Edit cells through `review.api.record_value`; 409 `version_conflict`, 422\n`reason_required`; a later edit makes an L2 sign-off stale (AC1.3, AC1.6; T04).",
+        "description": "Edit cells through `review.api.record_value`; 409 `version_conflict`, 422\n`reason_required`; a later edit makes an L2 sign-off stale (AC1.3, AC1.6; T04). A replay of\nthe key with the same body finds the version already moved and answers 409 too.",
         "operationId": "workpaper_cells_edit",
         "parameters": [
           {
@@ -149657,16 +149647,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Workpaper Cells Edit Route",
@@ -150222,16 +150202,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Workpaper Export Route",
@@ -150709,16 +150679,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Workpaper Record Route",
@@ -151425,16 +151385,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Workpaper Versions Route",

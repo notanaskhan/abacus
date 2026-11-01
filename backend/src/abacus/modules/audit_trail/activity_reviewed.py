@@ -472,9 +472,11 @@ REVIEWED_FALLBACK: Final = frozenset(
         "work_item.assigned",
         "work_item.created",
         "work_item.unassigned",
+        "workpaper.cells_edited",  # A-04-T04 (DEC-1762): an edit as the paper's next version
         "workpaper.cells_set",
         "workpaper.cited",
         "workpaper.created",
+        "workpaper.exported",  # A-04-T04: "Open in Excel", with the file's SHA-256
         "workpaper.signed_ready",
         "workpaper.signed_reviewed",
         "sending_domain.checked",  # R-01-T27

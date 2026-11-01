@@ -1917,6 +1917,7 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.requests.binders.ReasonRequired
+    - abacus.modules.workpapers.core.ReasonRequired
     summary: Unpublishing a binder needs a reason.
   recommendation_changed:
     status: 409
@@ -2706,6 +2707,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.signatures.portal.VerificationFailed
+  version_conflict:
+    status: 409
+    raised_by:
+    - abacus.modules.workpapers.core.VersionConflict
+    summary: The paper moved on since the caller read it (AC1.6).
   version_frozen:
     status: 409
     raised_by:
@@ -2775,6 +2781,7 @@ codes:
   workpaper_invalid:
     status: 422
     raised_by:
+    - abacus.modules.workpapers.core.CellInvalid
     - abacus.modules.workpapers.service.WorkpaperInvalid
   workpaper_not_ready:
     status: 409

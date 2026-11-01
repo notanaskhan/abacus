@@ -167,15 +167,19 @@ def content_of(
     tb: TbLink | None = None,
 ) -> dict[str, object]:
     """What a sign-off approves: each filled cell's raw text and tickmarks, the citations, and
-    which trial balance version TB() read when any cell uses it (so a new version is a change)."""
+    which trial balance version TB() read when any cell uses it (so a new version is a change).
+
+    A-04-T04 (DEC-1762): a cell on another sheet than `main` is keyed `<sheet>!<cell>`, and a
+    typed value joins its entry; a SPEC-308 paper's content, and so its hash, is unchanged."""
     content: dict[str, object] = {
         "cells": {
-            c.cell_key: {"raw": c.raw, "tickmarks": sorted(c.tickmarks)}
-            for c in sorted(cells, key=lambda c: c.cell_key)
-            if c.raw or c.tickmarks
+            cell_ref(c.sheet_key, c.cell_key): _entry(c)
+            for c in sorted(cells, key=lambda c: (c.sheet_key != SHEET, c.sheet_key, c.cell_key))
+            if is_filled(c)
         },
         "citations": sorted(
-            [c.cell_key, str(c.evidence_version_id), c.locator or ""] for c in citations
+            [cell_ref(c.sheet_key, c.cell_key), str(c.evidence_version_id), c.locator or ""]
+            for c in citations
         ),
     }
     if tb is not None and any(tb.source.uses(c.raw) for c in cells):
@@ -183,6 +187,22 @@ def content_of(
         if any(_uses_final(c.raw) for c in cells):  # SPEC-311: a newly recorded entry is a change
             content["tb"] = {**content["tb"], "entries": sorted(tb.entries)}
     return content
+
+
+def cell_ref(sheet_key: str, cell_key: str) -> str:
+    """A cell's address in the signed content and the field history: the key alone on `main`."""
+    return cell_key if sheet_key == SHEET else f"{sheet_key}!{cell_key}"
+
+
+def is_filled(cell: WorkpaperCell) -> bool:
+    return bool(cell.raw or cell.tickmarks or (cell.value is not None and cell.value.get("v")))
+
+
+def _entry(cell: WorkpaperCell) -> dict[str, object]:
+    entry: dict[str, object] = {"raw": cell.raw, "tickmarks": sorted(cell.tickmarks)}
+    if cell.value is not None:
+        entry["value"] = {"t": cell.value.get("t"), "v": cell.value.get("v")}
+    return entry
 
 
 async def tb_link(tenant: TenantContext, engagement_id: UUID) -> TbLink | None:
@@ -309,7 +329,7 @@ async def workpapers_for(ctx: AuthContext, engagement_id: UUID) -> list[Workpape
     names = await _names(ctx, engagement_id)
     out: list[WorkpaperSummary] = []
     for p in papers:
-        filled = sum(1 for c in cells if c.workpaper_id == p.id and (c.raw or c.tickmarks))
+        filled = sum(1 for c in cells if c.workpaper_id == p.id and is_filled(c))
         cited = sum(1 for c in citations if c.workpaper_id == p.id)
         out.append(
             WorkpaperSummary(
@@ -367,7 +387,7 @@ async def workpaper_detail(
     await authorise(ctx, "workpaper.read", ref.resource())
     async with tenant_session(ctx.tenant) as session:
         paper = _paper(await get_workpaper(session, workpaper_id), engagement_id)
-        cells = [c for c in await newest_cells(session, [paper.id]) if c.raw or c.tickmarks]
+        cells = [c for c in await newest_cells(session, [paper.id]) if is_filled(c)]
         citations = await citations_of(session, [paper.id])
         versions = await versions_of(session, paper.id)
     tb = await tb_link(ctx.tenant, engagement_id)
@@ -556,7 +576,7 @@ async def workpaper_facts(tenant: TenantContext, workpaper_id: UUID) -> Reviewab
         setters = await cell_setters(session, paper.id)
         version_no = await next_version_no(session, paper.id) - 1
     tb = await tb_link(tenant, paper.engagement_id)
-    filled = [c for c in cells if c.raw or c.tickmarks]
+    filled = [c for c in cells if is_filled(c)]
     cited = {c.cell_key for c in citations}
     return ReviewableFacts(
         TARGET,

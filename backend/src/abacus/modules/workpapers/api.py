@@ -4,6 +4,7 @@ Working papers (A-04; SPEC-308): the grid, formulas, citations and sign-offs.
 """
 
 from abacus.kernel.audit_owners import register_engagement_owners
+from abacus.modules.evidence.api import register_citable
 from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.review.api import (
     register_field_owner,
@@ -12,6 +13,13 @@ from abacus.modules.review.api import (
 )
 from abacus.modules.workpapers.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.workpapers.contract import router as a04_router
+from abacus.modules.workpapers.core import (
+    CELL_OWNER,
+    CELL_TARGET,
+    cell_facts,
+    display_workpaper_cell,
+    verify_workpaper_cell,
+)
 from abacus.modules.workpapers.routes import checks_router, router
 from abacus.modules.workpapers.service import (
     CodeTaken,
@@ -45,6 +53,10 @@ register_reviewable_facts("workpaper", workpaper_facts)
 # A-02-T17 (C3): the trial balance's annotated fields (`wp_ref`, `area_override` per line). The
 # trial balance itself is registered as a reviewable by assurance (SPEC-313).
 register_field_owner(TB_FIELD_OWNER)
+# A-04-T04 (DEC-1762): a cell's field history (SHL-09) and its C4 citable kind.
+register_field_owner(CELL_OWNER)
+register_reviewable_facts(CELL_TARGET, cell_facts)
+register_citable("workpaper_cell", verify_workpaper_cell, display_workpaper_cell)
 
 __all__ = [
     "ROUTERS",

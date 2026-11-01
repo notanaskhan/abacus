@@ -35,13 +35,16 @@ E = "/v1/engagements/{engagement_id}"
 WP = f"{E}/workpapers/{{workpaper_id}}"
 SOC = f"{E}/soc-reports/{{soc_report_id}}"
 EX = f"{E}/internal-control/exceptions/{{sheet_row}}"
-ROUTES: dict[tuple[str, str], str] = {
+# A-04-T04 serves these (DEC-1762): their action and 404 stay, 501 goes.
+SERVED: dict[tuple[str, str], str] = {
     ("get", f"{E}/workpaper-states"): "workpaper.read",
     ("get", f"{WP}/record"): "workpaper.read",
     ("get", f"{WP}/versions"): "workpaper.read",
     ("patch", f"{WP}/cells"): "workpaper.edit",
-    ("post", f"{WP}/drafts"): "workpaper.draft",
     ("get", f"{WP}/export.xlsx"): "workpaper.export",
+}
+ROUTES: dict[tuple[str, str], str] = {
+    ("post", f"{WP}/drafts"): "workpaper.draft",
     ("post", f"{WP}/flags/{{flag_id}}/convert"): "attention_flag.convert",
     ("post", f"{WP}/flags/{{flag_id}}/remind"): "follow_up.draft",
     ("get", f"{E}/program-tailoring"): "procedure.read",
@@ -134,6 +137,16 @@ def test_t01_each_route_declares_its_one_action_and_documents_404_and_501(
     assert {"404", "501"} <= responses
 
 
+@pytest.mark.parametrize(("method", "path"), sorted(SERVED))
+def test_t04_the_served_routes_keep_their_action_and_404_and_answer_no_501(
+    method: str, path: str
+) -> None:
+    operation = PATHS[path][method]
+    assert operation["x-abacus-action"] == SERVED[(method, path)]
+    responses = set(cast(Json, operation["responses"]))
+    assert "404" in responses and "501" not in responses
+
+
 @pytest.mark.parametrize(("method", "path"), sorted(LIVE))
 def test_t01_the_live_routes_keep_their_action_and_answer_no_501(method: str, path: str) -> None:
     operation = PATHS[path][method]
@@ -142,7 +155,7 @@ def test_t01_the_live_routes_keep_their_action_and_answer_no_501(method: str, pa
 
 
 def test_t01_every_write_takes_an_idempotency_key() -> None:
-    for (method, path), _action in ROUTES.items():
+    for (method, path), _action in (ROUTES | SERVED).items():
         if method == "get" or path.endswith(("/preview", "/coverage")) or method == "delete":
             continue
         names = {p["name"] for p in cast(list[Json], PATHS[path][method].get("parameters", []))}
@@ -246,7 +259,7 @@ async def test_t01_the_gate_authorises_then_reads_the_flag_then_answers_501(
     assert calls == ["authorise:materiality.read:engagement", "flag:assurance.materiality"]
     state["on"] = True
     with pytest.raises(NotImplementedYet):
-        await core.workpaper_versions_route(uuid.uuid4(), uuid.uuid4(), _ctx())
+        await core.program_tailoring_route(uuid.uuid4(), _ctx())
     calls.clear()
     with pytest.raises(NotImplementedYet):
         await core.workpaper_draft_route(
