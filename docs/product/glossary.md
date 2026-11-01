@@ -343,6 +343,22 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | SOC report evaluation | The team's evaluation of one SOC 1 report: type, opinion, period, objectives, exceptions, CUECs and the uncovered period computed by code (`soc_gap`). Reliance is concluded only by the engagement partner's `service_org_reliance` decision (DEC-83). | `soc_report_evaluations` | — |
 | CUEC | A complementary user entity control named in a SOC 1 report, mapped to one of the client's control activities with its evidence: Evidence missing · Evidenced. | `cuecs` | — |
 | Fraud brainstorm session | The AU-C 240 team discussion (AUD-05 b): date, medium, leader, attendees, exclusions with a reason (the EQR is not invited), discussion and presumed-risk conclusions, and minutes written by a person that only the engagement partner approves at their hash. | `fraud_brainstorm_sessions`, `fraud_minutes_approvals` | — |
+| Plan profile | An EBP audit's plan facts for the plan year (EBP-01; A-05): plan type, safe harbor, auto-enrollment, match, participants at the beginning and end of the year, filer status and the Form 5500 due date. The plan number (PN) lives on the plan entity, never the recordkeeper's ID. | `ebp_plans`; `client_entities.plan_number` | — |
+| Service provider | A party that serves the plan (recordkeeper, trustee, custodian, TPA, adviser) with the checks code runs on it (EIN against the agreement, SOC coverage): received · waiting on inputs · correction requested. | `ebp_service_providers`, `ebp_provider_checks` | — |
+| Plan provision | One term of the plan as the governing documents read (adoption agreement, amendments, SPD) with its citations, verified by a person's L1 tick; a conflict between documents is its own row. | `ebp_provisions`, `ebp_provision_conflicts` | — |
+| Participant (census record) | One person in the plan's census, SSN and date of birth sealed and shown masked; revealed only by a logged act (DEC-1858). | `ebp_participants` | employee (for the census record) |
+| Late deposit | The UI name of a late remittance: participant contributions deposited after the plan's established practice, with both day counts (business days from the pay date; calendar days for lost earnings). | `ebp_late_remittance` | late remittance (in UI copy) |
+| Lost earnings | The earnings a late deposit cost the participants, computed by code for the period it was late. | `lost_earnings` | interest (alone) |
+| VFCP correction | A person's record that a late deposit was corrected under the Voluntary Fiduciary Correction Program's self-correction component: pending · corrected. Time alone never corrects. | `ebp_corrections` | — |
+| Certification | The trustee's or custodian's certification of investment information under 29 CFR 2520.103-8, each point evaluated by a person. UI: "§103(a)(3)(C) audit". | `ebp_certification_points` | limited scope, limited-scope audit |
+| Form 5500 line | One Schedule H line of the TPA's draft Form 5500 tied out to the audited figures: tie · reconciling item · inconsistent. | `ebp_form5500_lines` | — |
+| Part IV answer | The draft's answer to a Schedule H Part IV question (4a late deposits, 4b, 4d, 4i, 4j) checked against the audit: consistent · inconsistent. | `ebp_part_iv_answers` | — |
+| Supplemental schedule | A Form 5500 schedule Accrued renders byte-stable for the TPA (4i assets held, 4a delinquent contributions). | `ebp_schedules` | — |
+| Party in interest | A person or entity ERISA §3(14) names in relation to the plan (AUD-27 c). | `parties_in_interest` | — |
+| Prohibited transaction | A transaction between the plan and a party in interest that ERISA §406 forbids; a late deposit is one. | `prohibited_transactions` | — |
+| Accounting estimate | An estimate in the financial statements with its method and evaluation (AUD-27 a): unevaluated · evaluated · exception; the conclusion is the engagement partner's. | `estimates` | — |
+| Related party | An entity or person related to the client (AUD-27 b): unevaluated · evaluated · exception · screened out (with a reason). | `related_parties` | — |
+| Attribute test | One test on the shared attribute grid: each sample item's attributes marked pass, exception or no effect by a person. | `tests`, `test_items`, `test_results` | — |
 
 ## New terms: ledger
 

@@ -4,12 +4,12 @@ title: K-02-T07 due-date and clock engine
 spec: SPEC-500
 acceptance_criteria: [AC-21, AC-22, AC-23, AC-24, AC-25, AC-26]
 risk_zone: amber
-status: in-review
+status: done
 epic: K-02
 plan_key: K-02-T07
 branch: s17-k02-t07
 created: 2026-10-30
-updated: 2026-10-30
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -48,3 +48,4 @@ Nov 16, 2026 for a June-30 Form 990, and the same inputs always give the same in
 
 ## Progress log
 - 2026-10-30: built in S17 Lane 2 on K-02-T05; tests written, run in the end review.
+- 2026-11-01: merged to main in #774 (dcafd2e4b).
