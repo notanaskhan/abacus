@@ -40,6 +40,10 @@ from abacus.modules.assurance.sections import (
     register_index_tag,
     register_run_summary,
 )
+from abacus.modules.assurance.materiality import AUDIT_KINDS as MATERIALITY_KINDS
+from abacus.modules.assurance.materiality import audit_owners as materiality_owners
+from abacus.modules.assurance.materiality import register as register_materiality_kinds
+from abacus.modules.assurance.materiality import register_materiality_dependents
 from abacus.modules.assurance.service_orgs import AUDIT_KINDS as SERVICE_ORG_KINDS
 from abacus.modules.assurance.service_orgs import audit_owners as service_org_owners
 from abacus.modules.assurance.tb_mapping_contract import MappingConfirmIn, MappingRunIn
@@ -106,6 +110,9 @@ register_review_gates()
 
 # A-04-T07: the trail places a service organization on its engagement (SPEC-304; DEC-121).
 register_engagement_owners(SERVICE_ORG_KINDS, service_org_owners)
+# A-04-T12 (DEC-1950): the materiality cards' kinds and appliers; versions placed for the trail.
+register_materiality_kinds()
+register_engagement_owners(MATERIALITY_KINDS, materiality_owners)
 
 __all__ = [
     "ACTIVITIES",
@@ -128,6 +135,7 @@ __all__ = [
     "register_audit_section",
     "register_audit_segment",
     "register_index_tag",
+    "register_materiality_dependents",
     "register_run_summary",
     "router",
     "update_profile",
