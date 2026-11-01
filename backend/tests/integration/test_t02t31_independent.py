@@ -8,13 +8,15 @@ Row acceptance: "...pass on main and fail on a planted draft leak to the portal.
   draft): not in the list, not in the detail, and answering it is refused.
 - Autosave is optimistic: two saves at the same version, the second answers 409.
 - A hostile answer is stored and returned as the same inert string, never interpreted.
-- A template whose wording carries markup or a formula is refused at import (dry run included).
+- A malformed template row is refused at import (dry run included); markup, formula and template
+  wording is kept verbatim as text (ADR-052).
 - An inquiry reaches only its addressee.
 - A K-1 recipient's details change stores no full TIN, and another recipient's id is not theirs.
 """
 
 from __future__ import annotations
 
+import json
 import uuid
 from dataclasses import replace
 from typing import cast
@@ -79,7 +81,7 @@ async def _world(b: Board) -> tuple[AuthContext, uuid.UUID, uuid.UUID, uuid.UUID
         samuel.user_id,
     )
     call = _as(samuel)
-    template = _csv([f"General,,q{n},text,Synthetic question {n},,," for n in (1, 2, 3)])
+    template = _csv([f"General,,q{n},long_text,Synthetic question {n},,," for n in (1, 2, 3)])
     with frozen(DEMO):
         made = await call(
             "POST",
@@ -109,7 +111,8 @@ async def _world(b: Board) -> tuple[AuthContext, uuid.UUID, uuid.UUID, uuid.UUID
 async def _client(b: Board, engagement: uuid.UUID, name: str) -> AuthContext:
     who = await b.person(name, None)
     await b.seed.run(
-        "UPDATE memberships SET kind = 'client' WHERE tenant_id = $1 AND user_id = $2",
+        "UPDATE memberships SET kind = 'client', level = NULL, office_id = NULL "
+        "WHERE tenant_id = $1 AND user_id = $2",
         b.tenant,
         who.user_id,
     )
@@ -129,7 +132,7 @@ async def test_ac_a_planted_draft_question_never_reaches_the_portal(board: Board
         planted = await _as(samuel)(
             "POST",
             f"/v1/questionnaires/{questionnaire}/questions",
-            json={"section": "General", "type": "text", "client_wording": "Draft, not sent"},
+            json={"section": "General", "type": "long_text", "client_wording": "Draft, not sent"},
         )
     assert planted.status_code == 201, planted.text
     draft_id = cast(str, cast(Json, planted.json())["id"])
@@ -165,21 +168,58 @@ async def test_autosave_is_optimistic_and_a_hostile_answer_stays_inert(board: Bo
     assert stale.status_code == 409, stale.text
     read = cast(Json, (await portal("GET", f"/v1/portal/questionnaires/{questionnaire}")).json())
     mine = next(q for q in cast(list[Json], read["questions"]) if q["id"] == question["id"])
-    assert cast(Json, mine["answer"])["value"] == HOSTILE  # stored and served verbatim
+    assert mine["answer"] == HOSTILE  # stored and served verbatim
 
 
-async def test_a_template_with_markup_or_a_formula_is_refused(board: Board) -> None:
+async def test_a_malformed_template_is_refused_and_hostile_wording_stays_text(
+    board: Board,
+) -> None:
+    """T-02 §3.5: a malformed row is refused (dry run or not) and nothing is stored; wording is
+    hostile content kept verbatim and rendered as text, never interpreted (ADR-052)."""
     samuel, _feld, _engagement, _questionnaire = await _world(board)
     call = _as(samuel)
-    for wording in ("<b>Income</b>", "=HYPERLINK(1)", "Hello {{ name }}"):
-        for dry in ("true", "false"):
-            refused = await call(
-                "POST",
-                "/v1/questionnaire-templates:import",
-                params={"name": f"Bad {wording[:3]}", "dry_run": dry},
-                content=_csv([f"General,,q1,text,{wording},,,"]),
-            )
-            assert refused.status_code == 422, (wording, dry, refused.text)
+    before = await board.seed.value("SELECT count(*) FROM questionnaire_template_versions")
+    for row in (
+        "General,,q1,text,Unknown type,,,",  # not a template type
+        ",,q1,long_text,No section,,,",
+        "General,,Bad Key!,long_text,A key outside the pattern,,,",
+        "General,,q1,long_text,,,,",  # no wording
+    ):
+        diff = await call(
+            "POST",
+            "/v1/questionnaire-templates:import",
+            params={"name": "Malformed", "dry_run": "true"},
+            content=_csv([row]),
+        )
+        assert diff.status_code == 201, diff.text  # the dry run is a diff naming the problems
+        assert cast(Json, diff.json())["problems"], (row, diff.text)
+        assert cast(Json, diff.json())["template_id"] is None
+        refused = await call(
+            "POST",
+            "/v1/questionnaire-templates:import",
+            params={"name": "Malformed", "dry_run": "false"},
+            content=_csv([row]),
+        )
+        assert refused.status_code == 422, (row, refused.text)
+    assert await board.seed.value("SELECT count(*) FROM questionnaire_template_versions") == before
+    hostile = ("<b>Income</b>", "=HYPERLINK(1)", "Hello {{ name }}")
+    with frozen(DEMO):
+        made = await call(
+            "POST",
+            "/v1/questionnaire-templates:import",
+            params={"name": "Hostile wording", "dry_run": "false"},
+            content=_csv([f"General,,h{n},long_text,{w},,," for n, w in enumerate(hostile)]),
+        )
+    assert made.status_code == 201, made.text
+    stored = cast(
+        str,
+        await board.seed.value(
+            "SELECT content::text FROM questionnaire_template_versions WHERE template_id = $1",
+            uuid.UUID(cast(str, cast(Json, made.json())["template_id"])),
+        ),
+    )
+    for wording in hostile:
+        assert json.dumps(wording)[1:-1] in stored  # verbatim, not escaped into markup
 
 
 async def test_an_inquiry_reaches_only_its_addressee(board: Board) -> None:
