@@ -4,7 +4,7 @@ title: A-03-T16 Brightwater Hale A-03 content (part one — the populations by i
 spec: SPEC-580  # A-03 §5.4
 acceptance_criteria: [AC-1]
 risk_zone: green
-status: partial
+status: in-progress
 epic: A-03
 plan_key: A-03-T16
 branch: s22-a03-t16
