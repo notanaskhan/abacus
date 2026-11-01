@@ -20,6 +20,13 @@
 | e′ | caleb-dunn | 11:40 AM | Changed after sign-off: amber banner and chip after TB version 2 | composed (A-03-T12 draws it; A-03-T14 makes it live) |
 | a–e (five entities) | caleb-dunn | — | Harlow & Pike group | recorded for A-09 |
 
+## Parity
+| Artboard | Tier (A/B/C/D) | Diff % | Notes |
+|---|---|---|---|
+| f | C (locked) | not run | locked by A-03-T19 at parity (A-03-T12): fixture rows are Granite Peak's 14 TB lines (DV-B4); report-only as Tier C |
+| a2, b2, c2, d2, e2 | D | — | the composed a′–e′ (DV-B2): geometry only, no handoff pixels for a single entity |
+| a–e (five entities) | — | — | recorded for A-09 (Harlow & Pike group mapping) |
+
 ## API
 | Read or write | Endpoint | Shape | Matrix action |
 |---|---|---|---|

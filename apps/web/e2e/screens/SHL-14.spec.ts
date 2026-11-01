@@ -1,4 +1,5 @@
-// SHL-14 a, b, e, f (P-06-T13) and d (P-06-T24) in fixture mode (build-screen-from-handoff §5):
+// SHL-14 a, b, e, f (P-06-T13), d (P-06-T24) and c (A-03-T15; axe with A-03-T19) in fixture mode
+// (build-screen-from-handoff §5):
 // every scenario at 1440×900, DPR 2, from the /components gallery on fixtures, with axe at zero
 // serious or critical findings inside the drawer. Tier C parity is reported by the parity harness (P-06-T26).
 // Run: `ABACUS_VISUAL=1 pnpm exec playwright test --project=chromium e2e/screens/SHL-14.spec.ts`.
@@ -13,6 +14,7 @@ const STATES = [
   { st: "e", ready: "Add a due date to send" },
   { st: "f", ready: "Approve & send to Luis Ferrante" },
   { st: "d", ready: "Pending incorporation" },
+  { st: "c", ready: "Create 25 requests" },
 ] as const;
 
 test.use({

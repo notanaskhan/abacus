@@ -157,7 +157,7 @@ The Comments tab lists the request's comments (SPEC-032 route) with "No comments
 |---|---|---|---|
 | a, b, e, f | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (P-06-T26: Playwright visual project not run in this environment; baselines to capture at the batch merge) | built; axe in `e2e/screens/SHL-14.spec.ts` (not run by P-06-T26); report-only until A-01's AUD-03 host is stable |
 | d | C | not run (P-06-T26: Playwright visual project not run in this environment; baselines to capture at the batch merge) | built (P-06-T24); in `e2e/screens/SHL-14.spec.ts` with axe; Playwright not run locally (chromium 1243 not cached) |
-| c | C | not run | built (A-03-T15, DEC-1764); parity and axe with A-03-T19 |
+| c | C | not run | built (A-03-T15, DEC-1764); axe in `e2e/screens/SHL-14.spec.ts` (A-03-T19); report-only |
 | host | D | not run | drawer 480, pane header 46 with a 14.5/500 title, rows 34, pills 21, radius 14; no `e2e/visual/tier-d.spec.ts` row for the O2 drawer yet |
 
 Keyboard: `src/screens/SHL-14/SHL-14.keyboard.test.tsx` (P-06-T26; vitest, passing). Report: `docs/quality/parity-P-06.md`.

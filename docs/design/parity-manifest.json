@@ -1710,6 +1710,84 @@
       "tier": "C",
       "locked": true
     },
+    "aud-11a.window": {
+      "page": "screens/AUD-11?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-11 Sampling/screenshots/AUD-11a.png",
+      "sha256": "6c1937e4f6bd700e410403f98e00b28cb404eb96fdee1cf6c98622593a9e5482",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ],
+      "locked": true
+    },
+    "aud-11b.window": {
+      "page": "screens/AUD-11?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-11 Sampling/screenshots/AUD-11b.png",
+      "sha256": "7f998ff5b93b58c4cab57cddebcea809c819a743aa24df08b24e8e13700522fb",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ]
+    },
+    "aud-11c.window": {
+      "page": "screens/AUD-11?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-11 Sampling/screenshots/AUD-11c.png",
+      "sha256": "e5ebff868b8c1ff40219362a11241a8c60cd5ec50a0596f7e48844a8b6847d73",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ]
+    },
+    "aud-11d.window": {
+      "page": "screens/AUD-11?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-11 Sampling/screenshots/AUD-11d.png",
+      "sha256": "329023d331cfa15b97efa864fdca1ce0d4de574531e0444b0496fc67282d4c9e",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ]
+    },
+    "aud-11e.window": {
+      "page": "screens/AUD-11?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-11 Sampling/screenshots/AUD-11e.png",
+      "sha256": "cb3e89d5a62d15a62647870b79cedb1495c5f7c83756a98315ebeecd956ba5f0",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ]
+    },
+    "aud-11f.window": {
+      "page": "screens/AUD-11?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-11 Sampling/screenshots/AUD-11f.png",
+      "sha256": "4f32bacf93757e48a2b6dbf31315977b6d73a23e78b0859f80c02de7debb0e4e",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-cockpit='dock']"
+      ],
+      "locked": true
+    },
+    "aud-31f.window": {
+      "page": "screens/AUD-31?st=f",
+      "selector": "[data-artboard=\"f\"]",
+      "source": "handoff/screens/AUD-31 Trial balance mapping - Harlow and Pike interim 8312026/screenshots/AUD-31f.png",
+      "sha256": "23c5a595ba8f4c78547bafb3027cdbc08f84a7e0d956a16888bdecbafe5a07f9",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "deviation": "DV-B4: fixture rows are Granite Peak's 14 TB lines; the handoff draws Harlow & Pike's group"
+    },
     "por-16a.window": {
       "page": "screens/POR-16?st=a",
       "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
