@@ -49,6 +49,8 @@ AGENTS = (
     "backend/src/abacus/modules/agents/**",
     "evals/**",
     "backend/src/abacus_tools/evals/**",
+    # A-04-T09: the materiality recommender's suite grades against the engine's figures.
+    "backend/src/abacus/modules/assurance/compute/**",
 )
 # What the fixture-mode journeys walk (F-04-T28; F-04.32): the SPA and portal sources, the
 # component library, the journey specs and their harness, and the server and browser config. A

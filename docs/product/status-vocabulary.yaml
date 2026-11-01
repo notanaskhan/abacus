@@ -1153,6 +1153,65 @@ objects:
       exception_for_resolution: {label: "Exception for resolution", variant: null, terminal: false, derived: false}
       proposed:                 {label: "Proposed", variant: amber, terminal: false, derived: false}
 
+  # --- A-05 EBP plan audits (A-05-T05, DEC-1860; A-05 §4.10) ---
+  ebp_provider_check:   # ebp_provider_checks.status (EBP-01 a, c)
+    source: "A-05 §4.10 (EBP-01)"
+    codes:
+      received:             {label: "Received", variant: green-tint, terminal: true, derived: false}
+      waiting_on_inputs:    {label: "Waiting on inputs", variant: muted, terminal: false, derived: false}
+      correction_requested: {label: "Correction requested", variant: amber, terminal: false, derived: false}
+
+  ebp_late_remittance:   # the late remittance's correction (EBP-04 a, f)
+    source: "A-05 §4.10 (EBP-04)"
+    codes:
+      found:            {label: "Late deposit found", variant: amber, terminal: false, derived: false}
+      pending_vfcp_scc: {label: "Pending — VFCP Self-Correction Component", variant: state, terminal: false, derived: false}
+      corrected:        {label: "Corrected", variant: green-tint, terminal: true, derived: false}
+
+  ebp_form5330:   # Form 5330 status on the late remittance (EBP-04 f)
+    source: "A-05 §4.10 (EBP-04)"
+    codes:
+      exposure:     {label: "Exposure", variant: amber, terminal: false, derived: false}
+      not_required: {label: "Not required", variant: green-tint, terminal: true, derived: false}
+      filed:        {label: "Filed", variant: green-tint, terminal: true, derived: false}
+
+  ebp_certification_point:   # each certification point (EBP-06 c)
+    source: "A-05 §4.10 (EBP-06)"
+    codes:
+      not_evaluated: {label: "Not evaluated", variant: muted, terminal: false, derived: false}
+      evaluated:     {label: "Evaluated", variant: green-tint, terminal: true, derived: false}
+
+  ebp_form5500_line:   # a Schedule H line's tie-out (EBP-07 a)
+    source: "A-05 §4.10 (EBP-07)"
+    codes:
+      tie:              {label: "Tie", variant: green, terminal: true, derived: true}
+      reconciling_item: {label: "Reconciling item", variant: state, terminal: false, derived: true}
+      inconsistent:     {label: "Inconsistent", variant: red-tint, terminal: false, derived: true}
+
+  ebp_part_iv:   # a Part IV answer against the audit (EBP-07 b, e)
+    source: "A-05 §4.10 (EBP-07)"
+    codes:
+      consistent:   {label: "Consistent", variant: green-tint, terminal: true, derived: true}
+      inconsistent: {label: "Inconsistent", variant: red-tint, terminal: false, derived: true}
+
+  ebp_test_result:   # one attribute's result on the shared grid (EBP-03, EBP-04 c, EBP-05)
+    source: "A-05 §4.10 (EBP-03)"
+    codes:
+      untested:    {label: "Untested", variant: muted, terminal: false, derived: false}
+      testing:     {label: "Testing", variant: state, terminal: false, derived: false}
+      pass:        {label: "Pass", variant: green-tint, terminal: true, derived: false}
+      exception:   {label: "Exception", variant: red-tint, terminal: true, derived: false}
+      needs_human: {label: "Needs human", variant: amber, terminal: false, derived: false}
+      no_effect:   {label: "No effect", variant: neutral, terminal: true, derived: false}
+
+  aud27_item:   # an estimate, related party or party in interest (AUD-27 a-e)
+    source: "A-05 §4.10 (AUD-27)"
+    codes:
+      unevaluated:  {label: "Unevaluated", variant: neutral, terminal: false, derived: false}
+      evaluated:    {label: "Evaluated", variant: green-tint, terminal: false, derived: false, context_labels: {pending_ep: "Evaluated · pending EP"}}
+      exception:    {label: "Exception", variant: red-tint, terminal: false, derived: false}
+      screened_out: {label: "Screened out", variant: muted, terminal: true, derived: false}
+
 retired:
   # --- request_item.status (9.5.6, DEC-09; migration P-44) ---
   "request_item.open":             {replacement: ["request.draft", "request.requested"], note: "draft while firm-only; requested once sent to the client"}

@@ -899,6 +899,8 @@ class ReassignCandidateOut(BaseModel):
 
     user_id: Annotated[UUID, classified("internal")]
     role: Annotated[str, classified("internal")]
+    # I-01-T19 (DEC-1853), additive: the name HOME-02's Reassign… picker lists.
+    display_name: Annotated[str, classified("internal")] = ""
 
 
 class ReassignCandidatesOut(BaseModel):
@@ -957,8 +959,15 @@ async def human_gate_candidates_route(gate_id: UUID, ctx: Ctx) -> ReassignCandid
     """Who the gate may move to now (the owner's hook; walls applied); 409 `not_reassignable`."""
     await _gate_flag(ctx)
     found = await reassign_candidates(ctx, gate_id)
+    # The hook read the candidates under RLS with walls applied; names only for those.
+    names = await names_of(sorted({c.user_id for c in found}))
     return ReassignCandidatesOut(
-        candidates=[ReassignCandidateOut(user_id=c.user_id, role=c.role) for c in found]
+        candidates=[
+            ReassignCandidateOut(
+                user_id=c.user_id, role=c.role, display_name=names.get(c.user_id, "")
+            )
+            for c in found
+        ]
     )
 
 

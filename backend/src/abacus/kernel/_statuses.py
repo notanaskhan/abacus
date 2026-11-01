@@ -966,6 +966,55 @@ class ControlExceptionDispositionStatus(StrEnum):
     PROPOSED = "proposed"
 
 
+class EbpProviderCheckStatus(StrEnum):
+    RECEIVED = "received"
+    WAITING_ON_INPUTS = "waiting_on_inputs"
+    CORRECTION_REQUESTED = "correction_requested"
+
+
+class EbpLateRemittanceStatus(StrEnum):
+    FOUND = "found"
+    PENDING_VFCP_SCC = "pending_vfcp_scc"
+    CORRECTED = "corrected"
+
+
+class EbpForm5330Status(StrEnum):
+    EXPOSURE = "exposure"
+    NOT_REQUIRED = "not_required"
+    FILED = "filed"
+
+
+class EbpCertificationPointStatus(StrEnum):
+    NOT_EVALUATED = "not_evaluated"
+    EVALUATED = "evaluated"
+
+
+class EbpForm5500LineStatus(StrEnum):
+    pass
+    # derived, never stored: tie, reconciling_item, inconsistent
+
+
+class EbpPartIvStatus(StrEnum):
+    pass
+    # derived, never stored: consistent, inconsistent
+
+
+class EbpTestResultStatus(StrEnum):
+    UNTESTED = "untested"
+    TESTING = "testing"
+    PASS = "pass"
+    EXCEPTION = "exception"
+    NEEDS_HUMAN = "needs_human"
+    NO_EFFECT = "no_effect"
+
+
+class Aud27ItemStatus(StrEnum):
+    UNEVALUATED = "unevaluated"
+    EVALUATED = "evaluated"
+    EXCEPTION = "exception"
+    SCREENED_OUT = "screened_out"
+
+
 # Each object's stored codes, and their SQL CHECK list.
 STORED: dict[str, tuple[str, ...]] = {
     "engagement": (
@@ -1770,6 +1819,43 @@ STORED: dict[str, tuple[str, ...]] = {
     "control_exception_disposition": (
         "exception_for_resolution",
         "proposed",
+    ),
+    "ebp_provider_check": (
+        "received",
+        "waiting_on_inputs",
+        "correction_requested",
+    ),
+    "ebp_late_remittance": (
+        "found",
+        "pending_vfcp_scc",
+        "corrected",
+    ),
+    "ebp_form5330": (
+        "exposure",
+        "not_required",
+        "filed",
+    ),
+    "ebp_certification_point": (
+        "not_evaluated",
+        "evaluated",
+    ),
+    "ebp_form5500_line": (
+    ),
+    "ebp_part_iv": (
+    ),
+    "ebp_test_result": (
+        "untested",
+        "testing",
+        "pass",
+        "exception",
+        "needs_human",
+        "no_effect",
+    ),
+    "aud27_item": (
+        "unevaluated",
+        "evaluated",
+        "exception",
+        "screened_out",
     ),
 }
 CHECKS: dict[str, str] = {

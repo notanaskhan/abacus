@@ -4,12 +4,12 @@ title: P-04-T44 independent AC tests for the E7 kit, SHL-10 and SHL-16
 spec: SPEC-000  # the backlog row; SPEC-360 and the handoff
 acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: amber
-status: in-review
+status: done
 epic: P-04
 plan_key: P-04-T44
 branch: s17-p04-t44
 created: 2026-10-30
-updated: 2026-10-30
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -28,3 +28,4 @@ sign-off control appears on an agent-owned element."
 
 ## Progress log
 - 2026-10-30: written in S17 Lane 2 on P-04-T43; run in the end review.
+- 2026-11-01: merged to main in #800 (201df3e3e).
