@@ -15,6 +15,8 @@ const SCREENS: Readonly<Record<string, readonly string[]>> = {
   "POR-13": ["a", "b", "c", "d", "e", "f"],
 };
 const WIDTHS = [1400, 390] as const;
+// Artboards whose state is loading: the frame is busy by design (TAX-01 g, T1e).
+const LOADING = new Set(["TAX-01:g"]);
 
 test.use({ deviceScaleFactor: 2, reducedMotion: "reduce" });
 
@@ -28,7 +30,9 @@ for (const width of WIDTHS) {
         await page.goto(`/components/screens/${id}?st=${st}&frame=1&w=${String(width)}`);
         const board = page.locator(`[data-artboard='${st}']`);
         await expect(board).toBeVisible();
-        await expect(board.locator("[aria-busy='true']")).toHaveCount(0);
+        if (!LOADING.has(`${id}:${st}`)) {
+          await expect(board.locator("[aria-busy='true']")).toHaveCount(0);
+        }
         if (id.startsWith("POR-")) expect(await board.innerText()).not.toMatch(/Accrued/);
         const { violations } = await new AxeBuilder({ page })
           .include(`[data-artboard='${st}']`)
