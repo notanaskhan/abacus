@@ -29,3 +29,7 @@ findings." (T-02 §5.4, §5.5.)
 
 ## Progress log
 - 2026-11-01: written; runs at the batch's end review.
+- 2026-11-01 end review: the journey walk's axe found a ready ViewState body scrolling without
+  keyboard access (TAX-02) and POR-05's complete discs labelled without a role: both fixed. Tier D
+  found the return frame's tabsbar at 50 where the handoff draws 44 (TAX-02, TAX-03): now 44 with
+  the default segmented. TXP-12 has no tabsbar, so the check leaves it out. Manifest keys lower-case.
