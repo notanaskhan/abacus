@@ -1409,6 +1409,11 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "/v1/portal/k1-recipients/{recipient_id}/details-changes",
         "portal_k1.update_details",
     ),
+    (
+        "POST",
+        "/v1/portal/k1-recipients/{recipient_id}/details-changes:upload",
+        "portal_k1.update_details",
+    ),
     ("POST", "/v1/portal/k1s/{package_id}/e-furnishing-consent", "portal_k1.update_details"),
     ("POST", "/v1/portal/links/renew", "pre_session"),
     (

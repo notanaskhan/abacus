@@ -54,7 +54,12 @@ export const COPY = {
   roleUnionTip: "Deliverables opens here once it is built (POR-09)",
   tinSheet: {
     title: "Update taxpayer ID",
+    form: "Form",
+    w9: "W-9",
+    w8: "W-8",
     upload: "Upload a signed Form W-9",
+    uploadW8Title: "Upload a signed Form W-8",
+    failed: "The form wasn't sent. Try again.",
     uploadW8: "Foreign recipients: upload a signed Form W-8 instead.",
     choose: "Choose file…",
     helper: "We never show your full number on screen.",

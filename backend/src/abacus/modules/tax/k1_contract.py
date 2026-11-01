@@ -23,7 +23,7 @@ from decimal import Decimal
 from typing import Annotated, Literal, cast
 from uuid import UUID
 
-from fastapi import Depends, Header, Path, Response
+from fastapi import Depends, Header, Path, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import TAX_K1_RELEASE
@@ -683,6 +683,30 @@ async def portal_k1_attachment_route(
 
 
 @portal_k1_router.post(
+    "/k1-recipients/{recipient_id}/details-changes:upload",
+    action="portal_k1.update_details",
+    response_model=RecipientDetailsChangeOut,
+    status_code=201,
+    errors=(409, 413),
+)
+async def portal_details_upload_route(
+    recipient_id: Annotated[UUID, Path()],
+    request: Request,
+    ctx: Member,
+    kind: Annotated[Literal["w9", "w8"], Query()],
+    filename: Annotated[str, Query(min_length=1, max_length=255)],
+) -> RecipientDetailsChangeOut:
+    """POR-13 d (S20e): a signed W-9 or W-8, the raw file as the body; scanned before storage,
+    refused closed, stored as the recipient's own upload; pending for a person at the firm."""
+    await _portal_gate(ctx)
+    return _change_out(
+        await k1_portal.upload_details_change(
+            ctx, recipient_id, kind, filename, await request.body()
+        )
+    )
+
+
+@portal_k1_router.post(
     "/k1-recipients/{recipient_id}/details-changes",
     action="portal_k1.update_details",
     response_model=RecipientDetailsChangeOut,
@@ -692,7 +716,8 @@ async def portal_k1_attachment_route(
 async def portal_details_change_route(
     recipient_id: Annotated[UUID, Path()], body: PortalDetailsChangeIn, ctx: Member
 ) -> RecipientDetailsChangeOut:
-    """A signed W-9 or W-8, or a structured address, for a person at the firm to decide."""
+    """A structured address for a person at the firm to decide; a W-9 or W-8 goes through
+    `…/details-changes:upload` (422 `details_change_invalid` here)."""
     await _portal_gate(ctx)
     return _change_out(
         await k1_portal.submit_details_change(
