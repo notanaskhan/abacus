@@ -104,8 +104,9 @@ async def _envelope_to(
     return envelope, signer_id
 
 
-def _sign_todos(home: dict[str, Any]) -> list[dict[str, Any]]:
-    return [t for t in cast(list[dict[str, Any]], home["todos"]) if t["kind"] == "sign"]
+def _sign_todos(home: dict[str, Any]) -> list[dict[str, Any]]:  # Any: a JSON response body
+    todos = cast(list[dict[str, Any]], home["todos"])  # Any: a JSON response body
+    return [t for t in todos if t["kind"] == "sign"]
 
 
 async def test_ac_claires_sign_todo_appears_on_her_home_and_not_on_jonahs(net: Net) -> None:

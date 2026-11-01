@@ -32,6 +32,7 @@ def test_ac6_the_contract_covers_both_compute_packages_and_forbids_everything_el
     assert set(contract["source_modules"]) == {
         "abacus.modules.sampling.compute",
         "abacus.modules.ledger.compute",
+        "abacus.modules.assurance.compute",  # A-04-T08: the materiality engine (DEC-1850)
     }
     forbidden = set(contract["forbidden_modules"])
     assert {"abacus.kernel", "abacus.modules", "abacus_tools", "abacus.ai_gateway"} <= forbidden

@@ -113,6 +113,7 @@ def test_the_canary_runs_every_15_minutes_on_the_time_sensitive_queue(
         "notification_purge:platform",
         "pilot_metrics:platform",  # Q-04-T008: the weekly pilot metrics
         "ses_events:platform",
+        "signatures-evidence-integrity",  # N-02-T38: nightly evidence re-hash
         "spend_anomaly:platform",
         f"canary:{canary_firm}",
     }

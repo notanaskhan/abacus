@@ -9,7 +9,8 @@ read answers the Northwind Robotics 401(k) Plan PY2025 seed's figures (the examp
 generated client and fixture mode agree) and a write is 501 `not_implemented` until its task.
 
 Classification: a participant's SSN and date of birth are Restricted and never leave the server
-unmasked (`ssn_masked`, `dob_masked`, DEC-1858); compensation and balances are Confidential.
+unmasked (`ssn` as `MaskedTinOut`, `dob_masked`, DEC-1858); compensation and balances are
+Confidential.
 Every figure is code's (ADR-050). Verify, adopt, record a correction, evaluate the certification
 and conclude are a person's acts; no agent or system principal holds them (INV-1).
 """
@@ -36,7 +37,9 @@ from abacus.modules.identity.api import (
     Forbidden,
     authorise,
     current_context,
+    mask_tins_for,
 )
+from abacus.modules.organisations.api import MaskedTinOut
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -91,7 +94,10 @@ class FigureRowOut(BaseModel):
     key: Annotated[str, Field(pattern=r"^[a-z0-9_.]{1,64}$"), classified("internal")]
     label: Label
     amount: MaybeMoney
-    status: Annotated[str | None, Field(max_length=40), classified("internal")] = None
+    # A Schedule H line's tie-out (status vocabulary `ebp_form5500_line`); a statement row: none.
+    status: Annotated[
+        Literal["tie", "reconciling_item", "inconsistent"] | None, classified("internal")
+    ] = None
     note: Annotated[str | None, Field(max_length=500), classified("confidential")] = None
 
 
@@ -100,7 +106,7 @@ class FigureRowOut(BaseModel):
 _PLAN: JsonDict = {
     "plan_name": "Northwind Robotics 401(k) Plan",
     "plan_number": "001",
-    "sponsor_ein_last4": "6620",
+    "sponsor_ein": {"kind": "ein", "presence": "on_file", "last4": "6620"},
     "plan_year_start": "2025-01-01",
     "plan_year_end": "2025-12-31",
     "plan_type": "401k",
@@ -122,7 +128,8 @@ class PlanOut(BaseModel):
 
     plan_name: Label
     plan_number: Annotated[str | None, Field(pattern=r"^[0-9]{3}$"), classified("internal")]
-    sponsor_ein_last4: Annotated[str, Field(pattern=r"^[0-9]{4}$"), classified("confidential")]
+    # The platform's masked shape (kind and last four; Restricted, P-12): never a plain EIN.
+    sponsor_ein: Annotated[MaskedTinOut, classified("restricted", pii_kind="tin")]
     plan_year_start: Annotated[date, classified("internal")]
     plan_year_end: Annotated[date, classified("internal")]
     plan_type: Annotated[Literal["401k"], classified("internal")]
@@ -150,9 +157,9 @@ ProviderStatus = Literal["received", "waiting_on_inputs", "correction_requested"
 
 _PROVIDER: JsonDict = {
     "id": "00000000-0000-4000-8000-000000000501",
-    "name": "Keystone Retirement Svcs LLC",
+    "name": "Example Recordkeeper LLC",
     "role": "recordkeeper",
-    "ein_last4": "4420",
+    "ein": {"kind": "ein", "presence": "on_file", "last4": "4420"},
     "status": "correction_requested",
     "soc_report": "SOC 1 Type 2, Jan 1 to Sep 30, 2025",
     "check_note": "Summit's draft Schedule C lists EIN ending 4402; the agreement shows 4420",
@@ -168,7 +175,7 @@ class ProviderOut(BaseModel):
         Literal["recordkeeper", "trustee", "custodian", "tpa", "investment_adviser", "other"],
         classified("internal"),
     ]
-    ein_last4: Annotated[str | None, Field(pattern=r"^[0-9]{4}$"), classified("confidential")]
+    ein: Annotated[MaskedTinOut | None, classified("restricted", pii_kind="tin")] = None
     status: Annotated[ProviderStatus, classified("internal")]
     soc_report: Annotated[str | None, Field(max_length=200), classified("internal")]
     check_note: Annotated[str | None, Field(max_length=500), classified("confidential")]
@@ -244,7 +251,7 @@ class PlanReviewIn(BaseModel):
 _PARTICIPANT: JsonDict = {
     "id": "00000000-0000-4000-8000-000000000601",
     "name": "Participant 22",
-    "ssn_masked": "•••-••-4417",
+    "ssn": {"kind": "ssn", "presence": "on_file", "last4": "4417"},
     "dob_masked": "••/••/••••",
     "status": "active",
     "compensation": "84200.00",
@@ -258,7 +265,7 @@ class ParticipantOut(BaseModel):
 
     id: Annotated[UUID, classified("internal")]
     name: Annotated[str, Field(max_length=200), classified("confidential")]
-    ssn_masked: Annotated[str, Field(pattern=r"^•••-••-[0-9]{4}$"), classified("internal")]
+    ssn: Annotated[MaskedTinOut, classified("restricted", pii_kind="tin")]
     dob_masked: Annotated[Literal["••/••/••••"], classified("internal")]
     status: Annotated[
         Literal["active", "terminated", "retired", "deceased"], classified("internal")
@@ -541,7 +548,8 @@ _A = ASSURANCE_ESTIMATES_RP
 async def ebp_plan_route(work_item_id: UUID, ctx: Ctx) -> PlanOut:
     """Plan facts and the filer status card (EBP-01; T08)."""
     await _gate(ctx, work_item_id, "ebp.read", _E)
-    return _example(PlanOut, _PLAN)
+    # The sponsor's masked EIN reaches an offshore reader null (DEC-52): the one central mask.
+    return await mask_tins_for(ctx, _example(PlanOut, _PLAN))
 
 
 @router.patch("/ebp/plan", action="ebp_plan.edit", response_model=PlanOut, errors=(409, 501))
@@ -557,8 +565,11 @@ async def ebp_plan_edit_route(
 @router.get("/ebp/providers", action="ebp.read", response_model=ProvidersOut)
 async def ebp_providers_route(work_item_id: UUID, ctx: Ctx) -> ProvidersOut:
     await _gate(ctx, work_item_id, "ebp.read", _E)
-    return ProvidersOut(
-        items=[_example(ProviderOut, _PROVIDER)], allowed_actions=["ebp_provider.manage"]
+    return await mask_tins_for(
+        ctx,
+        ProvidersOut(
+            items=[_example(ProviderOut, _PROVIDER)], allowed_actions=["ebp_provider.manage"]
+        ),
     )
 
 
@@ -636,8 +647,11 @@ async def ebp_participants_route(
 ) -> ParticipantsOut:
     """Masked participants, tokens only (DEC-1858; T15)."""
     await _gate(ctx, work_item_id, "ebp.read", _E)
-    return ParticipantsOut(
-        items=[_example(ParticipantOut, _PARTICIPANT)], next_cursor=None, total=301
+    return await mask_tins_for(
+        ctx,
+        ParticipantsOut(
+            items=[_example(ParticipantOut, _PARTICIPANT)], next_cursor=None, total=301
+        ),
     )
 
 

@@ -22,6 +22,7 @@ from abacus.kernel import _flags
 from abacus.kernel.classification import unclassified_fields
 from abacus.modules.assurance import ebp_contract as ebp
 from abacus.modules.identity.authz import _matrix
+from abacus.modules.organisations.api import MaskedTinOut
 
 Json = dict[str, object]
 DOC = cast(Json, json.loads(document()))
@@ -110,9 +111,10 @@ def test_t04_every_field_is_classified_and_pii_only_masked() -> None:
     assert models
     for model in models:
         assert unclassified_fields(model) == [], model.__name__
-    fields = set(ebp.ParticipantOut.model_fields)
-    assert {"ssn_masked", "dob_masked"} <= fields
-    assert not fields & {"ssn", "dob", "date_of_birth"}
+    fields = ebp.ParticipantOut.model_fields
+    # The census carries the SSN only as the platform's masked shape and the DOB masked (DEC-1858).
+    assert fields["ssn"].annotation is MaskedTinOut
+    assert "dob_masked" in fields and not set(fields) & {"dob", "date_of_birth"}
 
 
 @pytest.mark.parametrize("action", NEW_ACTIONS)

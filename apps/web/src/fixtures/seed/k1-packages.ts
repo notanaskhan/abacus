@@ -8,7 +8,7 @@ import type {
   K1BoxLineOut,
   K1DocumentOut,
   K1HandoffOut,
-  K1MaskedTinOut,
+  MaskedTinOut,
   K1PackageOut,
   K1PackageStatus,
   K1ReleaseCheckOut,
@@ -46,7 +46,7 @@ interface Recipient {
   note?: string;
   locality?: string;
   contact: string;
-  tin: K1MaskedTinOut;
+  tin: MaskedTinOut;
   period?: readonly [string, string];
   /** Its own 1040 in the firm, a share target (DEC-88). */
   related?: { id: string; client: string; status: string };
@@ -61,7 +61,7 @@ const RIDGELINE: readonly Recipient[] = [
     kind: "gp",
     note: "Owen Calder, managing member",
     contact: "Owen Calder",
-    tin: { kind: "ein", last4: "3318" },
+    tin: { kind: "ein", presence: "on_file", last4: "3318" },
     after: "released",
   },
   {
@@ -70,7 +70,7 @@ const RIDGELINE: readonly Recipient[] = [
     kind: "lp",
     locality: "Chicago, IL",
     contact: "Meera Shah",
-    tin: { kind: "ssn", last4: "2290" },
+    tin: { kind: "ssn", presence: "on_file", last4: "2290" },
     related: { id: SHAH_RETURN, client: "Meera Shah", status: "preparing" },
     after: "viewed",
   },
@@ -80,7 +80,7 @@ const RIDGELINE: readonly Recipient[] = [
     kind: "lp",
     note: "35% → 30% at 6/30",
     contact: "authorized member",
-    tin: { kind: "ein", last4: "7741" },
+    tin: { kind: "ein", presence: "on_file", last4: "7741" },
     after: "downloaded",
   },
   {
@@ -89,7 +89,7 @@ const RIDGELINE: readonly Recipient[] = [
     kind: "lp",
     note: "admitted 7/1/2025",
     contact: "authorized member",
-    tin: { kind: "ein", last4: "5106" },
+    tin: { kind: "ein", presence: "on_file", last4: "5106" },
     period: ["2025-07-01", "2025-12-31"],
     after: "bounced",
   },
@@ -99,7 +99,7 @@ const RIDGELINE: readonly Recipient[] = [
     kind: "lp",
     locality: "Brooklyn, NY",
     contact: "Jonah Feld",
-    tin: { kind: "ssn", last4: "4417" },
+    tin: { kind: "ssn", presence: "on_file", last4: "4417" },
     related: { id: FELD_RETURN, client: "Jonah & Claire Feld", status: "in_review" },
     after: "viewed",
   },
@@ -112,7 +112,7 @@ const BLUESTEM: readonly Recipient[] = [
     kind: "shareholder",
     note: "70%",
     contact: "Arjun Mehta",
-    tin: { kind: "ssn", last4: "6120" },
+    tin: { kind: "ssn", presence: "on_file", last4: "6120" },
     after: "downloaded",
   },
   {
@@ -121,7 +121,7 @@ const BLUESTEM: readonly Recipient[] = [
     kind: "shareholder",
     note: "30%",
     contact: "Sunita Rao",
-    tin: { kind: "ssn", last4: "8834" },
+    tin: { kind: "ssn", presence: "on_file", last4: "8834" },
     after: "downloaded",
   },
 ];
@@ -132,7 +132,7 @@ const CALLOWAY: readonly Recipient[] = [
     name: "Nora Calloway",
     kind: "beneficiary",
     contact: "Nora Calloway",
-    tin: { kind: "ssn", last4: "5512" },
+    tin: { kind: "ssn", presence: "on_file", last4: "5512" },
     after: "draft",
   },
   {
@@ -140,7 +140,7 @@ const CALLOWAY: readonly Recipient[] = [
     name: "Theo Calloway",
     kind: "beneficiary",
     contact: "Theo Calloway",
-    tin: { kind: "ssn", last4: "7034" },
+    tin: { kind: "ssn", presence: "on_file", last4: "7034" },
     after: "draft",
   },
 ];
@@ -308,7 +308,7 @@ export function k1Check(returnId: string, variant: K1Variant): K1ReleaseCheckOut
 }
 
 /** A package's masked TIN (the detail's only, ADR-031). */
-export function k1Tin(packageId_: string): K1MaskedTinOut | null {
+export function k1Tin(packageId_: string): MaskedTinOut | null {
   for (const set of SETS) {
     for (const r of set.recipients) {
       for (const v of [1, 2]) {

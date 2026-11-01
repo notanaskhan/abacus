@@ -201,23 +201,20 @@ def test_merged_it_becomes_the_flag_cli_command_with_its_fingerprint(
     assert verdict.why == () and verdict.refs["request"] == request.sha256
 
 
-def test_a_plain_ops_request_still_refuses_the_flag_cli(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_an_ops_request_may_name_the_flag_cli_since_dec1680(tmp_path: Path) -> None:
+    """T-01-T47 (DEC-1680) allowlists the flag CLI for a pilot's go-live; the flip guard, not the
+    ops request, still asks for an approver who is not the operator and a rollback."""
     path = tmp_path / "2027-09-21-flag.yaml"
-    path.write_text(
-        yaml.safe_dump(
-            {
-                "command": "abacus_tools.flags",
-                "args": [],
-                "operator": "ayushkbhatia",
-                "reason": "x",
-            }
-        ),
-        encoding="utf-8",
-    )
-    assert release.main(["ops-request", str(path)]) == 1
-    assert "allowlisted" in capsys.readouterr().err
+    raw: dict[str, object] = {
+        "command": "abacus_tools.flags",
+        "args": [],
+        "operator": "ayushkbhatia",
+        "reason": "x",
+    }
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    parsed = release.ops_request(cast(dict[str, object], yaml.safe_load(path.read_text())))
+    assert parsed.command == "abacus_tools.flags"
+    assert parsed.argv()[:3] == ["python", "-m", "abacus_tools.flags"]
 
 
 def test_the_cli_precheck_exits_1_naming_the_reason(

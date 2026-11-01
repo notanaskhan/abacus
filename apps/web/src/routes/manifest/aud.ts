@@ -46,7 +46,10 @@ export const audScreens = {
   // (`?section=trial_balance`, behind `ledger.tb_workpaper`); it has no path of its own, and stays
   // planned until A-02-T24 swaps it to the live C9 routes.
   "AUD-06": { name: "Trial balance & leadsheets", status: "planned", path: null },
-  "AUD-07": { name: "Materiality · partner decision", status: "fixture", path: null },
+  // A-04-T10 built a–e on fixtures as AUD-02's Materiality canvas (no path of its own). It stays
+  // planned for AUD-03's reason: AUD-11's "Opens AUD-07 · materiality" link has no ov.<ID>()
+  // builder for a cockpit section yet (main CI triage, DEC-1865).
+  "AUD-07": { name: "Materiality · partner decision", status: "planned", path: null },
   "AUD-08": { name: "Risk assessment register & linkage", status: "planned", path: null },
   "AUD-09": { name: "Internal control & exceptions", status: "planned", path: null },
   "AUD-10": { name: "Service organizations & SOC 1 evaluation", status: "planned", path: null },

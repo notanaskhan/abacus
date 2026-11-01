@@ -364,7 +364,8 @@ async def test_ac22_a_later_epic_registers_a_row_and_unanswered_rows_never_rende
         ("trial_balance", "Trial Balance", "Not started")
     ]
     fieldwork = next(b for b in view.bands if b.key == "fieldwork")
-    assert fieldwork.rows == []
+    # A-03-T15 registers AUD-11's real row here; the planted broken row never renders.
+    assert "broken_row" not in [r.key for r in fieldwork.rows]
     assert [b.key for b in view.bands] == [
         "overview",
         "planning",

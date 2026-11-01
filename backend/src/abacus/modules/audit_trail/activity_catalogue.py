@@ -158,6 +158,20 @@ CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
     "suggestion.edited": _a("decision", "ok", "decision", "version"),
     "suggestion.dismissed": _a("decision", "no", "decision", "version"),
     "field.value_recorded": _a("change", "pl", "seq", "citations"),
+    # N-02-T28: the envelope's life on the trail (moved here from signatures, which may not
+    # import this edge module; T08).
+    "envelope.drafted": _a("change", "pl"),
+    "envelope.draft_saved": _a("change", "pl"),
+    "envelope.send_requested": _a("decision", "ok"),
+    "envelope.send_undone": _a("decision", "no"),
+    "envelope.reminder_skipped": _a("communication", "no"),
+    "envelope.viewed": _a("access", "pl"),
+    "envelope.declined": _a("decision", "no"),
+    "envelope.decline_withdrawn": _a("decision", "pl"),
+    "envelope.expired": _a("change", "no"),
+    "envelope.voided": _a("change", "no"),
+    "envelope.evidence_recorded": _a("change", "pl"),
+    "signer.signing_session_issued": _a("sign_in", "pl"),
 }
 
 _REGISTERED: dict[str, CatalogueEntry] = {}

@@ -46,6 +46,7 @@ from abacus_tools.db_connect import connect
 from abacus_tools.fakes.identity import FakeIdentityProvider
 from abacus_tools.synthetic.scenarios.brightwater_hale import SCENARIO_HASH, SCENARIO_VERSION
 from abacus_tools.synthetic.scenarios.brightwater_hale.loader import TENANT
+from abacus_tools.synthetic.scenarios.brightwater_hale.prng import stable_id
 from abacus_tools.synthetic.scenarios.brightwater_hale.scenario import build
 
 REPO: Final = Path(__file__).resolve().parents[4]
@@ -238,6 +239,40 @@ async def capture(snapshot: str, *, app_url: str, identity_url: str) -> dict[str
     return done
 
 
+def _standard_version_ids(standards: Json) -> dict[str, str]:
+    """A standard and its versions are written through the service and the import endpoint
+    (K-02-T18), whose ids are the server's own and differ on every load: each one's stable
+    stand-in, from its key (and the version's number)."""
+    out: dict[str, str] = {}
+    body = cast(dict[str, object], standards)
+    for item in cast(list[dict[str, object]], body.get("items", [])):
+        out[str(item["id"])] = stable_id(f"standard:{item['key']}")
+        for slot in ("current_version", "draft_version"):
+            version = cast("dict[str, object] | None", item.get(slot))
+            if version is not None:
+                out[str(version["id"])] = stable_id(
+                    f"standard-version:{item['key']}:{version['version']}"
+                )
+    return out
+
+
+def _replaced(value: object, ids: Mapping[str, str]) -> object:
+    if isinstance(value, str):
+        return ids.get(value, value)
+    if isinstance(value, list):
+        return [_replaced(v, ids) for v in cast(list[object], value)]
+    if isinstance(value, dict):
+        return {k: _replaced(v, ids) for k, v in cast(dict[str, object], value).items()}
+    return value
+
+
+def stable(captured: Mapping[str, Json]) -> dict[str, Json]:
+    """The captured bodies with every server-made standard and version id swapped for its stand-in,
+    in every file, so links between fixtures hold and two exports are byte-identical."""
+    ids = _standard_version_ids(captured["standards"]) if "standards" in captured else {}
+    return {name: _replaced(body, ids) for name, body in captured.items()}
+
+
 def document(snapshot: str, read: Read, body: Json) -> dict[str, Json]:
     """The file's content: where it came from, then the body."""
     return {
@@ -263,9 +298,10 @@ def exported_files(out: Path, snapshot: str) -> list[Path]:
 
 def render(snapshot: str, captured: Mapping[str, Json]) -> dict[str, str]:
     """File name -> text, deterministic (two-space indent, sorted keys, trailing newline)."""
+    bodies = stable(captured)
     return {
         file_name(snapshot, read): json.dumps(
-            document(snapshot, read, captured[read.name]), indent=2, ensure_ascii=False
+            document(snapshot, read, bodies[read.name]), indent=2, ensure_ascii=False
         )
         + "\n"
         for read in READS

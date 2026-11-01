@@ -149,7 +149,7 @@ function Block({
       const Tag = block.level === 3 ? "h3" : "h4";
       return (
         <Tag
-          data-doc="heading"
+          data-doc="section-heading"
           className={cn(
             "mt-[14px] mb-[6px] font-medium",
             block.level === 3 ? "text-[14px]" : "text-dense",

@@ -2,7 +2,8 @@
 C21 `as_of`: the period end).
 
 - On create, and whenever the extension changes, a return's original and extended due dates
-  come from `practice.api.due_dates_for` (K-02's published rules, IRC §7503 roll), with the
+  come from the registered due-dates source (practice registers `due_dates_for`: K-02's
+  published rules, IRC §7503 roll; tax never imports that edge module, T08), with the
   reference-set version ids pinned beside them; its approval policy (the firm's
   `return_approval_policy`, BH-TAX-02) is pinned once, at creation, from `methodology.api`.
 - A return whose dates no published rule answers keeps them empty (creation never fails on a
@@ -17,10 +18,10 @@ The tax form codes map to the rule rows' forms (`FORM_FOR_RULES`; the TPL-01 map
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
-from typing import Final
+from typing import Final, Protocol
 from uuid import UUID
 
 from sqlalchemy import text
@@ -30,7 +31,40 @@ from abacus.kernel.clock import today
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.uow import OutboxEvent, Ref, Target, UnitOfWork, uow
 from abacus.modules.methodology.api import current_version_of_kind
-from abacus.modules.practice.api import DueDates, due_dates_for
+
+
+class DueDates(Protocol):
+    """What a due-dates source answers (`practice.api.DueDates` has these and more)."""
+
+    @property
+    def original_due_on(self) -> date: ...
+    @property
+    def extended_due_on(self) -> date | None: ...
+    @property
+    def reference_set_version_ids(self) -> Sequence[UUID]: ...
+    @property
+    def rule_text(self) -> str | None: ...
+    @property
+    def extended_rule_text(self) -> str | None: ...
+
+
+# (form, tax year, period end) -> the dates; `LookupError` when no published rule answers.
+DueDatesSource = Callable[[str, int, date], Awaitable[DueDates]]
+_SOURCE: list[DueDatesSource] = []
+
+
+def register_due_dates_source(source: DueDatesSource) -> None:
+    """Practice registers its rule engine once; a second, different source is a mistake."""
+    if _SOURCE and _SOURCE[0] is not source:
+        raise ValueError("a due-dates source is already registered")
+    _SOURCE[:] = [source]
+
+
+async def due_dates_for(form: str, tax_year: int, period_end: date) -> DueDates:
+    if not _SOURCE:
+        raise LookupError("no due-dates source is registered")
+    return await _SOURCE[0](form, tax_year, period_end)
+
 
 # The return's form code (0089, 0403) as C21's due-date rows name it.
 FORM_FOR_RULES: Final[Mapping[str, str]] = {
@@ -105,7 +139,7 @@ async def pin(session: AsyncSession, tenant: TenantContext, work_item_id: UUID) 
         policy = None if ref is None else ref.version_id
     original = None if found is None else found.original_due_on
     extended_on = found.extended_due_on if found is not None and extended else None
-    versions = () if found is None else found.reference_set_version_ids
+    versions = () if found is None else tuple(found.reference_set_version_ids)
     await session.execute(
         _PIN,
         {

@@ -10,7 +10,10 @@
 // query value (`/binders/_binderId_?ov=request:new:_binderId_`) resolves to them, so a journey
 // opens the record a scenario holds without knowing its id.
 
-import type { Scenario } from "../app-core/fixture-mode";
+import { type Scenario, json } from "../app-core/fixture-mode";
+import { seedScenario } from "./scenario";
+import { getSeed } from "./seed";
+import { capabilitiesFor } from "./seed/shell";
 import { scenarios as adm01 } from "./scenarios/ADM-01";
 import { OPENS as ADM02_OPENS, scenarios as adm02 } from "./scenarios/ADM-02";
 import { OPENS as ADM03_OPENS, scenarios as adm03 } from "./scenarios/ADM-03";
@@ -36,7 +39,9 @@ import {
 } from "./scenarios/CLI-08";
 import { OPENS as ENG02_OPENS, scenarios as eng02 } from "./scenarios/ENG-02";
 import { OPENS as ENG13_OPENS, scenarios as eng13 } from "./scenarios/ENG-13";
+import { OPENS as FIL01_OPENS, scenarios as fil01 } from "./scenarios/FIL-01";
 import { scenarios as home01 } from "./scenarios/HOME-01";
+import { OPENS as INB01_OPENS, scenarios as inb01 } from "./scenarios/INB-01";
 import { scenarios as knw01 } from "./scenarios/KNW-01";
 import { scenarios as knw04 } from "./scenarios/KNW-04";
 import { scenarios as shl03 } from "./scenarios/SHL-03";
@@ -47,6 +52,34 @@ import { FELD_RETURN_ID } from "./seed/tax-compliance";
 import { FERRIS_CLIENT_ID, WHITLEY_CLIENT_ID } from "./seed/tax-profile";
 
 type Ids = Readonly<Record<string, string>>;
+
+const E0 = seedScenario();
+const SEED = getSeed();
+
+/** A screen's scenarios over the whole E0 seed (the shell's own reads), with the flags its route
+ * sits behind on (N-01-T27: INB-01's and FIL-01's are component scenarios first). */
+function onE0(
+  scenarios: Readonly<Record<string, Scenario>>,
+  flags: readonly string[],
+): Readonly<Record<string, Scenario>> {
+  return Object.fromEntries(
+    Object.entries(scenarios).map(([state, scenario]) => [
+      state,
+      {
+        ...scenario,
+        handlers: {
+          ...E0.handlers,
+          ...scenario.handlers,
+          "GET /v1/me/capabilities": ({ persona }) => {
+            const base = capabilitiesFor(SEED, persona ?? scenario.persona ?? "");
+            const on = Object.fromEntries(flags.map((f) => [f, true]));
+            return json({ ...base, flags: { ...base.flags, ...on } });
+          },
+        },
+      } satisfies Scenario,
+    ]),
+  );
+}
 
 /** Per state, the client (and engagement) a P-07 screen opens (P-07-T53's gates and access walk). */
 function idsOf<S extends string>(
@@ -131,7 +164,24 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
     opens: {},
     ids: idsOf(ENG13_OPENS, (s) => ({ engagementId: ENG13_OPENS[s].source })),
   }, // P-07-T62
+  // N-01-T27: the inbox and files journey legs (j16 6a, 10; j06 4) open the state's thread, or
+  // its folder and document.
+  "FIL-01": {
+    scenarios: onE0(fil01, ["files.browser"]),
+    opens: Object.fromEntries(
+      Object.entries(FIL01_OPENS).map(([s, o]) => [
+        s,
+        `?node=${o.node}${o.doc === null ? "" : `&doc=${o.doc}`}`,
+      ]),
+    ),
+  },
   "HOME-01": { scenarios: home01, opens: {} }, // I-01-T05
+  "INB-01": {
+    scenarios: onE0(inb01, ["inbox.firm_intake"]),
+    opens: Object.fromEntries(
+      Object.entries(INB01_OPENS).map(([s, t]) => [s, t === null ? "" : `?thread=${t}`]),
+    ),
+  },
   "KNW-01": { scenarios: knw01, opens: {} }, // K-01-T04
   "KNW-04": { scenarios: knw04, opens: {} }, // K-02-T13
   "SHL-03": { scenarios: shl03, opens: {} },

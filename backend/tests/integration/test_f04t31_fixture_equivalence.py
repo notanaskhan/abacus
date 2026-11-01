@@ -65,6 +65,10 @@ def test_f04_21_the_exported_reads_are_the_mvp_paths_with_a_persona_each() -> No
     assert [(r.name, r.persona) for r in fixture_export.READS] == [
         ("firm-clients", "grace-holloway"),
         ("engagements", "hannah-leclerc"),
+        # T-02-T11: the tax board's summary and rows; K-02-T18: KNW-04's standards.
+        ("tax-returns-summary", "grace-holloway"),
+        ("tax-returns", "grace-holloway"),
+        ("standards", "priya-raman"),
         ("northwind-request-items", "hannah-leclerc"),
         ("binders", "daniel-reyes"),
         ("portal-home", "claire-feld"),

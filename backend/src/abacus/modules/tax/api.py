@@ -4,7 +4,7 @@ Pre-registered (F-03-T08; ADR-140). T-01-T02: the engine-bridge and e-file-recor
 (`engine_contract`). T-01-T18: final approval and its blocker slot (`approval`).
 """
 
-from abacus.kernel.audit_owners import register_engagement_owners
+from abacus.kernel.audit_owners import register_engagement_owners, register_entity_owners
 from abacus.kernel.uow import OutboxEvent
 from abacus.modules.engagements.api import register_work_item_kind
 from abacus.modules.identity.api import AbacusRouter, register_scope_resolver
@@ -15,13 +15,19 @@ from abacus.modules.tax.approval import Blocker as ApprovalBlocker
 from abacus.modules.tax.approval import eligibility as final_approval_eligibility
 from abacus.modules.tax.approval import register as register_approval
 from abacus.modules.tax.approval import register_final_approval_blocker
-from abacus.modules.tax.audit_targets import AUDIT_KINDS, audit_owners
+from abacus.modules.tax.audit_targets import (
+    AUDIT_KINDS,
+    ENTITY_KINDS,
+    audit_entities,
+    audit_owners,
+)
 from abacus.modules.tax.board import KIND as SEARCH_TYPE
 from abacus.modules.tax.board import return_search_document, returns_by_office
 from abacus.modules.tax.due_dates import (
     FORM_FOR_RULES,
     on_reference_set_published,
     recompute_unfiled,
+    register_due_dates_source,
     rule_texts,
     set_extended,
 )
@@ -54,6 +60,7 @@ register_work_item_kind("tax_return", TaxReturnKind())
 
 # DEC-121: the audit explorer asks which engagement each `tax_return` target belongs to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)
+register_entity_owners(ENTITY_KINDS, audit_entities)  # T-01: a tax profile's rows
 # T-02-T09: ADM-03a's per-office "TY returns" count (G-01) and the C15 search projection.
 register_office_facts("tax_returns", returns_by_office)
 register_search_projection(SEARCH_TYPE, return_search_document)
@@ -127,6 +134,7 @@ __all__ = [
     "next_status",
     "recompute_unfiled",
     "record_sync_state",
+    "register_due_dates_source",
     "register_final_approval_blocker",
     "rule_texts",
     "set_extended",

@@ -1,5 +1,5 @@
 import { FlagOffState } from "@abacus/ui";
-import { createRoute } from "@tanstack/react-router";
+import { createRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import type { JSX } from "react";
 import { FeatureGate } from "../../app-core/flags";
 import { useSession } from "../../app-core/session";
@@ -37,8 +37,10 @@ function gated(children: JSX.Element): JSX.Element {
 
 function Files({ clientId }: { clientId?: string }): JSX.Element {
   const viewer = useSession().user?.displayName ?? "";
-  const search = filesClientRoute.useSearch();
-  const navigate = filesClientRoute.useNavigate();
+  // Either files route renders this: read the active match's search, never the client route's
+  // alone (on /files that throws "Could not find an active match"; main CI triage, DEC-1865).
+  const search: FilesSearch = useSearch({ strict: false });
+  const navigate = useNavigate();
   return gated(
     <FilesPage
       {...(clientId === undefined ? {} : { clientId })}
@@ -46,10 +48,11 @@ function Files({ clientId }: { clientId?: string }): JSX.Element {
       doc={search.doc ?? null}
       viewer={viewer}
       onNode={(node) => {
-        void navigate({ search: { node }, replace: true });
+        void navigate({ to: ".", search: { node }, replace: true });
       }}
       onDoc={(doc) => {
         void navigate({
+          to: ".",
           search: {
             ...(search.node === undefined ? {} : { node: search.node }),
             ...(doc === null ? {} : { doc }),

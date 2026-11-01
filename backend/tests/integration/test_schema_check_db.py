@@ -1306,6 +1306,8 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             # P-07-T15 (0124): the interim recorded letter
             | {"client_signed_on", "firm_signed_on", "client_signer_contact_id"}
             | {"firm_signer_user_id", "signed_copy_version_id", "recorded_by_user_id"}
+            # N-02-T33/T34: the letter's current version, its envelope and its mode.
+            | {"current_version_id", "envelope_id", "mode"}
         ),
         "engagement_drafts": frozenset(  # P-07-T16 (0124): autosave, discard, create
             {"client_id", "client_entity_id", "type_code", "step", "payload"}
@@ -1626,6 +1628,116 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         ),
         # T-01-T36 (0524): a binding is only ever superseded, once (a guard trigger).
         "efile_amount_bindings": frozenset({"superseded_at", "superseded_reason"}),
+        # A-05-T06 (0610, 0612): a plan's facts by content hash and version; a provision's value
+        # and its citations; a provider's status, SOC facts and sealed EIN.
+        "ebp_plans": frozenset(
+            {
+                "auto_enrollment",
+                "content_hash",
+                "fidelity_bond_amount",
+                "form_5558_filed_on",
+                "latest_amendment_ref",
+                "match_formula",
+                "opinion_letter_on",
+                "participants_boy_with_balances",
+                "participants_eoy",
+                "plan_document_on",
+                "plan_entity_id",
+                "prior_year_filer",
+                "qdia",
+                "recordkeeper_plan_id",
+                "report_target_on",
+                "safe_harbor",
+                "sponsor_entity_id",
+                "version",
+            }
+        ),
+        "ebp_provisions": frozenset(
+            {
+                "amendment_citation_id",
+                "amendment_effective_on",
+                "citation_id",
+                "origin",
+                "reference",
+                "suggestion_id",
+                "value",
+            }
+        ),
+        "ebp_service_providers": frozenset(
+            {
+                "certification_signed_on",
+                "certifies",
+                "contact_id",
+                "grant_id",
+                "org_name",
+                "soc_evaluation_id",
+                "soc_period_end",
+                "soc_period_start",
+                "soc_type",
+                "status",
+                "tin_fingerprint",
+                "tin_last4",
+                "tin_sealed",
+            }
+        ),
+        # N-02-T33/T34: a letter version's approval and its envelope; the letter's current version,
+        # envelope and mode.
+        "engagement_letter_versions": frozenset(
+            {
+                "approval_content_hash",
+                "approval_requested_at",
+                "approval_requested_by",
+                "approved_at",
+                "approved_by",
+                "envelope_id",
+                "final_document_version_id",
+                "status",
+            }
+        ),
+        # T-01-T31: an engine export marked exported by a person.
+        "engine_exports": frozenset({"marked_exported_at", "marked_exported_by", "row_version"}),
+        # T-02-T21 to T26 (0568-0590): K-1 packages, recipients, hand-offs, releases and their
+        # deliveries, and a recipient's details change.
+        "k1_handoffs": frozenset(
+            {
+                "final_values",
+                "replaced_at",
+                "status",
+                "target_evidence_version_id",
+                "target_request_item_id",
+            }
+        ),
+        "k1_packages": frozenset(
+            {"delivery_contact_id", "e_furnishing_consent", "released_at", "status"}
+        ),
+        "k1_recipients": frozenset(
+            {
+                "address",
+                "contact_id",
+                "display_name",
+                "is_entity",
+                "ownership_note",
+                "recipient_kind",
+                "tin_kind",
+                "tin_last4",
+            }
+        ),
+        "k1_release_deliveries": frozenset(
+            {
+                "access_at",
+                "access_grant_id",
+                "contact_id",
+                "emailed_at",
+                "handoffs_at",
+                "invitation_id",
+                "message_id",
+                "released_at",
+            }
+        ),
+        "k1_releases": frozenset(
+            {"completed_at", "failure_code", "started_at", "status", "undone_at", "undone_by"}
+        ),
+        "recipient_details_changes": frozenset({"decided_at", "decided_by", "reason", "status"}),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(

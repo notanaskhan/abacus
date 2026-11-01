@@ -122,9 +122,14 @@ def test_the_four_gate_kinds_are_registered_and_no_agent_can_act_through_them() 
         "independence_conclusion_due": "decision",
         "independence_confirmation_due": "sign_off_request",
         "eqr_eligibility_due": "decision",
+        "letter_partner_approval": "decision",  # N-02-T33: the letter waits on each partner
     }
     # A gate only says that something waits; its read actions are reads.
-    assert {s.read_action for s in SOURCES} == {"acceptance.read", "independence.read"}
+    assert {s.read_action for s in SOURCES} == {
+        "acceptance.read",
+        "independence.read",
+        "letter.read",
+    }
     for source in SOURCES:
         assert source.events <= C13_EVENTS
 

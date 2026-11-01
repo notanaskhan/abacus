@@ -496,6 +496,10 @@ CAPITALISED_BY_SOURCE = {
     # (A-04-T01; verbatim, DEC-15).
     "Proposed",
     "Decided",
+    # EBP-04 f and AUD-27 spell the DOL programme's name "VFCP Self-Correction Component"
+    # (A-05-T05; verbatim, DEC-15).
+    "Self-Correction",
+    "Component",
 }
 
 # ---------------------------------------------------------------------------------------------
@@ -653,6 +657,12 @@ NO_YAML_ENTRY = {
     # `unavailable` get their DF-31 entries with the live routes (G-02-T08, G-02-T17).
     "AuditExport.status": "building",
     "AuditValuesOut.status": "withheld, unavailable",
+    # Main CI triage 2026-11-01: literals that landed without DF-31 entries, recorded for their
+    # owners. T-02-T25 (TXP-12): the K-1 hand-off's codes; N-02-T34 (ENG-04): the consent's
+    # `needed`; T-01-T01 (C19 stub): the transcript line comparison.
+    "K1HandoffOut.status": "draft_shared, final_replaced",
+    "LetterConsentOut.status": "needed",
+    "TranscriptLineDiffOut.status": "agrees, differs, not_on_return",
 }
 # Findings: fields with a literal outside the 3.3.1 object they belong to.
 OUTSIDE_ITS_OBJECT = {
@@ -667,6 +677,12 @@ UNTYPED = {
     # I-01-T01 (HOME contracts, #431): the home rows carry each owner's own status word as a
     # string until the HOME-01 build types them per source; recorded as findings like the rest.
     "DeadlineRowOut.status", "HomeTileOut.by_status", "WorkRowOut.status",
+    # Main CI triage 2026-11-01, recorded for their owners: N-02 (ENG-04 composer, S13) carries
+    # the envelope's status as a string; T-02-T18 (TAX-03 intake) and T-02-T25 (TXP-12) carry
+    # each source row's own status word until those screens type them.
+    "ComposerLetterOut.envelope_status",
+    "IntakeBinderOut.status", "IntakeQuestionnaireOut.status", "IntakeRequestOut.status",
+    "K1RelatedReturnOut.status",
 }  # fmt: skip
 
 

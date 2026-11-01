@@ -119,11 +119,11 @@ async def test_create_issue_is_not_offered_to_client_service_and_refuses_her(
     migrated_db: MigratedDatabase, gate: t01t37.Gate
 ) -> None:
     world = await _world(migrated_db, gate)
-    assert await t01t37._designate(world, world.daniel) == 200  # pyright: ignore[reportPrivateUsage]
+    assert await t01t37._designate(world, world.daniel) == 200  # pyright: ignore[reportPrivateUsage] -- the T-01-T37 suite's own helper
     gate.envelope = world.envelope
-    status, _ = await t01t37._transmit(world, world.daniel)  # pyright: ignore[reportPrivateUsage]
+    status, _ = await t01t37._transmit(world, world.daniel)  # pyright: ignore[reportPrivateUsage] -- the T-01-T37 suite's own helper
     assert status == 201
-    await t01t37._report(world, "rejected")  # pyright: ignore[reportPrivateUsage]
+    await t01t37._report(world, "rejected")  # pyright: ignore[reportPrivateUsage] -- the T-01-T37 suite's own helper
     ack = cast(
         uuid.UUID,
         await world.feld.seed.value(
@@ -142,4 +142,4 @@ async def test_create_issue_is_not_offered_to_client_service_and_refuses_her(
         headers={"Idempotency-Key": str(uuid.uuid4())},
     )
     assert refused.status_code == 403
-    assert await t01t37._status(world) == "rejected"  # pyright: ignore[reportPrivateUsage]
+    assert await t01t37._status(world) == "rejected"  # pyright: ignore[reportPrivateUsage] -- the T-01-T37 suite's own helper

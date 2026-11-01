@@ -55,18 +55,26 @@ test("frames 1, 2, 6, 7: header 56 at the top and the 64 tab bar at the foot", a
   page,
 }) => {
   for (const id of ["tpl-19-1", "tpl-19-2", "tpl-19-6", "tpl-19-7"]) {
-    const phone = await box(board(page, id).locator("[data-frame='phone']").first());
-    const header = await box(board(page, id).locator("[data-shell='mobile-header']"));
-    const tabs = await board(page, id).locator("[data-shell='mobile-tab-bar']").boundingBox();
-    const top = await board(page, id).locator("[data-frame='phone']").first().boundingBox();
-    if (tabs === null || top === null) throw new Error("no box");
-    expect([id, header.y - phone.y, header.h]).toEqual([id, 0, 56]);
-    // The foot from unrounded boxes: rounding y and height apart can lose a pixel.
-    expect([id, Math.round(tabs.height), Math.round(tabs.y + tabs.height - top.y)]).toEqual([
-      id,
-      64,
-      844,
-    ]);
+    // Head and foot measured against the phone in one read of the page: two reads taken while
+    // the gallery still scrolls (its boards sit far down) can disagree by a pixel.
+    const at = await board(page, id)
+      .locator("[data-frame='phone']")
+      .first()
+      .evaluate((phone) => {
+        const frame = phone.getBoundingClientRect();
+        const head = phone.querySelector("[data-shell='mobile-header']")?.getBoundingClientRect();
+        const foot = phone.querySelector("[data-shell='mobile-tab-bar']")?.getBoundingClientRect();
+        if (head === undefined || foot === undefined) return null;
+        return {
+          head: head.top - frame.top,
+          headHeight: head.height,
+          footHeight: foot.height,
+          footEnd: foot.bottom - frame.top,
+        };
+      });
+    if (at === null) throw new Error("no shell");
+    expect([id, Math.round(at.head), Math.round(at.headHeight)]).toEqual([id, 0, 56]);
+    expect([id, Math.round(at.footHeight), Math.round(at.footEnd)]).toEqual([id, 64, 844]);
   }
 });
 

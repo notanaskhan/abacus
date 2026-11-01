@@ -132,7 +132,9 @@ describe("SHL-09 frames", () => {
     const up = section(t, "Updated");
     expect(up.querySelector("[data-unsupported]")?.textContent).toContain("No source cited");
     expect(up.textContent).toContain("Unsupported");
-    const sign = within(t).getByRole<HTMLButtonElement>("button", { name: "Sign off field" });
+    const sign = await within(t).findByRole<HTMLButtonElement>("button", {
+      name: "Sign off field",
+    });
     expect(sign.disabled).toBe(true);
     expect(sign.getAttribute("data-human-verb")).toBe("Sign off");
     fireEvent.focus(t.querySelector("[data-shl09='sign-disabled']") as HTMLElement);
@@ -151,7 +153,9 @@ describe("SHL-09 frames", () => {
     await waitFor(() => {
       expect(t.querySelector("[data-unsupported]")).toBeNull();
     });
-    const sign = within(t).getByRole<HTMLButtonElement>("button", { name: "Sign off field" });
+    const sign = await within(t).findByRole<HTMLButtonElement>("button", {
+      name: "Sign off field",
+    });
     await waitFor(() => {
       expect(sign.disabled).toBe(false);
     });
@@ -168,7 +172,7 @@ describe("SHL-09 frames", () => {
   it("a: Sign off field ticks the current hash as the person", async () => {
     show("a");
     const t = await tray();
-    fireEvent.click(within(t).getByRole("button", { name: "Sign off field" }));
+    fireEvent.click(await within(t).findByRole("button", { name: "Sign off field" }));
     await waitFor(() => {
       expect(section(t, "Updated").querySelectorAll("[data-tick='current']")).toHaveLength(1);
     });

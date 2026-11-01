@@ -206,6 +206,7 @@ def test_no_home_field_is_a_status_field() -> None:
 # position, never that object's status; any other overlap fails (a firm code leaking in).
 COINCIDENT = {
     "open": "a to-do card's state, not an issue or note status",
+    "none": "a to-do card's state (nothing asked), not a risk's significance or fraud (A-04-T01)",
     "overdue": "the request's derived overdue, the one status a to-do reflects (contract §4)",
     "done": "a stage position, not a close task's status",
     "current": "a stage position, not a checkpoint's status",

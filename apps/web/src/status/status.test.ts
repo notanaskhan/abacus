@@ -70,7 +70,13 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // T-01-T06 added tax_authorization and efile_ack (+2; the sync chip is the blueprint's
     // return_sync_chip). T-02-T04 added questionnaire, recipient_details_change, k1_handoff (+3).
     // The S16 end review added engine_import and transcript_parse (T-01) and k3 (T-02) (+3).
-    expect(Object.keys(REGISTRY)).toHaveLength(110);
+    // K-01-T18 added methodology_source_file; A-03 sample_set_version, completeness_tie_result,
+    // mapping_set and account_mapping_state; A-04-T01 workpaper_value_state, attention_flag,
+    // audit_procedure, materiality_version, the four risk objects, fraud_minutes, fraud_inquiry,
+    // service_organization, soc_reliance, cuec, control_design and
+    // control_exception_disposition; A-05-T05 and the S23 triage the ten EBP and AUD-27 objects
+    // (+30; DEC-1865).
+    expect(Object.keys(REGISTRY)).toHaveLength(140);
     // +21: decision_card 3, suggestion 6, proposal 5, sign_off_slot 2, field_value 4, checkpoint saved.
     // +27 (P-07-T03): client 4, invitation 5, acceptance_record 5, letter_record 2,
     // conflict_assessment 5, nas_evaluation 3, independence_conclusion 3.
@@ -90,7 +96,8 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // +9 (T-01-T06): consent superseded and not_requested, tax_authorization 5, efile_ack 2.
     // +8 (T-02-T04): questionnaire 3, recipient_details_change 3, k1_handoff 2.
     // +11 (S16 end review): engine_import 5, transcript_parse 3 (T-01), k3 3 (T-02).
-    expect(ROWS).toHaveLength(507);
+    // +103 (K-01-T18, A-03, A-04-T01, A-05-T05 and the S23 triage): the thirty objects above.
+    expect(ROWS).toHaveLength(610);
   });
 
   it("resolves each code to a word, a kit variant or a line, and never to match", () => {

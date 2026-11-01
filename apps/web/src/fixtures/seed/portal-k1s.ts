@@ -154,7 +154,9 @@ export function portalK1Detail(variant: Por13Variant, id: string): K1PackageDeta
     package: row,
     lines: [...(pell ? PELL_LINES : NORA_LINES)],
     documents: row.documents ?? [],
-    tin: pell ? { kind: "ein", last4: "7741" } : { kind: "ssn", last4: "5512" },
+    tin: pell
+      ? { kind: "ein", presence: "on_file", last4: "7741" }
+      : { kind: "ssn", presence: "on_file", last4: "5512" },
     address_on_file: true,
   };
 }

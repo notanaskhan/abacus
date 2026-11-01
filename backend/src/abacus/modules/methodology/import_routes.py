@@ -324,7 +324,7 @@ class VersionDiffOut(BaseModel):
     version_id: Annotated[UUID, classified("internal")]
     against_version_id: Annotated[UUID | None, classified("internal")]
     against_label: Annotated[str | None, classified("internal")]
-    tiles: DiffTilesOut
+    tiles: Annotated[DiffTilesOut, classified("internal")]
     rows: Annotated[list[DiffRowOut], classified("internal")]
 
 

@@ -37,9 +37,6 @@ def test_ac10_a_superseded_8879_carries_the_marker() -> None:
     assert hasattr(signatures, "SUPERSEDED_BY_CHANGE")
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-2111: N-02 has not shipped the retention-extension call (T-01 §4.5)",
-)
 def test_ac10_signatures_extends_retention_on_filing() -> None:
+    # TASK-2111's finding closed: N-02 ships the retention-extension call (T-01 §4.5).
     assert hasattr(signatures, "extend_retention")

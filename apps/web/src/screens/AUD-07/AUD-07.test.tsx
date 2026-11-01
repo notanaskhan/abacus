@@ -101,9 +101,11 @@ describe("AUD-07 states", () => {
     expect(figure("overall")).toBe("$252,200");
     expect(figure("pm")).toBe("$189,150");
     expect(figure("ct")).toBe("$12,610");
-    expect((await drawn("[data-version='1']")).textContent).toBe(
+    const v1 = await drawn("[data-version='1']");
+    expect(v1.querySelector("[data-line]")?.textContent).toBe(
       "Version 1 · Proposed · Marcus Delaney via Agent · Sep 14 9:27 AM · 1.5% recommended",
     );
+    expect(v1.textContent).toContain("Current");
   });
 
   it("a: choosing 1.0% shows the option's figures from the card, not the browser", async () => {
@@ -119,18 +121,26 @@ describe("AUD-07 states", () => {
 
   it("a: the slider asks POST …/materiality/preview and shows what it answers", async () => {
     show("a");
-    const fetches = vi.spyOn(globalThis, "fetch");
-    const slider = await drawn("[data-aud07='slider']");
+    // The fixture client's own fetch answers, so the request is read off the client.
+    const asked: string[] = [];
+    const record = (request: Request): Request => {
+      asked.push(`${request.method} ${request.url}`);
+      return request;
+    };
+    client.interceptors.request.use(record);
+    const slider = (await drawn("[data-aud07='slider']")) as HTMLInputElement;
+    // The slider is the reserved partner's only once her card has loaded.
+    await waitFor(() => {
+      expect(slider.disabled).toBe(false);
+    });
     fireEvent.change(slider, { target: { value: "2.0" } });
     await waitFor(() => {
       expect(figure("overall")).toBe("$336,200");
     });
-    const asked = fetches.mock.calls.some(([input, init]) => {
-      const url = input instanceof Request ? input.url : String(input);
-      const method = input instanceof Request ? input.method : (init?.method ?? "GET");
-      return method === "POST" && url.includes("/materiality/preview");
-    });
-    expect(asked).toBe(true);
+    client.interceptors.request.eject(record);
+    expect(asked.some((r) => r.startsWith("POST ") && r.includes("/materiality/preview"))).toBe(
+      true,
+    );
     expect(document.querySelector("[data-option='custom'][data-checked]")).not.toBeNull();
   });
 

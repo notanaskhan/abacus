@@ -31,6 +31,54 @@ EXCLUDE: tuple[str, ...] = ()
 # (path glob, rule id, reason): findings that are known local fixtures, never real secrets.
 ALLOW: tuple[tuple[str, str, str], ...] = (
     (
+        "apps/web/src/fixtures/seed/e0.standards.json",
+        "SECRET-003",
+        "firm standards' `key` fields name a checklist or policy (bh-1040-review-checklist),"
+        " never a credential (K-02-T18)",
+    ),
+    (
+        "apps/web/src/fixtures/seed/e0.tax-returns.json",
+        "PII-003",
+        "a UUID's digit run read as a card number; the seed holds no card data",
+    ),
+    (
+        "backend/src/abacus_tools/synthetic/scenarios/brightwater_hale/report_templates.py",
+        "SECRET-003",
+        "a report template's `layout_key` names a layout (consent_7216), never a credential",
+    ),
+    (
+        "backend/tests/integration/backfill/test_k01t18_import_review.py",
+        "SECRET-003",
+        "an Idempotency-Key header value, never a credential (K-01-T18)",
+    ),
+    (
+        "backend/tests/integration/backfill/test_n02t41_signatures_independent.py",
+        "SECRET-003",
+        "an Idempotency-Key header value, never a credential (N-02-T41)",
+    ),
+    (
+        "backend/tests/integration/backfill/test_task2154_docuseal_webhook.py",
+        "SECRET-003",
+        "synthetic DocuSeal-shaped keys that spell 'not a secret', for the webhook's"
+        " signature check (TASK-2154); never a real key",
+    ),
+    (
+        "backend/tests/integration/test_p11t11_reporting_routes.py",
+        "PII-001",
+        "a synthetic SSN-shaped probe proving a rendered report never carries one (P-11-T11);"
+        " never a real person's number",
+    ),
+    (
+        "backend/tests/integration/test_t01t18_approve_path_independent.py",
+        "SECRET-003",
+        "a reference set's `key` (bh-tax-02), never a credential (T-01-T18)",
+    ),
+    (
+        "backend/tests/integration/test_t01t36_8879_binding.py",
+        "SECRET-003",
+        "a field set's `set_key` (form_8879_set), never a credential (T-01-T36)",
+    ),
+    (
         "backend/tests/unit/methodology/test_k01t20_extraction.py",
         "PII-001",
         "a synthetic SSN-shaped value in a generated PDF, proving the importer's PII hold stops a"

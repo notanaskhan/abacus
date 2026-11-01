@@ -111,7 +111,7 @@ def _census(
             "evidence_version_id": fixture_id(f"evidence:northwind-census-v{version_no}"),
             "file_name": "Northwind Census PY2025.xlsx",
             "file_version_no": version_no,
-            "uploaded_by_name": "Dana Kowalski",
+            "uploaded_by_name": "Example client contact",
             "uploaded_on": date(2026, 9, 16 if version_no == 2 else 15),
         },
         "record_count": records,

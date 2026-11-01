@@ -61,6 +61,12 @@ TIN_ROUTES = {
     # T-02-T25 (DEC-1575): a K-1 package's detail carries the recipient's masked TIN.
     ("GET", "/v1/k1-packages/{package_id}"): "masked",
     ("GET", "/v1/portal/k1s/{package_id}"): "masked",
+    # A-05-T04 (DEC-1858, DEC-1865): the plan's sponsor EIN, a provider's EIN and a census SSN,
+    # each the masked shape through the central mask (the plan's PATCH answers 501 until T08).
+    ("GET", "/v1/audits/{work_item_id}/ebp/plan"): "masked",
+    ("PATCH", "/v1/audits/{work_item_id}/ebp/plan"): "masked",
+    ("GET", "/v1/audits/{work_item_id}/ebp/providers"): "masked",
+    ("GET", "/v1/audits/{work_item_id}/ebp/participants"): "masked",
 }
 
 
@@ -349,7 +355,8 @@ def test_t02t30_k1_amounts_and_organizer_answers_are_tri_and_rows_carry_neither(
 
 def _k1_detail() -> BaseModel:
     from abacus.kernel._statuses import K1PackageStatus
-    from abacus.modules.tax.k1_contract import K1MaskedTinOut, K1PackageDetailOut, K1PackageOut
+    from abacus.modules.organisations.api import MaskedTinOut
+    from abacus.modules.tax.k1_contract import K1PackageDetailOut, K1PackageOut
 
     return K1PackageDetailOut(
         package=K1PackageOut(
@@ -368,7 +375,7 @@ def _k1_detail() -> BaseModel:
         ),
         lines=[],
         documents=[],
-        tin=K1MaskedTinOut(kind="ein", last4="7741"),
+        tin=MaskedTinOut(kind="ein", presence="on_file", last4="7741"),
     )
 
 

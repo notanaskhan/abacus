@@ -301,28 +301,37 @@ function GateMoves({ gate }: { gate: HumanGateOut }): JSX.Element | null {
               </Button>
             }
             sections={[
-              people.length === 0
-                ? [{ label: COPY.moves.noCandidates, disabled: true, onSelect: () => undefined }]
-                : people.map((c) => ({
-                    label: c.display_name ?? c.user_id,
-                    onSelect: () => {
-                      reassignWrite.mutate(
-                        {
-                          path: { gate_id: gate.id },
-                          body: { to_user_id: c.user_id, seen_version: gate.version ?? 1 },
-                        },
-                        {
-                          onSuccess: () => {
-                            toast.show({
-                              kind: "success",
-                              text: COPY.moves.reassigned(c.display_name ?? ""),
-                            });
-                          },
-                          onError: failed,
-                        },
-                      );
+              // The server's candidates only: none is said once it has answered (AC8.2).
+              candidates.data === undefined
+                ? [
+                    {
+                      label: COPY.moves.loadingCandidates,
+                      disabled: true,
+                      onSelect: () => undefined,
                     },
-                  })),
+                  ]
+                : people.length === 0
+                  ? [{ label: COPY.moves.noCandidates, disabled: true, onSelect: () => undefined }]
+                  : people.map((c) => ({
+                      label: c.display_name ?? c.user_id,
+                      onSelect: () => {
+                        reassignWrite.mutate(
+                          {
+                            path: { gate_id: gate.id },
+                            body: { to_user_id: c.user_id, seen_version: gate.version ?? 1 },
+                          },
+                          {
+                            onSuccess: () => {
+                              toast.show({
+                                kind: "success",
+                                text: COPY.moves.reassigned(c.display_name ?? ""),
+                              });
+                            },
+                            onError: failed,
+                          },
+                        );
+                      },
+                    })),
             ]}
           />
         )}

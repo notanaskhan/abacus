@@ -84,12 +84,12 @@ async def _duplicate(b: Board, engagement: uuid.UUID, request: uuid.UUID) -> uui
 
 async def test_waiting_files_name_their_message(board: Board) -> None:
     feld = board.returns["Feld Household 1040"]
-    await t02t18._binder(board, feld)  # pyright: ignore[reportPrivateUsage]
+    await t02t18._binder(board, feld)  # pyright: ignore[reportPrivateUsage] -- the T-02-T18 suite's own helper
     kevin = await manager_on(board, feld)
     client = cast(
         uuid.UUID, await board.seed.value("SELECT client_id FROM work_items WHERE id = $1", feld)
     )
-    attachment = await t02t18._waiting(  # pyright: ignore[reportPrivateUsage]
+    attachment = await t02t18._waiting(  # pyright: ignore[reportPrivateUsage] -- the T-02-T18 suite's own helper
         board, client, "Feld_1095C_2025.pdf", 2025
     )
     message = await board.seed.value(
@@ -110,7 +110,7 @@ async def test_a_pending_duplicate_shows_under_its_request_until_a_person_resolv
     board: Board,
 ) -> None:
     feld = board.returns["Feld Household 1040"]
-    made = await t02t18._binder(board, feld)  # pyright: ignore[reportPrivateUsage]
+    made = await t02t18._binder(board, feld)  # pyright: ignore[reportPrivateUsage] -- the T-02-T18 suite's own helper
     kevin = await manager_on(board, feld)
     original = await board.seed.value(
         "SELECT evidence_version_id FROM fulfilments WHERE request_item_id = $1", made[W2]

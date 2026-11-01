@@ -108,15 +108,18 @@ async def test_t08_an_unregistered_gate_is_unmet() -> None:
 
 
 async def test_t08_an_unregistered_scope_and_consent_deny() -> None:
-    assert await identity.resolve_scope(TENANT, "k1_package", uuid.uuid4()) is None
+    # Kinds no module registers: `k1_package` and `tri_offshore` were the examples until T-02 and
+    # T-01 registered them (main CI triage 2026-11-01).
+    assert await identity.resolve_scope(TENANT, "not_a_scope", uuid.uuid4()) is None
     assert (
-        await identity.consent_given(TENANT, uuid.uuid4(), "tri_offshore", datetime.now(UTC))
+        await identity.consent_given(TENANT, uuid.uuid4(), "not_a_purpose", datetime.now(UTC))
         is False
     )
 
 
 async def test_t08_an_unregistered_search_type_is_not_indexed() -> None:
-    assert await platform.search_document(TENANT, "tax_return", uuid.uuid4()) is None
+    # `tax_return` was the example until T-01 registered it (main CI triage 2026-11-01).
+    assert await platform.search_document(TENANT, "not_a_search_type", uuid.uuid4()) is None
 
 
 def test_t08_a_slot_takes_one_registration() -> None:

@@ -42,7 +42,6 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import Ref, Target, uow
-from abacus.modules.audit_trail.api import CatalogueEntry
 from abacus.modules.communications.api import (
     RecipientRef,
     SendScope,
@@ -320,25 +319,8 @@ async def signatures_out(viewer: object, office_id: UUID | None) -> HomeCount:
 
 # --- the envelope's events in the activity feeds ----------------------------------------------
 
-ACTIVITY_KINDS: Final[dict[str, CatalogueEntry]] = {
-    "envelope.drafted": CatalogueEntry("change", "pl", ()),
-    "envelope.draft_saved": CatalogueEntry("change", "pl", ()),
-    "envelope.send_requested": CatalogueEntry("decision", "ok", ()),
-    "envelope.send_undone": CatalogueEntry("decision", "no", ()),
-    "envelope.provider_sent": CatalogueEntry("communication", "pl", ()),
-    "envelope.reminded": CatalogueEntry("communication", "pl", ()),
-    "envelope.reminder_skipped": CatalogueEntry("communication", "no", ()),
-    "envelope.viewed": CatalogueEntry("access", "pl", ()),
-    "envelope.declined": CatalogueEntry("decision", "no", ()),
-    "envelope.decline_withdrawn": CatalogueEntry("decision", "pl", ()),
-    "envelope.expired": CatalogueEntry("change", "no", ()),
-    "envelope.voided": CatalogueEntry("change", "no", ()),
-    "envelope.evidence_recorded": CatalogueEntry("change", "pl", ()),
-    "signer.signing_session_issued": CatalogueEntry("sign_in", "pl", ()),
-}
 
 __all__ = [
-    "ACTIVITY_KINDS",
     "COUNTERSIGN",
     "COUNTERSIGN_GATE",
     "REMIND",

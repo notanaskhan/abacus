@@ -1161,6 +1161,20 @@ objects:
       waiting_on_inputs:    {label: "Waiting on inputs", variant: muted, terminal: false, derived: false}
       correction_requested: {label: "Correction requested", variant: amber, terminal: false, derived: false}
 
+  ebp_participant:   # a census row's status (EBP-02, EBP-05, EBP-08)
+    source: "A-05 §4.10 (EBP-02)"
+    codes:
+      active:     {label: "Active", variant: state, terminal: false, derived: false}
+      terminated: {label: "Terminated", variant: state, terminal: false, derived: false}
+      retired:    {label: "Retired", variant: state, terminal: false, derived: false}
+      deceased:   {label: "Deceased", variant: state, terminal: true, derived: false}
+
+  ebp_filer_status:   # the plan's Form 5500 filer status (EBP-01 a)
+    source: "A-05 §4.10 (EBP-01)"
+    codes:
+      large_plan: {label: "Large plan", variant: state, terminal: false, derived: true}
+      small_plan: {label: "Small plan", variant: state, terminal: false, derived: true}
+
   ebp_late_remittance:   # the late remittance's correction (EBP-04 a, f)
     source: "A-05 §4.10 (EBP-04)"
     codes:

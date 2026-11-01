@@ -153,6 +153,9 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "schedule_k_release.requested",
         "schedule_k_package.resend_requested",
         "message.bounced",  # T-02-T26: a bounced "Deliverable ready" marks the K-1 Bounced
+        "checkpoint.approved",  # T-01-T36: an approved checkpoint moves the filing on
+        "return.delivered",  # T-01-T41: a filed return's delivery
+        "generated_document.render_requested",  # P-11-T11: the render job
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert (

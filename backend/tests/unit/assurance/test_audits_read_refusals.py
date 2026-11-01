@@ -69,7 +69,11 @@ def test_ac22_the_methodology_row_requires_methodology_read_on_the_firm() -> Non
         "methodology.read",
         "firm",
     )
-    assert all(s.required_action is None for k, s in found.items() if k != "methodology")
+    # A-03-T15: AUD-11's row asks `sample_set.read` on the engagement (DEC-1764).
+    sample = found["sample_selection"]
+    assert (sample.required_action, sample.action_scope) == ("sample_set.read", "engagement")
+    guarded = {"methodology", "sample_selection"}
+    assert all(s.required_action is None for k, s in found.items() if k not in guarded)
 
 
 def test_ac18_the_search_is_a_literal_substring() -> None:

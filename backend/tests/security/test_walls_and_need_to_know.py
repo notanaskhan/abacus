@@ -576,10 +576,24 @@ def granite_consented(firm: Firm) -> Iterator[None]:
     def column(client_id: object, _purpose: str) -> ColumnElement[bool]:
         return cast(ColumnElement[uuid.UUID], client_id) == literal(granite)
 
+    # T-01-T12's real provider is registered at import: set it aside for the stand-in, then
+    # put it back (the registry refuses a second registration).
+    key = slots.OFFSHORE_DISCLOSURE
+    checks = slots._CONSENTS  # pyright: ignore[reportPrivateUsage] -- swaps the provider for the stand-in
+    columns = slots._CONSENT_COLUMNS  # pyright: ignore[reportPrivateUsage] -- swaps the provider for the stand-in
+    counts = slots._CONSENT_COUNTS  # pyright: ignore[reportPrivateUsage] -- swaps the provider for the stand-in
+    held = (checks.pop(key, None), columns.pop(key, None), counts.pop(key, None))
     slots.register_consent_check(slots.OFFSHORE_DISCLOSURE, check, column)
     yield
-    slots._CONSENTS.pop(slots.OFFSHORE_DISCLOSURE, None)  # pyright: ignore[reportPrivateUsage] -- drops the stand-in
-    slots._CONSENT_COLUMNS.pop(slots.OFFSHORE_DISCLOSURE, None)  # pyright: ignore[reportPrivateUsage] -- drops the stand-in
+    checks.pop(key, None)
+    columns.pop(key, None)
+    counts.pop(key, None)
+    if held[0] is not None:
+        checks[key] = held[0]
+    if held[1] is not None:
+        columns[key] = held[1]
+    if held[2] is not None:
+        counts[key] = held[2]
 
 
 async def _remy(firm: Firm, role: str) -> Lena:
