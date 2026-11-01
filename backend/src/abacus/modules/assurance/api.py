@@ -15,7 +15,7 @@ from abacus.modules.assurance.completion_routes import router as completion_rout
 # A-04-T08/T09: the pure materiality engine, for the recommender's evaluation (BOUND-001).
 from abacus.modules.assurance.compute import materiality as materiality_engine
 from abacus.modules.assurance.ebp_contract import router as ebp_router
-from abacus.modules.assurance.ebp_designed import register as register_ebp_designed
+from abacus.modules.assurance.findings_contract import router as findings_router
 from abacus.modules.assurance.home_counts import register_home_counts
 from abacus.modules.assurance.mapping import SUBSCRIPTIONS as MAPPING_SUBSCRIPTIONS
 from abacus.modules.assurance.mapping import import_csv as import_grouping_csv
@@ -67,6 +67,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     tb_mapping_router,  # C9 v2 (docs/contracts/ledger-mapping.md): A-03-T03 stub
     planning_router,  # A-04-T01 audit planning stub (docs/contracts/audit-planning.md)
     ebp_router,  # A-05-T04 ebp-workpapers v1 stub (docs/contracts/ebp-workpapers.md)
+    findings_router,  # A-06-T05 completion family stub (docs/contracts/completion.md)
 )
 
 # SPEC-313 (TASK-331): trial balances appear in the sign-off matrix and count toward G5.
@@ -105,8 +106,6 @@ register_home_counts()
 # I-01-T08 (C13): SPEC-004's review queue as `evidence_review` gates.
 register_review_gates()
 
-# A-05-T09 (DEC-1954): the nine EBP designed workpapers' rail rows, layouts and export section.
-register_ebp_designed()
 # A-04-T07: the trail places a service organization on its engagement (SPEC-304; DEC-121).
 register_engagement_owners(SERVICE_ORG_KINDS, service_org_owners)
 
