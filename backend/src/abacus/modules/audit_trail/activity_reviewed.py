@@ -547,8 +547,10 @@ REVIEWED_FALLBACK: Final = frozenset(
         "methodology_import.failed",  # reviewed 2026-10-31 (K-01-T18)
         "methodology_import.needs_review",  # reviewed 2026-10-31 (K-01-T18)
         "methodology_import.parsing",  # reviewed 2026-10-31 (K-01-T18)
+        "methodology_import.progressed",  # reviewed 2026-11-01 (K-01-T21)
         "methodology_source_file.downloaded",  # reviewed 2026-10-31 (K-01-T18)
         "methodology_source_file.page_read",  # reviewed 2026-11-01 (K-01-T20)
+        "methodology_source_file.pages_stored",  # reviewed 2026-11-01 (K-01-T21)
         "methodology_source_file.stored",  # reviewed 2026-10-31 (K-01-T18)
         "methodology_source_file.words_read",  # reviewed 2026-11-01 (K-01-T20)
         "methodology_step.added",  # reviewed 2026-10-31 (S17-S19)
@@ -579,17 +581,6 @@ REVIEWED_FALLBACK: Final = frozenset(
         "tax_return.approved",  # reviewed 2026-10-31 (S17-S19)
         "transcript.compared",  # reviewed 2026-10-31 (S17-S19)
         "transcript.uploaded",  # reviewed 2026-10-31 (S17-S19)
-        "population.created",  # A-03-T07, T10: reviewed 2026-10-31
-        "population.tie_recorded",  # A-03-T07, T10: reviewed 2026-10-31
-        "sample_set.created",  # A-03-T07, T10: reviewed 2026-10-31
-        "sample_set.drawn",  # A-03-T07, T10: reviewed 2026-10-31
-        "sample_set.override_requested",  # A-03-T07, T10: reviewed 2026-10-31
-        "sample_set.override_approved",  # A-03-T07, T10: reviewed 2026-10-31
-        "sample_set.approved",  # A-03-T07, T10: reviewed 2026-10-31
-        "sample_set.superseded",  # A-03-T07, T10: reviewed 2026-10-31
-        "sample_set.exported",  # A-03-T07, T10: reviewed 2026-10-31
-        "sample_set.draw_failed",  # A-03-T07, T10: reviewed 2026-10-31
-        "sample_set.draw_completed",  # A-03-T07, T10: reviewed 2026-10-31
         # S19 batch 5 (T-02-T20/T21): the K-1 set, its packages and the release gate.
         "schedule_k_set.imported",
         "schedule_k_package.shared_internal",

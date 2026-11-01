@@ -46,6 +46,7 @@ from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.identity.api import AuthContext, Forbidden, Resource, authorise, names_of
 from abacus.modules.methodology import lifecycle
 from abacus.modules.methodology.diff import StepRow, VersionDiff, lineage_diff
+from abacus.modules.methodology.document_import import document_importer
 from abacus.modules.methodology.models import (
     MethodologyImport,
     MethodologySourceFile,
@@ -410,10 +411,21 @@ async def start_import(ctx: AuthContext, import_id: UUID) -> ImportView:
     if not files:
         raise FilesMissing(facts={"import_id": str(import_id)})
     if any(f.role in DOCUMENTS for f in files):
-        # K-01-T21 builds MethodologyImportWorkflow; until then the document path is refused even
-        # with the flag on, and the UI offers the workbook path (AC7.7).
-        await flag_enabled(ctx.tenant, METHODOLOGY_IMPORTER)
-        raise ImporterNotEnabled(facts={"import_id": str(import_id)})
+        # K-01-T21: the Methodology importer reads a PDF; a Word file is not parsed yet. Off, not
+        # registered, or a firm it may not read (not synthetic, agent not cleared): 409, and the
+        # UI offers the workbook path (AC7.7).
+        importer = document_importer()
+        if (
+            importer is None
+            or not any(f.role == "document_pdf" for f in files)
+            or not await flag_enabled(ctx.tenant, METHODOLOGY_IMPORTER)
+            or not await importer.admitted(ctx)
+        ):
+            raise ImporterNotEnabled(facts={"import_id": str(import_id)})
+        await _finish(ctx, import_id, failed=False)
+        await importer.start(ctx, import_id)
+        async with tenant_session(ctx.tenant) as session:
+            return await _view(session, import_id)
     workbook = next(f for f in files if f.role == "workbook")
     data = await _read(
         ctx.tenant_id,

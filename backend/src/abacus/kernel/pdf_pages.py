@@ -45,6 +45,9 @@ class Word:
 class PageWords:
     page: int  # from 1
     words: tuple[Word, ...]
+    # The page's size in points (K-01-T21 keeps it with the words, `methodology_source_pages`).
+    width: float = 0.0
+    height: float = 0.0
 
     @property
     def text(self) -> str:
@@ -104,8 +107,11 @@ def _fraction(value: object, size: float) -> float:
     return min(max(number / size, 0.0), 1.0) if size > 0 else 0.0
 
 
-def read_words(content: bytes, max_pages: int = MAX_PAGES) -> PdfWords:
-    """Every page's words with their boxes; run it through `read_words_isolated`."""
+def read_words(
+    content: bytes, max_pages: int = MAX_PAGES, first: int = 1, last: int | None = None
+) -> PdfWords:
+    """Every page's words with their boxes, or pages `first` to `last` only (K-01-T21's batches;
+    `page_count` is still the file's); run it through `read_words_isolated`."""
     import pdfplumber
 
     try:
@@ -117,7 +123,9 @@ def read_words(content: bytes, max_pages: int = MAX_PAGES) -> PdfWords:
         if count > max_pages:
             return PdfWords(count, problem="too_many_pages")
         pages: list[PageWords] = []
-        for number, page in enumerate(pdf.pages, start=1):
+        end = count if last is None else min(last, count)
+        for number in range(max(first, 1), end + 1):
+            page = pdf.pages[number - 1]
             width = float(page.width)
             height = float(page.height)
             words: list[Word] = []
@@ -136,7 +144,7 @@ def read_words(content: bytes, max_pages: int = MAX_PAGES) -> PdfWords:
                         ),
                     )
                 )
-            pages.append(PageWords(number, tuple(words)))
+            pages.append(PageWords(number, tuple(words), width, height))
         return PdfWords(count, tuple(pages))
     except Exception as exc:  # pdfminer raises several kinds on a hostile page
         return PdfWords(0, problem=problem_of(exc))
@@ -173,9 +181,11 @@ def render_page(content: bytes, page: int, width_px: int = PAGE_WIDTH_PX) -> Pag
         document.close()
 
 
-def read_words_isolated(content: bytes, max_pages: int = MAX_PAGES) -> PdfWords:
+def read_words_isolated(
+    content: bytes, max_pages: int = MAX_PAGES, first: int = 1, last: int | None = None
+) -> PdfWords:
     try:
-        return run_isolated_with(LIMITS, read_words, content, max_pages)
+        return run_isolated_with(LIMITS, read_words, content, max_pages, first, last)
     except IsolationFailed:
         return PdfWords(0, problem="crashed")
 
