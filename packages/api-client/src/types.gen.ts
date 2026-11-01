@@ -92872,10 +92872,6 @@ export type SampleItemRequestsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SampleItemRequestsError = SampleItemRequestsErrors[keyof SampleItemRequestsErrors];
@@ -92936,10 +92932,6 @@ export type SampleItemRequestsPreviewErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type SampleItemRequestsPreviewError = SampleItemRequestsPreviewErrors[keyof SampleItemRequestsPreviewErrors];

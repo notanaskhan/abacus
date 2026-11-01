@@ -11344,7 +11344,7 @@ export const sampleItemRequests = <ThrowOnError extends boolean = false>(options
 /**
  * Sample Item Requests Preview Route
  *
- * "125 requests · 100 to POR-03 · 25 to POR-14" (T13).
+ * "125 requests · 100 to POR-03 · 25 to POR-14" (T13); 409 `sample_not_approved`.
  */
 export const sampleItemRequestsPreview = <ThrowOnError extends boolean = false>(options: Options<SampleItemRequestsPreviewData, ThrowOnError>): RequestResult<SampleItemRequestsPreviewResponses, SampleItemRequestsPreviewErrors, ThrowOnError> => (options.client ?? client).post<SampleItemRequestsPreviewResponses, SampleItemRequestsPreviewErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

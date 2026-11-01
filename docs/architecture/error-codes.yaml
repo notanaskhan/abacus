@@ -1919,6 +1919,11 @@ codes:
     - abacus.modules.requests.binders.ReasonRequired
     - abacus.modules.workpapers.core.ReasonRequired
     summary: Unpublishing a binder needs a reason.
+  recipient_not_contact:
+    status: 422
+    raised_by:
+    - abacus.modules.sampling.item_requests.RecipientNotContact
+    summary: A template names someone who is not the engagement's client's contact.
   recommendation_changed:
     status: 409
     raised_by:
@@ -2113,6 +2118,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.fieldwork.workpapers.SampleNotApproved
+    - abacus.modules.sampling.item_requests.SampleNotApproved
     summary: 'SPEC-040 AC-3: a manager or the partner approves the sample before anyone tests it, asks
       the client for support, or signs a row.'
   schedule_paused:

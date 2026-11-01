@@ -88,6 +88,13 @@ def test_ac20_each_new_route_declares_exactly_one_action_and_a_response_model() 
 # TASK-019: taking, releasing and assigning a review return the assignment, so 200.
 REVIEW_QUEUE = "/v1/engagements/{engagement_id}/review-queue/{version_id}"
 NOT_CREATING = {
+    # A-03 (T08, T10, T13): confirming a mapping set, approving a sample version and previewing
+    # the item-request fan-out act on existing rows or write nothing, so 200.
+    "/v1/mapping-sets/{mapping_set_id}/confirm",
+    "/v1/sample-sets/{sample_set_id}/versions/{version_no}/approve",
+    "/v1/sample-sets/{sample_set_id}/versions/{version_no}/item-requests/preview",
+    # N-02: withdrawing a letter's envelope voids it, so 200.
+    "/v1/engagements/{engagement_id}/letter/withdraw-envelope",
     # P-11-T03/T06 (C11 stub): an import answers its results, a preview renders and stores
     # nothing, a publish and a regenerate act on existing rows, so 200 (missing since #745).
     "/v1/report-templates/import",
@@ -408,6 +415,9 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/firm/safeguards/wisp-pack",
         # DEC-1281: a DocuSeal delivery is a hint only, always an empty 202.
         "/v1/webhooks/docuseal/{tenant_id}/{install_id}",
+        # A-03-T08 and T10: a mapping run and a sample draw start their workflows, so 202.
+        "/v1/engagements/{engagement_id}/mapping-sets",
+        "/v1/sample-sets/{sample_set_id}/versions",
         # A-04-T01: a draft starts a section-drafter run, so 202.
         "/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/drafts",
         "/v1/engagements/{engagement_id}/risks/{risk_id}/drafts",
@@ -419,6 +429,15 @@ def test_ac20_creating_routes_answer_201() -> None:
     assert created == {
         "/v1/engagements",
         "/v1/engagements/{engagement_id}/request-items",
+        # A-03 (T06, T07, T10, T13): a grouping import, a population and its ties, a sample set
+        # and the item-request fan-out each create rows, so 201.
+        "/v1/grouping-sets/imports/file",
+        "/v1/work-items/{work_item_id}/populations",
+        "/v1/populations/{population_id}/ties",
+        "/v1/work-items/{work_item_id}/sample-sets",
+        "/v1/sample-sets/{sample_set_id}/versions/{version_no}/item-requests",
+        # T-01: issuing an acknowledgement records it, so 201.
+        "/v1/tax-returns/{return_id}/acks/{ack_id}/issue",
         # K-01-T01 (C21 stub): a methodology draft and a program step.
         "/v1/methodology/versions/{version_id}/drafts",
         # K-01-T18: a methodology import.

@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
@@ -30,7 +30,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from abacus.kernel._flags import SAMPLING_SAMPLE_SETS
 from abacus.kernel._statuses import CompletenessTieResultStatus, SampleSetVersionStatus
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.modules.engagements.api import get_ref, work_item_engagement
@@ -528,10 +528,6 @@ async def live_gate(ctx: AuthContext, *, write: bool) -> None:
     await _flag_or_404(ctx)
 
 
-def _not_yet() -> NoReturn:
-    raise NotImplementedYet
-
-
 work_items_router = AbacusRouter(prefix="/v1/work-items/{work_item_id}", tags=["sampling"])
 populations_router = AbacusRouter(prefix="/v1/populations", tags=["sampling"])
 sample_sets_router = AbacusRouter(prefix="/v1/sample-sets", tags=["sampling"])
@@ -757,14 +753,16 @@ async def sample_set_export_route(sample_set_id: UUID, version_no: int, ctx: Ctx
     "/{sample_set_id}/versions/{version_no}/item-requests/preview",
     action="sample_set.generate_requests",
     response_model=ItemRequestPreviewOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def sample_item_requests_preview_route(
     sample_set_id: UUID, version_no: int, body: ItemRequestsIn, ctx: Ctx
 ) -> ItemRequestPreviewOut:
-    """ "125 requests · 100 to POR-03 · 25 to POR-14" (T13)."""
-    await target_gate(ctx, "sample_set.generate_requests")
-    _not_yet()
+    """ "125 requests · 100 to POR-03 · 25 to POR-14" (T13); 409 `sample_not_approved`."""
+    from abacus.modules.sampling import item_requests  # the service imports these models
+
+    await live_gate(ctx, write=True)
+    return await item_requests.preview(ctx, sample_set_id, version_no, body)
 
 
 @sample_sets_router.post(
@@ -772,7 +770,7 @@ async def sample_item_requests_preview_route(
     action="sample_set.generate_requests",
     response_model=ItemRequestsCreatedOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def sample_item_requests_route(
     sample_set_id: UUID,
@@ -783,8 +781,10 @@ async def sample_item_requests_route(
 ) -> ItemRequestsCreatedOut:
     """Create the fan-out through requests.api.create_items_bulk (T13); 409
     `sample_not_approved`; a replay with the same key returns the stored response."""
-    await target_gate(ctx, "sample_set.generate_requests")
-    _not_yet()
+    from abacus.modules.sampling import item_requests
+
+    await live_gate(ctx, write=True)
+    return await item_requests.create(ctx, sample_set_id, version_no, body, idempotency_key)
 
 
 ROUTERS = (work_items_router, populations_router, sample_sets_router)

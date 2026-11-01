@@ -18649,7 +18649,7 @@ export const sampleItemRequestsMutation = (options?: Partial<Options<SampleItemR
 /**
  * Sample Item Requests Preview Route
  *
- * "125 requests · 100 to POR-03 · 25 to POR-14" (T13).
+ * "125 requests · 100 to POR-03 · 25 to POR-14" (T13); 409 `sample_not_approved`.
  */
 export const sampleItemRequestsPreviewMutation = (options?: Partial<Options<SampleItemRequestsPreviewData>>): UseMutationOptions<SampleItemRequestsPreviewResponse, SampleItemRequestsPreviewError, Options<SampleItemRequestsPreviewData>> => {
     const mutationOptions: UseMutationOptions<SampleItemRequestsPreviewResponse, SampleItemRequestsPreviewError, Options<SampleItemRequestsPreviewData>> = {

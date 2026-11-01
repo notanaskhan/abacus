@@ -21,7 +21,7 @@ from abacus.kernel import _statuses
 from abacus.kernel._flags import SAMPLING_SAMPLE_SETS
 from abacus.kernel.classification import unclassified_fields
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.modules.identity.api import AuthContext, Forbidden
 from abacus.modules.sampling import contract
 from abacus.modules.sampling import contract_fixtures as fx
@@ -61,8 +61,8 @@ def _ctx(*, client: bool = False, kind: str = "human") -> AuthContext:
     )
 
 
-# A-03-T07 made the population routes live and A-03-T10 the sample-set routes: they no longer
-# answer 501 (the item-request fan-out stays a stub until A-03-T13).
+# A-03-T07 made the population routes live, A-03-T10 the sample-set routes and A-03-T13 the
+# item-request fan-out: none answers 501 now.
 LIVE = {
     ("post", f"{WI}/populations"),
     ("get", "/v1/populations/{population_id}"),
@@ -75,6 +75,8 @@ LIVE = {
     ("get", f"{SS}/versions/{{version_no}}/items"),
     ("post", f"{SS}/versions/{{version_no}}/approve"),
     ("get", f"{SS}/versions/{{version_no}}/export.xlsx"),
+    ("post", f"{V}/item-requests/preview"),
+    ("post", f"{V}/item-requests"),
 }
 
 
@@ -216,12 +218,6 @@ async def test_ac11_the_fixture_reads_answer_and_others_501(
     assert gl.items_total == 40 and str(gl.items_amount) == "3698700.00"
     census = await contract.population_route(fx.CENSUS_V2, ctx)
     assert [t.result for t in census.ties] == ["tie", "tie"]
-    # The fan-out is T13's: still 501 on every id.
-    body = contract.ItemRequestsIn.model_validate(
-        {"templates": [{"description": "Enrollment form"}], "due_on": "2026-10-01"}
-    )
-    with pytest.raises(NotImplementedYet):
-        await contract.sample_item_requests_preview_route(uuid.uuid4(), 1, body, ctx)
 
 
 def test_ac12_the_status_families_are_generated() -> None:

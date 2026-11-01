@@ -990,6 +990,7 @@ async def _insert_item(
     created_by: UUID,
     firm_tier: str | None = None,
     template: Guidance | None = None,
+    binder_fields: dict[str, object] | None = None,
 ) -> RequestItem:
     """Insert an item classified by `classify` (AC-1), recording how, with its guidance from the
     template or its document kind (SPEC-031 AC-2)."""
@@ -1011,9 +1012,74 @@ async def _insert_item(
         document_kind=kind,
         document_kind_source="rule" if kind is not None else None,
         guidance=for_new_item(template, kind),
+        binder_fields=binder_fields,
     )
     _record_classified(tx, item_id, engagement_id, found, "request_item.classified")
     return item
+
+
+# --- A-03-T13: many items in the caller's unit of work (`requests.api.create_items_bulk`) ------
+
+
+@dataclass(frozen=True)
+class BulkItem:
+    """One request of a fan-out: its text, area and what it links to (`{type, ...}`)."""
+
+    description: str
+    audit_area: str
+    linked_ref: dict[str, object]
+
+
+async def create_items_bulk(
+    tx: UnitOfWork,
+    ctx: AuthContext,
+    engagement_id: UUID,
+    items: Sequence[BulkItem],
+    *,
+    wave: str,
+    due_on: date | None,
+    batch_id: UUID,
+) -> list[UUID]:
+    """Every item in the caller's unit of work, each audited `request_item.created` and announced
+    like a single add; `batch_id` rides in each `linked_ref` so P-06's request emails group one
+    per recipient per batch (A-03 R14). The caller authorised its own action; this authorises
+    `request_item.create` on the engagement too."""
+    ref = await lock_ref(tx, engagement_id)
+    await authorise(ctx, "request_item.create", ref.resource())
+    list_id, created = await request_list_for(tx.session, ctx.tenant_id, engagement_id)
+    if created:
+        tx.record(
+            "request_list.created",
+            target=Target("request_list", list_id),
+            after=Ref(engagement_id=engagement_id),
+        )
+    ids: list[UUID] = []
+    for new in items:
+        item_id = uuid4()
+        await _insert_item(
+            tx,
+            item_id=item_id,
+            tenant_id=ctx.tenant_id,
+            engagement_id=engagement_id,
+            request_list_id=list_id,
+            description=new.description,
+            audit_area=new.audit_area,
+            created_by=ctx.user_id,
+            binder_fields={
+                "wave": wave,
+                "linked_ref": {**new.linked_ref, "batch_id": str(batch_id)},
+            },
+        )
+        tx.record(
+            "request_item.created",
+            target=Target("request_item", item_id),
+            after=Ref(engagement_id=engagement_id, batch=batch_id),
+        )
+        tx.emit(RequestItemCreated(request_item_id=item_id, engagement_id=engagement_id))
+        ids.append(item_id)
+    if due_on is not None and ids:
+        await set_due_dates(tx.session, engagement_id, ids, due_on)
+    return ids
 
 
 def _record_classified(

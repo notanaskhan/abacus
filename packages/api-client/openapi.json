@@ -200670,16 +200670,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Sample Item Requests Route",
@@ -200691,7 +200681,7 @@
     },
     "/v1/sample-sets/{sample_set_id}/versions/{version_no}/item-requests/preview": {
       "post": {
-        "description": "\"125 requests \u00b7 100 to POR-03 \u00b7 25 to POR-14\" (T13).",
+        "description": "\"125 requests \u00b7 100 to POR-03 \u00b7 25 to POR-14\" (T13); 409 `sample_not_approved`.",
         "operationId": "sample_item_requests_preview",
         "parameters": [
           {
@@ -200816,16 +200806,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Sample Item Requests Preview Route",
