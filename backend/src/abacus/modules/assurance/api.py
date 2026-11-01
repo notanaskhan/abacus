@@ -18,6 +18,7 @@ from abacus.modules.assurance.ebp_contract import router as ebp_router
 from abacus.modules.assurance.ebp_designed import register as register_ebp_designed
 from abacus.modules.assurance.ebp_plan import AUDIT_KINDS as EBP_PLAN_KINDS
 from abacus.modules.assurance.ebp_plan import audit_owners as ebp_plan_owners
+from abacus.modules.assurance.ebp_designed import register_modes as register_ebp_modes
 from abacus.modules.assurance.home_counts import register_home_counts
 from abacus.modules.assurance.mapping import SUBSCRIPTIONS as MAPPING_SUBSCRIPTIONS
 from abacus.modules.assurance.mapping import import_csv as import_grouping_csv
@@ -111,6 +112,8 @@ register_review_gates()
 register_ebp_designed()
 # A-05-T10 (DEC-1955): EBP-01's plan, providers and checks placed for the trail.
 register_engagement_owners(EBP_PLAN_KINDS, ebp_plan_owners)
+# A-05-T12 (DEC-1956): which papers each EBP section-draft mode drafts.
+register_ebp_modes()
 # A-04-T07: the trail places a service organization on its engagement (SPEC-304; DEC-121).
 register_engagement_owners(SERVICE_ORG_KINDS, service_org_owners)
 

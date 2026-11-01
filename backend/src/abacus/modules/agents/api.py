@@ -127,6 +127,7 @@ from abacus.modules.agents.section_sources import (
     SectionSource,
     SourceCell,
     SourcePaper,
+    register_mode_plan,
     register_section_source,
 )
 from abacus.modules.agents.service import (
@@ -401,6 +402,7 @@ __all__ = [
     "recommend",
     "register_change_set_applier",
     "register_engagement_run_agent",
+    "register_mode_plan",
     "register_proposal_adapter",
     "register_section_source",
     "register_suggestion_applier",
