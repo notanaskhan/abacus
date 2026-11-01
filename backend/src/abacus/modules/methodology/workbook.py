@@ -106,7 +106,14 @@ Level = Literal["foundation", "planning", "testing", "completion"]
 LEVELS: Final = frozenset({"foundation", "planning", "testing", "completion"})
 PROGRAM_COLUMNS: Final = ("code", "name")
 STEP_COLUMNS: Final = ("program_code", "number", "text", "level")
-STEP_OPTIONAL: Final = ("step_id", "assertions", "standard_refs", "mandatory", "lock_note")
+STEP_OPTIONAL: Final = (
+    "step_id",
+    "assertions",
+    "standard_refs",
+    "mandatory",
+    "lock_note",
+    "templates",  # A-04-T07: `request:<key>` or `workpaper:<kind>`, separated by ";"
+)
 STEP_OPTIONAL_LINKS: Final = "requests"
 MAX_PROGRAMS: Final = 100
 MAX_STEPS: Final = 3000
@@ -123,6 +130,17 @@ _STEP_LENGTH: Final = {
 _PROGRAM_CODE: Final = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,39}")
 STEP_KEY: Final = re.compile(r"[a-z0-9][a-z0-9_.-]{0,79}")
 _LIST_ITEM: Final = re.compile(r"[A-Za-z0-9][A-Za-z0-9 _.,()§-]{0,79}")
+TEMPLATE_REF: Final = re.compile(r"(request|workpaper):[a-z][a-z0-9_]{0,63}")
+
+
+def template_refs(cell: str) -> tuple[str, ...] | None:
+    """A `templates` cell's references, or None when one is malformed (A-04-T07)."""
+    found = tuple(p.strip() for p in cell.split(";") if p.strip())
+    if len(found) > MAX_LIST_ITEMS or not all(TEMPLATE_REF.fullmatch(f) for f in found):
+        return None
+    return tuple(dict.fromkeys(found))
+
+
 # Text that a spreadsheet would read as a formula, or that hides or reorders what is shown (control
 # and bidi characters): refused at import (ADR-052; security review L3, DEC-577).
 _FORMULA_LEADS: Final = ("=", "+", "-", "@", "\t", "\r")
@@ -151,6 +169,7 @@ class StepRow:
     assertions: tuple[str, ...] = ()
     standard_refs: tuple[str, ...] = ()
     request_positions: tuple[int, ...] = ()  # the linked Requests rows, 0-based
+    template_refs: tuple[str, ...] = ()  # A-04-T07: the templates the step points at
 
 
 @dataclass(frozen=True)
@@ -508,6 +527,10 @@ def _steps(
         if refs is None:
             problems.append(Problem(STEPS, number, "standard_refs", "invalid_list"))
             bad = True
+        templates = template_refs(row.get("templates", ""))
+        if templates is None:
+            problems.append(Problem(STEPS, number, "templates", "invalid_template_ref"))
+            bad = True
         links = _positions(row.get(STEP_OPTIONAL_LINKS, ""), requests)
         if links is None:
             problems.append(Problem(STEPS, number, STEP_OPTIONAL_LINKS, "unknown_request"))
@@ -521,6 +544,8 @@ def _steps(
                 taken[step_no] = number
         if bad or step_no is None or assertions is None or refs is None or links is None:
             continue
+        if templates is None:  # pragma: no cover -- `bad` above
+            continue
         found.append(
             StepRow(
                 row["program_code"],
@@ -533,6 +558,7 @@ def _steps(
                 assertions,
                 refs,
                 links,
+                templates,
             )
         )
     # Steps are numbered 1 to n in each program, with no gap.

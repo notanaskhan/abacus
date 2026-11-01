@@ -12,10 +12,12 @@ from sqlalchemy import select
 from sqlalchemy.orm import QueryableAttribute
 
 from abacus.kernel.db import TenantContext, tenant_session
+from abacus.modules.workpapers.models import ProgramProcedure
 from abacus.modules.workpapers.tie_models import TieOutCheck
 
 _OWNERS: dict[str, tuple[QueryableAttribute[UUID], QueryableAttribute[UUID | None]]] = {
     "tie_out_check": (TieOutCheck.id, TieOutCheck.engagement_id),  # SPEC-310
+    "program_procedure": (ProgramProcedure.id, ProgramProcedure.engagement_id),  # A-04-T07
 }
 AUDIT_KINDS = frozenset(_OWNERS)
 

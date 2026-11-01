@@ -4,7 +4,7 @@
 |---|---|
 | Register row | internal workpaper core API (A-04 §8.2; consumed by A-05 and A-08 as their cell store) in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | live for states, record, versions, cells and export (A-04-T04, 2026-11-01; DEC-1762); stub for procedures and tailoring (T07), drafts (T11) and attention flags (T19) |
+| Status | live for states, record, versions, cells and export (A-04-T04, 2026-11-01; DEC-1762) and for procedures and tailoring (A-04-T07, 2026-11-01; DEC-1867); stub for drafts (T11) and attention flags (T19) |
 | Provider epic | A-04 |
 | Consumers | AUD-04, AUD-05, AUD-09 (the cell store), AUD-02 rail (section states), KNW-03 d (tailoring), SHL-07 and SHL-08 (citations), SHL-09 (field history), SHL-12 (sign-off ladder); A-05 EBP workpapers, A-08 fieldwork |
 | Flags | `workpapers.core` (every route); `workpapers.drafting` too for `POST …/drafts` (default off; DEC-137 override, expires 2027-04-29) |
@@ -81,13 +81,16 @@ text), `mandatory_step`, `flag_already_converted` (409); `reason_required`, `rat
 (422). Each lands with the task that raises it. A-04-T04 raises `version_conflict` (a stale
 `expected_version`, with `current_version` in the facts; a replayed edit finds the version moved
 and answers it too) and `reason_required` (overriding a cell whose value is the agent's, or a
-suggestion, with no reason); the stubbed routes still answer 501 `not_implemented`.
+suggestion, with no reason). A-04-T07 raises `mandatory_step`, `version_conflict` (a stale
+tailoring) and `rationale_required`, and `pack_configuration_error` from pack validation; the
+stubbed routes still answer 501 `not_implemented`.
 
 ## 6. Human-only actions and audit events
 Human only: every write in §2 (the agent writes suggestions through its own channel, ADR-005).
 Audit: `workpaper.created`, `workpaper.cells_edited` (an edit as the next version, A-04-T04),
 `workpaper.exported` (with the file's SHA-256),
-`attention_flag.raised/converted/reminded/resolved`, `procedure.tailored`,
+`attention_flag.raised/converted/reminded/resolved`, `procedure.instantiated` (the system writing
+a work item's procedures once, with the count; A-04-T07), `procedure.tailored`,
 `section_draft.started/failed`. Outbox: `workpaper.version_created` (staleness and the re-draft
 consumer).
 
@@ -112,7 +115,17 @@ Every route: client principal 404 → the route's action on the engagement → 4
   `2`, `D`); `match_id` `wp:<sheet_id>!<sheet_key>.<row_key>.<column_key>`; the paper must be
   the anchor's engagement's (else `source_not_visible`) and readable by the actor; a claimed value
   is compared as an amount by code, a quote space- and case-folded.
-- Procedures and tailoring, drafts and flags: 501 `not_implemented` until T07, T11 and T19.
+- **Procedures** (`GET …/program-tailoring?program=`; A-04-T07, DEC-1867): the audit work item's
+  procedures from the engagement's pinned methodology version, in program and step order. The
+  system writes them the first time anyone reads them (`procedure.instantiated`); a second read
+  writes nothing. 404 without an audit work item or a pinned version.
+- **Tailoring** (`PATCH …/procedures/{id}`): `{expected_version, tailored, rationale?}`; a
+  mandatory step is 409 `mandatory_step`, a stale version 409 `version_conflict`, tailoring out
+  without a rationale 422 `rationale_required`; tailoring back in clears the rationale.
+- **Pack validation** (`workpapers.api.validate_pack`, before any model call): a step's
+  `template_refs` (`request:<key>`, `workpaper:<kind>`) resolve against the firm's registered
+  template libraries; the first that does not is `pack_configuration_error` with AUD-09 d's text.
+- Drafts and flags: 501 `not_implemented` until T11 and T19.
 
 ## 8. Example (Brightwater Hale, Northwind Robotics 401(k) Plan, PY2025)
 The Keystone Retirement Services cell on General Audit Planning (AUD-04 a) after a `gap` draft:

@@ -176,6 +176,8 @@ class ProgramStep(Base):
     edited_by: Mapped[UUID | None]
     edited_at: Mapped[datetime | None]
     row_version: Mapped[int] = mapped_column(server_default=FetchedValue())
+    # A-04-T07 (0614): the request and workpaper templates the step points at (pack validation).
+    template_refs: Mapped[list[str]] = mapped_column(ARRAY(String), server_default=FetchedValue())
 
 
 class MethodologyImport(Base):

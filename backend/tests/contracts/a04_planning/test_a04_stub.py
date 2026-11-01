@@ -35,8 +35,14 @@ E = "/v1/engagements/{engagement_id}"
 WP = f"{E}/workpapers/{{workpaper_id}}"
 SOC = f"{E}/soc-reports/{{soc_report_id}}"
 EX = f"{E}/internal-control/exceptions/{{sheet_row}}"
-# A-04-T04 serves these (DEC-1762): their action and 404 stay, 501 goes.
+# A-04-T04 (DEC-1762) and A-04-T07 (DEC-1867) serve these: their action and 404 stay, 501 goes.
 SERVED: dict[tuple[str, str], str] = {
+    ("get", f"{E}/program-tailoring"): "procedure.read",
+    ("patch", f"{E}/procedures/{{procedure_id}}"): "procedure.tailor",
+    ("get", f"{E}/service-organizations"): "service_org.read",
+    ("post", f"{E}/service-organizations"): "service_org.edit",
+    ("get", f"{E}/service-organizations/{{service_org_id}}"): "service_org.read",
+    ("patch", f"{E}/service-organizations/{{service_org_id}}"): "service_org.edit",
     ("get", f"{E}/workpaper-states"): "workpaper.read",
     ("get", f"{WP}/record"): "workpaper.read",
     ("get", f"{WP}/versions"): "workpaper.read",
@@ -47,8 +53,6 @@ ROUTES: dict[tuple[str, str], str] = {
     ("post", f"{WP}/drafts"): "workpaper.draft",
     ("post", f"{WP}/flags/{{flag_id}}/convert"): "attention_flag.convert",
     ("post", f"{WP}/flags/{{flag_id}}/remind"): "follow_up.draft",
-    ("get", f"{E}/program-tailoring"): "procedure.read",
-    ("patch", f"{E}/procedures/{{procedure_id}}"): "procedure.tailor",
     ("get", f"{E}/materiality/current"): "materiality.read",
     ("post", f"{E}/materiality/preview"): "materiality.read",
     ("post", f"{E}/materiality/proposals"): "materiality.propose",
@@ -76,10 +80,6 @@ ROUTES: dict[tuple[str, str], str] = {
     ("post", f"{EX}/send-to-findings"): "exception.route",
     ("post", f"{EX}/convert-to-misstatement"): "exception.route",
     ("post", f"{EX}/request-evidence"): "request_item.create",
-    ("get", f"{E}/service-organizations"): "service_org.read",
-    ("post", f"{E}/service-organizations"): "service_org.edit",
-    ("get", f"{E}/service-organizations/{{service_org_id}}"): "service_org.read",
-    ("patch", f"{E}/service-organizations/{{service_org_id}}"): "service_org.edit",
     ("get", SOC): "service_org.read",
     ("patch", SOC): "soc_report.evaluate",
     ("patch", f"{SOC}/cuecs/{{n}}"): "soc_report.evaluate",
@@ -258,8 +258,6 @@ async def test_t01_the_gate_authorises_then_reads_the_flag_then_answers_501(
         )
     assert calls == ["authorise:materiality.read:engagement", "flag:assurance.materiality"]
     state["on"] = True
-    with pytest.raises(NotImplementedYet):
-        await core.program_tailoring_route(uuid.uuid4(), _ctx())
     calls.clear()
     with pytest.raises(NotImplementedYet):
         await core.workpaper_draft_route(
@@ -281,7 +279,14 @@ async def test_t01_the_inventory_answers_with_either_flag(monkeypatch: pytest.Mo
     monkeypatch.setattr(planning, "get_ref", get_ref)
     monkeypatch.setattr(planning, "authorise", allow)
     monkeypatch.setattr(planning, "flag_enabled", only_core)
-    with pytest.raises(NotImplementedYet):
-        await planning.service_orgs_route(uuid.uuid4(), _ctx())
+    from abacus.modules.assurance import service_orgs
+
+    async def none_yet(*_: object) -> list[object]:
+        return []
+
+    monkeypatch.setattr(planning, "_org_actions", none_yet)
+    monkeypatch.setattr(service_orgs, "organizations", none_yet)
+    page = await planning.service_orgs_route(uuid.uuid4(), _ctx())
+    assert page.total == 0
     with pytest.raises(NotFound):
         await planning.soc_report_route(uuid.uuid4(), uuid.uuid4(), _ctx())

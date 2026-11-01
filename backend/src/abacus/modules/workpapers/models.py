@@ -173,6 +173,8 @@ class ProgramProcedure(Base):
     tailored: Mapped[bool] = mapped_column(server_default=FetchedValue())
     tailored_rationale: Mapped[str | None]
     status: Mapped[str] = mapped_column(server_default=FetchedValue())
-    linked_work: Mapped[dict[str, Any] | None] = mapped_column(JSONB)  # Any: JSON
+    # Any: JSON; SQL NULL for None (the column's CHECK refuses a JSON null).
+    linked_work: Mapped[dict[str, Any] | None] = mapped_column(JSONB(none_as_null=True))
     created_by: Mapped[UUID]
     created_at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
+    row_version: Mapped[int] = mapped_column(server_default=FetchedValue())  # 0614

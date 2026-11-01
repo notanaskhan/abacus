@@ -606,6 +606,11 @@ codes:
     - abacus.modules.requests.binders.DueDateRequired
     summary: Every request a publish sends needs a due date, its own or the binder's default; the facts
       name the requests without one.
+  duplicate_name:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.service_orgs.DuplicateName
+    summary: The work item already lists an organization by this name.
   duplicate_record_key:
     status: 422
     raised_by:
@@ -1362,6 +1367,11 @@ codes:
     raised_by:
     - abacus.modules.methodology.drafts.MandatoryLocked
     summary: Only the QM owner can remove or unlock mandatory steps.
+  mandatory_step:
+    status: 409
+    raised_by:
+    - abacus.modules.workpapers.procedures.MandatoryStep
+    summary: A mandatory step is never tailored (AC1.9).
   mapping_conflict:
     status: 409
     raised_by:
@@ -1724,6 +1734,11 @@ codes:
     raised_by:
     - abacus.modules.methodology.standards.OwnerNotPartner
     summary: The owner of a standard must be a partner member of the firm.
+  pack_configuration_error:
+    status: 409
+    raised_by:
+    - abacus.modules.workpapers.procedures.PackConfigurationError
+    summary: The pinned version points at a template neither it nor the firm's library holds (AC6.1).
   packet_approved:
     status: 409
     raised_by:
@@ -1907,6 +1922,7 @@ codes:
     raised_by:
     - abacus.modules.engagements.acceptance.RationaleRequired
     - abacus.modules.review.decisions.RationaleRequired
+    - abacus.modules.workpapers.procedures.RationaleRequired
     summary: A decision needs a rationale; Accept with conditions needs a condition (`facts.field`).
   read_not_confirmed:
     status: 422
@@ -2716,7 +2732,9 @@ codes:
   version_conflict:
     status: 409
     raised_by:
+    - abacus.modules.assurance.service_orgs.OrganizationMoved
     - abacus.modules.workpapers.core.VersionConflict
+    - abacus.modules.workpapers.procedures.ProcedureMoved
     summary: The paper moved on since the caller read it (AC1.6).
   version_frozen:
     status: 409

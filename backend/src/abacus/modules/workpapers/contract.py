@@ -24,7 +24,7 @@ sums (ADR-050). A cell written by the agent is a suggestion until a person adopt
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Literal, NoReturn
+from typing import TYPE_CHECKING, Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query, Response
@@ -43,6 +43,9 @@ from abacus.kernel.flags import Flag, flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.modules.engagements.api import get_ref
 from abacus.modules.identity.api import AbacusRouter, AuthContext, authorise, current_context
+
+if TYPE_CHECKING:
+    from abacus.modules.workpapers.procedures import ProcedureView as ProcedureRow
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -288,6 +291,27 @@ class TailorIn(BaseModel):
     ] = None
 
 
+def _procedure_out(view: ProcedureRow) -> ProgramProcedureOut:
+    p = view.procedure
+    linked = p.linked_work
+    return ProgramProcedureOut(
+        id=p.id,
+        program_code=view.program_code,
+        program_step_key=p.program_step_key,
+        number=view.number,
+        methodology_version_id=p.methodology_version_id,
+        level=cast(ProcedureLevel, p.level),
+        mandatory=p.mandatory,
+        tailored=p.tailored,
+        tailored_rationale=p.tailored_rationale,
+        status=cast(AuditProcedureStatus, p.status),
+        linked_work=None
+        if linked is None
+        else LinkedWorkOut(kind=cast(LinkedWorkKind, linked["kind"]), ref=str(linked["ref"])),
+        row_version=p.row_version,
+    )
+
+
 # --- the gate ------------------------------------------------------------------------------------
 
 
@@ -465,7 +489,6 @@ async def attention_flag_remind_route(
     "/program-tailoring",
     action="procedure.read",
     response_model=ListPage[ProgramProcedureOut],
-    errors=(501,),
 )
 async def program_tailoring_route(
     engagement_id: UUID,
@@ -474,14 +497,17 @@ async def program_tailoring_route(
 ) -> ListPage[ProgramProcedureOut]:
     """The procedures from the pinned version with their tailoring: AUD-04 and KNW-03 d (T07)."""
     await gate(ctx, engagement_id, "procedure.read", WORKPAPERS_CORE)
-    _not_yet()
+    from abacus.modules.workpapers import procedures  # the service imports these models
+
+    rows = [_procedure_out(v) for v in await procedures.procedures_of(ctx, engagement_id, program)]
+    return ListPage(items=rows, total=len(rows))
 
 
 @router.patch(
     "/procedures/{procedure_id}",
     action="procedure.tailor",
     response_model=ProgramProcedureOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def procedure_tailor_route(
     engagement_id: UUID,
@@ -493,4 +519,14 @@ async def procedure_tailor_route(
     """Tailor a non-mandatory step (409 `mandatory_step`; 409 `version_conflict`); audited
     `procedure.tailored` (AC1.9; T07)."""
     await gate(ctx, engagement_id, "procedure.tailor", WORKPAPERS_CORE)
-    _not_yet()
+    from abacus.modules.workpapers import procedures
+
+    view = await procedures.tailor(
+        ctx,
+        engagement_id,
+        procedure_id,
+        expected_version=body.expected_version,
+        tailored=body.tailored,
+        rationale=body.rationale,
+    )
+    return _procedure_out(view)

@@ -30,7 +30,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal, NoReturn
+from typing import TYPE_CHECKING, Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Path, Query
@@ -65,7 +65,16 @@ from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.modules.engagements.api import get_ref
-from abacus.modules.identity.api import AbacusRouter, AuthContext, authorise, current_context
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    AuthContext,
+    allowed_actions,
+    authorise,
+    current_context,
+)
+
+if TYPE_CHECKING:
+    from abacus.modules.assurance.service_orgs import ServiceOrganization as ServiceOrganizationRow
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -893,6 +902,37 @@ def _not_yet() -> NoReturn:
     raise NotImplementedYet
 
 
+async def _org_actions(ctx: AuthContext, engagement_id: UUID) -> list[PlanningAction]:
+    ref = await get_ref(ctx, engagement_id)
+    can = await allowed_actions(ctx, ref.resource(), ("service_org.edit",))
+    return ["service_org.edit"] if "service_org.edit" in can else []
+
+
+def _org_out(o: ServiceOrganizationRow, actions: list[PlanningAction]) -> ServiceOrganizationOut:
+    """A row as AUD-04 and AUD-10 read it; the edit actions are the reader's (A-04-T07)."""
+    return ServiceOrganizationOut(
+        id=o.id,
+        name=o.name,
+        services=o.services,
+        relevant=o.relevant,
+        evidence_type=cast(
+            Literal["soc1_type2", "soc1_type1", "certification", "tested_directly", "none"],
+            o.evidence_type,
+        ),
+        status=cast(ServiceOrganizationStatus, o.status),
+        subservice_orgs=[
+            SubserviceOrgOut(
+                name=str(s["name"]),
+                treatment=cast(Literal["carve_out", "inclusive"], s["treatment"]),
+            )
+            for s in o.subservice_orgs
+        ],
+        soc_report_id=o.soc_report_id,
+        row_version=o.row_version,
+        allowed_actions=actions,
+    )
+
+
 router = AbacusRouter(prefix="/v1/engagements/{engagement_id}", tags=["assurance"])
 _RR = ASSURANCE_RISK_REGISTER
 _IC = ASSURANCE_INTERNAL_CONTROL
@@ -1277,12 +1317,15 @@ async def exception_request_evidence_route(
     "/service-organizations",
     action="service_org.read",
     response_model=ListPage[ServiceOrganizationOut],
-    errors=(501,),
 )
 async def service_orgs_route(engagement_id: UUID, ctx: Ctx) -> ListPage[ServiceOrganizationOut]:
     """The inventory shared by AUD-04 and AUD-10 (T07)."""
     await _gate(ctx, engagement_id, "service_org.read", _SO, WORKPAPERS_CORE, any_of=True)
-    _not_yet()
+    from abacus.modules.assurance import service_orgs
+
+    actions = await _org_actions(ctx, engagement_id)
+    rows = [_org_out(o, actions) for o in await service_orgs.organizations(ctx, engagement_id)]
+    return ListPage(items=rows, total=len(rows))
 
 
 @router.post(
@@ -1290,34 +1333,50 @@ async def service_orgs_route(engagement_id: UUID, ctx: Ctx) -> ListPage[ServiceO
     action="service_org.edit",
     response_model=ServiceOrganizationOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def service_org_create_route(
     engagement_id: UUID, body: ServiceOrganizationIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ServiceOrganizationOut:
     """Add a service organization; 409 `duplicate_name` (T07)."""
     await _gate(ctx, engagement_id, "service_org.edit", _SO, WORKPAPERS_CORE, any_of=True)
-    _not_yet()
+    from abacus.modules.assurance import service_orgs
+
+    return _org_out(
+        await service_orgs.add(
+            ctx,
+            engagement_id,
+            name=body.name,
+            services=body.services,
+            relevant=body.relevant,
+            evidence_type=body.evidence_type,
+        ),
+        await _org_actions(ctx, engagement_id),
+    )
 
 
 @router.get(
     "/service-organizations/{service_org_id}",
     action="service_org.read",
     response_model=ServiceOrganizationOut,
-    errors=(501,),
 )
 async def service_org_route(
     engagement_id: UUID, service_org_id: UUID, ctx: Ctx
 ) -> ServiceOrganizationOut:
     await _gate(ctx, engagement_id, "service_org.read", _SO, WORKPAPERS_CORE, any_of=True)
-    _not_yet()
+    from abacus.modules.assurance import service_orgs
+
+    return _org_out(
+        await service_orgs.organization(ctx, engagement_id, service_org_id),
+        await _org_actions(ctx, engagement_id),
+    )
 
 
 @router.patch(
     "/service-organizations/{service_org_id}",
     action="service_org.edit",
     response_model=ServiceOrganizationOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def service_org_edit_route(
     engagement_id: UUID,
@@ -1327,7 +1386,20 @@ async def service_org_edit_route(
     idempotency_key: IdempotencyKey,
 ) -> ServiceOrganizationOut:
     await _gate(ctx, engagement_id, "service_org.edit", _SO, WORKPAPERS_CORE, any_of=True)
-    _not_yet()
+    from abacus.modules.assurance import service_orgs
+
+    return _org_out(
+        await service_orgs.edit(
+            ctx,
+            engagement_id,
+            service_org_id,
+            expected_version=body.expected_version,
+            services=body.services,
+            relevant=body.relevant,
+            evidence_type=body.evidence_type,
+        ),
+        await _org_actions(ctx, engagement_id),
+    )
 
 
 @router.get(

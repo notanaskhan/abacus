@@ -60,6 +60,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "program_procedures": frozenset(
         {"tenant_id", "engagement_id", "work_item_id", "methodology_version_id"}
         | {"program_step_key", "level", "mandatory", "created_by"}
+        | {"linked_work"}  # 0614 (A-04-T07)
     ),
     "tie_out_checks": frozenset(
         {"tenant_id", "engagement_id", "target_type", "target_id", "key", "kind", "created_by"}
@@ -76,5 +77,8 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     ),
     # 0581 (A-04-T03): a flag converts or resolves; a procedure is tailored or moves on.
     "attention_flags": frozenset({"state", "converted_to_kind", "converted_to_id"}),
-    "program_procedures": frozenset({"tailored", "tailored_rationale", "status", "linked_work"}),
+    "program_procedures": frozenset(
+        {"tailored", "tailored_rationale", "status", "linked_work"}
+        | {"row_version"}  # 0614 (A-04-T07): a tailoring names the version it saw
+    ),
 }

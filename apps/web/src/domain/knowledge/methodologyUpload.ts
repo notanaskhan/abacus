@@ -37,6 +37,7 @@ const MESSAGES: Readonly<Record<string, string>> = {
   invalid_list: "This list isn't valid.",
   invalid_number: "This must be a whole number.",
   invalid_effort: "This effort isn't valid.",
+  invalid_template_ref: "List templates as request:<key> or workpaper:<kind>, separated by ;.", // (undesigned)
   invalid_yes_no: "This must be Yes or No.",
   lock_note_without_mandatory: "A lock note needs the step to be mandatory.",
   unknown_request: "No request has this number.",

@@ -62,7 +62,13 @@ from abacus.modules.methodology.lifecycle import (
     version_effective_on,
     version_state,
 )
-from abacus.modules.methodology.programs import CitedStep, step_at
+from abacus.modules.methodology.programs import (
+    CitedStep,
+    VersionStep,
+    VersionSteps,
+    step_at,
+    version_steps,
+)
 from abacus.modules.methodology.report_templates import (
     ConsentTerms as ReportTemplateConsentTerms,
 )
@@ -165,6 +171,11 @@ from abacus.modules.methodology.standards_loading import (
     standard_workbook,
 )
 from abacus.modules.methodology.standards_routes import standards_router
+from abacus.modules.methodology.template_library import (
+    TemplateLibrary,
+    register_template_library,
+    templates_held,
+)
 from abacus.modules.methodology.workbook import (
     AccountRule,
     Area,
@@ -245,12 +256,15 @@ __all__ = [
     "StandardKind",
     "TemplateInvalid",
     "TemplateItem",
+    "TemplateLibrary",
     "TemplateNameInvalid",
     "TemplateVersionSummary",
     "Tier",
     "UsageCounter",
     "VarianceResult",
     "VersionNotLatest",
+    "VersionStep",
+    "VersionSteps",
     "Viewer",
     "approve_version",
     "area_for",
@@ -289,6 +303,7 @@ __all__ = [
     "register_catalog_provider",
     "register_document_importer",
     "register_standard_examples",
+    "register_template_library",
     "register_usage_counter",
     "report_template_parts",
     "report_template_variable_keys",
@@ -303,6 +318,7 @@ __all__ = [
     "store_pages",
     "stored_pages",
     "submit_version",
+    "templates_held",
     "templates_in_firm",
     "validate_materiality",
     "variance_exceeded",
@@ -311,4 +327,5 @@ __all__ = [
     "version_effective_on",
     "version_in",
     "version_state",
+    "version_steps",
 ]
