@@ -104,7 +104,7 @@ Q-02-T43,done,"s10-leftovers (TASK-1403): firm_exports and links (migration 0216
 F-05-T60,partial,#464 (b1ea439b) tier-2 checks; no board locked (needs a pnpm visual run and sign-off)
 P-03-T20,partial,"#439 (07e4d02c), TASK-1321 SHL-08 built; ""Ask ... for the password"" blocked on handoff copy (DEC-460, TASK-1365)"
 Q-03-T043,partial,#468 (81f57c4d) repo side; runs need the perf stack (Q-03-T036)
-Q-03-T044,partial,#468 (81f57c4d) repo side; runs need the perf stack (Q-03-T036)
+Q-03-T044,partial,#468 (81f57c4d) repo side; x25 rehearsed on a laptop 2026-11-01 (DEC-1531); only the perf-stack run waits for Q-03-T036
 Q-03-T046,partial,#468 (81f57c4d) repo side; runs need the perf stack (Q-03-T036)
 P-08-T28,partial,#468 (81f57c4d) repo side; staging rollout steps are human
 F-09-T94,todo,"needs programme, vendor or counsel input; nothing in the repo"
