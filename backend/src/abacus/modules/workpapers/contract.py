@@ -50,8 +50,12 @@ if TYPE_CHECKING:
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
 WorkpaperKind = Literal[
-    "general_audit_planning", "risk_assessment", "internal_control", "service_organizations"
-]
+    "general_audit_planning", "risk_assessment", "internal_control", "service_organizations",
+    # A-05-T09 (0641): the nine EBP designed workpapers.
+    "ebp_plan", "ebp_provisions", "ebp_eligibility", "ebp_contributions",
+    "ebp_distributions_loans", "ebp_investments", "ebp_form5500", "ebp_participant_accounts",
+    "ebp_admin_expenses",
+]  # fmt: skip
 BandKind = Literal["section", "menu", "sheet"]
 ValueType = Literal["decimal", "text", "date", "bool", "percent", "empty"]
 ValueSource = Literal["agent", "human", "formula", "tb_linked", "engine_import"]

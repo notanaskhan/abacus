@@ -90,4 +90,9 @@ def install(fake: FakeModel) -> FakeModel:
     from abacus.modules.agents.methodology_import import fake_parse
 
     fake.respond(IMPORT_PROMPT, fake_parse)
+    # A-04-T15: the materiality recommender's answer is read from the task by code.
+    from abacus.modules.agents.decision_recommend import fake_recommend
+    from abacus.modules.agents.spec import spec
+
+    fake.respond(spec("decisions.recommender").prompt, fake_recommend)
     return fake

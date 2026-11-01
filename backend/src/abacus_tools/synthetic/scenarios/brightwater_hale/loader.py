@@ -106,7 +106,9 @@ from abacus.modules.assurance.api import (
     adopt_trial_balance,
     import_grouping_csv,
     mapping_live,
+    propose_materiality,
     publish_grouping_version,
+    reassess_materiality,
     record_phase,
     update_profile,
 )
@@ -228,7 +230,14 @@ from abacus.modules.requests.api import (
     update_item,
 )
 from abacus.modules.review.api import STATEMENTS as SIGN_OFF_STATEMENTS
-from abacus.modules.review.api import sign_target
+from abacus.modules.review.api import (
+    create_issue,
+    decide_card,
+    raise_review_note,
+    reviewable_facts,
+    save_checkpoint,
+    sign_target,
+)
 from abacus.modules.sampling.api import (
     ApproveIn,
     GeneralLedgerSourceIn,
@@ -351,7 +360,10 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.intake import (
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.intake import NEEDS as INTAKE_NEEDS
 from abacus_tools.synthetic.scenarios.brightwater_hale.intake import SLICE as INTAKE_SLICE
-from abacus_tools.synthetic.scenarios.brightwater_hale.ledgers import GRANITE_PEAK_FY2026
+from abacus_tools.synthetic.scenarios.brightwater_hale.ledgers import (
+    GRANITE_PEAK_FY2026,
+    NORTHWIND_PY2025,
+)
 from abacus_tools.synthetic.scenarios.brightwater_hale.methodology import (
     NEEDS as METHODOLOGY_NEEDS,
 )
@@ -407,6 +419,21 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.report_templates import (
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.report_templates import (
     bundle as report_template_bundle,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.review_slice import (
+    ISSUE_BLOCKS as REVIEW_ISSUE_BLOCKS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.review_slice import (
+    ISSUES as REVIEW_ISSUES,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.review_slice import (
+    NEEDS as REVIEW_NEEDS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.review_slice import (
+    NORTHWIND_TB_LABEL,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.review_slice import (
+    SLICE as REVIEW_SLICE,
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.sampling_slice import (
     NEEDS as SAMPLING_NEEDS,
@@ -1749,6 +1776,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     SIGNATURES_SLICE: SIGNATURES_NEEDS,  # N-02-T36: SIG-01 at E0 over the tax clients
     TAX_CONTENT_SLICE: TAX_CONTENT_NEEDS,  # T-02-T23: K-1 sets, the organizer, questions
     PILOT_SLICE: PILOT_NEEDS,  # TASK-2470: PF-X1's enrolments name the Feld return and Northwind
+    REVIEW_SLICE: REVIEW_NEEDS,  # P-04-T36: the review grammar's objects on registered owners
 }
 
 
@@ -3940,6 +3968,175 @@ async def _questions_sent(conn: asyncpg.Connection, _: Scenario, event: Event) -
         await send_question(ctx, drafted.id)
 
 
+# --- the review slice (P-04-T36; DEC-1969) ------------------------------------------------------
+# Every object goes through its owner's service as the person the design names: the trial
+# balance through `ledger.api` and `assurance.api`, materiality through `assurance.api` (A-04-T12),
+# the sign-off, notes, card decisions, issues and checkpoints through `review.api`.
+
+
+async def _northwind_entity(conn: asyncpg.Connection) -> UUID:
+    engagement = (await _northwind_work_item(conn))[0]
+    entity = await tenant_value(
+        conn, TENANT, "SELECT client_entity_id FROM engagements WHERE id = $1", engagement
+    )
+    if entity is None:
+        raise LookupError("Northwind's engagement has no client entity")
+    return cast(UUID, entity)
+
+
+async def _northwind_tb_recorded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Northwind's PY2025 trial balance, unadjusted (net assets 16,812,400; AUD-07's base)."""
+    tb = NORTHWIND_PY2025
+    start, end = date(tb.as_of.year, 1, 1), tb.as_of
+    lines = tuple(
+        LedgerLine(ln.account_code, ln.account_name, ln.debit, ln.credit, f"tb:{ln.account_code}")
+        for ln in tb.lines
+    )
+    by = _SEATS[event.actor]
+    async with uow(TenantContext(TENANT, "human", str(user_id_of(by)))) as tx:
+        await record_snapshot(
+            tx,
+            client_entity_id=await _northwind_entity(conn),
+            period_start=start,
+            period_end=end,
+            tb=NormalisedTrialBalance(start, end, "USD", lines, tb.total_debits, tb.total_credits),
+            raw_fingerprint=_fingerprint("northwind-py2025-tb", *lines),
+            pulled_at=event.at,
+            source="import_accrued_template",
+        )
+
+
+async def _northwind_tb(conn: asyncpg.Connection) -> UUID:
+    engagement = (await _northwind_work_item(conn))[0]
+    found = await tenant_value(
+        conn, TENANT, "SELECT id FROM trial_balances WHERE engagement_id = $1", engagement
+    )
+    if found is None:
+        raise LookupError("Northwind's trial balance has not been adopted")
+    return cast(UUID, found)
+
+
+async def _northwind_tb_adopted(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    snapshot = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM ledger_snapshots WHERE client_entity_id = $1 AND period_end = $2 "
+        "ORDER BY pulled_at DESC LIMIT 1",
+        await _northwind_entity(conn),
+        NORTHWIND_PY2025.as_of,
+    )
+    if snapshot is None:
+        raise LookupError("Northwind's PY2025 trial balance has not been recorded")
+    await adopt_trial_balance(
+        await _staff_context(conn, event),
+        (await _northwind_work_item(conn))[0],
+        cast(UUID, snapshot),
+        None,
+        NORTHWIND_TB_LABEL,
+        "whole_dollars",
+    )
+
+
+async def _northwind_tb_signed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Marcus signs L1 on the hash he sees (SHL-12 a)."""
+    ctx = await _staff_context(conn, event)
+    tb = await _northwind_tb(conn)
+    facts = await reviewable_facts(ctx.tenant, "trial_balance", tb)
+    level = int(cast(int, event.data["level"]))
+    await sign_target(
+        ctx,
+        "trial_balance",
+        tb,
+        level,
+        f"sha256:{facts.content_hash.removeprefix('sha256:')}",
+        SIGN_OFF_STATEMENTS[level].version,
+    )
+
+
+async def _northwind_note_raised(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """SHL-12 b: a note on a cell, assigned to Marcus Delaney (the preparer)."""
+    await raise_review_note(
+        await _staff_context(conn, event),
+        "trial_balance",
+        await _northwind_tb(conn),
+        anchor_kind="cell",
+        anchor_ref=str(event.data["cell"]),
+        body=str(event.data["body"]),
+        assignee=user_id_of(_SEATS["MD"]),
+    )
+
+
+async def _materiality_proposed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    await propose_materiality(
+        await _staff_context(conn, event),
+        (await _northwind_work_item(conn))[0],
+        tb_id=await _northwind_tb(conn),
+        key=str(event.data["benchmark"]),
+        rate_pct=Decimal(str(event.data["rate_pct"])),
+    )
+
+
+async def _materiality_reassessed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    await reassess_materiality(
+        await _staff_context(conn, event),
+        (await _northwind_work_item(conn))[0],
+        tb_id=await _northwind_tb(conn),
+    )
+
+
+async def _materiality_decided(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Margaret decides the card awaiting her on the version she sees (SHL-11 a to c, d)."""
+    item = (await _northwind_work_item(conn))[1]
+    card = await tenant_row(
+        conn,
+        TENANT,
+        "SELECT id, version_no FROM decision_cards WHERE work_item_id = $1 "
+        "AND status = 'awaiting_role' ORDER BY created_at DESC LIMIT 1",
+        item,
+    )
+    if card is None:
+        raise LookupError("no materiality card awaits a decision on Northwind")
+    await decide_card(
+        await _staff_context(conn, event),
+        cast(UUID, card["id"]),
+        option_key=str(event.data["option_key"]),
+        factors=(),
+        rationale=str(event.data["rationale"]),
+        seen_version=int(cast(int, card["version_no"])),
+    )
+
+
+async def _ridgeline_issue_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """TXP-10: one of Ridgeline's 11 open issues, blocking final approval (SHL-12 h)."""
+    found = next(i for i in REVIEW_ISSUES if i.key == event.data["issue"])
+    ret = UUID(RETURN_BY_LABEL["ridgeline-property-partners-lp"].id)
+    await create_issue(
+        await _staff_context(conn, event),
+        record_type="tax_return",
+        record_id=ret,
+        kind=found.kind,
+        priority="medium",
+        title=found.title,
+        internal_note=None,
+        client_wording=None,
+        client_contact_id=None,
+        assignee_user_id=None,
+        assignee_agent=False,
+        blocks=REVIEW_ISSUE_BLOCKS,
+        source_ref=f"scenario:{found.key}",
+    )
+
+
+async def _feld_checkpoint_saved(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """SHL-16: Kevin Osei saves a named checkpoint of the Feld 1040 as it is."""
+    await save_checkpoint(
+        await _staff_context(conn, event),
+        "tax_return",
+        UUID(RETURN_BY_LABEL["jonah-and-claire-feld"].id),
+        str(event.data["name"]),
+    )
+
+
 HANDLERS: Final[dict[str, Handler]] = {
     "identity.firm_created": _firm_created,
     "organisations.office_created": _office_created,
@@ -4067,6 +4264,15 @@ HANDLERS: Final[dict[str, Handler]] = {
     "requests.organizer_attached": _organizer_attached,
     "requests.organizer_answered": _organizer_answered,
     "requests.questions_sent": _questions_sent,
+    "ledger.northwind_tb_recorded": _northwind_tb_recorded,  # P-04-T36
+    "assurance.northwind_tb_adopted": _northwind_tb_adopted,
+    "review.northwind_tb_signed": _northwind_tb_signed,
+    "review.northwind_note_raised": _northwind_note_raised,
+    "assurance.materiality_proposed": _materiality_proposed,
+    "assurance.materiality_reassessed": _materiality_reassessed,
+    "review.materiality_decided": _materiality_decided,
+    "review.ridgeline_issue_created": _ridgeline_issue_created,
+    "review.feld_checkpoint_saved": _feld_checkpoint_saved,
 }
 # Within one instant the timeline orders by label; the loader orders by dependency first.
 _ORDER: Final = {kind: n for n, kind in enumerate(HANDLERS)}
