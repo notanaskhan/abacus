@@ -43,6 +43,10 @@ from abacus.modules.workpapers.models import ProgramProcedure
 
 WORKPAPER_KINDS: Final = frozenset(
     {"general_audit_planning", "risk_assessment", "internal_control", "service_organizations"}
+    # A-05-T09 (0641): the nine EBP designed workpapers.
+    | {"ebp_plan", "ebp_provisions", "ebp_eligibility", "ebp_contributions"}
+    | {"ebp_distributions_loans", "ebp_investments", "ebp_form5500"}
+    | {"ebp_participant_accounts", "ebp_admin_expenses"}
 )
 # A request template's words in the error until K-03's library names its own templates.
 _TEMPLATE_WORDS: Final = {"soc1_bridge_letter": "SOC 1 bridge-letter"}
