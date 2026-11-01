@@ -30,16 +30,34 @@ TABLES = (
     "workpaper_versions",
     "attention_flags",
     "attention_flag_events",
-    "audit_procedures",
+    "program_procedures",
 )
-INSERT_ONLY = (
-    "workpapers",
-    "workpaper_sections",
-    "workpaper_cells",
-    "workpaper_cell_citations",
-    "workpaper_versions",
-    "attention_flag_events",
+# Each insert-only table's UPDATE and DELETE as the app would try them (literal SQL).
+REFUSED = (
+    "UPDATE workpapers SET tenant_id = tenant_id WHERE id = $1",
+    "DELETE FROM workpapers WHERE id = $1",
+    "UPDATE workpaper_sections SET tenant_id = tenant_id WHERE workpaper_id = $1",
+    "DELETE FROM workpaper_sections WHERE workpaper_id = $1",
+    "UPDATE workpaper_cells SET tenant_id = tenant_id WHERE workpaper_id = $1",
+    "DELETE FROM workpaper_cells WHERE workpaper_id = $1",
+    "UPDATE workpaper_cell_citations SET tenant_id = tenant_id WHERE workpaper_id = $1",
+    "DELETE FROM workpaper_cell_citations WHERE workpaper_id = $1",
+    "UPDATE workpaper_versions SET tenant_id = tenant_id WHERE workpaper_id = $1",
+    "DELETE FROM workpaper_versions WHERE workpaper_id = $1",
+    "UPDATE attention_flag_events SET tenant_id = tenant_id WHERE workpaper_id = $1",
+    "DELETE FROM attention_flag_events WHERE workpaper_id = $1",
 )
+SCOPE_OF = {
+    "workpaper_sections": (
+        "SELECT engagement_id, work_item_id FROM workpaper_sections WHERE workpaper_id = $1"
+    ),
+    "workpaper_cells": (
+        "SELECT engagement_id, work_item_id FROM workpaper_cells WHERE workpaper_id = $1"
+    ),
+    "workpaper_versions": (
+        "SELECT engagement_id, work_item_id FROM workpaper_versions WHERE workpaper_id = $1"
+    ),
+}
 
 
 @pytest.fixture(scope="module")
@@ -124,10 +142,7 @@ def test_ac_0581_goes_up_down_up_and_scopes_every_row(private_db: sc.Database) -
 
     async def scoped() -> None:
         for table in ("workpaper_sections", "workpaper_cells", "workpaper_versions"):
-            rows = await seed.rows(
-                f"SELECT engagement_id, work_item_id FROM {table} WHERE workpaper_id = $1",  # noqa: S608 -- fixed tables
-                paper.workpaper,
-            )
+            rows = await seed.rows(SCOPE_OF[table], paper.workpaper)
             assert [(r["engagement_id"], r["work_item_id"]) for r in rows] == [
                 (paper.engagement, paper.item)
             ], table
@@ -202,14 +217,9 @@ def test_ac_the_insert_only_tables_refuse_update_and_delete_as_the_app(
         )[0]
         assert (row["engagement_id"], row["work_item_id"]) == (paper.engagement, paper.item)
         assert row["created_by_kind"] == "human"
-        for table in INSERT_ONLY:
-            key = "id" if table == "workpapers" else "workpaper_id"
-            for statement in (
-                f"UPDATE {table} SET tenant_id = tenant_id WHERE {key} = $1",  # noqa: S608 -- fixed tables
-                f"DELETE FROM {table} WHERE {key} = $1",  # noqa: S608 -- fixed tables
-            ):
-                with pytest.raises(asyncpg.InsufficientPrivilegeError):
-                    await app.as_actor(paper.tenant, actor, statement, paper.workpaper)
+        for statement in REFUSED:
+            with pytest.raises(asyncpg.InsufficientPrivilegeError):
+                await app.as_actor(paper.tenant, actor, statement, paper.workpaper)
         # A flag converts by its state columns alone, and is never deleted.
         await app.as_actor(
             paper.tenant,
@@ -257,7 +267,7 @@ def test_ac_a_mandatory_procedure_is_never_tailored_and_a_tailoring_needs_its_re
             person.user_id,
         )
         insert = (
-            "INSERT INTO audit_procedures (tenant_id, engagement_id, work_item_id, "
+            "INSERT INTO program_procedures (tenant_id, engagement_id, work_item_id, "
             "methodology_version_id, program_step_key, level, mandatory, tailored, "
             "tailored_rationale, created_by) VALUES ($1, $2, $3, $4, $5, 'planning', $6, $7, $8, "
             "$9)"

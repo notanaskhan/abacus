@@ -21,21 +21,21 @@ updated: 2026-11-01
 ## Scope
 **In**: migration 0581 on SPEC-308's 0072 tables (columns added, cell keys widened, scope columns
 back-filled and trigger-set), new `attention_flags`, `attention_flag_events` (insert-only) and
-`audit_procedures`; workpapers registry and models; status-vocabulary comment; regenerated
+`program_procedures`; workpapers registry and models; status-vocabulary comment; regenerated
 tenant-isolation tests; migration test.
 **Out**: the service, projection, export and registrations (A-04-T04); planning tables (A-04-T06).
 
 ## Plan (amber)
 1. Reconcile decision (DEC-1761): land on 0072, keep every 0072 table insert-only, derive the
    current version and hash from `workpaper_versions`; `procedures` is taken by fieldwork (0057),
-   so the A-04 table is `audit_procedures` (the status object is already `audit_procedure`).
+   so the A-04 table is `program_procedures` (the status object is already `audit_procedure`).
 2. Migration 0581 revises 0580 (re-chain at merge if another head lands first). Expand-only: added
    columns are nullable or defaulted; the two cell-key CHECKs are widened, never narrowed.
 3. Scope: `workpaper_child_scope()` (invoker, search path pinned) sets `engagement_id` and
    `work_item_id` from the parent paper on every child insert; existing rows back-filled, then
    NOT NULL.
 4. Grants: insert-only by REVOKE (ADR-004); `attention_flags` updates only `state`,
-   `converted_to_kind`, `converted_to_id`; `audit_procedures` only `tailored`,
+   `converted_to_kind`, `converted_to_id`; `program_procedures` only `tailored`,
    `tailored_rationale`, `status`, `linked_work`; neither deletes. Actor kinds default from
    `app.actor_kind` and are not insertable.
 5. Rollback: downgrade drops the three tables, the triggers, the function and the added columns,

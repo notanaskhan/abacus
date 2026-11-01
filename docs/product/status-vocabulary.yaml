@@ -1056,7 +1056,7 @@ objects:
       converted: {label: "Converted", variant: null, terminal: false, derived: false}
       resolved:  {label: "Resolved", variant: null, terminal: true, derived: false}
 
-  audit_procedure:   # audit_procedures.status (A-04, 0581; distinct from fieldwork's SPEC-300 procedure); "Tailored" is the KNW-03 d word from `tailored`
+  audit_procedure:   # program_procedures.status (A-04, 0581; distinct from fieldwork's SPEC-300 procedure); "Tailored" is the KNW-03 d word from `tailored`
     source: "A-04 §4.2 M1 (AUD-04; KNW-03 d)"
     codes:
       not_started: {label: "Not started", variant: null, disc: ring, terminal: false, derived: false}

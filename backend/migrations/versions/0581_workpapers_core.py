@@ -16,8 +16,8 @@ insert-only. A-04's M1 lands on them rather than beside them (DEC-1761):
   and then set by `workpaper_child_scope()` from the parent workpaper on every insert (whatever the
   caller sends), so `visible()` and A-07's archive lock cover each row.
 - **New tables:** `attention_flags` (state moves open → converted or resolved, by column grant),
-  `attention_flag_events` (insert-only) and `audit_procedures` (the plan's `procedures`: that name
-  is fieldwork's SPEC-300 journal-entry procedure table since 0057). Each carries
+  `attention_flag_events` (insert-only) and `program_procedures` (the plan's `procedures`: that
+  name is fieldwork's SPEC-300 journal-entry procedure table since 0057). Each carries
   `engagement_id` and `work_item_id` and forced row-level security.
 
 Revision ID: 0581
@@ -240,7 +240,7 @@ def upgrade() -> None:
     _scope_children()
     op.execute(
         """
-        CREATE TABLE audit_procedures (
+        CREATE TABLE program_procedures (
             id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
             tenant_id uuid NOT NULL,
             engagement_id uuid NOT NULL,
@@ -263,8 +263,9 @@ def upgrade() -> None:
             created_at timestamptz NOT NULL DEFAULT abacus_now(),
             UNIQUE (tenant_id, id),
             UNIQUE (tenant_id, work_item_id, program_step_key),
-            CONSTRAINT audit_procedures_mandatory_untailored CHECK (NOT (mandatory AND tailored)),
-            CONSTRAINT audit_procedures_tailored_reason
+            CONSTRAINT program_procedures_mandatory_untailored
+                CHECK (NOT (mandatory AND tailored)),
+            CONSTRAINT program_procedures_tailored_reason
                 CHECK (NOT tailored OR tailored_rationale IS NOT NULL),
             FOREIGN KEY (tenant_id, engagement_id, work_item_id)
                 REFERENCES work_items (tenant_id, engagement_id, id),
@@ -273,11 +274,11 @@ def upgrade() -> None:
         )
         """
     )
-    tenant_table(op, "audit_procedures")
-    op.execute("REVOKE DELETE ON audit_procedures FROM abacus_app")
+    tenant_table(op, "program_procedures")
+    op.execute("REVOKE DELETE ON program_procedures FROM abacus_app")
     insert_columns(
         op,
-        "audit_procedures",
+        "program_procedures",
         (
             "tenant_id",
             "engagement_id",
@@ -289,10 +290,10 @@ def upgrade() -> None:
             "created_by",
         ),
     )
-    op.execute("REVOKE UPDATE ON audit_procedures FROM abacus_app")
+    op.execute("REVOKE UPDATE ON program_procedures FROM abacus_app")
     op.execute(
         "GRANT UPDATE (tailored, tailored_rationale, status, linked_work) "
-        "ON audit_procedures TO abacus_app"
+        "ON program_procedures TO abacus_app"
     )
     # The app may insert the new columns of the 0072 tables (the scope columns stay trigger-set).
     op.execute("GRANT INSERT (kind, program_step_keys) ON workpapers TO abacus_app")
@@ -308,7 +309,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.execute("DROP TABLE audit_procedures")
+    op.execute("DROP TABLE program_procedures")
     op.execute("DROP TABLE attention_flag_events")
     op.execute("DROP TABLE attention_flags")
     for table in _CHILDREN:

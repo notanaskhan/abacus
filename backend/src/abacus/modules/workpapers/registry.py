@@ -20,10 +20,10 @@ TABLES: frozenset[str] = frozenset(
         # engagement's audit procedures (fieldwork's SPEC-300 `procedures` keeps that name).
         "attention_flags",
         "attention_flag_events",
-        "audit_procedures",
+        "program_procedures",
     }
 )
-INSERT_ONLY: frozenset[str] = TABLES - {"tie_out_checks", "attention_flags", "audit_procedures"}
+INSERT_ONLY: frozenset[str] = TABLES - {"tie_out_checks", "attention_flags", "program_procedures"}
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "workpapers": frozenset(
         {"tenant_id", "engagement_id", "work_item_id", "code", "title", "audit_area"}
@@ -57,7 +57,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "attention_flag_events": frozenset(
         {"tenant_id", "workpaper_id", "flag_id", "event", "actor_user_id", "agent_run_id", "ref"}
     ),
-    "audit_procedures": frozenset(
+    "program_procedures": frozenset(
         {"tenant_id", "engagement_id", "work_item_id", "methodology_version_id"}
         | {"program_step_key", "level", "mandatory", "created_by"}
     ),
@@ -76,5 +76,5 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     ),
     # 0581 (A-04-T03): a flag converts or resolves; a procedure is tailored or moves on.
     "attention_flags": frozenset({"state", "converted_to_kind", "converted_to_id"}),
-    "audit_procedures": frozenset({"tailored", "tailored_rationale", "status", "linked_work"}),
+    "program_procedures": frozenset({"tailored", "tailored_rationale", "status", "linked_work"}),
 }

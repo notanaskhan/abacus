@@ -156,11 +156,11 @@ class AttentionFlagEvent(Base):
     at: Mapped[datetime] = mapped_column(server_default=FetchedValue())
 
 
-class AuditProcedure(Base):
+class ProgramProcedure(Base):
     """0581: one program step on the engagement's pinned methodology version (A-04 §4.2's
     `procedures`); a mandatory step is never tailored."""
 
-    __tablename__ = "audit_procedures"
+    __tablename__ = "program_procedures"
 
     id: Mapped[UUID] = mapped_column(primary_key=True, server_default=FetchedValue())
     tenant_id: Mapped[UUID]

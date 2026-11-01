@@ -67,7 +67,7 @@ Restricted value is stored in a cell.
 - `FlagConvertIn {to ∈ request_draft · review_note}`, `FlagConvertedOut {flag, draft_id}`.
 - `ProgramProcedureOut` (program code, step key and number, pinned version, level — the program
   step's foundation · planning · testing · completion, DEC-1761 — mandatory, tailored, rationale,
-  status, `linked_work`), `TailorIn`. The table is `audit_procedures` (0581).
+  status, `linked_work`), `TailorIn`. The table is `program_procedures` (0581).
 
 ## 4. Status words
 `workpaper_value_state` (empty, suggested, adopted, edited, human), `attention_flag` (open
