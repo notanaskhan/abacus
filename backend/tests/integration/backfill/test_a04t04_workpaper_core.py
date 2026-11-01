@@ -155,7 +155,7 @@ async def test_ac_a_stale_version_is_409_and_an_agent_override_needs_a_reason(
         current + 1,
         [{"sheet_key": "exceptions", "cell_key": "D2", "value": {"t": "decimal", "v": "1.00"}}],
     )
-    assert (status, body["code"]) == (409, "version_conflict")
+    assert (status, body["detail"]) == (409, "version_conflict")
     status, body = await _edit(
         world,
         paper,
@@ -168,7 +168,7 @@ async def test_ac_a_stale_version_is_409_and_an_agent_override_needs_a_reason(
             }
         ],
     )
-    assert (status, body["code"]) == (422, "reason_required")
+    assert (status, body["detail"]) == (422, "reason_required")
     status, body = await _edit(
         world,
         paper,

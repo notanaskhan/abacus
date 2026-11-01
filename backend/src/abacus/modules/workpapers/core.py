@@ -451,7 +451,7 @@ async def edit_cells(
             )
             reason = (c.reason or "").strip()
             if from_agent and not reason:
-                raise ReasonRequired(facts={"cell": cell_ref(c.sheet_key, c.cell_key)})
+                raise ReasonRequired
             value = _checked_value(c.value)
             section, row, col = _structure(c.cell_key)
             await record_value(
