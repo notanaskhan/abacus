@@ -90,6 +90,7 @@ def test_ac2_the_named_snapshots() -> None:
     assert [s.name for s in SNAPSHOTS] == [
         "E0",
         "2026-09-24",
+        "2026-09-24T10:20",
         "2026-10-01",
         "2026-10-06T11:20",
         "2026-10-21T14:10",

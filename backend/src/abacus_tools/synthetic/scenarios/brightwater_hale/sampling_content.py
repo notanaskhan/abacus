@@ -15,6 +15,12 @@ construction and fail if a selection line changes):
   above $50,000 (SURL-01 to 24), 1,102 from $7,750 (SURL-25 to 40 at `GL_RANDOM_ORDINALS`), 786
   below; 24 + 16 = 40 drawn, $3,698,700.00.
 - **Northwind distributions** (64 records, seed `0x7B13C4`): the picker's second set.
+- **Granite Peak FY2026 trial balance** (A-03-T16 part three, TASK-2717; DEC-1768): 128 accounts,
+  A-02 §5.3's 14 lines split by code inside BH FS groupings v1's number ranges; the line totals
+  are canon, the split and every account name but the Front Range Bank operating account are
+  synthetic. **Its subsequent-period GL** (Jul 1 - Sep 18, 2026): each disbursement a debit to
+  accounts payable and a credit to the operating account, in `disbursements()` order, so the
+  general-ledger population is that construction's.
 """
 
 from __future__ import annotations
@@ -22,13 +28,16 @@ from __future__ import annotations
 import io
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Final
 
 from openpyxl import Workbook
 
+from abacus.modules.ledger.api import GlAccount, GlEntry, GlSummary
 from abacus.modules.sampling.api import Record, StratumRule
+from abacus_tools.synthetic.model import TrialBalanceLine
+from abacus_tools.synthetic.scenarios.brightwater_hale.ledgers import GRANITE_PEAK_FY2026
 
 # The scenario's seeds (A-03 §5.4): each draw passes its own through the loader.
 SEEDS: Final = {
@@ -267,13 +276,113 @@ def distributions() -> list[Record]:
     return [Record(f"NWD-{n:04d}") for n in range(1, DISTRIBUTIONS_COUNT + 1)]
 
 
+# Granite Peak FY2026 (DEC-1768): how many accounts each A-02 §5.3 line splits into (128 in all).
+GRANITE_SPLIT: Final = {
+    "1000": 6, "1200": 6, "1400": 10, "1600": 12, "1900": 6, "2000": 5, "2100": 10,
+    "2300": 2, "2500": 2, "3000": 3, "4000": 8, "5000": 14, "6000": 40, "7000": 4,
+}  # fmt: skip
+GRANITE_CASH: Final = ("1010", "Front Range Bank operating account")  # AUD-11 f's tie
+GRANITE_AP: Final = ("2010", "Accounts payable")
+GRANITE_TB_LABEL: Final = "standard"  # the year-end TB of record (A-02)
+GL_FROM, GL_TO = date(2026, 7, 1), date(2026, 9, 18)
+GL_KINDS: Final = ("Payment", "Bill payment")
+GL_SAMPLING_UNIT: Final = "payment"
+GL_DEVIATION: Final = "any payment not agreed to an approved invoice and its receipt"
+DISBURSEMENTS_TITLE: Final = "Disbursements"
+FIRST_CHECK: Final = 40211
+
+
+def granite_accounts() -> list[TrialBalanceLine]:
+    """The 128 accounts: line `code` splits into accounts code+10, code+20 ... named as the line
+    (numbered after the first), its total spread in whole dollars so the split foots exactly."""
+    out: list[TrialBalanceLine] = []
+    for line in GRANITE_PEAK_FY2026.lines:
+        count = GRANITE_SPLIT[line.account_code]
+        debit = line.debit > 0
+        total = line.debit if debit else line.credit
+        mean = int(total) // count
+        parts = _spread(count, total, mean // 2, max(1, mean // (count + 1)))
+        for k, amount in enumerate(parts, start=1):
+            code = str(int(line.account_code) + 10 * k)
+            name = line.account_name if k == 1 else f"{line.account_name} {k}"
+            if code == GRANITE_CASH[0]:
+                name = GRANITE_CASH[1]
+            out.append(
+                TrialBalanceLine(
+                    code, name, amount if debit else Decimal(0), Decimal(0) if debit else amount
+                )
+            )
+    return out
+
+
+def _paid(text: str) -> date:
+    return datetime.strptime(f"{text} 2026", "%b %d %Y").date()
+
+
+def granite_gl() -> tuple[GlSummary, list[GlEntry]]:
+    """The subsequent-period GL: payment n is lines 2n-1 (debit AP) and 2n (credit cash), so the
+    population's records (the credit lines) keep `disbursements()`'s canonical order. Designed
+    payments carry their SURL vendor and date and pay by ACH; every third other one is a check,
+    numbered from 40211 with no gap."""
+    designed = dict(enumerate(SURL[:GL_BIG]))
+    designed |= dict(zip(GL_RANDOM_ORDINALS, SURL[GL_BIG:], strict=True))
+    vendors = sorted({v for _, v, _, _ in SURL})
+    entries: list[GlEntry] = []
+    check = FIRST_CHECK
+    for n, record in enumerate(disbursements()):
+        amount = record.amount if record.amount is not None else Decimal(0)
+        found = designed.get(n)
+        if found is not None:
+            vendor, paid, kind, ref = found[1], _paid(found[2]), "Bill payment", None
+        else:
+            vendor, paid = vendors[n % len(vendors)], GL_FROM + timedelta(days=n * 37 % 80)
+            kind, ref = ("Payment", str(check)) if n % 3 == 2 else ("Bill payment", None)
+            check += 1 if kind == "Payment" else 0
+        reference = ref or f"ACH-{paid:%y%m%d}-{n + 1:04d}"
+        for line_no, (code, name), debit, credit in (
+            (2 * n + 1, GRANITE_AP, amount, Decimal(0)),
+            (2 * n + 2, GRANITE_CASH, Decimal(0), amount),
+        ):
+            entries.append(
+                GlEntry(
+                    *(line_no, code, name, paid, reference, kind, vendor, None),
+                    *(debit, credit, f"netsuite:{line_no}"),
+                )
+            )
+    total = sum((e.debit for e in entries), Decimal(0))
+    summary = GlSummary(
+        line_count=len(entries),
+        total_debit=total,
+        total_credit=sum((e.credit for e in entries), Decimal(0)),
+        accounts=(
+            GlAccount(GRANITE_CASH[0], GRANITE_CASH[1], None, Decimal(0), total),
+            GlAccount(GRANITE_AP[0], GRANITE_AP[1], None, total, Decimal(0)),
+        ),
+        months=frozenset((e.posted_on.year, e.posted_on.month) for e in entries),
+        outside_period=sum(1 for e in entries if not GL_FROM <= e.posted_on <= GL_TO),
+        has_openings=False,
+    )
+    return summary, entries
+
+
 __all__ = [
     "CENSUS_FILE",
     "CENSUS_ORDINALS",
     "COLUMN_MAP",
     "DEVIATION",
+    "DISBURSEMENTS_TITLE",
+    "FIRST_CHECK",
+    "GL_DEVIATION",
+    "GL_FROM",
+    "GL_KINDS",
     "GL_RANDOM_ORDINALS",
+    "GL_SAMPLING_UNIT",
     "GL_STRATA",
+    "GL_TO",
+    "GRANITE_AP",
+    "GRANITE_CASH",
+    "GRANITE_SPLIT",
+    "GRANITE_TB_LABEL",
     "GROUPING_SET_KEY",
     "GROUPING_SET_NAME",
     "HEADER",
@@ -290,5 +399,7 @@ __all__ = [
     "census_xlsx",
     "disbursements",
     "distributions",
+    "granite_accounts",
+    "granite_gl",
     "grouping_set_csv",
 ]

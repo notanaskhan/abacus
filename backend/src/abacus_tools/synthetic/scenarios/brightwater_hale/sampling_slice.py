@@ -11,9 +11,17 @@ and Northwind's Participants sample, through the services as the people the desi
   Margaret names Dana Kowalski the SKE designee and concludes independence (G2, DEC-1767), so
   Marcus prepares Version 2 (L1) and Hannah Leclerc approves it (L2) at 4:05 PM.
 
-Granite Peak (the 128-account trial balance, its mapping and the 1,912 disbursements), the
-Distributions set, `make fixtures export` and the fixture equivalence test are TASK-2716's
-remaining list. Opt-in (`--slice sampling`, which brings `people` and `standards`).
+- **Granite Peak FY2026** (AUD-31 f, AUD-11 f; TASK-2717, DEC-1768): on Sep 10 Margaret adds
+  Caleb Dunn to the team, its five members confirm their independence, she names Luis Ferrante
+  the SKE designee and concludes (G2). On Sep 11 Simone Baptiste records the NetSuite trial
+  balance (128 accounts) and adopts it, which starts the rules on BH FS groupings v1, and Caleb
+  confirms the mapping (L1). On Sep 24 at 10:18 AM Simone records the subsequent-period GL, builds
+  the disbursements population (1,912 payments, $38,640,200.00), creates "Disbursements" and
+  draws Version 1 with seed 0x7C31B4 (24 + 16 = 40).
+
+The FY2025 prior mapping (no FY2025 engagement exists), the Distributions set, `make fixtures
+export` and the fixture equivalence test are TASK-2717's remaining list. Opt-in (`--slice
+sampling`, which brings `people`, `standards` and `acceptance`).
 """
 
 from __future__ import annotations
@@ -31,6 +39,8 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.timeline import Event
 SLICE: Final = "sampling"
 NEEDS: Final = ("people", "standards", "acceptance")  # acceptance: MD and HL confirm (Sep 2)
 NORTHWIND: Final = "Northwind Robotics, Inc."
+GRANITE: Final = "Granite Peak Outdoor Supply, Inc."
+GRANITE_TEAM: Final = ("MO", "OH", "SB", "CH", "CD")  # team_of(A2) and Caleb Dunn
 SET_TITLE: Final = "Participants"
 SET_PURPOSE: Final = "Eligibility, contribution and pay-rate tests on the same 25 participants"
 FLAGS: Final = ("sampling.sample_sets", "ledger.tb_mapping")
@@ -42,6 +52,84 @@ def _at(day: int, hour: int, minute: int = 0) -> datetime:
 
 def _event(key: str, at: datetime, kind: str, actor: str, **data: object) -> Event:
     return Event(f"sampling:{key}", at, kind, actor, SLICE, dict(data), client=NORTHWIND)
+
+
+def _granite(key: str, at: datetime, kind: str, actor: str, **data: object) -> Event:
+    return Event(f"sampling:granite:{key}", at, kind, actor, SLICE, dict(data), client=GRANITE)
+
+
+def granite_events() -> list[Event]:
+    """DEC-1768: Granite's G2 before the mapping is confirmed, as Northwind's (DEC-1767)."""
+    events = [
+        _granite(
+            "team-added:CD",
+            _at(10, 9, 0),
+            "engagements.member_proposed",
+            "MO",
+            audit="A2",
+            member="CD",
+            role="senior",
+            hours="40.0",
+        ),
+        _granite(
+            "contact:luis-ferrante",
+            _at(10, 9, 10),
+            "organisations.granite_contact_created",
+            "MO",
+            contact="Luis Ferrante",
+        ),
+    ]
+    events += [
+        Event(
+            f"independence:A2:{initials}",
+            _at(10, 9, 30 + n),
+            "engagements.member_independence_confirmed",
+            initials,
+            SLICE,
+            {"audit": "A2"},
+            client=GRANITE,
+        )
+        for n, initials in enumerate(GRANITE_TEAM)
+    ]
+    events += [
+        _granite(
+            "ske-designee",
+            _at(10, 10, 0),
+            "engagements.contact_designated",
+            "MO",
+            audit="A2",
+            contact="Luis Ferrante",
+            designation="ske_designee",
+        ),
+        _granite(
+            "independence-concluded",
+            _at(10, 10, 30),
+            "engagements.independence_concluded",
+            "MO",
+            audit="A2",
+            option="independent",
+        ),
+        _granite("tb", _at(11, 8, 30), "ledger.granite_tb_recorded", "SB"),
+        _granite("tb-adopted", _at(11, 8, 40), "assurance.granite_tb_adopted", "SB"),
+        _granite("mapping-run", _at(11, 8, 41), "assurance.granite_mapping_started", "SB"),
+        _granite("mapping-confirmed", _at(11, 15, 0), "assurance.granite_mapping_confirmed", "CD"),
+        _granite("gl", _at(24, 10, 18), "ledger.granite_gl_recorded", "SB"),
+        _granite(
+            "population",
+            _at(24, 10, 18) + timedelta(seconds=20),
+            "sampling.gl_population_built",
+            "SB",
+        ),
+        _granite("set", _at(24, 10, 19), "sampling.gl_sample_set_created", "SB"),
+        _granite(
+            "draw",
+            _at(24, 10, 19) + timedelta(seconds=30),
+            "sampling.gl_version_drawn",
+            "SB",
+            seed=SEEDS["granite-peak-disbursements-v1"],
+        ),
+    ]
+    return events
 
 
 @register_slice(SLICE)
@@ -175,7 +263,17 @@ def sampling_events() -> list[Event]:
         _event("prepare-v2", _at(16, 15, 12), "sampling.version_prepared", "MD", version=2),
         _event("approve-v2", _at(16, 16, 5), "sampling.version_approved", "HL", version=2),
     ]
-    return events
+    return events + granite_events()
 
 
-__all__ = ["FLAGS", "NEEDS", "SET_PURPOSE", "SET_TITLE", "SLICE", "sampling_events"]
+__all__ = [
+    "FLAGS",
+    "GRANITE",
+    "GRANITE_TEAM",
+    "NEEDS",
+    "SET_PURPOSE",
+    "SET_TITLE",
+    "SLICE",
+    "granite_events",
+    "sampling_events",
+]

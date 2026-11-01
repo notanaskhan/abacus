@@ -39,11 +39,13 @@ from abacus.modules.assurance.sections import (
     register_index_tag,
     register_run_summary,
 )
+from abacus.modules.assurance.tb_mapping_contract import MappingConfirmIn, MappingRunIn
 from abacus.modules.assurance.tb_mapping_contract import router as tb_mapping_router
 
 # A-02-T10: the live C9 routes are declared on `tb_router` in `tb_read_model`, so it is
 # imported from there (loading the module registers them before the API mounts the router).
 from abacus.modules.assurance.tb_read_model import tb_router
+from abacus.modules.assurance.trial_balance import adopt as adopt_trial_balance
 from abacus.modules.assurance.trial_balance import tb_facts, tb_reviewables
 from abacus.modules.engagements.api import register_gate_provider
 from abacus.modules.identity.api import AbacusRouter, register_firm_setting
@@ -106,10 +108,14 @@ __all__ = [
     "WORKFLOWS",
     "AuditSection",
     "IndexTag",
+    "MappingConfirmIn",
+    "MappingRunIn",
     "RunSummary",
     "SectionState",
+    "adopt_trial_balance",
     "completion_router",
     "import_grouping_csv",
+    "mapping_live",
     "materiality_engine",
     "publish_grouping_version",
     "record_phase",

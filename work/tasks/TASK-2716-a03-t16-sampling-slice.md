@@ -34,7 +34,7 @@ updated: 2026-11-01
   reloads writing nothing.
 
 ## Remaining
-1. Granite Peak FY2026: the 128-account TB (allocated to A-02 §5.3's 14 lines), the mapping set
+1. Granite Peak FY2026 (built in TASK-2717, DEC-1768): the 128-account TB (allocated to A-02 §5.3's 14 lines), the mapping set
    and its confirm (the same G2 question), FY2025's prior mapping, and the 1,912 disbursements as a
    GL snapshot with the population and the stratified draw (seed 0x7C31B4).
 2. Northwind Distributions (64, "10 of 64 · Draft", seed 0x7B13C4): the design gives no method.
