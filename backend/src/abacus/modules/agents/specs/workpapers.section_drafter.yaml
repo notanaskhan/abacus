@@ -4,7 +4,7 @@
 # flag (OQ-1). Source of truth: compiled into _specs.py by
 # `python -m abacus_tools.codegen.agent_specs`; a test fails if they drift.
 id: workpapers.section_drafter
-version: 2
+version: 3
 purpose: Draft a workpaper section's values, each cited to the firm's methodology or a source page, as suggestions for a person to adopt.
 shape: single_call
 # The default mode (`gap`) and every mode below share the base prompt until each mode's own prompt
@@ -63,8 +63,9 @@ modes:
     max_cost_usd: "0.15"
   # A-05-T12 (DEC-1956): the EBP modes, each on the base prompt until its own lands (T13
   # ebp_provisions; the others with their screens). A mode runs only on its plan's paper kinds.
+  # A-05-T13 (DEC-1957): its own prompt; the provisions are cells B2-C21 of the EBP-02 paper.
   ebp_provisions:
-    prompt: workpapers.section_draft@v1
+    prompt: workpapers.section_draft_ebp_provisions@v1
     input_schema: SectionDraftInput
     output_schema: SectionDraft
     max_cost_usd: "0.25"

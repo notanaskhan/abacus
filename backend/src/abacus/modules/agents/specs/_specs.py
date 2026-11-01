@@ -184,7 +184,7 @@ SPECS: dict[str, dict[str, object]] = {   'evidence.matcher': {   'autonomy': 'p
                                                    'ebp_provisions': {   'input_schema': 'SectionDraftInput',
                                                                          'max_cost_usd': '0.25',
                                                                          'output_schema': 'SectionDraft',
-                                                                         'prompt': 'workpapers.section_draft@v1'},
+                                                                         'prompt': 'workpapers.section_draft_ebp_provisions@v1'},
                                                    'ebp_reconcile': {   'input_schema': 'SectionDraftInput',
                                                                         'max_cost_usd': '0.25',
                                                                         'output_schema': 'SectionDraft',
@@ -230,6 +230,6 @@ SPECS: dict[str, dict[str, object]] = {   'evidence.matcher': {   'autonomy': 'p
                                       'tier': 'medium',
                                       'tools': [],
                                       'untrusted_inputs': ['cells', 'documents'],
-                                      'version': 2,
+                                      'version': 3,
                                       'work_class': 'background'}}
 # fmt: on
