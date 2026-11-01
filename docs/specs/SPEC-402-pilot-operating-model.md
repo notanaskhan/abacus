@@ -52,7 +52,11 @@ pilot codes and the W-signal thresholds, for every pilot window from PW1 (Q-04 Â
   of each live window (PW1: Jun 1 to Jul 12, 2027), quiet hours in writing, each firm's QI contact by
   pilot code and vault entry (never the contact itself), and a test-page record; a test page reaches N
   and escalates to AY after 15 minutes; `abacus_tools.quality.on_call` refuses an uncovered day, a
-  backup equal to the primary, or a phone number or email address in the file (Q-04-T020).
+  backup equal to the primary, or a phone number or email address in the file (Q-04-T020). For
+  the autumn window (Sep 1 to Oct 20, 2027) the rota covers every day with N primary and AY the
+  named backup, and each `deploy/windows.yaml` deadline week is on double cover: SEV2 pages both at
+  once and quiet hours are suspended; the check refuses a deadline-week day on single cover,
+  double cover outside one, and rota dates that differ from the release window's (Q-04-T066).
 - **AC-4** `docs/runbooks/firm-rollback.md` takes a firm back inside 60 minutes: every flag off in
   one audited unit of work (`make flag â€¦ ALL_OFF=1`), an A-01 export per engagement, and each package
   unpacked into a new folder and verified by `abacus_tools.package_check` (both checksum files, nothing

@@ -1872,6 +1872,16 @@ codes:
     raised_by:
     - abacus.modules.engagements.service.PossibleDuplicate
     summary: 'A client with this name (normalised) already exists: pick it, or confirm a new one.'
+  predecessor_file_mismatch:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.mapping_live.PredecessorFileMismatch
+    summary: A predecessor file names its evidence version, and only a predecessor file does.
+  predecessor_unreadable:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.mapping_live.PredecessorUnreadable
+    summary: The predecessor file is not a sheet with an account column and an FS-line column.
   preparer_cannot_review:
     status: 409
     raised_by:
