@@ -1,0 +1,48 @@
+# Deadline-day 8879 send surge (N-02-T47; N-02 §5.6; chapter 10 section 10.11.3; Sep 15, Oct 15):
+# staff send and read 8879-family envelopes and clients open their Sign area at the peak, for an
+# hour. Must show: send and the portal envelope view hold p95 at or under 500 ms, and the provider
+# queue drains inside the hour (the send activity backs off on a provider 429 at its Retry-After,
+# never in a tight loop). Send is a person's act through a single-use grant held ten seconds, so
+# after Harborview's E18 goes the first time, every further send answers 409 through the same
+# checks: the profile times the whole send path, refusal included. Distinct drafts per send (the
+# fleet's ten 8879s per firm) are Q-03-T131's tax surge content, written down here, not faked.
+name: signing_surge
+description: 8879 sends and the portal Sign area at the deadline peak, for one hour.
+duration_seconds: 3600
+users: 40
+think_ms: 500
+ramp_seconds: 120
+max_error_rate: 0.001
+personas:
+  - {subject: scenario-grace-holloway, weight: 2, groups: [envelope_send, envelope_read, envelopes_out]}
+  - {subject: scenario-daniel-reyes, weight: 1, groups: [envelope_read, envelopes_out]}
+  - {subject: scenario-dana-kowalski, weight: 6, groups: [portal_envelopes, portal_shell]}
+groups:
+  - name: envelope_send
+    weight: 1
+    p95_ms: 500
+    steps:
+      - method: POST
+        path: "/v1/envelopes/{e18_envelope_id}/send"
+        idempotency: true
+        expect: [200, 409]
+  - name: envelope_read
+    weight: 3
+    p95_ms: 500
+    steps:
+      - {path: "/v1/envelopes/{e18_envelope_id}"}
+  - name: envelopes_out
+    weight: 2
+    p95_ms: 500
+    steps:
+      - {path: "/v1/envelopes?tab=out"}
+  - name: portal_envelopes
+    weight: 4
+    p95_ms: 500
+    steps:
+      - {path: /v1/portal/envelopes}
+  - name: portal_shell
+    weight: 1
+    p95_ms: 300
+    steps:
+      - {path: /v1/me}

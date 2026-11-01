@@ -162,6 +162,8 @@ async def run(
             group = rng.choices(mine, chances)[0]
             for step in group.steps:
                 headers = dict(headers_of) if step.auth else {}
+                if step.idempotency:
+                    headers["Idempotency-Key"] = uuid.uuid4().hex
                 content: bytes | None = None
                 if step.body is not None:
                     body = BODIES[step.body]()

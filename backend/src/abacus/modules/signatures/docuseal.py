@@ -63,8 +63,10 @@ from abacus.modules.signatures.provider import (
     Completed,
     Created,
     EnvelopeSpec,
+    ProviderRateLimited,
     SignerEvidence,
     SignerState,
+    retry_after_seconds,
 )
 
 Json = dict[str, Any]  # Any: DocuSeal's JSON, read key by key and never trusted for state
@@ -286,6 +288,8 @@ class DocuSealProvider:
             params=params,
             headers={_KEY_HEADER: self._account.api_key},
         )
+        if got.status_code == 429:  # N-02-T47: back off as DocuSeal asks, never hammer it
+            raise ProviderRateLimited(retry_after_seconds(got.headers.get("Retry-After")))
         if not 200 <= got.status_code < 300:  # redirects are not followed, so a 3xx fails too
             raise DocuSealError(method.lower(), got.status_code)
         return got
