@@ -4,7 +4,7 @@ title: F-06-T19 calc tree beside the source-workbook grid (T6e), variance explan
 spec: SPEC-400
 acceptance_criteria: [AC-31]
 risk_zone: green
-status: in-review
+status: done
 epic: F-06
 plan_key: F-06-T19
 branch: s20-f06-t19

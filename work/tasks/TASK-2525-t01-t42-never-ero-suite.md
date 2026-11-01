@@ -4,7 +4,7 @@ title: T-01-T42 Never-ERO and transmitter suite
 spec: SPEC-501  # AC-13, AC-14; T-01 §3.15
 acceptance_criteria: [AC-13, AC-14]
 risk_zone: red
-status: in-review
+status: done
 epic: T-01
 plan_key: T-01-T42
 branch: s20c-t01-t42
