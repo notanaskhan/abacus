@@ -11,3 +11,10 @@ Zone: red. C20 v1 (`docs/contracts/c20-integrations.md`, final since A-02-T38). 
 - **Engine settings** (`engine_settings*.py`): T-01's CCH file bridge settings (ADM-08).
 
 Runbooks: RB-04 (provider outage), RB-05 (expiring-connections wave). Hand-off notes: `docs/handoffs/A-02/`.
+
+## Tax-engine bridge settings (T-01, closed 2026-11-01; bridge v1 frozen, DEC-1678)
+
+`engine_settings.py` holds the firm's file-bridge install (ADM-08's tax-engine segment): the
+install is the second kill switch of the W2 file export (`tax.export._switches`), beside the W2
+capability in the write-capability registry. `last_engine_sync` answers ADM-08's Last sync through a
+slot tax fills (`register_last_engine_sync`); integrations never reads tax. Runbook: RB-19.

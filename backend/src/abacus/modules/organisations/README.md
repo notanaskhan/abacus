@@ -26,3 +26,12 @@ breaking change ships the next version with overlap (`python -m abacus_tools.con
 - `docs/contracts/clients.md`
 - `docs/contracts/contacts-access.md`
 - `docs/contracts/acceptance-independence.md (conflict checks)`
+
+## §7216 consents (T-01, closed 2026-11-01; C19 v1 frozen, DEC-1678)
+
+`consents.py` (request, renew, record, decline, revoke; one purpose per document), `consent_registry.py`
+(ADM-05's registry, the counts-only summary with `blocked_clients`, the export, the daily
+ConsentLifecycleSweep) and `tax_profile.py` (the CLI-05 routes on `consents_router`, served by tax
+through `register_tax_profile_backend`). Red path: the TRI consent check registered with the gateway
+(`register_tri_consent_check`); condition 6 refuses any TRI call without both consents in force, and
+no allowance survives `access.changed`. Runbook: RB-17 (expiry or revocation wave).

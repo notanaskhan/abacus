@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Version | v1 |
-| Status | stub (T-01-T02, 2026-10-29): every route 501 behind `tax.delivery_efile` |
+| Status | **frozen at v1** (T-01-T53, 2026-11-01, DEC-1678); live behind `tax.delivery_efile` (packet, transmission record, acks, publish). Breaking changes need v2 |
 | Provider epic | T-01 |
 | Consumers | T-02 (status machine), N-02 (C7 envelopes, retention extension), R-01/P-08 (client delivery), T-08 |
 | Spec | SPEC-501 AC-5 to AC-8; `docs/plan/epics/T-01.md` §3.11–§3.15 |
