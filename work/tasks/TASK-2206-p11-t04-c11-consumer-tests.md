@@ -4,13 +4,13 @@ title: P-11-T04 C11 consumer contract tests
 spec: SPEC-520
 acceptance_criteria: [AC-32, AC-28]
 risk_zone: amber
-status: in-review
+status: done
 epic: P-11
 plan_key: P-11-T04
 branch: s17-p11-t04
 worktree: /Users/ayushkbhatia/Accrued/abacus-s17
 created: 2026-10-29
-updated: 2026-10-29
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -40,3 +40,4 @@ header and the F-07 field placements) and `apps/web/src/fixtures/contracts/c11-r
 ## Progress log
 - `2026-10-29` — Planned in P-11-T01.
 - `2026-10-29` — Built on `s17-p11-t04` (stacked on T03); run at the S17 end review.
+- 2026-11-01: merged to main in #746 (a2f684bb4).

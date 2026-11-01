@@ -4,7 +4,12 @@
 // the C3, C4 and C1 routes from seed/approvals-detail.ts. Decide answers the decided card (b); the
 // screen never decides by itself (INV-1).
 
-import type { AnalysisRequestOut, ListPageCitationV2Out } from "@abacus/api-client";
+import type {
+  AnalysisRequestOut,
+  BulkSignOffIn,
+  BulkSignOffOut,
+  ListPageCitationV2Out,
+} from "@abacus/api-client";
 import { type FixtureHandler, type FixtureRequest, json } from "../../app-core/fixture-mode";
 import {
   DECISION_754,
@@ -67,6 +72,27 @@ export function approvalsDetailHandlers(
     "GET /v1/sign-offs": (request) => {
       const found = section(request);
       return found === undefined ? json(NOT_FOUND, 404) : json(found.ladder);
+    },
+    // I-01-T19: SHL-12 f from HOME-02 e signs each eligible section on its own (R-SO-7).
+    "POST /v1/sign-offs:bulk": ({ body }) => {
+      const sent = body as BulkSignOffIn;
+      const results = sent.targets.map((t): BulkSignOffOut["results"][number] => {
+        const found = SECTIONS.find((s) => s.ladder.target.target_id === t.target_id);
+        const ok = found?.eligibility.eligible === true;
+        return {
+          target_type: t.target_type,
+          target_id: t.target_id,
+          ok,
+          sign_off_id: ok ? stableId(`home02:bulk:${t.target_id}`) : null,
+          detail: ok ? null : ("incomplete" as const),
+        };
+      });
+      const signed = results.filter((r) => r.ok).length;
+      return json({
+        results,
+        signed,
+        excluded: results.length - signed,
+      } satisfies BulkSignOffOut);
     },
     "GET /v1/sign-offs/eligibility": (request) => {
       const found = section(request);

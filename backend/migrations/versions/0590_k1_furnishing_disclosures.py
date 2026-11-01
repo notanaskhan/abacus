@@ -9,7 +9,7 @@ version they read (`k1_package_events.facts.disclosure_version_id`). Tax's table
 Classification (ADR-031): ids Internal; `body` Internal (the firm's own text).
 
 Revision ID: 0590
-Revises: 0580
+Revises: 0611
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, insert_only, tenant_table
 
 revision = "0590"
-down_revision = "0580"
+down_revision = "0611"
 branch_labels = None
 depends_on = None
 

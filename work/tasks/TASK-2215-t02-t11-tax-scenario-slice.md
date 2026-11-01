@@ -4,12 +4,12 @@ title: T-02-T11 Python scenario tax slice
 spec: SPEC-502
 acceptance_criteria: [AC-15, AC-16, AC-17]
 risk_zone: amber
-status: in-review
+status: done
 epic: T-02
 plan_key: T-02-T11
 branch: s17-t02-t11
 created: 2026-10-30
-updated: 2026-10-30
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -42,3 +42,4 @@ and every footing test passes."
 
 ## Progress log
 - 2026-10-30: built in S17 Lane 2 on T-02-T09; export files to generate in the end review.
+- 2026-11-01: merged to main in #787 (07c1cdc17).

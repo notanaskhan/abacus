@@ -4,12 +4,12 @@ title: K-02-T08 firm standards service
 spec: SPEC-500
 acceptance_criteria: [AC-27, AC-28, AC-29, AC-30, AC-31, AC-32, AC-33, AC-34]
 risk_zone: amber
-status: in-review
+status: done
 epic: K-02
 plan_key: K-02-T08
 branch: s17-k02-t08
 created: 2026-10-30
-updated: 2026-10-30
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -56,3 +56,4 @@ not_standard_owner."
 ## Progress log
 - 2026-10-30: built in S17 Lane 2 on K-02-T07; tests written, run in the end review.
 - Not done here: `firm_standard_version.published` in the protected human-only list (DEC-1256).
+- 2026-11-01: merged to main in #778 (e1e0edd0a).

@@ -36,6 +36,7 @@ import {
 import { useFlag } from "../../app-core/flags";
 import { AgentDock } from "../../domain/agents";
 import { type TrialBalanceOptions, useTrialBalancePane } from "../AUD-06/TrialBalance";
+import { MaterialityDock, useMaterialityCanvas } from "../AUD-07/Materiality";
 import { type SampleSelectionOptions, useSampleSelectionCanvas } from "../AUD-11/SampleSelection";
 import { ViewerPane } from "../SHL-08";
 import { COPY } from "./copy";
@@ -94,6 +95,7 @@ export interface AUD02Props {
 const TRIAL_BALANCE = "trial_balance";
 /** The rail row whose canvas is AUD-11 (A-03-T11). */
 const SAMPLE_SELECTION = "sample_selection";
+const MATERIALITY = "materiality";
 
 type Sort = "missing_first" | "received_first";
 
@@ -216,6 +218,10 @@ function Cockpit({
     ...sampleSelection,
     active: sampleOpen,
   });
+  // AUD-07 (A-04-T10): the Materiality row's canvas and its dock, behind `assurance.materiality`;
+  // with the flag off the row keeps the blocked-section card.
+  const materialityOn = useFlag("assurance.materiality") === true && selected === MATERIALITY;
+  const materiality = useMaterialityCanvas(cockpit.engagement_id, { active: materialityOn });
   const openDoc = (r: SourceDocumentRowOut): void => {
     const version = r.latest_upload?.evidence_version_id ?? null;
     if (version !== null) onDock?.("viewer", version);
@@ -226,6 +232,8 @@ function Cockpit({
     canvas = tb.canvas;
   } else if (sampleOpen) {
     canvas = sample;
+  } else if (materialityOn) {
+    canvas = materiality;
   } else if (row?.section_state === "blocked_on_decision" && row.blocked_on_name != null) {
     canvas = {
       title: row.title,
@@ -322,7 +330,9 @@ function Cockpit({
             onDock?.(tab, doc ?? null);
           },
           // P-09-T09: the SHL-13 run pane, with the v1 activity list below its thread.
-          agent: (
+          agent: materialityOn ? (
+            <MaterialityDock engagementId={cockpit.engagement_id} />
+          ) : (
             <AgentDock engagementId={cockpit.engagement_id}>
               <AgentActivityTab engagementId={cockpit.engagement_id} />
             </AgentDock>

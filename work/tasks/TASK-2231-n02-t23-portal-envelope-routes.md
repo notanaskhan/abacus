@@ -4,12 +4,12 @@ title: N-02-T23 portal envelope routes live (POR-06, DocuSeal)
 spec: SPEC-381  # signatures and engagement letters; N-02 §3.4
 acceptance_criteria: [AC-10, AC-11, AC-12, AC-16]
 risk_zone: red
-status: in-review
+status: done
 epic: N-02
 plan_key: N-02-T23
 branch: s17-n02-t23
 created: 2026-10-30
-updated: 2026-10-30
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -53,3 +53,4 @@ page shows Completed only after the poll, and Jonah Feld cannot open Claire's se
 - 2026-10-30: plan written; built (DEC-1283). No migration: 0292's tables cover it. Tests
   written, run at the end review (Ayush: build first, test last). The staging walk with the demo
   account needs the DocuSeal install connected on staging.
+- 2026-11-01: merged to main in #890 (5f05f6527).
