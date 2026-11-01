@@ -22,16 +22,16 @@ PLANNING_TABLES: frozenset[str] = frozenset(
     {"materiality_versions", "risk_register_rows", "risk_linkages", "service_organizations"}
     | {"fraud_brainstorm_sessions", "fraud_minutes_approvals", "fraud_inquiries"}
 )
-# A-05-T15 (0642, DEC-1959): the census and its population queries; queries insert-only.
-EBP_PARTICIPANT_TABLES: frozenset[str] = frozenset(
-    {"ebp_source_imports", "ebp_participants", "ebp_population_queries"}
+# A-06-T04 (0644, DEC-1963): the completion records beside SPEC-043's (DEC-1960).
+COMPLETION_TABLES: frozenset[str] = frozenset(
+    {"audit_findings", "deficiencies", "audit_misstatements", "sum_snapshots", "consultations"}
 )
-TABLES: frozenset[str] = _HUMAN_RECORDS | EBP_TABLES | PLANNING_TABLES | EBP_PARTICIPANT_TABLES
+TABLES: frozenset[str] = _HUMAN_RECORDS | EBP_TABLES | PLANNING_TABLES | COMPLETION_TABLES
 INSERT_ONLY: frozenset[str] = (
     _HUMAN_RECORDS
     | {"ebp_provider_checks", "ebp_provision_conflicts"}
     | {"materiality_versions", "fraud_minutes_approvals"}
-    | {"ebp_population_queries"}
+    | {"sum_snapshots"}
 )
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "eqr_concurrences": frozenset(
@@ -275,55 +275,87 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
             "questionnaire_id",
         }
     ),
-    "ebp_source_imports": frozenset(
+    "audit_findings": frozenset(
         {
             "tenant_id",
             "engagement_id",
             "work_item_id",
-            "evidence_version_id",
+            "issue_id",
+            "ref",
             "kind",
-            "column_map",
-            "row_count",
-            "totals",
-            "sha256",
-            "status",
-            "refusal_code",
-            "imported_by",
+            "route",
+            "compliance_standard",
+            "coso_component",
+            "title",
+            "why_surfaced_sealed",
+            "why_surfaced_suggestion_id",
+            "created_by_kind",
+            "agent_run_id",
+            "materiality_version_id",
+            "evaluation",
+            "consultation_id",
         }
     ),
-    "ebp_participants": frozenset(
+    "deficiencies": frozenset(
         {
             "tenant_id",
             "engagement_id",
             "work_item_id",
-            "import_id",
-            "participant_key",
-            "name",
-            "ssn_sealed",
-            "ssn_fp",
-            "ssn_last4",
-            "dob_sealed",
-            "dob_fp",
-            "hire_on",
-            "termination_on",
+            "finding_id",
             "status",
-            "compensation",
-            "deferral_election_pct",
-            "years_of_service",
-            "vested_pct",
+            "severity_proposed",
+            "severity_proposed_by_kind",
+            "severity_suggestion_id",
         }
     ),
-    "ebp_population_queries": frozenset(
+    "audit_misstatements": frozenset(
         {
             "tenant_id",
             "engagement_id",
             "work_item_id",
-            "import_id",
-            "rule_key",
-            "inputs_hash",
+            "finding_id",
+            "ref",
+            "origin_ref",
+            "type",
+            "nature",
+            "status",
+            "amount",
+            "column_set",
+            "fs_effect",
+            "carried_from_py",
+            "py_ref",
+            "projection",
+            "materiality_version_id",
+            "proposed_entry_id",
+        }
+    ),
+    "sum_snapshots": frozenset(
+        {
+            "tenant_id",
+            "engagement_id",
+            "work_item_id",
+            "version_no",
+            "materiality_version_id",
+            "column_set",
             "engine_version",
-            "result_keys",
-            "count",
+            "inputs_hash",
+            "totals",
+            "qualitative_factors",
+            "purpose",
+            "decision_card_id",
+            "created_by",
+        }
+    ),
+    "consultations": frozenset(
+        {
+            "tenant_id",
+            "engagement_id",
+            "work_item_id",
+            "ref",
+            "question_sealed",
+            "raised_by",
+            "consulted_with_user_id",
+            "links",
         }
     ),
 }
@@ -438,12 +470,48 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
             "answered_at",
         }
     ),
-    "ebp_source_imports": frozenset(
+    "audit_findings": frozenset(
+        {
+            "route",
+            "kind",
+            "coso_component",
+            "title",
+            "evaluation",
+            "version",
+        }
+    ),
+    "deficiencies": frozenset(
         {
             "status",
-            "refusal_code",
-            "row_count",
-            "totals",
+            "severity_proposed",
+            "severity_proposed_by_kind",
+            "severity_suggestion_id",
+            "severity_concluded",
+            "decision_card_id",
+            "decision_id",
+            "communicated_ref",
+            "communicated_at",
+            "version",
+        }
+    ),
+    "audit_misstatements": frozenset(
+        {
+            "ref",
+            "status",
+            "amount",
+            "fs_effect",
+            "projection",
+            "proposed_entry_id",
+            "passed_by",
+            "passed_reason_sealed",
+            "version",
+        }
+    ),
+    "consultations": frozenset(
+        {
+            "status",
+            "conclusion_sealed",
+            "concluded_at",
         }
     ),
 }
