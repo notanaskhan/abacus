@@ -372,7 +372,12 @@ describe("SHL-14 c (A-03-T15)", () => {
       { timeout: 6000 },
     );
     expect(list.textContent).toContain("25 participants");
-    expect(list.textContent).toContain("Alicia Brennan");
+    await waitFor(
+      () => {
+        expect(list.textContent).toContain("Alicia Brennan");
+      },
+      { timeout: 6000 },
+    );
     expect(list.textContent).toContain("+ 20 more");
     expect(document.body.textContent).toContain("Participants · sample seed 0x5E2A91");
     expect(document.body.textContent).not.toContain("Distributions");
