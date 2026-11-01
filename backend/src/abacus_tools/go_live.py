@@ -39,7 +39,8 @@ LEVELS: Final[tuple[Level, ...]] = ("shadow", "client_facing", "tax", "season")
 REPO: Final = Path(__file__).resolve().parents[3]
 ON_CALL: Final = REPO / "docs" / "ops" / "on-call.md"
 RUNBOOKS: Final = REPO / "docs" / "runbooks"
-SEASON_RUNBOOKS: Final = ("RB-16",)  # busy-season readiness; RB-18/19 join when written
+# Busy-season readiness, the e-signature outage and the tax-engine bridge failure (T-01-T47).
+SEASON_RUNBOOKS: Final = ("RB-16", "RB-18", "RB-19")
 TERMS_MARGIN: Final = timedelta(days=90)
 ON_CALL_MAX_AGE: Final = timedelta(days=31)
 # Flags whose being on reaches a client: the portal, client email and signatures (AC-5.7).

@@ -101,6 +101,11 @@ OPS_COMMANDS: Final = frozenset(
         "abacus_tools.esign_install rotate",
         "abacus_tools.esign_install disconnect",
         "abacus_tools.esign_install status",
+        # T-01-T47 (DEC-1680): a pilot firm's go-live on a hosted environment: the per-firm flag
+        # flip (the flip guard still asks for an approver who is not the operator and a rollback)
+        # and the dossier's go-live check (read only).
+        "abacus_tools.flags",
+        "abacus_tools.go_live",
         # Not `abacus_tools.drill verify`: it swaps the production database host, so it runs only
         # from drill.yml with the host of the restore it made (security review, S8 wave B).
     }

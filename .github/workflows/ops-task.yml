@@ -34,6 +34,8 @@ on:
           - abacus_tools.esign_install rotate
           - abacus_tools.esign_install disconnect
           - abacus_tools.esign_install status
+          - abacus_tools.flags
+          - abacus_tools.go_live
       args:
         description: 'Arguments as a JSON array of strings, e.g. ["--tenant", "<uuid>"]'
         required: true

@@ -97,10 +97,20 @@ def b_consented(env: Env) -> Iterator[None]:
     def column(client_id: object, _purpose: str) -> ColumnElement[bool]:
         return literal(b) == client_id
 
+    # The real C19 gate registers this purpose when organisations is imported: set it aside for
+    # the stand-in and put it back after, so neither registration leaks into another test.
+    tables = (
+        slots._CONSENTS,  # pyright: ignore[reportPrivateUsage] -- the stand-in swaps the registration
+        slots._CONSENT_COLUMNS,  # pyright: ignore[reportPrivateUsage] -- likewise
+        slots._CONSENT_COUNTS,  # pyright: ignore[reportPrivateUsage] -- likewise
+    )
+    saved = [table.pop(slots.OFFSHORE_DISCLOSURE, None) for table in tables]
     slots.register_consent_check(slots.OFFSHORE_DISCLOSURE, check, column)
     yield
-    slots._CONSENTS.pop(slots.OFFSHORE_DISCLOSURE, None)  # pyright: ignore[reportPrivateUsage] -- drops the stand-in
-    slots._CONSENT_COLUMNS.pop(slots.OFFSHORE_DISCLOSURE, None)  # pyright: ignore[reportPrivateUsage] -- drops the stand-in
+    for table, original in zip(tables, saved, strict=True):
+        table.pop(slots.OFFSHORE_DISCLOSURE, None)
+        if original is not None:
+            table[slots.OFFSHORE_DISCLOSURE] = original  # pyright: ignore[reportArgumentType] -- the entry popped above
 
 
 # --- refused only the `not_offshore` actions, at the condition layer -----------------------------
