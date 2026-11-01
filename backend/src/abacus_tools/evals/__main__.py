@@ -14,6 +14,8 @@ from abacus.modules.agents.api import ASSESSOR, DRAFTER, MATCHER, REVIEWER, spec
 from abacus_tools.evals import entry_assessment, guidance_drafting, matching
 from abacus_tools.evals.decision_recommendation import AGENT as RECOMMENDER
 from abacus_tools.evals.decision_recommendation import recommend_main
+from abacus_tools.evals.methodology_import import AGENT as IMPORTER
+from abacus_tools.evals.methodology_import import import_suite_main
 from abacus_tools.evals.report import render
 from abacus_tools.evals.runner import EvalRoute, Subset, guard, guard_real, prepare, run
 from abacus_tools.evals.section_drafting import AGENT as SECTION_DRAFTER
@@ -54,6 +56,10 @@ def main(argv: list[str]) -> int:
             cast(str, args.route),
             cast(Path, args.out),
             cast(Subset, args.subset),
+        )
+    if args.agent == IMPORTER:  # K-01-T22: code-graded, no stack (TASK-2921)
+        return import_suite_main(
+            cast(str, args.route), cast(Path, args.out), cast(Subset, args.subset)
         )
     if args.agent == RECOMMENDER:  # A-04-T09: code-graded, no stack (TASK-2802)
         return recommend_main(
