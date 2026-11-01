@@ -855,6 +855,16 @@ async def trial_balance_authors(tenant: TenantContext, tb_id: UUID) -> TbAuthors
     )
 
 
+async def version_adopter(tenant: TenantContext, tb_id: UUID, version_no: int) -> UUID | None:
+    """A-03-T14: who adopted one version of a trial balance (the mapping set's creator when the
+    subscriber starts it on version 1); None when unknown."""
+    async with tenant_session(tenant) as session:
+        for v in await versions_of(session, tb_id):
+            if v.version_no == version_no:
+                return v.adopted_by
+    return None
+
+
 async def review_digests(tenant: TenantContext, engagement_id: UUID) -> list[TbDigest]:
     async with tenant_session(tenant) as session:
         out: list[TbDigest] = []

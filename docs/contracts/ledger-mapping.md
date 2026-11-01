@@ -73,9 +73,26 @@ in `c09-ledger.md`.
 ## 7. Audit and outbox events
 Audit: `grouping_set.imported`, `grouping_set.published`, `mapping_set.created`,
 `mapping_set.rules_applied` (counts by method; system on behalf of the starter),
-`account_mapping.edited`, `mapping_set.confirmed`, `mapping_set.went_stale`, C3's
-`sign_off.recorded`. Outbox: `grouping_set.published`, `mapping_set.confirmed`,
-`mapping_set.went_stale`; consumed: A-02's `trial_balance.version_created`.
+`account_mapping.edited`, `mapping_set.confirmed`, `mapping_set.version_followed` (version,
+edits kept and dropped; A-03-T14), `mapping_set.went_stale`, C3's `sign_off.recorded`. Outbox:
+`grouping_set.published`, `mapping_set.confirmed`, `mapping_set.version_followed` (once per set
+and version), `mapping_set.went_stale` (`recipient_user_ids`: the set's signers); consumed: A-02's
+`trial_balance.version_created`.
+
+### 7.1 Trial balance versions (A-03-T14; DEC-1765)
+For a firm with `ledger.tb_mapping` on, `assurance` consumes `trial_balance.version_created`:
+- **Version 1:** the mapping set is created on the firm's one published grouping set (its newest
+  version), by the person who adopted the version; with none or several published, nothing is
+  created and a person starts it on AUD-31. Mapping is computed on read, so the set is its run.
+- **Version n > 1:** `ledger.api.follow_tb_version(tx, …)` records the move: a person's edit
+  stands while its account is on the trial balance, a new account is mapped by the rules or reads
+  unmapped, and nothing earlier is touched (ADR-004; the set's event history keeps each version it
+  followed). When the new content leaves the set's newest sign-offs on other content,
+  `mapping_set.went_stale` names its signers, and C16 `mapping_set_stale` (Approvals) tells each
+  once; review's detector still records each `sign_off.went_stale`, and `sign_off_stale` leaves
+  mapping sets to `mapping_set_stale`.
+- A replay of the event changes nothing (the deterministic event ids). A snapshot pulled but not
+  adopted emits no version, so it changes nothing.
 
 ## 8. Stub behaviour (A-03-T03)
 Client 404 → the action (engagement routes on the engagement; catalogue and picker, and mapping-

@@ -45,6 +45,7 @@ from abacus.modules.ledger.gl_service import (
 from abacus.modules.ledger.mapping import (
     AccountEdits,
     AlreadyPublished,
+    FollowedVersion,
     FsLineView,
     GroupingSetInvalid,
     GroupingView,
@@ -65,6 +66,7 @@ from abacus.modules.ledger.mapping import (
     build_statements,
     create_mapping_set,
     edit_mappings,
+    follow_tb_version,
     grouping_catalogue,
     grouping_set_versions,
     grouping_version_id,
@@ -145,6 +147,7 @@ from abacus.modules.ledger.trial_balances import (
     superseded_snapshot,
     trial_balance_authors,
     trial_balance_view,
+    version_adopter,
 )
 
 # The routers the API mounts, in order (P-39; F-03-T07).
@@ -168,6 +171,7 @@ __all__ = [
     "CitedLine",
     "EntryLine",
     "EntrySet",
+    "FollowedVersion",
     "FsLineView",
     "GlAccount",
     "GlCheck",
@@ -235,6 +239,7 @@ __all__ = [
     "engagement_trial_balances",
     "entity_snapshots",
     "firm_accounts",
+    "follow_tb_version",
     "gl_entries",
     "gl_snapshot_view",
     "grouping_catalogue",
@@ -280,5 +285,6 @@ __all__ = [
     "validate",
     "validate_gl",
     "validate_subsequent",
+    "version_adopter",
     "year_end_trial_balance",
 ]
