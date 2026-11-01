@@ -86,6 +86,12 @@ def _cell(key: str, raw: str | None, marks: list[str] | None = None) -> SimpleNa
     )
 
 
+def _citation(key: str) -> SimpleNamespace:
+    return SimpleNamespace(
+        cell_key=key, evidence_version_id=uuid4(), locator=None, sheet_key="main"
+    )
+
+
 def test_ac5_the_hash_covers_cells_tickmarks_and_citations_only() -> None:
     a = content_of([_cell("A1", "1"), _cell("B1", None)], [])  # type: ignore[list-item]  # SimpleNamespace stands in for rows
     b = content_of([_cell("A1", "1")], [])  # type: ignore[list-item]  # SimpleNamespace stands in for rows
@@ -94,11 +100,7 @@ def test_ac5_the_hash_covers_cells_tickmarks_and_citations_only() -> None:
     assert content_hash(ticked) != content_hash(b)
     cited = content_of(
         [_cell("A1", "1")],  # type: ignore[list-item]  # SimpleNamespace stands in for rows
-        [
-            SimpleNamespace(
-                cell_key="A1", evidence_version_id=uuid4(), locator=None, sheet_key="main"
-            )
-        ],  # type: ignore[list-item]  # SimpleNamespace stands in for rows
+        [_citation("A1")],  # type: ignore[list-item]  # SimpleNamespace stands in for rows
     )
     assert content_hash(cited) != content_hash(b)
 
