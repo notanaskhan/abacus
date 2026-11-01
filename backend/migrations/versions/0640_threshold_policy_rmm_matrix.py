@@ -5,7 +5,7 @@ for each inherent and control risk (`{rows: [{inherent_risk, control_risk, rmm}]
 through the standards import like every other policy. Widening a CHECK is additive.
 
 Revision ID: 0640
-Revises: 0614
+Revises: 0615
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ from __future__ import annotations
 from alembic import op
 
 revision = "0640"
-down_revision = "0614"
+down_revision = "0615"
 branch_labels = None
 depends_on = None
 
