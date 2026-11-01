@@ -120,8 +120,13 @@ def test_ac4_tb_cells_read_the_trial_balance() -> None:
 
 
 def test_ac4_a_new_trial_balance_version_changes_a_linked_papers_hash() -> None:
-    cells = [SimpleNamespace(cell_key="A1", raw='=TB("1000")', tickmarks=[])]
-    plain = [SimpleNamespace(cell_key="A1", raw="5", tickmarks=[])]
+    # SPEC-308 cells: the main sheet, no typed value (A-04-T04 added both to the content).
+    cells = [
+        SimpleNamespace(
+            cell_key="A1", raw='=TB("1000")', tickmarks=[], sheet_key="main", value=None
+        )
+    ]
+    plain = [SimpleNamespace(cell_key="A1", raw="5", tickmarks=[], sheet_key="main", value=None)]
     tb_id = uuid4()
     v1 = TbLink(tb_id, "standard", None, 1, TB, [])  # type: ignore[arg-type]  # date unused
     v2 = TbLink(tb_id, "standard", None, 2, TB, [])  # type: ignore[arg-type]  # date unused

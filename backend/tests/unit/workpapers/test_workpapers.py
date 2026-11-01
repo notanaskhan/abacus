@@ -80,7 +80,10 @@ def test_ac3_edits_are_validated() -> None:
 
 
 def _cell(key: str, raw: str | None, marks: list[str] | None = None) -> SimpleNamespace:
-    return SimpleNamespace(cell_key=key, raw=raw, tickmarks=marks or [])
+    # A SPEC-308 cell: the main sheet, no typed value (A-04-T04 added both to the content).
+    return SimpleNamespace(
+        cell_key=key, raw=raw, tickmarks=marks or [], sheet_key="main", value=None
+    )
 
 
 def test_ac5_the_hash_covers_cells_tickmarks_and_citations_only() -> None:
@@ -91,7 +94,11 @@ def test_ac5_the_hash_covers_cells_tickmarks_and_citations_only() -> None:
     assert content_hash(ticked) != content_hash(b)
     cited = content_of(
         [_cell("A1", "1")],  # type: ignore[list-item]  # SimpleNamespace stands in for rows
-        [SimpleNamespace(cell_key="A1", evidence_version_id=uuid4(), locator=None)],  # type: ignore[list-item]  # SimpleNamespace stands in for rows
+        [
+            SimpleNamespace(
+                cell_key="A1", evidence_version_id=uuid4(), locator=None, sheet_key="main"
+            )
+        ],  # type: ignore[list-item]  # SimpleNamespace stands in for rows
     )
     assert content_hash(cited) != content_hash(b)
 
