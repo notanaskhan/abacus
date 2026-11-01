@@ -283,7 +283,7 @@ def payroll_register_xlsx() -> bytes:
 
 def w3_pdf() -> bytes:
     return _lines(
-        "Form W-3 2025 — Northwind Robotics, Inc.",
+        "Form W-3 2025 - Northwind Robotics, Inc.",  # ASCII: the PDF writer's font
         (f"Box 1 Wages: {W3_BOX1:,.2f}", f"Box 12 D 401(k) deferrals: {W3_BOX12D:,.2f}"),
     )
 

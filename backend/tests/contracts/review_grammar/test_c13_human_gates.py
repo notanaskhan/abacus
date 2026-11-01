@@ -61,6 +61,9 @@ EVENTS: Final = {
     # I-01-T08 (DEC-647): SPEC-004's review queue as `evidence_review` gates.
     "evidence.uploaded",
     "review.assigned",
+    # N-02-T33: a letter waits on each partner's approval.
+    "letter.approval_requested",
+    "letter.approved",
 }
 # Contract §2: firm admin, practice leader (in scope), quality partner, engagement partner,
 # manager, senior, staff, reviewer, EQR reviewer.

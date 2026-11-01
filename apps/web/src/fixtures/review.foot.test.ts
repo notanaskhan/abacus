@@ -46,7 +46,8 @@ function request(frame: ReviewFrame, persona: string): FixtureRequest {
     method,
     path,
     params: { ...frame.params },
-    query: new URLSearchParams(),
+    // A frame that names its record in the query (SHL-12 f's eligibility) is asked with it.
+    query: new URLSearchParams(frame.query ?? {}),
     body: null,
     persona,
   };

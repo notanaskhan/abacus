@@ -1091,7 +1091,8 @@ export const SHL09 = {
   e: {
     ...tray,
     versions: [
-      { ...updated, citation: null, citation_ids: [], references: [], unsupported: true },
+      // The one version is the first (current_seq 1): the field's first, uncited agent value.
+      { ...updated, seq: 1, citation: null, citation_ids: [], references: [], unsupported: true },
     ],
     current_seq: 1,
     ticks: [],

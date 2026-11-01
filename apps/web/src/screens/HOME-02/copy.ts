@@ -47,6 +47,7 @@ export const COPY = {
     snoozed: (when: string): string => `Snoozed until ${when}`,
     reassigned: (name: string): string => `Reassigned to ${name}`,
     noCandidates: "No one else can take this", // (undesigned)
+    loadingCandidates: "Loading…", // (undesigned)
     failed: "That didn't go through. Try again.", // (undesigned)
     reassignMenu: "Reassign to",
     snoozeMenu: "Snooze until",

@@ -137,12 +137,15 @@ function frame(
     state,
     persona: options.persona ?? "margaret-okonkwo",
     clock,
-    handlers: {
-      ...E0.handlers,
-      ...trustHandlers({ documents: DOCUMENTS, citations: [] }),
-      ...cockpitWith(variant),
-      "GET /v1/me/capabilities": ({ persona }) => json(capabilities(persona, on)),
-      ...(options.materiality ?? materialityHandlers(variant)),
+    // A getter: every install starts the card at its variant again (a Decide moves a to c).
+    get handlers(): Record<string, FixtureHandler> {
+      return {
+        ...E0.handlers,
+        ...trustHandlers({ documents: DOCUMENTS, citations: [] }),
+        ...cockpitWith(variant),
+        "GET /v1/me/capabilities": ({ persona }) => json(capabilities(persona, on)),
+        ...(options.materiality ?? materialityHandlers(variant)),
+      };
     },
   };
 }

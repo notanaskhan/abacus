@@ -349,7 +349,8 @@ def test_t02t30_k1_amounts_and_organizer_answers_are_tri_and_rows_carry_neither(
 
 def _k1_detail() -> BaseModel:
     from abacus.kernel._statuses import K1PackageStatus
-    from abacus.modules.tax.k1_contract import K1MaskedTinOut, K1PackageDetailOut, K1PackageOut
+    from abacus.modules.organisations.api import MaskedTinOut
+    from abacus.modules.tax.k1_contract import K1PackageDetailOut, K1PackageOut
 
     return K1PackageDetailOut(
         package=K1PackageOut(
@@ -368,7 +369,7 @@ def _k1_detail() -> BaseModel:
         ),
         lines=[],
         documents=[],
-        tin=K1MaskedTinOut(kind="ein", last4="7741"),
+        tin=MaskedTinOut(kind="ein", presence="on_file", last4="7741"),
     )
 
 

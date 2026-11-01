@@ -12,6 +12,7 @@ import {
   AgentText,
   Button,
   type CockpitCanvas,
+  DASH,
   HumanAction,
   Icon,
   PaneAction,
@@ -60,7 +61,12 @@ export function percentText(v: string, keepOne = false): string {
 }
 
 const whole = (v: string): string => amount(v, "whole").text;
-const dollars = (v: string): string => prose(v, "whole");
+// Whole dollars with the sign the handoff draws ("$252,200"): `prose` puts "$" only on cents.
+const dollars = (v: string): string => {
+  const text = prose(v, "whole");
+  if (text === DASH) return text;
+  return text.startsWith("-") ? `-$${text.slice(1)}` : `$${text}`;
+};
 
 function Block({
   title,
@@ -111,10 +117,12 @@ function DecisionBlock({
   const head = card.card;
   const reserved = head.allowed_actions.includes("decision.decide");
   const [rationale, setRationale] = useState("");
+  // The agent's option is preselected (AUD-07 a); a person's click replaces it.
+  const selected = option ?? card.recommendation?.option_key;
   const name = head.reserved_user_name ?? "";
   const first = name.split(" ")[0] ?? name;
   const decide = useGate({
-    command: () => writes.decide(option ?? "", [], rationale.trim()),
+    command: () => writes.decide(selected ?? "", [], rationale.trim()),
     doneText: () => COPY.toasts.decided,
     failedText: COPY.toasts.decided,
   });
@@ -142,8 +150,7 @@ function DecisionBlock({
     );
   }
 
-  const ready = option !== undefined && rationale.trim() !== "" && decide.phase !== "busy";
-  const selected = option ?? card.recommendation?.option_key;
+  const ready = selected !== undefined && rationale.trim() !== "" && decide.phase !== "busy";
   return (
     <section
       data-aud07="decision"
@@ -701,7 +708,7 @@ function History({ record }: { record: MaterialityRecordOut }): JSX.Element {
               data-status={v.superseded ? "superseded" : v.status}
               className="flex min-h-[38px] items-center gap-[10px] px-[12px] text-body hairline-b"
             >
-              <span className={cn("flex-1", v.superseded && "text-ink-2")}>
+              <span data-line="" className={cn("flex-1", v.superseded && "text-ink-2")}>
                 {[
                   COPY.version(v.version_no, COPY.status[v.status]),
                   v.created_by_name,

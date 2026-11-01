@@ -39,6 +39,7 @@ from abacus.modules.identity.api import (
     current_member,
     mask_tins_for,
 )
+from abacus.modules.organisations.api import MaskedTinOut
 from abacus.modules.tax import k1_disclosures, k1_portal, k1_release
 from abacus.modules.tax import k1_packages as k1
 
@@ -109,19 +110,6 @@ class K1DetailsChangeTagOut(BaseModel):
     submitted_at: Annotated[datetime, classified("confidential")]
 
 
-class K1MaskedTinOut(BaseModel):
-    """A recipient's taxpayer ID, kind and last four only; the detail's, never a list row's
-    (ADR-031)."""
-
-    model_config = ConfigDict(frozen=True)
-
-    kind: Annotated[Literal["ssn", "ein", "itin"], classified("internal")]
-    # Null for an offshore reader: the central mask nulls a field that allows it (DEC-52).
-    last4: Annotated[
-        str | None, Field(pattern=r"^[0-9]{4}$"), classified("restricted", pii_kind="tin")
-    ] = None
-
-
 class K1PackageOut(BaseModel):
     """A TXP-12 row (and a POR-13 row, released and later only)."""
 
@@ -173,7 +161,7 @@ class K1PackageDetailOut(BaseModel):
     documents: Annotated[list[K1DocumentOut], classified("internal")]
     # T-02-T25 (additive): the recipient's masked TIN, the detail only (ADR-031); on the portal
     # (T-02-T27) the recipient's own, with whether an address is on file (Your details).
-    tin: Annotated[K1MaskedTinOut | None, classified("restricted")] = None
+    tin: Annotated[MaskedTinOut | None, classified("restricted")] = None
     address_on_file: Annotated[bool | None, classified("internal")] = None
 
 
@@ -392,10 +380,12 @@ def _package_out(p: k1.PackageView) -> K1PackageOut:
     )
 
 
-def _tin_out(p: k1.PackageView) -> K1MaskedTinOut | None:
+def _tin_out(p: k1.PackageView) -> MaskedTinOut | None:
     if p.tin_kind is None or p.tin_last4 is None:
         return None
-    return K1MaskedTinOut(kind=cast(Literal["ssn", "ein", "itin"], p.tin_kind), last4=p.tin_last4)
+    return MaskedTinOut(
+        kind=cast(Literal["ssn", "ein", "itin"], p.tin_kind), presence="on_file", last4=p.tin_last4
+    )
 
 
 def _change_out(c: k1.DetailsChange) -> RecipientDetailsChangeOut:

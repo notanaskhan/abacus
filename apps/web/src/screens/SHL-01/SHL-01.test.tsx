@@ -303,7 +303,7 @@ describe("SHL-01 behaviour (P-01 AC 1.1)", () => {
       "Notices",
       // Audits is routed by A-01-T11 (AUD-01); its flag-off page is AUD-01.test.tsx's.
       "Closes",
-      "Signatures",
+      // Signatures is routed by N-02-T40 (SIG-01); its flag-off page is behind `signatures.envelopes`.
     ]);
     expect(areaLandingRoutes.map((r) => r.fullPath)).toEqual(planned.map((a) => a.path));
     const paths = new Set(

@@ -83,6 +83,13 @@ LIVE_ACTIONS = {
     "send_envelope_route": "envelope.send",
     "undo_envelope_send_route": "envelope.send",
     "envelope_page_route": "envelope.read",  # N-02-T20 follow-up: the masked preview page
+    # N-02-T28, T27, T29: reminders, the wet signature, the countersign session, the policies.
+    "remind_envelopes_preview_route": "envelope.remind",
+    "remind_envelopes_send_route": "envelope.remind",
+    "record_wet_signature_route": "envelope.record_wet_signature",
+    "countersign_session_route": "envelope.countersign",
+    "list_envelope_policies_route": "envelope_policy.read",
+    "update_envelope_policy_route": "envelope_policy.manage",
 }
 LIVE = frozenset(
     {
@@ -101,9 +108,29 @@ LIVE = frozenset(
         "send_envelope_route",
         "undo_envelope_send_route",
         "envelope_page_route",
+        # N-02-T27 to T29 (main CI triage, DEC-1865): live since their rows landed.
+        "remind_envelopes_preview_route",
+        "remind_envelopes_send_route",
+        "record_wet_signature_route",
+        "countersign_session_route",
+        "list_envelope_policies_route",
+        "update_envelope_policy_route",
     }
 )
-STUBBED = [(r, m) for r, m in FIRM if r.name not in LIVE]
+# N-02-T33/T34 (ENG-04): the letter's routes are live behind `engagements.letter_composer` and
+# `signatures.envelopes`, with their own suites (test_n02t33, test_n02t35); they are not stubs.
+LETTERS_LIVE = frozenset(
+    {
+        "get_letter_route",
+        "draft_letter_route",
+        "request_approval_route",
+        "approve_letter_route",
+        "send_letter_route",
+        "withdraw_letter_envelope_route",
+        "amend_letter_route",
+    }
+)
+STUBBED = [(r, m) for r, m in FIRM if r.name not in LIVE | LETTERS_LIVE]
 
 
 def _models(module: ModuleType) -> list[type[BaseModel]]:

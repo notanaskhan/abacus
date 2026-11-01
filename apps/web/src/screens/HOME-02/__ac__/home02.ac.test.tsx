@@ -13,7 +13,7 @@
 //   6  allowlisted activity events only (HOME-01, I-01-T12 / T23)
 import type { HomeOut } from "@abacus/api-client";
 import { client } from "@abacus/api-client/client";
-import { formatActor } from "@abacus/ui";
+import { formatActor, toastStore } from "@abacus/ui";
 import { QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -25,7 +25,7 @@ import {
 } from "@tanstack/react-router";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
-import { type FixtureHandler, installFixtureMode, json } from "../../../app-core/fixture-mode";
+import { type FixtureHandler, installFixtureMode } from "../../../app-core/fixture-mode";
 import { homeGates } from "../../../fixtures/seed/home";
 import "../../../routes/firm/sheets";
 import { newQueryClient } from "../../../testing/support";
@@ -52,14 +52,18 @@ function show(
   state: Home02State,
   extra: Record<string, FixtureHandler> = {},
   gate: string | null = selectedGate(state),
+  holds: Record<string, Promise<void>> = {},
 ): { posts: { path: string; body: unknown }[] } {
   const posts: { path: string; body: unknown }[] = [];
   const scenario = freshScenarios()[state];
   const handlers = Object.fromEntries(
     Object.entries({ ...scenario.handlers, ...extra }).map(([key, handler]) => [
       key,
-      ((request) => {
+      (async (request) => {
         if (key.startsWith("POST ")) posts.push({ path: request.path, body: request.body });
+        // A held write answers only when the test releases it, then as the fixture answers
+        // (its state moves with it: a snoozed or moved gate leaves the queue).
+        await holds[key];
         return handler(request);
       }) satisfies FixtureHandler,
     ]),
@@ -100,17 +104,12 @@ const rowOf = (title: string): HTMLElement | null =>
   ) ?? null;
 
 /** A deferred response: the test decides when the server answers. */
-function held(): { handler: FixtureHandler; answer: (r: Response) => void } {
-  let answer: (r: Response) => void = () => undefined;
-  const pending = new Promise<Response>((resolve) => {
-    answer = resolve;
+function held(): { until: Promise<void>; release: () => void } {
+  let release: () => void = () => undefined;
+  const until = new Promise<void>((resolve) => {
+    release = resolve;
   });
-  return {
-    handler: () => pending,
-    answer: (r) => {
-      answer(r);
-    },
-  };
+  return { until, release };
 }
 
 describe("1 · INV-1: no gate verb on agent-owned elements", () => {
@@ -124,8 +123,12 @@ describe("1 · INV-1: no gate verb on agent-owned elements", () => {
       expect(within(el).queryAllByRole("button")).toEqual([]);
       expect(el.closest("button")).toBeNull();
     }
+    // A queue row is a link to its item whose title may start with a verb ("Approve Q3 ..."); the
+    // gate controls are the buttons that are not rows.
     for (const b of screen.queryAllByRole("button")) {
-      if (GATE_VERB.test(b.textContent.trim()) && b.closest("[data-home02='bulk-bar']") === null) {
+      const control =
+        b.closest("[data-home02='bulk-bar']") === null && !b.hasAttribute("data-issue-row");
+      if (control && GATE_VERB.test(b.textContent.trim())) {
         expect(b.getAttribute("data-human-verb")).not.toBeNull();
       }
     }
@@ -202,7 +205,7 @@ describe("4 · reassign and snooze wait for the server (AC8.2–AC8.4)", () => {
   it("d: Snooze until… Tomorrow 9 AM keeps the row until the server answers, then it leaves", async () => {
     const gate = selectedGate("d") ?? "";
     const reply = held();
-    show("d", { "POST /v1/human-gates/{gate_id}/snooze": reply.handler });
+    show("d", {}, gate, { "POST /v1/human-gates/{gate_id}/snooze": reply.until });
     await queue();
     fireEvent.keyDown(await screen.findByRole("button", { name: "Snooze until…" }), {
       key: "ArrowDown",
@@ -210,11 +213,13 @@ describe("4 · reassign and snooze wait for the server (AC8.2–AC8.4)", () => {
     fireEvent.click(await screen.findByRole("menuitem", { name: "Tomorrow 9 AM" }));
     // Never optimistic: the row and the count stand while the request is open.
     expect(rowOf(titleOf(4))).not.toBeNull();
-    reply.answer(json({ gate_id: gate, until: "2026-09-15T14:00:00Z" }));
+    reply.release();
     await waitFor(() => {
       expect(rowOf(titleOf(4))).toBeNull();
     });
-    expect(await screen.findByText(/Snoozed until/u)).toBeTruthy();
+    await waitFor(() => {
+      expect(toastStore.list().some((t) => t.text.startsWith("Snoozed until"))).toBe(true);
+    });
   });
 
   it("d: the snooze menu offers Today 2 PM before 2 PM, Tomorrow 9 AM and Pick date", async () => {
@@ -229,20 +234,24 @@ describe("4 · reassign and snooze wait for the server (AC8.2–AC8.4)", () => {
 
   it("d: Reassign… lists only the server's candidates and waits for the server", async () => {
     const reply = held();
-    show("d", { "POST /v1/human-gates/{gate_id}/reassign": reply.handler });
+    show("d", {}, selectedGate("d"), { "POST /v1/human-gates/{gate_id}/reassign": reply.until });
     await queue();
     fireEvent.keyDown(await screen.findByRole("button", { name: "Reassign…" }), {
       key: "ArrowDown",
     });
-    const options = (await screen.findAllByRole("menuitem")).map((m) => m.textContent.trim());
-    expect(options).toEqual(["Priya Raman"]);
+    await waitFor(() => {
+      const options = screen.getAllByRole("menuitem").map((m) => m.textContent.trim());
+      expect(options).toEqual(["Priya Raman"]);
+    });
     fireEvent.click(screen.getByRole("menuitem", { name: "Priya Raman" }));
     expect(rowOf(titleOf(4))).not.toBeNull();
-    reply.answer(json({ gate_id: selectedGate("d"), to_user_id: "x", version: 2 }));
+    reply.release();
     await waitFor(() => {
       expect(rowOf(titleOf(4))).toBeNull();
     });
-    expect(await screen.findByText("Reassigned to Priya Raman")).toBeTruthy();
+    await waitFor(() => {
+      expect(toastStore.list().map((t) => t.text)).toContain("Reassigned to Priya Raman");
+    });
   });
 
   it("an overdue gate offers no snooze", async () => {

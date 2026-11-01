@@ -190,7 +190,12 @@ describe("2 · no propose-only checkbox (DF-13)", () => {
       await waitFor(() => {
         expect(sheet.textContent).not.toBe("");
       });
-      expect(within(sheet).queryByRole("checkbox")).toBeNull();
+      // Frame e picks its issues with checkboxes (handoff E); DF-13 removes only the propose-only
+      // one, so every checkbox left is an issue's own row in the bulk sheet's list.
+      for (const box of within(sheet).queryAllByRole("checkbox")) {
+        expect(box.closest("[data-shl15='bulk'] li")).not.toBeNull();
+      }
+      if (s === "a") expect(within(sheet).queryByRole("checkbox")).toBeNull();
       expect(sheet.textContent).not.toMatch(/propose changes for my approval/iu);
     },
   );
@@ -247,7 +252,10 @@ describe("5 · Unsupported blocks field sign-off (SHL-09 e)", () => {
   it("e: Sign off field is disabled and a click sends no tick", async () => {
     const calls = mount(shl09.e, shl09View("e"));
     const t = await tray();
-    const sign = within(t).getByRole<HTMLButtonElement>("button", { name: "Sign off field" });
+    // The control names the signed-in person, so it appears once the session has loaded.
+    const sign = await within(t).findByRole<HTMLButtonElement>("button", {
+      name: "Sign off field",
+    });
     expect(sign.disabled).toBe(true);
     fireEvent.click(sign);
     expect(calls.some((c) => c.method === "POST" && c.path.endsWith("/ticks"))).toBe(false);

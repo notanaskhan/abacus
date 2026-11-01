@@ -41719,40 +41719,6 @@
         "title": "K1HandoffStatus",
         "type": "string"
       },
-      "K1MaskedTinOut": {
-        "description": "A recipient's taxpayer ID, kind and last four only; the detail's, never a list row's\n(ADR-031).",
-        "properties": {
-          "kind": {
-            "cls": "internal",
-            "enum": [
-              "ssn",
-              "ein",
-              "itin"
-            ],
-            "title": "Kind",
-            "type": "string"
-          },
-          "last4": {
-            "anyOf": [
-              {
-                "pattern": "^[0-9]{4}$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "restricted",
-            "title": "Last4",
-            "x-pii-kind": "tin"
-          }
-        },
-        "required": [
-          "kind"
-        ],
-        "title": "K1MaskedTinOut",
-        "type": "object"
-      },
       "K1PackageDetailOut": {
         "properties": {
           "address_on_file": {
@@ -41791,7 +41757,7 @@
           "tin": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/K1MaskedTinOut"
+                "$ref": "#/components/schemas/MaskedTinOut"
               },
               {
                 "type": "null"
@@ -52396,7 +52362,11 @@
             "dob_masked": "\u2022\u2022/\u2022\u2022/\u2022\u2022\u2022\u2022",
             "id": "00000000-0000-4000-8000-000000000601",
             "name": "Participant 22",
-            "ssn_masked": "\u2022\u2022\u2022-\u2022\u2022-4417",
+            "ssn": {
+              "kind": "ssn",
+              "last4": "4417",
+              "presence": "on_file"
+            },
             "status": "active"
           }
         ],
@@ -52425,11 +52395,10 @@
             "title": "Name",
             "type": "string"
           },
-          "ssn_masked": {
-            "cls": "internal",
-            "pattern": "^\u2022\u2022\u2022-\u2022\u2022-[0-9]{4}$",
-            "title": "Ssn Masked",
-            "type": "string"
+          "ssn": {
+            "$ref": "#/components/schemas/MaskedTinOut",
+            "cls": "restricted",
+            "x-pii-kind": "tin"
           },
           "status": {
             "cls": "internal",
@@ -52446,7 +52415,7 @@
         "required": [
           "id",
           "name",
-          "ssn_masked",
+          "ssn",
           "dob_masked",
           "status",
           "compensation"
@@ -53136,7 +53105,11 @@
             "plan_year_start": "2025-01-01",
             "recordkeeper_id": "58217",
             "safe_harbor": "qaca",
-            "sponsor_ein_last4": "6620"
+            "sponsor_ein": {
+              "kind": "ein",
+              "last4": "6620",
+              "presence": "on_file"
+            }
           }
         ],
         "properties": {
@@ -53268,17 +53241,16 @@
             "title": "Safe Harbor",
             "type": "string"
           },
-          "sponsor_ein_last4": {
-            "cls": "confidential",
-            "pattern": "^[0-9]{4}$",
-            "title": "Sponsor Ein Last4",
-            "type": "string"
+          "sponsor_ein": {
+            "$ref": "#/components/schemas/MaskedTinOut",
+            "cls": "restricted",
+            "x-pii-kind": "tin"
           }
         },
         "required": [
           "plan_name",
           "plan_number",
-          "sponsor_ein_last4",
+          "sponsor_ein",
           "plan_year_start",
           "plan_year_end",
           "plan_type",
@@ -84809,7 +84781,8 @@
             "type": "array"
           },
           "tiles": {
-            "$ref": "#/components/schemas/DiffTilesOut"
+            "$ref": "#/components/schemas/DiffTilesOut",
+            "cls": "internal"
           },
           "version_id": {
             "cls": "internal",
@@ -87776,7 +87749,11 @@
         "examples": [
           {
             "check_note": "Summit's draft Schedule C lists EIN ending 4402; the agreement shows 4420",
-            "ein_last4": "4420",
+            "ein": {
+              "kind": "ein",
+              "last4": "4420",
+              "presence": "on_file"
+            },
             "id": "00000000-0000-4000-8000-000000000501",
             "name": "Example Recordkeeper LLC",
             "role": "recordkeeper",
@@ -87798,18 +87775,17 @@
             "cls": "confidential",
             "title": "Check Note"
           },
-          "ein_last4": {
+          "ein": {
             "anyOf": [
               {
-                "pattern": "^[0-9]{4}$",
-                "type": "string"
+                "$ref": "#/components/schemas/MaskedTinOut"
               },
               {
                 "type": "null"
               }
             ],
-            "cls": "confidential",
-            "title": "Ein Last4"
+            "cls": "restricted",
+            "x-pii-kind": "tin"
           },
           "id": {
             "cls": "internal",
@@ -87864,7 +87840,6 @@
           "id",
           "name",
           "role",
-          "ein_last4",
           "status",
           "soc_report",
           "check_note"

@@ -19689,23 +19689,6 @@ export type K1HandoffOut = {
 export type K1HandoffStatus = 'awaiting' | 'received';
 
 /**
- * K1MaskedTinOut
- *
- * A recipient's taxpayer ID, kind and last four only; the detail's, never a list row's
- * (ADR-031).
- */
-export type K1MaskedTinOut = {
-    /**
-     * Kind
-     */
-    kind: 'ssn' | 'ein' | 'itin';
-    /**
-     * Last4
-     */
-    last4?: string | null;
-};
-
-/**
  * K1PackageDetailOut
  */
 export type K1PackageDetailOut = {
@@ -19722,7 +19705,7 @@ export type K1PackageDetailOut = {
      */
     lines: Array<K1BoxLineOut>;
     package: K1PackageOut;
-    tin?: K1MaskedTinOut | null;
+    tin?: MaskedTinOut | null;
 };
 
 /**
@@ -25001,10 +24984,7 @@ export type ParticipantOut = {
      * Name
      */
     name: string;
-    /**
-     * Ssn Masked
-     */
-    ssn_masked: string;
+    ssn: MaskedTinOut;
     /**
      * Status
      */
@@ -25404,10 +25384,7 @@ export type PlanOut = {
      * Safe Harbor
      */
     safe_harbor: 'none' | 'qaca' | 'basic' | 'nonelective';
-    /**
-     * Sponsor Ein Last4
-     */
-    sponsor_ein_last4: string;
+    sponsor_ein: MaskedTinOut;
 };
 
 /**
@@ -41596,10 +41573,7 @@ export type AbacusModulesAssuranceEbpContractProviderOut = {
      * Check Note
      */
     check_note: string | null;
-    /**
-     * Ein Last4
-     */
-    ein_last4: string | null;
+    ein?: MaskedTinOut | null;
     /**
      * Id
      */
