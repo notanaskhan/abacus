@@ -61,6 +61,7 @@ from abacus.modules.ledger.api import (
     subtotals,
     trial_balance_view,
 )
+from abacus.modules.organisations.api import entity_display_name
 from abacus.modules.review.api import sign_off_states
 
 TARGET: Final = "mapping_set"
@@ -145,7 +146,8 @@ async def _summary(
             "trial_balance_id": tb_id,
             "trial_balance_version_no": tb.version.version_no,
             "client_entity_id": ref.client_entity_id,
-            "entity_name": tb.summary.label,
+            # The client entity's name (AUD-31's heading), not the TB's label (DEC-1770).
+            "entity_name": await entity_display_name(ctx.tenant, ref.client_entity_id) or "",
             "period_end": tb.summary.period_end,
             "grouping_set_version_id": view.version.id,
             "grouping_set_label": f"{view.version.set_name} v{view.version.version}",

@@ -1,0 +1,29 @@
+{
+  "scenario": {
+    "version": "bh-2026.10.3",
+    "hash": "2b09e6fb01617c990e6e72feac508159fe5a03c6ff4f80bbb8d4a539c6f8d6a2",
+    "snapshot": "2026-09-24T10:20",
+    "slices": [
+      "sampling"
+    ]
+  },
+  "persona": "simone-baptiste",
+  "request": "GET /v1/work-items/{work_item_id}/sample-sets",
+  "body": {
+    "counts": {},
+    "facets": {},
+    "items": [
+      {
+        "current_version_no": 1,
+        "final_size": 40,
+        "id": "589517ef-fdbb-4eba-84b7-a8b061313dd9",
+        "population_count": 1912,
+        "status": "draft",
+        "title": "Disbursements"
+      }
+    ],
+    "next_cursor": null,
+    "total": 1,
+    "total_capped": false
+  }
+}
