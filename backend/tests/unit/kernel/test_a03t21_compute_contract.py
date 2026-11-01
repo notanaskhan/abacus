@@ -62,4 +62,8 @@ def test_ac6_every_compute_import_is_stdlib_its_own_package_or_the_two_kernel_he
             top = name.split(".")[0]
             if top in sys.stdlib_module_names or top == "__future__":
                 continue
+            # mutmut's copy (backend/mutants/) imports its own trampoline into every mutated file;
+            # the real tree never may, so only that copy skips it (Q-03-T147: the weekly run).
+            if top == "mutmut" and "mutants" in path.parts:
+                continue
             assert name in ALLOWED or name == own or name.startswith(own + "."), (path, name)

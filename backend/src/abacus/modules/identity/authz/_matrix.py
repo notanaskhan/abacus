@@ -3364,7 +3364,6 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "task_scope",
     },
     "section_draft.run": {
-        "system": "allow",
         "agent": "task_scope",
     },
     "security.manage": {
