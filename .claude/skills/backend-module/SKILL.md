@@ -75,6 +75,22 @@ A module whose records are signed (a letter, a consent set, an 8879, a rep lette
 6. **Events:** react to `envelope.completed`, `envelope.declined`, `envelope.expired`, `envelope.superseded` and the signer-level events through your module's `SUBSCRIPTIONS`, by the source kind and id they carry (identifiers only).
 7. **Tests:** a consumer suite in `backend/tests/contracts/c7_<you>/` (copy `c7_t01`): the draft prefill, a check blocking Send, the gate met only on completion, a superseded envelope unmet, a shortening `extend_retention` refused.
 
+## Registering a TRI tool (T-01-T54)
+
+A tool or agent that reads tax return information (§7216) declares it; nothing else opens the gate.
+
+1. The agent spec lists `data_classes: [tri]` (`agents/spec.py`). It loads only when C19's use and
+   AI-disclosure consent checks are registered (`validate_data_classes`), so a fresh environment
+   without `organisations` refuses it at start, not at the first call.
+2. Every gateway call carrying TRI passes its `DataSubject`s; condition 6
+   (`ai_gateway.boundary.enforce_tri_consent`) answers the covering consent ids or raises
+   `consent_7216`. Never call a provider for TRI without subjects, and never cache an allowance:
+   `access.changed` ends it.
+3. The tool's reads record `tri.tool_read` access events naming the consent ids; ADM-05's "Agent
+   reads since signature" counts them.
+4. Agents-off is the default posture (`tax_agents.enabled` arrives with T-04-T09); a screen draws
+   agent blocks only where `PLANNED_VISIBLE`. RB-17 is the runbook when consents lapse in a wave.
+
 ## Checklist before done
 - [ ] Cross-tenant test for every repository method (and the regenerated `tests/security/` cases)
 - [ ] Permission tests regenerate cleanly from the matrix

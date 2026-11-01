@@ -4,7 +4,7 @@ title: P-11-T14 Independent AC tests (ADR-078) for the renderer
 spec: SPEC-520  # AC-6 to AC-9, AC-15, AC-16, AC-20, AC-26, AC-27
 acceptance_criteria: [AC-6, AC-7, AC-8, AC-9, AC-15, AC-16, AC-20, AC-26, AC-27]
 risk_zone: amber
-status: in-review
+status: done
 epic: P-11
 plan_key: P-11-T14
 branch: s20c-p11-t14

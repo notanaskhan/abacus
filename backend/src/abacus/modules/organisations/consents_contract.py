@@ -187,6 +187,8 @@ class ConsentSummaryOut(BaseModel):
     revoked: Annotated[int, classified("internal")]
     ai_use_signed: Annotated[int, classified("internal")]
     offshore: Annotated[int, classified("internal")]
+    # T-01-T51 (additive): clients whose consent to use is not in force (agents blocked), ADM-04 D.
+    blocked_clients: Annotated[int, classified("internal")] = 0
 
 
 class ConsentRequestIn(BaseModel):

@@ -43,6 +43,17 @@ export const COPY = {
       links: "Links",
     },
   },
+  // T-01-T51: the live §7216 consents row (b), worded by code from C19's rows.
+  consentsLine: (purposes: readonly string[], n: number, signed: number) =>
+    `${purposes.join(" · ")} (${String(n)} ${n === 1 ? "consent" : "consents"}) · ${String(signed)} of ${String(n)} signed`,
+  consentPurposes: {
+    use: "Use",
+    ai_disclosure: "AI disclosure",
+    offshore_disclosure: "Offshore disclosure",
+    third_party_disclosure: "Third-party disclosure",
+    other_services_use: "Other services",
+    firm_defined: "Firm-defined",
+  } as Record<string, string>,
   details: {
     ein: "EIN",
     ssns: "SSNs",

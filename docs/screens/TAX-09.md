@@ -9,7 +9,7 @@
 | Epic and tasks | T-01 · contract T-01-T05; fixtures T09; build T22–T26 |
 | Spec and ADRs | SPEC-501 AC-11; ADR-231; R-04 |
 | Flags | `tax.engine_bridge` |
-| Manifest status | `fixture` since T-01-T15 (a, a2, b, c, d, d2, e, Not yet exported); `live` with the engine-bridge routes (T-01-T33) |
+| Manifest status | `fixture` since T-01-T15 on the engine-bridge routes (T-01-T33), opened from TAX-02, TAX-12, CLI-02 and ADM-08; the chip state is announced politely (T-01-T52, DEC-1670). `live` is the `tax.engine_bridge` flip in the M11 train |
 
 ## States
 | Artboard | Viewer | Clock (CT) | Data condition | Parity tier | Status |
@@ -65,6 +65,9 @@ Gradients, emoji, blue, heavy shadows, invented colours or data, boxed inputs, t
 |---|---|---|---|
 | D1 | File-mode chip semantics (T-01 §5.3 table): Synced means a person marked the export or approved an import | ADR-231 | DEC-1160 |
 | D2 | DF-08: Import pending approval is its own chip state | DF-08 | T-01 §2.1 |
+| T54-1 | The chip's state also lives in a polite live region (screen-reader announcement) | T-01 §5.6 | DEC-1670 |
+
+Every deviation above is closed: each has its decision recorded (T-01-T54, 2026-11-01).
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |

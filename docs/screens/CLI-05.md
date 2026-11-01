@@ -9,7 +9,7 @@
 | Epic and tasks | T-01 · contract T-01-T05 (this file); fixtures T09; build T43–T46 |
 | Spec and ADRs | SPEC-501 AC-11; ADR-231; R-04 |
 | Flags | `clients.tax_profile`; consents from `consents.registry` |
-| Manifest status | `fixture` since T-01-T14 (d, f: the consents section); b, c, e and g in fixture mode with T-01-T34 (DEC-1452); a with T-01-T50 on T-01-T43's transcript routes (DEC-1652); `live` with C19's routes (pilot posture: agents off) |
+| Manifest status | `fixture`, every artboard built (T-01-T14, T-01-T34, T-01-T50) on C19 and the transcript routes; the consents section reads live (T-01-T51, DEC-1667). `live` is the flag flip (`clients.tax_profile`, `consents.registry`) in the M11 train after RB-17's staging rehearsal (pilot posture: agents off) |
 
 ## States
 | Artboard | Viewer | Clock (CT) | Data condition | Parity tier | Status |
@@ -61,6 +61,9 @@ Gradients, emoji, blue, heavy shadows, invented colours or data, boxed inputs, t
 | D1 | The identity band shows the TIN's last four with Reveal (logged) through P-03's MaskedValue | DEC-52 | DEC-1160 |
 | D2 | CLI-05 a agent blocks are fixture-only until the gate (T-01-T12) is live | condition 6 | T-01 §2.2 |
 | D3 | DF-11: consents use the email-code identity method | DF-11 | T-01 §2.1 |
+| T54-1 | The consents row reads C19's live consents; KBA reads without the question count | the count is the provider's, not ours | DEC-1667 |
+
+Every deviation above is closed: each has its decision recorded (T-01-T54, 2026-11-01).
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |

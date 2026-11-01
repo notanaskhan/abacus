@@ -11,6 +11,7 @@ import {
   aiPolicyVersionOptions,
   aiPolicyVersionsOptions,
   approveAiPolicyMutation,
+  consentSummaryOptions,
   pauseFirmAgentsMutation,
   resumeFirmAgentsMutation,
   setAiClientDataMutation,
@@ -44,8 +45,10 @@ import { type JSX, useEffect, useState } from "react";
 import { currentRoute, signIn } from "../../app-core/auth";
 import { useCan } from "../../app-core/can";
 import { useNow } from "../../app-core/clock";
+import { useOpenHref } from "../../app-core/open";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { useSession } from "../../app-core/session";
+import { hrefOf, to } from "../../routes/to";
 import { GROUPS } from "../ADM-01/copy";
 import { COPY } from "./copy";
 
@@ -206,6 +209,10 @@ export function ADM04({ opens = {}, onNavigate }: ADM04Props): JSX.Element {
   const me = useSession().user?.id ?? null;
   const queries = useQueryClient();
   const policy = useQuery(aiPolicyOptions());
+  // T-01-T51 (D): the clients the agents are blocked for, from C19's summary (counts only; the
+  // registry names them). Off or forbidden: no count, never a made-up one.
+  const consents = useQuery({ ...consentSummaryOptions(), retry: false });
+  const open = useOpenHref();
   const members = useQuery(firmMembersOptions());
   const [sections, setSections] = useState<AiPolicySections | null>(null);
   const [version, setVersion] = useState(1);
@@ -453,7 +460,18 @@ export function ADM04({ opens = {}, onNavigate }: ADM04Props): JSX.Element {
               lock={locked(data, "client_data.require_7216_consent")}
               help={
                 <span>
-                  {COPY.data.consentHelp} <span className="text-ink-2">{COPY.data.registry}</span>
+                  {consents.data === undefined
+                    ? null
+                    : `${COPY.data.consentHelp(consents.data.blocked_clients ?? 0)} `}
+                  <button
+                    type="button"
+                    className="text-ink-2 hover:underline"
+                    onClick={() => {
+                      open(hrefOf(to.ADM05()));
+                    }}
+                  >
+                    {COPY.data.registry}
+                  </button>
                 </span>
               }
             />

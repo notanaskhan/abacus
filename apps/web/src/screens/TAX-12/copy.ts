@@ -1,11 +1,20 @@
 // TAX-12 copy, verbatim from the handoff (screens/TAX-12 spec.md and the a2 artboard). Accrued
 // records; the ERO transmits in CCH Axcess (R-04): no phrase here has Accrued or the agent file.
 
+/** "federal, New York and Illinois": a jurisdiction list in a sentence. */
+function list(names: readonly string[]): string {
+  const words = names.map((n) => (n === "Federal" ? "federal" : n));
+  return words.length < 2
+    ? (words[0] ?? "")
+    : `${words.slice(0, -1).join(", ")} and ${words[words.length - 1] ?? ""}`;
+}
+
 export const COPY = {
   rail: {
     title: "Delivery",
     card: "TY2025 delivery",
-    sub: "Federal · NY + NYC · IL · CO",
+    // T-01-T51: the return's jurisdictions, from its payment instructions.
+    sub: (names: readonly string[]) => names.join(" · "),
     awaiting: "Awaiting signature",
     inReview: "In review · Manager",
     band: "Checklist",
@@ -13,20 +22,27 @@ export const COPY = {
   rows: {
     finalApproval: "Final approval",
     approvedBy: (name: string, when: string) => `Return approved by ${name} · ${when}`,
-    blockedK1: "Blocked by Draft K-1 · pre-release (Ridgeline releases Sep 15)",
+    blocked: (n: number) =>
+      n === 1 ? "Blocked by 1 open item" : `Blocked by ${String(n)} open items`,
     exported: "Exported to tax engine",
-    exportedSub: "Synced · Sep 16, 11:42 AM · 2025I:FeldJ:V3",
+    exportedSub: (when: string | null, engineId: string | null) =>
+      [
+        when === null ? "Not yet exported" : `Synced · ${when}`,
+        ...(engineId ? [engineId] : []),
+      ].join(" · "),
     diagnostics: "Engine diagnostics",
-    diagnosticsSub: "0 errors · 2 informational",
+    diagnosticsSub: (errors: number, info: number) =>
+      `${String(errors)} ${errors === 1 ? "error" : "errors"} · ${String(info)} informational`,
     packet: "Delivery packet",
-    packetSub: "Assembled by Accrued Agent · approved by Grace Holloway",
+    packetSub: (status: "draft" | "approved" | "superseded" | null) =>
+      status === "approved" ? "Approved" : status === null ? "Not assembled yet" : "Draft",
     authorizations: "E-file authorizations",
-    authorizationsSub: (signed: number, total: number) =>
-      `${String(signed)} of ${String(total)} signed · Form 8879 + NY TR-579-IT`,
+    authorizationsSub: (signed: number, total: number, forms: string) =>
+      `${String(signed)} of ${String(total)} signed${forms ? ` · ${forms}` : ""}`,
     payments: "Payment instructions",
-    paymentsSub: "Federal refund 253 · NY balance due 1,269",
+    paymentsSub: (lines: readonly string[]) => lines.join(" · "),
     transmission: "Transmission",
-    transmissionSub: "Locked until both spouses sign",
+    transmissionSub: "Locked until every signer signs",
     acks: "Acknowledgments",
     acksSub: "Not transmitted",
     delivery: "Client delivery",
@@ -37,13 +53,20 @@ export const COPY = {
     openEnvelope: "Open envelope",
     sendReminder: "Send reminder…",
     blockedTitle: "Delivery starts after final approval.",
-    blockedBody: "Daniel Reyes approves under BH-TAX-02; Samuel Ito then exports to CCH Axcess.",
+    blockedBody: (approver: string | null, policy: string | null) =>
+      `${approver ?? "The signing partner"} approves${policy ? ` under ${policy}` : ""}; the return is then exported to CCH Axcess.`,
   },
   envelope: {
     partly: "Partially signed",
-    sent: "Sent Sep 16, 1:05 PM by Grace Holloway · due Sep 30",
-    claire: "KBA passed 4 of 4 · signed Sep 16, 7:48 PM · IP and login logged",
-    jonah: "Viewed Sep 17, 8:02 AM · identity check not started",
+    sent: (when: string | null, by: string | null, due: string | null) =>
+      [
+        when === null ? "Not sent yet" : `Sent ${when}${by ? ` by ${by}` : ""}`,
+        ...(due ? [`due ${due}`] : []),
+      ].join(" · "),
+    signedLine: (kba: boolean, when: string) =>
+      `${kba ? "KBA passed · " : ""}signed ${when} · IP and login logged`,
+    viewedLine: (when: string) => `Viewed ${when} · identity check not started`,
+    notViewed: "Not viewed yet",
     signed: "Signed",
     viewed: "Viewed",
     evidence:
@@ -53,38 +76,27 @@ export const COPY = {
     title: "Delivery packet",
     edit: "Edit packet",
     items: {
-      client_copy: ["Client copy — federal, NY, IL, CO", "PDF · 64 pages · 2.8 MB"],
-      filing_instructions_letter: [
-        "Filing instructions letter",
-        "Federal refund by direct deposit; NY balance due 1,269 with the return; 2026 estimates",
-      ],
+      client_copy: ["Client copy", "PDF"],
+      filing_instructions_letter: ["Filing instructions letter", ""],
       form_8879_tr_579_it: ["Form 8879 + TR-579-IT", "In envelope"],
-      voucher_1040es_q4: ["2026 Form 1040-ES voucher — Q4 Jan 15, 2027 · 19,990", ""],
-      voucher_it2105_q4: ["2026 IT-2105 voucher — Q4 Jan 15, 2027 · 7,824", ""],
+      voucher_1040es_q4: ["Form 1040-ES voucher", ""],
+      voucher_it2105_q4: ["IT-2105 voucher", ""],
       engagement_invoice: ["Engagement invoice (from Billing)", "Sent separately"],
     } as Record<string, readonly [string, string]>,
   },
   payments: {
     title: "Payment instructions",
-    rows: [
-      ["Federal refund", "253 · direct deposit · Claire Feld checking ••6620"],
-      [
-        "New York (IT-201 incl. NYC)",
-        "1,269 due · pay with the return via NY Online Services (interest from Apr 15)",
-      ],
-      ["Illinois (IL-1040, nonresident)", "0 · PTET credit 7,011 equals the tax"],
-      ["Colorado (DR 0104PN)", "0 · PTET credit 4,268 covers the tax"],
-      [
-        "2026 estimates",
-        "19,990 per quarter federal · 7,824 NY (both 110% of 2025 tax) · Q3 paid Sep 15",
-      ],
-    ] as const,
+    // T-01-T51: one row per instruction, worded by code from its kind and jurisdiction.
+    label: (jurisdiction: string, kind: "refund" | "balance_due" | "estimate") =>
+      `${jurisdiction} ${{ refund: "refund", balance_due: "balance due", estimate: "estimate" }[kind]}`,
+    value: (amount: string, due: string | null) => (due ? `${amount} · due ${due}` : amount),
+    none: "No payment instructions yet.",
   },
   gate: {
     title: "Transmission",
     button: "Mark transmitted in CCH Axcess",
     body: "E-file is sent from CCH Axcess by the ERO. This stays locked until every signer completes Form 8879 — the taxpayer signs before the return is transmitted.",
-    who: "Transmits: Daniel Reyes (ERO, Practitioner PIN)",
+    who: "Transmits: the ERO (Practitioner PIN)",
   },
   acks: {
     title: "Acknowledgments",
@@ -96,18 +108,18 @@ export const COPY = {
   },
   // T-01-T39: the ERO's record (c, c2), acceptance (d) and rejection (e).
   ero: {
-    waiting: "Waiting for Daniel Reyes to transmit",
+    waiting: "Waiting for the ERO to transmit",
     notify: "Notify",
     confirmTitle: "Mark transmitted",
-    confirm:
-      "Record that the federal, New York, Illinois and Colorado returns were transmitted from CCH Axcess on Sep 18, 2026?",
+    confirm: (names: readonly string[], on: string) =>
+      `Record that the ${list(names)} returns were transmitted from CCH Axcess on ${on}?`,
     cancel: "Cancel",
     record: "Record transmission",
     recorded: "Transmission recorded",
   },
   status: { completed: "Completed", accepted: "Accepted", rejected: "Rejected" },
-  delivered: "Delivered to portal · Sep 19, 9:10 AM",
-  estimates: "2026 estimate reminders scheduled",
+  delivered: "Delivered to portal",
+  estimates: "Estimate reminders scheduled",
   fix: {
     body: "Jonah Feld's 2026 IP PIN is in the CP01A letter on file. Add it in CCH Axcess and retransmit.",
     create: "Create issue",
@@ -120,6 +132,7 @@ export const COPY = {
     approve: "Approve",
     include: (name: string) => `Include ${name}`,
   },
+  syncHistory: "Tax-engine sync history",
   jurisdictions: { federal: "Federal", NY: "New York", IL: "Illinois", CO: "Colorado" } as Record<
     string,
     string
@@ -127,16 +140,17 @@ export const COPY = {
   reminder: {
     title: "Send reminder",
     toLabel: "To",
-    recipient: "Jonah Feld (taxpayer)",
+    recipient: (names: readonly string[]) => names.join(", "),
     channel: "Portal and email",
     template: "Template",
-    templateName: "Your 2025 return is ready to sign",
+    templateName: "Your return is ready to sign",
     approved: "Pre-approved",
-    body: "Hi Jonah, your 2025 federal and state returns are ready for your signature. Claire signed on September 16. Please review and sign Form 8879 and NY TR-579-IT in your portal by September 30.",
-    signature: "Grace Holloway · Brightwater Hale LLP",
-    footer: "Sent as Grace Holloway from the client portal",
+    // The reminder's words are the firm's pre-approved template (database content, P-06); the sheet
+    // names who it goes to and what it does, never a fixture's letter.
+    body: "The pre-approved reminder asks each signer who has not signed to review and sign in the portal.",
+    footer: "Sent from the client portal",
     cancel: "Cancel",
     send: "Send",
-    sent: "Reminder sent to Jonah Feld",
+    sent: "Reminder sent",
   },
 } as const;

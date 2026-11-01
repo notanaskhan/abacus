@@ -10,6 +10,7 @@
 // white-labelled: no portal step may show the product's name (INV-4).
 import type { Page } from "@playwright/test";
 import { DEMO_INSTANT, expect, test } from "../harness";
+import { M13, artboard } from "../signatures/support";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -294,4 +295,22 @@ test.describe("J03-ebp-audit (A-01's Source Documents steps)", () => {
       await journey.as("ana-cruz", "/audits", { clock: DEMO_INSTANT });
     },
   );
+});
+
+// N-02-T42 (N-02 §10.1, M13): j03 3, the audit engagement letter through POR-06 to G3. The fixture
+// walk uses the built artboards: ENG-04 e (the EBP audit letter variant, sent, 0 of 2 signed) and
+// Dana Kowalski's Sign area (POR-06). The Northwind letter itself walks on staging (M13).
+test.describe("J03 signatures (N-02-T42)", () => {
+  test("j03 3: Hannah sends the audit letter and Dana signs (G3)", async ({ journey }) => {
+    test.fixme(journey.project !== "fixture", M13);
+    await journey.as("hannah-leclerc", artboard("ENG-04", "e"));
+    await journey.step("j03 3: the EBP audit letter, sent (ENG-04 e)", async (page) => {
+      await expect(page.getByText(/^Sent .* · 0 of 2 signed$/).first()).toBeVisible();
+    });
+    await journey.as("dana-kowalski", "/sign", { scenario: "POR-06:list" });
+    await journey.step("j03 3: Dana's Sign area (POR-06)", async (page) => {
+      await expect(page.getByRole("heading", { name: /Sign/ }).first()).toBeVisible();
+      await expect(page.getByText(/Accrued/)).toHaveCount(0);
+    });
+  });
 });

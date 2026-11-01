@@ -153,6 +153,7 @@ export function ADM01({ onNavigate, onBack }: ADM01Props): JSX.Element {
   // A section whose screen is built opens through the manifest's builder; the rest by route id.
   const go = (section: string): void => {
     if (section === "consents") open(hrefOf(to.ADM05()));
+    else if (section === "integrations") open(hrefOf(to.ADM08()));
     else onNavigate?.(section);
   };
   const queryClient = useQueryClient();
@@ -372,7 +373,9 @@ export function ADM01({ onNavigate, onBack }: ADM01Props): JSX.Element {
       groups={GROUPS.map((g) => ({
         ...g,
         sections: g.sections.filter(
-          (s) => ["general", "people", "offices", "consents"].includes(s.id) || PLANNED_VISIBLE,
+          (s) =>
+            ["general", "people", "offices", "consents", "integrations"].includes(s.id) ||
+            PLANNED_VISIBLE,
         ),
       })).filter((g) => g.sections.length > 0)}
       active="general"

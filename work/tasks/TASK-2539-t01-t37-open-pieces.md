@@ -4,7 +4,7 @@ title: "T-01-T37 open pieces: the filed return's Deliverable ready email and Cre
 spec: SPEC-000  # T-01 §3.13, §3.14; TAX-12; DEC-1570, DEC-1571
 acceptance_criteria: [AC-1, AC-2]
 risk_zone: red
-status: in-review
+status: done
 epic: T-01
 plan_key: T-01-T37
 branch: s20e-t01t37-pieces

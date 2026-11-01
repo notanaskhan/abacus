@@ -9,7 +9,7 @@
 | Epic and tasks | T-01 · contract T-01-T05; fixtures T09; build T13, T14 |
 | Spec and ADRs | SPEC-501 AC-11; ADR-231; R-04 |
 | Flags | `consents.registry` |
-| Manifest status | `fixture` since T-01-T13 (a, b, f, g built; c, d, e, h with T-01-T22); `live` with the C19 routes (pilot posture: agents off) |
+| Manifest status | `fixture`, all eight artboards built (T-01-T13, T-01-T22) on C19's routes, with the integrations section linking ADM-08 (T-01-T51). `live` is the `consents.registry` flip in the M11 train after RB-17's staging rehearsal (pilot posture: agents off) |
 
 ## States
 | Artboard | Viewer | Clock (CT) | Data condition | Parity tier | Status |
@@ -74,6 +74,9 @@ Gradients, emoji, blue, heavy shadows, invented colours or data, boxed inputs, t
 |---|---|---|---|
 | D1 | DF-16: recipients come from the register, never free text | DF-16 | T-01 §2.1 |
 | D2 | Walled clients' rows are absent with no hidden count | DEC-43 | T-01 §3.5 |
+| T54-1 | ADM-04 D shows a count of blocked clients, not their names; the names are this registry's | ADM-04's summary is counts only (C19) | DEC-1667 |
+
+Every deviation above is closed: each has its decision recorded (T-01-T54, 2026-11-01).
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
