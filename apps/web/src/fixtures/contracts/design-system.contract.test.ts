@@ -16,6 +16,13 @@ import type {
   EvidenceUnlockOut,
   Facet,
   ListPageAccessLogRow,
+  ListPageControlExceptionOut,
+  ListPageFraudInquiryOut,
+  ListPageProcessOut,
+  ListPageProgramProcedureOut,
+  ListPageServiceOrganizationOut,
+  ListPageVersionActivityOut,
+  ListPageWorkpaperStateOut,
   ListPageAuditEventRow,
   ListPageActivityEventOut,
   ListPageBinderRequestRowOut,
@@ -144,6 +151,14 @@ const LIST_PAGES = {
   ListPage_TaxReturnRowOut_: (p: ListPageTaxReturnRowOut) => envelope(p), // T-02: TAX-01
   ListPage_WallEventOut_: (p: ListPageWallEventOut) => envelope(p), // G-01-T02
   ListPage_WorkItemRowOut_: (p: ListPageWorkItemRowOut) => envelope(p),
+  // S22 (A-04-T01, K-01-T18, A-04-T04): the A-04 lists and the methodology version activity.
+  ListPage_ControlExceptionOut_: (p: ListPageControlExceptionOut) => envelope(p),
+  ListPage_FraudInquiryOut_: (p: ListPageFraudInquiryOut) => envelope(p),
+  ListPage_ProcessOut_: (p: ListPageProcessOut) => envelope(p),
+  ListPage_ProgramProcedureOut_: (p: ListPageProgramProcedureOut) => envelope(p),
+  ListPage_ServiceOrganizationOut_: (p: ListPageServiceOrganizationOut) => envelope(p),
+  ListPage_VersionActivityOut_: (p: ListPageVersionActivityOut) => envelope(p),
+  ListPage_WorkpaperStateOut_: (p: ListPageWorkpaperStateOut) => envelope(p),
 } as const;
 
 describe("P-36 list envelope (T1)", () => {
