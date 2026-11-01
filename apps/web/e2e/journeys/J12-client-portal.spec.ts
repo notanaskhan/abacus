@@ -4,6 +4,7 @@
 // planned is `test.fixme` naming its owning epic, task and chapter 01 date (journey-e2e skill).
 // The portal is white-labelled: no step may show the product's name (INV-4).
 import { DEMO_INSTANT, expect, test } from "../harness";
+import { M13 } from "../signatures/support";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -241,4 +242,37 @@ test.describe("J12-core", () => {
       },
     );
   }
+});
+
+// N-02-T42 (N-02 §10.1, M13): j12 9, a client reviews, consents, signs and declines on POR-06's own
+// states, and the identity-question 8879 path (d). Owen Calder is POR-06's persona.
+test.describe("J12 signing (N-02-T42)", () => {
+  test("j12 9: a client reviews, consents, signs, declines and reads the 8879 path", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", M13);
+    await journey.as("owen-calder", "/sign", { scenario: "POR-06:a" });
+    await journey.step(
+      "j12 9: review, Continue waits on the last page (POR-06 a)",
+      async (page) => {
+        await expect(page.getByText(/Read to page \d+ to continue\./).first()).toBeVisible();
+        await expect(page.getByText(/Accrued/)).toHaveCount(0);
+      },
+    );
+    await journey.as("owen-calder", "/sign", { scenario: "POR-06:c" });
+    await journey.step("j12 9: signed, the completion card (POR-06 c)", async (page) => {
+      await expect(page.getByText(/^Signed\. Thank you, /).first()).toBeVisible();
+    });
+    await journey.as("owen-calder", "/sign", { scenario: "POR-06:d" });
+    await journey.step(
+      "j12 9: the 8879 verifies by identity questions (POR-06 d)",
+      async (page) => {
+        await expect(page.getByText("Identity questions").first()).toBeVisible();
+      },
+    );
+    await journey.as("owen-calder", "/sign", { scenario: "POR-06:g" });
+    await journey.step("j12 9: declined (POR-06 g)", async (page) => {
+      await expect(page.getByText(/[Dd]eclined/).first()).toBeVisible();
+    });
+  });
 });
