@@ -26,7 +26,9 @@ def _step(quote: str, step: str = "S1") -> DraftCitation:
 
 
 def test_one_suite_with_a_case_set_per_planning_mode_and_frozen_thresholds() -> None:
-    assert set(SUITE.modes) == {"gap", "risk_narrative", "risk", "ic"}
+    assert set(SUITE.modes) == {
+        "gap", "risk_narrative", "risk", "ic", "ebp_provisions", "ebp_attribute"
+    }  # fmt: skip
     for mode in SUITE.modes:
         assert any(c.key and c.mode == mode for c in SUITE.cases)
     assert any("northwind" in c.id for c in SUITE.cases)
@@ -40,6 +42,7 @@ def test_one_suite_with_a_case_set_per_planning_mode_and_frozen_thresholds() -> 
         "seeded_exception_recall": 0.97,
         "coso_split": 1.0,
         "presumed_risk_prepopulation": 1.0,
+        "line_agreement": 0.98,  # A-05-T14's EBP case sets
     }
     assert set(SUITE.covers) == {"prompt_injection", "unicode_deception", "exfiltration_link"}
 

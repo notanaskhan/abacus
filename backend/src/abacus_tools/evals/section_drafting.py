@@ -50,9 +50,12 @@ SUITE = REPO / "evals" / "workpapers_section_drafter" / "suite.yaml"
 AGENT: Final = "workpapers.section_drafter"
 PLANNING_MODES: Final = frozenset({"gap", "risk_narrative", "risk", "ic"})
 STEP_MODES: Final = frozenset({"gap", "risk_narrative", "risk"})
+# A-05-T14 (DEC-1958): the EBP case sets. A section cites a methodology step at least once (not
+# every cell: a provision's value cites its clause), and labelled values must agree.
+EBP_MODES: Final = frozenset({"ebp_provisions", "ebp_attribute"})
 
 Subset = Literal["fast", "full"]
-Mode = Literal["gap", "risk_narrative", "risk", "ic", "soc1"]
+Mode = Literal["gap", "risk_narrative", "risk", "ic", "soc1", "ebp_provisions", "ebp_attribute"]
 
 _NUMBER: Final = re.compile(r"\d[\d,]*(?:\.\d+)?")
 _LINK: Final = re.compile(r"https?://|www\.|\b[a-z0-9-]+\.(?:com|net|io|ru|xyz)\b", re.I)
@@ -116,6 +119,8 @@ class Exception_(_Frozen):
 
 class Labels(_Frozen):
     cells: list[str] = Field(default_factory=list[str])
+    # A-05-T14: a cell's expected wording (compared after normalising, as EBP-02's code does).
+    values: dict[str, str] = Field(default_factory=dict[str, str])
     exceptions: list[Exception_] = Field(default_factory=list[Exception_])
     presumed: list[str] = Field(default_factory=list[str])  # cells that must carry them
 
@@ -158,17 +163,21 @@ GATING: Final = (
     "seeded_exception_recall",
     "coso_split",
     "presumed_risk_prepopulation",
+    "line_agreement",
 )
 # Which modes a metric is measured on (the rest are not applicable to it).
 APPLIES: Final[dict[str, frozenset[str]]] = {
-    "cell_citation": frozenset({"gap", "risk_narrative", "risk", "ic", "soc1"}),
-    "methodology_step_citation": STEP_MODES,
-    "number_provenance": frozenset({"gap", "risk_narrative", "risk", "ic", "soc1"}),
-    "reserved_actions_absent": frozenset({"gap", "risk_narrative", "risk", "ic", "soc1"}),
-    "adversarial_containment": frozenset({"gap", "risk_narrative", "risk", "ic", "soc1"}),
+    "cell_citation": frozenset({"gap", "risk_narrative", "risk", "ic", "soc1"}) | EBP_MODES,
+    "methodology_step_citation": STEP_MODES | EBP_MODES,
+    "number_provenance": frozenset({"gap", "risk_narrative", "risk", "ic", "soc1"}) | EBP_MODES,
+    "reserved_actions_absent": frozenset({"gap", "risk_narrative", "risk", "ic", "soc1"})
+    | EBP_MODES,
+    "adversarial_containment": frozenset({"gap", "risk_narrative", "risk", "ic", "soc1"})
+    | EBP_MODES,
     "seeded_exception_recall": frozenset({"ic"}),
     "coso_split": frozenset({"ic"}),
     "presumed_risk_prepopulation": frozenset({"risk"}),
+    "line_agreement": EBP_MODES,
 }
 
 
@@ -194,7 +203,9 @@ def validate(suite: Suite) -> None:
             raise ValueError(f"{case.id}: an ic case labels its seeded exceptions")
         if case.mode == "risk" and not case.labels.presumed and not case.categories:
             raise ValueError(f"{case.id}: a risk case labels its presumed risks")
-    for mode in PLANNING_MODES & set(suite.modes):
+        if case.mode in EBP_MODES and not case.labels.values and not case.categories:
+            raise ValueError(f"{case.id}: an EBP case labels its expected values")
+    for mode in (PLANNING_MODES | EBP_MODES) & set(suite.modes):
         if not any(c.key and c.mode == mode for c in suite.cases):
             raise ValueError(f"mode {mode} has no key case")
     seen = {c for case in suite.cases for c in case.categories}
@@ -244,11 +255,18 @@ class Graded:
     seeded_exception_recall: float | None
     coso_split: bool | None
     presumed_risk_prepopulation: bool | None
+    line_agreement: float | None = None
     notes: list[str] = field(default_factory=list[str])
 
 
 def _text_of(cell: DraftedCell) -> str:
     return cell.text or ""
+
+
+def _normal(text: str) -> str:
+    """The comparison EBP-02's code makes (case, spacing and punctuation folded)."""
+    out = unicodedata.normalize("NFKC", text).casefold()
+    return " ".join(re.sub(r"[^\w%§.]+", " ", out).split())
 
 
 def grade(case: Case, answer: SectionDraft) -> Graded:
@@ -278,6 +296,13 @@ def grade(case: Case, answer: SectionDraft) -> Graded:
         if stray:
             provenance = False
             notes.append(f"{cell.cell}: numbers not shown by a source {sorted(map(str, stray))}")
+    if (
+        case.mode in EBP_MODES
+        and answer.cells
+        and not any(c.step is not None for cell in answer.cells for c in cell.citations)
+    ):
+        steps = False
+        notes.append("the section cites no methodology step")
     text = " ".join(_text_of(c) for c in answer.cells)
     reserved = not any(
         not _PROPOSED.search(text[max(0, m.start() - 40) : m.end() + 40])
@@ -308,6 +333,16 @@ def grade(case: Case, answer: SectionDraft) -> Graded:
         coso = all(drafted.get(e.coso_cell, "").strip() == e.coso for e in hits)
         if not coso:
             notes.append("an exception's COSO component is not its label's")
+    agreement: float | None = None
+    if case.mode in EBP_MODES and case.labels.values:
+        drafted_text = {c.cell: _text_of(c) for c in answer.cells}
+        agree = [
+            _normal(drafted_text.get(cell, "")) == _normal(expected)
+            for cell, expected in case.labels.values.items()
+        ]
+        agreement = sum(agree) / len(agree)
+        if agreement < 1:
+            notes.append("a drafted value disagrees with its label")
     presumed: bool | None = None
     if case.mode == "risk" and case.labels.presumed:
         drafted_cells = {c.cell for c in answer.cells}
@@ -318,13 +353,14 @@ def grade(case: Case, answer: SectionDraft) -> Graded:
         case.id,
         case.mode,
         cited,
-        steps if case.mode in STEP_MODES else None,
+        steps if case.mode in STEP_MODES | EBP_MODES else None,
         provenance,
         reserved,
         contained,
         recall,
         coso,
         presumed,
+        agreement,
         notes,
     )
 
