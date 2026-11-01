@@ -105,6 +105,11 @@ from abacus.modules.organisations.live import (
     key_dates_section,
     readable_client,
 )
+from abacus.modules.organisations.plan_numbers import (
+    entity_name,
+    entity_plan_number,
+    set_entity_plan_number,
+)
 
 # P-06-T11: correlated name columns for another module's list (BND-01's client and office).
 from abacus.modules.organisations.repository import (
@@ -332,7 +337,9 @@ __all__ = [
     "dedupe_candidates",
     "ein_matches",
     "entity_display_name",
+    "entity_name",
     "entity_name_column",
+    "entity_plan_number",
     "entity_tin_last4s",
     "envelope_completed",
     "filing_unit",
@@ -363,6 +370,7 @@ __all__ = [
     "seal_tin",
     "set_client_record",
     "set_entity_attributes",
+    "set_entity_plan_number",
     "signer_contacts",
     "standing_conflict_results",
     "tri_consent_verdict",

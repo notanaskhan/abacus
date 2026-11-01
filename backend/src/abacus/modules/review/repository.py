@@ -507,3 +507,22 @@ async def checkpoint_decisions_of(
         .scalars()
         .all()
     )
+
+
+async def awaiting_cards_of(
+    session: AsyncSession, work_item_id: UUID, kinds: Sequence[str]
+) -> list[DecisionCard]:
+    """A-04-T12: a work item's cards of `kinds` awaiting their role, oldest first."""
+    return list(
+        (
+            await session.execute(
+                select(DecisionCard)
+                .where(
+                    DecisionCard.work_item_id == work_item_id,
+                    DecisionCard.kind.in_(list(kinds)),
+                    DecisionCard.status == "awaiting_role",
+                )
+                .order_by(DecisionCard.created_at, DecisionCard.id)
+            )
+        ).scalars()
+    )

@@ -90,3 +90,19 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: assurance.completion
+    description: 'A-06 completion family (docs/contracts/completion.md): /v1/work-items/{work_item_id}/findings, /misstatements, /sum*, /consultations, /v1/findings/{id}*, /v1/misstatements/{id}*, the deficiency_severity and sum_conclusion kinds and AUD-15, AUD-16 a, e, f. Off: 404. On: 501 not_implemented until A-06-T09 to T13. A-06-T05, DEC-1965.'
+    owner: ayushkbhatia
+    created: 2026-11-01
+    expires: 2027-04-30
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: adjustments.entries
+    description: 'A-06 C8 adjustments (docs/contracts/adjustments.md): /v1/work-items/{work_item_id}/proposed-entries*, /adjusted-tb, /v1/proposed-entries/{id}*, /v1/approval-batches and AUD-16 b, b2, c, d. Off: 404. On: 501 not_implemented until A-06-T09 and T10. Nothing is ever posted (pe_posting_dormant). A-06-T05, DEC-1965.'
+    owner: ayushkbhatia
+    created: 2026-11-01
+    expires: 2027-04-30
+    override: DEC-137
+    kind: boolean
+    default: false
