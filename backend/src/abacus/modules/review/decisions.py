@@ -63,6 +63,7 @@ from abacus.modules.review.events import (
 from abacus.modules.review.mfa import require_fresh
 from abacus.modules.review.models import DecisionCard, DecisionCardVersion
 from abacus.modules.review.repository import (
+    awaiting_cards_of,
     card_list_query,
     cards_by_id,
     current_version,
@@ -79,6 +80,7 @@ from abacus.modules.review.repository import (
 )
 from abacus.modules.review.sealing import open_text, record_text_reads, seal_text
 from abacus.modules.review.slots import (
+    AppliedDecision,
     CardContext,
     CardFactor,
     CardOption,
@@ -517,6 +519,31 @@ async def _insert_card(
 # --- Reads -------------------------------------------------------------------------------------
 
 
+@dataclass(frozen=True)
+class AwaitingCard:
+    """A card on a work item still waiting on its reserved role (A-04-T12: the owner's record
+    shows the pending card and who may decide it)."""
+
+    card_id: UUID
+    kind: str
+    question_key: str
+    reserved_user_id: UUID | None
+    created_at: datetime
+
+
+async def awaiting_cards(
+    tenant: TenantContext, work_item_id: UUID, kinds: Sequence[str]
+) -> list[AwaitingCard]:
+    """`review.api.awaiting_cards`: a work item's cards of `kinds` awaiting their role, oldest
+    first, for an owner that has authorised on the work item's engagement."""
+    async with tenant_session(tenant) as session:
+        rows = await awaiting_cards_of(session, work_item_id, kinds)
+        return [
+            AwaitingCard(c.id, c.kind, c.question_key, c.reserved_user_id, c.created_at)
+            for c in rows
+        ]
+
+
 async def _readable(ctx: AuthContext, card_id: UUID) -> tuple[DecisionCard, Resource]:
     async with tenant_session(ctx.tenant) as session:
         card = await get_card(session, card_id)
@@ -850,6 +877,20 @@ async def decide_card(
             actor_user_id=ctx.user_id,
         )
         await set_card_status(tx.session, locked.id, "decided")
+        if kind.apply is not None:  # A-04-T12 (DEC-1950): the owner's record, same unit of work
+            await kind.apply(
+                tx,
+                ctx,
+                AppliedDecision(
+                    card_id=locked.id,
+                    decision_id=decision_id,
+                    engagement_id=locked.engagement_id,
+                    work_item_id=locked.work_item_id,
+                    question_key=locked.question_key,
+                    option_key=option_key,
+                    figures=cast(dict[str, str], options[option_key].get("figures") or {}),
+                ),
+            )
         tx.record(
             "decision.decided",
             target=Target(SUBJECT, locked.id),

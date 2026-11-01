@@ -31,9 +31,11 @@ from abacus.modules.review.contract import (
     sign_offs_router,
 )
 from abacus.modules.review.decisions import (
+    AwaitingCard,
     DecisionCardState,
     RationaleRequired,
     RecommendationChanged,
+    awaiting_cards,
     raise_decision_card,
 )
 from abacus.modules.review.engagement_gates import register_engagement_gates
@@ -97,6 +99,7 @@ from abacus.modules.review.sign_offs import (
 )
 from abacus.modules.review.slots import (
     REQUIRED_LEVELS,
+    AppliedDecision,
     CardContext,
     CardFactor,
     CardOption,
@@ -181,7 +184,9 @@ __all__ = [
     "SUBSCRIPTIONS",
     "WORKFLOWS",
     "AlreadySigned",
+    "AppliedDecision",
     "ApprovedValues",
+    "AwaitingCard",
     "Candidate",
     "CardContext",
     "CardFactor",
@@ -231,6 +236,7 @@ __all__ = [
     "UncitedChange",
     "UnregisteredKind",
     "approved_values",
+    "awaiting_cards",
     "blocking_issues",
     "canonical_json",
     "changed_since",

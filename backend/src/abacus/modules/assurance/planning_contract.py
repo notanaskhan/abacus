@@ -61,6 +61,7 @@ from abacus.kernel._statuses import (
     SocRelianceStatus,
 )
 from abacus.kernel.classification import classified
+from abacus.kernel.clock import system_now
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.kernel.listing import ListPage
@@ -74,6 +75,11 @@ from abacus.modules.identity.api import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from abacus.modules.assurance.compute.materiality import Option as MaterialityOption
+    from abacus.modules.assurance.compute.materiality import Thresholds as MaterialityThresholds
+    from abacus.modules.assurance.materiality import MaterialityVersion as MaterialityVersionRow
     from abacus.modules.assurance.service_orgs import ServiceOrganization as ServiceOrganizationRow
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -311,11 +317,16 @@ class MaterialityPreviewIn(BaseModel):
 
 
 class MaterialityProposalIn(BaseModel):
+    """`tb_snapshot_id` names the engagement's trial balance (C9) read at the Unadjusted layer.
+    `rate_pct` adds a rate the proposer typed, inside the firm range, as a third option (A-04-T12,
+    DEC-1950: the card's options are fixed when it is raised)."""
+
     model_config = ConfigDict(extra="forbid")
 
     tb_snapshot_id: Annotated[UUID, classified("internal")]
     benchmark_key: Annotated[str, Field(pattern=r"^[a-z_]{1,64}$"), classified("internal")]
     recommend: Annotated[bool, classified("internal")] = False  # a recommendation run, if allowed
+    rate_pct: Pct | None = None
 
 
 class MaterialityProposalOut(BaseModel):
@@ -940,23 +951,140 @@ _SO = ASSURANCE_SERVICE_ORGS
 _MAT = ASSURANCE_MATERIALITY
 
 
+def _thresholds_out(t: MaterialityThresholds, computed_at: datetime) -> ThresholdsOut:
+    return ThresholdsOut(
+        basis=t.basis,
+        benchmark_key=t.benchmark_key,
+        benchmark_amount=t.benchmark_amount,
+        rate_pct=t.rate_pct,
+        overall=t.overall,
+        pm_pct=t.pm_pct,
+        pm=t.pm,
+        ct_pct=t.ct_pct,
+        ct=t.ct,
+        policy_low_pct=t.policy_low_pct,
+        policy_high_pct=t.policy_high_pct,
+        stamp=EngineStamp(
+            engine_name=t.stamp.engine_name,
+            engine_version=t.stamp.engine_version,
+            inputs_hash=t.stamp.inputs_hash,
+            computed_at=computed_at,
+        ),
+    )
+
+
+def _version_out(
+    v: MaterialityVersionRow, newest: UUID | None, names: dict[UUID, str]
+) -> PlanningMaterialityVersionOut:
+    from abacus.modules.assurance import materiality
+
+    found = v.reassessment
+    reassessment = (
+        None
+        if found is None
+        else ReassessmentOut(
+            final_amount=Decimal(str(found["final_amount"])),
+            at_rate=Decimal(str(found["at_rate"])),
+            difference=Decimal(str(found["difference"])),
+            difference_pct=Decimal(str(found["difference_pct"])),
+            conclusion=cast(Literal["no_change", "revised"] | None, found.get("conclusion")),
+        )
+    )
+    impact = [] if v.impact is None else cast(list[dict[str, object]], v.impact.get("items", []))
+    name = names.get(v.created_by_user_id, "")
+    return PlanningMaterialityVersionOut(
+        version_no=v.version_no,
+        status=cast(MaterialityVersionStatus, v.status),
+        current=v.id == newest,
+        superseded=v.id != newest,
+        thresholds=_thresholds_out(materiality.thresholds_of(v), v.computed_at),
+        decision_card_id=v.decision_card_id,
+        decision_id=v.decision_id,
+        reassessment=reassessment,
+        impact=[
+            ImpactOut(
+                workpaper_code=str(i["workpaper_code"]),
+                title=str(i["title"]),
+                reason=cast(Literal["cites_materiality", "depends_on_step"], i["reason"]),
+                preparer_name=names.get(UUID(str(i["preparer_user_id"])))
+                if i.get("preparer_user_id")
+                else None,
+            )
+            for i in impact
+        ],
+        created_by_name=f"{name} via Agent" if v.created_by_kind == "agent" else name,
+        created_at=v.created_at,
+    )
+
+
+def _options_out(options: Sequence[MaterialityOption], computed_at: datetime) -> list[OptionOut]:
+    return [
+        OptionOut(
+            key=o.key,
+            thresholds=None
+            if o.thresholds is None
+            else _thresholds_out(o.thresholds, computed_at),
+            recommended=False,  # the agent's tag arrives with A-04-T15 (INV-1: never a choice)
+        )
+        for o in options
+    ]
+
+
 @router.get(
     "/materiality/current",
     action="materiality.read",
     response_model=MaterialityRecordOut,
-    errors=(501,),
 )
 async def materiality_current_route(engagement_id: UUID, ctx: Ctx) -> MaterialityRecordOut:
     """Versions, the current one, benchmarks with prior years, factors, policy range (T12)."""
     await _gate(ctx, engagement_id, "materiality.read", _MAT)
-    _not_yet()
+    from abacus.modules.assurance import materiality
+
+    found = await materiality.record(ctx, engagement_id)
+    newest = found.versions[-1].id if found.versions else None
+    versions = [_version_out(v, newest, found.names) for v in found.versions]
+    priors = {p.year: p for p in found.priors}
+    return MaterialityRecordOut(
+        current=versions[-1] if versions else None,
+        versions=versions,
+        benchmarks=[
+            BenchmarkOut(
+                key=b.key,
+                label=b.label,
+                amount=b.amount,
+                range_low_pct=b.range_low_pct,
+                range_high_pct=b.range_high_pct,
+                low=b.low,
+                high=b.high,
+                use=cast(BenchmarkUse, b.use),
+                prior_years=[
+                    PriorYearOut(
+                        year=p.year,
+                        amount=p.amount,
+                        overall_used=p.overall_used,
+                        rate_used_pct=priors[p.year].rate_used_pct if p.year in priors else None,
+                    )
+                    for p in b.prior_years
+                ],
+                growth_pct=b.growth_pct,
+            )
+            for b in found.benchmarks
+        ],
+        qualitative_factors=[],
+        policy_version_id=found.policy_version_id,
+        pending_card_id=found.pending_card_id,
+        allowed_actions=cast(list[PlanningAction], found.actions),
+        period_end=found.period_end,
+        benchmark_caption=found.caption,
+        specific_note=None,
+    )
 
 
 @router.post(
     "/materiality/preview",
     action="materiality.read",
     response_model=ThresholdsOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def materiality_preview_route(
     engagement_id: UUID, body: MaterialityPreviewIn, ctx: Ctx
@@ -964,7 +1092,18 @@ async def materiality_preview_route(
     """Thresholds by code for the slider and steppers; writes nothing; 409 `outside_policy`
     outside the K-02 range (T08, T12)."""
     await _gate(ctx, engagement_id, "materiality.read", _MAT)
-    _not_yet()
+    from abacus.modules.assurance import materiality
+
+    found = await materiality.preview(
+        ctx,
+        engagement_id,
+        basis=body.basis,
+        key=body.benchmark_key,
+        rate_pct=body.rate_pct,
+        pm_pct=body.pm_pct,
+        ct_pct=body.ct_pct,
+    )
+    return _thresholds_out(found, system_now())
 
 
 @router.post(
@@ -972,15 +1111,30 @@ async def materiality_preview_route(
     action="materiality.propose",
     response_model=MaterialityProposalOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409, 422),
 )
 async def materiality_proposal_route(
     engagement_id: UUID, body: MaterialityProposalIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> MaterialityProposalOut:
     """Compute the options and raise the `planning_materiality` card; the agent's recommendation
-    is a tag on an option, never a choice (T12, T15)."""
+    is a tag on an option, never a choice (T12, T15). 409 `proposal_pending`."""
     await _gate(ctx, engagement_id, "materiality.propose", _MAT)
-    _not_yet()
+    from abacus.modules.assurance import materiality
+
+    found = await materiality.propose(
+        ctx,
+        engagement_id,
+        tb_id=body.tb_snapshot_id,
+        key=body.benchmark_key,
+        rate_pct=body.rate_pct,
+    )
+    record = await materiality.record(ctx, engagement_id)
+    newest = record.versions[-1].id if record.versions else None
+    return MaterialityProposalOut(
+        version=_version_out(found.version, newest, record.names),
+        decision_card_id=found.card_id,
+        options=_options_out(found.options, found.version.computed_at),
+    )
 
 
 @router.post(
@@ -988,14 +1142,28 @@ async def materiality_proposal_route(
     action="materiality.reassess",
     response_model=ReassessmentRaisedOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409, 422),
 )
 async def materiality_reassess_route(
     engagement_id: UUID, body: ReassessmentIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ReassessmentRaisedOut:
-    """Final-basis compute and the reassessment card: No change or Revise (AC3.6, AC3.7; T12)."""
+    """Final-basis compute and the reassessment card: No change or Revise (AC3.6, AC3.7; T12);
+    409 `nothing_decided`, `proposal_pending`, `layer_unavailable` before an adjustment source."""
     await _gate(ctx, engagement_id, "materiality.reassess", _MAT)
-    _not_yet()
+    from abacus.modules.assurance import materiality
+
+    found = await materiality.reassess(ctx, engagement_id, tb_id=body.tb_snapshot_id)
+    r = found.reassessment
+    return ReassessmentRaisedOut(
+        decision_card_id=found.card_id,
+        reassessment=ReassessmentOut(
+            final_amount=r.final_amount,
+            at_rate=r.at_rate,
+            difference=r.difference,
+            difference_pct=r.difference_pct,
+            conclusion=None,
+        ),
+    )
 
 
 @router.get("/risks/register", action="risk.read", response_model=RegisterOut, errors=(501,))

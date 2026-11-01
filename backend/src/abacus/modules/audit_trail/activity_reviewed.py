@@ -629,5 +629,10 @@ REVIEWED_FALLBACK: Final = frozenset(
         "service_org.edited",
         "section_draft.started",  # A-04-T11: a person started a section draft
         "section_draft.failed",  # A-04-T11: pack validation failed the run (AC6.1)
+        # A-04-T12: materiality's versions, the partner's decision and reassessments applied.
+        "materiality_version.proposed",
+        "materiality_version.decided",
+        "materiality_version.reassessed",
+        "materiality_version.revised",
     }
 )
