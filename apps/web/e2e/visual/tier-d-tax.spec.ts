@@ -53,8 +53,8 @@ for (const st of ["d", "f"] as const) {
 
 test("TAX-12a: Tab reaches the rail rows and the canvas actions", async ({ page }) => {
   const frame = await board(page, "TAX-12", "a");
-  // Phase rows are not themselves controls: Tab lands on the first control inside the rail.
-  const first = frame.locator("[data-cockpit='rail'] button").first();
+  // Phase rows are not themselves controls: Tab starts at the screen's first control (the rail's).
+  const first = frame.locator("[data-screen='TAX-12'] button").first();
   await first.focus();
   await expect(first).toBeFocused();
   await page.keyboard.press("Tab");
