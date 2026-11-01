@@ -86,7 +86,9 @@ ROLE_SCOPES: dict[str, str] = {
     "prospect": "intake",
     "component_auditor": "component",
 }
-FLOOR_ROLES = {"owner"}
+# T-01-T12 (C19): `tri_scope` also asks the second step of a grant on a K-1 package, now that
+# T-02 resolves the `k1_package` scope.
+FLOOR_ROLES = {"owner", "k1_recipient"}
 
 
 @pytest.fixture(autouse=True)

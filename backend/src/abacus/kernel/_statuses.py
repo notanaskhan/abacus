@@ -972,6 +972,18 @@ class EbpProviderCheckStatus(StrEnum):
     CORRECTION_REQUESTED = "correction_requested"
 
 
+class EbpParticipantStatus(StrEnum):
+    ACTIVE = "active"
+    TERMINATED = "terminated"
+    RETIRED = "retired"
+    DECEASED = "deceased"
+
+
+class EbpFilerStatusStatus(StrEnum):
+    pass
+    # derived, never stored: large_plan, small_plan
+
+
 class EbpLateRemittanceStatus(StrEnum):
     FOUND = "found"
     PENDING_VFCP_SCC = "pending_vfcp_scc"
@@ -1824,6 +1836,14 @@ STORED: dict[str, tuple[str, ...]] = {
         "received",
         "waiting_on_inputs",
         "correction_requested",
+    ),
+    "ebp_participant": (
+        "active",
+        "terminated",
+        "retired",
+        "deceased",
+    ),
+    "ebp_filer_status": (
     ),
     "ebp_late_remittance": (
         "found",

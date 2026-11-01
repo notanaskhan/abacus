@@ -14,6 +14,10 @@ from abacus.modules.practice.due_dates_routes import router as due_dates_router
 from abacus.modules.practice.home_contract import router as home_router
 from abacus.modules.practice.jobs import ACTIVITIES, SCHEDULES, SUBSCRIPTIONS, WORKFLOWS
 from abacus.modules.practice.workflows import HOME_ACTIVITY_PRUNE_ID, HomeActivityPruneWorkflow
+from abacus.modules.tax.api import register_due_dates_source
+
+# T-02-T10: the return's due dates come from these rules; tax never imports practice (T08).
+register_due_dates_source(due_dates_for)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (

@@ -22,9 +22,9 @@ type Row = Record<string, unknown>;
 
 const THIRD_PARTY_ASSIGNEES = 11;
 // The Feld binder's fields where the BND-01 fixture and the load differ (TASK-1161): ids (slug
-// against label), the preparer (KO in BND-01; none in the load) and the actions (BINDER_ACTIONS
-// against the reader's own).
-const FELD_BINDER_GAPS = ["allowed_actions", "id", "preparer_user_id", "work_item_id"];
+// against label) and the actions (BINDER_ACTIONS against the reader's own). The preparer agrees
+// since the load names one (main CI triage, DEC-1865).
+const FELD_BINDER_GAPS = ["allowed_actions", "id", "work_item_id"];
 // Claire's home where POR-02 a and the load differ (TASK-1161): every section but the notices
 // and the K-1s, which both leave empty.
 const PORTAL_HOME_GAPS = [

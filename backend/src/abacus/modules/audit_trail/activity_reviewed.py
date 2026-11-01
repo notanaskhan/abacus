@@ -99,13 +99,9 @@ REVIEWED_FALLBACK: Final = frozenset(
         "comment_thread.read",
         "conflict.cleared",
         "decision.refused_non_human",  # K-01-T06: an agent or the platform asked to approve
-        "envelope.draft_saved",  # N-02-T20: SIG-02's edit of a draft (version, signer count)
-        "envelope.drafted",  # N-02-T20: a draft from a registered source (number, counts)
         "envelope.imported",  # N-02-T08: record-mode import (SIG-01 r)
         "envelope.provider_hint",  # N-02-T19: a verified Connect hint (duplicate flag only)
         "envelope.provider_unavailable",  # N-02-T18: kill switch, W7 or install off; not sent
-        "envelope.send_requested",  # N-02-T20: a person's Send, waiting its grant (+10 s)
-        "envelope.send_undone",  # N-02-T20: Undo inside the window; no provider call
         "envelope_import_file.staged",  # N-02-T08: a scanned file for an import
         "human_gate.reassigned",  # I-01-T07: a person moved a gate to someone else (user ids)
         "conflict_check.run",
@@ -489,17 +485,9 @@ REVIEWED_FALLBACK: Final = frozenset(
         "firm_mail_policy.client_mail_disabled",  # R-01-T27
         "tax_return.status_changed",  # T-02-T07: a return's move (status events hold the detail)
         "tax_return.sync_recorded",  # T-02-T07: T-01's sync-chip write
-        "envelope.evidence_recorded",  # N-02-T13/T14 (S15)
-        "envelope.expired",  # N-02-T13/T14 (S15)
         "envelope.polled",  # N-02-T13/T14 (S15)
-        "envelope.reminder_skipped",  # N-02-T13/T14 (S15)
-        "envelope.voided",  # N-02-T13/T14 (S15)
-        "envelope.viewed",  # N-02-T23: POR-06 (S17)
-        "envelope.declined",  # N-02-T23
-        "envelope.decline_withdrawn",  # N-02-T23
         "signer.progress",  # N-02-T23
         "signer.esign_consent_accepted",  # N-02-T23
-        "signer.signing_session_issued",  # N-02-T23
         "signer.signing_session_returned",  # N-02-T23
         "signer.signing_session_confirmed",  # N-02-T23
         "signed_copy.downloaded",  # N-02-T23
@@ -613,5 +601,25 @@ REVIEWED_FALLBACK: Final = frozenset(
         "schedule_k_package.bounced",
         "schedule_k_package.e_furnishing_consent_recorded",
         "letter.envelope_withdrawn",  # N-02-T35: a person lets an unsigned envelope go
+        # Reviewed 2026-11-01 (main CI triage): names that landed without an entry.
+        "agent_run.completed",  # K-01-T21: an importer step's run ends
+        # T-01-T35: the delivery packet's checklist and letter.
+        "delivery_packet.approved",
+        "delivery_packet.assembled",
+        "delivery_packet.edited",
+        "delivery_packet.letter_regenerated",
+        # T-01-T36, T37: the 8879 amount binding, the transmission and its acknowledgements.
+        "efile_binding.created",
+        "efile_binding.superseded",
+        "transmission.recorded",
+        "efile_ack.imported",
+        "efile_ack.recorded",
+        "member.ero_designated",
+        # T-01-T41: a filed return's delivery and its download.
+        "return.delivered",
+        "filed_return.downloaded",
+        "generated_document.render_failed",  # P-11-T11: a render job that could not finish
+        "methodology_version.exported",  # K-01-T16: a version's workbook export
+        "schedule_k_disclosure.imported",  # POR-13 (TASK-2538): furnishing disclosures
     }
 )

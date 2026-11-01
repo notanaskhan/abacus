@@ -20,15 +20,23 @@ from typing import Final
 import httpx
 
 from abacus.api import create_app
-from abacus.modules.identity.api import IDENTITY, PORTAL_PUBLIC, PRE_SESSION, SELF, STAFF
+from abacus.modules.identity.api import (
+    IDENTITY,
+    PORTAL_PUBLIC,
+    PRE_SESSION,
+    PROVIDER_WEBHOOK,
+    SELF,
+    STAFF,
+)
 from abacus_tools.codegen.security_tests import served
 
 from .support import Net, Seeder
 
 NOT_FOUND: Final = {"detail": "not found"}
 NOT_FOUND_BODY: Final = '{"detail":"not found"}'
-# Routes that never resolve a tenant from the header: they authenticate another way.
-_NO_TENANT: Final = (SELF, STAFF, IDENTITY, PRE_SESSION, PORTAL_PUBLIC)
+# Routes that never resolve a tenant from the header: they authenticate another way (the
+# provider webhook names its firm in the path and verifies the provider's signature; ADR-152).
+_NO_TENANT: Final = (SELF, STAFF, IDENTITY, PRE_SESSION, PORTAL_PUBLIC, PROVIDER_WEBHOOK)
 _ROUTES: Final = served(create_app())[0]
 _PARAM: Final = re.compile(r"\{(\w+)(?::\w+)?\}")
 # Headers that differ between any two responses: the time and the request's own trace.

@@ -64,7 +64,8 @@ async def _draft(ctx: AuthContext, source_id: uuid.UUID) -> SourceDraft:
         documents=(SourceDocument(sha256=p.sha256, evidence_version_id=p.version_id),),
         signers=(
             SourceSigner(identity_method="kba", contact_id=p.signer),
-            SourceSigner(identity_method="firm_sso", user_id=p.ero, role="ero"),
+            # N-02-T27 (Pub 1345): the taxpayer signs before the ERO, in a later routing group.
+            SourceSigner(identity_method="firm_sso", user_id=p.ero, role="ero", routing_group=2),
         ),
     )
 

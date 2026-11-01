@@ -13679,7 +13679,7 @@ export type FigureRowOut = {
     /**
      * Status
      */
-    status?: string | null;
+    status?: 'tie' | 'reconciling_item' | 'inconsistent' | null;
 };
 
 /**

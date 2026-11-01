@@ -79,7 +79,7 @@ async def current(tenant: TenantContext) -> Disclosure | None:
 
 async def import_disclosure(ctx: AuthContext, body: str) -> Disclosure:
     """A firm admin's new version of the counsel-approved text (content through an endpoint)."""
-    if ctx.client or ctx.is_support or ctx.tenant.actor_kind != "human":
+    if ctx.tenant.actor_kind != "human" or ctx.client or ctx.is_support:
         raise Forbidden(IMPORT, "role")
     await authorise(ctx, IMPORT, Resource.firm(ctx.tenant_id))
     text_ = body.strip()

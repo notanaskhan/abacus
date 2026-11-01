@@ -112,4 +112,4 @@ def test_t01_fills_the_binder_consents_slot() -> None:
     import abacus.modules.tax.api as tax_api  # registers at import
 
     assert tax_api.__name__
-    assert binder_index._consents is binder_consents  # pyright: ignore[reportPrivateUsage]
+    assert binder_index._consents is binder_consents  # pyright: ignore[reportPrivateUsage] -- the slot under test

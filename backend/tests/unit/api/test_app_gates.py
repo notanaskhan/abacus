@@ -88,6 +88,9 @@ def test_ac20_each_new_route_declares_exactly_one_action_and_a_response_model() 
 # TASK-019: taking, releasing and assigning a review return the assignment, so 200.
 REVIEW_QUEUE = "/v1/engagements/{engagement_id}/review-queue/{version_id}"
 NOT_CREATING = {
+    # A-05-T04: a Form 5500 line's value and a related party's screen-out act on existing rows.
+    "/v1/audits/{work_item_id}/ebp/form-5500/lines/{line_id}/value",
+    "/v1/audits/{work_item_id}/related-parties/{party_id}/screen-out",
     # A-03 (T08, T10, T13): confirming a mapping set, approving a sample version and previewing
     # the item-request fan-out act on existing rows or write nothing, so 200.
     "/v1/mapping-sets/{mapping_set_id}/confirm",
@@ -382,6 +385,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/issues/{issue_id}/fix-instructions",
         "/v1/issues/fix-instructions:bulk",
         "/v1/issues/{issue_id}/explanations",
+        # A-05-T04: a plan review starts the agent's draft, so 202.
+        "/v1/audits/{work_item_id}/ebp/plan-reviews",
         # Q-02-T29: placing and releasing a legal hold start their workflows, so 202.
         "/v1/legal-holds",
         "/v1/legal-holds/{hold_id}/release",
@@ -454,6 +459,23 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/service-organizations",
         "/v1/engagements/{engagement_id}/soc-reports/{soc_report_id}/requests",
         "/v1/engagements/{engagement_id}/soc-reports/{soc_report_id}/reliance-requests",
+        # A-05-T04 (ebp-workpapers stub): an import, a provider and its invite, a correction, a
+        # logged census reveal, a trust TB adoption, a reconciliation note, an estimate's
+        # conclusion request, related parties, parties in interest and a test each create a row.
+        "/v1/audits/{work_item_id}/ebp/imports",
+        "/v1/audits/{work_item_id}/ebp/providers",
+        "/v1/audits/{work_item_id}/ebp/providers/{provider_id}/invite",
+        "/v1/audits/{work_item_id}/ebp/late-remittances/{remittance_id}/corrections",
+        "/v1/audits/{work_item_id}/ebp/participants/{participant_id}/reveals",
+        "/v1/audits/{work_item_id}/ebp/trust-tb/adopt",
+        "/v1/audits/{work_item_id}/ebp/form-5500/reconciliation-note",
+        "/v1/audits/{work_item_id}/estimates/{estimate_id}/request-conclusion",
+        "/v1/audits/{work_item_id}/related-parties",
+        "/v1/audits/{work_item_id}/parties-in-interest",
+        "/v1/audits/{work_item_id}/tests",
+        # POR-13 (TASK-2537, TASK-2538): a recipient's W-9/W-8 upload and a furnishing consent.
+        "/v1/portal/k1-recipients/{recipient_id}/details-changes:upload",
+        "/v1/k1-furnishing-disclosures",
         # T-02-T02: a template import, an organizer, a questionnaire, a question, a portal
         # attachment and a recipient's details change.
         "/v1/questionnaire-templates:import",

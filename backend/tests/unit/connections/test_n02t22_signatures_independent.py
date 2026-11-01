@@ -183,9 +183,9 @@ async def test_a_file_link_off_docuseals_file_hosts_is_never_fetched() -> None:
     server = _Server()
     adapter = _provider(httpx.AsyncClient(transport=httpx.MockTransport(server)))
     with pytest.raises(HostNotAllowed):
-        await adapter._file("https://files.elsewhere.test/m.pdf", "documents")  # pyright: ignore[reportPrivateUsage]
+        await adapter._file("https://files.elsewhere.test/m.pdf", "documents")  # pyright: ignore[reportPrivateUsage] -- the adapter's internals under test
     with pytest.raises(DocuSealError):
-        await adapter._file("http://docuseal.com/file/m.pdf", "documents")  # pyright: ignore[reportPrivateUsage]
+        await adapter._file("http://docuseal.com/file/m.pdf", "documents")  # pyright: ignore[reportPrivateUsage] -- the adapter's internals under test
     assert server.requests == []
 
 
@@ -280,7 +280,7 @@ def test_the_builders_checks_import_no_model_gateway_or_agent() -> None:
 
 async def test_sms_is_offered_nowhere_for_the_efile_family() -> None:
     assert "sms_code" not in get_args(contract.IdentityMethod)
-    assert not [m for m in docuseal._IDENTITY if "sms" in m]  # pyright: ignore[reportPrivateUsage]
+    assert not [m for m in docuseal._IDENTITY if "sms" in m]  # pyright: ignore[reportPrivateUsage] -- the adapter's internals under test
     server = _Server()
     adapter = _provider(httpx.AsyncClient(transport=httpx.MockTransport(server)))
     sms = EnvelopeSpec(

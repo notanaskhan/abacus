@@ -43,6 +43,7 @@ IDS = (
     "notification_purge:platform",
     "pilot_metrics:platform",  # Q-04-T008: last week's pilot metrics, weekly (batch)
     "ses_events:platform",
+    "signatures-evidence-integrity",  # N-02-T38: every envelope's evidence re-hashed, nightly
     "spend_anomaly:platform",
 )
 BACKGROUND = (

@@ -178,8 +178,10 @@ def test_ac2_screening_is_time_sensitive_as_its_spec_says() -> None:
     assert [c for w, c in agents.WORKFLOWS.items() if w is not agents.ScreeningWorkflow] == [
         "batch",
         "background",
+        "background",  # K-01-T21: the methodology importer
         "background",  # SPEC-030 (TASK-059): the upload reviewer
         "background",  # SPEC-033 (TASK-066): the matcher
+        "background",  # N-01-T22: the matcher's intake mode
         "batch",  # SPEC-035 (TASK-073): the guidance drafter
         "batch",  # SPEC-037 Q4 (TASK-085): the entry assessor
     ]

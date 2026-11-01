@@ -146,7 +146,8 @@ def test_ac12_zip_entries_carry_no_wall_clock_time() -> None:
 
 def test_ac12_core_properties_have_creator_platform_and_pull_time() -> None:
     xml = _core_xml(render_trial_balance(_tb()))
-    assert re.search(r"<dc:creator>platform</dc:creator>", xml)
+    # lxml (P-11-T02) writes the namespace on the element: `<dc:creator xmlns:dc="…">`.
+    assert re.search(r"<dc:creator[^>]*>platform</dc:creator>", xml)
     created = re.search(r"<dcterms:created[^>]*>([^<]*)</dcterms:created>", xml)
     modified = re.search(r"<dcterms:modified[^>]*>([^<]*)</dcterms:modified>", xml)
     assert created is not None

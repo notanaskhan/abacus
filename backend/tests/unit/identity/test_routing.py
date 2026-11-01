@@ -33,6 +33,7 @@ from abacus.modules.identity.api import (
     OWN,
     PORTAL_PUBLIC,
     PRE_SESSION,
+    PROVIDER_WEBHOOK,
     SELF,
     STAFF,
     AbacusRoute,
@@ -51,7 +52,12 @@ from abacus.modules.identity.api import (
     reset_verifier,
     visible,
 )
-from abacus.modules.identity.routing import current_invitee, portal_public, pre_session
+from abacus.modules.identity.routing import (
+    current_invitee,
+    portal_public,
+    pre_session,
+    provider_webhook,
+)
 from abacus_tools.codegen import permission_matrix as pm
 from abacus_tools.fakes.identity import FakeIdentityProvider
 
@@ -231,7 +237,7 @@ def test_ac20_every_route_declares_an_action_in_the_matrix_or_self() -> None:
     for route in _routes():
         action = declared_action(route)
         assert action is not None, route.path
-        markers = (SELF, STAFF, OWN, IDENTITY, PRE_SESSION, PORTAL_PUBLIC)
+        markers = (SELF, STAFF, OWN, IDENTITY, PRE_SESSION, PORTAL_PUBLIC, PROVIDER_WEBHOOK)
         assert action in markers or action in MATRIX, (route.path, action)
 
 
@@ -303,6 +309,7 @@ def test_ac20_every_route_has_the_authentication_dependency() -> None:
             current_invitee,  # IDENTITY since P-08-T18: also a portal invitee's session
             pre_session,  # ADR-165: the three sign-in routes authenticate themselves
             portal_public,  # ADR-163: portal branding, Public fields to anyone
+            provider_webhook,  # ADR-152: the receiver verifies the provider's signature
         )
         assert any(d in dependencies for d in auth), route.path
 

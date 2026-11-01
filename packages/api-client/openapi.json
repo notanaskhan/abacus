@@ -29270,7 +29270,11 @@
           "status": {
             "anyOf": [
               {
-                "maxLength": 40,
+                "enum": [
+                  "tie",
+                  "reconciling_item",
+                  "inconsistent"
+                ],
                 "type": "string"
               },
               {
@@ -87774,7 +87778,7 @@
             "check_note": "Summit's draft Schedule C lists EIN ending 4402; the agreement shows 4420",
             "ein_last4": "4420",
             "id": "00000000-0000-4000-8000-000000000501",
-            "name": "Keystone Retirement Svcs LLC",
+            "name": "Example Recordkeeper LLC",
             "role": "recordkeeper",
             "soc_report": "SOC 1 Type 2, Jan 1 to Sep 30, 2025",
             "status": "correction_requested"

@@ -75,6 +75,8 @@ FIRM_LEVEL: Final = frozenset(
         "reference_set_version",  # K-02-T12: a platform rules table took effect (no client)
         "questionnaire_template",  # T-02-T16: the firm's organizer template and its versions
         "consent_export",  # T-01-T16: a person's export of the consent registry (a filter)
+        "envelope_policy",  # N-02: the firm's envelope fallback policy (the firm is its id)
+        "methodology_step",  # K-01-T18: a step of a firm methodology version (no engagement)
     }
 )
 # Kinds whose rows may belong to no engagement (a notification about the firm): then firm-level.

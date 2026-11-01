@@ -171,14 +171,30 @@ class Mine:
     identity_method: str
 
 
-_MINE = text(
+# The person's one signer row on an envelope (the first in order), and a page of their rows: a
+# tab is a bound flag and the cursor a bound number, so no query text is ever built (SQL-001).
+_MINE_ONE = text(
     "SELECT e.id AS envelope_id, e.number, e.title, e.status, e.client_id, e.engagement_id, "
     "e.work_item_id, e.due_on, e.date_as_of, e.signer_order, e.provider, e.policy_family, "
     's.id AS signer_id, s."order", s.routing_group, s.status AS signer_status, s.viewed_at, '
     "s.identity_method, e.provider_envelope_id "
     "FROM envelopes e JOIN envelope_signers s ON s.envelope_id = e.id "
     "WHERE s.party_kind = 'contact' AND s.contact_id = ANY(:contacts) AND e.status <> 'draft' "
-    "AND (CAST(:id AS uuid) IS NULL OR e.id = :id)"
+    "AND (CAST(:id AS uuid) IS NULL OR e.id = :id) "
+    'ORDER BY s."order" LIMIT 1'
+)
+_MINE_PAGE = text(
+    "SELECT e.id AS envelope_id, e.number, e.title, e.status, e.client_id, e.engagement_id, "
+    "e.work_item_id, e.due_on, e.date_as_of, e.signer_order, e.provider, e.policy_family, "
+    's.id AS signer_id, s."order", s.routing_group, s.status AS signer_status, s.viewed_at, '
+    "s.identity_method, e.provider_envelope_id "
+    "FROM envelopes e JOIN envelope_signers s ON s.envelope_id = e.id "
+    "WHERE s.party_kind = 'contact' AND s.contact_id = ANY(:contacts) AND e.status <> 'draft' "
+    "AND (CAST(:id AS uuid) IS NULL OR e.id = :id) "
+    "AND ((CAST(:to_sign AS boolean) AND e.status = ANY(:tab_statuses) "
+    "AND s.status <> 'signed') OR (NOT CAST(:to_sign AS boolean) AND s.status = 'signed')) "
+    "AND (CAST(:after_number AS bigint) IS NULL OR e.number < :after_number) "
+    "ORDER BY e.number DESC LIMIT :limit"
 )
 
 
@@ -237,7 +253,7 @@ async def signer_of(ctx: AuthContext, envelope_id: UUID, action: str) -> Mine:
         found = (
             (
                 await session.execute(
-                    text(f'{_MINE.text} ORDER BY s."order" LIMIT 1'),
+                    _MINE_ONE,
                     {"contacts": contacts, "id": envelope_id},
                 )
             )
@@ -304,25 +320,19 @@ async def list_mine(ctx: AuthContext, *, tab: str, cursor: str | None, limit: in
     contacts = sorted(await contact_ids_of_user(ctx.tenant, ctx.user_id))
     if not contacts:
         return Page([], None, query)
-    where = (
-        "AND e.status = ANY(:tab_statuses) AND s.status <> 'signed'"
-        if tab == "to_sign"
-        else "AND s.status = 'signed'"
-    )
-    keyed = "" if after is None else "AND (e.number < :after_number)"
     params: dict[str, object] = {
         "contacts": contacts,
         "id": None,
+        "to_sign": tab == "to_sign",
         "tab_statuses": list(TO_SIGN),
+        "after_number": None if after is None else int(cast(int, after.key)),
         "limit": limit + 1,
     }
-    if after is not None:
-        params["after_number"] = int(cast(int, after.key))
     async with tenant_session(ctx.tenant) as session:
         fetched = (
             (
                 await session.execute(
-                    text(f"{_MINE.text} {where} {keyed} ORDER BY e.number DESC LIMIT :limit"),
+                    _MINE_PAGE,
                     params,
                 )
             )
@@ -346,7 +356,7 @@ async def list_mine(ctx: AuthContext, *, tab: str, cursor: str | None, limit: in
 
 
 @dataclass(frozen=True)
-class Document:
+class EnvelopeDocument:
     id: UUID
     order: int
     title: str
@@ -381,7 +391,7 @@ class Session:
 class View:
     row: ListRow
     signer_id: UUID
-    documents: list[Document]
+    documents: list[EnvelopeDocument]
     my_fields: list[Field]
     signers_signed: int
     signers_total: int
@@ -514,7 +524,7 @@ async def _view(ctx: AuthContext, mine: Mine, *, outcome: str | None = None) -> 
         row=_row(mine),
         signer_id=mine.signer_id,
         documents=[
-            Document(
+            EnvelopeDocument(
                 d.id,
                 int(d.order),
                 titles.get(d.evidence_version_id, mine.title)

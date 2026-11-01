@@ -155,7 +155,7 @@ class ReleaseView:
 
 def _person(ctx: AuthContext) -> None:
     # DEC-53: the policy principal never releases; agents and the system never do (ADR-005).
-    if ctx.client or ctx.is_support or ctx.tenant.actor_kind != "human":
+    if ctx.tenant.actor_kind != "human" or ctx.client or ctx.is_support:
         raise Forbidden(ACTION, "role")
 
 

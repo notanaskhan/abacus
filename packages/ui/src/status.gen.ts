@@ -4014,6 +4014,46 @@ export const STATUS_REGISTRY = {
       "derived": false
     }
   },
+  "ebp_participant": {
+    "active": {
+      "label": "Active",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "terminated": {
+      "label": "Terminated",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "retired": {
+      "label": "Retired",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "deceased": {
+      "label": "Deceased",
+      "variant": "state",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "ebp_filer_status": {
+    "large_plan": {
+      "label": "Large plan",
+      "variant": "state",
+      "terminal": false,
+      "derived": true
+    },
+    "small_plan": {
+      "label": "Small plan",
+      "variant": "state",
+      "terminal": false,
+      "derived": true
+    }
+  },
   "ebp_late_remittance": {
     "found": {
       "label": "Late deposit found",

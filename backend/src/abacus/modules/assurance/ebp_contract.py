@@ -91,7 +91,10 @@ class FigureRowOut(BaseModel):
     key: Annotated[str, Field(pattern=r"^[a-z0-9_.]{1,64}$"), classified("internal")]
     label: Label
     amount: MaybeMoney
-    status: Annotated[str | None, Field(max_length=40), classified("internal")] = None
+    # A Schedule H line's tie-out (status vocabulary `ebp_form5500_line`); a statement row: none.
+    status: Annotated[
+        Literal["tie", "reconciling_item", "inconsistent"] | None, classified("internal")
+    ] = None
     note: Annotated[str | None, Field(max_length=500), classified("confidential")] = None
 
 
@@ -150,7 +153,7 @@ ProviderStatus = Literal["received", "waiting_on_inputs", "correction_requested"
 
 _PROVIDER: JsonDict = {
     "id": "00000000-0000-4000-8000-000000000501",
-    "name": "Keystone Retirement Svcs LLC",
+    "name": "Example Recordkeeper LLC",
     "role": "recordkeeper",
     "ein_last4": "4420",
     "status": "correction_requested",

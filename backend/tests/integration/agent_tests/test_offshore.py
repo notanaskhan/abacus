@@ -101,11 +101,24 @@ def granite_consented(firm: Firm) -> Iterator[None]:
     async def count(_tenant: TenantContext, _purpose: str) -> int:
         return 1
 
+    # T-01-T12's real provider is registered at import: set it aside for the stand-in, then
+    # put it back (the registry refuses a second registration).
+    key = slots.OFFSHORE_DISCLOSURE
+    checks = slots._CONSENTS  # pyright: ignore[reportPrivateUsage] -- swaps the provider for the stand-in
+    columns = slots._CONSENT_COLUMNS  # pyright: ignore[reportPrivateUsage] -- swaps the provider for the stand-in
+    counts = slots._CONSENT_COUNTS  # pyright: ignore[reportPrivateUsage] -- swaps the provider for the stand-in
+    held = (checks.pop(key, None), columns.pop(key, None), counts.pop(key, None))
     slots.register_consent_check(slots.OFFSHORE_DISCLOSURE, check, column, count)
     yield
-    slots._CONSENTS.pop(slots.OFFSHORE_DISCLOSURE, None)  # pyright: ignore[reportPrivateUsage] -- drops the stand-in
-    slots._CONSENT_COLUMNS.pop(slots.OFFSHORE_DISCLOSURE, None)  # pyright: ignore[reportPrivateUsage] -- drops the stand-in
-    slots._CONSENT_COUNTS.pop(slots.OFFSHORE_DISCLOSURE, None)  # pyright: ignore[reportPrivateUsage] -- drops the stand-in
+    checks.pop(key, None)
+    columns.pop(key, None)
+    counts.pop(key, None)
+    if held[0] is not None:
+        checks[key] = held[0]
+    if held[1] is not None:
+        columns[key] = held[1]
+    if held[2] is not None:
+        counts[key] = held[2]
 
 
 def _items(response: httpx.Response) -> list[Json]:

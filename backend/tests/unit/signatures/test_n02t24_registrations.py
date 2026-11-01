@@ -85,6 +85,6 @@ async def test_the_sender_is_the_only_recipient() -> None:
 
 def test_envelope_signers_are_on_the_mfa_floor_and_the_sign_todo_is_a_home_source() -> None:
     assert signatures_api.sign_todo  # exported for the home source
-    assert "envelope_signer" in mfa_floor._REQUIREMENTS  # pyright: ignore[reportPrivateUsage]
+    assert "envelope_signer" in mfa_floor._REQUIREMENTS  # pyright: ignore[reportPrivateUsage] -- the registry under test
     assert "signatures" in {name for name, _ in home_sources()}
     assert any(s.__module__.endswith("home_sources.signatures") for s in home.LOADED)

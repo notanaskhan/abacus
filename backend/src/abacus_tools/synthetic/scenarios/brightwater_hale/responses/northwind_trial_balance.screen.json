@@ -1,7 +1,7 @@
 {
   "document": "northwind_trial_balance",
   "prompt_ref": "evidence.screen@v0",
-  "content_sha256": "4e73ac631ca55be70ce4cee9a97ffaad968710aeeb6b8480202ba9c4c6905901",
+  "content_sha256": "976e0721296c6991ffb73572febae15ecb16feb0dea957d627a829346466b9af",
   "response": {
     "action": "ready_for_review",
     "confidence": 0.88,

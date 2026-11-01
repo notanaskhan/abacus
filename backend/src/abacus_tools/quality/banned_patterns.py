@@ -1589,11 +1589,11 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     # N-02-T38 (DEC-1567): + reporting, whose renderer draws the evidence package's legible page;
     # reporting never imports signatures.
     # N-02-T28 (DEC-1479): + review (the C13 gate kinds `envelope_send`, `envelope_countersign`),
-    # communications (a person's reminder through `send_templated`) and audit_trail (the
-    # envelope's activity entries); none of the three imports signatures.
+    # communications (a person's reminder through `send_templated`); neither imports signatures.
+    # The envelope's activity entries live in audit_trail's catalogue (an edge module, T08).
     "signatures": _BASE
     | {"engagements", "organisations", "evidence", "reporting"}
-    | {"review", "communications", "audit_trail"},
+    | {"review", "communications"},
     # SPEC-037 (TASK-083): populations and selection are pure functions over ledger snapshots.
     # A-03-T01 (DEC-1550; A-03 §4.1): + methodology (the size table), review (approval as an L2
     # sign-off) and requests (the item-request fan-out); none of them imports sampling.
@@ -1637,7 +1637,7 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     "tax": _BASE
     | {"organisations", "engagements", "methodology", "requests", "evidence", "ledger"}
     | {"review", "workpapers", "adjustments", "reporting", "signatures", "communications"}
-    | {"agents", "integrations", "practice"},
+    | {"agents", "integrations"},
     "closes": _BASE
     | {"organisations", "engagements", "methodology", "requests", "evidence", "ledger"}
     | {"review", "workpapers", "adjustments", "reporting", "communications", "agents"}
@@ -1646,7 +1646,8 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     | {"organisations", "engagements", "requests", "evidence", "review", "signatures"}
     | {"communications", "agents", "tax"},
     "workbench": _BASE | {"organisations", "engagements", "methodology", "agents", "integrations"},
-    "practice": _BASE | {"organisations", "engagements", "integrations"},
+    # T-02-T10: practice registers its due-dates rules into tax (`register_due_dates_source`).
+    "practice": _BASE | {"organisations", "engagements", "integrations", "tax"},
     # A-02-T23 (DEC-517, DEC-611): the home's reconnect to-do reads connections.
     "portal": _BASE
     | {"organisations", "engagements", "requests", "evidence", "signatures", "communications"}
@@ -2484,6 +2485,11 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/backfill/test_n02t13_envelope_hub.py",
             "tests/integration/backfill/test_n02t14_envelope_workflow.py",
             "tests/integration/backfill/test_n02t16_signatures_independent.py",
+            # N-02-T22, T23, T25: the same retention policy seeded as a session sets it, a sent
+            # envelope's actor set by hand, and the database refusing a person's supersede marker.
+            "tests/integration/backfill/test_n02t22_send_independent.py",
+            "tests/integration/backfill/test_n02t23_portal_envelopes.py",
+            "tests/integration/backfill/test_n02t25_c7_v11.py",
             # N-01 group B: the triage table's CHECK refuses an agent actor set like a session.
             "tests/integration/backfill/test_n01_group_b.py",
             # Q-04-T008: back-dates seeded audit rows under the actor the immutability guard reads.

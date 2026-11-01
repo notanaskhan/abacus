@@ -178,6 +178,21 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "decision.reassess",  # P-04-T08 (TASK-414)
         "decision.request_analysis",  # P-04-T08 (TASK-414)
         "deficiency.propose_severity",
+        "ebp.read",  # A-05-T04 (DEC-1859)
+        "ebp_certification.evaluate",
+        "ebp_correction.record",
+        "ebp_form5500.key",
+        "ebp_form5500.read",
+        "ebp_form5500.remind",
+        "ebp_form5500.send_note",
+        "ebp_import.create",
+        "ebp_plan.edit",
+        "ebp_population_query.run",
+        "ebp_provider.invite",
+        "ebp_provider.manage",
+        "ebp_provider.request",
+        "ebp_schedule.draft",
+        "ebp_schedule.render",
         "entry_assessment.adopt",  # SPEC-044 (TASK-109)
         "entry_assessment.request",  # SPEC-037 Q4 (TASK-085)
         "envelope.evidence_download",  # N-02-T02 (SPEC-381)
@@ -185,6 +200,9 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "envelope.record_wet_signature",  # N-02-T02
         "envelope.send",  # N-02-T02
         "eqr.concur",  # SPEC-314 (TASK-332)
+        "estimate.evaluate",
+        "estimate.read",
+        "estimate.request_conclusion",
         "evidence.accept",
         "evidence.read",
         "evidence.reject",
@@ -218,6 +236,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "item.sign_reviewed",
         "ledger.pull",  # A-02 §4.4 (TASK-1185)
         "ledger_import.upload",  # SPEC-028 (TASK-052)
+        "ledger_snapshot.create_from_document",
         "letter.approve",  # N-02-T02
         "mapping_set.confirm",  # A-03-T01 (DEC-1550)
         "mapping_set.edit",  # SPEC-316 (TASK-345)
@@ -230,6 +249,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "materiality.set",  # SPEC-037 (TASK-083)
         "message.send",  # ADR-164 item 2 (P-07-T24): client-facing
         "misstatement.set",  # SPEC-043 (TASK-107)
+        "party_in_interest.manage",
         "pii.reveal",  # P-03-T02 (C4 v1)
         "population.create",  # A-03-T01 (DEC-1550)
         "population.read",  # A-03-T01 (DEC-1550)
@@ -244,6 +264,9 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "proposal.reject",  # P-04-T08 (TASK-414)
         "proposal.route",  # P-04-T08 (TASK-414)
         "proposal.undo",  # P-04-T08 (TASK-414)
+        "related_party.manage",
+        "related_party.read",
+        "related_party.screen_out",
         "report.approve",  # SPEC-314 (TASK-332)
         "report.release",  # SPEC-314 (TASK-332)
         "representation.edit",  # SPEC-301 (TASK-302)
@@ -285,6 +308,9 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "soc_report.evaluate",
         "statement.approve",  # SPEC-312 (TASK-324)
         "suggestion.resolve",  # P-04-T08 (TASK-414)
+        "test.create",
+        "test.mark",
+        "test.read",
         "tie_out_check.define",  # SPEC-310 (TASK-321)
         "trial_balance.adopt",  # SPEC-309 (TASK-320)
         "trial_balance.annotate",
