@@ -52,6 +52,7 @@ from abacus.ai_gateway import (
     call,
     fake_responds,
     is_synthetic,
+    sanitise_text,
 )
 from abacus.ai_gateway.routes import route_enabled
 from abacus.kernel.config import settings
@@ -196,7 +197,9 @@ async def start(
         raise DraftingNotEnabled
     if not model_available():
         raise DraftingUnavailable(str(engagement_id))
-    await get_ref(ctx, engagement_id)
+    engagement = await get_ref(ctx, engagement_id)
+    # The route authorised it too; this public entry never relies on its caller (defence in depth).
+    await authorise(ctx, "workpaper.draft", engagement.resource())
     paper = await section_source().paper(ctx.tenant, engagement_id, workpaper_id, section_key)
     event = uuid5(
         NAMESPACE_URL,
@@ -243,8 +246,8 @@ async def start(
                     )
                     tx.record(
                         "section_draft.started",
-                        target=Target("workpaper", workpaper_id),
-                        after=Ref(agent_run_id=run_id),
+                        target=Target("agent_run", run_id),
+                        after=Ref(workpaper_id=workpaper_id),
                     )
     if capped:
         raise DraftCapReached
@@ -383,7 +386,8 @@ def _value(cell: DraftedCell, facts: Mapping[str, Fact]) -> dict[str, object]:
         fact = facts[cell.fact]
         kind = cast(str, fact.value.get("t"))
         return {"t": kind if kind in ("decimal", "date") else "decimal", "v": fact.value.get("v")}
-    return {"t": "text", "v": cell.text}
+    # Model text is hostile until proven otherwise: control and deceptive characters removed.
+    return {"t": "text", "v": sanitise_text(cell.text or "")}
 
 
 def _cell_key(cell: str) -> tuple[str, str]:
@@ -421,8 +425,8 @@ async def _fail_pack(agent: AgentContext, workpaper_id: UUID, exc: PackRefused) 
             tx.record("agent_run.failed", target=Target("agent_run", agent.agent_run_id))
             tx.record(
                 "section_draft.failed",
-                target=Target("workpaper", workpaper_id),
-                after=Ref(agent_run_id=agent.agent_run_id),
+                target=Target("agent_run", agent.agent_run_id),
+                after=Ref(workpaper_id=workpaper_id),
             )
 
 
