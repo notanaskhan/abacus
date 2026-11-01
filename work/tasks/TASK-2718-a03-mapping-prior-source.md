@@ -37,3 +37,6 @@ body already names `prior_source` and `predecessor_evidence_version_id`; nothing
 - 2026-11-01: built. Two slips: `Ref` takes identifiers only (an audit `after` carrying the
   source was refused), and SQLAlchemy's JSONB writes `None` as JSON null unless `none_as_null`,
   which the jsonb CHECK refuses.
+- 2026-11-01: merged as #1035 minutes after 0613-0614 (A-04, on 0612) landed, so main carried two
+  heads; 0615 joins them (no schema change). Lesson: re-check `alembic heads` on a fresh fetch
+  immediately before merging a migration PR.
