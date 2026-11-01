@@ -219,6 +219,54 @@ class GuidanceDraft(BaseModel):
     blocks_reason: Annotated[str | None, Field(max_length=160), classified("internal")] = None
 
 
+# --- The methodology importer (K-01-T21; K-01 §6; DEC-1856) ------------------------------------
+
+
+class ImportedProgram(BaseModel):
+    """A program heading the importer read; codes are the firm's own (`BH-EBP-110`)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    code: Annotated[
+        str,
+        Field(pattern=r"^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*$", max_length=40),
+        classified("internal"),
+    ]
+    name: Annotated[str, Field(min_length=1, max_length=200), classified("internal")]
+
+
+class ImportedStep(BaseModel):
+    """One numbered step as printed, with the quote code verifies on its page. There is no
+    mandatory, approval, effective-date or level field: those are a person's (K-01 §6.1, INV-1);
+    `extra="forbid"` refuses an answer that adds one."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    program_code: Annotated[
+        str,
+        Field(pattern=r"^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*$", max_length=40),
+        classified("internal"),
+    ]
+    number: Annotated[int, Field(ge=1, le=999), classified("internal")]
+    text: Annotated[str, Field(min_length=1, max_length=2000), classified("internal")]
+    page: Annotated[int, Field(ge=1, le=400), classified("internal")]
+    # The step runs onto the next page (a flag, `split_across_pages`).
+    page_to: Annotated[int | None, Field(ge=1, le=400), classified("internal")] = None
+    quote: Annotated[str, Field(min_length=1, max_length=400), classified("internal")]
+    confidence: Annotated[float, Field(ge=0, le=1), classified("internal")]
+    # Other steps the text refers to ("BH-EBP-410 step 6"), checked by code.
+    refs: Annotated[list[str], Field(max_length=10), classified("internal")] = []
+
+
+class ImportBatchOutput(BaseModel):
+    """The importer's answer for one batch of up to eight pages."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    programs: Annotated[list[ImportedProgram], Field(max_length=40), classified("internal")] = []
+    steps: Annotated[list[ImportedStep], Field(max_length=200), classified("internal")] = []
+
+
 @dataclass(frozen=True)
 class VerifiedDocumentCitation:
     page: int | None
