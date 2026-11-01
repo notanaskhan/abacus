@@ -363,7 +363,13 @@ function Body({
             ]}
           />
           <Tooltip content={COPY.population.hrTooltip}>
-            <span tabIndex={0} data-aud11="hr-tooltip" aria-label={COPY.population.hrTooltip}>
+            {/* role img: an aria-label is not permitted on a bare span (axe aria-prohibited-attr; A-03-T19) */}
+            <span
+              tabIndex={0}
+              role="img"
+              data-aud11="hr-tooltip"
+              aria-label={COPY.population.hrTooltip}
+            >
               <Icon name="info" size={12} className="ml-[6px] inline text-ink-3" />
             </span>
           </Tooltip>
