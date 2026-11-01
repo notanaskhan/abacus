@@ -2,13 +2,14 @@
 review-grammar objects whose owners have registered, through the services as the people the
 design names, so every row carries its real audit event.
 
-- **Northwind materiality** (SHL-11 a to d; A-04-T12's `planning_materiality`): Hannah Leclerc
-  adopts Northwind's PY2025 trial balance on Sep 8 (net assets 16,812,400, unadjusted) and
-  proposes planning materiality at 9:27 AM on Sep 14; Margaret Okonkwo decides 1.5% = $252,200
-  (PM $189,150, CT $12,610, computed by code) at 10:02 AM with her rationale. On Tue Oct 6
+- **Northwind materiality** (SHL-11 a to d; A-04-T12's `planning_materiality`; DF-34's
+  timeline): Hannah Leclerc adopts Northwind's PY2025 trial balance at 10:02 AM on Sep 14 (net
+  assets 16,812,400, unadjusted) and proposes planning materiality at 10:30 AM; Margaret
+  Okonkwo decides 1.5% = $252,200 (PM $189,150, CT $12,610, computed by code) at 11:12 AM with
+  her rationale (SHL-11 c keeps 10:02 AM for parity, a deviation). On Tue Oct 6
   Hannah raises the reassessment at final and Margaret records "No change" (v3).
 - **Northwind trial balance sign-off and notes** (SHL-12 a to c): Marcus Delaney signs L1 on
-  the trial balance of record at 9:00 AM on Sep 14; Hannah (RA!C14) and Margaret (RA!C22) raise
+  the trial balance of record at 10:20 AM on Sep 14; Hannah (RA!C14) and Margaret (RA!C22) raise
   the two review notes assigned to Marcus, so Hannah's L2 is blocked (b).
 - **Ridgeline's 11 open issues** (SHL-12 h, TXP-10): 5 "Waiting on the client" and 6 "Review
   points", verbatim from TXP-10, each blocking final approval, raised by Olivia Brandt (the
@@ -164,17 +165,17 @@ def review_events() -> list[Event]:
         for name in FLAGS
     ]
     events += [
-        _event("northwind:tb", _at(9, 8, 9, 0), "ledger.northwind_tb_recorded", "HL", NORTHWIND),
+        _event("northwind:tb", _at(9, 14, 10, 0), "ledger.northwind_tb_recorded", "HL", NORTHWIND),
         _event(
             "northwind:tb-adopted",
-            _at(9, 8, 9, 10),
+            _at(9, 14, 10, 2),
             "assurance.northwind_tb_adopted",
             "HL",
             NORTHWIND,
         ),
         _event(
             "northwind:tb-l1",
-            _at(9, 14, 9, 0),
+            _at(9, 14, 10, 20),
             "review.northwind_tb_signed",
             "MD",
             NORTHWIND,
@@ -184,7 +185,7 @@ def review_events() -> list[Event]:
     events += [
         _event(
             f"northwind:note:{n.cell}",
-            _at(9, 14, 9, 1 + i),
+            _at(9, 14, 10, 21 + i),
             "review.northwind_note_raised",
             n.by,
             NORTHWIND,
@@ -196,7 +197,7 @@ def review_events() -> list[Event]:
     events += [
         _event(
             "northwind:materiality-proposed",
-            _at(9, 14, 9, 27),
+            _at(9, 14, 10, 30),
             "assurance.materiality_proposed",
             "HL",
             NORTHWIND,
@@ -205,7 +206,7 @@ def review_events() -> list[Event]:
         ),
         _event(
             "northwind:materiality-decided",
-            _at(9, 14, 10, 2),
+            _at(9, 14, 11, 12),
             "review.materiality_decided",
             "MO",
             NORTHWIND,
