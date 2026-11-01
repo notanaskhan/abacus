@@ -37,7 +37,8 @@ for (const [screen, st] of FIRM) {
   });
 }
 
-for (const screen of ["TAX-02", "TAX-03", "TXP-12"] as const) {
+// TXP-12 sits in the return frame without the tabs (its own canvas header).
+for (const screen of ["TAX-02", "TAX-03"] as const) {
   test(`${screen}a: the return frame's subbar 42 and tabsbar 44`, async ({ page }) => {
     const frame = await board(page, screen, "a");
     const subbar = frame.locator('[data-shell="record-header"]');
