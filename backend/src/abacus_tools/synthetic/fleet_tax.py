@@ -123,6 +123,12 @@ class TaxReturn:
         return f"{TAX_YEAR} Form {self.form} (Load {self.r + 1:02d})"
 
 
+def has_room(firm: Firm) -> bool:
+    """A shape with fewer clients than its audits plus its returns loads no tax (the reduced
+    test firms of Q-03-T044)."""
+    return firm.shape.clients >= firm.shape.audits + returns_per_firm(firm)
+
+
 def returns_of(firm: Firm) -> tuple[TaxReturn, ...]:
     return tuple(TaxReturn(firm, r) for r in range(returns_per_firm(firm)))
 
@@ -352,7 +358,7 @@ async def _k1s(conn: asyncpg.Connection, ret: TaxReturn, counts: Counts) -> None
             ret.work_item,
             "pdfs",
             found.pdf_name(recipient),
-            engine_pdf(ret, f"Schedule K-1 (Form 1065) {TAX_YEAR} · {recipient.name}"),
+            engine_pdf(ret, f"Schedule K-1 (Form 1065) {TAX_YEAR} - {recipient.name}"),
         )
     name = f"{found.engine_return_id.replace(':', '_')}_k1_set.json"
     await import_engine_file(manager, ret.work_item, "k1_set", name, found.manifest())

@@ -34,4 +34,5 @@ the tax surge, 8879 sends and K-1 releases.)
 - **Human / waits:** the perf-stack run (Q-03-T036) and the x25 tax-surge test (Q-03-T131).
 
 ## Progress log
-- 2026-11-01: built; unit test 3 passed; the integration test runs at the batch's end review.
+- 2026-11-01: built; unit test 3 passed.
+- 2026-11-01 end review: K-1 PDF titles were not ASCII (the PDF helper is ASCII only); the load test now runs on its own database (fleet firm 1 is one tenant in every x1 test, so a shared database broke Q-03-T044's fresh-firm test); the no-room rule is `has_room`, unit-tested. T132 and Q-03-T044 suites: 9 passed.

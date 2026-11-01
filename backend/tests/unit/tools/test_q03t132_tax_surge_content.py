@@ -38,3 +38,11 @@ def test_a_k1_set_is_the_engines_manifest_without_a_full_tin() -> None:
     for recipient in manifest["recipients"]:
         assert len(recipient["tin_last4"]) == 4
         assert parse_pdf(recipient["documents"][0]["file_name"], b"%PDF-1.7\n%%EOF").kind == "k1"
+
+
+def test_a_shape_without_room_for_the_returns_loads_no_tax() -> None:
+    small = fleet.FirmShape(
+        seats=7, clients=4, audits=3, requests_per_audit=1, portal_people_per_audit=1
+    )
+    assert fleet_tax.has_room(fleet.plan("x1")[0])
+    assert not fleet_tax.has_room(fleet.plan("x1", small)[0])

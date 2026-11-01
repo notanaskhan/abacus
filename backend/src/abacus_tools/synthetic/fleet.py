@@ -495,7 +495,7 @@ async def load(
             if synthetic is False:
                 raise LoadRefused(f"{firm.tenant} exists and is not synthetic")
         # Q-03-T132: the tax-surge content after each firm's audits (its own module).
-        from abacus_tools.synthetic.fleet_tax import load_tax, returns_per_firm
+        from abacus_tools.synthetic.fleet_tax import has_room, load_tax
 
         for firm in firms:
             await _firm(conn, firm, counts)
@@ -503,7 +503,7 @@ async def load(
             await _clients(conn, firm, counts)
             await _audits(conn, firm, counts)
             await _flags(conn, firm, counts)
-            if tax and firm.shape.clients >= firm.shape.audits + returns_per_firm(firm):
+            if tax and has_room(firm):
                 await load_tax(conn, firm, counts)
     finally:
         await conn.close()
