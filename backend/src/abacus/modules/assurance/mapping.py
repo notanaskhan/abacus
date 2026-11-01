@@ -17,22 +17,26 @@ from uuid import UUID
 
 from sqlalchemy.exc import IntegrityError
 
+from abacus.kernel._flags import LEDGER_TB_MAPPING
 from abacus.kernel.classification import classified
 from abacus.kernel.clock import today
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
+from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import DomainEvent, Ref, Scope, Target, uow
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.engagements.api import get_ref, lock_ref, prior_engagement_of
 from abacus.modules.identity.api import AuthContext, Resource, authorise
 from abacus.modules.ledger.api import (
     GroupingView,
+    MappingExists,
     MappingView,
     Statements,
     VersionView,
     create_mapping_set,
     edit_mappings,
     engagement_trial_balances,
+    follow_tb_version,
     grouping_catalogue,
     grouping_set_versions,
     grouping_version_id,
@@ -48,8 +52,15 @@ from abacus.modules.ledger.api import (
     published_versions,
     recently_used,
     statements_for,
+    version_adopter,
 )
-from abacus.modules.review.api import Reviewable, ReviewableFacts, record_sign_off, stale_of
+from abacus.modules.review.api import (
+    Reviewable,
+    ReviewableFacts,
+    record_sign_off,
+    sign_off_states,
+    stale_of,
+)
 
 TARGET = "mapping_set"
 
@@ -277,16 +288,44 @@ async def mapping_reviewables(tenant: TenantContext, engagement_id: UUID) -> lis
     return out
 
 
-# --- A-03-T14: a new trial balance version leaves a signed mapping stale ----------------------
+# --- A-03-T14: the trial balance's versions and the mapping that follows them ------------------
+#
+# `trial_balance.version_created` (A-02, identifiers only), for firms with `ledger.tb_mapping` on:
+# - version 1: the set is created on the firm's one published grouping set (its newest version),
+#   by the person who adopted the version; with none or several published, a person chooses it on
+#   AUD-31 (DEC-1765). Mapping is computed on read, so creating the set is the run.
+# - version n > 1: `ledger.api.follow_tb_version` records the move (a person's edit stands while
+#   its account is on the trial balance; a new account is mapped by the rules or reads unmapped);
+#   when the new content leaves the set's newest sign-offs on other content,
+#   `mapping_set.went_stale` tells its signers once (C16 `mapping_set_stale`; review's detector
+#   still records each `sign_off.went_stale`, and `sign_off_stale` leaves mapping sets to this).
+# Both are idempotent on the event: a replay finds the set already made, or the version already
+# followed (the deterministic event id), and changes nothing. A snapshot pulled but not adopted
+# emits no version, so it changes nothing.
 
 _STALE_NAMESPACE: Final = uuid.UUID("0f6a7c1e-3d52-4b8f-9e0a-5c4d2b1a8e73")
+_FOLLOW_NAMESPACE: Final = uuid.UUID("5d0c2a8e-91b4-4f37-a6e2-7b13c4f9d051")
 
 
 class MappingSetWentStale(DomainEvent):
-    """A newer trial balance version changed a signed mapping's content (A-03 Story 4): review's
-    detector tells each signer (`sign_off.went_stale`); A-10 later marks overrides stale."""
+    """A newer trial balance version changed a signed mapping's content (A-03 Story 4): the L1
+    and L2 signers are told (`mapping_set_stale`); A-10 later marks overrides stale."""
 
     event_type: ClassVar[str] = "mapping_set.went_stale"
+
+    mapping_set_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    trial_balance_id: Annotated[UUID, classified("internal")]
+    version_no: Annotated[int, classified("internal")]
+    unmapped: Annotated[int, classified("internal")] = 0
+    recipient_user_ids: Annotated[tuple[UUID, ...], classified("internal")] = ()
+
+
+class MappingSetFollowedVersion(DomainEvent):
+    """The set followed a trial balance version (A-03-T14): once per set and version, so a
+    replayed adoption follows nothing twice."""
+
+    event_type: ClassVar[str] = "mapping_set.version_followed"
 
     mapping_set_id: Annotated[UUID, classified("internal")]
     engagement_id: Annotated[UUID, classified("internal")]
@@ -299,45 +338,102 @@ def went_stale_id(mapping_set_id: UUID, version_no: int) -> UUID:
     return uuid.uuid5(_STALE_NAMESPACE, f"{mapping_set_id}:{version_no}")
 
 
+def followed_id(mapping_set_id: UUID, version_no: int) -> UUID:
+    return uuid.uuid5(_FOLLOW_NAMESPACE, f"{mapping_set_id}:{version_no}")
+
+
+async def _first_version(tenant: TenantContext, engagement_id: UUID, tb_id: UUID) -> bool:
+    """Version 1: the set on the firm's one published grouping set, by the version's adopter."""
+    if await mapping_set_of(tenant, tb_id) is not None:
+        return False
+    versions = await published_versions(tenant)
+    sets = {v.set_id or v.set_key for v in versions}
+    if len(sets) != 1:
+        return False  # none, or the firm has several: a person chooses on AUD-31
+    newest = max(versions, key=lambda v: v.version)
+    adopter = await version_adopter(tenant, tb_id, 1)
+    if adopter is None:
+        return False
+    try:
+        async with uow(tenant) as tx:
+            await create_mapping_set(
+                tx,
+                tenant_id=tenant.tenant_id,
+                engagement_id=engagement_id,
+                tb_id=tb_id,
+                version_id=newest.id,
+                user_id=adopter,
+            )
+    except (IntegrityError, MappingExists):
+        return False  # made already (a replay, or a person got there first)
+    return True
+
+
+async def _signers(tenant: TenantContext, mapping_set_id: UUID, content: str) -> list[UUID]:
+    """Whoever signed the set's newest sign-offs: its L1 preparer and L2 reviewer (a mapping set
+    takes no other level today; any other signer is told too). `sign_off_stale` leaves mapping
+    sets to this kind, so each is told once."""
+    states = await sign_off_states(tenant, TARGET, [mapping_set_id], {mapping_set_id: content})
+    return sorted({s.signed_by for s in states.get(mapping_set_id, []) if s.signed_by})
+
+
 async def on_tb_version(event: OutboxEvent) -> bool:
-    """`trial_balance.version_created` (A-02): when a later version leaves the mapping's newest
-    sign-offs on other content, emit `mapping_set.went_stale` once. Version 1, a trial balance
-    with no mapping and an unsigned mapping change nothing. Human edits survive by account code
-    (`mapping_set_edits`), and new accounts read unmapped, by construction of the view."""
+    """`trial_balance.version_created` (A-02): version 1 starts the mapping; a later version is
+    followed, and a signed mapping it changed is announced stale once. True when it changed
+    anything."""
     tb_raw, eng_raw, version = (
         event.payload.get("trial_balance_id"),
         event.payload.get("engagement_id"),
         event.payload.get("version_no"),
     )
-    if tb_raw is None or eng_raw is None or not isinstance(version, int) or version < 2:
+    if tb_raw is None or eng_raw is None or not isinstance(version, int) or version < 1:
         return False
-    tenant = TenantContext(event.tenant_id, "system", "assurance.mapping_stale")
+    tenant = TenantContext(event.tenant_id, "system", "assurance.mapping_follow")
+    if not await flag_enabled(tenant, LEDGER_TB_MAPPING):
+        return False
     tb_id, engagement_id = UUID(str(tb_raw)), UUID(str(eng_raw))
+    if version == 1:
+        return await _first_version(tenant, engagement_id, tb_id)
     found = await mapping_set_of(tenant, tb_id)
     if found is None:
         return False
     view = await mapping_with_prior(tenant, engagement_id, tb_id)
-    if view is None or not await stale_of(tenant, TARGET, {found.id: view.content_hash}):
+    if view is None:
         return False
+    stale = await stale_of(tenant, TARGET, {found.id: view.content_hash})
+    signers = await _signers(tenant, found.id, view.content_hash) if stale else []
     try:
         async with uow(tenant) as tx:
-            tx.record(
-                "mapping_set.went_stale",
-                target=Target("mapping_set", found.id),
-                after=Ref(version_no=version, unmapped=view.unmapped),
-                scope=Scope(engagement_id=engagement_id),
-            )
+            await follow_tb_version(tx, tenant, engagement_id, tb_id, version)
             tx.emit(
-                MappingSetWentStale(
-                    event_id=went_stale_id(found.id, version),
+                MappingSetFollowedVersion(
+                    event_id=followed_id(found.id, version),
                     mapping_set_id=found.id,
                     engagement_id=engagement_id,
                     trial_balance_id=tb_id,
                     version_no=version,
                 )
             )
+            if stale:
+                tx.record(
+                    "mapping_set.went_stale",
+                    target=Target("mapping_set", found.id),
+                    after=Ref(version_no=version, unmapped=view.unmapped),
+                    scope=Scope(engagement_id=engagement_id),
+                )
+                tx.emit(
+                    MappingSetWentStale(
+                        event_id=went_stale_id(found.id, version),
+                        mapping_set_id=found.id,
+                        engagement_id=engagement_id,
+                        trial_balance_id=tb_id,
+                        version_no=version,
+                        unmapped=view.unmapped,
+                        recipient_user_ids=tuple(signers),
+                    )
+                )
     except IntegrityError:
-        return False  # already announced for this version (a replay)
+        return False  # this version was followed already (a replay)
     return True
 
 

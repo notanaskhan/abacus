@@ -285,6 +285,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "legal_hold.released",
         "letter.recorded",
         "mapping_set.created",
+        "mapping_set.version_followed",  # A-03-T14: the set followed a TB version, 2026-11-01
         "materiality.decided",
         "materiality.set",
         "membership.access_ending_notified",

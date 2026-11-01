@@ -27,7 +27,7 @@ from uuid import UUID
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
-from abacus.kernel.uow import Ref, Target, UnitOfWork
+from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork
 
 # The rules moved to the pure compute package (A-03-T08); re-exported for this module's callers.
 from abacus.modules.ledger.compute.mapping import Method as Method
@@ -589,6 +589,41 @@ async def create_mapping_set(
     )
     tx.record("mapping_set.created", target=Target("mapping_set", mapping_id))
     return mapping_id
+
+
+@dataclass(frozen=True)
+class FollowedVersion:
+    """A-03-T14: what following a new trial balance version did to a mapping set's edits."""
+
+    mapping_set_id: UUID
+    version_no: int
+    kept_edits: int  # a person's edits whose account is still on the trial balance
+    dropped_edits: int  # edits whose account the new version no longer has
+
+
+async def follow_tb_version(
+    tx: UnitOfWork, tenant: TenantContext, engagement_id: UUID, tb_id: UUID, version_no: int
+) -> FollowedVersion | None:
+    """`ledger.api.follow_tb_version` (A-03 F6 US-6.4): the mapping set follows the trial
+    balance's new version in the caller's unit of work. Mapping is computed on read (ADR-341 §5),
+    so the set already reads the new version: a person's edit stands while its account is on the
+    trial balance, a new account is mapped by the rules or reads unmapped, and nothing earlier is
+    touched (ADR-004). This records the move (`mapping_set.version_followed`, the set's event
+    history keeps every version it followed) with the edits kept and dropped. None: no set."""
+    found = await mapping_set_for(tx.session, tb_id)
+    if found is None:
+        return None
+    edits = await newest_edits(tx.session, found.id)
+    tb = await trial_balance_view(tenant, engagement_id, tb_id)
+    codes = {line.account_code for line in tb.lines}
+    kept = sum(1 for e in edits if e.account_code in codes)
+    tx.record(
+        "mapping_set.version_followed",
+        target=Target("mapping_set", found.id),
+        after=Ref(version_no=version_no, kept_edits=kept, dropped_edits=len(edits) - kept),
+        scope=Scope(engagement_id=engagement_id),
+    )
+    return FollowedVersion(found.id, version_no, kept, len(edits) - kept)
 
 
 async def mapping_set_of(tenant: TenantContext, tb_id: UUID) -> MappingSet | None:

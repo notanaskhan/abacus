@@ -194,7 +194,10 @@ async def _listed(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
 
 
 async def _signer(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
-    """P-04-T19: the person whose sign-off went stale."""
+    """P-04-T19: the person whose sign-off went stale. A mapping set's signers are told by its own
+    kind, `mapping_set_stale` (A-03-T14), so each is told once."""
+    if payload.get("target_type") == "mapping_set":
+        return []
     signer = _uuid(payload, "signed_by")
     return [signer] if signer is not None else []
 
@@ -395,6 +398,8 @@ CATALOGUE: Final[dict[str, Kind]] = {
     ),
     # P-04-T19 (SHL-12 e): the work a person signed changed after their sign-off.
     "sign_off.went_stale": Kind("sign_off_stale", _signer, "sign_off", "sign_off_id"),
+    # A-03-T14: a new trial balance version changed a signed mapping; its L1 and L2 signers.
+    "mapping_set.went_stale": Kind("mapping_set_stale", _listed, "mapping_set", "mapping_set_id"),
     # P-04-T21: a note was raised; its assignee (or the target's preparers) is told.
     "review_note.raised": Kind("review_note_raised", _listed, "reviewable_note", "note_id"),
     # P-04-T23: a card waits on its reserved person; "Notify" mentions them (SHL-11 b).
@@ -557,6 +562,9 @@ TEMPLATES: Final[dict[str, str]] = {
         "Your sending domain wasn't verified within 72 hours. Check its DNS records."
     ),
     "sign_off.went_stale": "Work you signed off on {engagement} changed after sign-off.",
+    "mapping_set.went_stale": (
+        "A new trial balance version on {engagement} changed the account mapping you signed."
+    ),
     "review_note.raised": "A review note on {engagement} is waiting for you.",
     "decision_card.raised": "A decision on {engagement} is waiting for you.",
     "decision_card.notify_requested": "A decision on {engagement} is waiting for you.",
@@ -659,6 +667,7 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     # P-04-T19, T21, T23, T26: the review grammar's seven kinds (C16 Approvals), their facts and
     # pending state read from the subject's owner at read time. Email text is database content
     # (`notification.<kind>`, imported), never committed.
+    NotificationKind("mapping_set_stale", "approval", "ClipboardCheck"),  # A-03-T14
     NotificationKind(
         "sign_off_stale",
         "approval",
