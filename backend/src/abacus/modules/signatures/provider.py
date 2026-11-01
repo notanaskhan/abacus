@@ -14,9 +14,11 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Protocol
+from email.utils import parsedate_to_datetime
+from typing import Final, Protocol
 from uuid import UUID
 
+from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 from abacus.kernel.errors import ServiceUnavailable
 
@@ -25,6 +27,41 @@ class ProviderUnavailable(ServiceUnavailable):
     """No e-signature provider is configured here: nothing is sent."""
 
     code = "provider_unavailable"
+
+
+# N-02-T47: a 429's wait, bounded by EnvelopeWorkflow's five-minute retry ceiling.
+RATE_LIMIT_DEFAULT_SECONDS: Final = 30.0
+RATE_LIMIT_MAX_SECONDS: Final = 300.0
+
+
+class ProviderRateLimited(ServiceUnavailable):
+    """The provider answered 429 (N-02-T47): the activity retries no sooner than `retry_after`
+    seconds, never in a tight loop; nothing is half-recorded."""
+
+    code = "provider_unavailable"
+
+    def __init__(self, retry_after: float) -> None:
+        super().__init__("rate_limited")
+        self.retry_after = retry_after
+
+
+def retry_after_seconds(header: str | None, now: datetime | None = None) -> float:
+    """`Retry-After` as seconds (delta-seconds or an HTTP date), clamped to 1..300; absent or
+    unreadable is 30."""
+    if header is None or not header.strip():
+        return RATE_LIMIT_DEFAULT_SECONDS
+    value = header.strip()
+    if value.isdigit():
+        wait = float(value)
+    else:
+        try:
+            when = parsedate_to_datetime(value)
+        except (TypeError, ValueError):
+            return RATE_LIMIT_DEFAULT_SECONDS
+        if when.tzinfo is None:
+            return RATE_LIMIT_DEFAULT_SECONDS
+        wait = (when - (now or system_now())).total_seconds()
+    return min(max(wait, 1.0), RATE_LIMIT_MAX_SECONDS)
 
 
 @dataclass(frozen=True)

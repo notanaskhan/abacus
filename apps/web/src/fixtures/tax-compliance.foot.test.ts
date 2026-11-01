@@ -65,7 +65,9 @@ describe("T-01 fixture figures", () => {
     // T-01-T15 adds one non-artboard condition after the seven (the chip before any export).
     expect(Object.keys(tax09)).toEqual(["a", "a2", "b", "c", "d", "d2", "e", "not_yet_exported"]);
     expect(Object.keys(tax12)).toEqual(["a", "a2", "b", "c", "c2", "d", "e"]);
-    expect(adm05.e.persona).toBe("harold-stein");
+    // T-01 §2: Grace Holloway views every ADM-05 artboard; the README's "Harold Stein" for e is
+    // a label error (an unknown viewer left the toolbar's firm pill unnamed, T-01-T46).
+    expect(adm05.e.persona).toBe("grace-holloway");
     expect(tax12.c2.persona).toBe("daniel-reyes");
   });
 });

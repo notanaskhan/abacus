@@ -4,7 +4,7 @@ title: T-01-T41 Filed-return delivery
 spec: SPEC-501  # T-01 §3.14; docs/contracts/efile-record.md
 acceptance_criteria: [AC-24]  # and T-01 §3.14
 risk_zone: amber
-status: in-review
+status: done
 epic: T-01
 plan_key: T-01-T41
 branch: s20c-t01-t41

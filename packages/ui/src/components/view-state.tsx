@@ -333,7 +333,13 @@ export function ViewStateBody({
   return (
     <div data-view-state={state.kind} className={cn("flex min-h-0 flex-1 flex-col", className)}>
       {head}
-      <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">{body}</div>
+      {/* A scrolling region a keyboard can reach (axe scrollable-region-focusable; T-02-T33). */}
+      <div
+        className="relative flex min-h-0 flex-1 flex-col overflow-y-auto"
+        {...(state.kind === "ready" ? { tabIndex: 0 } : {})}
+      >
+        {body}
+      </div>
     </div>
   );
 }

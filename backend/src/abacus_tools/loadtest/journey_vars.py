@@ -21,6 +21,7 @@ from typing import Final
 from abacus_tools.synthetic.fleet import plan
 from abacus_tools.synthetic.scenarios.brightwater_hale.audits import BY_LABEL
 from abacus_tools.synthetic.scenarios.brightwater_hale.clients import build_clients
+from abacus_tools.synthetic.scenarios.brightwater_hale.signatures import TO_SEND
 
 NORTHWIND: Final = "Northwind Robotics, Inc."
 J04_AUDIT: Final = "A1"
@@ -35,6 +36,8 @@ def journey_vars() -> dict[str, str]:
         "client_id": client.id,
         "engagement_id": audit.id,
         "fleet_engagement_id": str(plan("x1")[0].id("engagement", 0)),
+        # N-02-T47's signing surge: Harborview's 8879-PE, E18, the draft to send at E0.
+        "e18_envelope_id": next(e.id for e in TO_SEND if e.key == "E18"),
     }
 
 

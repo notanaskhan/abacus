@@ -39,11 +39,11 @@ interface Seen {
   calls: { method: string; path: string; body: unknown }[];
 }
 
-function show(state: Por13State): Seen {
+function show(state: Por13State, override: Record<string, FixtureHandler> = {}): Seen {
   const seen: Seen = { calls: [] };
   const scenario: Scenario = scenarios[state];
   const handlers = Object.fromEntries(
-    Object.entries(scenario.handlers).map(([key, handler]) => [
+    Object.entries({ ...scenario.handlers, ...override }).map(([key, handler]) => [
       key,
       ((request) => {
         seen.calls.push({ method: request.method, path: request.path, body: request.body });
@@ -217,5 +217,56 @@ describe("POR-13 My K-1s", () => {
       expect(writes(seen).map((c) => c.path)).toHaveLength(1);
     });
     expect((writes(seen)[0]?.body as { kind: string }).kind).toBe("address");
+  });
+
+  it("DV-12 · with a published disclosure, Download all asks first; agreeing records consent, then downloads", async () => {
+    const disclosure = {
+      id: "0d1e2f30-0000-4000-8000-000000000001",
+      version_no: 1,
+      body: "Synthetic disclosure, paragraph one.\n\nParagraph two.",
+      imported_at: "2026-09-01T12:00:00Z",
+    };
+    const seen = show("c", {
+      "GET /v1/portal/k1-furnishing-disclosure": () => Response.json(disclosure),
+    });
+    await screen.findByText("400,270");
+    await waitFor(() => {
+      expect(seen.calls.some((c) => c.path.endsWith("/k1-furnishing-disclosure"))).toBe(true);
+    });
+    fireEvent.click(screen.getByRole("button", { name: COPY.downloadAll }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Paragraph two.")).toBeTruthy();
+    expect(seen.calls.some((c) => c.path.endsWith("/download"))).toBe(false);
+    fireEvent.click(within(dialog).getByRole("button", { name: COPY.consent.agree }));
+    await waitFor(() => {
+      expect(seen.calls.some((c) => c.path.endsWith("/download"))).toBe(true);
+    });
+    const consent = writes(seen).find((c) => c.path.endsWith("/e-furnishing-consent"));
+    expect(consent?.body).toEqual({ decision: "given", disclosure_version_id: disclosure.id });
+  });
+
+  it("DV-12 · declining records the decline and downloads nothing", async () => {
+    const seen = show("c", {
+      "GET /v1/portal/k1-furnishing-disclosure": () =>
+        Response.json({
+          id: "0d1e2f30-0000-4000-8000-000000000001",
+          version_no: 1,
+          body: "Synthetic disclosure.",
+          imported_at: "2026-09-01T12:00:00Z",
+        }),
+    });
+    await screen.findByText("400,270");
+    await waitFor(() => {
+      expect(seen.calls.some((c) => c.path.endsWith("/k1-furnishing-disclosure"))).toBe(true);
+    });
+    fireEvent.click(screen.getByRole("button", { name: COPY.downloadAll }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: COPY.consent.decline }));
+    await waitFor(() => {
+      expect(writes(seen).map((c) => (c.body as { decision?: string }).decision)).toEqual([
+        "declined",
+      ]);
+    });
+    expect(seen.calls.some((c) => c.path.endsWith("/download"))).toBe(false);
   });
 });

@@ -198,7 +198,8 @@ async def registry(
 
 
 async def summary(ctx: AuthContext) -> dict[str, int]:
-    """ADM-04 D, CLI-02 b, the BND-01 tag: counts only (no names)."""
+    """ADM-04 D (with the clients the agents are blocked for), CLI-02 b, the BND-01 tag: counts
+    only (no names)."""
     scope = await _scope(ctx)
     at = await now(ctx.tenant)
     shown = display_status(at)
@@ -210,7 +211,23 @@ async def summary(ctx: AuthContext) -> dict[str, int]:
                 .group_by(shown, _consents.c.purpose)
             )
         ).all()
+        # T-01-T51 (ADM-04 D): clients in scope whose §7216 consent to use is not in force, so
+        # the agents cannot read their return information (a count, no names).
+        in_force = func.bool_or(
+            and_(_consents.c.purpose == "use", shown.in_(("signed", "expiring")))
+        )
+        per_client = (
+            select(_consents.c.client_id)
+            .where(scope)
+            .group_by(_consents.c.client_id)
+            .having(func.coalesce(in_force, False).is_(False))
+            .subquery()
+        )
+        blocked = int(
+            (await session.execute(select(func.count()).select_from(per_client))).scalar_one()
+        )
     out = {t: 0 for t in (*TILES, "total", "ai_use_signed", "offshore")}
+    out["blocked_clients"] = blocked
     for s, purpose, n in rows:
         n = int(n)
         out["total"] += n

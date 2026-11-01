@@ -10,7 +10,7 @@ from abacus.modules.engagements.api import register_work_item_kind
 from abacus.modules.identity.api import AbacusRouter, register_scope_resolver
 from abacus.modules.organisations.api import register_office_facts
 from abacus.modules.platform.api import register_search_projection
-from abacus.modules.tax import consent_capture, filing, k1_release
+from abacus.modules.tax import consent_capture, filed_delivery, filing, k1_release
 from abacus.modules.tax.approval import Blocker as ApprovalBlocker
 from abacus.modules.tax.approval import eligibility as final_approval_eligibility
 from abacus.modules.tax.approval import register as register_approval
@@ -98,6 +98,8 @@ SUBSCRIPTIONS = {
     "sign_off.recorded": on_sign_off_recorded,
     # T-02-T21: a release starts its workflow; a resend gives the corrected contact access.
     **k1_release.SUBSCRIPTIONS,
+    # T-01-T37: a published filed return emails the client's owners "Deliverable ready".
+    **filed_delivery.SUBSCRIPTIONS,
 }
 # T-02-T21: `K1ReleaseWorkflow` and its activities (the worker composes every module's parts).
 WORKFLOWS: dict[type, str] = {**k1_release.WORKFLOWS}

@@ -50,6 +50,14 @@ export const COPY = {
   },
   footer: (firm: string) =>
     `Questions about your K-1? Ask the trustee or ${firm} at the number in your beneficiary letter.`,
+  // DV-12 (S20e): the consent sheet's own words; the disclosure itself is the firm's text.
+  consent: {
+    title: "Get your K-1 electronically",
+    agree: "Agree and download",
+    decline: "No, send me the firm's copy",
+    declinedNote: (firm: string) => `You chose to get your K-1 from ${firm} by mail or email.`,
+    failed: "Your choice wasn't saved. Try again.",
+  },
   roleUnion: "Your K-1s are in Deliverables › My K-1s",
   roleUnionTip: "Deliverables opens here once it is built (POR-09)",
   tinSheet: {

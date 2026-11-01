@@ -215,7 +215,7 @@ function EvidenceDrawer({
 
 export interface SIG01Props {
   initialTab?: Sig01Tab;
-  /** The envelope number whose drawer is open (a: "E2"). */
+  /** The envelope whose drawer is open, by number (a: "E2") or id (`?envelope=<uuid>`). */
   initialEnvelope?: string | null;
   /** The envelope numbers checked for a bulk reminder (f: E5, E8, E9). */
   initialChecked?: readonly string[];
@@ -399,7 +399,7 @@ export function SIG01({
         columns={columns}
         rowKey={(r) => r.id}
         twoLine={() => true}
-        selected={all.find((r) => r.number === open)?.id ?? null}
+        selected={all.find((r) => r.number === open || r.id === open)?.id ?? null}
         onSelect={(r) => {
           setOpen(r.number);
         }}
@@ -481,7 +481,7 @@ export function SIG01({
         empty={{ title: COPY.empty.title, body: COPY.empty.body }}
       />
       <EvidenceDrawer
-        row={all.find((r) => r.number === open) ?? null}
+        row={all.find((r) => r.number === open || r.id === open) ?? null}
         now={now}
         tz={tz}
         onClose={() => {

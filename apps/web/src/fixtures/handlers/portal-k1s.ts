@@ -19,7 +19,20 @@ export function portalK1Handlers(
   base: Readonly<Record<string, FixtureHandler>>,
 ): Record<string, FixtureHandler> {
   const me = base["GET /v1/me"];
+  const refresh = base["POST /v1/portal/auth/refresh"];
   return {
+    // T-02-T32: a K-1-only person's session refreshes as a portal person's does, so the portal
+    // entry's /k1s walk (j07 8, j08 16) stays signed in; the shell itself comes from /v1/me.
+    ...(refresh === undefined
+      ? {}
+      : {
+          "POST /v1/portal/auth/refresh": (request) =>
+            refresh(
+              K1_PERSONAS[request.persona ?? ""] === undefined
+                ? request
+                : { ...request, persona: "meera-shah" },
+            ),
+        }),
     ...(me === undefined
       ? {}
       : {
@@ -33,6 +46,16 @@ export function portalK1Handlers(
         }),
     "GET /v1/portal/k1s": () => json(portalK1Rows(variant)),
     "GET /v1/portal/k1s/expected": () => json(portalK1Expected(variant)),
+    // DV-12 (S20e): no firm has published its counsel text in the fixtures (DEC-1579).
+    "GET /v1/portal/k1-furnishing-disclosure": () => json({ detail: "not_found" }, 404),
+    "POST /v1/portal/k1s/{package_id}/e-furnishing-consent": ({ params, body }) => {
+      const given = body as { decision: "given" | "declined" };
+      return json({
+        package_id: params.package_id ?? "",
+        e_furnishing_consent: given.decision,
+        decided_on: new Date(nowMs()).toISOString().slice(0, 10),
+      });
+    },
     "GET /v1/portal/k1s/{package_id}": ({ params }) => {
       const found = portalK1Detail(variant, params.package_id ?? "");
       return found === undefined ? json({ detail: "not_found" }, 404) : json(found);

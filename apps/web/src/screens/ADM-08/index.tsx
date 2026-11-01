@@ -8,6 +8,8 @@ import {
 import { Button, Drawer, Icon, Pill, Segmented, SettingsLayout, Toggle, toast } from "@abacus/ui";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type JSX, type ReactNode, useEffect, useMemo, useState } from "react";
+import { useOpenHref, useOpenOverlay } from "../../app-core/open";
+import { hrefOf, ov, to } from "../../routes/to";
 import { GROUPS } from "../ADM-01/copy";
 import { COPY } from "./copy";
 
@@ -87,7 +89,7 @@ function Value({
         <span className="flex flex-1 items-center gap-[6px] text-[13px] font-medium">
           {children}
           {lock != null && (
-            <span aria-label={lock} title={lock}>
+            <span role="img" aria-label={lock} title={lock}>
               <Icon name="lock" size={12} />
             </span>
           )}
@@ -150,6 +152,7 @@ function TaxEngine({
   const mirror = settings.mappings.filter((m) => m.kind === "workflow_status");
   const unmapped = users.filter((u) => u.target_value === "").length;
   const value = (key: string): string => cells[key] ?? cellOf(settings, key);
+  const openOverlay = useOpenOverlay();
   const toggle = (key: string, label: string): JSX.Element => (
     <Value label={label} lock={lockOf(settings, key)}>
       <Switch
@@ -175,7 +178,22 @@ function TaxEngine({
           right={<Pill variant="green">{COPY.engine.connected}</Pill>}
         />
         <Value label={COPY.engine.rows.connection}>{value("connection")}</Value>
-        <Value label={COPY.engine.rows.last_sync}>{value("last_sync")}</Value>
+        <Value label={COPY.engine.rows.last_sync}>
+          {/* ADM-08 → TAX-09: the return of the last sync, its engine sync over the page. */}
+          {settings.last_sync_return_id == null ? (
+            value("last_sync")
+          ) : (
+            <button
+              type="button"
+              className="text-left hover:underline"
+              onClick={() => {
+                openOverlay(ov.TAX09(settings.last_sync_return_id ?? ""));
+              }}
+            >
+              {value("last_sync")} ›
+            </button>
+          )}
+        </Value>
         <Value label={COPY.engine.rows.return_id_template} help={COPY.engine.returnIdHelp}>
           {value("return_id_template")}
         </Value>
@@ -342,6 +360,7 @@ function Ledgers({
 }
 
 function Mailboxes({ settings }: { settings: EngineSettingsOut }): JSX.Element {
+  const open = useOpenHref();
   return (
     <section aria-label={COPY.segments.mailboxes} className="rounded-[12px] bg-card shadow-e1">
       <Band title={cellOf(settings, "mailbox")} />
@@ -358,6 +377,17 @@ function Mailboxes({ settings }: { settings: EngineSettingsOut }): JSX.Element {
                   locked={false}
                   onChange={() => undefined}
                 />
+              ) : key === "unmatched_senders" ? (
+                // ADM-08 → INB-01: the Inbox, where unmatched senders wait (T-01-T51).
+                <button
+                  type="button"
+                  className="text-left hover:underline"
+                  onClick={() => {
+                    open(hrefOf(to.INB01()));
+                  }}
+                >
+                  {`${value} ›`}
+                </button>
               ) : (
                 `${value} ›`
               )}
@@ -390,6 +420,7 @@ export function ADM08({
   testOnOpen = false,
 }: Adm08Props): JSX.Element {
   const [active, setActive] = useState<Adm08Segment>(segment);
+  const openHref = useOpenHref();
   const [drawer, setDrawer] = useState(mappingOpen);
   const key = KEYS[active];
   const settings = useQuery(engineSettingsOptions({ path: { key } }));
@@ -439,7 +470,10 @@ export function ADM08({
       groups={GROUPS}
       active="integrations"
       onSelect={(id) => {
-        if (id !== "integrations") onNavigate?.(id);
+        // Built settings screens open through the manifest's builders (T-01-T51).
+        if (id === "general") openHref(hrefOf(to.ADM01()));
+        else if (id === "consents") openHref(hrefOf(to.ADM05()));
+        else if (id !== "integrations") onNavigate?.(id);
       }}
       dirty={dirty}
       invalid={conflict}

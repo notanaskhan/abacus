@@ -24,7 +24,7 @@ from typing import Final
 ROOT: Final = Path(__file__).resolve().parents[3].parent
 ON_CALL: Final = ROOT / "docs" / "ops" / "on-call.md"
 HANDLES: Final = frozenset({"N", "AY"})
-_PILOT: Final = re.compile(r"PF-[ATC]\d{1,2}|PC\d{2}-\d{2}")
+_PILOT: Final = re.compile(r"PF-[ATCX]\d{1,2}|PC\d{2}-\d{2}")
 _EMAIL: Final = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
 _PHONE: Final = re.compile(r"(?<![\d-])\+?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}(?!\d)")
 _UPDATED: Final = re.compile(r"^updated:\s*(\d{4}-\d{2}-\d{2})\s*$", re.MULTILINE)

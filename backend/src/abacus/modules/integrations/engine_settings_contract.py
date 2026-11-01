@@ -11,6 +11,7 @@ refuses and 404 with `tax.engine_bridge` off; live since T-01-T20 (`engine_setti
 from __future__ import annotations
 
 from typing import Annotated, Literal, cast
+from uuid import UUID
 
 from fastapi import Depends, Path
 from pydantic import BaseModel, ConfigDict, Field
@@ -71,6 +72,9 @@ class EngineSettingsOut(BaseModel):
     mappings: Annotated[list[MappingRowOut], classified("confidential")]
     version: Annotated[int, classified("internal")]
     allowed_actions: Annotated[list[str], classified("internal")]
+    # T-01-T51 (additive): the return of the firm's last engine sync, for ADM-08's Last sync link
+    # to TAX-09 (which authorises the return itself); None before the first sync.
+    last_sync_return_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class EngineSettingsIn(BaseModel):
@@ -142,7 +146,8 @@ def _out(v: svc.SettingsView) -> EngineSettingsOut:
 async def engine_settings_route(key: IntegrationKey, ctx: Ctx) -> EngineSettingsOut:
     """ADM-08 a: the cells with their locks and the mappings."""
     await _gate(ctx, "integration.read")
-    return _out(await svc.settings_view(ctx, key))
+    out = _out(await svc.settings_view(ctx, key))
+    return out.model_copy(update={"last_sync_return_id": await svc.last_engine_sync(ctx.tenant)})
 
 
 @engine_settings_router.put(

@@ -2,6 +2,8 @@ import type { K1PackageOut, PortalK1ExpectedOut } from "@abacus/api-client";
 import { portalDetailsUpload, portalK1Attachment, portalK1Download } from "@abacus/api-client";
 import {
   portalDetailsChangeMutation,
+  portalEFurnishingMutation,
+  portalK1DisclosureOptions,
   portalK1Options,
   portalK1sExpectedOptions,
   portalK1sOptions,
@@ -230,6 +232,18 @@ function PackageCard({
   const refresh = (): void => {
     void queryClient.invalidateQueries();
   };
+  // DV-12 (S20e): once the firm publishes its disclosure, the first download waits on consent.
+  const disclosure = useQuery({ ...portalK1DisclosureOptions(), retry: false });
+  const consent = detail.data?.package.e_furnishing_consent ?? row.e_furnishing_consent ?? null;
+  const needsConsent = disclosure.data !== undefined && consent !== "given";
+  const [pending, setPending] = useState<(() => Promise<void>) | null>(null);
+  const gated = (run: () => Promise<void>): void => {
+    if (needsConsent) {
+      setPending(() => run);
+      return;
+    }
+    void run();
+  };
   const downloadAll = async (): Promise<void> => {
     setBusy(true);
     try {
@@ -264,7 +278,7 @@ function PackageCard({
       key={id}
       type="button"
       onClick={() => {
-        void downloadOne(id, `${label}.pdf`);
+        gated(() => downloadOne(id, `${label}.pdf`));
       }}
       className="inline-flex h-[28px] items-center gap-[6px] rounded-pill bg-card px-[10px] text-dense text-ink shadow-e1 hover:shadow-e3"
     >
@@ -362,13 +376,33 @@ function PackageCard({
             className="ml-auto"
             loading={busy}
             onClick={() => {
-              void downloadAll();
+              gated(downloadAll);
             }}
           >
             {COPY.downloadAll}
           </Button>
         </footer>
+        {consent === "declined" && disclosure.data !== undefined && (
+          <p className="text-dense text-ink-2">{COPY.consent.declinedNote(firm)}</p>
+        )}
       </Card>
+      {pending !== null && disclosure.data !== undefined && (
+        <ConsentSheet
+          packageId={row.id}
+          disclosureId={disclosure.data.id}
+          body={disclosure.data.body}
+          firm={firm}
+          onClose={() => {
+            setPending(null);
+          }}
+          onDecided={(given) => {
+            const run = pending;
+            setPending(null);
+            refresh();
+            if (given) void run();
+          }}
+        />
+      )}
       {showDetails && (
         <Fieldset title={COPY.details.title}>
           <ValueRow label={COPY.details.name} kind="value">
@@ -526,6 +560,84 @@ function TinSheet({
         />
         <p className="text-meta text-ink-3">{COPY.tinSheet.uploadW8}</p>
         <p className="text-meta text-ink-3">{COPY.tinSheet.helper}</p>
+      </div>
+    </Dialog>
+  );
+}
+
+/** DV-12 (S20e): the firm's counsel-approved electronic-furnishing text, read before consenting;
+ * a decline keeps the firm's own copy by mail or email. The text is the firm's content (plain
+ * text, never markup). */
+function ConsentSheet({
+  packageId,
+  disclosureId,
+  body,
+  firm,
+  onClose,
+  onDecided,
+}: {
+  packageId: string;
+  disclosureId: string;
+  body: string;
+  firm: string;
+  onClose: () => void;
+  onDecided: (given: boolean) => void;
+}): JSX.Element {
+  const decide = useMutation(portalEFurnishingMutation());
+  const choose = (given: boolean): void => {
+    decide.mutate(
+      {
+        path: { package_id: packageId },
+        body: { decision: given ? "given" : "declined", disclosure_version_id: disclosureId },
+      },
+      {
+        onSuccess: () => {
+          if (!given) toast.show(COPY.consent.declinedNote(firm));
+          onDecided(given);
+        },
+        onError: () => {
+          toast.show(COPY.consent.failed);
+        },
+      },
+    );
+  };
+  return (
+    <Dialog
+      open
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+      title={COPY.consent.title}
+      size="md"
+      action={
+        <Button
+          variant="primary"
+          loading={decide.isPending}
+          onClick={() => {
+            choose(true);
+          }}
+        >
+          {COPY.consent.agree}
+        </Button>
+      }
+    >
+      <div className="flex flex-col gap-[12px] p-[16px] text-paragraph text-ink-2">
+        <div className="flex max-h-[360px] flex-col gap-[8px] overflow-auto">
+          {body.split(/\n\s*\n/).map((para, i) => (
+            <p key={i} className="whitespace-pre-line">
+              {para}
+            </p>
+          ))}
+        </div>
+        <Button
+          variant="secondary"
+          disabled={decide.isPending}
+          onClick={() => {
+            choose(false);
+          }}
+        >
+          {COPY.consent.decline}
+        </Button>
       </div>
     </Dialog>
   );

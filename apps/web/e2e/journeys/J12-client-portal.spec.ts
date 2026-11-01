@@ -4,6 +4,7 @@
 // planned is `test.fixme` naming its owning epic, task and chapter 01 date (journey-e2e skill).
 // The portal is white-labelled: no step may show the product's name (INV-4).
 import { DEMO_INSTANT, expect, test } from "../harness";
+import { M13, artboard, openEnvelope } from "../signatures/support";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -85,6 +86,35 @@ test.describe("J12-core", () => {
     await page.getByRole("button", { name: "Verify" }).click();
     await journey.step("J12 step 2b: Tess's home (POR-02d)", async () => {
       await expect(page.getByRole("heading", { name: "Good morning, Tess" })).toBeVisible();
+      await expect(page.getByText(/accrued/i)).toHaveCount(0);
+    });
+  });
+
+  // T-01-T29 (T-01-T12's TRI predicate): a portal grant scoped to a tax_return work item asks for
+  // two-step verification before return information shows. Written for the full stack; neither
+  // project can walk it yet, and each says why.
+  test("j12 TRI: Claire Feld completes two-step verification on her 1040 scope", async ({
+    journey,
+  }) => {
+    test.fixme(
+      journey.project === "fixture",
+      "POR-01 has no TRI step-up state for Claire: its two-step frame (c) is Tess Moreno's, by firm policy; the TRI step is the live sign-in's (T-01-T12)",
+    );
+    test.fixme(journey.project !== "fixture", "the codes come from the sink mailbox (F-04-T22)");
+    await journey.as("claire-feld", "/sign-in", { clock: SIGN_IN_CLOCK });
+    const page = journey.page;
+    await page.getByLabel("Email").fill("claire.feld@sink.brightwaterhale.test");
+    await page.getByRole("button", { name: "Continue" }).click();
+    await page.locator("input[autocomplete='one-time-code']").first().focus();
+    await page.keyboard.type("481027");
+    await journey.step("J12 TRI: two-step for return information (POR-01c)", async () => {
+      await expect(page.getByRole("heading", { name: "Two-step verification" })).toBeVisible();
+    });
+    await page.getByRole("group", { name: "Authenticator code" }).locator("input").first().focus();
+    await page.keyboard.type("481027");
+    await page.getByRole("button", { name: "Verify" }).click();
+    await journey.step("J12 TRI: Claire's 1040 documents (POR-03a)", async () => {
+      await expect(page.getByText("Form 1095-C From Mercer Hill Health")).toBeVisible();
       await expect(page.getByText(/accrued/i)).toHaveCount(0);
     });
   });
@@ -241,4 +271,43 @@ test.describe("J12-core", () => {
       },
     );
   }
+});
+
+// N-02-T42 (N-02 §10.1, M13): j12 9, a client reviews, consents, signs and declines on POR-06's own
+// states, and the identity-question 8879 path (d). Owen Calder is POR-06's persona.
+test.describe("J12 signing (N-02-T42)", () => {
+  test("j12 9: a client reviews, consents, signs, declines and reads the 8879 path", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", M13);
+    await journey.as("owen-calder", "/sign", { scenario: "POR-06:a" });
+    await journey.step(
+      "j12 9: review, Continue waits on the last page (POR-06 a)",
+      async (page) => {
+        await openEnvelope(page, /^Engagement letter — Cost segregation/);
+        await expect(page.getByText(/Read to page \d+ to continue\./).first()).toBeVisible();
+        await expect(page.getByText(/Accrued/)).toHaveCount(0);
+      },
+    );
+    // POR-06 c is the provider's return (`/sign/<id>/return?session=`), whose session id only the
+    // provider hands back: the fixture walk reads c's own artboard, the hosted walk the real return.
+    await journey.as("owen-calder", "/sign", { scenario: "POR-06:c" });
+    await journey.step("j12 9: signed, the completion card (POR-06 c)", async (page) => {
+      await page.goto(artboard("POR-06", "c"));
+      await expect(page.getByText(/^Signed\. Thank you, /).first()).toBeVisible();
+      await expect(page.locator("[data-artboard]").getByText(/Accrued/)).toHaveCount(0);
+    });
+    await journey.as("owen-calder", "/sign", { scenario: "POR-06:d" });
+    await journey.step(
+      "j12 9: the 8879 verifies by identity questions (POR-06 d)",
+      async (page) => {
+        await openEnvelope(page, /^Form 8879-PE · 2025/);
+        await expect(page.getByText("Identity questions").first()).toBeVisible();
+      },
+    );
+    await journey.as("owen-calder", "/sign", { scenario: "POR-06:g" });
+    await journey.step("j12 9: declined (POR-06 g)", async (page) => {
+      await expect(page.getByText(/[Dd]eclined/).first()).toBeVisible();
+    });
+  });
 });

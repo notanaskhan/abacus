@@ -24,3 +24,5 @@ floors:
   ai_gateway: 20
   audit_trail: 14
   compute: 0
+  # N-02-T47 (DEC-1673): a new scope; the floor is raised to its first weekly baseline, target 75.
+  signatures: 0
