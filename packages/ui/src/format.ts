@@ -524,6 +524,22 @@ export function period(start: Instant, end: Instant, options: ZoneOptions = {}):
     : `${monthDay(a)}, ${String(a.y)} – ${monthDay(b)}, ${String(b.y)}`;
 }
 
+/** The hour (0–23) at an instant in the firm's zone (HOME-02's "Today 2 PM" hides after 2 PM). */
+export function hourIn(at: Date | number, tz: string = DEFAULT_TZ): number {
+  return civilAt(msOf(at), tz).time?.h ?? 0;
+}
+
+/** The instant of `hour`:00 on a calendar date (YYYY-MM-DD) in the firm's zone, as ISO 8601 UTC:
+ * "Tomorrow 9 AM" for a snooze (I-01-T19). DST-safe by one correction against the zone's clock. */
+export function zonedInstant(day: string, hour: number, tz: string = DEFAULT_TZ): string {
+  const m = CALENDAR_DATE.exec(day);
+  if (m === null) throw new Error("zonedInstant needs a YYYY-MM-DD date");
+  const guess = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), hour);
+  const seen = civilAt(guess, tz);
+  const local = Date.UTC(seen.y, seen.m - 1, seen.d, seen.time?.h ?? 0, seen.time?.min ?? 0);
+  return new Date(guess - (local - guess)).toISOString();
+}
+
 /** The calendar date at an instant in the firm's zone, as YYYY-MM-DD (the business "today"). */
 export function isoDate(at: Date | number, tz: string = DEFAULT_TZ): string {
   const c = civilAt(msOf(at), tz);

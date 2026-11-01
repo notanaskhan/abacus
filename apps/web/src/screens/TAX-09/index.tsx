@@ -537,6 +537,13 @@ export function TAX09({
             <a href={hrefOf(to.INB01())} className="font-medium text-ink hover:underline">
               {COPY.inbox}
             </a>
+            {/* TAX-09 → TAX-12: the return's delivery, e-file and acknowledgements (T-01-T51). */}
+            <a
+              href={hrefOf(to.TAX12({ returnId: data.return_id }))}
+              className="font-medium text-ink hover:underline"
+            >
+              {COPY.delivery}
+            </a>
             <Tooltip content={COPY.settingsTip}>
               <span className="font-medium text-ink">{COPY.settings} →</span>
             </Tooltip>

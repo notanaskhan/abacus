@@ -4,7 +4,7 @@ title: A-03-T05 migration 0520 sampling (populations, ties, sample sets, frozen 
 spec: SPEC-580
 acceptance_criteria: [AC-13, AC-14, AC-15]
 risk_zone: amber
-status: in-review
+status: done
 epic: A-03
 plan_key: A-03-T05
 branch: s20-a03-t05

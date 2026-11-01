@@ -80,7 +80,8 @@ export function EvidenceDrawer({
         <Skeleton />
       ) : (
         <div data-drawer="consent-evidence" className="flex flex-col gap-[12px] p-[12px]">
-          <dl className="rounded-pane bg-card shadow-e1">
+          {/* SheetRow is a label and a value, not dt/dd: a plain group (axe definition-list). */}
+          <div className="rounded-pane bg-card shadow-e1">
             <SheetRow
               label={COPY.drawer.purpose}
               value={documents.length > 1 ? SET_PURPOSE : PURPOSES[data.consent.purpose]}
@@ -108,7 +109,7 @@ export function EvidenceDrawer({
               label={COPY.drawer.reads}
               value={COPY.drawer.readCount(data.agent_reads.length)}
             />
-          </dl>
+          </div>
           {tabs.length > 1 && (
             <Segmented
               label={COPY.drawer.documents}

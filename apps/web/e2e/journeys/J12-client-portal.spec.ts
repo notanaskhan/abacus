@@ -89,6 +89,35 @@ test.describe("J12-core", () => {
     });
   });
 
+  // T-01-T29 (T-01-T12's TRI predicate): a portal grant scoped to a tax_return work item asks for
+  // two-step verification before return information shows. Written for the full stack; neither
+  // project can walk it yet, and each says why.
+  test("j12 TRI: Claire Feld completes two-step verification on her 1040 scope", async ({
+    journey,
+  }) => {
+    test.fixme(
+      journey.project === "fixture",
+      "POR-01 has no TRI step-up state for Claire: its two-step frame (c) is Tess Moreno's, by firm policy; the TRI step is the live sign-in's (T-01-T12)",
+    );
+    test.fixme(journey.project !== "fixture", "the codes come from the sink mailbox (F-04-T22)");
+    await journey.as("claire-feld", "/sign-in", { clock: SIGN_IN_CLOCK });
+    const page = journey.page;
+    await page.getByLabel("Email").fill("claire.feld@sink.brightwaterhale.test");
+    await page.getByRole("button", { name: "Continue" }).click();
+    await page.locator("input[autocomplete='one-time-code']").first().focus();
+    await page.keyboard.type("481027");
+    await journey.step("J12 TRI: two-step for return information (POR-01c)", async () => {
+      await expect(page.getByRole("heading", { name: "Two-step verification" })).toBeVisible();
+    });
+    await page.getByRole("group", { name: "Authenticator code" }).locator("input").first().focus();
+    await page.keyboard.type("481027");
+    await page.getByRole("button", { name: "Verify" }).click();
+    await journey.step("J12 TRI: Claire's 1040 documents (POR-03a)", async () => {
+      await expect(page.getByText("Form 1095-C From Mercer Hill Health")).toBeVisible();
+      await expect(page.getByText(/accrued/i)).toHaveCount(0);
+    });
+  });
+
   test("J12 1e: an expired sign-in link is renewed by email (POR-01e)", async ({ journey }) => {
     test.fixme(journey.project !== "fixture", "the link comes from the sink mailbox (F-04-T22)");
     await journey.as("claire-feld", `/sign-in?st=e#link=${EXPIRED_LINK}`, {

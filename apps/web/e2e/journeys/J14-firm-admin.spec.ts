@@ -146,3 +146,78 @@ test.describe("J14 firm administration", () => {
     },
   );
 });
+
+// T-01-T29: J14 steps 4 and 8, the tax pilot's administration (T-01 §5 item 1). Felix Andersen
+// maps the CCH Axcess file bridge on ADM-08 (the return-ID convention, the office codes, the staff
+// IDs) and a second Accrued status for one workflow status is refused; Grace Holloway drafts three
+// consent renewals on ADM-05. Fixture mode walks the screens' own scenarios; the full stack and
+// staging walk them once the T-01 slices and the CCH integration row are on the stack.
+const TAX_ADMIN_LIVE =
+  "full stack: ADM-05 and ADM-08 over the T-01 slices and the CCH integration row (T-01-T23, T-01-T20); staging once ABACUS_STAGING_URL is set (F-04-T28)";
+
+test.describe("J14 tax administration (T-01-T29)", () => {
+  test.beforeEach(({ journey }) => {
+    const hosted = journey.project === "staging" || journey.project === "canary";
+    test.skip(
+      hosted && HOSTED_URL[journey.project] === undefined,
+      `ABACUS_${journey.project.toUpperCase()}_URL is not set`,
+    );
+    test.fixme(journey.project !== "fixture", TAX_ADMIN_LIVE);
+  });
+
+  test("j14 4: Felix maps the CCH return-ID convention and office codes and a duplicate workflow mapping is refused", async ({
+    journey,
+  }) => {
+    const flags = ["tax.engine_bridge"];
+    await journey.as("felix-andersen", "/settings/integrations", { scenario: "ADM-08:a", flags });
+    await journey.step(
+      "J14 step 4: the CCH return-ID convention and offices (ADM-08 a)",
+      async (page) => {
+        const engine = page.getByRole("region", { name: "CCH Axcess Tax" });
+        await expect(engine.getByText("{Tax year}{Type}:{Client code}:V{n}")).toBeVisible();
+        await expect(
+          engine.getByText("Tax team — 21 of 21 mapped to CCH staff IDs"),
+        ).toBeVisible();
+        for (const office of ["CHI-01 · Chicago", "DEN-01 · Denver", "NYC-01 · New York"]) {
+          await expect(engine.getByText(office)).toBeVisible();
+        }
+      },
+    );
+    await journey.as("felix-andersen", "/settings/integrations", { scenario: "ADM-08:g", flags });
+    await journey.step("J14 step 4: the staff IDs (Edit mapping, ADM-08 g)", async (page) => {
+      const drawer = page.getByRole("dialog", { name: "Edit mapping" });
+      await expect(
+        drawer.getByRole("list", { name: "User mapping" }).getByRole("listitem"),
+      ).toHaveCount(21);
+    });
+    await journey.as("felix-andersen", "/settings/integrations", { scenario: "ADM-08:f", flags });
+    await journey.step(
+      "J14 step 4: a duplicate workflow mapping is refused (ADM-08 f)",
+      async (page) => {
+        await expect(
+          page.getByText("Each workflow status may map from one Accrued status."),
+        ).toBeVisible();
+        await page.getByRole("switch", { name: "Read diagnostics back after export" }).click();
+        await expect(page.getByRole("button", { name: "Save", exact: true })).toBeDisabled();
+      },
+    );
+  });
+
+  test("j14 8: Grace drafts three consent renewals", async ({ journey }) => {
+    await journey.as("grace-holloway", "/settings/consents", {
+      scenario: "ADM-05:d",
+      flags: ["consents.registry", "clients.tax_profile"],
+    });
+    await journey.step("J14 step 8: three expiring consents selected (ADM-05 d)", async (page) => {
+      const rows = page.getByRole("table").getByRole("row");
+      for (const n of [3, 4, 5]) {
+        await rows.nth(n).getByRole("checkbox").check();
+      }
+      await expect(page.getByRole("button", { name: "Renew 3…" })).toBeVisible();
+    });
+    await journey.step("J14 step 8: Renew 3…, one envelope per client", async (page) => {
+      await page.getByRole("button", { name: "Renew 3…" }).click();
+      await expect(page.getByText("3 renewal envelopes drafted")).toBeVisible();
+    });
+  });
+});

@@ -4,7 +4,7 @@ title: A-03-T03 C9 v2 contract stub (taxonomy and mapping)
 spec: SPEC-580
 acceptance_criteria: [AC-16]
 risk_zone: red
-status: in-review
+status: done
 epic: A-03
 plan_key: A-03-T03
 branch: s20-a03-t03

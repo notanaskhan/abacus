@@ -66,3 +66,27 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: ebp.modules
+    description: 'A-05 EBP plan audits (docs/contracts/ebp-workpapers.md): every /v1/audits/{work_item_id}/ebp/* route but the Form 5500 tie-out, the tests grid, the rail rows and screens EBP-01 to 06, 08 and 09. Off: 404 and the rail rows are absent. On: the v1 stub reads answer the Northwind seed''s figures and every write is 501 not_implemented until its task. A-05-T04, DEC-1859.'
+    owner: ayushkbhatia
+    created: 2026-11-01
+    expires: 2027-04-30
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: ebp.form5500_tieout
+    description: 'A-05 EBP-07 Form 5500 tie-out: /v1/audits/{work_item_id}/ebp/form-5500* and the Form5500TieOut trigger. Off: 404 and EBP-07 is absent. A-05-T04, DEC-1859.'
+    owner: ayushkbhatia
+    created: 2026-11-01
+    expires: 2027-04-30
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: assurance.estimates_rp
+    description: 'A-05 AUD-27 estimates, related parties and parties in interest: /v1/audits/{work_item_id}/estimates*, /related-parties*, /parties-in-interest and /prohibited-transactions. Off: 404 and AUD-27 is absent. A-05-T04, DEC-1859.'
+    owner: ayushkbhatia
+    created: 2026-11-01
+    expires: 2027-04-30
+    override: DEC-137
+    kind: boolean
+    default: false

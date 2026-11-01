@@ -4,12 +4,12 @@ title: T-01-T11 gateway condition 6 and the TRI gate
 spec: SPEC-501
 acceptance_criteria: [AC-17, AC-18, AC-19, AC-20, AC-21, AC-22, AC-23]
 risk_zone: red
-status: in-review
+status: done
 epic: T-01
 plan_key: T-01-T11
 branch: s17-t01-t11
 created: 2026-10-30
-updated: 2026-10-30
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -60,3 +60,4 @@ a revocation takes effect on the next call, and existing audit-agent boundary te
 
 ## Progress log
 - 2026-10-30: built in S17 Lane 2 (AY on N's red row, as in S9); tests run in the end review.
+- 2026-11-01: merged to main in #783 (fe53c8de9).

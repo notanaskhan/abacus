@@ -8,6 +8,7 @@ import { homeRoutes } from "./home";
 import { inboxRoutes } from "./inbox";
 import { knowledgeRoutes } from "./knowledge";
 import { settingsRoutes } from "./settings";
+import { signatureRoutes } from "./signatures";
 import { taxReturnRoutes } from "./tax-returns";
 // SHL-08 (P-03-T14): registers the `?ov=viewer` drawer for every firm route.
 import "./viewer";
@@ -31,7 +32,7 @@ export const FIRM_AREAS = [
   { key: "notices", label: "Notices", routes: [] },
   { key: "audits", label: "Audits", routes: auditRoutes },
   { key: "closes", label: "Closes", routes: [] },
-  { key: "signatures", label: "Signatures", routes: [] },
+  { key: "signatures", label: "Signatures", routes: signatureRoutes },
   { key: "settings", label: "Settings", routes: settingsRoutes },
 ] as const;
 
@@ -49,6 +50,8 @@ export const firmRoutes = [
   ...auditRoutes,
   // T-02-T12: TAX-01 behind `tax.returns_v1`.
   ...taxReturnRoutes,
+  // N-02-T40: SIG-01 behind `signatures.envelopes`.
+  ...signatureRoutes,
   // P-01-T02: the Engagements index and the flag-off landings of planned areas.
   ...areaRoutes,
 ] as const;

@@ -6,8 +6,9 @@ import type { Manifest } from "./types";
 export const sigScreens = {
   "SIG-01": {
     name: "Signatures hub · evidence drawer",
+    // N-02-T40 (DEC-1582): routed; `planned` until its designed links are wired (as ENG-02).
     status: "planned",
-    path: null,
+    path: "/signatures",
     navArea: "Signatures",
   },
   "SIG-02": {
