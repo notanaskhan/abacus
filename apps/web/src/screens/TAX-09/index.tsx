@@ -10,17 +10,18 @@ import {
 import {
   Button,
   Checkbox,
+  date,
   Dialog,
   FullSheet,
   Icon,
   type IconName,
+  toast,
   Pill,
+  prose,
+  status,
   StatusDisc,
   SyncChip,
   Tooltip,
-  prose,
-  date,
-  toast,
   useReducedMotion,
 } from "@abacus/ui";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -412,6 +413,10 @@ export function TAX09({
             setOpen((o) => !o);
           }}
         />
+        {/* T-01-T52 (T-01 §5.6): the chip's state change is announced politely. */}
+        <span aria-live="polite" className="sr-only" data-sync-live>
+          {status("return_sync_chip", state, vars === undefined ? {} : { vars }).label}
+        </span>
         {!bare && (
           <span className="flex flex-1 items-center justify-center gap-[8px]">
             <span className="text-[15px] font-medium">{COPY.title}</span>
