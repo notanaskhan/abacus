@@ -490,6 +490,21 @@ class GuidanceBlockOut(BaseModel):
     strong: Annotated[list[MatchRangeOut], classified("internal")]
 
 
+class StepSourceOut(BaseModel):
+    """K-01-T23 (KNW-02 a, a2): where an imported step came from; `match_id` ties its row to the
+    page region both ways (C4's tracing grammar; the server's id, never derived from text)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    match_id: Annotated[str, classified("internal")]
+    file_id: Annotated[UUID, classified("internal")]
+    page_from: Annotated[int, classified("internal")]
+    page_to: Annotated[int, classified("internal")]
+    bbox: Annotated[list[float] | None, classified("internal")]  # points: x0, y0, x1, y1
+    quote: Annotated[str | None, classified("internal")]
+    verified: Annotated[bool, classified("internal")]
+
+
 class StepOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -513,6 +528,10 @@ class StepOut(BaseModel):
     rules_count: Annotated[int, classified("internal")]
     row_version: Annotated[int, classified("internal")]
     allowed_actions: Annotated[list[str], classified("internal")]
+    # K-01-T23 (additive): an imported step's sources; empty for a workbook step.
+    sources: Annotated[list[StepSourceOut], classified("internal")] = Field(
+        default_factory=list[StepSourceOut]
+    )
 
 
 class ProgramOut(BaseModel):
@@ -663,7 +682,30 @@ async def program_route(program_id: Annotated[UUID, Path()], ctx: Ctx) -> Progra
 async def program_steps_route(program_id: Annotated[UUID, Path()], ctx: Ctx) -> list[StepOut]:
     """KNW-03 a, b: the program's steps in order."""
     await _gate(ctx, METHODOLOGY_PROGRAMS, "methodology.read")
-    return [_step_out(v) for v in await programs.program_steps(ctx, program_id)]
+    from abacus.modules.methodology import imports
+
+    views = await programs.program_steps(ctx, program_id)
+    # K-01-T23: an imported step's sources for KNW-02's viewer (none for a workbook step).
+    found = await imports.step_sources(ctx, [v.step.id for v in views])
+    return [
+        _step_out(v).model_copy(
+            update={
+                "sources": [
+                    StepSourceOut(
+                        match_id=f"step-{s.step_id}-p{s.page_from}",
+                        file_id=s.file_id,
+                        page_from=s.page_from,
+                        page_to=s.page_to,
+                        bbox=s.bbox,
+                        quote=s.quote,
+                        verified=s.verified,
+                    )
+                    for s in found.get(v.step.id, [])
+                ]
+            }
+        )
+        for v in views
+    ]
 
 
 @programs_router.get(
