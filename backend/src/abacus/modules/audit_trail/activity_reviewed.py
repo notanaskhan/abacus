@@ -634,5 +634,12 @@ REVIEWED_FALLBACK: Final = frozenset(
         "materiality_version.decided",
         "materiality_version.reassessed",
         "materiality_version.revised",
+        # A-04-T13: the risk register's rows, field edits, proposals and responses.
+        "risk.created",
+        "risk.updated",
+        "risk.significance_proposed",
+        "risk.rebuttal_proposed",
+        "risk.linked",
+        "risk.unlinked",
     }
 )

@@ -136,6 +136,7 @@ from abacus.modules.methodology.standards import (
     current_version_of_kind,
     policy_payload,
     register_standard_examples,
+    rmm_matrix_for,
 )
 from abacus.modules.methodology.standards_catalog import register_standards_providers
 from abacus.modules.methodology.standards_contract import (
@@ -152,6 +153,7 @@ from abacus.modules.methodology.standards_contract import (
     RequiredLevels,
     ReturnApproval,
     ReturnApprovalPolicyPayload,
+    RmmFor,
     SsarsFramework,
     StandardKind,
     VarianceResult,
@@ -251,6 +253,7 @@ __all__ = [
     "ReturnApproval",
     "ReturnApprovalPolicyPayload",
     "ReviewItem",
+    "RmmFor",
     "SourceEncrypted",
     "SourceMalformed",
     "SourceTooLong",
@@ -313,6 +316,7 @@ __all__ = [
     "report_templates_in_firm",
     "required_review_levels",
     "return_approval_policy",
+    "rmm_matrix_for",
     "ssars_framework_for",
     "standard_by_key",
     "standard_workbook",
