@@ -31,7 +31,7 @@ export const adm05 = defineScenarios({
   b: at("b", "grace-holloway", MON_924),
   c: at("c", "grace-holloway", MON_924),
   d: at("d", "grace-holloway", MON_924),
-  e: at("e", "harold-stein", MON_924),
+  e: at("e", "grace-holloway", MON_924), // T-01 §2: Grace views every artboard; "Harold Stein" is the label
   f: at("f", "grace-holloway", MON_924),
   g: at("g", "grace-holloway", MON_924),
   h: at("h", "grace-holloway", MON_924),

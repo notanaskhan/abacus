@@ -32,3 +32,6 @@ the rest of J06 until E0 carries the delivery slice.
 
 ## Progress log
 - 2026-11-01: written; specs run at the batch's end review.
+- 2026-11-01 end review: ADM-05e's axe found the toolbar firm pill unnamed: scenario e used viewer
+  `harold-stein`, which T-01 §2 calls a label error; e now views as Grace (scenario and foot test).
+  CLI-05d passed twice on main (one navigation flake in the first run).
