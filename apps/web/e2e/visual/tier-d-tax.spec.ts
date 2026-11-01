@@ -46,15 +46,17 @@ test("TAX-09a2: the sync popover is 462 wide", async ({ page }) => {
 for (const st of ["d", "f"] as const) {
   test(`CLI-05${st}: rail 330`, async ({ page }) => {
     const frame = await board(page, "CLI-05", st);
-    const rail = frame.locator("[data-rail-row]").first().locator("xpath=ancestor::aside[1]");
+    const rail = frame.locator("[data-cockpit='rail']").first();
     expect((await size(rail)).width).toBe(330);
   });
 }
 
 test("TAX-12a: Tab reaches the rail rows and the canvas actions", async ({ page }) => {
   const frame = await board(page, "TAX-12", "a");
-  await frame.locator("[data-rail-row]").first().focus();
-  await expect(frame.locator("[data-rail-row]").first()).toBeFocused();
+  // Phase rows are not themselves controls: Tab lands on the first control inside the rail.
+  const first = frame.locator("[data-cockpit='rail'] button").first();
+  await first.focus();
+  await expect(first).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(page.locator(":focus")).toBeVisible();
 });
