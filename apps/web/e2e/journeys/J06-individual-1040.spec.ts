@@ -4,7 +4,7 @@
 // project the step walks BND-02's own scenario (`?screen=`, G-01-T16); the other
 // projects wait for `binders.engine` on in E0 and the BND-02 live swap (P-06-T16) and keep it fixme.
 import { expect, test } from "../harness";
-import { M13 } from "../signatures/support";
+import { M13, openEnvelope } from "../signatures/support";
 
 const LIVE = "binders.engine is off in E0; the BND-02 live swap is P-06-T16's";
 
@@ -100,10 +100,16 @@ test.describe("J06 · N-02 the joint 8879", () => {
       scenario: "POR-06:e",
       clock: "2026-10-02T09:10:00-05:00",
     });
-    await journey.step("j06 11a: 1 of 2 signed (POR-06 e)", async (page) => {
-      await expect(page.getByText("1 of 2 signed").first()).toBeVisible();
-      await expect(page.getByText(/Accrued/)).toHaveCount(0);
-    });
+    await journey.step(
+      "j06 11a: Claire signed, Jonah has his own link (POR-06 e)",
+      async (page) => {
+        await openEnvelope(page, /^Form 8879 · 2025 · Jonah & Claire Feld/);
+        // One of the two spouses (the ERO's signature is the third): transmission stays locked.
+        await expect(page.getByText("1 of 3 signed").first()).toBeVisible();
+        await expect(page.getByText("Jonah Feld — Separate link").first()).toBeVisible();
+        await expect(page.getByText(/Accrued/)).toHaveCount(0);
+      },
+    );
   });
 
   test("j06 11b: three failed identity checks route to a handwritten signature", async ({
@@ -111,6 +117,7 @@ test.describe("J06 · N-02 the joint 8879", () => {
   }) => {
     await journey.as("owen-calder", "/sign", { scenario: "POR-06:h" });
     await journey.step("j06 11b: identity not verified, a paper form (POR-06 h)", async (page) => {
+      await openEnvelope(page, /^Form 8879-PE · 2025/);
       await expect(page.getByText("We couldn't verify your identity.").first()).toBeVisible();
       await expect(page.getByText(/paper form to sign/).first()).toBeVisible();
     });

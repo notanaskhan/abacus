@@ -4,7 +4,7 @@
 // planned is `test.fixme` naming its owning epic, task and chapter 01 date (journey-e2e skill).
 // The portal is white-labelled: no step may show the product's name (INV-4).
 import { DEMO_INSTANT, expect, test } from "../harness";
-import { M13 } from "../signatures/support";
+import { M13, artboard, openEnvelope } from "../signatures/support";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -255,18 +255,24 @@ test.describe("J12 signing (N-02-T42)", () => {
     await journey.step(
       "j12 9: review, Continue waits on the last page (POR-06 a)",
       async (page) => {
+        await openEnvelope(page, /^Engagement letter — Cost segregation/);
         await expect(page.getByText(/Read to page \d+ to continue\./).first()).toBeVisible();
         await expect(page.getByText(/Accrued/)).toHaveCount(0);
       },
     );
+    // POR-06 c is the provider's return (`/sign/<id>/return?session=`), whose session id only the
+    // provider hands back: the fixture walk reads c's own artboard, the hosted walk the real return.
     await journey.as("owen-calder", "/sign", { scenario: "POR-06:c" });
     await journey.step("j12 9: signed, the completion card (POR-06 c)", async (page) => {
+      await page.goto(artboard("POR-06", "c"));
       await expect(page.getByText(/^Signed\. Thank you, /).first()).toBeVisible();
+      await expect(page.locator("[data-artboard]").getByText(/Accrued/)).toHaveCount(0);
     });
     await journey.as("owen-calder", "/sign", { scenario: "POR-06:d" });
     await journey.step(
       "j12 9: the 8879 verifies by identity questions (POR-06 d)",
       async (page) => {
+        await openEnvelope(page, /^Form 8879-PE · 2025/);
         await expect(page.getByText("Identity questions").first()).toBeVisible();
       },
     );
