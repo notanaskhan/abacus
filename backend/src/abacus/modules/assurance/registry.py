@@ -17,8 +17,17 @@ EBP_TABLES: frozenset[str] = frozenset(
     {"ebp_plans", "ebp_service_providers", "ebp_provider_checks", "ebp_provisions"}
     | {"ebp_provision_conflicts"}
 )
-TABLES: frozenset[str] = _HUMAN_RECORDS | EBP_TABLES
-INSERT_ONLY: frozenset[str] = _HUMAN_RECORDS | {"ebp_provider_checks", "ebp_provision_conflicts"}
+# A-04-T06 (0613, DEC-1866): the planning record; versions and minutes approvals insert-only.
+PLANNING_TABLES: frozenset[str] = frozenset(
+    {"materiality_versions", "risk_register_rows", "risk_linkages", "service_organizations"}
+    | {"fraud_brainstorm_sessions", "fraud_minutes_approvals", "fraud_inquiries"}
+)
+TABLES: frozenset[str] = _HUMAN_RECORDS | EBP_TABLES | PLANNING_TABLES
+INSERT_ONLY: frozenset[str] = (
+    _HUMAN_RECORDS
+    | {"ebp_provider_checks", "ebp_provision_conflicts"}
+    | {"materiality_versions", "fraud_minutes_approvals"}
+)
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "eqr_concurrences": frozenset(
         {"tenant_id", "engagement_id", "digest_hash", "not_involved", "concurred_by", "actor_kind"}
@@ -136,6 +145,131 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
             "issue_id",
         }
     ),
+    "materiality_versions": frozenset(
+        {
+            "tenant_id",
+            "engagement_id",
+            "work_item_id",
+            "version_no",
+            "status",
+            "basis",
+            "tb_snapshot_id",
+            "tb_layer",
+            "benchmarks",
+            "benchmark_key",
+            "rate_pct",
+            "overall",
+            "pm_pct",
+            "pm",
+            "ct_pct",
+            "ct",
+            "specific",
+            "qualitative_factors",
+            "prior_year_overall",
+            "policy_version_id",
+            "decision_card_id",
+            "decision_id",
+            "reassessment",
+            "impact",
+            "engine_name",
+            "engine_version",
+            "inputs_hash",
+            "computed_at",
+            "created_by_kind",
+            "created_by_user_id",
+            "on_behalf_of_user_id",
+        }
+    ),
+    "risk_register_rows": frozenset(
+        {
+            "tenant_id",
+            "engagement_id",
+            "work_item_id",
+            "code",
+            "level",
+            "area_key",
+            "area_label",
+            "assertions",
+            "inherent_risk",
+            "control_risk",
+            "rmm",
+            "rmm_policy_version_id",
+            "significance",
+            "fraud",
+            "presumption_kind",
+            "inherent_factors",
+            "rationale",
+            "status",
+            "approved_card_id",
+            "content_hash",
+            "version_no",
+        }
+    ),
+    "risk_linkages": frozenset(
+        {
+            "tenant_id",
+            "engagement_id",
+            "work_item_id",
+            "risk_id",
+            "target_kind",
+            "target_ref",
+            "state",
+            "suggestion_id",
+        }
+    ),
+    "service_organizations": frozenset(
+        {
+            "tenant_id",
+            "engagement_id",
+            "work_item_id",
+            "name",
+            "services",
+            "relevant",
+            "evidence_type",
+            "status",
+            "subservice_orgs",
+            "third_party_contact_id",
+        }
+    ),
+    "fraud_brainstorm_sessions": frozenset(
+        {
+            "tenant_id",
+            "engagement_id",
+            "work_item_id",
+            "held_at",
+            "medium",
+            "led_by_user_id",
+            "attendees",
+            "excluded",
+            "discussion",
+            "presumed_risk_conclusions",
+            "minutes_text",
+            "minutes_hash",
+            "minutes_status",
+            "minutes_source",
+        }
+    ),
+    "fraud_minutes_approvals": frozenset(
+        {
+            "tenant_id",
+            "engagement_id",
+            "work_item_id",
+            "session_id",
+            "minutes_hash",
+            "approved_by_user_id",
+            "actor_kind",
+        }
+    ),
+    "fraud_inquiries": frozenset(
+        {
+            "tenant_id",
+            "engagement_id",
+            "work_item_id",
+            "respondent_contact_id",
+            "governance_body_ref",
+            "questionnaire_id",
+        }
+    ),
 }
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "ebp_plans": frozenset(
@@ -186,6 +320,64 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
             "amendment_citation_id",
             "origin",
             "suggestion_id",
+        }
+    ),
+    "risk_register_rows": frozenset(
+        {
+            "area_label",
+            "assertions",
+            "inherent_risk",
+            "control_risk",
+            "rmm",
+            "rmm_policy_version_id",
+            "significance",
+            "fraud",
+            "inherent_factors",
+            "rationale",
+            "status",
+            "approved_card_id",
+            "content_hash",
+            "version_no",
+            "updated_at",
+        }
+    ),
+    "risk_linkages": frozenset(
+        {
+            "state",
+            "suggestion_id",
+            "removed_at",
+        }
+    ),
+    "service_organizations": frozenset(
+        {
+            "services",
+            "relevant",
+            "evidence_type",
+            "status",
+            "subservice_orgs",
+            "third_party_contact_id",
+            "updated_at",
+        }
+    ),
+    "fraud_brainstorm_sessions": frozenset(
+        {
+            "held_at",
+            "medium",
+            "led_by_user_id",
+            "attendees",
+            "excluded",
+            "discussion",
+            "presumed_risk_conclusions",
+            "minutes_text",
+            "minutes_hash",
+            "minutes_status",
+            "minutes_source",
+            "updated_at",
+        }
+    ),
+    "fraud_inquiries": frozenset(
+        {
+            "answered_at",
         }
     ),
 }
