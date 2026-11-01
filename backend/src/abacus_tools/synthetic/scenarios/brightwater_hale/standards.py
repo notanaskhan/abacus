@@ -314,8 +314,34 @@ TABLE_2: Final = Spec(
 )
 
 
+# A-04-T13 (DEC-1951): BH matrix v1, the firm's RMM for each inherent and control risk, loaded
+# beside Table 2 (not the standards slice: KNW-04's E0 list stays as designed). Control risk
+# "Max" leaves the inherent risk as the RMM, as every Northwind row reads (AUD-08 a).
+_RMM: Final = {
+    "low": {"low": "low", "moderate": "low", "high": "low", "max": "low"},
+    "moderate": {"low": "low", "moderate": "moderate", "high": "moderate", "max": "moderate"},
+    "high": {"low": "moderate", "moderate": "high", "high": "high", "max": "high"},
+}
+RMM_MATRIX: Final = Spec(
+    "bh-rmm-matrix",
+    "rmm_matrix",
+    "BH matrix v1 · risk of material misstatement",
+    "MO",
+    (
+        {
+            "kind": "rmm_matrix",
+            "rows": [
+                {"inherent_risk": ir, "control_risk": cr, "rmm": rmm}
+                for ir, by_cr in _RMM.items()
+                for cr, rmm in by_cr.items()
+            ],
+        },
+    ),
+)
+
+
 def spec_of(key: str) -> Spec:
-    return next(s for s in (*STANDARDS, TABLE_2) if s.key == key)
+    return next(s for s in (*STANDARDS, TABLE_2, RMM_MATRIX) if s.key == key)
 
 
 @register_slice(SLICE)
@@ -388,6 +414,7 @@ __all__ = [
     "AUGUST_HELD",
     "BH_TAX_02_CLIENTS",
     "NEEDS",
+    "RMM_MATRIX",
     "SLICE",
     "STANDARDS",
     "TABLE_2",

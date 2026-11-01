@@ -5,6 +5,7 @@ The audit line's read models and actions: the AUD-06 trial balance first (SPEC-3
 
 # A-03-T08: the C9 v2 routes call this lazily; imported here so its error codes are catalogued.
 from abacus.kernel.audit_owners import register_engagement_owners
+from abacus.modules.agents.api import register_suggestion_applier
 from abacus.modules.assurance import mapping_live as mapping_live
 from abacus.modules.assurance.archive_gate import g9
 from abacus.modules.assurance.audits_contract import audits_router
@@ -22,12 +23,19 @@ from abacus.modules.assurance.mapping import mapping_facts, mapping_reviewables
 from abacus.modules.assurance.mapping import publish as publish_grouping_version
 from abacus.modules.assurance.mapping_routes import firm_router as grouping_router
 from abacus.modules.assurance.mapping_routes import router as mapping_router
+from abacus.modules.assurance.materiality import AUDIT_KINDS as MATERIALITY_KINDS
+from abacus.modules.assurance.materiality import audit_owners as materiality_owners
+from abacus.modules.assurance.materiality import register as register_materiality_kinds
+from abacus.modules.assurance.materiality import register_materiality_dependents
 from abacus.modules.assurance.phase import SUBSCRIPTIONS as PHASE_SUBSCRIPTIONS
 from abacus.modules.assurance.phase import record_phase, update_profile
 from abacus.modules.assurance.planning_contract import router as planning_router
 from abacus.modules.assurance.providers import register as register_a01_providers
 from abacus.modules.assurance.release import RELEASE_MODE_SETTING, g8
 from abacus.modules.assurance.review_gates import register_review_gates
+from abacus.modules.assurance.risks import AUDIT_KINDS as RISK_KINDS
+from abacus.modules.assurance.risks import apply_risk_suggestion, risk_engagement
+from abacus.modules.assurance.risks import audit_owners as risk_owners
 from abacus.modules.assurance.routes import router
 from abacus.modules.assurance.run_badges import run_badges
 from abacus.modules.assurance.sections import (
@@ -40,10 +48,6 @@ from abacus.modules.assurance.sections import (
     register_index_tag,
     register_run_summary,
 )
-from abacus.modules.assurance.materiality import AUDIT_KINDS as MATERIALITY_KINDS
-from abacus.modules.assurance.materiality import audit_owners as materiality_owners
-from abacus.modules.assurance.materiality import register as register_materiality_kinds
-from abacus.modules.assurance.materiality import register_materiality_dependents
 from abacus.modules.assurance.service_orgs import AUDIT_KINDS as SERVICE_ORG_KINDS
 from abacus.modules.assurance.service_orgs import audit_owners as service_org_owners
 from abacus.modules.assurance.tb_mapping_contract import MappingConfirmIn, MappingRunIn
@@ -113,6 +117,10 @@ register_engagement_owners(SERVICE_ORG_KINDS, service_org_owners)
 # A-04-T12 (DEC-1950): the materiality cards' kinds and appliers; versions placed for the trail.
 register_materiality_kinds()
 register_engagement_owners(MATERIALITY_KINDS, materiality_owners)
+# A-04-T13 (DEC-1951): the register's rows placed for the trail; the agent's `risk` suggestions
+# written by their owner when a person adopts them (AC4.7).
+register_engagement_owners(RISK_KINDS, risk_owners)
+register_suggestion_applier("risk", apply_risk_suggestion, engagement_of=risk_engagement)
 
 __all__ = [
     "ACTIVITIES",

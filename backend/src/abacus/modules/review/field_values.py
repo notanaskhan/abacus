@@ -262,6 +262,53 @@ async def current_values(
     return {str(r.field_key): cast(dict[str, object], r.value) for r in rows}
 
 
+@dataclass(frozen=True)
+class FieldVersionFact:
+    """One version of a field, as an owner's history shows it (A-04-T13: AUD-08 b's versions)."""
+
+    seq: int
+    value: dict[str, object]
+    value_source: str
+    actor_kind: str
+    actor_id: str
+    on_behalf_of_user_id: UUID | None
+    suggestion_id: UUID | None
+    citation_ids: tuple[UUID, ...]
+    created_at: datetime
+
+
+async def field_timeline(
+    tenant: TenantContext, target_type: str, target_id: UUID, field_key: str
+) -> list[FieldVersionFact]:
+    """A field's versions, oldest first. The caller has authorised a read of the target; the
+    sealed citation note stays sealed."""
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                text(
+                    "SELECT seq, value, value_source, actor_kind, actor_id, on_behalf_of_user_id, "
+                    "suggestion_id, citation_ids, created_at FROM field_value_versions "
+                    "WHERE target_type = :t AND target_id = :i AND field_key = :f ORDER BY seq"
+                ),
+                {"t": target_type, "i": target_id, "f": field_key},
+            )
+        ).all()
+    return [
+        FieldVersionFact(
+            int(r.seq),
+            cast(dict[str, object], r.value),
+            str(r.value_source),
+            str(r.actor_kind),
+            str(r.actor_id),
+            r.on_behalf_of_user_id,
+            r.suggestion_id,
+            tuple(r.citation_ids or ()),
+            r.created_at,
+        )
+        for r in rows
+    ]
+
+
 async def changed_since(
     tenant: TenantContext, target_type: str, target_id: UUID, since: datetime
 ) -> list[str]:
