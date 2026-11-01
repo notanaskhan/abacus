@@ -56,6 +56,13 @@ export const PERSONAS = {
   "meera-shah": portal("Meera Shah"),
   "mira-kapoor": portal("Mira Kapoor"), // F-06-T02: the TPL-16 signer on envelope E6
   "sam-ortiz": portal("Sam Ortiz", "third_party"),
+  // T-02-T32: the two K-1-only people of T-02 §1 (seed/portal-k1s.ts); the member has no name.
+  "nora-calloway": portal("Nora Calloway"),
+  "pell-street-member": {
+    slug: "pell-street-member",
+    name: "Pell Street Ventures LLC · authorized member",
+    kind: "portal",
+  },
 } as const satisfies Record<string, Persona>;
 
 export type PersonaSlug = keyof typeof PERSONAS;
