@@ -189,4 +189,4 @@ async def audit_owners(tenant: TenantContext, kind: str, ids: Sequence[UUID]) ->
                 ServiceOrganization.id.in_(list(ids))
             )
         )
-        return dict(rows.tuples())
+        return {found: owned for found, owned in rows}
