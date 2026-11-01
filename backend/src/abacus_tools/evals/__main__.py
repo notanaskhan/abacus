@@ -43,7 +43,10 @@ def main(argv: list[str]) -> int:
     # N-01-T21: the matcher's suite has an audit section and an intake section.
     parser.add_argument("--section", choices=["audit", "intake"], default="audit")
     # A-04-T14: the section drafter's suite has a case set per mode.
-    parser.add_argument("--mode", choices=["gap", "risk_narrative", "risk", "ic", "soc1"])
+    parser.add_argument(
+        "--mode",
+        choices=["gap", "risk_narrative", "risk", "ic", "soc1", "ebp_provisions", "ebp_attribute"],
+    )
     args = parser.parse_args(argv)
     if args.agent == "evidence.upload_reviewer":  # SPEC-030 (TASK-058 D4): its own runner
         return review_main(

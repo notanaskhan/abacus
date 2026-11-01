@@ -9,3 +9,8 @@
 # the small tier (v2's engagement mode was $0.01), so the gate fails above $0.0165 a file.
 evidence.matcher:
   small: "0.015"
+# workpapers.section_drafter v1-v3 (A-04-T14, A-05-T14; A-05 §6; DEC-1958): $0.25 a section on the
+# medium tier, the EBP modes' baseline (chapter 05 §5.5.5, inferred); the planning modes' $0.15
+# budget sits under it. The gate fails a real run above $0.275 a section.
+workpapers.section_drafter:
+  medium: "0.25"
