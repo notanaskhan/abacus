@@ -405,6 +405,10 @@ CATALOGUE: Final[dict[str, Kind]] = {
     # P-04-T23: a card waits on its reserved person; "Notify" mentions them (SHL-11 b).
     "decision_card.raised": Kind("decision_assigned", _listed, "decision_card", "card_id"),
     "decision_card.notify_requested": Kind("mention", _assignee, "decision_card", "card_id"),
+    # A-04-T12 (AC3.7): a revised materiality tells the preparers of every impacted workpaper.
+    "materiality.revised": Kind(
+        "materiality_revised", _listed, "materiality_version", "version_id"
+    ),
     # P-04-T26: a proposal routed to a named approver (SHL-10 d), by a person or by the firm's
     # threshold policy when the agent proposed; a person asked to sign off a target (SHL-12); an
     # issue assigned (SHL-15, its service P-04-T30); an engine import's checkpoint waiting on the
@@ -668,6 +672,7 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     # pending state read from the subject's owner at read time. Email text is database content
     # (`notification.<kind>`, imported), never committed.
     NotificationKind("mapping_set_stale", "approval", "ClipboardCheck"),  # A-03-T14
+    NotificationKind("materiality_revised", "approval", "Scale"),  # A-04-T12 (AC3.7)
     NotificationKind(
         "sign_off_stale",
         "approval",
