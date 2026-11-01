@@ -1017,14 +1017,16 @@ def _version_out(
     )
 
 
-def _options_out(options: Sequence[MaterialityOption], computed_at: datetime) -> list[OptionOut]:
+def _options_out(
+    options: Sequence[MaterialityOption], computed_at: datetime, recommended: str | None
+) -> list[OptionOut]:
     return [
         OptionOut(
             key=o.key,
             thresholds=None
             if o.thresholds is None
             else _thresholds_out(o.thresholds, computed_at),
-            recommended=False,  # the agent's tag arrives with A-04-T15 (INV-1: never a choice)
+            recommended=o.key == recommended,  # the agent's tag (A-04-T15), never a choice
         )
         for o in options
     ]
@@ -1133,7 +1135,7 @@ async def materiality_proposal_route(
     return MaterialityProposalOut(
         version=_version_out(found.version, newest, record.names),
         decision_card_id=found.card_id,
-        options=_options_out(found.options, found.version.computed_at),
+        options=_options_out(found.options, found.version.computed_at, found.recommended_key),
     )
 
 
