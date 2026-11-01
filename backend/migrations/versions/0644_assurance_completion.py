@@ -382,7 +382,8 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    for table in _TABLES:
+    # Dependents first: deficiencies and misstatements name findings, findings name consultations.
+    for table in (*(t for t in _TABLES if t != "consultations"), "consultations"):
         op.execute(f"DROP TABLE {table}")
     op.execute("DROP FUNCTION consultations_concluded_by_the_consulted()")
     op.execute("DROP FUNCTION deficiencies_concluded_by_a_person()")
