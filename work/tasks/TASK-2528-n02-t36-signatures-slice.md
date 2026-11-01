@@ -4,7 +4,7 @@ title: N-02-T36 Brightwater Hale signatures slice
 spec: SPEC-381  # N-02 §9; SIG-01, SIG-02, POR-06, ENG-04
 acceptance_criteria: [AC-11]  # and N-02 §9 (N-02-T36)
 risk_zone: amber
-status: in-review
+status: done
 epic: N-02
 plan_key: N-02-T36
 branch: s20c-n02-t36

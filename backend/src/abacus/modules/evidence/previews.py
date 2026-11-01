@@ -32,6 +32,7 @@ from typing import Final, Literal, cast
 from PIL import Image, ImageDraw
 
 from abacus.kernel.isolation import IsolationFailed, run_isolated
+from abacus.kernel.pdf_pages import png_of
 from abacus.modules.evidence.active_content import is_active
 from abacus.modules.evidence.pdf_layout import flattened
 
@@ -81,10 +82,8 @@ class Rendered:
 
 
 def _png(image: Image.Image) -> Page:
-    clean = image.convert("RGBA" if image.mode in ("RGBA", "LA", "P") else "RGB")
-    out = io.BytesIO()
-    clean.save(out, format="PNG", optimize=True)  # no metadata is carried over
-    return Page(out.getvalue(), clean.width, clean.height)
+    # K-01-T20: the kernel's encoder, shared with the methodology importer (no metadata kept).
+    return Page(*png_of(image))
 
 
 def _pdf(content: bytes, burn: _Burn | None = None, *, annotations: bool = True) -> Rendered:

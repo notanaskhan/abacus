@@ -12,6 +12,8 @@ from typing import cast
 from abacus.ai_gateway import Tier
 from abacus.modules.agents.api import ASSESSOR, DRAFTER, MATCHER, REVIEWER, spec
 from abacus_tools.evals import entry_assessment, guidance_drafting, matching
+from abacus_tools.evals.decision_recommendation import AGENT as RECOMMENDER
+from abacus_tools.evals.decision_recommendation import recommend_main
 from abacus_tools.evals.report import render
 from abacus_tools.evals.runner import EvalRoute, Subset, guard, guard_real, prepare, run
 from abacus_tools.evals.upload_review import (
@@ -44,6 +46,10 @@ def main(argv: list[str]) -> int:
             cast(str, args.route),
             cast(Path, args.out),
             cast(Subset, args.subset),
+        )
+    if args.agent == RECOMMENDER:  # A-04-T09: code-graded, no stack (TASK-2802)
+        return recommend_main(
+            cast(str, args.route), cast(Path, args.out), cast(Subset, args.subset)
         )
     if args.agent == DRAFTER:  # SPEC-035 (TASK-072): its own runner
         return draft_main(

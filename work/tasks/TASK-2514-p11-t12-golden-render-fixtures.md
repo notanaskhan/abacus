@@ -4,7 +4,7 @@ title: P-11-T12 Golden render fixtures (Brightwater Hale ENG-04 b/d/e/f, AUD-21 
 spec: SPEC-520  # AC-6, AC-11, AC-20
 acceptance_criteria: [AC-6, AC-11, AC-20]
 risk_zone: amber
-status: in-review
+status: done
 epic: P-11
 plan_key: P-11-T12
 branch: s20b-p11-t12

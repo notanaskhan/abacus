@@ -4,12 +4,12 @@ title: F-06-T12 independent AC tests for portal mobile (ADR-078)
 spec: SPEC-000  # F-06-T12 row and docs/screens/TPL-19.md; no SPEC defines the specimen
 acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: amber
-status: in-review
+status: done
 epic: F-06
 plan_key: F-06-T12
 branch: s17-f06-t12
 created: 2026-10-30
-updated: 2026-10-30
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -30,3 +30,4 @@ specimens, no Accrued text or blue, and zero serious axe findings at 390 px."
 
 ## Progress log
 - 2026-10-30: written in S17 Lane 2 on F-06-T11; run in the end review.
+- 2026-11-01: merged to main in #795 (aa98089e0).

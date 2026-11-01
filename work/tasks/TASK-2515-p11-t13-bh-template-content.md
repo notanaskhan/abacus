@@ -4,7 +4,7 @@ title: P-11-T13 Brightwater Hale template content through the import API, plus t
 spec: SPEC-520  # AC-1 to AC-5 (the import and publication it exercises); C11 v1
 acceptance_criteria: [AC-1, AC-3]
 risk_zone: amber
-status: in-review
+status: done
 epic: P-11
 plan_key: P-11-T13
 branch: s20b-p11-t13

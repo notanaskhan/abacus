@@ -31,7 +31,7 @@ COLUMNS: Final = (
     "Answered on",
     "Answer (vault)",
 )
-_PILOT: Final = re.compile(r"PF-[ATC]\d{1,2}|PC\d{2}-\d{2}")
+_PILOT: Final = re.compile(r"PF-[ATCX]\d{1,2}|PC\d{2}-\d{2}")
 _DATE: Final = re.compile(r"\d{4}-\d{2}-\d{2}")
 _VAULT: Final = re.compile(r"V-\d+")
 _EXCLUSIONS: Final = frozenset({f"X-0{n}" for n in range(1, 9)} | {"D4", "D6", "D7", "D8"})

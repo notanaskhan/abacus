@@ -36,7 +36,7 @@ const AREA_DATA: Readonly<Record<string, Omit<Area, "label">>> = {
   Notices: { landing: "NOT-01", path: "/notices", routed: false },
   Audits: { landing: "AUD-01", path: "/audits", routed: true, chord: "a" },
   Closes: { landing: "CLS-01", path: "/closes", routed: false, chord: "c" },
-  Signatures: { landing: "SIG-01", path: "/signatures", routed: false },
+  Signatures: { landing: "SIG-01", path: "/signatures", routed: true },
 };
 
 /** The 13 areas, in nav.ts's order. */

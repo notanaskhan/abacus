@@ -5,11 +5,16 @@ import type {
   ClientRecordOut,
   ClientRelationshipOut,
 } from "@abacus/api-client";
-import { clientRelationshipsOptions } from "@abacus/api-client/query";
+import {
+  clientRelationshipsOptions,
+  engineSyncOptions,
+  entityConsentsOptions,
+} from "@abacus/api-client/query";
 import {
   AppShell,
   Button,
   Count,
+  SyncChip,
   DASH,
   DEFAULT_TZ,
   Icon,
@@ -39,6 +44,8 @@ import { useQuery } from "@tanstack/react-query";
 import { type JSX, type ReactNode, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { useFlag } from "../../app-core/flags";
+import { useOpenOverlay } from "../../app-core/open";
+import { ov } from "../../routes/to";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { RecordActivity } from "../shared/RecordActivity";
 import { useSession } from "../../app-core/session";
@@ -403,6 +410,9 @@ function Rail({
         {detailRows.map((row) => (
           <KvRowView key={row.id} row={row} />
         ))}
+        {record.kind === "household" &&
+          !detailRows.some((r) => r.id === "consents_7216") &&
+          record.entities[0] !== undefined && <ConsentsRow entityId={record.entities[0].id} />}
         <RecordBand title={COPY.rail.bands.team} />
         {teamRows.map((row) => (
           <KvRowView
@@ -518,6 +528,45 @@ function Rail({
 
 const RUNNING = new Set(["active", "in_review", "preparing", "gathering", "processing"]);
 
+/** T-01-T51 (b): a tax return's sync chip, live from the bridge; it opens TAX-09 over the page. */
+function TaxSyncChip({ returnId }: { returnId: string }): JSX.Element | null {
+  const sync = useQuery({ ...engineSyncOptions({ path: { return_id: returnId } }), retry: false });
+  const openOverlay = useOpenOverlay();
+  if (sync.data === undefined) return null;
+  return (
+    <SyncChip
+      code={sync.data.state}
+      onClick={() => {
+        openOverlay(ov.TAX09(returnId));
+      }}
+    />
+  );
+}
+
+/** T-01-T51 (b): the household's §7216 consents, live from C19, when the profile carries none. */
+function ConsentsRow({ entityId }: { entityId: string }): JSX.Element | null {
+  const consents = useQuery({
+    ...entityConsentsOptions({ path: { client_entity_id: entityId } }),
+    retry: false,
+  });
+  const rows = consents.data ?? [];
+  if (rows.length === 0) return null;
+  const purposes = [...new Set(rows.map((c) => COPY.consentPurposes[c.purpose] ?? c.purpose))];
+  return (
+    <KvRowView
+      row={{
+        id: "consents_7216",
+        label: COPY.details.consents_7216,
+        value: COPY.consentsLine(
+          purposes,
+          rows.length,
+          rows.filter((c) => c.status === "signed").length,
+        ),
+      }}
+    />
+  );
+}
+
 function WorkRow({
   item,
   onOpen,
@@ -538,6 +587,7 @@ function WorkRow({
           aria-label={COPY.card.openIssues(count(item.figure))}
         />
       )}
+      {item.ref?.type === "tax_return" && <TaxSyncChip returnId={item.ref.id} />}
       <Icon name="chevron-right" size={12} className="text-ink-3" />
     </>
   );
