@@ -238,9 +238,41 @@ class ProposedEntryStatus(StrEnum):
     REVIEW_REQUIRED = "review_required"
     APPROVED = "approved"
     CLIENT_APPROVED = "client_approved"
+    CLIENT_DECLINED = "client_declined"
+    REJECTED = "rejected"
     POSTED = "posted"
     FAILED_POST = "failed_post"
     REVERSED = "reversed"
+
+
+class FindingRouteStatus(StrEnum):
+    UNDER_EVALUATION = "under_evaluation"
+    CONVERTED_TO_MISSTATEMENT = "converted_to_misstatement"
+    CONVERTED_TO_DEFICIENCY = "converted_to_deficiency"
+
+
+class StatementDocumentStatus(StrEnum):
+    DRAFT = "draft"
+    IN_REVIEW = "in_review"
+    FINAL = "final"
+    SIGNED_OFF = "signed_off"
+
+
+class FsApprovalStatus(StrEnum):
+    NONE = "none"
+    SENT_FOR_APPROVAL = "sent_for_approval"
+    APPROVED_BY_MANAGEMENT = "approved_by_management"
+
+
+class DisclosureAnswerStatus(StrEnum):
+    YES = "yes"
+    NO = "no"
+    NA = "na"
+
+
+class ConsultationStatus(StrEnum):
+    OPEN = "open"
+    CONCLUDED = "concluded"
 
 
 class TieOutTallyStatus(StrEnum):
@@ -1229,9 +1261,36 @@ STORED: dict[str, tuple[str, ...]] = {
         "review_required",
         "approved",
         "client_approved",
+        "client_declined",
+        "rejected",
         "posted",
         "failed_post",
         "reversed",
+    ),
+    "finding_route": (
+        "under_evaluation",
+        "converted_to_misstatement",
+        "converted_to_deficiency",
+    ),
+    "statement_document": (
+        "draft",
+        "in_review",
+        "final",
+        "signed_off",
+    ),
+    "fs_approval": (
+        "none",
+        "sent_for_approval",
+        "approved_by_management",
+    ),
+    "disclosure_answer": (
+        "yes",
+        "no",
+        "na",
+    ),
+    "consultation": (
+        "open",
+        "concluded",
     ),
     "tie_out_tally": (
         "tie",

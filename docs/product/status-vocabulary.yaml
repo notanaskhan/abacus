@@ -238,6 +238,7 @@ objects:
       below_ct:          {label: "Below CT", variant: muted, terminal: false, derived: false}
       proposed_to_client: {label: "Proposed to client", variant: amber, terminal: false, derived: false}
       booked:            {label: "Booked", variant: green, terminal: true, derived: false}
+      passed_on_sum:     {label: "Passed on SUM", variant: neutral, terminal: true, derived: false}   # A-06-T02 (DF-28): the EP passes a declined entry
       passed_on_sum:     {label: "Passed on SUM", variant: neutral, terminal: true, derived: false}
 
   misstatement_type:   # type tag beside a confirmed misstatement; a category, never a state
@@ -292,9 +293,47 @@ objects:
       review_required:  {label: "Review required", variant: null, disc: ring, text_tone: amber, terminal: false, derived: false}
       approved:         {label: "Approved", variant: green, terminal: false, derived: false, context_labels: {attribution: "Approved by {person} under {policy}"}}   # a named human; never the agent
       client_approved:  {label: "Client approved", variant: green, terminal: false, derived: false}   # attest only
+      client_declined:  {label: "Client declined", variant: amber, terminal: false, derived: false}   # A-06-T02 (DF-28): waits for the EP to pass it on SUM
+      rejected:         {label: "Rejected", variant: soon, terminal: true, derived: false}   # A-06-T02: a firm-side withdrawal before the client decides, with a reason code
       posted:           {label: "Posted", variant: green-tint, terminal: true, derived: false, context_labels: {with_ref: "Posted · {system} {ref}"}}
       failed_post:      {label: "Failed post", variant: red, terminal: false, derived: false}
       reversed:         {label: "Reversed", variant: soon, terminal: true, derived: false}
+
+  # ---- A-06 (A-06-T02; DF-31, DF-28; SPEC-642) ----
+  finding_route:   # audit_findings: where a finding went (AUD-15); the issue holds its lifecycle
+    source: "A-06 §3 F1 (DF-31)"
+    codes:
+      under_evaluation:          {label: "Under evaluation", variant: state, terminal: false, derived: false}
+      converted_to_misstatement: {label: "Converted to misstatement", variant: neutral, terminal: true, derived: false}
+      converted_to_deficiency:   {label: "Converted to deficiency", variant: neutral, terminal: true, derived: false}
+
+  statement_document:   # statement_documents.status (AUD-20; A-06-T19)
+    source: "A-06 §3 F1, F7"
+    codes:
+      draft:      {label: "Draft", variant: state, terminal: false, derived: false}
+      in_review:  {label: "In review", variant: amber, terminal: false, derived: false}
+      final:      {label: "Final", variant: neutral, terminal: false, derived: false}
+      signed_off: {label: "Signed off", variant: green, terminal: true, derived: false}
+
+  fs_approval:   # statement_documents.management_approval (AUD-20; C18)
+    source: "A-06 §3 F1, F7"
+    codes:
+      none:                   {label: "Not sent", variant: null, terminal: false, derived: false}
+      sent_for_approval:      {label: "Sent for approval", variant: amber, terminal: false, derived: false}
+      approved_by_management: {label: "Approved by management", variant: green, terminal: true, derived: false}
+
+  disclosure_answer:   # disclosure_checklist_answers.answer (AUD-20)
+    source: "A-06 §3 F1, F7"
+    codes:
+      "yes": {label: "Yes", variant: null, terminal: false, derived: false}
+      "no":  {label: "No", variant: null, terminal: false, derived: false}
+      na:    {label: "N/A", variant: muted, terminal: false, derived: false}
+
+  consultation:   # consultations.status (DEC-83 minimal; UI in Q-05)
+    source: "A-06 §4.2 (DEC-83)"
+    codes:
+      open:      {label: "Open", variant: amber, terminal: false, derived: false}
+      concluded: {label: "Concluded", variant: green-tint, terminal: true, derived: false}
 
   tie_out_tally:
     source: "blueprint 3.3.1"

@@ -206,6 +206,24 @@ CardCompute = Callable[[TenantContext, CardSubject], Awaitable[ComputedCard]]
 CardReassess = Callable[
     [TenantContext, CardSubject, str | None, ComputedCard], Awaitable[Reassessment]
 ]
+
+
+@dataclass(frozen=True)
+class AppliedDecision:
+    """A-04-T12 (DEC-1950): what the kind's owner applies, inside the decider's unit of work."""
+
+    card_id: UUID
+    decision_id: UUID
+    engagement_id: UUID
+    work_item_id: UUID | None
+    question_key: str
+    option_key: str
+    figures: Mapping[str, str]
+
+
+# (the decider's unit of work, the decider, the decision): the owner writes its own record with
+# the decision in one unit of work (A-04 AC3.4); raising refuses the whole decision.
+CardApply = Callable[["UnitOfWork", "AuthContext", AppliedDecision], Awaitable[None]]
 # The fresh-MFA window for deciding: the matrix's `mfa_recent` (15 minutes) is the floor every
 # kind gets; a kind may only tighten it (DEC-505; no kind opts out).
 DECIDE_MFA_MAX_AGE_S: Final = 900
@@ -224,6 +242,8 @@ class DecisionKind:
     questions: Mapping[str, str] = field(default_factory=dict[str, str])
     reassess: CardReassess | None = None
     mfa_max_age_s: int = DECIDE_MFA_MAX_AGE_S
+    # A-04-T12 (DEC-1950): the owner's applier, run inside the decision's unit of work.
+    apply: CardApply | None = None
 
 
 @dataclass(frozen=True)

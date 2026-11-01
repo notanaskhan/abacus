@@ -21,9 +21,14 @@ TABLES: frozenset[str] = frozenset(
         "attention_flags",
         "attention_flag_events",
         "program_procedures",
+        # 0642 (A-05-T15, DEC-1959): the shared attribute grid and its insert-only results.
+        "attribute_tests",
+        "test_attribute_results",
     }
 )
-INSERT_ONLY: frozenset[str] = TABLES - {"tie_out_checks", "attention_flags", "program_procedures"}
+INSERT_ONLY: frozenset[str] = TABLES - {
+    "tie_out_checks", "attention_flags", "program_procedures", "attribute_tests"
+}  # fmt: skip
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "workpapers": frozenset(
         {"tenant_id", "engagement_id", "work_item_id", "code", "title", "audit_area"}
@@ -69,6 +74,37 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"tenant_id", "check_id", "version_no", "label", "actual_selector", "expected"}
         | {"citation_ids", "tolerance", "reason", "created_by", "actor_kind"}
     ),
+    "attribute_tests": frozenset(
+        {
+            "tenant_id",
+            "engagement_id",
+            "work_item_id",
+            "workpaper_id",
+            "variant",
+            "sample_set_id",
+            "sample_set_version",
+            "attributes",
+            "version_no",
+            "content_hash",
+        }
+    ),
+    "test_attribute_results": frozenset(
+        {
+            "tenant_id",
+            "engagement_id",
+            "work_item_id",
+            "test_id",
+            "sample_item_id",
+            "attribute_key",
+            "seq",
+            "value",
+            "citation_ids",
+            "result",
+            "note_sealed",
+            "trace",
+            "suggestion_id",
+        }
+    ),
 }
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "tie_out_checks": frozenset(
@@ -80,5 +116,12 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "program_procedures": frozenset(
         {"tailored", "tailored_rationale", "status", "linked_work"}
         | {"row_version"}  # 0614 (A-04-T07): a tailoring names the version it saw
+    ),
+    "attribute_tests": frozenset(
+        {
+            "attributes",
+            "version_no",
+            "content_hash",
+        }
     ),
 }
