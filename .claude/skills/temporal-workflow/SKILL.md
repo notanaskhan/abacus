@@ -38,6 +38,12 @@ Copy `EvidenceWithdrawalPurge` (`evidence/workflows.py`, activity body `evidence
 - **Tests:** `tests/workflows/test_withdrawal_purge_replay.py` replays `withdrawal-purge-v1-blocked-then-erased.json` (recorded by `abacus_tools.workflows.record_withdrawal_purge`); `tests/integration/backfill/test_p06t19_withdrawal.py` proves nothing erases before 30 days, a hold blocks and retries daily, and a missing hold check erases nothing. Runbook: `docs/runbooks/RB-32-withdrawal-erase-and-hold-conflicts.md`.
 - **Moving work into an activity needs no patch** when the workflow's commands do not change: P-4's draft-only change (DEC-220) lives in the tick's activity, so `EngagementAgent`'s recorded histories replay unchanged. Anything that changes what the workflow schedules still goes behind `workflow.patched`.
 
+## One frozen draw (the sampler, A-03-T10; ADR-340)
+Copy `SampleDrawWorkflow` (`sampling/draw_workflow.py`, activity `sample_draw.run` in `sampling/draw.py`) for work that must produce one immutable result or none.
+- The person's start inserts the row as `drawing` and dispatches. The activity re-checks its preconditions (the ties), computes with frozen code, and writes every item in one transaction before marking the row a draft. After the retries a failure marks it `failed` with its code, never a partial list.
+- The randomness is a recorded input: the seed is drawn at the start (server `secrets`), stored on the row and passed in. The workflow never calls a random source, so a replay and a re-performance (RB-46 §A) see the same seed.
+- Histories `sample-draw-v1-drafted.json` and `sample-draw-v1-failed.json`; a change lands behind `workflow.patched`.
+
 ## Tests
 - Replay test with recorded histories (required check). Record with `python -m abacus_tools.workflows.record_<name>`; never overwrite a history, add `v<N+1>`.
 - Tracing comes from the shared client's interceptor (`kernel.temporal`); don't add your own.

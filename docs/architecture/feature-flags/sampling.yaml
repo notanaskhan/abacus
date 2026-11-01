@@ -3,7 +3,7 @@
 
 flags:
   - name: sampling.sample_sets
-    description: 'A-03 sampling engine (ADR-340): every /v1/populations*, /v1/sample-sets* and /v1/work-items/{wid}/sample-sets route, the AUD-11 route, SHL-14''s "Sample" wave and the AUD-02 rail row. Off: 404 and the screens show the C-20 "not turned on" state. On for Dev and the synthetic firm on staging once the stubs go live; per pilot firm after the audit CPA signs the sampler review (A-03 §0). A-03-T01, DEC-1550.'
+    description: 'A-03 sampling engine (ADR-340): every /v1/populations*, /v1/sample-sets* and /v1/work-items/{wid}/sample-sets route, the AUD-11 route, SHL-14''s "Sample" wave and the AUD-02 rail row. Off: 404 and the screens show the C-20 "not turned on" state. On for Dev and the synthetic firm on staging once the stubs go live; per pilot firm after the audit CPA signs the sampler review (A-03 §0). A-03-T01, DEC-1550. Flip per firm Tue Sep 21, 2027 19:00 CT after the CPA signs docs/quality/golden-reviews/sampling@2.3.md; retire in the Thu Oct 21, 2027 batch; rollback and renewal in RB-46 (A-03-T20).'
     owner: ayushkbhatia
     created: 2026-10-30
     expires: 2027-04-28
