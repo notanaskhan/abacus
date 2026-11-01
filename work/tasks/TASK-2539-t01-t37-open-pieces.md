@@ -31,3 +31,5 @@ Create issue on a rejected ack works for whoever is offered it; client service i
 ## Progress log
 - 2026-11-01: built; new tests and the T-01-T37/T-01-T41 suites pass (12), TAX-12 10 pass.
   K-1 resend under client service has the same seam (DEC-1580 open item).
+- 2026-11-01: DEC-1583: K-1 resend's email authorised by `k1_package.resend`; the authority test
+  covers the pair, and the T-02-T21 suite passes (6).

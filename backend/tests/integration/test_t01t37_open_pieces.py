@@ -108,6 +108,7 @@ async def test_a_send_takes_its_authority_only_from_the_allowed_pair(
     with pytest.raises(Forbidden):
         await _authorise_send(grace, ref, "deliverable_ready", None)  # no message.send
     await _authorise_send(grace, ref, "deliverable_ready", "deliverable.publish")
+    await _authorise_send(grace, ref, "deliverable_ready", "k1_package.resend")  # DEC-1583
     with pytest.raises(Forbidden):
         await _authorise_send(grace, ref, "reminder", "deliverable.publish")
     with pytest.raises(Forbidden):
