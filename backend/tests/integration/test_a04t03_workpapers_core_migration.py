@@ -21,7 +21,7 @@ from abacus_tools.quality.schema_check import migrate, provisioned_database
 
 from .agent_tests.support import Person, Seeder
 
-BEFORE = "0580"
+BEFORE = "0590"
 TABLES = (
     "workpapers",
     "workpaper_sections",

@@ -21,7 +21,7 @@ insert-only. A-04's M1 lands on them rather than beside them (DEC-1761):
   `engagement_id` and `work_item_id` and forced row-level security.
 
 Revision ID: 0581
-Revises: 0580
+Revises: 0590
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, insert_only, tenant_table
 
 revision = "0581"
-down_revision = "0580"
+down_revision = "0590"
 branch_labels = None
 depends_on = None
 
