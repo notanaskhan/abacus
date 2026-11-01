@@ -32,6 +32,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Final, Literal, cast
 from uuid import UUID, uuid4
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -57,7 +58,7 @@ from abacus.modules.engagements.letter_contract import (
     ThirdPartyFeeOut,
 )
 from abacus.modules.engagements.letter_render import LetterRenderAsk, render_letter
-from abacus.modules.engagements.letter_send import letter_envelope_status
+from abacus.modules.engagements.letter_send import letter_envelope_signing, letter_envelope_status
 from abacus.modules.engagements.models import Engagement
 from abacus.modules.engagements.service import get_ref, lock_ref
 from abacus.modules.identity.api import (
@@ -67,6 +68,7 @@ from abacus.modules.identity.api import (
     authorise,
     engagement_team,
     firm_name,
+    firm_time_zone,
 )
 from abacus.modules.methodology.api import ReportTemplateParts, report_template_parts
 from abacus.modules.organisations.api import client_names, signer_contacts
@@ -580,7 +582,28 @@ async def composed_letter(ctx: AuthContext, engagement_id: UUID) -> ComposerLett
     allowed = [a for a in actions if by_status.get(a, False)]
     if ended and SEND in actions:
         allowed.append(WITHDRAW)
-    return view.model_copy(update={"allowed_actions": allowed, "envelope_status": envelope_status})
+    signed = await _signing(ctx, view)
+    return view.model_copy(
+        update={"allowed_actions": allowed, "envelope_status": envelope_status, **signed}
+    )
+
+
+async def _signing(ctx: AuthContext, view: ComposerLetterOut) -> dict[str, object]:
+    """N-02-T37 (ENG-04 d, e): the envelope's sent time and each side's signed day, in the
+    firm's time zone; nothing before an envelope exists."""
+    if view.envelope_id is None:
+        return {}
+    signing = await letter_envelope_signing(ctx.tenant, view.envelope_id)
+    if signing is None:
+        return {}
+    zone = ZoneInfo(await firm_time_zone(ctx.tenant))
+    signers = [
+        s.model_copy(update={"signed": True, "signed_on": at.astimezone(zone).date()})
+        if (at := signing.signed_at.get(s.role)) is not None
+        else s
+        for s in view.signers
+    ]
+    return {"sent_at": signing.sent_at, "signers": signers}
 
 
 WITHDRAW = "letter.withdraw_envelope"  # a `letter.send` holder's, shown when the envelope ended

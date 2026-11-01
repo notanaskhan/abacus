@@ -31,6 +31,7 @@ from abacus.modules.agents.intake_start import start_intake_match
 from abacus.modules.agents.knowledge_workflow import KnowledgeEmbeddingWorkflow
 from abacus.modules.agents.match_start import WORKFLOWS as MATCH_WORKFLOWS
 from abacus.modules.agents.match_start import start_match
+from abacus.modules.agents.methodology_import_workflow import MethodologyImportWorkflow
 from abacus.modules.agents.review_start import WORKFLOWS as REVIEW_WORKFLOWS
 from abacus.modules.agents.review_start import start_upload_review
 from abacus.modules.agents.screening_aggregate import on_version_event, on_version_withdrawn
@@ -64,6 +65,7 @@ WORKFLOWS: dict[type, WorkClass] = {
     ScreeningWorkflow: spec(SCREENER).work_class,
     KnowledgeEmbeddingWorkflow: "batch",
     EngagementAgent: "background",  # SPEC-027 (TASK-050): one per engagement, long-lived
+    MethodologyImportWorkflow: "background",  # K-01-T21 (K-01 §4.4)
 }
 WORKFLOWS.update(REVIEW_WORKFLOWS)  # SPEC-030 (TASK-059): the worker hosts it with these
 WORKFLOWS.update(MATCH_WORKFLOWS)  # SPEC-033 (TASK-066)

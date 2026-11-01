@@ -19583,6 +19583,40 @@ export type K1DetailsChangeTagOut = {
 };
 
 /**
+ * K1DisclosureIn
+ */
+export type K1DisclosureIn = {
+    /**
+     * Body
+     */
+    body: string;
+};
+
+/**
+ * K1DisclosureOut
+ *
+ * S20e (DV-12): the firm's counsel-approved electronic-furnishing text, one version.
+ */
+export type K1DisclosureOut = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Imported At
+     */
+    imported_at: string;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
  * K1DocumentOut
  */
 export type K1DocumentOut = {
@@ -19702,6 +19736,10 @@ export type K1PackageOut = {
      * Documents
      */
     documents?: Array<K1DocumentOut>;
+    /**
+     * E Furnishing Consent
+     */
+    e_furnishing_consent?: 'unknown' | 'given' | 'declined' | null;
     /**
      * Form
      */
@@ -23844,6 +23882,26 @@ export type MethodologyImportOut = {
 };
 
 /**
+ * MethodologyPageWordsOut
+ *
+ * One page's words with their boxes for the KNW-02 viewer (TIN forms masked).
+ */
+export type MethodologyPageWordsOut = {
+    /**
+     * Page
+     */
+    page: number;
+    /**
+     * Page Count
+     */
+    page_count: number;
+    /**
+     * Words
+     */
+    words: Array<PageWordOut>;
+};
+
+/**
  * MethodologyVersionOut
  */
 export type MethodologyVersionOut = {
@@ -24730,6 +24788,25 @@ export type PageBreakBlock = {
  * PageLineOut
  */
 export type PageLineOut = {
+    /**
+     * Box
+     */
+    box: [
+        number,
+        number,
+        number,
+        number
+    ];
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * PageWordOut
+ */
+export type PageWordOut = {
     /**
      * Box
      */
@@ -82704,6 +82781,53 @@ export type IssueVerifyResponses = {
 
 export type IssueVerifyResponse = IssueVerifyResponses[keyof IssueVerifyResponses];
 
+export type ImportK1DisclosureData = {
+    body: K1DisclosureIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/k1-furnishing-disclosures';
+};
+
+export type ImportK1DisclosureErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ImportK1DisclosureError = ImportK1DisclosureErrors[keyof ImportK1DisclosureErrors];
+
+export type ImportK1DisclosureResponses = {
+    /**
+     * Successful Response
+     */
+    201: K1DisclosureOut;
+};
+
+export type ImportK1DisclosureResponse = ImportK1DisclosureResponses[keyof ImportK1DisclosureResponses];
+
 export type K1PackageData = {
     body?: never;
     headers?: {
@@ -85307,6 +85431,136 @@ export type MethodologyFileDownloadResponses = {
 };
 
 export type MethodologyFileDownloadResponse = MethodologyFileDownloadResponses[keyof MethodologyFileDownloadResponses];
+
+export type MethodologyFilePageData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+        /**
+         * File Id
+         */
+        file_id: string;
+        /**
+         * Page No
+         */
+        page_no: number;
+    };
+    query?: never;
+    url: '/v1/methodology/versions/{version_id}/files/{file_id}/pages/{page_no}';
+};
+
+export type MethodologyFilePageErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type MethodologyFilePageError = MethodologyFilePageErrors[keyof MethodologyFilePageErrors];
+
+export type MethodologyFilePageResponses = {
+    /**
+     * Response Methodology File Page
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type MethodologyFilePageResponse = MethodologyFilePageResponses[keyof MethodologyFilePageResponses];
+
+export type MethodologyFilePageWordsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+        /**
+         * File Id
+         */
+        file_id: string;
+        /**
+         * Page No
+         */
+        page_no: number;
+    };
+    query?: never;
+    url: '/v1/methodology/versions/{version_id}/files/{file_id}/pages/{page_no}/words';
+};
+
+export type MethodologyFilePageWordsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type MethodologyFilePageWordsError = MethodologyFilePageWordsErrors[keyof MethodologyFilePageWordsErrors];
+
+export type MethodologyFilePageWordsResponses = {
+    /**
+     * Successful Response
+     */
+    200: MethodologyPageWordsOut;
+};
+
+export type MethodologyFilePageWordsResponse = MethodologyFilePageWordsResponses[keyof MethodologyFilePageWordsResponses];
 
 export type TemplateDraftsData = {
     body?: never;
@@ -89084,6 +89338,53 @@ export type WithdrawIntakeUploadResponses = {
 
 export type WithdrawIntakeUploadResponse = WithdrawIntakeUploadResponses[keyof WithdrawIntakeUploadResponses];
 
+export type PortalK1DisclosureData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/portal/k1-furnishing-disclosure';
+};
+
+export type PortalK1DisclosureErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PortalK1DisclosureError = PortalK1DisclosureErrors[keyof PortalK1DisclosureErrors];
+
+export type PortalK1DisclosureResponses = {
+    /**
+     * Successful Response
+     */
+    200: K1DisclosureOut;
+};
+
+export type PortalK1DisclosureResponse = PortalK1DisclosureResponses[keyof PortalK1DisclosureResponses];
+
 export type PortalDetailsChangeData = {
     body: PortalDetailsChangeIn;
     headers?: {
@@ -89139,6 +89440,75 @@ export type PortalDetailsChangeResponses = {
 };
 
 export type PortalDetailsChangeResponse = PortalDetailsChangeResponses[keyof PortalDetailsChangeResponses];
+
+export type PortalDetailsUploadData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Recipient Id
+         */
+        recipient_id: string;
+    };
+    query: {
+        /**
+         * Kind
+         */
+        kind: 'w9' | 'w8';
+        /**
+         * Filename
+         */
+        filename: string;
+    };
+    url: '/v1/portal/k1-recipients/{recipient_id}/details-changes:upload';
+};
+
+export type PortalDetailsUploadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * The file is too large
+     */
+    413: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PortalDetailsUploadError = PortalDetailsUploadErrors[keyof PortalDetailsUploadErrors];
+
+export type PortalDetailsUploadResponses = {
+    /**
+     * Successful Response
+     */
+    201: RecipientDetailsChangeOut;
+};
+
+export type PortalDetailsUploadResponse = PortalDetailsUploadResponses[keyof PortalDetailsUploadResponses];
 
 export type PortalK1sData = {
     body?: never;

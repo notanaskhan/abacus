@@ -172,6 +172,11 @@ export function taxComplianceHandlers(state = "a"): Record<string, FixtureHandle
         201,
       );
     },
+    // e: Create issue raises the rejection as an engine-diagnostic issue (T-01-T37).
+    "POST /v1/tax-returns/{return_id}/acks/{ack_id}/issue": ({ params }) =>
+      params.return_id === FELD_RETURN_ID
+        ? json({ issue_id: stableId(`issue:efile:${params.ack_id ?? ""}`) }, 201)
+        : json(NOT_FOUND, 404),
     // The packet editor (TAX-12 B): vouchers toggle, the letter regenerates, a manager approves.
     "PATCH /v1/delivery-packets/{packet_id}": ({ params, body }) => {
       if (params.packet_id !== FELD_PACKET_ID) return json(NOT_FOUND, 404);

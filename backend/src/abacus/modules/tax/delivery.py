@@ -53,7 +53,13 @@ from abacus.modules.reporting import api as c11
 from abacus.modules.review.api import current_values
 from abacus.modules.tax.approval import signer_for
 from abacus.modules.tax.engine_files import engine_documents
-from abacus.modules.tax.filing import ACK_RECORD, TRANSMIT, binding_state, envelope_of
+from abacus.modules.tax.filing import (
+    ACK_RECORD,
+    ISSUE_CREATE,
+    TRANSMIT,
+    binding_state,
+    envelope_of,
+)
 
 TARGET: Final = "tax_return"
 PACKET: Final = "delivery_packet"
@@ -354,6 +360,14 @@ async def delivery(ctx: AuthContext, return_id: UUID) -> Delivery:
         and await _allowed(ctx, ACK_RECORD, resource)
     ):
         allowed.append(ACK_RECORD)
+    # Create issue on a rejection needs `issue.create` too, which client service does not hold.
+    if (
+        person
+        and facts.status == "rejected"
+        and ACK_RECORD in allowed
+        and await _allowed(ctx, ISSUE_CREATE, resource)
+    ):
+        allowed.append(ISSUE_CREATE)
     binding_id, superseded = await binding_state(ctx.tenant, return_id)
     return Delivery(
         return_id,

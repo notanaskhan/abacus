@@ -20,7 +20,7 @@ from abacus.kernel.config import settings
 from abacus.kernel.listing import ListPage
 from abacus.kernel.text import SingleLineText
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
-from abacus.modules.methodology import imports
+from abacus.modules.methodology import extraction, imports
 from abacus.modules.methodology.contract import VersionStateOut, require_live, version_state_out
 from abacus.modules.methodology.service import EngagementType
 
@@ -212,6 +212,75 @@ async def methodology_file_download_route(
             "Cache-Control": "no-store",
             "X-Content-Type-Options": "nosniff",
         },
+    )
+
+
+# --- pages (K-01-T20) ----------------------------------------------------------------------------
+
+
+class PageWordOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    text: Annotated[str, classified("confidential")]
+    # x0, top, x1, bottom as fractions of the page.
+    box: Annotated[tuple[float, float, float, float], classified("internal")]
+
+
+class MethodologyPageWordsOut(BaseModel):
+    """One page's words with their boxes for the KNW-02 viewer (TIN forms masked)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    page: Annotated[int, classified("internal")]
+    page_count: Annotated[int, classified("internal")]
+    words: Annotated[list[PageWordOut], classified("confidential")]
+
+
+PageNo = Annotated[int, Path(ge=1, le=extraction.MAX_PAGES)]
+
+
+@methodology_import_router.get(
+    "/versions/{version_id}/files/{file_id}/pages/{page_no}",
+    action=READ,
+    response_model=bytes,
+    errors=(409,),
+)
+async def methodology_file_page_route(
+    version_id: VersionId, file_id: Annotated[UUID, Path()], page_no: PageNo, ctx: Ctx
+) -> Response:
+    """One page of a PDF source as a PNG, read in the isolated child (audited; `no-store`): 409
+    `page_preview_unavailable` for a DOCX, 422 `page_out_of_range`, `source_encrypted`,
+    `source_malformed`."""
+    await require_live(ctx, METHODOLOGY_IMPORT_REVIEW, READ)
+    found = await extraction.page_image(ctx, version_id, file_id, page_no)
+    return Response(
+        content=found.png,
+        media_type="image/png",
+        headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"},
+    )
+
+
+@methodology_import_router.get(
+    "/versions/{version_id}/files/{file_id}/pages/{page_no}/words",
+    action=READ,
+    response_model=MethodologyPageWordsOut,
+    errors=(409,),
+)
+async def methodology_file_page_words_route(
+    version_id: VersionId,
+    file_id: Annotated[UUID, Path()],
+    page_no: PageNo,
+    ctx: Ctx,
+    response: Response,
+) -> MethodologyPageWordsOut:
+    """One page's words and their boxes, for the viewer's regions and MatchProvider tracing."""
+    await require_live(ctx, METHODOLOGY_IMPORT_REVIEW, READ)
+    found = await extraction.page_words(ctx, version_id, file_id, page_no)
+    response.headers["Cache-Control"] = "no-store"
+    return MethodologyPageWordsOut(
+        page=found.page,
+        page_count=found.page_count,
+        words=[PageWordOut(text=w.text, box=w.box) for w in found.words],
     )
 
 

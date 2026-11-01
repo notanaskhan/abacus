@@ -11,6 +11,10 @@
 - **Download**: a client person whose grant covers the return (`portal_home.read` on it; anyone
   else 404), with the portal's second step (TRI, 403 `mfa_required`); the bytes are the evidence
   version's, fingerprint-verified, and every download is audited `filed_return.downloaded`.
+- **Email** (`on_delivered`, DEC-1580): the published release is announced to the client's
+  owners (`client_owners`) with the firm's "Deliverable ready" template, sent as the publisher and
+  authorised by their `deliverable.publish` (client service holds no `message.send`), one message
+  per release and person, so a redelivered event sends nothing twice.
 - **C10**: when R-02's deliverables registry lands, each release is registered there by its id
   (the row keeps the engagement, client, return and version it needs).
 """
@@ -26,18 +30,31 @@ from uuid import UUID
 from sqlalchemy import text
 
 from abacus.kernel.classification import classified
+from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainForbidden, NotFound
 from abacus.kernel.uow import DomainEvent, Ref, Scope, Target, uow
+from abacus.kernel.uow.relay import OutboxEvent
+from abacus.modules.communications.api import RecipientRef, SendScope, send_templated
 from abacus.modules.engagements.api import get_ref, work_item_facts
 from abacus.modules.evidence.api import version_content
-from abacus.modules.identity.api import AuthContext, Forbidden, authorise, engagement_resource
+from abacus.modules.identity.api import (
+    AuthContext,
+    Forbidden,
+    authorise,
+    client_owners,
+    engagement_resource,
+    firm_name,
+    member_context,
+    names_of,
+)
 from abacus.modules.tax.filing import PacketNotApproved
 
 TARGET: Final = "tax_return"
 PUBLISH: Final = "deliverable.publish"
 PORTAL_READ: Final = "portal_home.read"
 CLIENT_COPY: Final = "client_copy"
+TEMPLATE_KEY: Final = "deliverable_ready"
 
 
 class ReturnNotAccepted(DomainConflict):
@@ -195,6 +212,52 @@ async def publish(ctx: AuthContext, return_id: UUID) -> Delivered:
             )
         )
     return Delivered(cast(UUID, row[0]), return_id, cast(datetime, row[1]))
+
+
+async def on_delivered(event: OutboxEvent) -> None:
+    """A published release emails the client's owners "Deliverable ready" (DEC-1580): as the
+    publisher, as they are now (gone: nothing is sent), under their `deliverable.publish`."""
+    payload = event.payload
+    engagement_id = UUID(str(payload["engagement_id"]))
+    ctx = await member_context(event.tenant_id, UUID(str(payload["by_user"])))
+    if ctx is None:
+        return
+    ref = await get_ref(ctx, engagement_id)
+    async with tenant_session(ctx.tenant) as session:
+        filed = (
+            await session.execute(
+                text("SELECT tax_year, form FROM tax_returns WHERE work_item_id = :r"),
+                {"r": UUID(str(payload["return_id"]))},
+            )
+        ).first()
+    if filed is None:
+        return
+    owners = await client_owners(
+        ctx.tenant,
+        client_id=ref.client_id,
+        client_entity_id=ref.client_entity_id,
+        engagement_id=engagement_id,
+    )
+    names = await names_of(owners)
+    firm = await firm_name(event.tenant_id)
+    for user_id in owners:
+        await send_templated(
+            ctx,
+            TEMPLATE_KEY,
+            RecipientRef("user", user_id),
+            {
+                "client_first_name": (names.get(user_id) or "").split(" ")[0] or "there",
+                "firm_name": firm,
+                "deliverable_title": f"{filed.tax_year} Form {filed.form}",
+                "portal_link": f"{settings().app_base_url.rstrip('/')}/portal",
+            },
+            scope=SendScope(engagement_id=engagement_id),
+            idempotency_key=f"return_delivered:{payload['delivery_id']}",
+            authority=PUBLISH,
+        )
+
+
+SUBSCRIPTIONS = {ReturnDelivered.event_type: on_delivered}
 
 
 async def filed_returns(tenant: TenantContext, return_ids: list[UUID]) -> list[FiledReturn]:
