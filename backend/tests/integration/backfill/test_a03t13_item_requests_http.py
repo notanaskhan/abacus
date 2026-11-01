@@ -72,7 +72,7 @@ async def test_ac_create_writes_the_fan_out_once_and_a_replay_creates_none(
     net: Net, seed: Seeder
 ) -> None:
     team, sid, version_no, n = await _approved(net, seed)
-    dana = await _contact(seed, team, "Dana Kowalski", "client", None)
+    dana = await _contact(seed, team, "Dana Kowalski", "client_person", None)
     sam = await _contact(seed, team, "Sam Ortiz", "third_party", "Keystone")
     body = _body(dana, sam)
     path = f"/v1/sample-sets/{sid}/versions/{version_no}/item-requests"
@@ -116,12 +116,8 @@ async def test_ac_create_writes_the_fan_out_once_and_a_replay_creates_none(
         "SELECT count(*) FROM request_items WHERE engagement_id = $1", team.site.engagement_id
     )
     assert total == 5 * n + 1  # and the site's own request
-    audits = await seed.rows(
-        "SELECT after FROM audit_events WHERE tenant_id = $1 "
-        "AND action = 'sample_set.requests_generated'",
-        team.site.tenant_id,
-    )
-    assert len(audits) == 1
+    actions = await seed.actions(team.site.tenant_id)
+    assert actions.count("sample_set.requests_generated") == 1
 
 
 async def test_ac_a_draft_version_answers_409_sample_not_approved(net: Net, seed: Seeder) -> None:
@@ -129,25 +125,25 @@ async def test_ac_a_draft_version_answers_409_sample_not_approved(net: Net, seed
     pid = await _population(net, team)
     sid = await _set(net, team)
     version_no = await _draw(net, team, sid, pid)
-    dana = await _contact(seed, team, "Dana Kowalski", "client", None)
+    dana = await _contact(seed, team, "Dana Kowalski", "client_person", None)
     sam = await _contact(seed, team, "Sam Ortiz", "third_party", "Keystone")
     made = await net.http.post(
         f"/v1/sample-sets/{sid}/versions/{version_no}/item-requests",
         json=_body(dana, sam),
         headers={**net.headers(team.marcus), "Idempotency-Key": str(uuid.uuid4())},
     )
-    assert (made.status_code, made.json()["code"]) == (409, "sample_not_approved")
+    assert (made.status_code, made.json()["detail"]) == (409, "sample_not_approved")
 
 
 async def test_a_recipient_who_is_not_the_clients_contact_is_refused(
     net: Net, seed: Seeder
 ) -> None:
     team, sid, version_no, _ = await _approved(net, seed)
-    dana = await _contact(seed, team, "Dana Kowalski", "client", None)
+    dana = await _contact(seed, team, "Dana Kowalski", "client_person", None)
     preview = await net.call(
         "POST",
         f"/v1/sample-sets/{sid}/versions/{version_no}/item-requests/preview",
         team.marcus,
         body=_body(dana, uuid.uuid4()),
     )
-    assert (preview.status_code, preview.json()["code"]) == (422, "recipient_not_contact")
+    assert (preview.status_code, preview.json()["detail"]) == (422, "recipient_not_contact")
