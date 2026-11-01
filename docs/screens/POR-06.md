@@ -9,7 +9,7 @@
 | Epic and tasks | N-02 · contract T05; stub T03; list and review T23; ERSD T24; provider view and return T26; KBA and joint filers T25, T27; dated letters T31; decline T28; download T29; 390 px T43 |
 | Spec and ADRs | SPEC-381 AC-10..AC-12; ADR-149; ADR-146 (portal MFA) |
 | Flags | `signatures.envelopes` (list, review); `signatures.esign_provider` (signing) |
-| Manifest status | planned (portal paths are not in the firm tree, DEC-347); the portal entry mounts `/sign`, `/sign/$envelopeId` and `/sign/$envelopeId/return` since N-02-T26 (fixture data; live with T23) |
+| Manifest status | the portal entry mounts `/sign`, `/sign/$envelopeId` and `/sign/$envelopeId/return` on C7's portal routes (N-02-T23/T26/T29, DEC-1283, DEC-1251, DEC-1388); planned in the firm manifest because portal paths are not in the firm tree (DEC-347). `live` with the firm's `signatures.esign_provider` flip |
 
 ## States
 | Artboard | Viewer | Clock | Data condition | Parity tier | Status |
@@ -66,6 +66,14 @@ Deviations from the handoff (DEC-1388): d's identity questions are the provider'
 - Envelope header right side ("From Daniel Reyes · due Sep 24") and the "Signing order" card need the signer list (N-02-T25).
 - d, e, f, h built in N-02-T29 (fixture mode). The Playwright walk, axe and the Tier C lock are N-02-T43; the live letter walk on staging with the demo account (Owen's letter end to end) is a human step.
 - f's "rep_letter" purpose waits on A-07; a reminder on a dated letter's date is not scheduled anywhere.
+
+## Deviations (N-02-T46)
+| ID | What differs from the handoff | Why | Decision recorded |
+|---|---|---|---|
+| D1 | d's identity questions are the provider's view, not a panel (DF-12); e counts every signer ("1 of 3"); f drops the reminder line; h has no "Try again" (DF-11) | DF-11, DF-12 | DEC-1388 |
+| D2 | the review gate, the ERSD step and the return as built | N-02-T26 | DEC-1251 |
+
+Every deviation above is closed: each has its decision recorded (N-02-T46, 2026-11-01).
 
 ## Links
 Inbound: POR-02 home to-do, client signature-request email (secure link). Outbound: POR-02, signed-copy download.

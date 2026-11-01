@@ -9,7 +9,7 @@
 | Epic and tasks | N-02 · contract N-02-T05 (this file); stub T03; import T08; hub and drawer T11, T13; evidence T14; reminders T14, T28; wet signature T27; parity T40 |
 | Spec and ADRs | SPEC-381 AC-1..AC-6, AC-11, AC-16; ADR-149 |
 | Flags | `signatures.envelopes` (hub, import); `signatures.esign_provider` (provider rows and sends) |
-| Manifest status | planned; `fixture` with N-02-T11; `live` with T13 (record mode first) |
+| Manifest status | routed at `/signatures` (DEC-1582) and reading C7 live (N-02-T13, DEC-1055); manifest `planned` only until its designed links are all wired (as ENG-02). `live` for a firm is its `signatures.esign_provider` flip after RB-18's staging rehearsal (M11 letters, M13 8879s) |
 
 ## States
 Clock E0, Mon Sep 14, 2026, 9:24 AM CT; viewer Grace Holloway (Firm Admin, `client_service` on the envelopes she handles, DEC-20).
@@ -42,6 +42,15 @@ Non-artboard: walled (no row, no count, 404 on id); metadata-only firm admin out
 | `import.attest` | "I confirm these documents were signed by the people listed, on the dates shown." **(pending counsel)** |
 | `remind.preview` | "Preview reminder" · "Send {n} reminders" |
 | `empty.toSend` | "Nothing to send." |
+
+## Deviations (N-02-T46)
+| ID | What differs from the handoff | Why | Decision recorded |
+|---|---|---|---|
+| D1 | DF-11 copy for a locked identity check reads "Needs a handwritten signature"; the counsel-approved wording replaces it as database content | DF-11 | DEC-1055 |
+| D2 | f and r as built (the Out tab's check column; the import's states) | N-02-T15 | DEC-1057 |
+| D3 | the provider frame, signature images and DF-11 copy are masked at Tier C | N-02-T43 | DEC-1672 |
+
+Every deviation above is closed: each has its decision recorded (N-02-T46, 2026-11-01).
 
 ## Links
 Inbound: SHL-01 nav, HOME-01 `signatures_out` tile, TAX-12, AUD-21, NOT-03. Outbound: SIG-02 (drafts), SHL-08 (documents), FIL-01 (signed copies), ENG-04.

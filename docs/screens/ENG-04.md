@@ -9,7 +9,7 @@
 | Epic and tasks | N-02 · contract T05; stub T03; letter versions T32; composer T33, T34; approval and send T35; amend T37 |
 | Spec and ADRs | SPEC-381 AC-13..AC-15; ADR-149; ADR-167 (§7216 consents) |
 | Flags | `engagements.letter_composer` (T32; until then `signatures.envelopes`); flag off: the record panel (`letter.record`) |
-| Manifest status | planned; `fixture` with T33; `live` with T35 |
+| Manifest status | built a–f (N-02-T34/T37, DEC-1460, DEC-1574), its composer read fills sent and signed from C7 (DEC-1581); opened from ENG-02, no path of its own. `live` with `engagements.letter_composer` and the firm's provider flip |
 
 ## States
 Clock Mon Sep 14, 2026, 8:35 AM CT; viewer Daniel Reyes (engagement partner).
@@ -36,6 +36,14 @@ Non-artboard: an edit after approval stales it (`letter.approval_staled`, the ch
 | `primary.send` | "Send for signature" |
 | `chip.signedCount` | "{signed} of {total} signed" |
 | `consents.separate` | "Consents are signed as separate documents." |
+
+## Deviations (N-02-T46)
+| ID | What differs from the handoff | Why | Decision recorded |
+|---|---|---|---|
+| D1 | d–f as built on the firm's template bodies (BH CAS letter, BH Audit Letter · EBP, BH §7216 consents) | N-02-T37 | DEC-1574 |
+| D2 | sent and signed come from C7, not the letter row | N-02-T37 | DEC-1581 |
+
+Every deviation above is closed: each has its decision recorded (N-02-T46, 2026-11-01).
 
 ## Links
 Inbound: ENG-02 G3 row, ENG-01 "Letter │ Not signed" filter. Outbound: SIG-02 (send), SIG-01, FIL-01 (signed copy).

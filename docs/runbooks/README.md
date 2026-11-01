@@ -45,6 +45,8 @@ Owner is the builder for every row. `Last rehearsed` stays `never` until a rehea
 | RB-15 | Disaster-recovery drill procedure | ADR-098, ADR-096 | R1 | never | none (drill) | drafted |
 | RB-16 | Busy-season readiness (R4 checklist, window rules, partner notice) | ADR-098, ADR-075, P-29 | Aug 2027 | never | readiness test; R4 dossier operations-5 | drafted (Q-04-T055, T056) |
 | RB-17 | Section 7216 consent expiry or revocation wave (agents pause per taxpayer) | R-01 | R2 if tax is in scope | never | consent alarms | drafted (T-01-T54) |
+| RB-18 | E-signature or knowledge-based-authentication vendor outage (record mode; wet-signature path) | R-05, ADR-149, ADR-342 | R3 | never | provider health | drafted (N-02-T46) |
+| RB-19 | Tax-engine bridge failure near a filing deadline (file fallback) | P-18 | Aug 2027 | never | bridge failure | to write |
 | RB-18 | E-signature or knowledge-based-authentication vendor outage (record mode; wet-signature path) | R-05, ADR-149 | R3 | never | provider health | first notes (N-02-T17) |
 | RB-19 | Tax-engine bridge failure near a filing deadline (file fallback) | P-18 | Aug 2027 | never | bridge failure | drafted (T-01-T53) |
 | RB-20 | Email deliverability incident (bounce or complaint spike; a firm's sender authentication breaks) | P-11 | R1 | never | SLO-07 | drafted |
