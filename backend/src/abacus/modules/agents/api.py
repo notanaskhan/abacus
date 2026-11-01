@@ -52,7 +52,15 @@ from abacus.modules.agents.follow_ups import reminder_history_of
 from abacus.modules.agents.gates import register_gate_sources, register_suggestion_lookup
 from abacus.modules.agents.graph import EngagementGraph, engagement_graph
 from abacus.modules.agents.guidance_draft import DRAFTER, DraftOutcome, create_draft_run, draft
-from abacus.modules.agents.handoff import Citation, Handoff, ScreeningOutput, VerifiedCitation
+from abacus.modules.agents.handoff import (
+    Citation,
+    DraftCitation,
+    DraftedCell,
+    Handoff,
+    ScreeningOutput,
+    SectionDraft,
+    VerifiedCitation,
+)
 from abacus.modules.agents.home_counts import register_home_counts
 from abacus.modules.agents.inbox_match import MATCHER, MatchOutcome, create_match_run, match
 from abacus.modules.agents.intake_candidates import intake_candidates
@@ -293,7 +301,9 @@ __all__ = [
     "ChangeSetApplier",
     "Citation",
     "CitationStates",
+    "DraftCitation",
     "DraftOutcome",
+    "DraftedCell",
     "DraftingNotEnabled",
     "EffectiveAiPolicy",
     "EngagementAgent",
@@ -342,6 +352,7 @@ __all__ = [
     "ScreeningOutput",
     "ScreeningResultView",
     "ScreeningWorkflow",
+    "SectionDraft",
     "SectionDraftWorkflow",
     "SectionSource",
     "ShadowReportChanged",
