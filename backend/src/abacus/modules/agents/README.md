@@ -184,3 +184,8 @@ The firm's methodology documents, recalled by vector search. Knowledge is firm-w
 
 ## Withdrawn versions (P-06-T19; ADR-162 §4)
 Agents read `evidence.api.withdrawn_among` / `is_version_withdrawn` and leave a client's withdrawn upload out: the upload reviewer's runs record nothing for it, and the screening card, the screening aggregate, the engagement graph, the run trace, run records and the gate facts skip it.
+
+## The section drafter (A-04-T11; DEC-1868)
+- **Spec** `workpapers.section_drafter` v1: default mode `gap`, modes `risk_narrative`, `risk`, `ic`, `soc1`, all on `workpapers.section_draft@v1` until each mode's prompt lands as a spec version; medium tier, $0.15 per section, background, `client_data: none`, suite `evals/workpapers_section_drafter`.
+- **`section_draft.py`:** `start` (workpapers' route slot: 409 `drafting_not_enabled` for a real firm, `action_cap` over the daily cap; creates the run and starts `SectionDraftWorkflow`) and `draft` (the `section_draft.draft` activity): load context, validate the pack (fails the run `pack_configuration_error` before any model call), one gateway call, citations written as v2 rows anchored `section_draft:<run>`, number provenance by code, `workpaper_cell` suggestions through `create_suggestion`, Unsupported cells in the run output. Reads the paper through `section_sources.register_section_source`, which workpapers fills at import (agents never imports workpapers, BOUND-002); workpapers also registers its own `workpaper_cell` applier and calls `start_section_draft` from its route.
+

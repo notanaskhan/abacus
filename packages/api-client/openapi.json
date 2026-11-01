@@ -149838,7 +149838,7 @@
     },
     "/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/drafts": {
       "post": {
-        "description": "Start a section draft (`workpapers.section_drafter`); 409 `drafting_not_enabled` for a\nfirm without clearance, `pack_configuration_error` before any model call (T11).",
+        "description": "Start a section draft (`workpapers.section_drafter`); 409 `drafting_not_enabled` for a\nreal firm the drafter isn't cleared for. A pack configuration error fails the run before any\nmodel call (`pack_configuration_error`, AC6.1; T11).",
         "operationId": "workpaper_draft",
         "parameters": [
           {
@@ -149976,7 +149976,7 @@
             },
             "description": "Invalid request"
           },
-          "501": {
+          "503": {
             "content": {
               "application/json": {
                 "schema": {
@@ -149984,7 +149984,7 @@
                 }
               }
             },
-            "description": "Contract stub: not implemented yet"
+            "description": "Service unavailable"
           }
         },
         "summary": "Workpaper Draft Route",

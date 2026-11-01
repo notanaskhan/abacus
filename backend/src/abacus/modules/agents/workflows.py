@@ -39,6 +39,7 @@ with workflow.unsafe.imports_passed_through():
         RunInput,
         ScreeningInput,
         ScreeningOutcome,
+        SectionDraftInput,
         SlotGrant,
     )
 
@@ -495,6 +496,55 @@ class EntryAssessWorkflow:
                     outcome = await workflow.execute_activity(
                         "entry_assess.assess",
                         given,
+                        result_type=ScreeningOutcome,
+                        start_to_close_timeout=_SCREEN_TIMEOUT,
+                        heartbeat_timeout=_SCREEN_HEARTBEAT,
+                        retry_policy=_RETRY,
+                    )
+                    await _persist(run)  # Q-02-T41: after the terminal state
+                    return outcome
+                except ActivityError as err:
+                    refused = _not_admitted(err)
+                    if refused is None:
+                        raise
+                    retry_after, max_wait = refused
+                    if (workflow.now() - waiting_from).total_seconds() >= max_wait:
+                        return await _fail(run, CAPACITY_TIMEOUT)
+                    delay = max(retry_after, backoff) * (0.5 + workflow.random().random())
+                    await workflow.sleep(timedelta(seconds=min(delay, _MAX_ASK_INTERVAL)))
+                    backoff = min(backoff * 2, _MAX_ASK_INTERVAL)
+        except ActivityError as err:
+            if is_cancelled_exception(err):
+                await _fail(run, CANCELLED)
+                raise asyncio.CancelledError from err
+            return await _fail(run, _code(err))
+        except asyncio.CancelledError:
+            await _fail(run, CANCELLED)
+            raise
+        finally:
+            await _release("screening.release_slot", run)
+
+
+@workflow.defn(name="section_draft")
+class SectionDraftWorkflow:
+    """A-04-T11 (DEC-1868): one section drafter run, created by the route when a person chose
+    Draft with agent: hold a work slot, draft (waiting when not admitted), and always end a failed
+    run. Pack validation fails the run inside the draft before any model call (AC6.1). Slot and
+    fail activities are the screener's."""
+
+    @workflow.run
+    async def run(self, input: SectionDraftInput) -> ScreeningOutcome:
+        run = RunInput(input.tenant_id, input.run_id)
+        waiting_from = workflow.now()
+        try:
+            if not await wait_for_slot("screening.acquire_slot", run):
+                return await _fail(run, CAPACITY_TIMEOUT)
+            backoff = _MIN_ADMISSION_ASK
+            while True:
+                try:
+                    outcome = await workflow.execute_activity(
+                        "section_draft.draft",
+                        input,
                         result_type=ScreeningOutcome,
                         start_to_close_timeout=_SCREEN_TIMEOUT,
                         heartbeat_timeout=_SCREEN_HEARTBEAT,

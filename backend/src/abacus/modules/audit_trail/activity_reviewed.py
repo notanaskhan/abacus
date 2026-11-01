@@ -627,5 +627,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "procedure.tailored",
         "service_org.created",
         "service_org.edited",
+        "section_draft.started",  # A-04-T11: a person started a section draft
+        "section_draft.failed",  # A-04-T11: pack validation failed the run (AC6.1)
     }
 )

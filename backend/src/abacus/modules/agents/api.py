@@ -103,6 +103,16 @@ from abacus.modules.agents.screenings import (
     start_screening,
     workflow_id,
 )
+from abacus.modules.agents.section_draft import DraftingNotEnabled
+from abacus.modules.agents.section_draft import start as start_section_draft
+from abacus.modules.agents.section_sources import (
+    PackProblem,
+    PackRefused,
+    SectionSource,
+    SourceCell,
+    SourcePaper,
+    register_section_source,
+)
 from abacus.modules.agents.service import (
     SCREENER,
     AgentRunBusy,
@@ -171,6 +181,7 @@ from abacus.modules.agents.workflows import (
     GuidanceDraftWorkflow,
     InboxMatchWorkflow,
     ScreeningWorkflow,
+    SectionDraftWorkflow,
     UploadReviewWorkflow,
 )
 from abacus.modules.communications.api import register_intake_candidates, register_reminder_history
@@ -274,6 +285,7 @@ __all__ = [
     "Citation",
     "CitationStates",
     "DraftOutcome",
+    "DraftingNotEnabled",
     "EffectiveAiPolicy",
     "EngagementAgent",
     "EngagementGraph",
@@ -302,6 +314,8 @@ __all__ = [
     "NamedReport",
     "NextTickInput",
     "OverrideRate",
+    "PackProblem",
+    "PackRefused",
     "ProposalChanged",
     "ProposalInvalid",
     "ProposedRow",
@@ -315,12 +329,16 @@ __all__ = [
     "ScreeningOutput",
     "ScreeningResultView",
     "ScreeningWorkflow",
+    "SectionDraftWorkflow",
+    "SectionSource",
     "ShadowReportChanged",
     "ShadowReportRequired",
     "ShadowReportStale",
     "ShadowScore",
     "SheetLayoutError",
     "SlotGrant",
+    "SourceCell",
+    "SourcePaper",
     "StageNotReady",
     "SuggestionApplier",
     "SuggestionChanged",
@@ -359,6 +377,7 @@ __all__ = [
     "register_change_set_applier",
     "register_engagement_run_agent",
     "register_proposal_adapter",
+    "register_section_source",
     "register_suggestion_applier",
     "register_suggestion_target",
     "register_threshold_policy",
@@ -377,6 +396,7 @@ __all__ = [
     "stage_for",
     "start_agents",
     "start_screening",
+    "start_section_draft",
     "starts_in_shadow",
     "template_drafts_router",
     "upload_review_available",

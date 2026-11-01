@@ -69787,9 +69787,9 @@ export type WorkpaperDraftErrors = {
      */
     422: ValidationErrorOut;
     /**
-     * Contract stub: not implemented yet
+     * Service unavailable
      */
-    501: ErrorOut;
+    503: ErrorOut;
 };
 
 export type WorkpaperDraftError = WorkpaperDraftErrors[keyof WorkpaperDraftErrors];

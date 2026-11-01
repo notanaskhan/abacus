@@ -9856,7 +9856,8 @@ export const citeMutation = (options?: Partial<Options<CiteData>>): UseMutationO
  * Workpaper Draft Route
  *
  * Start a section draft (`workpapers.section_drafter`); 409 `drafting_not_enabled` for a
- * firm without clearance, `pack_configuration_error` before any model call (T11).
+ * real firm the drafter isn't cleared for. A pack configuration error fails the run before any
+ * model call (`pack_configuration_error`, AC6.1; T11).
  */
 export const workpaperDraftMutation = (options?: Partial<Options<WorkpaperDraftData>>): UseMutationOptions<WorkpaperDraftResponse, WorkpaperDraftError, Options<WorkpaperDraftData>> => {
     const mutationOptions: UseMutationOptions<WorkpaperDraftResponse, WorkpaperDraftError, Options<WorkpaperDraftData>> = {
