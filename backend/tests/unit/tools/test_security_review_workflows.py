@@ -51,6 +51,16 @@ def test_med3_the_inspector_gate_fails_when_the_scan_never_completed() -> None:
     assert "::error title=inspector scan incomplete::" in script
 
 
+def test_the_inspector_wait_reads_one_status_not_one_per_findings_page() -> None:
+    """Build 41327796020: the CLI paginated a large findings list and printed the status once per
+    page ("ACTIVE" twice), so a finished scan never matched; the gate reads one page, one line."""
+    script = runs(jobs(load("build.yml"))["inspector"])
+    wait = script[script.index("describe-image-scan-findings") :]
+    status_read = wait[: wait.index("&& break")]
+    assert "--no-paginate" in status_read
+    assert "| head -n 1" in status_read
+
+
 def test_med3_the_inspector_gate_scans_the_platform_image_not_the_index() -> None:
     """The pushed digest is an OCI index (image plus attestations); Inspector reports the index
     itself as UNSUPPORTED_IMAGE, so the gate waits on, and reads findings for, the platform image

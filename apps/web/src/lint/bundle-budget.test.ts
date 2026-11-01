@@ -1,5 +1,5 @@
 // @vitest-environment node
-// F-05-T17: the bundle budgets (firm 250 KB, portal 150 KB, route chunk 120 KB, gzip). The script
+// F-05-T17: the bundle budgets (firm 250 KB, portal 150 KB, route chunk 135 KB since DEC-1682, gzip). The script
 // reads the build manifest; here it runs over synthetic manifests with chosen sizes, and
 // `make check-fast` runs it over the real build (apps/web/scripts/bundle-budget.mjs).
 import { beforeAll, describe, expect, it } from "vitest";
@@ -51,7 +51,7 @@ function over(sizes: Record<string, number>): string[] {
 
 describe("F-05-T17 bundle budgets", () => {
   it("states the plan's budgets", () => {
-    expect(budget.BUDGETS).toEqual({ firm: 250 * KB, portal: 150 * KB, route: 120 * KB });
+    expect(budget.BUDGETS).toEqual({ firm: 250 * KB, portal: 150 * KB, route: 135 * KB });
   });
 
   it("follows static imports, not dynamic ones", () => {
@@ -82,10 +82,10 @@ describe("F-05-T17 bundle budgets", () => {
     expect(names.some((n) => n.startsWith("portal initial"))).toBe(true);
   });
 
-  it("fails a route chunk over 120 KB, counting what it adds to the initial load", () => {
+  it("fails a route chunk over 135 KB, counting what it adds to the initial load", () => {
     const names = over({
-      "assets/Board.js": 60 * KB,
-      "assets/shared.js": 61 * KB,
+      "assets/Board.js": 70 * KB,
+      "assets/shared.js": 66 * KB,
       "assets/vendor.js": 10 * KB,
     });
     expect(names).toEqual(["route src/legacy/Board.tsx"]);

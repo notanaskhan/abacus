@@ -1,0 +1,33 @@
+# The materiality recommender (A-04-T15; A-04 §6.1; DEC-1953). Source of truth: compiled into
+# _specs.py by `python -m abacus_tools.codegen.agent_specs`; a test fails if they drift.
+id: decisions.recommender
+version: 1
+purpose: Recommend one of the code-computed materiality options, with reasons by fact reference, for the engagement partner to decide.
+shape: single_call
+prompt: decisions.recommend@v1
+tier: medium
+escalation_tier: medium
+input_schema: DecisionRecommendInput
+output_schema: Recommendation
+# Reads the materiality record, raises the partner's card with its tag; never decides (INV-1).
+task_scope: [materiality.read, decision_card.raise, suggestion.create, decision_recommend.run]
+tools: []
+limits:
+  max_output_tokens: 600
+  max_cost_usd: "0.01"
+  max_steps: 1
+  max_seconds: 30
+autonomy: propose
+# The tag is shown only when code accepts it (the key is a computed option inside the firm's
+# range, every reference is a fact and every number is one); otherwise the card has no tag.
+confidence_routing:
+  below: "0"
+  route: hidden
+untrusted_inputs: [factors]
+evaluation_suite: evals/decision_recommendation
+# A-04 §6.1: the proposer waits on it.
+work_class: interactive
+essential: false
+cheaper_tiers: []
+routes: [bedrock, direct]
+client_data: none
