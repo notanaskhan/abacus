@@ -101,7 +101,11 @@ from abacus.kernel.dispatch import dispatch
 from abacus.kernel.temporal import temporal_client
 from abacus.kernel.uow import Target, uow
 from abacus.modules.assurance.api import (
+    MappingConfirmIn,
+    MappingRunIn,
+    adopt_trial_balance,
     import_grouping_csv,
+    mapping_live,
     publish_grouping_version,
     record_phase,
     update_profile,
@@ -155,6 +159,12 @@ from abacus.modules.identity.api import (
     provision_setting,
     set_demo_clock,
     set_member_profile,
+)
+from abacus.modules.ledger.api import (
+    LedgerLine,
+    NormalisedTrialBalance,
+    record_snapshot,
+    record_subsequent_snapshot,
 )
 from abacus.modules.methodology.api import (
     EngagementType,
@@ -221,9 +231,11 @@ from abacus.modules.review.api import STATEMENTS as SIGN_OFF_STATEMENTS
 from abacus.modules.review.api import sign_target
 from abacus.modules.sampling.api import (
     ApproveIn,
+    GeneralLedgerSourceIn,
     ParametersIn,
     PopulationIn,
     SampleSetIn,
+    StratumIn,
     TieComparisonIn,
     TieIn,
     UploadSourceIn,
@@ -339,6 +351,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.intake import (
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.intake import NEEDS as INTAKE_NEEDS
 from abacus_tools.synthetic.scenarios.brightwater_hale.intake import SLICE as INTAKE_SLICE
+from abacus_tools.synthetic.scenarios.brightwater_hale.ledgers import GRANITE_PEAK_FY2026
 from abacus_tools.synthetic.scenarios.brightwater_hale.methodology import (
     NEEDS as METHODOLOGY_NEEDS,
 )
@@ -2389,6 +2402,221 @@ async def _sample_version_approved(conn: asyncpg.Connection, _: Scenario, event:
     await approve_sample(ctx, sample_set, version, ApproveIn(seen_hash=str(view.content_hash)))
 
 
+# A-03-T16 part three (TASK-2717; DEC-1768): Granite Peak FY2026. Simone records the NetSuite
+# trial balance (128 accounts) and adopts it on Sep 11, which starts the rules on BH FS groupings
+# v1 (the subscriber's act, replayed inline as her run); Caleb confirms the mapping (L1) once
+# Granite's G2 is met. On Sep 24 Simone records the subsequent-period GL and builds the
+# disbursements population from it, then draws Version 1 (threshold + random, 0x7C31B4).
+
+
+async def _granite_engagement(conn: asyncpg.Connection) -> tuple[UUID, UUID, UUID]:
+    """Granite Peak FY2026's engagement, assurance work item and client entity."""
+    engagement = engagement_id_of(BY_LABEL["A2"])
+    row = await tenant_row(
+        conn,
+        TENANT,
+        "SELECT e.client_entity_id, w.id AS item FROM engagements e JOIN work_items w "
+        "ON w.engagement_id = e.id AND w.kind = 'assurance' WHERE e.id = $1",
+        engagement,
+    )
+    if row is None:
+        raise LookupError("Granite Peak's assurance work item is audit_core's and is missing")
+    return engagement, cast(UUID, row["item"]), cast(UUID, row["client_entity_id"])
+
+
+async def _granite_contact_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Luis Ferrante (CFO, Granite Peak's portal owner) as a contact of his company's client."""
+    person = _PORTAL[str(event.data["contact"])]
+    await create_contact(
+        await _staff_context(conn, event),
+        await _client_id(conn, person.org),
+        name=person.name,
+        party_kind="person",
+        email=person.email,
+        phone=None,
+        roles=[],
+    )
+
+
+def _fingerprint(*parts: object) -> str:
+    return hashlib.sha256("|".join(map(str, parts)).encode("utf-8")).hexdigest()
+
+
+async def _granite_tb_recorded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    entity = (await _granite_engagement(conn))[2]
+    accounts = sampling_content.granite_accounts()
+    tb = GRANITE_PEAK_FY2026
+    start, end = date(tb.as_of.year - 1, 7, 1), tb.as_of
+    lines = tuple(
+        LedgerLine(a.account_code, a.account_name, a.debit, a.credit, f"netsuite:{a.account_code}")
+        for a in accounts
+    )
+    debit = sum((a.debit for a in accounts), Decimal(0))
+    credit = sum((a.credit for a in accounts), Decimal(0))
+    by = _SEATS[event.actor]
+    async with uow(TenantContext(TENANT, "human", str(user_id_of(by)))) as tx:
+        await record_snapshot(
+            tx,
+            client_entity_id=entity,
+            period_start=start,
+            period_end=end,
+            tb=NormalisedTrialBalance(start, end, "USD", lines, debit, credit),
+            raw_fingerprint=_fingerprint("granite-peak-fy2026-tb", *lines),
+            pulled_at=event.at,
+            source="import_netsuite_tb_csv",
+        )
+
+
+async def _granite_tb_snapshot(conn: asyncpg.Connection) -> UUID:
+    entity = (await _granite_engagement(conn))[2]
+    found = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM ledger_snapshots WHERE client_entity_id = $1 AND period_end = $2 "
+        "ORDER BY pulled_at DESC LIMIT 1",
+        entity,
+        GRANITE_PEAK_FY2026.as_of,
+    )
+    if found is None:
+        raise LookupError("Granite Peak's FY2026 trial balance has not been recorded")
+    return cast(UUID, found)
+
+
+async def _granite_tb(conn: asyncpg.Connection) -> UUID:
+    engagement = (await _granite_engagement(conn))[0]
+    found = await tenant_value(
+        conn, TENANT, "SELECT id FROM trial_balances WHERE engagement_id = $1", engagement
+    )
+    if found is None:
+        raise LookupError("Granite Peak's trial balance has not been adopted")
+    return cast(UUID, found)
+
+
+async def _granite_tb_adopted(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    await adopt_trial_balance(
+        await _staff_context(conn, event),
+        (await _granite_engagement(conn))[0],
+        await _granite_tb_snapshot(conn),
+        None,
+        sampling_content.GRANITE_TB_LABEL,
+        "whole_dollars",
+    )
+
+
+async def _granite_mapping_started(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """The rules on the firm's one published grouping set, by the version's adopter."""
+    await mapping_live.run_start(
+        await _staff_context(conn, event),
+        (await _granite_engagement(conn))[0],
+        MappingRunIn(trial_balance_id=await _granite_tb(conn)),
+    )
+
+
+async def _granite_mapping_confirmed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Caleb confirms on the hash he sees: his L1 sign-off (AUD-31 f)."""
+    ctx = await _staff_context(conn, event)
+    tb = await _granite_tb(conn)
+    found = await tenant_value(
+        conn, TENANT, "SELECT id FROM mapping_sets WHERE trial_balance_id = $1", tb
+    )
+    seen = await mapping_live.mapping_set(ctx, cast(UUID, found))
+    await mapping_live.confirm(
+        ctx, cast(UUID, found), MappingConfirmIn(seen_hash=seen.summary.content_hash)
+    )
+
+
+async def _granite_gl_recorded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    entity = (await _granite_engagement(conn))[2]
+    summary, entries = sampling_content.granite_gl()
+    by = _SEATS[event.actor]
+    async with uow(TenantContext(TENANT, "human", str(user_id_of(by)))) as tx:
+        await record_subsequent_snapshot(
+            tx,
+            client_entity_id=entity,
+            period_start=sampling_content.GL_FROM,
+            period_end=sampling_content.GL_TO,
+            summary=summary,
+            entries=entries,
+            raw_fingerprint=_fingerprint("granite-peak-subsequent-gl", summary.line_count),
+            source="import_netsuite_gl_csv",
+        )
+
+
+async def _granite_gl_population_built(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    granite = await _granite_engagement(conn)
+    item, entity = granite[1], granite[2]
+    snapshot = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM gl_snapshots WHERE client_entity_id = $1 AND kind = 'subsequent' "
+        "AND period_start = $2 ORDER BY created_at DESC LIMIT 1",
+        entity,
+        sampling_content.GL_FROM,
+    )
+    await create_population(
+        await _staff_context(conn, event),
+        item,
+        PopulationIn(
+            source=GeneralLedgerSourceIn(
+                gl_snapshot_id=cast(UUID, snapshot),
+                account_codes=[sampling_content.GRANITE_CASH[0]],
+                side="credit",
+                kinds=list(sampling_content.GL_KINDS),
+                posted_from=sampling_content.GL_FROM,
+                posted_to=sampling_content.GL_TO,
+            ),
+            sampling_unit=sampling_content.GL_SAMPLING_UNIT,
+            deviation_definition=sampling_content.GL_DEVIATION,
+        ),
+    )
+
+
+async def _granite_sample_set_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    await create_sample_set(
+        await _staff_context(conn, event),
+        (await _granite_engagement(conn))[1],
+        SampleSetIn(title=sampling_content.DISBURSEMENTS_TITLE, purpose=None),
+    )
+
+
+async def _granite_version_drawn(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Threshold + random: all at or above $50,000, 16 of $7,750 to $49,999, none below."""
+    item = (await _granite_engagement(conn))[1]
+    row = await tenant_row(
+        conn,
+        TENANT,
+        "SELECT s.id AS set_id, p.id AS population_id FROM sample_sets s "
+        "JOIN sample_populations p ON p.work_item_id = s.work_item_id "
+        "WHERE s.work_item_id = $1 AND s.title = $2 AND p.source_kind = 'general_ledger' "
+        "ORDER BY p.created_at DESC LIMIT 1",
+        item,
+        sampling_content.DISBURSEMENTS_TITLE,
+    )
+    if row is None:
+        raise LookupError("Granite Peak's disbursements population or set is missing")
+    await draw_sample(
+        await _staff_context(conn, event),
+        cast(UUID, row["set_id"]),
+        VersionIn(
+            population_id=cast(UUID, row["population_id"]),
+            method="threshold_random_stratified",
+            parameters=ParametersIn(),
+            strata=[
+                StratumIn(
+                    min_amount=r.min_amount,
+                    max_amount=r.max_amount,
+                    test_rule=r.test_rule,
+                    random_count=r.random_count,
+                )
+                for r in sampling_content.GL_STRATA
+            ],
+        ),
+        scenario_seed=int(cast(int, event.data["seed"])),
+    )
+
+
 # --- service-backed events ---------------------------------------------------------------------
 
 
@@ -3723,6 +3951,15 @@ HANDLERS: Final[dict[str, Handler]] = {
     "engagements.contact_designated": _sampling_contact_designated,
     "sampling.version_prepared": _sample_version_prepared,
     "sampling.version_approved": _sample_version_approved,
+    "organisations.granite_contact_created": _granite_contact_created,
+    "ledger.granite_tb_recorded": _granite_tb_recorded,
+    "assurance.granite_tb_adopted": _granite_tb_adopted,
+    "assurance.granite_mapping_started": _granite_mapping_started,
+    "assurance.granite_mapping_confirmed": _granite_mapping_confirmed,
+    "ledger.granite_gl_recorded": _granite_gl_recorded,
+    "sampling.gl_population_built": _granite_gl_population_built,
+    "sampling.gl_sample_set_created": _granite_sample_set_created,
+    "sampling.gl_version_drawn": _granite_version_drawn,
     # P-08-T14 (`--slice portal`): branding before its host; people after the work items they name.
     "portal.branding_set": _branding_set,
     "portal.host_added": _host_added,
