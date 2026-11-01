@@ -2384,6 +2384,12 @@ function Shl14Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
       <RequestComposer
         binderId={SHL14_OPENS[state].binderId}
         requestId={SHL14_OPENS[state].requestId}
+        {...(SHL14_OPENS[state].workItemId === undefined
+          ? {}
+          : { workItemId: SHL14_OPENS[state].workItemId })}
+        {...(SHL14_OPENS[state].initial === undefined
+          ? {}
+          : { initial: SHL14_OPENS[state].initial })}
         open
         onOpenChange={() => undefined}
       />

@@ -46,7 +46,7 @@ function show(state: Shl14State): Seen {
     ]),
   );
   restore = installFixtureMode({ ...scenario, handlers });
-  const { binderId, requestId } = OPENS[state];
+  const { binderId, requestId, workItemId, initial } = OPENS[state];
   renderRoutes([
     {
       path: "/",
@@ -54,6 +54,8 @@ function show(state: Shl14State): Seen {
         <RequestComposer
           binderId={binderId}
           requestId={requestId}
+          {...(workItemId === undefined ? {} : { workItemId })}
+          {...(initial === undefined ? {} : { initial })}
           open
           onOpenChange={() => undefined}
         />
@@ -96,7 +98,7 @@ async function choose(label: RegExp, option: string): Promise<void> {
 
 describe("SHL-14 states", () => {
   it("defines a, b and e as Marcus Delaney on Sep 14, f as Cole Hart on Sep 24 and d as Raj Malhotra", () => {
-    expect(STATES).toEqual(["a", "b", "e", "f", "d"]);
+    expect(STATES).toEqual(["a", "b", "c", "e", "f", "d"]);
     expect(scenarios.d.persona).toBe("raj-malhotra");
     expect(scenarios.d.clock).toBe(CLOCK_A);
     for (const s of ["a", "b", "e"] as const) {
@@ -354,5 +356,48 @@ describe("SHL-14 acceptance", () => {
     );
     expect(sent?.status).toBe(422);
     expect(await sent?.json()).toEqual({ detail: "due_date_required" });
+  });
+});
+
+// A-03-T15 (TASK-2713): c, the Sample wave. "SHL-14 c offers only approved versions."
+describe("SHL-14 c (A-03-T15)", () => {
+  it("offers only approved sample versions and creates one request per participant", async () => {
+    const seen = show("c");
+    const list = await waitFor(
+      () => {
+        const found = document.querySelector<HTMLElement>("[data-shl14='sample-list']");
+        expect(found).not.toBeNull();
+        return found as HTMLElement;
+      },
+      { timeout: 6000 },
+    );
+    expect(list.textContent).toContain("25 participants");
+    await waitFor(
+      () => {
+        expect(list.textContent).toContain("Alicia Brennan");
+      },
+      { timeout: 6000 },
+    );
+    expect(list.textContent).toContain("+ 20 more");
+    expect(document.body.textContent).toContain("Participants · sample seed 0x5E2A91");
+    expect(document.body.textContent).not.toContain("Distributions");
+    const create = await screen.findByRole<HTMLButtonElement>("button", {
+      name: "Create 25 requests",
+    });
+    await waitFor(() => {
+      expect(create.disabled).toBe(false);
+    });
+    fireEvent.click(create);
+    await waitFor(() => {
+      const posted = seen.calls.find(
+        (c) => c.method === "POST" && c.path.endsWith("/item-requests"),
+      );
+      expect(posted).toBeDefined();
+      const body = posted?.body as { templates: { description: string }[]; wave: string };
+      expect(body.wave).toBe("sample");
+      expect(body.templates.map((t) => t.description)).toEqual([
+        "Enrollment and opt-out forms — sampled participants",
+      ]);
+    });
   });
 });

@@ -3,11 +3,12 @@ import type { JSX } from "react";
 import { useSession } from "../../app-core/session";
 import { useFirmToolbar } from "../../shell/firm/ToolbarData";
 import { AuditCockpitPage } from "../AUD-02";
-import { type Aud11State, NORTHWIND_AUDIT } from "./scenarios";
+import { type Aud11State, GENERATE_DUE, GENERATE_TEMPLATES, NORTHWIND_AUDIT } from "./scenarios";
 
 // AUD-11's artboards (A-03-T11): the AUD-02 cockpit with Fieldwork › Sample Selection open on
 // Northwind, inside the app shell at 1440 × 860 as AUD-02 and AUD-06 draw theirs. The dock opens
-// on the Viewer (DV-A2). d opens the size edit at 20 (the person's edit, held for the board).
+// on the Viewer (DV-A2). d opens the size edit at 20 (the person's edit, held for the board); c
+// opens the generate sheet with the handoff's five templates and due date (A-03-T15).
 
 export function AUD11Frame({ state }: { state: Aud11State }): JSX.Element {
   const firm = useSession().tenant?.firm_name ?? "";
@@ -31,6 +32,13 @@ export function AUD11Frame({ state }: { state: Aud11State }): JSX.Element {
               section: "sample_selection",
               dock: "viewer",
               ...(state === "d" ? { sampleSelection: { editSize: 20 } } : {}),
+              ...(state === "c"
+                ? {
+                    sampleSelection: {
+                      generate: { open: true, templates: GENERATE_TEMPLATES, due: GENERATE_DUE },
+                    },
+                  }
+                : {}),
             }}
           />
         </div>

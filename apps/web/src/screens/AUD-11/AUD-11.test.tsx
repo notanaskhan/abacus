@@ -154,3 +154,75 @@ describe("AUD-11 states", () => {
     expect(screen.queryByText(/Distributions/u)).toBeNull();
   });
 });
+
+// A-03-T15 (TASK-2713): c, e and f. Row acceptance: "State c shows 125 requests 100 to POR-03 25
+// to POR-14 and creates them, state f foots 24 + 1,102 + 786 = 1,912 and 24 + 16 = 40, and SHL-14
+// c offers only approved versions."
+describe("AUD-11 c, e and f (A-03-T15)", () => {
+  it("c: the sheet previews 125 · 100 · 25 from the server and creates them", async () => {
+    show("c");
+    const preview = await drawn("[data-aud11='generate-preview']");
+    await waitFor(
+      () => {
+        expect(preview.textContent).toBe("125 requests · 100 to POR-03 · 25 to POR-14");
+      },
+      { timeout: 6000 },
+    );
+    expect(document.querySelectorAll("[data-aud11='template']")).toHaveLength(5);
+    const recipients = await drawn("[data-aud11='recipients']");
+    expect(recipients.textContent).toContain("Dana Kowalski sees 100 requests (POR-03)");
+    expect(recipients.textContent).toContain("Sam Ortiz, Keystone sees 25 requests (POR-14)");
+    expect(document.body.textContent).toContain("Generate item requests");
+    const create = await screen.findByRole<HTMLButtonElement>("button", {
+      name: "Create 125 requests",
+    });
+    await waitFor(() => {
+      expect(create.disabled).toBe(false);
+    });
+    fireEvent.click(create);
+    await waitFor(
+      () => {
+        expect(screen.queryByRole("button", { name: "Create 125 requests" })).toBeNull();
+      },
+      { timeout: 6000 },
+    );
+  });
+
+  it("e: a person's draw reads Drawing, polls …/draw and shows the rows drawn so far", async () => {
+    show("e");
+    const label = await drawn("[data-aud11='drawing']");
+    expect(label.textContent).toBe("Drawing");
+    await waitFor(
+      () => {
+        expect(document.querySelectorAll("[data-aud11='drawn'] [data-item]")).toHaveLength(8);
+      },
+      { timeout: 6000 },
+    );
+    expect(document.body.textContent).toContain("8 of 25 drawn");
+    expect(document.querySelector("[data-aud11='items']")).toBeNull();
+  });
+
+  it("f: the ledger population and strata foot 24 + 1,102 + 786 = 1,912 and 24 + 16 = 40", async () => {
+    show("f");
+    const body = await drawn("[data-aud11='body']");
+    await waitFor(() => {
+      expect(body.textContent).toContain("NetSuite · Granite Peak Outdoor Supply");
+    });
+    expect(body.textContent).toContain("Disbursements Jul 1 – Sep 18, 2026");
+    expect(body.textContent).toContain("1,912 payments");
+    expect(body.textContent).toContain("24 + 16 = 40");
+    expect(body.textContent).toContain("0x7C31B4");
+    const strata = Array.from(document.querySelectorAll("[data-aud11='strata'] [data-stratum]"));
+    expect(strata.map((r) => r.querySelectorAll("td")[2]?.textContent)).toEqual([
+      "24",
+      "1,102",
+      "786",
+    ]);
+    expect(strata.map((r) => r.querySelectorAll("td")[3]?.textContent)).toEqual([
+      "all tested",
+      "16 random",
+      "none",
+    ]);
+    expect(document.querySelector("[data-aud11='hr-tooltip']")).not.toBeNull();
+  });
+});

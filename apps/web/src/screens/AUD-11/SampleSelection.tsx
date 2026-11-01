@@ -3,8 +3,10 @@ import type {
   SampleItemOut,
   SampleSetOut,
   SampleSetSummaryOut,
+  StratumOut,
 } from "@abacus/api-client";
 import {
+  sampleDrawProgressOptions,
   sampleItemsOptions,
   sampleSetOptions,
   sampleSetsListOptions,
@@ -36,13 +38,16 @@ import { type JSX, type ReactNode, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { useFlag } from "../../app-core/flags";
 import { useSession } from "../../app-core/session";
+import { GenerateSheet, type SheetTemplate } from "./GenerateSheet";
 import { COPY } from "./copy";
 
 // AUD-11 · Sampling (A-03-T11; A-03 §5.1; docs/screens/AUD-11.md; handoff AUD-11 spec, R1, R2): the
 // AUD-02 cockpit's Fieldwork › Sample Selection canvas, over the C9 sampling reads. States built
 // here: a (approved), b (draft: Generate disabled with its tooltip), d (the size edited below the
 // methodology: the amber banner and a required rationale), the composed sample-set picker and the
-// C-20 states (off, loading, error, a walled person's 404). c, e and f are A-03-T15's.
+// C-20 states (off, loading, error, a walled person's 404). A-03-T15 adds c (the generate sheet,
+// `GenerateSheet.tsx`), e (a person's draw: "Drawing", rows 70 ms apart, reduced-motion safe,
+// polling `…/draw`) and f (a general-ledger population with its strata).
 //
 // Every figure is the server's (ADR-050): counts, totals, tie results, the seed. No control here
 // approves or draws for the agent; Approve and the draw are people's, and the version history
@@ -161,6 +166,101 @@ function Items({ set }: { set: SampleSetOut }): JSX.Element {
   );
 }
 
+/** AUD-11 e: the draw a person started, polled until it is a draft (DV-A1: no agent dot). */
+function Drawing({ set }: { set: SampleSetOut }): JSX.Element {
+  const progress = useQuery({
+    ...sampleDrawProgressOptions({
+      path: { sample_set_id: set.id, version_no: set.version_no },
+    }),
+    refetchInterval: (query) => (query.state.data?.status === "drawing" ? 1000 : false),
+  });
+  const p = progress.data;
+  const total = p?.items_total ?? set.parameters.final_size;
+  return (
+    <Block
+      title={COPY.items.title(total)}
+      right={
+        <span data-aud11="drawing" className="flex items-center gap-[6px] text-meta text-ink-2">
+          <StatusDisc state="run" size={13} />
+          {COPY.drawing.label}
+        </span>
+      }
+    >
+      <p
+        role="status"
+        aria-live="polite"
+        className="px-[12px] py-[6px] text-meta text-ink-3 hairline-b"
+      >
+        {p?.failure_code != null
+          ? COPY.drawing.failed(p.failure_code)
+          : COPY.drawing.progress(p?.items_done ?? 0, total)}
+      </p>
+      <ol data-aud11="drawn">
+        {(p?.items ?? []).map((item, i) => (
+          <li
+            key={item.position}
+            data-item={item.record_key}
+            style={{ animationDelay: `${String(i * 70)}ms` }}
+            className="flex h-[30px] items-center gap-[10px] px-[12px] text-body hairline-b motion-safe:animate-[fade-in_160ms_ease-out_both]"
+          >
+            <span className="w-[34px] flex-none text-meta text-ink-3 tabular-nums">
+              {item.position}
+            </span>
+            <span className="min-w-0 flex-1 truncate">{item.name ?? item.record_key}</span>
+            <span className="text-meta text-ink-3">{item.record_key}</span>
+            <StatusDisc state={i < (p?.items_done ?? 0) ? "done" : "run"} />
+          </li>
+        ))}
+      </ol>
+    </Block>
+  );
+}
+
+function band(s: StratumOut): string {
+  const low = s.min_amount == null ? null : prose(s.min_amount);
+  const high = s.max_amount == null ? null : prose(s.max_amount);
+  if (low !== null && high !== null) return COPY.strata.between(low, high);
+  if (low !== null) return COPY.strata.atLeast(low);
+  if (high !== null) return COPY.strata.below(high);
+  return "—";
+}
+
+function rule(s: StratumOut): string {
+  if (s.test_rule === "all") return COPY.strata.all;
+  if (s.test_rule === "random") return COPY.strata.random(s.random_count ?? s.selected_count);
+  return COPY.strata.none;
+}
+
+/** R2 f: the strata, as the server stratified them (positions, ranges, counts, the rule). */
+function Strata({ set }: { set: SampleSetOut }): JSX.Element {
+  return (
+    <Block title={COPY.strata.title}>
+      <table data-aud11="strata" className="w-full text-body">
+        <thead>
+          <tr className="h-[30px] text-meta text-ink-3 hairline-b">
+            <th className="px-[12px] text-left font-normal">{COPY.strata.stratum}</th>
+            <th className="px-[12px] text-left font-normal">{COPY.strata.range}</th>
+            <th className="px-[12px] text-right font-normal">{COPY.strata.population}</th>
+            <th className="px-[12px] text-right font-normal">{COPY.strata.rule}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {set.strata.map((s) => (
+            <tr key={s.position} data-stratum={s.position} className="h-[30px] hairline-b">
+              <td className="px-[12px] tabular-nums">{s.position}</td>
+              <td className="px-[12px] tabular-nums">{band(s)}</td>
+              <td className="px-[12px] text-right tabular-nums">
+                {count(String(s.population_count))}
+              </td>
+              <td className="px-[12px] text-right">{rule(s)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Block>
+  );
+}
+
 function Versions({ set, tz }: { set: SampleSetOut; tz: string }): JSX.Element {
   return (
     <Block title={COPY.versions.title}>
@@ -262,7 +362,32 @@ function Body({
               { label: COPY.population.sources[2], disabled: true },
             ]}
           />
+          <Tooltip content={COPY.population.hrTooltip}>
+            <span tabIndex={0} data-aud11="hr-tooltip" aria-label={COPY.population.hrTooltip}>
+              <Icon name="info" size={12} className="ml-[6px] inline text-ink-3" />
+            </span>
+          </Tooltip>
         </Kv>
+        {src.kind === "general_ledger" && (
+          <>
+            {src.connection_label != null && (
+              <Kv label={COPY.population.connection}>
+                <span className="inline-flex items-center gap-[6px]">
+                  {src.connection_label}
+                  <Icon name="check" size={12} className="text-green-ink" />
+                </span>
+              </Kv>
+            )}
+            {src.query_label != null && <Kv label={COPY.population.query}>{src.query_label}</Kv>}
+            {src.pulled_at != null && (
+              <Kv label={COPY.population.snapshot}>
+                <span className="text-ink-3">
+                  {COPY.population.pulled(date(src.pulled_at, { now, tz }), shortHash(pop.sha256))}
+                </span>
+              </Kv>
+            )}
+          </>
+        )}
         {src.kind === "upload" && src.file_name != null && (
           <Kv label={COPY.population.file}>
             <span className="text-ink">{src.file_name}</span>{" "}
@@ -280,7 +405,14 @@ function Body({
             </span>
           </Kv>
         )}
-        <Kv label={COPY.population.records}>{count(String(pop.record_count))}</Kv>
+        <Kv label={COPY.population.records}>
+          {src.kind === "general_ledger"
+            ? `${count(String(pop.record_count))} ${pop.record_unit}`
+            : count(String(pop.record_count))}
+        </Kv>
+        {src.kind === "general_ledger" && pop.amount_total != null && (
+          <Kv label={COPY.population.amount}>{prose(pop.amount_total)}</Kv>
+        )}
         <Kv label={COPY.population.hash}>
           <span className="text-ink-3">{shortHash(pop.sha256)}</span>
         </Kv>
@@ -319,7 +451,16 @@ function Body({
                 )}
               </span>
             )}
-          <span className="font-medium">{editing ? size : p.final_size}</span>
+          <span className="font-medium">
+            {!editing && set.strata.length > 0
+              ? COPY.strata.size(
+                  set.strata.filter((x) => x.selected_count > 0).map((x) => x.selected_count),
+                  set.items_total,
+                )
+              : editing
+                ? size
+                : p.final_size}
+          </span>
         </Kv>
         {editing && (
           <ValueRow
@@ -378,7 +519,8 @@ function Body({
         </Kv>
       </Block>
 
-      <Items set={set} />
+      {set.strata.length > 0 && <Strata set={set} />}
+      {set.status === "drawing" ? <Drawing set={set} /> : <Items set={set} />}
       <Versions set={set} tz={tz} />
     </div>
   );
@@ -393,6 +535,8 @@ export interface SampleSelectionOptions {
   editSize?: number;
   /** "Sign off…": the host opens SHL-12 (`?ov=signoff:sample_set_version:<id>:L1`). */
   onSignOff?: (sampleSetId: string, versionNo: number) => void;
+  /** AUD-11 c: the generate sheet open, with its templates and due date (the artboard's). */
+  generate?: { open?: boolean; templates?: readonly SheetTemplate[]; due?: string };
 }
 
 /** AUD-11's canvas for the cockpit (AUD-02 renders it for `?section=sample_selection`). */
@@ -416,6 +560,7 @@ export function useSampleSelectionCanvas(
   const [editing, setEditing] = useState(options.editSize !== undefined);
   const [size, setSize] = useState(options.editSize ?? set.data?.parameters.final_size ?? 0);
   const [rationale, setRationale] = useState("");
+  const [sheet, setSheet] = useState(options.generate?.open === true);
 
   let state: ViewState = { kind: "ready" };
   if (!on) state = { kind: "flag-off", flag: "sampling.sample_sets" };
@@ -452,8 +597,19 @@ export function useSampleSelectionCanvas(
     />
   );
   const citations = (data?.parameters.citations ?? []).length;
+  const mayGenerate =
+    data !== undefined &&
+    data.status === "approved" &&
+    (data.allowed_actions ?? []).includes("sample_set.generate_requests");
   const generate = (
-    <Button variant="primary" disabled={!approved}>
+    <Button
+      variant="primary"
+      opensDialog
+      disabled={!mayGenerate}
+      onClick={() => {
+        setSheet(true);
+      }}
+    >
       {COPY.footer.generate(data?.items_total ?? 0, COPY.templates)}
     </Button>
   );
@@ -517,18 +673,31 @@ export function useSampleSelectionCanvas(
       ),
     children:
       data === undefined ? null : (
-        <Body
-          set={data}
-          editing={editing}
-          size={editing && size === 0 ? data.parameters.final_size : size}
-          onSize={setSize}
-          rationale={rationale}
-          onRationale={setRationale}
-          onCancel={() => {
-            setEditing(false);
-            setRationale("");
-          }}
-        />
+        <>
+          {approved && (
+            <GenerateSheet
+              set={data}
+              open={sheet}
+              onOpenChange={setSheet}
+              {...(options.generate?.templates === undefined
+                ? {}
+                : { initial: options.generate.templates })}
+              {...(options.generate?.due === undefined ? {} : { due: options.generate.due })}
+            />
+          )}
+          <Body
+            set={data}
+            editing={editing}
+            size={editing && size === 0 ? data.parameters.final_size : size}
+            onSize={setSize}
+            rationale={rationale}
+            onRationale={setRationale}
+            onCancel={() => {
+              setEditing(false);
+              setRationale("");
+            }}
+          />
+        </>
       ),
   };
 }

@@ -13,13 +13,13 @@ Code to come (P-06 §5.2): `src/domain/requests/{queries.ts, mutations.ts, messa
 
 ## States
 
-6 artboards in the handoff (5 + R2 f), 5 built here. The spec and revision number the states 1–6; the README and the screenshots letter them a–f (1 = a … 6 = f).
+6 artboards in the handoff (5 + R2 f), all 6 built (c by A-03-T15). The spec and revision number the states 1–6; the README and the screenshots letter them a–f (1 = a … 6 = f).
 
 | Artboard | Viewer (persona) | Clock | Snapshot | Data condition that produces it | Status |
 |---|---|---|---|---|---|
 | a | marcus-delaney (Marcus Delaney, Audit Senior) | Mon Sep 14, 2026, 9:41 AM CT (revision) | E0 | `?ov=request:new` on the Northwind PY2025 PBC binder: ERISA fidelity bond for Dana Kowalski; preview of what Dana sees | built · fixture (T13) |
 | b | marcus-delaney | same | E0 | Existing request "Bridge letter — Keystone, Oct–Dec 2025", `requested` Sep 1, due Sep 25, delegated to Sam Ortiz (Keystone) | built · fixture (T13) |
-| c | marcus-delaney | same | E0 | Sample-driven bulk: 25 requests from the EBP-04 sample (seed `0x5E2A91`) | **deferred → A-03** (S20–S23): needs the sampling engine. Recorded, not built, not missing |
+| c | marcus-delaney | same | E0 | Sample-driven bulk: "New sample requests" with the Sample wave on: an approved-version picker (Northwind's Participants, Version 2, 25 items; drafts are not offered), Linked "Participants · sample seed 0x5E2A91", the list card "25 participants" (five names, "+ 20 more"), "Dana sees one card with 25 items", footer "Creates 25 requests in 'Sample-driven'", CTA "Create 25 requests" (one template over every item through C9's fan-out) | built · fixture (A-03-T15, DEC-1764) |
 | d | raj-malhotra (Raj Malhotra) | same | E0 | An existing, non-draft request on a binder whose `kind = close_intake`: Copperleaf's August binder ("Requests", the backend seed's 9 requests), "Square payouts — August", `incorporation_state = pending_incorporation`, uploaded by Ben Ashby Sep 3 | built · fixture (T24, TASK-1273; hosted from BND-02 until C-01 builds CLS-03) |
 | e | marcus-delaney | same | E0 | State a with no due date | built · fixture (T13) |
 | f (R2) | cole-hart (Cole Hart, Audit Staff) | Thu Sep 24, 2026, 10:58 AM CT | E0 | Granite Peak FY2026 SURL request in `draft` with `drafted_by_run_id` set and `drafted_wording_source = 'template'` | built · fixture (T13) |
@@ -157,7 +157,7 @@ The Comments tab lists the request's comments (SPEC-032 route) with "No comments
 |---|---|---|---|
 | a, b, e, f | C (threshold 0.20, maxDiffPixelRatio 3 %) | not run (P-06-T26: Playwright visual project not run in this environment; baselines to capture at the batch merge) | built; axe in `e2e/screens/SHL-14.spec.ts` (not run by P-06-T26); report-only until A-01's AUD-03 host is stable |
 | d | C | not run (P-06-T26: Playwright visual project not run in this environment; baselines to capture at the batch merge) | built (P-06-T24); in `e2e/screens/SHL-14.spec.ts` with axe; Playwright not run locally (chromium 1243 not cached) |
-| c | — | — | deferred to A-03; recorded in `routes/manifest/shl.ts`, not missing |
+| c | C | not run | built (A-03-T15, DEC-1764); parity and axe with A-03-T19 |
 | host | D | not run | drawer 480, pane header 46 with a 14.5/500 title, rows 34, pills 21, radius 14; no `e2e/visual/tier-d.spec.ts` row for the O2 drawer yet |
 
 Keyboard: `src/screens/SHL-14/SHL-14.keyboard.test.tsx` (P-06-T26; vitest, passing). Report: `docs/quality/parity-P-06.md`.

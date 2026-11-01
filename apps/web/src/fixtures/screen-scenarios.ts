@@ -136,7 +136,17 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
   "KNW-04": { scenarios: knw04, opens: {} }, // K-02-T13
   "SHL-03": { scenarios: shl03, opens: {} },
   "SHL-04": { scenarios: shl04, opens: {} },
-  "SHL-14": { scenarios: shl14, opens: {}, ids: SHL14_OPENS },
+  "SHL-14": {
+    scenarios: shl14,
+    opens: {},
+    // The ids each state opens (A-03-T15: c's work item and fields are the artboard's own).
+    ids: Object.fromEntries(
+      Object.entries(SHL14_OPENS).map(([s, o]) => [
+        s,
+        { binderId: o.binderId, requestId: o.requestId },
+      ]),
+    ),
+  },
   // P-04-T47: j06 coordination, the CCH import approved as a checkpoint on SHL-16 over TAX-02.
   "TAX-02": {
     scenarios: { j06: j06Scenario() },
