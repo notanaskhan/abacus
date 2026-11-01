@@ -188,20 +188,24 @@ def test_ac_the_insert_only_tables_refuse_update_and_delete_as_the_app(
     app = Seeder(_dsn(private_db.app_url))
     paper, person = asyncio.run(_paper(seed))
     actor = ("human", str(person.user_id))
-    flag = uuid.uuid4()
 
     async def write() -> None:
-        # The caller's scope is ignored: the workpaper's is written.
+        # The app names no id or scope: the id is the default, the scope the workpaper's.
         await app.as_actor(
             paper.tenant,
             actor,
-            "INSERT INTO attention_flags (id, tenant_id, workpaper_id, section_key, kind, text, "
-            "created_by) VALUES ($1, $2, $3, 'service_organizations', 'pbc_gap', "
-            "'SOC 1 report for Keystone not received', $4)",
-            flag,
+            "INSERT INTO attention_flags (tenant_id, workpaper_id, section_key, kind, text, "
+            "created_by) VALUES ($1, $2, 'service_organizations', 'pbc_gap', "
+            "'SOC 1 report for Keystone not received', $3)",
             paper.tenant,
             paper.workpaper,
             person.user_id,
+        )
+        flag = cast(
+            uuid.UUID,
+            await seed.value(
+                "SELECT id FROM attention_flags WHERE workpaper_id = $1", paper.workpaper
+            ),
         )
         await app.as_actor(
             paper.tenant,
@@ -264,7 +268,7 @@ def test_ac_a_mandatory_procedure_is_never_tailored_and_a_tailoring_needs_its_re
         )
         await seed.run(
             "INSERT INTO methodology_versions (id, tenant_id, template_id, version, "
-            "source_fingerprint, imported_by) VALUES ($1, $2, $3, 3, $4, $5)",
+            "source_fingerprint, imported_by, label) VALUES ($1, $2, $3, 3, $4, $5, 'v3')",
             version,
             paper.tenant,
             template,

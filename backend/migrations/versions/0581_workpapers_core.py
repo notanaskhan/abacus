@@ -63,6 +63,10 @@ _SCOPE = """
 
 def _scope_children() -> None:
     op.execute(_SCOPE)
+    # The back-fill reads every tenant's rows: forced row-level security binds the owner too, so
+    # it is lifted for these statements only (as 0071 did) and restored before anything else.
+    for table in ("workpapers", *_CHILDREN):
+        op.execute(f"ALTER TABLE {table} NO FORCE ROW LEVEL SECURITY")
     for table in (*_CHILDREN, "attention_flags", "attention_flag_events"):
         if table in _CHILDREN:
             op.execute(
@@ -81,6 +85,8 @@ def _scope_children() -> None:
             f"CREATE TRIGGER {table}_scope BEFORE INSERT ON {table} "
             "FOR EACH ROW EXECUTE FUNCTION workpaper_child_scope()"
         )
+    for table in ("workpapers", *_CHILDREN):
+        op.execute(f"ALTER TABLE {table} FORCE ROW LEVEL SECURITY")
 
 
 def upgrade() -> None:
