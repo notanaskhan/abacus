@@ -21,6 +21,7 @@ from abacus.modules.review.checkpoints import (
     record_import_proposal,
 )
 from abacus.modules.review.checkpoints import propose as propose_checkpoint
+from abacus.modules.review.checkpoints import save as save_checkpoint
 from abacus.modules.review.contract import (
     checkpoints_router,
     decision_cards_router,
@@ -36,6 +37,7 @@ from abacus.modules.review.decisions import (
     RationaleRequired,
     RecommendationChanged,
     awaiting_cards,
+    decide_card,
     raise_decision_card,
 )
 from abacus.modules.review.engagement_gates import register_engagement_gates
@@ -60,10 +62,14 @@ from abacus.modules.review.gates import SUBSCRIPTIONS as GATE_SUBSCRIPTIONS
 from abacus.modules.review.hashing import Json, NotCanonical, canonical_json, content_hash
 from abacus.modules.review.issue_refs import issue_engagement
 from abacus.modules.review.issue_resolutions import register_client_request_sender
-from abacus.modules.review.issues import record_engine_issue  # T-01-T26: engine diagnostics
+from abacus.modules.review.issues import (
+    create_issue,
+    record_engine_issue,  # T-01-T26: engine diagnostics
+)
 from abacus.modules.review.matrix import review_gate
 from abacus.modules.review.mfa import MfaRequired
 from abacus.modules.review.notes import notes_for, open_note_counts
+from abacus.modules.review.notes import raise_on_target as raise_review_note
 from abacus.modules.review.notification_states import register_notification_states
 from abacus.modules.review.routes import router
 from abacus.modules.review.sealing import open_text, record_text_reads, seal_text
@@ -242,8 +248,10 @@ __all__ = [
     "changed_since",
     "checkpoint_deltas",
     "content_hash",
+    "create_issue",  # P-04-T36: the scenario loader acts as the person named (as sign_target)
     "current_checkpoint",
     "current_values",
+    "decide_card",
     "decide_import",
     "decision_kind",
     "detect_stale",
@@ -258,6 +266,7 @@ __all__ = [
     "previous_value",
     "propose_checkpoint",
     "raise_decision_card",
+    "raise_review_note",
     "rebuild_human_gates",
     "record_engine_issue",
     "record_import_proposal",
@@ -282,6 +291,7 @@ __all__ = [
     "reviewables_of",
     "router",
     "run_fix",
+    "save_checkpoint",
     "seal_text",
     "sign_off_states",
     "sign_target",
