@@ -14,6 +14,7 @@ import { useMotion } from "../motion";
 import { Button } from "./button";
 import { LiveDot, PULSE_STAGGER_MS, Pulse, Spinner } from "./motion";
 import { StatusDisc } from "./status";
+import { PRODUCT } from "../product";
 
 // Feedback states (C-20 States kit; F-05-T19): EmptyState, Skeleton, ErrorRow, WaitingBadge,
 // AgentRunningRow, the offline banner and the fieldset's empty line. The rules, from the bundle:
@@ -65,7 +66,7 @@ export const SKELETON_META_WIDTHS = ["38%", "74%", "62%"] as const;
 export const STATE_COPY = {
   offline: "You’re offline. Changes will sync when you reconnect.",
   loading: "Loading",
-  errorBody: "Accrued could not reach the server. Nothing was lost; try again in a moment.",
+  errorBody: `${PRODUCT} could not reach the server. Nothing was lost; try again in a moment.`,
   // The portal never shows the product's name (DEC-01, ADR-133).
   errorBodyPortal: "We could not reach the server. Nothing was lost; try again in a moment.",
   retry: "Retry",
@@ -73,7 +74,7 @@ export const STATE_COPY = {
   clearFilters: "Clear filters",
   running: "Running…",
   queued: "Queued",
-  agentRunning: "Accrued Agent is running",
+  agentRunning: `${PRODUCT} Agent is running`,
 } as const;
 
 // ---------------------------------------------------------------------------------------------

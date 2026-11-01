@@ -75,7 +75,7 @@ describe("POR-05 questions", () => {
     for (const wording of NORTHWIND_QUESTIONS) {
       expect(await screen.findByRole("article", { name: wording })).toBeTruthy();
     }
-    expect(screen.getByText(COPY.onlyTeam)).toBeTruthy();
+    expect(screen.getByText(COPY.onlyTeam("Brightwater Hale"))).toBeTruthy();
     expect(screen.getByRole("button", { name: COPY.submit })).toBeTruthy();
     expect(screen.getByText(/Addressed to you/)).toBeTruthy();
   });
@@ -85,13 +85,13 @@ describe("POR-05 questions", () => {
     for (const wording of GRANITE_PEAK_QUESTIONS) {
       expect(await screen.findByRole("article", { name: wording })).toBeTruthy();
     }
-    expect(screen.getAllByText(COPY.analyticsFrom).length).toBe(2);
+    expect(screen.getAllByText(COPY.analyticsFrom("Brightwater Hale")).length).toBe(2);
   });
 
   it("f · empty", async () => {
     show("f");
     expect(await screen.findByText(COPY.empty)).toBeTruthy();
-    expect(screen.getByText(COPY.emptyBody)).toBeTruthy();
+    expect(screen.getByText(COPY.emptyBody("Brightwater Hale"))).toBeTruthy();
   });
 
   it("autosave shows Saved with the time", async () => {

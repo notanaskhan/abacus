@@ -14,6 +14,7 @@ import {
   PortalBrandProvider,
   PortalLayout,
   time,
+  usePortalBrand,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useMemo, useState } from "react";
@@ -57,6 +58,8 @@ interface CardProps {
 }
 
 function Card({ q, inquiry, questionnaireId, onSaved }: CardProps): JSX.Element {
+  const brand = usePortalBrand();
+  const firm = brand.portalName ?? brand.name;
   const client = useQueryClient();
   const [reloaded, setReloaded] = useState(false);
   const save = useMutation({
@@ -90,7 +93,7 @@ function Card({ q, inquiry, questionnaireId, onSaved }: CardProps): JSX.Element 
     >
       {q.sent_at !== null && (
         <span className="text-[11.5px] text-ink-3">
-          {inquiry ? COPY.analyticsFrom : COPY.from("Kevin Osei", "Sep 11")}
+          {inquiry ? COPY.analyticsFrom(firm) : COPY.from("Kevin Osei", "Sep 11")}
         </span>
       )}
       <h3 className="text-[14px] font-medium leading-[1.35]">{q.client_wording}</h3>
@@ -182,6 +185,8 @@ function Questions({
   onNavigate,
 }: Por05Props): JSX.Element {
   const bar = usePortalToolbar(null);
+  const brand = usePortalBrand();
+  const firm = brand.portalName ?? brand.name;
   const list = useQuery(portalQuestionnairesOptions());
   const [filter, setFilter] = useState<Filter>("unanswered");
   const [savedAt, setSavedAt] = useState<string | null>(null);
@@ -219,7 +224,7 @@ function Questions({
     return (
       <PortalLayout variant="reduced" user={user} nav={nav} active={COPY.active} frame={frame}>
         <EmptyState title={COPY.empty} icon="message-circle">
-          {COPY.emptyBody}
+          {COPY.emptyBody(firm)}
         </EmptyState>
       </PortalLayout>
     );
@@ -373,7 +378,7 @@ function Questions({
         {current?.kind === "inquiry" && (
           <div className="flex items-center gap-[8px] px-[4px]">
             <p className="flex-1 text-[11.5px] text-ink-3">
-              {current.due_on !== null ? COPY.onlyTeam : ""}
+              {current.due_on !== null ? COPY.onlyTeam(firm) : ""}
             </p>
             <Button
               variant="primary"

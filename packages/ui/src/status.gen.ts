@@ -1,6 +1,8 @@
 // GENERATED from docs/product/status-vocabulary.yaml. Do not edit.
 // Regenerate: python -m abacus_tools.codegen.status_vocabulary (C2; F-03-T09, F-05-T12).
 
+import { PRODUCT } from "./product";
+
 export const STATUS_REGISTRY = {
   "engagement": {
     "prospect": {
@@ -3647,7 +3649,7 @@ export const STATUS_REGISTRY = {
       "terminal": false,
       "derived": false,
       "contextLabels": {
-        "cell": "Suggested by Accrued Agent"
+        "cell": `Suggested by ${PRODUCT} Agent`
       }
     },
     "adopted": {
@@ -4884,7 +4886,7 @@ export const RETIRED_CODES = {
     "replacement": [
       "request.received"
     ],
-    "note": "Accrued received means accepted"
+    "note": `${PRODUCT} received means accepted`
   },
   "engagement.active": {
     "replacement": [
