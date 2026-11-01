@@ -37,6 +37,7 @@ import { useFlag } from "../../app-core/flags";
 import { AgentDock } from "../../domain/agents";
 import { type TrialBalanceOptions, useTrialBalancePane } from "../AUD-06/TrialBalance";
 import { MaterialityDock, useMaterialityCanvas } from "../AUD-07/Materiality";
+import { usePlanProfileCanvas } from "../EBP-01/PlanProfile";
 import { type SampleSelectionOptions, useSampleSelectionCanvas } from "../AUD-11/SampleSelection";
 import { ViewerPane } from "../SHL-08";
 import { COPY } from "./copy";
@@ -89,6 +90,8 @@ export interface AUD02Props {
   onSignOff?: (tbId: string) => void;
   /** What the Sample Selection row's AUD-11 canvas opens on (A-03-T11). */
   sampleSelection?: SampleSelectionOptions;
+  /** EBP-01 d (A-05-T11): the Plan profile canvas opens in edit mode. */
+  planEditing?: boolean;
 }
 
 /** The rail row whose canvas is AUD-06 (A-02-T09). */
@@ -96,6 +99,7 @@ const TRIAL_BALANCE = "trial_balance";
 /** The rail row whose canvas is AUD-11 (A-03-T11). */
 const SAMPLE_SELECTION = "sample_selection";
 const MATERIALITY = "materiality";
+const PLAN_PROFILE = "ebp_01";
 
 type Sort = "missing_first" | "received_first";
 
@@ -186,6 +190,7 @@ function Cockpit({
   onOverlay,
   onSignOff,
   sampleSelection,
+  planEditing,
 }: Omit<AUD02Props, "auditId"> & { cockpit: AuditCockpitOut }): JSX.Element {
   // A-01-T24: "Export binder…" and the record-mode entries (DV-9, DV-4).
   const audit = useAuditActions(cockpit, overlay ?? null, onOverlay);
@@ -222,6 +227,12 @@ function Cockpit({
   // with the flag off the row keeps the blocked-section card.
   const materialityOn = useFlag("assurance.materiality") === true && selected === MATERIALITY;
   const materiality = useMaterialityCanvas(cockpit.engagement_id, { active: materialityOn });
+  // EBP-01 (A-05-T11): Overview › Plan profile, behind `ebp.modules` (C-20 when off).
+  const planOpen = selected === PLAN_PROFILE;
+  const planProfile = usePlanProfileCanvas(cockpit.work_item_id, {
+    active: planOpen,
+    ...(planEditing === undefined ? {} : { initialEditing: planEditing }),
+  });
   const openDoc = (r: SourceDocumentRowOut): void => {
     const version = r.latest_upload?.evidence_version_id ?? null;
     if (version !== null) onDock?.("viewer", version);
@@ -234,6 +245,8 @@ function Cockpit({
     canvas = sample;
   } else if (materialityOn) {
     canvas = materiality;
+  } else if (planOpen) {
+    canvas = planProfile;
   } else if (row?.section_state === "blocked_on_decision" && row.blocked_on_name != null) {
     canvas = {
       title: row.title,
@@ -422,6 +435,7 @@ export function AuditCockpitPage({
     autoMode?: AutoModeStep;
     overlay?: AuditOverlay;
     sampleSelection?: SampleSelectionOptions;
+    planEditing?: boolean;
   };
   onBack?: () => void;
 }): JSX.Element {
@@ -446,6 +460,7 @@ export function AuditCockpitPage({
       {...(initial.sampleSelection === undefined
         ? {}
         : { sampleSelection: initial.sampleSelection })}
+      {...(initial.planEditing === undefined ? {} : { planEditing: initial.planEditing })}
     />
   );
 }

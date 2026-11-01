@@ -56,7 +56,7 @@ async def test_an_ebp_audit_shows_the_nine_rows_with_canonical_statuses(net: obj
         assert rows[key]["section_state"] in codes
         assert rows[key]["section_state"] == "not_started"
         assert rows[key]["route"] == key.upper().replace("_", "-")
-        assert rows[key]["link"] == "planned"
+        assert rows[key]["link"] == ("live" if key == "ebp_01" else "planned")
 
 
 async def test_an_fs_audit_shows_none_of_them(net: object) -> None:

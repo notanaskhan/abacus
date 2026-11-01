@@ -107,6 +107,8 @@ DESIGNED: Final[tuple[DesignedPaper, ...]] = (
                   ("BH-EBP-410:9",)),
 )  # fmt: skip
 BY_KIND: Final = {p.kind: p for p in DESIGNED}
+# The papers whose screen is built (A-05-T11: EBP-01, the Overview › Plan profile canvas).
+LIVE: Final = frozenset({"EBP-01"})
 
 
 async def _is_ebp(tenant: TenantContext, work_item_id: UUID) -> bool:
@@ -160,7 +162,7 @@ def register() -> None:
             paper.code,
             provider,
             title=paper.title,
-            link="planned",  # each screen's row goes live with its screen (A-05-T11 for EBP-01)
+            link="live" if paper.code in LIVE else "planned",  # each row goes live with its screen
             required_action="workpaper.read",
         )
     register_export_section(EXPORT_SECTION, export_section)
