@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Version | v1 |
-| Status | T-02-T21 (2026-10-31): release and undo live behind `tax.k1_release` (T-02-T20's firm reads, share, release check, resend and details review before them); the portal routes (T26) stay 501 |
+| Status | **frozen at v1** (T-02-T35, 2026-11-01, DEC-1674); live behind `tax.k1_release`: firm reads, share, release check, resend and details review (T-02-T20), release and undo (T-02-T21), the portal routes (T-02-T26). Breaking changes need v2 |
 | Provider epic | T-02 |
 | Consumers | TXP-12, POR-13, TAX-03 (hand-offs), R-02 (deliverables v0; the C10 precursor) |
 | Spec | SPEC-502 AC-5; `docs/plan/epics/T-02.md` §3, §4.3 |

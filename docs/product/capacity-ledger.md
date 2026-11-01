@@ -133,3 +133,12 @@ The residual overcommit the plan names (106–121% of AY capacity in S1 to S4) d
 ## F-06 actuals (F-06-T23, 2026-11-01)
 
 F-06 (T6, T10, T16 and the TPL-01, 06, 10, 16, 19 specimens) is built on main through the T22 lock (planned 22.75 task-equivalents in 24 rows); this row adds the kits' written hand-offs (`docs/design/kits/{signing,workbook,document-on-well,portal-mobile}.md`) and the build-screen skill's pointer to them. The epic shipped inside S14 to S22 in the solo build's calendar weeks, ahead of chapter 01's dates; no F-06 cut was invoked. TPL-19 frames 3, 4, 8 and the permission-off variant are deferred to R-03 (DEC-97; `docs/plan/deferrals/R-03-tpl19.md`).
+
+
+## T-02 actuals (T-02-T35, 2026-11-01)
+
+T-02 (returns workflow, organizers and K-1s) planned 32.25 task-equivalents in 35 rows (S15–S21);
+delivered 35 task files for 35 rows (T-02-T15 folded into T-01-T18, its acceptance there), the
+last five (T31–T35) in the S21 batch with T-01 and N-02's closing rows. No row was dropped; the
+open items are written in `docs/handoffs/T-02/README.md`.
+
