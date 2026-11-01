@@ -4,6 +4,7 @@ The audit line's read models and actions: the AUD-06 trial balance first (SPEC-3
 """
 
 # A-03-T08: the C9 v2 routes call this lazily; imported here so its error codes are catalogued.
+from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.modules.assurance import mapping_live as mapping_live
 from abacus.modules.assurance.archive_gate import g9
 from abacus.modules.assurance.audits_contract import audits_router
@@ -39,6 +40,8 @@ from abacus.modules.assurance.sections import (
     register_index_tag,
     register_run_summary,
 )
+from abacus.modules.assurance.service_orgs import AUDIT_KINDS as SERVICE_ORG_KINDS
+from abacus.modules.assurance.service_orgs import audit_owners as service_org_owners
 from abacus.modules.assurance.tb_mapping_contract import MappingConfirmIn, MappingRunIn
 from abacus.modules.assurance.tb_mapping_contract import router as tb_mapping_router
 
@@ -100,6 +103,9 @@ register_a01_providers()
 register_home_counts()
 # I-01-T08 (C13): SPEC-004's review queue as `evidence_review` gates.
 register_review_gates()
+
+# A-04-T07: the trail places a service organization on its engagement (SPEC-304; DEC-121).
+register_engagement_owners(SERVICE_ORG_KINDS, service_org_owners)
 
 __all__ = [
     "ACTIVITIES",

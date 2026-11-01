@@ -20,6 +20,13 @@ from abacus.modules.workpapers.core import (
     display_workpaper_cell,
     verify_workpaper_cell,
 )
+from abacus.modules.workpapers.procedures import (
+    WORKPAPER_KINDS,
+    PackConfigurationError,
+    PackError,
+    pack_errors,
+    validate_pack,
+)
 from abacus.modules.workpapers.routes import checks_router, router
 from abacus.modules.workpapers.service import (
     CodeTaken,
@@ -60,13 +67,18 @@ register_citable("workpaper_cell", verify_workpaper_cell, display_workpaper_cell
 
 __all__ = [
     "ROUTERS",
+    "WORKPAPER_KINDS",
     "CodeTaken",
     "IssueLink",
     "NoAssuranceItem",
+    "PackConfigurationError",
+    "PackError",
     "WorkpaperInvalid",
     "checks_for",
     "checks_router",
     "link_issue",
+    "pack_errors",
     "router",
     "tie_digests",
+    "validate_pack",
 ]

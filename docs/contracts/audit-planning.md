@@ -4,7 +4,7 @@
 |---|---|
 | Register row | internal audit planning API (A-04 §8.2) in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | stub (A-04-T01, 2026-10-31); live per route with A-04-T07 (service-organization inventory), T12 (materiality), T13 (register and linkage), T18 (approval card, G4), T19 (fraud brainstorm), T25 and T31 (internal control, SOC 1) |
+| Status | stub (A-04-T01, 2026-10-31); service-organization inventory live (A-04-T07, 2026-11-01; DEC-1867); live per route with T12 (materiality), T13 (register and linkage), T18 (approval card, G4), T19 (fraud brainstorm), T25 and T31 (internal control, SOC 1) |
 | Provider epic | A-04 |
 | Consumers | AUD-04 e, f; AUD-05; AUD-07; AUD-08; AUD-09; AUD-10; HOME-02 (decision and gate rows); ENG-02 (G4); A-03 (`materiality.decided` releases AUD-11); A-05, A-06 (findings router), A-08 |
 | Flags | `assurance.materiality`, `assurance.risk_register`, `assurance.internal_control`, `assurance.service_orgs`; drafts also `workpapers.drafting` (all default off; DEC-137 override, expires 2027-04-29) |
@@ -109,7 +109,7 @@ use the existing `deficiency_severity` words.
 `duplicate_name`. 422: `rationale_required`, `presumption_not_rebuttable`, `reason_required`.
 503: `route_not_available` until A-06 registers the exception router. 403: a decide by anyone but
 the reserved person (C3). Each lands with the task that raises it; the stub raises only 404 and
-501 `not_implemented`.
+501 `not_implemented`. A-04-T07 raises `duplicate_name` and `version_conflict` on the inventory.
 
 ## 6. Human-only actions and audit events
 Human only: deciding the `planning_materiality`, `significant_risk` and `service_org_reliance`
@@ -121,14 +121,17 @@ management override. Audit: `materiality_version.proposed/decided/reassessed/rev
 `risk.approval_requested`, `risk_register.approved`, `fraud_session.recorded`,
 `fraud_minutes.approved`, `fraud_minutes.refused_non_human`, `fraud_inquiry.requested`,
 `control_activity.recorded`, `control_exception.recorded/severity_proposed/routed`,
-`service_org.recorded`, `soc_report.evaluated`, `cuec.evidenced`. Outbox: `materiality.decided`,
+`service_org.created/edited` (A-04-T07), `soc_report.evaluated`, `cuec.evidenced`. Outbox: `materiality.decided`,
 `materiality.reassessed`, `risk_register.approved`, `fraud_minutes.approved`,
 `control_exception.recorded`, `service_org.reliance_concluded`.
 
 ## 7. Stub behaviour (A-04-T01)
 Client principal 404 → the route's action on the engagement → 404 with the route's flag off (the
 inventory answers with `assurance.service_orgs` or `workpapers.core`; drafts need
-`workpapers.drafting` as well) → 501 `not_implemented`.
+`workpapers.drafting` as well) → 501 `not_implemented`. The inventory routes are live from
+A-04-T07: the list, the row, add (409 `duplicate_name` for a name the work item already holds,
+its spaces trimmed) and edit against `expected_version` (409 `version_conflict`); each row
+carries the reader's `allowed_actions` (`service_org.edit`).
 
 ## 8. Examples that foot (Brightwater Hale, Northwind Robotics 401(k) Plan, PY2025)
 - `ThresholdsOut` (OpenAPI example): unadjusted net assets 16,812,400 × 1.5% = 252,186, rounded to

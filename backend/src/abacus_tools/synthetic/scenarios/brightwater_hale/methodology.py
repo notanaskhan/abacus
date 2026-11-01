@@ -89,6 +89,19 @@ VERSIONS: Final[tuple[VersionSpec, ...]] = (
 )
 
 
+# A-04 AC6.1 (AUD-09 d; K-01 keeps the defect): EBP v3's BH-EBP-140 step 8 points at a SOC 1
+# bridge-letter request template the version does not include, so pack validation refuses the
+# Internal Control draft until the firm's template library holds it (OQ-15, DEC-1867).
+PACK_DEFECT: Final = (140, 8)
+PACK_DEFECT_TEMPLATE: Final = "request:soc1_bridge_letter"
+
+
+def _templates(spec: VersionSpec, program: int, n: int) -> str:
+    if spec.family == "ebp" and spec.number >= 3 and (program, n) == PACK_DEFECT:
+        return PACK_DEFECT_TEMPLATE
+    return ""
+
+
 def workbook(spec: VersionSpec) -> bytes:
     """The version's workbook in K-01-T05's layout (Areas, Requests, Account rules, Programs,
     Steps); the same rows for a spec (the loader runs each import once, by its trace)."""
@@ -110,7 +123,7 @@ def workbook(spec: VersionSpec) -> bytes:
     for code in spec.codes:
         programs.append([code, f"{code} procedures"])
     steps = book.create_sheet("Steps")
-    steps.append(["program_code", "number", "text", "level", "mandatory", "requests"])
+    steps.append(["program_code", "number", "text", "level", "mandatory", "requests", "templates"])
     for code, count, locked in zip(spec.codes, spec.shape, spec.mandatory, strict=True):
         for n in range(1, count + 1):
             program = int(code.rsplit("-", 1)[1])
@@ -123,6 +136,7 @@ def workbook(spec: VersionSpec) -> bytes:
                     LEVELS[n % 4],
                     "yes" if n <= locked else "no",
                     str(n) if spec.family == "ebp" and n <= PBC_REQUESTS else "",
+                    _templates(spec, program, n),
                 ]
             )
     buffer = io.BytesIO()

@@ -313,6 +313,7 @@ async def _insert_programs(
                 "lock_note": step.lock_note,
                 "prepopulates": [],
                 "depends_on_step_keys": [],
+                "template_refs": list(step.template_refs),
                 "origin": "workbook",
             }
         )

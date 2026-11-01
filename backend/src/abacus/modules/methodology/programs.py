@@ -27,11 +27,12 @@ from openpyxl.worksheet.worksheet import Worksheet
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from abacus.kernel.db import tenant_session
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.identity.api import AuthContext, Resource, authorise
 from abacus.modules.methodology.models import (
+    MethodologyTemplate,
     MethodologyVersion,
     Program,
     ProgramStep,
@@ -201,6 +202,61 @@ async def program_steps(ctx: AuthContext, program_id: UUID) -> list[StepView]:
         )
         links = await _links(session, [s.id for s in steps])
         return [StepView(s, version, links[s.id]) for s in steps]
+
+
+@dataclass(frozen=True)
+class VersionStep:
+    """A pinned version's step as A-04's procedures and pack validation read it (A-04-T07)."""
+
+    program_code: str
+    program_position: int
+    step_key: str
+    number: int
+    level: str
+    mandatory: bool
+    template_refs: tuple[str, ...]
+    prepopulates: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class VersionSteps:
+    version_id: UUID
+    version: int
+    label: str  # "EBP v3": the template's family and the version's number
+    steps: tuple[VersionStep, ...]
+
+
+async def version_steps(tenant: TenantContext, version_id: UUID) -> VersionSteps:
+    """Every step of a version in program and number order, for a caller that has authorised
+    on the engagement that pins it (A-04-T07). `NotFound` outside the tenant."""
+    async with tenant_session(tenant) as session:
+        found = await session.get(MethodologyVersion, version_id)
+        if found is None:
+            raise NotFound("methodology_version")
+        template = await session.get(MethodologyTemplate, found.template_id)
+        rows = (
+            await session.execute(
+                select(ProgramStep, Program.code, Program.position)
+                .join(Program, Program.id == ProgramStep.program_id)
+                .where(ProgramStep.version_id == version_id)
+                .order_by(Program.position, ProgramStep.number)
+            )
+        ).tuples()
+        steps = tuple(
+            VersionStep(
+                code,
+                position,
+                s.step_key,
+                s.number,
+                s.level,
+                s.mandatory,
+                tuple(s.template_refs),
+                tuple(s.prepopulates),
+            )
+            for s, code, position in rows
+        )
+    family = (template.name if template is not None else "").rsplit(" · ", 1)[-1]
+    return VersionSteps(version_id, found.version, f"{family} v{found.version}".strip(), steps)
 
 
 async def step_at(session: AsyncSession, step_key: str, version_id: UUID) -> CitedStep | None:

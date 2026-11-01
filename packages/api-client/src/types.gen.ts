@@ -59603,10 +59603,6 @@ export type ProcedureTailorErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ProcedureTailorError = ProcedureTailorErrors[keyof ProcedureTailorErrors];
@@ -61232,10 +61228,6 @@ export type ProgramTailoringErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ProgramTailoringError = ProgramTailoringErrors[keyof ProgramTailoringErrors];
@@ -66716,10 +66708,6 @@ export type ServiceOrgsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ServiceOrgsError = ServiceOrgsErrors[keyof ServiceOrgsErrors];
@@ -66780,10 +66768,6 @@ export type ServiceOrgCreateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ServiceOrgCreateError = ServiceOrgCreateErrors[keyof ServiceOrgCreateErrors];
@@ -66840,10 +66824,6 @@ export type ServiceOrgErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ServiceOrgError = ServiceOrgErrors[keyof ServiceOrgErrors];
@@ -66908,10 +66888,6 @@ export type ServiceOrgEditErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ServiceOrgEditError = ServiceOrgEditErrors[keyof ServiceOrgEditErrors];

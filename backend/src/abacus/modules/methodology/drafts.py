@@ -294,6 +294,7 @@ async def _copy_rows(session: AsyncSession, source_id: UUID, draft_id: UUID) -> 
                 "guidance": s.guidance,
                 "prepopulates": s.prepopulates,
                 "depends_on_step_keys": s.depends_on_step_keys,
+                "template_refs": s.template_refs,
                 "publisher_step_id": s.publisher_step_id,
                 "origin": s.origin,
                 "proposed_by_run_id": s.proposed_by_run_id,

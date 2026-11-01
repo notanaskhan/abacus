@@ -1174,6 +1174,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "attention_flags": frozenset({"state", "converted_to_kind", "converted_to_id"}),
         "program_procedures": frozenset(
             {"tailored", "tailored_rationale", "status", "linked_work"}
+            | {"row_version"}  # 0614 (A-04-T07, DEC-1867): a tailoring names its version
         ),
         "grouping_set_versions": frozenset(  # SPEC-316 (TASK-345): published once
             # A-03-T06 (0521): the publish also sets the dated effective_from.
@@ -1390,6 +1391,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             | {"depends_on_step_keys", "flag_resolution", "flag_resolved_by", "flag_resolved_at"}
             | {"edited_by", "edited_at", "row_version"}
             | {"mandatory", "lock_note"}  # K-01-T14 (0464): a lock and its note
+            | {"template_refs"}  # 0614 (A-04-T07, DEC-1867): the templates a step points at
         ),
         # K-01-T02 (0180): guarded lifecycle transitions (ED-111: declared without this row).
         "methodology_version_states": frozenset(

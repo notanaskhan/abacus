@@ -621,5 +621,11 @@ REVIEWED_FALLBACK: Final = frozenset(
         "generated_document.render_failed",  # P-11-T11: a render job that could not finish
         "methodology_version.exported",  # K-01-T16: a version's workbook export
         "schedule_k_disclosure.imported",  # POR-13 (TASK-2538): furnishing disclosures
+        # A-04-T07: a work item's procedures written from its pinned version, a person's
+        # tailoring, and the service-organization inventory's adds and edits.
+        "procedure.instantiated",
+        "procedure.tailored",
+        "service_org.created",
+        "service_org.edited",
     }
 )
