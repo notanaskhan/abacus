@@ -681,6 +681,16 @@ def _locator_out(at: _CellAt) -> dict[str, object]:
     return out
 
 
+async def _may_read(ctx: AuthContext, engagement_id: UUID) -> bool:
+    try:
+        await authorise(
+            ctx, "workpaper.read", await engagement_resource_of(ctx.tenant, engagement_id)
+        )
+    except (Forbidden, NotFound):
+        return False
+    return True
+
+
 async def verify_workpaper_cell(
     tx: UnitOfWork, actor: Actor, claim: CitationClaim, anchor: CitationAnchor
 ) -> CitationVerdict:
@@ -692,10 +702,9 @@ async def verify_workpaper_cell(
         return CitationVerdict("source_not_found", SOURCE, at.sheet_id)
     if anchor.engagement_id is None or anchor.engagement_id != paper.engagement_id:
         return CitationVerdict("source_not_visible", SOURCE, at.sheet_id)
-    try:
-        resource = await engagement_resource_of(actor.tenant, paper.engagement_id)
-        await authorise(actor, "workpaper.read", resource)
-    except (Forbidden, NotFound):
+    # A paper is a person's to read (`workpaper.read` is never the agent's, ADR-005): an agent
+    # or any other non-person actor cannot cite a cell.
+    if not isinstance(actor, AuthContext) or not await _may_read(actor, paper.engagement_id):
         return CitationVerdict("source_not_visible", SOURCE, at.sheet_id)
     current = await next_version_no(tx.session, paper.id) - 1
     if at.sheet_version is not None and at.sheet_version > current:

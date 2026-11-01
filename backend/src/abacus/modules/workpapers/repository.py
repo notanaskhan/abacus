@@ -172,7 +172,7 @@ async def engagement_papers(session: AsyncSession, engagement_id: UUID) -> Seque
 
 
 async def sections_of(session: AsyncSession, workpaper_id: UUID) -> Sequence[WorkpaperSection]:
-    """By position."""
+    """By position (LIST_EXEMPT: one paper's, after the caller authorised on its engagement)."""
     return (
         (
             await session.execute(
@@ -190,7 +190,8 @@ async def cells_up_to(
     session: AsyncSession, workpaper_id: UUID, version_no: int | None
 ) -> Sequence[WorkpaperCell]:
     """Each cell's newest row as it stood at `version_no` (rows written before 0581 carry no
-    version and belong to every version); None is now."""
+    version and belong to every version); None is now (LIST_EXEMPT: one paper's, after the caller
+    authorised on its engagement)."""
     query = select(WorkpaperCell).where(WorkpaperCell.workpaper_id == workpaper_id)
     if version_no is not None:
         query = query.where(
@@ -214,7 +215,7 @@ async def cells_up_to(
 
 
 async def flags_of(session: AsyncSession, workpaper_id: UUID) -> Sequence[AttentionFlag]:
-    """Oldest first."""
+    """Oldest first (LIST_EXEMPT: one paper's, after the caller authorised on its engagement)."""
     return (
         (
             await session.execute(
@@ -252,6 +253,7 @@ async def core_papers(
 async def sections_for(
     session: AsyncSession, workpaper_ids: Sequence[UUID]
 ) -> Sequence[WorkpaperSection]:
+    """By position (LIST_EXEMPT: the papers `core_papers` listed through `visible()`)."""
     if not workpaper_ids:
         return []
     return (

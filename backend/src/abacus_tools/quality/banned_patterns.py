@@ -1400,6 +1400,13 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/workpapers/repository.py", "versions_of"),
         # P-04-T15: who set a paper's cells (its preparers), after the same check.
         ("src/abacus/modules/workpapers/repository.py", "cell_setters"),
+        # A-04-T04 (DEC-1762): one paper's sections, cells at a version and flags, after the caller
+        # authorised on its engagement; and the sections of the papers `core_papers` listed
+        # through `visible()`.
+        ("src/abacus/modules/workpapers/repository.py", "sections_of"),
+        ("src/abacus/modules/workpapers/repository.py", "cells_up_to"),
+        ("src/abacus/modules/workpapers/repository.py", "flags_of"),
+        ("src/abacus/modules/workpapers/repository.py", "sections_for"),
         ("src/abacus/modules/review/repository.py", "sign_offs_of"),
         # P-04-T14: the computed staleness query over the same targets, after the same check.
         ("src/abacus/modules/review/repository.py", "stale_sign_offs"),
