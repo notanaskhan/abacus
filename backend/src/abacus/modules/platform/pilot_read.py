@@ -199,3 +199,34 @@ def report(reads: Sequence[FirmRead]) -> str:
                 f"| {s.colour} | {s.owner or ''} | {action} |"
             )
     return "\n".join(lines) + "\n"
+
+
+@dataclass(frozen=True)
+class Snapshot:
+    """One enrolment's week value of one metric, with its baseline (Q-04-T054's pack)."""
+
+    enrolment_id: UUID
+    metric_key: str
+    value: Decimal
+    baseline_days: int | None
+
+
+_WEEK = text(
+    "SELECT s.enrolment_id, s.metric_key, s.value, e.baseline_days "
+    "FROM pilot_metric_snapshots s JOIN pilot_enrolments e ON e.tenant_id = s.tenant_id "
+    "AND e.id = s.enrolment_id WHERE s.period_start = :start AND s.subject_id IS NULL "
+    "ORDER BY s.metric_key, s.enrolment_id"
+)
+
+
+async def week_snapshots(tenant_id: UUID, week_start: date) -> tuple[Snapshot, ...]:
+    """Every snapshot of one firm's ISO week (read only), for the M12 and M14 packs."""
+    if week_start.isoweekday() != 1:
+        raise NotAMonday(str(week_start))
+    tenant = TenantContext(tenant_id, "system", "pilot_read")
+    async with tenant_session(tenant) as session:
+        rows = (await session.execute(_WEEK, {"start": week_start})).all()
+    return tuple(
+        Snapshot(r.enrolment_id, str(r.metric_key), Decimal(r.value), r.baseline_days)
+        for r in rows
+    )

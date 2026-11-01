@@ -102,6 +102,10 @@ from abacus.modules.platform.pilot_read import (
     FirmRead,
     cross_firm,
     wedge_read,
+    week_snapshots,
+)
+from abacus.modules.platform.pilot_read import (
+    Snapshot as PilotSnapshot,
 )
 from abacus.modules.platform.pilot_read import (
     report as wedge_report,
@@ -336,6 +340,7 @@ __all__ = [
     "PilotMetricsWorkflow",
     "PilotMode",
     "PilotModeRefused",
+    "PilotSnapshot",
     "PilotWeek",
     "PropagationStarted",
     "ProvisionTenantInput",
@@ -421,4 +426,5 @@ __all__ = [
     "tenant_key_workflow_id",
     "wedge_read",
     "wedge_report",
+    "week_snapshots",
 ]
