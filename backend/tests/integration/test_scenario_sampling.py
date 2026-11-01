@@ -16,16 +16,22 @@ AUD-11 a's (the handoff and the A-03-T09 goldens), not the code's:
   24 + 16 = 40 items, $3,698,700.00, the SURL payments in draw order. The load runs to
   AUD-11 f's clock (Sep 24, 10:20 AM).
 
-The load gets its own database: the session's `migrated_db` holds the loader test's E0."""
+The load gets its own database (the session's `migrated_db` holds the loader test's E0) and its
+own bucket on the session's S3 (the census and predecessor uploads are evidence)."""
 
 from __future__ import annotations
 
 from collections.abc import Iterator
 from decimal import Decimal
+from typing import TYPE_CHECKING, Final
 
 import pytest
 
+from abacus.kernel.config import settings
+from abacus.kernel.crypto import LocalKeyService, configure_key_service, reset_key_service
 from abacus.kernel.db import configure_engine
+from abacus.kernel.storage import s3_client
+from abacus.modules.evidence import storage
 from abacus_tools.quality.schema_check import Database, provisioned_database
 from abacus_tools.synthetic.scenarios.brightwater_hale import loader, sampling_content
 from abacus_tools.synthetic.scenarios.brightwater_hale.scenario import build
@@ -33,7 +39,11 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.scenario import build
 from .agent_tests.support import Seeder
 from .conftest import MigratedDatabase
 
+if TYPE_CHECKING:
+    from types_boto3_s3 import S3Client
+
 pytestmark = pytest.mark.asyncio
+BUCKET: Final = "a03t16-sampling-evidence"
 TENANT = loader.TENANT
 NORTHWIND = loader.engagement_id_of(loader.BY_LABEL["A1"])
 GRANITE = loader.engagement_id_of(loader.BY_LABEL["A2"])
@@ -48,8 +58,26 @@ def own_db(migrated_db: MigratedDatabase) -> Iterator[Database]:
     configure_engine(migrated_db.app_url)
 
 
+@pytest.fixture
+def wired(s3_settings: dict[str, str]) -> Iterator[None]:
+    client: S3Client = s3_client(
+        endpoint_url=s3_settings["endpoint_url"],
+        access_key=s3_settings["access_key"],
+        secret_key=s3_settings["secret_key"],
+        region=s3_settings["region"],
+    )
+    client.create_bucket(Bucket=BUCKET, ObjectLockEnabledForBucket=True)
+    settings.cache_clear()
+    reset_key_service()
+    configure_key_service(LocalKeyService(b"a03t16-sampling-master-key-0123456789ab"))
+    storage.configure_storage(client, BUCKET)
+    yield
+    storage.reset_storage()
+    reset_key_service()
+
+
 async def test_the_sampling_slice_loads_the_participants_sample_through_services(
-    own_db: Database,
+    own_db: Database, wired: None
 ) -> None:
     configure_engine(own_db.app_url)
     seed = Seeder(own_db.superuser_dsn)
