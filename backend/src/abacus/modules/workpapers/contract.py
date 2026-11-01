@@ -409,7 +409,7 @@ async def workpaper_cells_edit_route(
     action="workpaper.draft",
     response_model=WorkpaperDraftStartedOut,
     status_code=202,
-    errors=(409, 501),
+    errors=(409, 503),
 )
 async def workpaper_draft_route(
     engagement_id: UUID,
@@ -419,9 +419,15 @@ async def workpaper_draft_route(
     idempotency_key: IdempotencyKey,
 ) -> WorkpaperDraftStartedOut:
     """Start a section draft (`workpapers.section_drafter`); 409 `drafting_not_enabled` for a
-    firm without clearance, `pack_configuration_error` before any model call (T11)."""
+    real firm the drafter isn't cleared for. A pack configuration error fails the run before any
+    model call (`pack_configuration_error`, AC6.1; T11)."""
     await gate(ctx, engagement_id, "workpaper.draft", WORKPAPERS_CORE, WORKPAPERS_DRAFTING)
-    _not_yet()
+    from abacus.modules.workpapers import drafting
+
+    run_id = await drafting.start_section_draft(
+        ctx, engagement_id, workpaper_id, body.mode, body.section_key, idempotency_key
+    )
+    return WorkpaperDraftStartedOut(run_id=run_id)
 
 
 @router.get(f"{_wp}/export.xlsx", action="workpaper.export", response_model=bytes)

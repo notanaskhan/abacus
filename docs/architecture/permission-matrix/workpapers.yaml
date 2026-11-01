@@ -3,7 +3,7 @@
 
 actions:
   # --- Working papers (SPEC-308; TASK-319) ---
-  workpaper.read:           {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, independence: required}   # firm roles only; the agent reads through its own tasks later
+  workpaper.read:           {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, agent: task_scope, independence: required}   # firm roles only; the agent reads through a run's task scope (the section drafter, A-04-T11)
   workpaper.edit:           {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # create, cells, citations; the agent proposes through its own channel (ADR-005)
   # --- Tie-out checks on the trial balance (SPEC-310; TASK-321) ---
   tie_out_check.define:     {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, independence: required}   # human only (the database CHECK agrees); results are read with trial_balance.read

@@ -171,6 +171,7 @@ from abacus.modules.agents.workflows import (
     GuidanceDraftWorkflow,
     InboxMatchWorkflow,
     ScreeningWorkflow,
+    SectionDraftWorkflow,
     UploadReviewWorkflow,
 )
 from abacus.modules.communications.api import register_intake_candidates, register_reminder_history
@@ -315,6 +316,7 @@ __all__ = [
     "ScreeningOutput",
     "ScreeningResultView",
     "ScreeningWorkflow",
+    "SectionDraftWorkflow",
     "ShadowReportChanged",
     "ShadowReportRequired",
     "ShadowReportStale",

@@ -35,6 +35,7 @@ from abacus.modules.agents.methodology_import_workflow import MethodologyImportW
 from abacus.modules.agents.review_start import WORKFLOWS as REVIEW_WORKFLOWS
 from abacus.modules.agents.review_start import start_upload_review
 from abacus.modules.agents.screening_aggregate import on_version_event, on_version_withdrawn
+from abacus.modules.agents.section_draft import WORKFLOWS as SECTION_DRAFT_WORKFLOWS
 from abacus.modules.agents.service import SCREENER
 from abacus.modules.agents.spec import spec
 from abacus.modules.agents.workflow_types import KnowledgeInput, ScreeningInput
@@ -72,6 +73,7 @@ WORKFLOWS.update(MATCH_WORKFLOWS)  # SPEC-033 (TASK-066)
 WORKFLOWS.update(INTAKE_WORKFLOWS)  # N-01-T22
 WORKFLOWS.update(DRAFT_WORKFLOWS)  # SPEC-035 (TASK-073)
 WORKFLOWS.update(ASSESS_WORKFLOWS)  # SPEC-037 Q4 (TASK-085)
+WORKFLOWS.update(SECTION_DRAFT_WORKFLOWS)  # A-04-T11
 register_work_classes(WORKFLOWS)
 
 

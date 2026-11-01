@@ -49,8 +49,8 @@ class AgentMode(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     prompt: Annotated[str, classified("internal")]
-    input_schema: Annotated[Literal["MatchInput"], classified("internal")]
-    output_schema: Annotated[Literal["MatchOutput"], classified("internal")]
+    input_schema: Annotated[Literal["MatchInput", "SectionDraftInput"], classified("internal")]
+    output_schema: Annotated[Literal["MatchOutput", "SectionDraft"], classified("internal")]
     max_cost_usd: Annotated[Decimal, Field(gt=0), classified("internal")]
 
 
@@ -78,6 +78,7 @@ class AgentSpec(BaseModel):
             "GuidanceDraftInput",
             "EntryAssessInput",
             "MethodologyImportInput",
+            "SectionDraftInput",
         ],
         classified("internal"),
     ]
@@ -91,6 +92,7 @@ class AgentSpec(BaseModel):
             "GuidanceDraft",
             "EntryAssessment",
             "ImportBatchOutput",
+            "SectionDraft",
         ],
         classified("internal"),
     ]

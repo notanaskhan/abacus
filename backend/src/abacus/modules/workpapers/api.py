@@ -20,10 +20,20 @@ from abacus.modules.workpapers.core import (
     display_workpaper_cell,
     verify_workpaper_cell,
 )
+from abacus.modules.workpapers.drafting import (
+    DraftCell,
+    DraftPaper,
+    SectionDrafter,
+    apply_cell_suggestion,
+    draft_paper,
+    paper_engagement,
+    register_section_drafter,
+)
 from abacus.modules.workpapers.procedures import (
     WORKPAPER_KINDS,
     PackConfigurationError,
     PackError,
+    bound_steps,
     pack_errors,
     validate_pack,
 )
@@ -66,18 +76,27 @@ register_reviewable_facts(CELL_TARGET, cell_facts)
 register_citable("workpaper_cell", verify_workpaper_cell, display_workpaper_cell)
 
 __all__ = [
+    "CELL_TARGET",
     "ROUTERS",
     "WORKPAPER_KINDS",
     "CodeTaken",
+    "DraftCell",
+    "DraftPaper",
     "IssueLink",
     "NoAssuranceItem",
     "PackConfigurationError",
     "PackError",
+    "SectionDrafter",
     "WorkpaperInvalid",
+    "apply_cell_suggestion",
+    "bound_steps",
     "checks_for",
     "checks_router",
+    "draft_paper",
     "link_issue",
     "pack_errors",
+    "paper_engagement",
+    "register_section_drafter",
     "router",
     "tie_digests",
     "validate_pack",

@@ -35,8 +35,10 @@ E = "/v1/engagements/{engagement_id}"
 WP = f"{E}/workpapers/{{workpaper_id}}"
 SOC = f"{E}/soc-reports/{{soc_report_id}}"
 EX = f"{E}/internal-control/exceptions/{{sheet_row}}"
-# A-04-T04 (DEC-1762) and A-04-T07 (DEC-1867) serve these: their action and 404 stay, 501 goes.
+# A-04-T04 (DEC-1762), T07 (DEC-1867) and T11 (DEC-1868) serve these: their action and 404 stay,
+# 501 goes.
 SERVED: dict[tuple[str, str], str] = {
+    ("post", f"{WP}/drafts"): "workpaper.draft",
     ("get", f"{E}/program-tailoring"): "procedure.read",
     ("patch", f"{E}/procedures/{{procedure_id}}"): "procedure.tailor",
     ("get", f"{E}/service-organizations"): "service_org.read",
@@ -50,7 +52,6 @@ SERVED: dict[tuple[str, str], str] = {
     ("get", f"{WP}/export.xlsx"): "workpaper.export",
 }
 ROUTES: dict[tuple[str, str], str] = {
-    ("post", f"{WP}/drafts"): "workpaper.draft",
     ("post", f"{WP}/flags/{{flag_id}}/convert"): "attention_flag.convert",
     ("post", f"{WP}/flags/{{flag_id}}/remind"): "follow_up.draft",
     ("get", f"{E}/materiality/current"): "materiality.read",
@@ -259,11 +260,28 @@ async def test_t01_the_gate_authorises_then_reads_the_flag_then_answers_501(
     assert calls == ["authorise:materiality.read:engagement", "flag:assurance.materiality"]
     state["on"] = True
     calls.clear()
-    with pytest.raises(NotImplementedYet):
-        await core.workpaper_draft_route(
-            uuid.uuid4(), uuid.uuid4(), core.WorkpaperDraftIn(mode="gap"), _ctx(), "k-1"
-        )
+    from abacus.modules.workpapers import drafting
+
+    run = uuid.uuid4()
+
+    async def started(*_: object) -> uuid.UUID:
+        return run
+
+    monkeypatch.setattr(drafting, "start_section_draft", started)
+    out = await core.workpaper_draft_route(
+        uuid.uuid4(), uuid.uuid4(), core.WorkpaperDraftIn(mode="gap"), _ctx(), "k-1"
+    )
+    assert out.run_id == run  # A-04-T11 serves the draft route
     assert calls[-2:] == ["flag:workpapers.core", "flag:workpapers.drafting"]
+    with pytest.raises(NotImplementedYet):
+        await core.attention_flag_convert_route(
+            uuid.uuid4(),
+            uuid.uuid4(),
+            uuid.uuid4(),
+            core.FlagConvertIn(to="review_note"),
+            _ctx(),
+            "k-2",
+        )
 
 
 async def test_t01_the_inventory_answers_with_either_flag(monkeypatch: pytest.MonkeyPatch) -> None:

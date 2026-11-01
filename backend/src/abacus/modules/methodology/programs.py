@@ -216,6 +216,7 @@ class VersionStep:
     mandatory: bool
     template_refs: tuple[str, ...]
     prepopulates: tuple[str, ...]
+    text: str = ""  # A-04-T11: the drafter's context quotes it (firm content, never client data)
 
 
 @dataclass(frozen=True)
@@ -252,6 +253,7 @@ async def version_steps(tenant: TenantContext, version_id: UUID) -> VersionSteps
                 s.mandatory,
                 tuple(s.template_refs),
                 tuple(s.prepopulates),
+                s.text,
             )
             for s, code, position in rows
         )

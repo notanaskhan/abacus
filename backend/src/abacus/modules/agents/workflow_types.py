@@ -206,6 +206,21 @@ class EntryAssessRunInput:
     selected_item_id: str
 
 
+# --- A-04-T11: the section drafter (identifiers in and out, WF-001; DEC-1868) -------------------
+
+
+@dataclass(frozen=True)
+class SectionDraftInput:
+    """One section drafter run, created when a person chose Draft with agent. The run row holds
+    the engagement and the initiator; the paper must be that engagement's."""
+
+    tenant_id: str
+    run_id: str
+    workpaper_id: str
+    mode: str
+    section_key: str  # "" for the whole paper
+
+
 # --- K-01-T21: the methodology importer (identifiers in and out, WF-001) -------------------------
 
 

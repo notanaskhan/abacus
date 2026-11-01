@@ -19,6 +19,7 @@ SPEC-620 AC-9, AC-23; DEC-1867).
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Final
 from uuid import UUID
@@ -113,22 +114,51 @@ async def _workpaper_kinds(_tenant: TenantContext, refs: frozenset[str]) -> froz
 register_template_library(_workpaper_kinds)
 
 
-async def pack_errors(tenant: TenantContext, version_id: UUID) -> list[PackError]:
-    """Every step reference the version and the firm's library cannot resolve, in step order."""
+def bound_steps(
+    steps: Sequence[VersionStep], *, step_keys: Sequence[str] = (), kind: str | None = None
+) -> list[VersionStep]:
+    """The steps a draft of one paper is bound to (A-04-T11, DEC-1868): the paper's own
+    `program_step_keys` when it names any; else every step of a program one of whose steps points
+    at the paper's kind (`workpaper:<kind>`); else none. Neither given: the whole version."""
+    if step_keys:
+        keys = set(step_keys)
+        return [s for s in steps if s.step_key in keys]
+    if kind is None:
+        return list(steps)
+    programs = {s.program_code for s in steps if f"workpaper:{kind}" in s.template_refs}
+    return [s for s in steps if s.program_code in programs]
+
+
+async def pack_errors(
+    tenant: TenantContext,
+    version_id: UUID,
+    *,
+    step_keys: Sequence[str] = (),
+    kind: str | None = None,
+) -> list[PackError]:
+    """Every step reference the version and the firm's library cannot resolve, in step order
+    (only the steps a paper is bound to when `step_keys` or `kind` is given)."""
     version = await version_steps(tenant, version_id)
-    wanted = {r for s in version.steps for r in s.template_refs}
+    steps = bound_steps(version.steps, step_keys=step_keys, kind=kind)
+    wanted = {r for s in steps for r in s.template_refs}
     held = await templates_held(tenant, wanted) if wanted else frozenset[str]()
     return [
         PackError(s.program_code, s.number, ref, pack_message(s, ref, version.label))
-        for s in version.steps
+        for s in steps
         for ref in s.template_refs
         if ref not in held
     ]
 
 
-async def validate_pack(tenant: TenantContext, version_id: UUID) -> None:
+async def validate_pack(
+    tenant: TenantContext,
+    version_id: UUID,
+    *,
+    step_keys: Sequence[str] = (),
+    kind: str | None = None,
+) -> None:
     """Refuse with the first unresolved reference (`pack_configuration_error`), else pass."""
-    errors = await pack_errors(tenant, version_id)
+    errors = await pack_errors(tenant, version_id, step_keys=step_keys, kind=kind)
     if errors:
         first = errors[0]
         raise PackConfigurationError(
@@ -287,6 +317,7 @@ __all__ = [
     "ProcedureMoved",
     "ProcedureView",
     "RationaleRequired",
+    "bound_steps",
     "ensure_procedures",
     "pack_errors",
     "pack_message",
