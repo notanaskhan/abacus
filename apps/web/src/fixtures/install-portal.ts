@@ -20,7 +20,9 @@ import { type Scenario, installFixtureMode } from "../app-core/fixture-mode";
 import { type Por01Scenario, scenarios } from "./scenarios/POR-01";
 import { scenarios as homes } from "./scenarios/POR-02";
 import { scenarios as documents } from "./scenarios/POR-03";
+import { scenarios as questions } from "./scenarios/POR-05";
 import { scenarios as sign } from "./scenarios/POR-06";
+import { scenarios as k1s } from "./scenarios/POR-13";
 import { scenarios as rooms } from "./scenarios/POR-14";
 import { scenarios as connections } from "./scenarios/POR-16";
 
@@ -33,7 +35,9 @@ const HOME_OF: Readonly<Record<string, keyof typeof homes>> = {
 };
 const HOME = "GET /v1/portal/home";
 const SCREENS: Readonly<Record<string, Readonly<Record<string, Scenario>>>> = {
+  "POR-05": questions, // T-02-T32: j06 2 walks /questions on POR-05's own states
   "POR-06": sign, // N-02-T40: the signature journeys walk /sign on POR-06's own states
+  "POR-13": k1s, // T-02-T32: j07 8 and j08 16 walk /k1s on POR-13's own states
   "POR-16": connections,
 };
 const DOCUMENTS_OF: Readonly<Record<string, Scenario>> = {

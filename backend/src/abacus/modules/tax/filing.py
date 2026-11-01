@@ -496,6 +496,7 @@ async def envelope_of(tenant: TenantContext, binding_id: UUID) -> UUID | None:
 
 TRANSMIT: Final = "transmission.record"
 ACK_RECORD: Final = "efile_ack.record"
+ISSUE_CREATE: Final = "issue.create"
 # The contract names the federal return `US`; the engine's status report says `federal`.
 FEDERAL: Final = "federal"
 
@@ -924,7 +925,9 @@ async def rejection_issue(ctx: AuthContext, return_id: UUID, ack_id: UUID) -> UU
     code), and the return moves Rejected to Fixing (§3.13)."""
     _person(ctx, ACK_RECORD)
     facts = await _return(ctx, return_id)
-    await authorise(ctx, ACK_RECORD, await _on_return(ctx, facts, return_id))
+    on_return = await _on_return(ctx, facts, return_id)
+    await authorise(ctx, ACK_RECORD, on_return)
+    await authorise(ctx, ISSUE_CREATE, on_return)  # before anything moves (client service: 403)
     ack = next((a for a in await acks_of(ctx.tenant, return_id) if a.id == ack_id), None)
     if ack is None or ack.status != "rejected":
         raise NotRejected(facts={"work_item_id": str(return_id)})

@@ -60,3 +60,5 @@ Cells (stored as `integration_mappings`): `return_id_template` (default `{Tax ye
 ## T-01-T33 additions (DEC-1473)
 `EngineSyncOut.checkpoint_id` (additive): the return's current checkpoint, the one `POST …/engine-exports` requires. The live read fills `blockers` (`final_approval_required` first until the return's status is exportable, then final approval's blockers) and `approver_name`.
 
+## T-01-T51 additions (DEC-1667)
+Additive: `EngineSettingsOut.last_sync_return_id` (default null): the return of the firm's latest sync (an approved import or a marked export), which ADM-08's Last sync opens as TAX-09 (`?ov=engine-sync:<id>`; TAX-09 authorises the return itself). Integrations never reads tax: tax answers through `integrations.api.register_last_engine_sync`. TAX-12 is routed at `/tax-returns/$returnId/delivery` behind `tax.returns_v1` and `tax.delivery_efile`.

@@ -45,7 +45,9 @@ from abacus.modules.integrations.engine_settings import (
     FormatCheck,
     engine_return_id,
     export_settings,
+    last_engine_sync,
     register_engine_file_check,
+    register_last_engine_sync,
 )
 from abacus.modules.integrations.engine_settings_contract import (
     engine_settings_router,
@@ -131,6 +133,7 @@ __all__ = [
     "execute_write",
     "export_settings",
     "is_available",
+    "last_engine_sync",
     "listed",
     "listing_of",
     "open_secret",
@@ -138,6 +141,7 @@ __all__ = [
     "policy_refusal",
     "register_adapter",
     "register_engine_file_check",
+    "register_last_engine_sync",
     "registered_adapter",
     "registered_keys",
     "registry",

@@ -180,6 +180,7 @@ from abacus.modules.platform.api import (
     IncidentFacts,
     TenantKeyInput,
     TenantKeyWorkflow,
+    enrol_pilot,
     record_incident,
     tenant_key_workflow_id,
 )
@@ -279,6 +280,9 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.connections import (
 from abacus_tools.synthetic.scenarios.brightwater_hale.consents_7216 import NEEDS as CONSENTS_NEEDS
 from abacus_tools.synthetic.scenarios.brightwater_hale.consents_7216 import ROW_BY_LABEL
 from abacus_tools.synthetic.scenarios.brightwater_hale.consents_7216 import SLICE as CONSENTS_SLICE
+from abacus_tools.synthetic.scenarios.brightwater_hale.ebp import FILES as EBP_FILES
+from abacus_tools.synthetic.scenarios.brightwater_hale.ebp import NEEDS as EBP_NEEDS
+from abacus_tools.synthetic.scenarios.brightwater_hale.ebp import SLICE as EBP_SLICE
 from abacus_tools.synthetic.scenarios.brightwater_hale.email_templates import (
     SLICE as EMAIL_TEMPLATES_SLICE,
 )
@@ -328,6 +332,8 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.people import (
     email_of,
     slug_of,
 )
+from abacus_tools.synthetic.scenarios.brightwater_hale.pilot import NEEDS as PILOT_NEEDS
+from abacus_tools.synthetic.scenarios.brightwater_hale.pilot import SLICE as PILOT_SLICE
 from abacus_tools.synthetic.scenarios.brightwater_hale.portal import (
     HOST_LABEL,
     INVITATION_BY_NAME,
@@ -1678,6 +1684,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     RETURNED_SLICE: PORTAL_PBC_NEEDS,  # POR-03 g's alternate path (DEC-471)
     COMPLIANCE_SLICE: COMPLIANCE_NEEDS,
     METHODOLOGY_SLICE: METHODOLOGY_NEEDS,  # K-01-T10: Grace imports, Margaret approves
+    EBP_SLICE: EBP_NEEDS,  # A-05-T07: Dana's EBP source documents on Northwind
     REPORT_TEMPLATES_SLICE: REPORT_TEMPLATES_NEEDS,  # P-11-T13: Grace imports, Margaret publishes
     CONNECTIONS_SLICE: CONNECTIONS_NEEDS,  # A-02-T27: Copperleaf's POR-16a connections
     ACCEPTANCE_SLICE: ACCEPTANCE_NEEDS,
@@ -1689,6 +1696,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     STANDARDS_SLICE: STANDARDS_NEEDS,  # K-02-T18: Margaret creates; each owner publishes
     SIGNATURES_SLICE: SIGNATURES_NEEDS,  # N-02-T36: SIG-01 at E0 over the tax clients
     TAX_CONTENT_SLICE: TAX_CONTENT_NEEDS,  # T-02-T23: K-1 sets, the organizer, questions
+    PILOT_SLICE: PILOT_NEEDS,  # TASK-2470: PF-X1's enrolments name the Feld return and Northwind
 }
 
 
@@ -2087,6 +2095,26 @@ async def _engagement_files_uploaded(conn: asyncpg.Connection, _: Scenario, even
             )
 
 
+async def _ebp_documents_uploaded(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
+    """A-05-T07: Northwind's EBP source documents (the adoption agreements, the 2024 amendment,
+    the 2025 SPD, the census, the HR sample, the PayGrid register and the W-3) from Dana
+    Kowalski, the plan administrator, through `evidence.api` in one unit of work."""
+    dana = UUID(_PORTAL["Dana Kowalski"].id)
+    engagement = engagement_id_of(BY_LABEL["A1"])
+    staged = [(f, await stage_content(TENANT, f.content())) for f in EBP_FILES]
+    async with uow(TenantContext(TENANT, "human", str(dana))) as tx:
+        for file, stored in staged:
+            await add_version(
+                tx,
+                engagement_id=engagement,
+                item=NewItem(title=file.file_name),
+                stored=stored,
+                media_type=file.media_type,
+                provenance=Provenance(source="client_upload", method="uploaded"),
+                requested_by=dana,
+            )
+
+
 # --- service-backed events ---------------------------------------------------------------------
 
 
@@ -2369,6 +2397,25 @@ async def _methodology_approved(conn: asyncpg.Connection, _: Scenario, event: Ev
         effective_from=date.fromisoformat(str(data["effective_from"])),
         checklist_hash=state.checklist_hash,
         row_version=state.row_version,
+    )
+
+
+async def _pilot_enrolled(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
+    """TASK-2470 (DEC-1530): PF-X1's enrolment through `make pilot-enrol`'s service, in shadow."""
+    data = event.data
+    target = str(data["target"])
+    item = (
+        _return_item(target)
+        if data["kind"] == "return"
+        else await _assurance_work_item(BY_LABEL[target])
+    )
+    await enrol_pilot(
+        TenantContext(TENANT, "system", LOADER),
+        item,
+        date.fromisoformat(str(data["window_start"])),
+        date.fromisoformat(str(data["window_end"])),
+        int(str(data["baseline_days"])),
+        UUID(str(data["operator"])),
     )
 
 
@@ -3389,6 +3436,7 @@ HANDLERS: Final[dict[str, Handler]] = {
     # P-06-T08 remainder: Granite Peak's agent-drafted SURL request, after its PBC list.
     "requests.request_drafted": _request_drafted,
     "evidence.engagement_files_uploaded": _engagement_files_uploaded,
+    "evidence.ebp_documents_uploaded": _ebp_documents_uploaded,  # A-05-T07
     # P-08-T14 (`--slice portal`): branding before its host; people after the work items they name.
     "portal.branding_set": _branding_set,
     "portal.host_added": _host_added,
@@ -3445,6 +3493,7 @@ HANDLERS: Final[dict[str, Handler]] = {
     "methodology.version_imported": _methodology_imported,
     "methodology.version_approved": _methodology_approved,
     "standards.created": _standard_created,  # K-02-T18
+    "platform.pilot_enrolled": _pilot_enrolled,  # TASK-2470
     "standards.version_imported": _standard_imported,
     "standards.version_published": _standard_published,
     "reporting.template_imported": _report_template_imported,

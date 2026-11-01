@@ -691,6 +691,8 @@ class PackageView:
     # T-02-T27 (additive): the issuing client's name, on a portal card.
     issuer_name: str | None = None
     address_on_file: bool | None = None
+    # S20e (DV-12): the recipient's electronic-furnishing decision, on portal views only.
+    e_furnishing_consent: str | None = None
     tin_kind: str | None = None
     tin_last4: str | None = None
 

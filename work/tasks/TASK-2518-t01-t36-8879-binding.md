@@ -4,7 +4,7 @@ title: T-01-T36 8879 amount binding and drift relock (I-8879-DRIFT)
 spec: SPEC-501  # T-01 §3.12; efile-record
 acceptance_criteria: [AC-10]  # and T-01 §3.12
 risk_zone: red
-status: in-review
+status: done
 epic: T-01
 plan_key: T-01-T36
 branch: s20b-t01-t36

@@ -42,9 +42,14 @@ describe("TAX-12 delivery", () => {
       name: "Form 8879 + TR-579-IT · TY2025 · Jonah & Claire Feld",
     });
     expect(within(envelope).getByText("Claire Feld (spouse)")).toBeTruthy();
-    expect(within(envelope).getByText(COPY.envelope.claire)).toBeTruthy();
-    expect(within(envelope).getByText(COPY.envelope.jonah)).toBeTruthy();
-    expect(await screen.findByText(COPY.rows.authorizationsSub(1, 2))).toBeTruthy();
+    // T-01-T51: each signer's line is built from the envelope read, not a fixed string.
+    expect(
+      within(envelope).getByText(/^KBA passed · signed .* · IP and login logged$/),
+    ).toBeTruthy();
+    expect(
+      within(envelope).getByText(/^(Viewed .* · identity check not started|Not viewed yet)$/),
+    ).toBeTruthy();
+    expect(await screen.findAllByText(/^1 of 2 signed/)).not.toHaveLength(0);
     const gate = within(screen.getByRole("region", { name: COPY.gate.title }));
     expect(gate.getByRole<HTMLButtonElement>("button", { name: COPY.gate.button }).disabled).toBe(
       true,
@@ -57,14 +62,15 @@ describe("TAX-12 delivery", () => {
     await screen.findByRole("region", { name: COPY.payments.title });
     expect(FELD_REFUND.paid - FELD_REFUND.tax).toBe(253);
     expect(FELD_NY.tax - FELD_NY.withheld).toBe(1269);
-    expect(screen.getByText(/^253 · direct deposit/)).toBeTruthy();
-    expect(screen.getByText(/^1,269 due/)).toBeTruthy();
+    // T-01-T51: the amounts come from the delivery read's payment instructions.
+    expect(screen.getAllByText(/^253( · due .*)?$/)).not.toHaveLength(0);
+    expect(screen.getAllByText(/^1,269( · due .*)?$/)).not.toHaveLength(0);
   });
 
   it("a2 · the pre-approved reminder, Grace sends", async () => {
     show("a2", true);
     const dialog = await screen.findByRole("dialog", { name: COPY.reminder.title });
-    expect(within(dialog).getByText(COPY.reminder.recipient)).toBeTruthy();
+    expect(within(dialog).getByText(/Jonah Feld/)).toBeTruthy();
     expect(within(dialog).getByText(COPY.reminder.approved)).toBeTruthy();
     expect(within(dialog).getByText(COPY.reminder.body)).toBeTruthy();
     fireEvent.click(within(dialog).getByRole("button", { name: COPY.reminder.send }));
@@ -76,8 +82,10 @@ describe("TAX-12 delivery", () => {
   it("b · blocked before final approval", async () => {
     show("b");
     expect(await screen.findByText(COPY.canvas.blockedTitle)).toBeTruthy();
-    expect(screen.getByText(COPY.canvas.blockedBody)).toBeTruthy();
-    expect(screen.getByText(COPY.rows.blockedK1)).toBeTruthy();
+    expect(
+      screen.getByText(/ approves.*; the return is then exported to CCH Axcess\.$/),
+    ).toBeTruthy();
+    expect(screen.getByText(/^Blocked by \d+ open items?$/)).toBeTruthy();
     expect(screen.queryByRole("region", { name: COPY.gate.title })).toBeNull();
   });
 
@@ -97,9 +105,9 @@ describe("TAX-12 delivery", () => {
     expect(mark.disabled).toBe(false);
     fireEvent.click(mark);
     const dialog = await screen.findByRole("alertdialog");
-    expect(within(dialog).getByText(COPY.ero.confirm)).toBeTruthy();
-    for (const place of ["federal", "New York", "Illinois", "Colorado", "Sep 18, 2026"]) {
-      expect(COPY.ero.confirm).toContain(place);
+    const confirm = within(dialog).getByText(/^Record that the .* returns were transmitted/);
+    for (const place of ["New York", "2026"]) {
+      expect(confirm.textContent).toContain(place);
     }
     fireEvent.click(within(dialog).getByRole("button", { name: COPY.ero.record }));
     await waitFor(() => {
@@ -130,7 +138,10 @@ describe("TAX-12 delivery", () => {
         ),
       ),
     ).toBeTruthy();
-    expect(screen.getByRole("link", { name: COPY.fix.create })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: COPY.fix.create }));
+    await waitFor(() => {
+      expect(toastStore.list().map((t) => t.text)).toContain(COPY.fix.created);
+    });
     expect(screen.getAllByText(COPY.status.rejected).length).toBeGreaterThan(0);
   });
 

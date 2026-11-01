@@ -9,7 +9,7 @@ epic: Q-03
 plan_key: Q-03-T044
 branch: s10c-ops
 created: 2026-10-27
-updated: 2026-10-27
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -51,3 +51,4 @@ and x100 profiles chapter 10 section 10.11.2 sizes.
 - 2026-10-27: built; unit and integration tests written (results in the S10 wave C report).
 - 2026-10-27: targeted pass: unit 92 passed (loadtest, T043, T044, portal slice, P-08-T28, quality report, frozen snapshots); integration `test_q03t044_fleet_load.py` 2 passed after two fixes (seat initials are capitals only; a flag already on is not set again, so a second run writes nothing). `fleet.py` added to TENANT-001's exclusions beside the scenario loader.
 - 2026-10-27: security review fixes: every pre-check reads as the firm under RLS (`loader.tenant_value`; the Brightwater loader's synthetic check, trace check and settle too); the bootstrap is `loader.bootstrap_write` and the TENANT-001 exclusion for fleet.py is gone; x25 and x100 refuse any `--staging` host not starting `abacus-perf`. Owner-role integration tests prove the refusal and the no-op re-run.
+- 2026-11-01 (TASK-2471, DEC-1531): x25 at the full Brightwater shape on a laptop's throwaway Postgres: 25 firms, 2,500 memberships, 4,600 clients, 675 audits and PBC lists, 10,800 requests, 4,600 `client.created` audits; 9,025 writes in 76 s, re-run 0 writes in 8 s. Repo side complete; the acceptance's "on the perf stack" waits only for Q-03-T036 (`infra/envs/perf` not built). Q-03-T132 builds on this content now.

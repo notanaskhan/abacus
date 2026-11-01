@@ -1,7 +1,9 @@
 import type { K1PackageOut, PortalK1ExpectedOut } from "@abacus/api-client";
-import { portalK1Attachment, portalK1Download } from "@abacus/api-client";
+import { portalDetailsUpload, portalK1Attachment, portalK1Download } from "@abacus/api-client";
 import {
   portalDetailsChangeMutation,
+  portalEFurnishingMutation,
+  portalK1DisclosureOptions,
   portalK1Options,
   portalK1sExpectedOptions,
   portalK1sOptions,
@@ -15,6 +17,7 @@ import {
   type PortalNavItem,
   PortalBrandProvider,
   PortalLayout,
+  RadioGroup,
   RegistryStatus,
   Tooltip,
   ValueRow,
@@ -27,7 +30,6 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, type ReactNode, useId, useState } from "react";
 import { useNow } from "../../app-core/clock";
-import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { brandOf, useBranding, usePortalToolbar } from "../../domain/portal";
 import { COPY } from "./copy";
 
@@ -41,8 +43,7 @@ import { COPY } from "./copy";
 // A recipient sees only their own released packages; before release only who issues the K-1 and
 // by when (no amounts, no documents). Amounts are the server's; the browser adds nothing up. The
 // TIN shows masked, from the detail only. A details change goes to the firm to check (DV-10).
-// Not built: the electronic-furnishing consent sheet (DV-12) waits on a counsel-approved
-// disclosure in the database (OQ-4; DEC-1576).
+// The W-9/W-8 goes up as the recipient's own upload (S20e, DEC-1578).
 
 const K1_NAV: readonly PortalNavItem[] = [{ label: COPY.active, icon: "file-text" }];
 
@@ -231,6 +232,18 @@ function PackageCard({
   const refresh = (): void => {
     void queryClient.invalidateQueries();
   };
+  // DV-12 (S20e): once the firm publishes its disclosure, the first download waits on consent.
+  const disclosure = useQuery({ ...portalK1DisclosureOptions(), retry: false });
+  const consent = detail.data?.package.e_furnishing_consent ?? row.e_furnishing_consent ?? null;
+  const needsConsent = disclosure.data !== undefined && consent !== "given";
+  const [pending, setPending] = useState<(() => Promise<void>) | null>(null);
+  const gated = (run: () => Promise<void>): void => {
+    if (needsConsent) {
+      setPending(() => run);
+      return;
+    }
+    void run();
+  };
   const downloadAll = async (): Promise<void> => {
     setBusy(true);
     try {
@@ -265,7 +278,7 @@ function PackageCard({
       key={id}
       type="button"
       onClick={() => {
-        void downloadOne(id, `${label}.pdf`);
+        gated(() => downloadOne(id, `${label}.pdf`));
       }}
       className="inline-flex h-[28px] items-center gap-[6px] rounded-pill bg-card px-[10px] text-dense text-ink shadow-e1 hover:shadow-e3"
     >
@@ -363,13 +376,33 @@ function PackageCard({
             className="ml-auto"
             loading={busy}
             onClick={() => {
-              void downloadAll();
+              gated(downloadAll);
             }}
           >
             {COPY.downloadAll}
           </Button>
         </footer>
+        {consent === "declined" && disclosure.data !== undefined && (
+          <p className="text-dense text-ink-2">{COPY.consent.declinedNote(firm)}</p>
+        )}
       </Card>
+      {pending !== null && disclosure.data !== undefined && (
+        <ConsentSheet
+          packageId={row.id}
+          disclosureId={disclosure.data.id}
+          body={disclosure.data.body}
+          firm={firm}
+          onClose={() => {
+            setPending(null);
+          }}
+          onDecided={(given) => {
+            const run = pending;
+            setPending(null);
+            refresh();
+            if (given) void run();
+          }}
+        />
+      )}
       {showDetails && (
         <Fieldset title={COPY.details.title}>
           <ValueRow label={COPY.details.name} kind="value">
@@ -382,18 +415,16 @@ function PackageCard({
                 : tin.kind === "ein"
                   ? einMask(tin.last4)
                   : ssnMask(tin.last4)}
-              {PLANNED_VISIBLE && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  aria-haspopup="dialog"
-                  onClick={() => {
-                    setSheet("tin");
-                  }}
-                >
-                  {COPY.details.update}
-                </Button>
-              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-haspopup="dialog"
+                onClick={() => {
+                  setSheet("tin");
+                }}
+              >
+                {COPY.details.update}
+              </Button>
             </span>
           </ValueRow>
           <ValueRow label={COPY.details.address} kind="value" help={COPY.details.help(firm)}>
@@ -415,8 +446,10 @@ function PackageCard({
           </ValueRow>
         </Fieldset>
       )}
-      {sheet === "tin" && PLANNED_VISIBLE && (
+      {sheet === "tin" && (
         <TinSheet
+          recipientId={row.recipient_id}
+          firm={firm}
           onClose={() => {
             setSheet(null);
           }}
@@ -435,12 +468,43 @@ function PackageCard({
   );
 }
 
-/** d: a signed W-9 (or W-8) for the firm to check; never a typed number (DV-10). Planned: no
- * portal upload yet yields an evidence version in a K-1 recipient's scope, so the sheet is drawn
- * in fixture builds with Send held (DEC-1576); production shows the masked TIN alone. */
-function TinSheet({ onClose }: { onClose: () => void }): JSX.Element {
+/** d: a signed W-9 (or W-8 for a foreign recipient) for the firm to check; never a typed number
+ * (DV-10). The file goes up as the recipient's own upload (`…/details-changes:upload`, S20e). */
+function TinSheet({
+  recipientId,
+  firm,
+  onClose,
+}: {
+  recipientId: string;
+  firm: string;
+  onClose: () => void;
+}): JSX.Element {
   const inputId = useId();
   const [file, setFile] = useState<File | null>(null);
+  const [kind, setKind] = useState<"w9" | "w8">("w9");
+  const [busy, setBusy] = useState(false);
+  const queryClient = useQueryClient();
+  const send = async (): Promise<void> => {
+    if (file === null) return;
+    setBusy(true);
+    try {
+      await portalDetailsUpload({
+        path: { recipient_id: recipientId },
+        query: { kind, filename: file.name },
+        body: file as never,
+        bodySerializer: null,
+        headers: { "Content-Type": file.type || "application/octet-stream" },
+        throwOnError: true,
+      });
+      toast.show(COPY.tinSheet.sent(firm));
+      void queryClient.invalidateQueries();
+      onClose();
+    } catch {
+      toast.show(COPY.tinSheet.failed);
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
     <Dialog
       open
@@ -450,18 +514,39 @@ function TinSheet({ onClose }: { onClose: () => void }): JSX.Element {
       title={COPY.tinSheet.title}
       size="md"
       action={
-        <Button variant="primary" disabled>
+        <Button
+          variant="primary"
+          disabled={file === null}
+          loading={busy}
+          onClick={() => {
+            void send();
+          }}
+        >
           {COPY.tinSheet.submit}
         </Button>
       }
     >
       <div className="flex flex-col gap-[12px] p-[16px] text-paragraph text-ink-2">
+        <RadioGroup
+          label={COPY.tinSheet.form}
+          orientation="horizontal"
+          options={[
+            { value: "w9", label: COPY.tinSheet.w9 },
+            { value: "w8", label: COPY.tinSheet.w8 },
+          ]}
+          value={kind}
+          onChange={(v) => {
+            setKind(v === "w8" ? "w8" : "w9");
+          }}
+        />
         <label
           htmlFor={inputId}
           className="flex cursor-pointer flex-col items-center gap-[6px] rounded-nested bg-nested px-[16px] py-[20px] text-center"
         >
           <Icon name="upload" size={16} className="text-ink-3" />
-          <span className="text-body font-medium text-ink">{COPY.tinSheet.upload}</span>
+          <span className="text-body font-medium text-ink">
+            {kind === "w9" ? COPY.tinSheet.upload : COPY.tinSheet.uploadW8Title}
+          </span>
           <span className="text-meta text-ink-3">{file?.name ?? COPY.tinSheet.choose}</span>
         </label>
         <input
@@ -475,6 +560,84 @@ function TinSheet({ onClose }: { onClose: () => void }): JSX.Element {
         />
         <p className="text-meta text-ink-3">{COPY.tinSheet.uploadW8}</p>
         <p className="text-meta text-ink-3">{COPY.tinSheet.helper}</p>
+      </div>
+    </Dialog>
+  );
+}
+
+/** DV-12 (S20e): the firm's counsel-approved electronic-furnishing text, read before consenting;
+ * a decline keeps the firm's own copy by mail or email. The text is the firm's content (plain
+ * text, never markup). */
+function ConsentSheet({
+  packageId,
+  disclosureId,
+  body,
+  firm,
+  onClose,
+  onDecided,
+}: {
+  packageId: string;
+  disclosureId: string;
+  body: string;
+  firm: string;
+  onClose: () => void;
+  onDecided: (given: boolean) => void;
+}): JSX.Element {
+  const decide = useMutation(portalEFurnishingMutation());
+  const choose = (given: boolean): void => {
+    decide.mutate(
+      {
+        path: { package_id: packageId },
+        body: { decision: given ? "given" : "declined", disclosure_version_id: disclosureId },
+      },
+      {
+        onSuccess: () => {
+          if (!given) toast.show(COPY.consent.declinedNote(firm));
+          onDecided(given);
+        },
+        onError: () => {
+          toast.show(COPY.consent.failed);
+        },
+      },
+    );
+  };
+  return (
+    <Dialog
+      open
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+      title={COPY.consent.title}
+      size="md"
+      action={
+        <Button
+          variant="primary"
+          loading={decide.isPending}
+          onClick={() => {
+            choose(true);
+          }}
+        >
+          {COPY.consent.agree}
+        </Button>
+      }
+    >
+      <div className="flex flex-col gap-[12px] p-[16px] text-paragraph text-ink-2">
+        <div className="flex max-h-[360px] flex-col gap-[8px] overflow-auto">
+          {body.split(/\n\s*\n/).map((para, i) => (
+            <p key={i} className="whitespace-pre-line">
+              {para}
+            </p>
+          ))}
+        </div>
+        <Button
+          variant="secondary"
+          disabled={decide.isPending}
+          onClick={() => {
+            choose(false);
+          }}
+        >
+          {COPY.consent.decline}
+        </Button>
       </div>
     </Dialog>
   );

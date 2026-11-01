@@ -1,0 +1,56 @@
+# I-8879-DRIFT golden cases (T-01-T49; T-01 §3.12; Pub 1345; DEC-85). Synthetic figures only.
+# Each case: the figures the 8879 was signed against (`bound`), the return's figures now (`now`),
+# the Pub 1345 tolerances (`income`: total income or AGI; `amounts`: tax, withholding, refund,
+# balance due), and the figures that must relock (strictly more than the tolerance, or a figure
+# that appeared or disappeared). Transcribed by ayushkbhatia from Pub 1345's rule.
+# Sign-off references (human, outside the repo): the tax CPA and counsel each record their review
+# of these cases against Pub 1345 for TY2026; until then both read "pending".
+signed_off:
+  tax_cpa: pending
+  counsel: pending
+tolerances: {income: 50, amounts: 14}
+cases:
+  - name: nothing moved
+    bound: {US: {agi: "245310", refund: "253"}}
+    now: {US: {agi: "245310", refund: "253"}}
+    relock: []
+  - name: AGI up exactly 50 holds
+    bound: {US: {agi: "245310"}}
+    now: {US: {agi: "245360"}}
+    relock: []
+  - name: AGI up 50.01 relocks
+    bound: {US: {agi: "245310.00"}}
+    now: {US: {agi: "245360.01"}}
+    relock: [US.agi]
+  - name: total income down 51 relocks
+    bound: {US: {total_income: "260000"}}
+    now: {US: {total_income: "259949"}}
+    relock: [US.total_income]
+  - name: refund up exactly 14 holds
+    bound: {US: {refund: "253"}}
+    now: {US: {refund: "267"}}
+    relock: []
+  - name: refund up 15 relocks
+    bound: {US: {refund: "253"}}
+    now: {US: {refund: "268"}}
+    relock: [US.refund]
+  - name: tax down 14.01 relocks
+    bound: {US: {tax: "123223.00"}}
+    now: {US: {tax: "123208.99"}}
+    relock: [US.tax]
+  - name: withholding within the amounts tolerance holds though larger than cents
+    bound: {US: {withholding: "11540"}}
+    now: {US: {withholding: "11553"}}
+    relock: []
+  - name: NY balance due moves 20 and relocks only NY
+    bound: {US: {refund: "253"}, NY: {balance_due: "1269"}}
+    now: {US: {refund: "253"}, NY: {balance_due: "1289"}}
+    relock: [NY.balance_due]
+  - name: a refund that turns into a balance due relocks both
+    bound: {US: {refund: "253"}}
+    now: {US: {balance_due: "40"}}
+    relock: [US.balance_due, US.refund]
+  - name: a jurisdiction that appears relocks its figures
+    bound: {US: {agi: "245310"}}
+    now: {US: {agi: "245310"}, IL: {tax: "0"}}
+    relock: [IL.tax]

@@ -4,7 +4,7 @@ title: T-02-T28 independent AC tests for T-02-T17, T-02-T21 and T-01-T18's guard
 spec: SPEC-502  # AC-1, AC-2; T-02 §3.3, §3.6
 acceptance_criteria: [AC-1, AC-2]
 risk_zone: red
-status: in-review
+status: done
 epic: T-02
 plan_key: T-02-T28
 branch: s20d-t02-t28
