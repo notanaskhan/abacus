@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Version | v1 |
-| Status | stub (T-02-T01, 2026-10-29): every route 501 behind `tax.returns_v1` |
+| Status | **frozen at v1** (T-02-T35, 2026-11-01, DEC-1674); live behind `tax.returns_v1` (T-02-T03 to T-02-T14, T-02-T19). Breaking changes need v2; additions follow handshake rule 5 |
 | Provider epic | T-02 |
 | Consumers | TAX-01, TAX-02, TAX-03 (T-02), HOME-01/02 (C13), T-01 (sync state through `tax.api.record_sync_state`), T-08 |
 | Spec | SPEC-502 AC-4; `docs/plan/epics/T-02.md` §4.3 |

@@ -44,7 +44,7 @@ Owner is the builder for every row. `Last rehearsed` stays `never` until a rehea
 | RB-14 | Legal hold: apply, release, failures | ADR-098, ADR-033 | R2 | never | hold workflow failure | drafted (Q-02-T51) |
 | RB-15 | Disaster-recovery drill procedure | ADR-098, ADR-096 | R1 | never | none (drill) | drafted |
 | RB-16 | Busy-season readiness (R4 checklist, window rules, partner notice) | ADR-098, ADR-075, P-29 | Aug 2027 | never | readiness test; R4 dossier operations-5 | drafted (Q-04-T055, T056) |
-| RB-17 | Section 7216 consent expiry or revocation wave (agents pause per taxpayer) | R-01 | R2 if tax is in scope | never | consent alarms | to write |
+| RB-17 | Section 7216 consent expiry or revocation wave (agents pause per taxpayer) | R-01 | R2 if tax is in scope | never | consent alarms | drafted (T-01-T54) |
 | RB-18 | E-signature or knowledge-based-authentication vendor outage (record mode; wet-signature path) | R-05, ADR-149 | R3 | never | provider health | first notes (N-02-T17) |
 | RB-19 | Tax-engine bridge failure near a filing deadline (file fallback) | P-18 | Aug 2027 | never | bridge failure | to write |
 | RB-20 | Email deliverability incident (bounce or complaint spike; a firm's sender authentication breaks) | P-11 | R1 | never | SLO-07 | drafted |
@@ -70,6 +70,8 @@ Owner is the builder for every row. `Last rehearsed` stays `never` until a rehea
 | RB-40 | Provider-terms `review_by` renewal and Bedrock parity refresh | Q-02-T51 | before the first real-firm model call | never | none | drafted |
 | RB-42 | Pre-shadow scrubbing audit: seeded cases through the logger, Sentry and the meter, read back from each sink | Q-03-T083 | before M9 (Tue Jun 1, 2027) | never | none | drafted |
 | RB-43 | Document services part 1: failed renders, engine upgrade and golden re-baseline (both approvals), template rollback by republishing a prior version | P-11-T17 | before the Sep 1, 2027 window (staging drill by Fri Aug 20, 2027) | never | none yet (`render_failed` rate to wire) | drafted |
+| RB-44 | T-02 pilot onboarding, shadow reconciliation against CCH and the Aug 17 / Aug 31 flips with rollback; the Aug 24 flag renewal | T-02-T34 | Fri Aug 13, 2027 (staging, test firm) | never | none | drafted |
+| RB-45 | K-1 invitation bounce and resend; a mis-released K-1 (undo, contain, register, supersede) | T-02-T34 | Fri Aug 27, 2027 (staging, test firm) | never | none | drafted |
 
 Q-02-T51's agent-stage and provider-terms runbooks are RB-39 and RB-40. Give the next runbook the next free number (RB-44 onward; RB-43 is P-11-T17's; RB-31 is P-01-T17's, RB-32 P-06-T27's, RB-33 A-01-T30's).
 

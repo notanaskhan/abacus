@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Version | v1 |
-| Status | stub (T-02-T02, 2026-10-29): every route 501 behind `questionnaires.v1` |
+| Status | **live** behind `questionnaires.v1` (T-02-T16 engine and templates, T-02-T22 portal routes; T-02-T35, 2026-11-01, DEC-1674); not frozen: A-04 and A-08 still add inquiry kinds |
 | Provider epic | T-02 |
 | Consumers | POR-05, TAX-03 drawer, A-04 and A-08 (inquiries) |
 | Spec | SPEC-502 AC-5; `docs/plan/epics/T-02.md` §3, §4.3 |
