@@ -19,7 +19,20 @@ export function portalK1Handlers(
   base: Readonly<Record<string, FixtureHandler>>,
 ): Record<string, FixtureHandler> {
   const me = base["GET /v1/me"];
+  const refresh = base["POST /v1/portal/auth/refresh"];
   return {
+    // T-02-T32: a K-1-only person's session refreshes as a portal person's does, so the portal
+    // entry's /k1s walk (j07 8, j08 16) stays signed in; the shell itself comes from /v1/me.
+    ...(refresh === undefined
+      ? {}
+      : {
+          "POST /v1/portal/auth/refresh": (request) =>
+            refresh(
+              K1_PERSONAS[request.persona ?? ""] === undefined
+                ? request
+                : { ...request, persona: "meera-shah" },
+            ),
+        }),
     ...(me === undefined
       ? {}
       : {
