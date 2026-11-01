@@ -246,7 +246,11 @@ allow_indirect_imports = true
 [[tool.importlinter.contracts]]
 name = "Compute packages import only kernel.numeric and kernel.calendar (A-03-T21; chapter 03 §10.1)"
 type = "forbidden"
-source_modules = ["abacus.modules.sampling.compute", "abacus.modules.ledger.compute"]
+source_modules = [
+    "abacus.modules.sampling.compute",
+    "abacus.modules.ledger.compute",
+    "abacus.modules.assurance.compute",
+]
 forbidden_modules = [
     "abacus.api",
     "abacus.worker",
@@ -261,6 +265,7 @@ ignore_imports = [
     "abacus.modules.*.compute.** -> abacus.kernel.calendar",
     "abacus.modules.sampling.compute.** -> abacus.modules.sampling.compute.**",
     "abacus.modules.ledger.compute.** -> abacus.modules.ledger.compute.**",
+    "abacus.modules.assurance.compute.** -> abacus.modules.assurance.compute.**",
 ]
 unmatched_ignore_imports_alerting = "none"
 

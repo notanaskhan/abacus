@@ -7,7 +7,7 @@
 | Surface | firm (never a client surface, AC3.9) |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/AUD-07 Materiality - partner decision/` (README.md, spec.md, revision.md R2: prior-year columns; revision wins) |
 | Epic and tasks | A-04 · stubs T01 (`docs/contracts/audit-planning.md`) · engine T08 · service and card T12 · recommender T15 · screen T10 · goldens T17 · parity T40 (before the Oct 26 flip) · SPEC-620 |
-| Manifest status | planned |
+| Manifest status | fixture (A-04-T10) |
 
 ## States
 | Artboard | Viewer (persona) | Clock | Snapshot | Data condition that produces it | Status |
@@ -68,6 +68,9 @@ Gradients, emoji, saturated blue, heavy shadows, invented colours, lorem ipsum; 
 | DV-A7-1 | The decision is 11:12 AM; P-04's SHL-11 c artboard keeps 10:02 | DF-34; P-04 Q9 | A-04 OQ-11 |
 | DV-A7-2 | c's dock line "Resuming the run." and a's run narration are masked for parity | No engagement run until P-10 (OQ-2) | DEC-1758 |
 | DV-A7-3 | Only in-range options are offered; out of range is 422 `rate_outside_policy` | OQ-9 | A-04 OQ-9 |
+| DV-A7-4 | The canvas is AUD-02's Planning › Materiality section (`/audits/$auditId?section=materiality`, manifest path null), as AUD-11 is; with `assurance.materiality` off the row keeps AUD-02 d's blocked-section card | One cockpit hosts every section (DEC-832) | DEC-1851 |
+| DV-A7-5 | The card's citation chips are its `context` rows; the qualitative factors' right-hand sources are not drawn | C3 has no chip list; the record's factors carry citation ids only | DEC-1851 |
+| DV-A7-6 | Deciding "Another rate…" sends `option_key: custom`; the custom rate reaches the applier with A-04-T12 | C3's decide body has no figures | DEC-1851 |
 
 ## Parity
 | Artboard | Tier | Diff % | Notes |

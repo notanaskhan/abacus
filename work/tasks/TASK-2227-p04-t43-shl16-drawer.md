@@ -4,12 +4,12 @@ title: P-04-T43 SHL-16 Checkpoint diff drawer a–f and the restore dialog
 spec: SPEC-000  # the backlog row; SPEC-360 and the handoff
 acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: green
-status: in-review
+status: done
 epic: P-04
 plan_key: P-04-T43
 branch: s17-p04-t43
 created: 2026-10-30
-updated: 2026-10-30
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -29,3 +29,4 @@ new checkpoint in the UI."
 
 ## Progress log
 - 2026-10-30: built in S17 Lane 2 off main; tests and Tier C run in the end review.
+- 2026-11-01: merged to main in #799 (ed40e9ce8).
