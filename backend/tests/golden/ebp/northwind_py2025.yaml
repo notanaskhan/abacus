@@ -1,0 +1,76 @@
+# Northwind Robotics 401(k) Plan PY2025: A-05-T07's figure book (DEC-1862). Every total foots in
+# tests/unit/synthetic/test_a05t07_ebp_slice.py; regenerate from the slice, never by hand.
+plan:
+  name: Northwind Robotics 401(k) Plan
+  plan_number: '001'
+  recordkeeper_plan_id: '58217'
+  participants_boy: 286
+  participants_eoy: 301
+  terminated_2025: 6
+  safe_harbor: qaca
+  auto_enrollment:
+    default_pct: '6'
+    escalation_pct: '1'
+    cap_pct: '15'
+  match_max_pct: '3.5'
+providers:
+- name: Keystone Retirement Svcs LLC
+  role: recordkeeper
+  ein_last4: '4420'
+  soc: SOC 1 Type 2, Jan 1 to Sep 30, 2025
+  note: Summit's draft Schedule C lists EIN ending 4402
+- name: Harborline Trust Company
+  role: trustee_custodian
+  ein_last4: null
+  soc: null
+  note: certifies
+- name: PayGrid Payroll
+  role: payroll
+  ein_last4: null
+  soc: null
+  note: null
+- name: Summit Plan Administrators
+  role: tpa
+  ein_last4: null
+  soc: null
+  note: 5500 preparer
+soc_gap:
+- '2025-10-01'
+- '2025-12-31'
+census:
+  rows: 301
+  compensation: '14560000.00'
+  deferrals: '746600.00'
+  active: 295
+  terminated: 6
+w3:
+  box1: '13813400.00'
+  box12d: '746600.00'
+  total: '14560000.00'
+payroll:
+  payrolls: 26
+  first: '2025-01-10'
+  last: '2025-12-26'
+  wages: '14560000.00'
+  deferrals: '746600.00'
+  on_time: 25
+late_remittance:
+  pay_on: '2025-12-26'
+  deposited_on: '2026-01-09'
+  amount: '33540.00'
+  business_days: 9
+  calendar_days_late: 10
+receivable:
+  regular: '15060.00'
+  late: '33540.00'
+  total: '48600.00'
+hr_records: 25
+files:
+- Northwind 401k - Adoption agreement v1.pdf
+- Northwind 401k - Adoption agreement v2.pdf
+- Northwind 401k - Amendment 2024-1.pdf
+- Northwind 401k - Summary Plan Description 2025.pdf
+- Northwind Census PY2025.xlsx
+- Northwind HR records - eligibility sample.xlsx
+- PayGrid payroll register 2025.xlsx
+- Northwind W-3 2025.pdf

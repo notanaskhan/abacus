@@ -14,10 +14,10 @@ import {
 } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import { type JSX, type KeyboardEvent, useRef, useState } from "react";
+import { BulkSignOffSheet } from "../SHL-12/Bulk";
 import { useNow } from "../../app-core/clock";
 import { useOpenHref, useOpenOverlay } from "../../app-core/open";
 import type { OverlayRef } from "../../app-core/overlays";
-import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { useSession } from "../../app-core/session";
 import {
   type Band,
@@ -46,7 +46,10 @@ import { MY_WORK, openHref, openOverlayOf } from "./hosts";
 // person's HumanAction, opening its overlay. A gate decided here stays in the detail (b) after it
 // leaves the queue, and `?gate=` on a done gate finds it among the done rows. The evidence pane
 // (I-01-T18, `Evidence.tsx`) shows the owner's summary and the cited sources through SHL-08's
-// viewer; bulk Select (T19) comes later. Enter and the generic "Open" go to the gate's own host
+// viewer. Select (I-01-T19) puts a checkbox on every sign-off row: enabled on the server's
+// `bulk_eligible` rows, disabled with "Blocked" on blocked ones, none on other classes; the 52 px
+// bar ("4 selected · Sign off 4 as Partner") opens SHL-12 f over the chosen targets, which signs
+// and shows each item's result. Enter and the generic "Open" go to the gate's own host
 // (`hosts.ts`), and the segmented's "My work" to HOME-01. A row is a link to where the gate is
 // decided, never a decision control (INV-1). Behind `home.approvals` (created here).
 
@@ -67,7 +70,29 @@ const GLYPH_OF: Readonly<Record<HumanGateOut["kind"], NonNullable<IssueItem["gly
   evidence_review: { icon: "file-search", label: COPY.glyph.other },
 };
 
-function itemOf(gate: HumanGateOut, today: string, now: Date): IssueItem {
+/** Select mode's checkbox on a sign-off row (AC8.1): the server says which rows may be signed. */
+interface Picking {
+  on: boolean;
+  chosen: ReadonlySet<string>;
+  toggle: (id: string, checked: boolean) => void;
+}
+
+function checkOf(gate: HumanGateOut, picking: Picking | undefined): IssueItem["check"] {
+  if (picking?.on !== true || gate.kind !== "sign_off_request") return undefined;
+  const title = gate.title ?? gate.subkind;
+  const blocked = gate.blocked || !gate.bulk_eligible;
+  return {
+    label: COPY.bulk.check(title),
+    checked: !blocked && picking.chosen.has(gate.id),
+    ...(blocked ? { disabled: true, reason: "blocked" } : {}),
+    onChange: (checked) => {
+      picking.toggle(gate.id, checked);
+    },
+  };
+}
+
+function itemOf(gate: HumanGateOut, today: string, now: Date, picking?: Picking): IssueItem {
+  const check = checkOf(gate, picking);
   const due =
     gate.due_on === null ? null : dueChip(today, gate.due_on, (iso) => formatDate(iso, { now }));
   const words = gate.blocked ? HOME_MESSAGES.blocked : (gate.context ?? null);
@@ -79,6 +104,7 @@ function itemOf(gate: HumanGateOut, today: string, now: Date): IssueItem {
     glyph: gate.blocked
       ? { icon: "triangle-alert", label: COPY.glyph.blocked, tone: "amber" }
       : GLYPH_OF[gate.kind],
+    ...(check === undefined ? {} : { check }),
   };
 }
 
@@ -87,13 +113,14 @@ function groupsOf(
   gates: readonly HumanGateOut[],
   today: string,
   now: Date,
+  picking: Picking,
 ): IssueGroup[] {
   return visibleBands(counts.bands).map((band: Band) => ({
     id: band,
     label: HOME_MESSAGES.bands[band],
     // The server's count, never counted here (the badge rule, DF-25).
     count: String(counts.bands[band]),
-    items: gates.filter((g) => g.band === band).map((g) => itemOf(g, today, now)),
+    items: gates.filter((g) => g.band === band).map((g) => itemOf(g, today, now, picking)),
   }));
 }
 
@@ -132,6 +159,21 @@ export function HOME02({
   const [said, setSaid] = useState("");
   const [drafts, setDrafts] = useState<Readonly<Record<string, DecisionDraft>>>({});
   const held = useRef<HumanGateOut | null>(null);
+  const [selecting, setSelecting] = useState(false);
+  const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const picking: Picking = {
+    on: selecting,
+    chosen: picked,
+    toggle: (id, checked) => {
+      setPicked((prev) => {
+        const next = new Set(prev);
+        if (checked) next.add(id);
+        else next.delete(id);
+        return next;
+      });
+    },
+  };
   const queueRef = useRef<HTMLDivElement>(null);
   const counts = useQuery({ ...humanGateCountsOptions(), ...POLL });
   const list = useQuery({
@@ -153,7 +195,7 @@ export function HOME02({
               items: gates.map((g) => itemOf(g, today, now)),
             },
           ]
-        : groupsOf(counts.data, gates, today, now);
+        : groupsOf(counts.data, gates, today, now, picking);
   const order = groups.flatMap((g) => g.items);
   const listed = order.some((i) => i.id === chosen);
   // `?gate=` naming a done gate (b): look among the done rows once the open list has loaded.
@@ -209,6 +251,30 @@ export function HOME02({
   };
 
   const total = counts.data?.total;
+  const anyEligible = gates.some((g) => g.kind === "sign_off_request" && g.bulk_eligible);
+  // The picked rows still open and eligible (a row the server moved drops out of the count).
+  const chosenGates = gates.filter((g) => picked.has(g.id) && g.bulk_eligible && !g.blocked);
+  const level = chosenGates[0]?.role ?? undefined;
+  const role = COPY.bulk.roles[level ?? ""] ?? "";
+  const bar =
+    selecting && chosenGates.length > 0 ? (
+      <div
+        data-home02="bulk-bar"
+        className="sticky bottom-0 flex h-[52px] items-center gap-[10px] bg-card px-[12px] shadow-[0_-0.5px_0_var(--color-hair)]"
+      >
+        <span className="flex-1 text-body">{COPY.bulk.selected(chosenGates.length)}</span>
+        <Button
+          variant="primary"
+          size="sm"
+          aria-haspopup="dialog"
+          onClick={() => {
+            setBulkOpen(true);
+          }}
+        >
+          {COPY.bulk.signOff(chosenGates.length, role)}
+        </Button>
+      </div>
+    ) : null;
   const record = (
     <div
       data-home02="subbar"
@@ -234,11 +300,18 @@ export function HOME02({
           <span aria-hidden="true" className="h-[14px] w-px bg-rule" />
           {COPY.deadline}
         </span>
-        {PLANNED_VISIBLE && (
-          <Button variant="secondary" size="sm" disabled>
-            {COPY.select}
-          </Button>
-        )}
+        <Button
+          variant="secondary"
+          size="sm"
+          aria-pressed={selecting}
+          disabled={done || !anyEligible}
+          onClick={() => {
+            setSelecting((s) => !s);
+            setPicked(new Set());
+          }}
+        >
+          {COPY.select}
+        </Button>
       </span>
     </div>
   );
@@ -290,6 +363,7 @@ export function HOME02({
         <p aria-live="polite" className="sr-only">
           {said}
         </p>
+        {bar}
       </div>
     );
 
@@ -349,6 +423,20 @@ export function HOME02({
           />,
         ]}
       />
+      {bulkOpen && (
+        <BulkSignOffSheet
+          open
+          onOpenChange={(open) => {
+            setBulkOpen(open);
+            if (!open) {
+              setSelecting(false);
+              setPicked(new Set());
+            }
+          }}
+          targets={chosenGates.map((g) => ({ type: g.subject.type, id: g.subject.id }))}
+          {...(level === undefined ? {} : { level })}
+        />
+      )}
     </div>
   );
 }

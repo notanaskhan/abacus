@@ -30,6 +30,7 @@ from decimal import Decimal
 from typing import Final, Literal, Protocol, cast
 
 from abacus.kernel.isolation import IsolationFailed, run_isolated
+from abacus.kernel.pdf_pages import problem_of
 from abacus.modules.evidence.active_content import is_active
 from abacus.modules.evidence.document_fields import (
     Aging,
@@ -101,13 +102,8 @@ def _text(value: object) -> str:
 
 def _reason(exc: BaseException) -> str:
     """`encrypted` when a password is needed (pdfplumber wraps pdfminer's error), else
-    `damaged`."""
-    from pdfminer.pdfdocument import PDFEncryptionError, PDFPasswordIncorrect
-
-    causes = (exc, *exc.args, exc.__cause__)
-    if any(isinstance(c, (PDFPasswordIncorrect, PDFEncryptionError)) for c in causes):
-        return "encrypted"
-    return "damaged"
+    `damaged` (K-01-T20: the kernel's reading, shared with the methodology importer)."""
+    return problem_of(exc)
 
 
 class _TextPage(Protocol):  # what pypdfium2's untyped text page offers

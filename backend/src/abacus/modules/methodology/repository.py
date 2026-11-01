@@ -180,11 +180,12 @@ async def _land_for_review(
     tenant_id: UUID,
     template_id: UUID,
     version_id: UUID,
-    actor: UUID,
+    actor: UUID | None,
     origin: str,
 ) -> None:
     """K-01-T05 (`methodology.lifecycle` on): the version waits in Needs review for a person to
-    approve it (K-01-T06); the template's published version and default stay as they are."""
+    approve it (K-01-T06); the template's published version and default stay as they are. `actor`
+    is None when the importer wrote the version (K-01-T21: the event's actor is the session's)."""
     types = (
         await session.execute(
             select(MethodologyTemplate.engagement_types).where(

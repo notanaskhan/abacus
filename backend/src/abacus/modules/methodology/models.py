@@ -6,6 +6,7 @@ events. Classification: titles, item text and guidance are internal (ADR-031).""
 from __future__ import annotations
 
 from datetime import date, datetime
+from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import ARRAY, FetchedValue, String
@@ -164,6 +165,8 @@ class ProgramStep(Base):
     publisher_step_id: Mapped[UUID | None]
     origin: Mapped[str]
     proposed_by_run_id: Mapped[UUID | None]
+    # K-01-T21: the importer's confidence in the step's boundaries (0224's column).
+    parse_confidence: Mapped[Decimal | None]
     parse_flag: Mapped[str | None]
     flag_resolution: Mapped[str | None]
     # K-01-T18: who resolved the parse flag, and when (0224's columns).

@@ -10,6 +10,10 @@ from abacus.modules.assurance.audits_contract import audits_router
 from abacus.modules.assurance.completion import g6, g7
 from abacus.modules.assurance.completion_routes import dashboard_router
 from abacus.modules.assurance.completion_routes import router as completion_router
+
+# A-04-T08/T09: the pure materiality engine, for the recommender's evaluation (BOUND-001).
+from abacus.modules.assurance.compute import materiality as materiality_engine
+from abacus.modules.assurance.ebp_contract import router as ebp_router
 from abacus.modules.assurance.home_counts import register_home_counts
 from abacus.modules.assurance.mapping import SUBSCRIPTIONS as MAPPING_SUBSCRIPTIONS
 from abacus.modules.assurance.mapping import mapping_facts, mapping_reviewables
@@ -54,6 +58,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     dashboard_router,
     tb_mapping_router,  # C9 v2 (docs/contracts/ledger-mapping.md): A-03-T03 stub
     planning_router,  # A-04-T01 audit planning stub (docs/contracts/audit-planning.md)
+    ebp_router,  # A-05-T04 ebp-workpapers v1 stub (docs/contracts/ebp-workpapers.md)
 )
 
 # SPEC-313 (TASK-331): trial balances appear in the sign-off matrix and count toward G5.
@@ -102,6 +107,7 @@ __all__ = [
     "RunSummary",
     "SectionState",
     "completion_router",
+    "materiality_engine",
     "record_phase",
     "register_audit_section",
     "register_audit_segment",

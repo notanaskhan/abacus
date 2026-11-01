@@ -4,12 +4,12 @@ title: Wire the designed links of the S17 Lane 2 screens (DEC-1272 follow-up)
 spec: SPEC-000  # DEC-1272's deferral; link-contract rule 1 (SPEC-307 AC-8)
 acceptance_criteria: [AC-1]  # quoted under Objective
 risk_zone: green
-status: in-review
+status: done
 epic: F-04
 plan_key: DEC-1272-follow-up
 branch: s17-wire-links
 created: 2026-10-30
-updated: 2026-10-30
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -30,3 +30,4 @@ test."
 
 ## Progress log
 - 2026-10-30: built on s17-wire-links. CLI-05 and TAX-09 stay planned (DEC-1273 names why).
+- 2026-11-01: merged to main in #809 (47967138f).
