@@ -2,7 +2,6 @@ import { FlagOffState } from "@abacus/ui";
 import { createRoute } from "@tanstack/react-router";
 import type { JSX } from "react";
 import { FeatureGate } from "../../app-core/flags";
-import type { Sig01Tab } from "../../screens/SIG-01";
 import { appRoute, lazyScreen } from "../root";
 
 // SIG-01 live (N-02-T40; docs/screens/SIG-01.md): `/signatures` behind `signatures.envelopes`.
@@ -11,7 +10,8 @@ import { appRoute, lazyScreen } from "../root";
 
 const Hub = lazyScreen(async () => (await import("../../screens/SIG-01")).SIG01);
 
-const TABS: readonly Sig01Tab[] = ["to_send", "out", "completed", "expired"];
+const TABS = ["to_send", "out", "completed", "expired"] as const;
+type Sig01Tab = (typeof TABS)[number];
 
 interface SignaturesSearch {
   tab?: Sig01Tab;
