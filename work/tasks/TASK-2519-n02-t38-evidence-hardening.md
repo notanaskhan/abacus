@@ -4,7 +4,7 @@ title: N-02-T38 Evidence package hardening and retention
 spec: SPEC-381  # N-02 §3.3, §3.13
 acceptance_criteria: [AC-17]  # and N-02 §3.3, §3.13
 risk_zone: red
-status: in-review
+status: done
 epic: N-02
 plan_key: N-02-T38
 branch: s20b-n02-t38

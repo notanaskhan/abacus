@@ -92,6 +92,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/audit-events/exports", "audit_event.export"),
     ("POST", "/v1/audit-events/exports/{export_id}/link", "audit_event.export"),
     ("POST", "/v1/audits/{work_item_id}/archive-record", "assurance.record_archive"),
+    ("POST", "/v1/audits/{work_item_id}/ebp/participants/{participant_id}/reveals", "pii.reveal"),
     ("POST", "/v1/audits/{work_item_id}/release-record", "assurance.record_release"),
     ("POST", "/v1/client-entities/{entity_id}/tin/reveal", "tin.reveal"),
     ("POST", "/v1/clients/{client_id}/contacts/{contact_id}/mfa-reset", "contact.mfa_reset"),

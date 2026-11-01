@@ -4,12 +4,12 @@ title: T-02-T14 ReturnFrame and TAX-02 a–f
 spec: SPEC-502
 acceptance_criteria: [AC-7]
 risk_zone: green
-status: in-review
+status: done
 epic: T-02
 plan_key: T-02-T14
 branch: s17-t02-t14
 created: 2026-10-30
-updated: 2026-10-30
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -48,3 +48,4 @@ Assistant control exists in a production build."
 
 ## Progress log
 - 2026-10-30: built in S17 Lane 2 on T-02-T12; tests run in the end review.
+- 2026-11-01: merged to main in #793 (63e35e6aa).

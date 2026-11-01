@@ -33,3 +33,14 @@ N-01 §0, ADR-089: `inbox.firm_intake`, `files.browser`, `portal.intake_upload` 
 | `matching.firm_intake` | ayushkbhatia | 2027-04-21 | **Thu Feb 25, 2027** | **Renew** to Wed May 26, 2027 | The matcher's intake mode per firm (N-01-T26's clearance comes first). Renew on May 26 to Tue Aug 24, then in the Aug 17–24 batch, before Sep 1, to at most Mon Nov 22, 2027, so it never expires inside Sep 1 – Oct 20 (the epic's "renewed in the Tue Aug 3 train to Mon Nov 1", kept in substance) |
 
 A renewal restarts `created` on the day it is made and may reach at most 90 days (ADR-089); record the outcome of each row here.
+
+## Q-02's firm export flag (Q-04-T350)
+
+Q-04-T350 retires `compliance.firm_export` in the **Thu Aug 5, 2027** train, before its **Wed Aug 25, 2027** expiry, once on-demand firm export works at every live firm (Q-02 hand-off, Q-02-T51). No live firm exists (DEC-1391), so its retirement condition cannot hold: under that decision's rule 3 the flag is renewed on its calendar instead. Created 2026-10-24, it expires 2027-04-21 under the DEC-137 override (`docs/architecture/feature-flags/evidence.yaml`).
+
+| Flag | Owner | Expires | Due | Action | Condition |
+|---|---|---|---|---|---|
+| `compliance.firm_export` | notanaskhan | 2027-04-21 | **Thu Feb 25, 2027** | **Renew** to Wed May 26, 2027 | Gates `/v1/firm/data-exports*` (dual approval, DEC-72); off answers 404. It is on for the Dev and synthetic tenants only. Renew again on May 26 to Wed Aug 25, 2027 |
+| `compliance.firm_export` | notanaskhan | 2027-08-25 | **Thu Aug 5, 2027** | **Retire** if on-demand export works at every live firm; else **Renew** to at most 90 days | Q-04-T350's acceptance: not registered after the Aug 5 train. With no live firm on Aug 5, renew (DEC-1391 rule 3) and carry the retirement to the first train after the last live firm's export check |
+
+A renewal restarts `created` on the day it is made and may reach at most 90 days (ADR-089); record the outcome of each row here.

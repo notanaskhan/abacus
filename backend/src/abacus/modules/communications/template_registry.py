@@ -227,6 +227,14 @@ class SystemSendContext:
     policy_version: int
 
 
+# DEC-1580: the sends a person makes as part of another authorised act, by key and that act's
+# action. Releasing a deliverable is the client service role's, which holds no `message.send`;
+# its "Deliverable ready" email is part of the release, so the release's own cell authorises it.
+SEND_AUTHORITIES: Final[frozenset[tuple[str, str]]] = frozenset(
+    {("deliverable_ready", "deliverable.publish")}
+)
+
+
 @dataclass(frozen=True)
 class SendOutcome:
     message_id: UUID
@@ -242,17 +250,26 @@ async def send_templated(
     *,
     scope: SendScope,
     idempotency_key: str,
+    authority: str | None = None,
 ) -> SendOutcome:
     """Authorise, render the key's published version for one recipient and queue it, or record
     it `blocked` with a `SendRefusal`. A person: `authorise(ctx, "message.send", engagement)`
     first, then `lint_values`, then the rendered text through `check_scope`. The system: the
     flag, the `reminder` key and a version the firm published, then the same checks (R-01-T19;
-    the policy's mode joins with R-01-T24, the client-mail gate with R-01-T27)."""
+    the policy's mode joins with R-01-T24, the client-mail gate with R-01-T27). `authority`: a
+    person's send that is part of another act, authorised by that act's action in place of
+    `message.send`, only for a pair in `SEND_AUTHORITIES` (DEC-1580)."""
     # Imported here: `template_send` imports this module.
     from abacus.modules.communications import template_send
 
     return await template_send.send(
-        ctx, key, recipient, variables, scope=scope, idempotency_key=idempotency_key
+        ctx,
+        key,
+        recipient,
+        variables,
+        scope=scope,
+        idempotency_key=idempotency_key,
+        authority=authority,
     )
 
 

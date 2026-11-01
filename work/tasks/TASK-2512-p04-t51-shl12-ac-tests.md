@@ -4,7 +4,7 @@ title: P-04-T51 independent acceptance tests for the SHL-12 UI
 spec: SPEC-000
 acceptance_criteria: [AC-1]
 risk_zone: amber
-status: in-review
+status: done
 epic: P-04
 plan_key: P-04-T51
 branch: s20-p04-t51

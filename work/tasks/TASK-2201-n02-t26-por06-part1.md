@@ -4,13 +4,13 @@ title: N-02-T26 POR-06 part 1 on T16 in fixture mode
 spec: SPEC-381
 acceptance_criteria: [AC-10, AC-12]
 risk_zone: green
-status: in-review
+status: done
 epic: N-02
 plan_key: N-02-T26
 branch: s17-n02-t26
 worktree: /Users/ayushkbhatia/Accrued/abacus-s17
 created: 2026-10-29
-updated: 2026-10-29
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -53,6 +53,7 @@ Tests to write (mapped to ACs):
 
 ## Progress log
 - `2026-10-29` — Built steps 1–5 on `s17-n02-t26` (build-only; tests run at the S17 end review).
+- 2026-11-01: merged to main in #741 (c51f5e96a).
 
 ## Decisions made during this task
 | Decision | Reason | Needs ADR? |

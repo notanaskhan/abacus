@@ -4,12 +4,12 @@ title: N-02-T24 registrations (MFA, Sign to-do, CSP, notification and email kind
 spec: SPEC-381  # N-02 §4.8; P-08-T13, P-08-T17; C16
 acceptance_criteria: [AC-10]
 risk_zone: red
-status: in-review
+status: done
 epic: N-02
 plan_key: N-02-T24
 branch: s17-n02-t24
 created: 2026-10-30
-updated: 2026-10-30
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -33,3 +33,4 @@ no email copy lives in code."
 ## Progress log
 - 2026-10-30: built (DEC-1286). Tests written, run at the end review. Human to-do: import the
   notification templates and publish the client keys per environment before the provider flag.
+- 2026-11-01: merged to main in #896 (bdf33d1e0).

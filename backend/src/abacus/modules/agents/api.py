@@ -52,6 +52,7 @@ from abacus.modules.agents.intake_match import IntakeOutcome, create_intake_matc
 from abacus.modules.agents.issue_client_requests import send_issue_to_client
 from abacus.modules.agents.knowledge import KnowledgeHit, knowledge_context, search_knowledge
 from abacus.modules.agents.methodology_citations import register_methodology_step
+from abacus.modules.agents.methodology_import_workflow import MethodologyImportWorkflow
 from abacus.modules.agents.pilot_w7 import w7_override_rate
 from abacus.modules.agents.proposal_slots import (
     AdoptedValue,
@@ -152,8 +153,14 @@ from abacus.modules.agents.workflow_types import (
     GuidanceDraftRunInput,
     HandleInput,
     HandleResult,
+    ImportBatchInput,
+    ImportBatchOutcome,
+    ImportFailInput,
+    ImportFinishInput,
+    ImportPagesOutcome,
     MatchInput,
     MatchRunInput,
+    MethodologyImportInput,
     NextTickInput,
     RunInput,
     ScreeningInput,
@@ -279,12 +286,19 @@ __all__ = [
     "HandleInput",
     "HandleResult",
     "Handoff",
+    "ImportBatchInput",
+    "ImportBatchOutcome",
+    "ImportFailInput",
+    "ImportFinishInput",
+    "ImportPagesOutcome",
     "InboxMatchWorkflow",
     "IntakeOutcome",
     "KnowledgeHit",
     "MatchInput",
     "MatchOutcome",
     "MatchRunInput",
+    "MethodologyImportInput",
+    "MethodologyImportWorkflow",
     "NamedReport",
     "NextTickInput",
     "OverrideRate",

@@ -28,9 +28,10 @@ export const shlScreens = {
   // P-03-T14 built a, b, e, f, h (`?ov=viewer:…` and the dock pane); it turns `fixture` with
   // P-03-T19, whose d state wires the designed SHL-08 → SHL-14 "Ask …" link (link rule 1).
   "SHL-08": { name: "Source viewer · drawer and pane", status: "planned", path: null },
-  "SHL-09": { name: "Field provenance popover", status: "planned", path: null },
-  // P-04-T41: a, b, c and f on fixtures as `?ov=approve:<ref>` (d, e, e′, g are later P-04 rows).
-  "SHL-10": { name: "Approve agent output", status: "planned", path: null },
+  "SHL-09": { name: "Field provenance popover", status: "fixture", path: null },
+  // P-04-T41 (a, b, c, f) and P-04-T42 (d, e, e′, g) on fixtures as `?ov=approve:<ref>`; HOME-02
+  // and SHL-15 open it through ov.SHL10 (link rule 1).
+  "SHL-10": { name: "Approve agent output", status: "fixture", path: null },
   "SHL-11": { name: "Decision card", status: "planned", path: null },
   "SHL-12": { name: "Sign-off modal", status: "planned", path: null },
   "SHL-13": { name: "Agent dock · run pane", status: "planned", path: null },
