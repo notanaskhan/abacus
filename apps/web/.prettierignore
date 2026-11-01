@@ -9,5 +9,7 @@ src/routes/handoff-links.json
 
 # Written by `make fixtures` from the Python scenario (F-04-T31); the backend test reads them byte for byte
 src/fixtures/seed/e*.*.json
+# A-03-T16 (DEC-1770): the 2026-09-24T10:20 export, written by `make fixtures` (byte-held).
+src/fixtures/seed/2026-*.*.json
 # Written by the `firm_inbox` slice's --export (N-01-T11); its web test reads it as written
 src/fixtures/seed/inbox-e0.json

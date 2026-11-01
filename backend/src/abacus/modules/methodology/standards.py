@@ -79,6 +79,8 @@ from abacus.modules.methodology.standards_contract import (
     ExamplesProvider,
     FirmStandardKind,
     PolicyRef,
+    RmmFor,
+    RmmMatrixPayload,
     StandardChangedCellOut,
     StandardCreateIn,
     StandardDetailOut,
@@ -93,6 +95,7 @@ from abacus.modules.methodology.standards_contract import (
     StandardVersionDiffOut,
     StandardVersionOut,
     StandardVersionSummaryOut,
+    rmm_for,
 )
 from abacus.modules.methodology.standards_contract import (
     attribute_sample_size as size_from_table,
@@ -1134,6 +1137,24 @@ async def policy_payload(
 
 
 _HUNDRED: Final = Decimal(100)
+
+
+async def rmm_matrix_for(
+    tenant_id: UUID,
+    *,
+    inherent_risk: Literal["low", "moderate", "high"],
+    control_risk: Literal["low", "moderate", "high", "max"],
+    as_of: date,
+) -> RmmFor:
+    """A-04-T13 (AC4.2): the RMM from the firm's matrix in effect on `as_of`. No matrix in effect:
+    `LookupError`; no row for the pair: `standard_row_missing`."""
+    policy = await current_version_of_kind(tenant_id, "rmm_matrix", as_of)
+    if policy is None:
+        raise LookupError("rmm_matrix")
+    payload = RmmMatrixPayload.model_validate(
+        await policy_payload(tenant_id, policy, "rmm_matrix")
+    )
+    return rmm_for(payload, policy, inherent_risk=inherent_risk, control_risk=control_risk)
 
 
 async def attribute_sample_size(

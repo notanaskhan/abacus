@@ -67,8 +67,18 @@ system on behalf of the adopter) starts; it maps by rule only.
 
 ## 6. Errors
 `unmapped_accounts {count}`, `content_changed`, `stale_version`, `mapping_run_in_progress`,
-`mapping_not_confirmed` (409); `grouping_set_invalid`, `import_invalid` (422); with the v0 codes
-in `c09-ledger.md`.
+`mapping_not_confirmed` (409); `grouping_set_invalid`, `import_invalid`,
+`predecessor_file_mismatch`, `predecessor_unreadable {reason}` (422); with the v0 codes in
+`c09-ledger.md`.
+
+**Prior-year source** (DEC-1769). The run body's `prior_source` is `prior_engagement` (the
+default: the engagement this one rolled forward from), `predecessor_file` with
+`predecessor_evidence_version_id` (a predecessor auditor's mapping sheet uploaded to this
+engagement; code reads its account column and its FS-line column, the line by key or label in
+the grouping version, and stores the keys on the set) or `none` (number ranges only). The file
+id is given exactly when the source is a file (`predecessor_file_mismatch`); another
+engagement's file is 404; a sheet without both columns is `predecessor_unreadable`. The source
+is fixed on the set and read back as `summary.prior_source`.
 
 ## 7. Audit and outbox events
 Audit: `grouping_set.imported`, `grouping_set.published`, `mapping_set.created`,

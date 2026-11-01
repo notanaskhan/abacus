@@ -6,7 +6,7 @@
 //     --mode portal` into dist/portal, P-08-T07, where route chunks count against the portal's
 //     initial load), or
 //   - one route chunk (a dynamically imported screen, with the static imports it adds to the initial
-//     load) is over 120 KB.
+//     load) is over 135 KB (120 KB until DEC-1682, a founder decision of 2026-11-01).
 // KB is 1000 bytes of gzip output at level 9. Dependency-free: reads dist/.vite/manifest.json
 // (`build.manifest` in vite.config.ts) and gzips with node:zlib.
 //
@@ -15,7 +15,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 
 const KB = 1000;
-export const BUDGETS = { firm: 250 * KB, portal: 150 * KB, route: 120 * KB };
+export const BUDGETS = { firm: 250 * KB, portal: 150 * KB, route: 135 * KB };
 
 /** @param {string} dist @param {string} file @returns {number} */
 function gzipSize(dist, file) {

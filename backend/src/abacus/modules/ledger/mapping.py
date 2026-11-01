@@ -573,7 +573,11 @@ async def create_mapping_set(
     tb_id: UUID,
     version_id: UUID,
     user_id: UUID,
+    prior_source: str = "prior_engagement",
+    predecessor_evidence_version_id: UUID | None = None,
+    predecessor: Mapping[str, str] | None = None,
 ) -> UUID:
+    """The set and, for a predecessor file, the keys parsed from it (DEC-1769: fixed at insert)."""
     version = await get_version(tx.session, version_id)
     if version is None or version.status != "published":
         raise MappingInvalid("version_not_published")
@@ -586,6 +590,9 @@ async def create_mapping_set(
         trial_balance_id=tb_id,
         grouping_set_version_id=version_id,
         created_by=user_id,
+        prior_source=prior_source,
+        predecessor_evidence_version_id=predecessor_evidence_version_id,
+        predecessor_keys=None if predecessor is None else dict(predecessor),
     )
     tx.record("mapping_set.created", target=Target("mapping_set", mapping_id))
     return mapping_id
