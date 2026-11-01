@@ -41,12 +41,17 @@ describe("HOME-02 figures", () => {
     expect(counts.total).toBe(11);
   });
 
-  it("names every artboard and the four queue conditions at 9:31 AM", () => {
+  it("names every artboard and the four queue conditions at 9:31 AM (b at 9:36)", () => {
     expect(Object.keys(scenarios)).toEqual([
       ...["a", "b", "c", "d", "e", "f", "g"],
       ...["show_done", "snoozed", "reassigned", "overdue"],
     ]);
     expect(scenarios.g.persona).toBe("samuel-ito");
-    for (const s of Object.values(scenarios)) expect(s.clock).toBe("2026-09-14T09:31:00-05:00");
+    // I-01-T17 (DEC-1750): b is the moment after the §754 decision, 9:36 AM; the rest 9:31 AM.
+    for (const [state, s] of Object.entries(scenarios)) {
+      expect(s.clock).toBe(
+        state === "b" ? "2026-09-14T09:36:00-05:00" : "2026-09-14T09:31:00-05:00",
+      );
+    }
   });
 });
