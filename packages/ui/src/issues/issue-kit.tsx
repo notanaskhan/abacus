@@ -10,6 +10,7 @@ import { Pill } from "../components/pill";
 import { Menu } from "../components/popover";
 import { EmptyState } from "../components/states";
 import { StatusDisc } from "../components/status";
+import { Checkbox } from "../components/toggles";
 import { Icon, type IconName } from "../icons";
 import { useMatch } from "../tracing/match";
 import type { MatchId } from "../tracing/types";
@@ -53,6 +54,15 @@ export interface IssueItem {
   /** A class glyph in place of the flag (severity): HOME-02's "?" decision chip, the sign-off
    * ring, the amber triangle of a blocked row (I-01-T16). `label` is its accessible name. */
   glyph?: { icon: IconName; label: string; tone?: "ink" | "amber" };
+  /** Select mode (HOME-02 bulk, I-01-T19): a leading checkbox beside the row, never inside it.
+   * `reason` marks why a disabled box cannot be chosen (`data-issue-check`) and is its tooltip. */
+  check?: {
+    checked: boolean;
+    label: string;
+    disabled?: boolean;
+    reason?: string;
+    onChange: (checked: boolean) => void;
+  };
 }
 
 export interface IssueGroup {
@@ -221,8 +231,24 @@ function IssueRow({
   onKey: (event: KeyboardEvent<HTMLButtonElement>) => void;
 }): JSX.Element {
   const done = isDone(item);
+  const check = item.check;
   return (
     <li className="flex">
+      {check !== undefined && (
+        <span
+          className="flex flex-none items-start pt-[9px] pl-[12px] hairline-t"
+          {...(check.reason === undefined
+            ? {}
+            : { title: check.reason, "data-issue-check": check.reason })}
+        >
+          <Checkbox
+            label={check.label}
+            checked={check.checked}
+            disabled={check.disabled === true}
+            onChange={check.onChange}
+          />
+        </span>
+      )}
       <button
         type="button"
         data-issue-row={item.id}

@@ -152,6 +152,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "assurance.record_archive",  # A-01-T02 (TASK-1101)
         "assurance.record_phase",
         "assurance.record_release",
+        "attention_flag.convert",  # A-04-T01 (DEC-1757)
         "citation.create",  # P-03-T02 (C4 v1)
         "citation.read",
         "citation.relink",
@@ -168,12 +169,15 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "connection.read_log",
         "connection.reconnect_request",  # A-02 §4.4 (TASK-1185)
         "connection.retry",  # A-02 security review (DEC-316): firm side, attest client data
+        "control.edit",
+        "control.read",
         "dashboard.read",  # SPEC-317 (TASK-460)
         "decision.decide",  # P-04-T08 (TASK-414)
         "decision.notify",  # P-04-T08 (TASK-414)
         "decision.read",  # P-04-T08 (TASK-414)
         "decision.reassess",  # P-04-T08 (TASK-414)
         "decision.request_analysis",  # P-04-T08 (TASK-414)
+        "deficiency.propose_severity",
         "entry_assessment.adopt",  # SPEC-044 (TASK-109)
         "entry_assessment.request",  # SPEC-037 Q4 (TASK-085)
         "envelope.evidence_download",  # N-02-T02 (SPEC-381)
@@ -186,6 +190,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "evidence.reject",
         "evidence.unlock",  # P-03-T02 (C4 v1)
         "evidence.upload",
+        "exception.route",
         "export.create",  # A-01-T17 (TASK-1261): an engagement export is client data
         "export.download",
         "export.read",
@@ -195,6 +200,10 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "finding.raise",  # SPEC-043 (TASK-107)
         # P-06-T14: the send is client data, per person; a draft is not (SPEC-027 AC-8, DEC-220).
         "follow_up.send",
+        "fraud_inquiry.request",
+        "fraud_minutes.approve",
+        "fraud_session.edit",
+        "fraud_session.read",
         "generated_document.read",  # P-11 (C11)
         "generated_document.regenerate",  # P-11 (C11)
         "guidance_draft.decide",  # SPEC-035 (TASK-073)
@@ -215,6 +224,9 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "mapping_set.read",  # A-03-T01 (DEC-1550)
         "mapping_set.run",  # A-03-T01 (DEC-1550)
         "materiality.decide",  # SPEC-300 (TASK-301)
+        "materiality.propose",
+        "materiality.read",
+        "materiality.reassess",
         "materiality.set",  # SPEC-037 (TASK-083)
         "message.send",  # ADR-164 item 2 (P-07-T24): client-facing
         "misstatement.set",  # SPEC-043 (TASK-107)
@@ -224,6 +236,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "procedure.configure",
         "procedure.read",
         "procedure.run",
+        "procedure.tailor",
         "proposal.approve",  # P-04-T08 (TASK-414)
         "proposal.decide_change_set",  # P-04-T24: a person decides a change set's rows
         "proposal.follow_up",  # P-04-T08 (TASK-414)
@@ -246,6 +259,10 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "review_note.withdraw",  # P-04-T07 (TASK-413)
         "risk.approve",  # SPEC-300 (TASK-301)
         "risk.assess",
+        "risk.edit",
+        "risk.link",
+        "risk.read",
+        "risk.route_for_approval",
         "run_content.read",  # DEC-87 (TASK-5002)
         "run_trace.export",  # SPEC-318 (TASK-461)
         "sample.approve",  # SPEC-040 (TASK-100)
@@ -255,6 +272,8 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "sample_set.read",  # A-03-T01 (DEC-1550)
         "screening.feedback",  # P-06-T15 (SHL-20 f)
         "screening.request",
+        "service_org.edit",
+        "service_org.read",
         "sign_off.bulk",  # P-04-T07 (TASK-413)
         "sign_off.create",  # P-04-T07 (TASK-413)
         "sign_off.eqr",  # SPEC-308 (TASK-319)
@@ -263,6 +282,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "sign_off.prepare",
         "sign_off.read",  # P-04-T07 (TASK-413)
         "sign_off.review",
+        "soc_report.evaluate",
         "statement.approve",  # SPEC-312 (TASK-324)
         "suggestion.resolve",  # P-04-T08 (TASK-414)
         "tie_out_check.define",  # SPEC-310 (TASK-321)
@@ -272,7 +292,9 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "trial_balance.read",
         "upload_review.read",  # SPEC-030 (TASK-059 D1)
         "upload_review.request",  # SPEC-030 (TASK-058)
+        "workpaper.draft",
         "workpaper.edit",  # SPEC-308 (TASK-319)
+        "workpaper.export",
         "workpaper.read",
         "workpaper.sign_ready",  # SPEC-037 (TASK-084)
         "workpaper.sign_reviewed",
