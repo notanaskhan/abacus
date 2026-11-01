@@ -13,7 +13,7 @@ const ARTBOARDS = [
   { st: "b", ready: "Upload Form 1099-DA or your exchange's 2025 gains and losses report" },
   { st: "c", ready: "Thanks — Kevin Osei has your answers." },
   { st: "d", ready: "Your answers go only to the Brightwater Hale audit team." },
-  { st: "e", ready: "From Hannah Leclerc · Brightwater Hale" },
+  { st: "e", ready: "From Brightwater Hale" },
   { st: "f", ready: "No questions right now." },
 ] as const;
 
