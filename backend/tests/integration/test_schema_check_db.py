@@ -1764,7 +1764,9 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {
                 "evidence_type",
                 "relevant",
+                "row_version",
                 "services",
+                "soc_report_id",
                 "status",
                 "subservice_orgs",
                 "third_party_contact_id",

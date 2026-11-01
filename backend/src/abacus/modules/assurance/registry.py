@@ -356,6 +356,8 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
             "status",
             "subservice_orgs",
             "third_party_contact_id",
+            "soc_report_id",
+            "row_version",
             "updated_at",
         }
     ),

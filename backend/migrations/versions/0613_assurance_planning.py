@@ -222,6 +222,8 @@ UPDATES: dict[str, tuple[str, ...]] = {
         "status",
         "subservice_orgs",
         "third_party_contact_id",
+        "soc_report_id",
+        "row_version",
         "updated_at",
     ),
     "fraud_brainstorm_sessions": (
@@ -397,13 +399,15 @@ def upgrade() -> None:
         CREATE TABLE service_organizations (
             id uuid PRIMARY KEY DEFAULT gen_random_uuid(),{_SCOPE}
             name text NOT NULL CHECK (char_length(btrim(name)) BETWEEN 1 AND 200),
-            services text NOT NULL DEFAULT '' CHECK (char_length(services) <= 500),
+            services text NOT NULL DEFAULT '' CHECK (char_length(services) <= 1000),
             relevant boolean NOT NULL DEFAULT true,
             evidence_type text NOT NULL DEFAULT 'none' CHECK (evidence_type IN
                 ('soc1_type2', 'soc1_type1', 'certification', 'tested_directly', 'none')),
             status text NOT NULL DEFAULT 'pending' CHECK (status IN {_in(SERVICE_ORGANIZATION)}),
             subservice_orgs {_JSON_ARRAY.format(name="subservice_orgs")},
             third_party_contact_id uuid NULL,
+            soc_report_id uuid NULL,
+            row_version integer NOT NULL DEFAULT 1 CHECK (row_version >= 1),
             created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
             updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
             UNIQUE (tenant_id, id),
