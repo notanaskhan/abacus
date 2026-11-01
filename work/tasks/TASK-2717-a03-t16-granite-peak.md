@@ -38,11 +38,9 @@ the 1,912 disbursements as a GL snapshot with the population and the stratified 
 - `tests/integration/test_scenario_sampling.py` runs at the new snapshot and checks Granite: 1 passed.
 
 ## Remaining
-1. FY2025's prior mapping: no FY2025 engagement; `run_start`'s predecessor-file path is unbuilt
-   (A-03-T14).
+1. FY2025's prior mapping: built in TASK-2718 (DEC-1769) as the predecessor's file.
 2. Northwind Distributions (64, "10 of 64 · Draft", seed 0x7B13C4): the design gives no method.
-3. `make fixtures export` and the fixture-vs-seed-demo equivalence test (tie labels and
-   `account_codes` differ from the C9 fixture today).
+3. `make fixtures export` and the equivalence test: built in TASK-2719 (DEC-1770).
 
 ## Progress log
 - 2026-11-01: built; R-SO-5 refused Caleb's confirm until Granite's G2 was met — the same

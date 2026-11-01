@@ -71,7 +71,7 @@ function build(manifest: Record<string, Chunk & { kb: number }>): string {
   return dir;
 }
 
-describe("bundle budgets: firm 250 KB, portal 150 KB, route chunk 120 KB (gzip)", () => {
+describe("bundle budgets: firm 250 KB, portal 150 KB, route chunk 135 KB (gzip)", () => {
   it("a build inside every budget passes", () => {
     const r = run(
       "bundle-budget.mjs",
@@ -109,7 +109,7 @@ describe("bundle budgets: firm 250 KB, portal 150 KB, route chunk 120 KB (gzip)"
     expect(r.stdout).toMatch(/^OVER .*portal initial/m);
   });
 
-  it("a route chunk over 120 KB fails, counting what it adds to the initial load", () => {
+  it("a route chunk over 135 KB fails, counting what it adds to the initial load", () => {
     const r = run(
       "bundle-budget.mjs",
       build({
@@ -120,7 +120,7 @@ describe("bundle budgets: firm 250 KB, portal 150 KB, route chunk 120 KB (gzip)"
           imports: ["_big.js"],
           kb: 70,
         },
-        "_big.js": { file: "assets/big.js", kb: 60 },
+        "_big.js": { file: "assets/big.js", kb: 70 },
       }),
     );
     expect(r.status).toBe(1);

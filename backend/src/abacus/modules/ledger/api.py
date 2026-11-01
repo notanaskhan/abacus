@@ -9,8 +9,10 @@ from abacus.modules.ledger.audit_targets import (
 )
 from abacus.modules.ledger.compute.mapping import (
     CONFIDENCE,
+    PredecessorColumns,
     Subtotal,
     Tallies,
+    predecessor_keys,
     rule_line,
     subtotals,
     tallies,
@@ -197,6 +199,7 @@ __all__ = [
     "NormaliseError",
     "NormalisedTrialBalance",
     "Posting",
+    "PredecessorColumns",
     "Problem",
     "SameSnapshot",
     "ScopeFacts",
@@ -262,6 +265,7 @@ __all__ = [
     "normalised_code",
     "parse_grouping_set",
     "parse_grouping_workbook",
+    "predecessor_keys",
     "prior_keys",
     "publish_version",
     "published_versions",
