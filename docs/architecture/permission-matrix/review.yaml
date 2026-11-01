@@ -32,7 +32,7 @@ actions:
   decision.request_analysis: {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, agent: deny, system: deny, independence: required}   # SHL-11 b: "Request more analysis"
   decision.notify:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny, independence: required}   # SHL-11 b: "Notify Margaret"
   decision.reassess:        {engagement_partner: allow, manager: allow, agent: deny, system: deny, independence: required}   # SHL-11 d: the owner's provider recomputes in code
-  decision_card.raise:      {agent: task_scope}   # P-04-T23: review.api.raise_decision_card, the agent through its task (no route); options come from the kind's provider (DEC-502)
+  decision_card.raise:      {manager: allow, senior: allow, agent: task_scope, independence: required}   # P-04-T23: review.api.raise_decision_card, the agent through its task (no route); A-04-T12: a manager or senior raises through an owner's route (materiality proposals); options come from the kind's provider (DEC-502)
   # --- Issues and fix instructions (C3 stub 3, P-04-T11; ADR-160 clause 7). Every resolution
   # and every write denies agent and system (INV-1, ISSUE-001). Agent-raised and engine issues
   # arrive with review.api.create_issue (P-04-T30) and their own task_scope row. The reviewer

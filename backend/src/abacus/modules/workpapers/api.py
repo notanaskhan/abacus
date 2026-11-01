@@ -21,6 +21,7 @@ from abacus.modules.workpapers.core import (
     display_workpaper_cell,
     verify_workpaper_cell,
 )
+from abacus.modules.workpapers.designed import PaperFact, work_item_papers
 from abacus.modules.workpapers.drafting import (
     SOURCE as SECTION_SOURCE,
 )
@@ -28,6 +29,14 @@ from abacus.modules.workpapers.drafting import (
     apply_cell_suggestion,
     draft_paper,
     paper_engagement,
+)
+from abacus.modules.workpapers.layouts import (
+    AddressInvalid,
+    DesignedLayout,
+    SheetLayout,
+    designed_layout,
+    register_designed_layout,
+    resolve,
 )
 from abacus.modules.workpapers.procedures import (
     WORKPAPER_KINDS,
@@ -83,21 +92,29 @@ __all__ = [
     "CELL_TARGET",
     "ROUTERS",
     "WORKPAPER_KINDS",
+    "AddressInvalid",
     "CodeTaken",
+    "DesignedLayout",
     "IssueLink",
     "NoAssuranceItem",
     "PackConfigurationError",
     "PackError",
+    "PaperFact",
+    "SheetLayout",
     "WorkpaperInvalid",
     "apply_cell_suggestion",
     "bound_steps",
     "checks_for",
     "checks_router",
+    "designed_layout",
     "draft_paper",
     "link_issue",
     "pack_errors",
     "paper_engagement",
+    "register_designed_layout",
+    "resolve",
     "router",
     "tie_digests",
     "validate_pack",
+    "work_item_papers",
 ]

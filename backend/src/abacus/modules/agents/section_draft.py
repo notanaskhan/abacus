@@ -74,6 +74,7 @@ from abacus.modules.agents.section_sources import (
     CELL_TARGET,
     PackRefused,
     SourcePaper,
+    mode_kinds,
     section_source,
 )
 from abacus.modules.agents.service import (
@@ -95,6 +96,11 @@ from abacus.modules.methodology.api import VersionStep, version_steps
 
 DRAFTER: Final = "workpapers.section_drafter"
 MODES: Final = frozenset({"gap", "risk_narrative", "risk", "ic", "soc1"})
+# A-05-T12 (DEC-1956): the EBP modes (version 2 of the spec), synthetic firms only like the rest.
+EBP_MODES: Final = frozenset(
+    {"ebp_provisions", "ebp_attribute", "ebp_reconcile", "ebp_trust", "ebp_form5500"}
+    | {"related_parties"}
+)
 PACK_ERROR: Final = "pack_configuration_error"
 ANCHOR: Final = "section_draft"
 MAX_STEPS: Final = 120
@@ -128,6 +134,12 @@ class UnknownMode(DomainConflict):
     """The spec declares no such mode."""
 
     code = "unknown_mode"
+
+
+class ModeNotForPaper(DomainConflict):
+    """The mode's owner does not draft this kind of paper with it (A-05-T12)."""
+
+    code = "mode_not_for_paper"
 
 
 @dataclass(frozen=True)
@@ -201,6 +213,9 @@ async def start(
     # The route authorised it too; this public entry never relies on its caller (defence in depth).
     await authorise(ctx, "workpaper.draft", engagement.resource())
     paper = await section_source().paper(ctx.tenant, engagement_id, workpaper_id, section_key)
+    kinds = mode_kinds(mode)
+    if kinds is not None and paper.kind not in kinds:
+        raise ModeNotForPaper(facts={"mode": "mode"})
     event = uuid5(
         NAMESPACE_URL,
         f"abacus:section_draft:{ctx.tenant_id}:{workpaper_id}:{section_key}:{idempotency_key}",

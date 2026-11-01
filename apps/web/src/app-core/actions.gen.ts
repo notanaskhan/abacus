@@ -99,6 +99,7 @@ export const ACTIONS = [
   "decision.reassess",
   "decision.request_analysis",
   "decision_card.raise",
+  "decision_recommend.run",
   "deficiency.propose_severity",
   "deliverable.publish",
   "delivery_packet.approve",
