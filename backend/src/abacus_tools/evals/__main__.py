@@ -16,6 +16,9 @@ from abacus_tools.evals.decision_recommendation import AGENT as RECOMMENDER
 from abacus_tools.evals.decision_recommendation import recommend_main
 from abacus_tools.evals.report import render
 from abacus_tools.evals.runner import EvalRoute, Subset, guard, guard_real, prepare, run
+from abacus_tools.evals.section_drafting import AGENT as SECTION_DRAFTER
+from abacus_tools.evals.section_drafting import Mode as DraftMode
+from abacus_tools.evals.section_drafting import draft_suite_main
 from abacus_tools.evals.upload_review import (
     evaluate,
     fake_answers,
@@ -39,6 +42,8 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--route", choices=["fake", "direct", "bedrock"], default="fake")
     # N-01-T21: the matcher's suite has an audit section and an intake section.
     parser.add_argument("--section", choices=["audit", "intake"], default="audit")
+    # A-04-T14: the section drafter's suite has a case set per mode.
+    parser.add_argument("--mode", choices=["gap", "risk_narrative", "risk", "ic", "soc1"])
     args = parser.parse_args(argv)
     if args.agent == "evidence.upload_reviewer":  # SPEC-030 (TASK-058 D4): its own runner
         return review_main(
@@ -50,6 +55,13 @@ def main(argv: list[str]) -> int:
     if args.agent == RECOMMENDER:  # A-04-T09: code-graded, no stack (TASK-2802)
         return recommend_main(
             cast(str, args.route), cast(Path, args.out), cast(Subset, args.subset)
+        )
+    if args.agent == SECTION_DRAFTER:  # A-04-T14: code-graded, no stack (TASK-2902)
+        return draft_suite_main(
+            cast(str, args.route),
+            cast(Path, args.out),
+            cast(Subset, args.subset),
+            cast(DraftMode | None, args.mode),
         )
     if args.agent == DRAFTER:  # SPEC-035 (TASK-072): its own runner
         return draft_main(
