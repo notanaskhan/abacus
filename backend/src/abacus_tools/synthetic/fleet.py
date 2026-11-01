@@ -7,7 +7,9 @@ Each firm is the Brightwater Hale shape, counted from the F-04 scenario so it ca
 seats across the three offices, its 184 clients, its 27 audit engagements (type, period, status and
 due date of each Brightwater audit in turn), one published PBC list per audit with the F-04
 generator's request list (`synthetic.requests.request_list`, 16 requests in glossary terms), and
-two client people per audit with an engagement grant. Names are numbered placeholders ("Load Firm
+two client people per audit with an engagement grant. Q-03-T132 adds the tax surge after the
+audits: 5 to 15 returns per firm with organizers, 8879 documents and K-1 sets (`fleet_tax`).
+Names are numbered placeholders ("Load Firm
 007", "Load Client 112 (Firm 007)"), every address on the `.test` sink domain, every firm
 `synthetic`. Profiles nest: firm n is the same firm in x1, x25 and x100, so x25 after x1 adds 24.
 
@@ -473,7 +475,12 @@ class FleetResult:
 
 
 async def load(
-    dsn: str, profile: str, *, staging: bool = False, shape: FirmShape | None = None
+    dsn: str,
+    profile: str,
+    *,
+    staging: bool = False,
+    shape: FirmShape | None = None,
+    tax: bool = True,
 ) -> FleetResult:
     guard(dsn, staging=staging)
     perf_guard(dsn, profile, staging=staging)
@@ -487,12 +494,17 @@ async def load(
             )
             if synthetic is False:
                 raise LoadRefused(f"{firm.tenant} exists and is not synthetic")
+        # Q-03-T132: the tax-surge content after each firm's audits (its own module).
+        from abacus_tools.synthetic.fleet_tax import has_room, load_tax
+
         for firm in firms:
             await _firm(conn, firm, counts)
             await _seats(conn, firm, counts)
             await _clients(conn, firm, counts)
             await _audits(conn, firm, counts)
             await _flags(conn, firm, counts)
+            if tax and has_room(firm):
+                await load_tax(conn, firm, counts)
     finally:
         await conn.close()
     return FleetResult(len(firms), counts.written, counts.skipped)
