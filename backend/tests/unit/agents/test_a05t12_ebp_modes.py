@@ -24,7 +24,7 @@ def test_one_section_drafter_spec_with_one_suite() -> None:
     files = [p for p in SPECS.glob("*.yaml") if "section_drafter" in p.name]
     assert [p.name for p in files] == ["workpapers.section_drafter.yaml"]
     drafter = spec(DRAFTER)
-    assert drafter.version == 2
+    assert drafter.version == 3
     assert drafter.evaluation_suite == "evals/workpapers_section_drafter"
     assert "ebp.read" in drafter.task_scope
 
