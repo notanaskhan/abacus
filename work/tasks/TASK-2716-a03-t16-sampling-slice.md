@@ -27,19 +27,21 @@ updated: 2026-11-01
   set, and draws with seeds 0x3C77D0 and 0x5E2A91 (25 each; v2's 25 the design's, in order).
 - `sampling.draw(..., scenario_seed=)` runs inline (the loader has no worker); synthetic firms only.
 - `sampling.api` and `assurance.api` export the services and models the loader uses.
-- `tests/integration/test_scenario_sampling.py`: loads, checks the figures, reloads writing nothing.
+- G2 (DEC-1767, Ayush's call): on Sep 15 Ana Cruz and Kira Ross confirm, Margaret names Dana
+  Kowalski the SKE designee and concludes independence; Marcus signs L1 on Version 2 and Hannah
+  approves it, as AUD-11 a shows. `review.api` exports `sign_target` for the loader.
+- `tests/integration/test_scenario_sampling.py`: loads, checks the figures and both sign-offs,
+  reloads writing nothing.
 
 ## Remaining
-1. **Version 2's L1 and approval (AUD-11 a):** R-SO-5 needs Northwind's G2 on an attest client;
-   CLI-08 leaves G2 unmet at E0 (Ana Cruz unconfirmed). Product decision needed (DEC-1767): confirm
-   Ana Cruz before Sep 16 in the scenario (changes CLI-08 at E0), or show AUD-11 a's "Prepared ·
-   MD" / "✓ HL" only from a later snapshot.
-2. Granite Peak FY2026: the 128-account TB (allocated to A-02 §5.3's 14 lines), the mapping set
+1. Granite Peak FY2026: the 128-account TB (allocated to A-02 §5.3's 14 lines), the mapping set
    and its confirm (the same G2 question), FY2025's prior mapping, and the 1,912 disbursements as a
    GL snapshot with the population and the stratified draw (seed 0x7C31B4).
-3. Northwind Distributions (64, "10 of 64 · Draft", seed 0x7B13C4): the design gives no method.
-4. `make fixtures export` for these and the fixture-vs-seed-demo equivalence test (§5.4 states).
+2. Northwind Distributions (64, "10 of 64 · Draft", seed 0x7B13C4): the design gives no method.
+3. `make fixtures export` for these and the fixture-vs-seed-demo equivalence test (§5.4 states).
 
 ## Progress log
 - 2026-11-01: slice built and its integration test run (1 passed); the G2 conflict found by the
   load, not by a guess.
+- 2026-11-01: G2 decided (confirm Ana Cruz earlier); the load also needed Kira Ross's
+  confirmation and an SKE designee, both added on Sep 15; test passes with L1 and L2.

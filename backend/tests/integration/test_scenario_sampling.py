@@ -5,9 +5,9 @@ AUD-11 a's (the handoff and the A-03-T09 goldens), not the code's:
 - BH-EBP-210 Table 2 published (moderate, 10 %, 0 %, 90 % → 25); BH FS groupings v1 published
   with 13 groupings and 14 FS lines.
 - Participants: Version 1 on census v1 (409, seed 0x3C77D0, its register tie off by $182,300.00)
-  and Version 2 on census v2 (412, seed 0x5E2A91, two ties), 25 items each, both drafts; Version
-  2's 25 are the design's in draw order. Its L1 and approval wait on Northwind's G2 (DEC-1767),
-  so no sign-off exists yet.
+  and Version 2 on census v2 (412, seed 0x5E2A91, two ties), 25 items each; Ana Cruz confirms on
+  Sep 15 (DEC-1767), so Version 2 is prepared by Marcus Delaney (L1) and approved by Hannah
+  Leclerc (L2), its 25 the design's in draw order.
 
 The load gets its own database: the session's `migrated_db` holds the loader test's E0."""
 
@@ -67,7 +67,8 @@ async def test_the_sampling_slice_loads_the_participants_sample_through_services
         "WHERE s.tenant_id = $1 AND s.title = 'Participants' ORDER BY v.version_no",
         TENANT,
     )
-    assert [(r["version_no"], r["status"]) for r in versions] == [(1, "draft"), (2, "draft")]
+    statuses = [(r["version_no"], r["status"]) for r in versions]
+    assert statuses[1] == (2, "approved") and statuses[0][1] in ("superseded", "draft")
     assert [(r["seed"], r["final_size"], r["record_count"]) for r in versions] == [
         (0x3C77D0, 25, 409),
         (0x5E2A91, 25, 412),
@@ -93,12 +94,16 @@ async def test_the_sampling_slice_loads_the_participants_sample_through_services
         TENANT,
     )
     assert [names[r["record_key"]] for r in items] == [n for n, _ in sampling_content.PARTICIPANTS]
-    signed = await seed.value(
-        "SELECT count(*) FROM sign_offs WHERE tenant_id = $1 "
-        "AND target_type = 'sample_set_version'",
+    signed = await seed.rows(
+        "SELECT level, signed_by FROM sign_offs WHERE tenant_id = $1 "
+        "AND target_type = 'sample_set_version' ORDER BY level",
         TENANT,
     )
-    assert signed == 0
+    seats = {s.initials: s for s in loader.SEATS}
+    assert [(r["level"], r["signed_by"]) for r in signed] == [
+        (1, loader.user_id_of(seats["MD"])),
+        (2, loader.user_id_of(seats["HL"])),
+    ]
 
     again = await loader.load(own_db.superuser_dsn, SNAPSHOT, slices=SLICES, wait=False)
     assert (again.replayed, again.skipped) == (0, len(events))

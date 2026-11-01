@@ -91,6 +91,9 @@ from abacus.modules.review.sign_offs import (
     OpenReviewNotes,
     Segregation,
     UncitedChange,
+    # A-03-T16: the scenario loader (tooling) signs as the person the design names; every
+    # product call stays in review (SIGNOFF-001).
+    sign_target,
 )
 from abacus.modules.review.slots import (
     REQUIRED_LEVELS,
@@ -275,6 +278,7 @@ __all__ = [
     "run_fix",
     "seal_text",
     "sign_off_states",
+    "sign_target",
     "stale_of",
     "states_of",
     "typed_value",

@@ -127,8 +127,10 @@ from abacus.modules.engagements.api import (
     assurance_item,
     assurance_item_id,
     change_team_role,
+    conclude_independence,
     create_draft,
     decide_acceptance,
+    designate_contact,
     remove_from_team,
     send_to_partner,
     start_acceptance,
@@ -215,7 +217,10 @@ from abacus.modules.requests.api import (
     send_question,
     update_item,
 )
+from abacus.modules.review.api import STATEMENTS as SIGN_OFF_STATEMENTS
+from abacus.modules.review.api import sign_target
 from abacus.modules.sampling.api import (
+    ApproveIn,
     ParametersIn,
     PopulationIn,
     SampleSetIn,
@@ -226,7 +231,9 @@ from abacus.modules.sampling.api import (
     create_population,
     create_sample_set,
     record_tie,
+    sample_set_view,
 )
+from abacus.modules.sampling.api import approve as approve_sample
 from abacus.modules.sampling.api import draw as draw_sample
 from abacus.modules.tax.api import import_engine_file, share_k1_internal
 from abacus_tools import deploy_lock
@@ -2152,7 +2159,8 @@ async def _ebp_documents_uploaded(_: asyncpg.Connection, __: Scenario, event: Ev
 # Through the services as the people the design names: Margaret imports and publishes BH FS
 # groupings v1; Dana uploads the census versions; Marcus builds each population, records its ties,
 # creates the Participants set and draws with the scenario seeds (inline: the loader has no
-# worker). Version 2's L1 and approval wait on Northwind's G2 (DEC-1767).
+# worker); Marcus prepares Version 2 and Hannah approves it, once Ana Cruz's confirmation meets
+# Northwind's G2 (DEC-1767).
 
 _SAMPLING_TIES: Final = {"register": sampling_content.REGISTER, "w3": sampling_content.W3}
 
@@ -2319,6 +2327,66 @@ async def _sample_version_drawn(conn: asyncpg.Connection, _: Scenario, event: Ev
         ),
         scenario_seed=int(cast(int, event.data["seed"])),
     )
+
+
+async def _sampling_independence_concluded(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    """Margaret concludes Northwind's independence once every team member has confirmed (G2)."""
+    await conclude_independence(
+        await _staff_context(conn, event), _a(event), option="independent", safeguards=None
+    )
+
+
+async def _sampling_contact_designated(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    """Margaret names the client's contact in the designation (Dana Kowalski, SKE designee)."""
+    engagement = _a(event)
+    contact = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT c.id FROM contacts c JOIN engagements e ON e.client_id = c.client_id "
+        "WHERE e.id = $1 AND c.display_name = $2",
+        engagement,
+        str(event.data["contact"]),
+    )
+    if contact is None:
+        raise LookupError(f"{event.data['contact']} is not a contact of the engagement's client")
+    await designate_contact(
+        await _staff_context(conn, event), engagement, cast(UUID, contact), "ske_designee"
+    )
+
+
+async def _sample_version_prepared(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Marcus signs L1 on the version he drew, on the content hash he sees (AUD-11 a)."""
+    ctx = await _staff_context(conn, event)
+    sample_set = await _participants_set(conn)
+    view = await sample_set_view(ctx, sample_set, int(cast(int, event.data["version"])))
+    version_id = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM sample_set_versions WHERE sample_set_id = $1 AND version_no = $2",
+        sample_set,
+        view.version_no,
+    )
+    await sign_target(
+        ctx,
+        "sample_set_version",
+        cast(UUID, version_id),
+        1,
+        f"sha256:{view.content_hash}",
+        SIGN_OFF_STATEMENTS[1].version,
+    )
+
+
+async def _sample_version_approved(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Hannah approves (L2), never the preparer; the earlier version is superseded."""
+    ctx = await _staff_context(conn, event)
+    sample_set = await _participants_set(conn)
+    version = int(cast(int, event.data["version"]))
+    view = await sample_set_view(ctx, sample_set, version)
+    await approve_sample(ctx, sample_set, version, ApproveIn(seen_hash=str(view.content_hash)))
 
 
 # --- service-backed events ---------------------------------------------------------------------
@@ -3651,6 +3719,10 @@ HANDLERS: Final[dict[str, Handler]] = {
     "sampling.tie_recorded": _sampling_tie_recorded,
     "sampling.sample_set_created": _sample_set_created,
     "sampling.version_drawn": _sample_version_drawn,
+    "engagements.independence_concluded": _sampling_independence_concluded,
+    "engagements.contact_designated": _sampling_contact_designated,
+    "sampling.version_prepared": _sample_version_prepared,
+    "sampling.version_approved": _sample_version_approved,
     # P-08-T14 (`--slice portal`): branding before its host; people after the work items they name.
     "portal.branding_set": _branding_set,
     "portal.host_added": _host_added,

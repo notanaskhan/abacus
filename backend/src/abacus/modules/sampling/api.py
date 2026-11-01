@@ -27,6 +27,7 @@ from abacus.modules.sampling.compute import (
 )
 from abacus.modules.sampling.contract import (
     ROUTERS,
+    ApproveIn,
     ParametersIn,
     PopulationIn,
     SampleSetIn,
@@ -74,10 +75,12 @@ from abacus.modules.sampling.sample_sets import (
     GATE_KIND,
     TARGET,
     approval_gate,
+    approve,
     create_sample_set,
     draw,
     reviewable_facts,
     reviewables,
+    sample_set_view,
     section_state,
 )
 from abacus.modules.sampling.selection import (
@@ -118,6 +121,7 @@ __all__ = [
     "SUBSCRIPTIONS",
     "TIE_VERSION",
     "WORKFLOWS",
+    "ApproveIn",
     "Band",
     "Bill",
     "Entry",
@@ -137,6 +141,7 @@ __all__ = [
     "TieIn",
     "UploadSourceIn",
     "VersionIn",
+    "approve",
     "attribute_size",
     "bills_by_party",
     "build_payments",
@@ -149,6 +154,7 @@ __all__ = [
     "projected_misstatement",
     "record_tie",
     "recorded_bill",
+    "sample_set_view",
     "section_state",
     "seeded_v1",
     "select",

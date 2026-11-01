@@ -6,9 +6,10 @@ and Northwind's Participants sample, through the services as the people the desi
 - **Northwind Participants** (AUD-11 a, b): Dana Kowalski uploads the census, v1 (409 rows) on
   Sep 15 and v2 (412) on Sep 16; Marcus Delaney builds each population, records its ties (v1's
   register is off by $182,300.00; v2 ties to the register and to the W-3), creates the sample set
-  and draws Version 1 (seed 0x3C77D0) and Version 2 (seed 0x5E2A91) with the scenario seeds.
-  Both are drafts: Version 2's L1 and approval (AUD-11 a) need Northwind's G2, which CLI-08 leaves
-  unmet at E0 (DEC-1767).
+  and draws Version 1 (seed 0x3C77D0) and Version 2 (seed 0x5E2A91) with the scenario seeds;
+  on Sep 15 Ana Cruz and Kira Ross confirm their independence (CLI-08 left them pending),
+  Margaret names Dana Kowalski the SKE designee and concludes independence (G2, DEC-1767), so
+  Marcus prepares Version 2 (L1) and Hannah Leclerc approves it (L2) at 4:05 PM.
 
 Granite Peak (the 128-account trial balance, its mapping and the 1,912 disbursements), the
 Distributions set, `make fixtures export` and the fixture equivalence test are TASK-2716's
@@ -138,8 +139,42 @@ def sampling_events() -> list[Event]:
                 seed=seed,
             )
         )
-    # AUD-11 a's "Prepared · MD" and "✓ HL" wait: R-SO-5 needs Northwind's G2, which CLI-08
-    # leaves unmet at E0 (Ana Cruz has not confirmed). DEC-1767 records the conflict.
+    # DEC-1767: on Sep 15 Ana Cruz and Kira Ross confirm their independence on Northwind (CLI-08
+    # left them pending), Margaret names Dana Kowalski the SKE designee (CLI-02) and concludes
+    # independence (G2), so Version 2 is prepared and approved as AUD-11 a shows.
+    events += [
+        *[
+            Event(
+                f"independence:A1:{initials}",
+                _at(15, 9, minute),
+                "engagements.member_independence_confirmed",
+                initials,
+                SLICE,
+                {"audit": "A1", "canon_on": "2026-09-15"},
+                client=NORTHWIND,
+            )
+            for initials, minute in (("AC", 0), ("KR", 5))
+        ],
+        _event(
+            "ske-designee",
+            _at(15, 9, 30),
+            "engagements.contact_designated",
+            "MO",
+            audit="A1",
+            contact="Dana Kowalski",
+            designation="ske_designee",
+        ),
+        _event(
+            "independence-concluded",
+            _at(15, 10, 0),
+            "engagements.independence_concluded",
+            "MO",
+            audit="A1",
+            option="independent",
+        ),
+        _event("prepare-v2", _at(16, 15, 12), "sampling.version_prepared", "MD", version=2),
+        _event("approve-v2", _at(16, 16, 5), "sampling.version_approved", "HL", version=2),
+    ]
     return events
 
 
