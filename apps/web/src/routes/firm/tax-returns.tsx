@@ -16,6 +16,7 @@ const PracticeBoard = lazyScreen(async () => (await import("../../screens/TAX-01
 const ReturnOverview = lazyScreen(async () => (await import("../../screens/TAX-02")).TAX02);
 const ReturnIntake = lazyScreen(async () => (await import("../../screens/TAX-03")).TAX03);
 const K1Package = lazyScreen(async () => (await import("../../screens/TXP-12")).TXP12);
+const ReturnDelivery = lazyScreen(async () => (await import("../../screens/TAX-12")).TAX12);
 
 function gated(children: JSX.Element): JSX.Element {
   return (
@@ -121,9 +122,28 @@ export const taxReturnK1Route = createRoute({
   },
 });
 
+// TAX-12 (T-01-T51): the return's Delivery & e-file cockpit, `/tax-returns/$returnId/delivery`,
+// behind `tax.returns_v1` and `tax.delivery_efile` (the delivery routes answer 404 while it is off).
+export const taxReturnDeliveryRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/tax-returns/$returnId/delivery",
+  component: function TaxReturnDeliveryPage(): JSX.Element {
+    const returnId = useParam("returnId");
+    return gated(
+      <FeatureGate
+        flag="tax.delivery_efile"
+        fallback={<FlagOffState flag="tax.delivery_efile" label="Delivery & e-file" />}
+      >
+        <ReturnDelivery returnId={returnId} />
+      </FeatureGate>,
+    );
+  },
+});
+
 export const taxReturnRoutes = [
   taxReturnsRoute,
   taxReturnRoute,
   taxReturnIntakeRoute,
   taxReturnK1Route,
+  taxReturnDeliveryRoute,
 ] as const;

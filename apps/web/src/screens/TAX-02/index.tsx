@@ -663,12 +663,21 @@ function AssignMenu({ record }: { record: TaxReturnRecordOut }): JSX.Element {
 
 function Actions({ record }: { record: TaxReturnRecordOut }): JSX.Element {
   const { row } = record;
+  const open = useOpenHref();
   const url = record.engine_url ?? null;
   const safe = url !== null && url.startsWith("https://");
   return (
     <span className="flex items-center gap-[8px]">
-      {PLANNED_VISIBLE && (row.status === "accepted" || row.status === "filed") && (
-        <Button variant="secondary" size="sm" icon="send" disabled title={COPY.hints.delivery}>
+      {/* TAX-02 → TAX-12: the return's Delivery & e-file (T-01-T51). */}
+      {(row.status === "accepted" || row.status === "filed") && (
+        <Button
+          variant="secondary"
+          size="sm"
+          icon="send"
+          onClick={() => {
+            open(hrefOf(to.TAX12({ returnId: row.id })));
+          }}
+        >
           {COPY.actions.openDelivery}
         </Button>
       )}
@@ -779,6 +788,8 @@ export function TAX02({
   // disabled where planned screens are, absent in production.
   const tabs = (
     <Tabsbar
+      // The return frame's tabsbar is 44 with the default segmented (handoff spec §3; T-02-T33).
+      className="h-(--tabs-h-compact)"
       label={COPY.tabs.label}
       options={[
         option("overview", true),

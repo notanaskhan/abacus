@@ -516,6 +516,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/portal/filed-returns/{delivery_id}/download", "portal_home.read"),
     ("GET", "/v1/portal/home", "portal_home.read"),
     ("GET", "/v1/portal/intake-uploads", "portal_intake.read_own"),
+    ("GET", "/v1/portal/k1-furnishing-disclosure", "portal_k1.read"),
     ("GET", "/v1/portal/k1s", "portal_k1.read"),
     ("GET", "/v1/portal/k1s/expected", "portal_k1.read"),
     ("GET", "/v1/portal/k1s/{package_id}", "portal_k1.read"),
@@ -1322,6 +1323,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/issues/{issue_id}/resolve", "issue.resolve"),
     ("POST", "/v1/issues/{issue_id}/send-to-client", "issue.send_to_client"),
     ("POST", "/v1/issues/{issue_id}/verify", "issue.verify"),
+    ("POST", "/v1/k1-furnishing-disclosures", "k1_disclosure.import"),
     ("POST", "/v1/k1-packages/{package_id}:resend", "k1_package.resend"),
     ("POST", "/v1/k1-releases/{release_id}:undo", "k1_package.release"),
     ("POST", "/v1/knowledge/documents", "knowledge.manage"),
@@ -1407,6 +1409,11 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     (
         "POST",
         "/v1/portal/k1-recipients/{recipient_id}/details-changes",
+        "portal_k1.update_details",
+    ),
+    (
+        "POST",
+        "/v1/portal/k1-recipients/{recipient_id}/details-changes:upload",
         "portal_k1.update_details",
     ),
     ("POST", "/v1/portal/k1s/{package_id}/e-furnishing-consent", "portal_k1.update_details"),

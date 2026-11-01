@@ -399,6 +399,8 @@ seed-demo: db-guard
 # deploy-staging run in flight (it names the run). No db-guard: staging is hosted by design.
 # The portal slice (P-08-T14, with the binders it needs) gives staging the branded portal host
 # `brightwaterhale.<portal_base_domain>` and every portal persona; it refuses without the domain.
+# The pilot slice (TASK-2470, DEC-1530) enrols the Feld return and Northwind's audit in shadow, so
+# Brightwater Hale is the test pilot firm PF-X1 that the ops rows rehearse on.
 # Load profiles (Q-03-T044): `make seed-staging PROFILE=x1|x25|x100` builds that many synthetic
 # Brightwater-size firms (abacus_tools.synthetic.fleet) instead, on the perf stack (QD-6), with
 # the same refusals. Any other PROFILE (the loadtest default `smoke`) seeds Brightwater Hale.
@@ -408,7 +410,7 @@ seed-staging:
 ifneq ($(FLEET_PROFILE),)
 	cd backend && uv run python -m abacus_tools.synthetic.fleet --staging --profile $(FLEET_PROFILE)
 else
-	cd backend && uv run python -m $(LOADER) --staging --snapshot $(RESET_CLOCK) --slice portal
+	cd backend && uv run python -m $(LOADER) --staging --snapshot $(RESET_CLOCK) --slice portal --slice pilot
 endif
 
 # F-04-T31 (F-04.21): fixture JSON exported from the Python scenario at a snapshot, through the

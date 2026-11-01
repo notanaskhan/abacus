@@ -50,6 +50,15 @@ import {
   scenarios as adm06Scenarios,
 } from "./ADM-06/scenarios";
 import { ADM05 } from "./ADM-05";
+import { ADM08 } from "./ADM-08";
+import {
+  OPENS as ADM08_OPENS,
+  STATES as ADM08_STATES,
+  type Adm08State,
+  scenarios as adm08Scenarios,
+} from "./ADM-08/scenarios";
+import { TAX12 } from "./TAX-12";
+import { type Tax12State, scenarios as tax12Scenarios } from "./TAX-12/scenarios";
 import { CLI05 } from "./CLI-05";
 import {
   AGENT_NOTE as CLI05_AGENT_NOTE,
@@ -3014,3 +3023,60 @@ function Tax09Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("TAX-09", { title: "Tax-engine sync", Component: Tax09Artboard });
+
+// TAX-12 a–e, a2, c2 (T-01-T24, T-01-T39; T-01-T46): the return's Delivery & e-file cockpit; a2
+// opens with the reminder sheet.
+const TAX12_STATES = Object.keys(tax12Scenarios) as Tax12State[];
+function Tax12Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Tax12State = TAX12_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      tax12Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  return ready === state ? (
+    <div data-artboard={state} className="h-[860px]">
+      <TAX12 key={state} returnId={FELD_RETURN_ID} defaultReminderOpen={state === "a2"} />
+    </div>
+  ) : null;
+}
+
+registerScreen("TAX-12", { title: "Delivery & e-file", Component: Tax12Artboard });
+
+// ADM-08 a–g (T-01-T40; T-01-T46): Integration settings at each artboard's segment, with the
+// mapping drawer (g) or Test connection's result (d, e).
+function Adm08Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
+  const state: Adm08State = ADM08_STATES.find((s) => s === params.st) ?? "a";
+  const [ready, setReady] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = installFixtureMode(
+      adm08Scenarios[state],
+      params.as === undefined ? {} : { persona: params.as },
+    );
+    setReady(state);
+    return () => {
+      setReady(null);
+      restore();
+    };
+  }, [state, params.as]);
+  const open = ADM08_OPENS[state];
+  return ready === state ? (
+    <div data-artboard={state} className="h-[860px]">
+      <ADM08
+        key={state}
+        segment={open.segment}
+        mappingOpen={open.mapping === true}
+        testOnOpen={open.test === true}
+      />
+    </div>
+  ) : null;
+}
+
+registerScreen("ADM-08", { title: "Integration settings", Component: Adm08Artboard });

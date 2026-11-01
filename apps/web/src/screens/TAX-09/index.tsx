@@ -10,17 +10,18 @@ import {
 import {
   Button,
   Checkbox,
+  date,
   Dialog,
   FullSheet,
   Icon,
   type IconName,
+  toast,
   Pill,
+  prose,
+  status,
   StatusDisc,
   SyncChip,
   Tooltip,
-  prose,
-  date,
-  toast,
   useReducedMotion,
 } from "@abacus/ui";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -412,6 +413,10 @@ export function TAX09({
             setOpen((o) => !o);
           }}
         />
+        {/* T-01-T52 (T-01 §5.6): the chip's state change is announced politely. */}
+        <span aria-live="polite" className="sr-only" data-sync-live>
+          {status("return_sync_chip", state, vars === undefined ? {} : { vars }).label}
+        </span>
         {!bare && (
           <span className="flex flex-1 items-center justify-center gap-[8px]">
             <span className="text-[15px] font-medium">{COPY.title}</span>
@@ -536,6 +541,13 @@ export function TAX09({
             {/* Where the client's files for the return arrive (TAX-09 → INB-01). */}
             <a href={hrefOf(to.INB01())} className="font-medium text-ink hover:underline">
               {COPY.inbox}
+            </a>
+            {/* TAX-09 → TAX-12: the return's delivery, e-file and acknowledgements (T-01-T51). */}
+            <a
+              href={hrefOf(to.TAX12({ returnId: data.return_id }))}
+              className="font-medium text-ink hover:underline"
+            >
+              {COPY.delivery}
             </a>
             <Tooltip content={COPY.settingsTip}>
               <span className="font-medium text-ink">{COPY.settings} →</span>

@@ -180,6 +180,7 @@ from abacus.modules.platform.api import (
     IncidentFacts,
     TenantKeyInput,
     TenantKeyWorkflow,
+    enrol_pilot,
     record_incident,
     tenant_key_workflow_id,
 )
@@ -331,6 +332,8 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.people import (
     email_of,
     slug_of,
 )
+from abacus_tools.synthetic.scenarios.brightwater_hale.pilot import NEEDS as PILOT_NEEDS
+from abacus_tools.synthetic.scenarios.brightwater_hale.pilot import SLICE as PILOT_SLICE
 from abacus_tools.synthetic.scenarios.brightwater_hale.portal import (
     HOST_LABEL,
     INVITATION_BY_NAME,
@@ -1693,6 +1696,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     STANDARDS_SLICE: STANDARDS_NEEDS,  # K-02-T18: Margaret creates; each owner publishes
     SIGNATURES_SLICE: SIGNATURES_NEEDS,  # N-02-T36: SIG-01 at E0 over the tax clients
     TAX_CONTENT_SLICE: TAX_CONTENT_NEEDS,  # T-02-T23: K-1 sets, the organizer, questions
+    PILOT_SLICE: PILOT_NEEDS,  # TASK-2470: PF-X1's enrolments name the Feld return and Northwind
 }
 
 
@@ -2393,6 +2397,25 @@ async def _methodology_approved(conn: asyncpg.Connection, _: Scenario, event: Ev
         effective_from=date.fromisoformat(str(data["effective_from"])),
         checklist_hash=state.checklist_hash,
         row_version=state.row_version,
+    )
+
+
+async def _pilot_enrolled(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
+    """TASK-2470 (DEC-1530): PF-X1's enrolment through `make pilot-enrol`'s service, in shadow."""
+    data = event.data
+    target = str(data["target"])
+    item = (
+        _return_item(target)
+        if data["kind"] == "return"
+        else await _assurance_work_item(BY_LABEL[target])
+    )
+    await enrol_pilot(
+        TenantContext(TENANT, "system", LOADER),
+        item,
+        date.fromisoformat(str(data["window_start"])),
+        date.fromisoformat(str(data["window_end"])),
+        int(str(data["baseline_days"])),
+        UUID(str(data["operator"])),
     )
 
 
@@ -3470,6 +3493,7 @@ HANDLERS: Final[dict[str, Handler]] = {
     "methodology.version_imported": _methodology_imported,
     "methodology.version_approved": _methodology_approved,
     "standards.created": _standard_created,  # K-02-T18
+    "platform.pilot_enrolled": _pilot_enrolled,  # TASK-2470
     "standards.version_imported": _standard_imported,
     "standards.version_published": _standard_published,
     "reporting.template_imported": _report_template_imported,

@@ -15,15 +15,18 @@ import { scenarios as adm01 } from "./scenarios/ADM-01";
 import { OPENS as ADM02_OPENS, scenarios as adm02 } from "./scenarios/ADM-02";
 import { OPENS as ADM03_OPENS, scenarios as adm03 } from "./scenarios/ADM-03";
 import { scenarios as adm04 } from "./scenarios/ADM-04";
+import { scenarios as adm05 } from "./scenarios/ADM-05";
 import { OPENS as ADM06_OPENS, scenarios as adm06 } from "./scenarios/ADM-06";
 import { OPENS as ADM10_OPENS, scenarios as adm10 } from "./scenarios/ADM-10";
 import { OPENS as ADM07_OPENS, scenarios as adm07 } from "./scenarios/ADM-07";
+import { scenarios as adm08 } from "./scenarios/ADM-08";
 import { scenarios as aud01 } from "./scenarios/AUD-01";
 import { IDS as AUD03_IDS, scenarios as aud03 } from "./scenarios/AUD-03";
 import { scenarios as bnd01 } from "./scenarios/BND-01";
 import { OPENS as TAX02_OPENS, j06Scenario } from "./scenarios/TAX-02";
 import { OPENS as BND02_OPENS, scenarios as bnd02 } from "./scenarios/BND-02";
 import { OPENS as CLI04_OPENS, scenarios as cli04 } from "./scenarios/CLI-04";
+import { ENTITY as CLI05_ENTITY, scenarios as cli05 } from "./scenarios/CLI-05";
 import { scenarios as cli06 } from "./scenarios/CLI-06";
 import { OPENS as CLI07_OPENS, scenarios as cli07 } from "./scenarios/CLI-07";
 import {
@@ -39,6 +42,9 @@ import { scenarios as knw04 } from "./scenarios/KNW-04";
 import { scenarios as shl03 } from "./scenarios/SHL-03";
 import { scenarios as shl04 } from "./scenarios/SHL-04";
 import { OPENS as SHL14_OPENS, scenarios as shl14 } from "./scenarios/SHL-14";
+import { scenarios as tax09 } from "./scenarios/TAX-09";
+import { FELD_RETURN_ID } from "./seed/tax-compliance";
+import { FERRIS_CLIENT_ID, WHITLEY_CLIENT_ID } from "./seed/tax-profile";
 
 type Ids = Readonly<Record<string, string>>;
 
@@ -63,8 +69,24 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
   "ADM-03": { scenarios: adm03, opens: ADM03_OPENS },
   // G-02-T26: ADM-04's OPENS are the gallery's open props (sheet, popover), not a search.
   "ADM-04": { scenarios: adm04, opens: {} },
+  // T-01-T29: j14 8 and the j06 consent steps; the searches are screens/ADM-05/scenarios.ts OPENS.
+  "ADM-05": {
+    scenarios: adm05,
+    opens: { b: "?status=expiring", e: "?q=harold", f: "?purpose=offshore_disclosure" },
+  },
   "ADM-06": { scenarios: adm06, opens: ADM06_OPENS }, // G-02-T16
   "ADM-07": { scenarios: adm07, opens: ADM07_OPENS }, // G-02-T13
+  // T-01-T29: j14 4 at /settings/integrations; the segment and the mapping drawer are the route's.
+  "ADM-08": {
+    scenarios: adm08,
+    opens: {
+      a: "?segment=tax-engine",
+      b: "?segment=ledgers",
+      c: "?segment=mailboxes",
+      f: "?segment=tax-engine",
+      g: "?segment=tax-engine&ov=integration-mapping:users",
+    },
+  },
   // R-01-T28: the preview's contact and device, and e's drawer, live in the URL.
   "ADM-10": {
     scenarios: adm10,
@@ -86,6 +108,12 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
     ids: idsOf(CLI04_OPENS, (s) => ({ clientId: CLI04_OPENS[s] })),
   },
   // P-07-T62: the intake and bulk import (g opens `?mode=import`), j19 2 and 3, and the roll-forward.
+  // T-01-T29: the consent sections the j06 steps read (Whitley d, Ferris f), on the live route.
+  "CLI-05": {
+    scenarios: cli05,
+    opens: { d: `?entity=${CLI05_ENTITY.d}`, f: `?entity=${CLI05_ENTITY.f}` },
+    ids: { d: { clientId: WHITLEY_CLIENT_ID }, f: { clientId: FERRIS_CLIENT_ID } },
+  },
   "CLI-06": { scenarios: cli06, opens: { g: "?mode=import" } },
   "CLI-07": { scenarios: cli07, opens: {}, ids: idsOf(CLI07_OPENS, (s) => CLI07_OPENS[s]) },
   "CLI-08": {
@@ -114,6 +142,12 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
     scenarios: { j06: j06Scenario() },
     opens: {},
     ids: { j06: { returnId: TAX02_OPENS.a } },
+  },
+  // T-01-T29: the engine-sync layer over the Feld return (`ov=engine-sync:_returnId_`, DEC-1288).
+  "TAX-09": {
+    scenarios: tax09,
+    opens: {},
+    ids: Object.fromEntries(Object.keys(tax09).map((s) => [s, { returnId: FELD_RETURN_ID }])),
   },
 };
 

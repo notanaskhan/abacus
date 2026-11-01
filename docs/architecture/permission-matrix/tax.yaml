@@ -27,4 +27,5 @@ actions:
   k1_package.share_internal:  {manager: allow, engagement_partner: allow, function_in: "preparer,manager_reviewer,signer", client_admin: deny, client_contributor: deny, agent: deny, system: deny}   # share to another return's intake
   k1_package.release:         {engagement_partner: allow, manager: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny, mfa_recent: required}   # release to the portal, undo within the window (tax/k1_release.py)
   k1_package.resend:          {manager: allow, client_service: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny}   # resend a released package
+  k1_disclosure.import:       {firm_admin: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny, mfa_recent: required}   # the counsel-approved electronic-furnishing disclosure, a new version (DV-12, S20e; DEC-1579)
   k1_recipient.review_details: {engagement_partner: allow, manager: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny}   # DV-10: accept or reject a recipient's details change

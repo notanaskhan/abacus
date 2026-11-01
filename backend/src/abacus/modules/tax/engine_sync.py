@@ -31,6 +31,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.uow import DomainEvent
+from abacus.modules.integrations.api import register_last_engine_sync
 from abacus.modules.review.api import register_gate_kind
 
 SyncState = Literal[
@@ -220,11 +221,27 @@ class ReadyToTransmit(DomainEvent):
     )
 
 
+_LAST_SYNCED = text(
+    "SELECT return_id FROM engine_sync_events "
+    "WHERE kind IN ('import_approved', 'marked_exported') ORDER BY at DESC, id DESC LIMIT 1"
+)
+
+
+async def last_synced_return(tenant: TenantContext) -> UUID | None:
+    """T-01-T51: the firm's most recently synced return (an approved import or a marked export),
+    for ADM-08's Last sync link; an identifier only."""
+    async with tenant_session(tenant) as session:
+        found = (await session.execute(_LAST_SYNCED)).scalar_one_or_none()
+    return cast(UUID | None, found)
+
+
 def register() -> None:
-    """At import: the two gate kinds (C13). The notification kinds and their sources are the
-    notifications catalogue's (tax may not import notifications, ADR-008)."""
+    """At import: the two gate kinds (C13) and ADM-08's last-sync source (T-01-T51). The
+    notification kinds and their sources are the notifications catalogue's (tax may not import
+    notifications, ADR-008)."""
     register_gate_kind("import_pending_approval", no_pending_import)
     register_gate_kind("ready_to_transmit", ready_to_transmit)
+    register_last_engine_sync(last_synced_return)
 
 
 __all__ = [
