@@ -23,6 +23,14 @@
 | Off | marcus-delaney | — | `sampling.sample_sets` off: C-20 "not turned on" | built (A-03-T11) |
 | Not allowed | cole-hart | — | walled from Northwind: every read 404, no count in the picker (INV-3) | built (A-03-T11) |
 
+## Parity
+| Artboard | Tier (A/B/C/D) | Diff % | Notes |
+|---|---|---|---|
+| a, f | C (locked) | not run | locked by A-03-T19: the dock pane (DV-A2) and the population SHA-256 (DV-A3) masked; report-only as Tier C |
+| b, c, d, e | C | not run | report-only (A-03-T19); dock pane masked (DV-A2); e with reduced motion |
+| g | — | — | recorded for X-01 (HR or ticketing source); the option renders disabled with its tooltip |
+| host | D | — | cockpit toolbar 46, audit bar 59, rail 330, canvas, dock 330; table rows 44; measured by the Tier D geometry run |
+
 ## API
 | Read or write | Endpoint | Shape | Matrix action | allowed_actions and read-only reasons per role |
 |---|---|---|---|---|
