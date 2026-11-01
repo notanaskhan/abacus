@@ -278,3 +278,19 @@ async def version_at(
             WorkpaperVersion.version_no == version_no,
         )
     )
+
+
+async def papers_of_work_item(session: AsyncSession, work_item_id: UUID) -> Sequence[Workpaper]:
+    """A-05-T09: a work item's designed papers (those with a kind), by code, for an owner's
+    rail provider or export section that already authorised on the engagement."""
+    return (
+        (
+            await session.execute(
+                select(Workpaper)
+                .where(Workpaper.work_item_id == work_item_id, Workpaper.kind.is_not(None))
+                .order_by(Workpaper.code)
+            )
+        )
+        .scalars()
+        .all()
+    )

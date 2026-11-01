@@ -629,5 +629,11 @@ REVIEWED_FALLBACK: Final = frozenset(
         "service_org.edited",
         "section_draft.started",  # A-04-T11: a person started a section draft
         "section_draft.failed",  # A-04-T11: pack validation failed the run (AC6.1)
+        # A-05-T10: EBP-01's plan facts, providers, code checks and the plan number.
+        "ebp_plan.created",
+        "ebp_plan.edited",
+        "ebp_provider.created",
+        "ebp_check.recorded",
+        "client_entity.plan_number_set",
     }
 )

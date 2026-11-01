@@ -1,0 +1,11 @@
+# A-04-T17 (TASK-2905): Granite Peak Manufacturing FY2026 (J04/J23), from A-04 §3.3 AC3.8.
+source: A-04 §3.3 AC3.8
+reviewed_by: notanaskhan
+policy: {low: "3", high: "7", pm_low: "50", pm_high: "75", ct: "5", increment: "100"}
+benchmark: {key: pre_tax_income, amount: "3100000"}
+options:
+  - {key: rate_3_0, rate: "3", overall: "93000.00", pm: "69750.00", ct: "4650.00"}
+  - {key: rate_5_0, rate: "5", overall: "155000.00", pm: "116250.00", ct: "7750.00"}
+versions:
+  # Decided at 5% at 10:12 AM.
+  v2: {rate: "5", overall: "155000.00", pm: "116250.00", ct: "7750.00"}
