@@ -4,7 +4,7 @@ title: "POR-13 W-9/W-8 upload in a K-1 recipient's scope (T-02-T27 open piece)"
 spec: SPEC-502  # AC-5; docs/screens/POR-13.md d; T-02 §3.7, DV-10
 acceptance_criteria: [AC-5]
 risk_zone: amber
-status: in-review
+status: done
 epic: T-02
 plan_key: T-02-T27
 branch: s20e-por13-upload

@@ -247,7 +247,9 @@ function Questions({
             value={current.answered}
             className="h-[3px] w-full"
           />
-          <span className="text-[12px] text-ink-3">{COPY.saved(saved)}</span>
+          <span className="text-[12px] text-ink-3" aria-live="polite">
+            {COPY.saved(saved)}
+          </span>
         </div>
       )}
       {!inquiry && (
@@ -270,7 +272,7 @@ function Questions({
                 >
                   <span className="flex-1">{name}</span>
                   {n === rows.length ? (
-                    <span aria-label={`${name} complete`}>
+                    <span role="img" aria-label={`${name} complete`}>
                       <Icon name="check" size={14} />
                     </span>
                   ) : (

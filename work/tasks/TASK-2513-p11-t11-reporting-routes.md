@@ -4,7 +4,7 @@ title: P-11-T11 Reporting routes live (generated-document read, fields, compare,
 spec: SPEC-520  # AC-14, AC-17 to AC-19, AC-22, AC-23, AC-26; C11 v1
 acceptance_criteria: [AC-14, AC-17, AC-18, AC-19, AC-22, AC-23, AC-26]
 risk_zone: amber
-status: in-review
+status: done
 epic: P-11
 plan_key: P-11-T11
 branch: s20b-p11-t11

@@ -4,7 +4,7 @@ title: A-03-T21 compute kernel (kernel.numeric, kernel.calendar) and the compute
 spec: SPEC-580
 acceptance_criteria: [AC-4, AC-5, AC-6]
 risk_zone: red
-status: in-review
+status: done
 epic: A-03
 plan_key: A-03-T21
 branch: s20-a03-t21

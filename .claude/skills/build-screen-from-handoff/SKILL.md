@@ -87,6 +87,16 @@ _flags.py); import firm shell code into portal code; render agent text raw;
 let a click, drag, trigger or column sign off, approve, release, send or post; add a 14th nav item, a persona, a peer
 benchmark or licensed publisher content (D1–D10, X-01…X-08).
 
+## The file-mode sync chip (T-01-T54)
+
+Tax screens show the engine's state with `SyncChip` (`packages/ui/src/components/status.tsx`):
+one white chip whose glyph and word come from the `return_sync_chip` registry, never a colour of
+its own. Synced means a person marked the export or approved an import (ADR-231, DEC-1160);
+"Import pending approval" is its own state (DF-08). The chip opens TAX-09 with
+`openOverlay(ov.TAX09(returnId))`, and its state is mirrored in a polite live region
+(`data-sync-live`) so the change is announced (DEC-1670). A screen without a return id (ADM-08,
+CLI-02) opens TAX-09 on the last synced return the read gives it (`last_sync_return_id`).
+
 ## Kits with written hand-offs (F-06-T23)
 Before composing a screen on T6, T10, T16 or the portal at 390, read its hand-off page: it maps the
 consumer's payload to the kit's props and names the callbacks the screen wires. Never build a kit

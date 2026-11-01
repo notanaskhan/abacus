@@ -1,6 +1,7 @@
 // The signature specs' shared pieces (N-02-T40): the owner annotation for a step the hosted
 // projects cannot walk yet, the hosted-URL skip, and the /components gallery path a fixture step
 // opens for a screen with no route of its own (SIG-01, SIG-02 as an artboard).
+import type { Page } from "@playwright/test";
 import { type HarnessProject, test } from "../harness";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -28,4 +29,10 @@ export function skipUnhosted(project: HarnessProject): void {
 /** A screen's artboard in the /components gallery, framed (fixture builds only). */
 export function artboard(screen: string, state: string): string {
   return `/components/screens/${screen}?st=${state}&frame=1`;
+}
+
+/** N-02-T42: POR-06's states open on the Sign list; a person opens the envelope from it. */
+export async function openEnvelope(page: Page, name: RegExp): Promise<void> {
+  await page.getByRole("button", { name }).first().click();
+  await page.waitForURL(/\/sign\/[^/?]+/);
 }
