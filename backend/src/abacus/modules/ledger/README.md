@@ -26,3 +26,19 @@ Ledger snapshots and trial balance lines in the common ledger model (ADR-038). O
 - **Adopt and re-version (`trial_balances.py`):** `adopt_trial_balance` writes `trial_balances` and version 1 (audits `trial_balance.created` and `trial_balance.version_adopted`); `adopt_version` adds the next version with a reason (audits `trial_balance.version_adopted`). Both emit the outbox `trial_balance.version_created` (`events.py`). Versions are insert-only; nothing earlier is touched (ADR-004).
 - **Layers:** Unadjusted always; AJE, RJE and Final only once an adjustment source registers (`register_adjustment_source`, filled by fieldwork), `layer_unavailable` before. `layer_totals` gives each layer's debits and credits; `require_balanced` refuses `layer_unbalanced` with the difference.
 - **Areas and leadsheets:** an annotation's area wins, else the caller's `AreaRule`s (the methodology's `area_for` rule, passed in); `leadsheets` rolls lines up by area with Unassigned last, Δ% half-even to 0.1. Goldens: `tests/golden/ledger/tb_layers.yaml`.
+
+## Grouping sets and account mapping (A-03-T06, T08, T14; contract `docs/contracts/ledger-mapping.md`, frozen C9 v2)
+
+- **Taxonomy** (`taxonomy_workbook.py`, `mapping.py`): a grouping set is firm content. It is imported into a draft version, then published by a person; the publish is human-only (CHECK) and the version is frozen (0079's triggers).
+- **Mapping** (`mapping.py`): computed on read, in this order:
+  1. A person's edit.
+  2. The prior year.
+  3. The version's number ranges (first rule wins).
+  4. Otherwise unmapped.
+  - The reserved `suggested` state is never written.
+  - The view's `content_hash` (the grouping version and every account's line) is what a sign-off records.
+- **Following the trial balance** (A-03-T14): `follow_tb_version` records a new version's move. Assurance's subscriber announces a signed mapping stale once to its signers when the content hash moved (DEC-1765).
+- **Rollout:** behind `ledger.tb_mapping`.
+  - Flip per firm on Tue Oct 19, 2027.
+  - Retire in the Oct 21 batch (RB-46).
+- **Independent tests** (ADR-078): `tests/unit/ledger/test_a03t17_*` and `tests/integration/test_a03t17_mapping_guards.py`.

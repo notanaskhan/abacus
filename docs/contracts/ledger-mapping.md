@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C9 in `docs/contracts/README.md` (the taxonomy half; the layers half is `c09-ledger.md`) |
 | Version | v2 |
-| Status | stub (A-03-T03, 2026-10-30); the SPEC-316 v0 operations stay live on their paths (`c09-ledger.md`, "Taxonomy half, live v0") until A-03-T08 and T12 move AUD-31 here |
+| Status | **frozen v2** (A-03-T20, 2026-11-01): live through A-03-T08, T12 and T14 (DEC-1765); additive changes only, a breaking one is v3. Was: stub (A-03-T03, 2026-10-30); the SPEC-316 v0 operations stay live on their paths (`c09-ledger.md`, "Taxonomy half, live v0") until A-03-T08 and T12 move AUD-31 here |
 | Provider epic | A-03 |
 | Consumers | AUD-31 (A-03-T12), AUD-06 `group_by=fs_line` (A-02); A-04 (FS-line totals), A-06 (mapped TB for adjusted layers), T-05 (groupings beside tax mapping), A-09 (one set per entity, the TB mapper), A-10 (FSP-02), C-01 |
 | Freeze sprint | S20 (frozen Fri Aug 6, 2027) |

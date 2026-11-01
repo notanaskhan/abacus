@@ -123,3 +123,7 @@ make check-heads check-generated
 ```
 
 A new tenant table changes the generated `tests/security/test_tenant_isolation.py`; regenerate it, never hand-edit it.
+
+## Frozen versions and human-only publish (A-03 migrations 0079, 0520; A-03-T17)
+- A version that freezes once drawn or published gets a BEFORE UPDATE OR DELETE trigger that refuses changes once its status leaves draft (`grouping_set_version_frozen`, `grouping_set_version_guard`, 0520's sample-set version trigger). Write the test that removing the trigger fails (A-03-T17's guards suite), not only the one that the trigger refuses.
+- A human-only act carries its actor kind in a column with a CHECK (`published_actor_kind = 'human'`), so neither the agent nor the system can do it even through a granted UPDATE.

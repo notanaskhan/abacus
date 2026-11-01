@@ -4,7 +4,7 @@
 |---|---|
 | Register row | internal sampling API (A-03 §8.1; not a numbered C-contract) in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | live (A-03-T07, T10; the item-request fan-out A-03-T13, 2026-11-01, DEC-1763) |
+| Status | **frozen v1** (A-03-T20, 2026-11-01): live (A-03-T07, T10; the item-request fan-out A-03-T13, DEC-1763); additive changes only, a breaking one is v2 |
 | Provider epic | A-03 |
 | Consumers | AUD-11, SHL-14 c, AUD-02 rail, AUD-03 "Sample-driven" band; A-05 (EBP-03/04/05), A-06 (`projection`), A-08 (MUS, AUD-12), K-03 (Sheet row source), A-11 (C17 tools) |
 | Freeze sprint | S20 (the stub merges by Thu Jul 29, 2027) |
