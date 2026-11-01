@@ -50,6 +50,7 @@ LIST_FIELD: Final[dict[str, str]] = {
     "variance_thresholds": "rows",
     "materiality_ranges": "rows",
     "attribute_sample_sizes": "rows",  # A-03-T10: the size table's rows; confidence in Settings
+    "rmm_matrix": "rows",  # A-04-T13: one row per inherent and control risk
     "review_checklist": "items",
     "review_levels": "tiers",
     "return_approval_policy": "applies_to",

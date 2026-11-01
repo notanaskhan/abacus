@@ -22,11 +22,16 @@ PLANNING_TABLES: frozenset[str] = frozenset(
     {"materiality_versions", "risk_register_rows", "risk_linkages", "service_organizations"}
     | {"fraud_brainstorm_sessions", "fraud_minutes_approvals", "fraud_inquiries"}
 )
-TABLES: frozenset[str] = _HUMAN_RECORDS | EBP_TABLES | PLANNING_TABLES
+# A-06-T04 (0644, DEC-1963): the completion records beside SPEC-043's (DEC-1960).
+COMPLETION_TABLES: frozenset[str] = frozenset(
+    {"audit_findings", "deficiencies", "audit_misstatements", "sum_snapshots", "consultations"}
+)
+TABLES: frozenset[str] = _HUMAN_RECORDS | EBP_TABLES | PLANNING_TABLES | COMPLETION_TABLES
 INSERT_ONLY: frozenset[str] = (
     _HUMAN_RECORDS
     | {"ebp_provider_checks", "ebp_provision_conflicts"}
     | {"materiality_versions", "fraud_minutes_approvals"}
+    | {"sum_snapshots"}
 )
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "eqr_concurrences": frozenset(
@@ -270,6 +275,89 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
             "questionnaire_id",
         }
     ),
+    "audit_findings": frozenset(
+        {
+            "tenant_id",
+            "engagement_id",
+            "work_item_id",
+            "issue_id",
+            "ref",
+            "kind",
+            "route",
+            "compliance_standard",
+            "coso_component",
+            "title",
+            "why_surfaced_sealed",
+            "why_surfaced_suggestion_id",
+            "created_by_kind",
+            "agent_run_id",
+            "materiality_version_id",
+            "evaluation",
+            "consultation_id",
+        }
+    ),
+    "deficiencies": frozenset(
+        {
+            "tenant_id",
+            "engagement_id",
+            "work_item_id",
+            "finding_id",
+            "status",
+            "severity_proposed",
+            "severity_proposed_by_kind",
+            "severity_suggestion_id",
+        }
+    ),
+    "audit_misstatements": frozenset(
+        {
+            "tenant_id",
+            "engagement_id",
+            "work_item_id",
+            "finding_id",
+            "ref",
+            "origin_ref",
+            "type",
+            "nature",
+            "status",
+            "amount",
+            "column_set",
+            "fs_effect",
+            "carried_from_py",
+            "py_ref",
+            "projection",
+            "materiality_version_id",
+            "proposed_entry_id",
+        }
+    ),
+    "sum_snapshots": frozenset(
+        {
+            "tenant_id",
+            "engagement_id",
+            "work_item_id",
+            "version_no",
+            "materiality_version_id",
+            "column_set",
+            "engine_version",
+            "inputs_hash",
+            "totals",
+            "qualitative_factors",
+            "purpose",
+            "decision_card_id",
+            "created_by",
+        }
+    ),
+    "consultations": frozenset(
+        {
+            "tenant_id",
+            "engagement_id",
+            "work_item_id",
+            "ref",
+            "question_sealed",
+            "raised_by",
+            "consulted_with_user_id",
+            "links",
+        }
+    ),
 }
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "ebp_plans": frozenset(
@@ -380,6 +468,50 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "fraud_inquiries": frozenset(
         {
             "answered_at",
+        }
+    ),
+    "audit_findings": frozenset(
+        {
+            "route",
+            "kind",
+            "coso_component",
+            "title",
+            "evaluation",
+            "version",
+        }
+    ),
+    "deficiencies": frozenset(
+        {
+            "status",
+            "severity_proposed",
+            "severity_proposed_by_kind",
+            "severity_suggestion_id",
+            "severity_concluded",
+            "decision_card_id",
+            "decision_id",
+            "communicated_ref",
+            "communicated_at",
+            "version",
+        }
+    ),
+    "audit_misstatements": frozenset(
+        {
+            "ref",
+            "status",
+            "amount",
+            "fs_effect",
+            "projection",
+            "proposed_entry_id",
+            "passed_by",
+            "passed_reason_sealed",
+            "version",
+        }
+    ),
+    "consultations": frozenset(
+        {
+            "status",
+            "conclusion_sealed",
+            "concluded_at",
         }
     ),
 }

@@ -1,0 +1,13 @@
+# The adjustments module's actions (ADR-027; P-39). Compiled with every other module's file into
+# identity/authz/_matrix.py by `make regenerate`. A-06-T05 (C8; DEC-1965): nothing is ever posted
+# to a client system (pe_posting_dormant); every approval, send and record is a named person's.
+
+actions:
+  proposed_entry.read:        {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, agent: task_scope, system: deny, independence: required}
+  proposed_entry.create:      {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny, independence: required}   # the agent proposes through a suggestion only
+  proposed_entry.update:      {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny, independence: required}   # lines editable until approved (entry_locked)
+  proposed_entry.send_to_client: {engagement_partner: allow, manager: allow, agent: deny, system: deny, independence: required, mfa_recent: required}   # approve, batch and send through C18 under a 10-second hold
+  proposed_entry.reject:      {engagement_partner: allow, manager: allow, agent: deny, system: deny, independence: required}   # a firm-side withdrawal with a reason code
+  proposed_entry.record_client_decision: {engagement_partner: allow, manager: allow, agent: deny, system: deny, independence: required}   # record mode, with the evidence attached
+  approval_batch.create:      {engagement_partner: allow, manager: allow, agent: deny, system: deny, independence: required}   # a named person's batch under a policy version
+  adjusted_tb.read:           {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, agent: task_scope, system: deny, independence: required}   # C8 read: Unadjusted, AJE, RJE, Final

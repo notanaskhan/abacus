@@ -27,6 +27,7 @@ d; DEC-1755).
 from __future__ import annotations
 
 import io
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Final, Literal, cast
@@ -56,6 +57,7 @@ from abacus.modules.methodology.models import (
     MethodologyVersionState,
     Program,
     ProgramStep,
+    ProgramStepSource,
 )
 from abacus.modules.methodology.repository import lock_or_insert_template
 from abacus.modules.methodology.service import EngagementType, import_template
@@ -240,6 +242,65 @@ async def import_view(ctx: AuthContext, import_id: UUID) -> ImportView:
     await authorise(ctx, MANAGE, Resource.firm(ctx.tenant_id))
     async with tenant_session(ctx.tenant) as session:
         return await _view(session, import_id)
+
+
+async def version_import(ctx: AuthContext, version_id: UUID) -> ImportView:
+    """K-01-T23 (KNW-02 a, a2, b): the newest import that made this version, for a reader of the
+    version (the RunCard polls it; the viewer reads its files)."""
+    await authorise(ctx, READ, Resource.firm(ctx.tenant_id))
+    async with tenant_session(ctx.tenant) as session:
+        found = await session.scalar(
+            select(MethodologyImport.id)
+            .where(MethodologyImport.version_id == version_id)
+            .order_by(MethodologyImport.started_at.desc(), MethodologyImport.id)
+            .limit(1)
+        )
+        if found is None:
+            raise NotFound(SUBJECT)
+        return await _view(session, found)
+
+
+@dataclass(frozen=True)
+class StepSourceView:
+    step_id: UUID
+    file_id: UUID
+    page_from: int
+    page_to: int
+    bbox: list[float] | None
+    quote: str | None
+    verified: bool
+
+
+async def step_sources(
+    ctx: AuthContext, step_ids: Sequence[UUID]
+) -> dict[UUID, list[StepSourceView]]:
+    """K-01-T23: where each parsed step came from (0580's `program_step_sources`), for a reader
+    of the version: KNW-02's viewer lights the step's region and the region lights the row."""
+    await authorise(ctx, READ, Resource.firm(ctx.tenant_id))
+    out: dict[UUID, list[StepSourceView]] = {}
+    if not step_ids:
+        return out
+    async with tenant_session(ctx.tenant) as session:
+        rows = (
+            await session.execute(
+                select(ProgramStepSource)
+                .where(ProgramStepSource.step_id.in_(list(step_ids)))
+                .order_by(ProgramStepSource.step_id, ProgramStepSource.page_from)
+            )
+        ).scalars()
+        for r in rows:
+            out.setdefault(r.step_id, []).append(
+                StepSourceView(
+                    r.step_id,
+                    r.source_file_id,
+                    r.page_from,
+                    r.page_to,
+                    [float(x) for x in cast(list[float], r.bbox)] if r.bbox else None,
+                    r.quote,
+                    r.verified,
+                )
+            )
+    return out
 
 
 async def create_import(

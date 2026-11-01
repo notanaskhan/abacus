@@ -77,6 +77,7 @@ from abacus.modules.workpapers.contract import (
     WorkpaperVersionOut,
 )
 from abacus.modules.workpapers.events import WorkpaperContentChanged, WorkpaperVersionCreated
+from abacus.modules.workpapers.layouts import designed_layout, is_cell_key
 from abacus.modules.workpapers.models import (
     AttentionFlag,
     Workpaper,
@@ -561,6 +562,15 @@ def workbook(view: WorkpaperRecordOut, titles: Mapping[str, str]) -> bytes:
     by_sheet: dict[str, list[WorkpaperCellOut]] = {}
     for cell in view.cells:
         by_sheet.setdefault(cell.sheet_key, []).append(cell)
+    # A-05-T09 (SPEC-641): a designed paper writes each cell at its own address on its sheet, so
+    # `EBP-04!C14` in the app is C14 on sheet "EBP-04" in Excel; anything else stays a list.
+    layout = designed_layout(view.kind)
+    if layout is not None:
+        for placed in layout.sheets:
+            sheet = book.create_sheet(placed.title)
+            for c in sorted(by_sheet.pop(placed.sheet_key, []), key=lambda c: c.cell_key):
+                if is_cell_key(c.cell_key):
+                    sheet[c.cell_key] = c.value.v or ""
     for sheet_key in sorted(by_sheet):
         title = re.sub(r"[\[\]:*?/\\]", " ", titles.get(sheet_key, sheet_key))[:31] or sheet_key
         sheet = book.create_sheet(title if title not in book.sheetnames else sheet_key[:31])

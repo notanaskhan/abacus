@@ -100,6 +100,24 @@ def section_source() -> SectionSource:
     return _SOURCE[0]
 
 
+# A-05-T12 (DEC-1956): which paper kinds each owner's mode drafts. A mode with a registered plan
+# runs only on those kinds (a mode's owner registers it; the planning modes have none and run on
+# any paper the source returns). An empty plan runs on nothing yet (`related_parties` before
+# AUD-27's records exist).
+_MODE_PLANS: dict[str, frozenset[str]] = {}
+
+
+def register_mode_plan(mode: str, kinds: frozenset[str]) -> None:
+    known = _MODE_PLANS.get(mode)
+    if known is not None and known != kinds:
+        raise ValueError(f"section draft mode {mode!r} already has a plan")
+    _MODE_PLANS[mode] = kinds
+
+
+def mode_kinds(mode: str) -> frozenset[str] | None:
+    return _MODE_PLANS.get(mode)
+
+
 __all__ = [
     "CELL_TARGET",
     "PackProblem",
@@ -108,6 +126,8 @@ __all__ = [
     "SourceCell",
     "SourceMissing",
     "SourcePaper",
+    "mode_kinds",
+    "register_mode_plan",
     "register_section_source",
     "section_source",
 ]

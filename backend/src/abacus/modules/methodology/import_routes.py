@@ -134,6 +134,16 @@ async def get_import_route(import_id: ImportId, ctx: Ctx) -> MethodologyImportOu
     return _import_out(await imports.import_view(ctx, import_id))
 
 
+@methodology_import_router.get(
+    "/versions/{version_id}/import", action=READ, response_model=MethodologyImportOut
+)
+async def version_import_route(version_id: VersionId, ctx: Ctx) -> MethodologyImportOut:
+    """K-01-T23: the newest import that made the version (KNW-02 b's RunCard polls it; a and a2
+    read its files); 404 for a workbook-only version."""
+    await require_live(ctx, METHODOLOGY_IMPORT_REVIEW, READ)
+    return _import_out(await imports.version_import(ctx, version_id))
+
+
 async def _body(request: Request) -> bytes:
     """The file, read up to the limit (a larger body is refused before it is all read)."""
     limit = settings().methodology_max_bytes

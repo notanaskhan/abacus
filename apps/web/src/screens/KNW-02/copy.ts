@@ -151,4 +151,18 @@ export const COPY = {
   },
   refused: "Only the QM owner can approve a methodology version.",
   error: "This methodology version couldn't load.",
+  // K-01-T23 (KNW-02 a, a2, b): the import review.
+  importReview: {
+    files: "Uploaded files",
+    page: (n: number): string => `p. ${String(n)}`,
+    pages: (a: number, b: number): string => `pp. ${String(a)}–${String(b)}`,
+    confirm: "Confirm",
+    flagged: "⚑ Flagged",
+    all: "All steps",
+    reading: (n: number): string =>
+      `Methodology importer is reading ${String(n)} ${n === 1 ? "file" : "files"}`,
+    progress: (done: number, total: number): string =>
+      `${String(done)} of ${String(total)} pages`,
+    parsing: "Parsing…",
+  },
 } as const;

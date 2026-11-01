@@ -34,8 +34,12 @@ SCREENER_YAML = SPECS_DIR / "evidence.screener.yaml"
 # Specs whose evaluation suite is delivered by a later increment, by evaluation_suite path.
 # 011b delivered `evals/screening`. K-01-T21's importer is owed `evals/methodology_import` by
 # K-01-T22 (S24, ADR-078: the suite is written in the other session before the prompt clears).
+# A-04-T14 delivered `evals/workpapers_section_drafter` (TASK-2902).
+OWED_TO_011B: set[str] = {"evals/methodology_import"}
 # A-04-T11's section drafter is owed `evals/workpapers_section_drafter` by A-04-T14 (S24).
-OWED_TO_011B: set[str] = {"evals/methodology_import", "evals/workpapers_section_drafter"}
+OWED_TO_011B: set[str] = {
+    "evals/workpapers_section_drafter"
+}  # K-01-T22 delivered the import suite
 # The loader that runs at import, reached by name: tests drive it with patched SPECS.
 load_specs = cast(Callable[[], dict[str, AgentSpec]], vars(spec_module)["_load"])
 

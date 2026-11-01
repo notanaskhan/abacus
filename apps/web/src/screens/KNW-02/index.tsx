@@ -5,10 +5,13 @@ import type {
 } from "@abacus/api-client";
 import {
   approveVersionMutation,
+  flagResolutionMutation,
   getVersionOptions,
   methodologyVersionDiffOptions,
   listTemplatesOptions,
   programStepsOptions,
+  programStepsQueryKey,
+  versionImportOptions,
   versionProgramsOptions,
   versionStateOptions,
 } from "@abacus/api-client/query";
@@ -23,7 +26,9 @@ import {
   Pill,
   Sheet,
   SheetRow,
+  MatchScope,
   Skeleton,
+  SourceViewer,
   Tooltip,
   TriadTree,
   ValueRow,
@@ -38,6 +43,7 @@ import { useNow } from "../../app-core/clock";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { type WorkbookProblem, uploadMethodology, workbookProblems } from "../../domain/knowledge";
 import { COPY } from "./copy";
+import { ImportedStepRows, ParsingRunCard, importViewerFile } from "./ImportReview";
 import { ActivityView, CompareMenu, DiffView, StandardsView } from "./Review";
 
 // KNW-02 · Methodology versions, the workbook slice (K-01-T07; K-01 §3.2, §3.3; handoff KNW-02 e,
@@ -72,6 +78,8 @@ export interface Knw02Search {
   tab?: Knw02Tab | undefined;
   /** The version the diff compares against ("Compare with v2"). */
   against?: string | undefined;
+  /** K-01-T23 (KNW-02 a2): the ⚑ filter across programs. */
+  flagged?: boolean | undefined;
 }
 
 export interface KNW02Props {
@@ -401,6 +409,22 @@ export function KNW02({
       ? undefined
       : diff.data.tiles.added + diff.data.tiles.changed + diff.data.tiles.removed;
   const tab: Knw02Tab = search.tab ?? "review";
+  // K-01-T23 (KNW-02 a, a2, b): a version made by an import shows its file and parsed steps; while
+  // the importer runs, the RunCard polls the import's own progress.
+  const imported = useQuery({
+    ...versionImportOptions(path),
+    retry: false,
+    refetchInterval: (q) => (q.state.data?.status === "parsing" ? 2000 : false),
+  });
+  const imp = imported.data;
+  const cache = useQueryClient();
+  const confirm = useMutation({
+    ...flagResolutionMutation(),
+    onSuccess: () =>
+      cache.invalidateQueries({
+        queryKey: programStepsQueryKey({ path: { program_id: picked?.id ?? "" } }),
+      }),
+  });
 
   if (state.isError) {
     return (
@@ -499,7 +523,7 @@ export function KNW02({
     );
 
   return (
-    <>
+    <MatchScope>
       <EvidenceTriad
         embedded
         toolbar={{ nav: [], active: "Knowledge", firm: "" }}
@@ -592,6 +616,9 @@ export function KNW02({
           footer,
         }}
         viewer={
+          imp !== undefined && imp.status !== "parsing" && steps.data !== undefined ? (
+            <SourceViewer file={importViewerFile(versionId, imp, steps.data)} scrollToLit />
+          ) : (
           <div className="flex flex-1 items-center justify-center p-[24px]">
             {s.drafted_from_version_id != null ? (
               <EmptyState icon="pencil" title={COPY.viewer.draft} />
@@ -601,17 +628,41 @@ export function KNW02({
               </EmptyState>
             )}
           </div>
+          )
         }
         sheet={{
-          tabs: [COPY.sheet.tab],
-          active: COPY.sheet.tab,
+          tabs: imp === undefined ? [COPY.sheet.tab] : [COPY.sheet.tab, COPY.importReview.flagged],
+          active: search.flagged === true ? COPY.importReview.flagged : COPY.sheet.tab,
+          onTab: (label) => {
+            set({ flagged: label === COPY.importReview.flagged ? true : undefined });
+          },
           children:
             picked === undefined ? (
               <p className="px-[12px] py-[8px] text-dense text-ink-3">{COPY.sheet.empty}</p>
             ) : (
               <div className="flex min-h-full flex-col">
+                {imp?.status === "parsing" && <ParsingRunCard imp={imp} />}
                 <div className="flex-1">
-                  {steps.data === undefined ? <Skeleton /> : <StepRows steps={steps.data} />}
+                  {steps.data === undefined ? (
+                    <Skeleton />
+                  ) : imp !== undefined ? (
+                    <ImportedStepRows
+                      steps={steps.data}
+                      flaggedOnly={search.flagged === true}
+                      {...(canManage && s.status !== "published"
+                        ? {
+                            onConfirm: (step: StepOut) => {
+                              confirm.mutate({
+                                path: { version_id: versionId, step_id: step.id },
+                                body: { action: "confirm", row_version: step.row_version },
+                              });
+                            },
+                          }
+                        : {})}
+                    />
+                  ) : (
+                    <StepRows steps={steps.data} />
+                  )}
                 </div>
                 <p className="h-[30px] px-[12px] text-meta leading-[30px] text-ink-3">
                   {COPY.sheet.footer(picked.step_count, picked.mandatory_count, picked.flags_open)}
@@ -672,6 +723,6 @@ export function KNW02({
           </Button>
         </div>
       </Dialog>
-    </>
+    </MatchScope>
   );
 }

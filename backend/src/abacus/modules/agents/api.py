@@ -16,6 +16,14 @@ from abacus.modules.agents.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.agents.citations import SheetLayoutError
 from abacus.modules.agents.citations import verify as verify_citations
 from abacus.modules.agents.contract import proposals_router, suggestions_router
+from abacus.modules.agents.decision_recommend import (
+    RECOMMENDER,
+    OptionFact,
+    PriorFact,
+    Recommended,
+    RecommendFacts,
+    recommend,
+)
 from abacus.modules.agents.engagement_agent import start_agents
 from abacus.modules.agents.engagement_agent_workflow import HANDLE as ENGAGEMENT_AGENT_HANDLE
 from abacus.modules.agents.engagement_agent_workflow import (
@@ -44,7 +52,20 @@ from abacus.modules.agents.follow_ups import reminder_history_of
 from abacus.modules.agents.gates import register_gate_sources, register_suggestion_lookup
 from abacus.modules.agents.graph import EngagementGraph, engagement_graph
 from abacus.modules.agents.guidance_draft import DRAFTER, DraftOutcome, create_draft_run, draft
-from abacus.modules.agents.handoff import Citation, Handoff, ScreeningOutput, VerifiedCitation
+from abacus.modules.agents.handoff import (
+    Citation,
+    DraftCitation,
+    DraftedCell,
+    Handoff,
+    ScreeningOutput,
+    SectionDraft,
+    Handoff,
+    ImportBatchOutput,
+    ImportedProgram,
+    ImportedStep,
+    ScreeningOutput,
+    VerifiedCitation,
+)
 from abacus.modules.agents.home_counts import register_home_counts
 from abacus.modules.agents.inbox_match import MATCHER, MatchOutcome, create_match_run, match
 from abacus.modules.agents.intake_candidates import intake_candidates
@@ -111,6 +132,7 @@ from abacus.modules.agents.section_sources import (
     SectionSource,
     SourceCell,
     SourcePaper,
+    register_mode_plan,
     register_section_source,
 )
 from abacus.modules.agents.service import (
@@ -265,6 +287,7 @@ __all__ = [
     "ENGAGEMENT_AGENT_HANDLE",
     "ENGAGEMENT_AGENT_NEXT_TICK",
     "MATCHER",
+    "RECOMMENDER",
     "REVIEWER",
     "ROUTERS",
     "SCREENER",
@@ -284,7 +307,9 @@ __all__ = [
     "ChangeSetApplier",
     "Citation",
     "CitationStates",
+    "DraftCitation",
     "DraftOutcome",
+    "DraftedCell",
     "DraftingNotEnabled",
     "EffectiveAiPolicy",
     "EngagementAgent",
@@ -300,9 +325,12 @@ __all__ = [
     "Handoff",
     "ImportBatchInput",
     "ImportBatchOutcome",
+    "ImportBatchOutput",
     "ImportFailInput",
     "ImportFinishInput",
     "ImportPagesOutcome",
+    "ImportedProgram",
+    "ImportedStep",
     "InboxMatchWorkflow",
     "IntakeOutcome",
     "KnowledgeHit",
@@ -313,13 +341,17 @@ __all__ = [
     "MethodologyImportWorkflow",
     "NamedReport",
     "NextTickInput",
+    "OptionFact",
     "OverrideRate",
     "PackProblem",
     "PackRefused",
+    "PriorFact",
     "ProposalChanged",
     "ProposalInvalid",
     "ProposedRow",
     "ProposedValue",
+    "RecommendFacts",
+    "Recommended",
     "ReviewOutcome",
     "ReviewUnavailable",
     "RunInput",
@@ -329,6 +361,7 @@ __all__ = [
     "ScreeningOutput",
     "ScreeningResultView",
     "ScreeningWorkflow",
+    "SectionDraft",
     "SectionDraftWorkflow",
     "SectionSource",
     "ShadowReportChanged",
@@ -374,8 +407,10 @@ __all__ = [
     "match",
     "match_intake",
     "override_rate",
+    "recommend",
     "register_change_set_applier",
     "register_engagement_run_agent",
+    "register_mode_plan",
     "register_proposal_adapter",
     "register_section_source",
     "register_suggestion_applier",
