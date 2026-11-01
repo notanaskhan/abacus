@@ -33,7 +33,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import CT
 from abacus_tools.synthetic.scenarios.brightwater_hale.sampling_content import SEEDS
 from abacus_tools.synthetic.scenarios.brightwater_hale.scenario import SETUP_AT
 from abacus_tools.synthetic.scenarios.brightwater_hale.slices import register_slice
-from abacus_tools.synthetic.scenarios.brightwater_hale.standards import TABLE_2
+from abacus_tools.synthetic.scenarios.brightwater_hale.standards import RMM_MATRIX, TABLE_2, Spec
 from abacus_tools.synthetic.scenarios.brightwater_hale.timeline import Event
 
 SLICE: Final = "sampling"
@@ -138,6 +138,37 @@ def granite_events() -> list[Event]:
     return events
 
 
+def _policy(spec: Spec, at: datetime) -> list[Event]:
+    """A firm policy created, imported and published by its owner (A-04-T13: BH matrix v1)."""
+    key = {"key": spec.key}
+    return [
+        Event(
+            f"standard-create:{spec.key}",
+            at,
+            "standards.created",
+            spec.owner,
+            SLICE,
+            {**key, "kind": spec.kind, "name": spec.name, "owner": spec.owner},
+        ),
+        Event(
+            f"standard-import:{spec.key}:v1",
+            at + timedelta(seconds=30),
+            "standards.version_imported",
+            spec.owner,
+            SLICE,
+            {**key, "version": 1},
+        ),
+        Event(
+            f"standard-publish:{spec.key}:v1",
+            at + timedelta(seconds=60),
+            "standards.version_published",
+            spec.owner,
+            SLICE,
+            {**key, "version": 1},
+        ),
+    ]
+
+
 @register_slice(SLICE)
 def sampling_events() -> list[Event]:
     firm = SETUP_AT + timedelta(hours=3)
@@ -171,6 +202,7 @@ def sampling_events() -> list[Event]:
             SLICE,
             {**table, "version": 1},
         ),
+        *_policy(RMM_MATRIX, firm + timedelta(minutes=12)),
         _event(
             "groupings-import", firm + timedelta(minutes=15), "ledger.grouping_set_imported", "MO"
         ),

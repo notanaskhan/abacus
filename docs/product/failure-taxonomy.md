@@ -37,6 +37,19 @@ Separate from failures: content written to manipulate the system. Every string f
 | Oversized field | `oversized_field` | A description of 64 KB or more |
 | Look-alike name | `lookalike_name` | A vendor named one character away from a real counterparty in the same ledger |
 
+## EBP section-draft defects (A-05-T14; DEC-1958)
+
+Not screening categories: the defects the section drafter's EBP case sets plant and the suite's
+graders count (`evals/workpapers_section_drafter/suite.yaml`). The screener's generator and rules
+are unchanged.
+
+- `spd_conflict`: the SPD's wording differs from the governing document's (EBP-02 c).
+- `amendment_governs`: an amendment changes a provision from its effective date (EBP-02 d).
+- `late_remittance`, `cutoff_receivable`, `part_iv_inconsistency`, `eligibility_exception`: the
+  exceptions the EBP modes must surface (recall at least 0.97).
+- `match_in_4a`, `small_plan_safe_harbor_applied`, `offset_as_deemed_distribution`,
+  `director_name_surfaced`: answers that must never occur.
+
 ## Changing this taxonomy
 
 This file is protected. Adding or renaming a category requires founder approval and updates to the generator, screening rules and evaluation suites in the same change.
