@@ -314,7 +314,13 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    for table in _TABLES:
+    # Dependents first: decisions name batches and entries, lines name entries.
+    for table in (
+        "proposed_entry_decisions",
+        "proposed_entry_lines",
+        "approval_batches",
+        "proposed_entries",
+    ):
         op.execute(f"DROP TABLE {table}")
     op.execute("DROP FUNCTION proposed_entry_lines_locked()")
     op.execute("DROP FUNCTION proposed_entry_balanced()")
