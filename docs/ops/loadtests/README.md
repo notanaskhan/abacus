@@ -23,6 +23,7 @@ public. Load runs on synthetic firms only, so there is no client data to leak, a
 | Harness: YAML profiles, client-side p50/p95/p99, SSE, Temporal load (`make loadtest PROFILE=`) | built (Q-03-T035) |
 | Journey content: `journeys` (J02, J04-PBC, J12 with persona weights), `pbc_import_burst` (300-item import), `smoke` | built (Q-03-T044) |
 | Firm profiles x1, x25, x100 (`make seed-staging PROFILE=`) | built (Q-03-T044); x25 rehearsed on a laptop's throwaway Postgres 2026-11-01 (below) |
+| Tax-surge content in every profile: 5 to 15 returns per firm (four in five Feld-shaped 1040s with an organizer and the 8879 family's PDFs, one in five a Ridgeline-shaped 1065 with a four-recipient K-1 set), through the organizer and bridge services | built (Q-03-T132, DEC-1675); the x25 tax-surge run (Q-03-T131) waits for the perf stack and Q-03-T106 |
 | Perf stack `infra/envs/perf` and its create and destroy workflow | **not built** (Q-03-T036) |
 | Chapter 10 scenarios: `monday_9am`, `deadline_surge`, `pbc_import_fairness`, `sse_soak`, `backfill_business_hours`, `failure_under_load`; the post-deploy `x1_smoke` | built (Q-03-T043) |
 | `--dry-run` (`make loadtest DRY_RUN=1`): the plan, no request | built (Q-03-T043) |
