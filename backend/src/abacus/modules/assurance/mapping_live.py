@@ -14,12 +14,13 @@ the adopt route are A-09's TB mapper's (ADR-005).
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Sequence
 from decimal import Decimal
 from typing import Final, Literal, cast
 from uuid import UUID
 
-from abacus.kernel.errors import DomainConflict, NotFound
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.listing import ListPage
 from abacus.modules.assurance.mapping import (
     edit,
@@ -43,14 +44,19 @@ from abacus.modules.assurance.tb_mapping_contract import (
     SignOffChipOut,
 )
 from abacus.modules.engagements.api import get_ref
+from abacus.modules.evidence.api import extract_isolated, read_version, version_view
 from abacus.modules.identity.api import AuthContext, allowed_actions, authorise, names_of
 from abacus.modules.ledger.api import (
     CONFIDENCE,
     MappingView,
+    PredecessorColumns,
+    VersionView,
     account_edits,
     engagement_trial_balances,
+    grouping_catalogue,
     mapped_trial_balance,
     mapping_set_by_id,
+    predecessor_keys,
     published_versions,
     subtotals,
     trial_balance_view,
@@ -143,7 +149,7 @@ async def _summary(
             "period_end": tb.summary.period_end,
             "grouping_set_version_id": view.version.id,
             "grouping_set_label": f"{view.version.set_name} v{view.version.version}",
-            "prior_source": "prior_engagement",
+            "prior_source": await _prior_source(ctx, view.mapping_set_id),
             "run_status": "ready",
             "status": status,
             "tallies": MappingTalliesOut(
@@ -172,20 +178,72 @@ async def mapping_sets(ctx: AuthContext, engagement_id: UUID) -> ListPage[Mappin
     return ListPage[MappingSetSummaryOut](items=items, total=len(items))
 
 
+class PredecessorFileMismatch(DomainInvalid):
+    """A predecessor file names its evidence version, and only a predecessor file does."""
+
+    code = "predecessor_file_mismatch"
+
+
+class PredecessorUnreadable(DomainInvalid):
+    """The predecessor file is not a sheet with an account column and an FS-line column."""
+
+    code = "predecessor_unreadable"
+
+
+async def _prior_source(ctx: AuthContext, mapping_set_id: UUID) -> str:
+    found = await mapping_set_by_id(ctx.tenant, mapping_set_id)
+    return "prior_engagement" if found is None else found.prior_source
+
+
+async def _predecessor(
+    ctx: AuthContext, engagement_id: UUID, version: VersionView, evidence_version_id: UUID
+) -> dict[str, str]:
+    """DEC-1769: the engagement's uploaded predecessor mapping, parsed by code in isolation
+    (ADR-050, ADR-110) against the version's FS lines (key or label)."""
+    view = await version_view(ctx.tenant, evidence_version_id)
+    if view.engagement_id != engagement_id:
+        raise NotFound("evidence_version")
+    content = await read_version(ctx, evidence_version_id)
+    extraction = await asyncio.to_thread(extract_isolated, content, view.media_type)
+    if extraction.status != "extracted" or not extraction.tables:
+        raise PredecessorUnreadable(facts={"reason": extraction.reason or "not_a_sheet"})
+    lines: dict[str, str] = {}
+    for g in await grouping_catalogue(ctx.tenant, version.id):
+        for line in g.lines:
+            lines[line.label] = line.key
+            lines[line.key] = line.key
+    table = next((t for t in extraction.tables if t.rows), extraction.tables[0])
+    try:
+        return predecessor_keys(table.rows, lines)
+    except PredecessorColumns as exc:
+        raise PredecessorUnreadable(facts={"reason": str(exc)}) from None
+
+
 async def run_start(ctx: AuthContext, engagement_id: UUID, body: MappingRunIn) -> MappingRunOut:
-    """Start the rules on a TB of record, on the firm's newest published grouping set. Computing
-    on read, the run is ready at once (DEC-1661)."""
+    """Start the rules on a TB of record, on the firm's newest published grouping set, with the
+    prior year from the source the body names (DEC-1769). Computing on read, the run is ready at
+    once (DEC-1661)."""
     # The TB must be this engagement's before anything about it is said (no 409 oracle).
     tbs = {t.id for t in await engagement_trial_balances(ctx.tenant, engagement_id)}
     if body.trial_balance_id not in tbs:
         raise NotFound("trial_balance")
     if await mapping_with_prior(ctx.tenant, engagement_id, body.trial_balance_id) is not None:
         raise MappingExistsForTb
+    if (body.prior_source == "predecessor_file") != (
+        body.predecessor_evidence_version_id is not None
+    ):
+        raise PredecessorFileMismatch
     versions = await published_versions(ctx.tenant)
     if not versions:
         raise NotFound("grouping_set_version")
     newest = max(versions, key=lambda v: (v.published_at or v.created_at, v.version))
-    await start(ctx, engagement_id, body.trial_balance_id, newest.id)
+    predecessor = None
+    if body.predecessor_evidence_version_id is not None:
+        keys = await _predecessor(ctx, engagement_id, newest, body.predecessor_evidence_version_id)
+        predecessor = (body.predecessor_evidence_version_id, keys)
+    await start(
+        ctx, engagement_id, body.trial_balance_id, newest.id, body.prior_source, predecessor
+    )
     view = await mapping_with_prior(ctx.tenant, engagement_id, body.trial_balance_id)
     if view is None:
         raise NotFound("mapping_set")
@@ -342,7 +400,7 @@ async def confirm(
 async def mapped(ctx: AuthContext, mapping_set_id: UUID) -> MappedTrialBalanceOut:
     """US-6.4: debits, credits and net per FS line, computed by code."""
     engagement_id, tb_id = await _set(ctx, mapping_set_id, "mapping_set.read")
-    prior = await prior_keys_for(ctx.tenant, engagement_id)
+    prior = await prior_keys_for(ctx.tenant, engagement_id, tb_id)
     found = await mapped_trial_balance(ctx.tenant, engagement_id, tb_id, prior)
     if found is None:
         raise NotFound("mapping_set")
