@@ -2,7 +2,7 @@
 id: TASK-2915
 title: A-06-T03 migration 0643 adjustments_core (C8 tables)
 spec: SPEC-642
-acceptance_criteria: [SPEC-642 AC-1, AC-2]
+acceptance_criteria: [AC-1, AC-2]
 risk_zone: red
 status: in-review
 epic: A-06

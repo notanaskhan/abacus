@@ -94,7 +94,7 @@ class AgentSpec(BaseModel):
             "EntryAssessment",
             "ImportBatchOutput",
             "SectionDraft",
-            "Recommendation",
+            "DecisionSuggestion",
         ],
         classified("internal"),
     ]

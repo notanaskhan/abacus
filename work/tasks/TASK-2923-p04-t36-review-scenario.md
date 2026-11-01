@@ -1,8 +1,8 @@
 ---
 id: TASK-2923
 title: P-04-T36 Brightwater Hale review-grammar scenario events through service APIs
-spec: SPEC-600
-acceptance_criteria: [P-04 §3 artboard rows SHL-11, SHL-12, SHL-16; T36 acceptance]
+spec: SPEC-000  # P-04-T36 row; P-04 §2, §3
+acceptance_criteria: [AC-1]
 risk_zone: amber
 status: in-review
 epic: P-04

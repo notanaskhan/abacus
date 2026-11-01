@@ -4,7 +4,11 @@
 // SHL-12 and SHL-15, with the dialog radius 14 (shared context: dialogs 14).
 import { type Locator, type Page, expect, test } from "@playwright/test";
 
-test.use({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2, reducedMotion: "reduce" });
+test.use({
+  viewport: { width: 1440, height: 900 },
+  deviceScaleFactor: 2,
+  reducedMotion: "reduce",
+});
 
 async function layer(page: Page, screen: string, st: string): Promise<Locator> {
   await page.goto(`/components/screens/${screen}?st=${st}&frame=1`);
@@ -16,7 +20,12 @@ async function layer(page: Page, screen: string, st: string): Promise<Locator> {
 async function box(target: Locator): Promise<{ x: number; y: number; w: number; h: number }> {
   const b = await target.boundingBox();
   if (b === null) throw new Error("no box");
-  return { x: Math.round(b.x), y: Math.round(b.y), w: Math.round(b.width), h: Math.round(b.height) };
+  return {
+    x: Math.round(b.x),
+    y: Math.round(b.y),
+    w: Math.round(b.width),
+    h: Math.round(b.height),
+  };
 }
 
 for (const screen of ["SHL-10", "SHL-11", "SHL-12", "SHL-15"] as const) {

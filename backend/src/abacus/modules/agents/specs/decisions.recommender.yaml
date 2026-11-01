@@ -8,13 +8,13 @@ prompt: decisions.recommend@v1
 tier: medium
 escalation_tier: medium
 input_schema: DecisionRecommendInput
-output_schema: Recommendation
+output_schema: DecisionSuggestion
 # Reads the materiality record, raises the partner's card with its tag; never decides (INV-1).
 task_scope: [materiality.read, decision_card.raise, suggestion.create, decision_recommend.run]
 tools: []
 limits:
   max_output_tokens: 600
-  max_cost_usd: "0.01"
+  max_cost_usd: "0.03"  # medium tier, 600 output tokens: the gateway's estimate is above 0.01
   max_steps: 1
   max_seconds: 30
 autonomy: propose

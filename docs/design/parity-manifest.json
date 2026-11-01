@@ -1,6 +1,14 @@
 {
   "schema": 1,
   "_comment": "Parity manifest (F-05-T16; chapter 04 9.3). key = <specimen id>.<part>. selector = CSS inside that specimen's section on /components. source = a PNG under $ACCRUED_HANDOFF_DIR. crop = [x0, y0, x1, y1] in the PNG's own pixels (2x), or \"window\". sha256 pins the source (python -m abacus_tools.parity.crop_handoff --pin). tier = A to D. deviation = a known, recorded difference: reported, not blocking. locked = blocking at tier B. The PNGs are never committed.",
+  "tools": {
+    "_comment": "Q-03-T152: the renderer, axe and font versions the baselines were measured with (pnpm-lock.yaml); a bump re-measures the parity rows before merging.",
+    "@playwright/test": "1.63.0",
+    "playwright": "1.63.0",
+    "@axe-core/playwright": "4.13.0",
+    "axe-core": "4.13.0",
+    "@fontsource/geist": "5.3.0"
+  },
   "entries": {
     "c-06-status-disc.done-15": {
       "selector": "[role=\"img\"][aria-label=\"Done\"] >> nth=1",

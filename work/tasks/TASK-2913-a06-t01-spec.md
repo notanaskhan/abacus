@@ -2,7 +2,7 @@
 id: TASK-2913
 title: A-06-T01 SPEC-642 findings, adjustments and SUM
 spec: SPEC-642
-acceptance_criteria: [SPEC-642 §6]
+acceptance_criteria: [AC-1]
 risk_zone: red
 status: in-review
 epic: A-06

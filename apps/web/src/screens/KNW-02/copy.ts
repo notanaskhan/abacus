@@ -161,8 +161,7 @@ export const COPY = {
     all: "All steps",
     reading: (n: number): string =>
       `Methodology importer is reading ${String(n)} ${n === 1 ? "file" : "files"}`,
-    progress: (done: number, total: number): string =>
-      `${String(done)} of ${String(total)} pages`,
+    progress: (done: number, total: number): string => `${String(done)} of ${String(total)} pages`,
     parsing: "Parsing…",
   },
 } as const;

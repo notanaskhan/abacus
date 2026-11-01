@@ -52,7 +52,8 @@ def _deficiency(
 ) -> tuple[str, tuple[object, ...]]:
     return (
         "INSERT INTO deficiencies (tenant_id, engagement_id, work_item_id, finding_id, status, "
-        "severity_concluded, decision_card_id, decision_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+        "severity_concluded, decision_card_id, decision_id) "
+        "VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
         (
             uuid.uuid4(),
             uuid.uuid4(),

@@ -2,7 +2,7 @@
 id: TASK-2912
 title: A-05-T15 migration 0642 ebp_participants_testing
 spec: SPEC-640
-acceptance_criteria: [A-05 §4.2 M2]
+acceptance_criteria: [AC-13]
 risk_zone: red
 status: in-review
 epic: A-05

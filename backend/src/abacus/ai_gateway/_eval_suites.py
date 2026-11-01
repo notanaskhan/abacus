@@ -9,6 +9,10 @@ EVAL_SUITES: dict[str, tuple[str, int]] = {   'decisions.recommender': ('decisio
     'evidence.screener': ('evidence.screen@v0', 2),
     'evidence.upload_reviewer': ('evidence.upload_review@v3', 3),
     'fieldwork.entry_assessor': ('fieldwork.entry_assess@v2', 2),
-    'requests.guidance_drafter': ('requests.guidance_draft@v1', 1)}
-EVAL_SUITE_MODES: dict[str, dict[str, int]] = {'evidence.matcher': {'evidence.inbox_match@v2': 1}}
+    'methodology.importer': ('methodology.import_parse@v1', 1),
+    'requests.guidance_drafter': ('requests.guidance_draft@v1', 1),
+    'workpapers.section_drafter': ('workpapers.section_draft@v1', 1)}
+EVAL_SUITE_MODES: dict[str, dict[str, int]] = {   'evidence.matcher': {'evidence.inbox_match@v2': 1},
+    'workpapers.section_drafter': {   'workpapers.section_draft@v1': 1,
+                                      'workpapers.section_draft_ebp_provisions@v1': 1}}
 # fmt: on

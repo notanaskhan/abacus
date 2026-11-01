@@ -1,4 +1,8 @@
-import type { PlanOut, ProviderOut, ProvidersOut } from "@abacus/api-client";
+import type {
+  AbacusModulesAssuranceEbpContractProviderOut as ProviderOut,
+  PlanOut,
+  ProvidersOut,
+} from "@abacus/api-client";
 import {
   ebpPlanEditMutation,
   ebpPlanOptions,
@@ -74,7 +78,10 @@ function KV({
   onChange?: ((v: string) => void) | undefined;
 }): JSX.Element {
   return (
-    <div data-field={field} className="flex min-h-[33px] flex-col justify-center px-[12px] hairline-b">
+    <div
+      data-field={field}
+      className="flex min-h-[33px] flex-col justify-center px-[12px] hairline-b"
+    >
       <div className="flex items-center gap-[8px] text-body">
         <span className="flex-1 text-ink-2">{label}</span>
         {onChange !== undefined ? (
@@ -134,14 +141,26 @@ function PlanFacts({
           ? { help: COPY.missingPn.replace("{id}", plan.recordkeeper_id ?? DASH) }
           : {})}
         editing={draft?.plan_number}
-        onChange={editing ? (v) => onDraft("plan_number", v) : undefined}
+        onChange={
+          editing
+            ? (v) => {
+                onDraft("plan_number", v);
+              }
+            : undefined
+        }
       />
       <KV
         label={k.recordkeeper}
         value={plan.recordkeeper_id ?? DASH}
         field="recordkeeper_plan_id"
         editing={draft?.recordkeeper_plan_id}
-        onChange={editing ? (v) => onDraft("recordkeeper_plan_id", v) : undefined}
+        onChange={
+          editing
+            ? (v) => {
+                onDraft("recordkeeper_plan_id", v);
+              }
+            : undefined
+        }
       />
       <KV
         label={k.planYear}
@@ -285,7 +304,13 @@ export function usePlanProfileCanvas(
     actions: (
       <>
         {canEdit && !editing && (
-          <PaneAction icon="pencil" label={COPY.edit} onClick={() => setDraft({})} />
+          <PaneAction
+            icon="pencil"
+            label={COPY.edit}
+            onClick={() => {
+              setDraft({});
+            }}
+          />
         )}
         {editing && (
           <PaneAction
@@ -294,11 +319,15 @@ export function usePlanProfileCanvas(
             label={COPY.save}
             disabled={!changed || save.isPending}
             onClick={() => {
-              if (draft === null || data === undefined) return;
+              if (data === undefined) return;
               save.mutate({
                 ...path,
                 headers: { "Idempotency-Key": crypto.randomUUID() },
-                body: { fields: draft, citation_note: COPY.noteRequired, seen_version: 1 },
+                body: {
+                  fields: draft,
+                  citation_note: COPY.noteRequired,
+                  seen_version: data.version,
+                },
               });
             }}
           />
@@ -318,7 +347,9 @@ export function usePlanProfileCanvas(
             <PlanFacts
               plan={data}
               draft={draft}
-              onDraft={(key, v) => setDraft((d) => ({ ...(d ?? {}), [key]: v }))}
+              onDraft={(key, v) => {
+                setDraft((d) => ({ ...(d ?? {}), [key]: v }));
+              }}
             />
             <StatusCard plan={data} />
           </div>

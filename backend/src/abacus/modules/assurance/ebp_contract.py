@@ -118,6 +118,7 @@ _PLAN: JsonDict = {
     "filer_status": "large_plan",
     "form5500_due_on": "2026-10-15",
     "audit_kind": "103a3c",
+    "version": 1,
     "allowed_actions": ["ebp_plan.edit"],
 }
 
@@ -144,6 +145,8 @@ class PlanOut(BaseModel):
     form5500_due_on: Annotated[date, classified("internal")]
     # "§103(a)(3)(C) audit", never "limited scope" (DEC-1857).
     audit_kind: Annotated[Literal["103a3c", "full_scope"], classified("internal")]
+    # The row's version: the next edit's `seen_version` (409 `version_conflict` otherwise).
+    version: Annotated[int, Field(ge=1), classified("internal")]
     allowed_actions: Actions
 
 
@@ -589,6 +592,7 @@ async def _plan_out(ctx: AuthContext, work_item_id: UUID) -> PlanOut:
             filer_status=status.filer_status if status is not None else "small_plan",
             form5500_due_on=status.form5500_due_on if status is not None else p.plan_year_end,
             audit_kind=found.audit_kind,
+            version=p.version,
             allowed_actions=cast(list[EbpAction], list(can)),
         ),
     )

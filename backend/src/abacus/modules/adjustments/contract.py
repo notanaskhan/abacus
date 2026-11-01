@@ -114,7 +114,7 @@ class SendIn(BaseModel):
     seen_versions: Annotated[dict[str, int], classified("internal")]
 
 
-class SendOut(BaseModel):
+class AdjustmentSendOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     approval_batch_id: Annotated[UUID, classified("internal")]
@@ -158,7 +158,7 @@ class AdjustedLineOut(BaseModel):
 
     account_code: Annotated[str, classified("internal")]
     account_name: Annotated[str, classified("internal")]
-    unadjusted: Money | None
+    unadjusted: Annotated[Money | None, classified("confidential")]
     aje: Annotated[Decimal | None, classified("confidential")]
     rje: Annotated[Decimal | None, classified("confidential")]
     final: Annotated[Decimal | None, classified("confidential")]
@@ -232,13 +232,13 @@ async def proposed_entry_create_route(
 @router.post(
     f"{_WI}/proposed-entries:approve-and-send",
     action="proposed_entry.send_to_client",
-    response_model=SendOut,
+    response_model=AdjustmentSendOut,
     status_code=201,
     errors=(409, 501),
 )
 async def proposed_entries_send_route(
     work_item_id: UUID, body: SendIn, ctx: Ctx, idempotency_key: IdempotencyKey
-) -> SendOut:
+) -> AdjustmentSendOut:
     """Approve, batch and send through C18; the client sees nothing for 10 seconds (Undo)."""
     await _gate(ctx, work_item_id, "proposed_entry.send_to_client")
     _not_yet()

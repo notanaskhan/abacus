@@ -9,7 +9,7 @@ client principals nothing and the agent no write; the flag defaults off; no rout
 from __future__ import annotations
 
 import json
-from typing import cast
+from typing import cast, get_args
 
 import pytest
 from pydantic import BaseModel
@@ -91,4 +91,4 @@ def test_no_route_can_post_book_or_write_to_a_client_system() -> None:
         if "proposed-entries" in path or "adjusted-tb" in path or "approval-batches" in path:
             assert not any(w in path for w in words), path
     # The posting states are not in the contract's status words (pe_posting_dormant).
-    assert not {"posted", "failed_post", "reversed"} & set(c8.EntryStatus.__args__)  # type: ignore[attr-defined]
+    assert not {"posted", "failed_post", "reversed"} & set(get_args(c8.EntryStatus))

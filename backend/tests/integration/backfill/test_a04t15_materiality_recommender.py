@@ -22,7 +22,10 @@ from abacus.kernel.flags import forget_flags
 from abacus.modules.agents.api import install_fake_responses
 
 from .tb_support import Books, Json
-from .test_a04t12_materiality_service import _keyed, _path
+from .test_a04t12_materiality_service import (
+    _keyed,  # pyright: ignore[reportPrivateUsage] -- a sibling suite\'s helper
+    _path,  # pyright: ignore[reportPrivateUsage] -- a sibling suite\'s helper
+)
 from .test_a04t12_materiality_service import world as materiality_world
 
 pytestmark = pytest.mark.asyncio
@@ -73,8 +76,11 @@ async def test_the_card_carries_the_agents_tag_on_1_5_with_reasons(
     )
     assert card.status_code == 200, card.text
     body = cast(Json, card.json())
-    assert "Accrued Agent" in card.text
-    assert body["card"]["recommendation_suggestion_id"] is not None  # type: ignore[index]
+    # C3 carries the tag as a suggestion on the card ("Recommended by Accrued Agent" is SHL-11's
+    # copy over it); the option it names is the code-computed 1.5%.
+    recommendation = cast(Json, body["recommendation"])
+    assert recommendation["suggestion_id"] is not None
+    assert recommendation["option_key"] == "rate_1_5"
     run = await books_.seed.value(
         "SELECT status FROM agent_runs WHERE tenant_id = $1 AND agent_id = $2",
         books_.tenant_id,
@@ -107,7 +113,7 @@ async def test_the_agent_never_decides(world: tuple[Books, uuid.UUID]) -> None:
         books_.tenant_id,
     )
     await books_.seed.run_untriggered(
-        "UPDATE agent_runs SET status = 'running' WHERE id = $1", run_id
+        "UPDATE agent_runs SET status = 'running', finished_at = NULL WHERE id = $1", run_id
     )
     agent = await load_agent_context(books_.tenant_id, cast(uuid.UUID, run_id))
     with pytest.raises(Exception) as refused:

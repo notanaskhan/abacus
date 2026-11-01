@@ -572,6 +572,8 @@ TEMPLATES: Final[dict[str, str]] = {
     "review_note.raised": "A review note on {engagement} is waiting for you.",
     "decision_card.raised": "A decision on {engagement} is waiting for you.",
     "decision_card.notify_requested": "A decision on {engagement} is waiting for you.",
+    # A-04-T12 (AC3.7): the impacted workpapers' preparers.
+    "materiality.revised": "Materiality on {engagement} was revised; your workpapers use it.",
     "proposal.routed": "A proposal on {engagement} was sent to you for approval.",
     "sign_off.requested": "Work on {engagement} is waiting for your sign-off.",
     "issue.assigned": "An issue on {engagement} was assigned to you.",

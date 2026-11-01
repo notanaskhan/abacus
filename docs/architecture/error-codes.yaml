@@ -111,6 +111,10 @@ codes:
     - abacus.modules.fieldwork.planning.AlreadyDecided
     - abacus.modules.platform.incident_register.AlreadyDecided
     summary: 'Both people have decided this incident: nothing more is recorded (AC-22).'
+  already_linked:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.risks.AlreadyLinked
   already_marked:
     status: 409
     raised_by:
@@ -224,6 +228,11 @@ codes:
     raised_by:
     - abacus.modules.evidence.retention.BelowFloor
     summary: The policy keeps records for less time than the published legal floor allows.
+  benchmark_not_found:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.materiality.BenchmarkNotFound
+    summary: The trial balance holds no line for the policy's benchmark.
   binder_closed:
     status: 409
     raised_by:
@@ -295,6 +304,10 @@ codes:
     raised_by:
     - abacus.modules.review.checkpoints.CheckpointInvalid
     summary: A restore of a checkpoint that is not in effect, or of Current itself; an empty proposal.
+  citation_note_required:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.ebp_plan.CitationNoteRequired
   citation_required:
     status: 422
     raised_by:
@@ -605,6 +618,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.agents.section_draft.DraftingNotEnabled
+    - abacus.modules.assurance.materiality.RecommendationNotEnabled
     summary: 'A real firm the section drafter isn''t cleared for (SPEC-036): synthetic firms only.'
   due_date_required:
     status: 422
@@ -642,6 +656,10 @@ codes:
     raised_by:
     - abacus.modules.tax.k1_disclosures.FurnishingDeclined
     summary: 'The recipient declined electronic furnishing: the firm furnishes by its own channel.'
+  ebp_plan_field_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.ebp_plan.PlanFieldInvalid
   edited_draft_refused:
     status: 422
     raised_by:
@@ -1411,6 +1429,16 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.service.MaterialityMissing
     summary: 'AC-3: a procedure can''t select before materiality is set.'
+  materiality_policy_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.materiality.PolicyMissing
+    summary: The firm has no materiality policy in effect for this kind of audit.
+  materiality_record_moved:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.materiality.MaterialityRecordMoved
+    summary: The card's version is no longer the record's newest (a later version was written).
   materiality_undecided:
     status: 409
     raised_by:
@@ -1431,6 +1459,11 @@ codes:
     - abacus.modules.signatures.portal.MfaRequired
     - abacus.modules.tax.k1_portal.K1MfaRequired
     summary: 'K-1s carry amounts (TRI): the portal session''s second step first (DEC-34).'
+  mode_not_for_paper:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.section_draft.ModeNotForPaper
+    summary: The mode's owner does not draft this kind of paper with it (A-05-T12).
   model_text_not_permitted:
     status: 409
     raised_by:
@@ -1519,6 +1552,10 @@ codes:
     raised_by:
     - abacus.modules.evidence.duplicates.NotADuplicate
     summary: The version carries no duplicate flag.
+  not_an_ebp_audit:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.ebp_plan.NotAnEbpAudit
   not_concluded:
     status: 409
     raised_by:
@@ -1549,6 +1586,10 @@ codes:
     raised_by:
     - abacus.modules.requests.lifecycle.NotIgnored
     summary: Only a request the client ignored can be returned to them.
+  not_linked:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.risks.NotLinked
   not_locked:
     status: 409
     raised_by:
@@ -1638,6 +1679,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.tax.engine_import.NothingAccepted
+  nothing_decided:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.materiality.NothingDecided
+    summary: A reassessment needs a decided materiality.
   nothing_to_approve:
     status: 409
     raised_by:
@@ -1715,6 +1761,11 @@ codes:
     - abacus.modules.requests.comments.CommentOutOfScope
     - abacus.modules.requests.lifecycle.OutOfScope
     summary: 'AC-7: the comment names something outside the engagement; it wasn''t posted.'
+  outside_policy:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.materiality.OutsidePolicy
+    summary: A rate, PM or CT outside the firm's K-02 policy (AC3.3); `facts.field` names which.
   override_not_acknowledged:
     status: 409
     raised_by:
@@ -1826,6 +1877,12 @@ codes:
     raised_by:
     - abacus.modules.platform.pilots.PilotModeRefused
     summary: The enrolment cannot move to that mode from where it is (or without a confirming person).
+  plan_number_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.ebp_plan.PlanNumberInvalid
+    summary: 'Not a Form 5500 plan number (line 1b): three digits 001 to 999, never the recordkeeper''s
+      plan ID; `facts.reason` and `facts.helper` say which and where to look.'
   planning_invalid:
     status: 422
     raised_by:
@@ -1886,6 +1943,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.review.service.PreparerCannotReview
+  presumption_not_rebuttable:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.risks.PresumptionNotRebuttable
+    summary: Management override of controls is presumed and never rebuttable (AU-C 240; AC4.5).
   preview_outdated:
     status: 409
     raised_by:
@@ -1922,6 +1984,11 @@ codes:
     raised_by:
     - abacus.modules.agents.proposals.ProposalInvalid
     summary: A row, edit, approver, reason or follow-up the proposal can't take.
+  proposal_pending:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.materiality.ProposalPending
+    summary: A materiality card already waits on the engagement partner.
   question_sent:
     status: 409
     raised_by:
@@ -2114,6 +2181,15 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.workpapers.OwnWork
     summary: 'ADR-131: the reviewer isn''t the preparer.'
+  risk_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.risks.RiskInvalid
+  rmm_matrix_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.risks.RmmMatrixMissing
+    summary: The firm has no RMM matrix in effect (K-02 `rmm_matrix`).
   roll_forward_invalid:
     status: 422
     raised_by:
@@ -2755,6 +2831,8 @@ codes:
   version_conflict:
     status: 409
     raised_by:
+    - abacus.modules.assurance.ebp_plan.PlanMoved
+    - abacus.modules.assurance.risks.RiskMoved
     - abacus.modules.assurance.service_orgs.OrganizationMoved
     - abacus.modules.workpapers.core.VersionConflict
     - abacus.modules.workpapers.procedures.ProcedureMoved

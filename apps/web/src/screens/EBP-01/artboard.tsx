@@ -20,7 +20,11 @@ export function EBP01Frame({ state }: { state: Ebp01State }): JSX.Element {
   return (
     <div data-artboard={state}>
       <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
-        <div data-screen-frame="EBP-01" data-state={state} className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <div
+          data-screen-frame="EBP-01"
+          data-state={state}
+          className="flex min-h-0 min-w-0 flex-1 flex-col"
+        >
           <AuditCockpitPage
             auditId={NORTHWIND_AUDIT}
             initial={{ section: "ebp_01", ...(state === "d" ? { planEditing: true } : {}) }}

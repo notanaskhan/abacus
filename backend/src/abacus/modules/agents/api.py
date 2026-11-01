@@ -57,13 +57,11 @@ from abacus.modules.agents.handoff import (
     DraftCitation,
     DraftedCell,
     Handoff,
-    ScreeningOutput,
-    SectionDraft,
-    Handoff,
     ImportBatchOutput,
     ImportedProgram,
     ImportedStep,
     ScreeningOutput,
+    SectionDraft,
     VerifiedCitation,
 )
 from abacus.modules.agents.home_counts import register_home_counts

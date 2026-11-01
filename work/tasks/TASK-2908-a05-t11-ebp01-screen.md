@@ -2,7 +2,7 @@
 id: TASK-2908
 title: A-05-T11 EBP-01 screen a-d (plan profile & service providers)
 spec: SPEC-640
-acceptance_criteria: [EBP-01 a-d]
+acceptance_criteria: [AC-9]
 risk_zone: green
 status: in-review
 epic: A-05
