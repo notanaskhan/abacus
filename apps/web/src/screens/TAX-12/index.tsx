@@ -16,6 +16,7 @@ import {
   patchPacketMutation,
   recordTransmissionMutation,
   regenerateLetterMutation,
+  rejectionIssueMutation,
   remindEnvelopesSendMutation,
 } from "@abacus/api-client/query";
 import {
@@ -38,7 +39,6 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { useOpenOverlay } from "../../app-core/open";
-import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { useStaffNames } from "../../domain/requests";
 import { ov } from "../../routes/to";
 import { COPY } from "./copy";
@@ -395,7 +395,24 @@ function Gate({
   );
 }
 
-function Acks({ acks, estimates }: { acks: EfileAckOut[]; estimates: boolean }): JSX.Element {
+function Acks({
+  acks,
+  returnId,
+  canCreateIssue,
+  estimates,
+}: {
+  acks: EfileAckOut[];
+  returnId: string;
+  canCreateIssue: boolean;
+  estimates: boolean;
+}): JSX.Element {
+  // T-01-T37: the rejection becomes an engine-diagnostic issue; the button shows only to someone
+  // the matrix lets create one (client service enters acks but holds no `issue.create`).
+  const raise = useMutation({
+    ...rejectionIssueMutation(),
+    onSuccess: () => toast.show(COPY.fix.created),
+    onError: () => toast.show(COPY.fix.failed),
+  });
   if (acks.length === 0) {
     return (
       <p className="border-t border-hair px-[14px] py-[12px] text-[12.5px] text-ink-3">
@@ -452,14 +469,19 @@ function Acks({ acks, estimates }: { acks: EfileAckOut[]; estimates: boolean }):
               <p className="text-[12.5px]">{COPY.fix.body}</p>
             </aside>
           )}
-          {/* Create issue opens TAX-06 (planned): drawn disabled where planned screens are. */}
-          {PLANNED_VISIBLE && (
-            <span
-              title={COPY.fix.create}
-              className="self-start rounded-[8px] bg-ink px-[12px] py-[6px] text-[12.5px] text-on-ink opacity-60"
+          {canCreateIssue && (
+            <Button
+              className="self-start"
+              disabled={raise.isPending || raise.isSuccess}
+              onClick={() => {
+                raise.mutate({
+                  path: { return_id: returnId, ack_id: rejected.id },
+                  headers: { "Idempotency-Key": `rejection-issue:${rejected.id}` },
+                });
+              }}
             >
               {COPY.fix.create}
-            </span>
+            </Button>
           )}
         </div>
       )}
@@ -680,6 +702,8 @@ function Authorizations({
           <Card title={COPY.acks.title}>
             <Acks
               acks={delivery?.acks ?? []}
+              returnId={returnId}
+              canCreateIssue={delivery?.allowed_actions.includes("issue.create") ?? false}
               estimates={(delivery?.payments ?? []).some((p) => p.kind === "estimate")}
             />
           </Card>

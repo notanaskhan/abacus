@@ -46,7 +46,7 @@ export const audScreens = {
   // (`?section=trial_balance`, behind `ledger.tb_workpaper`); it has no path of its own, and stays
   // planned until A-02-T24 swaps it to the live C9 routes.
   "AUD-06": { name: "Trial balance & leadsheets", status: "planned", path: null },
-  "AUD-07": { name: "Materiality · partner decision", status: "planned", path: null },
+  "AUD-07": { name: "Materiality · partner decision", status: "fixture", path: null },
   "AUD-08": { name: "Risk assessment register & linkage", status: "planned", path: null },
   "AUD-09": { name: "Internal control & exceptions", status: "planned", path: null },
   "AUD-10": { name: "Service organizations & SOC 1 evaluation", status: "planned", path: null },

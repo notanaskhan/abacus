@@ -25,7 +25,7 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Final
+from typing import Final, Literal, cast
 from uuid import UUID
 
 from sqlalchemy import text
@@ -34,9 +34,11 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict
 from abacus.modules.engagements.api import (
     GateFact,
+    LetterSigning,
     letter_for_envelope,
     letter_send_problems,
     recorded_letter,
+    register_letter_envelope_signing,
     register_letter_envelope_status,
     register_letter_sender,
     replace_gate_provider,
@@ -240,6 +242,7 @@ def register_letter_source() -> None:
     replace_gate_provider(LETTER_GATE, letter_gate)
     register_letter_sender(send_letter)
     register_letter_envelope_status(envelope_status)
+    register_letter_envelope_signing(envelope_signing)
 
 
 async def envelope_status(tenant: TenantContext, envelope_id: UUID) -> str | None:
@@ -254,3 +257,30 @@ async def envelope_status(tenant: TenantContext, envelope_id: UUID) -> str | Non
     if row is None:
         return None
     return "superseded" if row.superseded_at is not None else str(row.status)
+
+
+async def envelope_signing(tenant: TenantContext, envelope_id: UUID) -> LetterSigning | None:
+    """N-02-T37: when a letter envelope went out and when its client signer and the firm's
+    countersigner signed (C7's own rows; ENG-04 d, e)."""
+    async with tenant_session(tenant) as session:
+        sent = (
+            await session.execute(
+                text("SELECT sent_at FROM envelopes WHERE id = :id"), {"id": envelope_id}
+            )
+        ).first()
+        if sent is None:
+            return None
+        rows = (
+            await session.execute(
+                text(
+                    "SELECT role, signed_at FROM envelope_signers WHERE envelope_id = :id "
+                    "AND status = 'signed' AND signed_at IS NOT NULL"
+                ),
+                {"id": envelope_id},
+            )
+        ).all()
+    signed: dict[Literal["client", "firm"], datetime] = {}
+    for r in rows:
+        if r.role in ("signer", "countersigner"):
+            signed["firm" if r.role == "countersigner" else "client"] = cast(datetime, r.signed_at)
+    return LetterSigning(sent_at=cast(datetime | None, sent.sent_at), signed_at=signed)

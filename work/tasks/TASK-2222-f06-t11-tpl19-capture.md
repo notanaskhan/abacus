@@ -4,12 +4,12 @@ title: F-06-T11 TPL-19 frames 5 and 6 (v1 capture) and the TPL-19 lock
 spec: SPEC-000  # F-06-T11 row and the TPL-19 handoff; no SPEC defines the specimen
 acceptance_criteria: [AC-1]  # the backlog row's acceptance, quoted under Objective
 risk_zone: amber
-status: in-review
+status: done
 epic: F-06
 plan_key: F-06-T11
 branch: s17-f06-t11
 created: 2026-10-30
-updated: 2026-10-30
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -37,3 +37,4 @@ receipt, deferred frames render a Deferred (DEC-97) placeholder, and TPL-19 is p
 
 ## Progress log
 - 2026-10-30: built in S17 Lane 2 off main; tests run in the end review.
+- 2026-11-01: merged to main in #794 (59be914f7).

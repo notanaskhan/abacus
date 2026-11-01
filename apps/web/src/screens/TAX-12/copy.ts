@@ -123,6 +123,8 @@ export const COPY = {
   fix: {
     body: "Jonah Feld's 2026 IP PIN is in the CP01A letter on file. Add it in CCH Axcess and retransmit.",
     create: "Create issue",
+    created: "Issue created",
+    failed: "The issue could not be created.",
   },
   editor: {
     title: "Delivery packet",

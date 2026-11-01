@@ -89,7 +89,7 @@ function Value({
         <span className="flex flex-1 items-center gap-[6px] text-[13px] font-medium">
           {children}
           {lock != null && (
-            <span aria-label={lock} title={lock}>
+            <span role="img" aria-label={lock} title={lock}>
               <Icon name="lock" size={12} />
             </span>
           )}
