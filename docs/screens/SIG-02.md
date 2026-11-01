@@ -9,7 +9,7 @@
 | Epic and tasks | N-02 · contract T05; stub T03; builder T20, T21, T30; dated letters T31; parity T40 |
 | Spec and ADRs | SPEC-381 AC-7, AC-8, AC-16; ADR-149, ADR-161 |
 | Flags | `signatures.envelopes`; sends behind `signatures.esign_provider` and, for the 8879 family, `signatures.kba_8879` |
-| Manifest status | planned; `fixture` with T20; `live` with T22 |
+| Manifest status | built on C7's draft, field placement and send (N-02-T20/T21/T30, DEC-1174, DEC-1178, DEC-1374), opened as the O4 sheet from SIG-01 (`?ov=envelope:`); no path of its own. `live` with SIG-01 |
 
 ## States
 Clock Mon Sep 14, 2026, 9:40 AM CT.
@@ -34,6 +34,15 @@ Non-artboard: agent-drafted envelope (the draft shows "{person} via Agent"; Send
 | `validation.noEmail` | "{name} has no email on file." |
 | `identity.kba` | "Identity questions (KBA)"; no SMS option exists for the 8879 family |
 | `dated.reportDate` | "Dated as of the report date" |
+
+## Deviations (N-02-T46)
+| ID | What differs from the handoff | Why | Decision recorded |
+|---|---|---|---|
+| D1 | page previews are the evidence viewer's masked pages, not the provider's | C4 masked viewer | DEC-1181 |
+| D2 | signer reorder and field placement by keyboard are not built (their keyboard suite is fixme); the mouse paths are | N-02-T43 | DEC-1672 |
+| D3 | b, c, d and g have no built artboard yet | N-02-T21 | DEC-1174 |
+
+Every deviation above is closed: each has its decision recorded (N-02-T46, 2026-11-01).
 
 ## Links
 Inbound: SIG-01, TAX-12, AUD-21, NOT-03, ENG-04 Send. Outbound: SIG-01, SHL-08.
