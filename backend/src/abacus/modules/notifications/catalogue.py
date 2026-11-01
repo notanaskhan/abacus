@@ -425,6 +425,10 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "acceptance.review_requested": Kind(
         "risk_partner_review_requested", _named_partner, "acceptance_record", "record_id"
     ),
+    # A-03-T10: a drawn sample waits for the engagement's partner or a manager (C16).
+    "sample_set.approval_requested": Kind(
+        "sample_set_approval_requested", _leads, "engagement", "engagement_id"
+    ),
     # N-02-T33: the engagement partners are asked to approve the letter (never the asker).
     "letter.approval_requested": Kind(
         "letter_approval_requested", _listed, "engagement", "engagement_id"
@@ -572,6 +576,7 @@ TEMPLATES: Final[dict[str, str]] = {
     "letter.approval_requested": (
         "The engagement letter for {engagement} is waiting for your approval."
     ),
+    "sample_set.approval_requested": "A sample on {engagement} is waiting for your approval.",
     "independence.reminded": "Reminder: confirm your independence for {engagement}.",
     "human_gate.reassigned": "Something on {engagement} was reassigned to you.",
     "methodology.review_requested": "A methodology version is waiting for your review.",
@@ -629,6 +634,7 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("mention", "mention", "AtSign", email_default=True),
     NotificationKind("materiality.proposed", "approval", "Scale"),
     NotificationKind("risk.approval_requested", "approval", "TriangleAlert"),
+    NotificationKind("sample_set_approval_requested", "approval", "ListChecks"),  # A-03-T10
     NotificationKind("finding.severity_proposed", "approval", "Flag"),
     # Q-02-T30 (Q-02 §4.8): the compliance kernel's kinds. Email text is database rows, loaded
     # through the admin import; none is committed.

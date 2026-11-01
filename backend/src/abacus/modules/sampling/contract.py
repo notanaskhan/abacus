@@ -24,6 +24,7 @@ from typing import Annotated, Literal, NoReturn
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
+from fastapi.responses import Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import SAMPLING_SAMPLE_SETS
@@ -44,6 +45,7 @@ from abacus.modules.identity.api import (
 from abacus.modules.sampling import contract_fixtures as fx
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
+XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
 Money = Annotated[Decimal, classified("confidential")]
 Rate = Annotated[Decimal, Field(ge=0, le=1), classified("internal")]
@@ -283,6 +285,17 @@ class SampleSetSummaryOut(BaseModel):
     population_count: Annotated[int, Field(ge=1), classified("internal")]
 
 
+class SampleSetCreatedOut(BaseModel):
+    """`POST /v1/work-items/{wid}/sample-sets`: the new set, before its first draw (DEC-1662)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    title: Annotated[str, Field(max_length=120), classified("confidential")]
+    purpose: Annotated[str | None, Field(max_length=300), classified("confidential")]
+    program_step_key: Annotated[str | None, classified("internal")]
+
+
 class DrawProgressOut(BaseModel):
     """`…/draw`: what AUD-11e polls once a second until the version is Draft or Failed."""
 
@@ -505,6 +518,16 @@ async def population_gate(ctx: AuthContext, *, write: bool) -> None:
     await _flag_or_404(ctx)
 
 
+async def live_gate(ctx: AuthContext, *, write: bool) -> None:
+    """A live sample set (T10): client 404; a write refused to any non-person; the flag. The
+    service then authorises the action on the set's own engagement (DEC-1553's follow-up)."""
+    if ctx.client:
+        raise NotFound("sample sets")
+    if write and ctx.tenant.actor_kind != "human":
+        raise Forbidden("sample_set.create", "role")
+    await _flag_or_404(ctx)
+
+
 def _not_yet() -> NoReturn:
     raise NotImplementedYet
 
@@ -518,28 +541,41 @@ sample_sets_router = AbacusRouter(prefix="/v1/sample-sets", tags=["sampling"])
     "/sample-sets",
     action="sample_set.read",
     response_model=ListPage[SampleSetSummaryOut],
-    errors=(501,),
+    errors=(),
 )
 async def sample_sets_list_route(work_item_id: UUID, ctx: Ctx) -> ListPage[SampleSetSummaryOut]:
     """The header picker: every sample set on the work item with its current version (DF-05).
     A walled work item answers 404 and no count (INV-3)."""
+    from abacus.modules.sampling import sample_sets  # the service imports these models
+
     await work_item_gate(ctx, "sample_set.read", work_item_id)
-    _not_yet()
+    found = await sample_sets.sample_sets_of(ctx, work_item_id)
+    return ListPage[SampleSetSummaryOut](items=found, total=len(found))
 
 
 @work_items_router.post(
     "/sample-sets",
     action="sample_set.create",
-    response_model=SampleSetSummaryOut,
+    response_model=SampleSetCreatedOut,
     status_code=201,
-    errors=(501,),
+    errors=(),
 )
 async def sample_set_create_route(
     work_item_id: UUID, body: SampleSetIn, ctx: Ctx
-) -> SampleSetSummaryOut:
+) -> SampleSetCreatedOut:
     """Create a sample set; audited `sample_set.created` (T10)."""
+    from abacus.modules.sampling import sample_sets  # the service imports these models
+
     await work_item_gate(ctx, "sample_set.create", work_item_id)
-    _not_yet()
+    if ctx.tenant.actor_kind != "human":
+        raise Forbidden("sample_set.create", "role")
+    created = await sample_sets.create_sample_set(ctx, work_item_id, body)
+    return SampleSetCreatedOut(
+        id=created,
+        title=body.title.strip(),
+        purpose=body.purpose,
+        program_step_key=body.program_step_key,
+    )
 
 
 @work_items_router.post(
@@ -598,53 +634,61 @@ async def population_tie_create_route(
     action="sample_set.create",
     response_model=VersionStartedOut,
     status_code=202,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def sample_version_create_route(
     sample_set_id: UUID, body: VersionIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> VersionStartedOut:
     """Draw a version (T10): the server seeds it and starts `SampleDrawWorkflow`; 409
     `completeness_tie_required`; 403 `seed_not_allowed` has no input to arrive through."""
-    await target_gate(ctx, "sample_set.create")
-    _not_yet()
+    from abacus.modules.sampling import sample_sets  # the service imports these models
+
+    await live_gate(ctx, write=True)
+    return await sample_sets.start_version(ctx, sample_set_id, body, idempotency_key)
 
 
 @sample_sets_router.get(
-    "/{sample_set_id}", action="sample_set.read", response_model=SampleSetOut, errors=(501,)
+    "/{sample_set_id}", action="sample_set.read", response_model=SampleSetOut, errors=()
 )
 async def sample_set_route(
     sample_set_id: UUID,
     ctx: Ctx,
     version: Annotated[int | None, Query(ge=1)] = None,
 ) -> SampleSetOut:
-    await target_gate(ctx, "sample_set.read")
+    from abacus.modules.sampling import sample_sets  # the service imports these models
+
     found = fx.sample_set(sample_set_id, version)
-    if found is None:
-        _not_yet()
-    return SampleSetOut.model_validate(found)
+    if found is not None:
+        await target_gate(ctx, "sample_set.read")
+        return SampleSetOut.model_validate(found)
+    await live_gate(ctx, write=False)
+    return await sample_sets.sample_set_view(ctx, sample_set_id, version)
 
 
 @sample_sets_router.get(
     "/{sample_set_id}/versions/{version_no}/draw",
     action="sample_set.read",
     response_model=DrawProgressOut,
-    errors=(501,),
+    errors=(),
 )
 async def sample_draw_progress_route(
     sample_set_id: UUID, version_no: int, ctx: Ctx
 ) -> DrawProgressOut:
-    await target_gate(ctx, "sample_set.read")
+    from abacus.modules.sampling import sample_sets  # the service imports these models
+
     found = fx.draw_progress(sample_set_id, version_no)
-    if found is None:
-        _not_yet()
-    return DrawProgressOut.model_validate(found)
+    if found is not None:
+        await target_gate(ctx, "sample_set.read")
+        return DrawProgressOut.model_validate(found)
+    await live_gate(ctx, write=False)
+    return await sample_sets.draw_progress(ctx, sample_set_id, version_no)
 
 
 @sample_sets_router.get(
     "/{sample_set_id}/versions/{version_no}/items",
     action="sample_set.read",
     response_model=ListPage[SampleItemOut],
-    errors=(501,),
+    errors=(),
 )
 async def sample_items_route(
     sample_set_id: UUID,
@@ -654,40 +698,59 @@ async def sample_items_route(
     cursor: Annotated[str | None, Query(max_length=500)] = None,
 ) -> ListPage[SampleItemOut]:
     """The selected items with search ("Okoro" leaves Benjamin Okoro, NW-1158)."""
-    await target_gate(ctx, "sample_set.read")
+    from abacus.modules.sampling import sample_sets  # the service imports these models
+
     found = fx.items(sample_set_id, version_no, q)
-    if found is None or cursor is not None:
-        _not_yet()
-    return ListPage[SampleItemOut](
-        items=[SampleItemOut.model_validate(i) for i in found], total=len(found)
+    if found is not None and cursor is None:
+        await target_gate(ctx, "sample_set.read")
+        return ListPage[SampleItemOut](
+            items=[SampleItemOut.model_validate(i) for i in found], total=len(found)
+        )
+    await live_gate(ctx, write=False)
+    page, total, following = await sample_sets.items_page(
+        ctx, sample_set_id, version_no, q, cursor
     )
+    return ListPage[SampleItemOut](items=page, total=total, next_cursor=following)
 
 
 @sample_sets_router.post(
     "/{sample_set_id}/versions/{version_no}/approve",
     action="sample_set.approve",
     response_model=SampleSetOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def sample_set_approve_route(
     sample_set_id: UUID, version_no: int, body: ApproveIn, ctx: Ctx
 ) -> SampleSetOut:
     """L2 approval through review.api (T10): 409 `population_not_tied`,
     `override_not_acknowledged`, `content_changed`; never the preparer (403)."""
-    await target_gate(ctx, "sample_set.approve")
-    _not_yet()
+    from abacus.modules.sampling import sample_sets  # the service imports these models
+
+    await live_gate(ctx, write=True)
+    return await sample_sets.approve(ctx, sample_set_id, version_no, body)
 
 
 @sample_sets_router.get(
     "/{sample_set_id}/versions/{version_no}/export.xlsx",
     action="sample_set.export",
     response_model=bytes,
-    errors=(501,),
+    errors=(409,),
 )
-async def sample_set_export_route(sample_set_id: UUID, version_no: int, ctx: Ctx) -> bytes:
+async def sample_set_export_route(sample_set_id: UUID, version_no: int, ctx: Ctx) -> Response:
     """Deterministic XLSX with a cover sheet (seed, algorithm, parameters, population hash)."""
-    await target_gate(ctx, "sample_set.export")
-    _not_yet()
+    from abacus.modules.sampling import sample_sets  # the service imports these models
+
+    await live_gate(ctx, write=True)
+    data = await sample_sets.export_xlsx(ctx, sample_set_id, version_no)
+    return Response(
+        content=data,
+        media_type=XLSX,
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="sample-{sample_set_id}-v{version_no}.xlsx"'
+            )
+        },
+    )
 
 
 @sample_sets_router.post(

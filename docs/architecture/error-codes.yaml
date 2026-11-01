@@ -320,6 +320,11 @@ codes:
     - abacus.modules.sampling.populations.ColumnMapInvalid
     summary: The column map names an unknown field, no record key, a column the sheet does not have,
       one column twice, or an amount column holding something other than an amount.
+  completeness_tie_required:
+    status: 409
+    raised_by:
+    - abacus.modules.sampling.sample_sets.CompletenessTieRequired
+    summary: A draw needs at least one completeness tie on its population (ADR-340 §7).
   completion_blocked:
     status: 409
     raised_by:
@@ -440,6 +445,7 @@ codes:
     raised_by:
     - abacus.modules.assurance.mapping_live.ContentChanged
     - abacus.modules.review.sign_offs.ContentChanged
+    - abacus.modules.sampling.sample_sets.ContentChanged
     - abacus.modules.tax.approval.ContentChanged
     summary: 'The target changed since the signer saw it: nothing is written.'
   control_set_exists:
@@ -1679,6 +1685,16 @@ codes:
     - abacus.modules.requests.comments.CommentOutOfScope
     - abacus.modules.requests.lifecycle.OutOfScope
     summary: 'AC-7: the comment names something outside the engagement; it wasn''t posted.'
+  override_not_acknowledged:
+    status: 409
+    raised_by:
+    - abacus.modules.sampling.sample_sets.OverrideNotAcknowledged
+    summary: An override below the computed size must be acknowledged by the approver.
+  override_not_below:
+    status: 422
+    raised_by:
+    - abacus.modules.sampling.sample_sets.OverrideNotBelow
+    summary: An override is a size below the computed one; a larger size is not an override.
   override_refused:
     status: 409
     raised_by:
@@ -1720,6 +1736,8 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.fieldwork.service.ParametersInvalid
+    - abacus.modules.sampling.sample_sets.ParametersInvalid
+    summary: The method's parameters are missing or inconsistent (`facts.field`).
   payload_invalid:
     status: 422
     raised_by:
@@ -1792,6 +1810,11 @@ codes:
     raised_by:
     - abacus.modules.signatures.fallback.PolicyNotStricter
     summary: A policy change may only tighten the published floor (AC-9).
+  population_not_tied:
+    status: 409
+    raised_by:
+    - abacus.modules.sampling.sample_sets.PopulationNotTied
+    summary: 'A tie of the version''s population is off or unchecked: nobody may approve it.'
   population_unreadable:
     status: 422
     raised_by:
@@ -2222,6 +2245,16 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.identity.signup.SignupRateLimited
+  size_exceeds_population:
+    status: 422
+    raised_by:
+    - abacus.modules.sampling.sample_sets.SizeExceedsPopulation
+    summary: A size larger than the population cannot be drawn without replacement.
+  size_table_missing:
+    status: 422
+    raised_by:
+    - abacus.modules.sampling.sample_sets.SizeTableMissing
+    summary: No attribute sample size table is in effect for the firm (K-02's import loads it).
   snapshot_entity_mismatch:
     status: 422
     raised_by:
@@ -2660,6 +2693,11 @@ codes:
     - abacus.modules.methodology.lifecycle.VersionFrozen
     summary: The version is not in a status this step takes (a draft is submitted; a version in review
       is approved).
+  version_not_draft:
+    status: 409
+    raised_by:
+    - abacus.modules.sampling.sample_sets.VersionNotDraft
+    summary: Only a drawn draft can be approved (drawing, approved, superseded and failed cannot).
   version_not_latest:
     status: 409
     raised_by:

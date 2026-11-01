@@ -4,12 +4,12 @@ title: K-02-T09 independent AC tests for K-02's red work
 spec: SPEC-500
 acceptance_criteria: [AC-1, AC-2, AC-8, AC-9, AC-10]
 risk_zone: red
-status: in-review
+status: done
 epic: K-02
 plan_key: K-02-T09
 branch: s17-k02-t09
 created: 2026-10-30
-updated: 2026-10-30
+updated: 2026-11-01
 ---
 
 ## Objective
@@ -50,3 +50,4 @@ abacus_app can read a draft reference-set version."
 
 ## Progress log
 - 2026-10-30: written in S17 Lane 2 (AY); run in the end review.
+- 2026-11-01: merged to main in #780 (fb1a16da0).

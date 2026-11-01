@@ -8,7 +8,7 @@ version nor an attachment. Only `methodology.importer` may write that shape.
 Downgrade restores the 0431 check; it fails while an importer run exists, as it should.
 
 Revision ID: 0611
-Revises: 0580
+Revises: 0610
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ _MATCHER = "evidence.matcher"
 _IMPORTER = "methodology.importer"
 
 revision = "0611"
-down_revision = "0580"
+down_revision = "0610"
 branch_labels = None
 depends_on = None
 
