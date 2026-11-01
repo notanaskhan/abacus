@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: refdata-draft refdata-diff refdata-publish refdata-withdraw backfill-rerun shadow-report pilot-metrics go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast evals-match-fast evals-recommend-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check release-pr golden-render
+.PHONY: refdata-draft refdata-diff refdata-publish refdata-withdraw backfill-rerun shadow-report pilot-metrics pilot-read go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast evals-match-fast evals-recommend-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check release-pr golden-render
 
 setup:
 	cd backend && uv sync --locked
@@ -312,6 +312,10 @@ pilot-enrol:
 
 pilot-mode:
 	cd backend && uv run python -m abacus_tools.pilots mode --firm $(FIRM) --enrolment $(ENROLMENT) --mode $(MODE) --operator $(OPERATOR) $(if $(CONFIRMED_BY),--confirmed-by $(CONFIRMED_BY))
+
+# Q-04-T050: the W4/W5 read (Markdown) for the firms in FIRMS (space-separated) and the ISO week WEEK.
+pilot-read:
+	cd backend && uv run python -m abacus_tools.pilots read $(foreach f,$(FIRMS),--firm $(f)) --week $(WEEK)
 
 # Q-04-T008: compute (or rerun, idempotently) one firm's pilot metrics for the ISO week starting WEEK (a Monday).
 pilot-metrics:
