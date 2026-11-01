@@ -2693,7 +2693,7 @@
       "tier": "B",
       "locked": true
     },
-    "KNW-04a.window": {
+    "knw-04a.window": {
       "page": "screens/KNW-04?st=a",
       "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
       "source": "handoff/screens/KNW-04 Firm standards and thresholds - Brightwater Hale/screenshots/KNW-04a.png",
@@ -2702,7 +2702,7 @@
       "tier": "C",
       "deviation": "K-02-T19: report-only (Tier C); the parity report measures it once KNW-04 leaves `planned` (DEC-195)"
     },
-    "KNW-04b.window": {
+    "knw-04b.window": {
       "page": "screens/KNW-04?st=b",
       "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
       "source": "handoff/screens/KNW-04 Firm standards and thresholds - Brightwater Hale/screenshots/KNW-04b.png",
@@ -2711,7 +2711,7 @@
       "tier": "C",
       "deviation": "K-02-T19: report-only (Tier C); the parity report measures it once KNW-04 leaves `planned` (DEC-195)"
     },
-    "KNW-04c.window": {
+    "knw-04c.window": {
       "page": "screens/KNW-04?st=c",
       "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
       "source": "handoff/screens/KNW-04 Firm standards and thresholds - Brightwater Hale/screenshots/KNW-04c.png",
@@ -2720,7 +2720,7 @@
       "tier": "C",
       "deviation": "K-02-T19: report-only (Tier C); the parity report measures it once KNW-04 leaves `planned` (DEC-195)"
     },
-    "KNW-04d.window": {
+    "knw-04d.window": {
       "page": "screens/KNW-04?st=d",
       "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
       "source": "handoff/screens/KNW-04 Firm standards and thresholds - Brightwater Hale/screenshots/KNW-04d.png",
@@ -2729,7 +2729,7 @@
       "tier": "C",
       "deviation": "K-02-T19: report-only (Tier C); the parity report measures it once KNW-04 leaves `planned` (DEC-195)"
     },
-    "KNW-04e.window": {
+    "knw-04e.window": {
       "page": "screens/KNW-04?st=e",
       "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
       "source": "handoff/screens/KNW-04 Firm standards and thresholds - Brightwater Hale/screenshots/KNW-04e.png",
@@ -2738,7 +2738,7 @@
       "tier": "C",
       "deviation": "K-02-T19: report-only (Tier C); the parity report measures it once KNW-04 leaves `planned` (DEC-195)"
     },
-    "KNW-04f.window": {
+    "knw-04f.window": {
       "page": "screens/KNW-04?st=f",
       "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
       "source": "handoff/screens/KNW-04 Firm standards and thresholds - Brightwater Hale/screenshots/KNW-04f.png",
@@ -2747,7 +2747,7 @@
       "tier": "C",
       "deviation": "K-02-T19: report-only (Tier C); the parity report measures it once KNW-04 leaves `planned` (DEC-195)"
     },
-    "KNW-04g.window": {
+    "knw-04g.window": {
       "page": "screens/KNW-04?st=g",
       "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
       "source": "handoff/screens/KNW-04 Firm standards and thresholds - Brightwater Hale/screenshots/KNW-04g.png",
@@ -2756,7 +2756,7 @@
       "tier": "C",
       "deviation": "K-02-T19: report-only (Tier C); the parity report measures it once KNW-04 leaves `planned` (DEC-195)"
     },
-    "KNW-04h.window": {
+    "knw-04h.window": {
       "page": "screens/KNW-04?st=h",
       "selector": "[data-artboard=\"h\"] [data-shell=\"app\"]",
       "source": "handoff/screens/KNW-04 Firm standards and thresholds - Brightwater Hale/screenshots/KNW-04h.png",
@@ -2765,7 +2765,7 @@
       "tier": "C",
       "deviation": "K-02-T19: report-only (Tier C); the parity report measures it once KNW-04 leaves `planned` (DEC-195)"
     },
-    "KNW-04i.window": {
+    "knw-04i.window": {
       "page": "screens/KNW-04?st=i",
       "selector": "[data-artboard=\"i\"] [data-shell=\"app\"]",
       "source": "handoff/screens/KNW-04 Firm standards and thresholds - Brightwater Hale/screenshots/KNW-04i.png",
@@ -3082,7 +3082,7 @@
       "strip": "[data-template='t10'] [data-shell='pane-header']",
       "deviation": "F-06-T13 review measured 2.26% at Tier A: the kit's chrome differs from the board (icon gaps, chip padding, title wrap, button sizes); reported until F-06-T15/T22 fixes the kit"
     },
-    "KNW-01a.window": {
+    "knw-01a.window": {
       "page": "screens/KNW-01?st=a",
       "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
       "source": "handoff/screens/KNW-01 Knowledge library/screenshots/KNW-01a.png",
@@ -3091,7 +3091,7 @@
       "tier": "C",
       "locked": true
     },
-    "KNW-01b.window": {
+    "knw-01b.window": {
       "page": "screens/KNW-01?st=b",
       "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
       "source": "handoff/screens/KNW-01 Knowledge library/screenshots/KNW-01b.png",
@@ -3100,7 +3100,7 @@
       "tier": "C",
       "locked": true
     },
-    "KNW-01c.window": {
+    "knw-01c.window": {
       "page": "screens/KNW-01?st=c",
       "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
       "source": "handoff/screens/KNW-01 Knowledge library/screenshots/KNW-01c.png",
@@ -3109,7 +3109,7 @@
       "tier": "C",
       "locked": true
     },
-    "KNW-01d.window": {
+    "knw-01d.window": {
       "page": "screens/KNW-01?st=d",
       "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
       "source": "handoff/screens/KNW-01 Knowledge library/screenshots/KNW-01d.png",
@@ -3118,7 +3118,7 @@
       "tier": "C",
       "locked": true
     },
-    "KNW-01e.window": {
+    "knw-01e.window": {
       "page": "screens/KNW-01?st=e",
       "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
       "source": "handoff/screens/KNW-01 Knowledge library/screenshots/KNW-01e.png",
@@ -3127,7 +3127,7 @@
       "tier": "C",
       "locked": true
     },
-    "KNW-01f.window": {
+    "knw-01f.window": {
       "page": "screens/KNW-01?st=f",
       "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
       "source": "handoff/screens/KNW-01 Knowledge library/screenshots/KNW-01f.png",
@@ -3136,7 +3136,7 @@
       "tier": "C",
       "locked": true
     },
-    "KNW-03a.window": {
+    "knw-03a.window": {
       "page": "screens/KNW-03?st=a",
       "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
       "source": "handoff/screens/KNW-03 Program editor - BH-EBP-110 General Planning/screenshots/KNW-03a.png",
@@ -3145,7 +3145,7 @@
       "tier": "C",
       "locked": true
     },
-    "KNW-03b.window": {
+    "knw-03b.window": {
       "page": "screens/KNW-03?st=b",
       "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
       "source": "handoff/screens/KNW-03 Program editor - BH-EBP-110 General Planning/screenshots/KNW-03b.png",
@@ -3154,7 +3154,7 @@
       "tier": "C",
       "locked": true
     },
-    "KNW-03c.window": {
+    "knw-03c.window": {
       "page": "screens/KNW-03?st=c",
       "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
       "source": "handoff/screens/KNW-03 Program editor - BH-EBP-110 General Planning/screenshots/KNW-03c.png",
@@ -3163,7 +3163,7 @@
       "tier": "C",
       "locked": true
     },
-    "KNW-03d.window": {
+    "knw-03d.window": {
       "page": "screens/KNW-03?st=d",
       "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
       "source": "handoff/screens/KNW-03 Program editor - BH-EBP-110 General Planning/screenshots/KNW-03d.png",
@@ -3172,7 +3172,7 @@
       "tier": "C",
       "locked": true
     },
-    "KNW-03e.window": {
+    "knw-03e.window": {
       "page": "screens/KNW-03?st=e",
       "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
       "source": "handoff/screens/KNW-03 Program editor - BH-EBP-110 General Planning/screenshots/KNW-03e.png",
@@ -3181,7 +3181,7 @@
       "tier": "C",
       "locked": true
     },
-    "KNW-03f.window": {
+    "knw-03f.window": {
       "page": "screens/KNW-03?st=f",
       "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
       "source": "handoff/screens/KNW-03 Program editor - BH-EBP-110 General Planning/screenshots/KNW-03f.png",
@@ -3190,7 +3190,7 @@
       "tier": "C",
       "locked": true
     },
-    "SIG-01a.window": {
+    "sig-01a.window": {
       "page": "screens/SIG-01?st=a",
       "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
       "source": "handoff/screens/SIG-01 Signatures hub - evidence drawer/screenshots/SIG-01a.png",
@@ -3204,7 +3204,7 @@
       ],
       "locked": true
     },
-    "SIG-01b.window": {
+    "sig-01b.window": {
       "page": "screens/SIG-01?st=b",
       "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
       "source": "handoff/screens/SIG-01 Signatures hub - evidence drawer/screenshots/SIG-01b.png",
@@ -3218,7 +3218,7 @@
       ],
       "locked": true
     },
-    "SIG-01c.window": {
+    "sig-01c.window": {
       "page": "screens/SIG-01?st=c",
       "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
       "source": "handoff/screens/SIG-01 Signatures hub - evidence drawer/screenshots/SIG-01c.png",
@@ -3232,7 +3232,7 @@
       ],
       "locked": true
     },
-    "SIG-01d.window": {
+    "sig-01d.window": {
       "page": "screens/SIG-01?st=d",
       "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
       "source": "handoff/screens/SIG-01 Signatures hub - evidence drawer/screenshots/SIG-01d.png",
@@ -3246,7 +3246,7 @@
       ],
       "locked": true
     },
-    "SIG-01e.window": {
+    "sig-01e.window": {
       "page": "screens/SIG-01?st=e",
       "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
       "source": "handoff/screens/SIG-01 Signatures hub - evidence drawer/screenshots/SIG-01e.png",
@@ -3260,7 +3260,7 @@
       ],
       "locked": true
     },
-    "SIG-01f.window": {
+    "sig-01f.window": {
       "page": "screens/SIG-01?st=f",
       "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
       "source": "handoff/screens/SIG-01 Signatures hub - evidence drawer/screenshots/SIG-01f.png",
@@ -3274,7 +3274,7 @@
       ],
       "locked": true
     },
-    "SIG-01g.window": {
+    "sig-01g.window": {
       "page": "screens/SIG-01?st=g",
       "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
       "source": "handoff/screens/SIG-01 Signatures hub - evidence drawer/screenshots/SIG-01g.png",
@@ -3288,7 +3288,7 @@
       ],
       "locked": true
     },
-    "SIG-02a.window": {
+    "sig-02a.window": {
       "page": "screens/SIG-02?st=a",
       "selector": "[data-artboard=\"a\"]",
       "source": "handoff/screens/SIG-02 Envelope builder - Form 8879-PE - Harborview/screenshots/SIG-02a.png",
@@ -3302,7 +3302,7 @@
       ],
       "locked": true
     },
-    "SIG-02e.window": {
+    "sig-02e.window": {
       "page": "screens/SIG-02?st=e",
       "selector": "[data-artboard=\"e\"]",
       "source": "handoff/screens/SIG-02 Envelope builder - Form 8879-PE - Harborview/screenshots/SIG-02e.png",
@@ -3316,7 +3316,7 @@
       ],
       "locked": true
     },
-    "SIG-02f.window": {
+    "sig-02f.window": {
       "page": "screens/SIG-02?st=f",
       "selector": "[data-artboard=\"f\"]",
       "source": "handoff/screens/SIG-02 Envelope builder - Form 8879-PE - Harborview/screenshots/SIG-02f.png",
@@ -3330,7 +3330,7 @@
       ],
       "locked": true
     },
-    "POR-06a.window": {
+    "por-06a.window": {
       "page": "screens/POR-06?st=a",
       "selector": "[data-artboard=\"a\"]",
       "source": "handoff/screens/POR-06 Sign - Ridgeline engagement letter/screenshots/POR-06a.png",
@@ -3344,7 +3344,7 @@
       ],
       "locked": true
     },
-    "POR-06b.window": {
+    "por-06b.window": {
       "page": "screens/POR-06?st=b",
       "selector": "[data-artboard=\"b\"]",
       "source": "handoff/screens/POR-06 Sign - Ridgeline engagement letter/screenshots/POR-06b.png",
@@ -3358,7 +3358,7 @@
       ],
       "locked": true
     },
-    "POR-06c.window": {
+    "por-06c.window": {
       "page": "screens/POR-06?st=c",
       "selector": "[data-artboard=\"c\"]",
       "source": "handoff/screens/POR-06 Sign - Ridgeline engagement letter/screenshots/POR-06c.png",
@@ -3372,7 +3372,7 @@
       ],
       "locked": true
     },
-    "POR-06d.window": {
+    "por-06d.window": {
       "page": "screens/POR-06?st=d",
       "selector": "[data-artboard=\"d\"]",
       "source": "handoff/screens/POR-06 Sign - Ridgeline engagement letter/screenshots/POR-06d.png",
@@ -3386,7 +3386,7 @@
       ],
       "locked": true
     },
-    "POR-06e.window": {
+    "por-06e.window": {
       "page": "screens/POR-06?st=e",
       "selector": "[data-artboard=\"e\"]",
       "source": "handoff/screens/POR-06 Sign - Ridgeline engagement letter/screenshots/POR-06e.png",
@@ -3400,7 +3400,7 @@
       ],
       "locked": true
     },
-    "POR-06f.window": {
+    "por-06f.window": {
       "page": "screens/POR-06?st=f",
       "selector": "[data-artboard=\"f\"]",
       "source": "handoff/screens/POR-06 Sign - Ridgeline engagement letter/screenshots/POR-06f.png",
@@ -3414,7 +3414,7 @@
       ],
       "locked": true
     },
-    "POR-06g.window": {
+    "por-06g.window": {
       "page": "screens/POR-06?st=g",
       "selector": "[data-artboard=\"g\"]",
       "source": "handoff/screens/POR-06 Sign - Ridgeline engagement letter/screenshots/POR-06g.png",
@@ -3428,7 +3428,7 @@
       ],
       "locked": true
     },
-    "POR-06h.window": {
+    "por-06h.window": {
       "page": "screens/POR-06?st=h",
       "selector": "[data-artboard=\"h\"]",
       "source": "handoff/screens/POR-06 Sign - Ridgeline engagement letter/screenshots/POR-06h.png",
@@ -3442,7 +3442,7 @@
       ],
       "locked": true
     },
-    "ENG-04a.window": {
+    "eng-04a.window": {
       "page": "screens/ENG-04?st=a",
       "selector": "[data-artboard=\"a\"]",
       "source": "handoff/screens/ENG-04 Engagement letter composer - Ridgeline cost segregation and -754/screenshots/ENG-04a.png",
@@ -3456,7 +3456,7 @@
       ],
       "locked": true
     },
-    "ENG-04b.window": {
+    "eng-04b.window": {
       "page": "screens/ENG-04?st=b",
       "selector": "[data-artboard=\"b\"]",
       "source": "handoff/screens/ENG-04 Engagement letter composer - Ridgeline cost segregation and -754/screenshots/ENG-04b.png",
@@ -3470,7 +3470,7 @@
       ],
       "locked": true
     },
-    "ENG-04c.window": {
+    "eng-04c.window": {
       "page": "screens/ENG-04?st=c",
       "selector": "[data-artboard=\"c\"]",
       "source": "handoff/screens/ENG-04 Engagement letter composer - Ridgeline cost segregation and -754/screenshots/ENG-04c.png",
@@ -3484,7 +3484,7 @@
       ],
       "locked": true
     },
-    "ENG-04d.window": {
+    "eng-04d.window": {
       "page": "screens/ENG-04?st=d",
       "selector": "[data-artboard=\"d\"]",
       "source": "handoff/screens/ENG-04 Engagement letter composer - Ridgeline cost segregation and -754/screenshots/ENG-04d.png",
@@ -3498,7 +3498,7 @@
       ],
       "locked": true
     },
-    "ENG-04e.window": {
+    "eng-04e.window": {
       "page": "screens/ENG-04?st=e",
       "selector": "[data-artboard=\"e\"]",
       "source": "handoff/screens/ENG-04 Engagement letter composer - Ridgeline cost segregation and -754/screenshots/ENG-04e.png",
@@ -3512,7 +3512,7 @@
       ],
       "locked": true
     },
-    "ENG-04f.window": {
+    "eng-04f.window": {
       "page": "screens/ENG-04?st=f",
       "selector": "[data-artboard=\"f\"]",
       "source": "handoff/screens/ENG-04 Engagement letter composer - Ridgeline cost segregation and -754/screenshots/ENG-04f.png",
