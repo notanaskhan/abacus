@@ -8,6 +8,12 @@ AUD-11 a's (the handoff and the A-03-T09 goldens), not the code's:
   and Version 2 on census v2 (412, seed 0x5E2A91, two ties), 25 items each; Ana Cruz confirms on
   Sep 15 (DEC-1767), so Version 2 is prepared by Marcus Delaney (L1) and approved by Hannah
   Leclerc (L2), its 25 the design's in draw order.
+- Granite Peak FY2026 (TASK-2717; DEC-1768): the 128-account NetSuite TB (71,910,000 each side)
+  adopted and mapped on BH FS groupings v1, confirmed by Caleb Dunn (L1) once G2 is met; the
+  subsequent-period GL's disbursements, 1,912 payments, $38,640,200.00, tie to the operating
+  account with no gap in check numbers; "Disbursements" Version 1 (seed 0x7C31B4, draft) is
+  24 + 16 = 40 items, $3,698,700.00, the SURL payments in draw order. The load runs to
+  AUD-11 f's clock (Sep 24, 10:20 AM).
 
 The load gets its own database: the session's `migrated_db` holds the loader test's E0."""
 
@@ -28,7 +34,9 @@ from .conftest import MigratedDatabase
 
 pytestmark = pytest.mark.asyncio
 TENANT = loader.TENANT
-SNAPSHOT = "2026-09-24"
+NORTHWIND = loader.engagement_id_of(loader.BY_LABEL["A1"])
+GRANITE = loader.engagement_id_of(loader.BY_LABEL["A2"])
+SNAPSHOT = "2026-09-24T10:20"
 SLICES = ("sampling",)
 
 
@@ -75,9 +83,9 @@ async def test_the_sampling_slice_loads_the_participants_sample_through_services
     ]
     ties = await seed.rows(
         "SELECT p.record_count, t.result, t.difference FROM completeness_ties t "
-        "JOIN sample_populations p ON p.id = t.population_id WHERE p.tenant_id = $1 "
+        "JOIN sample_populations p ON p.id = t.population_id WHERE p.engagement_id = $1 "
         "ORDER BY p.record_count, t.position",
-        TENANT,
+        NORTHWIND,
     )
     assert [tuple(r) for r in ties] == [
         (409, "off", Decimal("-182300.00")),
@@ -104,6 +112,44 @@ async def test_the_sampling_slice_loads_the_participants_sample_through_services
         (1, loader.user_id_of(seats["MD"])),
         (2, loader.user_id_of(seats["HL"])),
     ]
+
+    tb = await seed.rows(
+        "SELECT s.line_count, s.total_debit, s.total_credit FROM ledger_snapshots s "
+        "JOIN trial_balance_versions v ON v.snapshot_id = s.id "
+        "JOIN trial_balances t ON t.id = v.trial_balance_id "
+        "WHERE t.engagement_id = $1",
+        GRANITE,
+    )
+    assert [tuple(r) for r in tb] == [(128, Decimal("71910000.00"), Decimal("71910000.00"))]
+    mapping = await seed.rows(
+        "SELECT o.level, o.signed_by FROM sign_offs o JOIN mapping_sets m ON m.id = o.target_id "
+        "WHERE m.engagement_id = $1 AND o.target_type = 'mapping_set'",
+        GRANITE,
+    )
+    assert [tuple(r) for r in mapping] == [(1, loader.user_id_of(seats["CD"]))]
+    gl = await seed.rows(
+        "SELECT p.record_count, p.amount_total, t.result, t.difference "
+        "FROM sample_populations p JOIN completeness_ties t ON t.population_id = p.id "
+        "WHERE p.engagement_id = $1 AND p.source_kind = 'general_ledger' ORDER BY t.position",
+        GRANITE,
+    )
+    assert [tuple(r) for r in gl] == [
+        (1912, Decimal("38640200.00"), "tie", Decimal("0.00")),
+        (1912, Decimal("38640200.00"), "tie", None),
+    ]
+    drawn = await seed.rows(
+        "SELECT v.version_no, v.status, v.seed, v.final_size, r.amount FROM sample_sets s "
+        "JOIN sample_set_versions v ON v.sample_set_id = s.id "
+        "JOIN sample_items i ON i.sample_set_version_id = v.id "
+        "JOIN sample_population_records r ON r.population_id = v.population_id "
+        "AND r.record_key = i.record_key "
+        "WHERE s.title = 'Disbursements' AND s.tenant_id = $1 ORDER BY i.position",
+        TENANT,
+    )
+    assert {(r["version_no"], r["status"], r["seed"], r["final_size"]) for r in drawn} == {
+        (1, "draft", 0x7C31B4, 40)
+    }
+    assert [r["amount"] for r in drawn] == [Decimal(a) for *_, a in sampling_content.SURL]
 
     again = await loader.load(own_db.superuser_dsn, SNAPSHOT, slices=SLICES, wait=False)
     assert (again.replayed, again.skipped) == (0, len(events))
