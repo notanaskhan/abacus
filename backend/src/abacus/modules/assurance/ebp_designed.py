@@ -28,6 +28,7 @@ from uuid import UUID
 
 from abacus.kernel._statuses import AuditSectionStatus
 from abacus.kernel.db import TenantContext
+from abacus.modules.agents.api import register_mode_plan
 from abacus.modules.assurance.sections import (
     Band,
     SectionState,
@@ -164,3 +165,23 @@ def register() -> None:
             required_action="workpaper.read",
         )
     register_export_section(EXPORT_SECTION, export_section)
+
+
+# A-05-T12 (DEC-1956): the paper kinds each EBP section-draft mode drafts (A-05 §6's table);
+# `related_parties` drafts AUD-27's records, which are not designed papers, so nothing yet.
+MODE_PLANS: Final[dict[str, frozenset[str]]] = {
+    "ebp_provisions": frozenset({"ebp_provisions"}),
+    "ebp_attribute": frozenset({"ebp_eligibility", "ebp_distributions_loans"}),
+    "ebp_reconcile": frozenset(
+        {"ebp_contributions", "ebp_distributions_loans", "ebp_participant_accounts"}
+        | {"ebp_admin_expenses"}
+    ),
+    "ebp_trust": frozenset({"ebp_investments"}),
+    "ebp_form5500": frozenset({"ebp_form5500"}),
+    "related_parties": frozenset(),
+}
+
+
+def register_modes() -> None:
+    for mode, kinds in MODE_PLANS.items():
+        register_mode_plan(mode, kinds)
