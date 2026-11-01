@@ -114,9 +114,12 @@ def test_t026_prepare_links_the_repository_entries_into_backend(tmp_path: Path) 
     (tmp_path / "AGENTS.md").write_text("x")
     (tmp_path / ".git").mkdir()
     (tmp_path / "src").mkdir()  # backend already has one: left alone
-    assert mutation.prepare(backend) == ["AGENTS.md", "docs"]
+    assert mutation.prepare(backend) == ["AGENTS.md", "docs", "backend"]
     assert (backend / "docs").resolve() == (tmp_path / "docs").resolve()
     assert not (backend / ".git").exists()
+    # Q-03-T147: a repository path from mutmut's copy (`REPO / "backend" / ...`) still resolves.
+    assert (backend / "backend" / "src").resolve() == (backend / "src").resolve()
+    assert mutation.prepare(backend) == []  # idempotent
 
 
 def _meta(codes: dict[str, int | None]) -> dict[str, object]:

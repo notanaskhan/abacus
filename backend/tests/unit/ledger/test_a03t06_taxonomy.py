@@ -157,6 +157,10 @@ def test_ac17_ledger_keeps_an_empty_dependency_set_and_imports_no_module() -> No
                 name = node.names[0].name
             else:
                 continue
+            # mutmut's copy (backend/mutants/) imports its own trampoline into every mutated file;
+            # the real tree never may, so only that copy skips it (Q-03-T147: the weekly run).
+            if name.split(".")[0] == "mutmut" and "mutants" in path.parts:
+                continue
             if name.startswith("abacus.modules."):
                 assert name.startswith("abacus.modules.ledger"), (path, name)
             assert not name.startswith("abacus_tools"), (path, name)
