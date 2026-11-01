@@ -907,6 +907,7 @@ async def on_resend_requested(event: OutboxEvent) -> None:
         await _variables(event.tenant_id, first),
         scope=SendScope(engagement_id=issuer.engagement_id),
         idempotency_key=f"schedule_k_resend:{event.event_id}",
+        authority=k1.RESEND,  # DEC-1583: client service resends without `message.send`
     )
 
 

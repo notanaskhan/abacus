@@ -230,8 +230,9 @@ class SystemSendContext:
 # DEC-1580: the sends a person makes as part of another authorised act, by key and that act's
 # action. Releasing a deliverable is the client service role's, which holds no `message.send`;
 # its "Deliverable ready" email is part of the release, so the release's own cell authorises it.
+# DEC-1583: so is a K-1 package's resend to its corrected contact (`k1_package.resend`).
 SEND_AUTHORITIES: Final[frozenset[tuple[str, str]]] = frozenset(
-    {("deliverable_ready", "deliverable.publish")}
+    {("deliverable_ready", "deliverable.publish"), ("deliverable_ready", "k1_package.resend")}
 )
 
 
