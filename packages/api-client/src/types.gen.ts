@@ -19583,6 +19583,40 @@ export type K1DetailsChangeTagOut = {
 };
 
 /**
+ * K1DisclosureIn
+ */
+export type K1DisclosureIn = {
+    /**
+     * Body
+     */
+    body: string;
+};
+
+/**
+ * K1DisclosureOut
+ *
+ * S20e (DV-12): the firm's counsel-approved electronic-furnishing text, one version.
+ */
+export type K1DisclosureOut = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Imported At
+     */
+    imported_at: string;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
  * K1DocumentOut
  */
 export type K1DocumentOut = {
@@ -19702,6 +19736,10 @@ export type K1PackageOut = {
      * Documents
      */
     documents?: Array<K1DocumentOut>;
+    /**
+     * E Furnishing Consent
+     */
+    e_furnishing_consent?: 'unknown' | 'given' | 'declined' | null;
     /**
      * Form
      */
@@ -82743,6 +82781,53 @@ export type IssueVerifyResponses = {
 
 export type IssueVerifyResponse = IssueVerifyResponses[keyof IssueVerifyResponses];
 
+export type ImportK1DisclosureData = {
+    body: K1DisclosureIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/k1-furnishing-disclosures';
+};
+
+export type ImportK1DisclosureErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ImportK1DisclosureError = ImportK1DisclosureErrors[keyof ImportK1DisclosureErrors];
+
+export type ImportK1DisclosureResponses = {
+    /**
+     * Successful Response
+     */
+    201: K1DisclosureOut;
+};
+
+export type ImportK1DisclosureResponse = ImportK1DisclosureResponses[keyof ImportK1DisclosureResponses];
+
 export type K1PackageData = {
     body?: never;
     headers?: {
@@ -89252,6 +89337,53 @@ export type WithdrawIntakeUploadResponses = {
 };
 
 export type WithdrawIntakeUploadResponse = WithdrawIntakeUploadResponses[keyof WithdrawIntakeUploadResponses];
+
+export type PortalK1DisclosureData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/portal/k1-furnishing-disclosure';
+};
+
+export type PortalK1DisclosureErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PortalK1DisclosureError = PortalK1DisclosureErrors[keyof PortalK1DisclosureErrors];
+
+export type PortalK1DisclosureResponses = {
+    /**
+     * Successful Response
+     */
+    200: K1DisclosureOut;
+};
+
+export type PortalK1DisclosureResponse = PortalK1DisclosureResponses[keyof PortalK1DisclosureResponses];
 
 export type PortalDetailsChangeData = {
     body: PortalDetailsChangeIn;

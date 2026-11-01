@@ -49,7 +49,7 @@ Gradients, emoji, blue, heavy shadows, invented data, boxed inputs, the agent as
 | DV-11 | Role union renders inside the full shell | T-02 §2 | DEC-1167 |
 | D1 | `pell-street-member` is "Pell Street Ventures LLC · authorized member"; no invented name | T-02 §2 | DEC-1167 |
 | D2 | White-labelled: never Accrued | T-02 §2 | DEC-1167 |
-| D3 | No e-furnishing consent sheet yet (the W-9/W-8 upload is live, DEC-1578) | no disclosure in the database (OQ-4) | DEC-1576 |
+| D3 | The e-furnishing consent sheet (DV-12) is undesigned: an O3 sheet with the firm's text, Agree and download, and the decline | DV-12, OQ-4 | DEC-1579 |
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |

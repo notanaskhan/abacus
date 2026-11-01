@@ -57,6 +57,7 @@ from abacus.modules.identity.api import (
     portal_scopes,
 )
 from abacus.modules.organisations.api import client_record, contacts_of_user
+from abacus.modules.tax import k1_disclosures
 from abacus.modules.tax import k1_packages as k1
 
 READ: Final = "portal_k1.read"
@@ -159,7 +160,8 @@ async def _own(ctx: AuthContext, package_id: UUID, action: str = READ) -> UUID:
 _PACKAGES = text(
     "SELECT p.id, p.recipient_id, r.display_name, r.recipient_kind, p.form, p.tax_year, "
     "p.status, p.k3_status, p.state_codes, p.released_at, p.version_no, p.work_item_id, "
-    "p.supersedes_package_id, r.tin_kind, r.tin_last4, r.address IS NOT NULL AS has_address "
+    "p.supersedes_package_id, r.tin_kind, r.tin_last4, r.address IS NOT NULL AS has_address, "
+    "p.e_furnishing_consent "
     "FROM k1_packages p JOIN k1_recipients r ON r.id = p.recipient_id WHERE p.id = ANY(:ids) "
     "ORDER BY p.tax_year DESC, r.display_name, p.version_no DESC"
 )
@@ -217,6 +219,7 @@ async def _views(tenant: TenantContext, ids: Sequence[UUID]) -> list[k1.PackageV
             issuer_name=issuers.get(r.work_item_id),
             # The recipient's own details (POR-13's Your details): the detail's only.
             address_on_file=bool(r.has_address),
+            e_furnishing_consent=r.e_furnishing_consent,
             tin_kind=r.tin_kind,
             tin_last4=r.tin_last4,
         )
@@ -390,10 +393,32 @@ def deterministic_zip(files: Sequence[tuple[str, bytes]]) -> bytes:
     return buffer.getvalue()
 
 
+async def _consent_of(tenant: TenantContext, package_id: UUID) -> str:
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text("SELECT e_furnishing_consent FROM k1_packages WHERE id = :p"), {"p": package_id}
+        )
+    return str(found or "unknown")
+
+
+async def furnishing_disclosure(ctx: AuthContext) -> k1_disclosures.Disclosure:
+    """`GET /v1/portal/k1-furnishing-disclosure` (S20e; DV-12): the firm's newest text, for a
+    person whose grants reach an issuing return; 404 when none is published or nothing is
+    reached."""
+    _client(ctx)
+    covered = [r for r in set((await _mine(ctx)).values()) if await _authorised(ctx, r, READ)]
+    found = await k1_disclosures.current(ctx.tenant)
+    if not covered or found is None:
+        raise NotFound("k1_furnishing_disclosure")
+    return found
+
+
 async def download(ctx: AuthContext, package_id: UUID) -> Download:
-    """`GET /v1/portal/k1s/{id}/download`: every final document, one zip, an access event."""
+    """`GET /v1/portal/k1s/{id}/download`: every final document, one zip, an access event; once
+    the firm publishes a disclosure, only after the recipient's consent (DV-12)."""
     return_id = await _own(ctx, package_id, DOWNLOAD)
     _second_step(ctx)
+    await k1_disclosures.consent_gate(ctx.tenant, await _consent_of(ctx.tenant, package_id))
     [view] = await _views(ctx.tenant, [package_id])
     docs = sorted(view.documents, key=lambda d: (_ORDER.get(d.kind, 9), d.jurisdiction or ""))
     await _read_logged(ctx, package_id, return_id)
@@ -412,6 +437,7 @@ async def one_document(ctx: AuthContext, package_id: UUID, document_id: UUID) ->
     """`GET …/attachments/{doc}`: one final document, an access event."""
     return_id = await _own(ctx, package_id, DOWNLOAD)
     _second_step(ctx)
+    await k1_disclosures.consent_gate(ctx.tenant, await _consent_of(ctx.tenant, package_id))
     [view] = await _views(ctx.tenant, [package_id])
     doc = next((d for d in view.documents if d.id == document_id), None)
     if doc is None:
@@ -558,6 +584,7 @@ async def e_furnishing(
     _second_step(ctx)
     if decision not in ("given", "declined"):
         raise DetailsChangeInvalid(facts={"field": "decision"})
+    await k1_disclosures.check_consent_version(ctx.tenant, disclosure_version_id)
     async with uow(ctx.tenant) as tx:
         await tx.session.execute(
             text("UPDATE k1_packages SET e_furnishing_consent = :d WHERE id = :p"),
@@ -593,6 +620,7 @@ __all__ = [
     "download",
     "e_furnishing",
     "expected",
+    "furnishing_disclosure",
     "one_document",
     "package",
     "packages",

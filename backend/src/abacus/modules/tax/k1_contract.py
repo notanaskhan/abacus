@@ -39,8 +39,8 @@ from abacus.modules.identity.api import (
     current_member,
     mask_tins_for,
 )
+from abacus.modules.tax import k1_disclosures, k1_portal, k1_release
 from abacus.modules.tax import k1_packages as k1
-from abacus.modules.tax import k1_portal, k1_release
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 Member = Annotated[AuthContext, Depends(current_member)]
@@ -159,6 +159,10 @@ class K1PackageOut(BaseModel):
     related_returns: Annotated[list[K1RelatedReturnOut], classified("confidential")] = []
     # T-02-T27 (additive): the issuing client's name, a POR-13 card's heading.
     issuer_name: Annotated[str | None, classified("confidential")] = None
+    # S20e (additive; DV-12): the recipient's electronic-furnishing decision (portal rows only).
+    e_furnishing_consent: Annotated[
+        Literal["unknown", "given", "declined"] | None, classified("internal")
+    ] = None
 
 
 class K1PackageDetailOut(BaseModel):
@@ -171,6 +175,23 @@ class K1PackageDetailOut(BaseModel):
     # (T-02-T27) the recipient's own, with whether an address is on file (Your details).
     tin: Annotated[K1MaskedTinOut | None, classified("restricted")] = None
     address_on_file: Annotated[bool | None, classified("internal")] = None
+
+
+class K1DisclosureOut(BaseModel):
+    """S20e (DV-12): the firm's counsel-approved electronic-furnishing text, one version."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    version_no: Annotated[int, classified("internal")]
+    body: Annotated[str, classified("internal")]
+    imported_at: Annotated[datetime, classified("internal")]
+
+
+class K1DisclosureIn(BaseModel):
+    model_config = _frozen()
+
+    body: Annotated[str, Field(min_length=1, max_length=20_000), classified("internal")]
 
 
 class PortalK1ExpectedOut(BaseModel):
@@ -359,6 +380,9 @@ def _package_out(p: k1.PackageView) -> K1PackageOut:
             else None
         ),
         issuer_name=p.issuer_name,
+        e_furnishing_consent=cast(
+            Literal["unknown", "given", "declined"] | None, p.e_furnishing_consent
+        ),
         related_returns=[
             K1RelatedReturnOut(
                 return_id=x.return_id, client_name=x.client_name, form=x.form, status=x.status
@@ -612,6 +636,35 @@ async def portal_k1s_route(ctx: Member) -> list[K1PackageOut]:
     """POR-13: the recipient's own packages, released and later only (T-02-T26)."""
     await _portal_gate(ctx)
     return [_package_out(p) for p in await k1_portal.packages(ctx)]
+
+
+def _disclosure_out(d: k1_disclosures.Disclosure) -> K1DisclosureOut:
+    return K1DisclosureOut(
+        id=d.id, version_no=d.version_no, body=d.body, imported_at=d.imported_at
+    )
+
+
+@k1_router.post(
+    "/k1-furnishing-disclosures",
+    action="k1_disclosure.import",
+    response_model=K1DisclosureOut,
+    status_code=201,
+)
+async def import_k1_disclosure_route(body: K1DisclosureIn, ctx: Ctx) -> K1DisclosureOut:
+    """S20e (DV-12): a firm admin's new version of the counsel-approved text (content, never a
+    seed for a real firm)."""
+    await _gate(ctx)
+    return _disclosure_out(await k1_disclosures.import_disclosure(ctx, body.body))
+
+
+@portal_k1_router.get(
+    "/k1-furnishing-disclosure", action="portal_k1.read", response_model=K1DisclosureOut
+)
+async def portal_k1_disclosure_route(ctx: Member) -> K1DisclosureOut:
+    """S20e (DV-12): the newest disclosure a recipient reads before consenting; 404 while none
+    is published."""
+    await _portal_gate(ctx)
+    return _disclosure_out(await k1_portal.furnishing_disclosure(ctx))
 
 
 @portal_k1_router.get(

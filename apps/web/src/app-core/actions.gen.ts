@@ -256,6 +256,7 @@ export const ACTIONS = [
   "issue.verify",
   "item.sign_prepared",
   "item.sign_reviewed",
+  "k1_disclosure.import",
   "k1_package.read",
   "k1_package.release",
   "k1_package.resend",

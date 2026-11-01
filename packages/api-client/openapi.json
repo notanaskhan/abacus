@@ -41510,6 +41510,58 @@
         "title": "K1DetailsChangeTagOut",
         "type": "object"
       },
+      "K1DisclosureIn": {
+        "additionalProperties": false,
+        "properties": {
+          "body": {
+            "cls": "internal",
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          }
+        },
+        "required": [
+          "body"
+        ],
+        "title": "K1DisclosureIn",
+        "type": "object"
+      },
+      "K1DisclosureOut": {
+        "description": "S20e (DV-12): the firm's counsel-approved electronic-furnishing text, one version.",
+        "properties": {
+          "body": {
+            "cls": "internal",
+            "title": "Body",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "imported_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Imported At",
+            "type": "string"
+          },
+          "version_no": {
+            "cls": "internal",
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "version_no",
+          "body",
+          "imported_at"
+        ],
+        "title": "K1DisclosureOut",
+        "type": "object"
+      },
       "K1DocumentOut": {
         "properties": {
           "evidence_version_id": {
@@ -41775,6 +41827,23 @@
             },
             "title": "Documents",
             "type": "array"
+          },
+          "e_furnishing_consent": {
+            "anyOf": [
+              {
+                "enum": [
+                  "unknown",
+                  "given",
+                  "declined"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "E Furnishing Consent"
           },
           "form": {
             "cls": "internal",
@@ -178508,6 +178577,113 @@
         "x-abacus-action": "issue.verify"
       }
     },
+    "/v1/k1-furnishing-disclosures": {
+      "post": {
+        "description": "S20e (DV-12): a firm admin's new version of the counsel-approved text (content, never a\nseed for a real firm).",
+        "operationId": "import_k1_disclosure",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/K1DisclosureIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/K1DisclosureOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Import K1 Disclosure Route",
+        "tags": [
+          "k1-packages"
+        ],
+        "x-abacus-action": "k1_disclosure.import"
+      }
+    },
     "/v1/k1-packages/{package_id}": {
       "get": {
         "operationId": "k1_package",
@@ -192705,6 +192881,103 @@
           "portal"
         ],
         "x-abacus-action": "portal_intake.withdraw"
+      }
+    },
+    "/v1/portal/k1-furnishing-disclosure": {
+      "get": {
+        "description": "S20e (DV-12): the newest disclosure a recipient reads before consenting; 404 while none\nis published.",
+        "operationId": "portal_k1_disclosure",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/K1DisclosureOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Portal K1 Disclosure Route",
+        "tags": [
+          "portal"
+        ],
+        "x-abacus-action": "portal_k1.read"
       }
     },
     "/v1/portal/k1-recipients/{recipient_id}/details-changes": {
