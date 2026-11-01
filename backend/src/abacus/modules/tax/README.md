@@ -42,3 +42,15 @@ frozen v1). A draft never reaches a portal (DEC-78); a full TIN refuses the file
 details change stores no full TIN. Runbooks: RB-44 (shadow and the flips), RB-45 (K-1 bounce and
 mis-release). Open: a route to revoke one package's `k1_recipient` grant.
 
+## Red paths and their guards (T-01, closed 2026-11-01; DEC-1678)
+
+- **Final approval** (`approval.py`): the only writer of a return's `final_approval` sign-off; every
+  blocker (open issues, pending import, Draft K-1 dependency) is checked in the service.
+- **Export** (`export.py`, W2 file mode): a single-use grant, the approved checkpoint, deterministic
+  bytes; two kill switches (capability, firm install). Never writes into the engine (DEC-49).
+- **Imports** (`engine_import.py`, `engine_files.py`): hostile files parsed in the isolated child; a
+  diff a person approves; PDFs filed as write-once evidence; `k1_set` routed to K-1 packages.
+- **Filing** (`filing.py`): the 8879 amount binding from the approved checkpoint, drift relock, the
+  ERO's transmission record (never a transmission, R-04) and acks.
+- **TRI** (`tri.py`): every model read of return information goes through C19's condition 6.
+Runbooks: RB-17 (consents), RB-19 (bridge failure).
