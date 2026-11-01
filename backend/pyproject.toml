@@ -180,6 +180,7 @@ only_mutate = [
     "src/abacus/ai_gateway/*",
     "src/abacus/modules/audit_trail/*",
     "src/abacus/*/compute/*",
+    "src/abacus/modules/signatures/*",
 ]
 do_not_mutate = [
     "*/_matrix.py",

@@ -13,11 +13,12 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 from email.utils import parsedate_to_datetime
 from typing import Final, Protocol
 from uuid import UUID
 
+from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 from abacus.kernel.errors import ServiceUnavailable
 
@@ -59,7 +60,7 @@ def retry_after_seconds(header: str | None, now: datetime | None = None) -> floa
             return RATE_LIMIT_DEFAULT_SECONDS
         if when.tzinfo is None:
             return RATE_LIMIT_DEFAULT_SECONDS
-        wait = (when - (now or datetime.now(UTC))).total_seconds()
+        wait = (when - (now or system_now())).total_seconds()
     return min(max(wait, 1.0), RATE_LIMIT_MAX_SECONDS)
 
 
