@@ -1,0 +1,78 @@
+# P-04-T37 (ADR-078): the review scenario's golden figures, transcribed from the plan and the
+# handoff, not from the code. Numbers are read as text and compared as Decimal.
+golden: review/scenario
+cases:
+  - id: northwind-planning-materiality
+    kind: materiality
+    inputs: {benchmark: 16812400, rate_pct: "1.5", pm_pct: 75, ct_pct: 5, policy: [1.0, 2.0]}
+    expected: {overall: 252200, pm: 189150, ct: 12610}
+    source: "P-04 §2 (Margaret Okonkwo decides 1.5% = $252,200, PM $189,150, CT $12,610); SHL-11 spec, math ties to 01 §9.4"
+    reviewed_by: pending (AY)
+
+  - id: northwind-lower-option
+    kind: materiality
+    inputs: {benchmark: 16812400, rate_pct: "1.0", pm_pct: 75, ct_pct: 5, policy: [1.0, 2.0]}
+    expected: {overall: 168100, pm: 126075, ct: 8405}
+    source: "P-04 §3 AC (1.0% = $168,100); SHL-11 spec"
+    reviewed_by: pending (AY)
+
+  - id: northwind-reassessed-at-final
+    kind: materiality
+    inputs: {benchmark: 16861000, rate_pct: "1.5", pm_pct: 75, ct_pct: 5, policy: [1.0, 2.0]}
+    expected: {overall: 252900, pm: 189675, ct: 12645}
+    source: "SHL-11 d (v3 · reassessed at final on $16,861,000: 1.5% = $252,900 — difference $700, no change)"
+    reviewed_by: pending (AY)
+
+  - id: northwind-reassessment-difference
+    kind: difference
+    inputs: {now: 252900, then: 252200}
+    expected: {difference: 700}
+    source: "SHL-11 d (difference $700, no change)"
+    reviewed_by: pending (AY)
+
+  - id: granite-peak-planning-materiality
+    kind: materiality
+    inputs: {benchmark: 3100000, rate_pct: "5", pm_pct: 75, ct_pct: 5, policy: [3, 7]}
+    expected: {overall: 155000, pm: 116250, ct: 7750}
+    source: "P-04-T37 row (155,000 / 116,250 / 7,750); pre-tax income 48,600,000 − 29,160,000 − 15,820,000 − 520,000 (A-02 §5.3)"
+    reviewed_by: pending (AY)
+
+  - id: granite-peak-pre-tax-income
+    kind: sum
+    inputs: {terms: {net_sales: 48600000, cost_of_goods_sold: -29160000, operating_expenses: -15820000, interest_expense: -520000}}
+    expected: {total: 3100000}
+    source: "A-02 §5.3 Granite Peak FY2026 trial balance"
+    reviewed_by: pending (AY)
+
+  - id: feld-k1-treatment-net-change
+    kind: sum
+    inputs: {terms: {sch_e_28a_k_nonpassive: -307900, sch_e_28a_h_passive: 307900}}
+    expected: {total: 0}
+    source: "SHL-16 a field diff (307,900 moves from line 28A (k) to (h); net change to total income 0, tie)"
+    reviewed_by: pending (AY)
+
+  - id: trial-balance-cited
+    kind: ratio
+    inputs: {cited: 14, cells: 14}
+    expected: {all_cited: true}
+    source: "P-04 §2 and SHL-12 a (Every value cited · 14 of 14 cells)"
+    reviewed_by: pending (AY)
+
+  - id: ridgeline-open-issues
+    kind: sum
+    inputs: {terms: {waiting_on_client: 5, review_points: 6}}
+    expected: {total: 11}
+    source: "TXP-10 (5 waiting on the client + 6 review points = 11); DF-34; SHL-12 h (Resolve 11 issues to approve)"
+    reviewed_by: pending (AY)
+
+  - id: northwind-tb-foots
+    kind: sum
+    inputs: {terms: {investments: 16500000, notes_receivable: 312400}}
+    expected: {total: 16812400}
+    source: "blueprint 01 §9.4 (unadjusted: the 48,600 receivable is found in fieldwork)"
+    reviewed_by: pending (AY)
+
+# DF-34's Sep 14 timeline: the seed's order, checked against the loaded slice's events.
+timeline:
+  - {event: "review:northwind:tb-adopted", at: "2026-09-14T10:02:00-05:00", source: "DF-34 (TB adopted at 10:02)"}
+  - {event: "review:northwind:materiality-decided", at: "2026-09-14T11:12:00-05:00", source: "DF-34 (Northwind materiality decided 11:12 AM)"}

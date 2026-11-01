@@ -800,6 +800,13 @@ ACTIONS: dict[str, dict[str, str]] = {
         "independence": "required",
     },
     "decision_card.raise": {
+        "manager": "allow",
+        "senior": "allow",
+        "agent": "task_scope",
+        "independence": "required",
+    },
+    "decision_recommend.run": {
+        "system": "allow",
         "agent": "task_scope",
     },
     "deficiency.propose_severity": {
