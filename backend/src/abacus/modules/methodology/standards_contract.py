@@ -50,6 +50,7 @@ ThresholdPolicyKind = Literal[
     "materiality_ranges",
     "document_confidence",
     "attribute_sample_sizes",  # A-03-T10 (ADR-340 §6): the firm's attribute sample size table
+    "rmm_matrix",  # A-04-T13 (A-04 §4.2 M3): RMM for each inherent and control risk
 ]
 StandardKind = Literal[
     "review_checklist",
@@ -61,6 +62,7 @@ StandardKind = Literal[
     "materiality_ranges",
     "document_confidence",
     "attribute_sample_sizes",
+    "rmm_matrix",
 ]
 # KNW-04's sections (`?section=`), in the section list's order; `deadline_rules` is section j,
 # composed over the platform reference sets (DF-10).
@@ -281,12 +283,37 @@ class AttributeSampleSizesPayload(BaseModel):
     ]
 
 
+ControlRisk = Literal["low", "moderate", "high", "max"]
+
+
+class RmmMatrixRow(BaseModel):
+    """One cell of the matrix: the RMM for an inherent and a control risk."""
+
+    model_config = _frozen()
+
+    inherent_risk: Annotated[Rmm, classified("internal")]
+    control_risk: Annotated[ControlRisk, classified("internal")]
+    rmm: Annotated[Rmm, classified("internal")]
+
+
+class RmmMatrixPayload(BaseModel):
+    """A-04-T13 (A-04 AC4.2; DEC-1951): the firm's RMM matrix ("BH matrix v1"). Firm content,
+    loaded through the import; the risk register reads it through `methodology.api` and stamps
+    each row with the version (code combines, never a model: ADR-050)."""
+
+    model_config = _frozen()
+
+    kind: Annotated[Literal["rmm_matrix"], classified("internal")]
+    rows: Annotated[list[RmmMatrixRow], Field(min_length=1, max_length=12), classified("internal")]
+
+
 StandardPayload = Annotated[
     AjeThresholdsPayload
     | VarianceThresholdsPayload
     | MaterialityRangesPayload
     | DocumentConfidencePayload
     | AttributeSampleSizesPayload
+    | RmmMatrixPayload
     | ReviewChecklistPayload
     | ReviewLevelsPayload
     | ReturnApprovalPolicyPayload
@@ -787,3 +814,22 @@ def attribute_sample_size(
         f"attribute_size:{rmm}:{tolerable_pct}:{expected_pct}",
     )
     return AttributeSize(row.size, payload.confidence_pct, policy)
+
+
+@dataclass(frozen=True)
+class RmmFor:
+    rmm: Rmm
+    policy: PolicyRef
+
+
+def rmm_for(
+    payload: RmmMatrixPayload, policy: PolicyRef, *, inherent_risk: Rmm, control_risk: ControlRisk
+) -> RmmFor:
+    """A-04-T13 (AC4.2): the matrix's RMM for the pair; a pair the firm's matrix does not
+    answer is `standard_row_missing` (the register never guesses one)."""
+    row = _row_for(
+        payload.rows,
+        lambda r: r.inherent_risk == inherent_risk and r.control_risk == control_risk,
+        f"rmm:{inherent_risk}:{control_risk}",
+    )
+    return RmmFor(row.rmm, policy)
