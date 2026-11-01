@@ -9,7 +9,7 @@
 | Epic and tasks | T-01 · contract T-01-T05; fixtures T09; build T35–T40 |
 | Spec and ADRs | SPEC-501 AC-11; ADR-231; R-04 |
 | Flags | `tax.delivery_efile` |
-| Manifest status | planned; built on fixtures with T-01-T09's scenarios, `live` with its build tasks (pilot posture: agents off) |
+| Manifest status | `fixture` at `/tax-returns/$returnId/delivery` since T-01-T51 (DEC-1667), every figure from the live reads (final approval, engine sync, delivery, envelope, staff names). `live` is the `tax.delivery_efile` flip in the M13 train (pilot posture: agents off) |
 
 ## States
 | Artboard | Viewer | Clock (CT) | Data condition | Parity tier | Status |
@@ -63,6 +63,9 @@ Gradients, emoji, blue, heavy shadows, invented colours or data, boxed inputs, t
 | D2 | DF-21 and DEC-38: the packet is approved by the signer or a manager-level person | DEC-38 | DEC-1156 |
 | D3 | The cover letter comes from a template (ADR P-25 off); TAX-12 e agent blocks are fixture-only | ADR P-25 | T-01 §2.2 |
 | D4 | DF-07: the Signatures & files segment | DF-07 | T-01 §2.1 |
+| T54-1 | Copy as functions over live data; Create issue only where planned screens are visible | T-01-T51 live swap | DEC-1667 |
+
+Every deviation above is closed: each has its decision recorded (T-01-T54, 2026-11-01).
 
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
