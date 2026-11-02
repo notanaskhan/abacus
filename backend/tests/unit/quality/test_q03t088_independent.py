@@ -130,7 +130,7 @@ def test_ac3_weekly_mutmut_is_cut_inside_4_hours_a_shard() -> None:
 def test_ac3_nightly_mutates_only_changed_red_files() -> None:
     changed = [
         "backend/src/abacus/modules/evidence/service.py",
-        "backend/src/abacus/modules/review/notes.py",  # not a red scope
+        "backend/src/abacus/modules/practice/activity.py",  # not a red scope (P-04-T59: review is)
         "apps/web/src/main.tsx",
     ]
     picked = mutation.changed_red_files(changed)

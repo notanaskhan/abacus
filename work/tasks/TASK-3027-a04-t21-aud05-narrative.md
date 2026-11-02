@@ -2,7 +2,7 @@
 id: TASK-3027
 title: A-04-T21 AUD-05 narrative workpaper screen
 spec: SPEC-620
-acceptance_criteria: [AUD-05]
+acceptance_criteria: [AC-11, AC-12, AC-13]
 risk_zone: green
 status: in-review
 epic: A-04

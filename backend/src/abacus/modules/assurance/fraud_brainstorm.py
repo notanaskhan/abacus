@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Final, Literal, cast
@@ -351,7 +351,7 @@ async def record_session(ctx: AuthContext, engagement_id: UUID, edit: SessionEdi
     return await session_view(ctx, engagement_id)
 
 
-def _json(values: dict[str, object]) -> dict[str, object]:
+def _json(values: Mapping[str, object]) -> dict[str, object]:
     return {k: json.dumps(v) if k in ("att", "exc", "disc") else v for k, v in values.items()}
 
 
@@ -385,10 +385,10 @@ async def _write_minutes(
     tx.record(
         "fraud_minutes.written",
         target=Target(AUDIT_TARGET, current["id"]),
-        after=Ref(version=int(current["row_version"]) + 1, source=source),
+        after=Ref(version=int(current["row_version"]) + 1),
         scope=Scope(engagement_id=engagement_id, work_item_id=work_item),
     )
-    partners = await engagement_partners(ctx.tenant, engagement_id)
+    partners = await engagement_partners(ctx.tenant_id, engagement_id)
     tx.emit(
         FraudMinutesAwaitingApproval(
             session_id=current["id"],

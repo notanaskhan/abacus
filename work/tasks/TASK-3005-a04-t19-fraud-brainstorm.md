@@ -2,7 +2,7 @@
 id: TASK-3005
 title: A-04-T19 AUD-05 narrative extras — fraud brainstorm, minutes gate, inquiries, flags
 spec: SPEC-620
-acceptance_criteria: [AC2.3, AC2.4, AC2.5]
+acceptance_criteria: [AC-12, AC-13, AC-14]
 risk_zone: amber
 status: in-review
 epic: A-04

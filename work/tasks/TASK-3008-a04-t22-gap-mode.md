@@ -2,7 +2,7 @@
 id: TASK-3008
 title: A-04-T22 mode gap — prompt, mapping and the drafter's document channel
 spec: SPEC-620
-acceptance_criteria: [AC1.1, AC6.2]
+acceptance_criteria: [AC-1, AC-23]
 risk_zone: red
 status: in-review
 epic: A-04

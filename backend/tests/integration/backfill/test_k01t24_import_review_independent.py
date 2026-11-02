@@ -130,7 +130,7 @@ async def test_ac3_4_approve_refuses_a_checklist_that_moved(net: Net) -> None:
         margaret,
         body={
             "effective_from": "2026-01-01",
-            "checklist_hash": "0" * 64,
+            "checklist_hash": "sha256:" + "0" * 64,
             "row_version": state["row_version"],
         },
     )
@@ -139,6 +139,6 @@ async def test_ac3_4_approve_refuses_a_checklist_that_moved(net: Net) -> None:
 
 async def test_ac6_2_no_issuer_standards_set_is_ever_offered(net: Net) -> None:
     issuer = await net.seed.value(
-        "SELECT count(*) FROM reference_sets WHERE key ILIKE '%pcaob%' OR name ILIKE '%pcaob%'"
+        "SELECT count(*) FROM reference_sets WHERE key ILIKE '%pcaob%' OR title ILIKE '%pcaob%'"
     )
     assert issuer == 0

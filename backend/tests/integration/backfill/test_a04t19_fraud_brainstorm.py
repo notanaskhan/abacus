@@ -139,7 +139,7 @@ async def test_ac2_4_a_stale_hash_is_refused_and_an_edit_resets_approval(world: 
         {"minutes_hash": "0" * 64},
         headers=_keyed(),
     )
-    assert stale.status_code == 409 and cast(Json, stale.json())["code"] == "minutes_changed"
+    assert stale.status_code == 409 and cast(Json, stale.json())["detail"] == "minutes_changed"
     await world.call(
         "POST",
         _path(world, "/minutes/approve"),
@@ -164,7 +164,7 @@ async def test_ac2_4_the_eqr_is_never_an_attendee(world: Books) -> None:
         headers=_keyed(),
     )
     assert response.status_code == 422
-    assert cast(Json, response.json())["code"] == "eqr_must_be_excluded"
+    assert cast(Json, response.json())["detail"] == "eqr_must_be_excluded"
 
 
 async def test_ac2_4_a_stale_session_edit_answers_version_conflict(world: Books) -> None:
@@ -189,7 +189,7 @@ async def test_ac2_4_adopting_goes_through_the_suggestion_route(world: Books) ->
         headers=_keyed(),
     )
     assert response.status_code == 422
-    assert cast(Json, response.json())["code"] == "adopt_through_suggestion"
+    assert cast(Json, response.json())["detail"] == "adopt_through_suggestion"
 
 
 async def test_ac2_5_a_governance_inquiry_is_recorded_and_reads_requested(world: Books) -> None:

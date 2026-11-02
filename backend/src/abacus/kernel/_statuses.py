@@ -562,7 +562,8 @@ class NoticeAnalysisStatus(StrEnum):
 
 class NoticeResponseReadinessStatus(StrEnum):
     pass
-    # derived, never stored: waiting_decision, in_review, approved, out_for_signature, ready_to_send, sent
+    # derived, never stored: waiting_decision, in_review, approved, out_for_signature,
+    # ready_to_send, sent
 
 
 class ConsentStatus(StrEnum):

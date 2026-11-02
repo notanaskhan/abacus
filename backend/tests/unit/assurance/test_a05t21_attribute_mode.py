@@ -60,7 +60,7 @@ def test_ac_facts_carry_keys_and_codes_never_a_dob_or_ssn() -> None:
     assert_masked(ModeInputs(facts=tuple(facts.items())), [DOB])
 
 
-@pytest.mark.parametrize("leak", ["SSN 123-45-6789", "ssn 123456789", "born 1990-06-14"])
+@pytest.mark.parametrize("leak", ["SSN 900-45-6789", "ssn 900456789", "born 1990-06-14"])
 def test_ac_an_input_with_an_ssn_or_a_dob_is_refused_before_any_run(leak: str) -> None:
     inputs = ModeInputs(
         documents=(ModeDocument(uuid.uuid4(), "HR record", (ModePage(1, f"Name: A. {leak}"),)),)

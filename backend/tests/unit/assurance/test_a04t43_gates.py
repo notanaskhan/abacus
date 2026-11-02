@@ -19,7 +19,7 @@ REPO = Path(__file__).resolve().parents[4]
 
 def test_ac_g4_is_registered_from_gates_py_over_g4_facts() -> None:
     assert assurance_api.g4_facts is g4_facts
-    assert slots._GATES["G4"] is g4_facts  # pyright: ignore[reportPrivateUsage]
+    assert slots._GATES["G4"] is g4_facts  # pyright: ignore[reportPrivateUsage] -- the slot under test
 
 
 def test_ac_gates_py_is_a_named_red_file() -> None:

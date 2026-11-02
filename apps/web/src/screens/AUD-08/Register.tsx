@@ -1,13 +1,6 @@
 import type { RegisterOut, RegisterRiskOut } from "@abacus/api-client";
 import { riskLinkageOptions, riskRegisterOptions } from "@abacus/api-client/query";
-import {
-  PaneAction,
-  Pill,
-  Segmented,
-  ViewStateBody,
-  type ViewState,
-  cn,
-} from "@abacus/ui";
+import { PaneAction, Pill, Segmented, ViewStateBody, type ViewState, cn } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import type { JSX } from "react";
 import { useFlag } from "../../app-core/flags";
@@ -21,7 +14,8 @@ import { COPY } from "./copy";
 // the UNADDRESSED card filters to the unaddressed rows (`?filter=unaddressed`). States a, b, b2 and
 // d (A-04-T29 builds c, e, f, g).
 
-const CARD = "flex h-[40px] flex-1 flex-col justify-center rounded-[10px] bg-card px-[10px] shadow-e1";
+const CARD =
+  "flex h-[40px] flex-1 flex-col justify-center rounded-[10px] bg-card px-[10px] shadow-e1";
 const LABEL = "text-micro font-medium uppercase tracking-[.07em] text-ink-3";
 const COLS =
   "grid grid-cols-[34px_196px_150px_64px_52px_64px_84px_104px_1fr_74px] items-center gap-[6px]";
@@ -134,7 +128,10 @@ function RiskRow({
       type="button"
       data-risk={risk.code}
       data-unaddressed={risk.unaddressed ? "true" : "false"}
-      className={cn(COLS, "h-[34px] w-full px-[10px] text-left text-body hairline-b hover:bg-tonal-hover")}
+      className={cn(
+        COLS,
+        "h-[34px] w-full px-[10px] text-left text-body hairline-b hover:bg-tonal-hover",
+      )}
       onClick={() => {
         onOpen(risk.code);
       }}
@@ -148,7 +145,13 @@ function RiskRow({
       <span>
         {significance !== null && (
           <Pill
-            variant={risk.significance === "approved" ? "green-tint" : risk.significance === "proposed" ? "amber" : "neutral"}
+            variant={
+              risk.significance === "approved"
+                ? "green-tint"
+                : risk.significance === "proposed"
+                  ? "amber"
+                  : "neutral"
+            }
             size="micro"
           >
             {significance}
@@ -158,7 +161,13 @@ function RiskRow({
       <span>
         {fraud !== null && (
           <Pill
-            variant={risk.fraud === "presumed" ? "red-tint" : risk.fraud === "rebuttal_approved" ? "green-tint" : "amber"}
+            variant={
+              risk.fraud === "presumed"
+                ? "red-tint"
+                : risk.fraud === "rebuttal_approved"
+                  ? "green-tint"
+                  : "amber"
+            }
             size="micro"
           >
             {fraud}
@@ -199,8 +208,14 @@ export function RiskRegisterPage({
   const cockpit = useAuditCockpit(auditId);
   const engagementId = cockpit.data?.engagement_id;
   const path = { path: { engagement_id: engagementId ?? "" } };
-  const register = useQuery({ ...riskRegisterOptions(path), enabled: on && engagementId !== undefined });
-  const linkage = useQuery({ ...riskLinkageOptions(path), enabled: on && engagementId !== undefined });
+  const register = useQuery({
+    ...riskRegisterOptions(path),
+    enabled: on && engagementId !== undefined,
+  });
+  const linkage = useQuery({
+    ...riskLinkageOptions(path),
+    enabled: on && engagementId !== undefined,
+  });
   let state: ViewState = { kind: "ready" };
   if (!on) state = { kind: "flag-off", flag: "assurance.risk_register" };
   else if (cockpit.isError || register.isError) {
@@ -236,7 +251,12 @@ export function RiskRegisterPage({
               <PaneAction label={COPY.signOff} />
             </header>
             <div className="flex h-[42px] items-center gap-[8px] px-[12px]">
-              <Segmented size="small" label={COPY.title} options={COPY.tabs} active={COPY.tabs[0]} />
+              <Segmented
+                size="small"
+                label={COPY.title}
+                options={COPY.tabs}
+                active={COPY.tabs[0]}
+              />
               <span className="flex-1" />
               <PaneAction icon="file-spreadsheet" label={COPY.openExcel} />
             </div>
@@ -254,7 +274,10 @@ export function RiskRegisterPage({
             >
               <div
                 role="row"
-                className={cn(COLS, "h-[30px] bg-nested px-[10px] text-[11.5px] font-medium text-ink-2")}
+                className={cn(
+                  COLS,
+                  "h-[30px] bg-nested px-[10px] text-[11.5px] font-medium text-ink-2",
+                )}
               >
                 {Object.values(COPY.columns).map((c) => (
                   <span key={c} className="truncate">
@@ -268,7 +291,12 @@ export function RiskRegisterPage({
                     {COPY.groups[g.level]}
                   </div>
                   {g.rows.map((r) => (
-                    <RiskRow key={r.id} risk={r} response={responses.get(r.code)} onOpen={onRisk} />
+                    <RiskRow
+                      key={r.id}
+                      risk={r}
+                      response={responses.get(r.code)}
+                      onOpen={onRisk}
+                    />
                   ))}
                 </div>
               ))}

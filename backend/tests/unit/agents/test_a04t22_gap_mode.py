@@ -13,6 +13,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from types import SimpleNamespace
 
 import pytest
 
@@ -21,7 +22,7 @@ from abacus.modules.agents.handoff import DraftCitation
 from abacus.modules.agents.section_draft import (
     DRAFTER,
     DraftContext,
-    _claim,  # pyright: ignore[reportPrivateUsage]
+    _claim,  # pyright: ignore[reportPrivateUsage] -- the claim rule under test
     build_context,
     mode_call,
 )
@@ -74,7 +75,7 @@ def test_ac_a_document_citation_is_a_document_text_claim_on_its_page() -> None:
 
 def test_ac_documents_and_waiting_inputs_enter_the_context() -> None:
     assembled = build_context("gap", _context(), ["cells", "documents"])
-    text = str(assembled.messages) if hasattr(assembled, "messages") else str(assembled)
+    text = assembled.render()
     assert "SOC 1 Type 2 report" in text
     assert "Bridge letter, Keystone" in text
 
@@ -113,7 +114,7 @@ async def test_ac_the_mapping_makes_documents_and_two_waiting_inputs(
 
     monkeypatch.setattr(draft_mappings, "request_items_for", listed)
     monkeypatch.setattr(draft_mappings, "review_material", material)
-    found = await draft_mappings.gap_inputs(object(), PAPER)  # pyright: ignore[reportArgumentType] -- a stand-in actor
+    found = await draft_mappings.gap_inputs(SimpleNamespace(tenant=object()), PAPER)  # pyright: ignore[reportArgumentType] -- a stand-in actor (its tenant reaches the stubbed reads)
     assert [d.evidence_version_id for d in found.documents] == [SOC]
     assert [p.number for p in found.documents[0].pages] == [1, 14]
     assert found.waiting_on == ("Bridge letter, Keystone", "SOC 1 report, Ridgeway")

@@ -1,8 +1,8 @@
 ---
 id: TASK-3016
 title: K-01-T24 independent acceptance tests for K-01-T18's import review
-spec: SPEC-000  # row
-acceptance_criteria: [AC3.4, AC6.1, AC6.2, AC7.9]
+spec: SPEC-000  # K-01-T24 row; K-01 §3.4, §6, §7
+acceptance_criteria: [AC-1]
 risk_zone: amber
 status: in-review
 epic: K-01

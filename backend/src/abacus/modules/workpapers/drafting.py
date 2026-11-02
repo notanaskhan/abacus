@@ -248,7 +248,7 @@ async def raise_draft_flag(
     )
     tx.record(
         "attention_flag.raised",
-        target=Target("workpaper", paper.workpaper_id),
+        target=Target(TARGET, paper.workpaper_id),
         after=Ref(flag=str(flag_id), run=str(run_id)),
     )
     return flag_id

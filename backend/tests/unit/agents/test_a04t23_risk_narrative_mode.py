@@ -28,9 +28,9 @@ def test_ac2_1_the_mode_has_its_own_prompt_mapping_and_preparer() -> None:
 
 
 def test_ac2_1_code_prepopulates_both_presumptions_exactly() -> None:
-    kinds = [p.presumption_kind for p in risks._PRESUMED]  # pyright: ignore[reportPrivateUsage]
+    kinds = [p.presumption_kind for p in risks._PRESUMED]  # pyright: ignore[reportPrivateUsage] -- the code list under test
     assert kinds == ["management_override", "revenue_recognition"]
-    override = risks._PRESUMED[0]  # pyright: ignore[reportPrivateUsage]
+    override = risks._PRESUMED[0]  # pyright: ignore[reportPrivateUsage] -- the code list under test
     assert (override.level, override.inherent_risk, override.control_risk) == (
         "financial_statement",
         "high",

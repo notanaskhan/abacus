@@ -121,9 +121,16 @@ def hire_check(key: str, dob: date | None, census: date, hr: date) -> Check:
 
 async def compare(tenant: TenantContext, work_item_id: UUID) -> list[Check]:
     """Census against the HR roster, participant by participant (the roster's keys), by code."""
+    return (await _compare(tenant, work_item_id))[0]
+
+
+async def _compare(tenant: TenantContext, work_item_id: UUID) -> tuple[list[Check], list[date]]:
+    """The checks, and the dates of birth code opened for them (so the mode's guard can refuse an
+    input that carries one; end-pass review S3)."""
     census = await _rows(tenant, work_item_id, "census")
     roster = await _rows(tenant, work_item_id, "hr_roster")
     out: list[Check] = []
+    opened: list[date] = []
     for key in sorted(roster):
         hr, c = roster[key], census.get(key)
         if c is None:
@@ -132,6 +139,8 @@ async def compare(tenant: TenantContext, work_item_id: UUID) -> list[Check]:
         out.append(Check(key, "name", "match" if _same_name(c.name, hr.name) else "needs_human"))
         if c.hire_on is not None and hr.hire_on is not None:
             dob = await _dob(tenant, c) if c.hire_on != hr.hire_on else None
+            if dob is not None:
+                opened.append(dob)
             out.append(hire_check(key, dob, c.hire_on, hr.hire_on))
         pairs: tuple[tuple[Attribute, str | None, str | None], ...] = (
             ("ssn", c.ssn_fp, hr.ssn_fp),
@@ -140,7 +149,7 @@ async def compare(tenant: TenantContext, work_item_id: UUID) -> list[Check]:
         for attribute, a, b in pairs:
             if a is not None and b is not None:
                 out.append(Check(key, attribute, "match" if a == b else "needs_human"))
-    return out
+    return out, opened
 
 
 def check_facts(checks: Iterable[Check]) -> tuple[tuple[str, dict[str, object]], ...]:
@@ -171,7 +180,7 @@ def assert_masked(inputs: ModeInputs, dobs: Sequence[date] = ()) -> None:
 async def attribute_inputs(actor: AuthContext, paper: SourcePaper) -> ModeInputs:
     """`ebp_attribute`'s inputs: the HR and payroll records (masked) and code's comparison."""
     documents = await documents_for_areas(actor, paper, ATTRIBUTE_AREAS)
-    checks = await compare(actor.tenant, paper.work_item_id)
+    checks, dobs = await _compare(actor.tenant, paper.work_item_id)
     inputs = ModeInputs(documents=documents.documents, facts=check_facts(checks))
-    assert_masked(inputs)
+    assert_masked(inputs, dobs)
     return inputs

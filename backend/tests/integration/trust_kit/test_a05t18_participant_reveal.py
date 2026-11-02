@@ -14,11 +14,12 @@ import dataclasses
 import uuid
 from datetime import date
 
-import asyncpg
 import pytest
+from sqlalchemy import text
 
 from abacus.kernel.crypto import open_sealed
 from abacus.kernel.errors import NotFound
+from abacus.kernel.uow import Target, uow
 from abacus.modules.assurance import ebp_participants
 from abacus.modules.assurance.ebp_participants import binding, seal_pii
 from abacus.modules.identity.api import Forbidden, agent_context_for_run
@@ -46,24 +47,19 @@ async def _participant(
         client_id,
         firm.user_id,
     )
-    conn = await asyncpg.connect(seed._dsn)  # pyright: ignore[reportPrivateUsage]
-    try:
-        async with conn.transaction():
-            await conn.execute("SELECT set_config('app.actor_kind', 'human', true)")
-            await conn.execute("SELECT set_config('app.actor_id', $1, true)", str(firm.user_id))
-            import_id = await conn.fetchval(
-                "INSERT INTO ebp_source_imports (tenant_id, engagement_id, work_item_id, "
-                "evidence_version_id, kind, sha256, status, imported_by) "
-                "VALUES ($1, $2, $3, gen_random_uuid(), 'census', repeat('a', 64), 'imported', "
-                "$4) "
-                "RETURNING id",
-                firm.tenant_id,
-                firm.engagement_id,
-                work_item,
-                firm.user_id,
+    # The import is a person's (its actor CHECK): written in a unit of work as the staff member.
+    async with uow(firm.person().tenant) as tx:
+        import_id = (
+            await tx.session.execute(
+                text(
+                    "INSERT INTO ebp_source_imports (tenant_id, engagement_id, work_item_id, "
+                    "evidence_version_id, kind, sha256, status, imported_by) VALUES (:t, :e, :w, "
+                    "gen_random_uuid(), 'census', repeat('a', 64), 'imported', :u) RETURNING id"
+                ),
+                {"t": firm.tenant_id, "e": firm.engagement_id, "w": work_item, "u": firm.user_id},
             )
-    finally:
-        await conn.close()
+        ).scalar_one()
+        tx.record("ebp_import.imported", target=Target("ebp_source_import", import_id))
     sealed = await seal_pii(firm.tenant_id, import_id, key, SSN, DOB)
     row = await seed.id(
         "INSERT INTO ebp_participants (tenant_id, engagement_id, work_item_id, import_id, "
@@ -101,7 +97,8 @@ async def test_ac_an_onshore_person_gets_the_ssn_once_with_a_logged_record(seed:
         revealed = await ebp_participants.reveal(
             firm.person(), work_item, participant, "ssn", "Eligibility test, row 14"
         )
-    assert (revealed.value, revealed.expires_in) == ("000004417", 30)
+    # shown as the form prints it (P-03's `shown`), once
+    assert (revealed.value, revealed.expires_in) == ("000-00-4417", 30)
     [row] = await seed.rows(
         "SELECT field_ref, region_id, evidence_version_id, user_id FROM pii_reveals "
         "WHERE tenant_id = $1",
@@ -114,11 +111,18 @@ async def test_ac_an_onshore_person_gets_the_ssn_once_with_a_logged_record(seed:
         firm.user_id,
     )
     assert await _traces(seed, firm) == (1, 1)
+    access = await seed.value(
+        "SELECT count(*) FROM access_events WHERE tenant_id = $1 AND kind = 'pii.revealed' "
+        "AND subject_type = 'ebp_participant' AND subject_id = $2",
+        firm.tenant_id,
+        participant,
+    )
+    assert access == 1
     dump = await seed.value(
         "SELECT coalesce(string_agg(t::text, ''), '') FROM audit_events t WHERE tenant_id = $1",
         firm.tenant_id,
     )
-    assert "000004417" not in str(dump)
+    assert "000004417" not in str(dump) and "000-00-4417" not in str(dump)
 
 
 async def test_ac_the_date_of_birth_reveals_as_its_iso_date(seed: Seeder) -> None:

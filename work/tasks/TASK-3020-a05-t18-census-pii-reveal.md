@@ -1,8 +1,8 @@
 ---
 id: TASK-3020
 title: A-05-T18 census PII sealing and field reveal
-spec: SPEC-641
-acceptance_criteria: [AC-F2]
+spec: SPEC-640
+acceptance_criteria: [AC-16]
 risk_zone: red
 status: in-review
 epic: A-05

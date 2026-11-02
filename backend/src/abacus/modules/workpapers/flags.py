@@ -21,6 +21,7 @@ from abacus.modules.identity.api import AuthContext, Forbidden
 from abacus.modules.requests.api import NewRequestItem, add_request_item
 from abacus.modules.review.api import raise_review_note
 from abacus.modules.workpapers.models import AttentionFlag, AttentionFlagEvent
+from abacus.modules.workpapers.service import TARGET as PAPER_TARGET
 
 TARGET = "attention_flag"
 ConvertTo = Literal["request_draft", "review_note"]
@@ -99,8 +100,8 @@ async def convert(
         )
         tx.record(
             "attention_flag.converted",
-            target=Target("workpaper", workpaper_id),
-            after=Ref(flag=str(flag_id), to=kind),
+            target=Target(PAPER_TARGET, workpaper_id),
+            after=Ref(flag=flag_id),
             scope=Scope(engagement_id=engagement_id, work_item_id=locked.work_item_id),
         )
     async with tenant_session(ctx.tenant) as session:

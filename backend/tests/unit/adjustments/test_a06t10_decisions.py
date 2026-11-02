@@ -45,7 +45,7 @@ async def test_ac_nothing_reaches_the_client_without_a_c18_port(
 def test_ac_only_a_live_person_decides(kind: str) -> None:
     ctx = SimpleNamespace(tenant=SimpleNamespace(actor_kind=kind), client=False, is_support=False)
     with pytest.raises(Forbidden):
-        decisions._live_human(ctx, decisions.SEND)  # pyright: ignore[reportArgumentType, reportPrivateUsage]
+        decisions._live_human(ctx, decisions.SEND)  # pyright: ignore[reportArgumentType, reportPrivateUsage] -- a stand-in principal
 
 
 def test_ac_the_send_is_held_on_its_grant_and_subscribed() -> None:

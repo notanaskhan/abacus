@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
-from typing import Final
+from typing import Final, cast
 
 ENGINE_NAME: Final = "notices"
 ENGINE_VERSION: Final = "1"
@@ -26,9 +27,10 @@ def _plain(value: object) -> object:
     if isinstance(value, date):
         return value.isoformat()
     if isinstance(value, dict):
-        return {str(k): _plain(v) for k, v in sorted(value.items(), key=lambda kv: str(kv[0]))}
+        items = cast(dict[object, object], value).items()
+        return {str(k): _plain(v) for k, v in sorted(items, key=lambda kv: str(kv[0]))}
     if isinstance(value, (list, tuple)):
-        return [_plain(v) for v in value]
+        return [_plain(v) for v in cast(Sequence[object], value)]
     return value
 
 

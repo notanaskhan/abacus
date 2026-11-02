@@ -33,6 +33,8 @@ def upgrade() -> None:
         "(region_id IS NOT NULL AND evidence_version_id IS NOT NULL AND field_ref IS NULL) "
         "OR (region_id IS NULL AND evidence_version_id IS NULL AND field_ref IS NOT NULL))"
     )
+    # 0109 grants the app role its insert columns one by one; the new column joins them.
+    op.execute("GRANT INSERT (field_ref) ON pii_reveals TO abacus_app")
 
 
 def downgrade() -> None:
@@ -42,6 +44,7 @@ def downgrade() -> None:
         "DO $$ BEGIN IF EXISTS (SELECT 1 FROM pii_reveals WHERE field_ref IS NOT NULL) THEN "
         "RAISE EXCEPTION 'pii_reveals holds field reveals; downgrade refused'; END IF; END $$"
     )
+    op.execute("REVOKE INSERT (field_ref) ON pii_reveals FROM abacus_app")
     op.execute("ALTER TABLE pii_reveals DROP CONSTRAINT pii_reveals_region_or_field")
     op.execute("ALTER TABLE pii_reveals ALTER COLUMN evidence_version_id SET NOT NULL")
     op.execute("ALTER TABLE pii_reveals ALTER COLUMN region_id SET NOT NULL")

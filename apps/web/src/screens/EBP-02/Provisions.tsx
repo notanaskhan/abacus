@@ -166,7 +166,10 @@ export function useProvisionsCanvas(
           </Pill>
         )}
         {l1 !== null && (
-          <span data-chip="l1" className="rounded-full bg-green-tint px-[6px] text-micro text-green-ink">
+          <span
+            data-chip="l1"
+            className="rounded-full bg-green-tint px-[6px] text-micro text-green-ink"
+          >
             {`✓ ${l1}`}
           </span>
         )}
@@ -188,7 +191,9 @@ export function useProvisionsCanvas(
     footer:
       data === undefined ? null : (
         <div className="flex items-center gap-[8px]">
-          <PaneAction label={COPY.citations(data.provisions.reduce((n, p) => n + p.citation_count, 0))} />
+          <PaneAction
+            label={COPY.citations(data.provisions.reduce((n, p) => n + p.citation_count, 0))}
+          />
           <PaneAction label={COPY.procedures} />
         </div>
       ),
@@ -216,7 +221,10 @@ export function useProvisionsCanvas(
             <div role="grid" aria-label={COPY.block} className="py-[4px]">
               <div
                 role="row"
-                className={cn(GRID, "mx-[5px] h-[26px] px-[8px] text-micro font-medium text-ink-3")}
+                className={cn(
+                  GRID,
+                  "mx-[5px] h-[26px] px-[8px] text-micro font-medium text-ink-3",
+                )}
               >
                 <span>{COPY.columns.provision}</span>
                 <span>{COPY.columns.election}</span>

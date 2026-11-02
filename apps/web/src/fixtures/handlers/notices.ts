@@ -87,7 +87,8 @@ function byRisk(a: NoticeRowOut, b: NoticeRowOut): number {
     return a.respond_by.localeCompare(b.respond_by);
   if (a.respond_by !== null) return -1;
   if (b.respond_by !== null) return 1;
-  return (b.sent_on ?? "").localeCompare(a.sent_on ?? "");
+  // No date to respond by (awaiting the agency): the longest-waiting reply first (N3, then N8).
+  return (a.sent_on ?? "").localeCompare(b.sent_on ?? "");
 }
 
 export interface NoticeQuery {

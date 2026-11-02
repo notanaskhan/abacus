@@ -17,12 +17,34 @@ from typing import cast
 import pytest
 
 from abacus.kernel.db import TenantContext
+from abacus.kernel.flags import forget_flags
 from abacus.modules.assurance.api import g4_facts
 
+from . import test_a04t13_risk_register as register
 from .tb_support import Books, Json
-from .test_a04t13_risk_register import _keyed, _northwind, _patch, _path, world
+from .test_a04t13_risk_register import world
+
+# The register suite's request helpers, shared (private to that module by name only).
+_keyed = register._keyed  # pyright: ignore[reportPrivateUsage] -- shared test helper
+_northwind = register._northwind  # pyright: ignore[reportPrivateUsage] -- shared test helper
+_patch = register._patch  # pyright: ignore[reportPrivateUsage] -- shared test helper
+_path = register._path  # pyright: ignore[reportPrivateUsage] -- shared test helper
 
 pytestmark = pytest.mark.asyncio
+
+
+@pytest.fixture(autouse=True)
+async def _decision_cards(world: Books) -> None:
+    """The card is C3's: its routes stand behind `review.grammar_api` (off in E0)."""
+    await world.seed.run(
+        "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
+        "VALUES ($1, 'review.grammar_api', 'true', 'test-seed', 'A-04-T18') "
+        "ON CONFLICT DO NOTHING",
+        world.tenant_id,
+    )
+    forget_flags()
+
+
 __all__ = ("world",)  # the fixture, imported for this module
 
 
@@ -40,7 +62,7 @@ async def _propose(world: Books) -> dict[str, Json]:
 async def _register(world: Books) -> dict[str, Json]:
     response = await world.call("GET", _path(world, "/register"), world.senior)
     assert response.status_code == 200, response.text
-    rows = cast(list[Json], cast(Json, response.json())["rows"])
+    rows = cast(list[Json], cast(Json, response.json())["risks"])
     return {cast(str, r["code"]): r for r in rows}
 
 
@@ -60,7 +82,7 @@ async def test_ac4_3_nothing_pending_answers_409(world: Books) -> None:
         "POST", _path(world, "/approval-requests"), world.senior, headers=_keyed()
     )
     assert response.status_code == 409
-    assert cast(Json, response.json())["code"] == "nothing_pending"
+    assert cast(Json, response.json())["detail"] == "nothing_pending"
 
 
 async def test_ac4_4_the_partner_approves_and_g4_reopens_after_an_edit(world: Books) -> None:
@@ -68,6 +90,7 @@ async def test_ac4_4_the_partner_approves_and_g4_reopens_after_an_edit(world: Bo
     raised = await world.call(
         "POST", _path(world, "/approval-requests"), world.senior, headers=_keyed()
     )
+    assert raised.status_code == 201, raised.text
     card = cast(Json, raised.json())["decision_card_id"]
     decide = f"/v1/decision-cards/{card}/decide"
     body: Json = {
@@ -77,7 +100,7 @@ async def test_ac4_4_the_partner_approves_and_g4_reopens_after_an_edit(world: Bo
         "seen_version": 1,
     }
     refused = await world.call("POST", decide, world.senior, body)
-    assert refused.status_code == 403
+    assert refused.status_code == 403, refused.text
     decided = await world.call("POST", decide, world.partner, body)
     assert decided.status_code == 200, decided.text
 

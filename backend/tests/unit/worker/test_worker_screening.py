@@ -42,6 +42,7 @@ def test_ac14_the_worker_hosts_connections_and_agents() -> None:
     # SPEC-013: notifications subscribes to its catalogued events.
     # F-03-T07: collected from each module's api.py, in MODULES order.
     assert tuple(m.__name__.split(".")[2] for m in worker_main.MODULES) == (
+        "adjustments",  # A-06-T10: proposed entries leave for the client after the grant holds
         "agents",
         "assurance",  # A-01-T05: a computed gate's `gate.met` derives the phase it opens
         "audit_trail",  # G-02 (S12 lanes): audit exports and the label index
@@ -125,6 +126,7 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         # A-01-T22: an expired or voided export's segments are deleted.
         "engagement_export.expired",
         "engagement_export.voided",
+        "proposed_entries.sent_to_client",  # A-06-T10: the held send goes out after commit
         # P-07-T47 (DEC-539): the C13 projector's engagement gates.
         "acceptance.decided",
         "independence.confirmed",

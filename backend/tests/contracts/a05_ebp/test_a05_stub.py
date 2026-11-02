@@ -66,6 +66,12 @@ ROUTES: dict[tuple[str, str], str] = {
 }
 # A-05-T10 (S24): EBP-01's plan edit and provider add are served, so they document no 501.
 SERVED = {("patch", f"{A}/ebp/plan"), ("post", f"{A}/ebp/providers")}
+# S25: plan reviews (A-05-T16), the participant reveal (T18) and imports (T19) are served too.
+SERVED |= {
+    ("post", f"{A}/ebp/plan-reviews"),
+    ("post", f"{A}/ebp/participants/{{participant_id}}/reveals"),
+    ("post", f"{A}/ebp/imports"),
+}
 READS = {"ebp.read", "ebp_form5500.read", "test.read", "estimate.read", "related_party.read"}
 NEW_ACTIONS = sorted(
     {
@@ -117,7 +123,8 @@ def test_t04_every_field_is_classified_and_pii_only_masked() -> None:
         assert unclassified_fields(model) == [], model.__name__
     fields = ebp.ParticipantOut.model_fields
     # The census carries the SSN only as the platform's masked shape and the DOB masked (DEC-1858).
-    assert fields["ssn"].annotation is MaskedTinOut
+    # A-05-T19: a census row may carry no SSN; one it carries is only ever masked.
+    assert fields["ssn"].annotation == MaskedTinOut | None
     assert "dob_masked" in fields and not set(fields) & {"dob", "date_of_birth"}
 
 

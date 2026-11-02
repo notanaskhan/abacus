@@ -2,12 +2,7 @@
 // risks verbatim from the handoff spec (a), R3's drawer (b, b2) and the EP-approved register (d).
 // Dev and test only.
 
-import type {
-  LinkageOut,
-  RegisterOut,
-  RegisterRiskOut,
-  RiskDrawerOut,
-} from "@abacus/api-client";
+import type { LinkageOut, RegisterOut, RegisterRiskOut, RiskDrawerOut } from "@abacus/api-client";
 import { stableId } from "./prng";
 
 export type Aud08Variant = "a" | "b2" | "d";
@@ -24,16 +19,97 @@ const ROWS: readonly (readonly [
   RegisterRiskOut["fraud"],
   string | null,
 ])[] = [
-  ["R1", "Management override of controls", "financial_statement", [], "high", "mandatory", "presumed", "je"],
-  ["R2", "Contributions — participant & employer", "assertion", ["occurrence", "accuracy"], "moderate", "none", "none", "ebp04"],
-  ["R3", "Contributions — remittance & cutoff", "assertion", ["completeness", "cutoff"], "high", "proposed", "presumed", "ebp04"],
-  ["R4", "Investments at fair value (certified)", "assertion", ["existence", "valuation"], "low", "none", "none", "ebp06"],
-  ["R5", "Investment income (certified)", "assertion", ["occurrence", "accuracy"], "low", "none", "rebuttal_proposed", "ebp06"],
-  ["R6", "Notes receivable from participants", "assertion", ["existence", "valuation"], "moderate", "none", "none", "ebp05"],
-  ["R7", "Benefit payments", "assertion", ["occurrence", "accuracy"], "moderate", "none", "none", "ebp05"],
-  ["R8", "Participant accounts — eligibility & deferral data", "assertion", ["completeness", "accuracy"], "high", "none", "none", null],
+  [
+    "R1",
+    "Management override of controls",
+    "financial_statement",
+    [],
+    "high",
+    "mandatory",
+    "presumed",
+    "je",
+  ],
+  [
+    "R2",
+    "Contributions — participant & employer",
+    "assertion",
+    ["occurrence", "accuracy"],
+    "moderate",
+    "none",
+    "none",
+    "ebp04",
+  ],
+  [
+    "R3",
+    "Contributions — remittance & cutoff",
+    "assertion",
+    ["completeness", "cutoff"],
+    "high",
+    "proposed",
+    "presumed",
+    "ebp04",
+  ],
+  [
+    "R4",
+    "Investments at fair value (certified)",
+    "assertion",
+    ["existence", "valuation"],
+    "low",
+    "none",
+    "none",
+    "ebp06",
+  ],
+  [
+    "R5",
+    "Investment income (certified)",
+    "assertion",
+    ["occurrence", "accuracy"],
+    "low",
+    "none",
+    "rebuttal_proposed",
+    "ebp06",
+  ],
+  [
+    "R6",
+    "Notes receivable from participants",
+    "assertion",
+    ["existence", "valuation"],
+    "moderate",
+    "none",
+    "none",
+    "ebp05",
+  ],
+  [
+    "R7",
+    "Benefit payments",
+    "assertion",
+    ["occurrence", "accuracy"],
+    "moderate",
+    "none",
+    "none",
+    "ebp05",
+  ],
+  [
+    "R8",
+    "Participant accounts — eligibility & deferral data",
+    "assertion",
+    ["completeness", "accuracy"],
+    "high",
+    "none",
+    "none",
+    null,
+  ],
   ["R9", "Administrative expenses", "assertion", ["occurrence"], "low", "none", "none", "ebp09"],
-  ["R10", "Disclosures — parties in interest, Schedule H line 4a", "assertion", ["presentation", "completeness"], "moderate", "none", "none", "pii"],
+  [
+    "R10",
+    "Disclosures — parties in interest, Schedule H line 4a",
+    "assertion",
+    ["presentation", "completeness"],
+    "moderate",
+    "none",
+    "none",
+    "pii",
+  ],
 ]; // fmt: skip
 
 // Each risk's response, as the register's Response column shows it (the spec's text).

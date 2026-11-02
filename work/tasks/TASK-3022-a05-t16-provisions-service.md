@@ -1,8 +1,8 @@
 ---
 id: TASK-3022
 title: A-05-T16 EBP-02 provisions service
-spec: SPEC-641
-acceptance_criteria: [AC-F2]
+spec: SPEC-640
+acceptance_criteria: [AC-14]
 risk_zone: amber
 status: in-review
 epic: A-05

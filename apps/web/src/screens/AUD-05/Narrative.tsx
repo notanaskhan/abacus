@@ -64,7 +64,10 @@ function Row({
       <span className="text-[12px] font-medium">{label}</span>
       <div className="flex min-w-0 flex-col gap-[6px] text-[12px] leading-[1.5]">
         {flag !== undefined ? (
-          <span data-flag={flag.id} className="rounded-[3px] bg-amber-tint px-[4px] text-amber-ink">
+          <span
+            data-flag={flag.id}
+            className="rounded-[3px] bg-amber-tint px-[4px] text-amber-ink"
+          >
             {`${COPY.pbcGap} — ${flag.text}`}
           </span>
         ) : agent ? (
@@ -111,13 +114,20 @@ function RiskTab({
 }): JSX.Element {
   const flagOf = (cell: WorkpaperCellOut): AttentionFlagOut | undefined =>
     record.flags.find(
-      (f) => f.section_key === cell.section_key && f.row_key === cell.row_key && f.state !== "resolved",
+      (f) =>
+        f.section_key === cell.section_key && f.row_key === cell.row_key && f.state !== "resolved",
     );
   const loose = record.cells.filter((c) => c.section_key == null);
   return (
     <div data-aud05="risk" className="overflow-hidden rounded-pane bg-card shadow-e1">
       {loose.map((c) => (
-        <Row key={c.cell_key} cell={c} flag={flagOf(c)} onRemind={onRemind} onEscalate={onEscalate} />
+        <Row
+          key={c.cell_key}
+          cell={c}
+          flag={flagOf(c)}
+          onRemind={onRemind}
+          onEscalate={onEscalate}
+        />
       ))}
       {record.sections.map((s) => (
         <section key={s.key} data-section={s.key}>
@@ -127,7 +137,13 @@ function RiskTab({
           {record.cells
             .filter((c) => c.section_key === s.key)
             .map((c) => (
-              <Row key={c.cell_key} cell={c} flag={flagOf(c)} onRemind={onRemind} onEscalate={onEscalate} />
+              <Row
+                key={c.cell_key}
+                cell={c}
+                flag={flagOf(c)}
+                onRemind={onRemind}
+                onEscalate={onEscalate}
+              />
             ))}
         </section>
       ))}
@@ -156,7 +172,9 @@ function FraudTab({
       <section className="rounded-pane bg-card p-[12px] shadow-e1">
         <h3 className="mb-[6px] text-section font-medium">{COPY.fraud.session}</h3>
         {session.held_at != null && <p>{dateTime(session.held_at)}</p>}
-        {session.led_by != null && <p className="text-ink-2">{COPY.fraud.ledBy(session.led_by.name)}</p>}
+        {session.led_by != null && (
+          <p className="text-ink-2">{COPY.fraud.ledBy(session.led_by.name)}</p>
+        )}
         <p data-aud05="attendees" className="mt-[6px]">
           {`${COPY.fraud.attendees}: ${session.attendees.map((a) => a.name).join(", ")}`}
         </p>
@@ -175,7 +193,10 @@ function FraudTab({
       <section data-aud05="minutes" className="rounded-pane bg-card p-[12px] shadow-e1">
         <h3 className="mb-[6px] flex items-center gap-[8px] text-section font-medium">
           {COPY.fraud.minutes}
-          <Pill variant={session.minutes_status === "approved" ? "green-tint" : "amber"} size="micro">
+          <Pill
+            variant={session.minutes_status === "approved" ? "green-tint" : "amber"}
+            size="micro"
+          >
             {COPY.fraud.status[session.minutes_status] ?? session.minutes_status}
           </Pill>
         </h3>
@@ -255,7 +276,9 @@ export function NarrativePage({
   } else if (record.data === undefined) state = { kind: "loading" };
   const data = record.data;
   const citations = new Set((data?.cells ?? []).flatMap((c) => c.citation_ids)).size;
-  const reviewed = (data?.sign_offs ?? []).find((s) => s.level !== "L1" && s.initials != null && !s.stale);
+  const reviewed = (data?.sign_offs ?? []).find(
+    (s) => s.level !== "L1" && s.initials != null && !s.stale,
+  );
   const drafted = (data?.cells ?? []).some((c) => c.value_state === "suggested");
   const labels: Record<NarrativeTab, string> = { risk: COPY.tabs[0], fraud: COPY.tabs[1] };
   return (
@@ -317,11 +340,7 @@ export function NarrativePage({
                   }}
                 />
               )}
-              <PaneAction
-                icon="arrow-up-right"
-                label={COPY.openRegister}
-                onClick={onRegister}
-              />
+              <PaneAction icon="arrow-up-right" label={COPY.openRegister} onClick={onRegister} />
             </footer>
           </div>
         )}

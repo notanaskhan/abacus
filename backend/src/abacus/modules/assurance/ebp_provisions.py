@@ -207,7 +207,7 @@ async def _states(
 
 async def _review_row(
     tenant: TenantContext, work_item_id: UUID, review_no: int | None
-) -> Row[Any] | None:
+) -> Row[Any] | None:  # Any: the row's columns are the query's (review_no, ids, amended)
     async with tenant_session(tenant) as session:
         if review_no is None:
             return (await session.execute(_LATEST, {"w": work_item_id})).first()

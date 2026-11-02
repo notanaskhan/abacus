@@ -202,21 +202,30 @@ function Tiles({ home, name }: { home: HomeOut; name: OfficeName }): JSX.Element
         }
         if (tile.key === "notices") {
           const fresh = statusN(tile, "received");
+          // N-04-T05: the tile opens NOT-01 (the notices index is built).
           return [
-            <DashTile
+            <ByOffice
               key="notices"
-              kind="meter"
-              value={String(tile.total)}
-              {...(fresh > 0
-                ? {
-                    pill: {
-                      label: COPY.tiles.noticesNew(fresh),
-                      variant: status("notice", "received").variant ?? "red-tint",
-                    },
-                  }
-                : {})}
-              caption={COPY.tiles.noticesCaption}
-            />,
+              tile={tile}
+              name={name}
+              label={COPY.tiles.noticesCaption}
+              href={linkOf(to.NOT01())}
+              n={tile.total}
+            >
+              <DashTile
+                kind="meter"
+                value={String(tile.total)}
+                {...(fresh > 0
+                  ? {
+                      pill: {
+                        label: COPY.tiles.noticesNew(fresh),
+                        variant: status("notice", "received").variant ?? "red-tint",
+                      },
+                    }
+                  : {})}
+                caption={COPY.tiles.noticesCaption}
+              />
+            </ByOffice>,
           ];
         }
         const label = (COPY.tiles.admin as Record<string, string>)[tile.key];

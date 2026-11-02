@@ -88,6 +88,14 @@ def test_ac20_each_new_route_declares_exactly_one_action_and_a_response_model() 
 # TASK-019: taking, releasing and assigning a review return the assignment, so 200.
 REVIEW_QUEUE = "/v1/engagements/{engagement_id}/review-queue/{version_id}"
 NOT_CREATING = {
+    # S25 (N-04-T02, A-06-T10, A-06-T11): acts on an existing intake, notice, batch or finding.
+    "/v1/notice-intakes/{intake_id}/attach",
+    "/v1/notice-intakes/{intake_id}/discard",
+    "/v1/notices/{notice_id}:start",
+    "/v1/notices/{notice_id}/response/regenerate",
+    "/v1/notices/{notice_id}/response/mark-sent",
+    "/v1/approval-batches/{batch_id}/undo",
+    "/v1/findings/{finding_id}/not-applicable",
     # A-05-T04: a Form 5500 line's value and a related party's screen-out act on existing rows.
     "/v1/audits/{work_item_id}/ebp/form-5500/lines/{line_id}/value",
     "/v1/audits/{work_item_id}/related-parties/{party_id}/screen-out",
@@ -431,6 +439,9 @@ def test_ac20_creating_routes_answer_201() -> None:
         # A-03-T08 and T10: a mapping run and a sample draw start their workflows, so 202.
         "/v1/engagements/{engagement_id}/mapping-sets",
         "/v1/sample-sets/{sample_set_id}/versions",
+        # N-04-T02: an intake reads its upload later; an analysis run starts the engines, so 202.
+        "/v1/notice-intakes",
+        "/v1/notices/{notice_id}/analysis/run",
         # A-04-T01: a draft starts a section-drafter run, so 202.
         "/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/drafts",
         "/v1/engagements/{engagement_id}/risks/{risk_id}/drafts",
@@ -442,6 +453,14 @@ def test_ac20_creating_routes_answer_201() -> None:
     assert created == {
         "/v1/engagements",
         "/v1/engagements/{engagement_id}/request-items",
+        # N-04-T02: a notice from its intake, a decision request, a note, the response, its
+        # signature request and an agency reply each create a row, so 201.
+        "/v1/notice-intakes/{intake_id}/create",
+        "/v1/notices/{notice_id}/decision-requests",
+        "/v1/notices/{notice_id}/notes",
+        "/v1/notices/{notice_id}/response",
+        "/v1/notices/{notice_id}/response/send-for-signature",
+        "/v1/notices/{notice_id}/agency-replies",
         # A-03 (T06, T07, T10, T13): a grouping import, a population and its ties, a sample set
         # and the item-request fan-out each create rows, so 201.
         "/v1/grouping-sets/imports/file",

@@ -2,7 +2,7 @@
 id: TASK-3007
 title: A-04-T43 assurance/gates.py with the G4 provider
 spec: SPEC-620
-acceptance_criteria: [AC4.4]
+acceptance_criteria: [AC-22]
 risk_zone: red
 status: in-review
 epic: A-04

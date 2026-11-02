@@ -2,7 +2,7 @@
 id: TASK-3025
 title: A-06-T12 Evaluation chrome and wiring
 spec: SPEC-642
-acceptance_criteria: [AUD-15, AUD-16, AUD-17, AUD-20]
+acceptance_criteria: [AC-3]
 risk_zone: green
 status: in-review
 epic: A-06

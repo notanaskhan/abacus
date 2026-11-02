@@ -300,7 +300,7 @@ describe("SHL-01 behaviour (P-01 AC 1.1)", () => {
       "Workbench",
       // Inbox is routed by N-01-T23 (INB-01); its flag-off page is behind `inbox.firm_intake`.
       // Binders is routed by P-06-T09 (BND-01); its flag-off page is BND-01.test.tsx's.
-      "Notices",
+      // Notices is routed by N-04-T05 (NOT-01); its flag-off page is behind `notices.workspace`.
       // Audits is routed by A-01-T11 (AUD-01); its flag-off page is AUD-01.test.tsx's.
       "Closes",
       // Signatures is routed by N-02-T40 (SIG-01); its flag-off page is behind `signatures.envelopes`.

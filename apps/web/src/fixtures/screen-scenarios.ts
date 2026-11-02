@@ -132,7 +132,6 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
     ),
   },
   "AUD-01": { scenarios: aud01, opens: {} }, // A-01-T26: j03 6, j04 1
-  "NOT-01": { scenarios: not01, opens: NOT01_OPENS }, // N-04-T05: j09 1 (T26)
   "AUD-03": { scenarios: aud03, opens: {}, ids: AUD03_IDS }, // A-01-T26: j03 4e, 5, 5c
   "BND-01": { scenarios: bnd01, opens: {} },
   "BND-02": { scenarios: bnd02, opens: {}, ids: BND02_OPENS },
@@ -186,6 +185,7 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
   },
   "KNW-01": { scenarios: knw01, opens: {} }, // K-01-T04
   "KNW-04": { scenarios: knw04, opens: {} }, // K-02-T13
+  "NOT-01": { scenarios: not01, opens: NOT01_OPENS }, // N-04-T05: j09 1 (T26)
   "SHL-03": { scenarios: shl03, opens: {} },
   "SHL-04": { scenarios: shl04, opens: {} },
   "SHL-14": {
