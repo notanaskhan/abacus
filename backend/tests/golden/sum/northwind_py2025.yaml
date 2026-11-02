@@ -1,0 +1,25 @@
+# A-06-T08 (TASK-3015): Northwind Robotics 401(k) Plan PY2025, AUD-16 a and d, transcribed from
+# A-06 §3 F4 and SPEC-642 AC-6. Exact Decimal; never computed here.
+source: A-06 §3 F4; SPEC-642 AC-6; AUD-16 a, d
+reviewed_by: the audit CPA (requested; docs/quality/golden-reviews/sum@1.md)
+column_set: ebp_net_assets
+thresholds: {overall: "252200.00", pm: "189150.00", ct: "12610.00"}
+items:
+  # This year's uncorrected misstatement, and last year's carry: its turnaround in this year's
+  # change (rollover) and its cumulative effect on the year-end balances (iron curtain).
+  - {ref: PAJE-1, rollover: "35300.00", iron_curtain: "35300.00"}
+  - {ref: PY-1, rollover: "-1150.00", iron_curtain: "-13050.00", prior_year: true}
+  # Under clearly trivial: listed, never accumulated (4,210 under 12,610).
+  - {ref: BCT-1, rollover: "4210.00", iron_curtain: "4210.00", below_ct: true}
+expect:
+  rollover: "34150.00"       # 35,300 - 1,150
+  iron_curtain: "22250.00"   # 35,300 - 13,050
+  aggregate: "34150.00"
+  pct_of_pm: "18.1"          # 34,150 / 189,150
+  fill_pct_of_overall: "13.5"
+  ct_tick_pct: "5.0"
+  pm_tick_pct: "75.0"
+  approaching_pm: false
+  above_pm: false
+  accumulated: [PAJE-1, PY-1]
+  below_ct: [BCT-1]
