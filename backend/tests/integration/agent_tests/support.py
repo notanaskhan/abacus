@@ -194,7 +194,9 @@ class Seeder:
         await self.run(
             "INSERT INTO firms (tenant_id, name) VALUES ($1, $2)",
             tenant_id,
-            f"Firm {tenant_id.hex[:8]}",
+            # A letter first: an all-digit suffix reads as an amount to the scope checker, and
+            # a reminder naming the firm was then refused as out of scope (R-01-T24; TASK-2927).
+            f"Firm x{tenant_id.hex[:8]}",
         )
         return tenant_id
 
@@ -259,7 +261,7 @@ class Seeder:
                 tenant_id,
                 client_id,
                 entity_id,
-                f"Seeded {uuid.uuid4().hex[:6]}",
+                f"Seeded x{uuid.uuid4().hex[:6]}",  # never an amount (see `firm`)
                 created_by,
             ),
         )
