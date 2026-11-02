@@ -101,11 +101,12 @@ def test_ac4_every_field_is_classified() -> None:
         assert unclassified_fields(model) == [], model.__name__
 
 
-def test_ac4_seven_reference_kinds_and_nine_standard_kinds() -> None:
+def test_ac4_seven_reference_kinds_and_ten_standard_kinds() -> None:
     assert len(get_args(reference_sets_contract.ReferenceSetKind)) == 7
     assert "standards_sets" in get_args(reference_sets_contract.ReferenceSetKind)
-    # A-03-T16 (DEC-1767) adds `attribute_sample_sizes`, BH-EBP-210 Table 2.
-    assert len(get_args(standards_contract.StandardKind)) == 9
+    # A-03-T16 (DEC-1767) adds `attribute_sample_sizes`, BH-EBP-210 Table 2; A-04-T13 (DEC-1951,
+    # migration 0640) adds `rmm_matrix`, the firm's RMM matrix.
+    assert len(get_args(standards_contract.StandardKind)) == 10
     assert set(get_args(standards_contract.StandardKind)) == set(
         get_args(standards_contract.FirmStandardKind)
     ) | set(get_args(standards_contract.ThresholdPolicyKind))
