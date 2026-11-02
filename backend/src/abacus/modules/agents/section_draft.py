@@ -72,9 +72,11 @@ from abacus.modules.agents.repository import (
 )
 from abacus.modules.agents.section_sources import (
     CELL_TARGET,
+    ModeDocument,
     PackRefused,
     SourcePaper,
     mode_kinds,
+    mode_mapping,
     section_source,
 )
 from abacus.modules.agents.service import (
@@ -105,6 +107,10 @@ PACK_ERROR: Final = "pack_configuration_error"
 ANCHOR: Final = "section_draft"
 MAX_STEPS: Final = 120
 MAX_FACTS: Final = 80
+# A-04-T22 (DEC-2058): a mapping's documents, bounded so a section's context stays one call.
+MAX_DOCUMENTS: Final = 8
+MAX_PAGES: Final = 40
+MAX_PAGE_CHARS: Final = 6000
 # Why a drafted cell was dropped (shown as Unsupported, never as a value).
 UNCITED: Final = "uncited"
 UNVERIFIED: Final = "citation_unverified"
@@ -155,6 +161,9 @@ class DraftContext:
     version_id: UUID
     steps: tuple[VersionStep, ...]  # S1 is steps[0]
     facts: tuple[Fact, ...]
+    # A-04-T22 (DEC-2058): the mode mapping's documents (D1 is documents[0]) and waiting inputs.
+    documents: tuple[ModeDocument, ...] = ()
+    waiting_on: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -305,7 +314,7 @@ def _facts(paper: SourcePaper) -> tuple[Fact, ...]:
 
 
 async def load_context(
-    agent: AgentContext, workpaper_id: UUID, section_key: str | None
+    agent: AgentContext, workpaper_id: UUID, section_key: str | None, mode: str = "gap"
 ) -> DraftContext:
     engagement = await get_ref(agent, agent.engagement)
     await authorise(agent, "workpaper.read", engagement.resource())
@@ -316,8 +325,15 @@ async def load_context(
     paper = await source.paper(agent.tenant, agent.engagement, workpaper_id, section_key)
     version = await version_steps(agent.tenant, engagement.methodology_version_id)
     steps = source.bound(version.steps, paper)
+    mapping = mode_mapping(mode)
+    inputs = None if mapping is None else await mapping(agent, paper)
     return DraftContext(
-        paper, engagement.methodology_version_id, tuple(steps[:MAX_STEPS]), _facts(paper)
+        paper,
+        engagement.methodology_version_id,
+        tuple(steps[:MAX_STEPS]),
+        _facts(paper),
+        () if inputs is None else inputs.documents[:MAX_DOCUMENTS],
+        () if inputs is None else inputs.waiting_on,
     )
 
 
@@ -346,7 +362,18 @@ def build_context(mode: str, context: DraftContext, untrusted: Sequence[str]) ->
                     }
                     for c in paper.cells
                 ],
-                "documents": [],
+                "documents": [
+                    {
+                        "document": f"D{n}",
+                        "title": d.title,
+                        "pages": [
+                            {"page": p.number, "text": p.text[:MAX_PAGE_CHARS]}
+                            for p in d.pages[:MAX_PAGES]
+                        ],
+                    }
+                    for n, d in enumerate(context.documents, start=1)
+                ],
+                "waiting_on": list(context.waiting_on),
             },
             untrusted=list(untrusted),
             trim="cells",
@@ -367,8 +394,18 @@ def _numbers(text: str) -> set[Decimal]:
 
 
 def _claim(c: DraftCitation, context: DraftContext) -> CitationClaim | None:
-    """The claim a citation makes, or None when it names a step the context didn't list (a
-    document is cited only once a mode's mapping supplies documents)."""
+    """The claim a citation makes, or None when it names a step or a document the context didn't
+    list. A document page is a C4 `document_text` claim, checked against the version's page."""
+    if c.document is not None:
+        doc_index = int(c.document[1:]) - 1
+        if doc_index >= len(context.documents) or c.page is None:
+            return None
+        document = context.documents[doc_index]
+        return CitationClaim(
+            "document_text",
+            {"evidence_version_id": str(document.evidence_version_id), "page": c.page},
+            quote=c.quote,
+        )
     if c.step is None:
         return None
     index = int(c.step[1:]) - 1
@@ -451,7 +488,7 @@ async def _draft(
     run = await _run(agent)
     drafter = spec(run.agent_id)
     prompt_ref, budget = mode_call(drafter, mode)
-    context = await load_context(agent, workpaper_id, section_key)
+    context = await load_context(agent, workpaper_id, section_key, mode)
     # Code's pack validation, before any model call (AC6.1).
     problem = await section_source().pack_problem(agent.tenant, context.version_id, context.paper)
     if problem is not None:
@@ -555,6 +592,8 @@ async def _draft(
                 "workpaper_id": str(workpaper_id),
                 "suggestion_ids": [str(s) for s in suggestions],
                 "unsupported": [{"cell": u.cell, "reason": u.reason} for u in unsupported],
+                # A-04-T22: what the section still needs from the client (AUD-04's waiting row).
+                "waiting_inputs": list(context.waiting_on),
             },
         ):
             tx.record(

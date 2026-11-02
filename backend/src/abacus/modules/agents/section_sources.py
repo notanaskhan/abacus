@@ -19,6 +19,7 @@ from uuid import UUID
 
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import DomainConflict, DomainUnavailable
+from abacus.modules.identity.api import AuthContext
 from abacus.modules.methodology.api import VersionStep
 
 CELL_TARGET: Final = "workpaper_cell"
@@ -118,8 +119,57 @@ def mode_kinds(mode: str) -> frozenset[str] | None:
     return _MODE_PLANS.get(mode)
 
 
+# A-04-T22 (DEC-2058): a mode's mapping adds its documents and its waiting inputs to the context
+# code builds. The documents are evidence versions the engagement holds, page by page (D<n>, in
+# the mapping's order); a citation to one is a C4 `document_text` claim on its page. Waiting
+# inputs are what the section still needs from the client (a request item not yet received),
+# recorded on the run, never guessed at. A mode with no mapping drafts from steps and cells only.
+
+
+@dataclass(frozen=True)
+class ModePage:
+    number: int
+    text: str
+
+
+@dataclass(frozen=True)
+class ModeDocument:
+    evidence_version_id: UUID
+    title: str
+    pages: tuple[ModePage, ...]
+
+
+@dataclass(frozen=True)
+class ModeInputs:
+    documents: tuple[ModeDocument, ...] = ()
+    waiting_on: tuple[str, ...] = ()
+
+
+# (the run's agent, as the actor the reads are authorised for; the paper as the source read it)
+ModeMapping = Callable[[AuthContext, SourcePaper], Awaitable[ModeInputs]]
+_MODE_MAPPINGS: dict[str, ModeMapping] = {}
+
+
+def register_mode_mapping(mode: str, mapping: ModeMapping) -> None:
+    known = _MODE_MAPPINGS.get(mode)
+    if known is not None and (known.__module__, known.__qualname__) != (
+        mapping.__module__,
+        mapping.__qualname__,
+    ):
+        raise ValueError(f"section draft mode {mode!r} already has a mapping")
+    _MODE_MAPPINGS[mode] = mapping
+
+
+def mode_mapping(mode: str) -> ModeMapping | None:
+    return _MODE_MAPPINGS.get(mode)
+
+
 __all__ = [
     "CELL_TARGET",
+    "ModeDocument",
+    "ModeInputs",
+    "ModeMapping",
+    "ModePage",
     "PackProblem",
     "PackRefused",
     "SectionSource",
@@ -127,6 +177,8 @@ __all__ = [
     "SourceMissing",
     "SourcePaper",
     "mode_kinds",
+    "mode_mapping",
+    "register_mode_mapping",
     "register_mode_plan",
     "register_section_source",
     "section_source",

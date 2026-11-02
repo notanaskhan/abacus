@@ -5,7 +5,11 @@ The audit line's read models and actions: the AUD-06 trial balance first (SPEC-3
 
 # A-03-T08: the C9 v2 routes call this lazily; imported here so its error codes are catalogued.
 from abacus.kernel.audit_owners import register_engagement_owners
-from abacus.modules.agents.api import register_suggestion_applier, register_suggestion_target
+from abacus.modules.agents.api import (
+    register_mode_mapping,
+    register_suggestion_applier,
+    register_suggestion_target,
+)
 from abacus.modules.assurance import mapping_live as mapping_live
 from abacus.modules.assurance.archive_gate import g9
 from abacus.modules.assurance.audits_contract import audits_router
@@ -15,6 +19,7 @@ from abacus.modules.assurance.completion_routes import router as completion_rout
 
 # A-04-T08/T09: the pure materiality engine, for the recommender's evaluation (BOUND-001).
 from abacus.modules.assurance.compute import materiality as materiality_engine
+from abacus.modules.assurance.draft_mappings import gap_inputs
 from abacus.modules.assurance.ebp_contract import router as ebp_router
 from abacus.modules.assurance.ebp_designed import register as register_ebp_designed
 from abacus.modules.assurance.ebp_designed import register_modes as register_ebp_modes
@@ -115,6 +120,8 @@ register_gate_provider("G7", g7)
 register_gate_provider("G8", g8)
 register_gate_provider("G9", g9)
 register_gates()  # A-04-T43 (DEC-2057): G4 from assurance/gates.py
+# A-04-T22 (DEC-2058): the planning modes' mappings for the section drafter.
+register_mode_mapping("gap", gap_inputs)
 register_firm_setting(RELEASE_MODE_SETTING)
 
 # A-01-T05 (SPEC-330 AC-13): C1's `gate.met` derives the phase a computed gate opens. The worker
