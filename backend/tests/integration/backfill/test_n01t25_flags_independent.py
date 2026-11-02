@@ -57,7 +57,9 @@ if TYPE_CHECKING:
 pytestmark = pytest.mark.asyncio
 EVIDENCE: Final = "n01t25-evidence"
 MASTER: Final = b"n01t25-independent-master-key-012345678"
-FULL_TIN: Final = re.compile(r"\d{3}-?\d{2}-?\d{4}")
+# A whole SSN (or nine digits) on its own. Inside a UUID (`9cd67909-0591-...`) a digit run is
+# not one; reading it as one failed this test on a random version id (TASK-2928).
+FULL_TIN: Final = re.compile(r"(?<![0-9A-Za-z])\d{3}-?\d{2}-?\d{4}(?![0-9A-Za-z])")
 
 
 def _form_1095c(year: int) -> bytes:
