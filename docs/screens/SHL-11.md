@@ -10,3 +10,8 @@ Screen contract: the full contract (artboards, scenarios, endpoints, deviations)
 | host | D | not run | O3 sheet 500, top 52 (`e2e/visual/tier-d-review.spec.ts`) |
 
 Gate: chapter 04 §9.3 keeps Tier C report-only, so the locks are listed and reported, not blocking (DEC-1970). Keyboard: Escape closes the topmost layer and focus returns to the opener.
+
+## Links
+| From | To (manifest builder) | Planned or live |
+|---|---|---|
+| A cited figure (Opens SHL-08 with the cited figure lit) | SHL-08, planned in the manifest (no builder yet) | planned (P-04-T60) |
