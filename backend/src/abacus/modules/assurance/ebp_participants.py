@@ -17,8 +17,10 @@ A participant's SSN and date of birth are never stored or shown in the clear:
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import date
+from decimal import Decimal
 from typing import Final, Literal
 from uuid import UUID
 
@@ -53,16 +55,33 @@ def ssn_mask(last4: str | None) -> str | None:
     return None if last4 is None else f"•••-••-{last4}"
 
 
+_SOURCE_MASKED: Final = re.compile(r"^[Xx•*]{3}-?[Xx•*]{2}-?([0-9]{4})$")
+
+
+def source_masked_last4(ssn: str) -> str | None:
+    """The last four of an SSN the client's file already masks ("XXX-XX-4417"), else None."""
+    m = _SOURCE_MASKED.match(ssn.strip())
+    return None if m is None else m.group(1)
+
+
 async def seal_pii(
     tenant_id: UUID, import_id: UUID, participant_key: str, ssn: str | None, dob: date | None
 ) -> SealedPii:
-    digits = None if ssn is None else "".join(c for c in ssn if c.isdigit())
-    if digits is not None and len(digits) != 9:
-        raise ValueError("an SSN has nine digits")
+    """A full SSN is sealed as nine digits. One the client's file already masks is sealed as the
+    file gave it, its fingerprint marked `masked:` so it never matches a full SSN's (DEC-2068)."""
+    masked = None if ssn is None else source_masked_last4(ssn)
+    if ssn is None:
+        ssn_text = None
+    elif masked is not None:
+        ssn_text = f"XXX-XX-{masked}"
+    else:
+        ssn_text = "".join(c for c in ssn if c.isdigit())
+        if len(ssn_text) != 9:
+            raise ValueError("an SSN has nine digits")
     ssn_sealed = (
         None
-        if digits is None
-        else await seal(tenant_id, digits.encode(), binding(import_id, participant_key, "ssn"))
+        if ssn_text is None
+        else await seal(tenant_id, ssn_text.encode(), binding(import_id, participant_key, "ssn"))
     )
     dob_text = None if dob is None else dob.isoformat()
     dob_sealed = (
@@ -70,10 +89,11 @@ async def seal_pii(
         if dob_text is None
         else await seal(tenant_id, dob_text.encode(), binding(import_id, participant_key, "dob"))
     )
+    fp_input = None if ssn_text is None else (ssn_text if masked is None else f"masked:{masked}")
     return SealedPii(
         ssn_sealed,
-        None if digits is None else fingerprint_tin(tenant_id, digits).hex(),
-        None if digits is None else digits[-4:],
+        None if fp_input is None else fingerprint_tin(tenant_id, fp_input).hex(),
+        None if ssn_text is None else ssn_text[-4:],
         dob_sealed,
         None if dob_text is None else fingerprint_tin(tenant_id, f"dob:{dob_text}").hex(),
     )
@@ -82,6 +102,40 @@ async def seal_pii(
 def dob_fingerprint(tenant_id: UUID, dob: date) -> str:
     """Code compares an HR record's date of birth to the census by this, never by opening it."""
     return fingerprint_tin(tenant_id, f"dob:{dob.isoformat()}").hex()
+
+
+@dataclass(frozen=True)
+class ParticipantRow:
+    id: UUID
+    participant_key: str
+    name: str
+    ssn_last4: str | None
+    status: str
+    compensation: Decimal | None
+
+
+_LIST = text(
+    "SELECT p.id, p.participant_key, p.name, p.ssn_last4, p.status, p.compensation "
+    "FROM ebp_participants p WHERE p.work_item_id = :w AND p.import_id = ("
+    "SELECT i.id FROM ebp_source_imports i WHERE i.work_item_id = :w AND i.kind = 'census' "
+    "AND i.status = 'imported' ORDER BY i.created_at DESC LIMIT 1) "
+    "AND (CAST(:q AS text) IS NULL OR p.name ILIKE :like OR p.participant_key ILIKE :like) "
+    "ORDER BY p.participant_key"
+)
+
+
+async def participants_of(
+    ctx: AuthContext, work_item_id: UUID, q: str | None, limit: int = 500
+) -> tuple[list[ParticipantRow], int]:
+    """The latest imported census's participants, masked fields only (never a sealed value)."""
+    like = None if q is None else "%" + q.replace("\\", "").replace("%", "").replace("_", "") + "%"
+    async with tenant_session(ctx.tenant) as session:
+        rows = (await session.execute(_LIST, {"w": work_item_id, "q": q, "like": like})).all()
+    found = [
+        ParticipantRow(r.id, r.participant_key, r.name, r.ssn_last4, r.status, r.compensation)
+        for r in rows
+    ]
+    return found[:limit], len(found)
 
 
 async def reveal(

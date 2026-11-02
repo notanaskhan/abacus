@@ -26,7 +26,7 @@ task. Writes take `Idempotency-Key`.
 | GET `/ebp/plan` · PATCH `/ebp/plan` | `PlanOut` · `PlanEditIn` | `ebp.read` · `ebp_plan.edit` | T08 |
 | GET/POST `/ebp/providers` · POST `/ebp/providers/{id}/invite` | `ProvidersOut` · `ProviderIn` · `InviteIn` | `ebp.read` · `ebp_provider.manage` · `ebp_provider.invite` | T08 |
 | GET `/ebp/plan-reviews/current?version=` · POST `/ebp/plan-reviews` | `PlanReviewOut` · `PlanReviewIn` | `ebp.read` · `workpaper.draft` | T10, T12 |
-| GET `/ebp/participants` · POST `/ebp/participants/{id}/reveals` · POST `/ebp/imports` | `ParticipantsOut` · `RevealIn` · `ImportIn` | `ebp.read` · `pii.reveal` · `ebp_import.create` | T15 |
+| GET `/ebp/participants` · POST `/ebp/participants/{id}/reveals` · POST `/ebp/imports` · GET `/ebp/imports/{id}` | `ParticipantsOut` · `RevealIn` → `ParticipantRevealOut` (`no-store`) · `ImportIn` → `ImportOut` (422 `import_refused`, recorded, with `facts.reason`, `column`, `difference`) | `ebp.read` · `pii.reveal` · `ebp_import.create` · `ebp.read` | T15; served T18 (reveal), T19 (imports, participants) |
 | POST `/tests` · PUT `/tests/{tid}/items/{iid}/results/{attr}` | `TestIn` · `ResultIn` | `test.create` · `test.mark` | T17 |
 | GET `/ebp/eligibility` | `FiguresOut` | `ebp.read` | T19 |
 | GET `/ebp/contributions/reconciliation` · GET `/ebp/late-remittances` · POST `/ebp/late-remittances/{id}/corrections` | `FiguresOut` · `LateRemittanceOut` · `CorrectionIn` | `ebp.read` · `ebp_correction.record` | T20, T21 |
