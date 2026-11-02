@@ -36,6 +36,11 @@ Code: `src/domain/review/checkpoints.ts`, `src/screens/SHL-16/{index.tsx, copy.t
 - Diff rows lighting their fields in the underlay need a typed locator per row (INV-2); the detail carries `field_key` only. As SHL-10.
 - The Assistant segment opens TAX-08 (planned): drawn disabled where planned screens are.
 
+## Deviations
+1. Import-author variant: the checkpoint's approval is its author's ladder (DEC-1970 notes).
+2. Fixture dates follow DF-13.
+3. DF-13: a checkpoint opened from a record names the record's own clock.
+
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|

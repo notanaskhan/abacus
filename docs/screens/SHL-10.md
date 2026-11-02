@@ -44,6 +44,11 @@ Loading: "Loading the proposal". Error: "This proposal isn't available." Not-all
 | Evidence rows (Opens SHL-08 with the cited box lit) | SHL-08 | live in fixture mode: `?ov=viewer:<evidence_version_id>` |
 | Opens SHL-19 on this set | SHL-19 | planned (handoff link; tooltip-only) |
 
+## Deviations
+1. The R2 revision wins over spec.md where they differ (e′ and g are later P-04 rows).
+2. Fixture dates follow DF-13: each artboard at its README clock.
+3. Approve and Reject on an agent proposal are a person's acts through `agents.api` (PROPOSAL-001); the sheet never offers them to the agent.
+
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
