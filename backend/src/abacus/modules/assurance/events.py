@@ -54,3 +54,14 @@ class FraudMinutesAwaitingApproval(DomainEvent):
     engagement_id: Annotated[UUID, classified("internal")]
     by_user: Annotated[UUID, classified("internal")]
     recipient_user_ids: Annotated[list[UUID], classified("internal")]
+
+
+class RiskRegisterApproved(DomainEvent):
+    """The engagement partner approved the risk register at its hash (A-04-T18): G4 reads it."""
+
+    event_type: ClassVar[str] = "risk_register.approved"
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    work_item_id: Annotated[UUID, classified("internal")]
+    decision_id: Annotated[UUID, classified("internal")]
+    register_hash: Annotated[str, classified("internal")]

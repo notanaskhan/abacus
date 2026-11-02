@@ -39,12 +39,26 @@ from abacus.kernel.db import Base, TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork, uow
 from abacus.modules.agents.api import AdoptedValue
+from abacus.modules.assurance.events import RiskRegisterApproved
 from abacus.modules.assurance.sections import registered_sections
 from abacus.modules.engagements.api import assurance_item_id, get_ref, lock_ref
 from abacus.modules.identity.api import AuthContext, allowed_actions, authorise, names_of
 from abacus.modules.ledger.api import engagement_trial_balances, trial_balance_view
 from abacus.modules.methodology.api import rmm_matrix_for
-from abacus.modules.review.api import Json, content_hash, field_timeline, record_value
+from abacus.modules.review.api import (
+    AppliedDecision,
+    CardContext,
+    CardOption,
+    CardSubject,
+    ComputedCard,
+    DecisionKind,
+    Json,
+    content_hash,
+    field_timeline,
+    raise_decision_card,
+    record_value,
+    register_decision_kind,
+)
 
 TARGET: Final = "risk"  # the field history and the suggestion target (AC4.7)
 # The trail's target type: SPEC-300's `risk` already names fieldwork's rows (DEC-1866).
@@ -321,6 +335,11 @@ async def _work_item(tenant: TenantContext, engagement_id: UUID) -> UUID:
     if found is None:
         raise NotFound("risk")
     return found
+
+
+async def rows_of(tenant: TenantContext, work_item_id: UUID) -> list[RiskRow]:
+    """The register's rows (G4's facts read them, A-04-T18)."""
+    return await _rows(tenant, work_item_id)
 
 
 async def _rows(tenant: TenantContext, work_item_id: UUID) -> list[RiskRow]:
@@ -847,6 +866,156 @@ async def coverage(
         material_areas=len(areas),
         covered=len(covered),
         unaddressed_codes=[r.code for r in rows if r.id not in linked],
+    )
+
+
+# --- the partner's approval of the register (A-04-T18; AC4.3, AC4.4; DEC-2056) -------------------
+
+APPROVAL_KIND: Final = "significant_risk"
+APPROVAL_QUESTION: Final = "risks.register"
+APPROVE: Final = "approve"
+RETURN: Final = "return"
+
+
+class NothingPending(DomainConflict):
+    """No significance or rebuttal waits for the partner."""
+
+    code = "nothing_pending"
+
+
+@dataclass(frozen=True)
+class ApprovalRequest:
+    card_id: UUID
+    subject_codes: tuple[str, ...]
+
+
+def _pending(rows: Sequence[RiskRow]) -> list[RiskRow]:
+    return [r for r in rows if r.significance == "proposed" or r.fraud == "rebuttal_proposed"]
+
+
+def _subject_word(r: RiskRow) -> str:
+    return "rebuttal" if r.fraud == "rebuttal_proposed" else "significance"
+
+
+async def _approval_card(tenant: TenantContext, subject: CardSubject) -> ComputedCard:
+    """The `significant_risk` provider: one card over every pending proposal, its options and
+    title by code (AC4.3: "Approve R3 significant and R5's rebuttal")."""
+    if subject.work_item_id is None:
+        raise RiskInvalid(facts={"field": "work_item_id"})
+    rows = await _rows(tenant, subject.work_item_id)
+    pending = _pending(rows)
+    if not pending:
+        raise NothingPending
+    outcomes = {r.code: _subject_word(r) for r in pending}
+    figures = {
+        "register_hash": register_hash(rows),
+        **{f"subject.{k}": v for k, v in outcomes.items()},
+    }
+    listed = ", ".join(
+        f"{r.code} {'rebuttal' if _subject_word(r) == 'rebuttal' else 'significant'}"
+        for r in pending
+    )
+    return ComputedCard(
+        options=(
+            CardOption(APPROVE, f"Approve {listed}", figures),
+            CardOption(RETURN, "Return to the team", figures),
+        ),
+        context=tuple(CardContext(f"risk.{r.code}", r.code, r.area_label) for r in pending),
+    )
+
+
+async def request_approval(ctx: AuthContext, engagement_id: UUID) -> ApprovalRequest:
+    """`POST …/risks/approval-requests` (the route authorised `risk.route_for_approval`): one
+    `significant_risk` card, reserved to the engagement partner, over every pending proposal;
+    409 `nothing_pending`. Remind is C3's `POST /v1/decision-cards/{id}/notify`."""
+    work_item = await _work_item(ctx.tenant, engagement_id)
+    pending = _pending(await _rows(ctx.tenant, work_item))
+    if not pending:
+        raise NothingPending
+    card_id = await raise_decision_card(
+        ctx,
+        engagement_id=engagement_id,
+        kind=APPROVAL_KIND,
+        question_key=APPROVAL_QUESTION,
+        work_item_id=work_item,
+    )
+    return ApprovalRequest(card_id, tuple(r.code for r in pending))
+
+
+async def _apply_approval(tx: UnitOfWork, ctx: AuthContext, decided: AppliedDecision) -> None:
+    """The `significant_risk` applier, in the decision's unit of work: Approve sets each subject's
+    outcome (significance approved, rebuttal approved) through the field history and marks every
+    row EP approved under the card; Return leaves the proposals for the team. The register must be
+    as the card saw it (409 `version_conflict` otherwise)."""
+    if decided.work_item_id is None:
+        raise RiskInvalid(facts={"field": "work_item_id"})
+    rows = list(
+        (
+            await tx.session.execute(
+                select(RiskRow)
+                .where(RiskRow.work_item_id == decided.work_item_id)
+                .order_by(RiskRow.code)
+                .with_for_update()
+            )
+        ).scalars()
+    )
+    if register_hash(rows) != decided.figures.get("register_hash"):
+        raise RiskMoved(facts={"field": "register"})
+    scope = Scope(engagement_id=decided.engagement_id, work_item_id=decided.work_item_id)
+    if decided.option_key != APPROVE:
+        tx.record(
+            "risk_register.returned",
+            target=Target("work_item", decided.work_item_id),
+            after=Ref(decision=decided.decision_id),
+            scope=scope,
+        )
+        return
+    outcomes = {
+        k.removeprefix("subject."): v
+        for k, v in decided.figures.items()
+        if k.startswith("subject.")
+    }
+    for row in rows:
+        changed: list[str] = []
+        outcome = outcomes.get(row.code)
+        if outcome == "significance" and row.significance == "proposed":
+            row.significance = "approved"
+            changed.append("significance")
+        elif outcome == "rebuttal" and row.fraud == "rebuttal_proposed":
+            row.fraud = "rebuttal_approved"
+            changed.append("fraud")
+        if changed:
+            await _record(tx, row, changed, note="Approved by the engagement partner")
+            row.content_hash = _row_hash(row)
+            row.version_no += 1
+        row.status = "ep_approved"
+        row.approved_card_id = decided.card_id
+    approved = register_hash(rows)
+    tx.record(
+        "risk_register.approved",
+        target=Target("work_item", decided.work_item_id),
+        after=Ref(decision=decided.decision_id, register_hash=approved),
+        scope=scope,
+    )
+    tx.emit(
+        RiskRegisterApproved(
+            engagement_id=decided.engagement_id,
+            work_item_id=decided.work_item_id,
+            decision_id=decided.decision_id,
+            register_hash=approved,
+        )
+    )
+
+
+def register_approval_kind() -> None:
+    register_decision_kind(
+        DecisionKind(
+            code=APPROVAL_KIND,
+            reserved_role="engagement_partner",
+            options=_approval_card,
+            questions={APPROVAL_QUESTION: "Significant risks and rebuttals"},
+            apply=_apply_approval,
+        )
     )
 
 
