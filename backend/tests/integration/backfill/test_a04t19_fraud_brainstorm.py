@@ -122,7 +122,8 @@ async def test_ac2_4_the_partner_approves_the_minutes_and_the_senior_is_refused(
         TenantContext(world.tenant_id, "system", "a04t19"), world.site.engagement_id
     )
     rows = await world.seed.value(
-        "SELECT count(*) FROM fraud_minutes_approvals WHERE tenant_id = $1 AND actor_kind = 'human'",
+        "SELECT count(*) FROM fraud_minutes_approvals "
+        "WHERE tenant_id = $1 AND actor_kind = 'human'",
         world.tenant_id,
     )
     assert rows == 1
