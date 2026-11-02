@@ -1467,7 +1467,7 @@ handoff_words:
     "Approved":  {object: proposed_entry, code: approved}
     "Posted":    {object: proposed_entry, code: posted}
     "Passed":    {object: misstatement, code: passed_on_sum}
-    "Rejected":  {status: false, reason: "proposed_entry has Failed post but no Rejected in 3.3.1"}
+    "Rejected":  {object: proposed_entry, code: rejected}   # A-06-T02 added the code (TASK-2927)
     "Reversed":  {object: proposed_entry, code: reversed}
 
   "Session":   # 6

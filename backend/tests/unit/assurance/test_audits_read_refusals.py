@@ -11,7 +11,7 @@ import pytest
 
 from abacus.kernel.db import ActorKind, TenantContext
 from abacus.modules.assurance import api as assurance_api
-from abacus.modules.assurance import audits_contract, cockpit, index, sections
+from abacus.modules.assurance import audits_contract, cockpit, ebp_designed, index, sections
 from abacus.modules.identity.api import AuthContext, Forbidden
 
 assert assurance_api.ROUTERS  # registers A-01's rows
@@ -72,7 +72,14 @@ def test_ac22_the_methodology_row_requires_methodology_read_on_the_firm() -> Non
     # A-03-T15: AUD-11's row asks `sample_set.read` on the engagement (DEC-1764).
     sample = found["sample_selection"]
     assert (sample.required_action, sample.action_scope) == ("sample_set.read", "engagement")
-    guarded = {"methodology", "sample_selection"}
+    # A-05-T09 (SPEC-641): each EBP designed paper's row asks `workpaper.read` on the engagement.
+    designed = {paper.section_key for paper in ebp_designed.DESIGNED}
+    assert designed and designed <= set(found)
+    assert all(
+        (found[k].required_action, found[k].action_scope) == ("workpaper.read", "engagement")
+        for k in designed
+    )
+    guarded = {"methodology", "sample_selection"} | designed
     assert all(s.required_action is None for k, s in found.items() if k not in guarded)
 
 
