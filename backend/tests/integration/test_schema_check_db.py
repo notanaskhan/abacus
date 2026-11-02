@@ -1792,6 +1792,30 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             }
         ),
         "fraud_inquiries": frozenset({"answered_at"}),
+        # A-05-T15 (0642): an EBP source import's outcome; a test's attributes at its version.
+        "ebp_source_imports": frozenset({"refusal_code", "row_count", "status", "totals"}),
+        "attribute_tests": frozenset({"attributes", "content_hash", "version_no"}),
+        # A-06-T03 (0643): a proposed entry and its lines are edited until decided.
+        "proposed_entries": frozenset(
+            {"account_class", "amount", "description", "status", "version"}
+        ),
+        "proposed_entry_lines": frozenset(
+            {"account_code", "account_name", "credit", "debit", "fs_line_key"}
+        ),
+        # A-06-T04 (0644): completion's findings, misstatements, deficiencies, consultations.
+        "audit_findings": frozenset(
+            {"coso_component", "evaluation", "kind", "route", "title", "version"}
+        ),
+        "audit_misstatements": frozenset(
+            {"amount", "fs_effect", "passed_by", "passed_reason_sealed", "projection"}
+            | {"proposed_entry_id", "ref", "status", "version"}
+        ),
+        "deficiencies": frozenset(
+            {"communicated_at", "communicated_ref", "decision_card_id", "decision_id"}
+            | {"severity_concluded", "severity_proposed", "severity_proposed_by_kind"}
+            | {"severity_suggestion_id", "status", "version"}
+        ),
+        "consultations": frozenset({"concluded_at", "conclusion_sealed", "status"}),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(

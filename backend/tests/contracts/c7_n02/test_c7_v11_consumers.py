@@ -69,16 +69,19 @@ def test_a_contracted_source_that_cannot_draft_is_refused_at_registration() -> N
     async def nothing(_ctx: object, _id: object) -> list[object]:
         return []
 
+    refused = EnvelopeSource(
+        kind=api.TAX_RETURN,
+        documents=nothing,
+        signers=nothing,
+        retention_record_type="signature_evidence",
+    )
+    before = api.registered_sources()
     with pytest.raises(RuntimeError, match="must provide a draft"):
-        register_envelope_source(
-            EnvelopeSource(
-                kind=api.TAX_RETURN,
-                documents=nothing,
-                signers=nothing,
-                retention_record_type="signature_evidence",
-            )
-        )
-    assert api.TAX_RETURN not in api.registered_sources()
+        register_envelope_source(refused)
+    # T-01-T51 registers tax's own source at import; the refused one never replaces it.
+    assert api.registered_sources() == before
+    if api.TAX_RETURN in before:
+        assert api.envelope_source(api.TAX_RETURN) is not refused
 
 
 @pytest.mark.parametrize("kind", ["human", "agent", "support"])
