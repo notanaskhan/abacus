@@ -6,7 +6,7 @@ contract in `backend/pyproject.toml`). Money is `Decimal` under the kernel's con
 half-up rounding to cents. Every result carries a `Stamp` (`engine_name`, `engine_version`, the
 SHA-256 `inputs_hash` of its canonical inputs), so the same inputs never make a new version.
 
-- `notice_types.lookup(code)`: the catalogue in `notice_types.yaml` (PROTECTED).
+- `notice_types.type_of(code)`: the catalogue in `notice_types.yaml` (PROTECTED).
 - `risk.band(respond_by, as_of)`: red within 7 days, amber within 30, otherwise none.
 - `plausibility.respond_by(...)`: the respond-by against the type's window; never corrects it.
 - `underreporter.compare(...)`: notice vs return as filed vs information returns, by code.

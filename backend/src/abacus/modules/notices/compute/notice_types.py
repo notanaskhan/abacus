@@ -46,7 +46,7 @@ def catalogue() -> dict[str, NoticeType]:
     }
 
 
-def lookup(code: str | None, *, agency: Literal["irs", "state"] | None = None) -> NoticeType:
+def type_of(code: str | None, *, agency: Literal["irs", "state"] | None = None) -> NoticeType:
     """The type for a printed notice code ("CP2000", "cp14"); a state notice with an unmapped code
     is `state_generic`, anything else unmapped is `unknown`."""
     wanted = (code or "").strip().upper().replace(" ", "")
