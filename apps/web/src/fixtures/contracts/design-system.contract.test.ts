@@ -23,6 +23,9 @@ import type {
   ListPageServiceOrganizationOut,
   ListPageVersionActivityOut,
   ListPageWorkpaperStateOut,
+  ListPageEntryOut,
+  ListPageFindingRowOut,
+  ListPageMisstatementOut,
   ListPageAuditEventRow,
   ListPageActivityEventOut,
   ListPageBinderRequestRowOut,
@@ -159,6 +162,10 @@ const LIST_PAGES = {
   ListPage_ServiceOrganizationOut_: (p: ListPageServiceOrganizationOut) => envelope(p),
   ListPage_VersionActivityOut_: (p: ListPageVersionActivityOut) => envelope(p),
   ListPage_WorkpaperStateOut_: (p: ListPageWorkpaperStateOut) => envelope(p),
+  // S24 (A-06-T03, A-06-T04): proposed entries, findings and misstatements.
+  ListPage_EntryOut_: (p: ListPageEntryOut) => envelope(p),
+  ListPage_FindingRowOut_: (p: ListPageFindingRowOut) => envelope(p),
+  ListPage_MisstatementOut_: (p: ListPageMisstatementOut) => envelope(p),
 } as const;
 
 describe("P-36 list envelope (T1)", () => {

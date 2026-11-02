@@ -34,7 +34,7 @@ def own_db(migrated_db: MigratedDatabase) -> Iterator[Database]:
 
 
 @pytest.fixture(scope="module")
-def loaded(own_db: Database) -> Database:
+def loaded(own_db: Database, object_store: str) -> Database:
     async def load() -> None:
         await dispose_engine()
         configure_engine(own_db.app_url)
