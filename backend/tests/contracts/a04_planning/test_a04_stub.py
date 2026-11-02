@@ -35,8 +35,8 @@ E = "/v1/engagements/{engagement_id}"
 WP = f"{E}/workpapers/{{workpaper_id}}"
 SOC = f"{E}/soc-reports/{{soc_report_id}}"
 EX = f"{E}/internal-control/exceptions/{{sheet_row}}"
-# A-04-T04 (DEC-1762), T07 (DEC-1867) and T11 (DEC-1868) serve these: their action and 404 stay,
-# 501 goes.
+# A-04-T04 (DEC-1762), T07 (DEC-1867), T11 (DEC-1868), T12 and T13 serve these: their action and
+# 404 stay, 501 goes.
 SERVED: dict[tuple[str, str], str] = {
     ("post", f"{WP}/drafts"): "workpaper.draft",
     ("get", f"{E}/program-tailoring"): "procedure.read",
@@ -50,22 +50,23 @@ SERVED: dict[tuple[str, str], str] = {
     ("get", f"{WP}/versions"): "workpaper.read",
     ("patch", f"{WP}/cells"): "workpaper.edit",
     ("get", f"{WP}/export.xlsx"): "workpaper.export",
-}
-ROUTES: dict[tuple[str, str], str] = {
-    ("post", f"{WP}/flags/{{flag_id}}/convert"): "attention_flag.convert",
-    ("post", f"{WP}/flags/{{flag_id}}/remind"): "follow_up.draft",
+    # A-04-T12 (DEC-1950) and T13 (DEC-1951): materiality and the risk register (S24).
     ("get", f"{E}/materiality/current"): "materiality.read",
     ("post", f"{E}/materiality/preview"): "materiality.read",
     ("post", f"{E}/materiality/proposals"): "materiality.propose",
     ("post", f"{E}/materiality/reassessments"): "materiality.reassess",
     ("get", f"{E}/risks/register"): "risk.read",
     ("get", f"{E}/risks/linkage"): "risk.read",
-    ("post", f"{E}/risks/approval-requests"): "risk.route_for_approval",
     ("post", f"{E}/risks/coverage"): "risk.read",
     ("get", f"{E}/risks/{{risk_id}}"): "risk.read",
     ("patch", f"{E}/risks/{{risk_id}}"): "risk.edit",
     ("post", f"{E}/risks/{{risk_id}}/responses"): "risk.link",
     ("delete", f"{E}/risks/{{risk_id}}/responses"): "risk.link",
+}
+ROUTES: dict[tuple[str, str], str] = {
+    ("post", f"{WP}/flags/{{flag_id}}/convert"): "attention_flag.convert",
+    ("post", f"{WP}/flags/{{flag_id}}/remind"): "follow_up.draft",
+    ("post", f"{E}/risks/approval-requests"): "risk.route_for_approval",
     ("post", f"{E}/risks/{{risk_id}}/drafts"): "workpaper.draft",
     ("get", f"{E}/fraud-brainstorm"): "fraud_session.read",
     ("put", f"{E}/fraud-brainstorm"): "fraud_session.edit",

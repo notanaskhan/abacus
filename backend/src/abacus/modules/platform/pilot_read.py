@@ -120,9 +120,12 @@ def _signal(signal: Signal, values: Sequence[Decimal], weeks_live: int) -> Signa
     )
 
 
+# In enrolment order (the oldest first), so the report lists a firm's values the same way each
+# week; an enrolment's id is random and ordered nothing (TASK-2927).
 _SNAPSHOTS = text(
-    "SELECT metric_key, value FROM pilot_metric_snapshots WHERE period_start = :start "
-    "AND metric_key = ANY(:keys) AND subject_id IS NULL ORDER BY enrolment_id"
+    "SELECT s.metric_key, s.value FROM pilot_metric_snapshots s JOIN pilot_enrolments e "
+    "ON e.tenant_id = s.tenant_id AND e.id = s.enrolment_id WHERE s.period_start = :start "
+    "AND s.metric_key = ANY(:keys) AND s.subject_id IS NULL ORDER BY e.created_at, e.id"
 )
 _FIRST_START = text(
     "SELECT min(window_start) FROM pilot_enrolments WHERE mode <> 'exited' "

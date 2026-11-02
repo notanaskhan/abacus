@@ -125,12 +125,13 @@ _SOURCES: dict[str, EnvelopeSource] = {}
 
 def register_envelope_source(source: EnvelopeSource) -> None:
     """A source registers once, at import; the same source again (a reload) replaces itself."""
+    if source.kind in CONTRACTED and source.draft is None:
+        # C7 v1.1 (N-02-T25): `consent_set` and `tax_return` sources must be able to draft. First,
+        # so the contract refuses a source whatever is registered already (TASK-2927).
+        raise RuntimeError(f"envelope source {source.kind!r} must provide a draft")
     known = _SOURCES.get(source.kind)
     if known is not None and known != source:
         raise RuntimeError(f"envelope source {source.kind!r} is already registered")
-    if source.kind in CONTRACTED and source.draft is None:
-        # C7 v1.1 (N-02-T25): `consent_set` and `tax_return` sources must be able to draft.
-        raise RuntimeError(f"envelope source {source.kind!r} must provide a draft")
     _SOURCES[source.kind] = source
 
 

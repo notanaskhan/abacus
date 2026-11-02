@@ -15,7 +15,7 @@ import { taxReturnRoutes } from "./tax-returns";
 import "./viewer";
 import "./run-trace";
 // SHL-10 and SIG-02 (P-04-T41, N-02-T21): the `?ov=approve` and `?ov=envelope` sheets,
-// registered lazily (the 250 KB initial budget).
+// registered lazily (the 300 KB initial budget, DEC-1975).
 import "./sheets";
 // A-06-T12: the Evaluation overlays (`?ov=convert`, `send-entries`, `send-fs-draft`).
 import "./evaluation";
