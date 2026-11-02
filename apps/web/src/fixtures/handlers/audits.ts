@@ -120,6 +120,17 @@ export function auditHandlers(
         ),
       );
     },
+    // A-06-T12: the Evaluation tabs' counts (AUD-15 "9 findings", "Misstatements 2"), the list
+    // totals the stubs serve; the rows land with AUD-15 and AUD-16. Review notes: none seeded.
+    "GET /v1/work-items/{work_item_id}/findings": (request) =>
+      find(request) === undefined
+        ? json(NOT_FOUND, 404)
+        : json({ items: [], total: request.params.work_item_id === northwind?.work_item_id ? 9 : 0 }),
+    "GET /v1/work-items/{work_item_id}/misstatements": (request) =>
+      find(request) === undefined
+        ? json(NOT_FOUND, 404)
+        : json({ items: [], total: request.params.work_item_id === northwind?.work_item_id ? 2 : 0 }),
+    "GET /v1/review-notes": () => json({ items: [], total: 0 }),
     "GET /v1/audits/{work_item_id}/cockpit": (request) => {
       const row = find(request);
       if (row === undefined || row.work_item_id !== northwind?.work_item_id) {

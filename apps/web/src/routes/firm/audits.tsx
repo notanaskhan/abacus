@@ -17,6 +17,9 @@ const AuditsIndex = lazyScreen(
 );
 const Cockpit = lazyScreen(async () => (await import("../../screens/AUD-02")).AUD02);
 const SourceDocuments = lazyScreen(async () => (await import("../../screens/AUD-03")).AUD03);
+const Evaluation = lazyScreen(
+  async () => (await import("../../screens/evaluation")).EvaluationPage,
+);
 
 function gated(children: JSX.Element): JSX.Element {
   return (
@@ -187,4 +190,44 @@ export const sourceDocumentsRoute = createRoute({
   },
 });
 
-export const auditRoutes = [auditsRoute, auditRoute, sourceDocumentsRoute] as const;
+// A-06-T12: the Evaluation routes (AUD-15 findings, AUD-16 misstatements, AUD-17 review notes,
+// AUD-20 financial statements), lazy, each the audit bar and its tabs over the planned screen.
+type EvaluationTab = "findings" | "misstatements" | "review-notes" | "fs-disclosure";
+
+function evaluationRoute(tab: EvaluationTab) {
+  return createRoute({
+    getParentRoute: () => appRoute,
+    path: `/audits/$auditId/${tab}`,
+    component: function EvaluationRoutePage(): JSX.Element {
+      const auditId = useParam("auditId");
+      const navigate = useNavigate();
+      return gated(
+        <Evaluation
+          auditId={auditId}
+          tab={tab}
+          onTab={(next) => {
+            void navigate({ to: `/audits/$auditId/${next}`, params: { auditId } });
+          }}
+          onBack={() => {
+            void navigate({ to: "/audits/$auditId", params: { auditId } });
+          }}
+        />,
+      );
+    },
+  });
+}
+
+export const findingsRoute = evaluationRoute("findings");
+export const misstatementsRoute = evaluationRoute("misstatements");
+export const reviewNotesRoute = evaluationRoute("review-notes");
+export const fsDisclosureRoute = evaluationRoute("fs-disclosure");
+
+export const auditRoutes = [
+  auditsRoute,
+  auditRoute,
+  sourceDocumentsRoute,
+  findingsRoute,
+  misstatementsRoute,
+  reviewNotesRoute,
+  fsDisclosureRoute,
+] as const;

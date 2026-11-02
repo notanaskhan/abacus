@@ -17,6 +17,8 @@ import "./run-trace";
 // SHL-10 and SIG-02 (P-04-T41, N-02-T21): the `?ov=approve` and `?ov=envelope` sheets,
 // registered lazily (the 250 KB initial budget).
 import "./sheets";
+// A-06-T12: the Evaluation overlays (`?ov=convert`, `send-entries`, `send-fs-draft`).
+import "./evaluation";
 
 // The firm's areas, once, in the bar's order (chapter 04 §2.2; F-03-T17). An area without
 // screens yet has no routes; its file arrives with its first epic.
