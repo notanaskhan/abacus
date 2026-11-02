@@ -4900,9 +4900,8 @@ export const HANDOFF_WORDS = {
       "code": "passed_on_sum"
     },
     "Rejected": {
-      "retired": true,
-      "reason": "proposed_entry has Failed post but no Rejected in 3.3.1",
-      "replacement": null
+      "object": "proposed_entry",
+      "code": "rejected"
     },
     "Reversed": {
       "object": "proposed_entry",
