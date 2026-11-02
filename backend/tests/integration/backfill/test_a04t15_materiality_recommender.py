@@ -23,6 +23,7 @@ from abacus.modules.agents.api import install_fake_responses
 
 from .tb_support import Books, Json
 from .test_a04t12_materiality_service import (
+    MID_RATE,
     _keyed,  # pyright: ignore[reportPrivateUsage] -- a sibling suite\'s helper
     _path,  # pyright: ignore[reportPrivateUsage] -- a sibling suite\'s helper
 )
@@ -120,7 +121,7 @@ async def test_the_agent_never_decides(world: tuple[Books, uuid.UUID]) -> None:
         await decide_card(
             agent,  # type: ignore[arg-type]  # the agent is not a person: refused
             uuid.UUID(cast(str, proposed["decision_card_id"])),
-            option_key="rate_1_5",
+            option_key=MID_RATE,
             factors=[],
             rationale="The agent cannot decide.",
             seen_version=1,

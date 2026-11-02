@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import AsyncIterator
+from pathlib import Path
 from typing import Final, cast
 
 import pytest
@@ -43,6 +44,7 @@ from abacus.modules.identity.api import (
 from abacus.modules.notifications import api as notifications
 from abacus.modules.review import api as review_api
 from abacus.modules.review.api import raise_decision_card
+from abacus_tools.quality import banned_patterns
 
 from .p04t28_support import (
     MATERIALITY,
@@ -645,10 +647,26 @@ async def test_inv1_the_matrix_refuses_the_agent_and_the_platform_every_human_ac
                 await authorise(ctx, action, resource)
 
 
-async def test_inv1_the_review_api_offers_no_decide_or_sign_for_an_agent_to_call() -> None:
+async def test_inv1_the_review_api_offers_no_decide_or_sign_for_an_agent_to_call(
+    tmp_path: Path,
+) -> None:
     exported = set(dir(review_api))
-    for name in ("decide", "decide_card", "reassess", "clear_note", "sign_target", "bulk_sign"):
+    for name in ("decide", "reassess", "clear_note", "bulk_sign"):
         assert name not in exported
+    # DEC-1767 and DEC-1971: `sign_target` and `decide_card` are on review's interface for the
+    # scenario loader (tooling, never shipped) acting as the person named, because tooling
+    # reaches a module only through its api (BOUND-001). No agent reaches them: a product file
+    # outside review that calls either fails SIGNOFF-001 and DECISION-001 (DEC-1972).
+    rel = "src/abacus/modules/agents/planted_tool.py"
+    planted = tmp_path / rel
+    planted.parent.mkdir(parents=True)
+    planted.write_text(
+        "from abacus.modules.review.api import decide_card, sign_target\n"
+        "async def go(ctx):\n    await decide_card(ctx)\n    await sign_target(ctx)\n",
+        encoding="utf-8",
+    )
+    found = {v.rule_id for v in banned_patterns.scan(tmp_path) if v.path == rel}
+    assert {"DECISION-001", "SIGNOFF-001"} <= found
 
 
 async def test_inv1_the_data_layer_refuses_a_decision_written_as_the_agent_or_platform(

@@ -19,13 +19,20 @@ from typing import cast
 
 import pytest
 import yaml
-from sqlalchemy import event
+from sqlalchemy import event, make_url
 from sqlalchemy.engine import Engine
 from testcontainers.community.postgres import PostgresContainer
 from testcontainers.core.container import DockerContainer
 
 from abacus.kernel.config import settings
-from abacus.kernel.db import configure_engine, configure_identity_engine, configure_relay_engine
+from abacus.kernel.db import (
+    configure_engine,
+    configure_identity_engine,
+    configure_relay_engine,
+    identity_engine,
+)
+from abacus.modules.evidence import storage
+from abacus_tools.local.evidence_bucket import ensure_bucket
 from abacus_tools.quality import slow_statements
 from abacus_tools.quality.schema_check import provisioned_database
 
@@ -109,6 +116,29 @@ def _wait(
     ) from last
 
 
+@pytest.fixture(autouse=True, scope="module")
+def _identity_engine_back() -> Iterator[None]:
+    """At the end of each module, sign-in's engine names the session's database again.
+
+    A module that loads a scenario into its own database points `ABACUS_IDENTITY_DATABASE_URL`
+    there and lets the engine be rebuilt from it; the variable is restored after the test, but
+    the engine kept the module's database after its container stopped, so the next module's
+    first name lookup was refused (P-04-T18's sign-offs on CI; TASK-2927).
+    """
+    yield
+    settings.cache_clear()
+    url = os.environ.get("ABACUS_IDENTITY_DATABASE_URL")
+    if url is None:
+        return
+    current, wanted = identity_engine().url, make_url(url)
+    if (current.host, current.port, current.database) != (
+        wanted.host,
+        wanted.port,
+        wanted.database,
+    ):
+        configure_identity_engine(url)
+
+
 @pytest.fixture(scope="session")
 def postgres_dsn() -> Iterator[str]:
     with PostgresContainer(
@@ -142,6 +172,27 @@ def s3_settings() -> Iterator[dict[str, str]]:
             "secret_key": S3_SECRET,
             "region": "us-east-1",
         }
+
+
+@pytest.fixture(scope="module")
+def object_store(s3_settings: dict[str, str]) -> Iterator[str]:
+    """The settings' S3 is this session's gateway, with the evidence bucket made (TASK-2927).
+
+    For a test whose API calls reach evidence storage through settings (an upload staged by
+    `screen_and_stage`, a profile file). Without it the local defaults name the dev gateway on
+    7070: present on a laptop, absent on CI, so such a test passed locally and failed on CI.
+    """
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setenv("ABACUS_S3_ENDPOINT_URL", s3_settings["endpoint_url"])
+        patch.setenv("ABACUS_S3_ACCESS_KEY", s3_settings["access_key"])
+        patch.setenv("ABACUS_S3_SECRET_KEY", s3_settings["secret_key"])
+        settings.cache_clear()
+        storage.reset_storage()
+        try:
+            yield ensure_bucket()
+        finally:
+            storage.reset_storage()
+    settings.cache_clear()
 
 
 @pytest.fixture(scope="session")
