@@ -102,8 +102,10 @@ def test_t08_an_unregistered_work_item_kind_is_refused() -> None:
         engagements.work_item_provider("not_a_kind")
 
 
-async def test_t08_an_unregistered_gate_is_unmet() -> None:
-    fact = await engagements.gate_fact(TENANT, uuid.uuid4(), "G4")  # G6-G9 registered by SPEC-314
+async def test_t08_an_unregistered_gate_is_unmet(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Every gate G1-G9 has a provider since A-04-T43 (G4): unregister one to see the rule.
+    monkeypatch.delitem(slots._GATES, "G4", raising=False)  # pyright: ignore[reportPrivateUsage]
+    fact = await engagements.gate_fact(TENANT, uuid.uuid4(), "G4")
     assert fact.met is False and fact.blockers == ("no_gate_provider",)
 
 

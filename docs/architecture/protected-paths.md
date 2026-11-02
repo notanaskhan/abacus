@@ -49,3 +49,8 @@ files: `backend/src/abacus/modules/notices/compute/notice_types.yaml` and
 `backend/src/abacus/modules/notices/compute/rate_schedules/*.yaml`. A change is a reviewed policy
 change with its goldens in the same diff; `notices/compute` imports only `abacus.kernel.numeric`
 and `abacus.kernel.calendar`.
+
+## The audit's gate providers (A-04-T43, DEC-2057)
+`backend/src/abacus/modules/assurance/gates.py` registers the engagement gates assurance owns (G4
+today; G5 to G9 move in with A-06-T15 and A-07-T15). It is a red file: a change needs the security
+review of a red diff, and an amber change set may not touch it.

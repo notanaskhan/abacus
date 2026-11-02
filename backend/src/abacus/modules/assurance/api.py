@@ -26,6 +26,7 @@ from abacus.modules.assurance.fraud_brainstorm import GATE_KIND as FRAUD_GATE
 from abacus.modules.assurance.fraud_brainstorm import SUGGESTION_TARGET as FRAUD_MINUTES
 from abacus.modules.assurance.fraud_brainstorm import apply_minutes_suggestion, minutes_gate
 from abacus.modules.assurance.fraud_brainstorm import audit_owners as fraud_owners
+from abacus.modules.assurance.gates import register as register_gates
 from abacus.modules.assurance.home_counts import register_home_counts
 from abacus.modules.assurance.mapping import SUBSCRIPTIONS as MAPPING_SUBSCRIPTIONS
 from abacus.modules.assurance.mapping import import_csv as import_grouping_csv
@@ -113,6 +114,7 @@ register_gate_provider("G6", g6)
 register_gate_provider("G7", g7)
 register_gate_provider("G8", g8)
 register_gate_provider("G9", g9)
+register_gates()  # A-04-T43 (DEC-2057): G4 from assurance/gates.py
 register_firm_setting(RELEASE_MODE_SETTING)
 
 # A-01-T05 (SPEC-330 AC-13): C1's `gate.met` derives the phase a computed gate opens. The worker
