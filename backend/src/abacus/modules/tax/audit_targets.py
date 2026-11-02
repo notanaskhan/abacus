@@ -44,4 +44,4 @@ async def audit_entities(
     """For a tax profile's rows named by an audit event: their id -> the owning client entity."""
     async with tenant_session(tenant) as session:
         rows = await session.execute(_ENTITIES[kind], {"ids": list(ids)})
-        return dict(rows.tuples())
+        return dict(rows.tuples().all())
