@@ -17,16 +17,46 @@ from __future__ import annotations
 
 import hashlib
 import io
+import re
 import struct
+import zipfile
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import date
+from datetime import UTC, date, datetime
 from decimal import Decimal
-from typing import Literal
+from typing import Final, Literal
 
 from openpyxl import Workbook
 
 Layout = Literal["a", "b", "c"]
+_ZIP_TIME: Final = (1980, 1, 1, 0, 0, 0)
+_STAMPS = re.compile(rb"(<dcterms:(created|modified)[^>]*>)[^<]*(</dcterms:\2>)")
+
+
+def pinned_xlsx(workbook: Workbook, at: datetime) -> bytes:
+    """The workbook's bytes, the same on every save (TASK-2928): openpyxl stamps the build and
+    save times into `docProps/core.xml` and the ZIP entries, so two builds a second apart differ.
+    Both stamps become `at`, the entries get fixed times and attributes (as `evidence.render`
+    pins a pulled trial balance)."""
+    raw = io.BytesIO()
+    workbook.save(raw)
+    utc = at.astimezone(UTC) if at.tzinfo is not None else at
+    stamp = utc.strftime("%Y-%m-%dT%H:%M:%SZ").encode()
+    out = io.BytesIO()
+    with (
+        zipfile.ZipFile(io.BytesIO(raw.getvalue())) as source,
+        zipfile.ZipFile(out, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as target,
+    ):
+        for info in source.infolist():
+            entry = zipfile.ZipInfo(info.filename, date_time=_ZIP_TIME)
+            entry.compress_type = zipfile.ZIP_DEFLATED
+            entry.external_attr = 0o644 << 16
+            entry.create_system = 3  # the same on every platform
+            data = source.read(info.filename)
+            if info.filename == "docProps/core.xml":
+                data = _STAMPS.sub(lambda m: m.group(1) + stamp + m.group(3), data)
+            target.writestr(entry, data)
+    return out.getvalue()
 
 
 def _escape(text: str) -> str:

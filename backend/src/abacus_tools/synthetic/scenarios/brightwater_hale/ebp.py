@@ -24,7 +24,6 @@ Opt-in (`--slice ebp`, which brings `people`).
 
 from __future__ import annotations
 
-import io
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import date, timedelta
@@ -35,7 +34,7 @@ from openpyxl import Workbook
 
 from abacus.kernel.calendar import add_business_days, is_business_day
 from abacus.kernel.numeric import allocate
-from abacus_tools.synthetic.documents import positioned_pdf
+from abacus_tools.synthetic.documents import pinned_xlsx, positioned_pdf
 from abacus_tools.synthetic.scenarios.brightwater_hale.prng import stable_id
 from abacus_tools.synthetic.scenarios.brightwater_hale.scenario import SETUP_AT
 from abacus_tools.synthetic.scenarios.brightwater_hale.slices import register_slice
@@ -240,9 +239,7 @@ def _sheet(title: str, header: Sequence[str], rows: Sequence[Sequence[object]]) 
     sheet.append(list(header))
     for row in rows:
         sheet.append(list(row))
-    out = io.BytesIO()
-    book.save(out)
-    return out.getvalue()
+    return pinned_xlsx(book, SETUP_AT)  # the same bytes on every build
 
 
 def census_xlsx() -> bytes:
