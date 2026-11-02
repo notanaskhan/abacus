@@ -41,6 +41,7 @@ from abacus.modules.review.decisions import (
     raise_decision_card,
 )
 from abacus.modules.review.engagement_gates import register_engagement_gates
+from abacus.modules.review.field_provenance import FieldState, field_states
 from abacus.modules.review.field_values import (
     FieldValueInvalid,
     FieldVersionFact,
@@ -214,6 +215,7 @@ __all__ = [
     "FieldCitation",
     "FieldCitations",
     "FieldOwner",
+    "FieldState",  # A-05-T16 (DEC-2069)
     "FieldValueInvalid",
     "FieldVersionFact",
     "GateFacts",
@@ -262,6 +264,7 @@ __all__ = [
     "decision_kind",
     "detect_stale",
     "field_owner",
+    "field_states",  # A-05-T16 (DEC-2069)
     "field_timeline",
     "follow_proposal_decision",
     "gate_met",

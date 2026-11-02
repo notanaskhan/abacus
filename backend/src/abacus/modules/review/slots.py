@@ -90,6 +90,10 @@ class ReviewableFacts:
     uncited_count: int = 0  # agent values with no citation (R-SO-6, 422 `uncited_change`)
     adopted_run_id: UUID | None = None  # the agent run whose work an L1 adopts (R-SO-8)
     adopted_run_number: int | None = None
+    # A-05-T16 (DEC-2069): the owner's own reason a sign-off must wait (EBP-02's
+    # `provisions_unverified`, with how many are left), a code, never text.
+    blocked_code: str | None = None
+    blocked_count: int = 0
 
 
 ReviewableFactsProvider = Callable[[TenantContext, UUID], Awaitable[ReviewableFacts | None]]

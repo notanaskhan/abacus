@@ -515,3 +515,43 @@ async def tick(
 
     await tick_field(ctx, target_type, target_id, field_key, level, seen_hash, current)
     return await provenance(ctx, target_type, target_id, field_key)
+
+
+# --- A-05-T16 (DEC-2069): several fields' current values and ticks, for an owner's read model ---
+
+
+@dataclass(frozen=True)
+class FieldState:
+    """A field now: its latest typed value (None before any), its citations, and the levels
+    ticked on that value (a tick on an earlier value is stale and not counted)."""
+
+    value: Mapping[str, object] | None
+    citation_ids: tuple[UUID, ...]
+    ticked_levels: frozenset[int]
+    ticked_by: tuple[UUID, ...]
+
+
+async def field_states(
+    tenant: TenantContext, target_type: str, target_id: UUID, field_keys: Sequence[str]
+) -> dict[str, FieldState]:
+    """For a caller authorised on the target's engagement (the owner's read)."""
+    out: dict[str, FieldState] = {}
+    async with tenant_session(tenant) as session:
+        for key in field_keys:
+            rows = await field_versions_of(session, target_type, target_id, key)
+            latest = rows[0] if rows else None
+            current = _hash_of(target_type, target_id, key, latest)
+            ticks = [
+                t
+                for t in await field_ticks_of(
+                    session, field_target_id(target_type, target_id, key)
+                )
+                if t.content_hash == current
+            ]
+            out[key] = FieldState(
+                None if latest is None else cast(Mapping[str, object], latest.value),
+                () if latest is None else tuple(latest.citation_ids or ()),
+                frozenset(t.level for t in ticks),
+                tuple(t.signed_by for t in ticks),
+            )
+    return out

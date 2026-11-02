@@ -26,10 +26,16 @@ from fastapi import Depends, Header, Path, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
 
-from abacus.kernel._flags import ASSURANCE_ESTIMATES_RP, EBP_FORM5500_TIEOUT, EBP_MODULES
+from abacus.kernel._flags import (
+    ASSURANCE_ESTIMATES_RP,
+    EBP_FORM5500_TIEOUT,
+    EBP_MODULES,
+    WORKPAPERS_DRAFTING,
+)
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
+from abacus.modules.assurance import ebp_provisions
 from abacus.modules.assurance.ebp_imports import ImportView, Ties, import_of, import_source
 from abacus.modules.assurance.ebp_participants import DOB_MASK, participants_of
 from abacus.modules.assurance.ebp_participants import reveal as reveal_participant_field
@@ -815,14 +821,29 @@ async def ebp_provider_invite_route(
 async def ebp_plan_review_route(
     work_item_id: UUID, ctx: Ctx, version: Annotated[int | None, Query(ge=1)] = None
 ) -> PlanReviewOut:
-    """Provisions with conflicts and amendment tags (EBP-02; `?version=` is b2; T10)."""
+    """EBP-02 (A-05-T16; DEC-2069): the latest review's provisions (`?version=` is b2, an earlier
+    review, read-only), each with its adopted value and reference and whether it is verified (a
+    current field tick on its value cell)."""
     await _gate(ctx, work_item_id, "ebp.read", _E)
+    found = await ebp_provisions.review_of(ctx, work_item_id, version)
+    actions: list[EbpAction] = ["field.sign_off"] if version is None else []
     return PlanReviewOut(
-        version_no=version or 2,
-        verified=0,
-        total=20,
-        provisions=[_example(ProvisionOut, _PROVISION)],
-        allowed_actions=["field.sign_off"],
+        version_no=max(found.review_no, 1),
+        verified=found.verified,
+        total=len(found.provisions),
+        provisions=[
+            ProvisionOut(
+                key=p.provision.key,
+                label=p.provision.label,
+                value=p.value or "",
+                verified=p.verified,
+                conflict=None,
+                amended_on=None,
+                citation_count=p.citation_count,
+            )
+            for p in found.provisions
+        ],
+        allowed_actions=actions,
     )
 
 
@@ -831,14 +852,19 @@ async def ebp_plan_review_route(
     action="workpaper.draft",
     response_model=AcceptedOut,
     status_code=202,
-    errors=(501,),
 )
 async def ebp_plan_review_start_route(
     work_item_id: UUID, body: PlanReviewIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> AcceptedOut:
-    """Start a provisions read (A-04's `workpapers.drafting` gate; T12)."""
+    """Start a provisions read (A-05-T16): the review is recorded and an `ebp_provisions` run
+    starts on EBP-02 over the chosen versions, in order; the answer is the run's id. A-04's
+    `workpapers.drafting` gate and the EBP flag both apply."""
     await _gate(ctx, work_item_id, "workpaper.draft", _E)
-    _not_yet()
+    await _gate(ctx, work_item_id, "workpaper.draft", WORKPAPERS_DRAFTING)
+    run_id = await ebp_provisions.start_review(
+        ctx, work_item_id, body.document_version_ids, idempotency_key
+    )
+    return AcceptedOut(id=run_id)
 
 
 # census

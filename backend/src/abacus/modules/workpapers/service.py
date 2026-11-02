@@ -36,6 +36,7 @@ from abacus.modules.review.api import (
 from abacus.modules.review.api import content_hash as review_content_hash
 from abacus.modules.workpapers.events import WorkpaperContentChanged
 from abacus.modules.workpapers.formulas import TbSource, evaluate, is_formula
+from abacus.modules.workpapers.guards import sign_off_block
 from abacus.modules.workpapers.models import Workpaper, WorkpaperCell, WorkpaperCellCitation
 from abacus.modules.workpapers.repository import (
     cell_setters,
@@ -578,6 +579,7 @@ async def workpaper_facts(tenant: TenantContext, workpaper_id: UUID) -> Reviewab
     tb = await tb_link(tenant, paper.engagement_id)
     filled = [c for c in cells if is_filled(c)]
     cited = {c.cell_key for c in citations}
+    blocked = await sign_off_block(tenant, paper.kind, paper.id, paper.work_item_id)
     return ReviewableFacts(
         TARGET,
         paper.id,
@@ -595,6 +597,8 @@ async def workpaper_facts(tenant: TenantContext, workpaper_id: UUID) -> Reviewab
         uncited_count=sum(
             1 for c in filled if c.value_source == "agent" and c.cell_key not in cited
         ),
+        blocked_code=None if blocked is None else blocked[0],
+        blocked_count=0 if blocked is None else blocked[1],
     )
 
 
