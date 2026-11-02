@@ -35,7 +35,7 @@ from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.isolation import IsolationFailed, run_isolated
 from abacus.kernel.uow import Ref, Target, uow
-from abacus.modules.engagements.api import work_item_facts
+from abacus.modules.engagements.api import work_item_engagement, work_item_facts
 from abacus.modules.identity.api import (
     AuthContext,
     Forbidden,
@@ -463,11 +463,14 @@ async def create_questionnaire(
     title: str,
     addressed_to_contact_id: UUID | None,
     due_on: date | None,
+    engagement_id: UUID | None = None,
 ) -> QuestionnaireView:
-    """A-04 and A-08's team questions and inquiries (an inquiry names its addressee)."""
+    """A-04 and A-08's team questions and inquiries (an inquiry names its addressee). An audit
+    work item with no request list names its engagement (A-04-T19's fraud inquiries)."""
     _person(ctx, CREATE)
     if kind == "inquiry" and addressed_to_contact_id is None:
         raise DomainInvalid(facts={"field": "addressed_to_contact_id"})
+    named = engagement_id
     async with tenant_session(ctx.tenant) as session:
         engagement_id = (
             await session.execute(
@@ -479,9 +482,11 @@ async def create_questionnaire(
         (f for f in await work_item_facts(ctx, "tax_return") if f.work_item_id == work_item_id),
         None,
     )
-    engagement = facts.engagement_id if facts else engagement_id
+    engagement = facts.engagement_id if facts else engagement_id or named
     if engagement is None:
         raise NotFound("work_item")
+    if engagement == named and await work_item_engagement(ctx.tenant, work_item_id) != named:
+        raise NotFound("work_item")  # the named engagement must own the work item
     await _engagement(ctx, engagement, work_item_id, CREATE)
     async with uow(ctx.tenant) as tx:
         questionnaire_id = (

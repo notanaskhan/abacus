@@ -21,6 +21,11 @@ from abacus.modules.assurance.ebp_designed import register_modes as register_ebp
 from abacus.modules.assurance.ebp_plan import AUDIT_KINDS as EBP_PLAN_KINDS
 from abacus.modules.assurance.ebp_plan import audit_owners as ebp_plan_owners
 from abacus.modules.assurance.findings_contract import router as findings_router
+from abacus.modules.assurance.fraud_brainstorm import AUDIT_KINDS as FRAUD_KINDS
+from abacus.modules.assurance.fraud_brainstorm import GATE_KIND as FRAUD_GATE
+from abacus.modules.assurance.fraud_brainstorm import SUGGESTION_TARGET as FRAUD_MINUTES
+from abacus.modules.assurance.fraud_brainstorm import apply_minutes_suggestion, minutes_gate
+from abacus.modules.assurance.fraud_brainstorm import audit_owners as fraud_owners
 from abacus.modules.assurance.home_counts import register_home_counts
 from abacus.modules.assurance.mapping import SUBSCRIPTIONS as MAPPING_SUBSCRIPTIONS
 from abacus.modules.assurance.mapping import import_csv as import_grouping_csv
@@ -67,7 +72,11 @@ from abacus.modules.assurance.trial_balance import adopt as adopt_trial_balance
 from abacus.modules.assurance.trial_balance import tb_facts, tb_reviewables
 from abacus.modules.engagements.api import register_gate_provider, work_item_engagement
 from abacus.modules.identity.api import AbacusRouter, register_firm_setting
-from abacus.modules.review.api import register_reviewable, register_reviewable_facts
+from abacus.modules.review.api import (
+    register_gate_kind,
+    register_reviewable,
+    register_reviewable_facts,
+)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
@@ -134,6 +143,13 @@ register_engagement_owners(MATERIALITY_KINDS, materiality_owners)
 # A-04-T13 (DEC-1951): the register's rows placed for the trail; the agent's `risk` suggestions
 # written by their owner when a person adopts them (AC4.7).
 register_engagement_owners(RISK_KINDS, risk_owners)
+# A-04-T19 (DEC-2055): the fraud brainstorm's session and inquiries placed for the trail, the
+# agent's minutes written by their owner when a person adopts them, and HOME-02's gate.
+register_engagement_owners(FRAUD_KINDS, fraud_owners)
+register_suggestion_applier(
+    FRAUD_MINUTES, apply_minutes_suggestion, engagement_of=work_item_engagement
+)
+register_gate_kind(FRAUD_GATE, minutes_gate)
 register_suggestion_applier("risk", apply_risk_suggestion, engagement_of=risk_engagement)
 # A-04-T15 (DEC-1953): the recommender's suggestion names the work item's materiality.
 register_suggestion_target("materiality", engagement_of=work_item_engagement)

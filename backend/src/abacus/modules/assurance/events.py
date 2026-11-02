@@ -42,3 +42,15 @@ class MaterialityRevised(DomainEvent):
     engagement_id: Annotated[UUID, classified("internal")]
     by_user: Annotated[UUID, classified("internal")]
     recipient_user_ids: Annotated[list[UUID], classified("internal")]
+
+
+class FraudMinutesAwaitingApproval(DomainEvent):
+    """A person wrote or adopted the fraud brainstorm's minutes: the engagement partners are told
+    (`fraud_minutes_awaiting_approval`, C16) and HOME-02's gate opens (A-04-T19)."""
+
+    event_type: ClassVar[str] = "fraud_minutes.awaiting_approval"
+
+    session_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    by_user: Annotated[UUID, classified("internal")]
+    recipient_user_ids: Annotated[list[UUID], classified("internal")]

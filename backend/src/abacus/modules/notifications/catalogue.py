@@ -406,6 +406,10 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "decision_card.raised": Kind("decision_assigned", _listed, "decision_card", "card_id"),
     "decision_card.notify_requested": Kind("mention", _assignee, "decision_card", "card_id"),
     # A-04-T12 (AC3.7): a revised materiality tells the preparers of every impacted workpaper.
+    # A-04-T19 (DEC-2055): the minutes wait for the engagement partners.
+    "fraud_minutes.awaiting_approval": Kind(
+        "fraud_minutes_awaiting_approval", _listed, "fraud_brainstorm_session", "session_id"
+    ),
     "materiality.revised": Kind(
         "materiality_revised", _listed, "materiality_version", "version_id"
     ),
@@ -574,6 +578,9 @@ TEMPLATES: Final[dict[str, str]] = {
     "decision_card.notify_requested": "A decision on {engagement} is waiting for you.",
     # A-04-T12 (AC3.7): the impacted workpapers' preparers.
     "materiality.revised": "Materiality on {engagement} was revised; your workpapers use it.",
+    "fraud_minutes.awaiting_approval": (
+        "The fraud brainstorm minutes on {engagement} are waiting for your approval."
+    ),
     "proposal.routed": "A proposal on {engagement} was sent to you for approval.",
     "sign_off.requested": "Work on {engagement} is waiting for your sign-off.",
     "issue.assigned": "An issue on {engagement} was assigned to you.",
@@ -675,6 +682,7 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     # (`notification.<kind>`, imported), never committed.
     NotificationKind("mapping_set_stale", "approval", "ClipboardCheck"),  # A-03-T14
     NotificationKind("materiality_revised", "approval", "Scale"),  # A-04-T12 (AC3.7)
+    NotificationKind("fraud_minutes_awaiting_approval", "approval", "FileSignature"),  # A-04-T19
     NotificationKind(
         "sign_off_stale",
         "approval",

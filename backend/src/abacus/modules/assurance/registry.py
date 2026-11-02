@@ -521,6 +521,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
             "minutes_status",
             "minutes_source",
             "updated_at",
+            "row_version",  # A-04-T19 (0651, DEC-2055)
         }
     ),
     "fraud_inquiries": frozenset(

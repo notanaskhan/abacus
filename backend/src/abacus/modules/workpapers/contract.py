@@ -474,7 +474,10 @@ async def attention_flag_convert_route(
 ) -> FlagConvertedOut:
     """Convert a PBC GAP flag to a request draft or a review note; the history records it (T19)."""
     await gate(ctx, engagement_id, "attention_flag.convert", WORKPAPERS_CORE)
-    _not_yet()
+    from abacus.modules.workpapers import core, flags
+
+    found = await flags.convert(ctx, engagement_id, workpaper_id, flag_id, body.to)
+    return FlagConvertedOut(flag=core.flag_out(found.flag), draft_id=found.draft_id)
 
 
 @router.post(
