@@ -145,7 +145,8 @@ async def test_the_detail_carries_the_tin_masked_and_the_check_names_the_templat
         detail = await _as(samuel)("GET", f"/v1/k1-packages/{rows[0]['id']}")
         check = await _as(samuel)("GET", f"/v1/tax-returns/{ridgeline}/k1-packages/release-check")
     assert detail.status_code == 200, detail.text
-    assert cast(Json, detail.json())["tin"] == {"kind": "ssn", "last4": "1111"}
+    tin = {"kind": "ssn", "presence": "on_file", "last4": "1111"}  # MaskedTinOut (DEC-1865)
+    assert cast(Json, detail.json())["tin"] == tin
     assert check.status_code == 200, check.text
     body = cast(Json, check.json())
     assert "email_template_version_id" in body
