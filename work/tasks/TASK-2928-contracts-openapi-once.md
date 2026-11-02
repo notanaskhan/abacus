@@ -1,6 +1,6 @@
 ---
 id: TASK-2928
-title: Build the OpenAPI document once per process, so ci-contracts fits its job
+title: Build the OpenAPI document once per process; stage 1 timeout 15 minutes
 spec: SPEC-000  # ADR-013 export; CI stage 2 "schema and api-client" (15-minute limit)
 acceptance_criteria: [AC-1]  # the schema and api-client job completes on CI
 risk_zone: green
@@ -26,3 +26,6 @@ minutes serial. Rollback: revert.
 ## Progress log
 - 2026-11-02: cached. Local `pytest tests/contracts`: 13.5 min → 6m47s (6601 passed); the whole
   `make ci-contracts` 10m26s, inside the job's 15 minutes.
+- 2026-11-02: on CI the schema and api-client job passed in 4m49s (contracts 2m48s). Stage 1
+  still hit its 10-minute limit (it needs about 12: ruff+pyright+lint-imports 3m54s, banned
+  patterns 1m55s, web lint 1m55s). Ayush approved raising it to 15 minutes.
