@@ -40,7 +40,7 @@ export const audScreens = {
   "AUD-05": {
     name: "Narrative workpaper · Risk Assessment (understanding, risk, fraud)",
     status: "planned",
-    path: null,
+    path: "/audits/$auditId/narrative/$wpRef", // A-04-T21
   },
   // A-02-T09 built a and c on fixtures as the AUD-02 cockpit's Trial Balance canvas
   // (`?section=trial_balance`, behind `ledger.tb_workpaper`); it has no path of its own, and stays

@@ -20,6 +20,7 @@ const SourceDocuments = lazyScreen(async () => (await import("../../screens/AUD-
 const RiskRegister = lazyScreen(
   async () => (await import("../../screens/AUD-08")).RiskRegisterPage,
 );
+const Narrative = lazyScreen(async () => (await import("../../screens/AUD-05")).NarrativePage);
 const Evaluation = lazyScreen(
   async () => (await import("../../screens/evaluation")).EvaluationPage,
 );
@@ -249,6 +250,54 @@ export const risksRoute = createRoute({
   },
 });
 
+// A-04-T21: AUD-05 `/audits/$auditId/narrative/$wpRef?tab=risk|fraud`; Summary and Linkage open
+// AUD-08; Escalate… opens SHL-14 with the flag as its prefill (`?ov=request:new&prefill=`).
+export const narrativeRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/audits/$auditId/narrative/$wpRef",
+  validateSearch: (search: Record<string, unknown>): { tab?: "fraud" } =>
+    search.tab === "fraud" ? { tab: "fraud" } : {},
+  component: function NarrativeRoutePage(): JSX.Element {
+    const auditId = useParam("auditId");
+    const wpRef = useParam("wpRef");
+    const navigate = useNavigate();
+    const search: { tab?: "fraud" } = useSearch({ strict: false });
+    const overlays = useOverlays();
+    return gated(
+      <Narrative
+        auditId={auditId}
+        workpaperId={wpRef}
+        tab={search.tab ?? "risk"}
+        onTab={(tab) => {
+          void navigate({ to: ".", search: tab === "fraud" ? { tab } : {}, replace: true });
+        }}
+        onRegister={() => {
+          void navigate({ to: "/audits/$auditId/risks", params: { auditId } });
+        }}
+        onRemind={() => {
+          overlays.open("request", "new");
+        }}
+        onEscalate={(flag) => {
+          void navigate({
+            to: ".",
+            search: (prev: Record<string, unknown>) => ({
+              ...prev,
+              ov: "request:new",
+              prefill: flag.id,
+            }),
+          });
+        }}
+        onAdopt={(workpaperId) => {
+          overlays.open("signoff", "workpaper", workpaperId, "L1");
+        }}
+        onBack={() => {
+          void navigate({ to: "/audits/$auditId", params: { auditId } });
+        }}
+      />,
+    );
+  },
+});
+
 export const findingsRoute = evaluationRoute("findings");
 export const misstatementsRoute = evaluationRoute("misstatements");
 export const reviewNotesRoute = evaluationRoute("review-notes");
@@ -259,6 +308,7 @@ export const auditRoutes = [
   auditRoute,
   sourceDocumentsRoute,
   risksRoute,
+  narrativeRoute,
   findingsRoute,
   misstatementsRoute,
   reviewNotesRoute,
