@@ -7,14 +7,14 @@ batches, the approve-and-send to the client through C18 under a 10-second hold, 
 client decision, and the adjusted TB read (Unadjusted, AJE, RJE, Final). **No route posts,
 books or writes an entry to any client system** (ADR-040; `pe_posting_dormant`). Every route
 answers, in order: a client principal 404 (C18's BFF is the client's path); the action on the
-work item's engagement; 404 with `adjustments.entries` off; 501 `not_implemented` until A-06-T09
-and T10.
+work item's engagement; 404 with `adjustments.entries` off. A-06-T09 serves the list, propose and
+the adjusted TB (`entries.py`); the sends and decisions answer 501 until A-06-T10.
 """
 
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Any, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header
@@ -158,7 +158,7 @@ class AdjustedLineOut(BaseModel):
 
     account_code: Annotated[str, classified("internal")]
     account_name: Annotated[str, classified("internal")]
-    unadjusted: Annotated[Money | None, classified("confidential")]
+    unadjusted: Annotated[Decimal | None, classified("confidential")]  # net, may be negative
     aje: Annotated[Decimal | None, classified("confidential")]
     rje: Annotated[Decimal | None, classified("confidential")]
     final: Annotated[Decimal | None, classified("confidential")]
@@ -201,6 +201,36 @@ router = AbacusRouter(prefix="/v1", tags=["adjustments"])
 _WI = "/work-items/{work_item_id}"
 
 
+def _entry_out(found: object) -> EntryOut:
+    from abacus.modules.adjustments import entries
+
+    e = cast(entries.Entry, found)
+    return EntryOut(
+        id=e.id,
+        ref=e.ref,
+        kind=e.kind,
+        description=e.description,
+        amount=e.amount,
+        status=cast(EntryStatus, e.status),
+        threshold_result=e.threshold_result,
+        is_attest_client=e.is_attest_client,
+        lines=[
+            LineOut(
+                line_no=ln.line_no,
+                account_code=ln.account_code,
+                account_name=ln.account_name,
+                fs_line_key=ln.fs_line_key,
+                debit=ln.debit,
+                credit=ln.credit,
+            )
+            for ln in e.lines
+        ],
+        approval_label=e.approval_label,
+        version=e.version,
+        allowed_actions=cast(Actions, list(e.allowed_actions)),
+    )
+
+
 @router.get(
     f"{_WI}/proposed-entries",
     action="proposed_entry.read",
@@ -211,7 +241,10 @@ async def proposed_entries_route(
     work_item_id: UUID, ctx: Ctx, kind: EntryKind | None = None
 ) -> ListPage[EntryOut]:
     await _gate(ctx, work_item_id, "proposed_entry.read")
-    _not_yet()
+    from abacus.modules.adjustments import entries
+
+    rows = [_entry_out(e) for e in await entries.entries_of(ctx, work_item_id, kind)]
+    return ListPage(items=rows, total=len(rows))
 
 
 @router.post(
@@ -224,9 +257,17 @@ async def proposed_entries_route(
 async def proposed_entry_create_route(
     work_item_id: UUID, body: EntryIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> EntryOut:
-    """A balanced entry (`unbalanced_entry` at commit); an attest client's is Review required."""
+    """A balanced entry (422 `unbalanced_entry`); an attest client's is Review required (T09)."""
     await _gate(ctx, work_item_id, "proposed_entry.create")
-    _not_yet()
+    from abacus.modules.adjustments import entries
+
+    new = entries.NewEntry(
+        kind=body.kind,
+        description=body.description,
+        misstatement_id=body.misstatement_id,
+        lines=tuple(entries.NewLine(ln.account_code, ln.debit, ln.credit) for ln in body.lines),
+    )
+    return _entry_out(await entries.propose(ctx, work_item_id, new))
 
 
 @router.post(
@@ -289,5 +330,23 @@ async def approval_batch_route(
     f"{_WI}/adjusted-tb", action="adjusted_tb.read", response_model=AdjustedTbOut, errors=(501,)
 )
 async def adjusted_tb_route(work_item_id: UUID, ctx: Ctx, layer: Layer = "final") -> AdjustedTbOut:
+    """C8's adjusted TB by layer, computed by the ledger over the snapshot (T09; never stored)."""
     await _gate(ctx, work_item_id, "adjusted_tb.read")
-    _not_yet()
+    from abacus.modules.adjustments import entries
+
+    view = cast(Any, await entries.adjusted_tb(ctx, work_item_id, layer))  # Any: ledger's view
+    return AdjustedTbOut(
+        layer=layer,
+        lines=[
+            AdjustedLineOut(
+                account_code=ln.account_code,
+                account_name=ln.account_name,
+                unadjusted=ln.eoy,
+                aje=ln.aje,
+                rje=ln.rje,
+                final=ln.final,
+            )
+            for ln in view.lines
+        ],
+        pending_entries=view.pending_entries,
+    )

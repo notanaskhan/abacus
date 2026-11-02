@@ -131,6 +131,7 @@ from abacus.modules.methodology.service import (
     version_in,
 )
 from abacus.modules.methodology.standards import (
+    aje_classification_for,
     attribute_sample_size,
     current_version,
     current_version_of_kind,
@@ -273,6 +274,7 @@ __all__ = [
     "VersionStep",
     "VersionSteps",
     "Viewer",
+    "aje_classification_for",
     "approve_version",
     "area_for",
     "assign_flags",
