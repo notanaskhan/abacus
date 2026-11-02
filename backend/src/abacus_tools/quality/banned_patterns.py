@@ -1149,6 +1149,9 @@ _SCOPE_KINDS = frozenset({"engagement", "work_item", "client", "client_entity", 
 # lookups for rows the caller has already authorised, or sign-in before a tenant exists.
 LIST_EXEMPT = frozenset(
     {
+        # A-05-T09 (DEC-1954): a work item's designed papers, for an owner's rail provider or
+        # export section that already authorised the engagement it reads.
+        ("src/abacus/modules/workpapers/repository.py", "papers_of_work_item"),
         # I-01-T08 (DEC-647): C13's system reader for the `evidence_review` gate source; the
         # projection applies `visible()` and the source's read action when anyone reads it.
         ("src/abacus/modules/requests/repository.py", "awaiting_review_rows"),
@@ -2746,11 +2749,14 @@ RULES: list[Rule | TreeRule] = [
             "only the card's reserved person decides, through the review service (INV-1, "
             "ADR-160 clause 8)",
         ),
-        # P-04-T23: the definition and its route; any other file naming it fails.
+        # P-04-T23: the definition and its route; P-04-T36: review's public interface, for the
+        # scenario loader (tooling) acting as the person named, as SIGNOFF-001 allows
+        # `sign_target`. Any other product file naming it fails.
         include=("src/abacus/*",),
         exclude=(
             "src/abacus/modules/review/decisions.py",
             "src/abacus/modules/review/contract.py",
+            "src/abacus/modules/review/api.py",
         ),
     ),
     Rule(

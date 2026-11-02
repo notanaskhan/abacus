@@ -34,7 +34,7 @@ export const COPY = {
     full_scope: "Full-scope audit (AU-C 700)",
   } as Record<string, string>,
   filer: { large_plan: "Large plan", small_plan: "Small plan" } as Record<string, string>,
-  participantsAtBoy: (n: number): string => `(${n} participants with balances at Jan 1)`,
+  participantsAtBoy: (n: number): string => `(${String(n)} participants with balances at Jan 1)`,
   extended: "Extended",
   missingPn:
     "Form 5500 needs a three-digit PN (001–499). The recordkeeper ID {id} is not a plan number.",

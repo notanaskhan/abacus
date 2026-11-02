@@ -47,7 +47,9 @@ describe.each(["a", "b", "c", "d"] as const)("EBP-01%s", (state) => {
     const queries = show(state);
     const facts = await drawn("[data-ebp01='facts']");
     expect(facts.textContent).toContain("Northwind Robotics 401(k) Plan");
-    expect(facts.textContent).toContain("58217");
+    // d is the edit frame: its PN and recordkeeper ID sit in inputs.
+    const inputs = [...facts.querySelectorAll("input")].map((i) => i.value).join(" ");
+    expect(`${facts.textContent} ${inputs}`).toContain("58217");
     const status = await drawn("[data-ebp01='status']");
     expect(status.textContent).toContain("Large plan");
     expect(status.textContent).toContain("286");
@@ -57,10 +59,15 @@ describe.each(["a", "b", "c", "d"] as const)("EBP-01%s", (state) => {
     });
     // P-12: no full EIN anywhere: the DOM, the cached payloads and the URL.
     const nineDigits = /\b\d{2}-?\d{7}\b/u;
-    expect(document.body.textContent ?? "").not.toMatch(nineDigits);
-    expect(JSON.stringify(queries.getQueryCache().getAll().map((q) => q.state.data))).not.toMatch(
-      nineDigits,
-    );
+    expect(document.body.textContent).not.toMatch(nineDigits);
+    expect(
+      JSON.stringify(
+        queries
+          .getQueryCache()
+          .getAll()
+          .map((q) => q.state.data),
+      ),
+    ).not.toMatch(nineDigits);
     expect(window.location.href).not.toMatch(nineDigits);
   });
 });

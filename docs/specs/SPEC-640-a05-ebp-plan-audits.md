@@ -52,7 +52,7 @@ F6 investments and certification, F7 distributions and loans, F8 expenses and co
 participant accounts, F10 Form 5500 and schedules, F11 estimates, related parties and parties in
 interest, F12 agent drafts, F13 the agent-off path).
 
-The S23 foundation rows are numbered for their task files:
+The S23 foundation rows (AC-1 to AC-5) and the S24 rows (AC-6 to AC-13) are numbered for their task files:
 
 | AC | Row | Given / when / then |
 |---|---|---|
@@ -61,6 +61,14 @@ The S23 foundation rows are numbered for their task files:
 | AC-3 | A-05-T05 | The glossary and status vocabulary carry the EBP words; certification, correction and sign-off acts are human-only (DEC-1860). |
 | AC-4 | A-05-T06 | Migration `ebp_core` creates the five tables with forced row-level security; checks and conflicts are insert-only and column-granted; a tenant reads only its own rows (DEC-1861). |
 | AC-5 | A-05-T07 | The Northwind PY2025 EBP slice loads as Dana Kowalski with its eight documents, and its figures foot to `tests/golden/ebp/northwind_py2025.yaml` (DEC-1862). |
+| AC-6 | A-05-T08 | The three suites run in N's CI and fail on any breaking change to the shapes EBP-02, EBP-04 and EBP-06 read. |
+| AC-7 | A-05-T09 | Rail rows appear on the Northwind cockpit with canonical statuses, and every seeded anchor resolves to exactly one cell in the XLSX export. |
+| AC-8 | A-05-T10 | Northwind reads large filer, due Oct 15, 2026, one SOC gap on Keystone and one EIN mismatch routed to Summit; PN 58217 or 000 is refused with the Form 5500 helper, and a staff member's PATCH answers 403. |
+| AC-9 | A-05-T11 | All four artboards render from fixtures and live data, and the EIN is never in the DOM, query cache or URL after re-mask. |
+| AC-10 | A-05-T12 | A run in an EBP mode writes only suggestions and proposed issues, every proposed value carries a verified citation, a run Marcus Delaney starts is attributed 'Marcus Delaney via Agent', and agents/specs holds one workpapers.section_drafter spec with one evaluation_suite. |
+| AC-11 | A-05-T13 | On the Northwind documents the mode proposes 20 provisions (18 for Version 1), flags the SPD quarterly-entry conflict and the Jan 1, 2025 catch-up amendment, and every quote verifies. |
+| AC-12 | A-05-T14 | The suite runs in CI on the fake route and its thresholds are frozen in suite.yaml before any EBP prompt merges. |
+| AC-13 | A-05-T15 | No plaintext SSN or DOB column exists, result rows are insert-only, and a human-only CHECK refuses an agent writing pass, exception or no_effect. |
 
 ## 6. Decisions
 DEC-1857 (screen contracts, deviations, the agent-off path) and DEC-1858 (census PII masking and

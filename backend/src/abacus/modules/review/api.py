@@ -43,9 +43,11 @@ from abacus.modules.review.decisions import (
 from abacus.modules.review.engagement_gates import register_engagement_gates
 from abacus.modules.review.field_values import (
     FieldValueInvalid,
+    FieldVersionFact,
     PreviousValue,
     changed_since,
     current_values,
+    field_timeline,
     previous_value,
     record_value,
     typed_value,
@@ -210,6 +212,7 @@ __all__ = [
     "FieldCitations",
     "FieldOwner",
     "FieldValueInvalid",
+    "FieldVersionFact",
     "GateFacts",
     "GateSource",
     "GateView",
@@ -256,6 +259,7 @@ __all__ = [
     "decision_kind",
     "detect_stale",
     "field_owner",
+    "field_timeline",
     "follow_proposal_decision",
     "gate_met",
     "issue_engagement",

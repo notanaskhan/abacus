@@ -2,7 +2,7 @@
 id: TASK-2909
 title: A-05-T12 EBP modes on workpapers.section_drafter
 spec: SPEC-640
-acceptance_criteria: [A-05 §6]
+acceptance_criteria: [AC-10]
 risk_zone: red
 status: in-review
 epic: A-05

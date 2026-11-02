@@ -8,8 +8,9 @@ import {
   Pill,
   type ViewerFile,
   type ViewerRegion,
-  cn,
+  type MatchId,
   MATCH_ROW,
+  cn,
   useMatch,
 } from "@abacus/ui";
 import type { JSX } from "react";
@@ -41,7 +42,7 @@ export function importViewerFile(
       if (src.bbox != null && src.bbox.length === 4) {
         const [x0 = 0, y0 = 0, x1 = 0, y1 = 0] = src.bbox;
         regions.push({
-          match: src.match_id,
+          match: src.match_id as MatchId, // the server's key (INV-2)
           page: src.page_from,
           rects: [[x0, y0, x1, y1]],
           label: s.text,
@@ -74,7 +75,9 @@ function ImportedRow({
   step: StepOut;
   onConfirm?: ((step: StepOut) => void) | undefined;
 }): JSX.Element {
-  const match = step.sources?.[0]?.match_id ?? `step-${step.id}`;
+  const first = step.sources?.[0];
+  // The server's key, which the page region carries too (INV-2: never built on the client).
+  const match = (first?.match_id ?? `step-${step.id}`) as MatchId;
   const { bind, pin, lit } = useMatch(match, "row");
   const flagged = step.parse_flag != null && step.flag_resolution == null;
   const page = step.sources?.[0];
@@ -86,7 +89,11 @@ function ImportedRow({
       onClick={(e) => {
         pin(e.currentTarget);
       }}
-      className={cn("h-[42px] cursor-default align-top hairline-b", MATCH_ROW, lit && "font-medium")}
+      className={cn(
+        "h-[42px] cursor-default align-top hairline-b",
+        MATCH_ROW,
+        lit && "font-medium",
+      )}
     >
       <td className="w-[40px] px-[10px] py-[6px] text-ink-3">{step.number}</td>
       <td className="px-[6px] py-[6px]">

@@ -1,8 +1,8 @@
 ---
 id: TASK-2924
 title: P-04-T37 golden-figure tests for the review scenario
-spec: SPEC-600
-acceptance_criteria: [P-04-T37]
+spec: SPEC-000  # P-04-T37 row
+acceptance_criteria: [AC-1]
 risk_zone: amber
 status: in-review
 epic: P-04

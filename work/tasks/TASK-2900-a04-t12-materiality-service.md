@@ -2,7 +2,7 @@
 id: TASK-2900
 title: A-04-T12 materiality service (AUD-07)
 spec: SPEC-620
-acceptance_criteria: [AC3.1, AC3.3, AC3.4, AC3.5, AC3.6, AC3.7, AC3.9]
+acceptance_criteria: [AC-15, AC-16, AC-17, AC-18]
 risk_zone: amber
 status: in-review
 epic: A-04

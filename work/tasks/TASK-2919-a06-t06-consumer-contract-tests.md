@@ -2,7 +2,7 @@
 id: TASK-2919
 title: A-06-T06 consumer contract tests for the C8 and completion stubs
 spec: SPEC-642
-acceptance_criteria: [SPEC-642 AC-3]
+acceptance_criteria: [AC-3]
 risk_zone: amber
 status: in-review
 epic: A-06

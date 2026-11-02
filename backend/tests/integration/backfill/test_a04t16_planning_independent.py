@@ -15,7 +15,13 @@ from typing import Final, cast
 import pytest
 
 from .tb_support import Books, Json, stranger_firm, without_independence
-from .test_a04t13_risk_register import GRID, _create, _keyed, _patch, _path
+from .test_a04t13_risk_register import (
+    GRID,
+    _create,  # pyright: ignore[reportPrivateUsage] -- A-04-T13's helpers
+    _keyed,  # pyright: ignore[reportPrivateUsage] -- a sibling suite\'s helper
+    _patch,  # pyright: ignore[reportPrivateUsage] -- a sibling suite\'s helper
+    _path,  # pyright: ignore[reportPrivateUsage] -- a sibling suite\'s helper
+)
 from .test_a04t13_risk_register import world as register_world
 
 pytestmark = pytest.mark.asyncio
@@ -39,7 +45,9 @@ async def test_inv4_no_client_principal_reaches_a_planning_route(world: Books) -
     client = await world.seed.client_contact(world.site)
     for path in READS:
         found = await world.call("GET", _engagement(world, path), client)
-        assert found.status_code == 404, (path, found.status_code)
+        # SPEC-620 AC-10: a client principal is refused (403 by the matrix, 404 where the
+        # route hides the engagement); never a 2xx.
+        assert found.status_code in (403, 404), (path, found.status_code)
 
 
 async def test_inv3_another_firm_never_sees_the_register(world: Books) -> None:
@@ -51,9 +59,25 @@ async def test_inv3_another_firm_never_sees_the_register(world: Books) -> None:
 
 
 async def test_a_member_without_independence_is_refused(world: Books) -> None:
+    """G2 v2 (DEC-270, ADR-164 items 2-3): on an attest client's engagement a member not
+    cleared may not write the register (reads are gated only with `g2_blocks_view`)."""
+    await world.seed.attest(world.site.tenant_id, world.site.engagement_id)
     who = await without_independence(world.seed, world.site)
-    found = await world.call("GET", _path(world, "/register"), who)
-    assert found.status_code == 403
+    found = await world.call(
+        "POST",
+        _path(world, "/register"),
+        who,
+        {
+            "level": "financial_statement",
+            "area_label": "Management override of controls",
+            "assertions": [],
+            "inherent_risk": "high",
+            "control_risk": "max",
+            "presumption_kind": "management_override",
+        },
+        headers=_keyed(),
+    )
+    assert found.status_code == 403, found.text
 
 
 async def test_inv5_a_created_risk_is_attributed_to_its_person(world: Books) -> None:

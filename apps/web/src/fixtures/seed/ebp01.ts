@@ -1,7 +1,11 @@
 // EBP-01 Plan profile & service providers (A-05-T11): the A-05-T10 shapes for Northwind PY2025,
 // figures verbatim from the handoff spec and the A-05-T07 golden (tests/golden/ebp). Masked TINs
 // only: no full EIN exists in the fixture (P-12).
-import type { PlanOut, ProviderOut, ProvidersOut } from "@abacus/api-client";
+import type {
+  AbacusModulesAssuranceEbpContractProviderOut as ProviderOut,
+  PlanOut,
+  ProvidersOut,
+} from "@abacus/api-client";
 
 export type Ebp01Variant = "a" | "b" | "c" | "d";
 
@@ -19,10 +23,12 @@ const PLAN: PlanOut = {
   filer_status: "large_plan",
   form5500_due_on: "2026-10-15",
   audit_kind: "103a3c",
+  version: 1,
   allowed_actions: ["ebp_plan.edit"],
 };
 
-const id = (n: number): string => `00000000-0000-4000-8000-0000000005${String(n).padStart(2, "0")}`;
+const id = (n: number): string =>
+  `00000000-0000-4000-8000-0000000005${String(n).padStart(2, "0")}`;
 
 const KEYSTONE: ProviderOut = {
   id: id(1),

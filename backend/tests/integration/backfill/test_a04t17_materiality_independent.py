@@ -18,7 +18,12 @@ import pytest
 import yaml
 
 from .tb_support import Books, Json
-from .test_a04t12_materiality_service import _decide, _keyed, _path, _propose
+from .test_a04t12_materiality_service import (
+    _decide,  # pyright: ignore[reportPrivateUsage] -- A-04-T12's helpers
+    _keyed,  # pyright: ignore[reportPrivateUsage] -- a sibling suite\'s helper
+    _path,  # pyright: ignore[reportPrivateUsage] -- a sibling suite\'s helper
+    _propose,  # pyright: ignore[reportPrivateUsage] -- a sibling suite\'s helper
+)
 from .test_a04t12_materiality_service import world as materiality_world
 
 pytestmark = pytest.mark.asyncio

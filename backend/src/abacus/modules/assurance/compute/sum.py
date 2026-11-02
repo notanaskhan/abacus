@@ -25,7 +25,7 @@ import json
 from collections.abc import Sequence
 from dataclasses import dataclass
 from decimal import Decimal, localcontext
-from typing import Final, Literal
+from typing import Final, Literal, cast
 
 from abacus.kernel.numeric import CONTEXT, quantize_half_up
 
@@ -84,7 +84,7 @@ def _text(value: object) -> object:
     if isinstance(value, Decimal):
         return format(value.normalize(CONTEXT), "f")
     if isinstance(value, (list, tuple)):
-        return [_text(v) for v in value]  # pyright: ignore[reportUnknownVariableType]
+        return [_text(v) for v in cast("list[object] | tuple[object, ...]", value)]
     return value
 
 

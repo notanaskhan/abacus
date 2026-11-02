@@ -590,6 +590,26 @@ export function KNW02({
           ) : (
             <TriadTree
               groups={[
+                // K-01-T23 (KNW-02 a, a2, b): the files the import read, above the programs.
+                ...(imp === undefined
+                  ? []
+                  : [
+                      {
+                        id: "files",
+                        label: COPY.importReview.files,
+                        subs: [
+                          {
+                            id: "uploaded",
+                            label: name,
+                            docs: imp.files.map((f) => ({
+                              id: f.id,
+                              label: f.filename,
+                              checkable: false,
+                            })),
+                          },
+                        ],
+                      },
+                    ]),
                 {
                   id: "programs",
                   label: COPY.tree.programs(totalSteps),
@@ -609,6 +629,7 @@ export function KNW02({
               ]}
               selected={picked?.id ?? null}
               onSelect={(doc) => {
+                if (!list.some((p) => p.id === doc.id)) return; // a file row selects no program
                 set({ program: doc.id });
               }}
             />
@@ -619,15 +640,15 @@ export function KNW02({
           imp !== undefined && imp.status !== "parsing" && steps.data !== undefined ? (
             <SourceViewer file={importViewerFile(versionId, imp, steps.data)} scrollToLit />
           ) : (
-          <div className="flex flex-1 items-center justify-center p-[24px]">
-            {s.drafted_from_version_id != null ? (
-              <EmptyState icon="pencil" title={COPY.viewer.draft} />
-            ) : (
-              <EmptyState icon="file-spreadsheet" title={COPY.viewer.workbook}>
-                {COPY.viewer.workbookHelp}
-              </EmptyState>
-            )}
-          </div>
+            <div className="flex flex-1 items-center justify-center p-[24px]">
+              {s.drafted_from_version_id != null ? (
+                <EmptyState icon="pencil" title={COPY.viewer.draft} />
+              ) : (
+                <EmptyState icon="file-spreadsheet" title={COPY.viewer.workbook}>
+                  {COPY.viewer.workbookHelp}
+                </EmptyState>
+              )}
+            </div>
           )
         }
         sheet={{

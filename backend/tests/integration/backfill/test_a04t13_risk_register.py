@@ -44,7 +44,7 @@ MATRIX: Final[Json] = {
         for cr, rmm in zip(("low", "moderate", "high", "max"), row, strict=True)
     ],
 }
-GRID: Final = (
+GRID: Final[tuple[tuple[str, list[str], str, str], ...]] = (
     ("Management override of controls", [], "high", "management_override"),
     ("Contributions — participant & employer", ["occurrence", "accuracy"], "moderate", "none"),
     (
@@ -137,7 +137,7 @@ async def _create(world: Books, area: str, assertions: list[str], ir: str, presu
 
 
 async def _northwind(world: Books) -> dict[str, Json]:
-    made = {}
+    made: dict[str, Json] = {}
     for area, assertions, ir, presumed in GRID:
         risk = await _create(world, area, assertions, ir, presumed)
         made[cast(str, risk["code"])] = risk

@@ -2,7 +2,7 @@
 id: TASK-2904
 title: A-04-T16 independent acceptance tests for A-04-T03, T04, T06, T13 (ADR-078)
 spec: SPEC-620
-acceptance_criteria: [A-04 §3.1, §3.4, §3.9]
+acceptance_criteria: [AC-15, AC-16, AC-19]
 risk_zone: amber
 status: in-review
 epic: A-04

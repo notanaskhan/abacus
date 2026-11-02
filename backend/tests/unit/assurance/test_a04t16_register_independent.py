@@ -65,7 +65,7 @@ GRID: Final = (
 @pytest.mark.parametrize(("pair", "rmm"), sorted(GOLDEN.items()))
 def test_rmm_golden_over_every_ir_cr_pair(pair: tuple[str, str], rmm: str) -> None:
     ir, cr = pair
-    found = rmm_for(MATRIX, POLICY, inherent_risk=ir, control_risk=cr)  # type: ignore[arg-type]
+    found = rmm_for(MATRIX, POLICY, inherent_risk=ir, control_risk=cr)  # type: ignore[arg-type] -- the grid's text ratings
     assert (found.rmm, found.policy) == (rmm, POLICY)
 
 

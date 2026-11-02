@@ -2,7 +2,7 @@
 id: TASK-2917
 title: A-06-T07 SUM compute library (assurance/compute/sum.py)
 spec: SPEC-642
-acceptance_criteria: [SPEC-642 AC-6]
+acceptance_criteria: [AC-6]
 risk_zone: amber
 status: in-review
 epic: A-06

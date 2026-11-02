@@ -27,7 +27,8 @@ REVIEW: Final = HERE.parents[3] / "docs" / "quality" / "golden-reviews" / "mater
 
 
 def _load(name: str) -> dict[str, Any]:  # Any: YAML
-    return cast(dict[str, Any], yaml.safe_load((HERE / name).read_text(encoding="utf-8")))
+    text = (HERE / name).read_text(encoding="utf-8")
+    return cast(dict[str, Any], yaml.safe_load(text))  # Any: YAML
 
 
 def _policy(p: dict[str, str]) -> engine.Policy:

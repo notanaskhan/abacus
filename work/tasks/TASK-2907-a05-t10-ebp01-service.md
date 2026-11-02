@@ -2,7 +2,7 @@
 id: TASK-2907
 title: A-05-T10 EBP-01 service (plan profile, plan status, providers and checks)
 spec: SPEC-640
-acceptance_criteria: [A-05 F1]
+acceptance_criteria: [AC-8]
 risk_zone: amber
 status: in-review
 epic: A-05

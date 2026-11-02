@@ -14,7 +14,7 @@ What EBP-02, EBP-04 and EBP-06 read from other epics' contracts:
 from __future__ import annotations
 
 import json
-from typing import cast
+from typing import cast, get_args
 
 from abacus.api.export_openapi import document
 from abacus.kernel._statuses import ProposedEntryStatus
@@ -27,7 +27,7 @@ PATHS = cast(dict[str, dict[str, Json]], DOC["paths"])
 
 
 def test_c8_carries_the_aje_1_pill_states() -> None:
-    states = set(c8.EntryStatus.__args__)  # type: ignore[attr-defined]
+    states = set(get_args(c8.EntryStatus))
     assert {"proposed", "review_required", "approved", "client_approved", "client_declined"} <= (
         states
     )
@@ -36,7 +36,7 @@ def test_c8_carries_the_aje_1_pill_states() -> None:
 
 
 def test_c8_reads_the_four_layers_ebp_06_shows() -> None:
-    assert set(c8.Layer.__args__) == {"unadjusted", "aje", "rje", "final"}  # type: ignore[attr-defined]
+    assert set(get_args(c8.Layer)) == {"unadjusted", "aje", "rje", "final"}
     operation = PATHS["/v1/work-items/{work_item_id}/adjusted-tb"]["get"]
     assert operation["x-abacus-action"] == "adjusted_tb.read"
 
@@ -50,10 +50,7 @@ def test_c9_serves_each_layer_and_final_waits_for_an_adjustment_source() -> None
 
 def test_c3_offers_field_ticks_and_decision_cards() -> None:
     actions = {
-        cast(str, op.get("x-abacus-action"))
-        for ops in PATHS.values()
-        for op in ops.values()
-        if isinstance(op, dict)
+        cast(str, op.get("x-abacus-action")) for ops in PATHS.values() for op in ops.values()
     }
     assert "decision.decide" in actions
     assert any(a.startswith("sign_off.") for a in actions)

@@ -73,8 +73,12 @@ class EbpPlan(Base):
     plan_year_end: Mapped[date]
     plan_type: Mapped[str]
     safe_harbor: Mapped[str]
-    auto_enrollment: Mapped[dict[str, Any] | None] = mapped_column(JSONB)  # Any: JSON
-    match_formula: Mapped[dict[str, Any] | None] = mapped_column(JSONB)  # Any: JSON
+    auto_enrollment: Mapped[dict[str, Any] | None] = mapped_column(  # Any: JSON
+        JSONB(none_as_null=True)
+    )
+    match_formula: Mapped[dict[str, Any] | None] = mapped_column(  # Any: JSON
+        JSONB(none_as_null=True)
+    )
     qdia: Mapped[str | None]
     recordkeeper_plan_id: Mapped[str | None]
     participants_boy_with_balances: Mapped[int | None]
@@ -102,7 +106,7 @@ class EbpProvider(Base):
     role: Mapped[str]
     contact_id: Mapped[UUID | None]
     grant_id: Mapped[UUID | None]
-    ein_last4: Mapped[str | None]
+    tin_last4: Mapped[str | None]  # 0612 renamed ein_* to the platform's tin_* names
     soc_type: Mapped[str | None]
     soc_period_start: Mapped[date | None]
     soc_period_end: Mapped[date | None]

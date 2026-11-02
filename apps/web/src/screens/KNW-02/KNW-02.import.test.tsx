@@ -100,10 +100,10 @@ describe("KNW-02 a2 · the ⚑ filter", () => {
     expect(within(step7).getByText("pp. 15–16")).toBeTruthy();
     fireEvent.click(within(step7).getByRole("button", { name: "Confirm" }));
     await waitFor(() => {
-      const post = calls.find(
-        (c) => c.method === "POST" && c.path.endsWith("/flag-resolution"),
-      );
-      expect(post?.body).toMatchObject({ action: "confirm", row_version: expect.any(Number) });
+      const post = calls.find((c) => c.method === "POST" && c.path.endsWith("/flag-resolution"));
+      const body = post?.body as { action?: string; row_version?: unknown } | undefined;
+      expect(body?.action).toBe("confirm");
+      expect(typeof body?.row_version).toBe("number");
     });
     await waitFor(() => {
       expect(document.querySelectorAll('[data-knw02="import-steps"] [data-step]').length).toBe(0);

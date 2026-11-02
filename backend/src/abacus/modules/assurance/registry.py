@@ -22,15 +22,22 @@ PLANNING_TABLES: frozenset[str] = frozenset(
     {"materiality_versions", "risk_register_rows", "risk_linkages", "service_organizations"}
     | {"fraud_brainstorm_sessions", "fraud_minutes_approvals", "fraud_inquiries"}
 )
+# A-05-T15 (0642, DEC-1959): the census and its population queries; queries insert-only.
+EBP_PARTICIPANT_TABLES: frozenset[str] = frozenset(
+    {"ebp_source_imports", "ebp_participants", "ebp_population_queries"}
+)
 # A-06-T04 (0644, DEC-1963): the completion records beside SPEC-043's (DEC-1960).
 COMPLETION_TABLES: frozenset[str] = frozenset(
     {"audit_findings", "deficiencies", "audit_misstatements", "sum_snapshots", "consultations"}
 )
-TABLES: frozenset[str] = _HUMAN_RECORDS | EBP_TABLES | PLANNING_TABLES | COMPLETION_TABLES
+TABLES: frozenset[str] = (
+    _HUMAN_RECORDS | EBP_TABLES | PLANNING_TABLES | EBP_PARTICIPANT_TABLES | COMPLETION_TABLES
+)
 INSERT_ONLY: frozenset[str] = (
     _HUMAN_RECORDS
     | {"ebp_provider_checks", "ebp_provision_conflicts"}
     | {"materiality_versions", "fraud_minutes_approvals"}
+    | {"ebp_population_queries"}
     | {"sum_snapshots"}
 )
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -275,6 +282,57 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
             "questionnaire_id",
         }
     ),
+    "ebp_source_imports": frozenset(
+        {
+            "tenant_id",
+            "engagement_id",
+            "work_item_id",
+            "evidence_version_id",
+            "kind",
+            "column_map",
+            "row_count",
+            "totals",
+            "sha256",
+            "status",
+            "refusal_code",
+            "imported_by",
+        }
+    ),
+    "ebp_participants": frozenset(
+        {
+            "tenant_id",
+            "engagement_id",
+            "work_item_id",
+            "import_id",
+            "participant_key",
+            "name",
+            "ssn_sealed",
+            "ssn_fp",
+            "ssn_last4",
+            "dob_sealed",
+            "dob_fp",
+            "hire_on",
+            "termination_on",
+            "status",
+            "compensation",
+            "deferral_election_pct",
+            "years_of_service",
+            "vested_pct",
+        }
+    ),
+    "ebp_population_queries": frozenset(
+        {
+            "tenant_id",
+            "engagement_id",
+            "work_item_id",
+            "import_id",
+            "rule_key",
+            "inputs_hash",
+            "engine_version",
+            "result_keys",
+            "count",
+        }
+    ),
     "audit_findings": frozenset(
         {
             "tenant_id",
@@ -512,6 +570,14 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
             "status",
             "conclusion_sealed",
             "concluded_at",
+        }
+    ),
+    "ebp_source_imports": frozenset(
+        {
+            "status",
+            "refusal_code",
+            "row_count",
+            "totals",
         }
     ),
 }

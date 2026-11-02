@@ -110,7 +110,7 @@ class FindingIn(BaseModel):
     ]
     coso_component: Annotated[Coso | None, classified("internal")] = None
     citation_ids: Annotated[list[UUID], Field(max_length=50), classified("internal")] = Field(
-        default_factory=list
+        default_factory=list[UUID]
     )
 
 
@@ -118,7 +118,8 @@ class ConvertToMisstatementIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     type: Annotated[Literal["factual", "judgmental", "projected"], classified("internal")]
-    amount: Money | None = None  # null for projected: the projection is code's
+    # Null for projected: the projection is code's.
+    amount: Annotated[Money | None, classified("confidential")] = None
     projection_ref: Annotated[UUID | None, classified("internal")] = None
     seen_version: Annotated[int, Field(ge=1), classified("internal")]
 
@@ -127,7 +128,7 @@ class ReasonIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     reason_code: Annotated[str, Field(pattern=r"^[a-z][a-z0-9_]{0,59}$"), classified("internal")]
-    note: Text | None = None
+    note: Annotated[Text | None, classified("confidential")] = None
 
 
 class DecisionRaisedOut(BaseModel):
@@ -193,7 +194,7 @@ class SumOut(BaseModel):
     inputs_hash: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$"), classified("internal")]
 
 
-class SnapshotOut(BaseModel):
+class SumSnapshotOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     id: Annotated[UUID, classified("internal")]
@@ -215,7 +216,7 @@ class FactorIn(BaseModel):
     value: Annotated[str, Field(min_length=1, max_length=200), classified("confidential")]
     note: Text
     citation_ids: Annotated[list[UUID], Field(max_length=20), classified("internal")] = Field(
-        default_factory=list
+        default_factory=list[UUID]
     )
 
 
@@ -409,12 +410,12 @@ async def sum_request_conclusion_route(
 @router.post(
     f"{_WI}/sum/snapshots",
     action="sum.snapshot",
-    response_model=SnapshotOut,
+    response_model=SumSnapshotOut,
     status_code=201,
     errors=(501,),
 )
 async def sum_snapshot_route(
     work_item_id: UUID, body: SnapshotIn, ctx: Ctx, idempotency_key: IdempotencyKey
-) -> SnapshotOut:
+) -> SumSnapshotOut:
     await _gate(ctx, work_item_id, "sum.snapshot")
     _not_yet()

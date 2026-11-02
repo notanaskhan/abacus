@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-import abacus.modules.assurance.api  # noqa: F401 -- registers the EBP mode plans
+import abacus.modules.assurance.api  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers the EBP mode plans
 from abacus.modules.agents.section_draft import DRAFTER, EBP_MODES, mode_call
 from abacus.modules.agents.section_sources import mode_kinds
 from abacus.modules.agents.spec import spec
@@ -32,7 +32,8 @@ def test_one_section_drafter_spec_with_one_suite() -> None:
 @pytest.mark.parametrize("mode", sorted(EBP_MODES))
 def test_each_ebp_mode_is_declared_with_a_budget(mode: str) -> None:
     prompt, budget = mode_call(spec(DRAFTER), mode)
-    assert prompt.startswith("workpapers.section_draft@")
+    # A-05-T13 gave ebp_provisions its own prompt (`section_draft_ebp_provisions`).
+    assert prompt.startswith("workpapers.section_draft")
     assert budget > 0
 
 

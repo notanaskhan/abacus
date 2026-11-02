@@ -1,8 +1,8 @@
 ---
 id: TASK-2925
 title: P-04-T58 parity, accessibility and keyboard for the 44 review-grammar artboards
-spec: SPEC-600
-acceptance_criteria: [P-04-T58]
+spec: SPEC-000  # P-04-T58 row
+acceptance_criteria: [AC-1]
 risk_zone: green
 status: in-review
 epic: P-04

@@ -105,14 +105,20 @@ class MaterialityVersion(Base):
     pm: Mapped[Decimal]
     ct_pct: Mapped[Decimal]
     ct: Mapped[Decimal]
-    specific: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB)  # Any: JSON
+    specific: Mapped[list[dict[str, Any]] | None] = mapped_column(  # Any: JSON
+        JSONB(none_as_null=True)
+    )
     qualitative_factors: Mapped[list[dict[str, Any]]] = mapped_column(JSONB)  # Any: JSON
-    prior_year_overall: Mapped[dict[str, Any] | None] = mapped_column(JSONB)  # Any: JSON
+    prior_year_overall: Mapped[dict[str, Any] | None] = mapped_column(  # Any: JSON
+        JSONB(none_as_null=True)
+    )
     policy_version_id: Mapped[UUID | None]
     decision_card_id: Mapped[UUID | None]
     decision_id: Mapped[UUID | None]
-    reassessment: Mapped[dict[str, Any] | None] = mapped_column(JSONB)  # Any: JSON
-    impact: Mapped[dict[str, Any] | None] = mapped_column(JSONB)  # Any: JSON
+    reassessment: Mapped[dict[str, Any] | None] = mapped_column(  # Any: JSON
+        JSONB(none_as_null=True)
+    )
+    impact: Mapped[dict[str, Any] | None] = mapped_column(JSONB(none_as_null=True))  # Any: JSON
     engine_name: Mapped[str]
     engine_version: Mapped[str]
     inputs_hash: Mapped[str]
@@ -178,7 +184,8 @@ def benchmark_key(label: str) -> str:
     """The benchmark's key from its label, to the first connecting word: "Net assets available
     for benefits" -> "net_assets", "Pre-tax income" -> "pre_tax_income"."""
     words: list[str] = []
-    for word in _WORD.findall(label.casefold()):
+    # A parenthetical qualifies the benchmark; it is not part of its name.
+    for word in _WORD.findall(label.casefold().split("(", 1)[0]):
         if word in _STOP and words:
             break
         words.append(word)

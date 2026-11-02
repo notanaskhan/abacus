@@ -2,7 +2,7 @@
 id: TASK-2914
 title: A-06-T02 status vocabulary and glossary rows (DF-31, DF-28)
 spec: SPEC-642
-acceptance_criteria: [SPEC-642 AC-4]
+acceptance_criteria: [AC-4]
 risk_zone: red
 status: in-review
 epic: A-06

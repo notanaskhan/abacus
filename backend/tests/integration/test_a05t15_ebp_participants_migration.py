@@ -42,8 +42,8 @@ def private_db() -> Iterator[sc.Database]:
         yield database
 
 
-def _value(database: sc.Database, sql: str) -> object:
-    return asyncio.run(Seeder(database.superuser_dsn).value(sql))
+def _value(database: sc.Database, sql: str, *args: object) -> object:
+    return asyncio.run(Seeder(database.superuser_dsn).value(sql, *args))
 
 
 async def _as(dsn: str, kind: str, actor: str, sql: str, *args: object) -> None:
@@ -62,13 +62,13 @@ def _result(result: str) -> tuple[str, tuple[object, ...]]:
 def test_0642_goes_down_and_up_with_forced_rls(private_db: sc.Database) -> None:
     migrate(private_db.owner_url, BEFORE, down=True)
     for table in TABLES:
-        assert _value(private_db, f"SELECT to_regclass('{table}') IS NULL"), table
+        assert _value(private_db, "SELECT to_regclass($1) IS NULL", table), table
     migrate(private_db.owner_url, "head")
     for table in TABLES:
         forced = _value(
             private_db,
-            "SELECT relrowsecurity AND relforcerowsecurity FROM pg_class "
-            f"WHERE relname = '{table}'",
+            "SELECT relrowsecurity AND relforcerowsecurity FROM pg_class WHERE relname = $1",
+            table,
         )
         assert forced, table
 

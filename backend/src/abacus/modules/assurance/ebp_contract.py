@@ -118,6 +118,7 @@ _PLAN: JsonDict = {
     "filer_status": "large_plan",
     "form5500_due_on": "2026-10-15",
     "audit_kind": "103a3c",
+    "version": 1,
     "allowed_actions": ["ebp_plan.edit"],
 }
 
@@ -144,6 +145,8 @@ class PlanOut(BaseModel):
     form5500_due_on: Annotated[date, classified("internal")]
     # "§103(a)(3)(C) audit", never "limited scope" (DEC-1857).
     audit_kind: Annotated[Literal["103a3c", "full_scope"], classified("internal")]
+    # The row's version: the next edit's `seen_version` (409 `version_conflict` otherwise).
+    version: Annotated[int, Field(ge=1), classified("internal")]
     allowed_actions: Actions
 
 
@@ -562,6 +565,7 @@ _A = ASSURANCE_ESTIMATES_RP
 
 # EBP-01
 async def _plan_out(ctx: AuthContext, work_item_id: UUID) -> PlanOut:
+    """Unmasked: each route masks it itself (`mask_tins_for`, the offshore contract)."""
     from abacus.modules.assurance import ebp_plan
 
     found = await ebp_plan.plan_view(
@@ -574,23 +578,21 @@ async def _plan_out(ctx: AuthContext, work_item_id: UUID) -> PlanOut:
     item = await assurance_item(ctx.tenant, work_item_id)
     ref = await get_ref(ctx, item.engagement_id)
     can = await allowed_actions(ctx, ref.resource(), ("ebp_plan.edit",))
-    return await mask_tins_for(
-        ctx,
-        PlanOut(
-            plan_name=found.plan_name,
-            plan_number=found.plan_number,
-            plan_year_start=p.plan_year_start,
-            plan_year_end=p.plan_year_end,
-            plan_type="401k",
-            safe_harbor=cast(Literal["none", "qaca", "basic", "nonelective"], p.safe_harbor),
-            recordkeeper_id=p.recordkeeper_plan_id,
-            participants_boy=p.participants_boy_with_balances or 0,
-            participants_eoy=p.participants_eoy or 0,
-            filer_status=status.filer_status if status is not None else "small_plan",
-            form5500_due_on=status.form5500_due_on if status is not None else p.plan_year_end,
-            audit_kind=found.audit_kind,
-            allowed_actions=cast(list[EbpAction], list(can)),
-        ),
+    return PlanOut(
+        plan_name=found.plan_name,
+        plan_number=found.plan_number,
+        plan_year_start=p.plan_year_start,
+        plan_year_end=p.plan_year_end,
+        plan_type="401k",
+        safe_harbor=cast(Literal["none", "qaca", "basic", "nonelective"], p.safe_harbor),
+        recordkeeper_id=p.recordkeeper_plan_id,
+        participants_boy=p.participants_boy_with_balances or 0,
+        participants_eoy=p.participants_eoy or 0,
+        filer_status=status.filer_status if status is not None else "small_plan",
+        form5500_due_on=status.form5500_due_on if status is not None else p.plan_year_end,
+        audit_kind=found.audit_kind,
+        version=p.version,
+        allowed_actions=cast(list[EbpAction], list(can)),
     )
 
 
@@ -605,7 +607,7 @@ async def ebp_plan_route(work_item_id: UUID, ctx: Ctx) -> PlanOut:
     """Plan facts and the filer status card (EBP-01; T10); 404 `ebp_plan` until recorded."""
     await _gate(ctx, work_item_id, "ebp.read", _E)
     # The sponsor's masked EIN reaches an offshore reader null (DEC-52): the one central mask.
-    return await _plan_out(ctx, work_item_id)
+    return await mask_tins_for(ctx, await _plan_out(ctx, work_item_id))
 
 
 @router.patch("/ebp/plan", action="ebp_plan.edit", response_model=PlanOut, errors=(409,))
@@ -628,7 +630,7 @@ async def ebp_plan_edit_route(
         seen_version=body.seen_version,
         plan_entity_id=ref.client_entity_id,
     )
-    return await _plan_out(ctx, work_item_id)
+    return await mask_tins_for(ctx, await _plan_out(ctx, work_item_id))
 
 
 _ROLE_OUT: dict[str, str] = {

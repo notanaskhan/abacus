@@ -2,7 +2,7 @@
 id: TASK-2918
 title: A-06-T05 C8 and completion contract stubs
 spec: SPEC-642
-acceptance_criteria: [SPEC-642 AC-3]
+acceptance_criteria: [AC-3]
 risk_zone: red
 status: in-review
 epic: A-06
