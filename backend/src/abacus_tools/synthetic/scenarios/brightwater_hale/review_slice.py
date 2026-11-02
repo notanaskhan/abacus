@@ -44,6 +44,7 @@ NORTHWIND_TB_LABEL: Final = "standard"
 # The benchmark, as the BH materiality ranges name it for an EBP (defined contribution) audit.
 BENCHMARK_KEY: Final = "net_assets"
 RATE_PCT: Final = "1.5"
+RATE_OPTION: Final = "rate_1_5"  # the materiality option RATE_PCT names
 RATIONALE: Final = (
     "Recurring engagement, stable plan, no prior misstatements above CT. 1.5% of net assets, "
     "consistent with PY2024."
@@ -210,7 +211,7 @@ def review_events() -> list[Event]:
             "review.materiality_decided",
             "MO",
             NORTHWIND,
-            option_key="rate_1_5",
+            option_key=RATE_OPTION,
             rationale=RATIONALE,
         ),
         _event(

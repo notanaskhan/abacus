@@ -1,7 +1,7 @@
 // The bundle budgets (F-05-T17; chapter 04 section 11, FE-17): after a production build, gzip each
 // JavaScript file the build manifest names and fail when
 //   - the firm app's initial JavaScript (its entry chunk and everything it imports statically) is
-//     over 250 KB,
+//     over 300 KB (250 KB until DEC-1975, a founder decision of 2026-11-02),
 //   - the portal's initial JavaScript is over 150 KB (a build with a portal entry: `vite build
 //     --mode portal` into dist/portal, P-08-T07, where route chunks count against the portal's
 //     initial load), or
@@ -15,7 +15,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 
 const KB = 1000;
-export const BUDGETS = { firm: 250 * KB, portal: 150 * KB, route: 135 * KB };
+export const BUDGETS = { firm: 300 * KB, portal: 150 * KB, route: 135 * KB };
 
 /** @param {string} dist @param {string} file @returns {number} */
 function gzipSize(dist, file) {

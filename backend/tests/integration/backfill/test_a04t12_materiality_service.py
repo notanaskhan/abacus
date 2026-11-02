@@ -33,6 +33,7 @@ from .tb_support import Books, Json, books, snapshot
 pytestmark = pytest.mark.asyncio
 
 FLAGS: Final = ("assurance.materiality", "review.grammar_api")
+MID_RATE: Final = "rate_1_5"  # the 1.5% option the partner picks
 NORTHWIND: Final = (
     ("1010", "KRS 500 Index Fund", "16500000.00", "0"),
     ("1200", "Notes receivable from participants", "312400.00", "0"),
@@ -126,7 +127,7 @@ async def _propose(world: Books, tb_id: uuid.UUID) -> Json:
 
 def _decide(**over: object) -> Json:
     body: Json = {
-        "option_key": "rate_1_5",
+        "option_key": MID_RATE,
         "factors": list[str](),
         "rationale": "1.5% of net assets: participants rely on the statements.",
         "seen_version": 1,
