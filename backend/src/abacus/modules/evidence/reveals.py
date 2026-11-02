@@ -24,6 +24,7 @@ PROTECTED, red zone.
 from __future__ import annotations
 
 import math
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Final
@@ -288,13 +289,96 @@ async def _record_throttle(ctx: AuthContext, version_id: UUID, engagement_id: UU
     )
 
 
+# --- A-05-T18 (DEC-2067): a sealed field's reveal (a census SSN or date of birth) ----------------
+
+_INSERT_FIELD = text(
+    "INSERT INTO pii_reveals (tenant_id, field_ref, user_id, reason_code, context_ref, mfa_at, "
+    "expires_at) VALUES (:tenant, :field, :user, :reason, :context, :mfa, "
+    "clock_timestamp() + make_interval(secs => :expires)) RETURNING id, revealed_at"
+)
+
+
+@dataclass(frozen=True)
+class RevealedField:
+    value: str  # Restricted: returned once, `no-store`; never logged, stored or emitted
+    kind: str
+    expires_in: int
+    revealed_by: str
+    revealed_at: datetime
+
+
+async def reveal_field(
+    ctx: AuthContext,
+    engagement_id: UUID,
+    field_ref: str,
+    kind: str,
+    open_value: Callable[[], Awaitable[str]],
+    context_ref: str | None = None,
+) -> RevealedField:
+    """The one call that returns a sealed field in the clear, on P-03's rules: a person (never an
+    agent, a support session or a portal principal), `pii.reveal` on the engagement (onshore, fresh
+    MFA), twenty an hour across every reveal, an audit row naming them and never the value. The
+    owner opens the field (`open_value`) only after the reveal is recorded."""
+    _human(ctx)
+    engagement = await get_ref(ctx, engagement_id)
+    try:
+        await authorise(ctx, REVEAL, engagement.resource())
+    except Forbidden as refused:
+        if refused.layer == "attribute" and _stale(ctx.mfa_at, system_now()):
+            raise RevealNeedsMfa(facts={"reason": "mfa_required"}) from None
+        raise
+    async with uow(ctx.tenant) as tx:
+        await tx.session.execute(
+            _LOCK_PERSON, {"key": f"pii_reveal:{ctx.tenant_id}:{ctx.user_id}"}
+        )
+        recent = (
+            await tx.session.execute(
+                _RECENT, {"user": ctx.user_id, "window": REVEAL_WINDOW_SECONDS}
+            )
+        ).one()
+        if int(recent.n) >= REVEAL_LIMIT:
+            elapsed = (recent.now - recent.oldest).total_seconds()
+            raise RevealRateLimited(
+                facts={
+                    "limit": REVEAL_LIMIT,
+                    "retry_after": max(1, math.ceil(REVEAL_WINDOW_SECONDS - elapsed)),
+                }
+            )
+        row = (
+            await tx.session.execute(
+                _INSERT_FIELD,
+                {
+                    "tenant": ctx.tenant_id,
+                    "field": field_ref,
+                    "user": ctx.user_id,
+                    "reason": REASON_CODE,
+                    "context": context_ref,
+                    "mfa": ctx.mfa_at,
+                    "expires": EXPIRES_IN,
+                },
+            )
+        ).one()
+        tx.record(
+            "pii.revealed",
+            target=Target("engagement", engagement_id),
+            after=Ref(reveal_id=row.id, field=field_ref.rsplit(":", 1)[-1]),
+            scope=Scope(engagement_id=engagement_id),
+        )
+    plain = await open_value()
+    name = (await names_of([ctx.user_id])).get(ctx.user_id, "")
+    _reveals.add(1, {"kind": kind})
+    return RevealedField(shown(kind, plain), kind, EXPIRES_IN, name, row.revealed_at)
+
+
 __all__ = [
     "EXPIRES_IN",
     "REVEAL_LIMIT",
     "TIN_KINDS",
     "RevealNeedsMfa",
     "RevealRateLimited",
+    "RevealedField",
     "RevealedPii",
+    "reveal_field",
     "reveal_pii",
     "shown",
 ]

@@ -245,6 +245,7 @@ from abacus.modules.evidence.retrieved_copies import (
     file_retrieved_copy,
     pdf_text,
 )
+from abacus.modules.evidence.reveals import RevealedField, reveal_field
 from abacus.modules.evidence.routes import firm_router, router
 
 # The routers the API mounts, in order (P-39; F-03-T07).
@@ -545,6 +546,7 @@ __all__ = [
     "RecordClass",
     "RecordedCitation",
     "RenderHashMismatch",
+    "RevealedField",  # A-05-T18 (DEC-2067)
     "ReviewMaterial",
     "ScreenedFile",
     "ScreeningDecision",
@@ -652,6 +654,7 @@ __all__ = [
     "render_trial_balance_layers",
     "retain_until_for",
     "return_files",
+    "reveal_field",  # A-05-T18 (DEC-2067)
     "review_assignees",
     "review_decision_engagement",
     "review_material",
