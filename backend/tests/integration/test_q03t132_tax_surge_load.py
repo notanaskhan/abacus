@@ -19,7 +19,7 @@ from abacus_tools.synthetic import fleet, fleet_tax
 from .agent_tests.support import Seeder
 from .conftest import MigratedDatabase
 
-pytestmark = pytest.mark.asyncio
+pytestmark = [pytest.mark.asyncio, pytest.mark.usefixtures("object_store")]
 
 
 @pytest.fixture(scope="module")

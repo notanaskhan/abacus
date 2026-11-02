@@ -1,5 +1,5 @@
 // @vitest-environment node
-// F-05-T17: the bundle budgets (firm 250 KB, portal 150 KB, route chunk 135 KB since DEC-1682, gzip). The script
+// F-05-T17: the bundle budgets (firm 300 KB since DEC-1975, portal 150 KB, route chunk 135 KB since DEC-1682, gzip). The script
 // reads the build manifest; here it runs over synthetic manifests with chosen sizes, and
 // `make check-fast` runs it over the real build (apps/web/scripts/bundle-budget.mjs).
 import { beforeAll, describe, expect, it } from "vitest";
@@ -51,7 +51,7 @@ function over(sizes: Record<string, number>): string[] {
 
 describe("F-05-T17 bundle budgets", () => {
   it("states the plan's budgets", () => {
-    expect(budget.BUDGETS).toEqual({ firm: 250 * KB, portal: 150 * KB, route: 135 * KB });
+    expect(budget.BUDGETS).toEqual({ firm: 300 * KB, portal: 150 * KB, route: 135 * KB });
   });
 
   it("follows static imports, not dynamic ones", () => {
@@ -72,8 +72,8 @@ describe("F-05-T17 bundle budgets", () => {
     ).toEqual([]);
   });
 
-  it("fails a firm entry over 250 KB, counting its vendor chunk", () => {
-    const names = over({ "assets/index.js": 100 * KB, "assets/vendor.js": 151 * KB });
+  it("fails a firm entry over 300 KB, counting its vendor chunk", () => {
+    const names = over({ "assets/index.js": 100 * KB, "assets/vendor.js": 201 * KB });
     expect(names.some((n) => n.startsWith("firm initial"))).toBe(true);
   });
 
