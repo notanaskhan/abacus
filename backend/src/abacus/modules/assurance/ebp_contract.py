@@ -337,6 +337,7 @@ ImportKind = Literal[
     "account_balances",
     "sdba_detail",
     "trust_receipts",
+    "hr_roster",
 ]
 
 
