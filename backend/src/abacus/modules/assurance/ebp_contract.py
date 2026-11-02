@@ -17,6 +17,7 @@ and conclude are a person's acts; no agent or system principal holds them (INV-1
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated, Literal, NoReturn, cast
@@ -39,6 +40,7 @@ from abacus.modules.assurance import ebp_provisions
 from abacus.modules.assurance.ebp_imports import ImportView, Ties, import_of, import_source
 from abacus.modules.assurance.ebp_participants import DOB_MASK, participants_of
 from abacus.modules.assurance.ebp_participants import reveal as reveal_participant_field
+from abacus.modules.assurance.tb_mapping_contract import SignOffChipOut
 from abacus.modules.engagements.api import assurance_item, get_ref
 from abacus.modules.identity.api import (
     AbacusRouter,
@@ -48,6 +50,7 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
     mask_tins_for,
+    names_of,
 )
 from abacus.modules.organisations.api import MaskedTinOut, entity_name
 
@@ -253,6 +256,12 @@ class ProvisionOut(BaseModel):
     conflict: Annotated[str | None, Field(max_length=200), classified("confidential")]
     amended_on: Annotated[date | None, classified("internal")]
     citation_count: Annotated[int, Field(ge=0), classified("internal")]
+    # A-05-T17 (DEC-2071): what the screen ticks and shows beside the value.
+    reference: Annotated[str | None, Field(max_length=300), classified("confidential")] = None
+    cell: Annotated[
+        str | None, Field(pattern=r"^[A-Z]{1,3}[0-9]{1,5}$"), classified("internal")
+    ] = None
+    value_hash: Annotated[str | None, Field(max_length=80), classified("internal")] = None
 
 
 class PlanReviewOut(BaseModel):
@@ -265,6 +274,12 @@ class PlanReviewOut(BaseModel):
     total: Annotated[int, Field(ge=0), classified("internal")]
     provisions: Annotated[list[ProvisionOut], Field(max_length=200), classified("confidential")]
     allowed_actions: Actions
+    # A-05-T17 (DEC-2071): the paper the ticks are on (`workpaper_cell` fields) and its
+    # sign-offs ("✓ HL", "Reviewed · HL Sep 17").
+    workpaper_id: Annotated[UUID | None, classified("internal")] = None
+    sign_offs: Annotated[list[SignOffChipOut], Field(max_length=10), classified("internal")] = (
+        Field(default_factory=list[SignOffChipOut])
+    )
 
 
 class PlanReviewIn(BaseModel):
@@ -370,7 +385,7 @@ class ImportIn(BaseModel):
     ] = Field(default_factory=dict)
 
 
-class ImportOut(BaseModel):
+class EbpImportOut(BaseModel):
     """An import as the import sheet shows it: its totals, or why it was refused (the
     differences, never a cell value)."""
 
@@ -841,10 +856,15 @@ async def ebp_plan_review_route(
                 conflict=None,
                 amended_on=None,
                 citation_count=p.citation_count,
+                reference=p.reference,
+                cell=p.provision.value_cell,
+                value_hash=p.value_hash,
             )
             for p in found.provisions
         ],
         allowed_actions=actions,
+        workpaper_id=found.workpaper_id,
+        sign_offs=await _chips(found.sign_offs),
     )
 
 
@@ -940,12 +960,12 @@ async def ebp_participant_reveal_route(
 @router.post(
     "/ebp/imports",
     action="ebp_import.create",
-    response_model=ImportOut,
+    response_model=EbpImportOut,
     status_code=201,
 )
 async def ebp_import_route(
     work_item_id: UUID, body: ImportIn, ctx: Ctx, idempotency_key: IdempotencyKey
-) -> ImportOut:
+) -> EbpImportOut:
     """A code import (A-05-T19; DEC-2068): parsed from the version's isolated extraction, footed
     and tied by code, census SSNs and dates of birth sealed. 422 `import_map_invalid` for a map
     that misses a field or names a header the file lacks; 422 `import_refused` (recorded, with
@@ -963,15 +983,29 @@ async def ebp_import_route(
     return _import_out(view)
 
 
-@router.get("/ebp/imports/{import_id}", action="ebp.read", response_model=ImportOut)
-async def ebp_import_read_route(work_item_id: UUID, import_id: UUID, ctx: Ctx) -> ImportOut:
+@router.get("/ebp/imports/{import_id}", action="ebp.read", response_model=EbpImportOut)
+async def ebp_import_read_route(work_item_id: UUID, import_id: UUID, ctx: Ctx) -> EbpImportOut:
     """An import and its totals or refusal (A-05-T19)."""
     await _gate(ctx, work_item_id, "ebp.read", _E)
     return _import_out(await import_of(ctx, work_item_id, import_id))
 
 
-def _import_out(view: ImportView) -> ImportOut:
-    return ImportOut(
+async def _chips(signed: Sequence[ebp_provisions.SignedLevel]) -> list[SignOffChipOut]:
+    names = await names_of([s.user_id for s in signed])
+    return [
+        SignOffChipOut(
+            level=s.level,
+            initials="".join(part[0] for part in names.get(s.user_id, "").split()[:2]).upper(),
+            name=names.get(s.user_id, ""),
+            at=s.at,
+            stale=s.stale,
+        )
+        for s in signed
+    ]
+
+
+def _import_out(view: ImportView) -> EbpImportOut:
+    return EbpImportOut(
         id=view.id,
         evidence_version_id=view.evidence_version_id,
         kind=cast(ImportKind, view.kind),

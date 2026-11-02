@@ -529,6 +529,7 @@ class FieldState:
     citation_ids: tuple[UUID, ...]
     ticked_levels: frozenset[int]
     ticked_by: tuple[UUID, ...]
+    content_hash: str = ""  # what a tick on the value signs now (`seen_hash`)
 
 
 async def field_states(
@@ -553,5 +554,6 @@ async def field_states(
                 () if latest is None else tuple(latest.citation_ids or ()),
                 frozenset(t.level for t in ticks),
                 tuple(t.signed_by for t in ticks),
+                current,
             )
     return out
