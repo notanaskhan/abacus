@@ -20,7 +20,7 @@ from abacus.modules.assurance.completion_routes import router as completion_rout
 
 # A-04-T08/T09: the pure materiality engine, for the recommender's evaluation (BOUND-001).
 from abacus.modules.assurance.compute import materiality as materiality_engine
-from abacus.modules.assurance.draft_mappings import gap_inputs, risk_narrative_inputs
+from abacus.modules.assurance.draft_mappings import gap_inputs, risk_inputs, risk_narrative_inputs
 from abacus.modules.assurance.ebp_contract import router as ebp_router
 from abacus.modules.assurance.ebp_designed import register as register_ebp_designed
 from abacus.modules.assurance.ebp_designed import register_modes as register_ebp_modes
@@ -125,6 +125,7 @@ register_gates()  # A-04-T43 (DEC-2057): G4 from assurance/gates.py
 # A-04-T22 (DEC-2058): the planning modes' mappings for the section drafter.
 register_mode_mapping("gap", gap_inputs)
 register_mode_mapping("risk_narrative", risk_narrative_inputs)
+register_mode_mapping("risk", risk_inputs)  # A-04-T24 (DEC-2060)
 # A-04-T23 (DEC-2059): code inserts the presumed fraud risks before a narrative draft.
 register_mode_preparer("risk_narrative", presumed_preparer)
 register_firm_setting(RELEASE_MODE_SETTING)

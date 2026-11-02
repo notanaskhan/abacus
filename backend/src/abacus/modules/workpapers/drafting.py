@@ -48,6 +48,7 @@ from abacus.modules.workpapers.repository import (
     insert_version,
     next_version_no,
     sections_of,
+    workpapers_of,
 )
 from abacus.modules.workpapers.service import (
     SHEET,
@@ -251,6 +252,17 @@ async def raise_draft_flag(
         after=Ref(flag=str(flag_id), run=str(run_id)),
     )
     return flag_id
+
+
+async def paper_of_kind(ctx: AuthContext, engagement_id: UUID, kind: str) -> UUID:
+    """A-04-T24: the engagement's paper of `kind` (the Risk Assessment paper a single-field risk
+    draft runs on), through `visible()`; 404 when it has none."""
+    async with tenant_session(ctx.tenant) as session:
+        papers = await workpapers_of(session, ctx, engagement_id)
+    found = next((p for p in papers if p.kind == kind), None)
+    if found is None:
+        raise NotFound("workpaper")
+    return found.id
 
 
 SOURCE = SectionSource(draft_paper, bound, pack_problem, raise_draft_flag)

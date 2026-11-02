@@ -36,7 +36,7 @@ from __future__ import annotations
 import re
 from collections.abc import Mapping, Sequence
 from contextlib import suppress
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 from decimal import Decimal, InvalidOperation
 from typing import Final, cast
 from uuid import NAMESPACE_URL, UUID, uuid5
@@ -74,6 +74,8 @@ from abacus.modules.agents.section_sources import (
     CELL_TARGET,
     FLAG_MODES,
     ModeDocument,
+    ModeInputs,
+    ModeTarget,
     PackRefused,
     SourcePaper,
     mode_kinds,
@@ -167,6 +169,8 @@ class DraftContext:
     # A-04-T22 (DEC-2058): the mode mapping's documents (D1 is documents[0]) and waiting inputs.
     documents: tuple[ModeDocument, ...] = ()
     waiting_on: tuple[str, ...] = ()
+    # A-04-T24 (DEC-2060): where a mode's own cells land ("risk!B9" -> risk R8's rationale).
+    targets: Mapping[str, ModeTarget] = field(default_factory=dict[str, ModeTarget])
 
 
 @dataclass(frozen=True)
@@ -334,14 +338,22 @@ async def load_context(
     version = await version_steps(agent.tenant, engagement.methodology_version_id)
     steps = source.bound(version.steps, paper)
     mapping = mode_mapping(mode)
-    inputs = None if mapping is None else await mapping(agent, paper)
+    inputs = ModeInputs() if mapping is None else await mapping(agent, paper)
+    # The mode's own cells join the section's; its code facts follow the paper's (F<n>).
+    paper = replace(paper, cells=paper.cells + inputs.cells)
+    facts = _facts(paper)
+    extra = tuple(
+        Fact(f"F{len(facts) + n}", name, dict(value))
+        for n, (name, value) in enumerate(inputs.facts, start=1)
+    )
     return DraftContext(
         paper,
         engagement.methodology_version_id,
         tuple(steps[:MAX_STEPS]),
-        _facts(paper),
-        () if inputs is None else inputs.documents[:MAX_DOCUMENTS],
-        () if inputs is None else inputs.waiting_on,
+        (facts + extra)[:MAX_FACTS],
+        inputs.documents[:MAX_DOCUMENTS],
+        inputs.waiting_on,
+        dict(inputs.targets),
     )
 
 
@@ -575,14 +587,18 @@ async def _draft(
     suggestions: list[UUID] = []
     for cell, citation_ids in kept:
         sheet, key = _cell_key(cell.cell)
+        # A-04-T24: a mode's own cell lands on its record's field (the owner's applier).
+        target = context.targets.get(f"{sheet}!{key}")
         try:
             suggestions.append(
                 await create_suggestion(
                     agent,
                     engagement_id=agent.engagement,
-                    target_type=CELL_TARGET,
-                    target_id=context.paper.workpaper_id,
-                    field_key=key if sheet == "main" else f"{sheet}!{key}",
+                    target_type=CELL_TARGET if target is None else target.target_type,
+                    target_id=context.paper.workpaper_id if target is None else target.target_id,
+                    field_key=(key if sheet == "main" else f"{sheet}!{key}")
+                    if target is None
+                    else target.field_key,
                     proposed_value=_value(cell, facts),
                     citation_ids=citation_ids,
                     rationale_ref=f"{ANCHOR}:{run.id}",

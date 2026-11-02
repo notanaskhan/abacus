@@ -375,6 +375,11 @@ async def _actions(ctx: AuthContext, engagement_id: UUID) -> list[str]:
     return [a for a in ("risk.edit", "risk.link", "risk.route_for_approval") if a in can]
 
 
+async def linked_ids(tenant: TenantContext, work_item_id: UUID) -> list[UUID]:
+    """The risks with a live response (the risk mode's coverage facts read them, A-04-T24)."""
+    return [link.risk_id for link in await _links(tenant, work_item_id) if link.state == "linked"]
+
+
 async def register(ctx: AuthContext, engagement_id: UUID) -> Register:
     """`GET …/risks/register` (the route authorised `risk.read` and the flag)."""
     work_item = await _work_item(ctx.tenant, engagement_id)

@@ -11,13 +11,25 @@ its task scope.
 - **risk_narrative** (Risk Assessment, AUD-05): every fulfilled request on the engagement (the
   plan document, the SPD, the trust report, the SOC 1, ...), so Menu 1 and Menu 2 cite across them;
   the presumed fraud risks are code's (`risks.prepopulate_presumed`, the mode's preparer).
+- **risk** (the register, AUD-08): the register as its own grid on the `risk` sheet, one row per
+  risk (row n + 1 for Rn): B rationale, C assertions, D inherent risk, E control risk, each landing
+  on that risk's field through the `risk` applier; and code's coverage facts (risks, significant,
+  unaddressed codes), so "Identify risks" cites numbers by reference only.
 """
 
 from __future__ import annotations
 
 from typing import Final
 
-from abacus.modules.agents.api import ModeDocument, ModeInputs, ModePage, SourcePaper
+from abacus.modules.agents.api import (
+    ModeDocument,
+    ModeInputs,
+    ModePage,
+    ModeTarget,
+    SourceCell,
+    SourcePaper,
+)
+from abacus.modules.assurance import risks
 from abacus.modules.evidence.api import review_material
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.requests.api import request_items_for
@@ -67,3 +79,49 @@ async def risk_narrative_inputs(actor: AuthContext, paper: SourcePaper) -> ModeI
     areas = frozenset(i.audit_area for i in items)
     found = await _documents_and_waits(actor, paper, areas)
     return ModeInputs(found.documents, ())
+
+
+# The register's grid on the `risk` sheet: column -> the risk's field.
+RISK_SHEET: Final = "risk"
+RISK_COLUMNS: Final = (
+    ("B", "rationale"),
+    ("C", "assertions"),
+    ("D", "inherent_risk"),
+    ("E", "control_risk"),
+)
+
+
+def _text(value: object) -> dict[str, object] | None:
+    if value is None or value == "" or value == []:
+        return None
+    shown = ",".join(str(v) for v in value) if isinstance(value, list) else str(value)
+    return {"t": "text", "v": shown}
+
+
+async def risk_inputs(actor: AuthContext, paper: SourcePaper) -> ModeInputs:
+    """AUD-08's register: each risk's fields as cells that land on the risk, and the coverage
+    facts by code (AC4.6, AC4.7)."""
+    rows = sorted(await risks.rows_of(actor.tenant, paper.work_item_id), key=lambda r: r.code)
+    cells: list[SourceCell] = []
+    targets: dict[str, ModeTarget] = {}
+    for row in rows:
+        line = int(row.code[1:]) + 1
+        for column, field_key in RISK_COLUMNS:
+            key = f"{column}{line}"
+            cells.append(
+                SourceCell(
+                    RISK_SHEET, key, f"{row.code} {row.area_label}", field_key,
+                    _text(getattr(row, field_key)),
+                )
+            )  # fmt: skip
+            targets[f"{RISK_SHEET}!{key}"] = ModeTarget(risks.TARGET, row.id, field_key)
+    linked = frozenset(await risks.linked_ids(actor.tenant, paper.work_item_id))
+    tally = risks.tally(rows, linked)
+    unaddressed = [r.code for r in rows if r.id not in linked]
+    facts: list[tuple[str, dict[str, object]]] = [
+        ("risks_total", {"t": "decimal", "v": str(tally.risks)}),
+        ("risks_significant", {"t": "decimal", "v": str(tally.significant)}),
+        ("risks_high_rmm", {"t": "decimal", "v": str(tally.high_rmm)}),
+        ("risks_unaddressed", {"t": "text", "v": ", ".join(unaddressed)}),
+    ]
+    return ModeInputs(cells=tuple(cells), targets=targets, facts=tuple(facts))

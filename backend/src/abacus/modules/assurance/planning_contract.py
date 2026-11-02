@@ -1470,10 +1470,18 @@ async def risk_draft_route(
     ctx: Ctx,
     idempotency_key: IdempotencyKey,
 ) -> RunStartedOut:
-    """Single-field Draft with agent: pending suggestions only (AC4.7; T11)."""
+    """Single-field Draft with agent: pending suggestions only (AC4.7; T24). The risk mode drafts
+    the register on the engagement's Risk Assessment paper; the drawer shows this risk's."""
     await _gate(ctx, engagement_id, "workpaper.draft", _RR)
     await _gate(ctx, engagement_id, "workpaper.draft", WORKPAPERS_DRAFTING)
-    _not_yet()
+    from abacus.modules.agents.api import start_section_draft
+    from abacus.modules.assurance import risks
+    from abacus.modules.workpapers.api import paper_of_kind
+
+    await risks.drawer(ctx, engagement_id, risk_id)  # 404 for another engagement's risk
+    paper = await paper_of_kind(ctx, engagement_id, "risk_assessment")
+    run_id = await start_section_draft(ctx, engagement_id, paper, "risk", None, idempotency_key)
+    return RunStartedOut(run_id=run_id)
 
 
 def _session_out(found: object) -> FraudSessionOut:
