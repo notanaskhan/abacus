@@ -51595,6 +51595,7 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Rate Pct"
           },
           "recommend": {
