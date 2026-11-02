@@ -1534,6 +1534,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Unadjusted"
           }
         },
@@ -18349,6 +18350,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Amount"
           },
           "projection_ref": {
@@ -49677,6 +49679,7 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Rate Pct"
           },
           "recommend": {
@@ -60907,6 +60910,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Note"
           },
           "reason_code": {

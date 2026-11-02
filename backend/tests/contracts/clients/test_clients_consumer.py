@@ -115,8 +115,21 @@ def test_ac21_the_clients_list_takes_no_wall_parameter() -> None:
 def test_ac22_no_schema_carries_a_plain_tin(schema: str) -> None:
     for name, prop in _props(schema).items():
         if TIN_NAME.search(name):
+            if name.endswith("_last4") and _last4_only(prop):
+                continue  # A-05-T10: four restricted digits typed for a check, never a whole TIN
             # A TIN-named field is the masked shape, by reference, and nothing else.
             assert _refs(prop) == {MASKED}, f"{schema}.{name} is not MaskedTinOut"
+
+
+def _last4_only(prop: Json) -> bool:
+    """Exactly four digits (or null), restricted and marked a TIN (DEC-1973)."""
+    shapes = cast(list[Json], prop.get("anyOf", [prop]))
+    texts = [s for s in shapes if s.get("type") != "null"]
+    return (
+        prop.get("cls") == "restricted"
+        and prop.get("x-pii-kind") == "tin"
+        and texts == [{"type": "string", "pattern": "^[0-9]{4}$"}]
+    )
 
 
 def test_ac22_the_masked_shape_is_kind_presence_and_four_restricted_digits() -> None:
