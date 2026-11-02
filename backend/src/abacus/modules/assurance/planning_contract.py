@@ -327,7 +327,7 @@ class MaterialityProposalIn(BaseModel):
     tb_snapshot_id: Annotated[UUID, classified("internal")]
     benchmark_key: Annotated[str, Field(pattern=r"^[a-z_]{1,64}$"), classified("internal")]
     recommend: Annotated[bool, classified("internal")] = False  # a recommendation run, if allowed
-    rate_pct: Pct | None = None
+    rate_pct: Annotated[Pct | None, classified("internal")] = None
 
 
 class MaterialityProposalOut(BaseModel):

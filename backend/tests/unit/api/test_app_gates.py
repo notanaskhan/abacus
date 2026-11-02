@@ -364,6 +364,14 @@ NOT_CREATING = {
     "/v1/engagements/{engagement_id}/fraud-brainstorm/minutes/approve",
     "/v1/engagements/{engagement_id}/internal-control/exceptions/{sheet_row}/send-to-findings",
     "/v1/engagements/{engagement_id}/internal-control/exceptions/{sheet_row}/convert-to-misstatement",
+    # A-06-T03, T04 (S24): a finding's conversion and resolution, a misstatement passed to the
+    # SUM, a client's recorded decision and a rejection act on existing rows, so 200.
+    "/v1/findings/{finding_id}/convert-to-deficiency",
+    "/v1/findings/{finding_id}/convert-to-misstatement",
+    "/v1/findings/{finding_id}/resolve",
+    "/v1/misstatements/{misstatement_id}/pass-to-sum",
+    "/v1/proposed-entries/{entry_id}/client-decision:record",
+    "/v1/proposed-entries/{entry_id}/reject",
 }
 
 
@@ -711,6 +719,17 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/envelopes/import/files",  # N-02: one stored file a record-mode import names
         "/v1/envelopes/{envelope_id}/resend",
         "/v1/engagements/{engagement_id}/letter/amend",
+        # A-04-T13 (S24): a risk added to the register.
+        "/v1/engagements/{engagement_id}/risks/register",
+        # A-06-T03, T04, T07 (S24): a proposed entry, an approval batch (alone or with the send),
+        # a finding and its decision card, the SUM's snapshot and its conclusion request.
+        "/v1/work-items/{work_item_id}/proposed-entries",
+        "/v1/work-items/{work_item_id}/proposed-entries:approve-and-send",
+        "/v1/approval-batches",
+        "/v1/work-items/{work_item_id}/findings",
+        "/v1/findings/{finding_id}/request-decision",
+        "/v1/work-items/{work_item_id}/sum/snapshots",
+        "/v1/work-items/{work_item_id}/sum/request-conclusion",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING

@@ -64,6 +64,8 @@ ROUTES: dict[tuple[str, str], str] = {
     ("get", f"{A}/parties-in-interest"): "ebp.read",
     ("post", f"{A}/parties-in-interest"): "party_in_interest.manage",
 }
+# A-05-T10 (S24): EBP-01's plan edit and provider add are served, so they document no 501.
+SERVED = {("patch", f"{A}/ebp/plan"), ("post", f"{A}/ebp/providers")}
 READS = {"ebp.read", "ebp_form5500.read", "test.read", "estimate.read", "related_party.read"}
 NEW_ACTIONS = sorted(
     {
@@ -90,7 +92,9 @@ def test_t04_each_route_declares_its_one_action_and_documents_404(method: str, p
     assert operation["x-abacus-action"] == ROUTES[(method, path)]
     responses = set(cast(Json, operation["responses"]))
     assert "404" in responses
-    if method != "get":
+    if (method, path) in SERVED:
+        assert "501" not in responses
+    elif method != "get":
         assert "501" in responses
 
 

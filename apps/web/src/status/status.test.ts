@@ -75,8 +75,9 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // audit_procedure, materiality_version, the four risk objects, fraud_minutes, fraud_inquiry,
     // service_organization, soc_reliance, cuec, control_design and
     // control_exception_disposition; A-05-T05 and the S23 triage the ten EBP and AUD-27 objects
-    // (+30; DEC-1865).
-    expect(Object.keys(REGISTRY)).toHaveLength(140);
+    // (+30; DEC-1865). A-06-T02 added finding_route, statement_document, fs_approval,
+    // disclosure_answer and consultation (+5).
+    expect(Object.keys(REGISTRY)).toHaveLength(145);
     // +21: decision_card 3, suggestion 6, proposal 5, sign_off_slot 2, field_value 4, checkpoint saved.
     // +27 (P-07-T03): client 4, invitation 5, acceptance_record 5, letter_record 2,
     // conflict_assessment 5, nas_evaluation 3, independence_conclusion 3.
@@ -97,7 +98,9 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // +8 (T-02-T04): questionnaire 3, recipient_details_change 3, k1_handoff 2.
     // +11 (S16 end review): engine_import 5, transcript_parse 3 (T-01), k3 3 (T-02).
     // +103 (K-01-T18, A-03, A-04-T01, A-05-T05 and the S23 triage): the thirty objects above.
-    expect(ROWS).toHaveLength(610);
+    // +17 (A-06-T02): finding_route 3, statement_document 4, fs_approval 3, disclosure_answer 3,
+    // consultation 2, proposed_entry client_declined and rejected.
+    expect(ROWS).toHaveLength(627);
   });
 
   it("resolves each code to a word, a kit variant or a line, and never to match", () => {
@@ -254,7 +257,8 @@ describe("ac2 every word of the handoff's lib/status.js is mapped or retired", (
     }
     expect(mapped + retired).toBe(144);
     expect(retired).toBe(Object.keys(RETIRED).length);
-    expect({ mapped, retired }).toEqual({ mapped: 123, retired: 21 });
+    // A-06-T02 gave proposed_entry its `rejected` code, so AJE "Rejected" maps (TASK-2927).
+    expect({ mapped, retired }).toEqual({ mapped: 124, retired: 20 });
   });
 
   it("says where a word that changed meaning went", () => {
