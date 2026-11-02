@@ -44,7 +44,7 @@ from abacus.modules.assurance.sections import registered_sections
 from abacus.modules.engagements.api import assurance_item_id, get_ref, lock_ref
 from abacus.modules.identity.api import AuthContext, allowed_actions, authorise, names_of
 from abacus.modules.ledger.api import engagement_trial_balances, trial_balance_view
-from abacus.modules.methodology.api import rmm_matrix_for
+from abacus.modules.methodology.api import rmm_matrix_for, version_steps
 from abacus.modules.review.api import (
     AppliedDecision,
     CardContext,
@@ -867,6 +867,64 @@ async def coverage(
         covered=len(covered),
         unaddressed_codes=[r.code for r in rows if r.id not in linked],
     )
+
+
+# --- presumed fraud risks prepopulated by code (A-04-T23; AC2.1; DEC-2059) -----------------------
+
+PRESUMED_TARGET: Final = "risk_assessment.presumed_fraud_risks"
+# AU-C 240: management override is presumed in every audit and never rebuttable; revenue
+# recognition is presumed and stays unless a person adopts a rebuttal proposal (AC2.2).
+_PRESUMED: Final = (
+    NewRisk(
+        level="financial_statement",
+        area_label="Management override of controls",
+        assertions=(),
+        inherent_risk="high",
+        control_risk="max",
+        presumption_kind="management_override",
+        inherent_factors=(),
+        rationale=None,
+    ),
+    NewRisk(
+        level="assertion",
+        area_label="Revenue recognition",
+        assertions=("occurrence", "cutoff"),
+        inherent_risk="high",
+        control_risk="max",
+        presumption_kind="revenue_recognition",
+        inherent_factors=(),
+        rationale=None,
+    ),
+)
+
+
+async def presumed_preparer(ctx: AuthContext, engagement_id: UUID, paper: object) -> None:
+    """risk_narrative's preparer (the section drafter's slot): the presumed risks, when the
+    person starting the draft may edit the register; otherwise nothing (the draft still runs)."""
+    del paper
+    ref = await get_ref(ctx, engagement_id)
+    if "risk.edit" in await allowed_actions(ctx, ref.resource(), ("risk.edit",)):
+        await prepopulate_presumed(ctx, engagement_id)
+
+
+async def prepopulate_presumed(ctx: AuthContext, engagement_id: UUID) -> list[str]:
+    """When the engagement's pinned methodology prepopulates the presumed fraud risks (a step
+    with the `risk_assessment.presumed_fraud_risks` target, BH-EBP-110 step 9), the register gets
+    each presumption it lacks, as the person who started the draft. Code inserts them; the agent
+    never does. Returns the codes added."""
+    ref = await get_ref(ctx, engagement_id)
+    if ref.methodology_version_id is None:
+        return []
+    steps = await version_steps(ctx.tenant, ref.methodology_version_id)
+    if not any(PRESUMED_TARGET in s.prepopulates for s in steps.steps):
+        return []
+    work_item = await _work_item(ctx.tenant, engagement_id)
+    have = {r.presumption_kind for r in await _rows(ctx.tenant, work_item)}
+    added: list[str] = []
+    for presumed in _PRESUMED:
+        if presumed.presumption_kind not in have:
+            added.append((await create(ctx, engagement_id, presumed)).code)
+    return added
 
 
 # --- the partner's approval of the register (A-04-T18; AC4.3, AC4.4; DEC-2056) -------------------

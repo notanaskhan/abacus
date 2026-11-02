@@ -362,12 +362,28 @@ class DraftedCell(BaseModel):
         return self
 
 
+class DraftedFlag(BaseModel):
+    """A-04-T23 (AC2.2): a "PBC GAP" the draft found: what the section needs that the client has
+    not provided, on one row. Only `pbc_gap`; never a scope limitation (copy lint)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    cell: Annotated[DraftCellKey, classified("internal")]
+    kind: Annotated[Literal["pbc_gap"], classified("internal")] = "pbc_gap"
+    text: Annotated[str, Field(min_length=1, max_length=2000), classified("confidential")]
+    citations: Annotated[
+        list[DraftCitation], Field(min_length=1, max_length=4), classified("confidential")
+    ]
+
+
 class SectionDraft(BaseModel):
     """A section's proposed values: suggestions for a person to adopt (ADR-005, AC1.1)."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     cells: Annotated[list[DraftedCell], Field(max_length=200), classified("confidential")] = []
+    # A-04-T23: risk_narrative's PBC GAP flags (other modes' flags are dropped as Unsupported).
+    flags: Annotated[list[DraftedFlag], Field(max_length=20), classified("confidential")] = []
 
 
 # --- A-04-T15: the materiality recommender (decisions.recommender; DEC-1953) ---------------------
