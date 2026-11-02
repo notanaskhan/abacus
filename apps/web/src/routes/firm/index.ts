@@ -15,7 +15,7 @@ import { taxReturnRoutes } from "./tax-returns";
 import "./viewer";
 import "./run-trace";
 // SHL-10 and SIG-02 (P-04-T41, N-02-T21): the `?ov=approve` and `?ov=envelope` sheets,
-// registered lazily (the 250 KB initial budget).
+// registered lazily (the 300 KB initial budget, DEC-1975).
 import "./sheets";
 
 // The firm's areas, once, in the bar's order (chapter 04 §2.2; F-03-T17). An area without
