@@ -426,6 +426,17 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Term | Meaning | Code name | Don't use |
 |---|---|---|---|
 | Notice | Distinct from `notification`. | `notices` | — |
+| Notice intake | A notice file on its way in (NOT-01 b to d): read by code maps, the agent (types without a map) or a person, matched to a client, a return and the authorization on file, and confirmed by a person who never retypes it: Extracting · Ready · Manual entry · Created · Discarded · Failed. | `notice_intakes`, `notice_field_values` | — |
+| Return as filed | The snapshot of the filed return a notice is compared with: from the approved engine import or a person's cited entry, never edited. | `notice_return_snapshots` | — |
+| Proposed item | One line the agency proposes to change, or one payer on its list (a CP2000's "shown on return / corrected"), with its citation. | `notice_proposed_items` | — |
+| Information return | A 1099, W-2 or similar the agency matched against the return; compared by code, each amount located on its document as a citation. | (in `notice_analyses.information_returns`) | — |
+| Notice analysis | A versioned comparison of the notice, the return as filed and the information returns, computed by code, with the agent's cited explanation where the firm cleared it. | `notice_analyses` | — |
+| Notice position | The decision kind for a notice: agree · partially agree · disagree, decided only by the signing partner (P-04's reserved role `signer`). | `notice_position` (decision kind) | — |
+| Notice response | The letter to the agency from the firm's template for the analysis kind and position, versioned, signed off and signed by the taxpayer; the signed letter never changes. | `notice_responses`, `notice_response_versions` | — |
+| Agency reply | What the agency answered after the response: resolved or escalated, recorded by a person. | `notice_agency_replies` | — |
+| Follow-up | The date the response's owner checks back with the agency (60 days by default from the sent date). | `follow_up_on` | reminder, task |
+
+UI labels (N-04-T01): **Response sent** (status `sent`), **Awaiting agency** (status `awaiting_irs` on a state-agency notice; IRS rows read "Awaiting IRS"), **Resolved** (status `closed`).
 
 ## New terms: practice
 

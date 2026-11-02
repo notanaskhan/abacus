@@ -2312,7 +2312,10 @@ export const STATUS_REGISTRY = {
       "label": "Awaiting IRS",
       "variant": "muted",
       "terminal": false,
-      "derived": false
+      "derived": false,
+      "contextLabels": {
+        "state_agency": "Awaiting agency"
+      }
     },
     "closed": {
       "label": "Resolved",
@@ -2325,6 +2328,108 @@ export const STATUS_REGISTRY = {
       "variant": "red-tint",
       "terminal": false,
       "derived": false
+    }
+  },
+  "notice_intake": {
+    "extracting": {
+      "label": "Extracting",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "ready": {
+      "label": "Ready",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "manual_entry": {
+      "label": "Manual entry",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "created": {
+      "label": "Created",
+      "variant": "green",
+      "terminal": true,
+      "derived": false
+    },
+    "discarded": {
+      "label": "Discarded",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    },
+    "failed": {
+      "label": "Failed",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "notice_analysis": {
+    "running": {
+      "label": "Analyzing",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "ready": {
+      "label": "Ready",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "failed": {
+      "label": "Failed",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "notice_response_readiness": {
+    "waiting_decision": {
+      "label": "Waiting for the partner's decision",
+      "variant": "muted",
+      "terminal": false,
+      "derived": true
+    },
+    "in_review": {
+      "label": "In review",
+      "variant": "state",
+      "terminal": false,
+      "derived": true
+    },
+    "approved": {
+      "label": "Approved",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": true
+    },
+    "out_for_signature": {
+      "label": "Out for signature",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "ready_to_send": {
+      "label": "Ready to send",
+      "variant": "green",
+      "terminal": false,
+      "derived": true
+    },
+    "sent": {
+      "label": "Response sent",
+      "variant": "amber",
+      "terminal": true,
+      "derived": true
     }
   },
   "consent": {

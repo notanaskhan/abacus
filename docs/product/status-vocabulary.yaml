@@ -648,9 +648,38 @@ objects:
       response_drafted: {label: "Response drafted", variant: state, terminal: false, derived: false}
       approved:       {label: "Approved", variant: green-tint, terminal: false, derived: false}
       sent:           {label: "Response sent", variant: amber, terminal: false, derived: false}
-      awaiting_irs:   {label: "Awaiting IRS", variant: muted, terminal: false, derived: false}
+      awaiting_irs:   {label: "Awaiting IRS", variant: muted, terminal: false, derived: false, context_labels: {state_agency: "Awaiting agency"}}   # N-04-T01: state-agency rows
       closed:         {label: "Resolved", variant: green, terminal: true, derived: false}   # canonical state Closed, display "Resolved"
       escalated:      {label: "Escalated", variant: red-tint, terminal: false, derived: false}
+
+  # --- N-04 Notices (N-04-T01, DEC-2050; N-04 §2.1, §4.2) ---
+  notice_intake:   # notice_intakes.status (NOT-01 b, c, d)
+    source: "N-04 §2.1 (NOT-01)"
+    codes:
+      extracting:   {label: "Extracting", variant: state, terminal: false, derived: false}   # "Reading {n} pages…"
+      ready:        {label: "Ready", variant: green-tint, terminal: false, derived: false}
+      manual_entry: {label: "Manual entry", variant: amber, terminal: false, derived: false}
+      created:      {label: "Created", variant: green, terminal: true, derived: false}
+      discarded:    {label: "Discarded", variant: muted, terminal: true, derived: false}
+      failed:       {label: "Failed", variant: red-tint, terminal: false, derived: false}   # "Couldn't read this file — enter the fields"
+
+  notice_analysis:   # notice_analyses.status (NOT-02 a, b)
+    source: "N-04 §4.2 (NOT-02)"
+    codes:
+      running:    {label: "Analyzing", variant: state, terminal: false, derived: false}
+      ready:      {label: "Ready", variant: green-tint, terminal: false, derived: false}
+      failed:     {label: "Failed", variant: red-tint, terminal: false, derived: false}
+      superseded: {label: "Superseded", variant: muted, terminal: true, derived: false}
+
+  notice_response_readiness:   # the response's readiness facts (NOT-03 c, d, g), derived from sign-offs, envelope and payment
+    source: "N-04 §3 F7 (NOT-03)"
+    codes:
+      waiting_decision:      {label: "Waiting for the partner's decision", variant: muted, terminal: false, derived: true}
+      in_review:             {label: "In review", variant: state, terminal: false, derived: true}
+      approved:              {label: "Approved", variant: green-tint, terminal: false, derived: true}
+      out_for_signature:     {label: "Out for signature", variant: amber, terminal: false, derived: true}
+      ready_to_send:         {label: "Ready to send", variant: green, terminal: false, derived: true}
+      sent:                  {label: "Response sent", variant: amber, terminal: true, derived: true}
 
   consent:   # section 7216
     source: "blueprint 3.3.1"

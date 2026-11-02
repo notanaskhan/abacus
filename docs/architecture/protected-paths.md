@@ -42,3 +42,10 @@ The compute packages (`sampling/compute`, `ledger/compute`) import only `abacus.
 and `abacus.kernel.calendar`; the import-linter contract that says so is switched on by A-03-T21,
 which adds `backend/src/abacus/kernel/numeric.py` and `backend/src/abacus/kernel/calendar.py` to
 the red files.
+
+## Notices parameter files (N-04-T01, DEC-2050; N-04 §4.2, DEC-76)
+Golden-tested parameters reviewed with the tax CPA, named here and in `notices/README.md` as red
+files: `backend/src/abacus/modules/notices/compute/notice_types.yaml` and
+`backend/src/abacus/modules/notices/compute/rate_schedules/*.yaml`. A change is a reviewed policy
+change with its goldens in the same diff; `notices/compute` imports only `abacus.kernel.numeric`
+and `abacus.kernel.calendar`.

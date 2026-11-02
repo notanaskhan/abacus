@@ -276,6 +276,16 @@ METHODOLOGY_PROGRAMS = Flag(
     kind="boolean",
     default="false",
 )
+NOTICES_RESPONDER = Flag(
+    name="notices.responder",
+    kind="boolean",
+    default="false",
+)
+NOTICES_WORKSPACE = Flag(
+    name="notices.workspace",
+    kind="boolean",
+    default="false",
+)
 NOTIFICATIONS_EMAIL = Flag(
     name="notifications.email",
     kind="boolean",
@@ -480,6 +490,8 @@ FLAGS: dict[str, Flag] = {
     "methodology.importer": METHODOLOGY_IMPORTER,
     "methodology.lifecycle": METHODOLOGY_LIFECYCLE,
     "methodology.programs": METHODOLOGY_PROGRAMS,
+    "notices.responder": NOTICES_RESPONDER,
+    "notices.workspace": NOTICES_WORKSPACE,
     "notifications.email": NOTIFICATIONS_EMAIL,
     "notifications.v2": NOTIFICATIONS_V2,
     "portal.drop_sort": PORTAL_DROP_SORT,

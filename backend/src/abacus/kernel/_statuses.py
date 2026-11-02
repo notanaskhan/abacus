@@ -544,6 +544,27 @@ class NoticeStatus(StrEnum):
     ESCALATED = "escalated"
 
 
+class NoticeIntakeStatus(StrEnum):
+    EXTRACTING = "extracting"
+    READY = "ready"
+    MANUAL_ENTRY = "manual_entry"
+    CREATED = "created"
+    DISCARDED = "discarded"
+    FAILED = "failed"
+
+
+class NoticeAnalysisStatus(StrEnum):
+    RUNNING = "running"
+    READY = "ready"
+    FAILED = "failed"
+    SUPERSEDED = "superseded"
+
+
+class NoticeResponseReadinessStatus(StrEnum):
+    pass
+    # derived, never stored: waiting_decision, in_review, approved, out_for_signature, ready_to_send, sent
+
+
 class ConsentStatus(StrEnum):
     REQUESTED = "requested"
     SIGNED = "signed"
@@ -1509,6 +1530,22 @@ STORED: dict[str, tuple[str, ...]] = {
         "awaiting_irs",
         "closed",
         "escalated",
+    ),
+    "notice_intake": (
+        "extracting",
+        "ready",
+        "manual_entry",
+        "created",
+        "discarded",
+        "failed",
+    ),
+    "notice_analysis": (
+        "running",
+        "ready",
+        "failed",
+        "superseded",
+    ),
+    "notice_response_readiness": (
     ),
     "consent": (
         "requested",
