@@ -95,7 +95,7 @@ def test_ac_collins_basis_on_8949_makes_the_gain_zero_and_rates_are_preferential
 
 
 def test_ac_santos_cp14_window_and_risk() -> None:
-    cp14 = notice_types.lookup("CP14")
+    cp14 = notice_types.type_of("CP14")
     assert (cp14.key, cp14.analysis_kind, cp14.window_days) == ("cp14", "balance_due", 21)
     assert (
         plausibility.respond_by(cp14, date(2026, 9, 10), date(2026, 10, 1)).verdict == "plausible"
@@ -111,13 +111,13 @@ def test_ac_the_index_risk_bands() -> None:
 
 
 def test_ac_cp2000_respond_by_is_thirty_days_and_a_mismatch_is_never_corrected() -> None:
-    cp2000 = notice_types.lookup("cp2000")
+    cp2000 = notice_types.type_of("cp2000")
     ok = plausibility.respond_by(cp2000, date(2026, 8, 24), date(2026, 9, 23))
     assert ok == plausibility.Plausibility("plausible", date(2026, 9, 23))
     off = plausibility.respond_by(cp2000, date(2026, 8, 24), date(2026, 9, 30))
     assert off.verdict == "check" and off.expected == date(2026, 9, 23)
     assert (
-        plausibility.respond_by(notice_types.lookup("CP501"), DEMO, DEMO).verdict == "not_checked"
+        plausibility.respond_by(notice_types.type_of("CP501"), DEMO, DEMO).verdict == "not_checked"
     )
 
 
@@ -128,9 +128,9 @@ def test_ac_follow_up_is_sixty_calendar_days_never_rolled() -> None:
 
 
 def test_unmapped_codes_fall_back_by_agency() -> None:
-    assert notice_types.lookup("DTF-160", agency="state").key == "state_generic"
-    assert notice_types.lookup("LTR 12C").key == "unknown"
-    assert notice_types.lookup("CP3219A").partner_owned
+    assert notice_types.type_of("DTF-160", agency="state").key == "state_generic"
+    assert notice_types.type_of("LTR 12C").key == "unknown"
+    assert notice_types.type_of("CP3219A").partner_owned
 
 
 def test_balance_due_compares_the_notice_with_the_return() -> None:
