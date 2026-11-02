@@ -144,10 +144,12 @@ def _sql(expression: ColumnElement[bool]) -> str:
 def test_ac7_the_client_data_actions_are_marked() -> None:
     assert MARKED == [
         "account_mapping.edit",  # A-03-T01 (DEC-1550)
+        "adjusted_tb.read",  # A-06-T03 (DEC-1960)
         "adjustment.approve",  # SPEC-301 (TASK-302)
         "adjustment.propose",
         "adjustment.record_response",
         "agent_run.read",  # SPEC-318 (TASK-461)
+        "approval_batch.create",  # A-06-T03
         "archive.lock",  # SPEC-314 (TASK-332)
         "assurance.record_archive",  # A-01-T02 (TASK-1101)
         "assurance.record_phase",
@@ -169,6 +171,8 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "connection.read_log",
         "connection.reconnect_request",  # A-02 §4.4 (TASK-1185)
         "connection.retry",  # A-02 security review (DEC-316): firm side, attest client data
+        "consultation.create",  # A-06-T04
+        "consultation.read",
         "control.edit",
         "control.read",
         "dashboard.read",  # SPEC-317 (TASK-460)
@@ -177,6 +181,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "decision.read",  # P-04-T08 (TASK-414)
         "decision.reassess",  # P-04-T08 (TASK-414)
         "decision.request_analysis",  # P-04-T08 (TASK-414)
+        "decision_card.raise",  # A-04-T12 (DEC-1950)
         "deficiency.propose_severity",
         "ebp.read",  # A-05-T04 (DEC-1859)
         "ebp_certification.evaluate",
@@ -214,8 +219,15 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "export.read",
         "finding.communicate",  # SPEC-301 (TASK-302)
         "finding.conclude_severity",
+        "finding.convert",  # A-06-T04
+        "finding.create",
+        "finding.mark_not_applicable",
         "finding.propose_severity",
         "finding.raise",  # SPEC-043 (TASK-107)
+        "finding.read",
+        "finding.request_decision",
+        "finding.resolve",
+        "finding.update",
         # P-06-T14: the send is client data, per person; a draft is not (SPEC-027 AC-8, DEC-220).
         "follow_up.send",
         "fraud_inquiry.request",
@@ -248,7 +260,11 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "materiality.reassess",
         "materiality.set",  # SPEC-037 (TASK-083)
         "message.send",  # ADR-164 item 2 (P-07-T24): client-facing
+        "misstatement.create",  # A-06-T04
+        "misstatement.pass_to_sum",
+        "misstatement.read",
         "misstatement.set",  # SPEC-043 (TASK-107)
+        "misstatement.update",
         "party_in_interest.manage",
         "pii.reveal",  # P-03-T02 (C4 v1)
         "population.create",  # A-03-T01 (DEC-1550)
@@ -264,6 +280,12 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "proposal.reject",  # P-04-T08 (TASK-414)
         "proposal.route",  # P-04-T08 (TASK-414)
         "proposal.undo",  # P-04-T08 (TASK-414)
+        "proposed_entry.create",  # A-06-T03
+        "proposed_entry.read",
+        "proposed_entry.record_client_decision",
+        "proposed_entry.reject",
+        "proposed_entry.send_to_client",
+        "proposed_entry.update",
         "related_party.manage",
         "related_party.read",
         "related_party.screen_out",
@@ -308,6 +330,11 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "soc_report.evaluate",
         "statement.approve",  # SPEC-312 (TASK-324)
         "suggestion.resolve",  # P-04-T08 (TASK-414)
+        "sum.export",  # A-06-T07 (SUM)
+        "sum.read",
+        "sum.request_conclusion",
+        "sum.snapshot",
+        "sum.update_factors",
         "test.create",
         "test.mark",
         "test.read",

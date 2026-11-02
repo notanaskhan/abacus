@@ -42,6 +42,7 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "agent.digest",
         "comment.mentioned",  # SPEC-032 (TASK-062)
         "materiality.proposed",  # SPEC-305 (TASK-306)
+        "materiality.revised",  # A-04-T12 (C16 `materiality_revised`, AC3.7: impacted preparers)
         "risk.approval_requested",
         "finding.severity_proposed",
         "legal_hold.placed",  # Q-02-T29 (C16 `legal_hold_placed`)
