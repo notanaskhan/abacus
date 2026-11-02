@@ -65,9 +65,10 @@ ROUTES: dict[tuple[str, str], str] = {
     ("post", f"{A}/parties-in-interest"): "party_in_interest.manage",
 }
 # A-05-T10 (S24): EBP-01's plan edit and provider add are served, so they document no 501.
-SERVED = {("patch", f"{A}/ebp/plan"), ("post", f"{A}/ebp/providers")}
-# S25: plan reviews (A-05-T16), the participant reveal (T18) and imports (T19) are served too.
-SERVED |= {
+SERVED = {
+    ("patch", f"{A}/ebp/plan"),
+    ("post", f"{A}/ebp/providers"),
+    # S25: plan reviews (A-05-T16), the participant reveal (T18) and imports (T19) are served too.
     ("post", f"{A}/ebp/plan-reviews"),
     ("post", f"{A}/ebp/participants/{{participant_id}}/reveals"),
     ("post", f"{A}/ebp/imports"),
