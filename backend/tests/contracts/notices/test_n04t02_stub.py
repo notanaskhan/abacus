@@ -1,0 +1,180 @@
+"""The notices v1 contract stub (N-04-T02; docs/contracts/notices.md; DEC-2051).
+
+Every N-04 §4.3 route exists with its one matrix action and documents 404 and 501; every create
+takes an Idempotency-Key and every edit an If-Match; the gate answers clients 404, authorises
+before reading the flag, answers 404 with `notices.workspace` off and 501 with it on; every model
+field is classified, amounts and letter text are tax return information, and TINs and
+confirmation numbers never come back whole.
+"""
+
+from __future__ import annotations
+
+import json
+import uuid
+from types import SimpleNamespace
+from typing import cast
+
+import pytest
+from pydantic import BaseModel
+
+from abacus.api.export_openapi import document
+from abacus.kernel.classification import tri_paths, unclassified_fields
+from abacus.kernel.db import TenantContext
+from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.modules.identity.api import AuthContext
+from abacus.modules.notices import contract
+
+Json = dict[str, object]
+DOC = cast(Json, json.loads(document()))
+PATHS = cast(dict[str, dict[str, Json]], DOC["paths"])
+N = "/v1/notices/{notice_id}"
+I = "/v1/notice-intakes/{intake_id}"  # noqa: E741
+ROUTES: dict[tuple[str, str], str] = {
+    ("get", "/v1/notices"): "notice.read",
+    ("get", "/v1/notices/summary"): "notice.read",
+    ("post", "/v1/notice-intakes"): "notice_intake.create",
+    ("get", I): "notice_intake.read",
+    ("put", I): "notice_intake.update",
+    ("post", f"{I}/create"): "notice_intake.confirm",
+    ("post", f"{I}/attach"): "notice_intake.confirm",
+    ("post", f"{I}/discard"): "notice_intake.confirm",
+    ("get", N): "notice.read",
+    ("patch", N): "notice.update",
+    ("post", f"{N}:start"): "notice.start",
+    ("put", f"{N}/return-as-filed"): "notice.record_as_filed",
+    ("put", f"{N}/proposed-items"): "notice.record_as_filed",
+    ("get", f"{N}/analysis"): "notice.read",
+    ("post", f"{N}/analysis/run"): "notice.analyze",
+    ("post", f"{N}/decision-requests"): "notice.request_decision",
+    ("post", f"{N}/notes"): "notice.note",
+    ("get", f"{N}/activity"): "notice.read",
+    ("post", f"{N}/response"): "notice_response.draft",
+    ("get", f"{N}/response"): "notice.read",
+    ("put", f"{N}/response"): "notice_response.edit",
+    ("post", f"{N}/response/regenerate"): "notice_response.edit",
+    ("post", f"{N}/response/send-for-signature"): "notice_response.send_for_signature",
+    ("post", f"{N}/response/mark-sent"): "notice_response.mark_sent",
+    ("post", f"{N}/agency-replies"): "notice.agency_reply",
+}
+IF_MATCH = {
+    ("put", I),
+    ("patch", N),
+    ("put", f"{N}/response"),
+    ("post", f"{N}/response/regenerate"),
+}
+
+
+def _ctx(*, client: bool = False) -> AuthContext:
+    user = uuid.uuid4()
+    return AuthContext(
+        TenantContext(uuid.uuid4(), "human", str(user)),
+        user,
+        uuid.uuid4(),
+        None,
+        None,
+        client=client,
+    )
+
+
+def _params(method: str, path: str) -> set[str]:
+    return {p["name"] for p in cast(list[Json], PATHS[path][method].get("parameters", []))}
+
+
+@pytest.mark.parametrize(("method", "path"), sorted(ROUTES))
+def test_ac1_each_route_declares_its_one_action_and_documents_404_and_501(
+    method: str, path: str
+) -> None:
+    operation = PATHS[path][method]
+    assert operation["x-abacus-action"] == ROUTES[(method, path)]
+    assert {"404", "501"} <= set(cast(Json, operation["responses"]))
+
+
+def test_ac1_the_stub_owns_exactly_these_routes() -> None:
+    mine = {
+        (m, p)
+        for p, ops in PATHS.items()
+        if p.startswith(("/v1/notices", "/v1/notice-intakes"))
+        for m in ops
+    }
+    assert mine == set(ROUTES)
+
+
+def test_ac1_creates_take_an_idempotency_key_and_edits_an_if_match() -> None:
+    for method, path in ROUTES:
+        if method == "get":
+            continue
+        names = _params(method, path)
+        if (method, path) in IF_MATCH:
+            assert "If-Match" in names, (method, path)
+        else:
+            assert "Idempotency-Key" in names, (method, path)
+
+
+def test_ac1_there_is_no_notices_decide_route() -> None:
+    assert not [p for p in PATHS if p.startswith("/v1/notices") and "decide" in p]
+
+
+def test_ac1_every_field_is_classified_and_amounts_are_tri() -> None:
+    models = [
+        v
+        for v in vars(contract).values()
+        if isinstance(v, type) and issubclass(v, BaseModel) and v.__module__ == contract.__name__
+    ]
+    assert len(models) > 30
+    for model in models:
+        assert unclassified_fields(model) == [], model.__name__
+    assert "tax" in tri_paths(contract.AmountsOut)
+    assert "text" in tri_paths(contract.BlockOut)
+    assert "confirmation_no" in tri_paths(contract.MarkSentIn)
+
+
+def test_ac1_no_out_model_carries_a_whole_tin_or_confirmation_number() -> None:
+    for model in (contract.IntakeFieldOut, contract.NoticeOut, contract.SentOut):
+        names = set(model.model_fields)
+        assert not names & {"tin", "confirmation_no", "taxpayer_tin"}, model.__name__
+    assert "last4" in contract.IntakeFieldOut.model_fields
+    assert "confirmation_last4" in contract.SentOut.model_fields
+
+
+async def test_ac1_a_client_principal_gets_404_before_anything_else() -> None:
+    with pytest.raises(NotFound):
+        await contract.notices_summary_route(_ctx(client=True))
+    with pytest.raises(NotFound):
+        await contract.notice_route(uuid.uuid4(), _ctx(client=True))
+
+
+async def test_ac1_the_gate_authorises_then_reads_the_flag_then_answers_501(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[str] = []
+    state = {"on": False}
+
+    async def engagement(_tenant: object, _wid: uuid.UUID) -> uuid.UUID:
+        return uuid.uuid4()
+
+    async def get_ref(_ctx: AuthContext, _eid: uuid.UUID) -> object:
+        return SimpleNamespace(resource=lambda: "engagement")
+
+    async def authorise(_ctx: AuthContext, action: str, resource: object) -> None:
+        calls.append(f"authorise:{action}")
+
+    async def flag(_tenant: object, f: object) -> bool:
+        calls.append(f"flag:{getattr(f, 'name', f)}")
+        return state["on"]
+
+    monkeypatch.setattr(contract, "work_item_engagement", engagement)
+    monkeypatch.setattr(contract, "get_ref", get_ref)
+    monkeypatch.setattr(contract, "authorise", authorise)
+    monkeypatch.setattr(contract, "flag_enabled", flag)
+    with pytest.raises(NotFound):
+        await contract.analysis_route(uuid.uuid4(), _ctx())
+    assert calls == ["authorise:notice.read", "flag:notices.workspace"]
+    state["on"] = True
+    with pytest.raises(NotImplementedYet):
+        await contract.analysis_route(uuid.uuid4(), _ctx())
+    calls.clear()
+    with pytest.raises(NotImplementedYet):
+        await contract.notice_patch_route(
+            uuid.uuid4(), contract.NoticePatchIn(assignee_id=uuid.uuid4()), _ctx(), 1
+        )
+    assert calls[0] == "authorise:notice.assign"  # the assignee alone is notice.assign
