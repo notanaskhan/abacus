@@ -253,6 +253,7 @@ source_modules = [
     "abacus.modules.sampling.compute",
     "abacus.modules.ledger.compute",
     "abacus.modules.assurance.compute",
+    "abacus.modules.notices.compute",  # N-04-T04 (DEC-2053)
 ]
 forbidden_modules = [
     "abacus.api",
@@ -269,6 +270,7 @@ ignore_imports = [
     "abacus.modules.sampling.compute.** -> abacus.modules.sampling.compute.**",
     "abacus.modules.ledger.compute.** -> abacus.modules.ledger.compute.**",
     "abacus.modules.assurance.compute.** -> abacus.modules.assurance.compute.**",
+    "abacus.modules.notices.compute.** -> abacus.modules.notices.compute.**",
 ]
 unmatched_ignore_imports_alerting = "none"
 

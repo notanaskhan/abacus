@@ -1,0 +1,13 @@
+# Ordinary-income tax rate schedules, tax year 2024 (IRC §1; IRS inflation adjustments). PROTECTED
+# parameters for the bracket check only (QN-3: it verifies the agency's figure, never replaces
+# it), reviewed with the tax CPA and golden-tested (DEC-2050). qss uses mfj's schedule.
+# Each schedule: the upper bound of each bracket at 10, 12, 22, 24, 32 and 35 percent; above the
+# last bound, 37 percent.
+version: 1
+tax_year: 2024
+rates: ["0.10", "0.12", "0.22", "0.24", "0.32", "0.35", "0.37"]
+schedules:
+  single: [11600, 47150, 100525, 191950, 243725, 609350]
+  mfj: [23200, 94300, 201050, 383900, 487450, 731200]
+  mfs: [11600, 47150, 100525, 191950, 243725, 365600]
+  hoh: [16550, 63100, 100500, 191950, 243700, 609350]
