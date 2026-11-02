@@ -52,7 +52,7 @@ ACCEPTED = [
 
 
 @pytest.fixture(autouse=True)
-async def engines(migrated_db: MigratedDatabase) -> AsyncIterator[None]:
+async def engines(migrated_db: MigratedDatabase, object_store: str) -> AsyncIterator[None]:
     settings.cache_clear()
     await dispose_engine()
     configure_engine(migrated_db.app_url)
