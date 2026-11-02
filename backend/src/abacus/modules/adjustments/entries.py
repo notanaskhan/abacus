@@ -121,10 +121,23 @@ def balance(lines: Sequence[NewLine]) -> Decimal:
     return debits
 
 
-async def _engagement_of(tenant: TenantContext, work_item_id: UUID) -> UUID:
+async def engagement_of(tenant: TenantContext, work_item_id: UUID) -> UUID:
     found = await work_item_engagement(tenant, work_item_id)
     if found is None:
         raise NotFound("work_item")
+    return found
+
+
+async def work_item_of(tenant: TenantContext, entry_id: UUID) -> UUID:
+    """The work item an entry is on (a batch names entries only)."""
+    async with tenant_session(tenant) as session:
+        found = (
+            await session.execute(
+                text("SELECT work_item_id FROM proposed_entries WHERE id = :id"), {"id": entry_id}
+            )
+        ).scalar_one_or_none()
+    if found is None:
+        raise NotFound(TARGET)
     return found
 
 
@@ -143,7 +156,7 @@ async def _accounts(
 async def propose(ctx: AuthContext, work_item_id: UUID, new: NewEntry) -> Entry:
     """`POST …/proposed-entries` (the route authorised `proposed_entry.create`)."""
     amount = balance(new.lines)
-    engagement_id = await _engagement_of(ctx.tenant, work_item_id)
+    engagement_id = await engagement_of(ctx.tenant, work_item_id)
     attest = bool(await attest_of(ctx.tenant, engagement_id))
     accounts = await _accounts(ctx.tenant, engagement_id)
     largest = max(new.lines, key=lambda ln: max(ln.debit, ln.credit))
@@ -323,7 +336,7 @@ async def entries_of(
     ctx: AuthContext, work_item_id: UUID, kind: EntryKind | None = None
 ) -> list[Entry]:
     """`GET …/proposed-entries` (the route authorised `proposed_entry.read`) and C8's read."""
-    engagement_id = await _engagement_of(ctx.tenant, work_item_id)
+    engagement_id = await engagement_of(ctx.tenant, work_item_id)
     async with tenant_session(ctx.tenant) as session:
         rows = (
             (
@@ -376,7 +389,7 @@ async def recorded_entries(tenant: TenantContext, engagement_id: UUID) -> EntryS
 async def adjusted_tb(ctx: AuthContext, work_item_id: UUID, layer: str) -> object:
     """`GET …/adjusted-tb` (the route authorised `adjusted_tb.read`): the current trial balance's
     `layer` from the ledger, never stored. The caller shapes the view (C8's `AdjustedTbOut`)."""
-    engagement_id = await _engagement_of(ctx.tenant, work_item_id)
+    engagement_id = await engagement_of(ctx.tenant, work_item_id)
     tbs = await engagement_trial_balances(ctx.tenant, engagement_id)
     if not tbs:
         raise NotFound("trial_balance")

@@ -15941,6 +15941,10 @@ export type FraudInquiryIn = {
      * Respondent Contact Id
      */
     respondent_contact_id?: string | null;
+    /**
+     * Title
+     */
+    title?: string;
 };
 
 /**
@@ -15958,7 +15962,7 @@ export type FraudInquiryOut = {
     /**
      * Questionnaire Id
      */
-    questionnaire_id: string;
+    questionnaire_id: string | null;
     /**
      * Respondent Name
      */
@@ -16007,7 +16011,7 @@ export type FraudSessionIn = {
     /**
      * Medium
      */
-    medium?: 'in_person' | 'video' | 'call' | null;
+    medium?: 'in_person' | 'video' | 'hybrid' | null;
 };
 
 /**
@@ -16050,7 +16054,7 @@ export type FraudSessionOut = {
     /**
      * Medium
      */
-    medium: 'in_person' | 'video' | 'call' | null;
+    medium: 'in_person' | 'video' | 'hybrid' | null;
     /**
      * Minutes Hash
      */
@@ -44790,6 +44794,71 @@ export type ApprovalBatchResponses = {
 };
 
 export type ApprovalBatchResponse = ApprovalBatchResponses[keyof ApprovalBatchResponses];
+
+export type ApprovalBatchUndoData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Batch Id
+         */
+        batch_id: string;
+    };
+    query: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    url: '/v1/approval-batches/{batch_id}/undo';
+};
+
+export type ApprovalBatchUndoErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ApprovalBatchUndoError = ApprovalBatchUndoErrors[keyof ApprovalBatchUndoErrors];
+
+export type ApprovalBatchUndoResponses = {
+    /**
+     * Successful Response
+     */
+    200: BatchOut;
+};
+
+export type ApprovalBatchUndoResponse = ApprovalBatchUndoResponses[keyof ApprovalBatchUndoResponses];
 
 export type ListAuditEventsData = {
     body?: never;

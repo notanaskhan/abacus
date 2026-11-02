@@ -5,6 +5,7 @@ The audit line's read models and actions: the AUD-06 trial balance first (SPEC-3
 
 # A-03-T08: the C9 v2 routes call this lazily; imported here so its error codes are catalogued.
 from abacus.kernel.audit_owners import register_engagement_owners
+from abacus.modules.adjustments.api import register_entry_decision_hook
 from abacus.modules.agents.api import (
     register_mode_mapping,
     register_mode_preparer,
@@ -14,7 +15,7 @@ from abacus.modules.agents.api import (
 from abacus.modules.assurance import mapping_live as mapping_live
 from abacus.modules.assurance.archive_gate import g9
 from abacus.modules.assurance.audits_contract import audits_router
-from abacus.modules.assurance.completion import g6, g7
+from abacus.modules.assurance.completion import g6, g7, on_entry_client_decision
 from abacus.modules.assurance.completion_routes import dashboard_router
 from abacus.modules.assurance.completion_routes import router as completion_router
 
@@ -122,6 +123,8 @@ register_gate_provider("G7", g7)
 register_gate_provider("G8", g8)
 register_gate_provider("G9", g9)
 register_gates()  # A-04-T43 (DEC-2057): G4 from assurance/gates.py
+# A-06-T10 (DEC-2062): a client's decision on an entry moves its misstatement.
+register_entry_decision_hook(on_entry_client_decision)
 # A-04-T22 (DEC-2058): the planning modes' mappings for the section drafter.
 register_mode_mapping("gap", gap_inputs)
 register_mode_mapping("risk_narrative", risk_narrative_inputs)

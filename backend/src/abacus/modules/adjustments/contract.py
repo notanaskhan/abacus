@@ -8,7 +8,8 @@ client decision, and the adjusted TB read (Unadjusted, AJE, RJE, Final). **No ro
 books or writes an entry to any client system** (ADR-040; `pe_posting_dormant`). Every route
 answers, in order: a client principal 404 (C18's BFF is the client's path); the action on the
 work item's engagement; 404 with `adjustments.entries` off. A-06-T09 serves the list, propose and
-the adjusted TB (`entries.py`); the sends and decisions answer 501 until A-06-T10.
+the adjusted TB (`entries.py`), A-06-T10 the send with its Undo, the batch, the reject and the
+recorded client decision (`decisions.py`).
 """
 
 from __future__ import annotations
@@ -280,9 +281,22 @@ async def proposed_entry_create_route(
 async def proposed_entries_send_route(
     work_item_id: UUID, body: SendIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> AdjustmentSendOut:
-    """Approve, batch and send through C18; the client sees nothing for 10 seconds (Undo)."""
+    """Approve, batch and send through C18; the client sees nothing for 10 seconds (Undo, T10)."""
     await _gate(ctx, work_item_id, "proposed_entry.send_to_client")
-    _not_yet()
+    from abacus.modules.adjustments import decisions
+
+    sent = await decisions.send(
+        ctx,
+        work_item_id,
+        entry_ids=body.entry_ids,
+        recipient_contact_id=body.recipient_contact_id,
+        wording_template_version_id=body.wording_template_version_id,
+        seen_versions=body.seen_versions,
+        label="Approved and sent to the client",
+    )
+    return AdjustmentSendOut(
+        approval_batch_id=sent.approval_batch_id, undo_until=sent.undo_until.isoformat()
+    )
 
 
 @router.post(
@@ -294,8 +308,11 @@ async def proposed_entries_send_route(
 async def proposed_entry_reject_route(
     entry_id: UUID, body: RejectIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> EntryOut:
-    await _gate_flag(ctx)
-    _not_yet()
+    from abacus.modules.adjustments import decisions, entries
+
+    await _gate(ctx, await entries.work_item_of(ctx.tenant, entry_id), "proposed_entry.reject")
+    await decisions.reject(ctx, entry_id, body.reason_code)
+    return _entry_out(await entries.entry(ctx, entry_id))
 
 
 @router.post(
@@ -307,9 +324,19 @@ async def proposed_entry_reject_route(
 async def proposed_entry_record_route(
     entry_id: UUID, body: ClientDecisionIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> EntryOut:
-    """Record mode: the client's decision from email, with the email as evidence."""
-    await _gate_flag(ctx)
-    _not_yet()
+    """Record mode: the client's decision from email, with the email as evidence (T10)."""
+    from abacus.modules.adjustments import decisions, entries
+
+    work_item = await entries.work_item_of(ctx.tenant, entry_id)
+    await _gate(ctx, work_item, "proposed_entry.record_client_decision")
+    await decisions.record_client_decision(
+        ctx,
+        entry_id,
+        decision=body.decision,
+        reason=body.reason,
+        evidence_version_id=body.evidence_version_id,
+    )
+    return _entry_out(await entries.entry(ctx, entry_id))
 
 
 @router.post(
@@ -322,8 +349,34 @@ async def proposed_entry_record_route(
 async def approval_batch_route(
     body: BatchIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> BatchOut:
-    await _gate_flag(ctx)
-    _not_yet()
+    """Within-threshold entries approved together by the named person (T10)."""
+    from abacus.modules.adjustments import decisions, entries
+
+    work_item = await entries.work_item_of(ctx.tenant, body.entry_ids[0])
+    await _gate(ctx, work_item, "approval_batch.create")
+    label = "Approved under the firm's AJE thresholds"
+    batch_id = await decisions.create_batch(
+        ctx, work_item, body.entry_ids, body.policy_version_id, label
+    )
+    return BatchOut(id=batch_id, label=label)
+
+
+@router.post(
+    "/approval-batches/{batch_id}/undo",
+    action="proposed_entry.send_to_client",
+    response_model=BatchOut,
+    errors=(409,),
+)
+async def approval_batch_undo_route(
+    batch_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey, work_item_id: UUID
+) -> BatchOut:
+    """Undo an approve-and-send inside its 10 seconds, by the approver: the grant voided, nothing
+    reached the client; 409 `undo_window_closed` after (T10)."""
+    from abacus.modules.adjustments import decisions
+
+    await _gate(ctx, work_item_id, "proposed_entry.send_to_client")
+    await decisions.undo_send(ctx, work_item_id, batch_id)
+    return BatchOut(id=batch_id, label="Undone: nothing reached the client")
 
 
 @router.get(
