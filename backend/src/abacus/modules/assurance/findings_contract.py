@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Any, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header
@@ -112,6 +112,10 @@ class FindingIn(BaseModel):
     citation_ids: Annotated[list[UUID], Field(max_length=50), classified("internal")] = Field(
         default_factory=list[UUID]
     )
+    # A-06-T11 (DEC-2063): the workpaper the finding's issue sits on, and an agent's run.
+    workpaper_id: Annotated[UUID, classified("internal")]
+    why_surfaced: Annotated[str | None, Field(max_length=4000), classified("confidential")] = None
+    agent_run_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class ConvertToMisstatementIn(BaseModel):
@@ -122,6 +126,7 @@ class ConvertToMisstatementIn(BaseModel):
     amount: Annotated[Money | None, classified("confidential")] = None
     projection_ref: Annotated[UUID | None, classified("internal")] = None
     seen_version: Annotated[int, Field(ge=1), classified("internal")]
+    column_set: Annotated[ColumnSet, classified("internal")] = "commercial"
 
 
 class ReasonIn(BaseModel):
@@ -252,13 +257,55 @@ router = AbacusRouter(prefix="/v1", tags=["assurance"])
 _WI = "/work-items/{work_item_id}"
 
 
+def _finding_out(found: object) -> FindingDetailOut:
+    from abacus.modules.assurance import findings
+
+    f = cast(findings.Finding, found)
+    return FindingDetailOut(
+        finding=_row_out(f),
+        issue_id=f.issue_id,
+        why_surfaced=f.why_surfaced,
+        citation_ids=[],
+        evaluation=f.evaluation,
+        decision_card_id=f.decision_card_id,
+        allowed_actions=cast(Actions, list(f.allowed_actions)),
+    )
+
+
+def _row_out(f: object) -> FindingRowOut:
+    from abacus.modules.assurance import findings
+
+    r = cast(findings.Finding, f)
+    return FindingRowOut(
+        id=r.id,
+        ref=r.ref,
+        title=r.title,
+        kind=cast(Any, r.kind),  # Any: 0644's CHECK holds the words
+        route=cast(Any, r.route),  # Any: 0644's CHECK holds the words
+        deficiency_status=cast(Any, r.deficiency_status),  # Any: 0644's CHECK
+        severity_proposed=cast(Any, r.severity_proposed),  # Any: 0644's CHECK
+        severity_concluded=cast(Any, r.severity_concluded),  # Any: 0644's CHECK
+        coso_component=cast(Any, r.coso_component),  # Any: 0644's CHECK
+        workpaper_ref=None,
+        created_by_name=r.created_by_name,
+        created_at=r.created_at,
+    )
+
+
 @router.get(
     f"{_WI}/findings", action="finding.read", response_model=ListPage[FindingRowOut], errors=(501,)
 )
 async def audit_findings_route(work_item_id: UUID, ctx: Ctx) -> ListPage[FindingRowOut]:
     """Severity bands with counts and the awaiting-decision badge (AUD-15 a; T11)."""
     await _gate(ctx, work_item_id, "finding.read")
-    _not_yet()
+    from abacus.modules.assurance import findings
+
+    page = await findings.findings_of(ctx, work_item_id)
+    return ListPage(
+        items=[_row_out(f) for f in page.rows],
+        total=len(page.rows),
+        counts={**page.counts, "awaiting_decision": page.awaiting_decision},
+    )
 
 
 @router.post(
@@ -272,17 +319,30 @@ async def audit_finding_create_route(
     work_item_id: UUID, body: FindingIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> FindingDetailOut:
     """Record a finding on a new P-04 issue; an agent's lands Proposed with citations verified
-    (422 `uncited_change`; T11)."""
+    (422 `uncited_finding`; T11)."""
     await _gate(ctx, work_item_id, "finding.create")
-    _not_yet()
+    from abacus.modules.assurance import findings
+
+    new = findings.NewFinding(
+        workpaper_id=body.workpaper_id,
+        title=body.title,
+        kind=body.kind,
+        coso_component=body.coso_component,
+        citation_ids=tuple(body.citation_ids),
+        why_surfaced=body.why_surfaced,
+        agent_run_id=body.agent_run_id,
+    )
+    return _finding_out(await findings.record_finding(ctx, work_item_id, new))
 
 
 @router.get(
     "/findings/{finding_id}", action="finding.read", response_model=FindingDetailOut, errors=(501,)
 )
 async def audit_finding_route(finding_id: UUID, ctx: Ctx) -> FindingDetailOut:
-    await _gate_flag(ctx)
-    _not_yet()
+    from abacus.modules.assurance import findings
+
+    await _gate(ctx, await findings.work_item_of(ctx.tenant, finding_id), "finding.read")
+    return _finding_out(await findings.finding(ctx, finding_id))
 
 
 @router.post(
@@ -294,8 +354,10 @@ async def audit_finding_route(finding_id: UUID, ctx: Ctx) -> FindingDetailOut:
 async def finding_to_deficiency_route(
     finding_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> FindingDetailOut:
-    await _gate_flag(ctx)
-    _not_yet()
+    from abacus.modules.assurance import findings
+
+    await _gate(ctx, await findings.work_item_of(ctx.tenant, finding_id), "finding.convert")
+    return _finding_out(await findings.to_deficiency(ctx, finding_id))
 
 
 @router.post(
@@ -307,9 +369,28 @@ async def finding_to_deficiency_route(
 async def finding_to_misstatement_route(
     finding_id: UUID, body: ConvertToMisstatementIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> MisstatementOut:
-    """A projected misstatement takes its figure from `sampling.compute.projection` (T09)."""
-    await _gate_flag(ctx)
-    _not_yet()
+    """A projected misstatement takes its figure from sampling (422 `projection_unavailable`
+    until A-03 exposes its projection facts; T11)."""
+    from abacus.modules.assurance import findings
+
+    work_item = await findings.work_item_of(ctx.tenant, finding_id)
+    await _gate(ctx, work_item, "finding.convert")
+    misstatement_id = await findings.to_misstatement(
+        ctx, finding_id, type_=body.type, amount=body.amount, column_set=body.column_set
+    )
+    found = await findings.finding(ctx, finding_id)
+    return MisstatementOut(
+        id=misstatement_id,
+        ref=f"M-{found.ref.removeprefix('F-')}",
+        origin_ref=None,
+        type=body.type,
+        nature="misstatement",
+        status="confirmed",
+        amount=body.amount or Decimal(0),
+        finding_ref=found.ref,
+        proposed_entry_ref=None,
+        allowed_actions=[],
+    )
 
 
 @router.post(
@@ -321,8 +402,28 @@ async def finding_to_misstatement_route(
 async def finding_resolve_route(
     finding_id: UUID, body: ReasonIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> FindingDetailOut:
-    await _gate_flag(ctx)
-    _not_yet()
+    """Resolved through the finding's issue; the agent is refused by the matrix (T11)."""
+    from abacus.modules.assurance import findings
+
+    await _gate(ctx, await findings.work_item_of(ctx.tenant, finding_id), "finding.resolve")
+    return _finding_out(await findings.move(ctx, finding_id, "resolved"))
+
+
+@router.post(
+    "/findings/{finding_id}/not-applicable",
+    action="finding.mark_not_applicable",
+    response_model=FindingDetailOut,
+    errors=(409,),
+)
+async def finding_not_applicable_route(
+    finding_id: UUID, body: ReasonIn, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> FindingDetailOut:
+    """Marked not applicable through the finding's issue; never by the agent (T11)."""
+    from abacus.modules.assurance import findings
+
+    work_item = await findings.work_item_of(ctx.tenant, finding_id)
+    await _gate(ctx, work_item, "finding.mark_not_applicable")
+    return _finding_out(await findings.move(ctx, finding_id, "not_applicable"))
 
 
 @router.post(
