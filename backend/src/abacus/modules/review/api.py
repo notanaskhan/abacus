@@ -130,6 +130,7 @@ from abacus.modules.review.slots import (
     decision_kind,
     field_owner,
     gate_met,
+    register_archive_lock,
     register_checkpoint_proposal_hooks,
     register_decision_kind,
     register_field_citations,
@@ -281,6 +282,7 @@ __all__ = [
     "record_sign_off",
     "record_text_reads",
     "record_value",
+    "register_archive_lock",  # P-04-T59 (DEC-2065): A-07's archive lock
     "register_checkpoint_proposal_hooks",
     "register_client_request_sender",
     "register_decision_kind",

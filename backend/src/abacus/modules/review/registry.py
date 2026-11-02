@@ -120,3 +120,6 @@ UPDATE_COLUMNS["issues"] = frozenset(
     {"status", "assignee_user_id", "assignee_agent", "priority", "kind", "title_sealed"}
     | {"version"}
 )
+# P-04-T59 (DEC-2065): every review table's retention record type (evidence's `RECORD_TYPES`);
+# A-07's archive keeps them with the engagement's file.
+RETENTION_RECORD_TYPES: dict[str, str] = dict.fromkeys(sorted(TABLES), "review_record")
