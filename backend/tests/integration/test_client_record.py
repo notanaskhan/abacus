@@ -171,9 +171,19 @@ async def test_no_plaintext_taxpayer_id_column_exists(firm: _Firm) -> None:
         "AND column_name ~ '(^|_)(tin|ssn|ein|itin|taxpayer_id)(_|$)' "
         "AND column_name !~ '_last4$' "
         # P-07-T07 (DEC-52): the sealed set: an envelope, its kind, status and HMAC fingerprint.
-        "AND column_name NOT IN ('tin_sealed', 'tin_kind', 'tin_status', 'tin_fingerprint')"
+        "AND column_name NOT IN ('tin_sealed', 'tin_kind', 'tin_status', 'tin_fingerprint') "
+        # A-05-T15 (0642, DEC-1973): an EBP participant's SSN, sealed with its HMAC fingerprint.
+        "AND (table_name, column_name) NOT IN "
+        "(('ebp_participants', 'ssn_sealed'), ('ebp_participants', 'ssn_fp'))"
     )
     assert columns == ""
+    # Every envelope in the sealed sets is ciphertext, never text a value could sit in.
+    envelopes = await firm.seed.value(
+        "SELECT coalesce(string_agg(table_name || '.' || column_name || ' ' || data_type, ', '), "
+        "'') FROM information_schema.columns WHERE table_schema = 'public' "
+        "AND column_name IN ('tin_sealed', 'ssn_sealed') AND data_type <> 'bytea'"
+    )
+    assert envelopes == ""
 
 
 async def test_is_attest_client_follows_the_engagements(firm: _Firm) -> None:
