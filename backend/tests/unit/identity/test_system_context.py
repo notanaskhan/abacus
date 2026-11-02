@@ -53,6 +53,8 @@ CONTRACT_ALLOWED = {
     "entry_assessment.run",  # SPEC-037 Q4 (TASK-085): the assessor records its assessments
     "checkpoint.propose",  # P-04-T32 (DEC-804): an engine import's checkpoint, pending a person
     "mapping_set.run",  # A-03-T01 (DEC-1550): the TB-adoption subscriber starts the rules run
+    "section_draft.run",  # A-04-T11 (DEC-1868): the section drafter writes its run's suggestions
+    "decision_recommend.run",  # A-04-T15 (DEC-1953): the recommender tags the partner's card
 }
 REASON = "documented in the working paper"
 
