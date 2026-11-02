@@ -560,3 +560,44 @@ export function StatusTileStrip({
     </div>
   );
 }
+
+export interface GroupedTileItem {
+  key: string;
+  label: string;
+  count: number;
+}
+
+export interface GroupedTileProps {
+  /** "By type" */
+  title: string;
+  items: readonly GroupedTileItem[];
+  pending?: boolean;
+}
+
+/** C-19's grouped tile (NOT-01; N-04-T05): 300 × 72, a title over mini counts, read-only. The
+ * counts are the server's; the tile adds nothing up. */
+export function GroupedTile({ title, items, pending = false }: GroupedTileProps): JSX.Element {
+  return (
+    <div
+      role="group"
+      aria-label={title}
+      className="flex h-[72px] w-[300px] flex-col justify-center gap-[6px] rounded-pane bg-card px-[14px] shadow-e1"
+    >
+      <span className="text-dense font-medium text-ink-2">{title}</span>
+      <dl className="flex items-baseline gap-[14px]">
+        {items.map((item) => (
+          <div key={item.key} className="flex items-baseline gap-[5px]">
+            <dd className="text-cell font-medium tabular-nums">
+              {pending ? (
+                <Skeleton className="inline-block h-[12px] w-[14px]" />
+              ) : (
+                count(item.count)
+              )}
+            </dd>
+            <dt className="text-meta text-ink-3">{item.label}</dt>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}

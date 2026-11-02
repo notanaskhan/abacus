@@ -94,6 +94,10 @@ export interface IndexListProps<Row> {
   /** The selected tile's code. */
   tile?: string | null;
   onTile?: (code: string | null) => void;
+  /** The filter bar's right end after any end chips: NOT-01's agent chip (N-04-T05). */
+  barEnd?: ReactNode;
+  /** After the tiles, 16 px on: a grouped tile ("By type", NOT-01; N-04-T05). */
+  tilesAfter?: ReactNode;
   /** A right-aligned summary at the end of the tile row: "224 returns · 79 open". */
   summary?: string;
   /** Clears every chip, the tile and the search. */
@@ -142,6 +146,8 @@ export function IndexList<Row>({
   tiles,
   tile = null,
   onTile,
+  barEnd,
+  tilesAfter,
   summary,
   onClear,
   segments,
@@ -295,8 +301,11 @@ export function IndexList<Row>({
             Clear
           </Button>
         )}
-        {endChips.length > 0 && (
-          <span className="ml-auto flex items-center gap-[8px]">{endChips.map(chip)}</span>
+        {(endChips.length > 0 || barEnd !== undefined) && (
+          <span className="ml-auto flex items-center gap-[8px]">
+            {endChips.map(chip)}
+            {barEnd}
+          </span>
         )}
       </div>
 
@@ -318,6 +327,7 @@ export function IndexList<Row>({
               {...(t.mark === undefined ? {} : { mark: t.mark })}
             />
           ))}
+          {tilesAfter !== undefined && <div className="ml-[8px] flex">{tilesAfter}</div>}
           {summary !== undefined && !pendingTiles && (
             <span className="ml-auto self-center text-dense text-ink-3">{summary}</span>
           )}

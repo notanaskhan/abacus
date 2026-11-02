@@ -1,0 +1,223 @@
+// The Brightwater Hale notices N1–N9 at E0 (blueprint 01 §9.7; NOT-01 spec rows; N-04-T05). Nine
+// open notices seen at Mon Sep 14, 2026: 3 CP2000, 2 CP14, 1 CP501 and 3 state; tiles 2 New · 3
+// Analyzing · 2 Response drafted · 2 Awaiting IRS; N5 Santos has no authorization on file. All
+// names are fictional. The scenario under the service APIs is N-04-T21's.
+
+export type NoticeKey = "N1" | "N2" | "N3" | "N4" | "N5" | "N6" | "N7" | "N8" | "N9";
+type Status = "received" | "analyzing" | "response_drafted" | "awaiting_irs";
+type TypeKey = "cp2000" | "cp14" | "cp501" | "state_generic";
+type AuthKind = "form_8821" | "form_2848" | "state_poa" | "none";
+
+export interface SeedNotice {
+  key: NoticeKey;
+  client: string;
+  formLine: string | null;
+  agency: "irs" | "state";
+  agencyName: string;
+  typeKey: TypeKey;
+  code: string;
+  title: string;
+  taxYear: number;
+  receivedOn: string;
+  respondBy: string | null;
+  sentOn: string | null;
+  tax: string | null;
+  interest: string | null;
+  total: string | null;
+  position: "disagree" | null;
+  status: Status;
+  assignee: string | null; // initials (seed/people.ts)
+  auth: { kind: AuthKind; label: string };
+}
+
+export const NOTICES: readonly SeedNotice[] = [
+  {
+    key: "N4",
+    client: "Thomas & Irene Kowal",
+    formLine: null,
+    agency: "irs",
+    agencyName: "IRS",
+    typeKey: "cp14",
+    code: "CP14",
+    title: "Balance due",
+    taxYear: 2024,
+    receivedOn: "2026-08-31",
+    respondBy: "2026-09-21",
+    sentOn: null,
+    tax: null,
+    interest: null,
+    total: "3412.18",
+    position: null,
+    status: "response_drafted",
+    assignee: "MA",
+    auth: { kind: "form_8821", label: "8821 ✓" },
+  },
+  {
+    key: "N1",
+    client: "Marcus & Dana Whitley",
+    formLine: "Form 1040",
+    agency: "irs",
+    agencyName: "IRS",
+    typeKey: "cp2000",
+    code: "CP2000",
+    title: "Proposed adjustment",
+    taxYear: 2024,
+    receivedOn: "2026-08-24",
+    respondBy: "2026-09-23",
+    sentOn: null,
+    tax: "686.40",
+    interest: "66.61",
+    total: "753.01",
+    position: null,
+    status: "analyzing",
+    assignee: "KO",
+    auth: { kind: "form_8821", label: "8821 ✓" },
+  },
+  {
+    key: "N6",
+    client: "Rafael Quintero",
+    formLine: null,
+    agency: "irs",
+    agencyName: "IRS",
+    typeKey: "cp501",
+    code: "CP501",
+    title: "Balance due reminder",
+    taxYear: 2024,
+    receivedOn: "2026-08-28",
+    respondBy: "2026-09-28",
+    sentOn: null,
+    tax: null,
+    interest: null,
+    total: "2240.00",
+    position: null,
+    status: "response_drafted",
+    assignee: "LW",
+    auth: { kind: "form_8821", label: "8821 ✓" },
+  },
+  {
+    key: "N2",
+    client: "Harold Stein",
+    formLine: null,
+    agency: "irs",
+    agencyName: "IRS",
+    typeKey: "cp2000",
+    code: "CP2000",
+    title: "Proposed adjustment",
+    taxYear: 2024,
+    receivedOn: "2026-09-02",
+    respondBy: "2026-09-30",
+    sentOn: null,
+    tax: null,
+    interest: null,
+    total: "4210.00",
+    position: null,
+    status: "analyzing",
+    assignee: "GT",
+    auth: { kind: "form_2848", label: "2848 ✓" },
+  },
+  {
+    key: "N5",
+    client: "Aurelio Santos",
+    formLine: "Form 1040",
+    agency: "irs",
+    agencyName: "IRS",
+    typeKey: "cp14",
+    code: "CP14",
+    title: "Balance due",
+    taxYear: 2024,
+    receivedOn: "2026-09-10",
+    respondBy: "2026-10-01",
+    sentOn: null,
+    tax: null,
+    interest: null,
+    total: "1106.00",
+    position: null,
+    status: "received",
+    assignee: null,
+    auth: { kind: "none", label: "None · blocked" },
+  },
+  {
+    key: "N7",
+    client: "Copperleaf Coffee Roasters, Inc.",
+    formLine: null,
+    agency: "state",
+    agencyName: "Colorado DOR",
+    typeKey: "state_generic",
+    code: "Notice of deficiency",
+    title: "withholding",
+    taxYear: 2025,
+    receivedOn: "2026-09-03",
+    respondBy: "2026-10-03",
+    sentOn: null,
+    tax: null,
+    interest: null,
+    total: "640.00",
+    position: null,
+    status: "analyzing",
+    assignee: "RM",
+    auth: { kind: "state_poa", label: "CO POA ✓" },
+  },
+  {
+    key: "N9",
+    client: "Priyanka & Sam Iyer",
+    formLine: null,
+    agency: "state",
+    agencyName: "NY DTF",
+    typeKey: "state_generic",
+    code: "DTF-160",
+    title: "Account adjustment",
+    taxYear: 2024,
+    receivedOn: "2026-09-11",
+    respondBy: "2026-10-11",
+    sentOn: null,
+    tax: null,
+    interest: null,
+    total: "918.00",
+    position: null,
+    status: "received",
+    assignee: null,
+    auth: { kind: "state_poa", label: "NY POA ✓" },
+  },
+  {
+    key: "N3",
+    client: "Wren & Avery Collins",
+    formLine: null,
+    agency: "irs",
+    agencyName: "IRS",
+    typeKey: "cp2000",
+    code: "CP2000",
+    title: "Proposed adjustment",
+    taxYear: 2023,
+    receivedOn: "2026-07-18",
+    respondBy: null,
+    sentOn: "2026-08-12",
+    tax: "1980.00",
+    interest: null,
+    total: "1980.00",
+    position: "disagree",
+    status: "awaiting_irs",
+    assignee: "JL",
+    auth: { kind: "form_2848", label: "2848 ✓" },
+  },
+  {
+    key: "N8",
+    client: "Meridian Tool & Die, Inc.",
+    formLine: null,
+    agency: "state",
+    agencyName: "Illinois DOR",
+    typeKey: "state_generic",
+    code: "Notice of tax due",
+    title: "IL-1120",
+    taxYear: 2024,
+    receivedOn: "2026-08-12",
+    respondBy: null,
+    sentOn: "2026-09-02",
+    tax: null,
+    interest: null,
+    total: "5880.00",
+    position: null,
+    status: "awaiting_irs",
+    assignee: "YK",
+    auth: { kind: "state_poa", label: "IL-2848 ✓" },
+  },
+];
