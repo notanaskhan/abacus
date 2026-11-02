@@ -258,14 +258,29 @@ test.describe("J01-core firm onboarding", () => {
     },
   );
 
-  // K-01-T11 (DEC-902): j01 5w walks KNW-02's workbook slice, which is K-01-T07's (not built:
-  // KNW-02 has no screen yet). The service half (import lands Needs review, the agent's approve is
-  // refused, Margaret approves, v2 is superseded) is proven by K-01-T06 and K-01-T09's suites.
-  test.fixme(
-    "J01 5w: Margaret imports BH EBP v3, the agent's approve is refused, she approves and v2 is superseded (KNW-02)",
-    owner("K-01 · K-01-T07 KNW-02 workbook slice on the T3 Prepare frame · S12, Fri Apr 16, 2027"),
+  // K-01-T25: J01 step 5 walks KNW-02 (built by K-01-T22/T23): Margaret Okonkwo reviews BH EBP v3
+  // as imported (parse, the flagged step 7, the diff against v2, the standards set), approves it
+  // in the sheet with the server's checklist, and v2 ends Dec 31, 2025. Fixture-first; the full
+  // walk is `knw-02-import-review.spec.ts`. The agent never approves (INV-1).
+  test(
+    "J01 5w: Margaret reviews BH EBP v3, approves it, and v2 is superseded (KNW-02)",
+    owner("K-01 · K-01-T25 fixture; full stack after the methodology slice · S25"),
     async ({ journey }) => {
-      await journey.as("margaret-okonkwo", "/knowledge", { clock: DEMO_INSTANT });
+      test.fixme(journey.project !== "fixture", "KNW-02's review walk is fixture-first");
+      await journey.as("margaret-okonkwo", "/components/screens/KNW-02?st=a2", {
+        clock: "2026-01-12T14:10:00-06:00",
+      });
+      await journey.step("J01 step 5: the flagged step 7 waits for a person", async (page) => {
+        await expect(page.locator('[data-step="7"]')).toHaveAttribute("data-flagged", "true");
+        await expect(page.locator('[data-step="7"]').getByText("pp. 15–16")).toBeVisible();
+      });
+      await journey.as("margaret-okonkwo", "/components/screens/KNW-02?st=e", {
+        clock: "2026-01-12T14:10:00-06:00",
+      });
+      await journey.step("J01 step 5: the Approve sheet supersedes v2", async (page) => {
+        const sheet = page.getByRole("dialog", { name: "Approve BH Audit Methodology · EBP v3" });
+        await expect(sheet.getByText("v2 (ends Dec 31, 2025)")).toBeVisible();
+      });
     },
   );
 
