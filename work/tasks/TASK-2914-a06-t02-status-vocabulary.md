@@ -4,7 +4,7 @@ title: A-06-T02 status vocabulary and glossary rows (DF-31, DF-28)
 spec: SPEC-642
 acceptance_criteria: [AC-4]
 risk_zone: red
-status: in-review
+status: done
 epic: A-06
 plan_key: A-06-T02
 branch: s24-a06-t02 (stacked on s24-a06-t01)

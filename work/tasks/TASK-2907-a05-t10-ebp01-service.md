@@ -4,7 +4,7 @@ title: A-05-T10 EBP-01 service (plan profile, plan status, providers and checks)
 spec: SPEC-640
 acceptance_criteria: [AC-8]
 risk_zone: amber
-status: in-review
+status: done
 epic: A-05
 plan_key: A-05-T10
 branch: s24-a05-t10 (stacked on s24-a05-t09)

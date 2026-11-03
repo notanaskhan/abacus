@@ -4,7 +4,7 @@ title: A-05-T12 EBP modes on workpapers.section_drafter
 spec: SPEC-640
 acceptance_criteria: [AC-10]
 risk_zone: red
-status: in-review
+status: done
 epic: A-05
 plan_key: A-05-T12
 branch: s24-a05-t12 (stacked on s24-a05-t09)
