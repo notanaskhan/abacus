@@ -361,6 +361,13 @@ describe("Toolbar: controls", () => {
     ).toBe("true");
   });
 
+  it("an artboard with no firm yet still names the firm menu (ED-320, Q-03-T165)", () => {
+    barWidth = 1440;
+    render(<Toolbar nav={NAV} firm="" active="Home" />);
+    const menu = document.querySelector<HTMLButtonElement>('button[aria-haspopup="menu"]');
+    expect(menu?.getAttribute("aria-label")).toBe("Firm menu");
+  });
+
   it("nav items are text only: no icon, no count", () => {
     renderToolbar(1440);
     const nav = screen.getByRole("navigation", { name: "Modules" });
