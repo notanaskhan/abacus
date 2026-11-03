@@ -282,10 +282,10 @@ def test_ed300_a_span_id_with_a_tin_shaped_run_passes_verbatim() -> None:
 def test_ed300_a_trace_field_that_is_not_an_exact_hex_id_is_dropped() -> None:
     # Only exact ids skip the mask, so nothing else can ride along in the trace context.
     event = hostile()
-    event["contexts"] = {"trace": {"trace_id": "123-45-6789", "span_id": "c486040120f1dda1 x"}}
+    event["contexts"] = {"trace": {"trace_id": "not-a-trace-id", "span_id": "c486040120f1dda1 x"}}
     result = _scrubbed(event)
     assert "contexts" not in result
-    assert "123-45-6789" not in json.dumps(result)
+    assert "not-a-trace-id" not in json.dumps(result)
 
 
 def test_ac20_scrub_drops_other_contexts_when_there_is_no_trace() -> None:
