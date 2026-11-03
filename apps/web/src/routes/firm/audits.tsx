@@ -336,6 +336,65 @@ export const narrativeRoute = createRoute({
   },
 });
 
+// A-04-T32: AUD-09 `/audits/$auditId/controls?sheet=exceptions|internal-control&cell=D2`: the
+// cockpit on Planning › Internal Control. Request evidence… opens SHL-14 on the server's draft
+// (`?ov=request:new&prefill=<draft>`); another rail row returns to `/audits/$auditId`.
+interface ControlsSearch {
+  sheet?: "internal-control";
+  cell?: string;
+}
+export const controlsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/audits/$auditId/controls",
+  validateSearch: (search: Record<string, unknown>): ControlsSearch => ({
+    ...(search.sheet === "internal-control" ? { sheet: "internal-control" } : {}),
+    ...(typeof search.cell === "string" && /^[B-E]\d+$/.test(search.cell)
+      ? { cell: search.cell }
+      : {}),
+  }),
+  component: function ControlsPage(): JSX.Element {
+    const auditId = useParam("auditId");
+    const navigate = useNavigate();
+    const search: ControlsSearch = useSearch({ strict: false });
+    const go = (next: ControlsSearch): void => {
+      void navigate({ to: ".", search: next, replace: true });
+    };
+    return gated(
+      <Cockpit
+        auditId={auditId}
+        section="internal_control"
+        onSection={(section) => {
+          if (section === "internal_control") return;
+          void navigate({ to: "/audits/$auditId", params: { auditId }, search: { section } });
+        }}
+        controls={{
+          sheet: search.sheet ?? "exceptions",
+          cell: search.cell ?? "C1",
+          onSheet: (sheet) => {
+            go(sheet === "exceptions" ? {} : { sheet });
+          },
+          onCell: (cell) => {
+            go({ ...search, ...(cell === null ? {} : { cell }) });
+          },
+          onRequest: (draftId) => {
+            void navigate({
+              to: ".",
+              search: (prev: Record<string, unknown>) => ({
+                ...prev,
+                ov: "request:new",
+                prefill: draftId,
+              }),
+            });
+          },
+        }}
+        onBack={() => {
+          void navigate({ to: "/audits" });
+        }}
+      />,
+    );
+  },
+});
+
 export const findingsRoute = evaluationRoute("findings");
 export const misstatementsRoute = evaluationRoute("misstatements");
 export const reviewNotesRoute = evaluationRoute("review-notes");
@@ -346,6 +405,7 @@ export const auditRoutes = [
   auditRoute,
   sourceDocumentsRoute,
   risksRoute,
+  controlsRoute,
   narrativeRoute,
   programRoute,
   findingsRoute,

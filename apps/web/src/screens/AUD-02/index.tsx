@@ -40,6 +40,12 @@ import { MaterialityDock, useMaterialityCanvas } from "../AUD-07/Materiality";
 import { usePlanProfileCanvas } from "../EBP-01/PlanProfile";
 import { useProvisionsCanvas } from "../EBP-02/Provisions";
 import { useEligibilityCanvas } from "../EBP-03/Eligibility";
+import {
+  type ControlsOptions,
+  FailedStepCard,
+  INTERNAL_CONTROL,
+  useControlsCanvas,
+} from "../AUD-09";
 import { type SampleSelectionOptions, useSampleSelectionCanvas } from "../AUD-11/SampleSelection";
 import { ViewerPane } from "../SHL-08";
 import { useOpenOverlay } from "../../app-core/open";
@@ -98,6 +104,8 @@ export interface AUD02Props {
   planEditing?: boolean;
   /** EBP-02 b2 (A-05-T17): the Plan Review canvas opens on an earlier review (`?version=`). */
   planReviewVersion?: number;
+  /** AUD-09 (A-04-T32): the Internal Control row's sheet, cell and links. */
+  controls?: ControlsOptions;
 }
 
 /** The rail row whose canvas is AUD-06 (A-02-T09). */
@@ -200,6 +208,7 @@ function Cockpit({
   sampleSelection,
   planEditing,
   planReviewVersion,
+  controls,
 }: Omit<AUD02Props, "auditId"> & { cockpit: AuditCockpitOut }): JSX.Element {
   // A-01-T24: "Export binder…" and the record-mode entries (DV-9, DV-4).
   const audit = useAuditActions(cockpit, overlay ?? null, onOverlay);
@@ -259,6 +268,10 @@ function Cockpit({
       openOverlay(ov.SHL12("attribute_test", testId, level));
     },
   });
+  // AUD-09 (A-04-T32): Planning › Internal Control, behind `assurance.internal_control` (C-20 when
+  // off, drawn by the canvas itself).
+  const controlsOpen = selected === INTERNAL_CONTROL;
+  const controlsCanvas = useControlsCanvas(cockpit, { ...controls, active: controlsOpen });
   const openDoc = (r: SourceDocumentRowOut): void => {
     const version = r.latest_upload?.evidence_version_id ?? null;
     if (version !== null) onDock?.("viewer", version);
@@ -277,6 +290,8 @@ function Cockpit({
     canvas = planReview;
   } else if (eligibilityOpen) {
     canvas = eligibility;
+  } else if (controlsOpen) {
+    canvas = controlsCanvas;
   } else if (row?.section_state === "blocked_on_decision" && row.blocked_on_name != null) {
     canvas = {
       title: row.title,
@@ -375,6 +390,15 @@ function Cockpit({
           // P-09-T09: the SHL-13 run pane, with the v1 activity list below its thread.
           agent: materialityOn ? (
             <MaterialityDock engagementId={cockpit.engagement_id} />
+          ) : controlsOpen ? (
+            <AgentDock engagementId={cockpit.engagement_id}>
+              <div className="px-[12px] pb-[12px]">
+                <FailedStepCard
+                  cockpit={cockpit}
+                  {...(controls?.onFix === undefined ? {} : { onFix: controls.onFix })}
+                />
+              </div>
+            </AgentDock>
           ) : (
             <AgentDock engagementId={cockpit.engagement_id}>
               <AgentActivityTab engagementId={cockpit.engagement_id} />
@@ -467,6 +491,7 @@ export function AuditCockpitPage({
     sampleSelection?: SampleSelectionOptions;
     planEditing?: boolean;
     planReviewVersion?: number;
+    controls?: ControlsOptions;
   };
   onBack?: () => void;
 }): JSX.Element {
@@ -495,6 +520,7 @@ export function AuditCockpitPage({
       {...(initial.planReviewVersion === undefined
         ? {}
         : { planReviewVersion: initial.planReviewVersion })}
+      {...(initial.controls === undefined ? {} : { controls: initial.controls })}
     />
   );
 }
