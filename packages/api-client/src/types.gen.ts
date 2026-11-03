@@ -9166,7 +9166,7 @@ export type ControlExceptionOut = {
     /**
      * Coso Component
      */
-    coso_component: 'control_environment' | 'risk_assessment' | 'control_activities' | 'information_communication' | 'monitoring';
+    coso_component: 'control_environment' | 'risk_assessment' | 'control_activities' | 'information_communication' | 'monitoring' | null;
     /**
      * Description
      */

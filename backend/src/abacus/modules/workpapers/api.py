@@ -66,6 +66,7 @@ from abacus.modules.workpapers.service import (
     CodeTaken,
     NoAssuranceItem,
     WorkpaperInvalid,
+    create_workpaper,
     workpaper_facts,
     workpaper_reviewables,
 )
@@ -128,6 +129,7 @@ __all__ = [
     "checks_for",
     "checks_router",
     "create_test",
+    "create_workpaper",  # A-04-T28: the planning slice opens EBP-140 through the service
     "designed_layout",
     "draft_paper",
     "exception_prefill",

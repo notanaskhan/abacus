@@ -84,7 +84,7 @@ class ControlException:
     description: str
     proposed_severity: str | None
     disposition: str
-    coso_component: str
+    coso_component: str | None  # None: an exception for resolution has none yet (0663)
     misstatement_candidate_amount: Decimal | None
     routed_kind: str | None
     routed_ref: UUID | None
@@ -103,7 +103,7 @@ class ExceptionRow:
     sheet_row: int
     matter: str
     description: str
-    coso_component: str
+    coso_component: str | None  # None: an exception for resolution has none yet (0663)
     proposed_severity: Severity | None = None
     misstatement_candidate_amount: Decimal | None = None
     suggestion_id: UUID | None = None
@@ -121,7 +121,7 @@ class RouteRequest:
     matter: str
     description: str
     proposed_severity: str | None
-    coso_component: str
+    coso_component: str | None  # None: an exception for resolution has none yet (0663)
     amount: Decimal | None
     citation_ids: tuple[UUID, ...]
     requested_by: UUID
@@ -299,7 +299,7 @@ def _exception(r: dict[str, object]) -> ControlException:
         description=cast(str, r["description"]),
         proposed_severity=cast(str | None, r["proposed_severity"]),
         disposition=cast(str, r["disposition"]),
-        coso_component=cast(str, r["coso_component"]),
+        coso_component=cast(str | None, r["coso_component"]),
         misstatement_candidate_amount=cast(Decimal | None, r["misstatement_candidate_amount"]),
         routed_kind=cast(str | None, r["routed_kind"]),
         routed_ref=cast(UUID | None, r["routed_ref"]),

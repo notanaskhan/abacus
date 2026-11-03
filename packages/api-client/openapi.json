@@ -19755,16 +19755,23 @@
             "cls": "internal"
           },
           "coso_component": {
-            "cls": "internal",
-            "enum": [
-              "control_environment",
-              "risk_assessment",
-              "control_activities",
-              "information_communication",
-              "monitoring"
+            "anyOf": [
+              {
+                "enum": [
+                  "control_environment",
+                  "risk_assessment",
+                  "control_activities",
+                  "information_communication",
+                  "monitoring"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "title": "Coso Component",
-            "type": "string"
+            "cls": "internal",
+            "title": "Coso Component"
           },
           "description": {
             "cls": "confidential",
