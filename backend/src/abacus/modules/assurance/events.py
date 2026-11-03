@@ -65,3 +65,15 @@ class RiskRegisterApproved(DomainEvent):
     work_item_id: Annotated[UUID, classified("internal")]
     decision_id: Annotated[UUID, classified("internal")]
     register_hash: Annotated[str, classified("internal")]
+
+
+class ControlExceptionRecorded(DomainEvent):
+    """A-04-T25 (DEC-2206): a row of the Exceptions sheet was recorded or replaced (identifiers
+    only); A-06's findings and AUD-09's read model hear it."""
+
+    event_type: ClassVar[str] = "control_exception.recorded"
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    workpaper_id: Annotated[UUID, classified("internal")]
+    control_exception_id: Annotated[UUID, classified("internal")]
+    sheet_row: Annotated[int, classified("internal")]
