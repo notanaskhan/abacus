@@ -856,8 +856,95 @@ objects:
     source: "blueprint 3.3.1"
     codes:
       assembling:         {label: "Archive in {days} days", variant: muted, disc: clock, terminal: false, derived: false}
-      locked:             {label: "Locked · WORM", variant: soon, disc: lock, terminal: false, derived: false}
+      locked:             {label: "Locked · sealed", variant: soon, disc: lock, terminal: false, derived: false}   # DF-20, DV-2 (A-07-T03): "WORM" only if the SOC 2 auditor accepts it (OQ-2)
       post_lock_addition: {label: "Addition logged", variant: amber, terminal: false, derived: false}
+      locking:            {label: "Locking…", variant: state, terminal: false, derived: true}   # DV-7: transient audit-bar pill while the seal computes; not stored
+
+  # --- A-07 completion, release and archive (A-07-T03; SPEC-644; DF-31) ---
+  eqr_review:   # eqr_reviews.status (AUD-18)
+    source: "A-07 §2.1 (AUD-18)"
+    codes:
+      in_progress:     {label: "In progress", variant: state, terminal: false, derived: false}
+      ready_to_concur: {label: "Ready to concur", variant: green-tint, terminal: false, derived: true}   # 10 of 10 and notes cleared; computed, never stored
+      concurred:       {label: "Concurred", variant: green-tint, terminal: true, derived: false, context_labels: {attribution: "Concurred · {date} · {time} · {person}"}}
+
+  eqr_checklist_item:   # eqr_checklist_items.status
+    source: "A-07 §4.2"
+    codes:
+      todo:    {label: "To do", variant: null, disc: ring, terminal: false, derived: false}
+      partial: {label: "In progress", variant: null, disc: half, terminal: false, derived: false}
+      done:    {label: "Done", variant: null, disc: check_olive, terminal: false, derived: false}
+
+  completion_item:   # completion_items.status (AUD-19)
+    source: "A-07 §2.1 (AUD-19)"
+    codes:
+      open:           {label: "Open", variant: amber, terminal: false, derived: false}
+      partial:        {label: "In progress", variant: state, terminal: false, derived: false}
+      done:           {label: "Complete", variant: green-tint, terminal: false, derived: false}
+      not_applicable: {label: "Not applicable", variant: muted, terminal: false, derived: false}
+
+  subsequent_event:   # subsequent_events.recognition
+    source: "A-07 §2.1 (AUD-19 b)"
+    codes:
+      recognized:    {label: "Recognized", variant: state, terminal: true, derived: false}
+      nonrecognized: {label: "Nonrecognized", variant: neutral, terminal: true, derived: false}
+
+  legal_letter:   # legal_letters.status
+    source: "A-07 §2.1 (AUD-19 c)"
+    codes:
+      not_applicable: {label: "Not applicable", variant: muted, terminal: false, derived: false}
+      requested:      {label: "Requested", variant: state, terminal: false, derived: false}
+      received:       {label: "Received", variant: green-tint, terminal: false, derived: false}
+
+  representation_letter:   # representation_letters.status projection (AUD-21)
+    source: "A-07 §4.2 (AUD-21)"
+    codes:
+      drafting:                  {label: "Drafting", variant: state, terminal: false, derived: false}
+      draft:                     {label: "Draft", variant: neutral, terminal: false, derived: false}
+      awaiting_partner_approval: {label: "Awaiting partner approval", variant: amber, terminal: false, derived: false}
+      approved:                  {label: "Draft · partner-approved", variant: green-tint, terminal: false, derived: false}
+      sent:                      {label: "Sent", variant: state, terminal: false, derived: false, context_labels: {viewed: "Sent · viewed"}}
+      signed:                    {label: "Signed", variant: green, terminal: true, derived: false}
+      date_mismatch:             {label: "Date mismatch", variant: red-tint, terminal: false, derived: false}
+
+  governance_communication:   # governance_communications.status projection (AUD-22)
+    source: "A-07 §4.2 (AUD-22)"
+    codes:
+      not_started:          {label: "Not started", variant: null, disc: ring, terminal: false, derived: false}
+      draft:                {label: "Draft", variant: neutral, terminal: false, derived: false}
+      awaiting_ep_approval: {label: "Awaiting approval", variant: amber, terminal: false, derived: false}
+      sent:                 {label: "Sent", variant: state, terminal: false, derived: false}
+      acknowledged:         {label: "Acknowledged", variant: green, terminal: true, derived: false, context_labels: {attribution: "Acknowledged {date} · {body}"}}
+      overdue:              {label: "Overdue", variant: red-tint, terminal: false, derived: true}   # from due_on (AU-C 265: release + 60 days); never stored
+
+  audit_report:   # audit_reports.status projection (AUD-23)
+    source: "A-07 §4.2 (AUD-23)"
+    codes:
+      draft:       {label: "Draft", variant: neutral, terminal: false, derived: false}
+      approved:    {label: "Approved", variant: green-tint, terminal: false, derived: false}
+      released:    {label: "Released", variant: green, terminal: false, derived: false}
+      reissued:    {label: "Reissued report", variant: red-tint, terminal: false, derived: false}   # Q-05 (fixture-only in A-07, DV-9)
+      out_of_date: {label: "Out of date", variant: amber, terminal: false, derived: true}   # AUD-23 j (R2): a generated document behind its version
+
+  report_release:   # report_releases.kind
+    source: "A-07 §4.2 (AUD-24)"
+    codes:
+      original: {label: "Released", variant: green, terminal: true, derived: false}
+      reissue:  {label: "Reissued", variant: red-tint, terminal: true, derived: false}
+      releasing: {label: "Releasing…", variant: state, terminal: false, derived: true}   # DV-7: transient button state; not stored
+
+  filing:   # filings.status (AUD-24 f)
+    source: "A-07 §4.2 (AUD-24)"
+    codes:
+      awaiting_client_filing: {label: "Awaiting client filing", variant: muted, terminal: false, derived: false}
+      filed:                  {label: "Filed", variant: green, terminal: true, derived: false, context_labels: {with_date: "Filed {date}"}}
+
+  archive_addition:   # archive_addition_decisions.decision (AUD-25 d)
+    source: "A-07 §4.2 (AUD-25)"
+    codes:
+      pending:  {label: "Awaiting partner approval", variant: amber, terminal: false, derived: false}
+      approved: {label: "Addition logged", variant: amber, terminal: true, derived: false}
+      rejected: {label: "Rejected", variant: red-tint, terminal: true, derived: false}
 
   checkpoint:
     source: "blueprint 3.3.1"

@@ -717,6 +717,81 @@ class ArchiveStatus(StrEnum):
     ASSEMBLING = "assembling"
     LOCKED = "locked"
     POST_LOCK_ADDITION = "post_lock_addition"
+    # derived, never stored: locking
+
+
+class EqrReviewStatus(StrEnum):
+    IN_PROGRESS = "in_progress"
+    CONCURRED = "concurred"
+    # derived, never stored: ready_to_concur
+
+
+class EqrChecklistItemStatus(StrEnum):
+    TODO = "todo"
+    PARTIAL = "partial"
+    DONE = "done"
+
+
+class CompletionItemStatus(StrEnum):
+    OPEN = "open"
+    PARTIAL = "partial"
+    DONE = "done"
+    NOT_APPLICABLE = "not_applicable"
+
+
+class SubsequentEventStatus(StrEnum):
+    RECOGNIZED = "recognized"
+    NONRECOGNIZED = "nonrecognized"
+
+
+class LegalLetterStatus(StrEnum):
+    NOT_APPLICABLE = "not_applicable"
+    REQUESTED = "requested"
+    RECEIVED = "received"
+
+
+class RepresentationLetterStatus(StrEnum):
+    DRAFTING = "drafting"
+    DRAFT = "draft"
+    AWAITING_PARTNER_APPROVAL = "awaiting_partner_approval"
+    APPROVED = "approved"
+    SENT = "sent"
+    SIGNED = "signed"
+    DATE_MISMATCH = "date_mismatch"
+
+
+class GovernanceCommunicationStatus(StrEnum):
+    NOT_STARTED = "not_started"
+    DRAFT = "draft"
+    AWAITING_EP_APPROVAL = "awaiting_ep_approval"
+    SENT = "sent"
+    ACKNOWLEDGED = "acknowledged"
+    # derived, never stored: overdue
+
+
+class AuditReportStatus(StrEnum):
+    DRAFT = "draft"
+    APPROVED = "approved"
+    RELEASED = "released"
+    REISSUED = "reissued"
+    # derived, never stored: out_of_date
+
+
+class ReportReleaseStatus(StrEnum):
+    ORIGINAL = "original"
+    REISSUE = "reissue"
+    # derived, never stored: releasing
+
+
+class FilingStatus(StrEnum):
+    AWAITING_CLIENT_FILING = "awaiting_client_filing"
+    FILED = "filed"
+
+
+class ArchiveAdditionStatus(StrEnum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
 
 
 class CheckpointStatus(StrEnum):
@@ -1715,6 +1790,65 @@ STORED: dict[str, tuple[str, ...]] = {
         "assembling",
         "locked",
         "post_lock_addition",
+    ),
+    "eqr_review": (
+        "in_progress",
+        "concurred",
+    ),
+    "eqr_checklist_item": (
+        "todo",
+        "partial",
+        "done",
+    ),
+    "completion_item": (
+        "open",
+        "partial",
+        "done",
+        "not_applicable",
+    ),
+    "subsequent_event": (
+        "recognized",
+        "nonrecognized",
+    ),
+    "legal_letter": (
+        "not_applicable",
+        "requested",
+        "received",
+    ),
+    "representation_letter": (
+        "drafting",
+        "draft",
+        "awaiting_partner_approval",
+        "approved",
+        "sent",
+        "signed",
+        "date_mismatch",
+    ),
+    "governance_communication": (
+        "not_started",
+        "draft",
+        "awaiting_ep_approval",
+        "sent",
+        "acknowledged",
+    ),
+    "audit_report": (
+        "draft",
+        "approved",
+        "released",
+        "reissued",
+    ),
+    "report_release": (
+        "original",
+        "reissue",
+    ),
+    "filing": (
+        "awaiting_client_filing",
+        "filed",
+    ),
+    "archive_addition": (
+        "pending",
+        "approved",
+        "rejected",
     ),
     "checkpoint": (
         "proposed",

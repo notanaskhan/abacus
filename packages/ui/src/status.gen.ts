@@ -3078,7 +3078,7 @@ export const STATUS_REGISTRY = {
       "disc": "clock"
     },
     "locked": {
-      "label": "Locked · WORM",
+      "label": "Locked · sealed",
       "variant": "soon",
       "terminal": false,
       "derived": false,
@@ -3088,6 +3088,296 @@ export const STATUS_REGISTRY = {
       "label": "Addition logged",
       "variant": "amber",
       "terminal": false,
+      "derived": false
+    },
+    "locking": {
+      "label": "Locking…",
+      "variant": "state",
+      "terminal": false,
+      "derived": true
+    }
+  },
+  "eqr_review": {
+    "in_progress": {
+      "label": "In progress",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "ready_to_concur": {
+      "label": "Ready to concur",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": true
+    },
+    "concurred": {
+      "label": "Concurred",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "attribution": "Concurred · {date} · {time} · {person}"
+      }
+    }
+  },
+  "eqr_checklist_item": {
+    "todo": {
+      "label": "To do",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "ring"
+    },
+    "partial": {
+      "label": "In progress",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "half"
+    },
+    "done": {
+      "label": "Done",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "check_olive"
+    }
+  },
+  "completion_item": {
+    "open": {
+      "label": "Open",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "partial": {
+      "label": "In progress",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "done": {
+      "label": "Complete",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "not_applicable": {
+      "label": "Not applicable",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "subsequent_event": {
+    "recognized": {
+      "label": "Recognized",
+      "variant": "state",
+      "terminal": true,
+      "derived": false
+    },
+    "nonrecognized": {
+      "label": "Nonrecognized",
+      "variant": "neutral",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "legal_letter": {
+    "not_applicable": {
+      "label": "Not applicable",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    },
+    "requested": {
+      "label": "Requested",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "received": {
+      "label": "Received",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "representation_letter": {
+    "drafting": {
+      "label": "Drafting",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "draft": {
+      "label": "Draft",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "awaiting_partner_approval": {
+      "label": "Awaiting partner approval",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "approved": {
+      "label": "Draft · partner-approved",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "sent": {
+      "label": "Sent",
+      "variant": "state",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "viewed": "Sent · viewed"
+      }
+    },
+    "signed": {
+      "label": "Signed",
+      "variant": "green",
+      "terminal": true,
+      "derived": false
+    },
+    "date_mismatch": {
+      "label": "Date mismatch",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "governance_communication": {
+    "not_started": {
+      "label": "Not started",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "ring"
+    },
+    "draft": {
+      "label": "Draft",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "awaiting_ep_approval": {
+      "label": "Awaiting approval",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "sent": {
+      "label": "Sent",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "acknowledged": {
+      "label": "Acknowledged",
+      "variant": "green",
+      "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "attribution": "Acknowledged {date} · {body}"
+      }
+    },
+    "overdue": {
+      "label": "Overdue",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": true
+    }
+  },
+  "audit_report": {
+    "draft": {
+      "label": "Draft",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "approved": {
+      "label": "Approved",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "released": {
+      "label": "Released",
+      "variant": "green",
+      "terminal": false,
+      "derived": false
+    },
+    "reissued": {
+      "label": "Reissued report",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "out_of_date": {
+      "label": "Out of date",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    }
+  },
+  "report_release": {
+    "original": {
+      "label": "Released",
+      "variant": "green",
+      "terminal": true,
+      "derived": false
+    },
+    "reissue": {
+      "label": "Reissued",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "releasing": {
+      "label": "Releasing…",
+      "variant": "state",
+      "terminal": false,
+      "derived": true
+    }
+  },
+  "filing": {
+    "awaiting_client_filing": {
+      "label": "Awaiting client filing",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    },
+    "filed": {
+      "label": "Filed",
+      "variant": "green",
+      "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "with_date": "Filed {date}"
+      }
+    }
+  },
+  "archive_addition": {
+    "pending": {
+      "label": "Awaiting partner approval",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "approved": {
+      "label": "Addition logged",
+      "variant": "amber",
+      "terminal": true,
+      "derived": false
+    },
+    "rejected": {
+      "label": "Rejected",
+      "variant": "red-tint",
+      "terminal": true,
       "derived": false
     }
   },
