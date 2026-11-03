@@ -21,6 +21,7 @@ const RiskRegister = lazyScreen(
   async () => (await import("../../screens/AUD-08")).RiskRegisterPage,
 );
 const Narrative = lazyScreen(async () => (await import("../../screens/AUD-05")).NarrativePage);
+const Program = lazyScreen(async () => (await import("../../screens/AUD-04")).ProgramPage);
 const Evaluation = lazyScreen(
   async () => (await import("../../screens/evaluation")).EvaluationPage,
 );
@@ -250,6 +251,43 @@ export const risksRoute = createRoute({
   },
 });
 
+// A-04-T27: AUD-04 `/audits/$auditId/program/$wpRef?tab=linkage|approach` (Service Organizations
+// by default); Adopt (L1) and Sign off… open SHL-12 on the paper.
+type ProgramSearch = { tab?: "linkage" | "approach" };
+export const programRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/audits/$auditId/program/$wpRef",
+  validateSearch: (search: Record<string, unknown>): ProgramSearch =>
+    search.tab === "linkage" || search.tab === "approach" ? { tab: search.tab } : {},
+  component: function ProgramRoutePage(): JSX.Element {
+    const auditId = useParam("auditId");
+    const wpRef = useParam("wpRef");
+    const navigate = useNavigate();
+    const search: ProgramSearch = useSearch({ strict: false });
+    const overlays = useOverlays();
+    return gated(
+      <Program
+        auditId={auditId}
+        workpaperId={wpRef}
+        tab={search.tab ?? "service_organizations"}
+        onTab={(tab) => {
+          void navigate({
+            to: ".",
+            search: tab === "service_organizations" ? {} : { tab },
+            replace: true,
+          });
+        }}
+        onSignOff={(workpaperId, level) => {
+          overlays.open("signoff", "workpaper", workpaperId, level);
+        }}
+        onBack={() => {
+          void navigate({ to: "/audits/$auditId", params: { auditId } });
+        }}
+      />,
+    );
+  },
+});
+
 // A-04-T21: AUD-05 `/audits/$auditId/narrative/$wpRef?tab=risk|fraud`; Summary and Linkage open
 // AUD-08; Escalate… opens SHL-14 with the flag as its prefill (`?ov=request:new&prefill=`).
 export const narrativeRoute = createRoute({
@@ -309,6 +347,7 @@ export const auditRoutes = [
   sourceDocumentsRoute,
   risksRoute,
   narrativeRoute,
+  programRoute,
   findingsRoute,
   misstatementsRoute,
   reviewNotesRoute,
