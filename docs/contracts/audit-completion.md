@@ -42,6 +42,43 @@ v2 with one sprint of overlap.
 | Issuance, release and filings (AUD-24) | *T05* | A-07-T05 |
 | Assembly, archive, manifest and additions (AUD-25) | *T05* | A-07-T05 |
 
+## EQR (AUD-18) — stub, A-07-T04
+Code: `assurance/completion_contract.py`. Every route answers 501 until A-07-T18 and 404 for a
+firm with `audits.completion` off once A-07-T33 creates it.
+
+| Operation | Method and path | Action | Live in |
+|---|---|---|---|
+| The review | `GET /v1/audits/{work_item_id}/eqr` → `EqrReviewOut` | `eqr.read` | T18 |
+| Build the digest | `POST …/eqr/digest:build` (Idempotency-Key) → 202 `CompletionRunAcceptedOut` | `eqr.build_digest` | T18, T32 |
+| Mark a card reviewed | `POST …/eqr/digest/{card_id}/reviewed` `{reviewed}` | `eqr.mark_reviewed` (human, `function_in: eqr`) | T18 |
+| Update a checklist item | `PATCH …/eqr/checklist/{item_key}` `{status, sub_line, seen_version}` | `eqr.checklist_update` (human, `function_in: eqr`) | T18 |
+| Concur (G6) | `POST …/eqr/concur` `{not_involved: true, concurrence_date, seen_version}` (Idempotency-Key) | `eqr.concur` (human, fresh MFA) | T18 |
+| Request EQR (DF-05) | `POST …/eqr/request` `{message?}` | `eqr.request` | T18 |
+| EQR notes | C3's `POST /v1/review-notes {kind: eqr}` and its messages, clear and reopen | P-04's actions | T18 |
+
+Refusals: `403 eqr_only` (not the assigned EQR), `409 checklist_incomplete` (an item or an EQR
+note open), `409 eqr_ineligible` (P-07 eligibility re-check), `401 mfa_required`,
+`409 stale_version`.
+
+## Completion, subsequent events, legal letters, going concern (AUD-19) — stub, A-07-T04
+
+| Operation | Method and path | Action | Live in |
+|---|---|---|---|
+| The checklist | `GET /v1/audits/{work_item_id}/completion` → `AuditCompletionOut` (counts exclude N/A) | `completion.read` | T22 |
+| Manual not applicable | `POST …/completion/items/{item_key}/not-applicable` `{basis, seen_version}` | `completion.update` | T22 |
+| Reopen | `POST …/completion/items/{item_key}/reopen` `{seen_version}` | `completion.update` | T22 |
+| Subsequent events | `GET …/subsequent-events` → procedures, events, bring-down | `completion.read` | T23 |
+| Add or perform a procedure | `POST …/subsequent-events/procedures` · `PATCH …/procedures/{id}` | `subsequent_event.update` | T23 |
+| Record an event | `POST …/subsequent-events` | `subsequent_event.create` | T23 |
+| Legal letters | `GET …/legal-letters` · `PUT …/legal-letters` `{not_applicable, basis, seen_version}` | `completion.read` · `legal_letter.update` | T23 |
+| Request a legal letter | `POST …/legal-letters/request` `{counsel_contact_id, message?}` (Idempotency-Key) | `legal_letter.request` | T23 |
+| Going concern | `GET …/going-concern` → `GoingConcernOut` | `completion.read` | T23 |
+| Request the EP's decision | `POST …/going-concern/request-decision` | `going_concern.request_decision` | T23 |
+
+The `going_concern` card is decided only through C3 (`POST /v1/decisions/{id}/decide`), reserved
+to the engagement partner. Refusals: `409 item_derived` (N/A on a projected item),
+`409 decision_required`, `409 stale_version`.
+
 ## Events (outbox; identifiers and enums only)
 `report.released`, `archive.locked`, `archive.addition_logged`,
 `governance_communication.sent`, `governance_communication.acknowledged` (A-07 §4.6).

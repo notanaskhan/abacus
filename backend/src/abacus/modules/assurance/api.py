@@ -19,6 +19,7 @@ from abacus.modules.assurance.audits_contract import audits_router
 from abacus.modules.assurance.completion import g6, g7, on_entry_client_decision
 from abacus.modules.assurance.completion_decisions import register_completion_decision_kinds
 from abacus.modules.assurance.completion_routes import dashboard_router
+from abacus.modules.assurance.completion_contract import router as audit_completion_router
 from abacus.modules.assurance.completion_routes import router as completion_router
 
 # A-04-T08/T09: the pure materiality engine, for the recommender's evaluation (BOUND-001).
@@ -128,6 +129,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     planning_router,  # A-04-T01 audit planning stub (docs/contracts/audit-planning.md)
     ebp_router,  # A-05-T04 ebp-workpapers v1 stub (docs/contracts/ebp-workpapers.md)
     findings_router,  # A-06-T05 completion family stub (docs/contracts/completion.md)
+    audit_completion_router,  # A-07-T04 AUD-18/AUD-19 stub (docs/contracts/audit-completion.md)
 )
 
 # SPEC-313 (TASK-331): trial balances appear in the sign-off matrix and count toward G5.

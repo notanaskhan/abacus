@@ -6204,6 +6204,231 @@
         "title": "AuditCockpitOut",
         "type": "object"
       },
+      "AuditCompletionItemOut": {
+        "properties": {
+          "depends_on_client": {
+            "cls": "internal",
+            "title": "Depends On Client",
+            "type": "boolean"
+          },
+          "derived": {
+            "cls": "internal",
+            "title": "Derived",
+            "type": "boolean"
+          },
+          "due_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Due On"
+          },
+          "evidence_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Evidence Text"
+          },
+          "gate_tag": {
+            "anyOf": [
+              {
+                "enum": [
+                  "G1",
+                  "G2",
+                  "G3",
+                  "G4",
+                  "G5",
+                  "G6",
+                  "G7",
+                  "G8",
+                  "G9"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Gate Tag"
+          },
+          "item_key": {
+            "cls": "internal",
+            "title": "Item Key",
+            "type": "string"
+          },
+          "link_target": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Link Target"
+          },
+          "na_basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Na Basis"
+          },
+          "na_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Na By Name"
+          },
+          "position": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Position",
+            "type": "integer"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "open",
+              "partial",
+              "done",
+              "not_applicable"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "cls": "internal",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_key",
+          "position",
+          "title",
+          "status",
+          "derived",
+          "evidence_text",
+          "link_target",
+          "gate_tag",
+          "depends_on_client",
+          "due_on",
+          "na_basis",
+          "na_by_name"
+        ],
+        "title": "AuditCompletionItemOut",
+        "type": "object"
+      },
+      "AuditCompletionOut": {
+        "description": "GET \u2026/completion: items, counts with N/A excluded (\"12 of 17\"), what blocks the report.",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "enum": [
+                "completion.update",
+                "subsequent_event.create",
+                "subsequent_event.update",
+                "legal_letter.update",
+                "legal_letter.request",
+                "going_concern.request_decision"
+              ],
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "blockers": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Blockers",
+            "type": "array"
+          },
+          "complete": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Complete",
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AuditCompletionItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "not_applicable": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Not Applicable",
+            "type": "integer"
+          },
+          "open": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Open",
+            "type": "integer"
+          },
+          "total": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          },
+          "work_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Work Item Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "work_item_id",
+          "items",
+          "complete",
+          "not_applicable",
+          "open",
+          "total",
+          "blockers",
+          "allowed_actions",
+          "version"
+        ],
+        "title": "AuditCompletionOut",
+        "type": "object"
+      },
       "AuditEngagementStatus": {
         "enum": [
           "planning",
@@ -10184,6 +10409,54 @@
           "resolved"
         ],
         "title": "BreachOut",
+        "type": "object"
+      },
+      "BringDownOut": {
+        "description": "The report-date bring-down run (BringDownWorkflow, 09:00 firm time on the report date).",
+        "properties": {
+          "run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Run Id"
+          },
+          "scheduled_for": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Scheduled For"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "not_scheduled",
+              "queued",
+              "completed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scheduled_for",
+          "run_id",
+          "status"
+        ],
+        "title": "BringDownOut",
         "type": "object"
       },
       "BudgetIn": {
@@ -16513,6 +16786,65 @@
         "title": "CompletenessTieResultStatus",
         "type": "string"
       },
+      "CompletionItemNaIn": {
+        "additionalProperties": false,
+        "properties": {
+          "basis": {
+            "cls": "confidential",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Basis",
+            "type": "string"
+          },
+          "seen_version": {
+            "cls": "internal",
+            "title": "Seen Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "basis",
+          "seen_version"
+        ],
+        "title": "CompletionItemNaIn",
+        "type": "object"
+      },
+      "CompletionItemReopenIn": {
+        "additionalProperties": false,
+        "properties": {
+          "seen_version": {
+            "cls": "internal",
+            "title": "Seen Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "seen_version"
+        ],
+        "title": "CompletionItemReopenIn",
+        "type": "object"
+      },
+      "CompletionKvOut": {
+        "description": "One code-computed label and value (a digest card row, a going-concern input).",
+        "properties": {
+          "label": {
+            "cls": "internal",
+            "title": "Label",
+            "type": "string"
+          },
+          "value": {
+            "cls": "confidential",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "value"
+        ],
+        "title": "CompletionKvOut",
+        "type": "object"
+      },
       "CompletionOut": {
         "properties": {
           "archive": {
@@ -16718,6 +17050,28 @@
           "at"
         ],
         "title": "CompletionRecordOut",
+        "type": "object"
+      },
+      "CompletionRunAcceptedOut": {
+        "description": "202: a code-only run started (EqrDigestWorkflow, CompletionReadiness, BringDown).",
+        "properties": {
+          "run_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status_url": {
+            "cls": "internal",
+            "title": "Status Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "status_url"
+        ],
+        "title": "CompletionRunAcceptedOut",
         "type": "object"
       },
       "ComposerLetterOut": {
@@ -30413,6 +30767,21 @@
         "title": "EqrCandidateOut",
         "type": "object"
       },
+      "EqrCardReviewIn": {
+        "additionalProperties": false,
+        "properties": {
+          "reviewed": {
+            "cls": "internal",
+            "title": "Reviewed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "reviewed"
+        ],
+        "title": "EqrCardReviewIn",
+        "type": "object"
+      },
       "EqrCheckOut": {
         "description": "One eligibility check, a code and its result; `year` names the cooling-off year.",
         "properties": {
@@ -30469,6 +30838,277 @@
           "result"
         ],
         "title": "EqrCheckOut",
+        "type": "object"
+      },
+      "EqrChecklistIn": {
+        "additionalProperties": false,
+        "properties": {
+          "seen_version": {
+            "cls": "internal",
+            "title": "Seen Version",
+            "type": "integer"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "todo",
+              "partial",
+              "done"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "sub_line": {
+            "anyOf": [
+              {
+                "maxLength": 280,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Sub Line"
+          }
+        },
+        "required": [
+          "status",
+          "seen_version"
+        ],
+        "title": "EqrChecklistIn",
+        "type": "object"
+      },
+      "EqrChecklistItemOut": {
+        "properties": {
+          "item_key": {
+            "cls": "internal",
+            "title": "Item Key",
+            "type": "string"
+          },
+          "position": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Position",
+            "type": "integer"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "todo",
+              "partial",
+              "done"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "sub_line": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Sub Line"
+          },
+          "title": {
+            "cls": "internal",
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Updated By Name"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "item_key",
+          "position",
+          "title",
+          "status",
+          "sub_line",
+          "updated_by_name",
+          "version"
+        ],
+        "title": "EqrChecklistItemOut",
+        "type": "object"
+      },
+      "EqrConcurIn": {
+        "additionalProperties": false,
+        "description": "G6: only the assigned EQR, 10 of 10, notes cleared, attested, fresh MFA.",
+        "properties": {
+          "concurrence_date": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Concurrence Date",
+            "type": "string"
+          },
+          "not_involved": {
+            "cls": "internal",
+            "const": true,
+            "title": "Not Involved",
+            "type": "boolean"
+          },
+          "seen_version": {
+            "cls": "internal",
+            "title": "Seen Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "not_involved",
+          "concurrence_date",
+          "seen_version"
+        ],
+        "title": "EqrConcurIn",
+        "type": "object"
+      },
+      "EqrConcurrenceOut": {
+        "properties": {
+          "concurred_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Concurred At",
+            "type": "string"
+          },
+          "concurred_by_name": {
+            "cls": "internal",
+            "title": "Concurred By Name",
+            "type": "string"
+          },
+          "concurrence_date": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Concurrence Date",
+            "type": "string"
+          },
+          "not_involved_attested": {
+            "cls": "internal",
+            "const": true,
+            "title": "Not Involved Attested",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "concurred_by_name",
+          "concurred_at",
+          "concurrence_date",
+          "not_involved_attested"
+        ],
+        "title": "EqrConcurrenceOut",
+        "type": "object"
+      },
+      "EqrDigestCardOut": {
+        "description": "A card built by code from one decided card or conclusion; rebuilt cards supersede.",
+        "properties": {
+          "citation_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "link_target": {
+            "cls": "internal",
+            "title": "Link Target",
+            "type": "string"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reviewed At"
+          },
+          "reviewed_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reviewed By Name"
+          },
+          "rows": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/CompletionKvOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "snapshot_sha256": {
+            "cls": "internal",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Snapshot Sha256",
+            "type": "string"
+          },
+          "source_kind": {
+            "cls": "internal",
+            "enum": [
+              "decision",
+              "conclusion"
+            ],
+            "title": "Source Kind",
+            "type": "string"
+          },
+          "source_ref": {
+            "cls": "internal",
+            "title": "Source Ref",
+            "type": "string"
+          },
+          "title": {
+            "cls": "internal",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "source_kind",
+          "source_ref",
+          "title",
+          "rows",
+          "snapshot_sha256",
+          "citation_ids",
+          "link_target",
+          "reviewed_at",
+          "reviewed_by_name"
+        ],
+        "title": "EqrDigestCardOut",
         "type": "object"
       },
       "EqrEligibilityApprovalIn": {
@@ -30564,6 +31204,209 @@
           "user_id"
         ],
         "title": "EqrIn",
+        "type": "object"
+      },
+      "EqrNoteRowOut": {
+        "description": "An EQR note (a C3 review note of kind `eqr`), summarised for the rail.",
+        "properties": {
+          "assignee_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Assignee Name"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "ref": {
+            "cls": "internal",
+            "pattern": "^EQR-[0-9]{1,3}$",
+            "title": "Ref",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "open",
+              "responded",
+              "cleared"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "ref",
+          "status",
+          "assignee_name"
+        ],
+        "title": "EqrNoteRowOut",
+        "type": "object"
+      },
+      "EqrRequestIn": {
+        "additionalProperties": false,
+        "description": "\"Request EQR\u2026\" (DF-05, DV-4).",
+        "properties": {
+          "message": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Message"
+          }
+        },
+        "title": "EqrRequestIn",
+        "type": "object"
+      },
+      "EqrReviewOut": {
+        "description": "GET \u2026/eqr: the review, its checklist, digest cards, notes and what blocks concurrence.",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "enum": [
+                "eqr.build_digest",
+                "eqr.mark_reviewed",
+                "eqr.checklist_update",
+                "eqr.concur",
+                "eqr.request",
+                "review_note.create",
+                "review_note.respond",
+                "review_note.clear"
+              ],
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "blockers": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Blockers",
+            "type": "array"
+          },
+          "checklist": {
+            "items": {
+              "$ref": "#/components/schemas/EqrChecklistItemOut"
+            },
+            "title": "Checklist",
+            "type": "array"
+          },
+          "checklist_done": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Checklist Done",
+            "type": "integer"
+          },
+          "checklist_total": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Checklist Total",
+            "type": "integer"
+          },
+          "concurrence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EqrConcurrenceOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "digest_cards": {
+            "items": {
+              "$ref": "#/components/schemas/EqrDigestCardOut"
+            },
+            "title": "Digest Cards",
+            "type": "array"
+          },
+          "eqr_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Eqr Name"
+          },
+          "notes": {
+            "items": {
+              "$ref": "#/components/schemas/EqrNoteRowOut"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "required": {
+            "cls": "internal",
+            "title": "Required",
+            "type": "boolean"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "in_progress",
+              "ready_to_concur",
+              "concurred"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          },
+          "viewer_is_eqr": {
+            "cls": "internal",
+            "title": "Viewer Is Eqr",
+            "type": "boolean"
+          },
+          "work_item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Work Item Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "work_item_id",
+          "required",
+          "eqr_name",
+          "status",
+          "checklist",
+          "checklist_done",
+          "checklist_total",
+          "digest_cards",
+          "notes",
+          "concurrence",
+          "blockers",
+          "viewer_is_eqr",
+          "allowed_actions",
+          "version"
+        ],
+        "title": "EqrReviewOut",
         "type": "object"
       },
       "EroDesignationIn": {
@@ -39032,6 +39875,118 @@
           "choice"
         ],
         "title": "GoingConcernBody",
+        "type": "object"
+      },
+      "GoingConcernOut": {
+        "description": "The EP's `going_concern` card and code's inputs (Granite Peak: DSCR 1.32\u00d7 vs 1.25\u00d7).",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "enum": [
+                "completion.update",
+                "subsequent_event.create",
+                "subsequent_event.update",
+                "legal_letter.update",
+                "legal_letter.request",
+                "going_concern.request_decision"
+              ],
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "conclusion": {
+            "anyOf": [
+              {
+                "enum": [
+                  "no_substantial_doubt",
+                  "doubt_alleviated",
+                  "doubt_exists"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Conclusion"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Decided At"
+          },
+          "decided_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Decided By Name"
+          },
+          "decision_card_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Decision Card Id"
+          },
+          "inputs": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/CompletionKvOut"
+            },
+            "title": "Inputs",
+            "type": "array"
+          },
+          "reserved_to": {
+            "cls": "internal",
+            "const": "engagement_partner",
+            "title": "Reserved To",
+            "type": "string"
+          },
+          "state": {
+            "cls": "internal",
+            "enum": [
+              "not_requested",
+              "awaiting_decision",
+              "decided"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state",
+          "decision_card_id",
+          "conclusion",
+          "decided_by_name",
+          "decided_at",
+          "inputs",
+          "reserved_to",
+          "allowed_actions"
+        ],
+        "title": "GoingConcernOut",
         "type": "object"
       },
       "GovernancePersonOut": {
@@ -49621,6 +50576,153 @@
           "rows"
         ],
         "title": "LegalHolidaysPayload",
+        "type": "object"
+      },
+      "LegalLetterIn": {
+        "additionalProperties": false,
+        "description": "Not applicable needs a basis (CHECK `not_applicable = (basis IS NOT NULL)`).",
+        "properties": {
+          "basis": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Basis"
+          },
+          "not_applicable": {
+            "cls": "internal",
+            "title": "Not Applicable",
+            "type": "boolean"
+          },
+          "seen_version": {
+            "cls": "internal",
+            "title": "Seen Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "not_applicable",
+          "seen_version"
+        ],
+        "title": "LegalLetterIn",
+        "type": "object"
+      },
+      "LegalLetterOut": {
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "enum": [
+                "completion.update",
+                "subsequent_event.create",
+                "subsequent_event.update",
+                "legal_letter.update",
+                "legal_letter.request",
+                "going_concern.request_decision"
+              ],
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Basis"
+          },
+          "not_applicable": {
+            "cls": "internal",
+            "title": "Not Applicable",
+            "type": "boolean"
+          },
+          "request_item_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Request Item Id"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "not_applicable",
+                  "requested",
+                  "received"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Status"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "status",
+          "not_applicable",
+          "basis",
+          "request_item_id",
+          "allowed_actions",
+          "version"
+        ],
+        "title": "LegalLetterOut",
+        "type": "object"
+      },
+      "LegalLetterRequestIn": {
+        "additionalProperties": false,
+        "description": "An SHL-14 third-party request to counsel through P-06.",
+        "properties": {
+          "counsel_contact_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Counsel Contact Id",
+            "type": "string"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Message"
+          }
+        },
+        "required": [
+          "counsel_contact_id"
+        ],
+        "title": "LegalLetterRequestIn",
         "type": "object"
       },
       "LegendBlock": {
@@ -86974,6 +88076,336 @@
         "title": "SubmitVersionIn",
         "type": "object"
       },
+      "SubsequentEventIn": {
+        "additionalProperties": false,
+        "properties": {
+          "citation_ids": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "description": {
+            "cls": "confidential",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          },
+          "fs_effect": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Fs Effect"
+          },
+          "note_ref": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Note Ref"
+          },
+          "recognition": {
+            "cls": "internal",
+            "enum": [
+              "recognized",
+              "nonrecognized"
+            ],
+            "title": "Recognition",
+            "type": "string"
+          }
+        },
+        "required": [
+          "description",
+          "recognition"
+        ],
+        "title": "SubsequentEventIn",
+        "type": "object"
+      },
+      "SubsequentEventOut": {
+        "properties": {
+          "citation_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "description": {
+            "cls": "confidential",
+            "title": "Description",
+            "type": "string"
+          },
+          "fs_effect": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Fs Effect"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "note_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Note Ref"
+          },
+          "recognition": {
+            "cls": "internal",
+            "enum": [
+              "recognized",
+              "nonrecognized"
+            ],
+            "title": "Recognition",
+            "type": "string"
+          },
+          "recorded_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "recorded_by_name": {
+            "cls": "internal",
+            "title": "Recorded By Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "description",
+          "recognition",
+          "fs_effect",
+          "note_ref",
+          "citation_ids",
+          "recorded_by_name",
+          "recorded_at"
+        ],
+        "title": "SubsequentEventOut",
+        "type": "object"
+      },
+      "SubsequentEventProcedureIn": {
+        "additionalProperties": false,
+        "properties": {
+          "procedure_key": {
+            "cls": "internal",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Procedure Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "procedure_key"
+        ],
+        "title": "SubsequentEventProcedureIn",
+        "type": "object"
+      },
+      "SubsequentEventProcedureOut": {
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "performed_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Performed By Name"
+          },
+          "performed_through": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Performed Through"
+          },
+          "procedure_key": {
+            "cls": "internal",
+            "title": "Procedure Key",
+            "type": "string"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Run Id"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "open",
+              "performed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "cls": "internal",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "procedure_key",
+          "title",
+          "performed_through",
+          "performed_by_name",
+          "status",
+          "run_id"
+        ],
+        "title": "SubsequentEventProcedureOut",
+        "type": "object"
+      },
+      "SubsequentEventProcedureUpdateIn": {
+        "additionalProperties": false,
+        "properties": {
+          "performed_through": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Performed Through",
+            "type": "string"
+          },
+          "seen_version": {
+            "cls": "internal",
+            "title": "Seen Version",
+            "type": "integer"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "open",
+              "performed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "performed_through",
+          "status",
+          "seen_version"
+        ],
+        "title": "SubsequentEventProcedureUpdateIn",
+        "type": "object"
+      },
+      "SubsequentEventsOut": {
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "enum": [
+                "completion.update",
+                "subsequent_event.create",
+                "subsequent_event.update",
+                "legal_letter.update",
+                "legal_letter.request",
+                "going_concern.request_decision"
+              ],
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "bring_down": {
+            "$ref": "#/components/schemas/BringDownOut"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/SubsequentEventOut"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "procedures": {
+            "items": {
+              "$ref": "#/components/schemas/SubsequentEventProcedureOut"
+            },
+            "title": "Procedures",
+            "type": "array"
+          },
+          "report_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Report Date"
+          }
+        },
+        "required": [
+          "report_date",
+          "procedures",
+          "events",
+          "bring_down",
+          "allowed_actions"
+        ],
+        "title": "SubsequentEventsOut",
+        "type": "object"
+      },
       "SubserviceOrgOut": {
         "properties": {
           "name": {
@@ -102585,6 +104017,414 @@
         "x-abacus-action": "engagement.read_metadata"
       }
     },
+    "/v1/audits/{work_item_id}/completion": {
+      "get": {
+        "description": "AUD-19 a: the projected checklist (A-07-T22).",
+        "operationId": "audit_completion",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditCompletionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Audit Completion Route",
+        "tags": [
+          "audit completion"
+        ],
+        "x-abacus-action": "completion.read"
+      }
+    },
+    "/v1/audits/{work_item_id}/completion/items/{item_key}/not-applicable": {
+      "post": {
+        "description": "A manager marks a manual item not applicable with a basis (409 `item_derived` on a\nprojected item).",
+        "operationId": "completion_item_na",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_key",
+            "required": true,
+            "schema": {
+              "title": "Item Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompletionItemNaIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditCompletionItemOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Completion Item Na Route",
+        "tags": [
+          "audit completion"
+        ],
+        "x-abacus-action": "completion.update"
+      }
+    },
+    "/v1/audits/{work_item_id}/completion/items/{item_key}/reopen": {
+      "post": {
+        "operationId": "completion_item_reopen",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_key",
+            "required": true,
+            "schema": {
+              "title": "Item Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompletionItemReopenIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditCompletionItemOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Completion Item Reopen Route",
+        "tags": [
+          "audit completion"
+        ],
+        "x-abacus-action": "completion.update"
+      }
+    },
     "/v1/audits/{work_item_id}/ebp/certification/points/{point_key}": {
       "put": {
         "description": "A person evaluates a certification point (29 CFR 2520.103-8; T27).",
@@ -105712,6 +107552,838 @@
         "x-abacus-action": "ledger_snapshot.create_from_document"
       }
     },
+    "/v1/audits/{work_item_id}/eqr": {
+      "get": {
+        "description": "AUD-18: checklist, digest cards, EQR notes and the concurrence blockers (A-07-T18).",
+        "operationId": "eqr_review",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EqrReviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Eqr Review Route",
+        "tags": [
+          "audit completion"
+        ],
+        "x-abacus-action": "eqr.read"
+      }
+    },
+    "/v1/audits/{work_item_id}/eqr/checklist/{item_key}": {
+      "patch": {
+        "operationId": "eqr_checklist",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_key",
+            "required": true,
+            "schema": {
+              "title": "Item Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EqrChecklistIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EqrChecklistItemOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Eqr Checklist Route",
+        "tags": [
+          "audit completion"
+        ],
+        "x-abacus-action": "eqr.checklist_update"
+      }
+    },
+    "/v1/audits/{work_item_id}/eqr/concur": {
+      "post": {
+        "description": "G6. Refused while any item or EQR note is open (409 `checklist_incomplete`), for anyone but\nthe assigned EQR (403 `eqr_only`), without a fresh second factor (401 `mfa_required`).",
+        "operationId": "eqr_concur",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EqrConcurIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EqrReviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Eqr Concur Route",
+        "tags": [
+          "audit completion"
+        ],
+        "x-abacus-action": "eqr.concur"
+      }
+    },
+    "/v1/audits/{work_item_id}/eqr/digest/{card_id}/reviewed": {
+      "post": {
+        "description": "The assigned EQR marks a card reviewed (403 `eqr_only` otherwise; A-07-T18).",
+        "operationId": "eqr_card_reviewed",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "card_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Card Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EqrCardReviewIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EqrDigestCardOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Eqr Card Reviewed Route",
+        "tags": [
+          "audit completion"
+        ],
+        "x-abacus-action": "eqr.mark_reviewed"
+      }
+    },
+    "/v1/audits/{work_item_id}/eqr/digest:build": {
+      "post": {
+        "description": "Starts EqrDigestWorkflow (code only; A-07-T18, T32).",
+        "operationId": "eqr_digest_build",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompletionRunAcceptedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Eqr Digest Build Route",
+        "tags": [
+          "audit completion"
+        ],
+        "x-abacus-action": "eqr.build_digest"
+      }
+    },
+    "/v1/audits/{work_item_id}/eqr/request": {
+      "post": {
+        "description": "\"Request EQR\u2026\" from AUD-23 while an EQR is required and not concurred (DF-05).",
+        "operationId": "eqr_request",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EqrRequestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EqrReviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Eqr Request Route",
+        "tags": [
+          "audit completion"
+        ],
+        "x-abacus-action": "eqr.request"
+      }
+    },
     "/v1/audits/{work_item_id}/estimates": {
       "get": {
         "operationId": "estimates",
@@ -106121,6 +108793,649 @@
           "assurance"
         ],
         "x-abacus-action": "estimate.request_conclusion"
+      }
+    },
+    "/v1/audits/{work_item_id}/going-concern": {
+      "get": {
+        "description": "AUD-19 d and e: the decided card read-only, \"Reserved to Engagement Partner\".",
+        "operationId": "audit_going_concern",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoingConcernOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Audit Going Concern Route",
+        "tags": [
+          "audit completion"
+        ],
+        "x-abacus-action": "completion.read"
+      }
+    },
+    "/v1/audits/{work_item_id}/going-concern/request-decision": {
+      "post": {
+        "description": "Raise the `going_concern` card with code-computed options; the EP decides (P-04).",
+        "operationId": "going_concern_request",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoingConcernOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Going Concern Request Route",
+        "tags": [
+          "audit completion"
+        ],
+        "x-abacus-action": "going_concern.request_decision"
+      }
+    },
+    "/v1/audits/{work_item_id}/legal-letters": {
+      "get": {
+        "operationId": "legal_letters",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegalLetterOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Legal Letters Route",
+        "tags": [
+          "audit completion"
+        ],
+        "x-abacus-action": "completion.read"
+      },
+      "put": {
+        "description": "Not applicable with a basis (AUD-19 c).",
+        "operationId": "legal_letters_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LegalLetterIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegalLetterOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Legal Letters Put Route",
+        "tags": [
+          "audit completion"
+        ],
+        "x-abacus-action": "legal_letter.update"
+      }
+    },
+    "/v1/audits/{work_item_id}/legal-letters/request": {
+      "post": {
+        "description": "\"Request a legal letter\u2026\": an SHL-14 third-party request through P-06.",
+        "operationId": "legal_letters_request",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LegalLetterRequestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegalLetterOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Legal Letters Request Route",
+        "tags": [
+          "audit completion"
+        ],
+        "x-abacus-action": "legal_letter.request"
       }
     },
     "/v1/audits/{work_item_id}/parties-in-interest": {
@@ -107349,6 +110664,540 @@
           "audits"
         ],
         "x-abacus-action": "request_item.read"
+      }
+    },
+    "/v1/audits/{work_item_id}/subsequent-events": {
+      "get": {
+        "description": "AUD-19 b: procedures through the report date, events and the bring-down (A-07-T23).",
+        "operationId": "subsequent_events",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubsequentEventsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Subsequent Events Route",
+        "tags": [
+          "audit completion"
+        ],
+        "x-abacus-action": "completion.read"
+      },
+      "post": {
+        "description": "Record an event (insert-only); every citation verified by C4 (INV-2).",
+        "operationId": "subsequent_event",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubsequentEventIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubsequentEventOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Subsequent Event Route",
+        "tags": [
+          "audit completion"
+        ],
+        "x-abacus-action": "subsequent_event.create"
+      }
+    },
+    "/v1/audits/{work_item_id}/subsequent-events/procedures": {
+      "post": {
+        "operationId": "subsequent_procedure_add",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubsequentEventProcedureIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubsequentEventProcedureOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Subsequent Procedure Add Route",
+        "tags": [
+          "audit completion"
+        ],
+        "x-abacus-action": "subsequent_event.update"
+      }
+    },
+    "/v1/audits/{work_item_id}/subsequent-events/procedures/{procedure_id}": {
+      "patch": {
+        "operationId": "subsequent_procedure",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "procedure_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Procedure Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubsequentEventProcedureUpdateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubsequentEventProcedureOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Subsequent Procedure Route",
+        "tags": [
+          "audit completion"
+        ],
+        "x-abacus-action": "subsequent_event.update"
       }
     },
     "/v1/audits/{work_item_id}/tests": {
