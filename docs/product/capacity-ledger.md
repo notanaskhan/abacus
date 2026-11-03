@@ -142,3 +142,17 @@ delivered 35 task files for 35 rows (T-02-T15 folded into T-01-T18, its acceptan
 last five (T31–T35) in the S21 batch with T-01 and N-02's closing rows. No row was dropped; the
 open items are written in `docs/handoffs/T-02/README.md`.
 
+
+## M14 ops retro (Q-04-T087, Q-04-T088; 2026-11-03, synthetic)
+
+Rehearsed on PF-X1 and reported as synthetic (DEC-1530, DEC-2081); no pilot firm is live, so every
+firm figure is zero or no data. For re-baseline #4.
+
+| Figure | Value |
+|---|---|
+| Support hours, S22 to S25 | 0, 0, 0, 0 against reserves of 31.50, 43.50, 43.50 and 36.00 hours; RK-07 does not fire |
+| W2 to W8 for PF-X1 | no data (no snapshots; dossier at shadow) |
+| Flips executed and rolled back in the window | 0 and 0 |
+| Pages per week, hotfixes, change failure rate | see Q-04-T088 (`docs/ops/pilot/retros/m14-ops-retro-n.md`) |
+
+The retros are `docs/ops/pilot/retros/m14-ops-retro-ay.md` and `m14-ops-retro-n.md`.

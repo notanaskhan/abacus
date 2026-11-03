@@ -9,7 +9,7 @@ from uuid import uuid4
 
 import pytest
 
-from abacus.modules.platform.api import PilotSnapshot
+from abacus.modules.platform.api import FirmRead, PilotSnapshot
 from abacus_tools import m12_pack
 
 D = Decimal
@@ -71,3 +71,10 @@ def test_the_test_firms_dossier_is_quoted_not_estimated() -> None:
     level, _lines = m12_pack.dossier_lines("PF-X1")
     assert level != "no dossier"
     assert m12_pack.dossier_lines("PF-NONE") == ("no dossier", [])
+
+
+def test_t087_a_committed_pack_names_each_firm_by_its_pilot_code() -> None:
+    # Q-04-T087: firm names never enter git (docs/ops/pilot/README.md), and the pack is committed.
+    read = FirmRead(uuid4(), "A Firm Name", True, date(2027, 10, 4), 0, ())
+    assert m12_pack._coded(read, "PF-X1").firm_name == "PF-X1"  # pyright: ignore[reportPrivateUsage] -- the labelling under test
+    assert m12_pack._coded(read, None).firm_name == "A Firm Name"  # pyright: ignore[reportPrivateUsage] -- no code given: unchanged
