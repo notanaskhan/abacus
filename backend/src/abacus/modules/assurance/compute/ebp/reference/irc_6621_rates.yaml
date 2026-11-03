@@ -1,0 +1,14 @@
+# IRC §6621(a)(2) underpayment rates by calendar quarter (A-05-T24; ADR P-62 engine-parameter side;
+# DEC-76). PROTECTED: reviewed with the audit CPA and pinned by golden tests
+# (docs/architecture/protected-paths.md, DEC-2211). VFCP lost earnings compound daily at the rate
+# of each day's quarter. Add each quarter when the IRS announces it (OQ-3); a quarter missing
+# here is a refusal, never a guess.
+version: 1
+source: "IRS quarterly interest-rate announcements under IRC §6621(a)(2)"
+reviewed_by: null
+rates:
+  "2025-Q1": "7.00"
+  "2025-Q2": "7.00"
+  "2025-Q3": "7.00"
+  "2025-Q4": "7.00"
+  "2026-Q1": "7.00"
