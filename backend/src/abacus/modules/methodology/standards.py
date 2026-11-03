@@ -75,6 +75,7 @@ from abacus.modules.methodology.standards_contract import (
     AjeThresholdsPayload,
     AttributeSampleSizesPayload,
     AttributeSize,
+    EntryClassification,
     ExampleRow,
     ExamplesProvider,
     FirmStandardKind,
@@ -95,6 +96,7 @@ from abacus.modules.methodology.standards_contract import (
     StandardVersionDiffOut,
     StandardVersionOut,
     StandardVersionSummaryOut,
+    classify_entry,
     rmm_for,
 )
 from abacus.modules.methodology.standards_contract import (
@@ -1155,6 +1157,29 @@ async def rmm_matrix_for(
         await policy_payload(tenant_id, policy, "rmm_matrix")
     )
     return rmm_for(payload, policy, inherent_risk=inherent_risk, control_risk=control_risk)
+
+
+async def aje_classification_for(
+    tenant_id: UUID,
+    *,
+    account_class: str,
+    amount_usd: int,
+    attest_client: bool,
+    as_of: date,
+) -> EntryClassification | None:
+    """A-06-T09: an entry's threshold outcome under the firm's AJE thresholds in effect on `as_of`
+    (`classify_entry`). None when the firm has no thresholds in effect: the caller treats the
+    entry as review required (fail closed)."""
+    policy = await current_version_of_kind(tenant_id, "aje_thresholds", as_of)
+    if policy is None:
+        return None
+    payload = AjeThresholdsPayload.model_validate(
+        await policy_payload(tenant_id, policy, "aje_thresholds")
+    )
+    return classify_entry(
+        payload, policy, account_class=account_class, amount_usd=amount_usd,
+        attest_client=attest_client,
+    )  # fmt: skip
 
 
 async def attribute_sample_size(
