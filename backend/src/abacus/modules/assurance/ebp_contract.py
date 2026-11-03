@@ -17,12 +17,12 @@ and conclude are a person's acts; no agent or system principal holds them (INV-1
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
-from fastapi import Depends, Header, Path, Query
+from fastapi import Depends, Header, Path, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
 
@@ -30,6 +30,7 @@ from abacus.kernel._flags import ASSURANCE_ESTIMATES_RP, EBP_FORM5500_TIEOUT, EB
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
+from abacus.modules.assurance.ebp_participants import reveal as reveal_participant_field
 from abacus.modules.engagements.api import assurance_item, get_ref
 from abacus.modules.identity.api import (
     AbacusRouter,
@@ -306,6 +307,19 @@ class RevealIn(BaseModel):
 
     field: Annotated[Literal["ssn", "dob"], classified("internal")]
     reason: Note
+
+
+class ParticipantRevealOut(BaseModel):
+    """The only payload that carries a participant's SSN or date of birth in the clear, for 30
+    seconds; `Cache-Control: no-store`, never logged (DEC-60, DEC-1858; A-05-T18)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    value: Annotated[str, classified("restricted")]
+    field: Annotated[Literal["ssn", "dob"], classified("internal")]
+    expires_in: Annotated[int, Field(ge=1, le=60), classified("internal")]
+    revealed_by: Annotated[str, classified("confidential")]
+    revealed_at: Annotated[datetime, classified("internal")]
 
 
 class ImportIn(BaseModel):
@@ -797,20 +811,37 @@ async def ebp_participants_route(
 @router.post(
     "/ebp/participants/{participant_id}/reveals",
     action="pii.reveal",
-    response_model=AcceptedOut,
+    response_model=ParticipantRevealOut,
     status_code=201,
-    errors=(501,),
+    errors=(429,),
 )
 async def ebp_participant_reveal_route(
     work_item_id: UUID,
     participant_id: UUID,
     body: RevealIn,
     ctx: Ctx,
+    response: Response,
     idempotency_key: IdempotencyKey,
-) -> AcceptedOut:
-    """A logged reveal (fresh MFA, onshore, 20 an hour, `no-store`; DEC-1858; T15)."""
-    await _gate(ctx, work_item_id, "pii.reveal", _E)
-    _not_yet()
+) -> ParticipantRevealOut:
+    """A logged reveal (A-05-T18; DEC-1858, DEC-2067): one field for 30 seconds, `no-store`. The
+    gate reads the work item (`ebp.read`, then the flag); `pii.reveal` itself is authorised by the
+    reveal, so stale MFA answers 403 `mfa_required` (the shell steps up), and offshore members,
+    agents, support sessions and client principals get 403 before anything opens; 429 past twenty
+    reveals an hour across every reveal. One `pii_reveals` row and one `pii.revealed` audit event,
+    never the value."""
+    await _gate(ctx, work_item_id, "ebp.read", _E)
+    revealed = await reveal_participant_field(
+        ctx, work_item_id, participant_id, body.field, body.reason
+    )
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Pragma"] = "no-cache"
+    return ParticipantRevealOut(
+        value=revealed.value,
+        field=body.field,
+        expires_in=revealed.expires_in,
+        revealed_by=revealed.revealed_by,
+        revealed_at=revealed.revealed_at,
+    )
 
 
 @router.post(
