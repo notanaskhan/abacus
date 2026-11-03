@@ -772,6 +772,11 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("notice_decided", "approval", "Gavel"),
     NotificationKind("notice_response_ready_to_send", "approval", "Send"),
     NotificationKind("notice_follow_up_due", "deadline", "CalendarClock"),
+    # T-03-T01 (T-03 §4.6, DEC-2200): category Tax in the drawer; no amounts in any text. The
+    # producers (T-03-T07, T08) add their catalogue events and templates.
+    NotificationKind("extension_ack_rejected", "system", "ShieldAlert"),
+    NotificationKind("extension_payment_approval_requested", "approval", "Gavel"),
+    NotificationKind("estimate_due_soon", "deadline", "CalendarClock"),
 )
 for _kind in _REGISTERED:
     register_kind(_kind)

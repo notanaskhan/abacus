@@ -98,6 +98,37 @@ class K1HandoffStatus(StrEnum):
     RECEIVED = "received"
 
 
+class FilingExtensionStatus(StrEnum):
+    NOT_FILED = "not_filed"
+    PREPARED = "prepared"
+    FILED = "filed"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+
+
+class EstimateInstallmentStatus(StrEnum):
+    NOT_CONFIRMED = "not_confirmed"
+    CONFIRMATION_REQUESTED = "confirmation_requested"
+    SCHEDULED = "scheduled"
+    PAID = "paid"
+    NOT_REQUIRED = "not_required"
+
+
+class QuestionnaireTemplateVersionStatus(StrEnum):
+    DRAFT = "draft"
+    PUBLISHED = "published"
+    DISCARDED = "discarded"
+    # derived, never stored: superseded
+
+
+class AnswerEffectStatus(StrEnum):
+    REQUEST_ITEM_CREATED = "request_item_created"
+    REVIEW_POINT_RAISED = "review_point_raised"
+    INTERNAL_REVIEW_FLAGGED = "internal_review_flagged"
+    UPLOAD_ROUTED_TO_NOTICES = "upload_routed_to_notices"
+    PENDING_HANDLER = "pending_handler"
+
+
 class AuditEngagementStatus(StrEnum):
     PLANNING = "planning"
     FIELDWORK = "fieldwork"
@@ -1167,6 +1198,32 @@ STORED: dict[str, tuple[str, ...]] = {
     "k1_handoff": (
         "awaiting",
         "received",
+    ),
+    "filing_extension": (
+        "not_filed",
+        "prepared",
+        "filed",
+        "accepted",
+        "rejected",
+    ),
+    "estimate_installment": (
+        "not_confirmed",
+        "confirmation_requested",
+        "scheduled",
+        "paid",
+        "not_required",
+    ),
+    "questionnaire_template_version": (
+        "draft",
+        "published",
+        "discarded",
+    ),
+    "answer_effect": (
+        "request_item_created",
+        "review_point_raised",
+        "internal_review_flagged",
+        "upload_routed_to_notices",
+        "pending_handler",
     ),
     "audit_engagement": (
         "planning",

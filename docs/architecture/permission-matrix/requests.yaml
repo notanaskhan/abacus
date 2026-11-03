@@ -85,7 +85,13 @@ actions:
   # content; sending a question is a person's act.
   questionnaire_template.import:  {firm_admin: allow, firm_partner: allow, firm_manager: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny}   # POST /v1/questionnaire-templates:import
   questionnaire_template.read:    {firm_admin: allow, firm_partner: allow, firm_manager: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny}   # template list
-  questionnaire_template.publish: {firm_partner: allow, firm_manager: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny, mfa_recent: required}   # publish a template version
+  questionnaire_template.publish: {firm_partner: allow, firm_manager: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny, mfa_recent: required}   # publish a template version (T-03-T05 narrows it to the template's owner once owners exist; DEC-2200)
   questionnaire.create:           {engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny}   # attach an organizer, create team questions or an inquiry
   questionnaire.ask:              {engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny}   # draft and send a question (person-sent)
   questionnaire.read:             {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, client_service: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny}   # firm read
+  # --- organizer editing and templates (T-03-T01, DEC-2200; T-03 §4.3). Every write is a
+  # person's: agent, system and every portal principal deny (INV-1). Templates hold no client
+  # data, so `firm_admin` drafts (DEC-20); publishing is the template owner's, with fresh MFA.
+  questionnaire.edit:                 {engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_service: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny, not_offshore: required}   # PUT /v1/questionnaires/{id} on a binder's organizer (If-Match, dry run)
+  questionnaire_template.draft:       {firm_admin: allow, firm_partner: allow, firm_manager: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # POST/DELETE …/versions and PUT a template draft's questionnaire
+  questionnaire_template.assign_owner: {practice_leader: allow, quality_partner: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # PUT /v1/questionnaire-templates/{id}/owner (a partner member)

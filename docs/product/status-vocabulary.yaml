@@ -132,6 +132,42 @@ objects:
       awaiting: {label: "Awaiting K-1", variant: muted, terminal: false, derived: false}
       received: {label: "Received", variant: green-tint, terminal: true, derived: false}
 
+  # --- T-03 TY2027 season readiness (T-03-T01, DEC-2200; T-03 §4.2; BND-03, TAX-13) ---
+  filing_extension:   # filing_extensions.status (TAX-13 a, c, d, e)
+    source: "T-03 section 4.2 (filing_extensions); TAX-13"
+    codes:
+      not_filed: {label: "Not filed", variant: muted, terminal: false, derived: false}
+      prepared:  {label: "Prepared", variant: state, terminal: false, derived: false}
+      filed:     {label: "Filed", variant: amber, terminal: false, derived: false}   # waiting for the acknowledgement
+      accepted:  {label: "Accepted", variant: green, terminal: true, derived: false}
+      rejected:  {label: "Rejected", variant: red-tint, terminal: false, derived: false}   # with the reject code; re-filed as a new submission
+
+  estimate_installment:   # estimate_installments.status (TAX-13 b); the schedule's "Prospect" is a method label
+    source: "T-03 section 4.2 (estimate_installments); TAX-13 b"
+    codes:
+      not_confirmed:          {label: "Not confirmed", variant: amber, terminal: false, derived: false}
+      confirmation_requested: {label: "Confirmation requested", variant: state, terminal: false, derived: false}
+      scheduled:              {label: "Scheduled {date}", variant: green-tint, terminal: false, derived: false}
+      paid:                   {label: "Paid {date}", variant: green, terminal: true, derived: false}
+      not_required:           {label: "Not required", variant: muted, terminal: true, derived: false}
+
+  questionnaire_template_version:   # questionnaire_template_versions.status (BND-03 d; KNW-01 Organizers)
+    source: "T-03 section 4.2 (questionnaire_template_versions); BND-03 d"
+    codes:
+      draft:      {label: "Draft", variant: amber, terminal: false, derived: false}
+      published:  {label: "Published", variant: green, terminal: false, derived: false}
+      superseded: {label: "Superseded", variant: muted, terminal: true, derived: true}   # computed at read time: a newer version is published
+      discarded:  {label: "Discarded", variant: muted, terminal: true, derived: false}   # hidden from lists
+
+  answer_effect:   # answer_effects.effect_kind: display words for BND-03's Logic band
+    source: "T-03 section 4.2 (answer_effects); BND-03 a"
+    codes:
+      request_item_created:     {label: "Request created", variant: state, terminal: true, derived: false}
+      review_point_raised:      {label: "Review point raised", variant: amber, terminal: true, derived: false}
+      internal_review_flagged:  {label: "Flagged for internal review", variant: amber, terminal: true, derived: false}
+      upload_routed_to_notices: {label: "Routed to Notices", variant: state, terminal: true, derived: false}
+      pending_handler:          {label: "Waiting for Notices", variant: muted, terminal: false, derived: false}   # the slot failed closed: notices.workspace off
+
   # ---- Audit ----
   audit_engagement:   # record card (AUD-01)
     source: "blueprint 3.3.1"

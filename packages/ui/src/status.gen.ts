@@ -404,6 +404,128 @@ export const STATUS_REGISTRY = {
       "derived": false
     }
   },
+  "filing_extension": {
+    "not_filed": {
+      "label": "Not filed",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    },
+    "prepared": {
+      "label": "Prepared",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "filed": {
+      "label": "Filed",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "accepted": {
+      "label": "Accepted",
+      "variant": "green",
+      "terminal": true,
+      "derived": false
+    },
+    "rejected": {
+      "label": "Rejected",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "estimate_installment": {
+    "not_confirmed": {
+      "label": "Not confirmed",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "confirmation_requested": {
+      "label": "Confirmation requested",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "scheduled": {
+      "label": "Scheduled {date}",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "paid": {
+      "label": "Paid {date}",
+      "variant": "green",
+      "terminal": true,
+      "derived": false
+    },
+    "not_required": {
+      "label": "Not required",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "questionnaire_template_version": {
+    "draft": {
+      "label": "Draft",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "published": {
+      "label": "Published",
+      "variant": "green",
+      "terminal": false,
+      "derived": false
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "muted",
+      "terminal": true,
+      "derived": true
+    },
+    "discarded": {
+      "label": "Discarded",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "answer_effect": {
+    "request_item_created": {
+      "label": "Request created",
+      "variant": "state",
+      "terminal": true,
+      "derived": false
+    },
+    "review_point_raised": {
+      "label": "Review point raised",
+      "variant": "amber",
+      "terminal": true,
+      "derived": false
+    },
+    "internal_review_flagged": {
+      "label": "Flagged for internal review",
+      "variant": "amber",
+      "terminal": true,
+      "derived": false
+    },
+    "upload_routed_to_notices": {
+      "label": "Routed to Notices",
+      "variant": "state",
+      "terminal": true,
+      "derived": false
+    },
+    "pending_handler": {
+      "label": "Waiting for Notices",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    }
+  },
   "audit_engagement": {
     "planning": {
       "label": "Planning",
