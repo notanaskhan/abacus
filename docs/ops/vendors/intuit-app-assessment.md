@@ -14,7 +14,7 @@ can't be removed once saved.
 
 | Field | Answer |
 |---|---|
-| App name shown on Intuit's consent screen | **[open: Ayush]** Clients see it when they connect. The portal is white-labelled (DEC-01, ADR-133), so the choice is "Accrued" or a neutral name |
+| App name shown on Intuit's consent screen | **abacus** (Ayush, 2026-11-03; DEC-2083). A neutral name, so a firm's white-label portal never shows "Accrued" (DEC-01, ADR-133). This is the one place the code namespace is shown to clients, by Ayush's decision |
 | Scope | `com.intuit.quickbooks.accounting` only. No Payments, no OpenID, no write scope (a write scope waits on the W1 adapter ADR) |
 | Host domain | **[open: F-09-T09]** the neutral portal domain |
 | Launch URL | **[open: F-09-T09]** `https://<connect host>/` (the firm app's connections screen) |
