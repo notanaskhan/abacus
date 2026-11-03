@@ -128,7 +128,7 @@ export default defineConfig(({ mode, command }) => {
     },
     // dist/.vite/manifest.json: scripts/bundle-budget.mjs (F-05-T17) reads the chunk graph from it.
     build: portal
-      ? { manifest: true, outDir: "dist/portal", rollupOptions: { input: "portal.html" } }
+      ? { manifest: true, outDir: "dist/portal", rolldownOptions: { input: "portal.html" } }
       : {
           manifest: true,
           // TASK-1368 (DEC-464): the framework every firm page boots with in one chunk. Left to
