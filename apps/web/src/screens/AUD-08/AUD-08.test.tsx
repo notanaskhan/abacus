@@ -222,4 +222,49 @@ describe("AUD-08 c, e, f, g (A-04-T26)", () => {
     expect(footer.textContent).toContain("Adopt");
     expect(document.querySelector("[data-drafted]")).toBeTruthy();
   });
+
+  // ED-323 (Q-03-T173): Edit once adopted the suggestion with the model's own rationale as the
+  // person's edit (ADR-065). It now hands off to the host's editor and adopts nothing.
+  it("f: Edit opens the host's editor and never adopts the model's text", async () => {
+    const adopts: string[] = [];
+    const f = scenarios.f;
+    restore = installFixtureMode({
+      ...f,
+      handlers: {
+        ...f.handlers,
+        "POST /v1/suggestions/{suggestion_id}/adopt": (request) => {
+          adopts.push(request.path);
+          return new Response("{}", {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          });
+        },
+      },
+    });
+    const r8 = aud08Register("a").risks[7];
+    if (r8 === undefined) throw new Error("R8");
+    const onEdit = vi.fn();
+    render(
+      <QueryClientProvider client={newQueryClient()}>
+        <RiskDrawer
+          engagementId={NORTHWIND_AUDIT}
+          risk={r8}
+          cardId={null}
+          onClose={() => undefined}
+          onDecide={vi.fn()}
+          onEdit={onEdit}
+        />
+      </QueryClientProvider>,
+    );
+    const footer = await waitFor(() => {
+      const el = document.querySelector('[data-aud08="drafted-footer"]');
+      expect(el).toBeTruthy();
+      return el as HTMLElement;
+    });
+    const edit = [...footer.querySelectorAll("button")].find((b) => b.textContent === "Edit");
+    if (edit === undefined) throw new Error("no Edit");
+    fireEvent.click(edit);
+    expect(onEdit).toHaveBeenCalledTimes(1);
+    expect(adopts).toEqual([]);
+  });
 });
