@@ -30,6 +30,8 @@ from abacus.kernel._flags import ASSURANCE_ESTIMATES_RP, EBP_FORM5500_TIEOUT, EB
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
+from abacus.modules.assurance.ebp_imports import ImportView, Ties, import_of, import_source
+from abacus.modules.assurance.ebp_participants import DOB_MASK, participants_of
 from abacus.modules.assurance.ebp_participants import reveal as reveal_participant_field
 from abacus.modules.engagements.api import assurance_item, get_ref
 from abacus.modules.identity.api import (
@@ -286,7 +288,7 @@ class ParticipantOut(BaseModel):
 
     id: Annotated[UUID, classified("internal")]
     name: Annotated[str, Field(max_length=200), classified("confidential")]
-    ssn: Annotated[MaskedTinOut, classified("restricted", pii_kind="tin")]
+    ssn: Annotated[MaskedTinOut | None, classified("restricted", pii_kind="tin")]
     dob_masked: Annotated[Literal["••/••/••••"], classified("internal")]
     status: Annotated[
         Literal["active", "terminated", "retired", "deceased"], classified("internal")
@@ -322,12 +324,59 @@ class ParticipantRevealOut(BaseModel):
     revealed_at: Annotated[datetime, classified("internal")]
 
 
+ImportKind = Literal[
+    "census",
+    "payroll_register",
+    "loan_report",
+    "account_balances",
+    "sdba_detail",
+    "trust_receipts",
+]
+
+
 class ImportIn(BaseModel):
+    """A code import (A-05-T19; DEC-2068): the column map is `{field: header}`; the W-3 boxes
+    and a register's printed control totals are keyed from the PDF with the import."""
+
     model_config = ConfigDict(extra="forbid")
 
     evidence_version_id: Annotated[UUID, classified("internal")]
-    kind: Annotated[Literal["census", "hr", "payroll", "w3"], classified("internal")]
-    column_map: Annotated[dict[str, str], classified("internal")]
+    kind: Annotated[ImportKind, classified("internal")]
+    column_map: Annotated[
+        dict[
+            Annotated[str, Field(pattern=r"^[a-z_]{1,40}$")],
+            Annotated[str, Field(min_length=1, max_length=120)],
+        ],
+        Field(max_length=30),
+        classified("internal"),
+    ]
+    w3_box1: Annotated[
+        Decimal | None, Field(ge=0, decimal_places=2), classified("confidential")
+    ] = None
+    w3_box12d: Annotated[
+        Decimal | None, Field(ge=0, decimal_places=2), classified("confidential")
+    ] = None
+    control_totals: Annotated[
+        dict[Annotated[str, Field(pattern=r"^[a-z_]{1,40}$")], Decimal],
+        Field(max_length=10),
+        classified("confidential"),
+    ] = Field(default_factory=dict)
+
+
+class ImportOut(BaseModel):
+    """An import as the import sheet shows it: its totals, or why it was refused (the
+    differences, never a cell value)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    evidence_version_id: Annotated[UUID, classified("internal")]
+    kind: Annotated[ImportKind, classified("internal")]
+    row_count: Annotated[int | None, Field(ge=0), classified("internal")]
+    totals: Annotated[dict[str, object], classified("confidential")]
+    status: Annotated[Literal["mapped", "imported", "refused"], classified("internal")]
+    refusal_code: Annotated[str | None, Field(max_length=60), classified("internal")]
+    created_at: Annotated[datetime, classified("internal")]
 
 
 # --- EBP-04 contributions and the late remittance ------------------------------------------------
@@ -798,12 +847,27 @@ async def ebp_participants_route(
     q: Annotated[str | None, Query(max_length=100)] = None,
     cursor: Annotated[str | None, Query(max_length=200)] = None,
 ) -> ParticipantsOut:
-    """Masked participants, tokens only (DEC-1858; T15)."""
+    """Masked participants of the latest imported census, tokens only (DEC-1858; T15, T19)."""
     await _gate(ctx, work_item_id, "ebp.read", _E)
+    rows, total = await participants_of(ctx, work_item_id, q)
     return await mask_tins_for(
         ctx,
         ParticipantsOut(
-            items=[_example(ParticipantOut, _PARTICIPANT)], next_cursor=None, total=301
+            items=[
+                ParticipantOut(
+                    id=r.id,
+                    name=r.name,
+                    ssn=None
+                    if r.ssn_last4 is None
+                    else MaskedTinOut(kind="ssn", presence="on_file", last4=r.ssn_last4),
+                    dob_masked=DOB_MASK,
+                    status=cast(Literal["active", "terminated"], r.status),
+                    compensation=r.compensation or Decimal("0.00"),
+                )
+                for r in rows
+            ],
+            next_cursor=None,
+            total=total,
         ),
     )
 
@@ -847,16 +911,47 @@ async def ebp_participant_reveal_route(
 @router.post(
     "/ebp/imports",
     action="ebp_import.create",
-    response_model=AcceptedOut,
+    response_model=ImportOut,
     status_code=201,
-    errors=(501,),
 )
 async def ebp_import_route(
     work_item_id: UUID, body: ImportIn, ctx: Ctx, idempotency_key: IdempotencyKey
-) -> AcceptedOut:
-    """A code import that foots or is refused `import_not_footing` (T15)."""
+) -> ImportOut:
+    """A code import (A-05-T19; DEC-2068): parsed from the version's isolated extraction, footed
+    and tied by code, census SSNs and dates of birth sealed. 422 `import_map_invalid` for a map
+    that misses a field or names a header the file lacks; 422 `import_refused` (recorded, with
+    `facts.reason` `import_not_footing`, `import_not_tying`, `import_no_control_total` or
+    `import_bad_value` and the differences) for a file that reads but does not foot or tie."""
     await _gate(ctx, work_item_id, "ebp_import.create", _E)
-    _not_yet()
+    view = await import_source(
+        ctx,
+        work_item_id,
+        body.evidence_version_id,
+        body.kind,
+        body.column_map,
+        Ties(body.w3_box1, body.w3_box12d, body.control_totals),
+    )
+    return _import_out(view)
+
+
+@router.get("/ebp/imports/{import_id}", action="ebp.read", response_model=ImportOut)
+async def ebp_import_read_route(work_item_id: UUID, import_id: UUID, ctx: Ctx) -> ImportOut:
+    """An import and its totals or refusal (A-05-T19)."""
+    await _gate(ctx, work_item_id, "ebp.read", _E)
+    return _import_out(await import_of(ctx, work_item_id, import_id))
+
+
+def _import_out(view: ImportView) -> ImportOut:
+    return ImportOut(
+        id=view.id,
+        evidence_version_id=view.evidence_version_id,
+        kind=cast(ImportKind, view.kind),
+        row_count=view.row_count,
+        totals=dict(view.totals),
+        status=cast(Literal["mapped", "imported", "refused"], view.status),
+        refusal_code=view.refusal_code,
+        created_at=view.created_at,
+    )
 
 
 # tests grid (EBP-03, 04 testing tab, 05)
