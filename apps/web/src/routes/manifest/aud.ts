@@ -63,20 +63,32 @@ export const audScreens = {
     path: null,
   },
   "AUD-14": { name: "Confirmations manager", status: "planned", path: null },
-  "AUD-15": { name: "Findings register (issues & deficiencies)", status: "planned", path: null },
+  "AUD-15": {
+    name: "Findings register (issues & deficiencies)",
+    status: "planned",
+    path: "/audits/$auditId/findings", // A-06-T12: the Evaluation chrome over the planned screen
+  },
   "AUD-16": {
     name: "Misstatements & adjustments (AJEs, RJEs, SUM)",
     status: "planned",
-    path: null,
+    path: "/audits/$auditId/misstatements",
   },
-  "AUD-17": { name: "Review notes & sign-off matrix", status: "planned", path: null },
+  "AUD-17": {
+    name: "Review notes & sign-off matrix",
+    status: "planned",
+    path: "/audits/$auditId/review-notes",
+  },
   "AUD-18": { name: "EQR workspace", status: "planned", path: null },
   "AUD-19": {
     name: "Completion (checklist · subsequent events · legal letters · going concern)",
     status: "planned",
     path: "/engagements/$engagementId/completion", // legacy CompletionRelease (SPEC-314)
   },
-  "AUD-20": { name: "Financial statements & disclosure checklist", status: "planned", path: null },
+  "AUD-20": {
+    name: "Financial statements & disclosure checklist",
+    status: "planned",
+    path: "/audits/$auditId/fs-disclosure",
+  },
   "AUD-21": { name: "Representation letter builder", status: "planned", path: null },
   "AUD-22": {
     name: "Governance communications (AU-C 260 planning letter; AU-C 260 / 265 / 703 completion letters)",
