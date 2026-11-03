@@ -6,6 +6,11 @@ Pre-registered (F-03-T08; ADR-140); A-06-T05 (DEC-1965): the C8 contract stub
 
 from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.modules.adjustments.contract import router
+from abacus.modules.adjustments.decisions import (
+    SUBSCRIPTIONS,
+    register_client_delivery,
+    register_entry_decision_hook,
+)
 from abacus.modules.adjustments.entries import (
     AUDIT_KINDS,
     audit_owners,
@@ -22,4 +27,12 @@ register_engagement_owners(AUDIT_KINDS, audit_owners)
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (router,)
 
-__all__ = ["ROUTERS", "entries_of", "recorded_entries", "router"]
+__all__ = [
+    "ROUTERS",
+    "SUBSCRIPTIONS",
+    "entries_of",
+    "recorded_entries",
+    "register_client_delivery",
+    "register_entry_decision_hook",
+    "router",
+]

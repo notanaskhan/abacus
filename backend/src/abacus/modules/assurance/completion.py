@@ -24,10 +24,12 @@ from datetime import date, datetime, timedelta
 from typing import Final, Literal
 from uuid import UUID
 
+from sqlalchemy import text
+
 from abacus.kernel.clock import now
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
-from abacus.kernel.uow import Ref, Target, uow
+from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.assurance.completion_models import (
     Archive,
     CompletionRecord,
@@ -645,3 +647,22 @@ async def lock_archive(ctx: AuthContext, engagement_id: UUID, attest: bool) -> N
         tx.record(
             "archive.locked", target=Target("engagement", engagement_id), after=Ref(seal=seal)
         )
+
+
+async def on_entry_client_decision(
+    tx: UnitOfWork, entry_id: UUID, misstatement_id: UUID | None, decision: str
+) -> None:
+    """A-06-T10 (DEC-2062): a client's recorded decision on a proposed entry moves the
+    misstatement it came from: approved, it reads Booked; declined, it stays Uncorrected
+    (Confirmed, on the SUM). A question leaves it as it is."""
+    del entry_id
+    if misstatement_id is None or decision == "client_question":
+        return
+    status = "booked" if decision == "client_accepted" else "confirmed"
+    await tx.session.execute(
+        text(
+            "UPDATE audit_misstatements SET status = :s, version = version + 1 "
+            "WHERE id = :id AND status = 'proposed_to_client'"
+        ),
+        {"s": status, "id": misstatement_id},
+    )

@@ -1567,8 +1567,7 @@
           "unadjusted": {
             "anyOf": [
               {
-                "cls": "confidential",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
                 "type": "string"
               },
               {
@@ -34095,7 +34094,7 @@
           "governance_body_ref": {
             "anyOf": [
               {
-                "maxLength": 128,
+                "maxLength": 120,
                 "type": "string"
               },
               {
@@ -34123,6 +34122,14 @@
             ],
             "cls": "internal",
             "title": "Respondent Contact Id"
+          },
+          "title": {
+            "cls": "internal",
+            "default": "Fraud inquiry",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
           }
         },
         "required": [
@@ -34153,10 +34160,17 @@
             "type": "string"
           },
           "questionnaire_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "cls": "internal",
-            "format": "uuid",
-            "title": "Questionnaire Id",
-            "type": "string"
+            "title": "Questionnaire Id"
           },
           "respondent_name": {
             "cls": "confidential",
@@ -34263,7 +34277,7 @@
                 "enum": [
                   "in_person",
                   "video",
-                  "call"
+                  "hybrid"
                 ],
                 "type": "string"
               },
@@ -34393,7 +34407,7 @@
                 "enum": [
                   "in_person",
                   "video",
-                  "call"
+                  "hybrid"
                 ],
                 "type": "string"
               },
@@ -34440,7 +34454,7 @@
           "minutes_text": {
             "anyOf": [
               {
-                "maxLength": 50000,
+                "maxLength": 20000,
                 "type": "string"
               },
               {
@@ -53159,7 +53173,7 @@
           "text": {
             "anyOf": [
               {
-                "maxLength": 50000,
+                "maxLength": 20000,
                 "minLength": 1,
                 "type": "string"
               },
@@ -94852,6 +94866,7 @@
     },
     "/v1/approval-batches": {
       "post": {
+        "description": "Within-threshold entries approved together by the named person (T10).",
         "operationId": "approval_batch",
         "parameters": [
           {
@@ -94985,6 +95000,144 @@
           "adjustments"
         ],
         "x-abacus-action": "approval_batch.create"
+      }
+    },
+    "/v1/approval-batches/{batch_id}/undo": {
+      "post": {
+        "description": "Undo an approve-and-send inside its 10 seconds, by the approver: the grant voided, nothing\nreached the client; 409 `undo_window_closed` after (T10).",
+        "operationId": "approval_batch_undo",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "batch_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Batch Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Approval Batch Undo Route",
+        "tags": [
+          "adjustments"
+        ],
+        "x-abacus-action": "proposed_entry.send_to_client"
       }
     },
     "/v1/audit-events": {
@@ -125082,7 +125235,7 @@
     },
     "/v1/engagements/{engagement_id}/fraud-brainstorm/minutes": {
       "put": {
-        "description": "Write the minutes or adopt a suggestion; either resets approval (T19).",
+        "description": "Write the minutes; a suggestion is adopted through C3's suggestion adopt (422\n`adopt_through_suggestion`). Either resets approval (T19).",
         "operationId": "fraud_minutes",
         "parameters": [
           {
@@ -147042,7 +147195,7 @@
     },
     "/v1/engagements/{engagement_id}/risks/{risk_id}/drafts": {
       "post": {
-        "description": "Single-field Draft with agent: pending suggestions only (AC4.7; T11).",
+        "description": "Single-field Draft with agent: pending suggestions only (AC4.7; T24). The risk mode drafts\nthe register on the engagement's Risk Assessment paper; the drawer shows this risk's.",
         "operationId": "risk_draft",
         "parameters": [
           {
@@ -206329,7 +206482,7 @@
     },
     "/v1/proposed-entries/{entry_id}/client-decision:record": {
       "post": {
-        "description": "Record mode: the client's decision from email, with the email as evidence.",
+        "description": "Record mode: the client's decision from email, with the email as evidence (T10).",
         "operationId": "proposed_entry_record",
         "parameters": [
           {
@@ -219513,6 +219666,7 @@
     },
     "/v1/work-items/{work_item_id}/adjusted-tb": {
       "get": {
+        "description": "C8's adjusted TB by layer, computed by the ledger over the snapshot (T09; never stored).",
         "operationId": "adjusted_tb",
         "parameters": [
           {
@@ -220554,7 +220708,7 @@
         "x-abacus-action": "proposed_entry.read"
       },
       "post": {
-        "description": "A balanced entry (`unbalanced_entry` at commit); an attest client's is Review required.",
+        "description": "A balanced entry (422 `unbalanced_entry`); an attest client's is Review required (T09).",
         "operationId": "proposed_entry_create",
         "parameters": [
           {
@@ -220702,7 +220856,7 @@
     },
     "/v1/work-items/{work_item_id}/proposed-entries:approve-and-send": {
       "post": {
-        "description": "Approve, batch and send through C18; the client sees nothing for 10 seconds (Undo).",
+        "description": "Approve, batch and send through C18; the client sees nothing for 10 seconds (Undo, T10).",
         "operationId": "proposed_entries_send",
         "parameters": [
           {
