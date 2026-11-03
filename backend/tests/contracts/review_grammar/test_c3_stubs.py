@@ -1,8 +1,8 @@
 """C3 v1 consumer tests (P-04-T09), the stubs as a whole: every stub-1 and stub-2 route declares
-its one matrix action and answers 404 with `review.grammar_api` off and 501 with it on; every
-resolution, decision and sign-off action denies the agent and system principals; the status enums
-are the registry's stored codes; and the three review migrations (0093 to 0095) agree with the
-wire. `docs/contracts/review-grammar.md` §2, §4, §5 and §6."""
+its one matrix action and answers 501 until its service lands (`review.grammar_api`
+retired, P-04-T62); every resolution, decision and sign-off action denies the agent and system
+principals; the status enums are the registry's stored codes; and the three review migrations
+(0093 to 0095) agree with the wire. `docs/contracts/review-grammar.md` §2, §4, §5 and §6."""
 
 from __future__ import annotations
 
@@ -16,10 +16,9 @@ import pytest
 from fastapi.routing import APIRoute
 from pydantic import BaseModel
 
-from abacus.kernel._flags import REVIEW_GRAMMAR_API
 from abacus.kernel.classification import unclassified_fields
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotImplementedYet
 from abacus.modules.agents import contract as agents_contract
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.identity.authz.matrix import RULES
@@ -34,6 +33,9 @@ ROUTES: dict[tuple[str, str], str] = {
     ("post", "/v1/sign-offs"): "sign_off.create",
     ("post", "/v1/sign-offs:bulk"): "sign_off.bulk",
     ("get", "/v1/review-notes"): "review_note.read",
+    # A-06-T14 (DEC-2214): AUD-17's note bands and a re-review request, both live.
+    ("get", "/v1/review-notes/bands"): "review_note.read",
+    ("post", "/v1/sign-offs/{sign_off_id}/request-re-review"): "sign_off.request_re_review",
     ("get", "/v1/review-notes/{note_id}"): "review_note.read",
     ("post", "/v1/review-notes"): "review_note.raise",
     ("post", "/v1/review-notes/{note_id}/respond"): "review_note.respond",
@@ -113,12 +115,16 @@ MODELS: list[type[BaseModel]] = [
 ]
 
 
+BORN_LIVE = frozenset({"/v1/review-notes/bands", "/v1/sign-offs/{sign_off_id}/request-re-review"})
+
+
 @pytest.mark.parametrize(("method", "path"), sorted(ROUTES))
 def test_c3_each_route_declares_its_action_and_the_stub_answers(method: str, path: str) -> None:
     op = PATHS[path][method]
     assert op["x-abacus-action"] == ROUTES[(method, path)]
-    if path.startswith("/v1/human-gates"):
+    if path.startswith("/v1/human-gates") or path in BORN_LIVE:
         # I-01-T04 and T07 made the gate routes live: 404 behind the flag, no 501 (DEC-646).
+        # A-06-T14's two routes were live from their first commit, so they never declared 501.
         assert "404" in set(cast(Json, op["responses"]))
         return
     assert {"404", "501"} <= set(cast(Json, op["responses"]))
@@ -146,6 +152,8 @@ def _ctx() -> AuthContext:
 # (backfill/test_p04t29_proposal_undo.py).
 LIVE = frozenset(
     {
+        "review_note_bands_route",  # A-06-T14 (DEC-2214)
+        "sign_off_re_review_route",  # A-06-T14 (DEC-2214)
         "proposal_undo_route",  # P-04-T29 (DEC-713)
         "human_gate_list_route",
         "human_gate_counts_route",  # I-01-T04
@@ -208,31 +216,18 @@ def test_c3_the_endpoints_are_the_routes_above() -> None:
 @pytest.mark.parametrize(
     ("module", "endpoint"), _ENDPOINTS, ids=[e.__name__ for _m, e in _ENDPOINTS]
 )
-async def test_c3_flag_off_is_404_and_flag_on_is_501(
+async def test_c3_reads_no_flag_and_stubs_answer_501(
     module: ModuleType,
     endpoint: Callable[..., Awaitable[object]],
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Each route handler itself, with the flag read stubbed: off 404, on 501 (§2, §6)."""
+    """Each route handler itself: `review.grammar_api` is retired (P-04-T62), so no handler reads
+    a flag; a stub still answers 501 until its service lands (§2, §6)."""
     handler = endpoint
     params = inspect.signature(handler).parameters
     args = {name: (_ctx() if name == "ctx" else None) for name in params}
-    seen: list[object] = []
-
-    async def off(_tenant: object, flag: object) -> bool:
-        seen.append(flag)
-        return False
-
-    async def on(_tenant: object, _flag: object) -> bool:
-        return True
-
-    monkeypatch.setattr(module, "flag_enabled", off)
-    with pytest.raises(NotFound):
-        await handler(**args)
-    assert seen == [REVIEW_GRAMMAR_API]
+    assert not hasattr(module, "REVIEW_GRAMMAR_API")
     if handler.__name__ in LIVE:
-        return  # served with the flag on; its integration tests cover the answers
-    monkeypatch.setattr(module, "flag_enabled", on)
+        return  # live; its integration tests cover the answers
     with pytest.raises(NotImplementedYet):
         await handler(**args)
 

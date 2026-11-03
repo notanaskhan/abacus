@@ -4,10 +4,11 @@ cards, the SHL-11 family; proposals and suggestions are the agents module's (ADR
 (P-04-T11): issues and fix instructions (SHL-15), checkpoints (SHL-16) and field provenance
 (SHL-09), an additive extension of the C3 v1 schema.
 
-Behind `review.grammar_api`: off, every route answers 404; on, 501 `not_implemented` until its
-service lands (sign-offs P-04-T18, notes P-04-T21, the projection P-04-T16, decision cards
-P-04-T23, issues P-04-T30 and T31, checkpoints P-04-T32, field values P-04-T35). Nothing here
-decides; the shapes are what SHL-09, SHL-11, SHL-12, SHL-15, SHL-16, AUD-17 and HOME-02 read.
+`review.grammar_api` retired (P-04-T62, DEC-2221): every route is served, 501
+`not_implemented` only until its service lands (sign-offs P-04-T18, notes P-04-T21, the
+projection P-04-T16, decision cards P-04-T23, issues P-04-T30 and T31, checkpoints P-04-T32,
+field values P-04-T35). Nothing here decides; the shapes are what SHL-09, SHL-11, SHL-12, SHL-15,
+SHL-16, AUD-17 and HOME-02 read.
 `docs/contracts/review-grammar.md` parts 1 to 3.
 
 The level actions are the existing `sign_off.prepare|review|manager|partner|eqr` rows (L1 to L5);
@@ -17,13 +18,12 @@ The level actions are the existing `sign_off.prepare|review|manager|partner|eqr`
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn, cast
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Path, Query
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import REVIEW_GRAMMAR_API
 from abacus.kernel._statuses import (
     AgentRunStatus,
     CheckpointStatus,
@@ -34,7 +34,6 @@ from abacus.kernel._statuses import (
 )
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
-from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import Facet, ListPage
 from abacus.kernel.text import MultiLineText, SingleLineText
 from abacus.kernel.uow.idempotency import idempotent
@@ -138,18 +137,6 @@ GateKind = Literal[
 ]
 GateBand = Literal["decisions", "sign_offs", "agent_outputs", "approvals_sends"]
 GateState = Literal["open", "done", "voided"]
-
-
-async def _stub(ctx: AuthContext) -> NoReturn:
-    if not await flag_enabled(ctx.tenant, REVIEW_GRAMMAR_API):
-        raise NotFound("review.grammar_api")
-    raise NotImplementedYet
-
-
-async def _live(ctx: AuthContext) -> None:
-    """A live route behind the same flag: off, it answers 404 like its stub did."""
-    if not await flag_enabled(ctx.tenant, REVIEW_GRAMMAR_API):
-        raise NotFound("review.grammar_api")
 
 
 class ObjectRefOut(BaseModel):
@@ -367,7 +354,6 @@ async def sign_off_ladder_route(
     target_id: Annotated[UUID, Query()],
 ) -> SignOffLadderOut:
     """SHL-12: the ladder per level, with computed staleness (P-04-T18)."""
-    await _live(ctx)
     found = await ladder(ctx, target_type, target_id)
     return SignOffLadderOut(
         target=_target_out(found.facts),
@@ -386,7 +372,6 @@ async def sign_off_eligibility_route(
     level: Annotated[Level, Query()],
 ) -> SignOffEligibilityOut:
     """SHL-12 a to h: target, levels allowed, checks and the statement for one level."""
-    await _live(ctx)
     found = await eligibility(ctx, target_type, target_id, LEVEL_OF[level])
     return SignOffEligibilityOut(
         target=_target_out(found.facts),
@@ -416,7 +401,6 @@ async def sign_off_eligibility_route(
 )
 async def sign_off_route(body: SignOffIn, ctx: Ctx) -> SignOffOut:
     """SHL-12 a-prime: record one sign-off (human only; the service also authorises the level)."""
-    await _live(ctx)
     return _sign_off_out(
         await sign_target(
             ctx,
@@ -440,7 +424,6 @@ async def sign_off_bulk_route(
 ) -> BulkSignOffOut:
     """SHL-12 f: sign several targets at one level; reviewers only, each item atomic, fresh MFA
     (P-04-T22). A replay with the same key returns the stored result."""
-    await _live(ctx)
     found = await bulk_sign(
         ctx,
         targets=[BulkTarget(t.target_type, t.target_id, t.seen_hash) for t in body.targets],
@@ -592,7 +575,6 @@ async def review_note_list_route(
 ) -> ListPage[ReviewNoteItemOut]:
     """Notes on a target or an engagement, on the list envelope with per-status counts. Rows
     never carry a body (P-04-T21)."""
-    await _live(ctx)
     found = await list_notes(
         ctx,
         engagement_id=engagement_id,
@@ -627,7 +609,6 @@ async def review_note_bands_route(
     ctx: Ctx, work_item_id: Annotated[UUID, Query()]
 ) -> NoteBandsOut:
     """The work item's notes by band, from the visible rows' counts (A-06-T14; AUD-17)."""
-    await _live(ctx)
     from abacus.modules.engagements.api import work_item_engagement
     from abacus.modules.review.re_review import bands_of
 
@@ -664,7 +645,6 @@ class ReReviewOut(BaseModel):
 async def sign_off_re_review_route(sign_off_id: UUID, ctx: Ctx) -> ReReviewOut:
     """AUD-17: ask the signer of a stale sign-off to look again (409 `not_stale`); a person's
     act. The signer is told (C16 `sign_off_re_review`)."""
-    await _live(ctx)
     from abacus.modules.review.re_review import request_re_review
 
     return ReReviewOut(sign_off_id=await request_re_review(ctx, sign_off_id))
@@ -675,7 +655,6 @@ async def sign_off_re_review_route(sign_off_id: UUID, ctx: Ctx) -> ReReviewOut:
 )
 async def review_note_route(note_id: UUID, ctx: Ctx) -> ReviewNoteDetailOut:
     """One note with its body and events (the body read is an access event)."""
-    await _live(ctx)
     return _note_detail_out(await note_detail(ctx, note_id))
 
 
@@ -688,7 +667,6 @@ async def review_note_route(note_id: UUID, ctx: Ctx) -> ReviewNoteDetailOut:
 )
 async def review_note_raise_route(body: RaiseReviewNoteIn, ctx: Ctx) -> ReviewNoteDetailOut:
     """Raise a note on a registered reviewable, optionally on an anchor; the body is sealed."""
-    await _live(ctx)
     return _note_detail_out(
         await raise_on_target(
             ctx,
@@ -711,7 +689,6 @@ async def review_note_raise_route(body: RaiseReviewNoteIn, ctx: Ctx) -> ReviewNo
 async def review_note_respond_route(
     note_id: UUID, body: ReviewNoteEventIn, ctx: Ctx
 ) -> ReviewNoteDetailOut:
-    await _live(ctx)
     return _note_detail_out(await note_event(ctx, note_id, "responded", body.body))
 
 
@@ -725,7 +702,6 @@ async def review_note_clear_route(
     note_id: UUID, body: ReviewNoteEventIn, ctx: Ctx
 ) -> ReviewNoteDetailOut:
     """Clearing is a person's act (the event's CHECK requires a human)."""
-    await _live(ctx)
     return _note_detail_out(await note_event(ctx, note_id, "cleared", body.body))
 
 
@@ -739,7 +715,6 @@ async def review_note_withdraw_route(
     note_id: UUID, body: ReviewNoteEventIn, ctx: Ctx
 ) -> ReviewNoteDetailOut:
     """The raiser withdraws their own note."""
-    await _live(ctx)
     return _note_detail_out(await note_event(ctx, note_id, "withdrawn", body.body))
 
 
@@ -830,9 +805,7 @@ async def human_gate_counts_route(
     """The one count source (I-01-T04): open gates waiting on the caller by DF-25 band, how many
     of them are overdue, and how many the caller snoozed (left out of `total`). A walled client's
     gates are never counted, and nothing says any were left out (DEC-43); `office_id` narrows and
-    never authorises (DEC-30). Behind `review.grammar_api`, like the list."""
-    if not await flag_enabled(ctx.tenant, REVIEW_GRAMMAR_API):
-        raise NotFound("review.grammar_api")
+    never authorises (DEC-30)."""
     found = await gate_counts(ctx, office_id=office_id)
     return HumanGateCountsOut(
         total=found.total,
@@ -913,11 +886,9 @@ async def human_gate_list_route(
     sort: Annotated[GateSort, Query()] = "created",
 ) -> ListPage[HumanGateOut]:
     """What waits on the caller; `counts` are per kind ("3 decisions, 6 sign-offs, 2 exports").
-    P-04-T16: served from the projection behind `review.grammar_api`; a walled client's gates
+    P-04-T16: served from the projection; a walled client's gates
     are never listed or counted. I-01-T07: `state` (open, snoozed by the caller, done), `band`,
     `office_id` (narrows, never authorises), `sort=deadline`, and each row's presentation facts."""
-    if not await flag_enabled(ctx.tenant, REVIEW_GRAMMAR_API):
-        raise NotFound("review.grammar_api")
     found = await gates_waiting_on(
         ctx,
         kind=kind,
@@ -983,18 +954,12 @@ class ReassignedOut(BaseModel):
     version: Annotated[int, classified("internal")]
 
 
-async def _gate_flag(ctx: AuthContext) -> None:
-    if not await flag_enabled(ctx.tenant, REVIEW_GRAMMAR_API):
-        raise NotFound("review.grammar_api")
-
-
 @human_gates_router.post(
     "/{gate_id}/snooze", action=SNOOZE, response_model=SnoozedOut, errors=(409,)
 )
 async def human_gate_snooze_route(gate_id: UUID, body: SnoozeIn, ctx: Ctx) -> SnoozedOut:
     """The caller's own snooze, until a moment after now and no later than the gate's due date
     (422 `snooze_in_past`, `snooze_past_due`); 409 `gate_not_open`, `gate_overdue`."""
-    await _gate_flag(ctx)
     done = await snooze_gate(ctx, gate_id, body.until)
     return SnoozedOut(gate_id=done.gate_id, until=done.until)
 
@@ -1003,7 +968,6 @@ async def human_gate_snooze_route(gate_id: UUID, body: SnoozeIn, ctx: Ctx) -> Sn
     "/{gate_id}/unsnooze", action=SNOOZE, response_model=SnoozedOut, errors=(409,)
 )
 async def human_gate_unsnooze_route(gate_id: UUID, ctx: Ctx) -> SnoozedOut:
-    await _gate_flag(ctx)
     done = await unsnooze_gate(ctx, gate_id)
     return SnoozedOut(gate_id=done.gate_id, until=done.until)
 
@@ -1016,7 +980,6 @@ async def human_gate_unsnooze_route(gate_id: UUID, ctx: Ctx) -> SnoozedOut:
 )
 async def human_gate_candidates_route(gate_id: UUID, ctx: Ctx) -> ReassignCandidatesOut:
     """Who the gate may move to now (the owner's hook; walls applied); 409 `not_reassignable`."""
-    await _gate_flag(ctx)
     found = await reassign_candidates(ctx, gate_id)
     # The hook read the candidates under RLS with walls applied; names only for those.
     names = await names_of(sorted({c.user_id for c in found}))
@@ -1036,7 +999,6 @@ async def human_gate_candidates_route(gate_id: UUID, ctx: Ctx) -> ReassignCandid
 async def human_gate_reassign_route(gate_id: UUID, body: ReassignIn, ctx: Ctx) -> ReassignedOut:
     """Through the owner's hook only (409 `not_reassignable`); 409 `stale_version`; 422
     `candidate_not_eligible`."""
-    await _gate_flag(ctx)
     done = await reassign_gate(ctx, gate_id, body.to_user_id, body.seen_version)
     return ReassignedOut(gate_id=done.gate_id, to_user_id=done.to_user_id, version=done.version)
 
@@ -1300,7 +1262,6 @@ async def decision_card_list_route(
     limit: Annotated[int | None, Query(ge=1, le=200)] = None,
 ) -> ListPage[DecisionCardItemOut]:
     """Cards on an engagement, on the list envelope with per-status counts (P-04-T23)."""
-    await _live(ctx)
     found = await list_cards(
         ctx, engagement_id=engagement_id, state=state, cursor=cursor, limit=limit
     )
@@ -1318,7 +1279,6 @@ async def decision_card_list_route(
 )
 async def decision_card_route(card_id: UUID, ctx: Ctx) -> DecisionCardOut:
     """SHL-11 a to h: one card, its versions and the caller's allowed actions."""
-    await _live(ctx)
     return _card_out(await card_detail(ctx, card_id))
 
 
@@ -1332,7 +1292,6 @@ async def decision_card_decide_route(
     card_id: UUID, body: CardDecideIn, ctx: Ctx
 ) -> DecisionCardOut:
     """SHL-11 a to c: the reserved role decides, with a rationale (human only; MFA per kind)."""
-    await _live(ctx)
     return _card_out(
         await decide_card(
             ctx,
@@ -1356,7 +1315,6 @@ async def decision_card_analysis_request_route(
     card_id: UUID, body: AnalysisRequestIn, ctx: Ctx
 ) -> AnalysisRequestOut:
     """SHL-11 b: "Request more analysis" records a request for the run."""
-    await _live(ctx)
     found = await request_analysis(ctx, card_id, body.text)
     return AnalysisRequestOut(
         id=found.id,
@@ -1374,7 +1332,6 @@ async def decision_card_analysis_request_route(
 )
 async def decision_card_notify_route(card_id: UUID, ctx: Ctx) -> DecisionNotifyOut:
     """SHL-11 b: "Notify Margaret" sends the reserved person a mention notification."""
-    await _live(ctx)
     found = await notify(ctx, card_id)
     return DecisionNotifyOut(
         card_id=found.card_id,
@@ -1392,7 +1349,6 @@ async def decision_card_notify_route(card_id: UUID, ctx: Ctx) -> DecisionNotifyO
 async def decision_card_reassess_route(card_id: UUID, ctx: Ctx) -> DecisionCardOut:
     """SHL-11 d, h: the owner's provider recomputes in code; no change is a new version, a
     changed outcome raises a superseding card."""
-    await _live(ctx)
     return _card_out(await reassess(ctx, card_id))
 
 
@@ -1755,7 +1711,6 @@ async def issue_list_route(
     limit: Annotated[int | None, Query(ge=1, le=200)] = None,
 ) -> ListPage[IssueItemOut]:
     """Issues on a record or an engagement; `counts` per status and `facets` by kind."""
-    await _live(ctx)
     page = await issues_svc.list_issues(
         ctx,
         record_type=record_type,
@@ -1778,7 +1733,6 @@ async def issue_list_route(
 )
 async def issue_route(issue_id: UUID, ctx: Ctx) -> IssueDetailOut:
     """One issue with its sealed texts (each read is an access event)."""
-    await _live(ctx)
     return await _issue_detail(ctx, issue_id)
 
 
@@ -1787,7 +1741,6 @@ async def issue_route(issue_id: UUID, ctx: Ctx) -> IssueDetailOut:
 )
 async def issue_create_route(body: IssueCreateIn, ctx: Ctx) -> IssueDetailOut:
     """SHL-15 b, c: a new issue, from cells or a field flag."""
-    await _live(ctx)
     issue_id = await issues_svc.create_issue(
         ctx,
         record_type=body.record_type,
@@ -1810,7 +1763,6 @@ async def issue_create_route(body: IssueCreateIn, ctx: Ctx) -> IssueDetailOut:
 )
 async def issue_update_route(issue_id: UUID, body: IssueUpdateIn, ctx: Ctx) -> IssueDetailOut:
     """Title, class, priority and assignee."""
-    await _live(ctx)
     await issues_svc.update_issue(
         ctx,
         issue_id,
@@ -1829,7 +1781,6 @@ async def issue_update_route(issue_id: UUID, body: IssueUpdateIn, ctx: Ctx) -> I
 )
 async def issue_resolve_route(issue_id: UUID, body: IssueResolutionIn, ctx: Ctx) -> IssueDetailOut:
     """Human only; the agent never resolves its own issue (ISSUE-001)."""
-    await _live(ctx)
     await resolutions.move(ctx, issue_id, "resolved", body.seen_version)
     return await _issue_detail(ctx, issue_id)
 
@@ -1839,7 +1790,6 @@ async def issue_resolve_route(issue_id: UUID, body: IssueResolutionIn, ctx: Ctx)
 )
 async def issue_verify_route(issue_id: UUID, body: IssueResolutionIn, ctx: Ctx) -> IssueDetailOut:
     """A reviewer verifies a resolved issue."""
-    await _live(ctx)
     await resolutions.move(ctx, issue_id, "verified", body.seen_version)
     return await _issue_detail(ctx, issue_id)
 
@@ -1848,7 +1798,6 @@ async def issue_verify_route(issue_id: UUID, body: IssueResolutionIn, ctx: Ctx) 
     "/{issue_id}/reopen", action="issue.reopen", response_model=IssueDetailOut, errors=(409, 501)
 )
 async def issue_reopen_route(issue_id: UUID, body: IssueResolutionIn, ctx: Ctx) -> IssueDetailOut:
-    await _live(ctx)
     await resolutions.move(ctx, issue_id, "reopened", body.seen_version)
     return await _issue_detail(ctx, issue_id)
 
@@ -1863,7 +1812,6 @@ async def issue_not_applicable_route(
     issue_id: UUID, body: IssueResolutionIn, ctx: Ctx
 ) -> IssueDetailOut:
     """Not applicable is a resolution, so it shares `issue.resolve`."""
-    await _live(ctx)
     await resolutions.move(ctx, issue_id, "not_applicable", body.seen_version)
     return await _issue_detail(ctx, issue_id)
 
@@ -1881,7 +1829,6 @@ async def issue_send_to_client_route(
     idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
 ) -> IssueDetailOut:
     """SHL-15 b: one request item with only the client wording; G3 is checked (ADR-111)."""
-    await _live(ctx)
     await resolutions.check_send(ctx, issue_id)
 
     async def run() -> tuple[int, dict[str, object]]:
@@ -1916,7 +1863,6 @@ async def fix_instructions_bulk_route(
     body: BulkFixInstructionsIn, ctx: Ctx
 ) -> BulkFixInstructionsOut:
     """SHL-15 e: one instruction per selected issue, each decided on its own."""
-    await _live(ctx)
     outcomes = await resolutions.set_fix_instructions_bulk(
         ctx, [(i.issue_id, i.seen_version) for i in body.issues], body.text, "this_issue"
     )
@@ -1946,7 +1892,6 @@ async def fix_instructions_route(
     issue_id: UUID, body: FixInstructionsIn, ctx: Ctx
 ) -> FixInstructionsAcceptedOut:
     """SHL-15 a: sealed instructions; 409 `fix_runner_unavailable` when no runner is registered."""
-    await _live(ctx)
     run = await resolutions.set_fix_instructions(
         ctx, issue_id, body.seen_version, body.text, body.scope
     )
@@ -1965,7 +1910,7 @@ async def fix_instructions_route(
 )
 async def issue_explain_route(issue_id: UUID, ctx: Ctx) -> ExplainAcceptedOut:
     """SHL-15 d, "Explain…": a person asks the agent to explain; nothing is decided."""
-    await _stub(ctx)
+    raise NotImplementedYet
 
 
 # --- Checkpoints (SHL-16; ADR-160 clause 9) ----------------------------------------------------
@@ -2197,7 +2142,6 @@ async def checkpoint_history_route(
     filter: Annotated[CheckpointFilter, Query()] = "all",
 ) -> CheckpointHistoryOut:
     """SHL-16: the drawer's cards, filtered Agent only, Named only or All (P-04-T32)."""
-    await _live(ctx)
     found = await checkpoints.list_checkpoints(ctx, target_type, target_id, filter)
     return CheckpointHistoryOut(
         target_type=found.target_type,
@@ -2220,7 +2164,6 @@ async def checkpoint_route(
 ) -> CheckpointDetailOut:
     """SHL-16 a, c: the code-computed diff. `steps` stay empty until C6 run steps are read
     through review (P-04-T32 leaves them to the run owner)."""
-    await _live(ctx)
     found = await checkpoints.detail(ctx, checkpoint_id, compare)
     return CheckpointDetailOut(
         checkpoint=_checkpoint_out(found.checkpoint),
@@ -2253,7 +2196,6 @@ async def checkpoint_route(
 )
 async def checkpoint_create_route(body: CheckpointCreateIn, ctx: Ctx) -> CheckpointItemOut:
     """SHL-16 f: "Save checkpoint…" (human only)."""
-    await _live(ctx)
     return _checkpoint_out(
         await checkpoints.save(ctx, body.target_type, body.target_id, body.name)
     )
@@ -2269,7 +2211,6 @@ async def checkpoint_approve_route(
     checkpoint_id: UUID, body: CheckpointApproveIn, ctx: Ctx
 ) -> CheckpointItemOut:
     """SHL-16 b: human only; Current moves and `checkpoint.approved` carries the deltas."""
-    await _live(ctx)
     return _checkpoint_out(await checkpoints.approve(ctx, checkpoint_id, body.seen_hash))
 
 
@@ -2283,7 +2224,6 @@ async def checkpoint_reject_route(
     checkpoint_id: UUID, body: CheckpointRejectIn, ctx: Ctx
 ) -> CheckpointItemOut:
     """SHL-16 e: "Reject…" with a reason (human only)."""
-    await _live(ctx)
     return _checkpoint_out(
         await checkpoints.reject(ctx, checkpoint_id, body.seen_hash, body.reason)
     )
@@ -2300,7 +2240,6 @@ async def checkpoint_restore_route(
     checkpoint_id: UUID, body: CheckpointRestoreIn, ctx: Ctx
 ) -> CheckpointItemOut:
     """SHL-16 c: returns the new checkpoint (Checkpoint 7, a copy of Checkpoint 3); human only."""
-    await _live(ctx)
     return _checkpoint_out(await checkpoints.restore(ctx, checkpoint_id, body.seen_hash))
 
 
@@ -2314,7 +2253,6 @@ async def checkpoint_rename_route(
     checkpoint_id: UUID, body: CheckpointRenameIn, ctx: Ctx
 ) -> CheckpointItemOut:
     """SHL-16 d: rename and star (only the fields sent change)."""
-    await _live(ctx)
     return _checkpoint_out(
         await checkpoints.rename(
             ctx,
@@ -2488,7 +2426,6 @@ async def field_provenance_route(
     target_type: FieldTargetType, target_id: UUID, field_key: FieldKey, ctx: Ctx
 ) -> FieldProvenanceOut:
     """SHL-09 a to f: versions, prior values, citations, ticks and flags with staleness."""
-    await _live(ctx)
     return _provenance_out(await fields_svc.provenance(ctx, target_type, target_id, field_key))
 
 
@@ -2504,7 +2441,6 @@ async def field_edit_route(
 ) -> FieldProvenanceOut:
     """SHL-09 c: a person's edit with a citation note (a human checkpoint where the owner
     checkpoints, SHL-16)."""
-    await _live(ctx)
     return _provenance_out(
         await fields_svc.edit(
             ctx,
@@ -2534,7 +2470,6 @@ async def field_reference_route(
     ctx: Ctx,
 ) -> FieldProvenanceOut:
     """ "Add reference": a document in this return, verified through C4."""
-    await _live(ctx)
     return _provenance_out(
         await fields_svc.add_reference(
             ctx,
@@ -2563,7 +2498,6 @@ async def field_tick_route(
     ctx: Ctx,
 ) -> FieldProvenanceOut:
     """ "Sign off field": a `field_tick` sign-off (human only)."""
-    await _live(ctx)
     return _provenance_out(
         await fields_svc.tick(
             ctx,

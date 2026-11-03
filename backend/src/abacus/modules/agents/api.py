@@ -243,7 +243,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     template_drafts_router,
     engagement_runs_router,
     runs_router,
-    # C3 stubs behind `review.grammar_api` (P-04-T08; ADR-161).
+    # C3 (P-04-T08; ADR-161); `review.grammar_api` retired (P-04-T62).
     proposals_router,
     suggestions_router,
     follow_ups_router,  # P-06-T14: follow-ups v2 behind `binders.engine`

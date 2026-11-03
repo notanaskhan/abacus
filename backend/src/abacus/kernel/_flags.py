@@ -385,11 +385,6 @@ REVIEW_CHECKPOINTS = Flag(
     kind="boolean",
     default="false",
 )
-REVIEW_GRAMMAR_API = Flag(
-    name="review.grammar_api",
-    kind="boolean",
-    default="false",
-)
 RULES_REFERENCE_SETS = Flag(
     name="rules.reference_sets",
     kind="boolean",
@@ -541,7 +536,6 @@ FLAGS: dict[str, Flag] = {
     "retrieval.auto": RETRIEVAL_AUTO,
     "review.approve_agent_output": REVIEW_APPROVE_AGENT_OUTPUT,
     "review.checkpoints": REVIEW_CHECKPOINTS,
-    "review.grammar_api": REVIEW_GRAMMAR_API,
     "rules.reference_sets": RULES_REFERENCE_SETS,
     "sampling.sample_sets": SAMPLING_SAMPLE_SETS,
     "screening.card": SCREENING_CARD,

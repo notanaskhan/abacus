@@ -44,3 +44,19 @@ Q-04-T350 retires `compliance.firm_export` in the **Thu Aug 5, 2027** train, bef
 | `compliance.firm_export` | notanaskhan | 2027-08-25 | **Thu Aug 5, 2027** | **Retire** if on-demand export works at every live firm; else **Renew** to at most 90 days | Q-04-T350's acceptance: not registered after the Aug 5 train. With no live firm on Aug 5, renew (DEC-1391 rule 3) and carry the retirement to the first train after the last live firm's export check |
 
 A renewal restarts `created` on the day it is made and may reach at most 90 days (ADR-089); record the outcome of each row here.
+
+## The P-04 review flags (P-04-T62)
+
+P-04 §8, ADR-089. Recorded 2026-11-03 (DEC-2221). The epic named five flags; two never existed.
+
+| Flag | Owner | Was | Now | Action | Condition |
+|---|---|---|---|---|---|
+| `review.grammar_api` | ayushkbhatia | expires 2027-04-21 | — | **Retired** | Every C3 service it stood in front of has landed (P-04-T16 to T35); it was on for every tenant (Dev, synthetic, canary). Deleted with its 404 branches in `review/contract.py` and `agents/contract.py` and its SHL-10/11/12/15 wrappers in `sheets-host.tsx`, in one change |
+| `review.approve_agent_output` | ayushkbhatia | expires 2027-04-29 | expires **2027-05-01** | **Renewed** (DEC-137, 180 days at most) | Per-firm switch for SHL-10's live approval; flipped per pilot firm Tue Jul 13, 2027. Renew again before May 1 (outside the Jan 1 – Apr 20 and Sep 1 – Oct 20 freezes); retire once on for every live firm |
+| `review.checkpoints` | ayushkbhatia | expires 2027-04-28 | expires **2027-05-01** | **Renewed** (DEC-137) | Tax-pilot shadow Jul 27, live Aug 17, 2027. Renew before May 1, or retire with the pilot |
+| `review.sign_offs` | — | never created | — | **None to retire** | Sign-offs went live behind `review.grammar_api` (P-04-T18); no separate flag was registered |
+| `review.issues` | — | never created | — | **None to retire** | DEC-1752 kept SHL-15 behind `review.grammar_api` until a `review.issues` flag; none was registered, so retiring the C3 flag opens SHL-15 with the rest |
+
+The epic's "outside Jan 1 to Apr 20, 2028" assumed flags created in 2027. Today's flags were
+created in 2026, so a renewal reaches at most 180 days (DEC-137) and lands before 2028. May 1,
+2027 is outside both freeze windows.

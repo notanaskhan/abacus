@@ -15,7 +15,7 @@ Will own (docs/plan/03-backend-architecture.md §2.2): Sign-offs, review notes, 
 
 ## The sign-off service (P-04-T18, T19; DEC-400 to DEC-402)
 
-`sign_offs.py` serves `GET /v1/sign-offs`, `/eligibility` and `POST /v1/sign-offs` (behind `review.grammar_api`): a live person signs the hash they saw at a level the matrix allows them, and every R-SO rule answers its fixed code (`docs/contracts/review-grammar.md` §2, §6). Rows record initials, engagement role, version, statement version, the adopted agent run (R-SO-8) and when independence was checked; audit and outbox `sign_off.recorded`. `stale.py` is the `StaleSignOffDetector`: on `trial_balance.version_created` and `workpaper.content_changed` it emits `sign_off.went_stale` once per sign-off and hash (notification `sign_off_stale`). SIGNOFF-001 names the only files that reach `record_sign_off` and `sign_target`.
+`sign_offs.py` serves `GET /v1/sign-offs`, `/eligibility` and `POST /v1/sign-offs`: a live person signs the hash they saw at a level the matrix allows them, and every R-SO rule answers its fixed code (`docs/contracts/review-grammar.md` §2, §6). Rows record initials, engagement role, version, statement version, the adopted agent run (R-SO-8) and when independence was checked; audit and outbox `sign_off.recorded`. `stale.py` is the `StaleSignOffDetector`: on `trial_balance.version_created` and `workpaper.content_changed` it emits `sign_off.went_stale` once per sign-off and hash (notification `sign_off_stale`). SIGNOFF-001 names the only files that reach `record_sign_off` and `sign_target`.
 
 ## Review notes, bulk sign-off and decision cards (P-04-T21 to T23; DEC-500 to DEC-504)
 
