@@ -206,16 +206,16 @@ def _live_human(ctx: Actor) -> bool:
     principal or a break-glass support session."""
     return (
         isinstance(cast(object, ctx), AuthContext)
-        and not cast(AuthContext, ctx).client
+        and not cast(AuthContext, ctx).client  # a person: the isinstance check above
         and ctx.tenant.actor_kind == "human"
-        and not cast(AuthContext, ctx).is_support
+        and not cast(AuthContext, ctx).is_support  # a person: the isinstance check above
     )
 
 
 def _human(ctx: Actor, action: str) -> AuthContext:
     if not _live_human(ctx):
         raise Forbidden(action, "role")
-    return cast(AuthContext, ctx)
+    return cast(AuthContext, ctx)  # a person: _live_human above
 
 
 def hash_out(digest: str) -> str:
@@ -411,7 +411,8 @@ async def _held(ctx: Actor, resource: Resource) -> list[str]:
     holds only reads."""
     if not _live_human(ctx):
         return []
-    return list(await allowed_actions(cast(AuthContext, ctx), resource, [CREATE, *ROW_ACTIONS]))
+    person = cast(AuthContext, ctx)  # a person: _live_human above
+    return list(await allowed_actions(person, resource, [CREATE, *ROW_ACTIONS]))
 
 
 async def _names(

@@ -35,7 +35,9 @@ from abacus.kernel.storage import s3_client
 if TYPE_CHECKING:
     from types_boto3_s3 import S3Client
 
-_CODE: Final = re.compile(r"(?<!\d)(\d{6})(?!\d)")
+# A whole token: six digits inside a UUID, a hex id or an address are not a code (ED-301,
+# Q-03-T164: a mention email's engagement id held "457780" and read as one).
+_CODE: Final = re.compile(r"(?<![0-9A-Za-z_+.-])(\d{6})(?![0-9A-Za-z_@-])")
 
 
 @dataclass(frozen=True)

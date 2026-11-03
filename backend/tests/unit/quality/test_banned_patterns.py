@@ -170,6 +170,21 @@ CASES: list[tuple[str, str, str, str]] = [
         "from typing import (\n    Any,\n)\nx: Any = 1  # pyright: ignore[reportX] -- r\n",
         "from typing import (\n    Any,\n)\nx: Any = 1  # payload validated downstream\n",
     ),
+    # CAST-001
+    (
+        "CAST-001",
+        SERVICE,
+        "from typing import cast\ndef f(agent: object) -> None:\n"
+        "    g(cast(AuthContext, agent))\n",
+        "from typing import cast\ndef f(v: object) -> None:\n"
+        "    g(cast(AuthContext, v))  # HOME's slot passes the viewer\n",
+    ),
+    (
+        "CAST-001",
+        SERVICE,
+        "import typing\nx = typing.cast(identity.AuthContext, y)\n",
+        "import typing\nx = typing.cast(identity.AuthContext, y)  # isinstance-checked above\n",
+    ),
     # SUPPRESS-001
     (
         "SUPPRESS-001",

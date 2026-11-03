@@ -25,7 +25,7 @@ _SHOWN: Final = ("draft", "published", "unpublished", "complete")
 
 
 async def binders(viewer: object, office_id: UUID | None) -> HomeCount:
-    ctx = cast(AuthContext, viewer)
+    ctx = cast(AuthContext, viewer)  # HOME-01's count slot passes the signed-in person
     async with tenant_session(ctx.tenant) as session:
         rows = (
             await session.execute(
