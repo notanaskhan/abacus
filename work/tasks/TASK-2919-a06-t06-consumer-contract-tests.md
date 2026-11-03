@@ -4,7 +4,7 @@ title: A-06-T06 consumer contract tests for the C8 and completion stubs
 spec: SPEC-642
 acceptance_criteria: [AC-3]
 risk_zone: amber
-status: in-review
+status: done
 epic: A-06
 plan_key: A-06-T06
 branch: s24-a06-t06 (stacked on s24-a06-t05)
