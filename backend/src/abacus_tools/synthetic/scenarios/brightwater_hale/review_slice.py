@@ -242,8 +242,18 @@ def review_events() -> list[Event]:
         )
         for i in ISSUES
     ]
+    # The return exists from the setup instant, so a save dated before it (Apr 13) replays at
+    # setup and the handler stamps it with its own date.
     events += [
-        _event(f"feld:checkpoint:{seq}", at, "review.feld_checkpoint_saved", "KO", FELD, name=name)
+        _event(
+            f"feld:checkpoint:{seq}",
+            max(at, SETUP_AT),
+            "review.feld_checkpoint_saved",
+            "KO",
+            FELD,
+            name=name,
+            saved_at=at.isoformat(),
+        )
         for seq, name, at in CHECKPOINTS
     ]
     return events

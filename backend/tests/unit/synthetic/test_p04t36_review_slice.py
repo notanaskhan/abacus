@@ -61,3 +61,17 @@ def test_the_tb_l1_precedes_the_two_notes_assigned_to_the_preparer() -> None:
     assert (signed.actor, signed.data["level"]) == ("MD", 1)
     assert [(n.actor, n.data["cell"]) for n in notes] == [("HL", "RA!C14"), ("MO", "RA!C22")]
     assert all(n.at > signed.at for n in notes)
+
+
+def test_the_feld_checkpoints_replay_after_the_return_and_keep_their_own_dates() -> None:
+    # Checkpoint 1 is dated Apr 13; the firm, Kevin and the Feld return exist from Sep 1.
+    loaded = expand_slices((review_slice.SLICE,))
+    events = replay_order(tuple(e for name in loaded for e in slice_events(name)))
+    kinds = [e.kind for e in events]
+    saves = [e for e in events if e.kind == "review.feld_checkpoint_saved"]
+    assert [e.data["saved_at"] for e in saves] == [
+        at.isoformat() for _, _, at in review_slice.CHECKPOINTS
+    ]
+    first_save = kinds.index("review.feld_checkpoint_saved")
+    assert kinds.index("tax.return_board_set") < first_save
+    assert kinds.index("identity.seats_provisioned") < first_save
