@@ -47,6 +47,7 @@ from abacus.modules.tax.k1_release_workflow import (
 from abacus.modules.tax.kind import TaxReturnKind
 from abacus.modules.tax.overview import on_binder_published, on_sign_off_recorded
 from abacus.modules.tax.returns_routes import returns_router
+from abacus.modules.tax.schedules_contract import schedules_router
 from abacus.modules.tax.status import TRANSITIONS, StaleReturn, TransitionRefused, next_status
 from abacus.modules.tax.tax_profile import register as register_tax_profile
 from abacus.modules.tax.transitions import apply_transition, record_sync_state
@@ -82,6 +83,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     k1_router,  # K-1 packages (T-02-T02 stub)
     portal_k1_router,  # POR-13 (T-02-T02 stub)
     portal_filing_router,  # T-01-T41: the filed client copy's download
+    schedules_router,  # extensions, estimates and payments (T-03-T02 stub)
 )
 
 

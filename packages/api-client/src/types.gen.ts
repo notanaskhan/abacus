@@ -2070,6 +2070,76 @@ export type AnswerSavedOut = {
 };
 
 /**
+ * AnswerSummaryOut
+ *
+ * "Claire Feld · Aug 20: Yes".
+ */
+export type AnswerSummaryOut = {
+    /**
+     * Answer Id
+     */
+    answer_id: string;
+    /**
+     * Answered On
+     */
+    answered_on: string;
+    /**
+     * Contact Name
+     */
+    contact_name: string;
+    /**
+     * Note
+     */
+    note?: string | null;
+    value: JsonValue;
+};
+
+/**
+ * AppliedEffectOut
+ *
+ * One `answer_effects` row: the banner "Raised review point '…' · open in TAX-06" and the
+ * helper "this answer created the open request …".
+ */
+export type AppliedEffectOut = {
+    /**
+     * Actor Kind
+     */
+    actor_kind: 'system' | 'human';
+    /**
+     * Actor Name
+     */
+    actor_name?: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'request_item_created' | 'review_point_raised' | 'internal_review_flagged' | 'upload_routed_to_notices' | 'pending_handler';
+    /**
+     * Rule Key
+     */
+    rule_key: string;
+    /**
+     * Target Id
+     */
+    target_id?: string | null;
+    /**
+     * Target Type
+     */
+    target_type?: string | null;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * AppliedMethodologyOut
  */
 export type AppliedMethodologyOut = {
@@ -2140,6 +2210,58 @@ export type ApprovalStepOut = {
      * State
      */
     state: 'done' | 'in_progress' | 'pending' | 'stale';
+};
+
+/**
+ * ApproveAndRequestIn
+ *
+ * Either prepared extensions, or returns with payments (prepared in the same unit of work);
+ * `send_confirmations` sends one confirmation request per client ("Send confirmation
+ * requests").
+ */
+export type ApproveAndRequestIn = {
+    /**
+     * Extension Ids
+     */
+    extension_ids?: Array<string>;
+    /**
+     * Payments
+     */
+    payments?: Array<ProposedPaymentIn>;
+    /**
+     * Return Ids
+     */
+    return_ids?: Array<string>;
+    /**
+     * Send Confirmations
+     */
+    send_confirmations?: boolean;
+};
+
+/**
+ * ApproveAndRequestOut
+ */
+export type ApproveAndRequestOut = {
+    /**
+     * Approved Payment Ids
+     */
+    approved_payment_ids: Array<string>;
+    /**
+     * Checks
+     */
+    checks: Array<SafeHarborCheckOut>;
+    /**
+     * Confirmation Request Item Ids
+     */
+    confirmation_request_item_ids: Array<string>;
+    /**
+     * Extensions
+     */
+    extensions: Array<ExtensionRowOut>;
+    /**
+     * Gate Id
+     */
+    gate_id?: string | null;
 };
 
 /**
@@ -4118,6 +4240,31 @@ export type BinderOut = {
      * Work Item Id
      */
     work_item_id: string | null;
+};
+
+/**
+ * BinderQuestionnaireOut
+ *
+ * BND-02's Questions tab badge and the link into BND-03.
+ */
+export type BinderQuestionnaireOut = {
+    /**
+     * Answered
+     */
+    answered: number;
+    /**
+     * Binder Id
+     */
+    binder_id: string;
+    /**
+     * Questionnaire Id
+     */
+    questionnaire_id?: string | null;
+    /**
+     * Questions
+     */
+    questions: number;
+    template?: OrganizerTemplateRefOut | null;
 };
 
 /**
@@ -6831,6 +6978,20 @@ export type ClientPreviewItemOut = {
 };
 
 /**
+ * ClientPreviewOut
+ */
+export type ClientPreviewOut = {
+    /**
+     * Firm Name
+     */
+    firm_name: string;
+    /**
+     * Questions
+     */
+    questions: Array<PreviewQuestionOut>;
+};
+
+/**
  * ClientRecordOut
  *
  * CLI-02's subbar facts, rail Details and Team, and tab counts. The Team band's Partner is
@@ -7129,6 +7290,28 @@ export type ClientVisibilityIn = {
      * Client Visible
      */
     client_visible: boolean;
+};
+
+/**
+ * ClientVisibleChangeOut
+ */
+export type ClientVisibleChangeOut = {
+    /**
+     * After
+     */
+    after?: string | null;
+    /**
+     * Before
+     */
+    before?: string | null;
+    /**
+     * Kind
+     */
+    kind: 'added' | 'edited' | 'reordered' | 'retired' | 'wording' | 'required' | 'logic';
+    /**
+     * Question Key
+     */
+    question_key: string;
 };
 
 /**
@@ -7619,6 +7802,38 @@ export type ConfirmationOut = {
      * User Id
      */
     user_id: string;
+};
+
+/**
+ * ConfirmationRequestIn
+ */
+export type ConfirmationRequestIn = {
+    /**
+     * Contact Id
+     */
+    contact_id?: string | null;
+};
+
+/**
+ * ConfirmationRequestOut
+ */
+export type ConfirmationRequestOut = {
+    /**
+     * Contact Name
+     */
+    contact_name: string;
+    /**
+     * Request Item Id
+     */
+    request_item_id: string;
+    /**
+     * Request List Id
+     */
+    request_list_id: string;
+    /**
+     * Sent At
+     */
+    sent_at: string;
 };
 
 /**
@@ -10874,6 +11089,162 @@ export type EbpImportOut = {
 };
 
 /**
+ * EditorCountsOut
+ *
+ * The rail: "Answered 8 of 9", the Logic band's "4 conditional follow-ups" and the amber
+ * "1 review point raised".
+ */
+export type EditorCountsOut = {
+    /**
+     * Answered
+     */
+    answered: number;
+    /**
+     * Conditional Follow Ups
+     */
+    conditional_follow_ups: number;
+    /**
+     * Last Answer By
+     */
+    last_answer_by?: string | null;
+    /**
+     * Last Answer On
+     */
+    last_answer_on?: string | null;
+    /**
+     * Questions
+     */
+    questions: number;
+    /**
+     * Requests Created
+     */
+    requests_created: number;
+    /**
+     * Review Points Raised
+     */
+    review_points_raised: number;
+};
+
+/**
+ * EditorQuestionOut
+ */
+export type EditorQuestionOut = {
+    /**
+     * Amount Parts
+     */
+    amount_parts?: Array<string>;
+    answer?: AnswerSummaryOut | null;
+    /**
+     * Answered
+     */
+    answered: boolean;
+    /**
+     * Choices
+     */
+    choices?: Array<string>;
+    /**
+     * Client Wording
+     */
+    client_wording: string;
+    /**
+     * Effect Rules
+     */
+    effect_rules?: Array<EffectRule>;
+    /**
+     * Effects
+     */
+    effects?: Array<AppliedEffectOut>;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Internal Helper
+     */
+    internal_helper?: string | null;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Parent Key
+     */
+    parent_key?: string | null;
+    /**
+     * Position
+     */
+    position: number;
+    /**
+     * Required
+     */
+    required: boolean;
+    /**
+     * Section Key
+     */
+    section_key: string;
+    show_when?: ShowWhen | null;
+    /**
+     * Triggered
+     */
+    triggered?: boolean | null;
+    /**
+     * Type
+     */
+    type: 'yes_no' | 'amount' | 'choice' | 'date' | 'text' | 'upload_if_yes';
+};
+
+/**
+ * EffectRule
+ *
+ * One deterministic rule ("Yes → create the request 'estimated payment confirmations'").
+ * Evaluated by code; the agent never fires an effect.
+ */
+export type EffectRule = {
+    /**
+     * Detail
+     */
+    detail?: string | null;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Kind
+     */
+    kind: 'create_request_item' | 'raise_review_point' | 'flag_internal_review' | 'route_upload_to_notices';
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * When Equals
+     */
+    when_equals: string;
+};
+
+/**
+ * EffectToFireOut
+ */
+export type EffectToFireOut = {
+    /**
+     * Kind
+     */
+    kind: 'create_request_item' | 'raise_review_point' | 'flag_internal_review' | 'route_upload_to_notices';
+    /**
+     * Question Key
+     */
+    question_key: string;
+    /**
+     * Rule Key
+     */
+    rule_key: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * EffectiveAiPolicyOut
  *
  * `GET /v1/firm/ai-policy/effective`: the cells a run planner, ENG-03 (P-07) and KNW-04
@@ -12723,6 +13094,26 @@ export type EngineStamp = {
 };
 
 /**
+ * EngineStampOut
+ *
+ * Every computed figure carries the engine that computed it (chapter 03 §10.1).
+ */
+export type EngineStampOut = {
+    /**
+     * Engine Name
+     */
+    engine_name: string;
+    /**
+     * Engine Version
+     */
+    engine_version: string;
+    /**
+     * Inputs Hash
+     */
+    inputs_hash: string;
+};
+
+/**
  * EngineSummaryLineOut
  *
  * One engine figure from an approved import only (ADR-231).
@@ -13512,6 +13903,215 @@ export type ErrorOut = {
 };
 
 /**
+ * EstimateInstallmentOut
+ */
+export type EstimateInstallmentOut = {
+    /**
+     * Amount
+     */
+    amount?: string | null;
+    confirmation?: TaxConfirmationOut | null;
+    /**
+     * Due On
+     */
+    due_on: string;
+    /**
+     * Jurisdiction Amounts
+     */
+    jurisdiction_amounts?: {
+        [key: string]: string;
+    };
+    /**
+     * Paid On
+     */
+    paid_on?: string | null;
+    /**
+     * Quarter
+     */
+    quarter: number;
+    /**
+     * Scheduled For
+     */
+    scheduled_for?: string | null;
+    /**
+     * Status
+     */
+    status: 'not_confirmed' | 'confirmation_requested' | 'scheduled' | 'paid' | 'not_required';
+};
+
+/**
+ * EstimateOut
+ */
+export type EstimateOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'estimate_schedule.update' | 'estimate_schedule.confirmation_send' | 'tax_schedule.export'>;
+    /**
+     * Annual Required
+     */
+    annual_required?: string | null;
+    /**
+     * Client Entity Id
+     */
+    client_entity_id: string;
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Client Note
+     */
+    client_note?: string | null;
+    /**
+     * Forms
+     */
+    forms: Array<string>;
+    installment?: EstimateInstallmentOut | null;
+    /**
+     * Installments
+     */
+    installments: Array<EstimateInstallmentOut>;
+    /**
+     * Jurisdiction Annual
+     */
+    jurisdiction_annual?: {
+        [key: string]: string;
+    };
+    /**
+     * Method
+     */
+    method: 'prior_year_100' | 'prior_year_110' | 'current_year_90' | 'not_required_withholding' | 'not_required_estate_first_years' | 'prospect';
+    /**
+     * Method Note
+     */
+    method_note?: string | null;
+    /**
+     * Payment Method Labels
+     */
+    payment_method_labels: Array<'irs_direct_pay' | 'eftps' | 'ny_online_services' | 'state_portal' | 'check' | 'other'>;
+    /**
+     * Prior Agi Over Threshold
+     */
+    prior_agi_over_threshold?: boolean | null;
+    /**
+     * Prior Year Tax
+     */
+    prior_year_tax?: string | null;
+    /**
+     * Projected Withholding
+     */
+    projected_withholding?: string | null;
+    /**
+     * Row Version
+     */
+    row_version: number;
+    /**
+     * Schedule Id
+     */
+    schedule_id: string;
+    stamp?: EngineStampOut | null;
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+};
+
+/**
+ * EstimatePatchIn
+ */
+export type EstimatePatchIn = {
+    /**
+     * Method
+     */
+    method?: 'prior_year_100' | 'prior_year_110' | 'current_year_90' | 'not_required_withholding' | 'not_required_estate_first_years' | 'prospect' | null;
+    /**
+     * Payment Method Label
+     */
+    payment_method_label?: 'irs_direct_pay' | 'eftps' | 'ny_online_services' | 'state_portal' | 'check' | 'other' | null;
+    /**
+     * Prior Agi Over Threshold
+     */
+    prior_agi_over_threshold?: boolean | null;
+    /**
+     * Prior Year Tax
+     */
+    prior_year_tax?: number | string | null;
+    /**
+     * Prior Year Tax Source
+     */
+    prior_year_tax_source?: 'engine_import' | 'preparer_entry' | null;
+    /**
+     * Projected Withholding
+     */
+    projected_withholding?: number | string | null;
+};
+
+/**
+ * EstimateRowOut
+ *
+ * One TAX-13 b row: the schedule and the selected quarter's installment.
+ */
+export type EstimateRowOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'estimate_schedule.update' | 'estimate_schedule.confirmation_send' | 'tax_schedule.export'>;
+    /**
+     * Annual Required
+     */
+    annual_required?: string | null;
+    /**
+     * Client Entity Id
+     */
+    client_entity_id: string;
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Client Note
+     */
+    client_note?: string | null;
+    /**
+     * Forms
+     */
+    forms: Array<string>;
+    installment?: EstimateInstallmentOut | null;
+    /**
+     * Jurisdiction Annual
+     */
+    jurisdiction_annual?: {
+        [key: string]: string;
+    };
+    /**
+     * Method
+     */
+    method: 'prior_year_100' | 'prior_year_110' | 'current_year_90' | 'not_required_withholding' | 'not_required_estate_first_years' | 'prospect';
+    /**
+     * Method Note
+     */
+    method_note?: string | null;
+    /**
+     * Payment Method Labels
+     */
+    payment_method_labels: Array<'irs_direct_pay' | 'eftps' | 'ny_online_services' | 'state_portal' | 'check' | 'other'>;
+    /**
+     * Row Version
+     */
+    row_version: number;
+    /**
+     * Schedule Id
+     */
+    schedule_id: string;
+    stamp?: EngineStampOut | null;
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+};
+
+/**
  * EventOut
  */
 export type EventOut = {
@@ -13844,6 +14444,365 @@ export type ExportScopeOut = {
      * Include Unaccepted
      */
     include_unaccepted: boolean;
+};
+
+/**
+ * ExtensionBatchOut
+ */
+export type ExtensionBatchOut = {
+    /**
+     * Checks
+     */
+    checks: Array<SafeHarborCheckOut>;
+    /**
+     * Extensions
+     */
+    extensions: Array<ExtensionRowOut>;
+    /**
+     * Gate Id
+     */
+    gate_id?: string | null;
+};
+
+/**
+ * ExtensionOut
+ *
+ * The detail: rule and engine versions, the approval trail and evidence refs.
+ */
+export type ExtensionOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'filing_extension.prepare' | 'filing_extension.approve_payment' | 'filing_extension.mark_filed' | 'filing_extension.flag_likely' | 'filing_extension.confirmation_send' | 'tax_schedule.export'>;
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Client Note
+     */
+    client_note?: string | null;
+    confirmation?: TaxConfirmationOut | null;
+    /**
+     * Days To Extended Due
+     */
+    days_to_extended_due?: number | null;
+    /**
+     * Due Rules Version Id
+     */
+    due_rules_version_id?: string | null;
+    /**
+     * Extended Due On
+     */
+    extended_due_on: string;
+    /**
+     * Filed Form Evidence Version Id
+     */
+    filed_form_evidence_version_id?: string | null;
+    /**
+     * Filed Recorded By Name
+     */
+    filed_recorded_by_name?: string | null;
+    /**
+     * Likely Note
+     */
+    likely_note?: string | null;
+    /**
+     * Likely Reasons
+     */
+    likely_reasons: Array<'k1_outstanding' | 'binder_incomplete' | 'engagement_not_accepted' | 'preparer_flag'>;
+    /**
+     * Likely To Extend
+     */
+    likely_to_extend: boolean;
+    /**
+     * Lines
+     */
+    lines: Array<JurisdictionLineOut>;
+    /**
+     * Meets Safe Harbor
+     */
+    meets_safe_harbor?: boolean | null;
+    /**
+     * Original Due On
+     */
+    original_due_on: string;
+    /**
+     * Paid By Original Due
+     */
+    paid_by_original_due?: string | null;
+    /**
+     * Payments
+     */
+    payments: Array<ExtensionPaymentOut>;
+    /**
+     * Prepare Blocked Reason
+     */
+    prepare_blocked_reason?: string | null;
+    /**
+     * Projected Liability
+     */
+    projected_liability?: string | null;
+    /**
+     * Projected Liability Note
+     */
+    projected_liability_note?: string | null;
+    /**
+     * Projected Liability Source
+     */
+    projected_liability_source?: 'engine_import' | 'preparer_entry' | null;
+    /**
+     * Return Form
+     */
+    return_form: string;
+    /**
+     * Row Version
+     */
+    row_version: number;
+    /**
+     * Safe Harbor Pct
+     */
+    safe_harbor_pct?: string | null;
+    /**
+     * Safe Harbor Target
+     */
+    safe_harbor_target?: string | null;
+    stamp?: EngineStampOut | null;
+    /**
+     * Tax Return Id
+     */
+    tax_return_id: string;
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+    /**
+     * Withholding Plus Estimates
+     */
+    withholding_plus_estimates?: string | null;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
+ * ExtensionPatchIn
+ *
+ * `filed_on` (+ `form`) records the filing in the engine (`filing_extension.mark_filed`);
+ * `likely_to_extend` with a reason is `filing_extension.flag_likely`. One or the other.
+ */
+export type ExtensionPatchIn = {
+    /**
+     * Filed Form Evidence Version Id
+     */
+    filed_form_evidence_version_id?: string | null;
+    /**
+     * Filed On
+     */
+    filed_on?: string | null;
+    /**
+     * Form
+     */
+    form?: string | null;
+    /**
+     * Likely To Extend
+     */
+    likely_to_extend?: boolean | null;
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Reason
+     */
+    reason?: 'k1_outstanding' | 'binder_incomplete' | 'engagement_not_accepted' | 'preparer_flag' | null;
+};
+
+/**
+ * ExtensionPaymentOut
+ *
+ * One proposed or approved payment; an approved payment never changes (a later change is a
+ * new row that supersedes it). "PTET Mar 12: IL 28,044" is a `ptet` row per state.
+ */
+export type ExtensionPaymentOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Approved At
+     */
+    approved_at?: string | null;
+    /**
+     * Approved By Name
+     */
+    approved_by_name?: string | null;
+    /**
+     * Confirmation Evidence Version Id
+     */
+    confirmation_evidence_version_id?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Jurisdiction
+     */
+    jurisdiction: string;
+    /**
+     * Kind
+     */
+    kind: 'extension_payment' | 'ptet';
+    /**
+     * Paid On
+     */
+    paid_on?: string | null;
+    /**
+     * Proposed By Name
+     */
+    proposed_by_name: string;
+    /**
+     * Supersedes Id
+     */
+    supersedes_id?: string | null;
+};
+
+/**
+ * ExtensionPrepareIn
+ *
+ * 409 `gate_unmet` with the G1/G3 facts for a return whose engagement is not accepted.
+ */
+export type ExtensionPrepareIn = {
+    /**
+     * Payments
+     */
+    payments?: Array<ProposedPaymentIn>;
+    /**
+     * Return Ids
+     */
+    return_ids: Array<string>;
+};
+
+/**
+ * ExtensionRowOut
+ *
+ * One TAX-13 a row per return with its jurisdiction lines. Projected liability, the
+ * safe-harbor target and the paid figures are code's; cells carry no "$".
+ */
+export type ExtensionRowOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'filing_extension.prepare' | 'filing_extension.approve_payment' | 'filing_extension.mark_filed' | 'filing_extension.flag_likely' | 'filing_extension.confirmation_send' | 'tax_schedule.export'>;
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Client Note
+     */
+    client_note?: string | null;
+    confirmation?: TaxConfirmationOut | null;
+    /**
+     * Days To Extended Due
+     */
+    days_to_extended_due?: number | null;
+    /**
+     * Extended Due On
+     */
+    extended_due_on: string;
+    /**
+     * Likely Note
+     */
+    likely_note?: string | null;
+    /**
+     * Likely Reasons
+     */
+    likely_reasons: Array<'k1_outstanding' | 'binder_incomplete' | 'engagement_not_accepted' | 'preparer_flag'>;
+    /**
+     * Likely To Extend
+     */
+    likely_to_extend: boolean;
+    /**
+     * Lines
+     */
+    lines: Array<JurisdictionLineOut>;
+    /**
+     * Meets Safe Harbor
+     */
+    meets_safe_harbor?: boolean | null;
+    /**
+     * Original Due On
+     */
+    original_due_on: string;
+    /**
+     * Paid By Original Due
+     */
+    paid_by_original_due?: string | null;
+    /**
+     * Payments
+     */
+    payments: Array<ExtensionPaymentOut>;
+    /**
+     * Prepare Blocked Reason
+     */
+    prepare_blocked_reason?: string | null;
+    /**
+     * Projected Liability
+     */
+    projected_liability?: string | null;
+    /**
+     * Projected Liability Note
+     */
+    projected_liability_note?: string | null;
+    /**
+     * Projected Liability Source
+     */
+    projected_liability_source?: 'engine_import' | 'preparer_entry' | null;
+    /**
+     * Return Form
+     */
+    return_form: string;
+    /**
+     * Row Version
+     */
+    row_version: number;
+    /**
+     * Safe Harbor Pct
+     */
+    safe_harbor_pct?: string | null;
+    /**
+     * Safe Harbor Target
+     */
+    safe_harbor_target?: string | null;
+    stamp?: EngineStampOut | null;
+    /**
+     * Tax Return Id
+     */
+    tax_return_id: string;
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+    /**
+     * Withholding Plus Estimates
+     */
+    withholding_plus_estimates?: string | null;
+    /**
+     * Work Item Id
+     */
+    work_item_id: string;
+};
+
+/**
+ * ExtensionSubmitIn
+ */
+export type ExtensionSubmitIn = {
+    /**
+     * Extension Ids
+     */
+    extension_ids: Array<string>;
 };
 
 /**
@@ -15576,6 +16535,27 @@ export type FolderItemsOut = {
      * Virtual
      */
     virtual: number;
+};
+
+/**
+ * FollowUpDraftOut
+ *
+ * A follow-up drafted from the approved Reminder template; a person sends it through the
+ * existing `follow_up.send` (DEC-74).
+ */
+export type FollowUpDraftOut = {
+    /**
+     * Follow Up Id
+     */
+    follow_up_id: string;
+    /**
+     * Request Item Id
+     */
+    request_item_id: string;
+    /**
+     * Template Key
+     */
+    template_key: string;
 };
 
 /**
@@ -18907,6 +19887,24 @@ export type InstallmentOut = {
 };
 
 /**
+ * InstallmentPatchIn
+ */
+export type InstallmentPatchIn = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id?: string | null;
+    /**
+     * Paid On
+     */
+    paid_on?: string | null;
+    /**
+     * Scheduled For
+     */
+    scheduled_for?: string | null;
+};
+
+/**
  * IntakeAttachIn
  */
 export type IntakeAttachIn = {
@@ -20560,6 +21558,46 @@ export type JoinedOut = {
 };
 
 export type JsonValue = unknown;
+
+/**
+ * JurisdictionLineOut
+ *
+ * A grouped line under a return (Feld: "4868 + IT-370"; "10,000 · NY 6,000").
+ */
+export type JurisdictionLineOut = {
+    /**
+     * Ack Received At
+     */
+    ack_received_at?: string | null;
+    /**
+     * Extension Id
+     */
+    extension_id: string;
+    /**
+     * Filed On
+     */
+    filed_on?: string | null;
+    /**
+     * Form
+     */
+    form: string;
+    /**
+     * Jurisdiction
+     */
+    jurisdiction: string;
+    /**
+     * Paid With Extension
+     */
+    paid_with_extension?: string | null;
+    /**
+     * Reject Code
+     */
+    reject_code?: string | null;
+    /**
+     * Status
+     */
+    status: 'not_filed' | 'prepared' | 'filed' | 'accepted' | 'rejected';
+};
 
 /**
  * K1BoxLineOut
@@ -22742,6 +23780,74 @@ export type ListPageEnvelopeListRow = {
 };
 
 /**
+ * ListPage[EstimateRowOut]
+ */
+export type ListPageEstimateRowOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<EstimateRowOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
+ * ListPage[ExtensionRowOut]
+ */
+export type ListPageExtensionRowOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<ExtensionRowOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
  * ListPage[FindingRowOut]
  */
 export type ListPageFindingRowOut = {
@@ -23101,6 +24207,40 @@ export type ListPageNoticeRowOut = {
      * Items
      */
     items: Array<NoticeRowOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
+ * ListPage[PaymentRowOut]
+ */
+export type ListPagePaymentRowOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<PaymentRowOut>;
     /**
      * Next Cursor
      */
@@ -26270,6 +27410,76 @@ export type OptionsPart = {
 };
 
 /**
+ * OrganizerTemplateRefOut
+ *
+ * "1040 organizer v6".
+ */
+export type OrganizerTemplateRefOut = {
+    /**
+     * Applies To Tax Year
+     */
+    applies_to_tax_year?: number | null;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Template Id
+     */
+    template_id: string;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Version Id
+     */
+    version_id: string;
+};
+
+/**
+ * OrganizerTemplateVersionOut
+ */
+export type OrganizerTemplateVersionOut = {
+    /**
+     * Applies To Tax Year
+     */
+    applies_to_tax_year?: number | null;
+    /**
+     * Change Summary
+     */
+    change_summary?: string | null;
+    /**
+     * Drafted By Name
+     */
+    drafted_by_name: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Published At
+     */
+    published_at?: string | null;
+    /**
+     * Published By Name
+     */
+    published_by_name?: string | null;
+    /**
+     * Questionnaire Id
+     */
+    questionnaire_id: string;
+    /**
+     * Status
+     */
+    status: 'draft' | 'published' | 'superseded' | 'discarded';
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * OutputCountOut
  */
 export type OutputCountOut = {
@@ -26705,6 +27915,44 @@ export type PaymentOut = {
      * Request State
      */
     request_state: string | null;
+};
+
+/**
+ * PaymentRowOut
+ */
+export type PaymentRowOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Client Name
+     */
+    client_name: string;
+    /**
+     * Confirmation Evidence Version Id
+     */
+    confirmation_evidence_version_id?: string | null;
+    /**
+     * Jurisdiction
+     */
+    jurisdiction: string;
+    /**
+     * Paid On
+     */
+    paid_on?: string | null;
+    /**
+     * Source Id
+     */
+    source_id: string;
+    /**
+     * Source Kind
+     */
+    source_kind: 'extension_payment' | 'ptet' | 'estimate_installment';
+    /**
+     * Tax Return Id
+     */
+    tax_return_id?: string | null;
 };
 
 /**
@@ -29200,6 +30448,48 @@ export type PreviewPageOut = {
 };
 
 /**
+ * PreviewQuestionOut
+ *
+ * Exactly the portal question DTO (POR-05's renderer, lifted into packages/ui by T-03-T09):
+ * wording, type, choices, the "Required" marker and answers. No tag, banner, helper or rule.
+ */
+export type PreviewQuestionOut = {
+    /**
+     * Amount Parts
+     */
+    amount_parts?: Array<string>;
+    answer?: JsonValue | null;
+    /**
+     * Choices
+     */
+    choices?: Array<string>;
+    /**
+     * Client Wording
+     */
+    client_wording: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Parent Key
+     */
+    parent_key?: string | null;
+    /**
+     * Required
+     */
+    required: boolean;
+    /**
+     * Type
+     */
+    type: 'yes_no' | 'amount' | 'choice' | 'date' | 'text' | 'upload_if_yes';
+    /**
+     * Visible
+     */
+    visible: boolean;
+};
+
+/**
  * PriorAcceptanceOut
  *
  * A continuance's prior year through the `prior_engagement_id` chain, read-only (AC-5).
@@ -29843,6 +31133,28 @@ export type ProposedMemberOut = {
 };
 
 /**
+ * ProposedPaymentIn
+ */
+export type ProposedPaymentIn = {
+    /**
+     * Amount
+     */
+    amount: number | string;
+    /**
+     * Jurisdiction
+     */
+    jurisdiction: string;
+    /**
+     * Kind
+     */
+    kind?: 'extension_payment' | 'ptet';
+    /**
+     * Return Id
+     */
+    return_id: string;
+};
+
+/**
  * ProposedSeverityIn
  */
 export type ProposedSeverityIn = {
@@ -30101,6 +31413,82 @@ export type QuestionCreateIn = {
 };
 
 /**
+ * QuestionDiffOut
+ */
+export type QuestionDiffOut = {
+    /**
+     * After
+     */
+    after?: string | null;
+    /**
+     * Before
+     */
+    before?: string | null;
+    /**
+     * Kind
+     */
+    kind: 'added' | 'removed' | 'changed';
+    /**
+     * Question Key
+     */
+    question_key: string;
+};
+
+/**
+ * QuestionIn
+ *
+ * A question as the editor sends it. `id` null is a new question; a missing existing id is
+ * a retire (answered) or a delete (never answered).
+ */
+export type QuestionIn = {
+    /**
+     * Amount Parts
+     */
+    amount_parts?: Array<string>;
+    /**
+     * Choices
+     */
+    choices?: Array<string>;
+    /**
+     * Client Wording
+     */
+    client_wording: string;
+    /**
+     * Effect Rules
+     */
+    effect_rules?: Array<EffectRule>;
+    /**
+     * Id
+     */
+    id?: string | null;
+    /**
+     * Internal Helper
+     */
+    internal_helper?: string | null;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Parent Key
+     */
+    parent_key?: string | null;
+    /**
+     * Required
+     */
+    required?: boolean;
+    /**
+     * Section Key
+     */
+    section_key: string;
+    show_when?: ShowWhen | null;
+    /**
+     * Type
+     */
+    type: 'yes_no' | 'amount' | 'choice' | 'date' | 'text' | 'upload_if_yes';
+};
+
+/**
  * QuestionOut
  */
 export type QuestionOut = {
@@ -30171,6 +31559,50 @@ export type QuestionnaireCreateIn = {
 };
 
 /**
+ * QuestionnaireEditorOut
+ */
+export type QuestionnaireEditorOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'questionnaire.edit' | 'questionnaire_template.draft' | 'questionnaire_template.publish' | 'questionnaire_template.assign_owner'>;
+    /**
+     * Banner
+     */
+    banner?: string | null;
+    /**
+     * Binder Id
+     */
+    binder_id?: string | null;
+    counts: EditorCountsOut;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Owner Kind
+     */
+    owner_kind: 'binder' | 'template_version';
+    /**
+     * Questions
+     */
+    questions: Array<EditorQuestionOut>;
+    /**
+     * Row Version
+     */
+    row_version: number;
+    /**
+     * Sections
+     */
+    sections: Array<SectionOut>;
+    template?: OrganizerTemplateRefOut | null;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * QuestionnaireOut
  */
 export type QuestionnaireOut = {
@@ -30207,6 +31639,49 @@ export type QuestionnaireOut = {
      * Total
      */
     total: number;
+};
+
+/**
+ * QuestionnaireSaveIn
+ *
+ * The whole edited structure in display order. 409 `question_answered` (a type change on an
+ * answered question), 409 `version_published`, 422 `client_wording_required` and
+ * `logic_invalid`; 412 `stale_version` from If-Match.
+ */
+export type QuestionnaireSaveIn = {
+    /**
+     * Change Summary
+     */
+    change_summary?: string | null;
+    /**
+     * Questions
+     */
+    questions: Array<QuestionIn>;
+    /**
+     * Sections
+     */
+    sections: Array<SectionIn>;
+};
+
+/**
+ * QuestionnaireSaveOut
+ *
+ * `dry_run=true` returns the lists with `saved` false; the confirm then saves.
+ */
+export type QuestionnaireSaveOut = {
+    /**
+     * Client Visible Changes
+     */
+    client_visible_changes: Array<ClientVisibleChangeOut>;
+    /**
+     * Effects To Fire
+     */
+    effects_to_fire: Array<EffectToFireOut>;
+    questionnaire?: QuestionnaireEditorOut | null;
+    /**
+     * Saved
+     */
+    saved: boolean;
 };
 
 /**
@@ -34096,6 +35571,37 @@ export type RunWriteOut = {
 };
 
 /**
+ * SafeHarborCheckOut
+ */
+export type SafeHarborCheckOut = {
+    /**
+     * Jurisdiction
+     */
+    jurisdiction: string;
+    /**
+     * Meets Safe Harbor
+     */
+    meets_safe_harbor?: boolean | null;
+    /**
+     * Paid By Original Due
+     */
+    paid_by_original_due?: string | null;
+    /**
+     * Projected Liability
+     */
+    projected_liability?: string | null;
+    /**
+     * Safe Harbor Target
+     */
+    safe_harbor_target?: string | null;
+    stamp?: EngineStampOut | null;
+    /**
+     * Tax Return Id
+     */
+    tax_return_id: string;
+};
+
+/**
  * SafeguardsControlIn
  */
 export type SafeguardsControlIn = {
@@ -35017,6 +36523,50 @@ export type SectionBlockOutput = {
      * Type
      */
     type?: 'section';
+};
+
+/**
+ * SectionIn
+ */
+export type SectionIn = {
+    /**
+     * Id
+     */
+    id?: string | null;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * SectionOut
+ */
+export type SectionOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Position
+     */
+    position: number;
+    /**
+     * Question Count
+     */
+    question_count: number;
+    /**
+     * Title
+     */
+    title: string;
 };
 
 /**
@@ -36023,6 +37573,23 @@ export type SheetPreviewOut = {
      * Suggested Tier
      */
     suggested_tier: number | null;
+};
+
+/**
+ * ShowWhen
+ *
+ * Equality on a top-level yes_no or choice parent only; depth 1, no cycles (422
+ * `logic_invalid`).
+ */
+export type ShowWhen = {
+    /**
+     * Equals
+     */
+    equals: string;
+    /**
+     * Parent Key
+     */
+    parent_key: string;
 };
 
 /**
@@ -39129,6 +40696,35 @@ export type TaxAuthorizationRequestIn = {
 };
 
 /**
+ * TaxConfirmationOut
+ *
+ * "✓ Claire Feld Apr 13" or "○ (confirmation request sent Sep 8)": a request item, never a
+ * task (R-03 reads POR-10 from the same item).
+ */
+export type TaxConfirmationOut = {
+    /**
+     * Confirmed
+     */
+    confirmed: boolean;
+    /**
+     * Confirmed On
+     */
+    confirmed_on?: string | null;
+    /**
+     * Contact Name
+     */
+    contact_name?: string | null;
+    /**
+     * Request Item Id
+     */
+    request_item_id?: string | null;
+    /**
+     * Requested On
+     */
+    requested_on?: string | null;
+};
+
+/**
  * TaxElectionIn
  */
 export type TaxElectionIn = {
@@ -40336,6 +41932,74 @@ export type TemplateBlock = {
 };
 
 /**
+ * TemplateDetailOut
+ *
+ * KNW-01's "Organizers" rows and BND-03 d's header.
+ */
+export type TemplateDetailOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'questionnaire.edit' | 'questionnaire_template.draft' | 'questionnaire_template.publish' | 'questionnaire_template.assign_owner'>;
+    /**
+     * Form Family
+     */
+    form_family: '1040' | '1041' | '1065' | '1120s' | '1120' | '990' | '706';
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Owner Id
+     */
+    owner_id?: string | null;
+    /**
+     * Owner Name
+     */
+    owner_name?: string | null;
+    /**
+     * Versions
+     */
+    versions: Array<OrganizerTemplateVersionOut>;
+};
+
+/**
+ * TemplateDiffOut
+ */
+export type TemplateDiffOut = {
+    /**
+     * Against
+     */
+    against: number;
+    /**
+     * Changes
+     */
+    changes: Array<QuestionDiffOut>;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * TemplateDraftIn
+ */
+export type TemplateDraftIn = {
+    /**
+     * Change Summary
+     */
+    change_summary?: string | null;
+};
+
+/**
  * TemplateDraftOut
  */
 export type TemplateDraftOut = {
@@ -40537,6 +42201,16 @@ export type TemplateItemOut = {
      * Why
      */
     why?: string | null;
+};
+
+/**
+ * TemplateOwnerIn
+ */
+export type TemplateOwnerIn = {
+    /**
+     * Owner Id
+     */
+    owner_id: string;
 };
 
 /**
@@ -48562,6 +50236,62 @@ export type UndoPublishBinderResponses = {
 };
 
 export type UndoPublishBinderResponse = UndoPublishBinderResponses[keyof UndoPublishBinderResponses];
+
+export type BinderQuestionnaireData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Binder Id
+         */
+        binder_id: string;
+    };
+    query?: never;
+    url: '/v1/binders/{binder_id}/questionnaire';
+};
+
+export type BinderQuestionnaireErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type BinderQuestionnaireError = BinderQuestionnaireErrors[keyof BinderQuestionnaireErrors];
+
+export type BinderQuestionnaireResponses = {
+    /**
+     * Successful Response
+     */
+    200: BinderQuestionnaireOut;
+};
+
+export type BinderQuestionnaireResponse = BinderQuestionnaireResponses[keyof BinderQuestionnaireResponses];
 
 export type SetBinderRecipientsData = {
     body: RecipientsIn;
@@ -95729,6 +97459,315 @@ export type QuestionnaireListTemplatesResponses = {
 
 export type QuestionnaireListTemplatesResponse = QuestionnaireListTemplatesResponses[keyof QuestionnaireListTemplatesResponses];
 
+export type TemplateDetailData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Template Id
+         */
+        template_id: string;
+    };
+    query?: never;
+    url: '/v1/questionnaire-templates/{template_id}';
+};
+
+export type TemplateDetailErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TemplateDetailError = TemplateDetailErrors[keyof TemplateDetailErrors];
+
+export type TemplateDetailResponses = {
+    /**
+     * Successful Response
+     */
+    200: TemplateDetailOut;
+};
+
+export type TemplateDetailResponse = TemplateDetailResponses[keyof TemplateDetailResponses];
+
+export type TemplateOwnerData = {
+    body: TemplateOwnerIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Template Id
+         */
+        template_id: string;
+    };
+    query?: never;
+    url: '/v1/questionnaire-templates/{template_id}/owner';
+};
+
+export type TemplateOwnerErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TemplateOwnerError = TemplateOwnerErrors[keyof TemplateOwnerErrors];
+
+export type TemplateOwnerResponses = {
+    /**
+     * Successful Response
+     */
+    200: TemplateDetailOut;
+};
+
+export type TemplateOwnerResponse = TemplateOwnerResponses[keyof TemplateOwnerResponses];
+
+export type TemplateDraftData = {
+    body: TemplateDraftIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Template Id
+         */
+        template_id: string;
+    };
+    query?: never;
+    url: '/v1/questionnaire-templates/{template_id}/versions';
+};
+
+export type TemplateDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TemplateDraftError = TemplateDraftErrors[keyof TemplateDraftErrors];
+
+export type TemplateDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: OrganizerTemplateVersionOut;
+};
+
+export type TemplateDraftResponse = TemplateDraftResponses[keyof TemplateDraftResponses];
+
+export type TemplateDiscardData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Template Id
+         */
+        template_id: string;
+        /**
+         * Version
+         */
+        version: number;
+    };
+    query?: never;
+    url: '/v1/questionnaire-templates/{template_id}/versions/{version}';
+};
+
+export type TemplateDiscardErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TemplateDiscardError = TemplateDiscardErrors[keyof TemplateDiscardErrors];
+
+export type TemplateDiscardResponses = {
+    /**
+     * Successful Response
+     */
+    200: OrganizerTemplateVersionOut;
+};
+
+export type TemplateDiscardResponse = TemplateDiscardResponses[keyof TemplateDiscardResponses];
+
+export type TemplateDiffData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Template Id
+         */
+        template_id: string;
+        /**
+         * Version
+         */
+        version: number;
+    };
+    query?: {
+        /**
+         * Against
+         */
+        against?: number | null;
+    };
+    url: '/v1/questionnaire-templates/{template_id}/versions/{version}/diff';
+};
+
+export type TemplateDiffErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TemplateDiffError = TemplateDiffErrors[keyof TemplateDiffErrors];
+
+export type TemplateDiffResponses = {
+    /**
+     * Successful Response
+     */
+    200: TemplateDiffOut;
+};
+
+export type TemplateDiffResponse = TemplateDiffResponses[keyof TemplateDiffResponses];
+
 export type PublishTemplateData = {
     body?: never;
     headers?: {
@@ -95951,6 +97990,196 @@ export type QuestionnaireResponses = {
 };
 
 export type QuestionnaireResponse = QuestionnaireResponses[keyof QuestionnaireResponses];
+
+export type QuestionnaireSaveData = {
+    body: QuestionnaireSaveIn;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': number;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Questionnaire Id
+         */
+        questionnaire_id: string;
+    };
+    query?: {
+        /**
+         * Dry Run
+         */
+        dry_run?: boolean;
+    };
+    url: '/v1/questionnaires/{questionnaire_id}';
+};
+
+export type QuestionnaireSaveErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QuestionnaireSaveError = QuestionnaireSaveErrors[keyof QuestionnaireSaveErrors];
+
+export type QuestionnaireSaveResponses = {
+    /**
+     * Successful Response
+     */
+    200: QuestionnaireSaveOut;
+};
+
+export type QuestionnaireSaveResponse = QuestionnaireSaveResponses[keyof QuestionnaireSaveResponses];
+
+export type QuestionnairePreviewData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Questionnaire Id
+         */
+        questionnaire_id: string;
+    };
+    query?: {
+        /**
+         * Question
+         */
+        question?: string | null;
+        /**
+         * Contact
+         */
+        contact?: string | null;
+    };
+    url: '/v1/questionnaires/{questionnaire_id}/client-preview';
+};
+
+export type QuestionnairePreviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QuestionnairePreviewError = QuestionnairePreviewErrors[keyof QuestionnairePreviewErrors];
+
+export type QuestionnairePreviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: ClientPreviewOut;
+};
+
+export type QuestionnairePreviewResponse = QuestionnairePreviewResponses[keyof QuestionnairePreviewResponses];
+
+export type QuestionnaireEditorData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Questionnaire Id
+         */
+        questionnaire_id: string;
+    };
+    query?: never;
+    url: '/v1/questionnaires/{questionnaire_id}/editor';
+};
+
+export type QuestionnaireEditorErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type QuestionnaireEditorError = QuestionnaireEditorErrors[keyof QuestionnaireEditorErrors];
+
+export type QuestionnaireEditorResponses = {
+    /**
+     * Successful Response
+     */
+    200: QuestionnaireEditorOut;
+};
+
+export type QuestionnaireEditorResponse = QuestionnaireEditorResponses[keyof QuestionnaireEditorResponses];
 
 export type DraftQuestionData = {
     body: QuestionCreateIn;
@@ -100891,6 +103120,963 @@ export type BulkAssignResponses = {
 };
 
 export type BulkAssignResponse = BulkAssignResponses[keyof BulkAssignResponses];
+
+export type Estimates2Data = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Tax Year
+         */
+        tax_year: number;
+        /**
+         * Quarter
+         */
+        quarter?: number | null;
+        /**
+         * Tile
+         */
+        tile?: 'due' | 'paid' | 'scheduled' | 'confirmation_requested' | 'not_required' | null;
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/tax/estimates';
+};
+
+export type Estimates2Errors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type Estimates2Error = Estimates2Errors[keyof Estimates2Errors];
+
+export type Estimates2Responses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageEstimateRowOut;
+};
+
+export type Estimates2Response = Estimates2Responses[keyof Estimates2Responses];
+
+export type EstimatesExportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Tax Year
+         */
+        tax_year: number;
+        /**
+         * Quarter
+         */
+        quarter?: number | null;
+    };
+    url: '/v1/tax/estimates/export.xlsx';
+};
+
+export type EstimatesExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EstimatesExportError = EstimatesExportErrors[keyof EstimatesExportErrors];
+
+export type EstimatesExportResponses = {
+    /**
+     * Response Estimates Export
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type EstimatesExportResponse = EstimatesExportResponses[keyof EstimatesExportResponses];
+
+export type EstimatePatchData = {
+    body: EstimatePatchIn;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': number;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Schedule Id
+         */
+        schedule_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/estimates/{schedule_id}';
+};
+
+export type EstimatePatchErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EstimatePatchError = EstimatePatchErrors[keyof EstimatePatchErrors];
+
+export type EstimatePatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: EstimateOut;
+};
+
+export type EstimatePatchResponse = EstimatePatchResponses[keyof EstimatePatchResponses];
+
+export type InstallmentPatchData = {
+    body: InstallmentPatchIn;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': number;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Schedule Id
+         */
+        schedule_id: string;
+        /**
+         * Quarter
+         */
+        quarter: number;
+    };
+    query?: never;
+    url: '/v1/tax/estimates/{schedule_id}/installments/{quarter}';
+};
+
+export type InstallmentPatchErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type InstallmentPatchError = InstallmentPatchErrors[keyof InstallmentPatchErrors];
+
+export type InstallmentPatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: EstimateInstallmentOut;
+};
+
+export type InstallmentPatchResponse = InstallmentPatchResponses[keyof InstallmentPatchResponses];
+
+export type InstallmentConfirmationData = {
+    body: ConfirmationRequestIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Schedule Id
+         */
+        schedule_id: string;
+        /**
+         * Quarter
+         */
+        quarter: number;
+    };
+    query?: never;
+    url: '/v1/tax/estimates/{schedule_id}/installments/{quarter}/confirmation-requests';
+};
+
+export type InstallmentConfirmationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type InstallmentConfirmationError = InstallmentConfirmationErrors[keyof InstallmentConfirmationErrors];
+
+export type InstallmentConfirmationResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConfirmationRequestOut;
+};
+
+export type InstallmentConfirmationResponse = InstallmentConfirmationResponses[keyof InstallmentConfirmationResponses];
+
+export type InstallmentFollowUpData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Schedule Id
+         */
+        schedule_id: string;
+        /**
+         * Quarter
+         */
+        quarter: number;
+    };
+    query?: never;
+    url: '/v1/tax/estimates/{schedule_id}/installments/{quarter}/follow-ups';
+};
+
+export type InstallmentFollowUpErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type InstallmentFollowUpError = InstallmentFollowUpErrors[keyof InstallmentFollowUpErrors];
+
+export type InstallmentFollowUpResponses = {
+    /**
+     * Successful Response
+     */
+    200: FollowUpDraftOut;
+};
+
+export type InstallmentFollowUpResponse = InstallmentFollowUpResponses[keyof InstallmentFollowUpResponses];
+
+export type ExtensionsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Tax Year
+         */
+        tax_year: number;
+        /**
+         * Segment
+         */
+        segment?: 'open' | 'filed' | 'likely' | null;
+        /**
+         * Tile
+         */
+        tile?: 'extended' | 'open' | 'filed' | 'likely' | 'acks_pending' | null;
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/tax/extensions';
+};
+
+export type ExtensionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ExtensionsError = ExtensionsErrors[keyof ExtensionsErrors];
+
+export type ExtensionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageExtensionRowOut;
+};
+
+export type ExtensionsResponse = ExtensionsResponses[keyof ExtensionsResponses];
+
+export type ExtensionsExportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Tax Year
+         */
+        tax_year: number;
+        /**
+         * Segment
+         */
+        segment?: 'open' | 'filed' | 'likely' | null;
+    };
+    url: '/v1/tax/extensions/export.xlsx';
+};
+
+export type ExtensionsExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ExtensionsExportError = ExtensionsExportErrors[keyof ExtensionsExportErrors];
+
+export type ExtensionsExportResponses = {
+    /**
+     * Response Extensions Export
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type ExtensionsExportResponse = ExtensionsExportResponses[keyof ExtensionsExportResponses];
+
+export type ExtensionData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Extension Id
+         */
+        extension_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/extensions/{extension_id}';
+};
+
+export type ExtensionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ExtensionError = ExtensionErrors[keyof ExtensionErrors];
+
+export type ExtensionResponses = {
+    /**
+     * Successful Response
+     */
+    200: ExtensionOut;
+};
+
+export type ExtensionResponse = ExtensionResponses[keyof ExtensionResponses];
+
+export type ExtensionPatchData = {
+    body: ExtensionPatchIn;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': number;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Extension Id
+         */
+        extension_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/extensions/{extension_id}';
+};
+
+export type ExtensionPatchErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ExtensionPatchError = ExtensionPatchErrors[keyof ExtensionPatchErrors];
+
+export type ExtensionPatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: ExtensionOut;
+};
+
+export type ExtensionPatchResponse = ExtensionPatchResponses[keyof ExtensionPatchResponses];
+
+export type ExtensionConfirmationData = {
+    body: ConfirmationRequestIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Extension Id
+         */
+        extension_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/extensions/{extension_id}/confirmation-requests';
+};
+
+export type ExtensionConfirmationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ExtensionConfirmationError = ExtensionConfirmationErrors[keyof ExtensionConfirmationErrors];
+
+export type ExtensionConfirmationResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConfirmationRequestOut;
+};
+
+export type ExtensionConfirmationResponse = ExtensionConfirmationResponses[keyof ExtensionConfirmationResponses];
+
+export type ExtensionsApproveData = {
+    body: ApproveAndRequestIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/tax/extensions:approve-and-request';
+};
+
+export type ExtensionsApproveErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ExtensionsApproveError = ExtensionsApproveErrors[keyof ExtensionsApproveErrors];
+
+export type ExtensionsApproveResponses = {
+    /**
+     * Successful Response
+     */
+    200: ApproveAndRequestOut;
+};
+
+export type ExtensionsApproveResponse = ExtensionsApproveResponses[keyof ExtensionsApproveResponses];
+
+export type ExtensionsPrepareData = {
+    body: ExtensionPrepareIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/tax/extensions:prepare';
+};
+
+export type ExtensionsPrepareErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ExtensionsPrepareError = ExtensionsPrepareErrors[keyof ExtensionsPrepareErrors];
+
+export type ExtensionsPrepareResponses = {
+    /**
+     * Successful Response
+     */
+    200: ExtensionBatchOut;
+};
+
+export type ExtensionsPrepareResponse = ExtensionsPrepareResponses[keyof ExtensionsPrepareResponses];
+
+export type ExtensionsSubmitData = {
+    body: ExtensionSubmitIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/tax/extensions:submit-for-approval';
+};
+
+export type ExtensionsSubmitErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ExtensionsSubmitError = ExtensionsSubmitErrors[keyof ExtensionsSubmitErrors];
+
+export type ExtensionsSubmitResponses = {
+    /**
+     * Successful Response
+     */
+    200: ExtensionBatchOut;
+};
+
+export type ExtensionsSubmitResponse = ExtensionsSubmitResponses[keyof ExtensionsSubmitResponses];
+
+export type PaymentsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Tax Year
+         */
+        tax_year: number;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/tax/payments';
+};
+
+export type PaymentsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PaymentsError = PaymentsErrors[keyof PaymentsErrors];
+
+export type PaymentsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPagePaymentRowOut;
+};
+
+export type PaymentsResponse = PaymentsResponses[keyof PaymentsResponses];
 
 export type BrowserErrorData = {
     body?: never;
