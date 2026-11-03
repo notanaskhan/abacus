@@ -18,7 +18,7 @@ interface BuildPlugin {
 }
 interface ResolvedConfig {
   plugins?: unknown[];
-  build?: { outDir?: string; rollupOptions?: { input?: unknown } };
+  build?: { outDir?: string; rolldownOptions?: { input?: unknown } };
 }
 type ConfigFn = (env: {
   mode: string;
@@ -73,7 +73,7 @@ describe("P-08-T22 the portal build's CSP (ADR-163 §4, §6)", () => {
   it("builds portal.html alone into dist/portal", async () => {
     const config = await portalBuildConfig();
     expect(config.build?.outDir).toBe("dist/portal");
-    expect(config.build?.rollupOptions?.input).toBe("portal.html");
+    expect(config.build?.rolldownOptions?.input).toBe("portal.html");
   });
 
   it("keeps the network to this origin: connect-src 'self' and nothing else", async () => {
