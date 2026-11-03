@@ -15,6 +15,13 @@ Will own (docs/plan/03-backend-architecture.md §2.2): Tax returns, worksheets, 
   decimals. No clock, database or I/O; hostile text is bounded and reported, never guessed at
   (DEC-1650). T-01-T43 stores the results.
 
+## Payments engine (T-03-T04; DEC-2203)
+`compute/payments.py` (safe harbors, required annual payments, installments) and
+`compute/likely_to_extend.py`, with the engine parameters in `compute/parameters/ty<year>.yaml`.
+The parameter files are **red files** (`docs/architecture/protected-paths.md`): a change is a
+CPA-reviewed policy change with its goldens in the same diff. Due dates, holidays and installment
+dates are C21 reference sets (`practice.api.installments_for`), never repository content.
+
 ## Tax profile (T-01-T43, red; DEC-1651)
 - **Tables (0550):** `tax_profile_files` (staged uploads, consumed once), `tax_authorizations`
   (8821, 2848, state; CAF numbers sealed, last four kept), `tax_elections` (upsert with

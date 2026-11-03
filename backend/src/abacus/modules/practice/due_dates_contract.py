@@ -61,6 +61,28 @@ class DueDateOut(BaseModel):
     inputs_hash: Annotated[str, Field(pattern=r"^sha256:[0-9a-f]{64}$"), classified("internal")]
 
 
+class DueInstallmentOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    quarter: Annotated[int, Field(ge=1, le=4), classified("public")]
+    due_on: Annotated[date, classified("public")]
+    rolled: Annotated[bool, classified("public")]
+
+
+class InstallmentDatesOut(BaseModel):
+    """C21 additive (T-03-T04): an estimate form's installment due dates with provenance."""
+
+    model_config = ConfigDict(frozen=True)
+
+    form: Annotated[str, classified("public")]
+    tax_year: Annotated[int, classified("public")]
+    jurisdiction: Annotated[Jurisdiction, classified("public")]
+    period_end: Annotated[date, classified("public")]
+    installments: Annotated[list[DueInstallmentOut], classified("public")]
+    reference_set_version_ids: Annotated[list[UUID], classified("internal")]
+    inputs_hash: Annotated[str, Field(pattern=r"^sha256:[0-9a-f]{64}$"), classified("internal")]
+
+
 # --- C21 part A module API results (frozen S17; `due_dates.py` builds them) ---------------------
 
 
@@ -91,6 +113,26 @@ class DueDates:
     # Additive (T-02-T10): the rule as the Due popover reads it, original and extended.
     rule_text: str | None = None
     extended_rule_text: str | None = None
+
+
+@dataclass(frozen=True)
+class InstallmentDue:
+    quarter: int
+    due_on: date
+    rolled: bool
+
+
+@dataclass(frozen=True)
+class InstallmentDueDates:
+    """C21 additive (T-03-T04): an estimate form's installments with provenance (INV-2)."""
+
+    form: str
+    tax_year: int
+    jurisdiction: str
+    period_end: date
+    installments: tuple[InstallmentDue, ...]
+    reference_set_version_ids: tuple[UUID, ...]
+    inputs_hash: str
 
 
 @dataclass(frozen=True)

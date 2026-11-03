@@ -30,7 +30,13 @@ from abacus.modules.platform.api import (
 )
 from abacus.modules.practice.compute import calendar
 from abacus.modules.practice.compute.calendar import ClockKind
-from abacus.modules.practice.due_dates_contract import ClockDue, DueDates, Location
+from abacus.modules.practice.due_dates_contract import (
+    ClockDue,
+    DueDates,
+    InstallmentDue,
+    InstallmentDueDates,
+    Location,
+)
 
 # Past the latest unrolled date, so the holiday list a date rolls through is in effect.
 _ROLL_MARGIN: Final = timedelta(days=14)
@@ -45,6 +51,9 @@ def _rules(payload: DueDateRulesPayload) -> list[calendar.Rule]:
             extension_form=row.extension.form if row.extension else None,
             extension_months=row.extension.months if row.extension else None,
             extension_day=row.extension.day if row.extension else None,
+            installments=tuple(
+                (i.quarter, i.months_after_period_end, i.day) for i in row.installments
+            ),
         )
         for row in payload.rows
     ]
@@ -140,6 +149,39 @@ async def due_dates_for(
                 "jurisdiction": jurisdiction,
                 "location": None if place is None else [place.state, place.county],
                 "event_date": event_date,
+                "reference_set_version_ids": [str(v) for v in version_ids],
+            }
+        ),
+    )
+
+
+async def installments_for(
+    form: str, tax_year: int, jurisdiction: str = "US", period_end: date | None = None
+) -> InstallmentDueDates:
+    """C21 additive (T-03-T04): an estimate form's installment due dates for a tax year, from the
+    rules in effect on the period end (Dec 31 of the tax year unless given), rolled with the
+    holidays in effect. A form with no installments in effect: `LookupError`."""
+    end = period_end or date(tax_year, 12, 31)
+    rule, rules = await _rule_for(form, tax_year, end)
+    if not rule.installments:
+        raise LookupError(f"installments:{form}")
+    unrolled = calendar.installment_dates(rule, end, frozenset())
+    holidays, holiday_ids = await _holidays(await _roll_as_of(max(i.due_on for i in unrolled)))
+    found = calendar.installment_dates(rule, end, holidays)
+    version_ids = (rules.version_id, *sorted(holiday_ids))
+    return InstallmentDueDates(
+        form=form,
+        tax_year=tax_year,
+        jurisdiction=jurisdiction,
+        period_end=end,
+        installments=tuple(InstallmentDue(i.quarter, i.due_on, i.rolled) for i in found),
+        reference_set_version_ids=version_ids,
+        inputs_hash=calendar.inputs_hash(
+            {
+                "form": form,
+                "tax_year": tax_year,
+                "period_end": end,
+                "jurisdiction": jurisdiction,
                 "reference_set_version_ids": [str(v) for v in version_ids],
             }
         ),

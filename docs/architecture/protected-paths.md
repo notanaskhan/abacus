@@ -54,3 +54,10 @@ and `abacus.kernel.calendar`.
 `backend/src/abacus/modules/assurance/gates.py` registers the engagement gates assurance owns (G4
 today; G5 to G9 move in with A-06-T15 and A-07-T15). It is a red file: a change needs the security
 review of a red diff, and an amber change set may not touch it.
+
+## Tax payments parameter files (T-03-T04, DEC-2203; T-03 §4.4, DEC-76, DEC-77)
+Golden-tested engine parameters reviewed yearly with the tax CPA, named here and in
+`tax/README.md` as red files: `backend/src/abacus/modules/tax/compute/parameters/*.yaml`. A change
+is a reviewed policy change with its goldens in the same diff; `tax/compute` imports only
+`abacus.kernel.numeric` and `abacus.kernel.calendar` (the import-linter compute contract).
+

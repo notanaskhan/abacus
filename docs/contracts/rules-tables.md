@@ -70,3 +70,18 @@ Audit: `firm_standard.created`, `firm_standard.owner_changed`, `firm_standard_ve
 
 ## 8. Consumer contract tests
 T-01: `backend/tests/contracts/c21_t01/`; T-02: `backend/tests/contracts/c21_t02/`; both import the models and module-API signatures above and run in K-02's CI.
+
+## C21 additive: installments (T-03-T04, 2026-11-03, DEC-2203)
+- **Payload schema v2.** A `due_date_rules` row gains `installments[]`, each `{quarter,
+  months_after_period_end, day}`. `months_after_period_end` may be negative inside the year: a
+  calendar-year 1040-ES is -8, -6, -3 and +1 on the 15th. A v1 row has none and reads as an
+  empty list, so readers handle v1 and v2 alike (K-02 R12). The TY2027 rows are content: they
+  are published through the reference-set CLI by two people (T-03-T18), never committed.
+- **Module API.** `practice.api.installments_for(form, tax_year, jurisdiction="US",
+  period_end=None)` returns `InstallmentDueDates`: each quarter's date, rolled past weekends and
+  legal holidays (IRC §7503), with the versions read and an inputs hash. A form with no
+  installments raises `LookupError`.
+- **Route.** `GET /v1/due-dates/installments?form=&tax_year=&jurisdiction=` returns
+  `InstallmentDatesOut` under `due_date.read`. It answers 404 for a form with none.
+- **I-CLOCKS TY2027.** TY2027 Q4 is Tue Jan 18, 2028: Jan 15 is a Saturday and Mon Jan 17 is MLK
+  Day. TY2028 Q4 is Tue Jan 16, 2029, because Mon Jan 15 is MLK Day.

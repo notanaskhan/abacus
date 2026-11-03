@@ -23461,6 +23461,15 @@
             "title": "Fye Rule",
             "type": "string"
           },
+          "installments": {
+            "cls": "public",
+            "items": {
+              "$ref": "#/components/schemas/InstallmentOffset"
+            },
+            "maxItems": 4,
+            "title": "Installments",
+            "type": "array"
+          },
           "original": {
             "$ref": "#/components/schemas/DueDateOffset",
             "cls": "public"
@@ -23537,6 +23546,35 @@
           "due_on"
         ],
         "title": "DueDatesIn",
+        "type": "object"
+      },
+      "DueInstallmentOut": {
+        "properties": {
+          "due_on": {
+            "cls": "public",
+            "format": "date",
+            "title": "Due On",
+            "type": "string"
+          },
+          "quarter": {
+            "cls": "public",
+            "maximum": 4.0,
+            "minimum": 1.0,
+            "title": "Quarter",
+            "type": "integer"
+          },
+          "rolled": {
+            "cls": "public",
+            "title": "Rolled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "quarter",
+          "due_on",
+          "rolled"
+        ],
+        "title": "DueInstallmentOut",
         "type": "object"
       },
       "DuplicateResolutionIn": {
@@ -42496,6 +42534,70 @@
         "title": "InherentFactorOut",
         "type": "object"
       },
+      "InstallmentDatesOut": {
+        "description": "C21 additive (T-03-T04): an estimate form's installment due dates with provenance.",
+        "properties": {
+          "form": {
+            "cls": "public",
+            "title": "Form",
+            "type": "string"
+          },
+          "inputs_hash": {
+            "cls": "internal",
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "title": "Inputs Hash",
+            "type": "string"
+          },
+          "installments": {
+            "cls": "public",
+            "items": {
+              "$ref": "#/components/schemas/DueInstallmentOut"
+            },
+            "title": "Installments",
+            "type": "array"
+          },
+          "jurisdiction": {
+            "cls": "public",
+            "enum": [
+              "US",
+              "DC"
+            ],
+            "title": "Jurisdiction",
+            "type": "string"
+          },
+          "period_end": {
+            "cls": "public",
+            "format": "date",
+            "title": "Period End",
+            "type": "string"
+          },
+          "reference_set_version_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Reference Set Version Ids",
+            "type": "array"
+          },
+          "tax_year": {
+            "cls": "public",
+            "title": "Tax Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "form",
+          "tax_year",
+          "jurisdiction",
+          "period_end",
+          "installments",
+          "reference_set_version_ids",
+          "inputs_hash"
+        ],
+        "title": "InstallmentDatesOut",
+        "type": "object"
+      },
       "InstallmentIn": {
         "additionalProperties": false,
         "description": "One billing installment as a share of the fee, in basis points (5000 is 50%).",
@@ -42520,6 +42622,40 @@
           "share_bp"
         ],
         "title": "InstallmentIn",
+        "type": "object"
+      },
+      "InstallmentOffset": {
+        "additionalProperties": false,
+        "description": "C21 additive, payload schema v2 (T-03-T04, DEC-2203): an estimated-tax installment's\nunrolled date, the `day` of the month `months_after_period_end` months from the period end\n(negative inside the year: a calendar-year 1040-ES runs -8, -6, -3 and +1 on the 15th).",
+        "properties": {
+          "day": {
+            "cls": "public",
+            "maximum": 31.0,
+            "minimum": 1.0,
+            "title": "Day",
+            "type": "integer"
+          },
+          "months_after_period_end": {
+            "cls": "public",
+            "maximum": 12.0,
+            "minimum": -12.0,
+            "title": "Months After Period End",
+            "type": "integer"
+          },
+          "quarter": {
+            "cls": "public",
+            "maximum": 4.0,
+            "minimum": 1.0,
+            "title": "Quarter",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "quarter",
+          "months_after_period_end",
+          "day"
+        ],
+        "title": "InstallmentOffset",
         "type": "object"
       },
       "InstallmentOut": {
@@ -118349,6 +118485,139 @@
           }
         },
         "summary": "Practice Due Dates Route",
+        "tags": [
+          "due-dates"
+        ],
+        "x-abacus-action": "due_date.read"
+      }
+    },
+    "/v1/due-dates/installments": {
+      "get": {
+        "description": "An estimate form's installment due dates with provenance; 404 for a form with none.",
+        "operationId": "practice_installments",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "form",
+            "required": true,
+            "schema": {
+              "maxLength": 20,
+              "minLength": 1,
+              "title": "Form",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tax_year",
+            "required": true,
+            "schema": {
+              "maximum": 2100,
+              "minimum": 2000,
+              "title": "Tax Year",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "jurisdiction",
+            "required": false,
+            "schema": {
+              "default": "US",
+              "enum": [
+                "US",
+                "DC"
+              ],
+              "title": "Jurisdiction",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstallmentDatesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Practice Installments Route",
         "tags": [
           "due-dates"
         ],
