@@ -1,0 +1,20 @@
+# A-06-T08 (TASK-3015): the illustrative aggregate that crosses the firm's approaching-PM line
+# (50% of PM; K-02), from A-06 §3 F4.
+source: A-06 §3 F4 (illustrative)
+reviewed_by: the audit CPA (requested; docs/quality/golden-reviews/sum@1.md)
+column_set: ebp_net_assets
+thresholds: {overall: "252200.00", pm: "189150.00", ct: "12610.00"}
+items:
+  - {ref: PAJE-1, rollover: "96800.00", iron_curtain: "96800.00"}
+expect:
+  rollover: "96800.00"
+  iron_curtain: "96800.00"
+  aggregate: "96800.00"
+  pct_of_pm: "51.2"          # 96,800 / 189,150 crosses 50% of PM
+  fill_pct_of_overall: "38.4"
+  ct_tick_pct: "5.0"
+  pm_tick_pct: "75.0"
+  approaching_pm: true
+  above_pm: false
+  accumulated: [PAJE-1]
+  below_ct: []

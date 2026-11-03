@@ -1,0 +1,20 @@
+# A-06-T08 (TASK-3015): Granite Peak Manufacturing FY2026 (J04), commercial columns: AJE-3 68,400
+# uncorrected, below PM 116,250 (materiality 155,000 / 116,250 / 7,750; A-04 §3.3 AC3.8).
+source: A-06 §3 F4; J04
+reviewed_by: the audit CPA (requested; docs/quality/golden-reviews/sum@1.md)
+column_set: commercial
+thresholds: {overall: "155000.00", pm: "116250.00", ct: "7750.00"}
+items:
+  - {ref: AJE-3, rollover: "68400.00", iron_curtain: "68400.00"}
+expect:
+  rollover: "68400.00"
+  iron_curtain: "68400.00"
+  aggregate: "68400.00"
+  pct_of_pm: "58.8"          # 68,400 / 116,250
+  fill_pct_of_overall: "44.1"
+  ct_tick_pct: "5.0"
+  pm_tick_pct: "75.0"
+  approaching_pm: true
+  above_pm: false
+  accumulated: [AJE-3]
+  below_ct: []
