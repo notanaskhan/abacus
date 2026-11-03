@@ -1,0 +1,41 @@
+# Tax payments engine parameters, TY2027 (T-03 §4.4; DEC-76 / ADR P-62 second category; DEC-77).
+# PROTECTED: reviewed yearly with the tax CPA and pinned by golden tests
+# (docs/architecture/protected-paths.md, DEC-2203). A change is a reviewed policy change with its
+# goldens in the same diff. Due dates, holidays and tolerances are database reference sets, never
+# here.
+version: 1
+tax_year: 2027
+reviewed_by: null   # the CPA's handle once the TY2027 memo is signed (T-03-T18)
+source: "IRC §6654; Treas. Reg. §301.6651-1(c)(3); Form 4868, 7004, 8868 and 4768 instructions"
+
+# Paid by the original due date (withholding + estimates + the extension payment) must reach this
+# percentage of the projected liability, or the late-payment penalty applies to the shortfall.
+# Keyed by the return's form; null: no payment rule (pass-through or exempt returns).
+extension_safe_harbor_pct:
+  "1040": "90"     # Treas. Reg. §301.6651-1(c)(3): 90% for Form 4868 filers
+  "1041": "100"
+  "1120": "100"
+  "1120s": "100"
+  "706": "100"     # 4768 extends time to file only; the estate tax is due on the original date
+  "1065": null     # pass-through (PTET is a state payment, recorded as `ptet`)
+  "990": null      # exempt
+
+# Required annual estimated-tax payment (IRC §6654(d)): the smaller of the current-year and the
+# prior-year safe harbors; prior year at 110% when the prior-year AGI is over the threshold.
+estimates:
+  current_year_pct: "90"
+  prior_year_pct: "100"
+  prior_year_high_income_pct: "110"
+  agi_threshold: "150000"
+  agi_threshold_married_separate: "75000"
+  estate_exempt_tax_years: 2   # IRC §6654(l)(2): an estate's first two tax years
+  quarters: 4
+  # Whole dollars, half up, at each step (TAX-13 b: 1.10 × 52,805 = 58,086; 50,930 / 4 =
+  # 12,733 per installment). `largest_remainder` would make the four installments foot instead.
+  rounding: half_up_each
+  rounding_places: 0
+
+# Likely-to-extend signals (TAX-13 c): a return not filed within this many days of its original
+# due date with one of the signals below is proposed as likely to extend; a person decides.
+likely_to_extend:
+  window_days: 30

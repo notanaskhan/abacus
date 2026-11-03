@@ -73,6 +73,18 @@ class DueDateExtension(BaseModel):
     day: Annotated[int | None, Field(ge=1, le=31), classified("public")] = None
 
 
+class InstallmentOffset(BaseModel):
+    """C21 additive, payload schema v2 (T-03-T04, DEC-2203): an estimated-tax installment's
+    unrolled date, the `day` of the month `months_after_period_end` months from the period end
+    (negative inside the year: a calendar-year 1040-ES runs -8, -6, -3 and +1 on the 15th)."""
+
+    model_config = _frozen()
+
+    quarter: Annotated[int, Field(ge=1, le=4), classified("public")]
+    months_after_period_end: Annotated[int, Field(ge=-12, le=12), classified("public")]
+    day: Annotated[int, Field(ge=1, le=31), classified("public")]
+
+
 class DueDateRuleRow(BaseModel):
     """One form's rule: 1040/4868, 1041/7004, 1065/7004, 1120-S/7004, 1120/7004, 990/8868,
     5500/5558, 706/4768, 709 (each verified per season, outside the repo)."""
@@ -84,6 +96,11 @@ class DueDateRuleRow(BaseModel):
     original: Annotated[DueDateOffset, classified("public")]
     extension: Annotated[DueDateExtension | None, classified("public")]
     authority: Annotated[str, Field(min_length=1, max_length=200), classified("public")]
+    # C21 additive, schema v2 (T-03-T04): the estimate form's installments ("1040-ES"); v1 rows
+    # carry none and read as an empty list.
+    installments: Annotated[list[InstallmentOffset], Field(max_length=4), classified("public")] = (
+        Field(default_factory=list[InstallmentOffset])
+    )
 
 
 class DueDateRulesPayload(BaseModel):
