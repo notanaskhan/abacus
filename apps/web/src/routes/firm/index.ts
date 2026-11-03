@@ -19,6 +19,8 @@ import "./run-trace";
 import "./sheets";
 // A-06-T12: the Evaluation overlays (`?ov=convert`, `send-entries`, `send-fs-draft`).
 import "./evaluation";
+// A-04-T20: AUD-08's rationale drawer (`?ov=risk:<code>`).
+import "./risks";
 
 // The firm's areas, once, in the bar's order (chapter 04 §2.2; F-03-T17). An area without
 // screens yet has no routes; its file arrives with its first epic.

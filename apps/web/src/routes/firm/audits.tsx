@@ -17,6 +17,9 @@ const AuditsIndex = lazyScreen(
 );
 const Cockpit = lazyScreen(async () => (await import("../../screens/AUD-02")).AUD02);
 const SourceDocuments = lazyScreen(async () => (await import("../../screens/AUD-03")).AUD03);
+const RiskRegister = lazyScreen(
+  async () => (await import("../../screens/AUD-08")).RiskRegisterPage,
+);
 const Evaluation = lazyScreen(
   async () => (await import("../../screens/evaluation")).EvaluationPage,
 );
@@ -217,6 +220,35 @@ function evaluationRoute(tab: EvaluationTab) {
   });
 }
 
+// A-04-T20: AUD-08 `/audits/$auditId/risks?filter=unaddressed`, its drawer `?ov=risk:<code>`.
+export const risksRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/audits/$auditId/risks",
+  validateSearch: (search: Record<string, unknown>): { filter?: "unaddressed" } =>
+    search.filter === "unaddressed" ? { filter: "unaddressed" } : {},
+  component: function RisksPage(): JSX.Element {
+    const auditId = useParam("auditId");
+    const navigate = useNavigate();
+    const search: { filter?: "unaddressed" } = useSearch({ strict: false });
+    const overlays = useOverlays();
+    return gated(
+      <RiskRegister
+        auditId={auditId}
+        filter={search.filter ?? null}
+        onFilter={(filter) => {
+          void navigate({ to: ".", search: filter === null ? {} : { filter }, replace: true });
+        }}
+        onRisk={(code) => {
+          overlays.open("risk", code);
+        }}
+        onBack={() => {
+          void navigate({ to: "/audits/$auditId", params: { auditId } });
+        }}
+      />,
+    );
+  },
+});
+
 export const findingsRoute = evaluationRoute("findings");
 export const misstatementsRoute = evaluationRoute("misstatements");
 export const reviewNotesRoute = evaluationRoute("review-notes");
@@ -226,6 +258,7 @@ export const auditRoutes = [
   auditsRoute,
   auditRoute,
   sourceDocumentsRoute,
+  risksRoute,
   findingsRoute,
   misstatementsRoute,
   reviewNotesRoute,

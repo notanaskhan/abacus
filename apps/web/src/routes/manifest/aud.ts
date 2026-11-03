@@ -50,7 +50,11 @@ export const audScreens = {
   // planned for AUD-03's reason: AUD-11's "Opens AUD-07 · materiality" link has no ov.<ID>()
   // builder for a cockpit section yet (main CI triage, DEC-1865).
   "AUD-07": { name: "Materiality · partner decision", status: "planned", path: null },
-  "AUD-08": { name: "Risk assessment register & linkage", status: "planned", path: null },
+  "AUD-08": {
+    name: "Risk assessment register & linkage",
+    status: "planned",
+    path: "/audits/$auditId/risks", // A-04-T20: a, b, b2, d; A-04-T29 brings c, e, f, g
+  },
   "AUD-09": { name: "Internal control & exceptions", status: "planned", path: null },
   "AUD-10": { name: "Service organizations & SOC 1 evaluation", status: "planned", path: null },
   // A-03-T11: a, b, d, the picker and the C-20 states on fixtures, the AUD-02 cockpit's Sample
