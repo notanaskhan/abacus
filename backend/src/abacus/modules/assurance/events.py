@@ -77,3 +77,18 @@ class ControlExceptionRecorded(DomainEvent):
     workpaper_id: Annotated[UUID, classified("internal")]
     control_exception_id: Annotated[UUID, classified("internal")]
     sheet_row: Annotated[int, classified("internal")]
+
+
+class ServiceOrgRelianceConcluded(DomainEvent):
+    """A-04-T31 (DEC-2236): the engagement partner decided reliance on a SOC 1 report (identifiers
+    only); AUD-09's control reliance and the A-07 governance letter's service-organisation facts
+    read it."""
+
+    event_type: ClassVar[str] = "service_org.reliance_concluded"
+
+    engagement_id: Annotated[UUID, classified("internal")]
+    work_item_id: Annotated[UUID, classified("internal")]
+    soc_report_id: Annotated[UUID, classified("internal")]
+    service_organization_id: Annotated[UUID, classified("internal")]
+    decision_id: Annotated[UUID, classified("internal")]
+    relied: Annotated[bool, classified("internal")]
