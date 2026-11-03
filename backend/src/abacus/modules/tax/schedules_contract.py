@@ -1,0 +1,634 @@
+"""The tax schedules contract stub: extensions, estimates and the payments union (T-03-T02;
+T-03 §4.3; DEC-2201). Contract: `docs/contracts/tax-extensions-estimates.md`; screen TAX-13;
+consumers T-08 (HOME-03), R-03 (POR-10), T-04 (TAX-12 estimate reminders).
+
+Every return's extension of time to file per jurisdiction, with its projected liability, what was
+paid by the original due date against the safe-harbor target (computed by `tax.compute.payments`,
+never a model; ADR-050, DEC-77) and the client's confirmation; every client's estimate schedule
+and its quarterly installments. Accrued never transmits a filing (DEC-49): "Mark filed" records
+what a person filed in the engine. Payment methods are labels, never instruments (DEC-89).
+
+Every route answers, in order: a client principal 404 (POR-10 reads confirmation requests through
+its own request grant, never these routes); the matrix action at the firm (the service narrows to
+the return's engagement and function); 404 with `tax.extensions_estimates` off; 501
+`not_implemented` until T-03-T07. Amounts and reject codes are tax return information (`tri`);
+client and contact names are confidential.
+"""
+
+from __future__ import annotations
+
+from datetime import date, datetime
+from decimal import Decimal
+from typing import Annotated, Literal, NoReturn
+from uuid import UUID
+
+from fastapi import Depends, Header, Path, Query, Response
+from pydantic import BaseModel, ConfigDict, Field
+
+from abacus.kernel._flags import TAX_EXTENSIONS_ESTIMATES
+from abacus.kernel.classification import classified
+from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.flags import flag_enabled
+from abacus.kernel.listing import ListPage
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    AuthContext,
+    Resource,
+    authorise,
+    current_context,
+)
+
+Ctx = Annotated[AuthContext, Depends(current_context)]
+IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
+IfMatch = Annotated[int, Header(alias="If-Match", ge=1)]
+Tri = classified("restricted", tri=True)
+Money = Annotated[Decimal, Field(max_digits=18, decimal_places=2), Tri]
+Pct = Annotated[Decimal, Field(max_digits=5, decimal_places=2), classified("internal")]
+Name = Annotated[str, classified("confidential")]
+Internal = classified("internal")
+
+ExtensionStatus = Literal["not_filed", "prepared", "filed", "accepted", "rejected"]
+InstallmentStatus = Literal[
+    "not_confirmed", "confirmation_requested", "scheduled", "paid", "not_required"
+]
+Segment = Literal["open", "filed", "likely"]
+ExtensionTile = Literal["extended", "open", "filed", "likely", "acks_pending"]
+EstimateTile = Literal["due", "paid", "scheduled", "confirmation_requested", "not_required"]
+LikelyReason = Literal[
+    "k1_outstanding", "binder_incomplete", "engagement_not_accepted", "preparer_flag"
+]
+LiabilitySource = Literal["engine_import", "preparer_entry"]
+PaymentKind = Literal["extension_payment", "ptet"]
+EstimateMethod = Literal[
+    "prior_year_100",
+    "prior_year_110",
+    "current_year_90",
+    "not_required_withholding",
+    "not_required_estate_first_years",
+    "prospect",
+]
+PaymentMethodLabel = Literal[
+    "irs_direct_pay", "eftps", "ny_online_services", "state_portal", "check", "other"
+]
+PaymentSourceKind = Literal["extension_payment", "ptet", "estimate_installment"]
+ExtensionAction = Literal[
+    "filing_extension.prepare",
+    "filing_extension.approve_payment",
+    "filing_extension.mark_filed",
+    "filing_extension.flag_likely",
+    "filing_extension.confirmation_send",
+    "tax_schedule.export",
+]
+EstimateAction = Literal[
+    "estimate_schedule.update", "estimate_schedule.confirmation_send", "tax_schedule.export"
+]
+
+
+def _frozen() -> ConfigDict:
+    return ConfigDict(frozen=True)
+
+
+def _strict() -> ConfigDict:
+    return ConfigDict(frozen=True, extra="forbid")
+
+
+# --- shared facts -------------------------------------------------------------------------------
+
+
+class EngineStampOut(BaseModel):
+    """Every computed figure carries the engine that computed it (chapter 03 §10.1)."""
+
+    model_config = _frozen()
+
+    engine_name: Annotated[str, Internal]
+    engine_version: Annotated[str, Internal]
+    inputs_hash: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$"), Internal]
+
+
+class TaxConfirmationOut(BaseModel):
+    """ "✓ Claire Feld Apr 13" or "○ (confirmation request sent Sep 8)": a request item, never a
+    task (R-03 reads POR-10 from the same item)."""
+
+    model_config = _frozen()
+
+    confirmed: Annotated[bool, Internal]
+    contact_name: Name | None = None
+    confirmed_on: Annotated[date | None, Internal] = None
+    request_item_id: Annotated[UUID | None, Internal] = None
+    requested_on: Annotated[date | None, Internal] = None
+
+
+class ExtensionPaymentOut(BaseModel):
+    """One proposed or approved payment; an approved payment never changes (a later change is a
+    new row that supersedes it). "PTET Mar 12: IL 28,044" is a `ptet` row per state."""
+
+    model_config = _frozen()
+
+    id: Annotated[UUID, Internal]
+    kind: Annotated[PaymentKind, Internal]
+    jurisdiction: Annotated[str, Internal]
+    amount: Money
+    paid_on: Annotated[date | None, Internal] = None
+    proposed_by_name: Name
+    approved_by_name: Name | None = None
+    approved_at: Annotated[datetime | None, Internal] = None
+    supersedes_id: Annotated[UUID | None, Internal] = None
+    confirmation_evidence_version_id: Annotated[UUID | None, Internal] = None
+
+
+class JurisdictionLineOut(BaseModel):
+    """A grouped line under a return (Feld: "4868 + IT-370"; "10,000 · NY 6,000")."""
+
+    model_config = _frozen()
+
+    extension_id: Annotated[UUID, Internal]
+    jurisdiction: Annotated[str, Internal]
+    form: Annotated[str, Internal]
+    status: Annotated[ExtensionStatus, Internal]
+    filed_on: Annotated[date | None, Internal] = None
+    ack_received_at: Annotated[datetime | None, Internal] = None
+    reject_code: Annotated[str | None, Tri] = None
+    paid_with_extension: Money | None = None
+
+
+# --- extensions ---------------------------------------------------------------------------------
+
+
+class ExtensionRowOut(BaseModel):
+    """One TAX-13 a row per return with its jurisdiction lines. Projected liability, the
+    safe-harbor target and the paid figures are code's; cells carry no "$"."""
+
+    model_config = _frozen()
+
+    tax_return_id: Annotated[UUID, Internal]
+    work_item_id: Annotated[UUID, Internal]
+    client_name: Name
+    client_note: Name | None = None  # "(Walter's 2025 Form 1040)"
+    return_form: Annotated[str, Internal]  # "1040", "1065", "2025 Form 990 (FYE Jun 30, 2026)"
+    tax_year: Annotated[int, Internal]
+    lines: Annotated[list[JurisdictionLineOut], Internal]
+    projected_liability: Money | None = None
+    projected_liability_source: Annotated[LiabilitySource | None, Internal] = None
+    projected_liability_note: Name | None = None  # "— (pass-through)", "Not started — …"
+    withholding_plus_estimates: Money | None = None
+    safe_harbor_target: Money | None = None
+    safe_harbor_pct: Pct | None = None
+    paid_by_original_due: Money | None = None
+    meets_safe_harbor: Annotated[bool | None, Internal] = None
+    payments: Annotated[list[ExtensionPaymentOut], Internal]
+    confirmation: TaxConfirmationOut | None = None
+    original_due_on: Annotated[date, Internal]
+    extended_due_on: Annotated[date, Internal]
+    days_to_extended_due: Annotated[int | None, Internal] = None
+    likely_to_extend: Annotated[bool, Internal]
+    likely_reasons: Annotated[list[LikelyReason], Internal]
+    likely_note: Name | None = None
+    prepare_blocked_reason: Annotated[str | None, Internal] = None  # G1/G3 tooltip key
+    stamp: EngineStampOut | None = None
+    row_version: Annotated[int, Internal]
+    allowed_actions: Annotated[list[ExtensionAction], Internal]
+
+
+class ExtensionOut(ExtensionRowOut):
+    """The detail: rule and engine versions, the approval trail and evidence refs."""
+
+    due_rules_version_id: Annotated[UUID | None, Internal] = None
+    filed_form_evidence_version_id: Annotated[UUID | None, Internal] = None
+    filed_recorded_by_name: Name | None = None
+
+
+class ProposedPaymentIn(BaseModel):
+    model_config = _strict()
+
+    return_id: Annotated[UUID, Internal]
+    jurisdiction: Annotated[str, Field(min_length=2, max_length=12), Internal]
+    kind: Annotated[PaymentKind, Internal] = "extension_payment"
+    amount: Money
+
+
+class ExtensionPrepareIn(BaseModel):
+    """409 `gate_unmet` with the G1/G3 facts for a return whose engagement is not accepted."""
+
+    model_config = _strict()
+
+    return_ids: Annotated[list[UUID], Field(min_length=1, max_length=200), Internal]
+    payments: Annotated[list[ProposedPaymentIn], Field(max_length=400), Internal] = Field(
+        default_factory=list[ProposedPaymentIn]
+    )
+
+
+class ExtensionSubmitIn(BaseModel):
+    model_config = _strict()
+
+    extension_ids: Annotated[list[UUID], Field(min_length=1, max_length=200), Internal]
+
+
+class ApproveAndRequestIn(BaseModel):
+    """Either prepared extensions, or returns with payments (prepared in the same unit of work);
+    `send_confirmations` sends one confirmation request per client ("Send confirmation
+    requests")."""
+
+    model_config = _strict()
+
+    extension_ids: Annotated[list[UUID], Field(max_length=200), Internal] = Field(
+        default_factory=list[UUID]
+    )
+    return_ids: Annotated[list[UUID], Field(max_length=200), Internal] = Field(
+        default_factory=list[UUID]
+    )
+    payments: Annotated[list[ProposedPaymentIn], Field(max_length=400), Internal] = Field(
+        default_factory=list[ProposedPaymentIn]
+    )
+    send_confirmations: Annotated[bool, Internal] = True
+
+
+class SafeHarborCheckOut(BaseModel):
+    model_config = _frozen()
+
+    tax_return_id: Annotated[UUID, Internal]
+    jurisdiction: Annotated[str, Internal]
+    projected_liability: Money | None = None
+    safe_harbor_target: Money | None = None
+    paid_by_original_due: Money | None = None
+    meets_safe_harbor: Annotated[bool | None, Internal] = None
+    stamp: EngineStampOut | None = None
+
+
+class ExtensionBatchOut(BaseModel):
+    model_config = _frozen()
+
+    extensions: Annotated[list[ExtensionRowOut], Internal]
+    checks: Annotated[list[SafeHarborCheckOut], Internal]
+    gate_id: Annotated[UUID | None, Internal] = None  # submit-for-approval's C13 gate
+
+
+class ApproveAndRequestOut(ExtensionBatchOut):
+    approved_payment_ids: Annotated[list[UUID], Internal]
+    confirmation_request_item_ids: Annotated[list[UUID], Internal]
+
+
+class ExtensionPatchIn(BaseModel):
+    """`filed_on` (+ `form`) records the filing in the engine (`filing_extension.mark_filed`);
+    `likely_to_extend` with a reason is `filing_extension.flag_likely`. One or the other."""
+
+    model_config = _strict()
+
+    filed_on: Annotated[date | None, Internal] = None
+    form: Annotated[str | None, Field(max_length=12), Internal] = None
+    filed_form_evidence_version_id: Annotated[UUID | None, Internal] = None
+    likely_to_extend: Annotated[bool | None, Internal] = None
+    reason: Annotated[LikelyReason | None, Internal] = None
+    note: Annotated[str | None, Field(max_length=500), classified("confidential")] = None
+
+
+class ConfirmationRequestIn(BaseModel):
+    model_config = _strict()
+
+    contact_id: Annotated[UUID | None, Internal] = None
+
+
+class ConfirmationRequestOut(BaseModel):
+    model_config = _frozen()
+
+    request_item_id: Annotated[UUID, Internal]
+    request_list_id: Annotated[UUID, Internal]
+    sent_at: Annotated[datetime, Internal]
+    contact_name: Name
+
+
+# --- estimates ----------------------------------------------------------------------------------
+
+
+class EstimateInstallmentOut(BaseModel):
+    model_config = _frozen()
+
+    quarter: Annotated[int, Field(ge=1, le=4), Internal]
+    due_on: Annotated[date, Internal]
+    amount: Money | None = None
+    jurisdiction_amounts: Annotated[dict[str, Decimal], Tri] = Field(
+        default_factory=dict[str, Decimal]
+    )  # "19,990 · NY 7,824"
+    status: Annotated[InstallmentStatus, Internal]
+    scheduled_for: Annotated[date | None, Internal] = None
+    paid_on: Annotated[date | None, Internal] = None
+    confirmation: TaxConfirmationOut | None = None
+
+
+class EstimateRowOut(BaseModel):
+    """One TAX-13 b row: the schedule and the selected quarter's installment."""
+
+    model_config = _frozen()
+
+    schedule_id: Annotated[UUID, Internal]
+    client_entity_id: Annotated[UUID, Internal]
+    client_name: Name
+    client_note: Name | None = None
+    tax_year: Annotated[int, Internal]
+    forms: Annotated[list[str], Internal]  # ["1040-ES", "IT-2105"]
+    method: Annotated[EstimateMethod, Internal]
+    method_note: Annotated[str | None, Tri] = None  # the code-written explanation of the figure
+    annual_required: Money | None = None
+    jurisdiction_annual: Annotated[dict[str, Decimal], Tri] = Field(
+        default_factory=dict[str, Decimal]
+    )
+    payment_method_labels: Annotated[list[PaymentMethodLabel], Internal]
+    installment: EstimateInstallmentOut | None = None
+    stamp: EngineStampOut | None = None
+    row_version: Annotated[int, Internal]
+    allowed_actions: Annotated[list[EstimateAction], Internal]
+
+
+class EstimateOut(EstimateRowOut):
+    installments: Annotated[list[EstimateInstallmentOut], Internal]
+    prior_year_tax: Money | None = None
+    prior_agi_over_threshold: Annotated[bool | None, Internal] = None
+    projected_withholding: Money | None = None
+
+
+class EstimatePatchIn(BaseModel):
+    model_config = _strict()
+
+    method: Annotated[EstimateMethod | None, Internal] = None
+    prior_year_tax: Money | None = None
+    prior_year_tax_source: Annotated[LiabilitySource | None, Internal] = None
+    prior_agi_over_threshold: Annotated[bool | None, Internal] = None
+    projected_withholding: Money | None = None
+    payment_method_label: Annotated[PaymentMethodLabel | None, Internal] = None
+
+
+class InstallmentPatchIn(BaseModel):
+    model_config = _strict()
+
+    scheduled_for: Annotated[date | None, Internal] = None
+    paid_on: Annotated[date | None, Internal] = None
+    evidence_version_id: Annotated[UUID | None, Internal] = None
+
+
+class FollowUpDraftOut(BaseModel):
+    """A follow-up drafted from the approved Reminder template; a person sends it through the
+    existing `follow_up.send` (DEC-74)."""
+
+    model_config = _frozen()
+
+    follow_up_id: Annotated[UUID, Internal]
+    request_item_id: Annotated[UUID, Internal]
+    template_key: Annotated[str, Internal]
+
+
+# --- payments union (DF-08) ---------------------------------------------------------------------
+
+
+class PaymentRowOut(BaseModel):
+    model_config = _frozen()
+
+    source_kind: Annotated[PaymentSourceKind, Internal]
+    source_id: Annotated[UUID, Internal]
+    tax_return_id: Annotated[UUID | None, Internal] = None
+    client_name: Name
+    jurisdiction: Annotated[str, Internal]
+    amount: Money
+    paid_on: Annotated[date | None, Internal] = None
+    confirmation_evidence_version_id: Annotated[UUID | None, Internal] = None
+
+
+# --- gates --------------------------------------------------------------------------------------
+
+
+async def _gate(ctx: AuthContext, action: str) -> None:
+    if ctx.client:
+        raise NotFound("filing_extension")
+    await authorise(ctx, action, Resource.firm(ctx.tenant_id))
+    if not await flag_enabled(ctx.tenant, TAX_EXTENSIONS_ESTIMATES):
+        raise NotFound(TAX_EXTENSIONS_ESTIMATES.name)
+
+
+def _not_yet() -> NoReturn:
+    raise NotImplementedYet
+
+
+schedules_router = AbacusRouter(prefix="/v1", tags=["tax"])
+_X = "/tax/extensions/{extension_id}"
+_E = "/tax/estimates/{schedule_id}"
+_Q = f"{_E}/installments/{{quarter}}"
+Quarter = Annotated[int, Path(ge=1, le=4)]
+
+
+# Exports come before `/{extension_id}` so the literal path wins.
+@schedules_router.get(
+    "/tax/extensions/export.xlsx",
+    action="tax_schedule.export",
+    response_model=bytes,
+    errors=(501,),
+)
+async def extensions_export_route(
+    ctx: Ctx,
+    tax_year: Annotated[int, Query(ge=2000, le=2100)],
+    segment: Annotated[Segment | None, Query()] = None,
+) -> Response:
+    """The visible rows of the current segment; fresh MFA; audited with the row count only."""
+    await _gate(ctx, "tax_schedule.export")
+    _not_yet()
+
+
+@schedules_router.get(
+    "/tax/estimates/export.xlsx", action="tax_schedule.export", response_model=bytes, errors=(501,)
+)
+async def estimates_export_route(
+    ctx: Ctx,
+    tax_year: Annotated[int, Query(ge=2000, le=2100)],
+    quarter: Annotated[int | None, Query(ge=1, le=4)] = None,
+) -> Response:
+    await _gate(ctx, "tax_schedule.export")
+    _not_yet()
+
+
+@schedules_router.get(
+    "/tax/extensions",
+    action="filing_extension.read",
+    response_model=ListPage[ExtensionRowOut],
+    errors=(501,),
+)
+async def extensions_route(
+    ctx: Ctx,
+    tax_year: Annotated[int, Query(ge=2000, le=2100)],
+    segment: Annotated[Segment | None, Query()] = None,
+    tile: Annotated[ExtensionTile | None, Query()] = None,
+    q: Annotated[str | None, Query(max_length=120)] = None,
+    cursor: Annotated[str | None, Query(max_length=200)] = None,
+) -> ListPage[ExtensionRowOut]:
+    """Rows grouped per return; `counts` {extended, open, filed, likely, acks_pending} from the
+    viewer's visible rows only (DEC-43)."""
+    await _gate(ctx, "filing_extension.read")
+    _not_yet()
+
+
+@schedules_router.post(
+    "/tax/extensions:prepare",
+    action="filing_extension.prepare",
+    response_model=ExtensionBatchOut,
+    errors=(409, 501),
+)
+async def extensions_prepare_route(
+    body: ExtensionPrepareIn, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> ExtensionBatchOut:
+    """Extensions `prepared` with proposed payments and per-row safe-harbor checks; 409
+    `gate_unmet` with the G1/G3 facts."""
+    await _gate(ctx, "filing_extension.prepare")
+    _not_yet()
+
+
+@schedules_router.post(
+    "/tax/extensions:submit-for-approval",
+    action="filing_extension.prepare",
+    response_model=ExtensionBatchOut,
+    errors=(409, 501),
+)
+async def extensions_submit_route(
+    body: ExtensionSubmitIn, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> ExtensionBatchOut:
+    """The proposer's path: registers the C13 payment-approval gate for the return's reviewers."""
+    await _gate(ctx, "filing_extension.prepare")
+    _not_yet()
+
+
+@schedules_router.post(
+    "/tax/extensions:approve-and-request",
+    action="filing_extension.approve_payment",
+    response_model=ApproveAndRequestOut,
+    errors=(409, 501),
+)
+async def extensions_approve_route(
+    body: ApproveAndRequestIn, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> ApproveAndRequestOut:
+    """One unit of work: prepare any unprepared rows, approve the proposed payments as the
+    caller (human only), then create and send the confirmation requests (the service also
+    checks `filing_extension.confirmation_send`)."""
+    await _gate(ctx, "filing_extension.approve_payment")
+    _not_yet()
+
+
+@schedules_router.get(
+    _X, action="filing_extension.read", response_model=ExtensionOut, errors=(501,)
+)
+async def extension_route(extension_id: UUID, ctx: Ctx) -> ExtensionOut:
+    await _gate(ctx, "filing_extension.read")
+    _not_yet()
+
+
+@schedules_router.patch(
+    _X, action="filing_extension.mark_filed", response_model=ExtensionOut, errors=(409, 501)
+)
+async def extension_patch_route(
+    extension_id: UUID, body: ExtensionPatchIn, ctx: Ctx, if_match: IfMatch
+) -> ExtensionOut:
+    """`filing_extension.flag_likely` for `likely_to_extend` alone, `mark_filed` otherwise."""
+    await _gate(ctx, _patch_action(body))
+    _not_yet()
+
+
+def _patch_action(body: ExtensionPatchIn) -> str:
+    likely_only = body.likely_to_extend is not None and body.filed_on is None
+    return "filing_extension.flag_likely" if likely_only else "filing_extension.mark_filed"
+
+
+@schedules_router.post(
+    f"{_X}/confirmation-requests",
+    action="filing_extension.confirmation_send",
+    response_model=ConfirmationRequestOut,
+    errors=(409, 501),
+)
+async def extension_confirmation_route(
+    extension_id: UUID, body: ConfirmationRequestIn, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> ConfirmationRequestOut:
+    """One confirmation request, sent on the click, in the return's binder."""
+    await _gate(ctx, "filing_extension.confirmation_send")
+    _not_yet()
+
+
+@schedules_router.get(
+    "/tax/estimates",
+    action="estimate_schedule.read",
+    response_model=ListPage[EstimateRowOut],
+    errors=(501,),
+)
+async def estimates_route(
+    ctx: Ctx,
+    tax_year: Annotated[int, Query(ge=2000, le=2100)],
+    quarter: Annotated[int | None, Query(ge=1, le=4)] = None,
+    tile: Annotated[EstimateTile | None, Query()] = None,
+    q: Annotated[str | None, Query(max_length=120)] = None,
+    cursor: Annotated[str | None, Query(max_length=200)] = None,
+) -> ListPage[EstimateRowOut]:
+    """Schedules by the quarter's installment; `counts` {due, paid, scheduled,
+    confirmation_requested, not_required} from visible rows."""
+    await _gate(ctx, "estimate_schedule.read")
+    _not_yet()
+
+
+@schedules_router.patch(
+    _E, action="estimate_schedule.update", response_model=EstimateOut, errors=(409, 501)
+)
+async def estimate_patch_route(
+    schedule_id: UUID, body: EstimatePatchIn, ctx: Ctx, if_match: IfMatch
+) -> EstimateOut:
+    """Inputs, then code recomputes the annual payment and the installments."""
+    await _gate(ctx, "estimate_schedule.update")
+    _not_yet()
+
+
+@schedules_router.patch(
+    _Q, action="estimate_schedule.update", response_model=EstimateInstallmentOut, errors=(409, 501)
+)
+async def installment_patch_route(
+    schedule_id: UUID, quarter: Quarter, body: InstallmentPatchIn, ctx: Ctx, if_match: IfMatch
+) -> EstimateInstallmentOut:
+    await _gate(ctx, "estimate_schedule.update")
+    _not_yet()
+
+
+@schedules_router.post(
+    f"{_Q}/confirmation-requests",
+    action="estimate_schedule.confirmation_send",
+    response_model=ConfirmationRequestOut,
+    errors=(409, 501),
+)
+async def installment_confirmation_route(
+    schedule_id: UUID,
+    quarter: Quarter,
+    body: ConfirmationRequestIn,
+    ctx: Ctx,
+    idempotency_key: IdempotencyKey,
+) -> ConfirmationRequestOut:
+    """In the basis return's binder, or a "{year} estimated payments" binder part (DEC-31)."""
+    await _gate(ctx, "estimate_schedule.confirmation_send")
+    _not_yet()
+
+
+@schedules_router.post(
+    f"{_Q}/follow-ups",
+    action="follow_up.draft",
+    response_model=FollowUpDraftOut,
+    errors=(409, 501),
+)
+async def installment_follow_up_route(
+    schedule_id: UUID, quarter: Quarter, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> FollowUpDraftOut:
+    """A draft from the approved Reminder template; a person sends it (`follow_up.send`)."""
+    await _gate(ctx, "follow_up.draft")
+    _not_yet()
+
+
+@schedules_router.get(
+    "/tax/payments",
+    action="filing_extension.read",
+    response_model=ListPage[PaymentRowOut],
+    errors=(501,),
+)
+async def payments_route(
+    ctx: Ctx,
+    tax_year: Annotated[int, Query(ge=2000, le=2100)],
+    cursor: Annotated[str | None, Query(max_length=200)] = None,
+) -> ListPage[PaymentRowOut]:
+    """DF-08's union, read only: extension payments, PTET and paid installments."""
+    await _gate(ctx, "filing_extension.read")
+    _not_yet()

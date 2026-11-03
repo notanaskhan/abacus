@@ -1,6 +1,9 @@
 """Public interface of the requests module; other modules import only this (ADR-008)."""
 
+from uuid import UUID
+
 from abacus.kernel.audit_owners import register_engagement_owners
+from abacus.kernel.errors import NotImplementedYet
 from abacus.modules.engagements.api import (
     register_draft_request_copy,
     register_open_requests,
@@ -8,6 +11,7 @@ from abacus.modules.engagements.api import (
 )
 from abacus.modules.identity.api import (
     AbacusRouter,
+    AuthContext,
     register_contact_delegations,
     register_scope_resolver,
     register_scopes_resolver,
@@ -196,10 +200,28 @@ WORKFLOWS: dict[type, str] = {}
 ACTIVITIES: tuple[object, ...] = ()
 
 # The routers the API mounts, in order (P-39; F-03-T07).
+from abacus.modules.requests.answer_effect_slots import (  # noqa: E402 -- T-03-T02 slot
+    EffectRequest,
+    EffectResult,
+    answer_effect_handler,
+    register_answer_effect,
+)
+from abacus.modules.requests.questionnaire_editor_contract import (  # noqa: E402 -- T-03-T02
+    questionnaire_editor_router,
+)
 from abacus.modules.requests.questionnaires_contract import (  # noqa: E402 -- T-02-T02 stub
     portal_questionnaires_router,
     questionnaires_router,
 )
+
+
+async def questionnaire_from_template(
+    ctx: AuthContext, template_key: str, tax_year: int, binder_id: UUID
+) -> UUID:
+    """A binder's organizer from the template version published for `tax_year` (T-03 §4.4;
+    T-02 now, T-08's roll-forward later). Stub until T-03-T05."""
+    raise NotImplementedYet
+
 
 ROUTERS: tuple[AbacusRouter, ...] = (
     router,
@@ -211,6 +233,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     pbc_portal_router,  # C5 portal-pbc (R-01-T08): undo an Ignore, undo Mark as Done
     questionnaires_router,  # questionnaires v1 (T-02-T02 stub)
     portal_questionnaires_router,  # POR-05 (T-02-T02 stub)
+    questionnaire_editor_router,  # BND-03 editor and templates (T-03-T02 stub)
 )
 
 # P-07-T08: the clients index's open-request count.
@@ -244,6 +267,8 @@ __all__ = [
     "DelegateUpload",
     "DropBinder",
     "DueDatesChanged",
+    "EffectRequest",
+    "EffectResult",
     "FollowUpCandidate",
     "FulfilledVersion",
     "FulfilmentRef",
@@ -276,6 +301,7 @@ __all__ = [
     "UploadFacts",
     "VoidedRuleLink",
     "add_request_item",
+    "answer_effect_handler",
     "apply_drafted_guidance",
     "attach_organizer",
     "awaiting_review",
@@ -324,11 +350,13 @@ __all__ = [
     "prior_year_link",
     "publish_questionnaire_template",
     "questionnaire",
+    "questionnaire_from_template",
     "questionnaire_templates",
     "read_item",
     "read_item_versions",
     "refuse_closed_item",
     "refuse_closed_item_in",
+    "register_answer_effect",
     "register_available_datasets",
     "register_binder_close_rule",
     "register_binder_consents",
