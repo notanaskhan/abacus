@@ -62,6 +62,7 @@ Gradients, emoji, saturated blue, heavy shadows, invented colours, lorem ipsum; 
 ## Deviations
 | ID | What differs from the handoff | Why | Decision recorded |
 |---|---|---|---|
+| DV-AUD-05-A | The EQR exclusion line reads "to keep the review objective" rather than "his review" | The record holds no pronoun | DEC-2074 |
 | DV-A5-1 | b's minutes card reads "Written by <person>" on the live path; "Minutes drafted by Accrued Agent from the Teams transcript" stays fixture-only | No transcript connector (OQ-5); connectors only read | DEC-1758 |
 | DV-A5-2 | The medium "Microsoft Teams" is stored as the meeting medium only; no Teams integration | OQ-5 | DEC-1758 |
 | DV-A5-3 | If T-02's questionnaires are not live by S25, inquiries render as request items with a text answer | OQ-6 | A-04 OQ-6 |

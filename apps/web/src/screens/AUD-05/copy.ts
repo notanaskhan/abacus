@@ -1,0 +1,56 @@
+// AUD-05 · Narrative workpaper, Risk Assessment (A-04-T21): copy verbatim from the handoff spec.
+export const COPY = {
+  title: "Risk Assessment",
+  version: (n: number): string => `Version ${String(n)}`,
+  tabs: ["Risk Assessment", "Fraud Brainstorming", "Summary", "Audit Approach", "Linkage"],
+  openExcel: "Open in Excel",
+  openRegister: "Open register",
+  remind: "Remind…",
+  escalate: "Escalate…",
+  pbcGap: "PBC GAP",
+  citations: (n: number): string => `Citations (${String(n)})`,
+  procedures: "Procedures (1)",
+  adopt: "Adopt draft",
+  reviewed: (initials: string): string => `Reviewed · ${initials}`,
+  agentDraft: "Agent draft",
+  guidance: {
+    title: "Risk Assessment",
+    source: "Prepopulated from BH Audit Methodology · EBP v3 · mandatory",
+  },
+  // The narrative layout's row labels (the paper's KV keys, by row key).
+  rows: {
+    period: "Period",
+    purpose: "Purpose",
+    procedures: "Procedures performed",
+    governance: "Plan, governance, related parties",
+    framework: "Regulatory and external framework",
+    service_organizations: "Service organizations",
+    reporting: "Reporting",
+    conclusion_1: "Conclusion — Section 1",
+    management_override: "Management override of controls",
+    revenue_recognition: "Improper revenue recognition",
+    investment_income: "Investment income",
+    conclusion_2: "Conclusion — Section 2",
+  } as Record<string, string>,
+  fraud: {
+    session: "Session",
+    ledBy: (name: string): string => `Led by ${name}`,
+    attendees: "Attendees",
+    excluded: "Not invited",
+    // The handoff's line, worded without a pronoun the record does not hold.
+    excludedReason: {
+      eqr: (name: string): string => `${name} (EQR) is not invited, to keep the review objective.`,
+      independence: (name: string): string => `${name} is not invited: independence.`,
+      other: (name: string): string => `${name} is not invited.`,
+    } as Record<string, (name: string) => string>,
+    discussion: "Discussion",
+    minutes: "Minutes",
+    status: {
+      draft: "Draft",
+      awaiting_approval: "Awaiting EP approval",
+      approved: "Approved",
+    } as Record<string, string>,
+    approve: "Approve minutes",
+    approvedBy: (name: string): string => `Approved by ${name}`,
+  },
+} as const;
