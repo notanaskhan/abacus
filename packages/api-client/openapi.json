@@ -19197,6 +19197,16 @@
             "cls": "confidential",
             "title": "Amount"
           },
+          "column_set": {
+            "cls": "internal",
+            "default": "commercial",
+            "enum": [
+              "ebp_net_assets",
+              "commercial"
+            ],
+            "title": "Column Set",
+            "type": "string"
+          },
           "projection_ref": {
             "anyOf": [
               {
@@ -92872,6 +92882,19 @@
       "abacus__modules__assurance__findings_contract__FindingIn": {
         "additionalProperties": false,
         "properties": {
+          "agent_run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Agent Run Id"
+          },
           "citation_ids": {
             "cls": "internal",
             "items": {
@@ -92918,11 +92941,31 @@
             "minLength": 1,
             "title": "Title",
             "type": "string"
+          },
+          "why_surfaced": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Why Surfaced"
+          },
+          "workpaper_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Workpaper Id",
+            "type": "string"
           }
         },
         "required": [
           "title",
-          "kind"
+          "kind",
+          "workpaper_id"
         ],
         "title": "FindingIn",
         "type": "object"
@@ -163200,7 +163243,7 @@
     },
     "/v1/findings/{finding_id}/convert-to-misstatement": {
       "post": {
-        "description": "A projected misstatement takes its figure from `sampling.compute.projection` (T09).",
+        "description": "A projected misstatement takes its figure from sampling (422 `projection_unavailable`\nuntil A-03 exposes its projection facts; T11).",
         "operationId": "finding_to_misstatement",
         "parameters": [
           {
@@ -163346,6 +163389,144 @@
         "x-abacus-action": "finding.convert"
       }
     },
+    "/v1/findings/{finding_id}/not-applicable": {
+      "post": {
+        "description": "Marked not applicable through the finding's issue; never by the agent (T11).",
+        "operationId": "finding_not_applicable",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "finding_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Finding Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReasonIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FindingDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Finding Not Applicable Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "finding.mark_not_applicable"
+      }
+    },
     "/v1/findings/{finding_id}/request-decision": {
       "post": {
         "description": "Raise the `deficiency_severity` card reserved to the EP (AUD-15 a, b; T13).",
@@ -163486,6 +163667,7 @@
     },
     "/v1/findings/{finding_id}/resolve": {
       "post": {
+        "description": "Resolved through the finding's issue; the agent is refused by the matrix (T11).",
         "operationId": "finding_resolve",
         "parameters": [
           {
@@ -220174,7 +220356,7 @@
         "x-abacus-action": "finding.read"
       },
       "post": {
-        "description": "Record a finding on a new P-04 issue; an agent's lands Proposed with citations verified\n(422 `uncited_change`; T11).",
+        "description": "Record a finding on a new P-04 issue; an agent's lands Proposed with citations verified\n(422 `uncited_finding`; T11).",
         "operationId": "audit_finding_create",
         "parameters": [
           {

@@ -27,6 +27,8 @@ from abacus.modules.assurance.ebp_designed import register as register_ebp_desig
 from abacus.modules.assurance.ebp_designed import register_modes as register_ebp_modes
 from abacus.modules.assurance.ebp_plan import AUDIT_KINDS as EBP_PLAN_KINDS
 from abacus.modules.assurance.ebp_plan import audit_owners as ebp_plan_owners
+from abacus.modules.assurance.findings import AUDIT_KINDS as FINDING_KINDS
+from abacus.modules.assurance.findings import audit_owners as finding_owners
 from abacus.modules.assurance.findings_contract import router as findings_router
 from abacus.modules.assurance.fraud_brainstorm import AUDIT_KINDS as FRAUD_KINDS
 from abacus.modules.assurance.fraud_brainstorm import GATE_KIND as FRAUD_GATE
@@ -170,6 +172,7 @@ register_engagement_owners(RISK_KINDS, risk_owners)
 # A-04-T19 (DEC-2055): the fraud brainstorm's session and inquiries placed for the trail, the
 # agent's minutes written by their owner when a person adopts them, and HOME-02's gate.
 register_engagement_owners(FRAUD_KINDS, fraud_owners)
+register_engagement_owners(FINDING_KINDS, finding_owners)  # A-06-T11 (DEC-2063)
 register_suggestion_applier(
     FRAUD_MINUTES, apply_minutes_suggestion, engagement_of=work_item_engagement
 )

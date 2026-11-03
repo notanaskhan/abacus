@@ -8858,6 +8858,10 @@ export type ConvertToMisstatementIn = {
      */
     amount?: number | string | null;
     /**
+     * Column Set
+     */
+    column_set?: 'ebp_net_assets' | 'commercial';
+    /**
      * Projection Ref
      */
     projection_ref?: string | null;
@@ -43764,6 +43768,10 @@ export type AbacusModulesAssuranceEbpContractRevealIn = {
  */
 export type AbacusModulesAssuranceFindingsContractFindingIn = {
     /**
+     * Agent Run Id
+     */
+    agent_run_id?: string | null;
+    /**
      * Citation Ids
      */
     citation_ids?: Array<string>;
@@ -43779,6 +43787,14 @@ export type AbacusModulesAssuranceFindingsContractFindingIn = {
      * Title
      */
     title: string;
+    /**
+     * Why Surfaced
+     */
+    why_surfaced?: string | null;
+    /**
+     * Workpaper Id
+     */
+    workpaper_id: string;
 };
 
 /**
@@ -75721,6 +75737,66 @@ export type FindingToMisstatementResponses = {
 };
 
 export type FindingToMisstatementResponse = FindingToMisstatementResponses[keyof FindingToMisstatementResponses];
+
+export type FindingNotApplicableData = {
+    body: ReasonIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Finding Id
+         */
+        finding_id: string;
+    };
+    query?: never;
+    url: '/v1/findings/{finding_id}/not-applicable';
+};
+
+export type FindingNotApplicableErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type FindingNotApplicableError = FindingNotApplicableErrors[keyof FindingNotApplicableErrors];
+
+export type FindingNotApplicableResponses = {
+    /**
+     * Successful Response
+     */
+    200: FindingDetailOut;
+};
+
+export type FindingNotApplicableResponse = FindingNotApplicableResponses[keyof FindingNotApplicableResponses];
 
 export type FindingRequestDecisionData = {
     body?: never;

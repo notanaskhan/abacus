@@ -63,9 +63,11 @@ from abacus.modules.review.gates import (
 from abacus.modules.review.gates import SUBSCRIPTIONS as GATE_SUBSCRIPTIONS
 from abacus.modules.review.hashing import Json, NotCanonical, canonical_json, content_hash
 from abacus.modules.review.issue_refs import issue_engagement
+from abacus.modules.review.issue_resolutions import move as move_issue
 from abacus.modules.review.issue_resolutions import register_client_request_sender
 from abacus.modules.review.issues import (
     create_issue,
+    issue_row,
     record_engine_issue,  # T-01-T26: engine diagnostics
 )
 from abacus.modules.review.matrix import review_gate
@@ -263,6 +265,8 @@ __all__ = [
     "follow_proposal_decision",
     "gate_met",
     "issue_engagement",
+    "issue_row",  # A-06-T11: a finding's issue status and version
+    "move_issue",  # A-06-T11: resolve or mark not applicable through the issue
     "notes_for",
     "open_note_counts",
     "open_text",
