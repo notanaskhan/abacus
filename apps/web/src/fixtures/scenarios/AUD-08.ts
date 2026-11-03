@@ -7,6 +7,11 @@
 //   d            hannah-leclerc     4:40 PM              EP approved, G4 met
 //   off          hannah-leclerc     2:30 PM              `assurance.risk_register` off: C-20
 //   not_allowed  cole-hart          2:30 PM              walled from Northwind: 404
+//   c            hannah-leclerc     2:30 PM              the Linkage tab; R8 Suggested (A-04-T26)
+//   e            hannah-leclerc     2:30 PM              revising after Internal Control (A-04-T26)
+//   f            hannah-leclerc     2:30 PM              `?ov=risk:R8`: rationale drafted, not adopted
+//   g            hannah-leclerc     2:30 PM              Identify risks with agent: 10 of 10, R8
+//   drafting_off hannah-leclerc     2:30 PM              workpapers.drafting off: Check coverage
 //
 // Dev and test only.
 
@@ -29,19 +34,35 @@ const AT = "2026-09-14T14:30:00-05:00";
 const AT_D = "2026-09-14T16:40:00-05:00";
 const P = "/v1/engagements/{engagement_id}/risks";
 
-function capabilities(persona: string | undefined, on: boolean): CapabilitiesOut {
+function capabilities(
+  persona: string | undefined,
+  on: boolean,
+  drafting: boolean,
+): CapabilitiesOut {
   const base = capabilitiesFor(seed, persona ?? "hannah-leclerc");
   return {
     ...base,
-    flags: { ...base.flags, "audits.cockpit": true, "assurance.risk_register": on },
+    flags: {
+      ...base.flags,
+      "audits.cockpit": true,
+      "assurance.risk_register": on,
+      "workpapers.drafting": drafting,
+    },
   };
 }
 
 function frame(
   state: string,
-  options: { persona?: string; variant?: Aud08Variant; on?: boolean; clock?: string } = {},
+  options: {
+    persona?: string;
+    variant?: Aud08Variant;
+    on?: boolean;
+    clock?: string;
+    drafting?: boolean;
+  } = {},
 ): Scenario {
   const on = options.on ?? true;
+  const drafting = options.drafting ?? true;
   const variant = options.variant ?? "a";
   return {
     state,
@@ -51,7 +72,15 @@ function frame(
       return {
         ...E0.handlers,
         ...auditHandlers(seed, "run"),
-        "GET /v1/me/capabilities": ({ persona }) => json(capabilities(persona, on)),
+        "GET /v1/me/capabilities": ({ persona }) => json(capabilities(persona, on, drafting)),
+        // A-04-T26 (g): code's coverage (A-04-T13): 10 of 10 material areas, R8 unaddressed.
+        [`POST ${P}/coverage`]: () =>
+          json({
+            material_areas: 10,
+            covered: 10,
+            unaddressed_codes: ["R8"],
+            wording_run_id: null,
+          }),
         [`GET ${P}/register`]: () => json(aud08Register(variant)),
         [`GET ${P}/linkage`]: () => json(aud08Linkage()),
         [`GET ${P}/{risk_id}`]: () => json(aud08Drawer(variant)),
@@ -67,6 +96,11 @@ export const scenarios = defineScenarios({
   d: frame("d", { variant: "d", clock: AT_D }),
   off: frame("off", { on: false }),
   not_allowed: frame("not_allowed", { persona: "cole-hart" }),
+  c: frame("c"),
+  e: frame("e"),
+  f: frame("f", { variant: "f" }),
+  g: frame("g"),
+  drafting_off: frame("drafting_off", { drafting: false }),
 });
 
 export type Aud08State = keyof typeof scenarios;

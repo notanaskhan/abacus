@@ -1,6 +1,39 @@
 // AUD-08 · Risk assessment register & linkage (A-04-T20): copy verbatim from the handoff spec and
 // its R2 revision.
 export const COPY = {
+  // A-04-T26 (R2 revision): states c, e, f and g.
+  linkage: {
+    title: "Linkage",
+    linked: "Linked",
+    suggested: "Suggested",
+    link: "Link EBP-03…",
+  },
+  revising: "Revising after Internal Control…",
+  drafted: {
+    adopt: "Adopt",
+    edit: "Edit",
+    discard: "Discard",
+    draft: "Draft with agent",
+    tooltip: (n: number): string =>
+      `Suggested by Accrued Agent · ${String(n)} citations · not yet adopted`,
+  },
+  identify: {
+    button: "Identify risks with agent",
+    check: "Check coverage",
+    agentLine: (c: {
+      material_areas: number;
+      covered: number;
+      unaddressed_codes: string[];
+    }): string =>
+      `I compared the register with the trial balance, the plan profile and Internal Control. Every material area has an assessed risk (${String(c.covered)} of ${String(c.material_areas)}). ${c.unaddressed_codes.length === 1 ? "One risk has no response" : `${String(c.unaddressed_codes.length)} risks have no response`}: ${c.unaddressed_codes.join(", ")}.`,
+    codeLine: (c: {
+      material_areas: number;
+      covered: number;
+      unaddressed_codes: string[];
+    }): string =>
+      `Material areas with an assessed risk: ${String(c.covered)} of ${String(c.material_areas)}. Without a response: ${c.unaddressed_codes.join(", ") || "none"}.`,
+    open: (code: string): string => `Open ${code} →`,
+  },
   title: "Risk Assessment",
   version: (n: number): string => `Version ${String(n)}`,
   edit: "Edit",
