@@ -33,7 +33,18 @@ function show(tab: EvaluationTab, onTab = vi.fn()): void {
   );
 }
 
-describe.each(["findings", "misstatements", "review-notes", "fs-disclosure"] as const)(
+// A-06-T18: the Findings tab is AUD-15 now; the other three stay planned until their rows land.
+describe("/audits/$auditId/findings", () => {
+  it("renders the audit bar over AUD-15, not the planned body", async () => {
+    show("findings");
+    await waitFor(() => {
+      expect(document.querySelector("[data-screen='AUD-15']")).not.toBeNull();
+    });
+    expect(document.body.textContent).not.toContain("Not built yet");
+  });
+});
+
+describe.each(["misstatements", "review-notes", "fs-disclosure"] as const)(
   "/audits/$auditId/%s",
   (tab) => {
     it("renders the audit bar and the planned body, Not built yet", async () => {
