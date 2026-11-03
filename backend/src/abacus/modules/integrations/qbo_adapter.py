@@ -16,6 +16,7 @@ from abacus.modules.integrations.adapters import register_adapter, registered_ad
 KEY: Final = "quickbooks_online"
 _HOSTS: Final = (
     "appcenter.intuit.com",
+    "developer.intuit.com",
     "oauth.platform.intuit.com",
     "developer.api.intuit.com",
     "sandbox-quickbooks.api.intuit.com",

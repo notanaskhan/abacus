@@ -1,11 +1,16 @@
 """The QuickBooks Online read connector (A-02-T26; DEC-70, DEC-709; ADR-037, ADR-040).
 
-The first live ledger read. It implements the connector contract and nothing more (CONN-001):
-OAuth 2.0 authorisation-code with PKCE, a rotating refresh token, the TrialBalance report and a
-health read. Network access is only through `kernel.egress.EgressClient` (HTTPS to the registry's
-declared hosts, GET or HEAD, and POST only to the two OAuth paths declared as reads: the token
-exchange and the revoke). It never calls a write endpoint of the client's books; the interception
-harness in `tests/unit/connections/test_qbo_read_only.py` proves the requests it sends.
+The first live ledger read. It implements the connector contract and nothing more (CONN-001): OAuth
+2.0 authorisation-code with PKCE, a rotating refresh token, the TrialBalance report and a health
+read. The OAuth endpoints come from Intuit's discovery document (TASK-3099, DEC-2099), read once a
+day per environment; when it can't be read or names an endpoint off Intuit's hosts, the pinned
+endpoints below are used, and a changed host or path still meets the egress allowlist, which
+refuses it (fail closed). Every response's `intuit_tid` is logged with the endpoint and status, so
+a request can be traced with Intuit support. Network access is only through
+`kernel.egress.EgressClient` (HTTPS to the registry's declared hosts, GET or HEAD, and POST only to
+the two OAuth paths declared as reads: the token exchange and the revoke). It never calls a write
+endpoint of the client's books; the interception harness in
+`tests/unit/connections/test_qbo_connector.py` proves the requests it sends.
 
 Credentials are this connector's own JSON (`access_token`, `refresh_token`, `realm_id`,
 `expires_at`), sealed with the tenant's key at rest by the caller. A refresh that rotates the
@@ -18,13 +23,15 @@ from __future__ import annotations
 
 import base64
 import json
-from collections.abc import Awaitable, Callable, Sequence
+import re
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import ClassVar, Final, cast
 
 from abacus.kernel.clock import system_now
 from abacus.kernel.egress import EgressClient, EgressRefused, EgressResponse
+from abacus.kernel.logging import get_logger
 from abacus.modules.connections.connector import (
     Capabilities,
     Connector,
@@ -49,11 +56,77 @@ API_HOSTS: Final = {
 }
 # The read-only accounting scope; never `payment` or anything that writes.
 SCOPE: Final = "com.intuit.quickbooks.accounting"
+# Intuit's OpenID discovery documents (DEC-2099): the authorisation, token and revoke endpoints.
+DISCOVERY_HOST: Final = "developer.intuit.com"
+DISCOVERY_PATHS: Final = {
+    "sandbox": "/.well-known/openid_sandbox_configuration",
+    "production": "/.well-known/openid_configuration",
+}
+_DISCOVERY_TTL: Final = timedelta(hours=24)
+_INTUIT_DOMAIN: Final = ".intuit.com"
+# HTTPS, a bare host, a plain path: no port, userinfo, query or fragment (CONN-001: no URL lib).
+_ENDPOINT_URL: Final = re.compile(r"https://([a-z0-9.-]+)(/[A-Za-z0-9._~/-]*)?")
+TID_HEADER: Final = "intuit_tid"
+_TID: Final = re.compile(r"[A-Za-z0-9-]{1,64}")
 MEDIA_TYPE: Final = "application/json"
 MINOR_VERSION: Final = "75"
 REALM_SEPARATOR: Final = "~"
 _EARLY_REFRESH: Final = timedelta(minutes=5)
 _REAUTH_ERRORS: Final = frozenset({"invalid_grant"})
+
+_log = get_logger(__name__)
+
+
+@dataclass(frozen=True)
+class Endpoints:
+    authorise: str
+    token: str
+    revoke: str
+
+
+PINNED: Final = Endpoints(
+    AUTHORISE_URL, f"https://{OAUTH_HOST}{OAUTH_PATH}", f"https://{REVOKE_HOST}{REVOKE_PATH}"
+)
+_discovered: dict[str, tuple[Endpoints, datetime]] = {}
+
+
+def reset_discovery() -> None:
+    """Forget the discovered endpoints (tests; a process re-reads them daily anyway)."""
+    _discovered.clear()
+
+
+def _intuit_url(value: object) -> str | None:
+    """An HTTPS URL on an Intuit host with no port or userinfo, else None."""
+    if not isinstance(value, str):
+        return None
+    match = _ENDPOINT_URL.fullmatch(value)
+    return value if match and match.group(1).endswith(_INTUIT_DOMAIN) else None
+
+
+def _endpoints_from(content: bytes) -> Endpoints | None:
+    try:
+        raw: object = json.loads(content)
+    except ValueError:
+        return None
+    if not isinstance(raw, dict):
+        return None
+    body = cast(dict[str, object], raw)
+    found = [
+        _intuit_url(body.get(key))
+        for key in ("authorization_endpoint", "token_endpoint", "revocation_endpoint")
+    ]
+    if any(url is None for url in found):
+        return None
+    authorise, token, revoke = cast(list[str], found)
+    return Endpoints(authorise, token, revoke)
+
+
+def intuit_tid(headers: Mapping[str, str]) -> str | None:
+    """The response's `intuit_tid`, if it has Intuit's shape (header text is untrusted)."""
+    for key, value in headers.items():
+        if key.lower() == TID_HEADER:
+            return value if _TID.fullmatch(value) else None
+    return None
 
 
 @dataclass(frozen=True)
@@ -163,7 +236,7 @@ class QuickBooksOnlineConnector(Connector):
                 ("code_challenge_method", "S256"),
             )
         )
-        return f"{AUTHORISE_URL}?{query}"
+        return f"{(await self._endpoints()).authorise}?{query}"
 
     def _basic(self) -> dict[str, str]:
         token = base64.b64encode(f"{self._app.client_id}:{self._app.client_secret}".encode())
@@ -174,14 +247,52 @@ class QuickBooksOnlineConnector(Connector):
         }
 
     async def _call(
-        self, method: str, url: str, *, headers: dict[str, str], data: dict[str, str] | None = None
+        self,
+        method: str,
+        url: str,
+        *,
+        endpoint: str,
+        headers: dict[str, str],
+        data: dict[str, str] | None = None,
     ) -> EgressResponse:
         try:
-            return await self._client.request(method, url, headers=headers, data=data)
+            response = await self._client.request(method, url, headers=headers, data=data)
         except EgressRefused:
             raise ConnectorError("egress_refused") from None
         except (TimeoutError, OSError):
             raise Unavailable("provider_unavailable") from None
+        # Intuit's support traces a request by its intuit_tid (DEC-2099): never a token or body.
+        fields = {"endpoint": endpoint, "status": response.status_code}
+        tid = intuit_tid(response.headers)
+        if response.status_code >= 400:
+            _log.warning("qbo.response", intuit_tid=tid, **fields)
+        else:
+            _log.info("qbo.response", intuit_tid=tid, **fields)
+        return response
+
+    async def _endpoints(self) -> Endpoints:
+        """Intuit's discovery document, read at most once a day per environment (DEC-2099)."""
+        environment = self._app.environment
+        cached = _discovered.get(environment)
+        if cached is not None and system_now() - cached[1] < _DISCOVERY_TTL:
+            return cached[0]
+        try:
+            response = await self._call(
+                "GET",
+                f"https://{DISCOVERY_HOST}{DISCOVERY_PATHS[environment]}",
+                endpoint="discovery",
+                headers={"Accept": MEDIA_TYPE},
+            )
+        except (ConnectorError, Unavailable):
+            response = None
+        found = (
+            _endpoints_from(response.content) if response and response.status_code == 200 else None
+        )
+        if found is None:
+            _log.warning("qbo.discovery_unread", environment=environment)
+            return PINNED  # not cached: the next call tries the document again
+        _discovered[environment] = (found, system_now())
+        return found
 
     def _tokens(self, response: EgressResponse, realm_id: str) -> QboCredentials:
         if response.status_code == 400:
@@ -212,7 +323,8 @@ class QuickBooksOnlineConnector(Connector):
         realm = _realm(realm_id)
         response = await self._call(
             "POST",
-            f"https://{OAUTH_HOST}{OAUTH_PATH}",
+            (await self._endpoints()).token,
+            endpoint="token",
             headers=self._basic(),
             data={
                 "grant_type": "authorization_code",
@@ -230,7 +342,8 @@ class QuickBooksOnlineConnector(Connector):
             return
         response = await self._call(
             "POST",
-            f"https://{OAUTH_HOST}{OAUTH_PATH}",
+            (await self._endpoints()).token,
+            endpoint="token",
             headers=self._basic(),
             data={"grant_type": "refresh_token", "refresh_token": held.refresh_token},
         )
@@ -249,7 +362,8 @@ class QuickBooksOnlineConnector(Connector):
         held = self._held()
         response = await self._call(
             "POST",
-            f"https://{REVOKE_HOST}{REVOKE_PATH}",
+            (await self._endpoints()).revoke,
+            endpoint="revoke",
             headers=self._basic(),
             data={"token": held.refresh_token},
         )
@@ -263,11 +377,12 @@ class QuickBooksOnlineConnector(Connector):
             raise ConnectorError("token_expired")
         return self._credentials
 
-    async def _get(self, path: str) -> EgressResponse:
+    async def _get(self, path: str, endpoint: str) -> EgressResponse:
         held = self._held()
         response = await self._call(
             "GET",
             f"https://{self._app.api_host}/v3/company/{_realm(held.realm_id)}{path}",
+            endpoint=endpoint,
             headers={"Authorization": f"Bearer {held.access_token}", "Accept": MEDIA_TYPE},
         )
         if response.status_code == 401:
@@ -284,7 +399,8 @@ class QuickBooksOnlineConnector(Connector):
         start, end = period.start.isoformat(), period.end.isoformat()
         response = await self._get(
             f"/reports/TrialBalance?start_date={start}&end_date={end}"
-            f"&accounting_method=Accrual&minorversion={MINOR_VERSION}"
+            f"&accounting_method=Accrual&minorversion={MINOR_VERSION}",
+            "trial_balance",
         )
         request = f"trial_balance {start}..{end}"
         return RawPayload(response.content, MEDIA_TYPE, PROVIDER, system_now(), request)
@@ -297,7 +413,9 @@ class QuickBooksOnlineConnector(Connector):
 
     async def health(self) -> bool:
         held = self._held()
-        await self._get(f"/companyinfo/{_realm(held.realm_id)}?minorversion={MINOR_VERSION}")
+        await self._get(
+            f"/companyinfo/{_realm(held.realm_id)}?minorversion={MINOR_VERSION}", "companyinfo"
+        )
         return True
 
 

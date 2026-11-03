@@ -202,3 +202,115 @@ def test_a02t26_the_pipeline_dispatches_qbo_runs_to_this_normaliser() -> None:
     source = (Path(__file__).parents[3] / "src/abacus/modules/connections/pipeline.py").read_text()
     assert "run.source == QBO_PROVIDER" in source
     assert "parse_qbo_trial_balance(content)" in source
+
+
+# TASK-3099 (DEC-2099): Intuit's discovery document and intuit_tid.
+
+DISCOVERY = {
+    "issuer": "https://oauth.platform.intuit.com/op/v1",
+    "authorization_endpoint": "https://appcenter.intuit.com/connect/oauth2",
+    "token_endpoint": "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer",
+    "revocation_endpoint": "https://developer.api.intuit.com/v2/oauth2/tokens/revoke",
+}
+
+
+@pytest.fixture(autouse=True)
+def _fresh_discovery() -> None:
+    qbo.reset_discovery()
+
+
+@dataclass
+class Discovering(Recorder):
+    """Serves a discovery document and tags each response with an intuit_tid."""
+
+    document: dict[str, object] = field(default_factory=lambda: dict(DISCOVERY))
+
+    async def request(
+        self,
+        method: str,
+        url: str,
+        *,
+        headers: Mapping[str, str] | None = None,
+        data: Mapping[str, str] | None = None,
+    ) -> EgressResponse:
+        if qbo.DISCOVERY_HOST in url:
+            self.sent.append((method.upper(), url))
+            return EgressResponse(
+                200, {"intuit_tid": "1-abc-2"}, json.dumps(self.document).encode()
+            )
+        response = await super().request(method, url, headers=headers, data=data)
+        return EgressResponse(response.status_code, {"Intuit_TID": "9-def-8"}, response.content)
+
+
+async def test_dec2083_the_oauth_endpoints_come_from_the_discovery_document() -> None:
+    recorder = Discovering()
+    recorder.document["authorization_endpoint"] = "https://appcenter.intuit.com/connect/oauth2/v2"
+    connector = _connector(recorder, _held(timedelta(minutes=1)))
+    url = await connector.authorise_url("s-1", "https://app.example.test/cb", code_challenge="c1")
+    assert url.startswith("https://appcenter.intuit.com/connect/oauth2/v2?")
+    await connector.refresh()
+    await connector.revoke()
+    sandbox = f"https://{qbo.DISCOVERY_HOST}{qbo.DISCOVERY_PATHS['sandbox']}"
+    assert [u for _m, u in recorder.sent if qbo.DISCOVERY_HOST in u] == [sandbox]  # read once
+    assert ("POST", DISCOVERY["token_endpoint"]) in recorder.sent
+    assert ("POST", DISCOVERY["revocation_endpoint"]) in recorder.sent
+
+
+async def test_dec2083_an_unreadable_document_falls_back_to_the_pinned_endpoints() -> None:
+    recorder = Recorder()  # answers the discovery GET with a 404
+    connector = _connector(recorder)
+    url = await connector.authorise_url("s-1", "https://app.example.test/cb", code_challenge="c1")
+    assert url.startswith(qbo.AUTHORISE_URL + "?")
+    await connector.authorise_url("s-2", "https://app.example.test/cb", code_challenge="c1")
+    assert sum(qbo.DISCOVERY_HOST in u for _m, u in recorder.sent) == 2  # a miss isn't cached
+
+
+@pytest.mark.parametrize(
+    "token_endpoint",
+    [
+        "http://oauth.platform.intuit.com/oauth2/v1/tokens/bearer",
+        "https://oauth.platform.intuit.com.evil.test/oauth2/v1/tokens/bearer",
+        "https://attacker.test/token",
+        "https://oauth.platform.intuit.com:8443/oauth2/v1/tokens/bearer",
+        "https://user@oauth.platform.intuit.com/oauth2/v1/tokens/bearer",
+        42,
+    ],
+)
+async def test_dec2083_an_endpoint_off_intuit_https_is_not_trusted(token_endpoint: object) -> None:
+    recorder = Discovering()
+    recorder.document["token_endpoint"] = token_endpoint
+    connector = _connector(recorder, _held(timedelta(minutes=1)))
+    await connector.refresh()
+    assert ("POST", qbo.PINNED.token) in recorder.sent
+
+
+async def test_dec2083_every_response_logs_its_intuit_tid_and_nothing_else(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    connector = _connector(Discovering(), _held())
+    await connector.authorise_url("s-1", "https://app.example.test/cb", code_challenge="c1")
+    await connector.health()
+    lines = [json.loads(x) for x in capsys.readouterr().out.splitlines() if x.startswith("{")]
+    events = [e for e in lines if e.get("event") == "qbo.response"]
+    assert {(e["endpoint"], e["intuit_tid"]) for e in events} == {
+        ("discovery", "1-abc-2"),
+        ("companyinfo", "9-def-8"),
+    }
+    text = json.dumps(lines)
+    assert "at-1" not in text and "rt-1" not in text and REALM not in text
+
+
+def test_dec2083_a_hostile_intuit_tid_is_dropped() -> None:
+    assert qbo.intuit_tid({"intuit_tid": "abc-123"}) == "abc-123"
+    assert qbo.intuit_tid({"intuit_tid": "abc\nevil=1"}) is None
+    assert qbo.intuit_tid({"intuit_tid": "x" * 65}) is None
+    assert qbo.intuit_tid({}) is None
+
+
+async def test_dec2083_the_discovery_host_is_declared_for_this_connector_only() -> None:
+    from abacus.modules.integrations.api import egress_hosts_by_connector
+
+    hosts = egress_hosts_by_connector()
+    assert qbo.DISCOVERY_HOST in hosts[qbo.PROVIDER]
+    assert all(qbo.DISCOVERY_HOST not in h for k, h in hosts.items() if k != qbo.PROVIDER)
+    assert (qbo.DISCOVERY_HOST, qbo.DISCOVERY_PATHS["sandbox"]) not in egress_read_posts()
