@@ -72,13 +72,18 @@ from abacus.modules.assurance.providers import register as register_a01_provider
 from abacus.modules.assurance.release import RELEASE_MODE_SETTING, g8
 from abacus.modules.assurance.review_gates import register_review_gates
 from abacus.modules.assurance.risks import AUDIT_KINDS as RISK_KINDS
+from abacus.modules.assurance.risks import Edit as RiskEdit
 from abacus.modules.assurance.risks import (
+    NewRisk,
     apply_risk_suggestion,
     presumed_preparer,
     register_approval_kind,
     risk_engagement,
 )
 from abacus.modules.assurance.risks import audit_owners as risk_owners
+from abacus.modules.assurance.risks import create as create_risk
+from abacus.modules.assurance.risks import edit as edit_risk
+from abacus.modules.assurance.risks import request_approval as request_risk_approval
 from abacus.modules.assurance.routes import router
 from abacus.modules.assurance.run_badges import run_badges
 from abacus.modules.assurance.sections import (
@@ -215,11 +220,15 @@ __all__ = [
     "IndexTag",
     "MappingConfirmIn",
     "MappingRunIn",
+    "NewRisk",  # A-04-T28: the planning slice records the register through the service
+    "RiskEdit",
     "RouteRequest",
     "RunSummary",
     "SectionState",
     "adopt_trial_balance",
     "completion_router",
+    "create_risk",
+    "edit_risk",
     "exception_route_available",
     "follows_gate",
     "g4_facts",
@@ -237,6 +246,7 @@ __all__ = [
     "register_index_tag",
     "register_materiality_dependents",
     "register_run_summary",
+    "request_risk_approval",
     "router",
     "update_profile",
 ]

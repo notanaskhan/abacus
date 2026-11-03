@@ -102,16 +102,23 @@ from abacus.kernel.temporal import temporal_client
 from abacus.kernel.uow import Target, uow
 from abacus.modules.assurance.api import (
     PHASE_GATES,
+    ExceptionRow,
     MappingConfirmIn,
     MappingRunIn,
+    NewRisk,
+    RiskEdit,
     adopt_trial_balance,
+    create_risk,
+    edit_risk,
     follows_gate,
     import_grouping_csv,
     mapping_live,
     propose_materiality,
     publish_grouping_version,
     reassess_materiality,
+    record_exceptions,
     record_phase,
+    request_risk_approval,
     update_profile,
 )
 from abacus.modules.communications.api import (
@@ -259,6 +266,7 @@ from abacus.modules.sampling.api import (
 from abacus.modules.sampling.api import approve as approve_sample
 from abacus.modules.sampling.api import draw as draw_sample
 from abacus.modules.tax.api import import_engine_file, share_k1_internal
+from abacus.modules.workpapers.api import create_workpaper
 from abacus_tools import deploy_lock
 from abacus_tools.db_connect import connect as connect_db
 from abacus_tools.fakes.identity import ISSUER
@@ -387,6 +395,21 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.people import (
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.pilot import NEEDS as PILOT_NEEDS
 from abacus_tools.synthetic.scenarios.brightwater_hale.pilot import SLICE as PILOT_SLICE
+from abacus_tools.synthetic.scenarios.brightwater_hale.planning_slice import (
+    EXCEPTIONS as PLANNING_EXCEPTIONS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.planning_slice import (
+    IC_PAPER as PLANNING_IC_PAPER,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.planning_slice import (
+    NEEDS as PLANNING_NEEDS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.planning_slice import (
+    RISKS as PLANNING_RISKS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.planning_slice import (
+    SLICE as PLANNING_SLICE,
+)
 from abacus_tools.synthetic.scenarios.brightwater_hale.portal import (
     HOST_LABEL,
     INVITATION_BY_NAME,
@@ -423,6 +446,9 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.report_templates import (
     bundle as report_template_bundle,
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.review_slice import (
+    BENCHMARK_KEY as REVIEW_BENCHMARK_KEY,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.review_slice import (
     ISSUE_BLOCKS as REVIEW_ISSUE_BLOCKS,
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.review_slice import (
@@ -433,6 +459,15 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.review_slice import (
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.review_slice import (
     NORTHWIND_TB_LABEL,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.review_slice import (
+    RATE_OPTION as REVIEW_RATE_OPTION,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.review_slice import (
+    RATE_PCT as REVIEW_RATE_PCT,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.review_slice import (
+    RATIONALE as REVIEW_RATIONALE,
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.review_slice import (
     SLICE as REVIEW_SLICE,
@@ -1779,6 +1814,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     TAX_CONTENT_SLICE: TAX_CONTENT_NEEDS,  # T-02-T23: K-1 sets, the organizer, questions
     PILOT_SLICE: PILOT_NEEDS,  # TASK-2470: PF-X1's enrolments name the Feld return and Northwind
     REVIEW_SLICE: REVIEW_NEEDS,  # P-04-T36: the review grammar's objects on registered owners
+    PLANNING_SLICE: PLANNING_NEEDS,  # A-04-T28: Northwind's planning day; G4 met at 4:40 PM
 }
 
 
@@ -4117,6 +4153,141 @@ async def _materiality_decided(conn: asyncpg.Connection, _: Scenario, event: Eve
     )
 
 
+async def _northwind_tb_basis(conn: asyncpg.Connection, s: Scenario, event: Event) -> None:
+    """A-04-T28: the trial balance of record, unless the review slice already adopted it."""
+    engagement = (await _northwind_work_item(conn))[0]
+    if await tenant_value(
+        conn, TENANT, "SELECT id FROM trial_balances WHERE engagement_id = $1", engagement
+    ):
+        return
+    await _northwind_tb_recorded(conn, s, event)
+    await _northwind_tb_adopted(conn, s, event)
+
+
+async def _northwind_materiality_basis(
+    conn: asyncpg.Connection, s: Scenario, event: Event
+) -> None:
+    """A-04-T28: Hannah proposes planning materiality, unless a card or a version exists."""
+    item = (await _northwind_work_item(conn))[1]
+    if await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM decision_cards WHERE work_item_id = $1 AND kind = 'planning_materiality'",
+        item,
+    ):
+        return
+    data = {"benchmark": REVIEW_BENCHMARK_KEY, "rate_pct": REVIEW_RATE_PCT}
+    await _materiality_proposed(conn, s, replace(event, data={**event.data, **data}))
+
+
+async def _northwind_materiality_basis_decided(
+    conn: asyncpg.Connection, s: Scenario, event: Event
+) -> None:
+    """A-04-T28: Margaret decides 1.5% of net assets, unless the card is already decided."""
+    item = (await _northwind_work_item(conn))[1]
+    if not await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM decision_cards WHERE work_item_id = $1 "
+        "AND kind = 'planning_materiality' AND status = 'awaiting_role'",
+        item,
+    ):
+        return
+    data = {"option_key": REVIEW_RATE_OPTION, "rationale": REVIEW_RATIONALE}
+    await _materiality_decided(conn, s, replace(event, data={**event.data, **data}))
+
+
+async def _northwind_risks(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """AUD-08 a (A-04-T28): Hannah records R1 to R10 in register order, RMM by code from BH's
+    matrix; R3 is proposed significant and R5's presumed fraud risk carries a proposed rebuttal."""
+    ctx = await _staff_context(conn, event)
+    engagement = (await _northwind_work_item(conn))[0]
+    for r in PLANNING_RISKS:
+        row = await create_risk(
+            ctx,
+            engagement,
+            NewRisk(
+                level=cast(Literal["financial_statement", "assertion"], r.level),
+                area_label=r.area,
+                assertions=r.assertions,
+                inherent_risk=cast(Literal["low", "moderate", "high"], r.inherent),
+                control_risk="max",
+                presumption_kind=cast(
+                    Literal["none", "management_override", "revenue_recognition"], r.presumption
+                ),
+                inherent_factors=(),
+                rationale=None,
+            ),
+        )
+        if row.code != r.code:
+            raise LookupError(f"register order drifted: expected {r.code}, got {row.code}")
+        if r.proposal == "proposed":
+            change = RiskEdit(significance="proposed")
+        elif r.proposal == "rebuttal_proposed":
+            change = RiskEdit(fraud="rebuttal_proposed")
+        else:
+            continue
+        await edit_risk(
+            ctx, engagement, row.id, change, expected_version=row.version_no, reason=r.area
+        )
+
+
+async def _northwind_ic(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """AUD-09 a (A-04-T28): the internal-control paper and its seven exceptions, as Hannah."""
+    ctx = await _staff_context(conn, event)
+    engagement = (await _northwind_work_item(conn))[0]
+    code, title = PLANNING_IC_PAPER
+    paper = await create_workpaper(ctx, engagement, code, title, "Internal control")
+    await record_exceptions(
+        ctx,
+        engagement,
+        paper,
+        [
+            ExceptionRow(
+                sheet_row=x.row,
+                matter=x.matter,
+                description=x.description,
+                coso_component=x.coso,
+                proposed_severity=cast(
+                    Literal["deficiency", "significant_deficiency", "material_weakness"] | None,
+                    x.severity,
+                ),
+            )
+            for x in PLANNING_EXCEPTIONS
+        ],
+    )
+
+
+async def _northwind_risks_routed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """AUD-08 b: one `significant_risk` card for R3 and R5's rebuttal, reserved to Margaret."""
+    await request_risk_approval(
+        await _staff_context(conn, event), (await _northwind_work_item(conn))[0]
+    )
+
+
+async def _northwind_risks_approved(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """AUD-08 d: Margaret approves the register at 4:40 PM; with materiality decided, G4 is met."""
+    item = (await _northwind_work_item(conn))[1]
+    card = await tenant_row(
+        conn,
+        TENANT,
+        "SELECT id, version_no FROM decision_cards WHERE work_item_id = $1 "
+        "AND kind = 'significant_risk' AND status = 'awaiting_role' "
+        "ORDER BY created_at DESC LIMIT 1",
+        item,
+    )
+    if card is None:
+        raise LookupError("no significant_risk card awaits Margaret on Northwind")
+    await decide_card(
+        await _staff_context(conn, event),
+        cast(UUID, card["id"]),
+        option_key="approve",
+        factors=(),
+        rationale=str(event.data["rationale"]),
+        seen_version=int(cast(int, card["version_no"])),
+    )
+
+
 async def _ridgeline_issue_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     """TXP-10: one of Ridgeline's 11 open issues, blocking final approval (SHL-12 h)."""
     found = next(i for i in REVIEW_ISSUES if i.key == event.data["issue"])
@@ -4280,6 +4451,13 @@ HANDLERS: Final[dict[str, Handler]] = {
     "review.northwind_tb_signed": _northwind_tb_signed,
     "review.northwind_note_raised": _northwind_note_raised,
     "assurance.materiality_proposed": _materiality_proposed,
+    "assurance.northwind_tb_basis": _northwind_tb_basis,  # A-04-T28
+    "assurance.northwind_materiality_basis": _northwind_materiality_basis,
+    "review.northwind_materiality_basis_decided": _northwind_materiality_basis_decided,
+    "assurance.northwind_risks": _northwind_risks,
+    "assurance.northwind_ic": _northwind_ic,
+    "assurance.northwind_risks_routed": _northwind_risks_routed,
+    "review.northwind_risks_approved": _northwind_risks_approved,
     "assurance.materiality_reassessed": _materiality_reassessed,
     "review.materiality_decided": _materiality_decided,
     "review.ridgeline_issue_created": _ridgeline_issue_created,

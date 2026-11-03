@@ -729,7 +729,7 @@ class ControlExceptionOut(BaseModel):
     proposed_severity: Annotated[Proposable | None, classified("internal")]
     concluded_severity: Annotated[DeficiencySeverityStatus | None, classified("internal")]
     disposition: Annotated[ControlExceptionDispositionStatus, classified("internal")]
-    coso_component: Annotated[CosoComponent, classified("internal")]
+    coso_component: Annotated[CosoComponent | None, classified("internal")]  # 0663
     misstatement_candidate_amount: Annotated[Decimal | None, classified("confidential")]
     routed_kind: Annotated[Literal["finding", "misstatement"] | None, classified("internal")]
     routed_ref: Annotated[UUID | None, classified("internal")]
