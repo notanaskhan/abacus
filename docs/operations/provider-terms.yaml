@@ -22,3 +22,34 @@
 #   approved_on: YYYY-MM-DD
 #   review_by: YYYY-MM-DD               # at most 12 months after approved_on
 entries: []
+
+# Register v2 (P-11-T21, DEC-2217): document services beside the model routes. A document service
+# (OCR, form extraction) carries client documents only while an **approved** entry here covers it
+# (`covering('textract', on)`); a `draft` entry covers nothing. Each also records the provider's
+# AI-services opt-out (no use of content to improve the service) and the §7216 basis on which TRI
+# may be sent (`tri_basis`, counsel's words; null: TRI may not be sent).
+#   route: textract                     # the only eligible document service (ADR-153, P-32)
+#   status: draft | approved
+#   ai_services_opt_out: "..."          # the evidence that the org-level opt-out is in force
+#   tri_basis: "..." | null
+#   (then every model-route field above; approved_on and the approvals stay null in a draft)
+document_services:
+  - route: textract
+    status: draft
+    provider: Amazon Web Services
+    documents:
+      - {title: "AWS Service Terms (Amazon Textract)", version: "to confirm at signing", accepted_on: 2026-11-03}
+    training: none
+    retention:
+      beyond_processing: false
+      exceptions: []
+    region: us-east-2
+    subprocessors: []
+    breach_notice: "AWS Customer Agreement security incident notification"
+    ai_services_opt_out: "AWS Organizations AI services opt-out policy, to be attached at approval"
+    tri_basis: null
+    second_approver: counsel
+    second_approved_on: null
+    approved_by: null
+    approved_on: null
+    review_by: null
