@@ -8,13 +8,15 @@ import { useQuery } from "@tanstack/react-query";
 import type { JSX } from "react";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { AuditBar, isNotFound, useAuditCockpit } from "../../domain/audits";
+import { FindingsRegister } from "../AUD-15";
 import { COPY } from "./copy";
 
 // The Evaluation chrome (A-06-T12; A-06 §5, chapter 04 §2.1): the audit bar, then the Evaluation
 // tabs (Findings · Misstatements · Review notes · Sign-offs, 50 px) with counts from the server —
 // the findings and misstatements list totals and the engagement's open review notes — linking
 // `/audits/$auditId/findings`, `/misstatements` and `/review-notes`; `/fs-disclosure` (AUD-20) has
-// the bar alone. The four screens (AUD-15, AUD-16, AUD-17, AUD-20) land with their own rows: until
+// the bar alone. The four screens (AUD-15, AUD-16, AUD-17, AUD-20) land with their own rows (AUD-15
+// with A-06-T18): until
 // then each body is the planned target, "Not built yet" in dev, fixture and gallery builds and
 // nothing in production.
 
@@ -105,7 +107,8 @@ export function EvaluationPage({
           <>
             <AuditBar cockpit={cockpit.data} {...(onBack === undefined ? {} : { onBack })} />
             {tab !== "fs-disclosure" && <EvaluationTabs tab={tab} counts={counts} onTab={onTab} />}
-            {PLANNED_VISIBLE && (
+            {tab === "findings" && <FindingsRegister auditId={auditId} />}
+            {tab !== "findings" && PLANNED_VISIBLE && (
               <EmptyState icon="clock" title={COPY.planned}>
                 {COPY.plannedBody(SCREEN[tab])}
               </EmptyState>
