@@ -19,7 +19,7 @@ its task scope.
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Final, cast
 
 from abacus.modules.agents.api import (
     ModeDocument,
@@ -65,6 +65,14 @@ async def _documents_and_waits(
     return ModeInputs(tuple(documents), tuple(waiting))
 
 
+async def documents_for_areas(
+    actor: AuthContext, paper: SourcePaper, areas: frozenset[str]
+) -> ModeInputs:
+    """A-05-T21: the fulfilled requests in these areas as documents (masked), and the open ones
+    as waiting inputs, for another mode's mapping."""
+    return await _documents_and_waits(actor, paper, areas)
+
+
 async def gap_inputs(actor: AuthContext, paper: SourcePaper) -> ModeInputs:
     """AUD-04's Service Organizations section: SOC reports and bridge letters, and the requests
     still open for them."""
@@ -94,7 +102,11 @@ RISK_COLUMNS: Final = (
 def _text(value: object) -> dict[str, object] | None:
     if value is None or value == "" or value == []:
         return None
-    shown = ",".join(str(v) for v in value) if isinstance(value, list) else str(value)
+    shown = (
+        ",".join(str(v) for v in cast(list[object], value))
+        if isinstance(value, list)
+        else str(value)
+    )
     return {"t": "text", "v": shown}
 
 

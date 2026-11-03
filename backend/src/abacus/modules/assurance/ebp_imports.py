@@ -57,8 +57,10 @@ Kind = Literal[
     "account_balances",
     "sdba_detail",
     "trust_receipts",
+    "hr_roster",
 ]
 AUDIT_TARGET: Final = "ebp_source_import"
+PARTICIPANT_KINDS: Final = frozenset({"census", "hr_roster"})  # rows written to ebp_participants
 MAX_ROWS: Final = 20_000
 ZERO: Final = Decimal("0.00")
 CENT: Final = Decimal("0.01")
@@ -76,6 +78,15 @@ class KindSpec:
 
 
 SPECS: Final[Mapping[str, KindSpec]] = {
+    # A-05-T21 (DEC-2070): the HR roster, read like the census and sealed the same way, so code
+    # compares SSN and date of birth on fingerprints and no model reads either.
+    "hr_roster": KindSpec(
+        key="participant_key",
+        required=frozenset({"participant_key", "name", "hire_on"}),
+        optional=frozenset({"ssn", "dob", "status", "termination_on"}),
+        dates=frozenset({"dob", "hire_on", "termination_on"}),
+        foots=False,
+    ),
     "census": KindSpec(
         key="participant_key",
         required=frozenset({"participant_key", "name", "hire_on", "status", "compensation"}),
@@ -288,7 +299,7 @@ def parse(
         if len(rows) > MAX_ROWS:
             return _refused(kind, "import_too_large", {"limit": MAX_ROWS})
     keys = [r[spec.key] for r in rows]
-    if kind == "census" and len(set(keys)) != len(keys):
+    if kind in PARTICIPANT_KINDS and len(set(keys)) != len(keys):
         return _refused(kind, "import_duplicate_key", {"column": spec.key})
     totals = {
         a: sum((cast(Decimal, r[a]) for r in rows if r.get(a) is not None), ZERO).quantize(CENT)
@@ -445,7 +456,7 @@ async def import_source(
                 },
             )
         ).one()
-        if refusal is None and kind == "census":
+        if refusal is None and kind in PARTICIPANT_KINDS:
             for r in parsed.rows:
                 await tx.session.execute(
                     _INSERT_PARTICIPANT,
@@ -479,7 +490,11 @@ async def _participant(
 ) -> dict[str, object]:
     key = cast(str, r["participant_key"])
     sealed = await seal_pii(
-        ctx.tenant_id, import_id, key, cast(str | None, r.get("ssn")), cast(date | None, r["dob"])
+        ctx.tenant_id,
+        import_id,
+        key,
+        cast(str | None, r.get("ssn")),
+        cast(date | None, r.get("dob")),
     )
     return {
         "tenant": ctx.tenant_id,
@@ -495,7 +510,7 @@ async def _participant(
         "dob_fp": sealed.dob_fp,
         "hire_on": r.get("hire_on"),
         "termination_on": r.get("termination_on"),
-        "status": r["status"],
+        "status": r.get("status") or "active",
         "compensation": r.get("compensation"),
         "election": r.get("deferral_election_pct"),
         "years": r.get("years_of_service"),

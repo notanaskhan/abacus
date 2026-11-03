@@ -13,7 +13,8 @@ EVAL_SUITES: dict[str, tuple[str, int]] = {   'decisions.recommender': ('decisio
     'requests.guidance_drafter': ('requests.guidance_draft@v1', 1),
     'workpapers.section_drafter': ('workpapers.section_draft.gap@v1', 1)}
 EVAL_SUITE_MODES: dict[str, dict[str, int]] = {   'evidence.matcher': {'evidence.inbox_match@v2': 1},
-    'workpapers.section_drafter': {   'workpapers.section_draft.risk@v1': 1,
+    'workpapers.section_drafter': {   'workpapers.section_draft.ebp_attribute@v1': 1,
+                                      'workpapers.section_draft.risk@v1': 1,
                                       'workpapers.section_draft.risk_narrative@v1': 1,
                                       'workpapers.section_draft@v1': 1,
                                       'workpapers.section_draft_ebp_provisions@v1': 1}}

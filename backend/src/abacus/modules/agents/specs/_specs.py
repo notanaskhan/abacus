@@ -205,7 +205,7 @@ SPECS: dict[str, dict[str, object]] = {   'decisions.recommender': {   'autonomy
                                       'modes': {   'ebp_attribute': {   'input_schema': 'SectionDraftInput',
                                                                         'max_cost_usd': '0.25',
                                                                         'output_schema': 'SectionDraft',
-                                                                        'prompt': 'workpapers.section_draft@v1'},
+                                                                        'prompt': 'workpapers.section_draft.ebp_attribute@v1'},
                                                    'ebp_form5500': {   'input_schema': 'SectionDraftInput',
                                                                        'max_cost_usd': '0.25',
                                                                        'output_schema': 'SectionDraft',
@@ -260,6 +260,6 @@ SPECS: dict[str, dict[str, object]] = {   'decisions.recommender': {   'autonomy
                                       'tier': 'medium',
                                       'tools': [],
                                       'untrusted_inputs': ['cells', 'documents'],
-                                      'version': 6,
+                                      'version': 7,
                                       'work_class': 'background'}}
 # fmt: on
