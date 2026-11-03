@@ -4,7 +4,7 @@ title: P-04-T36 Brightwater Hale review-grammar scenario events through service 
 spec: SPEC-000  # P-04-T36 row; P-04 §2, §3
 acceptance_criteria: [AC-1]
 risk_zone: amber
-status: in-review
+status: done
 epic: P-04
 plan_key: P-04-T36
 branch: s24-p04-t36 (on s24-a04-t12)
