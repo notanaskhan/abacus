@@ -60,3 +60,16 @@ P-04 §8, ADR-089. Recorded 2026-11-03 (DEC-2221). The epic named five flags; tw
 The epic's "outside Jan 1 to Apr 20, 2028" assumed flags created in 2027. Today's flags were
 created in 2026, so a renewal reaches at most 180 days (DEC-137) and lands before 2028. May 1,
 2027 is outside both freeze windows.
+
+## The A-04 planning flags (A-04-T40)
+
+A-04 §8, ADR-089. Recorded 2026-11-03 (DEC-2226). Each expires Apr 28–29, 2027 under DEC-137: none
+inside the Jan 1 – Apr 20, 2028 freeze. The rollout is `docs/runbooks/audit-planning-flip.md`.
+
+| Flag | Expires | Action | Condition |
+|---|---|---|---|
+| `assurance.materiality` | 2027-04-29 | **Renew** to Dec 30, 2027 before expiry | First real-firm flip Tue Oct 26, 2027; retire in the Dec 14 train once on for every live firm |
+| `assurance.risk_register` | 2027-04-29 | **Renew** to Dec 30, 2027 | Flip Tue Nov 9; retire Dec 14 |
+| `workpapers.core`, `workpapers.drafting` | 2027-04-29 | **Renew** to Dec 30, 2027 | Flip Tue Nov 9; retire Dec 14 |
+| `assurance.internal_control` | 2027-04-29 | **Renew** to Dec 30, 2027 | Flip Tue Nov 23 (in the window); retire after the season if AUD-10 stayed dark |
+| `ledger.tb_mapping` | 2027-04-28 | **Renew** to Dec 30, 2027 | Flipped Oct 19 (Q-04-T092); retire Dec 14 |
