@@ -603,12 +603,12 @@ class FraudSessionOut(BaseModel):
 
     id: Annotated[UUID, classified("internal")]
     held_at: Annotated[datetime | None, classified("internal")]
-    medium: Annotated[Literal["in_person", "video", "call"] | None, classified("internal")]
+    medium: Annotated[Literal["in_person", "video", "hybrid"] | None, classified("internal")]
     led_by: Annotated[AttendeeOut | None, classified("internal")]
     attendees: Annotated[list[AttendeeOut], classified("internal")]
     excluded: Annotated[list[ExclusionOut], classified("internal")]
     discussion: Annotated[list[DiscussionOut], classified("confidential")]
-    minutes_text: Annotated[str | None, Field(max_length=50_000), classified("confidential")]
+    minutes_text: Annotated[str | None, Field(max_length=20_000), classified("confidential")]
     minutes_hash: Annotated[str | None, Field(pattern=r"^[0-9a-f]{64}$"), classified("internal")]
     minutes_status: Annotated[FraudMinutesStatus, classified("internal")]
     minutes_source: Annotated[
@@ -632,7 +632,9 @@ class FraudSessionIn(BaseModel):
 
     expected_version: Annotated[int, Field(ge=0), classified("internal")]
     held_at: Annotated[datetime | None, classified("internal")] = None
-    medium: Annotated[Literal["in_person", "video", "call"] | None, classified("internal")] = None
+    medium: Annotated[Literal["in_person", "video", "hybrid"] | None, classified("internal")] = (
+        None
+    )
     led_by_user_id: Annotated[UUID | None, classified("internal")] = None
     attendee_user_ids: Annotated[list[UUID], Field(max_length=50), classified("internal")] = []
     excluded: Annotated[list[ExclusionIn], Field(max_length=20), classified("internal")] = []
@@ -645,7 +647,7 @@ class MinutesIn(BaseModel):
 
     expected_version: Annotated[int, Field(ge=1), classified("internal")]
     text: Annotated[
-        str | None, Field(min_length=1, max_length=50_000), classified("confidential")
+        str | None, Field(min_length=1, max_length=20_000), classified("confidential")
     ] = None
     adopt_suggestion_id: Annotated[UUID | None, classified("internal")] = None
 
@@ -661,7 +663,8 @@ class FraudInquiryOut(BaseModel):
 
     id: Annotated[UUID, classified("internal")]
     respondent_name: Annotated[str, classified("confidential")]
-    questionnaire_id: Annotated[UUID, classified("internal")]
+    # None for a governance-body inquiry, recorded with its reference (A-04-T19, DEC-2055).
+    questionnaire_id: Annotated[UUID | None, classified("internal")]
     sent: Annotated[bool, classified("internal")]  # a draft until a person sends it (AC2.5)
     status: Annotated[FraudInquiryStatus, classified("internal")]
     answered_at: Annotated[datetime | None, classified("internal")]
@@ -671,10 +674,13 @@ class FraudInquiryIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     respondent_contact_id: Annotated[UUID | None, classified("internal")] = None
-    governance_body_ref: Annotated[str | None, Field(max_length=128), classified("internal")] = (
+    governance_body_ref: Annotated[str | None, Field(max_length=120), classified("internal")] = (
         None
     )
     questionnaire_template_id: Annotated[UUID, classified("internal")]
+    title: Annotated[str, Field(min_length=1, max_length=200), classified("internal")] = (
+        "Fraud inquiry"
+    )
 
 
 # --- internal control and exceptions (AUD-09; T25, T31) ------------------------------------------
@@ -1465,13 +1471,60 @@ async def risk_draft_route(
     _not_yet()
 
 
+def _session_out(found: object) -> FraudSessionOut:
+    from abacus.modules.assurance import fraud_brainstorm as fb
+
+    session = cast(fb.Session, found)
+
+    def attendee(p: fb.Attendee) -> AttendeeOut:
+        return AttendeeOut(user_id=p.user_id, name=p.name, initials=p.initials)
+
+    return FraudSessionOut(
+        id=session.id,
+        held_at=session.held_at,
+        medium=session.medium,
+        led_by=None if session.led_by is None else attendee(session.led_by),
+        attendees=[attendee(p) for p in session.attendees],
+        excluded=[
+            ExclusionOut(user_id=e.user_id, name=e.name, reason=e.reason) for e in session.excluded
+        ],
+        discussion=[
+            DiscussionOut(step_key=d.step_key, summary=d.summary) for d in session.discussion
+        ],
+        minutes_text=session.minutes_text,
+        minutes_hash=session.minutes_hash,
+        minutes_status=session.minutes_status,
+        minutes_source=session.minutes_source,
+        approved_by_name=session.approved_by_name,
+        approved_at=session.approved_at,
+        row_version=max(session.row_version, 1),
+        allowed_actions=cast(Actions, list(session.allowed_actions)),
+    )
+
+
+def _inquiry_out(found: object) -> FraudInquiryOut:
+    from abacus.modules.assurance import fraud_brainstorm as fb
+
+    i = cast(fb.Inquiry, found)
+    return FraudInquiryOut(
+        id=i.id,
+        respondent_name=i.respondent_name,
+        questionnaire_id=i.questionnaire_id,
+        sent=i.sent,
+        status=i.status,
+        answered_at=i.answered_at,
+    )
+
+
 @router.get(
     "/fraud-brainstorm", action="fraud_session.read", response_model=FraudSessionOut, errors=(501,)
 )
 async def fraud_session_route(engagement_id: UUID, ctx: Ctx) -> FraudSessionOut:
     """The session: date, medium, leader, attendees and exclusions with reasons (AC2.4; T19)."""
     await _gate(ctx, engagement_id, "fraud_session.read", _RR)
-    _not_yet()
+    from abacus.modules.assurance import fraud_brainstorm as fb
+
+    return _session_out(await fb.session_view(ctx, engagement_id))
 
 
 @router.put(
@@ -1485,7 +1538,17 @@ async def fraud_session_edit_route(
 ) -> FraudSessionOut:
     """Record the session; audited `fraud_session.recorded` (T19)."""
     await _gate(ctx, engagement_id, "fraud_session.edit", _RR)
-    _not_yet()
+    from abacus.modules.assurance import fraud_brainstorm as fb
+
+    edit = fb.SessionEdit(
+        expected_version=body.expected_version,
+        held_at=body.held_at,
+        medium=body.medium,
+        led_by_user_id=body.led_by_user_id,
+        attendee_user_ids=tuple(body.attendee_user_ids),
+        excluded=tuple((e.user_id, e.reason) for e in body.excluded),
+    )
+    return _session_out(await fb.record_session(ctx, engagement_id, edit))
 
 
 @router.put(
@@ -1497,9 +1560,19 @@ async def fraud_session_edit_route(
 async def fraud_minutes_route(
     engagement_id: UUID, body: MinutesIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> FraudSessionOut:
-    """Write the minutes or adopt a suggestion; either resets approval (T19)."""
+    """Write the minutes; a suggestion is adopted through C3's suggestion adopt (422
+    `adopt_through_suggestion`). Either resets approval (T19)."""
     await _gate(ctx, engagement_id, "fraud_session.edit", _RR)
-    _not_yet()
+    from abacus.modules.assurance import fraud_brainstorm as fb
+
+    found = await fb.record_minutes(
+        ctx,
+        engagement_id,
+        expected_version=body.expected_version,
+        minutes=body.text,
+        adopt_suggestion_id=body.adopt_suggestion_id,
+    )
+    return _session_out(found)
 
 
 @router.post(
@@ -1514,7 +1587,9 @@ async def fraud_minutes_approve_route(
     """The EP approves the minutes at their hash: matrix, `require_live_human`, the DB CHECK,
     FRAUD-MINUTES-001 and the audit event; 409 `minutes_changed` (AC2.4; T19)."""
     await _gate(ctx, engagement_id, "fraud_minutes.approve", _RR)
-    _not_yet()
+    from abacus.modules.assurance import fraud_brainstorm as fb
+
+    return _session_out(await fb.approve_minutes(ctx, engagement_id, body.minutes_hash))
 
 
 @router.get(
@@ -1526,7 +1601,10 @@ async def fraud_minutes_approve_route(
 async def fraud_inquiries_route(engagement_id: UUID, ctx: Ctx) -> ListPage[FraudInquiryOut]:
     """Inquiries with their computed status (T19)."""
     await _gate(ctx, engagement_id, "fraud_session.read", _RR)
-    _not_yet()
+    from abacus.modules.assurance import fraud_brainstorm as fb
+
+    rows = [_inquiry_out(i) for i in await fb.inquiries(ctx, engagement_id)]
+    return ListPage(items=rows, total=len(rows))
 
 
 @router.post(
@@ -1542,7 +1620,16 @@ async def fraud_inquiry_create_route(
     """A POR-05 questionnaire **draft** from a firm template through C5; Dana sees it only after a
     person sends it (AC2.5; T19)."""
     await _gate(ctx, engagement_id, "fraud_inquiry.request", _RR)
-    _not_yet()
+    from abacus.modules.assurance import fraud_brainstorm as fb
+
+    found = await fb.request_inquiry(
+        ctx,
+        engagement_id,
+        respondent_contact_id=body.respondent_contact_id,
+        governance_body_ref=body.governance_body_ref,
+        title=body.title,
+    )
+    return _inquiry_out(found)
 
 
 @router.get(

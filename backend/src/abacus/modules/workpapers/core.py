@@ -247,7 +247,8 @@ def _sections(
     return out
 
 
-def _flag_out(flag: AttentionFlag) -> AttentionFlagOut:
+def flag_out(flag: AttentionFlag) -> AttentionFlagOut:
+    """A flag as AUD-04 and AUD-05 read it (A-04-T19's convert answers with it too)."""
     return AttentionFlagOut(
         id=flag.id,
         section_key=flag.section_key,
@@ -313,7 +314,7 @@ async def record(
             for c in shown
             if is_filled(c) or c.value_state != "human"
         ],
-        flags=[_flag_out(f) for f in loaded.flags if tab is None or f.section_key == tab],
+        flags=[flag_out(f) for f in loaded.flags if tab is None or f.section_key == tab],
         sign_offs=[
             SignOffRungOut(
                 level=RUNGS[s.level],  # pyright: ignore[reportArgumentType] -- the five rungs
