@@ -4,7 +4,7 @@ title: A-06-T05 C8 and completion contract stubs
 spec: SPEC-642
 acceptance_criteria: [AC-3]
 risk_zone: red
-status: in-review
+status: done
 epic: A-06
 plan_key: A-06-T05
 branch: s24-a06-t05 (stacked on s24-a06-t04)

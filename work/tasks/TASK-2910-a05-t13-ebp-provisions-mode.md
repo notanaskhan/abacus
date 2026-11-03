@@ -4,7 +4,7 @@ title: A-05-T13 mode ebp_provisions (prompt, provision registry, code comparison
 spec: SPEC-640
 acceptance_criteria: [AC-11]
 risk_zone: red
-status: in-review
+status: done
 epic: A-05
 plan_key: A-05-T13
 branch: s24-a05-t13 (stacked on s24-a05-t12)
