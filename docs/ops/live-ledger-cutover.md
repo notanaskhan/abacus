@@ -46,3 +46,24 @@ in `infra/envs/staging` (an empty secret would stop every task from starting).
 | Date | Environment | Flip at | First paused run at | Seconds | Egress after flip | Who |
 |---|---|---|---|---|---|---|
 | — | staging | — | — | — | — | not run: needs the sandbox app's secret and `qbo_enabled` on staging |
+
+## Sandbox check from a laptop (F-09-T05, before staging)
+
+`python -m abacus_tools.qbo_sandbox` runs the product's connector and egress client against
+Intuit's sandbox with the app's Development keys: sign-in with PKCE and a checked `state`, the
+token exchange, the companyinfo health read, the TrialBalance pull, a forced refresh-token
+rotation and the revoke. It refuses anything but `sandbox` and reaches only the registry's
+QuickBooks hosts (no Payments, no OpenID, no writes).
+
+1. Use an Intuit app whose only scope is `com.intuit.quickbooks.accounting`. Scopes can't be
+   removed once saved, so the Quick Start app (which asks for payments and OpenID too) is a
+   throwaway; the app that goes to the assessment is a separate one.
+2. Under Development keys > Redirect URIs, add `http://localhost:8765/callback`.
+3. In a terminal of your own (never pasted into a chat, an ops request or a file in the repo):
+   `export ABACUS_QBO_CLIENT_ID=… ABACUS_QBO_CLIENT_SECRET=…`
+4. From `backend/`: `uv run python -m abacus_tools.qbo_sandbox connect`, sign in, pick the
+   sandbox company. Then `health`, `trial-balance --start 2026-01-01 --end 2026-11-03`,
+   `refresh --force` and `revoke`.
+
+Tokens sit in `~/.abacus/qbo-sandbox.json` (0600, outside the repository) until `revoke` deletes
+them. Production keys never go through this tool.

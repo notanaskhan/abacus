@@ -142,3 +142,33 @@ delivered 35 task files for 35 rows (T-02-T15 folded into T-01-T18, its acceptan
 last five (T31–T35) in the S21 batch with T-01 and N-02's closing rows. No row was dropped; the
 open items are written in `docs/handoffs/T-02/README.md`.
 
+
+## M14 ops retro (Q-04-T087, Q-04-T088; 2026-11-03, synthetic)
+
+Rehearsed on PF-X1 and reported as synthetic (DEC-1530, DEC-2081); no pilot firm is live, so every
+firm figure is zero or no data. For re-baseline #4.
+
+| Figure | Value |
+|---|---|
+| Support hours, S22 to S25 | 0, 0, 0, 0 against reserves of 31.50, 43.50, 43.50 and 36.00 hours; RK-07 does not fire |
+| W2 to W8 for PF-X1 | no data (no snapshots; dossier at shadow) |
+| Flips executed and rolled back in the window | 0 and 0 |
+| Pages per week, hotfixes, change failure rate | see Q-04-T088 (`docs/ops/pilot/retros/m14-ops-retro-n.md`) |
+
+The retros are `docs/ops/pilot/retros/m14-ops-retro-ay.md` and `m14-ops-retro-n.md`.
+- Q-04-T088 (N): change failure rate has no denominator (0 production releases); `main`'s `ci` had
+  0 green of 48 runs since 2026-10-30; 0 hotfixes; 0 pages per week. Fractional SRE: kept per ADR-100,
+  contracted at the first real go-live (DEC-2082).
+
+## Q-03 reserve review 2027 Q3 (Q-03-T162; 2026-11-03)
+
+S19-S25: 51 rows, 65.75 te planned; 2.75 te merged, 7.00 te in review (the S25 batch's lane rows),
+56.00 te not traced (an upper bound on what is undone). Escaped defects: 22 in S25, mostly
+integration and review gaps found at the batch. 2027 Q4 lanes: integration, escaped-defect and
+ADR-078 catch-up kept; window hardening held until the first live firm; pen tests deferred
+(DEC-1389); load, drills and SOC 2 waiting on environments. The review is
+`docs/quality/reserve-review-2027-q3.md`.
+- Q-03-T159 (M14 calibration inputs): one builder column; 2027 Q3 actuals are 2.75 te merged and
+  7.00 te in review of 65.75 te; escaped defects by sprint found 22 in S25 after 0 in S15-S24
+  (batches tested late); back-fill 55 of 55 accounted for; no pen-test remediation (DEC-1389).
+  `docs/quality/m14-calibration-inputs.md`.

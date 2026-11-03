@@ -33,7 +33,7 @@ import hashlib
 import re
 import sys
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, timedelta
 from decimal import Decimal
 from itertools import pairwise
@@ -239,6 +239,11 @@ def defects_found(first: date, last: date, path: Path = DEFECTS) -> list[tuple[s
 # --- the pack -------------------------------------------------------------------------------
 
 
+def _coded(read: FirmRead, code: str | None) -> FirmRead:
+    """The read labelled with the firm's pilot code instead of its name, when one is given."""
+    return read if code is None else replace(read, firm_name=code)
+
+
 async def build(
     firms: Sequence[UUID],
     codes: Sequence[str],
@@ -261,8 +266,11 @@ async def build(
         "",
     ]
     extra: list[Row] = []
+    # A committed pack names a firm by its pilot code, never its name (docs/ops/pilot/README.md:
+    # firm names never enter git; Q-04-T087). With codes given, each firm's read carries its code.
+    label = dict(zip(firms, codes, strict=False))
     for week in weeks:
-        reads = [await wedge_read(firm, week) for firm in firms]
+        reads = [_coded(await wedge_read(firm, week), label.get(firm)) for firm in firms]
         lines.append(wedge_report(cross_firm(reads)))
         for read, firm in zip(reads, firms, strict=True):
             extra.extend(w6_w7_rows(read, await week_snapshots(firm, week)))

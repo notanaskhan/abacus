@@ -215,12 +215,12 @@ def _person(ctx: Actor, action: str) -> AuthContext:
     """A person's own act: never an agent, the platform, a client principal or support."""
     if (
         not isinstance(cast(object, ctx), AuthContext)
-        or cast(AuthContext, ctx).client
+        or cast(AuthContext, ctx).client  # a person: the isinstance check above
         or ctx.tenant.actor_kind != "human"
-        or cast(AuthContext, ctx).is_support
+        or cast(AuthContext, ctx).is_support  # a person: the isinstance check above
     ):
         raise Forbidden(action, "role")
-    return cast(AuthContext, ctx)
+    return cast(AuthContext, ctx)  # a person: the isinstance check above
 
 
 async def _check(ctx: AuthContext, action: str, resource: Resource) -> None:

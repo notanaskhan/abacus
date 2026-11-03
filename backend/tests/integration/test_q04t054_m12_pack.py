@@ -52,6 +52,7 @@ async def test_ac_the_pack_reproduces_from_snapshots_and_logs(loaded: Database) 
     assert one == two
     assert "(synthetic)" in one
     assert "| PF-X1 |" in one
+    assert "Brightwater" not in one  # rows carry the pilot code, never the firm's name (Q-04-T087)
     assert "W6 request → received vs baseline | 28.6% faster" in one  # 4 of 14 baseline days
     assert "W7 override rate · upload_review | 5.0% | 1 | green" in one
     assert "| S21 | 0 | 36.00 | no |" in one

@@ -292,6 +292,26 @@ def _check_unexplained_any(src: SourceFile) -> Iterator[Finding]:
             yield Finding(line, "Any without an explanatory comment on the same line")
 
 
+def _check_unexplained_auth_cast(src: SourceFile) -> Iterator[Finding]:
+    """CAST-001 (Q-03-T164, ED-302): `cast(AuthContext, x)` asserts that a person acts, and pyright
+    takes it on trust. Twice it hid an agent context reaching person-only reads (a request
+    list's `user_id`, a flag's `created_by`) that crashed at run time. The line says why."""
+    for node in ast.walk(src.tree):
+        if (
+            isinstance(node, ast.Call)
+            and _terminal_name(node.func) == "cast"
+            and node.args
+            and _terminal_name(node.args[0]) == "AuthContext"
+        ):
+            comment = src.comments.get(node.lineno, "")
+            if not comment or _IGNORE_COMMENT.search(comment):
+                yield Finding(
+                    node.lineno,
+                    "cast(AuthContext, ...) without a comment on the same line saying why the "
+                    "actor is a person (an agent context is AgentContext; type the slot instead)",
+                )
+
+
 _NOQA = re.compile(r"#\s*noqa\s*:\s*(?P<codes>[A-Z0-9, ]+)", re.IGNORECASE)
 _GATE_CODES = re.compile(r"^(?:TID|S)\d", re.IGNORECASE)
 
@@ -3021,6 +3041,13 @@ RULES: list[Rule | TreeRule] = [
         description="Any is explained by a comment on the same line",
         adr="ADR-009",
         check=_check_unexplained_any,
+    ),
+    Rule(
+        id="CAST-001",
+        description="cast(AuthContext, ...) says on its line why the actor is a person",
+        adr="ADR-005, ADR-009",
+        check=_check_unexplained_auth_cast,
+        include=("src/abacus/*",),
     ),
 ]
 
