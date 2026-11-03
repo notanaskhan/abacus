@@ -14,7 +14,10 @@ from abacus.modules.notices.repository import insert_notices
 
 class NoticeKind:
     async def status(self, tenant: TenantContext, work_item_id: UUID) -> str:
-        return "active"  # the subtype carries no lifecycle of its own yet
+        """N-04-T06: the notice's own status (C2's `notice` object)."""
+        from abacus.modules.notices.service import status_of
+
+        return await status_of(tenant, work_item_id)
 
     async def create(self, tx: UnitOfWork, item: NewWorkItem) -> None:
         await insert_notices(

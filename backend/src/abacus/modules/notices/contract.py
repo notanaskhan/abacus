@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal, NoReturn
+from typing import TYPE_CHECKING, Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
@@ -39,6 +39,9 @@ from abacus.modules.identity.api import (
 )
 from abacus.modules.notices.compute.bracket import FilingStatus
 from abacus.modules.organisations.api import MaskedTinOut
+
+if TYPE_CHECKING:
+    from abacus.modules.notices.service import Notice
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -756,6 +759,121 @@ def _not_yet() -> NoReturn:
 # (`mask_tins_for`; TASK-1207 item 6), so the implementation that replaces `_not_yet()` keeps it.
 
 
+_OWN_ACTIONS: tuple[str, ...] = (
+    "notice.assign",
+    "notice.update",
+    "notice.start",
+    "notice.record_as_filed",
+    "notice.analyze",
+    "notice.request_decision",
+    "notice.note",
+    "notice.agency_reply",
+    "notice_response.draft",
+    "notice_response.edit",
+    "notice_response.send_for_signature",
+    "notice_response.mark_sent",
+)
+
+
+def _initials(name: str) -> str:
+    return "".join(part[0] for part in name.split()[:2]).upper() or "?"
+
+
+async def _rows_out(ctx: AuthContext, rows: list[Notice], on: date) -> list[NoticeRowOut]:
+    from abacus.kernel.db import tenant_session
+    from abacus.modules.notices import service
+    from abacus.modules.organisations.api import client_names
+
+    entities = [n.client_entity_id for n in rows if n.client_entity_id is not None]
+    async with tenant_session(ctx.tenant) as session:
+        clients = await client_names(session, entities) if entities else {}
+    people = await service.names([n.assignee_user_id for n in rows])
+    out: list[NoticeRowOut] = []
+    for n in rows:
+        named = clients.get(n.client_entity_id) if n.client_entity_id else None
+        assignee = None
+        if n.assignee_user_id is not None and n.assignee_user_id in people:
+            who = people[n.assignee_user_id]
+            assignee = NoticePersonOut(
+                user_id=n.assignee_user_id, name=who, initials=_initials(who)
+            )
+        out.append(
+            NoticeRowOut(
+                id=n.id,
+                engagement_id=n.engagement_id,
+                client_entity_id=n.client_entity_id or n.engagement_id,
+                client_name=named.client_entity_name if named else "",
+                form_line=f"Form {n.form}" if n.form else None,
+                agency=cast(Agency, n.agency or "irs"),
+                agency_name=n.agency_name or ("IRS" if n.agency != "state" else "State"),
+                notice_type_key=cast(NoticeTypeKey, n.notice_type_key or "unknown"),
+                notice_code=n.notice_code,
+                title=n.title or n.notice_code,
+                tax_year=n.tax_year or on.year - 1,
+                received_on=n.received_on,
+                respond_by=n.respond_by,
+                respond_by_days=None if n.respond_by is None else (n.respond_by - on).days,
+                risk=cast(RiskBand, service.risk_band(n.respond_by, on, n.status)),
+                sent_on=None,
+                amounts=AmountsOut(
+                    tax=n.amount_tax,
+                    interest=n.amount_interest,
+                    penalty=n.amount_penalty,
+                    total=n.amount_total,
+                    interest_to=n.interest_to,
+                ),
+                position=cast(Position | None, n.position),
+                status=cast(NoticeStatus, n.status),
+                tile=cast(Tile | None, n.tile),
+                assignee=assignee,
+                authorization=AuthorizationOut(
+                    kind=cast(AuthorizationKind, n.authorization_kind),
+                    label=n.authorization_label,
+                    on_file=n.authorization_kind != "none",
+                    can_represent=n.can_represent,
+                    authorization_id=n.authorization_id,
+                ),
+                version=n.row_version,
+            )
+        )
+    return out
+
+
+async def _notice_out(ctx: AuthContext, n: Notice) -> NoticeOut:
+    from abacus.modules.identity.api import allowed_actions
+    from abacus.modules.notices import service
+
+    on = await service.on_day(ctx)
+    row = (await _rows_out(ctx, [n], on))[0]
+    ref = await get_ref(ctx, n.engagement_id)
+    can = await allowed_actions(ctx, ref.resource(), _OWN_ACTIONS)
+    if n.status != "received":
+        can = [a for a in can if a != "notice.start"]
+    return NoticeOut(
+        row=row,
+        notice_date=n.notice_date,
+        respond_by_source=cast(
+            Literal["extracted", "entered", "corrected"] | None, n.respond_by_source
+        ),
+        taxpayer_tin=None,  # the sealed TIN and its mask arrive with the intake (N-04-T07)
+        related_return_id=n.related_return_id,
+        related_return_label=None,
+        partner_owned=n.partner_owned,
+        signer=None,
+        decision_id=n.decision_id,
+        decided_by=None,
+        decided_at=n.decided_at,
+        follow_up_on=n.follow_up_on,
+        closed_on=n.closed_on,
+        escalated_reason=n.escalated_reason,
+        client_visible=n.client_visible,
+        readiness=[
+            ReadinessFactOut(key="decision", met=n.position is not None, label="Partner decision"),
+        ],
+        allowed_actions=[cast(NoticeAction, a) for a in _OWN_ACTIONS if a in can],
+    )
+
+
 router = AbacusRouter(prefix="/v1", tags=["notices"])
 _N = "/notices/{notice_id}"
 _I = "/notice-intakes/{intake_id}"
@@ -776,7 +894,34 @@ async def notices_route(
 ) -> ListPage[NoticeRowOut]:
     """Rows by deadline risk (respond-by ascending; sent rows after), visible rows only."""
     await _gate_firm(ctx, "notice.read")
-    _not_yet()
+    from abacus.modules.notices import service
+
+    on = await service.on_day(ctx)
+    rows = await service.visible_notices(ctx)
+    counts = service.tallies(rows, on)
+    shown = [
+        n
+        for n in rows
+        if (agency is None or n.agency == agency)
+        and (type is None or n.notice_type_key == type)
+        and (assignee is None or n.assignee_user_id == assignee)
+        and (status is None or n.status == status)
+        and (tile is None or n.tile == tile)
+        and (client_entity_id is None or n.client_entity_id == client_entity_id)
+        and (
+            respond_by is None
+            or (n.respond_by is not None and n.open and (n.respond_by - on).days <= respond_by)
+        )
+    ]
+    items = await _rows_out(ctx, shown, on)
+    if q:
+        needle = q.casefold()
+        items = [
+            r
+            for r in items
+            if needle in r.client_name.casefold() or needle in r.notice_code.casefold()
+        ]
+    return ListPage[NoticeRowOut](items=items, total=len(items), counts=counts.tiles)
 
 
 @router.get(
@@ -784,7 +929,22 @@ async def notices_route(
 )
 async def notices_summary_route(ctx: Ctx) -> NoticesSummaryOut:
     await _gate_firm(ctx, "notice.read")
-    _not_yet()
+    from abacus.modules.notices import service
+
+    counts = service.tallies(await service.visible_notices(ctx), await service.on_day(ctx))
+    labels = {"cp2000": "CP2000", "cp14": "CP14", "cp501": "CP501", "cp503": "CP503"}
+    labels |= {"cp504": "CP504", "cp3219a": "CP3219A", "state": "State", "unknown": "Other"}
+    return NoticesSummaryOut(
+        tiles=cast(dict[Tile, int], counts.tiles),
+        by_type=[
+            TypeCountOut(key=k, label=labels.get(k, k.upper()), count=v)
+            for k, v in sorted(counts.by_type.items())
+        ],
+        open=counts.open,
+        due_within_7=counts.due_within_7,
+        blocked=counts.blocked,
+        agent_stage="off",  # notices.responder stays off until a mode is cleared (N-04 §6)
+    )
 
 
 @router.post(
@@ -854,7 +1014,9 @@ async def intake_discard_route(
 @router.get(_N, action="notice.read", response_model=NoticeOut, errors=(501,))
 async def notice_route(notice_id: UUID, ctx: Ctx) -> NoticeOut:
     await _gate(ctx, notice_id, "notice.read")
-    return await mask_tins_for(ctx, _not_yet())
+    from abacus.modules.notices import service
+
+    return await mask_tins_for(ctx, await _notice_out(ctx, await service.notice(ctx, notice_id)))
 
 
 @router.patch(_N, action="notice.update", response_model=NoticeOut, errors=(409, 501))
@@ -863,7 +1025,18 @@ async def notice_patch_route(
 ) -> NoticeOut:
     """`notice.assign` for `assignee_id` alone, `notice.update` otherwise (the service checks)."""
     await _gate(ctx, notice_id, "notice.assign" if _assign_only(body) else "notice.update")
-    return await mask_tins_for(ctx, _not_yet())
+    from abacus.modules.notices import service
+
+    found = await service.edit(
+        ctx,
+        notice_id,
+        if_match,
+        assignee_id=body.assignee_id,
+        respond_by=body.respond_by,
+        related_return_id=body.related_return_id,
+        client_visible=body.client_visible,
+    )
+    return await mask_tins_for(ctx, await _notice_out(ctx, found))
 
 
 def _assign_only(body: NoticePatchIn) -> bool:
@@ -874,9 +1047,12 @@ def _assign_only(body: NoticePatchIn) -> bool:
 async def notice_start_route(
     notice_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> NoticeOut:
-    """received to classified, and the analysis starts."""
+    """received to classified (the analysis starts with N-04-T11)."""
     await _gate(ctx, notice_id, "notice.start")
-    return await mask_tins_for(ctx, _not_yet())
+    from abacus.modules.notices import service
+
+    found = await service.start(ctx, notice_id, None)
+    return await mask_tins_for(ctx, await _notice_out(ctx, found))
 
 
 @router.put(
@@ -966,7 +1142,18 @@ async def notice_activity_route(
     notice_id: UUID, ctx: Ctx, cursor: str | None = None
 ) -> ListPage[ActivityItemOut]:
     await _gate(ctx, notice_id, "notice.read")
-    _not_yet()
+    from abacus.modules.notices import service
+
+    items = [
+        ActivityItemOut(
+            at=at,
+            event=action,
+            label=action.replace("_", " ").replace(".", " · "),
+            actor_label=None if kind == "human" else "System",
+        )
+        for at, action, kind in await service.activity(ctx, notice_id)
+    ]
+    return ListPage[ActivityItemOut](items=items, total=len(items))
 
 
 @router.post(
