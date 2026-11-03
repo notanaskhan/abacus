@@ -524,6 +524,10 @@ class TestIn(BaseModel):
         Literal["eligibility", "deferral", "match", "distribution", "loan"], classified("internal")
     ]
     sample_set_id: Annotated[UUID, classified("internal")]
+    # A-05-T22 (additive): the approved sample version and the paper (default: the variant's
+    # EBP workpaper on the work item).
+    sample_version: Annotated[int, Field(ge=1), classified("internal")] = 1
+    workpaper_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class ResultIn(BaseModel):
@@ -595,6 +599,41 @@ class MethodIn(BaseModel):
 
     method: Annotated[str, Field(min_length=1, max_length=200), classified("confidential")]
     seen_version: Annotated[int, Field(ge=1), classified("internal")]
+
+
+class TestGridCellOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    attribute_key: Annotated[str, classified("internal")]
+    result: Annotated[
+        Literal["not_started", "agent_tested", "needs_human", "pass", "exception", "no_effect"],
+        classified("internal"),
+    ]
+    by: Annotated[Literal["human", "agent", "system", "policy"], classified("internal")]
+    citation_ids: Annotated[list[UUID], classified("internal")]
+
+
+class TestGridRowOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    position: Annotated[int, classified("internal")]
+    item_id: Annotated[UUID, classified("internal")]
+    record_key: Annotated[str, classified("confidential")]
+    state: Annotated[str, classified("internal")]
+    cells: Annotated[list[TestGridCellOut], classified("internal")]
+
+
+class TestGridOut(BaseModel):
+    """EBP-03 a/b, EBP-04 c, EBP-05: rows in sample order with each attribute's newest result."""
+
+    model_config = ConfigDict(frozen=True)
+
+    test_id: Annotated[UUID, classified("internal")]
+    variant: Annotated[str, classified("internal")]
+    attributes: Annotated[list[str], classified("internal")]
+    rows: Annotated[list[TestGridRowOut], classified("confidential")]
+    counts: Annotated[dict[str, int], classified("internal")]
+    version_no: Annotated[int, classified("internal")]
 
 
 class AcceptedOut(BaseModel):
@@ -1023,7 +1062,19 @@ async def ebp_test_create_route(
     work_item_id: UUID, body: TestIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> AcceptedOut:
     await _gate(ctx, work_item_id, "test.create", _E)
-    _not_yet()
+    from abacus.modules.assurance import ebp_tests
+
+    test_id = await ebp_tests.create(ctx, work_item_id, body)
+    return AcceptedOut(id=test_id)
+
+
+@router.get("/tests/{test_id}", action="test.read", response_model=TestGridOut)
+async def ebp_test_grid_route(work_item_id: UUID, test_id: UUID, ctx: Ctx) -> TestGridOut:
+    """The shared grid (A-05-T22)."""
+    await _gate(ctx, work_item_id, "test.read", _E)
+    from abacus.modules.assurance import ebp_tests
+
+    return await ebp_tests.grid_out(ctx, work_item_id, test_id)
 
 
 @router.put(
@@ -1043,7 +1094,10 @@ async def ebp_test_mark_route(
 ) -> AcceptedOut:
     """A person's pass, exception or no effect (never the agent's; INV-1)."""
     await _gate(ctx, work_item_id, "test.mark", _E)
-    _not_yet()
+    from abacus.modules.assurance import ebp_tests
+
+    await ebp_tests.mark(ctx, work_item_id, test_id, item_id, attribute, body)
+    return AcceptedOut(id=test_id)
 
 
 @router.get("/ebp/eligibility", action="ebp.read", response_model=FiguresOut)
