@@ -438,9 +438,10 @@ import {
   type Shl15State,
   scenarios as shl15Scenarios,
 } from "./SHL-15/scenarios";
-import { SignOffChips, SignOffSheet } from "./SHL-12";
+import { BulkSignOffSheet, SignOffChips, SignOffSheet } from "./SHL-12";
 import { COPY as SHL12_COPY } from "./SHL-12/copy";
 import {
+  BULK as SHL12_BULK,
   OPENS as SHL12_OPENS,
   STATES as SHL12_STATES,
   type Shl12State,
@@ -2240,7 +2241,8 @@ function Aud31Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 registerScreen("AUD-31", { title: "Trial balance mapping", Component: Aud31Artboard });
 
 // SHL-12 (P-04-T48): the sign-off sheet a, b, c, d, e, g, h over an empty frame; a′ is the frame
-// after signing: the sheet closed, the header's "✓ MD ✓ HL" and the toast.
+// after signing: the sheet closed, the header's "✓ MD ✓ HL" and the toast; f (P-04-T49) is the
+// bulk sheet over Northwind's six planning workpapers (P-04-T57's j23 step reads it).
 function Shl12Artboard({ params }: { params: FixtureParams }): JSX.Element | null {
   const state: Shl12State = SHL12_STATES.find((s) => s === params.st) ?? "a";
   const [ready, setReady] = useState<string | null>(null);
@@ -2270,6 +2272,15 @@ function Shl12Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
           <span className="text-title font-medium">Trial Balance</span>
           <SignOffChips target={{ type: open.type, id: open.id }} />
         </div>
+      ) : state === "f" ? (
+        <BulkSignOffSheet
+          targets={SHL12_BULK}
+          level={open.level}
+          meta={open.meta}
+          context="Planning 5 of 6 · SOC 1 waiting on inputs"
+          open
+          onOpenChange={() => undefined}
+        />
       ) : (
         <SignOffSheet
           target={{ type: open.type, id: open.id }}
@@ -2864,6 +2875,7 @@ function Knw02Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
     setSearch({
       ...(opens.ov === undefined ? {} : { ov: opens.ov }),
       ...(opens.tab === undefined ? {} : { tab: opens.tab }),
+      ...(opens.flagged === true ? { flagged: true } : {}),
     });
     setReady(state);
     return () => {

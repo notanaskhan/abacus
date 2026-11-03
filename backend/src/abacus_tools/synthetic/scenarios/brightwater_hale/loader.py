@@ -101,9 +101,11 @@ from abacus.kernel.dispatch import dispatch
 from abacus.kernel.temporal import temporal_client
 from abacus.kernel.uow import Target, uow
 from abacus.modules.assurance.api import (
+    PHASE_GATES,
     MappingConfirmIn,
     MappingRunIn,
     adopt_trial_balance,
+    follows_gate,
     import_grouping_csv,
     mapping_live,
     propose_materiality,
@@ -2785,11 +2787,19 @@ async def _independence_confirmed(_: asyncpg.Connection, __: Scenario, event: Ev
     await answer_independence(ctx, engagement_id_of(audit), confirm=True, note=None)
 
 
-async def _phase_recorded(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
-    """Record mode: the engagement partner records the next phase (SPEC-330 AC-9 to AC-12)."""
+async def _phase_recorded(conn: asyncpg.Connection, scenario: Scenario, event: Event) -> None:
+    """Record mode: the engagement partner records the next phase (SPEC-330 AC-9 to AC-12). A
+    phase whose gate has a provider is no longer recorded (Fieldwork since A-04-T43's G4): the
+    scenario's move is written as the seed-only gate advance, so its content and hash stay put
+    (DEC-2078)."""
+    to = str(event.data["to"])
+    if follows_gate(to):
+        gated = {**event.data, "gate": PHASE_GATES[to][-1]}
+        await _phase_advanced(conn, scenario, replace(event, data=gated))
+        return
     audit = BY_LABEL[str(event.data["audit"])]
     ctx = _partner_context(audit, event.at)
-    await record_phase(ctx, await _assurance_work_item(audit), str(event.data["to"]))
+    await record_phase(ctx, await _assurance_work_item(audit), to)
 
 
 async def _phase_advanced(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:

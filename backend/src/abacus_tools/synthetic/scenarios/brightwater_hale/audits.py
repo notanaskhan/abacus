@@ -553,7 +553,7 @@ FIRM_ADMIN: Final = "GH"  # Grace Holloway sets firm settings (§9.2 "season set
 # has no provider (Fieldwork, In review), `advanced` naming the gate SPEC-314 computes (Ready to
 # release G7, Released G8) until A-01-T23's external release record.
 PHASE_STEPS: Final[tuple[tuple[str, str, str | None], ...]] = (
-    ("fieldwork", "advanced", "G4"),  # A-04-T43 registers G4: Fieldwork follows its gate
+    ("fieldwork", "recorded", None),
     ("in_review", "recorded", None),
     ("ready_to_release", "advanced", "G7"),
     ("released", "advanced", "G8"),

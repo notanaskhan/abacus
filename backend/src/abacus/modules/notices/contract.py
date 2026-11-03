@@ -35,6 +35,7 @@ from abacus.modules.identity.api import (
     Resource,
     authorise,
     current_context,
+    mask_tins_for,
 )
 from abacus.modules.notices.compute.bracket import FilingStatus
 from abacus.modules.organisations.api import MaskedTinOut
@@ -751,6 +752,10 @@ def _not_yet() -> NoReturn:
     raise NotImplementedYet
 
 
+# A stub whose response carries a TIN (`MaskedTinOut`) already returns through the central mask
+# (`mask_tins_for`; TASK-1207 item 6), so the implementation that replaces `_not_yet()` keeps it.
+
+
 router = AbacusRouter(prefix="/v1", tags=["notices"])
 _N = "/notices/{notice_id}"
 _I = "/notice-intakes/{intake_id}"
@@ -794,13 +799,13 @@ async def intake_create_route(
 ) -> IntakeOut:
     """Starts NoticeIntakeWorkflow; the sheet polls while `extracting`."""
     await _gate_firm(ctx, "notice_intake.create")
-    _not_yet()
+    return await mask_tins_for(ctx, _not_yet())
 
 
 @router.get(_I, action="notice_intake.read", response_model=IntakeOut, errors=(501,))
 async def intake_route(intake_id: UUID, ctx: Ctx) -> IntakeOut:
     await _gate_firm(ctx, "notice_intake.read")
-    _not_yet()
+    return await mask_tins_for(ctx, _not_yet())
 
 
 @router.put(_I, action="notice_intake.update", response_model=IntakeOut, errors=(409, 501))
@@ -808,7 +813,7 @@ async def intake_update_route(
     intake_id: UUID, body: IntakeUpdateIn, ctx: Ctx, if_match: IfMatch
 ) -> IntakeOut:
     await _gate_firm(ctx, "notice_intake.update")
-    _not_yet()
+    return await mask_tins_for(ctx, _not_yet())
 
 
 @router.post(
@@ -833,7 +838,7 @@ async def intake_attach_route(
     intake_id: UUID, body: IntakeAttachIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> IntakeOut:
     await _gate_firm(ctx, "notice_intake.confirm")
-    _not_yet()
+    return await mask_tins_for(ctx, _not_yet())
 
 
 @router.post(
@@ -843,13 +848,13 @@ async def intake_discard_route(
     intake_id: UUID, body: IntakeDiscardIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> IntakeOut:
     await _gate_firm(ctx, "notice_intake.confirm")
-    _not_yet()
+    return await mask_tins_for(ctx, _not_yet())
 
 
 @router.get(_N, action="notice.read", response_model=NoticeOut, errors=(501,))
 async def notice_route(notice_id: UUID, ctx: Ctx) -> NoticeOut:
     await _gate(ctx, notice_id, "notice.read")
-    _not_yet()
+    return await mask_tins_for(ctx, _not_yet())
 
 
 @router.patch(_N, action="notice.update", response_model=NoticeOut, errors=(409, 501))
@@ -858,7 +863,7 @@ async def notice_patch_route(
 ) -> NoticeOut:
     """`notice.assign` for `assignee_id` alone, `notice.update` otherwise (the service checks)."""
     await _gate(ctx, notice_id, "notice.assign" if _assign_only(body) else "notice.update")
-    _not_yet()
+    return await mask_tins_for(ctx, _not_yet())
 
 
 def _assign_only(body: NoticePatchIn) -> bool:
@@ -871,7 +876,7 @@ async def notice_start_route(
 ) -> NoticeOut:
     """received to classified, and the analysis starts."""
     await _gate(ctx, notice_id, "notice.start")
-    _not_yet()
+    return await mask_tins_for(ctx, _not_yet())
 
 
 @router.put(
@@ -1051,4 +1056,4 @@ async def agency_reply_route(
     notice_id: UUID, body: AgencyReplyIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> NoticeOut:
     await _gate(ctx, notice_id, "notice.agency_reply")
-    _not_yet()
+    return await mask_tins_for(ctx, _not_yet())

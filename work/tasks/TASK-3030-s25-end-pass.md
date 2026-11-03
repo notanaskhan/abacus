@@ -49,6 +49,13 @@ and at most one re-review; then CI once, on the batch.
   S3; workpaper export determinism. Fixed under DEC-2078. Main's own reds (portal recovery,
   a05t07 and a03t10 determinism) are #1105's, merged in. Left as main flakes: a random hex run
   read as a TIN (error tracking span id) or a sign-in code (mention email).
+- 2026-11-03 (CI run 41600040024): integration green. Still red: the seed's pinned scenario hash
+  (the G4 fieldwork move now maps in the loader, so the scenario content stays put), two
+  offshore TIN contract tests (the notice stubs now return through `mask_tins_for`; the reveal
+  test counts only unmasked `not_offshore` routes), A-04's stub test reaching a dev database (the
+  flag service stands in), and K-01-T25/P-04-T57 journeys: KNW-02's `<dl>` rows, the a2 artboard
+  dropping its ⚑ filter, SHL-12 f missing from the gallery, and the firm button's empty name.
+  Locally: contracts 6741 pass (dead DB); fixture journeys 142 pass, 49 skipped (9.7 min).
 - Mistake made twice: a `cast` to `AuthContext` around an agent context hid a crash both times.
   Typed the slots for the agent instead; a lint rule against `cast(AuthContext, ...)` is worth
   adding.
