@@ -6,8 +6,8 @@ import type { Manifest } from "./types";
 export const notScreens = {
   "NOT-01": {
     name: "Notices index · intake sheet",
-    status: "planned",
-    path: null,
+    status: "fixture",
+    path: "/notices",
     navArea: "Notices",
   },
   "NOT-02": {

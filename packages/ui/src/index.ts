@@ -92,6 +92,9 @@ export {
 export {
   KPI_STAGGER_MS,
   KpiGrid,
+  GroupedTile,
+  type GroupedTileItem,
+  type GroupedTileProps,
   KpiTile,
   type KpiTileProps,
   ProgressBar,

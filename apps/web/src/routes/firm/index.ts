@@ -7,6 +7,7 @@ import { filesRoutes } from "./files";
 import { homeRoutes } from "./home";
 import { inboxRoutes } from "./inbox";
 import { knowledgeRoutes } from "./knowledge";
+import { noticeRoutes } from "./notices";
 import { settingsRoutes } from "./settings";
 import { signatureRoutes } from "./signatures";
 import { taxReturnRoutes } from "./tax-returns";
@@ -29,7 +30,7 @@ export const FIRM_AREAS = [
   { key: "inbox", label: "Inbox", routes: inboxRoutes },
   { key: "clients", label: "Clients", routes: clientRoutes },
   { key: "binders", label: "Binders", routes: binderRoutes },
-  { key: "notices", label: "Notices", routes: [] },
+  { key: "notices", label: "Notices", routes: noticeRoutes },
   { key: "audits", label: "Audits", routes: auditRoutes },
   { key: "closes", label: "Closes", routes: [] },
   { key: "signatures", label: "Signatures", routes: signatureRoutes },
@@ -52,6 +53,8 @@ export const firmRoutes = [
   ...taxReturnRoutes,
   // N-02-T40: SIG-01 behind `signatures.envelopes`.
   ...signatureRoutes,
+  // N-04-T05: NOT-01 behind `notices.workspace`.
+  ...noticeRoutes,
   // P-01-T02: the Engagements index and the flag-off landings of planned areas.
   ...areaRoutes,
 ] as const;
