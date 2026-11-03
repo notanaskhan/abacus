@@ -265,25 +265,27 @@ def sampling_events() -> list[Event]:
                 seed=seed,
             )
         )
-    # DEC-1767: on Sep 15 Ana Cruz and Kira Ross confirm their independence on Northwind (CLI-08
-    # left them pending), Margaret names Dana Kowalski the SKE designee (CLI-02) and concludes
-    # independence (G2), so Version 2 is prepared and approved as AUD-11 a shows.
+    # DEC-1767, re-timed by DEC-2229: on Sep 14 before E0 (9:24 AM) Ana Cruz and Kira Ross
+    # confirm their independence on Northwind (CLI-08 left them pending), Margaret names Dana
+    # Kowalski the SKE designee (CLI-02) and concludes independence (G2). So G2 is met at E0,
+    # the review slice's TB L1 (10:20 AM) may sign (R-SO-5), and Version 2 is prepared and
+    # approved as AUD-11 a shows.
     events += [
         *[
             Event(
                 f"independence:A1:{initials}",
-                _at(15, 9, minute),
+                _at(14, 9, minute),
                 "engagements.member_independence_confirmed",
                 initials,
                 SLICE,
-                {"audit": "A1", "canon_on": "2026-09-15"},
+                {"audit": "A1", "canon_on": "2026-09-14"},
                 client=NORTHWIND,
             )
             for initials, minute in (("AC", 0), ("KR", 5))
         ],
         _event(
             "ske-designee",
-            _at(15, 9, 30),
+            _at(14, 9, 10),
             "engagements.contact_designated",
             "MO",
             audit="A1",
@@ -292,7 +294,7 @@ def sampling_events() -> list[Event]:
         ),
         _event(
             "independence-concluded",
-            _at(15, 10, 0),
+            _at(14, 9, 15),
             "engagements.independence_concluded",
             "MO",
             audit="A1",

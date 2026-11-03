@@ -35,7 +35,8 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.slices import register_sl
 from abacus_tools.synthetic.scenarios.brightwater_hale.timeline import Event
 
 SLICE: Final = "review"
-NEEDS: Final = ("people", "standards", "acceptance", "tax_board")
+# sampling: Northwind's G2 (Sep 14, before the TB L1; R-SO-5, DEC-2229).
+NEEDS: Final = ("people", "standards", "acceptance", "sampling", "tax_board")
 FLAGS: Final = ("review.checkpoints", "assurance.materiality")  # grammar_api retired: P-04-T62
 NORTHWIND: Final = "Northwind Robotics, Inc."
 RIDGELINE: Final = "Ridgeline Property Partners, LP"
