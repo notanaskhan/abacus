@@ -76,3 +76,16 @@ async def covering_letter_engagements(tenant: TenantContext, engagement_id: UUID
             if any(v.key == CLAUSE and v.state != "off" for v in views):
                 out.append(cast(UUID, row["id"]))
         return out
+
+
+async def notice_engagement(tenant: TenantContext, client_entity_id: UUID) -> UUID | None:
+    """N-04-T07 (QN-1): the client entity's `notice_response` engagement, the newest if several."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text(
+                "SELECT id FROM engagements WHERE tenant_id = :t AND client_entity_id = :entity "
+                "AND type = 'notice_response' ORDER BY fiscal_period_end DESC LIMIT 1"
+            ),
+            {"t": tenant.tenant_id, "entity": client_entity_id},
+        )
+    return cast(UUID | None, found)
