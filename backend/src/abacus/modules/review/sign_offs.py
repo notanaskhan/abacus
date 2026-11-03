@@ -140,6 +140,13 @@ class Incomplete(DomainConflict):
     code = "incomplete"
 
 
+class SignOffBlocked(DomainConflict):
+    """The target's owner says it is not ready (A-05-T16: EBP-02 with provisions unverified);
+    `facts.reason` is the owner's code and `facts.count` what is left."""
+
+    code = "sign_off_blocked"
+
+
 class UncitedChange(DomainInvalid):
     """R-SO-6: an agent value carries no citation (INV-2)."""
 
@@ -492,6 +499,10 @@ async def sign_target(
             raise SignOffInvalid(facts={"field": "statement_version"})
         if facts.incomplete_count:
             raise Incomplete(facts={"count": facts.incomplete_count})
+        if facts.blocked_code:
+            raise SignOffBlocked(
+                facts={"reason": facts.blocked_code, "count": facts.blocked_count}
+            )
         if facts.uncited_count:
             raise UncitedChange(facts={"count": facts.uncited_count})
         await _rules(tx, ctx, facts, rows, level, preparers)

@@ -31,6 +31,7 @@ from abacus.modules.workpapers.drafting import (
     paper_engagement,
     paper_of_kind,
 )
+from abacus.modules.workpapers.guards import register_sign_off_guard
 from abacus.modules.workpapers.layouts import (
     AddressInvalid,
     DesignedLayout,
@@ -114,6 +115,7 @@ __all__ = [
     "paper_engagement",
     "paper_of_kind",
     "register_designed_layout",
+    "register_sign_off_guard",  # A-05-T16 (DEC-2069)
     "resolve",
     "router",
     "tie_digests",

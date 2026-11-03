@@ -16,6 +16,7 @@ _HUMAN_RECORDS: frozenset[str] = frozenset(
 EBP_TABLES: frozenset[str] = frozenset(
     {"ebp_plans", "ebp_service_providers", "ebp_provider_checks", "ebp_provisions"}
     | {"ebp_provision_conflicts"}
+    | {"ebp_plan_reviews"}  # A-05-T16 (0653, DEC-2069)
 )
 # A-04-T06 (0613, DEC-1866): the planning record; versions and minutes approvals insert-only.
 PLANNING_TABLES: frozenset[str] = frozenset(
@@ -38,6 +39,7 @@ INSERT_ONLY: frozenset[str] = (
     | {"ebp_provider_checks", "ebp_provision_conflicts"}
     | {"materiality_versions", "fraud_minutes_approvals"}
     | {"ebp_population_queries"}
+    | {"ebp_plan_reviews"}
     | {"sum_snapshots"}
 )
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -143,6 +145,18 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
             "amendment_citation_id",
             "origin",
             "suggestion_id",
+        }
+    ),
+    "ebp_plan_reviews": frozenset(
+        {
+            "tenant_id",
+            "engagement_id",
+            "work_item_id",
+            "workpaper_id",
+            "review_no",
+            "document_version_ids",
+            "amendment_in_force",
+            "started_by",
         }
     ),
     "ebp_provision_conflicts": frozenset(

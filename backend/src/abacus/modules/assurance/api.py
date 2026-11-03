@@ -12,6 +12,7 @@ from abacus.modules.agents.api import (
     register_suggestion_applier,
     register_suggestion_target,
 )
+from abacus.modules.assurance import ebp_provisions
 from abacus.modules.assurance import mapping_live as mapping_live
 from abacus.modules.assurance.archive_gate import g9
 from abacus.modules.assurance.audits_contract import audits_router
@@ -93,6 +94,7 @@ from abacus.modules.review.api import (
     register_reviewable,
     register_reviewable_facts,
 )
+from abacus.modules.workpapers.api import register_sign_off_guard
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (
@@ -131,6 +133,8 @@ register_entry_decision_hook(on_entry_client_decision)
 register_mode_mapping("gap", gap_inputs)
 register_mode_mapping("risk_narrative", risk_narrative_inputs)
 register_mode_mapping("risk", risk_inputs)  # A-04-T24 (DEC-2060)
+register_mode_mapping(ebp_provisions.MODE, ebp_provisions.provisions_inputs)  # A-05-T16
+register_sign_off_guard(ebp_provisions.KIND, ebp_provisions.sign_off_guard)  # A-05-T16
 # A-04-T23 (DEC-2059): code inserts the presumed fraud risks before a narrative draft.
 register_mode_preparer("risk_narrative", presumed_preparer)
 register_firm_setting(RELEASE_MODE_SETTING)
