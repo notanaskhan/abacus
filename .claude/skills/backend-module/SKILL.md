@@ -91,6 +91,34 @@ A tool or agent that reads tax return information (§7216) declares it; nothing 
 4. Agents-off is the default posture (`tax_agents.enabled` arrives with T-04-T09); a screen draws
    agent blocks only where `PLANNED_VISIBLE`. RB-17 is the runbook when consents lapse in a wave.
 
+## Registering with the review grammar (P-04; P-04-T61)
+
+A module whose records a person reviews, decides or waits on registers with `review.api` at
+import of its `api.py`; it never writes sign-offs, decisions or `human_gates` rows. Who registers
+what today: `docs/architecture/reference/review-slot-consumers.md`. Incidents:
+`docs/runbooks/review-grammar.md`.
+
+1. **Reviewable** (a thing signed off): `register_reviewable(target, provider)` and
+   `register_reviewable_facts(target, facts)`. Facts answer the engagement and a content hash of
+   exactly what the sign-off approves (copy `assurance/review_targets.py`, `sum_schedule`). Add
+   the owner's change event to `STALE_SOURCES` in `review/stale.py` with the payload key naming
+   the target.
+2. **Decision kind** (a person decides between options): `register_decision_kind(DecisionKind(
+   code=..., ...))` once per process (copy `assurance/completion_decisions.py`). The deciding
+   action is human-only: add it to `docs/architecture/human-only-actions.yaml` and the
+   database list (a migration like 0661), then regenerate (`abacus_tools.codegen.human_only_actions`).
+3. **Gate kind** (C13, someone must act): `register_gate_kind(code, check)`; the check answers
+   from the owner's records so `abacus_tools.reproject_human_gates` can rebuild it (copy
+   `tax/approval.py`, `sampling/sample_sets.py`). A G-gate (G1–G9) replaces its provider through
+   `engagements` `replace_gate_provider` instead (copy `assurance/gates.py`, G5).
+4. **Field owner, field citations, suggestion owner, checkpoint hooks:** for agent-drafted
+   values; copy `workpapers/api.py` (`TB_FIELD_OWNER`), `agents/field_citations.py`,
+   `agents/gates.py` and `agents/proposals.py`.
+5. **Fix runner** (`register_fix_runner(issue_kind, runner)`) for an issue a person can resolve
+   with one action; **archive lock** (`register_archive_lock(check)`) for A-07's archive.
+6. **Tests:** a stale sign-off after the change event; a replayed event announces nothing new; an
+   agent context refused on the decision; the gate rebuilt from scratch equals the live rows.
+
 ## Checklist before done
 - [ ] Cross-tenant test for every repository method (and the regenerated `tests/security/` cases)
 - [ ] Permission tests regenerate cleanly from the matrix
