@@ -1,0 +1,81 @@
+# Notice-type catalogue (N-04 §4.2; DEC-76 second category). PROTECTED parameters: reviewed with
+# the tax CPA and golden-tested (docs/architecture/protected-paths.md, DEC-2050). A change is a
+# reviewed policy change with its goldens in the same diff.
+#
+# window_days: the respond-by the agency normally gives from the notice date, for the
+# plausibility check only (never auto-corrected); null: no check ("Not checked").
+# analysis_kind: underreporter_comparison | balance_due | none.
+version: 1
+types:
+  cp2000:
+    agency: irs
+    code: CP2000
+    title: Proposed adjustment
+    analysis_kind: underreporter_comparison
+    window_days: 30
+    partner_owned: false
+    templates: {agree: cp2000_agree, partially_agree: cp2000_partial, disagree: cp2000_disagree}
+    response_page_hint: last
+  cp14:
+    agency: irs
+    code: CP14
+    title: Balance due
+    analysis_kind: balance_due
+    window_days: 21
+    partner_owned: false
+    templates: {agree: balance_due, partially_agree: generic, disagree: generic}
+    response_page_hint: null
+  cp501:
+    agency: irs
+    code: CP501
+    title: Balance due reminder
+    analysis_kind: balance_due
+    window_days: null
+    partner_owned: false
+    templates: {agree: balance_due, partially_agree: generic, disagree: generic}
+    response_page_hint: null
+  cp503:
+    agency: irs
+    code: CP503
+    title: Second balance due reminder
+    analysis_kind: balance_due
+    window_days: null
+    partner_owned: false
+    templates: {agree: balance_due, partially_agree: generic, disagree: generic}
+    response_page_hint: null
+  cp504:
+    agency: irs
+    code: CP504
+    title: Notice of intent to levy
+    analysis_kind: balance_due
+    window_days: null
+    partner_owned: true
+    templates: {agree: balance_due, partially_agree: generic, disagree: generic}
+    response_page_hint: null
+  cp3219a:
+    agency: irs
+    code: CP3219A
+    title: Notice of deficiency
+    analysis_kind: underreporter_comparison
+    window_days: 90
+    partner_owned: true
+    templates: {agree: generic, partially_agree: generic, disagree: generic}
+    response_page_hint: null
+  state_generic:
+    agency: state
+    code: null
+    title: State notice
+    analysis_kind: none
+    window_days: null
+    partner_owned: false
+    templates: {agree: generic, partially_agree: generic, disagree: generic}
+    response_page_hint: null
+  unknown:
+    agency: null
+    code: null
+    title: Notice
+    analysis_kind: none
+    window_days: null
+    partner_owned: false
+    templates: {agree: generic, partially_agree: generic, disagree: generic}
+    response_page_hint: null

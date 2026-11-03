@@ -1,0 +1,13 @@
+# Ordinary-income tax rate schedules, tax year 2025 (IRC §1; IRS inflation adjustments). PROTECTED
+# parameters for the bracket check only (QN-3: it verifies the agency's figure, never replaces
+# it), reviewed with the tax CPA and golden-tested (DEC-2050). qss uses mfj's schedule.
+# Each schedule: the upper bound of each bracket at 10, 12, 22, 24, 32 and 35 percent; above the
+# last bound, 37 percent.
+version: 1
+tax_year: 2025
+rates: ["0.10", "0.12", "0.22", "0.24", "0.32", "0.35", "0.37"]
+schedules:
+  single: [11925, 48475, 103350, 197300, 250525, 626350]
+  mfj: [23850, 96950, 206700, 394600, 501050, 751600]
+  mfs: [11925, 48475, 103350, 197300, 250525, 375800]
+  hoh: [17000, 64850, 103350, 197300, 250500, 626350]
