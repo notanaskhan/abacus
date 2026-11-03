@@ -32,6 +32,7 @@ TABLES: frozenset[str] = frozenset(
         "questionnaire_sections",
         "questions",
         "answer_versions",
+        "answer_effects",  # T-03-T03 (0655): one row per answer and rule
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -47,6 +48,7 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "binder_recipients",  # P-06-T05 (0100): a removal is a new row
         "fulfilment_withdrawals",  # P-06-T19 (0145): a withdrawn version's voided links
         "answer_versions",  # T-02-T16 (0467): the current answer is the highest version
+        "answer_effects",  # T-03-T03 (0655): an applied effect is never edited
     }
 )
 # Columns the app may supply on insert; everything else is server-set.
@@ -167,3 +169,41 @@ UPDATE_COLUMNS["questionnaires"] = frozenset(
     {"status", "completed_by", "completed_at", "submitted_by", "submitted_at", "row_version"}
 )
 UPDATE_COLUMNS["questions"] = frozenset({"sent_by", "sent_at"})
+
+# T-03-T03 (0655, DEC-2202): the organizer editor's columns and answer effects.
+INSERT_COLUMNS["questionnaire_template_versions"] = INSERT_COLUMNS[
+    "questionnaire_template_versions"
+] | frozenset(
+    {"status", "questionnaire_id", "applies_to_tax_year", "drafted_from_version_id"}
+    | {"change_summary", "drafted_by"}
+)
+INSERT_COLUMNS["questionnaires"] = INSERT_COLUMNS["questionnaires"] | frozenset(
+    {"owner_kind", "source_template_version_id"}
+)
+INSERT_COLUMNS["questionnaire_sections"] = INSERT_COLUMNS["questionnaire_sections"] | frozenset(
+    {"key"}
+)
+INSERT_COLUMNS["questions"] = INSERT_COLUMNS["questions"] | frozenset(
+    {"internal_helper", "required", "show_when", "choices", "amount_parts", "effect_rules"}
+    | {"origin_template_question_key"}
+)
+INSERT_COLUMNS["answer_versions"] = INSERT_COLUMNS["answer_versions"] | frozenset(
+    {"question_wording_hash"}
+)
+INSERT_COLUMNS["answer_effects"] = frozenset(
+    {"tenant_id", "answer_id", "question_id", "rule_key", "effect_kind", "target_type"}
+    | {"target_id", "actor_kind", "actor_user_id", "template_version_id"}
+)
+UPDATE_COLUMNS["questionnaire_templates"] = frozenset({"key", "form_family", "owner_id"})
+UPDATE_COLUMNS["questionnaire_template_versions"] = UPDATE_COLUMNS[
+    "questionnaire_template_versions"
+] | frozenset(
+    {"status", "questionnaire_id", "applies_to_tax_year", "change_summary"}
+    | {"published_actor_kind", "row_version"}
+)
+UPDATE_COLUMNS["questionnaire_sections"] = frozenset({"name", "position", "key", "retired_at"})
+UPDATE_COLUMNS["questions"] = UPDATE_COLUMNS["questions"] | frozenset(
+    {"section_id", "position", "client_wording", "help_text", "internal_helper", "required"}
+    | {"show_when", "conditional_on_question_id", "conditional_value", "choices"}
+    | {"amount_parts", "effect_rules", "retired_at", "type"}
+)
