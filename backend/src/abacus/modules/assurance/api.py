@@ -241,3 +241,19 @@ __all__ = [
 
 # A-01-T27 (DEC-717): the Processing pill and audit-bar run time read C6 v1 engagement runs.
 register_run_summary(run_badges)
+
+# A-06-T15 (DEC-2215): a reviewable on C3's matrix and G5.
+from abacus.modules.assurance.review_targets import (  # noqa: E402
+    SUM_TARGET,
+    sum_facts,
+    sum_reviewables,
+)
+from abacus.modules.review.api import (  # noqa: E402
+    register_reviewable as _register_reviewable,
+)
+from abacus.modules.review.api import (  # noqa: E402
+    register_reviewable_facts as _register_reviewable_facts,
+)
+
+_register_reviewable(SUM_TARGET, sum_reviewables)
+_register_reviewable_facts(SUM_TARGET, sum_facts)

@@ -230,6 +230,14 @@ async def open_note_counts(tenant: TenantContext, engagement_id: UUID) -> dict[U
     return counts
 
 
+async def open_notes(tenant: TenantContext, engagement_id: UUID) -> list[tuple[UUID, UUID]]:
+    """A-06-T15: each open or responded note (id, target) for G5's blockers (callers
+    authorised)."""
+    async with tenant_session(tenant) as session:
+        notes = await notes_of(session, engagement_id)
+    return [(n.id, n.target_id) for n in notes if n.status in OPEN]
+
+
 async def notes_for(
     ctx: AuthContext,
     engagement_id: UUID,

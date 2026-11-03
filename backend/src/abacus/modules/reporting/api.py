@@ -528,3 +528,19 @@ ACTIVITIES: tuple[object, ...] = ()
 register_letter_renderer(render_engagement_letter)
 register_letter_finaliser(finalise_engagement_letter)  # N-02-T33: the approval renders final
 register_letter_locker(lock_engagement_letter)  # N-02-T33: a completed envelope locks it
+
+# A-06-T15 (DEC-2215): a reviewable on C3's matrix and G5.
+from abacus.modules.reporting.review_targets import (  # noqa: E402
+    FS_TARGET,
+    fs_facts,
+    fs_reviewables,
+)
+from abacus.modules.review.api import (  # noqa: E402
+    register_reviewable as _register_reviewable,
+)
+from abacus.modules.review.api import (  # noqa: E402
+    register_reviewable_facts as _register_reviewable_facts,
+)
+
+_register_reviewable(FS_TARGET, fs_reviewables)
+_register_reviewable_facts(FS_TARGET, fs_facts)
