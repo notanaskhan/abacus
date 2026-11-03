@@ -38,6 +38,8 @@ For a 30-day, 99.9% objective the error budget is 0.1% of requests, or about 43 
 | SLO-12 | Durability: single data-centre failure | Recovers automatically | n/a | binding | Verified by drills | RB-10 |
 | SLO-13 | Durability: regional recovery time | under 8 hours | n/a | binding | Verified by yearly tabletop | RB-11 |
 
+| SLO-14 | Review projector lag (P-04-T59; DEC-2065): an outbox event to its HOME-02 gate row | 95th percentile under 60 seconds; page above 5 minutes for 10 minutes | 7 days | inferred | Page on the lag; ticket on a dead-letter row | RB-06 |
+
 SLO-11 to SLO-13 are targets proven by the quarterly restore drill and the yearly regional-failover tabletop (chapter 06 §4), not by a running alarm.
 
 ## Where each lives (to fill as it is built)
@@ -46,6 +48,7 @@ SLO-11 to SLO-13 are targets proven by the quarterly restore drill and the yearl
 |---|---|---|
 | SLO definitions as code | `infra/` (path set when the production account lands) | planned |
 | Burn-rate alarms | Same | planned |
+| SLO-14 projector-lag alarm | `infra/modules/observability` (the relay's per-subscriber lag, `human_gate_projector`) | planned with the observability module (P-04-T59) |
 | Dashboard | Same | planned |
 | Error-budget review record | Dated entry in the compliance tool at each review below | planned |
 

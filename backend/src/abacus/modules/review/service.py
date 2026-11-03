@@ -28,7 +28,11 @@ from abacus.modules.review.repository import (
     sign_offs_of,
     stale_sign_offs,
 )
-from abacus.modules.review.slots import reviewable_fact_types, reviewable_facts
+from abacus.modules.review.slots import (
+    refuse_if_archived,
+    reviewable_fact_types,
+    reviewable_facts,
+)
 
 LEVELS: Final = {1: "preparer", 2: "reviewer", 3: "manager", 4: "partner", 5: "eqr"}
 _ACTIONS: Final = {
@@ -165,6 +169,7 @@ async def record_sign_off(
     so those rows deny (fail closed)."""
     if level not in LEVELS:
         raise SignOffInvalid("level")
+    await refuse_if_archived(ctx.tenant, engagement_id)  # P-04-T59: A-07's lock
     rows = await sign_offs_of(tx.session, target_type, [target_id])
     preparers: frozenset[UUID] | None = None
     if target_type in reviewable_fact_types():

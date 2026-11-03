@@ -89,6 +89,7 @@ from abacus.modules.review.slots import (
     DecisionKind,
     UnregisteredKind,
     decision_kind,
+    refuse_if_archived,
     suggestion_engagement,
 )
 
@@ -829,6 +830,7 @@ async def decide_card(
     kind = decision_kind(card.kind)
     text = (rationale or "").strip()
     decision_id = uuid4()
+    await refuse_if_archived(ctx.tenant, card.engagement_id)  # P-04-T59: A-07's lock
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, card.engagement_id)
         locked = await lock_card(tx.session, card_id)

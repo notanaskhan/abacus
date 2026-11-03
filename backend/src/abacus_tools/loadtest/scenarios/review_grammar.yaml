@@ -1,0 +1,33 @@
+# The review grammar under load (P-04-T59; ADR-079; chapter 10 section 10.11.1; DEC-2065): the
+# Northwind 401(k) audit team (Brightwater Hale at E0, `make seed-demo`) reading what waits for
+# them, the decision cards on the audit and the gate counts, at x25 (users 25). Must show: each read
+# p95 at or under 500 ms. The sign-off and decide writes' 500 ms budget (hashing included) is timed
+# on the fleet once `journey_vars` carries a reviewable and a card per user (Q-03 x100 content);
+# a write without its own target only times its refusal, so it is not faked here.
+name: review_grammar
+description: Waiting-on-you, decision cards and sign-offs on the Northwind audit at x25.
+duration_seconds: 600
+users: 25
+think_ms: 500
+ramp_seconds: 60
+max_error_rate: 0.001
+personas:
+  - {subject: scenario-hannah-leclerc, weight: 2, groups: [gates, cards, sign_offs]}
+  - {subject: scenario-margaret-okonkwo, weight: 1, groups: [gates, cards]}
+  - {subject: scenario-marcus-delaney, weight: 2, groups: [gates, sign_offs]}
+groups:
+  - name: gates
+    weight: 3
+    p95_ms: 500
+    steps:
+      - {path: /v1/human-gates}
+  - name: cards
+    weight: 2
+    p95_ms: 500
+    steps:
+      - {path: "/v1/decision-cards?engagement_id={engagement_id}"}
+  - name: sign_offs
+    weight: 2
+    p95_ms: 500
+    steps:
+      - {path: /v1/human-gates/counts}

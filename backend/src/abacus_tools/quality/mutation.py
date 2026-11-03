@@ -49,6 +49,7 @@ SCOPES: Final[dict[str, tuple[str, ...]]] = {
     "audit_trail": ("src/abacus/modules/audit_trail/*.py",),
     "compute": ("src/abacus/*/compute/*.py",),
     "signatures": ("src/abacus/modules/signatures/*.py",),  # N-02-T47 (ADR-079)
+    "review": ("src/abacus/modules/review/*.py",),  # P-04-T59 (ADR-079; DEC-2065)
 }
 # Generated files are regenerated, never mutated.
 GENERATED: Final = (

@@ -474,3 +474,27 @@ def checkpoint_proposal_hooks() -> CheckpointProposalHooks:
     if not _CHECKPOINT_PROPOSALS:
         raise ServiceUnavailable
     return _CHECKPOINT_PROPOSALS[0]
+
+
+# --- P-04-T59 (DEC-2065): the archive lock A-07 owns ------------------------------------------
+# Once an engagement's file is archive-locked, no sign-off and no decision is recorded on it. A-07
+# registers the check; with none registered nothing is locked (no archive exists before A-07).
+ArchiveLocked = Callable[[TenantContext, UUID], Awaitable[bool]]
+_ARCHIVE_LOCK: list[ArchiveLocked] = []
+
+
+class ArchiveLockedRefused(DomainInvalid):
+    """The engagement's file is archive-locked: the review record is closed (A-07)."""
+
+    code = "engagement_archive_locked"
+
+
+def register_archive_lock(check: ArchiveLocked) -> None:
+    if _ARCHIVE_LOCK and _ARCHIVE_LOCK[0] is not check:
+        raise ValueError("an archive lock is already registered")
+    _ARCHIVE_LOCK[:] = [check]
+
+
+async def refuse_if_archived(tenant: TenantContext, engagement_id: UUID) -> None:
+    if _ARCHIVE_LOCK and await _ARCHIVE_LOCK[0](tenant, engagement_id):
+        raise ArchiveLockedRefused

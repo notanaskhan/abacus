@@ -282,6 +282,9 @@ RECORD_TYPES: Final = frozenset(
     # P-11-T09 (AC6.1): the record types a generated document kind registers; their years are
     # content too, so a kind with no policy or floor yet is locked for the default period.
     | {"engagement_letter", "tax_return"}
+    # P-04-T59 (DEC-2065): the review grammar's records (sign-offs, notes, decisions, checkpoints,
+    # issues, gates), retained with the engagement's file; years are content like every other's.
+    | {"review_record"}
 )
 _DAYS_PER_YEAR: Final = Decimal("365.25")
 _EFFECTIVE_YEARS = text(
