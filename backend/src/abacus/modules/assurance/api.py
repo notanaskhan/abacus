@@ -38,6 +38,14 @@ from abacus.modules.assurance.fraud_brainstorm import apply_minutes_suggestion, 
 from abacus.modules.assurance.fraud_brainstorm import audit_owners as fraud_owners
 from abacus.modules.assurance.gates import register as register_gates
 from abacus.modules.assurance.home_counts import register_home_counts
+from abacus.modules.assurance.internal_control import (
+    ExceptionRouter,
+    ExceptionRow,
+    RouteRequest,
+    exception_route_available,
+    record_exceptions,
+    register_exception_route,
+)
 from abacus.modules.assurance.mapping import SUBSCRIPTIONS as MAPPING_SUBSCRIPTIONS
 from abacus.modules.assurance.mapping import import_csv as import_grouping_csv
 from abacus.modules.assurance.mapping import mapping_facts, mapping_reviewables
@@ -198,13 +206,17 @@ __all__ = [
     "SUBSCRIPTIONS",
     "WORKFLOWS",
     "AuditSection",
+    "ExceptionRouter",
+    "ExceptionRow",
     "IndexTag",
     "MappingConfirmIn",
     "MappingRunIn",
+    "RouteRequest",
     "RunSummary",
     "SectionState",
     "adopt_trial_balance",
     "completion_router",
+    "exception_route_available",
     "follows_gate",
     "g4_facts",
     "import_grouping_csv",
@@ -213,9 +225,11 @@ __all__ = [
     "propose_materiality",  # P-04-T36: the scenario loader proposes as the person named
     "publish_grouping_version",
     "reassess_materiality",
+    "record_exceptions",
     "record_phase",
     "register_audit_section",
     "register_audit_segment",
+    "register_exception_route",
     "register_index_tag",
     "register_materiality_dependents",
     "register_run_summary",

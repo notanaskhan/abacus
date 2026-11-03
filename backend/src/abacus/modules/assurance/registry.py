@@ -31,8 +31,18 @@ EBP_PARTICIPANT_TABLES: frozenset[str] = frozenset(
 COMPLETION_TABLES: frozenset[str] = frozenset(
     {"audit_findings", "deficiencies", "audit_misstatements", "sum_snapshots", "consultations"}
 )
+# A-04-T25 (0657, DEC-2206): internal control and SOC 1; walkthroughs insert-only.
+CONTROL_TABLES: frozenset[str] = frozenset(
+    {"control_activities", "walkthroughs", "control_exceptions"}
+    | {"soc_report_evaluations", "soc_exceptions", "cuecs"}
+)
 TABLES: frozenset[str] = (
-    _HUMAN_RECORDS | EBP_TABLES | PLANNING_TABLES | EBP_PARTICIPANT_TABLES | COMPLETION_TABLES
+    _HUMAN_RECORDS
+    | EBP_TABLES
+    | PLANNING_TABLES
+    | EBP_PARTICIPANT_TABLES
+    | COMPLETION_TABLES
+    | CONTROL_TABLES
 )
 INSERT_ONLY: frozenset[str] = (
     _HUMAN_RECORDS
@@ -41,6 +51,7 @@ INSERT_ONLY: frozenset[str] = (
     | {"ebp_population_queries"}
     | {"ebp_plan_reviews"}
     | {"sum_snapshots"}
+    | {"walkthroughs"}  # A-04-T25 (0657)
 )
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "eqr_concurrences": frozenset(
@@ -596,3 +607,62 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         }
     ),
 }
+
+# A-04-T25 (0657, DEC-2206): internal control and SOC 1, as the migration grants them.
+INSERT_COLUMNS.update(
+    {
+        "control_activities": frozenset(
+            {"tenant_id", "engagement_id", "work_item_id", "process_name", "design"}
+            | {"implementation", "reliance", "service_organization_id"}
+        ),
+        "walkthroughs": frozenset(
+            {"tenant_id", "engagement_id", "work_item_id", "control_activity_id"}
+            | {"performed_on", "performed_by_user_id", "evidence_version_ids"}
+        ),
+        "control_exceptions": frozenset(
+            {"tenant_id", "engagement_id", "work_item_id", "workpaper_id", "sheet_row"}
+            | {"matter", "description", "proposed_severity", "disposition", "coso_component"}
+            | {"misstatement_candidate_amount", "suggestion_id", "citation_ids"}
+            | {"recorded_by_kind"}
+        ),
+        "soc_report_evaluations": frozenset(
+            {"tenant_id", "engagement_id", "work_item_id", "service_organization_id"}
+            | {"evidence_version_id", "service_auditor_name", "opinion", "report_type"}
+            | {"period_start", "period_end", "report_date", "objectives_total"}
+            | {"objectives_relevant"}
+        ),
+        "soc_exceptions": frozenset(
+            {"tenant_id", "engagement_id", "work_item_id", "evaluation_id", "co_ref"}
+            | {"description", "impact", "impact_rationale"}
+        ),
+        "cuecs": frozenset(
+            {"tenant_id", "engagement_id", "work_item_id", "evaluation_id", "n", "text"}
+            | {"control_activity_id", "evidence_refs", "status", "page_citation_id"}
+        ),
+    }
+)
+UPDATE_COLUMNS.update(
+    {
+        "control_activities": frozenset(
+            {"design", "implementation", "reliance", "service_organization_id"}
+            | {"row_version", "updated_at"}
+        ),
+        "control_exceptions": frozenset(
+            {"matter", "description", "proposed_severity", "proposed_by_kind"}
+            | {"proposed_by_user_id", "disposition", "coso_component"}
+            | {"misstatement_candidate_amount", "routed_kind", "routed_ref", "suggestion_id"}
+            | {"citation_ids", "row_version", "updated_at"}
+        ),
+        "soc_report_evaluations": frozenset(
+            {"service_auditor_name", "opinion", "report_type", "period_start", "period_end"}
+            | {"report_date", "objectives_total", "objectives_relevant"}
+            | {"bridge_letter_request_item_id", "bridge_letter_evidence_version_id"}
+            | {"gap_days", "engine_version", "inputs_hash", "reliance_state"}
+            | {"reliance_card_id", "row_version", "updated_at"}
+        ),
+        "soc_exceptions": frozenset({"impact", "impact_rationale", "routed_ref", "updated_at"}),
+        "cuecs": frozenset(
+            {"control_activity_id", "evidence_refs", "status", "page_citation_id", "updated_at"}
+        ),
+    }
+)
