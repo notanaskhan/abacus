@@ -36,8 +36,13 @@ CONTROL_TABLES: frozenset[str] = frozenset(
     {"control_activities", "walkthroughs", "control_exceptions"}
     | {"soc_report_evaluations", "soc_exceptions", "cuecs"}
 )
+# A-05-T26 (0658, DEC-2207): EBP contributions; events insert-only.
+EBP_CONTRIBUTION_TABLES: frozenset[str] = frozenset(
+    {"ebp_payrolls", "ebp_late_remittances", "ebp_late_remittance_events"}
+)
 TABLES: frozenset[str] = (
     _HUMAN_RECORDS
+    | EBP_CONTRIBUTION_TABLES
     | EBP_TABLES
     | PLANNING_TABLES
     | EBP_PARTICIPANT_TABLES
@@ -52,6 +57,7 @@ INSERT_ONLY: frozenset[str] = (
     | {"ebp_plan_reviews"}
     | {"sum_snapshots"}
     | {"walkthroughs"}  # A-04-T25 (0657)
+    | {"ebp_payrolls", "ebp_late_remittance_events"}  # A-05-T26 (0658)
 )
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "eqr_concurrences": frozenset(
@@ -622,6 +628,10 @@ INSERT_COLUMNS.update(
         "control_exceptions": frozenset(
             {"tenant_id", "engagement_id", "work_item_id", "workpaper_id", "sheet_row"}
             | {"matter", "description", "proposed_severity", "disposition", "coso_component"}
+            | {
+                "proposed_by_kind",
+                "proposed_by_user_id",
+            }  # 0657's CHECK: a severity names its proposer
             | {"misstatement_candidate_amount", "suggestion_id", "citation_ids"}
             | {"recorded_by_kind"}
         ),
@@ -665,4 +675,33 @@ UPDATE_COLUMNS.update(
             {"control_activity_id", "evidence_refs", "status", "page_citation_id", "updated_at"}
         ),
     }
+)
+
+# A-05-T26 (0658, DEC-2207): EBP contributions. Payrolls are as imported and computed; a late
+# remittance's correction columns move through its events (a correction is a person's).
+INSERT_COLUMNS.update(
+    {
+        "ebp_payrolls": frozenset(
+            {"tenant_id", "engagement_id", "work_item_id", "import_id", "pay_date"}
+            | {"deferrals_pretax", "deferrals_roth", "match", "deposit_date"}
+            | {"business_day_lag", "calendar_lag", "result", "engine_name", "engine_version"}
+            | {"inputs_hash", "citation_ids"}
+        ),
+        "ebp_late_remittances": frozenset(
+            {"tenant_id", "engagement_id", "work_item_id", "payroll_id", "principal", "due_on"}
+            | {"deposited_on", "business_days_late", "interest_days", "rate", "rate_ref"}
+            | {"lost_earnings", "excise_exposure", "schedule_h_4a", "engine_name"}
+            | {"engine_version", "inputs_hash"}
+        ),
+        "ebp_late_remittance_events": frozenset(
+            {"tenant_id", "engagement_id", "work_item_id", "late_remittance_id", "event"}
+            | {"payload", "evidence_version_ids", "actor_kind", "actor_user_id"}
+        ),
+    }
+)
+UPDATE_COLUMNS["ebp_late_remittances"] = frozenset(
+    {"interest_days", "rate", "rate_ref", "lost_earnings", "excise_exposure", "schedule_h_4a"}
+    | {"engine_name", "engine_version", "inputs_hash", "finding_id", "correction_status"}
+    | {"lost_earnings_deposited_on", "scc_notice_on", "form_5330_status", "version"}
+    | {"updated_at"}
 )
