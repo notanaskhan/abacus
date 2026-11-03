@@ -89,7 +89,8 @@ def register_gate_provider(gate: str, provider: GateProvider) -> None:
 
 # N-02-T09 (DEC-820): an interim provider its owner replaces once. P-07's G3 reads the recorded
 # letter until signatures registers the envelope-backed G3 (which still honours the record).
-_REPLACEABLE: Final = frozenset({"G3"})
+# A-06-T15 (DEC-2215): assurance takes G5 over from the review module's SPEC-313 provider.
+_REPLACEABLE: Final = frozenset({"G3", "G5"})
 _REPLACED: set[str] = set()
 
 
