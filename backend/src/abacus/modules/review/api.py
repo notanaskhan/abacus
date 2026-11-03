@@ -73,7 +73,7 @@ from abacus.modules.review.issues import (
 )
 from abacus.modules.review.matrix import review_gate
 from abacus.modules.review.mfa import MfaRequired
-from abacus.modules.review.notes import notes_for, open_note_counts
+from abacus.modules.review.notes import notes_for, open_note_counts, open_notes
 from abacus.modules.review.notes import raise_on_target as raise_review_note
 from abacus.modules.review.notification_states import register_notification_states
 from abacus.modules.review.routes import router
@@ -273,6 +273,7 @@ __all__ = [
     "move_issue",  # A-06-T11: resolve or mark not applicable through the issue
     "notes_for",
     "open_note_counts",
+    "open_notes",
     "open_text",
     "pending_imports",
     "previous_value",
