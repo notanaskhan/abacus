@@ -2797,8 +2797,9 @@ async def _phase_advanced(conn: asyncpg.Connection, _: Scenario, event: Event) -
     (G4's planning facts, DEC-2078; SPEC-314's EQR concurrence, rep letter, release). The
     derived event is written as the owner in the event's actor transaction with its audit row,
     like the other bootstrap writes; its insert trigger still binds the actor to the session,
-    refuses a stale or backward move and moves the projection. No product path moves a phase without its gate met
-    (`assurance.phase.advance_by_gate` computes it). A release keeps its own date."""
+    refuses a stale or backward move and moves the projection. No product path moves a phase
+    without its gate met (`assurance.phase.advance_by_gate` computes it). A release keeps its own
+    date."""
     audit = BY_LABEL[str(event.data["audit"])]
     engagement = engagement_id_of(audit)
     on = event.data.get("on")
