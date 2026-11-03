@@ -187,6 +187,15 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "document_classifications": "trust_kit_immutable",  # 0404 (N-01-T17)
     "answer_versions": "answer_versions_immutable",  # 0467 (T-02-T16)
     "duplicate_resolutions": "duplicate_resolutions_immutable",  # 0468 (T-02-T17)
+    "notice_status_events": "notice_rows_immutable",  # 0650 (N-04-T03)
+    "notice_field_values": "notice_rows_immutable",  # 0650 (N-04-T03)
+    "notice_proposed_items": "notice_rows_immutable",  # 0650 (N-04-T03)
+    "notice_return_snapshots": "notice_rows_immutable",  # 0650 (N-04-T03)
+    "notice_analyses": "notice_rows_immutable",  # 0650 (N-04-T03)
+    "notice_notes": "notice_rows_immutable",  # 0650 (N-04-T03)
+    "notice_response_versions": "notice_rows_immutable",  # 0650 (N-04-T03)
+    "notice_sent_records": "notice_rows_immutable",  # 0650 (N-04-T03)
+    "notice_agency_replies": "notice_rows_immutable",  # 0650 (N-04-T03)
 }
 # Update columns for tables outside the modules (TASK-008); modules declare theirs.
 _PLATFORM_UPDATE_COLUMNS: dict[str, frozenset[str]] = {
