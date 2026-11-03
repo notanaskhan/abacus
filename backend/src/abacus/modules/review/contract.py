@@ -611,6 +611,65 @@ async def review_note_list_route(
     )
 
 
+class NoteBandsOut(BaseModel):
+    """AUD-17's bands for one work item: Open · Responded · Cleared (A-06-T14)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    open: Annotated[int, classified("internal")]
+    responded: Annotated[int, classified("internal")]
+    cleared: Annotated[int, classified("internal")]
+    total: Annotated[int, classified("internal")]
+
+
+@review_notes_router.get("/bands", action="review_note.read", response_model=NoteBandsOut)
+async def review_note_bands_route(
+    ctx: Ctx, work_item_id: Annotated[UUID, Query()]
+) -> NoteBandsOut:
+    """The work item's notes by band, from the visible rows' counts (A-06-T14; AUD-17)."""
+    await _live(ctx)
+    from abacus.modules.engagements.api import work_item_engagement
+    from abacus.modules.review.re_review import bands_of
+
+    engagement_id = await work_item_engagement(ctx.tenant, work_item_id)
+    if engagement_id is None:
+        raise NotFound("work_item")
+    found = await list_notes(
+        ctx,
+        engagement_id=engagement_id,
+        target_type=None,
+        target_id=None,
+        status=None,
+        cursor=None,
+        limit=1,
+    )
+    bands = bands_of(dict(found.counts))
+    return NoteBandsOut(
+        open=bands.open, responded=bands.responded, cleared=bands.cleared, total=bands.total
+    )
+
+
+class ReReviewOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    sign_off_id: Annotated[UUID, classified("internal")]
+
+
+@sign_offs_router.post(
+    "/{sign_off_id}/request-re-review",
+    action="sign_off.request_re_review",
+    response_model=ReReviewOut,
+    errors=(409,),
+)
+async def sign_off_re_review_route(sign_off_id: UUID, ctx: Ctx) -> ReReviewOut:
+    """AUD-17: ask the signer of a stale sign-off to look again (409 `not_stale`); a person's
+    act. The signer is told (C16 `sign_off_re_review`)."""
+    await _live(ctx)
+    from abacus.modules.review.re_review import request_re_review
+
+    return ReReviewOut(sign_off_id=await request_re_review(ctx, sign_off_id))
+
+
 @review_notes_router.get(
     "/{note_id}", action="review_note.read", response_model=ReviewNoteDetailOut, errors=(501,)
 )

@@ -27161,6 +27161,30 @@ export type NoteAnchorOut = {
 };
 
 /**
+ * NoteBandsOut
+ *
+ * AUD-17's bands for one work item: Open · Responded · Cleared (A-06-T14).
+ */
+export type NoteBandsOut = {
+    /**
+     * Cleared
+     */
+    cleared: number;
+    /**
+     * Open
+     */
+    open: number;
+    /**
+     * Responded
+     */
+    responded: number;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
  * NoteEntryOut
  */
 export type NoteEntryOut = {
@@ -32285,6 +32309,16 @@ export type RaiseReviewNoteIn = {
      * Target Type
      */
     target_type: string;
+};
+
+/**
+ * ReReviewOut
+ */
+export type ReReviewOut = {
+    /**
+     * Sign Off Id
+     */
+    sign_off_id: string;
 };
 
 /**
@@ -100574,6 +100608,58 @@ export type ReviewNoteRaiseResponses = {
 
 export type ReviewNoteRaiseResponse = ReviewNoteRaiseResponses[keyof ReviewNoteRaiseResponses];
 
+export type ReviewNoteBandsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    url: '/v1/review-notes/bands';
+};
+
+export type ReviewNoteBandsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ReviewNoteBandsError = ReviewNoteBandsErrors[keyof ReviewNoteBandsErrors];
+
+export type ReviewNoteBandsResponses = {
+    /**
+     * Successful Response
+     */
+    200: NoteBandsOut;
+};
+
+export type ReviewNoteBandsResponse = ReviewNoteBandsResponses[keyof ReviewNoteBandsResponses];
+
 export type ReviewNoteData = {
     body?: never;
     headers?: {
@@ -101571,6 +101657,62 @@ export type SignOffEligibilityResponses = {
 };
 
 export type SignOffEligibilityResponse = SignOffEligibilityResponses[keyof SignOffEligibilityResponses];
+
+export type SignOffReReviewData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Sign Off Id
+         */
+        sign_off_id: string;
+    };
+    query?: never;
+    url: '/v1/sign-offs/{sign_off_id}/request-re-review';
+};
+
+export type SignOffReReviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SignOffReReviewError = SignOffReReviewErrors[keyof SignOffReReviewErrors];
+
+export type SignOffReReviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: ReReviewOut;
+};
+
+export type SignOffReReviewResponse = SignOffReReviewResponses[keyof SignOffReReviewResponses];
 
 export type SignOffBulkData = {
     body: BulkSignOffIn;
