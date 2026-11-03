@@ -4,7 +4,7 @@ title: A-06-T01 SPEC-642 findings, adjustments and SUM
 spec: SPEC-642
 acceptance_criteria: [AC-1]
 risk_zone: red
-status: in-review
+status: done
 epic: A-06
 plan_key: A-06-T01
 branch: s24-a06-t01
