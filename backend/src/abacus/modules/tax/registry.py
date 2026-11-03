@@ -24,6 +24,8 @@ TABLES: frozenset[str] = frozenset(
     | {"transmissions", "efile_acks"}  # T-01-T37 (0568, DEC-1570)
     | {"filed_return_deliveries"}  # T-01-T41 (0569, DEC-1571)
     | {"k1_furnishing_disclosures"}  # S20e (0590, DEC-1579): the e-furnishing disclosure
+    # T-03-T03 (0655, DEC-2202): extensions and estimates.
+    | {"filing_extensions", "extension_payments", "estimate_schedules", "estimate_installments"}
 )
 # T-02-T07 (0403): `tax_returns` takes updates of its v1 columns now, so it is no longer
 # insert-only; its events and engine summaries are.
@@ -180,3 +182,48 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         | {"message_id", "emailed_at", "handoffs_at"}
     ),
 }
+
+# T-03-T03 (0655, DEC-2202): extensions and estimates. An approved extension payment is frozen by
+# its trigger (a change supersedes it); the rest take their computed and recorded columns.
+INSERT_COLUMNS["filing_extensions"] = frozenset(
+    {"id", "tenant_id", "engagement_id", "work_item_id", "tax_return_id", "tax_year"}
+    | {"jurisdiction", "form", "status", "likely_to_extend", "likely_reasons", "likely_note"}
+    | {"original_due_on", "extended_due_on", "due_rules_version_id", "projected_liability"}
+    | {"projected_liability_source", "projected_liability_ref", "withholding_plus_estimates"}
+    | {"safe_harbor_pct", "safe_harbor_target", "engine_version", "inputs_hash", "created_by"}
+)
+INSERT_COLUMNS["extension_payments"] = frozenset(
+    {"id", "tenant_id", "filing_extension_id", "kind", "amount", "paid_on", "proposed_by"}
+    | {"supersedes_id"}
+)
+INSERT_COLUMNS["estimate_schedules"] = frozenset(
+    {"id", "tenant_id", "client_entity_id", "basis_tax_return_id", "tax_year", "jurisdiction"}
+    | {"form", "method", "prior_year_tax", "prior_year_tax_ref", "prior_agi_over_threshold"}
+    | {"projected_withholding", "annual_required", "engine_version", "inputs_hash"}
+    | {"payment_method_label", "created_by"}
+)
+INSERT_COLUMNS["estimate_installments"] = frozenset(
+    {"id", "tenant_id", "schedule_id", "quarter", "due_on", "due_rules_version_id", "amount"}
+    | {"status"}
+)
+UPDATE_COLUMNS["filing_extensions"] = frozenset(
+    {"status", "likely_to_extend", "likely_reasons", "likely_note", "original_due_on"}
+    | {"extended_due_on", "due_rules_version_id", "filed_on", "filed_recorded_by", "form"}
+    | {"filed_form_evidence_version_id", "ack_received_at", "reject_code"}
+    | {"projected_liability", "projected_liability_source", "projected_liability_ref"}
+    | {"withholding_plus_estimates", "safe_harbor_pct", "safe_harbor_target"}
+    | {"engine_version", "inputs_hash", "row_version"}
+)
+UPDATE_COLUMNS["extension_payments"] = frozenset(
+    {"approved_by", "approved_actor_kind", "approved_at", "paid_on"}
+    | {"confirmation_evidence_version_id"}
+)
+UPDATE_COLUMNS["estimate_schedules"] = frozenset(
+    {"method", "prior_year_tax", "prior_year_tax_ref", "prior_agi_over_threshold"}
+    | {"projected_withholding", "annual_required", "engine_version", "inputs_hash"}
+    | {"payment_method_label", "row_version"}
+)
+UPDATE_COLUMNS["estimate_installments"] = frozenset(
+    {"due_on", "due_rules_version_id", "amount", "status", "scheduled_for", "paid_on"}
+    | {"confirmation_request_item_id", "confirmed_by_contact_id", "confirmed_at", "row_version"}
+)
