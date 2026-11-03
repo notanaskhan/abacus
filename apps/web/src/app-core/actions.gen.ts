@@ -169,6 +169,7 @@ export const ACTIONS = [
   "estimate_schedule.read",
   "estimate_schedule.update",
   "evidence.accept",
+  "evidence.ocr_retry",
   "evidence.read",
   "evidence.read_access_log",
   "evidence.read_metadata",

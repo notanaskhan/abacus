@@ -175,6 +175,7 @@ from abacus.modules.evidence.match_material import (
 )
 from abacus.modules.evidence.matching import MIN_SCORE as SUGGESTION_MIN_SCORE
 from abacus.modules.evidence.matching import suggest as suggest_by_name
+from abacus.modules.evidence.ocr_contract import ocr_router
 from abacus.modules.evidence.pii import column_families, masked_rows, pii_scan_upload
 from abacus.modules.evidence.pii_facts import tin_exposure
 from abacus.modules.evidence.portal_files import (
@@ -365,6 +366,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     drops_router,  # C5 portal-pbc stub (R-01-T01): a portal drop
     void_router,  # C5 portal-pbc (TASK-1248): a person voids a wrong rule link
     trust_router,  # C4 v1 stub (P-03-T02; ADR-144)
+    ocr_router,  # C4 v1.1 OCR and box extraction stub (P-11-T19)
     retention_router,  # Q-02-T23: a firm's retention policies
     retention_platform_router,  # Q-02-T23: staff floor and default sets
     legal_hold_router,  # Q-02-T29: legal holds

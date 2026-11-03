@@ -43,6 +43,7 @@ from abacus.modules.evidence.citations.display import (
     citation_list,
 )
 from abacus.modules.evidence.citations.moved import relink
+from abacus.modules.evidence.events import OcrRefusal
 from abacus.modules.evidence.reveals import reveal_pii
 from abacus.modules.evidence.routes import (
     _png_response,  # pyright: ignore[reportPrivateUsage] -- the module's own PNG answer
@@ -262,6 +263,16 @@ async def create_citation_route(body: CitationCreateIn, ctx: Ctx) -> CitationV2O
 # --- Source viewer (geometry and mask tokens only, never text) ------------------------------
 
 
+class PageOcrOut(BaseModel):
+    """C4 v1.1 (P-11-T19): a page's OCR facts; `refused_reason` when the gate refused it."""
+
+    model_config = ConfigDict(frozen=True)
+
+    mean_confidence: Annotated[float | None, Field(ge=0, le=1), classified("internal")] = None
+    low_confidence_words: Annotated[int, Field(ge=0), classified("internal")] = 0
+    refused_reason: Annotated[OcrRefusal | None, classified("internal")] = None
+
+
 class ViewerPageOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -273,6 +284,11 @@ class ViewerPageOut(BaseModel):
     image_h: Annotated[int, classified("internal")]
     text_layer: Annotated[bool, classified("internal")]
     pii_scan: Annotated[Literal["done", "not_scannable"], classified("internal")]
+    # C4 v1.1 additive (P-11-T19, DEC-2204): where the words came from, and OCR's facts.
+    text_source: Annotated[Literal["text_layer", "ocr", "none"] | None, classified("internal")] = (
+        None
+    )
+    ocr: Annotated[PageOcrOut | None, classified("internal")] = None
 
 
 class PiiMaskOut(BaseModel):

@@ -212,3 +212,34 @@ Additive changes go in place. Breaking changes ship as C4 v2 with one sprint of 
   - `unreadable` shares "Can't preview" (the words themselves land with the C4 stub);
   - P-03 §11.2 OQ-1 to OQ-8 decided with the plan's recommendations: a reveal lasts 30 s on the viewer, with `reason_code=source_review` and no free text; v1 relinks only to the successor; `eqr_reviewer` and `reviewer` read citations, and `client_service` does not; firm-level citations take visibility from their anchor provider; auto-highlight is per browser; the reveal limit is 20 per hour; unlock adds no re-screening trigger.
 - The `register_citing_anchor(anchor_type, provider)` slot is inferred and lands with P-04.
+
+## v1.1 additive: OCR and box extraction (P-11-T19, 2026-11-03, DEC-2204)
+Stub. `…/fields` and `…/tables` sit behind `evidence.form_extraction` (variant `off · notices ·
+notices_tax_forms · all`; 404 at `off`). `…/text/retry` sits behind `evidence.ocr`. All three
+answer 501 until P-11-T22 onward. Additive only: the v1 consumer suite (P-03-T03) is unchanged.
+Module: `evidence/ocr_contract.py`.
+
+| Operation | Method and path | Action |
+|---|---|---|
+| Viewer manifest (P-03): pages gain `text_source` (`text_layer · ocr · none`) and `ocr {mean_confidence, low_confidence_words, refused_reason}` (optional, null until P-11-T22) | `GET /v1/evidence-versions/{v}/viewer` | `evidence.read` (unchanged) |
+| The boxes code read: `{form_type, tax_year, corrected, form_map_version, items[{field_key, label, value_type, value_text \| mask_token, page, bbox, confidence, low_confidence, extractor_kind, match_id}]}` | `GET /v1/evidence-versions/{v}/fields?form=&key=` | `evidence.read` (unfiled inbox files: the inbox preview's `evidence.upload`) |
+| Statement tables: `{items[{table_id, page, bbox, rows[[{text, bbox, confidence}]]}]}` | `GET /v1/evidence-versions/{v}/tables?page=` | same |
+| A person's "Read text again": `{status: queued \| refused, reason}` | `POST /v1/evidence-versions/{v}/text/retry` | `evidence.ocr_retry` (new; agent and system deny) |
+| Regions accept `ev:<v>#field:<key>` | `GET /v1/evidence-versions/{v}/regions?match_ids=` (P-03) | `evidence.read` |
+
+- **Rules.**
+  - A field below confidence 0.90 is `low_confidence` and is stored as read, never corrected.
+  - A TIN box returns only its mask token; reveal stays P-03's logged route.
+  - An unsupported form or tax year answers no items, and the consumer offers manual entry.
+  - No model reads a value (ADR-050).
+- **Refusal reasons**, checked in order (the first failure is the reason):
+  `kill_switch`, `flag_off`, `provider_terms`, `boundary_basis`, `consent_7216`,
+  `daily_page_cap`, `size_limit`. `provider_error` is also a reason.
+- **Events.** These carry identifiers and enums only (`evidence/events.py`):
+  - `evidence_text.ready {evidence_version_id, engagement_id, text_source, pages}`;
+  - `extracted_fields.recorded {evidence_version_id, engagement_id, form_type, tax_year, fields,
+    low_confidence, corrected}`;
+  - `ocr_run.refused {evidence_version_id, engagement_id, reason}`.
+- **Fixture targets for consumers.** Santos CP14 (a photo) and Whitley CP2000: CP2000, TY2024,
+  753.01 = 686.40 + 66.61, respond by Sep 23, 2026. Also Feld 1095-C and the Iyer 1099-DIV
+  CORRECTED (box 1b 3,310.00).

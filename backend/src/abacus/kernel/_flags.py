@@ -156,6 +156,22 @@ EVIDENCE_DUPLICATE_REVIEW = Flag(
     kind="boolean",
     default="false",
 )
+EVIDENCE_FORM_EXTRACTION = Flag(
+    name="evidence.form_extraction",
+    kind="variant",
+    default="off",
+    values=(
+        "off",
+        "notices",
+        "notices_tax_forms",
+        "all",
+    ),
+)
+EVIDENCE_OCR = Flag(
+    name="evidence.ocr",
+    kind="boolean",
+    default="false",
+)
 EVIDENCE_PII_REVEAL = Flag(
     name="evidence.pii_reveal",
     kind="boolean",
@@ -476,6 +492,8 @@ FLAGS: dict[str, Flag] = {
     "engagements.roll_forward_v2": ENGAGEMENTS_ROLL_FORWARD_V2,
     "evidence.citations_v2": EVIDENCE_CITATIONS_V2,
     "evidence.duplicate_review": EVIDENCE_DUPLICATE_REVIEW,
+    "evidence.form_extraction": EVIDENCE_FORM_EXTRACTION,
+    "evidence.ocr": EVIDENCE_OCR,
     "evidence.pii_reveal": EVIDENCE_PII_REVEAL,
     "evidence.viewer_unlock": EVIDENCE_VIEWER_UNLOCK,
     "evidence.viewer_v1": EVIDENCE_VIEWER_V1,
