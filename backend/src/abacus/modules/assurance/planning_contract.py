@@ -1342,7 +1342,12 @@ async def risk_approval_request_route(
 ) -> ApprovalRequestOut:
     """One `significant_risk` card over every pending proposal; 409 `nothing_pending` (T18)."""
     await _gate(ctx, engagement_id, "risk.route_for_approval", _RR)
-    _not_yet()
+    from abacus.modules.assurance import risks
+
+    found = await risks.request_approval(ctx, engagement_id)
+    return ApprovalRequestOut(
+        decision_card_id=found.card_id, subject_codes=list(found.subject_codes)
+    )
 
 
 @router.post("/risks/coverage", action="risk.read", response_model=CoverageOut)

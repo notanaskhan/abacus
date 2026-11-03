@@ -42,11 +42,16 @@ from abacus.modules.assurance.materiality import register_materiality_dependents
 from abacus.modules.assurance.phase import SUBSCRIPTIONS as PHASE_SUBSCRIPTIONS
 from abacus.modules.assurance.phase import record_phase, update_profile
 from abacus.modules.assurance.planning_contract import router as planning_router
+from abacus.modules.assurance.planning_gate import g4_facts
 from abacus.modules.assurance.providers import register as register_a01_providers
 from abacus.modules.assurance.release import RELEASE_MODE_SETTING, g8
 from abacus.modules.assurance.review_gates import register_review_gates
 from abacus.modules.assurance.risks import AUDIT_KINDS as RISK_KINDS
-from abacus.modules.assurance.risks import apply_risk_suggestion, risk_engagement
+from abacus.modules.assurance.risks import (
+    apply_risk_suggestion,
+    register_approval_kind,
+    risk_engagement,
+)
 from abacus.modules.assurance.risks import audit_owners as risk_owners
 from abacus.modules.assurance.routes import router
 from abacus.modules.assurance.run_badges import run_badges
@@ -139,6 +144,7 @@ register_ebp_modes()
 register_engagement_owners(SERVICE_ORG_KINDS, service_org_owners)
 # A-04-T12 (DEC-1950): the materiality cards' kinds and appliers; versions placed for the trail.
 register_materiality_kinds()
+register_approval_kind()  # A-04-T18 (DEC-2056): the `significant_risk` card
 register_engagement_owners(MATERIALITY_KINDS, materiality_owners)
 # A-04-T13 (DEC-1951): the register's rows placed for the trail; the agent's `risk` suggestions
 # written by their owner when a person adopts them (AC4.7).
@@ -167,6 +173,7 @@ __all__ = [
     "SectionState",
     "adopt_trial_balance",
     "completion_router",
+    "g4_facts",
     "import_grouping_csv",
     "mapping_live",
     "materiality_engine",
