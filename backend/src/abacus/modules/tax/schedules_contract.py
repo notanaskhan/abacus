@@ -45,6 +45,10 @@ Tri = classified("restricted", tri=True)
 Money = Annotated[Decimal, Field(max_digits=18, decimal_places=2), Tri]
 Pct = Annotated[Decimal, Field(max_digits=5, decimal_places=2), classified("internal")]
 Name = Annotated[str, classified("confidential")]
+# Optional forms keep the classification on the field (a `Name | None` union drops it).
+OptName = Annotated[str | None, classified("confidential")]
+OptMoney = Annotated[Decimal | None, Field(max_digits=18, decimal_places=2), Tri]
+OptPct = Annotated[Decimal | None, Field(max_digits=5, decimal_places=2), classified("internal")]
 Internal = classified("internal")
 
 ExtensionStatus = Literal["not_filed", "prepared", "filed", "accepted", "rejected"]
@@ -112,7 +116,7 @@ class TaxConfirmationOut(BaseModel):
     model_config = _frozen()
 
     confirmed: Annotated[bool, Internal]
-    contact_name: Name | None = None
+    contact_name: OptName = None
     confirmed_on: Annotated[date | None, Internal] = None
     request_item_id: Annotated[UUID | None, Internal] = None
     requested_on: Annotated[date | None, Internal] = None
@@ -130,7 +134,7 @@ class ExtensionPaymentOut(BaseModel):
     amount: Money
     paid_on: Annotated[date | None, Internal] = None
     proposed_by_name: Name
-    approved_by_name: Name | None = None
+    approved_by_name: OptName = None
     approved_at: Annotated[datetime | None, Internal] = None
     supersedes_id: Annotated[UUID | None, Internal] = None
     confirmation_evidence_version_id: Annotated[UUID | None, Internal] = None
@@ -148,7 +152,7 @@ class JurisdictionLineOut(BaseModel):
     filed_on: Annotated[date | None, Internal] = None
     ack_received_at: Annotated[datetime | None, Internal] = None
     reject_code: Annotated[str | None, Tri] = None
-    paid_with_extension: Money | None = None
+    paid_with_extension: OptMoney = None
 
 
 # --- extensions ---------------------------------------------------------------------------------
@@ -163,28 +167,28 @@ class ExtensionRowOut(BaseModel):
     tax_return_id: Annotated[UUID, Internal]
     work_item_id: Annotated[UUID, Internal]
     client_name: Name
-    client_note: Name | None = None  # "(Walter's 2025 Form 1040)"
+    client_note: OptName = None  # "(Walter's 2025 Form 1040)"
     return_form: Annotated[str, Internal]  # "1040", "1065", "2025 Form 990 (FYE Jun 30, 2026)"
     tax_year: Annotated[int, Internal]
     lines: Annotated[list[JurisdictionLineOut], Internal]
-    projected_liability: Money | None = None
+    projected_liability: OptMoney = None
     projected_liability_source: Annotated[LiabilitySource | None, Internal] = None
-    projected_liability_note: Name | None = None  # "— (pass-through)", "Not started — …"
-    withholding_plus_estimates: Money | None = None
-    safe_harbor_target: Money | None = None
-    safe_harbor_pct: Pct | None = None
-    paid_by_original_due: Money | None = None
+    projected_liability_note: OptName = None  # "— (pass-through)", "Not started — …"
+    withholding_plus_estimates: OptMoney = None
+    safe_harbor_target: OptMoney = None
+    safe_harbor_pct: OptPct = None
+    paid_by_original_due: OptMoney = None
     meets_safe_harbor: Annotated[bool | None, Internal] = None
     payments: Annotated[list[ExtensionPaymentOut], Internal]
-    confirmation: TaxConfirmationOut | None = None
+    confirmation: Annotated[TaxConfirmationOut | None, classified("confidential")] = None
     original_due_on: Annotated[date, Internal]
     extended_due_on: Annotated[date, Internal]
     days_to_extended_due: Annotated[int | None, Internal] = None
     likely_to_extend: Annotated[bool, Internal]
     likely_reasons: Annotated[list[LikelyReason], Internal]
-    likely_note: Name | None = None
+    likely_note: OptName = None
     prepare_blocked_reason: Annotated[str | None, Internal] = None  # G1/G3 tooltip key
-    stamp: EngineStampOut | None = None
+    stamp: Annotated[EngineStampOut | None, Internal] = None
     row_version: Annotated[int, Internal]
     allowed_actions: Annotated[list[ExtensionAction], Internal]
 
@@ -194,7 +198,7 @@ class ExtensionOut(ExtensionRowOut):
 
     due_rules_version_id: Annotated[UUID | None, Internal] = None
     filed_form_evidence_version_id: Annotated[UUID | None, Internal] = None
-    filed_recorded_by_name: Name | None = None
+    filed_recorded_by_name: OptName = None
 
 
 class ProposedPaymentIn(BaseModel):
@@ -247,11 +251,11 @@ class SafeHarborCheckOut(BaseModel):
 
     tax_return_id: Annotated[UUID, Internal]
     jurisdiction: Annotated[str, Internal]
-    projected_liability: Money | None = None
-    safe_harbor_target: Money | None = None
-    paid_by_original_due: Money | None = None
+    projected_liability: OptMoney = None
+    safe_harbor_target: OptMoney = None
+    paid_by_original_due: OptMoney = None
     meets_safe_harbor: Annotated[bool | None, Internal] = None
-    stamp: EngineStampOut | None = None
+    stamp: Annotated[EngineStampOut | None, Internal] = None
 
 
 class ExtensionBatchOut(BaseModel):
@@ -304,14 +308,14 @@ class EstimateInstallmentOut(BaseModel):
 
     quarter: Annotated[int, Field(ge=1, le=4), Internal]
     due_on: Annotated[date, Internal]
-    amount: Money | None = None
+    amount: OptMoney = None
     jurisdiction_amounts: Annotated[dict[str, Decimal], Tri] = Field(
         default_factory=dict[str, Decimal]
     )  # "19,990 · NY 7,824"
     status: Annotated[InstallmentStatus, Internal]
     scheduled_for: Annotated[date | None, Internal] = None
     paid_on: Annotated[date | None, Internal] = None
-    confirmation: TaxConfirmationOut | None = None
+    confirmation: Annotated[TaxConfirmationOut | None, classified("confidential")] = None
 
 
 class EstimateRowOut(BaseModel):
@@ -322,37 +326,37 @@ class EstimateRowOut(BaseModel):
     schedule_id: Annotated[UUID, Internal]
     client_entity_id: Annotated[UUID, Internal]
     client_name: Name
-    client_note: Name | None = None
+    client_note: OptName = None
     tax_year: Annotated[int, Internal]
     forms: Annotated[list[str], Internal]  # ["1040-ES", "IT-2105"]
     method: Annotated[EstimateMethod, Internal]
     method_note: Annotated[str | None, Tri] = None  # the code-written explanation of the figure
-    annual_required: Money | None = None
+    annual_required: OptMoney = None
     jurisdiction_annual: Annotated[dict[str, Decimal], Tri] = Field(
         default_factory=dict[str, Decimal]
     )
     payment_method_labels: Annotated[list[PaymentMethodLabel], Internal]
-    installment: EstimateInstallmentOut | None = None
-    stamp: EngineStampOut | None = None
+    installment: Annotated[EstimateInstallmentOut | None, classified("internal")] = None
+    stamp: Annotated[EngineStampOut | None, Internal] = None
     row_version: Annotated[int, Internal]
     allowed_actions: Annotated[list[EstimateAction], Internal]
 
 
 class EstimateOut(EstimateRowOut):
     installments: Annotated[list[EstimateInstallmentOut], Internal]
-    prior_year_tax: Money | None = None
+    prior_year_tax: OptMoney = None
     prior_agi_over_threshold: Annotated[bool | None, Internal] = None
-    projected_withholding: Money | None = None
+    projected_withholding: OptMoney = None
 
 
 class EstimatePatchIn(BaseModel):
     model_config = _strict()
 
     method: Annotated[EstimateMethod | None, Internal] = None
-    prior_year_tax: Money | None = None
+    prior_year_tax: OptMoney = None
     prior_year_tax_source: Annotated[LiabilitySource | None, Internal] = None
     prior_agi_over_threshold: Annotated[bool | None, Internal] = None
-    projected_withholding: Money | None = None
+    projected_withholding: OptMoney = None
     payment_method_label: Annotated[PaymentMethodLabel | None, Internal] = None
 
 
@@ -551,7 +555,7 @@ async def extension_confirmation_route(
     response_model=ListPage[EstimateRowOut],
     errors=(501,),
 )
-async def estimates_route(
+async def tax_estimates_route(
     ctx: Ctx,
     tax_year: Annotated[int, Query(ge=2000, le=2100)],
     quarter: Annotated[int | None, Query(ge=1, le=4)] = None,

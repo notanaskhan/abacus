@@ -35,6 +35,8 @@ TABLES: frozenset[str] = frozenset(
         "methodology_source_files",
         "methodology_source_pages",
         "program_step_sources",
+        "disclosure_checklist_templates",
+        "disclosure_checklist_template_versions",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -160,3 +162,14 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         | {"published_by", "published_actor_kind", "published_at", "row_version"}
     ),
 }
+
+# A-06-T19 (0660, DEC-2209): statements v1 (DEC-80) and the disclosure-checklist templates.
+INSERT_COLUMNS["disclosure_checklist_templates"] = frozenset(
+    {"created_by", "framework_key", "name", "tenant_id"}
+)
+INSERT_COLUMNS["disclosure_checklist_template_versions"] = frozenset(
+    {"imported_by", "items", "source_file_sha256", "template_id", "tenant_id", "version"}
+)
+UPDATE_COLUMNS["disclosure_checklist_template_versions"] = frozenset(
+    {"published_at", "published_by", "status"}
+)
