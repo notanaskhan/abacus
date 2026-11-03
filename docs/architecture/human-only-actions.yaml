@@ -153,3 +153,5 @@ actions:
     verb: decide  # the engagement partner's sum_conclusion decision applied (A-06-T13/T16, 0661)
   - action: attribute_result.marked
     verb: confirm  # a person's pass, exception or no effect on the attribute grid (A-05-T22, 0661)
+  - action: fraud_minutes.approved
+    verb: approve  # the engagement partner approves the fraud brainstorming minutes (A-04-T19/T30, 0662)
