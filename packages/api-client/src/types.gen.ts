@@ -18321,25 +18321,40 @@ export type GreetingOut = {
 };
 
 /**
- * GridCellOut
+ * GridRowOut
+ *
+ * One capability row; cells per template computed from the compiled matrix and the firm's
+ * overrides, or from `role-templates.yaml` for actions not yet in the matrix.
  */
-export type GridCellOut = {
+export type GridRowOut = {
     /**
-     * Attribute Key
+     * Actions
      */
-    attribute_key: string;
+    actions: Array<string>;
     /**
-     * By
+     * Cells
      */
-    by: 'human' | 'agent' | 'system' | 'policy';
+    cells: {
+        [key: string]: 'allow' | 'conditional' | 'delegated' | 'deny' | 'locked';
+    };
     /**
-     * Citation Ids
+     * Conditions
      */
-    citation_ids: Array<string>;
+    conditions?: {
+        [key: string]: string;
+    };
     /**
-     * Result
+     * Key
      */
-    result: 'not_started' | 'agent_tested' | 'needs_human' | 'pass' | 'exception' | 'no_effect';
+    key: string;
+    /**
+     * Locked
+     */
+    locked?: boolean;
+    /**
+     * Source
+     */
+    source: 'matrix' | 'policy';
 };
 
 /**
@@ -35178,7 +35193,7 @@ export type RoleTemplatesOut = {
     /**
      * Grid
      */
-    grid: Array<AbacusModulesIdentitySettingsContractGridRowOut>;
+    grid: Array<GridRowOut>;
     /**
      * Templates
      */
@@ -42943,6 +42958,28 @@ export type TemplateVersionRefOut = {
 };
 
 /**
+ * TestGridCellOut
+ */
+export type TestGridCellOut = {
+    /**
+     * Attribute Key
+     */
+    attribute_key: string;
+    /**
+     * By
+     */
+    by: 'human' | 'agent' | 'system' | 'policy';
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Result
+     */
+    result: 'not_started' | 'agent_tested' | 'needs_human' | 'pass' | 'exception' | 'no_effect';
+};
+
+/**
  * TestGridOut
  *
  * EBP-03 a/b, EBP-04 c, EBP-05: rows in sample order with each attribute's newest result.
@@ -42961,7 +42998,7 @@ export type TestGridOut = {
     /**
      * Rows
      */
-    rows: Array<AbacusModulesAssuranceEbpContractGridRowOut>;
+    rows: Array<TestGridRowOut>;
     /**
      * Test Id
      */
@@ -42974,6 +43011,32 @@ export type TestGridOut = {
      * Version No
      */
     version_no: number;
+};
+
+/**
+ * TestGridRowOut
+ */
+export type TestGridRowOut = {
+    /**
+     * Cells
+     */
+    cells: Array<TestGridCellOut>;
+    /**
+     * Item Id
+     */
+    item_id: string;
+    /**
+     * Position
+     */
+    position: number;
+    /**
+     * Record Key
+     */
+    record_key: string;
+    /**
+     * State
+     */
+    state: string;
 };
 
 /**
@@ -46183,32 +46246,6 @@ export type AbacusModulesAssuranceCompletionRoutesEqrOut = {
 };
 
 /**
- * GridRowOut
- */
-export type AbacusModulesAssuranceEbpContractGridRowOut = {
-    /**
-     * Cells
-     */
-    cells: Array<GridCellOut>;
-    /**
-     * Item Id
-     */
-    item_id: string;
-    /**
-     * Position
-     */
-    position: number;
-    /**
-     * Record Key
-     */
-    record_key: string;
-    /**
-     * State
-     */
-    state: string;
-};
-
-/**
  * ProviderOut
  */
 export type AbacusModulesAssuranceEbpContractProviderOut = {
@@ -46639,43 +46676,6 @@ export type AbacusModulesFieldworkRoutesStartIn = {
      * Definition
      */
     definition?: 'journal_entry_testing' | 'unrecorded_liabilities';
-};
-
-/**
- * GridRowOut
- *
- * One capability row; cells per template computed from the compiled matrix and the firm's
- * overrides, or from `role-templates.yaml` for actions not yet in the matrix.
- */
-export type AbacusModulesIdentitySettingsContractGridRowOut = {
-    /**
-     * Actions
-     */
-    actions: Array<string>;
-    /**
-     * Cells
-     */
-    cells: {
-        [key: string]: 'allow' | 'conditional' | 'delegated' | 'deny' | 'locked';
-    };
-    /**
-     * Conditions
-     */
-    conditions?: {
-        [key: string]: string;
-    };
-    /**
-     * Key
-     */
-    key: string;
-    /**
-     * Locked
-     */
-    locked?: boolean;
-    /**
-     * Source
-     */
-    source: 'matrix' | 'policy';
 };
 
 /**
