@@ -221,7 +221,7 @@ SPECS: dict[str, dict[str, object]] = {   'decisions.recommender': {   'autonomy
                                                    'ebp_trust': {   'input_schema': 'SectionDraftInput',
                                                                     'max_cost_usd': '0.25',
                                                                     'output_schema': 'SectionDraft',
-                                                                    'prompt': 'workpapers.section_draft@v1'},
+                                                                    'prompt': 'workpapers.section_draft.ebp_trust@v1'},
                                                    'ic': {   'input_schema': 'SectionDraftInput',
                                                              'max_cost_usd': '0.15',
                                                              'output_schema': 'SectionDraft',
@@ -260,6 +260,6 @@ SPECS: dict[str, dict[str, object]] = {   'decisions.recommender': {   'autonomy
                                       'tier': 'medium',
                                       'tools': [],
                                       'untrusted_inputs': ['cells', 'documents'],
-                                      'version': 10,
+                                      'version': 11,
                                       'work_class': 'background'}}
 # fmt: on
