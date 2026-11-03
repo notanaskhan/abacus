@@ -150,7 +150,7 @@ from abacus.modules.review.stale import SUBSCRIPTIONS as STALE_SUBSCRIPTIONS
 from abacus.modules.review.stale import detect_stale
 
 # The routers the API mounts, in order (P-39; F-03-T07).
-# C3 stubs behind `review.grammar_api` (P-04-T07, T08, T11).
+# C3 (P-04-T07, T08, T11); `review.grammar_api` retired (P-04-T62).
 ROUTERS: tuple[AbacusRouter, ...] = (
     router,
     sign_offs_router,

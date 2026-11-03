@@ -1,5 +1,6 @@
 """C3 v1 consumer tests (P-04-T12), stub 3 as a whole: every issue, checkpoint and field route
-declares its one matrix action and answers 404 with `review.grammar_api` off and 501 with it on;
+declares its one matrix action and answers 501 until its service lands (`review.grammar_api`
+retired, P-04-T62);
 every part 3 write and resolution denies the agent and system principals; the status enums are the
 registry's stored codes; migrations 0093 and 0094 agree with the wire; and stub 3 is additive,
 with names no older model holds. `docs/contracts/review-grammar.md` §2 to §6, part 3."""
@@ -15,10 +16,9 @@ import pytest
 from fastapi.routing import APIRoute
 from pydantic import BaseModel
 
-from abacus.kernel._flags import REVIEW_GRAMMAR_API
 from abacus.kernel.classification import unclassified_fields
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotImplementedYet
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.identity.authz.matrix import RULES
 from abacus.modules.review import contract as c3
@@ -179,28 +179,16 @@ LIVE: Final = frozenset(
 
 
 @pytest.mark.parametrize("endpoint", _STUBBED, ids=[e.__name__ for e in _STUBBED])
-async def test_c3_part3_flag_off_is_404_and_flag_on_is_501(
-    endpoint: Callable[..., Awaitable[object]], monkeypatch: pytest.MonkeyPatch
+async def test_c3_part3_reads_no_flag_and_stubs_answer_501(
+    endpoint: Callable[..., Awaitable[object]],
 ) -> None:
-    """Each route handler itself, with the flag read stubbed: off 404, on 501 (§2, §6)."""
+    """Each route handler itself: `review.grammar_api` is retired (P-04-T62), so no handler reads
+    a flag; a stub still answers 501 until its service lands (§2, §6)."""
     params = inspect.signature(endpoint).parameters
     args = {name: (_ctx() if name == "ctx" else None) for name in params}
-    seen: list[object] = []
-
-    async def off(_tenant: object, flag: object) -> bool:
-        seen.append(flag)
-        return False
-
-    async def on(_tenant: object, _flag: object) -> bool:
-        return True
-
-    monkeypatch.setattr(c3, "flag_enabled", off)
-    with pytest.raises(NotFound):
-        await endpoint(**args)
-    assert seen == [REVIEW_GRAMMAR_API]
+    assert not hasattr(c3, "REVIEW_GRAMMAR_API")
     if endpoint.__name__ in LIVE:
-        return  # served with the flag on; its integration tests cover the answers
-    monkeypatch.setattr(c3, "flag_enabled", on)
+        return  # live; its integration tests cover the answers
     with pytest.raises(NotImplementedYet):
         await endpoint(**args)
 

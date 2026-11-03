@@ -2,7 +2,7 @@
 `review.approve_agent_output`, per firm.
 
 Off: approve, reject, route and follow-up answer 404 and the proposal view offers none of them;
-reading a proposal stays behind `review.grammar_api` and Undo stays open. On (with the C3 flag):
+reading a proposal needs no flag (`review.grammar_api` retired, P-04-T62) and Undo stays open. On:
 the decisions are offered and reach the service.
 """
 
@@ -14,7 +14,7 @@ from typing import cast
 
 import pytest
 
-from abacus.kernel._flags import REVIEW_APPROVE_AGENT_OUTPUT, REVIEW_GRAMMAR_API
+from abacus.kernel._flags import REVIEW_APPROVE_AGENT_OUTPUT
 from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag
 from abacus.modules.agents import contract
@@ -33,10 +33,8 @@ class _Ctx:
     tenant = object()
 
 
-def _flags(monkeypatch: pytest.MonkeyPatch, *, grammar: bool, approve: bool) -> None:
+def _flags(monkeypatch: pytest.MonkeyPatch, *, approve: bool) -> None:
     async def enabled(_tenant: object, flag: Flag) -> bool:
-        if flag is REVIEW_GRAMMAR_API:
-            return grammar
         if flag is REVIEW_APPROVE_AGENT_OUTPUT:
             return approve
         raise AssertionError(flag.name)
@@ -59,13 +57,10 @@ def test_the_flag_is_registered_off_by_default() -> None:
 async def test_ac_a_decision_answers_404_until_the_firm_turns_approval_on(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    _flags(monkeypatch, grammar=True, approve=False)
+    _flags(monkeypatch, approve=False)
     with pytest.raises(NotFound):
         await contract._deciding(_ctx())  # pyright: ignore[reportPrivateUsage] -- the guard under test
-    _flags(monkeypatch, grammar=False, approve=True)
-    with pytest.raises(NotFound):
-        await contract._deciding(_ctx())  # pyright: ignore[reportPrivateUsage] -- the guard under test
-    _flags(monkeypatch, grammar=True, approve=True)
+    _flags(monkeypatch, approve=True)
     await contract._deciding(_ctx())  # pyright: ignore[reportPrivateUsage] -- the guard under test
 
 
@@ -84,9 +79,9 @@ async def test_ac_the_view_offers_no_decision_while_approval_is_off(
     out = contract.AgentProposalOut.model_construct(
         ref=str(uuid.uuid4()), allowed_actions=[*offered, "proposal.follow_up"]
     )
-    _flags(monkeypatch, grammar=True, approve=False)
+    _flags(monkeypatch, approve=False)
     shown = await contract._shown(_ctx(), out)  # pyright: ignore[reportPrivateUsage] -- under test
     assert shown.allowed_actions == ["proposal.read"]
-    _flags(monkeypatch, grammar=True, approve=True)
+    _flags(monkeypatch, approve=True)
     shown = await contract._shown(_ctx(), out)  # pyright: ignore[reportPrivateUsage] -- under test
     assert shown.allowed_actions == [*offered, "proposal.follow_up"]
