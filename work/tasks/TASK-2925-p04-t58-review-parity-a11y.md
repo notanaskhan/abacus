@@ -4,7 +4,7 @@ title: P-04-T58 parity, accessibility and keyboard for the 44 review-grammar art
 spec: SPEC-000  # P-04-T58 row
 acceptance_criteria: [AC-1]
 risk_zone: green
-status: in-review
+status: done
 epic: P-04
 plan_key: P-04-T58
 branch: s24-p04-t58

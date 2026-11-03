@@ -4,7 +4,7 @@ title: A-06-T03 migration 0643 adjustments_core (C8 tables)
 spec: SPEC-642
 acceptance_criteria: [AC-1, AC-2]
 risk_zone: red
-status: in-review
+status: done
 epic: A-06
 plan_key: A-06-T03
 branch: s24-a06-t03 (stacked on s24-a06-t02)

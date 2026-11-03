@@ -4,7 +4,7 @@ title: A-05-T15 migration 0642 ebp_participants_testing
 spec: SPEC-640
 acceptance_criteria: [AC-13]
 risk_zone: red
-status: in-review
+status: done
 epic: A-05
 plan_key: A-05-T15
 branch: s24-a05-t15 (stacked on s24-a05-t09)
