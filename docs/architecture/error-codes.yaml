@@ -1738,6 +1738,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.fieldwork.notes.NoteInvalid
+  note_required:
+    status: 422
+    raised_by:
+    - abacus.modules.workpapers.attribute_grid.NoteRequired
+    summary: An exception or a no-effect mark carries the person's note.
   notes_open:
     status: 409
     raised_by:
@@ -2823,6 +2828,10 @@ codes:
     - abacus.modules.agents.stage_admin.UnknownAgent
     summary: Only an agent the registry declares has a stage. Like the founder's command, a stage may
       be set before the agent is cleared for client data; the gateway reads it only once it is.
+  unknown_attribute:
+    status: 422
+    raised_by:
+    - abacus.modules.workpapers.attribute_grid.UnknownAttribute
   unknown_engagement_type:
     status: 422
     raised_by:
@@ -2942,6 +2951,7 @@ codes:
     - abacus.modules.assurance.risks.RiskMoved
     - abacus.modules.assurance.service_orgs.OrganizationMoved
     - abacus.modules.notices.service.VersionConflict
+    - abacus.modules.workpapers.attribute_grid.TestMoved
     - abacus.modules.workpapers.core.VersionConflict
     - abacus.modules.workpapers.procedures.ProcedureMoved
     summary: An entry changed since the person read it (its version) or is in another state.

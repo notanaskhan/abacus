@@ -42958,6 +42958,88 @@ export type TemplateVersionRefOut = {
 };
 
 /**
+ * TestGridCellOut
+ */
+export type TestGridCellOut = {
+    /**
+     * Attribute Key
+     */
+    attribute_key: string;
+    /**
+     * By
+     */
+    by: 'human' | 'agent' | 'system' | 'policy';
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Result
+     */
+    result: 'not_started' | 'agent_tested' | 'needs_human' | 'pass' | 'exception' | 'no_effect';
+};
+
+/**
+ * TestGridOut
+ *
+ * EBP-03 a/b, EBP-04 c, EBP-05: rows in sample order with each attribute's newest result.
+ */
+export type TestGridOut = {
+    /**
+     * Attributes
+     */
+    attributes: Array<string>;
+    /**
+     * Counts
+     */
+    counts: {
+        [key: string]: number;
+    };
+    /**
+     * Rows
+     */
+    rows: Array<TestGridRowOut>;
+    /**
+     * Test Id
+     */
+    test_id: string;
+    /**
+     * Variant
+     */
+    variant: string;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
+ * TestGridRowOut
+ */
+export type TestGridRowOut = {
+    /**
+     * Cells
+     */
+    cells: Array<TestGridCellOut>;
+    /**
+     * Item Id
+     */
+    item_id: string;
+    /**
+     * Position
+     */
+    position: number;
+    /**
+     * Record Key
+     */
+    record_key: string;
+    /**
+     * State
+     */
+    state: string;
+};
+
+/**
  * TestIn
  */
 export type TestIn = {
@@ -42966,9 +43048,17 @@ export type TestIn = {
      */
     sample_set_id: string;
     /**
+     * Sample Version
+     */
+    sample_version?: number;
+    /**
      * Variant
      */
     variant: 'eligibility' | 'deferral' | 'match' | 'distribution' | 'loan';
+    /**
+     * Workpaper Id
+     */
+    workpaper_id?: string | null;
 };
 
 /**
@@ -50081,6 +50171,62 @@ export type EbpTestCreateResponses = {
 };
 
 export type EbpTestCreateResponse = EbpTestCreateResponses[keyof EbpTestCreateResponses];
+
+export type EbpTestGridData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Test Id
+         */
+        test_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/tests/{test_id}';
+};
+
+export type EbpTestGridErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EbpTestGridError = EbpTestGridErrors[keyof EbpTestGridErrors];
+
+export type EbpTestGridResponses = {
+    /**
+     * Successful Response
+     */
+    200: TestGridOut;
+};
+
+export type EbpTestGridResponse = EbpTestGridResponses[keyof EbpTestGridResponses];
 
 export type EbpTestMarkData = {
     body: AbacusModulesAssuranceEbpContractResultIn;
