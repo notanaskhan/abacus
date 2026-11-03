@@ -35,7 +35,7 @@ export const audScreens = {
   "AUD-04": {
     name: "Audit program & workpaper · General Audit Planning › Service Organizations",
     status: "planned",
-    path: null,
+    path: "/audits/$auditId/program/$wpRef", // A-04-T27
   },
   "AUD-05": {
     name: "Narrative workpaper · Risk Assessment (understanding, risk, fraud)",
