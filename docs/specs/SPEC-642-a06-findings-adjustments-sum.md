@@ -78,6 +78,12 @@ the AU-C 265 letter (A-07), the statements' schema (T19, S26), consultations' UI
   CT 5% and PM 75%; above 50% of PM (the firm standard, default 50%) the result is flagged.
 - **AC-7 (F3, ADR-040):** no route, workflow or adapter posts, books or writes an entry to a
   client system; the route-table test fails if one appears.
+- **AC-8 (F2, F5):** the `deficiency_severity` and `sum_conclusion` cards are reserved to the engagement partner; an agent or another person is refused (A-06-T13).
+- **AC-9 (F7):** a person asks a stale sign-off's signer to look again and AUD-17 reads its note bands from the server (A-06-T14).
+- **AC-10 (F7):** G5 is answered by `assurance.gates.g5_facts` through `replace_gate_provider` (A-06-T15).
+- **AC-11 (INV-1, INV-2):** `deficiency.concluded`, `sum.concluded` and `attribute_result.marked` are human-only at the data layer, and a finding's why-surfaced text names only figures code supplied (A-06-T16).
+- **AC-12 (F6):** statements v1 stores versions, line items, linked values and tie-out runs insert-only behind `reporting.fs_disclosure` (A-06-T19).
+- **AC-13 (F2, INV-1):** AUD-15 renders a–g from its scenarios and the severity picker is read-only with "Reserved to Engagement Partner" for everyone but the engagement partner (A-06-T18).
 
 ## 7. Decisions
 DEC-1960 (tables beside SPEC-043's), DEC-1961 (status words), DEC-1962 (adjustments core),

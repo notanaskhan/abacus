@@ -75,6 +75,11 @@ The S23 foundation rows (AC-1 to AC-5) and the S24 rows (AC-6 to AC-13) are numb
 | AC-17 | A-05-T19 | The Northwind census imports 301 participants with SSNs sealed, and a register whose total does not foot is refused with the difference shown. |
 | AC-18 | A-05-T20 | Kwame's missed amounts are 2,472 and 1,442, Yuki's are 3,168 and 1,848, and the population query returns exactly 4 participants. |
 | AC-19 | A-05-T21 | Row 22's hire-date difference is marked Needs human with a computed no-effect note, and no model input contains an unmasked SSN or DOB. |
+| AC-20 | A-05-T22 | The shared attribute grid marks a cell by a person only, every mark is a new version, and a mark makes the test's L1 and L2 sign-offs stale. |
+| AC-21 | A-05-T24 | The remittance engine finds the Dec 26, 2025 payroll 9 business days late (Jan 1 excluded) with lost earnings 64.38, by code. |
+| AC-22 | A-05-T26 | Migration `ebp_contributions` is tenant-RLS with insert-only payroll rows and no participant identifiers. |
+| AC-23 | A-05-T27 | Mode `ebp_reconcile` drafts from code's payroll, trust and W-3 facts and never adds, subtracts or computes. |
+| AC-24 | A-05-T28 | A document's ledger snapshot records its source version and is immutable. |
 
 ## 6. Decisions
 DEC-1857 (screen contracts, deviations, the agent-off path) and DEC-1858 (census PII masking and

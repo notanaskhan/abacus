@@ -8805,7 +8805,7 @@ export const home = <ThrowOnError extends boolean = false>(options?: Options<Hom
  * Human Gate List Route
  *
  * What waits on the caller; `counts` are per kind ("3 decisions, 6 sign-offs, 2 exports").
- * P-04-T16: served from the projection behind `review.grammar_api`; a walled client's gates
+ * P-04-T16: served from the projection; a walled client's gates
  * are never listed or counted. I-01-T07: `state` (open, snoozed by the caller, done), `band`,
  * `office_id` (narrows, never authorises), `sort=deadline`, and each row's presentation facts.
  */
@@ -8821,7 +8821,7 @@ export const humanGateList = <ThrowOnError extends boolean = false>(options?: Op
  * The one count source (I-01-T04): open gates waiting on the caller by DF-25 band, how many
  * of them are overdue, and how many the caller snoozed (left out of `total`). A walled client's
  * gates are never counted, and nothing says any were left out (DEC-43); `office_id` narrows and
- * never authorises (DEC-30). Behind `review.grammar_api`, like the list.
+ * never authorises (DEC-30).
  */
 export const humanGateCounts = <ThrowOnError extends boolean = false>(options?: Options<HumanGateCountsData, ThrowOnError>): RequestResult<HumanGateCountsResponses, HumanGateCountsErrors, ThrowOnError> => (options?.client ?? client).get<HumanGateCountsResponses, HumanGateCountsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -10142,7 +10142,7 @@ export const misstatementPass = <ThrowOnError extends boolean = false>(options: 
 /**
  * Intake Create Route
  *
- * Starts NoticeIntakeWorkflow; the sheet polls while `extracting`.
+ * An intake from a stored file; the sheet polls while `extracting` (N-04-T07).
  */
 export const intakeCreate = <ThrowOnError extends boolean = false>(options: Options<IntakeCreateData, ThrowOnError>): RequestResult<IntakeCreateResponses, IntakeCreateErrors, ThrowOnError> => (options.client ?? client).post<IntakeCreateResponses, IntakeCreateErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -10192,7 +10192,7 @@ export const intakeAttach = <ThrowOnError extends boolean = false>(options: Opti
 /**
  * Intake Confirm Route
  *
- * 409 `low_confidence_unconfirmed`, `duplicate_unresolved`, `no_client`.
+ * 409 `low_confidence_unconfirmed`, `duplicate_unresolved`, `no_notice_engagement`.
  */
 export const intakeConfirm = <ThrowOnError extends boolean = false>(options: Options<IntakeConfirmData, ThrowOnError>): RequestResult<IntakeConfirmResponses, IntakeConfirmErrors, ThrowOnError> => (options.client ?? client).post<IntakeConfirmResponses, IntakeConfirmErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

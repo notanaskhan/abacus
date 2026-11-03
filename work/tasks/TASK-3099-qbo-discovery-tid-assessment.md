@@ -1,8 +1,8 @@
 ---
 id: TASK-3099
 title: QuickBooks connector reads Intuit's discovery document and logs intuit_tid; draft Intuit assessment answers
-spec: A-02-T26 (connector), F-09-T05, F-09-T11 (Intuit part)
-acceptance_criteria: [every Intuit technical question answers yes from code on main]
+spec: SPEC-000  # rows A-02-T26 (connector), F-09-T05, F-09-T11 (Intuit part)
+acceptance_criteria: [AC-1]  # every Intuit technical question answers yes from code on main
 risk_zone: red
 status: in-review
 branch: qbo-discovery-tid

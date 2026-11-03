@@ -51,7 +51,7 @@ from abacus.modules.integrations.api import (
 )
 
 ID_ENV: Final = "ABACUS_QBO_CLIENT_ID"
-SECRET_ENV: Final = "ABACUS_QBO_CLIENT_SECRET"  # noqa: S105 (a variable name, not a secret)
+SECRET_ENV: Final = "ABACUS_QBO_CLIENT_SECRET"
 ENVIRONMENT_ENV: Final = "ABACUS_QBO_ENVIRONMENT"
 TOKENS_ENV: Final = "ABACUS_QBO_SANDBOX_TOKENS"
 DEFAULT_TOKENS: Final = Path.home() / ".abacus" / "qbo-sandbox.json"
