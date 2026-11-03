@@ -11,3 +11,11 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: reporting.fs_disclosure
+    description: 'AUD-20 and the statements routes (A-06 §4.7): financial statements, lineage, tie-out, the disclosure checklist, draft sends and management approval; the disclosure-checklist template import. Off: 404 and AUD-20 shows the C-20 "not turned on" state. On: 501 until A-06-T25 onward. A-06-T19, DEC-2209.'
+    owner: ayushkbhatia
+    created: 2026-11-03
+    expires: 2027-05-01
+    override: DEC-137
+    kind: boolean
+    default: false
