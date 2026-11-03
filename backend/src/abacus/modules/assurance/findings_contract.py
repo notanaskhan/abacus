@@ -438,7 +438,12 @@ async def finding_request_decision_route(
 ) -> DecisionRaisedOut:
     """Raise the `deficiency_severity` card reserved to the EP (AUD-15 a, b; T13)."""
     await _gate_flag(ctx)
-    _not_yet()
+    from abacus.modules.assurance import completion_decisions as cd
+    from abacus.modules.assurance import findings
+
+    work_item = await findings.work_item_of(ctx.tenant, finding_id)
+    await _gate(ctx, work_item, "finding.request_decision")
+    return DecisionRaisedOut(decision_card_id=await cd.request_severity_decision(ctx, finding_id))
 
 
 @router.get(
@@ -503,9 +508,14 @@ async def sum_factor_route(
 async def sum_request_conclusion_route(
     work_item_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> DecisionRaisedOut:
-    """A frozen snapshot and the `sum_conclusion` card (409 `snapshot_changed`; T13)."""
+    """A frozen snapshot and the `sum_conclusion` card (409 `no_snapshot`; T13)."""
     await _gate(ctx, work_item_id, "sum.request_conclusion")
-    _not_yet()
+    from abacus.modules.assurance import completion_decisions as cd
+    from abacus.modules.engagements.api import assurance_item
+
+    item = await assurance_item(ctx.tenant, work_item_id)
+    card = await cd.request_sum_conclusion(ctx, item.engagement_id, work_item_id)
+    return DecisionRaisedOut(decision_card_id=card)
 
 
 @router.post(
