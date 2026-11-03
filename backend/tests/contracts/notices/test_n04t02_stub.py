@@ -178,9 +178,8 @@ async def test_ac1_the_gate_authorises_then_reads_the_flag_then_answers_501(
     state["on"] = True
     with pytest.raises(NotImplementedYet):
         await contract.analysis_route(uuid.uuid4(), _ctx())
-    calls.clear()
-    with pytest.raises(NotImplementedYet):
-        await contract.notice_patch_route(
-            uuid.uuid4(), contract.NoticePatchIn(assignee_id=uuid.uuid4()), _ctx(), 1
-        )
-    assert calls[0] == "authorise:notice.assign"  # the assignee alone is notice.assign
+    # N-04-T06 serves the patch; the assignee alone is still `notice.assign`.
+    assert contract._assign_only(contract.NoticePatchIn(assignee_id=uuid.uuid4()))  # pyright: ignore[reportPrivateUsage] -- the private helper under test
+    assert not contract._assign_only(  # pyright: ignore[reportPrivateUsage] -- the private helper under test
+        contract.NoticePatchIn(assignee_id=uuid.uuid4(), client_visible=True)
+    )

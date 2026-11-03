@@ -15,6 +15,7 @@ TINs and confirmation numbers are sealed and only their last four digits travel.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING, Annotated, Literal, NoReturn, cast
@@ -41,6 +42,7 @@ from abacus.modules.notices.compute.bracket import FilingStatus
 from abacus.modules.organisations.api import MaskedTinOut
 
 if TYPE_CHECKING:
+    from abacus.modules.notices.intake import Intake
     from abacus.modules.notices.service import Notice
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -746,7 +748,9 @@ async def _gate(ctx: AuthContext, notice_id: UUID, action: str) -> None:
     if engagement_id is None:
         raise NotFound("notice")
     ref = await get_ref(ctx, engagement_id)
-    await authorise(ctx, action, ref.resource())
+    # A notice is its work item: scope the check to it so `function_in` (preparer, reviewers,
+    # signer) is evaluated on the person's assignment, not refused for want of one.
+    await authorise(ctx, action, replace(ref.resource(), work_item_id=notice_id))
     if not await flag_enabled(ctx.tenant, NOTICES_WORKSPACE):
         raise NotFound(NOTICES_WORKSPACE.name)
 
@@ -874,6 +878,54 @@ async def _notice_out(ctx: AuthContext, n: Notice) -> NoticeOut:
     )
 
 
+def _intake_out(found: Intake) -> IntakeOut:
+    """The sheet's read; a TIN travels as its last four only."""
+    auth = found.authorization
+    kind = cast(AuthorizationKind, auth.get("kind", "none"))
+    return IntakeOut(
+        id=found.id,
+        status=cast(IntakeStatus, found.status),
+        source=cast(IntakeSource, found.source),
+        file_name=None,
+        pages=None,
+        uploaded_by_label=None,
+        extraction_mode=cast(ExtractionMode | None, found.extraction_mode),
+        manual_reason=None if found.status != "manual_entry" else "Read automatically isn't on",
+        fields=[
+            IntakeFieldOut(
+                key=cast(FieldKey, f.key),
+                value_text=None if f.key == "taxpayer.tin" else f.value_text,
+                confidence=f.confidence,
+                low_confidence=f.low_confidence and not f.confirmed,
+                origin=cast(FieldOrigin, f.origin),
+                confirmed=f.confirmed,
+                citation_id=f.citation_id,
+            )
+            for f in found.fields
+        ],
+        match=MatchOut(
+            client_entity_id=None,
+            client_name=None,
+            method=None,
+            candidates=[],
+            return_id=None,
+            return_label=None,
+            office=None,
+        ),
+        authorization=AuthorizationOut(
+            kind=kind,
+            label=str(auth.get("label", "None · blocked")),
+            on_file=kind != "none",
+            can_represent=kind in ("form_2848", "state_poa"),
+        ),
+        duplicate_of=found.duplicate_of,
+        assignee_user_id=found.assignee_user_id,
+        notify_user_ids=list(found.notify_user_ids),
+        created_work_item_id=found.created_work_item_id,
+        version=found.row_version,
+    )
+
+
 router = AbacusRouter(prefix="/v1", tags=["notices"])
 _N = "/notices/{notice_id}"
 _I = "/notice-intakes/{intake_id}"
@@ -957,15 +1009,25 @@ async def notices_summary_route(ctx: Ctx) -> NoticesSummaryOut:
 async def intake_create_route(
     body: IntakeSourceIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> IntakeOut:
-    """Starts NoticeIntakeWorkflow; the sheet polls while `extracting`."""
+    """An intake from a stored file; the sheet polls while `extracting` (N-04-T07)."""
     await _gate_firm(ctx, "notice_intake.create")
-    return await mask_tins_for(ctx, _not_yet())
+    from abacus.modules.notices import intake
+
+    found = await intake.create(
+        ctx,
+        source=body.source,
+        evidence_version_id=body.evidence_version_id,
+        inbox_item_id=body.inbox_item_id,
+    )
+    return await mask_tins_for(ctx, _intake_out(found))
 
 
 @router.get(_I, action="notice_intake.read", response_model=IntakeOut, errors=(501,))
 async def intake_route(intake_id: UUID, ctx: Ctx) -> IntakeOut:
     await _gate_firm(ctx, "notice_intake.read")
-    return await mask_tins_for(ctx, _not_yet())
+    from abacus.modules.notices import intake
+
+    return await mask_tins_for(ctx, _intake_out(await intake.intake(ctx, intake_id)))
 
 
 @router.put(_I, action="notice_intake.update", response_model=IntakeOut, errors=(409, 501))
@@ -973,7 +1035,18 @@ async def intake_update_route(
     intake_id: UUID, body: IntakeUpdateIn, ctx: Ctx, if_match: IfMatch
 ) -> IntakeOut:
     await _gate_firm(ctx, "notice_intake.update")
-    return await mask_tins_for(ctx, _not_yet())
+    from abacus.modules.notices import intake
+
+    found = await intake.revise(
+        ctx,
+        intake_id,
+        if_match,
+        fields=[(f.key, f.value_text, f.confirm) for f in body.fields],
+        client_id=None,
+        assignee_user_id=body.assignee_user_id,
+        notify_user_ids=body.notify_user_ids,
+    )
+    return await mask_tins_for(ctx, _intake_out(found))
 
 
 @router.post(
@@ -986,9 +1059,20 @@ async def intake_update_route(
 async def intake_confirm_route(
     intake_id: UUID, body: IntakeCreateIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> CreatedNoticeOut:
-    """409 `low_confidence_unconfirmed`, `duplicate_unresolved`, `no_client`."""
+    """409 `low_confidence_unconfirmed`, `duplicate_unresolved`, `no_notice_engagement`."""
     await _gate_firm(ctx, "notice_intake.confirm")
-    _not_yet()
+    from abacus.modules.notices import intake
+
+    notice_id, engagement_id = await intake.create_notice(
+        ctx,
+        intake_id,
+        client_entity_id=body.client_entity_id,
+        assignee_id=body.assignee_id,
+        engagement_id=body.engagement_id,
+        related_return_id=body.related_return_id,
+        create_anyway=body.create_anyway,
+    )
+    return CreatedNoticeOut(notice_id=notice_id, engagement_id=engagement_id)
 
 
 @router.post(
@@ -1008,7 +1092,11 @@ async def intake_discard_route(
     intake_id: UUID, body: IntakeDiscardIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> IntakeOut:
     await _gate_firm(ctx, "notice_intake.confirm")
-    return await mask_tins_for(ctx, _not_yet())
+    from abacus.modules.notices import intake
+
+    return await mask_tins_for(
+        ctx, _intake_out(await intake.discard(ctx, intake_id, body.reason_code))
+    )
 
 
 @router.get(_N, action="notice.read", response_model=NoticeOut, errors=(501,))
@@ -1151,7 +1239,7 @@ async def notice_activity_route(
             label=action.replace("_", " ").replace(".", " · "),
             actor_label=None if kind == "human" else "System",
         )
-        for at, action, kind in await service.activity(ctx, notice_id)
+        for at, action, kind in await service.audit_events(ctx, notice_id)
     ]
     return ListPage[ActivityItemOut](items=items, total=len(items))
 

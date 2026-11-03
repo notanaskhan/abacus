@@ -122,7 +122,10 @@ from abacus.modules.engagements.letter_send import (
     register_letter_envelope_status,
     register_letter_sender,
 )
-from abacus.modules.engagements.notice_letters import covering_letter_engagements
+from abacus.modules.engagements.notice_letters import (
+    covering_letter_engagements,
+    notice_engagement,
+)
 from abacus.modules.engagements.pilot_w4 import w4_portal_activation
 from abacus.modules.engagements.roll_forward import (
     PriorItem,
@@ -524,6 +527,7 @@ __all__ = [
     "lock_engagement",
     "lock_ref",
     "methodology_version",
+    "notice_engagement",
     "open_engagements",
     "pin_methodology",
     "pin_methodology_on",
