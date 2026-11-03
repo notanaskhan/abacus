@@ -10831,6 +10831,49 @@ export type EFurnishingConsentOut = {
 };
 
 /**
+ * EbpImportOut
+ *
+ * An import as the import sheet shows it: its totals, or why it was refused (the
+ * differences, never a cell value).
+ */
+export type EbpImportOut = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'census' | 'payroll_register' | 'loan_report' | 'account_balances' | 'sdba_detail' | 'trust_receipts' | 'hr_roster';
+    /**
+     * Refusal Code
+     */
+    refusal_code: string | null;
+    /**
+     * Row Count
+     */
+    row_count: number | null;
+    /**
+     * Status
+     */
+    status: 'mapped' | 'imported' | 'refused';
+    /**
+     * Totals
+     */
+    totals: {
+        [key: string]: unknown;
+    };
+};
+
+/**
  * EffectiveAiPolicyOut
  *
  * `GET /v1/firm/ai-policy/effective`: the cells a run planner, ENG-03 (P-07) and KNW-04
@@ -17842,13 +17885,22 @@ export type ImportFileOut = {
 
 /**
  * ImportIn
+ *
+ * A code import (A-05-T19; DEC-2068): the column map is `{field: header}`; the W-3 boxes
+ * and a register's printed control totals are keyed from the PDF with the import.
  */
 export type ImportIn = {
     /**
      * Column Map
      */
     column_map: {
-        [key: string]: string;
+        [key: string]: unknown | string;
+    };
+    /**
+     * Control Totals
+     */
+    control_totals?: {
+        [key: string]: unknown | number | string;
     };
     /**
      * Evidence Version Id
@@ -17857,7 +17909,15 @@ export type ImportIn = {
     /**
      * Kind
      */
-    kind: 'census' | 'hr' | 'payroll' | 'w3';
+    kind: 'census' | 'payroll_register' | 'loan_report' | 'account_balances' | 'sdba_detail' | 'trust_receipts' | 'hr_roster';
+    /**
+     * W3 Box1
+     */
+    w3_box1?: number | string | null;
+    /**
+     * W3 Box12D
+     */
+    w3_box12d?: number | string | null;
 };
 
 /**
@@ -26523,11 +26583,40 @@ export type ParticipantOut = {
      * Name
      */
     name: string;
-    ssn: MaskedTinOut;
+    ssn: MaskedTinOut | null;
     /**
      * Status
      */
     status: 'active' | 'terminated' | 'retired' | 'deceased';
+};
+
+/**
+ * ParticipantRevealOut
+ *
+ * The only payload that carries a participant's SSN or date of birth in the clear, for 30
+ * seconds; `Cache-Control: no-store`, never logged (DEC-60, DEC-1858; A-05-T18).
+ */
+export type ParticipantRevealOut = {
+    /**
+     * Expires In
+     */
+    expires_in: number;
+    /**
+     * Field
+     */
+    field: 'ssn' | 'dob';
+    /**
+     * Revealed At
+     */
+    revealed_at: string;
+    /**
+     * Revealed By
+     */
+    revealed_by: string;
+    /**
+     * Value
+     */
+    value: string;
 };
 
 /**
@@ -26980,6 +27069,10 @@ export type PlanReviewOut = {
      */
     provisions: Array<ProvisionOut>;
     /**
+     * Sign Offs
+     */
+    sign_offs?: Array<SignOffChipOut>;
+    /**
      * Total
      */
     total: number;
@@ -26991,6 +27084,10 @@ export type PlanReviewOut = {
      * Version No
      */
     version_no: number;
+    /**
+     * Workpaper Id
+     */
+    workpaper_id?: string | null;
 };
 
 /**
@@ -29876,6 +29973,10 @@ export type ProvisionOut = {
      */
     amended_on: string | null;
     /**
+     * Cell
+     */
+    cell?: string | null;
+    /**
      * Citation Count
      */
     citation_count: number;
@@ -29892,9 +29993,17 @@ export type ProvisionOut = {
      */
     label: string;
     /**
+     * Reference
+     */
+    reference?: string | null;
+    /**
      * Value
      */
     value: string;
+    /**
+     * Value Hash
+     */
+    value_hash?: string | null;
     /**
      * Verified
      */
@@ -45848,10 +45957,6 @@ export type EbpImportErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EbpImportError = EbpImportErrors[keyof EbpImportErrors];
@@ -45860,10 +45965,66 @@ export type EbpImportResponses = {
     /**
      * Successful Response
      */
-    201: AcceptedOut;
+    201: EbpImportOut;
 };
 
 export type EbpImportResponse = EbpImportResponses[keyof EbpImportResponses];
+
+export type EbpImportReadData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Import Id
+         */
+        import_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/ebp/imports/{import_id}';
+};
+
+export type EbpImportReadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EbpImportReadError = EbpImportReadErrors[keyof EbpImportReadErrors];
+
+export type EbpImportReadResponses = {
+    /**
+     * Successful Response
+     */
+    200: EbpImportOut;
+};
+
+export type EbpImportReadResponse = EbpImportReadResponses[keyof EbpImportReadResponses];
 
 export type EbpInvestmentsData = {
     body?: never;
@@ -46257,9 +46418,9 @@ export type EbpParticipantRevealErrors = {
      */
     422: ValidationErrorOut;
     /**
-     * Contract stub: not implemented yet
+     * Too soon or too many: retry after Retry-After
      */
-    501: ErrorOut;
+    429: ErrorOut;
 };
 
 export type EbpParticipantRevealError = EbpParticipantRevealErrors[keyof EbpParticipantRevealErrors];
@@ -46268,7 +46429,7 @@ export type EbpParticipantRevealResponses = {
     /**
      * Successful Response
      */
-    201: AcceptedOut;
+    201: ParticipantRevealOut;
 };
 
 export type EbpParticipantRevealResponse = EbpParticipantRevealResponses[keyof EbpParticipantRevealResponses];
@@ -46480,10 +46641,6 @@ export type EbpPlanReviewStartErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EbpPlanReviewStartError = EbpPlanReviewStartErrors[keyof EbpPlanReviewStartErrors];

@@ -23,6 +23,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, Final
 from uuid import UUID
 
@@ -47,10 +48,14 @@ from abacus.modules.assurance.compute.ebp.provisions import (
 from abacus.modules.engagements.api import assurance_item, get_ref
 from abacus.modules.evidence.api import review_material, version_view
 from abacus.modules.identity.api import AuthContext, Forbidden, authorise
-from abacus.modules.review.api import FieldState, field_states
+from abacus.modules.review.api import (
+    FieldState,
+    field_states,
+)
 from abacus.modules.workpapers.api import CELL_TARGET, paper_of_kind
 
 KIND: Final = "ebp_provisions"
+PAPER_TARGET: Final = "workpaper"
 MODE: Final = "ebp_provisions"
 AUDIT_TARGET: Final = "ebp_plan_review"
 UNVERIFIED: Final = "provisions_unverified"
@@ -68,12 +73,23 @@ class ProvisionState:
     reference: str | None
     verified: bool
     citation_count: int
+    value_hash: str | None = None  # what a tick on the value signs (None before a value)
+
+
+@dataclass(frozen=True)
+class SignedLevel:
+    level: int
+    user_id: UUID
+    at: datetime
+    stale: bool
 
 
 @dataclass(frozen=True)
 class PlanReview:
     review_no: int
     provisions: tuple[ProvisionState, ...]
+    workpaper_id: UUID | None = None
+    sign_offs: tuple[SignedLevel, ...] = ()
 
     @property
     def verified(self) -> int:

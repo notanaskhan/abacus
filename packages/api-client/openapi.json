@@ -23214,6 +23214,97 @@
         "title": "EFurnishingConsentOut",
         "type": "object"
       },
+      "EbpImportOut": {
+        "description": "An import as the import sheet shows it: its totals, or why it was refused (the\ndifferences, never a cell value).",
+        "properties": {
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "census",
+              "payroll_register",
+              "loan_report",
+              "account_balances",
+              "sdba_detail",
+              "trust_receipts",
+              "hr_roster"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "refusal_code": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Refusal Code"
+          },
+          "row_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Row Count"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "mapped",
+              "imported",
+              "refused"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "totals": {
+            "additionalProperties": true,
+            "cls": "confidential",
+            "title": "Totals",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "evidence_version_id",
+          "kind",
+          "row_count",
+          "totals",
+          "status",
+          "refusal_code",
+          "created_at"
+        ],
+        "title": "EbpImportOut",
+        "type": "object"
+      },
       "EffectiveAiPolicyOut": {
         "description": "`GET /v1/firm/ai-policy/effective`: the cells a run planner, ENG-03 (P-07) and KNW-04\n(K-02) read for one engagement type at one time (AC-39; `agents.api.effective_ai_policy`).",
         "properties": {
@@ -37976,13 +38067,38 @@
       },
       "ImportIn": {
         "additionalProperties": false,
+        "description": "A code import (A-05-T19; DEC-2068): the column map is `{field: header}`; the W-3 boxes\nand a register's printed control totals are keyed from the PDF with the import.",
         "properties": {
           "column_map": {
-            "additionalProperties": {
-              "type": "string"
-            },
             "cls": "internal",
+            "maxProperties": 30,
+            "patternProperties": {
+              "^[a-z_]{1,40}$": {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              }
+            },
             "title": "Column Map",
+            "type": "object"
+          },
+          "control_totals": {
+            "cls": "confidential",
+            "maxProperties": 10,
+            "patternProperties": {
+              "^[a-z_]{1,40}$": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                    "type": "string"
+                  }
+                ]
+              }
+            },
+            "title": "Control Totals",
             "type": "object"
           },
           "evidence_version_id": {
@@ -37995,12 +38111,49 @@
             "cls": "internal",
             "enum": [
               "census",
-              "hr",
-              "payroll",
-              "w3"
+              "payroll_register",
+              "loan_report",
+              "account_balances",
+              "sdba_detail",
+              "trust_receipts",
+              "hr_roster"
             ],
             "title": "Kind",
             "type": "string"
+          },
+          "w3_box1": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,2}0*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "W3 Box1"
+          },
+          "w3_box12d": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,2}0*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "W3 Box12D"
           }
         },
         "required": [
@@ -55983,7 +56136,14 @@
             "type": "string"
           },
           "ssn": {
-            "$ref": "#/components/schemas/MaskedTinOut",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MaskedTinOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "cls": "restricted",
             "x-pii-kind": "tin"
           },
@@ -56008,6 +56168,52 @@
           "compensation"
         ],
         "title": "ParticipantOut",
+        "type": "object"
+      },
+      "ParticipantRevealOut": {
+        "description": "The only payload that carries a participant's SSN or date of birth in the clear, for 30\nseconds; `Cache-Control: no-store`, never logged (DEC-60, DEC-1858; A-05-T18).",
+        "properties": {
+          "expires_in": {
+            "cls": "internal",
+            "maximum": 60.0,
+            "minimum": 1.0,
+            "title": "Expires In",
+            "type": "integer"
+          },
+          "field": {
+            "cls": "internal",
+            "enum": [
+              "ssn",
+              "dob"
+            ],
+            "title": "Field",
+            "type": "string"
+          },
+          "revealed_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Revealed At",
+            "type": "string"
+          },
+          "revealed_by": {
+            "cls": "confidential",
+            "title": "Revealed By",
+            "type": "string"
+          },
+          "value": {
+            "cls": "restricted",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "field",
+          "expires_in",
+          "revealed_by",
+          "revealed_at"
+        ],
+        "title": "ParticipantRevealOut",
         "type": "object"
       },
       "ParticipantsOut": {
@@ -57005,6 +57211,15 @@
             "title": "Provisions",
             "type": "array"
           },
+          "sign_offs": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/SignOffChipOut"
+            },
+            "maxItems": 10,
+            "title": "Sign Offs",
+            "type": "array"
+          },
           "total": {
             "cls": "internal",
             "minimum": 0.0,
@@ -57022,6 +57237,19 @@
             "minimum": 1.0,
             "title": "Version No",
             "type": "integer"
+          },
+          "workpaper_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Workpaper Id"
           }
         },
         "required": [
@@ -62997,6 +63225,19 @@
             "cls": "internal",
             "title": "Amended On"
           },
+          "cell": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Z]{1,3}[0-9]{1,5}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Cell"
+          },
           "citation_count": {
             "cls": "internal",
             "minimum": 0.0,
@@ -63028,11 +63269,37 @@
             "title": "Label",
             "type": "string"
           },
+          "reference": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Reference"
+          },
           "value": {
             "cls": "confidential",
             "maxLength": 500,
             "title": "Value",
             "type": "string"
+          },
+          "value_hash": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Value Hash"
           },
           "verified": {
             "cls": "internal",
@@ -97373,7 +97640,7 @@
     },
     "/v1/audits/{work_item_id}/ebp/imports": {
       "post": {
-        "description": "A code import that foots or is refused `import_not_footing` (T15).",
+        "description": "A code import (A-05-T19; DEC-2068): parsed from the version's isolated extraction, footed\nand tied by code, census SSNs and dates of birth sealed. 422 `import_map_invalid` for a map\nthat misses a field or names a header the file lacks; 422 `import_refused` (recorded, with\n`facts.reason` `import_not_footing`, `import_not_tying`, `import_no_control_total` or\n`import_bad_value` and the differences) for a file that reads but does not foot or tie.",
         "operationId": "ebp_import",
         "parameters": [
           {
@@ -97445,7 +97712,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AcceptedOut"
+                  "$ref": "#/components/schemas/EbpImportOut"
                 }
               }
             },
@@ -97490,16 +97757,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Ebp Import Route",
@@ -97507,6 +97764,123 @@
           "assurance"
         ],
         "x-abacus-action": "ebp_import.create"
+      }
+    },
+    "/v1/audits/{work_item_id}/ebp/imports/{import_id}": {
+      "get": {
+        "description": "An import and its totals or refusal (A-05-T19).",
+        "operationId": "ebp_import_read",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "import_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Import Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EbpImportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Ebp Import Read Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "ebp.read"
       }
     },
     "/v1/audits/{work_item_id}/ebp/investments": {
@@ -98115,7 +98489,7 @@
     },
     "/v1/audits/{work_item_id}/ebp/participants": {
       "get": {
-        "description": "Masked participants, tokens only (DEC-1858; T15).",
+        "description": "Masked participants of the latest imported census, tokens only (DEC-1858; T15, T19).",
         "operationId": "ebp_participants",
         "parameters": [
           {
@@ -98256,7 +98630,7 @@
     },
     "/v1/audits/{work_item_id}/ebp/participants/{participant_id}/reveals": {
       "post": {
-        "description": "A logged reveal (fresh MFA, onshore, 20 an hour, `no-store`; DEC-1858; T15).",
+        "description": "A logged reveal (A-05-T18; DEC-1858, DEC-2067): one field for 30 seconds, `no-store`. The\ngate reads the work item (`ebp.read`, then the flag); `pii.reveal` itself is authorised by the\nreveal, so stale MFA answers 403 `mfa_required` (the shell steps up), and offshore members,\nagents, support sessions and client principals get 403 before anything opens; 429 past twenty\nreveals an hour across every reveal. One `pii_reveals` row and one `pii.revealed` audit event,\nnever the value.",
         "operationId": "ebp_participant_reveal",
         "parameters": [
           {
@@ -98338,7 +98712,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AcceptedOut"
+                  "$ref": "#/components/schemas/ParticipantRevealOut"
                 }
               }
             },
@@ -98384,7 +98758,7 @@
             },
             "description": "Invalid request"
           },
-          "501": {
+          "429": {
             "content": {
               "application/json": {
                 "schema": {
@@ -98392,7 +98766,7 @@
                 }
               }
             },
-            "description": "Contract stub: not implemented yet"
+            "description": "Too soon or too many: retry after Retry-After"
           }
         },
         "summary": "Ebp Participant Reveal Route",
@@ -98753,7 +99127,7 @@
     },
     "/v1/audits/{work_item_id}/ebp/plan-reviews": {
       "post": {
-        "description": "Start a provisions read (A-04's `workpapers.drafting` gate; T12).",
+        "description": "Start a provisions read (A-05-T16): the review is recorded and an `ebp_provisions` run\nstarts on EBP-02 over the chosen versions, in order; the answer is the run's id. A-04's\n`workpapers.drafting` gate and the EBP flag both apply.",
         "operationId": "ebp_plan_review_start",
         "parameters": [
           {
@@ -98870,16 +99244,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Ebp Plan Review Start Route",
@@ -98891,7 +99255,7 @@
     },
     "/v1/audits/{work_item_id}/ebp/plan-reviews/current": {
       "get": {
-        "description": "Provisions with conflicts and amendment tags (EBP-02; `?version=` is b2; T10).",
+        "description": "EBP-02 (A-05-T16; DEC-2069): the latest review's provisions (`?version=` is b2, an earlier\nreview, read-only), each with its adopted value and reference and whether it is verified (a\ncurrent field tick on its value cell).",
         "operationId": "ebp_plan_review",
         "parameters": [
           {

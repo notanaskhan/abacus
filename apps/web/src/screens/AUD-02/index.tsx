@@ -38,6 +38,7 @@ import { AgentDock } from "../../domain/agents";
 import { type TrialBalanceOptions, useTrialBalancePane } from "../AUD-06/TrialBalance";
 import { MaterialityDock, useMaterialityCanvas } from "../AUD-07/Materiality";
 import { usePlanProfileCanvas } from "../EBP-01/PlanProfile";
+import { useProvisionsCanvas } from "../EBP-02/Provisions";
 import { type SampleSelectionOptions, useSampleSelectionCanvas } from "../AUD-11/SampleSelection";
 import { ViewerPane } from "../SHL-08";
 import { COPY } from "./copy";
@@ -92,6 +93,8 @@ export interface AUD02Props {
   sampleSelection?: SampleSelectionOptions;
   /** EBP-01 d (A-05-T11): the Plan profile canvas opens in edit mode. */
   planEditing?: boolean;
+  /** EBP-02 b2 (A-05-T17): the Plan Review canvas opens on an earlier review (`?version=`). */
+  planReviewVersion?: number;
 }
 
 /** The rail row whose canvas is AUD-06 (A-02-T09). */
@@ -100,6 +103,7 @@ const TRIAL_BALANCE = "trial_balance";
 const SAMPLE_SELECTION = "sample_selection";
 const MATERIALITY = "materiality";
 const PLAN_PROFILE = "ebp_01";
+const PLAN_REVIEW = "ebp_02";
 
 type Sort = "missing_first" | "received_first";
 
@@ -191,6 +195,7 @@ function Cockpit({
   onSignOff,
   sampleSelection,
   planEditing,
+  planReviewVersion,
 }: Omit<AUD02Props, "auditId"> & { cockpit: AuditCockpitOut }): JSX.Element {
   // A-01-T24: "Export binder…" and the record-mode entries (DV-9, DV-4).
   const audit = useAuditActions(cockpit, overlay ?? null, onOverlay);
@@ -233,6 +238,12 @@ function Cockpit({
     active: planOpen,
     ...(planEditing === undefined ? {} : { initialEditing: planEditing }),
   });
+  // EBP-02 (A-05-T17): Fieldwork › Plan Review, behind `ebp.modules` (C-20 when off).
+  const reviewOpen = selected === PLAN_REVIEW;
+  const planReview = useProvisionsCanvas(cockpit.work_item_id, {
+    active: reviewOpen,
+    ...(planReviewVersion === undefined ? {} : { version: planReviewVersion }),
+  });
   const openDoc = (r: SourceDocumentRowOut): void => {
     const version = r.latest_upload?.evidence_version_id ?? null;
     if (version !== null) onDock?.("viewer", version);
@@ -247,6 +258,8 @@ function Cockpit({
     canvas = materiality;
   } else if (planOpen) {
     canvas = planProfile;
+  } else if (reviewOpen) {
+    canvas = planReview;
   } else if (row?.section_state === "blocked_on_decision" && row.blocked_on_name != null) {
     canvas = {
       title: row.title,
@@ -436,6 +449,7 @@ export function AuditCockpitPage({
     overlay?: AuditOverlay;
     sampleSelection?: SampleSelectionOptions;
     planEditing?: boolean;
+    planReviewVersion?: number;
   };
   onBack?: () => void;
 }): JSX.Element {
@@ -461,6 +475,9 @@ export function AuditCockpitPage({
         ? {}
         : { sampleSelection: initial.sampleSelection })}
       {...(initial.planEditing === undefined ? {} : { planEditing: initial.planEditing })}
+      {...(initial.planReviewVersion === undefined
+        ? {}
+        : { planReviewVersion: initial.planReviewVersion })}
     />
   );
 }
