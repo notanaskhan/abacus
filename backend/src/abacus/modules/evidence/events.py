@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated, ClassVar
+from typing import Annotated, ClassVar, Literal
 from uuid import UUID
 
 from abacus.kernel.classification import classified
@@ -200,3 +200,56 @@ class FirmExportScheduleChanged(DomainEvent):
     event_type: ClassVar[str] = "firm_export_schedule.changed"
 
     tenant_id: Annotated[UUID, classified("internal")]
+
+
+# --- C4 v1.1, OCR and box extraction (P-11-T19 shapes; P-11 §4.7, DEC-2204). Identifiers and
+# enums only: never text, values or TINs.
+
+TextSource = Literal["text_layer", "ocr", "none"]
+OcrRefusal = Literal[
+    "kill_switch",
+    "flag_off",
+    "provider_terms",
+    "boundary_basis",
+    "consent_7216",
+    "daily_page_cap",
+    "size_limit",
+    "provider_error",
+]
+
+
+class EvidenceTextReady(DomainEvent):
+    """A version's word layer is ready (text layer, or OCR'd): N-04's intake and
+    `FormExtractionWorkflow` start from here."""
+
+    event_type: ClassVar[str] = "evidence_text.ready"
+
+    evidence_version_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")] = None
+    text_source: Annotated[TextSource, classified("internal")]
+    pages: Annotated[int, classified("internal")]
+
+
+class ExtractedFieldsRecorded(DomainEvent):
+    """Code read a known form's boxes (never a model; ADR-050)."""
+
+    event_type: ClassVar[str] = "extracted_fields.recorded"
+
+    evidence_version_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")] = None
+    form_type: Annotated[str, classified("internal")]
+    tax_year: Annotated[int | None, classified("internal")] = None
+    fields: Annotated[int, classified("internal")]
+    low_confidence: Annotated[int, classified("internal")]
+    corrected: Annotated[bool, classified("internal")] = False
+
+
+class OcrRunRefused(DomainEvent):
+    """The gate refused OCR; the page stays `not_scannable` and the consumer offers manual
+    entry. Never retried automatically and never rerouted."""
+
+    event_type: ClassVar[str] = "ocr_run.refused"
+
+    evidence_version_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")] = None
+    reason: Annotated[OcrRefusal, classified("internal")]

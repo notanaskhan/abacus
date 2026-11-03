@@ -83,3 +83,20 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: evidence.ocr
+    description: 'Every Textract call per firm (P-11 §4.10): OCR of pages with no text layer inside the AWS boundary. Off: pages stay not_scannable, SHL-08 shows the muted line and consumers offer manual entry. On: the C4 v1.1 routes answer 501 until P-11-T22 onward. P-11-T19, DEC-2204.'
+    owner: ayushkbhatia
+    created: 2026-11-03
+    expires: 2027-05-01
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: evidence.form_extraction
+    description: 'Which form families write extracted_fields (P-11 §4.10): off, notices, notices_tax_forms or all. Off: no fields; consumers show manual entry. On: the fields and tables routes answer 501 until P-11-T23 onward. P-11-T19, DEC-2204.'
+    owner: ayushkbhatia
+    created: 2026-11-03
+    expires: 2027-05-01
+    override: DEC-137
+    kind: variant
+    values: ['off', notices, notices_tax_forms, all]
+    default: 'off'

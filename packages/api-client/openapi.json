@@ -9907,6 +9907,41 @@
         "title": "BoardSummaryOut",
         "type": "object"
       },
+      "BoxOut": {
+        "description": "A rectangle in page points (the viewer's grammar).",
+        "properties": {
+          "h": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "H",
+            "type": "number"
+          },
+          "w": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "W",
+            "type": "number"
+          },
+          "x": {
+            "cls": "internal",
+            "title": "X",
+            "type": "number"
+          },
+          "y": {
+            "cls": "internal",
+            "title": "Y",
+            "type": "number"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "w",
+          "h"
+        ],
+        "title": "BoxOut",
+        "type": "object"
+      },
       "BracketCheckOut": {
         "properties": {
           "agrees": {
@@ -32121,6 +32156,224 @@
           "extension_ids"
         ],
         "title": "ExtensionSubmitIn",
+        "type": "object"
+      },
+      "ExtractedFieldOut": {
+        "description": "One box: `match_id` is `ev:<version>#field:<key>`, which SHL-08's regions accept. A TIN\nbox carries `mask_token` (\"\u2022\u2022\u2022-\u2022\u2022-6081\") and never `value_text`.",
+        "properties": {
+          "bbox": {
+            "$ref": "#/components/schemas/BoxOut"
+          },
+          "confidence": {
+            "cls": "internal",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "extractor_kind": {
+            "cls": "internal",
+            "enum": [
+              "text_layer_map",
+              "ocr_map",
+              "key_value"
+            ],
+            "title": "Extractor Kind",
+            "type": "string"
+          },
+          "field_key": {
+            "cls": "internal",
+            "pattern": "^[a-z0-9][a-z0-9_.]{0,79}$",
+            "title": "Field Key",
+            "type": "string"
+          },
+          "label": {
+            "cls": "internal",
+            "title": "Label",
+            "type": "string"
+          },
+          "low_confidence": {
+            "cls": "internal",
+            "title": "Low Confidence",
+            "type": "boolean"
+          },
+          "mask_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Mask Token"
+          },
+          "match_id": {
+            "cls": "internal",
+            "title": "Match Id",
+            "type": "string"
+          },
+          "page": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          },
+          "value_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Value Text",
+            "x-tri": true
+          },
+          "value_type": {
+            "cls": "internal",
+            "enum": [
+              "money",
+              "date",
+              "text",
+              "code",
+              "checkbox",
+              "tin"
+            ],
+            "title": "Value Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "field_key",
+          "label",
+          "value_type",
+          "page",
+          "bbox",
+          "confidence",
+          "low_confidence",
+          "extractor_kind",
+          "match_id"
+        ],
+        "title": "ExtractedFieldOut",
+        "type": "object"
+      },
+      "ExtractedFieldsOut": {
+        "properties": {
+          "corrected": {
+            "cls": "internal",
+            "default": false,
+            "title": "Corrected",
+            "type": "boolean"
+          },
+          "form_map_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Form Map Version"
+          },
+          "form_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Form Type"
+          },
+          "items": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/ExtractedFieldOut"
+            },
+            "title": "Items",
+            "type": "array",
+            "x-tri": true
+          },
+          "tax_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Tax Year"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "ExtractedFieldsOut",
+        "type": "object"
+      },
+      "ExtractedTableOut": {
+        "properties": {
+          "bbox": {
+            "$ref": "#/components/schemas/BoxOut"
+          },
+          "page": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          },
+          "rows": {
+            "cls": "restricted",
+            "items": {
+              "items": {
+                "$ref": "#/components/schemas/TableCellOut"
+              },
+              "type": "array"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "table_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Table Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "table_id",
+          "page",
+          "bbox",
+          "rows"
+        ],
+        "title": "ExtractedTableOut",
+        "type": "object"
+      },
+      "ExtractedTablesOut": {
+        "properties": {
+          "items": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/ExtractedTableOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "ExtractedTablesOut",
         "type": "object"
       },
       "Facet": {
@@ -58534,6 +58787,56 @@
           "box"
         ],
         "title": "PageLineOut",
+        "type": "object"
+      },
+      "PageOcrOut": {
+        "description": "C4 v1.1 (P-11-T19): a page's OCR facts; `refused_reason` when the gate refused it.",
+        "properties": {
+          "low_confidence_words": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Low Confidence Words",
+            "type": "integer"
+          },
+          "mean_confidence": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Mean Confidence"
+          },
+          "refused_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "kill_switch",
+                  "flag_off",
+                  "provider_terms",
+                  "boundary_basis",
+                  "consent_7216",
+                  "daily_page_cap",
+                  "size_limit",
+                  "provider_error"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Refused Reason"
+          }
+        },
+        "title": "PageOcrOut",
         "type": "object"
       },
       "PageWordOut": {
@@ -86304,6 +86607,32 @@
         "title": "TableBlock",
         "type": "object"
       },
+      "TableCellOut": {
+        "properties": {
+          "bbox": {
+            "$ref": "#/components/schemas/BoxOut"
+          },
+          "confidence": {
+            "cls": "internal",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "text": {
+            "cls": "restricted",
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "bbox",
+          "confidence"
+        ],
+        "title": "TableCellOut",
+        "type": "object"
+      },
       "TablePart": {
         "additionalProperties": false,
         "properties": {
@@ -90401,6 +90730,47 @@
         "title": "TestIn",
         "type": "object"
       },
+      "TextRetryOut": {
+        "description": "`queued`, or `refused` with the first failing gate's reason (never retried by itself).",
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "kill_switch",
+                  "flag_off",
+                  "provider_terms",
+                  "boundary_basis",
+                  "consent_7216",
+                  "daily_page_cap",
+                  "size_limit",
+                  "provider_error"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reason"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "queued",
+              "refused"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "TextRetryOut",
+        "type": "object"
+      },
       "TextRun": {
         "description": "Literal text: rendered escaped, never interpreted (AC-8).",
         "properties": {
@@ -94368,6 +94738,17 @@
             "title": "N",
             "type": "integer"
           },
+          "ocr": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PageOcrOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
           "pii_scan": {
             "cls": "internal",
             "enum": [
@@ -94392,6 +94773,23 @@
             "cls": "internal",
             "title": "Text Layer",
             "type": "boolean"
+          },
+          "text_source": {
+            "anyOf": [
+              {
+                "enum": [
+                  "text_layer",
+                  "ocr",
+                  "none"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Text Source"
           },
           "width_pt": {
             "cls": "internal",
@@ -165250,6 +165648,157 @@
         "x-abacus-action": "evidence.read_metadata"
       }
     },
+    "/v1/evidence-versions/{version_id}/fields": {
+      "get": {
+        "description": "The boxes code read; an unsupported form or year answers no items (manual entry).",
+        "operationId": "extracted_fields",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "form",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 40,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Form"
+            }
+          },
+          {
+            "in": "query",
+            "name": "key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 80,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Key"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtractedFieldsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Extracted Fields Route",
+        "tags": [
+          "trust kit"
+        ],
+        "x-abacus-action": "evidence.read"
+      }
+    },
     "/v1/evidence-versions/{version_id}/pages/{page_no}": {
       "get": {
         "description": "AC4.2: the masked PNG (`no-store`, `nosniff`); 409 `preview_outdated` for a preview made\nbefore masking. The read leaves an access event first (Q-02-T20). Never served to a reader who\nmay not read unmasked content: 403 (Ayush, 2026-10-26; DEC-369), whose view is `\u2026/text`.",
@@ -165812,6 +166361,141 @@
         "x-abacus-action": "evidence.read"
       }
     },
+    "/v1/evidence-versions/{version_id}/tables": {
+      "get": {
+        "description": "A statement page's transaction rows with cell boxes (CLS-05).",
+        "operationId": "extracted_tables",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 5000,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Page"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtractedTablesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Extracted Tables Route",
+        "tags": [
+          "trust kit"
+        ],
+        "x-abacus-action": "evidence.read"
+      }
+    },
     "/v1/evidence-versions/{version_id}/text": {
       "get": {
         "description": "Ayush, 2026-10-26 (DEC-369): the masked text projection, page by page, the view a reader\nwho may not read unmasked content gets instead of page images until OCR (P-11): detected\nvalues as tokens, the kernel TIN scrub applied, `unread` on pages with content no scan read,\na workbook's cells masked; 409 `preview_outdated` before the PII scan. `no-store`; logged as\na content read.",
@@ -165937,6 +166621,133 @@
           "trust kit"
         ],
         "x-abacus-action": "evidence.read"
+      }
+    },
+    "/v1/evidence-versions/{version_id}/text/retry": {
+      "post": {
+        "description": "A person's \"Read text again\" after a cleared refusal; the agent and workers are refused\nby the matrix (INV-1).",
+        "operationId": "text_retry",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TextRetryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Text Retry Route",
+        "tags": [
+          "trust kit"
+        ],
+        "x-abacus-action": "evidence.ocr_retry"
       }
     },
     "/v1/evidence-versions/{version_id}/unlock": {
