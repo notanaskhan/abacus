@@ -4,7 +4,7 @@ title: A-05-T14 EBP case sets in evals/workpapers_section_drafter
 spec: SPEC-640
 acceptance_criteria: [AC-12]
 risk_zone: red
-status: in-review
+status: done
 epic: A-05
 plan_key: A-05-T14
 branch: s24-a05-t14 (stacked on s24-a04-t14)
