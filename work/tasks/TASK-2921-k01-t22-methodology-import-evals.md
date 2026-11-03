@@ -4,7 +4,7 @@ title: K-01-T22 eval suite evals/methodology_import
 spec: SPEC-000  # K-01-T22 row; K-01 §6
 acceptance_criteria: [AC-1]
 risk_zone: red
-status: in-review
+status: done
 epic: K-01
 plan_key: K-01-T22
 branch: s24-k01-t22

@@ -4,7 +4,7 @@ title: A-04-T13 risk register service (AUD-05, AUD-08)
 spec: SPEC-620
 acceptance_criteria: [AC-19, AC-20, AC-21]
 risk_zone: amber
-status: in-review
+status: done
 epic: A-04
 plan_key: A-04-T13
 branch: s24-a04-t13 (stacked on s24-a04-t12)

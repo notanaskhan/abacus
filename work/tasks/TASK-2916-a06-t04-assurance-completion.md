@@ -4,7 +4,7 @@ title: A-06-T04 migration 0644 assurance_completion
 spec: SPEC-642
 acceptance_criteria: [AC-1]
 risk_zone: amber
-status: in-review
+status: done
 epic: A-06
 plan_key: A-06-T04
 branch: s24-a06-t04 (stacked on s24-a06-t03)
