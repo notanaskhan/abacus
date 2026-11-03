@@ -2,7 +2,9 @@
 // source `GET /v1/human-gates/counts` with the list beside it. Polled every 60 s and on focus,
 // fresh for 10 s (DEC-23: no SSE in I-01). Every gate mutation (snooze, reassign, an owner's
 // decide) invalidates the counts and the list together, so the badge, header and summary move as
-// one (`invalidateGates`).
+// one (`invalidateGates`). I-01-T21: HOME-02 reads the same counts and lists through these hooks,
+// and every gate write on HOME-02 (snooze, reassign, decide, bulk sign-off) calls `invalidateGates`,
+// so HOME-01 and HOME-02 never disagree.
 
 import {
   homeOptions,
@@ -45,6 +47,31 @@ export function useWaitingOnYou() {
     ...humanGateListOptions({ query: { assignee: "me", limit: 200 } }),
     ...POLL,
   });
+}
+
+export type GateListState = "open" | "done";
+
+/** HOME-02's queue: the viewer's gates by deadline, open or done (I-01-T16, T21). */
+export function useApprovalsList(state: GateListState) {
+  return useQuery({
+    ...humanGateListOptions({ query: { assignee: "me", state, sort: "deadline", limit: 200 } }),
+    ...POLL,
+  });
+}
+
+/** HOME-02 `?gate=` on a done gate: the done rows, read once the open list lacks the gate. */
+export function useDoneGates(enabled: boolean) {
+  return useQuery({
+    ...humanGateListOptions({
+      query: { assignee: "me", state: "done", sort: "deadline", limit: 200 },
+    }),
+    enabled,
+  });
+}
+
+/** I-01-T21: with `home.approvals` on, a HOME-01 row opens the gate selected in HOME-02. */
+export function approvalsHref(gateId: string): string {
+  return `/home/approvals?gate=${encodeURIComponent(gateId)}`;
 }
 
 export async function invalidateGates(client: QueryClient): Promise<void> {

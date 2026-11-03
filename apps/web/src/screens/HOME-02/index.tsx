@@ -1,5 +1,4 @@
 import type { HumanGateCountsOut, HumanGateOut } from "@abacus/api-client";
-import { humanGateCountsOptions, humanGateListOptions } from "@abacus/api-client/query";
 import {
   Button,
   EmptyState,
@@ -12,7 +11,7 @@ import {
   QueueDetailLayout,
   date as formatDate,
 } from "@abacus/ui";
-import { useQuery } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { type JSX, type KeyboardEvent, useRef, useState } from "react";
 import { BulkSignOffSheet } from "../SHL-12/Bulk";
 import { useNow } from "../../app-core/clock";
@@ -23,11 +22,13 @@ import {
   type Band,
   type EvidenceSummaryOf,
   HOME_MESSAGES,
-  HOME_POLL_MS,
   HOME_SEGMENTS,
-  HOME_STALE_MS,
   HomeSegmented,
   dueChip,
+  invalidateGates,
+  useApprovalsList,
+  useDoneGates,
+  useGateCounts,
   visibleBands,
 } from "../../domain/home";
 import { COPY } from "./copy";
@@ -52,12 +53,6 @@ import { MY_WORK, openHref, openOverlayOf } from "./hosts";
 // and shows each item's result. Enter and the generic "Open" go to the gate's own host
 // (`hosts.ts`), and the segmented's "My work" to HOME-01. A row is a link to where the gate is
 // decided, never a decision control (INV-1). Behind `home.approvals` (created here).
-
-const POLL = {
-  refetchInterval: HOME_POLL_MS,
-  staleTime: HOME_STALE_MS,
-  refetchOnWindowFocus: true,
-};
 
 const GLYPH_OF: Readonly<Record<HumanGateOut["kind"], NonNullable<IssueItem["glyph"]>>> = {
   decision: { icon: "circle-help", label: COPY.glyph.decision },
@@ -175,13 +170,9 @@ export function HOME02({
     },
   };
   const queueRef = useRef<HTMLDivElement>(null);
-  const counts = useQuery({ ...humanGateCountsOptions(), ...POLL });
-  const list = useQuery({
-    ...humanGateListOptions({
-      query: { assignee: "me", state: done ? "done" : "open", sort: "deadline", limit: 200 },
-    }),
-    ...POLL,
-  });
+  const queryClient = useQueryClient();
+  const counts = useGateCounts(null);
+  const list = useApprovalsList(done ? "done" : "open");
   const gates = list.data?.items ?? [];
   const groups: IssueGroup[] =
     counts.data === undefined
@@ -199,17 +190,9 @@ export function HOME02({
   const order = groups.flatMap((g) => g.items);
   const listed = order.some((i) => i.id === chosen);
   // `?gate=` naming a done gate (b): look among the done rows once the open list has loaded.
-  const doneRows = useQuery({
-    ...humanGateListOptions({
-      query: { assignee: "me", state: "done", sort: "deadline", limit: 200 },
-    }),
-    enabled:
-      !done &&
-      chosen !== null &&
-      list.data !== undefined &&
-      !listed &&
-      held.current?.id !== chosen,
-  });
+  const doneRows = useDoneGates(
+    !done && chosen !== null && list.data !== undefined && !listed && held.current?.id !== chosen,
+  );
   const fromDone = doneRows.data?.items.find((g) => g.id === chosen);
   if (fromDone !== undefined && held.current?.id !== fromDone.id) held.current = fromDone;
   const keep = !listed && chosen !== null && held.current?.id === chosen;
@@ -435,6 +418,9 @@ export function HOME02({
           }}
           targets={chosenGates.map((g) => ({ type: g.subject.type, id: g.subject.id }))}
           {...(level === undefined ? {} : { level })}
+          onSigned={() => {
+            void invalidateGates(queryClient);
+          }}
         />
       )}
     </div>

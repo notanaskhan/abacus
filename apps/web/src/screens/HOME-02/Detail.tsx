@@ -6,8 +6,6 @@ import type {
 } from "@abacus/api-client";
 import {
   humanGateCandidatesOptions,
-  humanGateCountsQueryKey,
-  humanGateListQueryKey,
   humanGateReassignMutation,
   humanGateSnoozeMutation,
 } from "@abacus/api-client/query";
@@ -39,6 +37,7 @@ import type { OverlayRef } from "../../app-core/overlays";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { useSession } from "../../app-core/session";
 import { useEngagementTeam } from "../../domain/engagements";
+import { invalidateGates } from "../../domain/home";
 import {
   levelOf,
   useDecisionCard,
@@ -234,8 +233,7 @@ function GateMoves({ gate }: { gate: HumanGateOut }): JSX.Element | null {
     enabled: reassign && askCandidates,
   });
   const refresh = (): void => {
-    void queryClient.invalidateQueries({ queryKey: humanGateListQueryKey() });
-    void queryClient.invalidateQueries({ queryKey: humanGateCountsQueryKey() });
+    void invalidateGates(queryClient);
   };
   const snoozeWrite = useMutation({ ...humanGateSnoozeMutation(), onSuccess: refresh });
   const reassignWrite = useMutation({ ...humanGateReassignMutation(), onSuccess: refresh });
@@ -521,8 +519,7 @@ function DecisionFooter({ gate, draft, onDraft }: DetailProps): JSX.Element | nu
     failedText: COPY.detailPane.decideFailed,
     onDone: () => {
       onDraft({ words: "" });
-      void queryClient.invalidateQueries({ queryKey: humanGateListQueryKey() });
-      void queryClient.invalidateQueries({ queryKey: humanGateCountsQueryKey() });
+      void invalidateGates(queryClient);
     },
   });
   if (card === undefined) return null;
