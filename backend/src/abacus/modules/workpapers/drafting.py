@@ -20,6 +20,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from uuid import UUID
 
+from sqlalchemy import insert
+
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork
@@ -36,7 +38,7 @@ from abacus.modules.methodology.api import VersionStep
 from abacus.modules.review.api import record_value
 from abacus.modules.workpapers.core import CELL_TARGET
 from abacus.modules.workpapers.events import WorkpaperContentChanged, WorkpaperVersionCreated
-from abacus.modules.workpapers.models import WorkpaperCell
+from abacus.modules.workpapers.models import AttentionFlag, AttentionFlagEvent, WorkpaperCell
 from abacus.modules.workpapers.procedures import bound_steps, pack_errors
 from abacus.modules.workpapers.repository import (
     cells_up_to,
@@ -203,7 +205,55 @@ async def pack_problem(
     return PackProblem(first.message, first.program_code, first.number, first.ref)
 
 
-SOURCE = SectionSource(draft_paper, bound, pack_problem)
+async def raise_draft_flag(
+    tx: UnitOfWork,
+    agent: AuthContext,
+    paper: SourcePaper,
+    section_key: str | None,
+    row_key: str | None,
+    text: str,
+) -> UUID:
+    """A-04-T23 (AC2.2; DEC-2059): the agent's PBC GAP flag on the paper's row, in the run's unit
+    of work, as the agent with its run (0581's CHECK); a person converts it (`flags.convert`)."""
+    run_id = getattr(agent, "agent_run_id", None)
+    if agent.tenant.actor_kind != "agent" or run_id is None:
+        raise NotFound("agent_run")
+    flag_id = (
+        await tx.session.execute(
+            insert(AttentionFlag)
+            .values(
+                tenant_id=agent.tenant_id,
+                workpaper_id=paper.workpaper_id,
+                section_key=section_key or "main",
+                row_key=row_key,
+                kind="pbc_gap",
+                text=text,
+                created_by=agent.user_id,
+                agent_run_id=run_id,
+            )
+            .returning(AttentionFlag.id)
+        )
+    ).scalar_one()
+    tx.session.add(
+        AttentionFlagEvent(
+            tenant_id=agent.tenant_id,
+            workpaper_id=paper.workpaper_id,
+            flag_id=flag_id,
+            event="raised",
+            actor_user_id=None,
+            agent_run_id=run_id,
+            ref=None,
+        )
+    )
+    tx.record(
+        "attention_flag.raised",
+        target=Target("workpaper", paper.workpaper_id),
+        after=Ref(flag=str(flag_id), run=str(run_id)),
+    )
+    return flag_id
+
+
+SOURCE = SectionSource(draft_paper, bound, pack_problem, raise_draft_flag)
 
 __all__ = [
     "SOURCE",

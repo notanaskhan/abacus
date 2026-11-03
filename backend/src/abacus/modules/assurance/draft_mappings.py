@@ -8,6 +8,9 @@ its task scope.
 - **gap** (General Audit Planning, Service Organizations; AUD-04): the request items in the
   `service_organizations` area. An item with evidence is a document (a SOC 1 report, a bridge
   letter); an item still requested is a waiting input ("2 waiting inputs"), never guessed at.
+- **risk_narrative** (Risk Assessment, AUD-05): every fulfilled request on the engagement (the
+  plan document, the SPD, the trust report, the SOC 1, ...), so Menu 1 and Menu 2 cite across them;
+  the presumed fraud risks are code's (`risks.prepopulate_presumed`, the mode's preparer).
 """
 
 from __future__ import annotations
@@ -54,3 +57,13 @@ async def gap_inputs(actor: AuthContext, paper: SourcePaper) -> ModeInputs:
     """AUD-04's Service Organizations section: SOC reports and bridge letters, and the requests
     still open for them."""
     return await _documents_and_waits(actor, paper, frozenset({SERVICE_ORG_AREA}))
+
+
+async def risk_narrative_inputs(actor: AuthContext, paper: SourcePaper) -> ModeInputs:
+    """AUD-05's narrative: the documents the client provided, in the order requested."""
+    items = [
+        i for i in await request_items_for(actor, paper.engagement_id) if i.evidence_version_id
+    ]
+    areas = frozenset(i.audit_area for i in items)
+    found = await _documents_and_waits(actor, paper, areas)
+    return ModeInputs(found.documents, ())

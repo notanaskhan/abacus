@@ -7,6 +7,7 @@ The audit line's read models and actions: the AUD-06 trial balance first (SPEC-3
 from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.modules.agents.api import (
     register_mode_mapping,
+    register_mode_preparer,
     register_suggestion_applier,
     register_suggestion_target,
 )
@@ -19,7 +20,7 @@ from abacus.modules.assurance.completion_routes import router as completion_rout
 
 # A-04-T08/T09: the pure materiality engine, for the recommender's evaluation (BOUND-001).
 from abacus.modules.assurance.compute import materiality as materiality_engine
-from abacus.modules.assurance.draft_mappings import gap_inputs
+from abacus.modules.assurance.draft_mappings import gap_inputs, risk_narrative_inputs
 from abacus.modules.assurance.ebp_contract import router as ebp_router
 from abacus.modules.assurance.ebp_designed import register as register_ebp_designed
 from abacus.modules.assurance.ebp_designed import register_modes as register_ebp_modes
@@ -55,6 +56,7 @@ from abacus.modules.assurance.review_gates import register_review_gates
 from abacus.modules.assurance.risks import AUDIT_KINDS as RISK_KINDS
 from abacus.modules.assurance.risks import (
     apply_risk_suggestion,
+    presumed_preparer,
     register_approval_kind,
     risk_engagement,
 )
@@ -122,6 +124,9 @@ register_gate_provider("G9", g9)
 register_gates()  # A-04-T43 (DEC-2057): G4 from assurance/gates.py
 # A-04-T22 (DEC-2058): the planning modes' mappings for the section drafter.
 register_mode_mapping("gap", gap_inputs)
+register_mode_mapping("risk_narrative", risk_narrative_inputs)
+# A-04-T23 (DEC-2059): code inserts the presumed fraud risks before a narrative draft.
+register_mode_preparer("risk_narrative", presumed_preparer)
 register_firm_setting(RELEASE_MODE_SETTING)
 
 # A-01-T05 (SPEC-330 AC-13): C1's `gate.met` derives the phase a computed gate opens. The worker

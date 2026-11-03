@@ -59,9 +59,9 @@ from abacus.kernel.config import settings
 from abacus.kernel.db import tenant_session
 from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
 from abacus.kernel.errors import DomainConflict, NotFound
-from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
+from abacus.kernel.uow import MissingAuditEvent, Ref, Target, UnitOfWork, uow
 from abacus.modules.agents.draft_start import DraftingUnavailable
-from abacus.modules.agents.handoff import DraftCitation, DraftedCell, SectionDraft
+from abacus.modules.agents.handoff import DraftCitation, DraftedCell, DraftedFlag, SectionDraft
 from abacus.modules.agents.proposals import ProposalInvalid, create_suggestion
 from abacus.modules.agents.repository import (
     finish_run,
@@ -72,11 +72,13 @@ from abacus.modules.agents.repository import (
 )
 from abacus.modules.agents.section_sources import (
     CELL_TARGET,
+    FLAG_MODES,
     ModeDocument,
     PackRefused,
     SourcePaper,
     mode_kinds,
     mode_mapping,
+    mode_preparer,
     section_source,
 )
 from abacus.modules.agents.service import (
@@ -113,6 +115,7 @@ MAX_PAGES: Final = 40
 MAX_PAGE_CHARS: Final = 6000
 # Why a drafted cell was dropped (shown as Unsupported, never as a value).
 UNCITED: Final = "uncited"
+FLAG_NOT_IN_MODE: Final = "flag_not_in_mode"  # A-04-T23: only risk_narrative raises flags
 UNVERIFIED: Final = "citation_unverified"
 NO_PROVENANCE: Final = "number_without_provenance"
 UNKNOWN_CELL: Final = "unknown_cell"
@@ -225,6 +228,11 @@ async def start(
     kinds = mode_kinds(mode)
     if kinds is not None and paper.kind not in kinds:
         raise ModeNotForPaper(facts={"mode": "mode"})
+    # A-04-T23 (DEC-2059): the mode's code steps, as the person starting it (risk_narrative's
+    # presumed fraud risks), before any run exists.
+    preparer = mode_preparer(mode)
+    if preparer is not None:
+        await preparer(ctx, engagement_id, paper)
     event = uuid5(
         NAMESPACE_URL,
         f"abacus:section_draft:{ctx.tenant_id}:{workpaper_id}:{section_key}:{idempotency_key}",
@@ -563,6 +571,7 @@ async def _draft(
                 unsupported.append(Unsupported(cell.cell, NO_PROVENANCE))
                 continue
             kept.append((cell, tuple(r.id for r in verified)))
+        flag_ids = await _raise_flags(tx, agent, run.id, mode, context, output.flags, unsupported)
     suggestions: list[UUID] = []
     for cell, citation_ids in kept:
         sheet, key = _cell_key(cell.cell)
@@ -594,6 +603,8 @@ async def _draft(
                 "unsupported": [{"cell": u.cell, "reason": u.reason} for u in unsupported],
                 # A-04-T22: what the section still needs from the client (AUD-04's waiting row).
                 "waiting_inputs": list(context.waiting_on),
+                # A-04-T23: the PBC GAP flags raised on the paper (risk_narrative only).
+                "flag_ids": [str(f) for f in flag_ids],
             },
         ):
             tx.record(
@@ -602,6 +613,45 @@ async def _draft(
                 after=Ref(suggestions=len(suggestions), unsupported=len(unsupported)),
             )
     return DraftOutcome(run.id, "completed", tuple(suggestions), tuple(unsupported))
+
+
+async def _raise_flags(
+    tx: UnitOfWork,
+    agent: AgentContext,
+    run_id: UUID,
+    mode: str,
+    context: DraftContext,
+    flags: Sequence[DraftedFlag],
+    unsupported: list[Unsupported],
+) -> list[UUID]:
+    """A-04-T23 (AC2.2): each drafted PBC GAP flag with a verified citation is raised on its row
+    through the paper's owner, as the agent; a mode that raises none, a row the section doesn't
+    hold, or a flag nothing verifies is Unsupported instead."""
+    raiser = section_source().raise_flag
+    cells = {(c.sheet_key, c.cell_key): c for c in context.paper.cells}
+    raised: list[UUID] = []
+    for flag in flags:
+        cell = cells.get(_cell_key(flag.cell))
+        if mode not in FLAG_MODES or raiser is None:
+            unsupported.append(Unsupported(flag.cell, FLAG_NOT_IN_MODE))
+            continue
+        if cell is None:
+            unsupported.append(Unsupported(flag.cell, UNKNOWN_CELL))
+            continue
+        claims = [c for c in (_claim(x, context) for x in flag.citations) if c is not None]
+        recorded = await record_agent_citations(
+            tx, agent, anchor_type=ANCHOR, anchor_id=run_id, ref=f"flag:{flag.cell}",
+            claims=claims, shadow=False,
+        )  # fmt: skip
+        if not any(r.verified for r in recorded):
+            unsupported.append(Unsupported(flag.cell, UNVERIFIED))
+            continue
+        raised.append(
+            await raiser(
+                tx, agent, context.paper, context.paper.section_key, cell.row_key, flag.text
+            )
+        )
+    return raised
 
 
 __all__ = [

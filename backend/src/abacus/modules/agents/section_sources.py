@@ -14,13 +14,16 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
-from typing import Final
+from typing import TYPE_CHECKING, Final
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import DomainConflict, DomainUnavailable
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.methodology.api import VersionStep
+
+if TYPE_CHECKING:
+    from abacus.kernel.uow import UnitOfWork
 
 CELL_TARGET: Final = "workpaper_cell"
 
@@ -56,11 +59,20 @@ class PackProblem:
     ref: str
 
 
+# A-04-T23 (DEC-2059): the paper's owner raises a PBC GAP attention flag the agent drafted, in
+# the run's unit of work, as the agent with its run (0581: an agent's flag names its run).
+# (unit of work, the agent, the paper, its section, the row, the flag's text) -> the flag's id
+FlagRaiser = Callable[
+    ["UnitOfWork", AuthContext, SourcePaper, str | None, str | None, str], Awaitable[UUID]
+]
+
+
 @dataclass(frozen=True)
 class SectionSource:
     paper: Callable[[TenantContext, UUID, UUID, str | None], Awaitable[SourcePaper]]
     bound: Callable[[Sequence[VersionStep], SourcePaper], list[VersionStep]]
     pack_problem: Callable[[TenantContext, UUID, SourcePaper], Awaitable[PackProblem | None]]
+    raise_flag: FlagRaiser | None = None
 
 
 class SourceMissing(DomainUnavailable):
@@ -164,12 +176,38 @@ def mode_mapping(mode: str) -> ModeMapping | None:
     return _MODE_MAPPINGS.get(mode)
 
 
+# A-04-T23 (DEC-2059): what code does when a person starts a mode, before the run exists, as that
+# person (risk_narrative inserts the presumed fraud risks the methodology prepopulates). It runs
+# in the starter's own context; the agent never writes the register.
+ModePreparer = Callable[[AuthContext, UUID, SourcePaper], Awaitable[None]]
+_MODE_PREPARERS: dict[str, ModePreparer] = {}
+# The modes whose drafts may raise PBC GAP flags (A-04 §6: risk_narrative only).
+FLAG_MODES: Final = frozenset({"risk_narrative"})
+
+
+def register_mode_preparer(mode: str, preparer: ModePreparer) -> None:
+    known = _MODE_PREPARERS.get(mode)
+    if known is not None and (known.__module__, known.__qualname__) != (
+        preparer.__module__,
+        preparer.__qualname__,
+    ):
+        raise ValueError(f"section draft mode {mode!r} already has a preparer")
+    _MODE_PREPARERS[mode] = preparer
+
+
+def mode_preparer(mode: str) -> ModePreparer | None:
+    return _MODE_PREPARERS.get(mode)
+
+
 __all__ = [
     "CELL_TARGET",
+    "FLAG_MODES",
+    "FlagRaiser",
     "ModeDocument",
     "ModeInputs",
     "ModeMapping",
     "ModePage",
+    "ModePreparer",
     "PackProblem",
     "PackRefused",
     "SectionSource",
@@ -178,8 +216,10 @@ __all__ = [
     "SourcePaper",
     "mode_kinds",
     "mode_mapping",
+    "mode_preparer",
     "register_mode_mapping",
     "register_mode_plan",
+    "register_mode_preparer",
     "register_section_source",
     "section_source",
 ]
