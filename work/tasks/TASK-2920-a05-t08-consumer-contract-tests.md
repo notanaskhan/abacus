@@ -4,7 +4,7 @@ title: A-05-T08 consumer contract tests on behalf of A-05 (C3, C8, C9)
 spec: SPEC-640
 acceptance_criteria: [AC-6]
 risk_zone: amber
-status: in-review
+status: done
 epic: A-05
 plan_key: A-05-T08
 branch: s24-a05-t08 (stacked on s24-a06-t05)
