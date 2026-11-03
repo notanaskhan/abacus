@@ -17,6 +17,7 @@ from abacus.modules.assurance import mapping_live as mapping_live
 from abacus.modules.assurance.archive_gate import g9
 from abacus.modules.assurance.audits_contract import audits_router
 from abacus.modules.assurance.completion import g6, g7, on_entry_client_decision
+from abacus.modules.assurance.completion_decisions import register_completion_decision_kinds
 from abacus.modules.assurance.completion_routes import dashboard_router
 from abacus.modules.assurance.completion_routes import router as completion_router
 
@@ -183,6 +184,7 @@ register_engagement_owners(SERVICE_ORG_KINDS, service_org_owners)
 # A-04-T12 (DEC-1950): the materiality cards' kinds and appliers; versions placed for the trail.
 register_materiality_kinds()
 register_approval_kind()  # A-04-T18 (DEC-2056): the `significant_risk` card
+register_completion_decision_kinds()  # A-06-T13 (DEC-2213): severity and the SUM conclusion
 register_engagement_owners(MATERIALITY_KINDS, materiality_owners)
 # A-04-T13 (DEC-1951): the register's rows placed for the trail; the agent's `risk` suggestions
 # written by their owner when a person adopts them (AC4.7).

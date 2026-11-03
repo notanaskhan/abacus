@@ -1595,6 +1595,11 @@ codes:
     raised_by:
     - abacus.modules.communications.inbox_read.NoSenderAddress
     summary: The thread has no email sender to remember (portal or staff-logged).
+  no_snapshot:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.completion_decisions.NoSnapshot
+    summary: The SUM has no frozen snapshot for the conclusion yet.
   no_subsequent_ledger:
     status: 409
     raised_by:
@@ -1624,6 +1629,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.ebp_plan.NotAnEbpAudit
+  not_concludable:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.completion_decisions.NotConcludable
+    summary: The finding is not an open deficiency (not converted, or already concluded).
   not_concluded:
     status: 409
     raised_by:
@@ -2478,6 +2488,10 @@ codes:
     raised_by:
     - abacus.modules.sampling.sample_sets.SizeTableMissing
     summary: No attribute sample size table is in effect for the firm (K-02's import loads it).
+  snapshot_changed:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.completion_decisions.SnapshotChanged
   snapshot_entity_mismatch:
     status: 422
     raised_by:
