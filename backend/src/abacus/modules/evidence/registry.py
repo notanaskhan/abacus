@@ -53,6 +53,11 @@ TABLES: frozenset[str] = frozenset(
         "firm_export_links",
         "firm_export_downloads",
         "document_classifications",  # N-01-T17 (0404): rule and agent classifications
+        # P-11-T24 (0666): OCR runs, extracted fields and tables, all insert-only.
+        "ocr_runs",
+        "extracted_fields",
+        "extracted_tables",
+        "extracted_table_cells",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -81,6 +86,10 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "firm_export_links",  # Q-02-T43 (0216)
         "firm_export_downloads",  # Q-02-T43 (0216)
         "document_classifications",  # N-01-T17 (0404): a reclassification is a new row
+        "ocr_runs",  # P-11-T24 (0666)
+        "extracted_fields",  # P-11-T24 (0666): a correction is a new row
+        "extracted_tables",  # P-11-T24 (0666)
+        "extracted_table_cells",  # P-11-T24 (0666)
     }
 )
 # Columns the app may supply on insert; everything else is server-set.
@@ -180,6 +189,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"issuer_name", "kind", "page_count", "taxpayer_tin_last4", "corrected"}
         | {"confidences", "citation_ids", "proposed_by_kind", "agent_run_id", "rules_version"}
         | {"confirmed_by", "confirmed_at"}
+        | {"form_map_version"}  # P-11-T24 (0666)
     ),
 }
 # Columns the app may update; tables not listed keep what their migration grants.
@@ -226,4 +236,23 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
 # T-02-T17 (0468): a person's duplicate decision.
 INSERT_COLUMNS["duplicate_resolutions"] = frozenset(
     {"tenant_id", "engagement_id", "version_id", "kept_version_id", "decision", "decided_by"}
+)
+# P-11-T24 (0666, DEC-2235): OCR and extraction; a TIN value is sealed, never text.
+INSERT_COLUMNS["ocr_runs"] = frozenset(
+    {"tenant_id", "evidence_version_id", "inbox_file_id", "derivation_id", "provider"}
+    | {"api", "pages", "status", "refused_reason", "register_version", "basis"}
+    | {"page_units", "provider_request_ids"}
+)
+INSERT_COLUMNS["extracted_fields"] = frozenset(
+    {"tenant_id", "evidence_version_id", "inbox_file_id", "derivation_id", "ocr_run_id"}
+    | {"form_type", "tax_year", "form_map_version", "field_key", "label", "value_type"}
+    | {"value_text", "value_sealed", "last4", "page_no", "bbox", "confidence", "low_confidence"}
+    | {"extractor_kind", "extractor_version", "pii_region_id", "match_id"}
+)
+INSERT_COLUMNS["extracted_tables"] = frozenset(
+    {"tenant_id", "evidence_version_id", "inbox_file_id", "derivation_id", "ocr_run_id"}
+    | {"page_no", "bbox", "row_count", "col_count", "extractor_version"}
+)
+INSERT_COLUMNS["extracted_table_cells"] = frozenset(
+    {"tenant_id", "table_id", "row_no", "col_no", "text", "bbox", "confidence"}
 )
