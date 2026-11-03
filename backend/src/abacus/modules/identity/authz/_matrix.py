@@ -4205,6 +4205,17 @@ ACTIONS: dict[str, dict[str, str]] = {
         "eqr_reviewer": "allow",
         "independence": "required",
     },
+    "sign_off.request_re_review": {
+        "engagement_partner": "allow",
+        "manager": "allow",
+        "senior": "allow",
+        "client_admin": "deny",
+        "client_contributor": "deny",
+        "third_party": "deny",
+        "agent": "deny",
+        "system": "deny",
+        "independence": "required",
+    },
     "sign_off.review": {
         "engagement_partner": "allow",
         "manager": "allow",

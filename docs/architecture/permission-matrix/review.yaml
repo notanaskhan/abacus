@@ -14,6 +14,8 @@ actions:
   # facts (P-04-T15: not_preparer_of_target on L2 and L3).
   sign_off.read:            {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, independence: required}   # SHL-12 ladder and eligibility; firm roles only
   sign_off.create:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, agent: deny, system: deny, independence: required, mfa_recent: required}   # R-SO-1: a live human; the level row decides who may sign what; a fresh second factor (DEC-505)
+  # A-06-T14 (DEC-2214; AUD-17): ask a stale signer to look again; a person's act.
+  sign_off.request_re_review: {engagement_partner: allow, manager: allow, senior: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny, independence: required}   # POST /v1/sign-offs/{id}/request-re-review
   sign_off.bulk:            {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny, independence: required, mfa_recent: required}   # R-SO-7: reviewers only (senior, manager, partner); a fresh second factor (P-04-T22, DEC-501)
   # --- Review notes (SPEC-041, SPEC-313; ADR-160 clause 6). Moved from fieldwork.yaml: review owns notes ---
   review_note.read:         {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, independence: required}   # P-04-T07: GET /v1/review-notes; bodies are sealed and read as access events

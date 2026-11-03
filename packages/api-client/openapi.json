@@ -57449,6 +57449,39 @@
         "title": "NoteAnchorOut",
         "type": "object"
       },
+      "NoteBandsOut": {
+        "description": "AUD-17's bands for one work item: Open \u00b7 Responded \u00b7 Cleared (A-06-T14).",
+        "properties": {
+          "cleared": {
+            "cls": "internal",
+            "title": "Cleared",
+            "type": "integer"
+          },
+          "open": {
+            "cls": "internal",
+            "title": "Open",
+            "type": "integer"
+          },
+          "responded": {
+            "cls": "internal",
+            "title": "Responded",
+            "type": "integer"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "open",
+          "responded",
+          "cleared",
+          "total"
+        ],
+        "title": "NoteBandsOut",
+        "type": "object"
+      },
       "NoteEntryOut": {
         "properties": {
           "at": {
@@ -68382,6 +68415,21 @@
           "body"
         ],
         "title": "RaiseReviewNoteIn",
+        "type": "object"
+      },
+      "ReReviewOut": {
+        "properties": {
+          "sign_off_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Sign Off Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sign_off_id"
+        ],
+        "title": "ReReviewOut",
         "type": "object"
       },
       "ReadAllOut": {
@@ -218040,6 +218088,113 @@
         "x-abacus-action": "review_note.raise"
       }
     },
+    "/v1/review-notes/bands": {
+      "get": {
+        "description": "The work item's notes by band, from the visible rows' counts (A-06-T14; AUD-17).",
+        "operationId": "review_note_bands",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteBandsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Review Note Bands Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "review_note.read"
+      }
+    },
     "/v1/review-notes/{note_id}": {
       "get": {
         "description": "One note with its body and events (the body read is an access event).",
@@ -220257,6 +220412,123 @@
           "review"
         ],
         "x-abacus-action": "sign_off.read"
+      }
+    },
+    "/v1/sign-offs/{sign_off_id}/request-re-review": {
+      "post": {
+        "description": "AUD-17: ask the signer of a stale sign-off to look again (409 `not_stale`); a person's\nact. The signer is told (C16 `sign_off_re_review`).",
+        "operationId": "sign_off_re_review",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sign_off_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Sign Off Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReReviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Sign Off Re Review Route",
+        "tags": [
+          "review"
+        ],
+        "x-abacus-action": "sign_off.request_re_review"
       }
     },
     "/v1/sign-offs:bulk": {
@@ -233406,7 +233678,7 @@
     },
     "/v1/work-items/{work_item_id}/sum/request-conclusion": {
       "post": {
-        "description": "A frozen snapshot and the `sum_conclusion` card (409 `snapshot_changed`; T13).",
+        "description": "A frozen snapshot and the `sum_conclusion` card (409 `no_snapshot`; T13).",
         "operationId": "sum_request_conclusion",
         "parameters": [
           {
