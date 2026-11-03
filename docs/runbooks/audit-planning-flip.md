@@ -20,15 +20,18 @@ recorded in the release record).
 `ledger.tb_mapping` (A-03) flips separately, on Oct 19 (Q-04-T092).
 
 ## 2. Flip
-1. Confirm the release record for the slot names the flip, its approver and this runbook as the
-   rollback (`window_mode: flag_flip`).
-2. Turn the flags on for the one firm (`python -m abacus_tools.flags set --tenant <id> ...` as an
-   ECS one-off task, never from a laptop against a hosted database).
+1. Confirm the slot's `flag_flip` record names the flip, its approver and this runbook as the
+   rollback; `abacus_tools.flip_guard` checks it against `deploy/windows.yaml`.
+2. Turn each flag on for the one firm: `make flag FIRM=<tenant_id> FLAG=<name> VALUE=true
+   OPERATOR=<name> REASON=<text>` with `--approved-by` and `--rollback
+   docs/runbooks/audit-planning-flip.md`, as an ECS one-off task, never from a laptop against a
+   hosted database.
 3. Run the planning journey on the firm's tenant as its engagement partner; check AUD-07's figures
    against the firm's materiality ranges and G4's facts on one engagement.
 
 ## 3. Rollback: flag off
-Turn the same flags off for the firm. Nothing is deleted or reversed:
+Turn the same flags off for the firm (`make flag ... VALUE=false`, or the tool's `--all-off`).
+Nothing is deleted or reversed:
 - **Decisions persist.** Materiality versions, `significant_risk` and planning decisions, their
   cards and audit events stay as recorded (insert-only; human-only actions).
 - **Versions persist.** Workpaper versions, sign-offs and the risk register's rows and history
