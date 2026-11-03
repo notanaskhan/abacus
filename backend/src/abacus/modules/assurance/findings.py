@@ -21,10 +21,12 @@ Severity and the SUM conclusion stay the engagement partner's C3 cards (INV-1).
 
 from __future__ import annotations
 
+import re
+import unicodedata
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from typing import Final, Literal, cast
 from uuid import UUID
 
@@ -75,6 +77,9 @@ class NewFinding:
     citation_ids: tuple[UUID, ...]
     why_surfaced: str | None = None
     agent_run_id: UUID | None = None
+    # A-06-T16 (DEC-2216): the figures code computed for the run; a number in `why_surfaced`
+    # outside them marks the explanation Unsupported (never shown as the reason).
+    figures: tuple[Decimal, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -114,6 +119,33 @@ async def _engagement(tenant: TenantContext, work_item_id: UUID) -> UUID:
     if found is None:
         raise NotFound("work_item")
     return found
+
+
+_NUMBER: Final = re.compile(r"(?<![A-Za-z])-?\d[\d,]*(?:\.\d+)?")
+# Dates, references and codes are not figures: F-01, EBP-04, Dec 26, 2025, row 8, §6621.
+_NOT_FIGURES: Final = re.compile(
+    r"\b[A-Z]{1,6}-\d+\b|§\s*\d+[\w().-]*|\b(?:19|20)\d{2}\b|"
+    r"\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.? \d{1,2}\b|"
+    r"\b(?:row|rows|step|line|box|Q)\s?\d+\b"
+)
+
+
+def numbers_in(text: str) -> set[Decimal]:
+    """The figures a text states (dates, references and codes are not figures)."""
+    out: set[Decimal] = set()
+    for raw in _NUMBER.findall(_NOT_FIGURES.sub(" ", unicodedata.normalize("NFKC", text))):
+        try:
+            out.add(Decimal(raw.replace(",", "")).normalize())
+        except InvalidOperation:
+            continue
+    return out
+
+
+def why_surfaced_support(text: str, figures: Sequence[Decimal]) -> str:
+    """`supported` when every number the agent wrote is one code computed, else `unsupported`
+    (A-06-T16: a free number in Why This Was Surfaced is never presented as a fact)."""
+    allowed = {f.normalize() for f in figures}
+    return "supported" if numbers_in(text) <= allowed else "unsupported"
 
 
 async def record_finding(ctx: AuthContext, work_item_id: UUID, new: NewFinding) -> Finding:
@@ -178,6 +210,15 @@ async def record_finding(ctx: AuthContext, work_item_id: UUID, new: NewFinding) 
                 },
             )
         ).scalar_one()
+        if agent and new.why_surfaced is not None:
+            support = why_surfaced_support(new.why_surfaced, new.figures)
+            await tx.session.execute(
+                text(
+                    "UPDATE audit_findings SET evaluation = evaluation || "
+                    "jsonb_build_object('why_surfaced_support', CAST(:s AS text)) WHERE id = :id"
+                ),
+                {"s": support, "id": finding_id},
+            )
         tx.record(
             "audit_finding.recorded",
             target=Target(TARGET, finding_id),
