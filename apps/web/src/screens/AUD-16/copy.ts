@@ -1,0 +1,92 @@
+// AUD-16 · Misstatements & adjustments (A-06-T22): every word verbatim from the handoff spec. Every
+// number on the screen is the server's (SumOut, EntryOut, MisstatementOut); the copy only frames it.
+
+export const COPY = {
+  views: {
+    proposed: "Proposed AJEs",
+    reclass: "Reclassifications",
+    passed: "Passed (SUM)",
+    below_ct: "Below CT",
+  },
+  viewsLabel: "Misstatement views",
+  title: "Summary of uncorrected misstatements",
+  openInExcel: "Open in Excel",
+  sendToClient: "Send to client…",
+  allSent: "All entries sent",
+  tally: {
+    ct: "CLEARLY TRIVIAL",
+    pm: "PERFORMANCE MATERIALITY",
+    overall: "OVERALL MATERIALITY",
+    rollover: "UNCORRECTED · ROLLOVER",
+    ironCurtain: "UNCORRECTED · IRON CURTAIN",
+    aggregate: "AGGREGATE VS PM",
+    belowPm: "Below PM",
+    approaching: "Approaching PM",
+    abovePm: "Above PM",
+  },
+  sum: {
+    title: "Passed adjustments (SUM)",
+    edit: "Edit",
+    signOff: "Sign off…",
+    sourceDocs: "Source Docs",
+    note: "Increase (decrease) needed to correct",
+    current: "CURRENT YEAR — UNCORRECTED",
+    prior: "PRIOR YEAR — PY2024 SUM (CONTEXT)",
+    total: "Total uncorrected",
+    columns: {
+      ref: "Ref",
+      description: "Description",
+      type: "Type",
+      assets: "Assets",
+      liabilities: "Liabilities",
+      net_assets: "Net assets 12/31/2025 (iron curtain)",
+      change: "Change in net assets 2025 (rollover)",
+      py: "Carried from PY2024",
+    },
+    awaitingPartner: "Partner — awaiting conclusion",
+  },
+  type: { factual: "Factual", judgmental: "Judgmental", projected: "Projected" } as Record<
+    string,
+    string
+  >,
+  entries: {
+    reviewRequired: "Review required",
+    policy:
+      "Attest clients always held — a manager approves every entry before it is sent; the client books it.",
+    lines: (ref: string) => `Journal lines for ${ref}`,
+    dr: "Dr",
+    cr: "Cr",
+  },
+  belowCt: { logged: "Logged, not accumulated" },
+  evaluation: {
+    title: "Evaluation",
+    zero: "0",
+    ct: (v: string) => `CT ${v}`,
+    pm: (v: string) => `PM ${v}`,
+    overall: (v: string) => `Overall ${v}`,
+    caption: (aggregate: string, view: string, pct: string, count: number, total: string) =>
+      `Aggregate ${aggregate} (${view}, the larger view) = ${pct}% of PM. Below CT items are logged, not accumulated (${String(count)} ${count === 1 ? "item" : "items"}, ${total}).`,
+    view: { rollover: "rollover", iron_curtain: "iron curtain" } as Record<string, string>,
+    factors: "Qualitative factors",
+    booked: "Corrected misstatements (booked)",
+    question: "Are uncorrected misstatements material, individually or in aggregate?",
+    awaiting: (who: string) => `Awaiting ${who}`,
+    requestConclusion: "Request conclusion…",
+    concluded: (outcome: string, who: string, at: string) =>
+      `${outcome} · Concluded by ${who} · ${at}`,
+    attach: "Attach SUM to rep letter",
+    attachTarget: "AUD-21",
+  },
+  send: {
+    title: "Send entries to the client",
+    to: (name: string) => `To ${name}`,
+    template: (label: string) => `Wording from ${label}`,
+    send: "Send",
+    cancel: "Cancel",
+    sent: "Sent. The client sees nothing for 10 seconds.",
+    undo: "Undo",
+    undone: "Undone: nothing reached the client",
+    refused: "The send was refused. Nothing reached the client.",
+  },
+  states: { empty: "No misstatements yet." },
+} as const;

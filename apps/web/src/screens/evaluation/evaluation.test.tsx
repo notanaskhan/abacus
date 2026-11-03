@@ -33,7 +33,7 @@ function show(tab: EvaluationTab, onTab = vi.fn()): void {
   );
 }
 
-// A-06-T18: the Findings tab is AUD-15 now; the other three stay planned until their rows land.
+// A-06-T18: the Findings tab is AUD-15 now; the remaining tabs stay planned until their rows land.
 describe("/audits/$auditId/findings", () => {
   it("renders the audit bar over AUD-15, not the planned body", async () => {
     show("findings");
@@ -44,20 +44,28 @@ describe("/audits/$auditId/findings", () => {
   });
 });
 
-describe.each(["misstatements", "review-notes", "fs-disclosure"] as const)(
-  "/audits/$auditId/%s",
-  (tab) => {
-    it("renders the audit bar and the planned body, Not built yet", async () => {
-      show(tab);
-      await waitFor(() => {
-        expect(
-          document.querySelector(`[data-screen='evaluation'][data-tab='${tab}']`),
-        ).not.toBeNull();
-        expect(document.body.textContent).toContain("Not built yet");
-      });
+// A-06-T22: the Misstatements tab is AUD-16 now.
+describe("/audits/$auditId/misstatements", () => {
+  it("renders the audit bar over AUD-16, not the planned body", async () => {
+    show("misstatements");
+    await waitFor(() => {
+      expect(document.querySelector("[data-screen='AUD-16']")).not.toBeNull();
     });
-  },
-);
+    expect(document.body.textContent).not.toContain("Not built yet");
+  });
+});
+
+describe.each(["review-notes", "fs-disclosure"] as const)("/audits/$auditId/%s", (tab) => {
+  it("renders the audit bar and the planned body, Not built yet", async () => {
+    show(tab);
+    await waitFor(() => {
+      expect(
+        document.querySelector(`[data-screen='evaluation'][data-tab='${tab}']`),
+      ).not.toBeNull();
+      expect(document.body.textContent).toContain("Not built yet");
+    });
+  });
+});
 
 describe("Evaluation tabs", () => {
   it("show the server's counts: Findings 9, Misstatements 2", async () => {
