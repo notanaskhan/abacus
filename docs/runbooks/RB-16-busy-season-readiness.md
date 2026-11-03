@@ -152,6 +152,12 @@ both founders are reachable all day (double cover). SEV1 pages both at once, alw
 
 - The R4 dossier for each live firm is green and signed by both founders before the window opens
   (Q-04-T063 for Sep 1, 2027).
+- Before the window opens, rehearse its Tuesday slots and deadline weeks under the real gate (N):
+  `python -m abacus_tools.window_rehearsal --firm PF-X1 --live-since <date> --at <instant> ...`
+  treats the synthetic firm as live in memory only and prints, per instant, the window, the slot
+  and the gate's verdict on rehearsal records (DEC-2081; first run for autumn 2027 in
+  `docs/ops/windows/`). This rehearses the gate, not the whole runbook: it does not set
+  `last_rehearsed`.
 - During the window: every release record shows `window_mode` and a rollback, every flip has both
   approvals, and each deadline week's watch row shows no release or flip and every daily check logged.
 - After the window: the season retro reads the window's incidents, hotfixes and support hours against
