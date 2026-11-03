@@ -334,6 +334,11 @@ PROMPT_EVIDENCE_SCREENER = Flag(
         "evidence.screen@v0",
     ),
 )
+QUESTIONNAIRES_EDITOR = Flag(
+    name="questionnaires.editor",
+    kind="boolean",
+    default="false",
+)
 QUESTIONNAIRES_V1 = Flag(
     name="questionnaires.v1",
     kind="boolean",
@@ -401,6 +406,11 @@ TAX_DELIVERY_EFILE = Flag(
 )
 TAX_ENGINE_BRIDGE = Flag(
     name="tax.engine_bridge",
+    kind="boolean",
+    default="false",
+)
+TAX_EXTENSIONS_ESTIMATES = Flag(
+    name="tax.extensions_estimates",
     kind="boolean",
     default="false",
 )
@@ -501,6 +511,7 @@ FLAGS: dict[str, Flag] = {
     "portal.sign_in_v2": PORTAL_SIGN_IN_V2,
     "portal.third_party_room": PORTAL_THIRD_PARTY_ROOM,
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
+    "questionnaires.editor": QUESTIONNAIRES_EDITOR,
     "questionnaires.v1": QUESTIONNAIRES_V1,
     "reporting.generated_documents": REPORTING_GENERATED_DOCUMENTS,
     "retrieval.auto": RETRIEVAL_AUTO,
@@ -515,6 +526,7 @@ FLAGS: dict[str, Flag] = {
     "signatures.esign_provider": SIGNATURES_ESIGN_PROVIDER,
     "tax.delivery_efile": TAX_DELIVERY_EFILE,
     "tax.engine_bridge": TAX_ENGINE_BRIDGE,
+    "tax.extensions_estimates": TAX_EXTENSIONS_ESTIMATES,
     "tax.k1_release": TAX_K1_RELEASE,
     "tax.returns_v1": TAX_RETURNS_V1,
     "upload_review.enabled": UPLOAD_REVIEW_ENABLED,

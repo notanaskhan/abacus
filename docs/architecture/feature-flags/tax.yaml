@@ -34,3 +34,11 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: tax.extensions_estimates
+    description: 'Extensions and estimates (T-03): /v1/tax/extensions*, /v1/tax/estimates*, /v1/tax/payments and TAX-13 a-e. Off: 404 and the TAX-13 entry stays absent. On: 501 until T-03-T07 onward. T-03-T01, DEC-2200.'
+    owner: ayushkbhatia
+    created: 2026-11-03
+    expires: 2027-05-01
+    override: DEC-137
+    kind: boolean
+    default: false
