@@ -4600,6 +4600,30 @@ export type BoardSummaryOut = {
 };
 
 /**
+ * BoxOut
+ *
+ * A rectangle in page points (the viewer's grammar).
+ */
+export type BoxOut = {
+    /**
+     * H
+     */
+    h: number;
+    /**
+     * W
+     */
+    w: number;
+    /**
+     * X
+     */
+    x: number;
+    /**
+     * Y
+     */
+    y: number;
+};
+
+/**
  * BracketCheckOut
  */
 export type BracketCheckOut = {
@@ -14825,6 +14849,111 @@ export type ExtensionSubmitIn = {
      * Extension Ids
      */
     extension_ids: Array<string>;
+};
+
+/**
+ * ExtractedFieldOut
+ *
+ * One box: `match_id` is `ev:<version>#field:<key>`, which SHL-08's regions accept. A TIN
+ * box carries `mask_token` ("•••-••-6081") and never `value_text`.
+ */
+export type ExtractedFieldOut = {
+    bbox: BoxOut;
+    /**
+     * Confidence
+     */
+    confidence: number;
+    /**
+     * Extractor Kind
+     */
+    extractor_kind: 'text_layer_map' | 'ocr_map' | 'key_value';
+    /**
+     * Field Key
+     */
+    field_key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Low Confidence
+     */
+    low_confidence: boolean;
+    /**
+     * Mask Token
+     */
+    mask_token?: string | null;
+    /**
+     * Match Id
+     */
+    match_id: string;
+    /**
+     * Page
+     */
+    page: number;
+    /**
+     * Value Text
+     */
+    value_text?: string | null;
+    /**
+     * Value Type
+     */
+    value_type: 'money' | 'date' | 'text' | 'code' | 'checkbox' | 'tin';
+};
+
+/**
+ * ExtractedFieldsOut
+ */
+export type ExtractedFieldsOut = {
+    /**
+     * Corrected
+     */
+    corrected?: boolean;
+    /**
+     * Form Map Version
+     */
+    form_map_version?: string | null;
+    /**
+     * Form Type
+     */
+    form_type?: string | null;
+    /**
+     * Items
+     */
+    items: Array<ExtractedFieldOut>;
+    /**
+     * Tax Year
+     */
+    tax_year?: number | null;
+};
+
+/**
+ * ExtractedTableOut
+ */
+export type ExtractedTableOut = {
+    bbox: BoxOut;
+    /**
+     * Page
+     */
+    page: number;
+    /**
+     * Rows
+     */
+    rows: Array<Array<TableCellOut>>;
+    /**
+     * Table Id
+     */
+    table_id: string;
+};
+
+/**
+ * ExtractedTablesOut
+ */
+export type ExtractedTablesOut = {
+    /**
+     * Items
+     */
+    items: Array<ExtractedTableOut>;
 };
 
 /**
@@ -27668,6 +27797,26 @@ export type PageLineOut = {
      * Text
      */
     text: string;
+};
+
+/**
+ * PageOcrOut
+ *
+ * C4 v1.1 (P-11-T19): a page's OCR facts; `refused_reason` when the gate refused it.
+ */
+export type PageOcrOut = {
+    /**
+     * Low Confidence Words
+     */
+    low_confidence_words?: number;
+    /**
+     * Mean Confidence
+     */
+    mean_confidence?: number | null;
+    /**
+     * Refused Reason
+     */
+    refused_reason?: 'kill_switch' | 'flag_off' | 'provider_terms' | 'boundary_basis' | 'consent_7216' | 'daily_page_cap' | 'size_limit' | 'provider_error' | null;
 };
 
 /**
@@ -40574,6 +40723,21 @@ export type TableBlock = {
 };
 
 /**
+ * TableCellOut
+ */
+export type TableCellOut = {
+    bbox: BoxOut;
+    /**
+     * Confidence
+     */
+    confidence: number;
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
  * TablePart
  */
 export type TablePart = {
@@ -42423,6 +42587,22 @@ export type TestIn = {
      * Variant
      */
     variant: 'eligibility' | 'deferral' | 'match' | 'distribution' | 'loan';
+};
+
+/**
+ * TextRetryOut
+ *
+ * `queued`, or `refused` with the first failing gate's reason (never retried by itself).
+ */
+export type TextRetryOut = {
+    /**
+     * Reason
+     */
+    reason?: 'kill_switch' | 'flag_off' | 'provider_terms' | 'boundary_basis' | 'consent_7216' | 'daily_page_cap' | 'size_limit' | 'provider_error' | null;
+    /**
+     * Status
+     */
+    status: 'queued' | 'refused';
 };
 
 /**
@@ -44345,6 +44525,7 @@ export type ViewerPageOut = {
      * N
      */
     n: number;
+    ocr?: PageOcrOut | null;
     /**
      * Pii Scan
      */
@@ -44357,6 +44538,10 @@ export type ViewerPageOut = {
      * Text Layer
      */
     text_layer: boolean;
+    /**
+     * Text Source
+     */
+    text_source?: 'text_layer' | 'ocr' | 'none' | null;
     /**
      * Width Pt
      */
@@ -76545,6 +76730,71 @@ export type DrawerResponses = {
 
 export type DrawerResponse = DrawerResponses[keyof DrawerResponses];
 
+export type ExtractedFieldsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: {
+        /**
+         * Form
+         */
+        form?: string | null;
+        /**
+         * Key
+         */
+        key?: string | null;
+    };
+    url: '/v1/evidence-versions/{version_id}/fields';
+};
+
+export type ExtractedFieldsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ExtractedFieldsError = ExtractedFieldsErrors[keyof ExtractedFieldsErrors];
+
+export type ExtractedFieldsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ExtractedFieldsOut;
+};
+
+export type ExtractedFieldsResponse = ExtractedFieldsResponses[keyof ExtractedFieldsResponses];
+
 export type ViewerPageData = {
     body?: never;
     headers?: {
@@ -76801,6 +77051,67 @@ export type ViewerSearchResponses = {
 
 export type ViewerSearchResponse = ViewerSearchResponses[keyof ViewerSearchResponses];
 
+export type ExtractedTablesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: {
+        /**
+         * Page
+         */
+        page?: number | null;
+    };
+    url: '/v1/evidence-versions/{version_id}/tables';
+};
+
+export type ExtractedTablesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ExtractedTablesError = ExtractedTablesErrors[keyof ExtractedTablesErrors];
+
+export type ExtractedTablesResponses = {
+    /**
+     * Successful Response
+     */
+    200: ExtractedTablesOut;
+};
+
+export type ExtractedTablesResponse = ExtractedTablesResponses[keyof ExtractedTablesResponses];
+
 export type ViewerTextData = {
     body?: never;
     headers?: {
@@ -76860,6 +77171,66 @@ export type ViewerTextResponses = {
 };
 
 export type ViewerTextResponse = ViewerTextResponses[keyof ViewerTextResponses];
+
+export type TextRetryData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/evidence-versions/{version_id}/text/retry';
+};
+
+export type TextRetryErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TextRetryError = TextRetryErrors[keyof TextRetryErrors];
+
+export type TextRetryResponses = {
+    /**
+     * Successful Response
+     */
+    200: TextRetryOut;
+};
+
+export type TextRetryResponse = TextRetryResponses[keyof TextRetryResponses];
 
 export type UnlockVersionData = {
     body: EvidenceUnlockIn;

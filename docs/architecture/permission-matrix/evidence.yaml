@@ -7,6 +7,10 @@ actions:
   legal_hold.read:          {firm_admin: allow, security_admin: allow, firm_partner: allow, quality_partner: allow, agent: deny, system: deny}   # metadata and counts; never the details text
   legal_hold.place:         {firm_admin: allow, security_admin: allow, firm_partner: allow, agent: deny, system: deny, mfa_recent: required}
   legal_hold.lift:          {firm_admin: allow, security_admin: allow, firm_partner: allow, agent: deny, system: deny, mfa_recent: required}
+  # --- OCR and box extraction, C4 v1.1 (P-11-T19, DEC-2204; P-11 §4.3) ---
+  # A person re-runs OCR after a cleared refusal; an agent or worker never does (INV-1). Client
+  # service only for unfiled inbox files under the intake scope (DEC-20; the service checks).
+  evidence.ocr_retry:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_service: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny, independence: required}   # POST /v1/evidence-versions/{v}/text/retry
   # --- Evidence ---
   evidence.read:
     independence: required   # SPEC-025 (TASK-045): client data, per person
