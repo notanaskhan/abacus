@@ -29,6 +29,7 @@ import {
   HOME_SEGMENTS,
   HomeSegmented,
   WaitingOnYou,
+  approvalsHref,
   useGateCounts,
   useHome,
   useWaitingOnYou,
@@ -425,7 +426,7 @@ export function HOME01({
   toolbar,
   height,
   initialOffice = null,
-  hrefOf = hostHref,
+  hrefOf,
 }: HOME01Props): JSX.Element {
   const [office, setOffice] = useState<string | null>(initialOffice);
   const session = useSession();
@@ -443,6 +444,11 @@ export function HOME01({
   const list = useWaitingOnYou();
   const now = useNow();
   const briefOn = useFlag("today_brief.enabled") === true;
+  // I-01-T21: with `home.approvals` on, a row opens its gate selected in HOME-02; off, the row
+  // opens the gate's host as before (I-01 AC2.4).
+  const approvalsOn = useFlag("home.approvals") === true;
+  const rowHref =
+    hrefOf ?? (approvalsOn ? (gate: HumanGateOut) => approvalsHref(gate.id) : hostHref);
   const tz = session.tz ?? "America/Chicago";
   const open = useOpenHref();
   const loading = home.isPending || counts.isPending;
@@ -489,7 +495,7 @@ export function HOME01({
       counts={counts.data}
       gates={list.data?.items ?? []}
       office={office}
-      hrefOf={hrefOf}
+      hrefOf={rowHref}
       work={view?.your_work}
     />
   );

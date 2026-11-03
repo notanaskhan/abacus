@@ -21,7 +21,11 @@ export { HOME_MESSAGES } from "./messages";
 export {
   HOME_POLL_MS,
   HOME_STALE_MS,
+  type GateListState,
+  approvalsHref,
   invalidateGates,
+  useApprovalsList,
+  useDoneGates,
   useGateCounts,
   useHome,
   useWaitingOnYou,
