@@ -39,6 +39,8 @@ export interface TableCell {
   /** A decimal string ("1234.56"), a text value, or null for blank. */
   value: string | null;
   tick?: Tickmark | undefined;
+  /** The agent drafted this value: a text cell draws it through AgentText. */
+  agent?: boolean | undefined;
   /** A variance column's cell: the change and what is known about it. */
   variance?: VarianceValue | undefined;
 }
@@ -67,6 +69,8 @@ export interface TableRow {
   id: string;
   kind?: RowKind | undefined;
   label: string;
+  /** The agent drafted the label: it draws through AgentText. */
+  labelAgent?: boolean | undefined;
   /** Label padding-left = grammar pad + indent × the grammar's indent step. */
   indent?: number | undefined;
   /** A micro tag after the label (GP, LP). */

@@ -1,5 +1,6 @@
 import { tableFeatures, useTable } from "@tanstack/react-table";
 import { type JSX, type KeyboardEvent, useId, useMemo, useRef, useState } from "react";
+import { AgentText } from "../agent-text";
 import { cn } from "../cn";
 import type { MatchId } from "../tracing/types";
 import { MoneyCell, PropChip, TickCell, ValueChip } from "./cells";
@@ -108,6 +109,8 @@ const GRAMMARS: Record<Grammar, GrammarMetrics> = {
 
 /** The action column a variance column brings (C-01 spec 06): 100 wide, right-aligned. */
 const ACTION_WIDTH = 100;
+// Agent-drafted text keeps the grid's type size; AgentText still sets its ink.
+const AGENT_CELL = "[font-size:inherit] [line-height:inherit]";
 
 function typeOf(column: TableColumn, index: number): ColumnType {
   return column.type ?? (index === 0 ? "label" : "num");
@@ -407,7 +410,11 @@ export function DataGrid({
                   >
                     {type === "label" ? (
                       <>
-                        {row.label}
+                        {row.labelAgent === true ? (
+                          <AgentText inline text={row.label} className={AGENT_CELL} />
+                        ) : (
+                          row.label
+                        )}
                         {row.tag !== undefined && <PropChip>{row.tag}</PropChip>}
                       </>
                     ) : type === "num" ? (
@@ -423,6 +430,8 @@ export function DataGrid({
                       ) : (
                         <PropChip>{cell.value}</PropChip>
                       ))
+                    ) : cell?.agent === true ? (
+                      <AgentText inline text={cell.value ?? ""} className={AGENT_CELL} />
                     ) : (
                       (cell?.value ?? "")
                     )}

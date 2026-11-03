@@ -96,6 +96,7 @@ export function tabOf(
         .map((c) => ({
           key: COPY.keys[c.row_key ?? ""] ?? c.row_key ?? "",
           text: textOf(c),
+          ...(c.value_source === "agent" ? { agent: true } : {}),
           cites: numberOf(order, c.citation_ids),
         }));
     const grid = cells.filter((c) => c.col_key !== null && c.col_key !== "value");
@@ -111,16 +112,25 @@ export function tabOf(
       const mine = grid.filter((c) => c.row_key === row);
       return {
         id: row,
-        label: (() => {
+        ...(() => {
           const first = mine.find((c) => c.col_key === cols[0]) ?? mine[0];
-          return first === undefined ? "" : textOf(first);
+          return first === undefined
+            ? { label: "" }
+            : {
+                label: textOf(first),
+                ...(first.value_source === "agent" ? { labelAgent: true } : {}),
+              };
         })(),
         cells: Object.fromEntries(
           mine
             .filter((c) => c.col_key !== cols[0])
             .map((c) => [
               c.col_key ?? "",
-              { value: textOf(c), ...(adopted ? { tick: "check" as const } : {}) },
+              {
+                value: textOf(c),
+                ...(c.value_source === "agent" ? { agent: true } : {}),
+                ...(adopted ? { tick: "check" as const } : {}),
+              },
             ]),
         ),
       };
