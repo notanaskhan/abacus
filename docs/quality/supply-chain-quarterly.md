@@ -33,3 +33,22 @@ is critical 7 days, high 30 days, from the day first seen.
 
 ## 2027 Q2
 _Run `supply_chain report --quarter 2027Q2` on Jun 30, 2027 and paste the output here._
+
+## 2027 Q4 (Q-03-T170, run 2026-11-03 on the plan's S26)
+Local runs on the batch-merged tree (main f1b6c86ec plus the S26 batch-2 branches); CI's
+`security.yml` has not run since Actions stopped creating runs on 2026-11-03 (recorded in
+TASK-3240), so Trivy (fs, IaC, image), CodeQL and Inspector are not re-run here.
+- **pip-audit** 2.9.0 on `uv export --locked` with hashes (as `security.yml`): no known
+  vulnerabilities.
+- **bandit**, high severity at medium confidence, `backend/src`: 0 findings.
+- **pnpm audit** (high and above): 3 high, all js-yaml below 4.3.2 under `@hey-api/openapi-ts`
+  (the API-client generator, build-time only): GHSA-52cp-r559-cp3m, GHSA-5p4m-2wfm-xmqj,
+  GHSA-2883-xcg3-v3hh; 1 moderate below the bar. **Open, inside SLA** (high: 30 days, due
+  2026-12-03). An override fixes them (tried: the generated client is byte-identical with js-yaml
+  4.3.2), but `check_dependencies` refuses `overrides` and `pnpm-lock.yaml` is a protected
+  manifest, so the fix is the protected-manifest PR below; pnpm cannot move the transitive pin on
+  its own. The register takes them when CI's Trivy filesystem scan reports them (its sources do
+  not include pnpm audit).
+- **uv.lock refresh and base-image digests**: not done here; they need the protected-manifest PR
+  with `make check` and the replay histories green, and the weekly digest check in `build.yml`.
+- `supply_chain report --quarter 2026Q4`: every source 0 seen, 0 open; none past SLA.
