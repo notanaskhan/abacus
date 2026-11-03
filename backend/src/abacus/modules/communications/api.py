@@ -199,6 +199,7 @@ from abacus.modules.communications.triage_apply import (
     Placement,
     register_intake_destination,
 )
+from abacus.modules.communications.triage_apply import Node as IntakeNode
 from abacus.modules.communications.triage_outcomes import TriageOutcome, triage_outcomes
 from abacus.modules.communications.triage_workflow import (
     AttachmentTriageWorkflow,
@@ -321,6 +322,7 @@ __all__ = [
     "IntakeAttachmentFacts",
     "IntakeCandidate",
     "IntakeDestination",
+    "IntakeNode",  # N-04-T13: a destination's picker node
     "IntakePurgeInput",
     "IntakeWithdrawalPurgeWorkflow",
     "IssuedLink",

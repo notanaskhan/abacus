@@ -204,6 +204,7 @@ ACTIVITIES: tuple[object, ...] = ()
 from abacus.modules.requests.answer_effect_slots import (  # noqa: E402 -- T-03-T02 slot
     EffectRequest,
     EffectResult,
+    HandlerUnavailable,
     answer_effect_handler,
     register_answer_effect,
 )
@@ -273,6 +274,7 @@ __all__ = [
     "FollowUpCandidate",
     "FulfilledVersion",
     "FulfilmentRef",
+    "HandlerUnavailable",  # N-04-T13: a handler whose module is off (pending_handler)
     "ItemKind",
     "ItemNotFulfillable",
     "ItemPatch",
@@ -395,5 +397,5 @@ _register_effects()
 
 # T-03 (S27): imported so its refusal codes are catalogued (the routes import it lazily).
 from abacus.modules.requests import (  # noqa: E402
-    questionnaire_editor as _questionnaire_editor,  # noqa: F401
+    questionnaire_editor as _questionnaire_editor,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- imported to register and catalogue it
 )

@@ -17,7 +17,7 @@ internal-review kinds.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from typing import Any, Final
+from typing import Any, Final, cast
 from uuid import UUID
 
 from sqlalchemy import text
@@ -27,8 +27,12 @@ from abacus.kernel.uow import OutboxEvent, Ref, Target, uow
 from abacus.modules.requests.answer_effect_slots import (
     EffectRequest,
     EffectResult,
+    HandlerUnavailable,
     answer_effect_handler,
 )
+
+JsonMap = Mapping[str, Any]  # Any: rules, conditions and answers are JSON
+JsonRow = dict[str, Any]  # Any: an effect row as stored
 
 _SYSTEM_ACTOR: Final = "answer_effects"
 RESULT_KIND: Final = {
@@ -44,19 +48,26 @@ def normalise(value: object) -> str:
     if isinstance(value, bool):
         return "yes" if value else "no"
     if isinstance(value, Mapping):
-        inner = value.get("value", value.get("answer"))
+        mapping = cast(Mapping[str, object], value)
+        inner = mapping.get("value", mapping.get("answer"))
         return normalise(inner) if inner is not None else ""
     return str(value).strip().lower()
 
 
-def shown(show_when: Mapping[str, Any] | None, parent_value: object) -> bool:
+def shown(
+    show_when: JsonMap | None,
+    parent_value: object,
+) -> bool:
     """A follow-up shows when its parent's answer equals `equals` (depth 1)."""
     if not show_when:
         return True
     return normalise(parent_value) == normalise(show_when.get("equals"))
 
 
-def matching(rules: Sequence[Mapping[str, Any]], value: object) -> list[Mapping[str, Any]]:
+def matching(
+    rules: Sequence[JsonMap],
+    value: object,
+) -> list[JsonMap]:
     answer = normalise(value)
     return [r for r in rules if normalise(r.get("when_equals")) == answer]
 
@@ -72,7 +83,7 @@ async def on_answered(event: OutboxEvent) -> None:
                 await session.execute(
                     text(
                         "SELECT q.effect_rules, q.questionnaire_id, a.value, qn.engagement_id, "
-                        "qn.source_template_version_id, qn.template_version_id "
+                        "qn.source_template_version_id, qn.template_version_id, qn.created_by "
                         "FROM questions q JOIN answer_versions a ON a.id = :a "
                         "JOIN questionnaires qn ON qn.id = q.questionnaire_id WHERE q.id = :q"
                     ),
@@ -86,15 +97,15 @@ async def on_answered(event: OutboxEvent) -> None:
         return
     template_version = row["source_template_version_id"] or row["template_version_id"]
     for rule in matching(row["effect_rules"], row["value"]):
-        await _fire(tenant, row, question_id, answer_id, rule, template_version)
+        await _fire(tenant, dict(row), question_id, answer_id, rule, template_version)
 
 
 async def _fire(
     tenant: TenantContext,
-    row: Mapping[str, Any],
+    row: JsonMap,
     question_id: UUID,
     answer_id: UUID,
-    rule: Mapping[str, Any],
+    rule: JsonMap,
     template_version: UUID | None,
 ) -> None:
     """One rule for one answer: skipped when already recorded (a replay); otherwise the handler
@@ -113,16 +124,21 @@ async def _fire(
     handler = answer_effect_handler(kind)
     result: EffectResult | None = None
     if handler is not None:
-        result = await handler(
-            EffectRequest(
-                tenant_id=tenant.tenant_id,
-                questionnaire_id=row["questionnaire_id"],
-                question_id=question_id,
-                answer_id=answer_id,
-                rule_key=str(rule["key"]),
-                template_version_id=template_version,
+        try:
+            result = await handler(
+                EffectRequest(
+                    tenant_id=tenant.tenant_id,
+                    questionnaire_id=row["questionnaire_id"],
+                    question_id=question_id,
+                    answer_id=answer_id,
+                    rule_key=str(rule["key"]),
+                    template_version_id=template_version,
+                    evidence_version_id=await _uploaded_version(tenant, answer_id),
+                    owner_user_id=row["created_by"],
+                )
             )
-        )
+        except HandlerUnavailable:
+            result = None  # fail closed: pending_handler, the upload stays in the binder
     async with uow(tenant) as tx:
         inserted = (
             await tx.session.execute(
@@ -152,7 +168,23 @@ async def _fire(
             )
 
 
-async def effect_log(tenant: TenantContext, questionnaire_id: UUID) -> list[dict[str, Any]]:
+async def _uploaded_version(tenant: TenantContext, answer_id: UUID) -> UUID | None:
+    """An upload answer's evidence version (`{"evidence_version_id": …}`), if any."""
+    async with tenant_session(tenant) as session:
+        value = (
+            await session.execute(
+                text("SELECT value FROM answer_versions WHERE id = :a"), {"a": answer_id}
+            )
+        ).scalar()
+    found = (
+        cast(Mapping[str, object], value).get("evidence_version_id")
+        if isinstance(value, Mapping)
+        else None
+    )
+    return UUID(str(found)) if found else None
+
+
+async def effect_log(tenant: TenantContext, questionnaire_id: UUID) -> list[JsonRow]:
     """BND-03's effect log, oldest first (counts, banners and helpers read it)."""
     async with tenant_session(tenant) as session:
         return [
