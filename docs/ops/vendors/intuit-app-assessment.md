@@ -1,4 +1,4 @@
-# Intuit app assessment: draft answers (F-09-T05, F-09-T11 Intuit part; TASK-3044, DEC-2083)
+# Intuit app assessment: draft answers (F-09-T05, F-09-T11 Intuit part; TASK-3099, DEC-2099)
 
 Draft answers for Intuit's **App assessment questionnaire** (Production Settings in the developer
 portal), drawn from the code on `main`. Ayush submits them; F-09-T12 checks them against the plan
@@ -14,7 +14,7 @@ can't be removed once saved.
 
 | Field | Answer |
 |---|---|
-| App name shown on Intuit's consent screen | **abacus** (Ayush, 2026-11-03; DEC-2083). A neutral name, so a firm's white-label portal never shows "Accrued" (DEC-01, ADR-133). This is the one place the code namespace is shown to clients, by Ayush's decision |
+| App name shown on Intuit's consent screen | **abacus** (Ayush, 2026-11-03; DEC-2099). A neutral name, so a firm's white-label portal never shows "Accrued" (DEC-01, ADR-133). This is the one place the code namespace is shown to clients, by Ayush's decision |
 | Scope | `com.intuit.quickbooks.accounting` only. No Payments, no OpenID, no write scope (a write scope waits on the W1 adapter ADR) |
 | Host domain | **[open: F-09-T09]** the neutral portal domain |
 | Launch URL | **[open: F-09-T09]** `https://<connect host>/` (the firm app's connections screen) |
@@ -48,13 +48,13 @@ can't be removed once saved.
 |---|---|---|
 | OAuth 2.0 authorisation-code flow | Yes, with PKCE (S256) | `connectors/quickbooks_online.py` `authorise_url`, `exchange_code` |
 | `state` parameter checked against CSRF | Yes. The state is random, single-use, unexpired and this person's, and carries the sealed PKCE verifier; anything else is refused and audited | `connections/connect.py` (A-02-T16, DEC-515 L6) |
-| Uses Intuit's discovery document | Yes. Authorisation, token and revoke endpoints are read from `developer.intuit.com/.well-known/openid_configuration` (sandbox: `openid_sandbox_configuration`) once a day per environment, with pinned fallbacks restricted to Intuit HTTPS hosts | `_endpoints` (DEC-2083) |
+| Uses Intuit's discovery document | Yes. Authorisation, token and revoke endpoints are read from `developer.intuit.com/.well-known/openid_configuration` (sandbox: `openid_sandbox_configuration`) once a day per environment, with pinned fallbacks restricted to Intuit HTTPS hosts | `_endpoints` (DEC-2099) |
 | Refreshes the access token only when it expires | Yes. A refresh runs only when the access token has under 5 minutes left. The rotated refresh token replaces the stored one in one transaction | `refresh`, `_EARLY_REFRESH` |
 | Handles an expired or revoked refresh token (`invalid_grant`) | Yes. The connection is marked "needs reconnect" and the client is asked to reconnect; no retry loop | `refresh`, C20 reauth reason |
 | Retries a failed authorisation automatically | No | — |
 | Handles 401 on API calls | Yes. Treated as an expired token; the client is asked to reconnect | `_get` |
 | Handles 429 and 5xx | Yes. Treated as provider unavailable; the sync activity is retryable, so the workflow's retry policy (Temporal, exponential backoff) tries again | `_get`, `connections/activities.py` |
-| Captures `intuit_tid` | Yes. Logged with the endpoint and status for every response; no tokens, bodies or company data in the log | `_call` (DEC-2083) |
+| Captures `intuit_tid` | Yes. Logged with the endpoint and status for every response; no tokens, bodies or company data in the log | `_call` (DEC-2099) |
 | Revokes tokens on disconnect | Yes. Disconnect revokes the refresh token at Intuit's revoke endpoint, then erases it | `revoke`, DEC-515 M1 |
 | Uses the OAuth Playground for production tokens | No | — |
 | Uses Change Data Capture (CDC) or webhooks | No. Reads are on demand for a period | `changes_since` raises `NotSupported` |

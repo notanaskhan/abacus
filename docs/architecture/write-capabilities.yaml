@@ -26,7 +26,7 @@ version: 2
 read_connectors:
   # A-02-T26 (DEC-70, DEC-709): the first live ledger read. The sign-in host is the browser's
   # (`check_sign_in_url`), the token and revoke hosts are OAuth, the two API hosts read reports,
-  # and developer.intuit.com serves the OpenID discovery document (GET only; DEC-2083).
+  # and developer.intuit.com serves the OpenID discovery document (GET only; DEC-2099).
   - adapter_key: quickbooks_online
     category: ledger
     egress_hosts:

@@ -2,7 +2,7 @@
 
 The first live ledger read. It implements the connector contract and nothing more (CONN-001): OAuth
 2.0 authorisation-code with PKCE, a rotating refresh token, the TrialBalance report and a health
-read. The OAuth endpoints come from Intuit's discovery document (TASK-3044, DEC-2083), read once a
+read. The OAuth endpoints come from Intuit's discovery document (TASK-3099, DEC-2099), read once a
 day per environment; when it can't be read or names an endpoint off Intuit's hosts, the pinned
 endpoints below are used, and a changed host or path still meets the egress allowlist, which
 refuses it (fail closed). Every response's `intuit_tid` is logged with the endpoint and status, so
@@ -56,7 +56,7 @@ API_HOSTS: Final = {
 }
 # The read-only accounting scope; never `payment` or anything that writes.
 SCOPE: Final = "com.intuit.quickbooks.accounting"
-# Intuit's OpenID discovery documents (DEC-2083): the authorisation, token and revoke endpoints.
+# Intuit's OpenID discovery documents (DEC-2099): the authorisation, token and revoke endpoints.
 DISCOVERY_HOST: Final = "developer.intuit.com"
 DISCOVERY_PATHS: Final = {
     "sandbox": "/.well-known/openid_sandbox_configuration",
@@ -261,7 +261,7 @@ class QuickBooksOnlineConnector(Connector):
             raise ConnectorError("egress_refused") from None
         except (TimeoutError, OSError):
             raise Unavailable("provider_unavailable") from None
-        # Intuit's support traces a request by its intuit_tid (DEC-2083): never a token or body.
+        # Intuit's support traces a request by its intuit_tid (DEC-2099): never a token or body.
         fields = {"endpoint": endpoint, "status": response.status_code}
         tid = intuit_tid(response.headers)
         if response.status_code >= 400:
@@ -271,7 +271,7 @@ class QuickBooksOnlineConnector(Connector):
         return response
 
     async def _endpoints(self) -> Endpoints:
-        """Intuit's discovery document, read at most once a day per environment (DEC-2083)."""
+        """Intuit's discovery document, read at most once a day per environment (DEC-2099)."""
         environment = self._app.environment
         cached = _discovered.get(environment)
         if cached is not None and system_now() - cached[1] < _DISCOVERY_TTL:

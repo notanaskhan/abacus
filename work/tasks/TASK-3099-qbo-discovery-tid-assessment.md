@@ -1,5 +1,5 @@
 ---
-id: TASK-3044
+id: TASK-3099
 title: QuickBooks connector reads Intuit's discovery document and logs intuit_tid; draft Intuit assessment answers
 spec: A-02-T26 (connector), F-09-T05, F-09-T11 (Intuit part)
 acceptance_criteria: [every Intuit technical question answers yes from code on main]
@@ -20,7 +20,7 @@ and draft the questionnaire answers from the code.
   environment, pinned fallback; `intuit_tid` logged per response.
 - Registry: `developer.intuit.com` (GET only) for `quickbooks_online`; regenerated
   `_capabilities.py`; `qbo_adapter._HOSTS`.
-- `docs/ops/vendors/intuit-app-assessment.md` (draft answers); DEC-2083.
+- `docs/ops/vendors/intuit-app-assessment.md` (draft answers); DEC-2099.
 
 **Out**
 - Submitting the questionnaire, the production app, domains and legal URLs (Ayush; F-09-T09,

@@ -204,7 +204,7 @@ def test_a02t26_the_pipeline_dispatches_qbo_runs_to_this_normaliser() -> None:
     assert "parse_qbo_trial_balance(content)" in source
 
 
-# TASK-3044 (DEC-2083): Intuit's discovery document and intuit_tid.
+# TASK-3099 (DEC-2099): Intuit's discovery document and intuit_tid.
 
 DISCOVERY = {
     "issuer": "https://oauth.platform.intuit.com/op/v1",
