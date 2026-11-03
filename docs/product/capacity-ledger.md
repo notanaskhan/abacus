@@ -168,3 +168,7 @@ integration and review gaps found at the batch. 2027 Q4 lanes: integration, esca
 ADR-078 catch-up kept; window hardening held until the first live firm; pen tests deferred
 (DEC-1389); load, drills and SOC 2 waiting on environments. The review is
 `docs/quality/reserve-review-2027-q3.md`.
+- Q-03-T159 (M14 calibration inputs): one builder column; 2027 Q3 actuals are 2.75 te merged and
+  7.00 te in review of 65.75 te; escaped defects by sprint found 22 in S25 after 0 in S15-S24
+  (batches tested late); back-fill 55 of 55 accounted for; no pen-test remediation (DEC-1389).
+  `docs/quality/m14-calibration-inputs.md`.
