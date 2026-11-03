@@ -13,6 +13,7 @@ READ_CONNECTORS: Final[tuple[dict[str, object], ...]] = (
         "category": "ledger",
         "egress_hosts": (
             "appcenter.intuit.com",
+            "developer.intuit.com",
             "oauth.platform.intuit.com",
             "developer.api.intuit.com",
             "sandbox-quickbooks.api.intuit.com",
@@ -60,6 +61,7 @@ EGRESS_HOSTS: Final[frozenset[str]] = frozenset(
     {
         "appcenter.intuit.com",
         "developer.api.intuit.com",
+        "developer.intuit.com",
         "oauth.platform.intuit.com",
         "quickbooks.api.intuit.com",
         "sandbox-quickbooks.api.intuit.com",
