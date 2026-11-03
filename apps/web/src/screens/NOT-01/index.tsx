@@ -35,6 +35,7 @@ import {
   useNoticesSummary,
 } from "../../domain/notices";
 import { COPY } from "./copy";
+import { IntakeSheet } from "./IntakeSheet";
 
 // NOT-01 · Notices index (N-04-T05; docs/screens/NOT-01.md). T1 over `GET /v1/notices` and
 // `GET /v1/notices/summary`: the split chips (Agency, Notice, Assignee, Respond by), the agent chip
@@ -50,14 +51,17 @@ import { COPY } from "./copy";
 //   f  none visible: "No open notices."
 //   g  the list never answers: skeleton tile counts and rows
 //
-// b, c and d (the O3 intake sheet) are N-04-T09; "+ Add notice" waits for it and is drawn disabled
-// outside production. A row opens NOT-02 (N-04-T14) through `onOpen`.
+// b, c and d are the O3 intake sheet (N-04-T09, `IntakeSheet.tsx`): "+ Add notice" opens it on
+// the DropZone; `intakeId` opens it on an intake the Inbox or the portal already made. A row opens
+// NOT-02 (N-04-T14) through `onOpen`.
 
 export interface NOT01Props {
   filters: NoticeFilters;
   onFilters: (next: NoticeFilters) => void;
   /** Open a notice's workspace (NOT-02). */
   onOpen?: (noticeId: string) => void;
+  /** N-04-T09: the intake the sheet opens on (b, c, d; an Inbox or portal intake), if any. */
+  intakeId?: string | null;
 }
 
 const TILES: readonly IndexTile[] = [
@@ -143,9 +147,12 @@ function AgentChip({ stage }: { stage: keyof typeof COPY.agent.stage }): JSX.Ele
 export function NoticesIndex({
   initial = {},
   onOpen,
+  intakeId,
 }: {
   initial?: Partial<NoticeFilters>;
   onOpen?: (noticeId: string) => void;
+  /** N-04-T09: open the intake sheet on this intake (b, c, d). */
+  intakeId?: string;
 }): JSX.Element {
   const [filters, setFilters] = useState<NoticeFilters>(() => ({
     ...DEFAULT_NOTICE_FILTERS,
@@ -156,11 +163,15 @@ export function NoticesIndex({
       filters={filters}
       onFilters={setFilters}
       {...(onOpen === undefined ? {} : { onOpen })}
+      {...(intakeId === undefined ? {} : { intakeId })}
     />
   );
 }
 
-export function NOT01({ filters, onFilters, onOpen }: NOT01Props): JSX.Element {
+export function NOT01({ filters, onFilters, onOpen, intakeId }: NOT01Props): JSX.Element {
+  const [sheet, setSheet] = useState<{ intakeId: string | null } | null>(
+    intakeId === undefined ? null : { intakeId },
+  );
   const now = useNow();
   const tz = useSession().tz ?? DEFAULT_TZ;
   const list = useNotices(filters);
@@ -378,12 +389,26 @@ export function NOT01({ filters, onFilters, onOpen }: NOT01Props): JSX.Element {
           set({ q });
         }}
         searchPlaceholder={COPY.search}
-        {...(canAdd && PLANNED_VISIBLE
-          ? { newLabel: COPY.addNotice, onNew: () => undefined }
+        {...(canAdd
+          ? {
+              newLabel: COPY.addNotice,
+              onNew: () => {
+                setSheet({ intakeId: null });
+              },
+            }
           : {})}
         {...(facts === undefined ? {} : { barEnd: <AgentChip stage={facts.agent_stage} /> })}
         empty={{ icon: "file-text", title: COPY.empty.title, body: COPY.empty.body }}
       />
+      {sheet !== null && (
+        <IntakeSheet
+          intakeId={sheet.intakeId}
+          open
+          onOpenChange={(open) => {
+            if (!open) setSheet(null);
+          }}
+        />
+      )}
     </div>
   );
 }
