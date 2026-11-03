@@ -46,7 +46,8 @@ WAGES: Final = sum((p.wages for p in ebp.payrolls()), Decimal(0))
 
 
 @pytest.fixture
-async def world(net: object) -> Books:
+async def world(net: object, object_store: str) -> Books:
+    del object_store  # the uploads go to this session's S3, not the dev gateway (TASK-2927)
     found = await books(net)  # pyright: ignore[reportArgumentType] -- the backfill `net` fixture
     await found.seed.run(
         "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "

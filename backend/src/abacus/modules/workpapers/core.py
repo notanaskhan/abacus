@@ -128,6 +128,11 @@ _HISTORY_TYPE: Final = {"percent": "decimal", "empty": "text"}
 _FORMULA_LEAD: Final = ("=", "+", "-", "@", "\t", "\r")
 _ZIP_TIME: Final = (1980, 1, 1, 0, 0, 0)
 _EPOCH: Final = datetime(2026, 1, 1)
+# openpyxl stamps the save time into `dcterms:modified` whatever `properties.modified` says, so
+# two exports a second apart differed; `_rebuild` sets it back to _EPOCH (as TASK-2928 does for
+# sample sets; DEC-2078).
+_MODIFIED: Final = re.compile(rb"(<dcterms:modified[^>]*>)[^<]*(</dcterms:modified>)")
+_EPOCH_STAMP: Final = _EPOCH.strftime("%Y-%m-%dT%H:%M:%SZ").encode()
 _A1: Final = re.compile(r"^([A-Z]{1,2})([1-9][0-9]{0,3})$")
 _SHEET_KEY: Final = re.compile(r"^[a-z][a-z0-9_]{0,39}$")
 _PART: Final = re.compile(r"^[A-Za-z0-9_]{1,40}$")
@@ -540,7 +545,12 @@ def _rebuild(raw: bytes) -> bytes:
             entry.compress_type = zipfile.ZIP_DEFLATED
             entry.external_attr = 0o644 << 16
             entry.create_system = 3
-            target.writestr(entry, source.read(name))
+            data = source.read(name)
+            if name == "docProps/core.xml":
+                data, count = _MODIFIED.subn(rb"\g<1>" + _EPOCH_STAMP + rb"\g<2>", data)
+                if count != 1:
+                    raise RuntimeError("docProps/core.xml has no modified stamp to pin")
+            target.writestr(entry, data)
     return out.getvalue()
 
 

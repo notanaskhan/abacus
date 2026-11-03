@@ -129,8 +129,9 @@ async def test_ac16_every_phase_past_planning_was_reached_through_events(loaded:
     steps = {"planning": 0, "fieldwork": 1, "in_review": 2, "ready_to_release": 3, "released": 4}
     for r in rows:
         assert r["moves"] == steps[r["phase"]], r["phase"]
-        assert r["recorded"] == min(r["moves"], 2)
-        assert r["derived"] == max(r["moves"] - 2, 0)
+        # Fieldwork follows G4 (A-04-T43, DEC-2078); only In review is recorded by a person.
+        assert r["recorded"] == (1 if r["moves"] >= 2 else 0)
+        assert r["derived"] == r["moves"] - r["recorded"]
     audited = await seed.value(
         "SELECT count(*) FROM audit_events WHERE tenant_id = $1 "
         "AND action IN ('assurance.phase_recorded', 'assurance.phase_derived')",

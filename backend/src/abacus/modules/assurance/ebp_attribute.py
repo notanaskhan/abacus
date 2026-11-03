@@ -35,7 +35,7 @@ from abacus.modules.agents.api import ModeInputs, SourcePaper
 from abacus.modules.assurance.compute.ebp import eligibility
 from abacus.modules.assurance.draft_mappings import documents_for_areas
 from abacus.modules.assurance.ebp_participants import binding
-from abacus.modules.identity.api import AuthContext
+from abacus.modules.identity.api import AgentContext
 
 MODE: Final = "ebp_attribute"
 # The PBC areas whose fulfilled requests are the HR and payroll records the mode reads.
@@ -177,7 +177,7 @@ def assert_masked(inputs: ModeInputs, dobs: Sequence[date] = ()) -> None:
             raise UnmaskedModelInput(facts={"mode": MODE})
 
 
-async def attribute_inputs(actor: AuthContext, paper: SourcePaper) -> ModeInputs:
+async def attribute_inputs(actor: AgentContext, paper: SourcePaper) -> ModeInputs:
     """`ebp_attribute`'s inputs: the HR and payroll records (masked) and code's comparison."""
     documents = await documents_for_areas(actor, paper, ATTRIBUTE_AREAS)
     checks, dobs = await _compare(actor.tenant, paper.work_item_id)

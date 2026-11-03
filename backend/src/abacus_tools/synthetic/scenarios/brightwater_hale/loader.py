@@ -2793,11 +2793,11 @@ async def _phase_recorded(_: asyncpg.Connection, __: Scenario, event: Event) -> 
 
 
 async def _phase_advanced(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
-    """Seed only (security review, DEC-310): a gate phase whose SPEC-314 facts (EQR concurrence,
-    rep letter, release) the slice does not model. The derived event is written as the owner in
-    the event's actor transaction with its audit row, like the other bootstrap writes; its
-    insert trigger still binds the actor to the session, refuses a stale or backward move and
-    moves the projection. No product path moves a phase without its gate met
+    """Seed only (security review, DEC-310): a gate phase whose facts the slice does not model
+    (G4's planning facts, DEC-2078; SPEC-314's EQR concurrence, rep letter, release). The
+    derived event is written as the owner in the event's actor transaction with its audit row,
+    like the other bootstrap writes; its insert trigger still binds the actor to the session,
+    refuses a stale or backward move and moves the projection. No product path moves a phase without its gate met
     (`assurance.phase.advance_by_gate` computes it). A release keeps its own date."""
     audit = BY_LABEL[str(event.data["audit"])]
     engagement = engagement_id_of(audit)

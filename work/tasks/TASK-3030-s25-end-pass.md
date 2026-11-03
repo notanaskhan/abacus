@@ -42,5 +42,16 @@ and at most one re-review; then CI once, on the batch.
   and the schema-check, worker, catalogue and stub expectations.
 - Not run locally: the full integration suite and e2e (CI's batch run covers them).
 
+- 2026-11-02 (CI on #1106, run 41502162260, red): 96 failures. Most came from one cause: G4's
+  provider (A-04-T43) ended Fieldwork's record mode, which the seed loader and the A-01 record-mode
+  tests still used. Also: the drafter's agent context reached two person-only reads (requests'
+  `user_id`, the flag raiser's `created_by`); three status fields; A-05-T19's tests on the dev
+  S3; workpaper export determinism. Fixed under DEC-2078. Main's own reds (portal recovery,
+  a05t07 and a03t10 determinism) are #1105's, merged in. Left as main flakes: a random hex run
+  read as a TIN (error tracking span id) or a sign-in code (mention email).
+- Mistake made twice: a `cast` to `AuthContext` around an agent context hid a crash both times.
+  Typed the slots for the agent instead; a lint rule against `cast(AuthContext, ...)` is worth
+  adding.
+
 ## Decisions made during this task
-DEC-2077 (end-pass fixes).
+DEC-2077 (end-pass fixes), DEC-2078 (batch CI fixes).

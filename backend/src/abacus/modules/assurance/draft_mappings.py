@@ -31,7 +31,7 @@ from abacus.modules.agents.api import (
 )
 from abacus.modules.assurance import risks
 from abacus.modules.evidence.api import review_material
-from abacus.modules.identity.api import AuthContext
+from abacus.modules.identity.api import AgentContext
 from abacus.modules.requests.api import request_items_for
 
 SERVICE_ORG_AREA: Final = "service_organizations"
@@ -40,7 +40,7 @@ _WAITING: Final = frozenset({"draft", "requested", "returned"})
 
 
 async def _documents_and_waits(
-    actor: AuthContext, paper: SourcePaper, areas: frozenset[str]
+    actor: AgentContext, paper: SourcePaper, areas: frozenset[str]
 ) -> ModeInputs:
     items = [
         i for i in await request_items_for(actor, paper.engagement_id) if i.audit_area in areas
@@ -66,20 +66,20 @@ async def _documents_and_waits(
 
 
 async def documents_for_areas(
-    actor: AuthContext, paper: SourcePaper, areas: frozenset[str]
+    actor: AgentContext, paper: SourcePaper, areas: frozenset[str]
 ) -> ModeInputs:
     """A-05-T21: the fulfilled requests in these areas as documents (masked), and the open ones
     as waiting inputs, for another mode's mapping."""
     return await _documents_and_waits(actor, paper, areas)
 
 
-async def gap_inputs(actor: AuthContext, paper: SourcePaper) -> ModeInputs:
+async def gap_inputs(actor: AgentContext, paper: SourcePaper) -> ModeInputs:
     """AUD-04's Service Organizations section: SOC reports and bridge letters, and the requests
     still open for them."""
     return await _documents_and_waits(actor, paper, frozenset({SERVICE_ORG_AREA}))
 
 
-async def risk_narrative_inputs(actor: AuthContext, paper: SourcePaper) -> ModeInputs:
+async def risk_narrative_inputs(actor: AgentContext, paper: SourcePaper) -> ModeInputs:
     """AUD-05's narrative: the documents the client provided, in the order requested."""
     items = [
         i for i in await request_items_for(actor, paper.engagement_id) if i.evidence_version_id
@@ -110,7 +110,7 @@ def _text(value: object) -> dict[str, object] | None:
     return {"t": "text", "v": shown}
 
 
-async def risk_inputs(actor: AuthContext, paper: SourcePaper) -> ModeInputs:
+async def risk_inputs(actor: AgentContext, paper: SourcePaper) -> ModeInputs:
     """AUD-08's register: each risk's fields as cells that land on the risk, and the coverage
     facts by code (AC4.6, AC4.7)."""
     rows = sorted(await risks.rows_of(actor.tenant, paper.work_item_id), key=lambda r: r.code)

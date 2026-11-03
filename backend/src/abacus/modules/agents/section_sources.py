@@ -19,7 +19,7 @@ from uuid import UUID
 
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import DomainConflict, DomainUnavailable
-from abacus.modules.identity.api import AuthContext
+from abacus.modules.identity.api import AgentContext, AuthContext
 from abacus.modules.methodology.api import VersionStep
 
 if TYPE_CHECKING:
@@ -63,7 +63,7 @@ class PackProblem:
 # the run's unit of work, as the agent with its run (0581: an agent's flag names its run).
 # (unit of work, the agent, the paper, its section, the row, the flag's text) -> the flag's id
 FlagRaiser = Callable[
-    ["UnitOfWork", AuthContext, SourcePaper, str | None, str | None, str], Awaitable[UUID]
+    ["UnitOfWork", AgentContext, SourcePaper, str | None, str | None, str], Awaitable[UUID]
 ]
 
 
@@ -174,7 +174,7 @@ class ModeInputs:
 
 
 # (the run's agent, as the actor the reads are authorised for; the paper as the source read it)
-ModeMapping = Callable[[AuthContext, SourcePaper], Awaitable[ModeInputs]]
+ModeMapping = Callable[[AgentContext, SourcePaper], Awaitable[ModeInputs]]
 _MODE_MAPPINGS: dict[str, ModeMapping] = {}
 
 

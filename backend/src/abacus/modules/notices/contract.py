@@ -36,6 +36,7 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
 )
+from abacus.modules.notices.compute.bracket import FilingStatus
 from abacus.modules.organisations.api import MaskedTinOut
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -81,6 +82,10 @@ Readiness = Literal[
     "waiting_decision", "in_review", "approved", "out_for_signature", "ready_to_send", "sent"
 ]
 Channel = Literal["dut", "fax", "mail"]
+# C7's `envelope` codes (status-vocabulary.yaml), as the signing provider reports them.
+EnvelopeStatus = Literal[
+    "draft", "sent", "viewed", "partially_signed", "completed", "declined", "expired", "voided"
+]
 PaymentMethod = Literal["irs_direct_pay", "eftps", "state_portal", "check", "later_bill"]
 BlockOrigin = Literal["template", "human", "agent"]
 NoticeAction = Literal[
@@ -421,7 +426,7 @@ class ReturnAsFiledIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     source: Annotated[Literal["entry", "engine_import"], classified("internal")]
-    filing_status: Annotated[str | None, Field(max_length=40), classified("internal")] = None
+    filing_status: Annotated[FilingStatus | None, classified("internal")] = None
     filed_on: Annotated[date | None, classified("internal")] = None
     lines: Annotated[list[CitedLineIn], Field(max_length=200), Tri] = []
 
@@ -644,7 +649,7 @@ class ResponseOut(BaseModel):
     readiness: Annotated[Readiness, classified("internal")]
     readiness_facts: Annotated[list[ReadinessFactOut], classified("internal")]
     envelope_id: Annotated[UUID | None, classified("internal")]
-    envelope_status: Annotated[str | None, classified("internal")]  # C7's words
+    envelope_status: Annotated[EnvelopeStatus | None, classified("internal")]  # C7 `envelope`
     locked: Annotated[bool, classified("internal")]  # after send (`response_locked`)
     row_version: Annotated[int, Field(ge=1), classified("internal")]
 

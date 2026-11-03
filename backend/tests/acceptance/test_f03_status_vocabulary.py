@@ -609,6 +609,8 @@ NOT_A_STATUS = {
     "PortalRoomRowOut.state": "a room row's sub-line (uploaded, due, in_review, returned)",
     # P-08-T10 (ADR-168): what a verified sign-in code leads to, not a stored object's status.
     "PortalSignInVerifyOut.state": "the sign-in step's outcome (signed_in, mfa_required, …)",
+    # N-04-T02 (NOT-02): the return's filing status as filed, a tax code, never a firm status.
+    "ReturnAsFiledIn.filing_status": "a return's filing status (single, mfj, mfs, hoh, qss)",
 }
 # The 3.3.1 object a field's literals must all belong to (named from the sources: Deficiency,
 # Review note, Tie-out tally, Integration / connection, Proposed entry (AJE), Audit section /
