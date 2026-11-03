@@ -4,7 +4,7 @@ title: A-05-T09 register the nine EBP designed workpapers
 spec: SPEC-640  # and SPEC-641 (the cell-address scheme)
 acceptance_criteria: [AC-7]
 risk_zone: amber
-status: in-review
+status: done
 epic: A-05
 plan_key: A-05-T09
 branch: s24-a05-t09

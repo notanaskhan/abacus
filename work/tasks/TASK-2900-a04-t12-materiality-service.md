@@ -4,7 +4,7 @@ title: A-04-T12 materiality service (AUD-07)
 spec: SPEC-620
 acceptance_criteria: [AC-15, AC-16, AC-17, AC-18]
 risk_zone: amber
-status: in-review
+status: done
 epic: A-04
 plan_key: A-04-T12
 branch: s24-a04-t12
