@@ -7,11 +7,12 @@ import base64
 import hashlib
 import stat
 from pathlib import Path
+from typing import cast
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
-from abacus.kernel.egress import EgressRefused
+from abacus.kernel.egress import EgressClient, EgressRefused, EgressResponse
 from abacus_tools import qbo_sandbox as tool
 
 KEYS = {tool.ID_ENV: "ABsandboxclient123", tool.SECRET_ENV: "sandbox-secret"}
@@ -80,11 +81,19 @@ def test_tokens_path_can_be_moved(tmp_path: Path) -> None:
     assert tool.tokens_path({}) == tool.DEFAULT_TOKENS
 
 
+class Offline:
+    """No network in unit tests: every request answers 404."""
+
+    async def request(self, method: str, url: str, **_: object) -> EgressResponse:
+        return EgressResponse(404, {}, b"")
+
+
 async def test_sign_in_asks_for_the_accounting_scope_only(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     for key, value in KEYS.items():
         monkeypatch.setenv(key, value)
+    monkeypatch.setattr(tool, "egress_client", lambda: cast(EgressClient, Offline()))
     connector = tool.connector_for(tmp_path / "t.json", None)
     url = await connector.authorise_url("s-1", tool.redirect_uri(8765), code_challenge="abc")
     query = parse_qs(urlsplit(url).query)
