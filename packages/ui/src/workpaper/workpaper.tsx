@@ -1,4 +1,5 @@
 import { type JSX, useEffect, useId, useMemo, useRef, useState } from "react";
+import { AgentText } from "../agent-text";
 import { cn } from "../cn";
 import { Button } from "../components/button";
 import { Segmented } from "../components/tabs";
@@ -75,7 +76,15 @@ function KvRows({
         >
           <dt className="w-[118px] flex-none font-medium">{row.key}</dt>
           <dd className="min-w-0 flex-1 text-pretty">
-            {row.text}
+            {row.agent === true ? (
+              <AgentText
+                inline
+                text={row.text}
+                className="[font-size:inherit] [line-height:inherit]"
+              />
+            ) : (
+              row.text
+            )}
             {(row.cites ?? []).map((n) => {
               const cite = citations.find((c) => c.n === n);
               return cite === undefined ? null : (

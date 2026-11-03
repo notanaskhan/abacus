@@ -76,6 +76,19 @@ describe("AUD-04 a: the agent's draft", () => {
     expect(document.body.textContent).toContain("Carve-out — Ridgeway Data Services (hosting)");
   });
 
+  it("draws the agent's drafted cells through AgentText, and none once adopted", async () => {
+    show("a");
+    await screen.findByText("Summit Plan Administrators");
+    const summit = screen.getByText("Summit Plan Administrators");
+    expect(summit.closest("[data-actor='agent']")).not.toBeNull();
+    const kv = document.querySelector("[data-workpaper='kv'] dd [data-actor='agent']");
+    expect(kv).not.toBeNull();
+    cleanup();
+    show("b");
+    await screen.findByText("Prepared · MD");
+    expect(document.querySelector("[data-workpaper] [data-actor='agent']")).toBeNull();
+  });
+
   it("Adopt (L1)… opens SHL-12 at L1 on the paper", async () => {
     const onSignOff = vi.fn();
     show("a", onSignOff);

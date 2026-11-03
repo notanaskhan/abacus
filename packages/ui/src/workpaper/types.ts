@@ -10,6 +10,8 @@ import type { CitationView, ProcedureRef } from "../tracing";
 export interface WorkpaperKv {
   key: string;
   text: string;
+  /** The agent drafted the text: it draws through AgentText. */
+  agent?: boolean;
   /** Citation numbers drawn as markers after the text. */
   cites?: readonly number[];
 }
