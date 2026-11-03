@@ -2,10 +2,10 @@ import { type JSX, Suspense, lazy } from "react";
 import { FeatureGate } from "../../app-core/flags";
 import type { OverlayRenderProps } from "../../app-core/overlays";
 
-// The sheets `sheets.tsx` registers, loaded when one opens: each behind its flag
-// (`review.grammar_api` for SHL-10, SHL-11, SHL-12 and SHL-15, `review.checkpoints` for SHL-16,
-// `signatures.envelopes` for SIG-02, `tax.returns_v1` for TAX-09's engine sync) and its own
-// screen chunk.
+// The sheets `sheets.tsx` registers, loaded when one opens, each in its own screen chunk. SHL-10,
+// SHL-11, SHL-12 and SHL-15 need no flag (`review.grammar_api` retired, P-04-T62); the rest stand
+// behind theirs (`review.checkpoints` for SHL-16, `signatures.envelopes` for SIG-02,
+// `tax.returns_v1` for TAX-09's engine sync).
 
 const ApproveSheet = lazy(async () => ({
   default: (await import("../../screens/SHL-10")).ApproveSheet,
@@ -64,16 +64,14 @@ export default function SheetsHost(props: OverlayRenderProps): JSX.Element | nul
     if (targetId === undefined) return null;
     const level = ref.args[2];
     return (
-      <FeatureGate flag="review.grammar_api">
-        <Suspense fallback={null}>
-          <SignOffSheet
-            target={{ type: id, id: targetId }}
-            {...(level === undefined ? {} : { level })}
-            open
-            onOpenChange={onOpenChange}
-          />
-        </Suspense>
-      </FeatureGate>
+      <Suspense fallback={null}>
+        <SignOffSheet
+          target={{ type: id, id: targetId }}
+          {...(level === undefined ? {} : { level })}
+          open
+          onOpenChange={onOpenChange}
+        />
+      </Suspense>
     );
   }
   if (ref.key === "signoffs") {
@@ -81,45 +79,35 @@ export default function SheetsHost(props: OverlayRenderProps): JSX.Element | nul
     const level = ref.args[2];
     if (ids.length === 0) return null;
     return (
-      <FeatureGate flag="review.grammar_api">
-        <Suspense fallback={null}>
-          <BulkSignOffSheet
-            targets={ids.map((targetId) => ({ type: id, id: targetId }))}
-            {...(level === undefined ? {} : { level })}
-            open
-            onOpenChange={onOpenChange}
-          />
-        </Suspense>
-      </FeatureGate>
+      <Suspense fallback={null}>
+        <BulkSignOffSheet
+          targets={ids.map((targetId) => ({ type: id, id: targetId }))}
+          {...(level === undefined ? {} : { level })}
+          open
+          onOpenChange={onOpenChange}
+        />
+      </Suspense>
     );
   }
   if (ref.key === "decision") {
     return (
-      <FeatureGate flag="review.grammar_api">
-        <Suspense fallback={null}>
-          <DecisionSheet cardId={id} open onOpenChange={onOpenChange} />
-        </Suspense>
-      </FeatureGate>
+      <Suspense fallback={null}>
+        <DecisionSheet cardId={id} open onOpenChange={onOpenChange} />
+      </Suspense>
     );
   }
   if (ref.key === "issue") {
-    // P-04-T54 (DEC-1752): behind `review.grammar_api` with SHL-10/11/12 until `review.issues`
-    // is registered with the issues service's live routes.
     return (
-      <FeatureGate flag="review.grammar_api">
-        <Suspense fallback={null}>
-          <IssueSheet args={ref.args} open onOpenChange={onOpenChange} />
-        </Suspense>
-      </FeatureGate>
+      <Suspense fallback={null}>
+        <IssueSheet args={ref.args} open onOpenChange={onOpenChange} />
+      </Suspense>
     );
   }
   if (ref.key === "approve") {
     return (
-      <FeatureGate flag="review.grammar_api">
-        <Suspense fallback={null}>
-          <ApproveSheet proposalRef={id} open onOpenChange={onOpenChange} />
-        </Suspense>
-      </FeatureGate>
+      <Suspense fallback={null}>
+        <ApproveSheet proposalRef={id} open onOpenChange={onOpenChange} />
+      </Suspense>
     );
   }
   return (

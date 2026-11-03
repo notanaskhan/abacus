@@ -16,7 +16,7 @@ const HOSTED_URL: Readonly<Record<string, string | undefined>> = {
   canary: process.env.ABACUS_CANARY_URL,
 };
 const LIVE =
-  "review.grammar_api is off in E0; full stack and staging walk the host routes once the demo firm has the review flags (P-04 flag plan, STAGING_JOURNEYS)";
+  "the review host routes need a live stack (review.grammar_api retired, P-04-T62); full stack and staging walk the host routes once the demo firm has the review flags (P-04 flag plan, STAGING_JOURNEYS)";
 const sheet = (screen: string, state: string): string =>
   `/components/screens/${screen}?st=${state}&frame=1`;
 

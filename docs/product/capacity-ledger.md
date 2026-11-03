@@ -172,3 +172,18 @@ ADR-078 catch-up kept; window hardening held until the first live firm; pen test
   7.00 te in review of 65.75 te; escaped defects by sprint found 22 in S25 after 0 in S15-S24
   (batches tested late); back-fill 55 of 55 accounted for; no pen-test remediation (DEC-1389).
   `docs/quality/m14-calibration-inputs.md`.
+## P-04 Review grammar & sign-off engine (updated 2026-11-03, P-04-T62)
+
+Plan: 62 rows, 59.25 task-equivalents, S8 to S26. Counted from the task files (TASK-3223).
+
+| State | Rows | Task-equivalents | Rows |
+|---|---|---|---|
+| done | 28 | 26.25 | T01 to T18 and T21 (the contract, schema, slots, projector and sign-off services), T36, T37, T42 to T44, T49 to T51, T58 |
+| in review (merged, review items left) | 32 | 32.0 | T19, T20, T22 to T35, T38 to T41, T45 to T48, T52 to T57, T59, T60 |
+| built on the S26 stack (PR open) | 2 | 1.0 | T61 (runbook, skill, consumer notes; staging rehearsal pending), T62 (this row) |
+| not started | 0 | 0 | — |
+
+P-04 actuals: every row has a task file and built code or docs; no row is deferred. Open clauses
+carried by the in-review rows are listed in their task files (staging flips on PF-X1, the RB rehearsal
+for the review grammar). `review.grammar_api` is retired; `review.approve_agent_output` and
+`review.checkpoints` are renewed to May 1, 2027.

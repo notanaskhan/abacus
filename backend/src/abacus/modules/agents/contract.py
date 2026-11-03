@@ -1,7 +1,7 @@
 """C3 v1, the review grammar: stub PR 2 (P-04-T08), the SHL-10 family. Proposals and suggestions
 are the agents module's (ADR-161); the C3 contract is `docs/contracts/review-grammar.md` part 2.
 
-Behind `review.grammar_api`: off, every route answers 404. On, the routes are served by
+`review.grammar_api` retired (P-04-T62, DEC-2221): the routes are served by
 `agents.proposals` (P-04-T24) and, for a typed ref, `agents.proposal_adapters` (P-04-T25); Undo
 answers 501 until P-04-T29. The agent proposes; every route here is a person's act or read
 (ADR-005, INV-1). Proposal and suggestion values may be return information (§7216) or client
@@ -17,7 +17,7 @@ from uuid import UUID
 from fastapi import Depends, Header, Path
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import REVIEW_APPROVE_AGENT_OUTPUT, REVIEW_GRAMMAR_API
+from abacus.kernel._flags import REVIEW_APPROVE_AGENT_OUTPUT
 from abacus.kernel._statuses import ProposalStatus, SuggestionStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound
@@ -65,14 +65,8 @@ PolicyResult = Literal["within_threshold", "review_required"]
 SuggestionDecisionKind = Literal["adopted", "edited", "dismissed", "undone"]
 
 
-async def _live(ctx: AuthContext) -> None:
-    """A live route behind the same flag: off, it answers 404 like its stub did."""
-    if not await flag_enabled(ctx.tenant, REVIEW_GRAMMAR_API):
-        raise NotFound("review.grammar_api")
-
-
 # P-04-T46 (P-04 §2; DEC-1385): a person decides on agent output only where the firm has turned
-# SHL-10's live approval on. Reading a proposal and Undo inside its window stay behind the C3 flag.
+# SHL-10's live approval on. Reading a proposal and Undo inside its window need no flag.
 DECISIONS: Final = frozenset(
     {
         "proposal.approve",
@@ -85,8 +79,7 @@ DECISIONS: Final = frozenset(
 
 
 async def _deciding(ctx: AuthContext) -> None:
-    """A decision route: the C3 flag, then the firm's SHL-10 approval flag (off: 404)."""
-    await _live(ctx)
+    """A decision route: the firm's SHL-10 approval flag (off: 404)."""
     if not await flag_enabled(ctx.tenant, REVIEW_APPROVE_AGENT_OUTPUT):
         raise NotFound("review.approve_agent_output")
 
@@ -277,7 +270,6 @@ proposals_router = AbacusRouter(prefix="/v1/proposals", tags=["agents"])
 )
 async def agent_proposal_route(ref: ProposalRef, ctx: Ctx) -> AgentProposalOut:
     """SHL-10 a to g: the proposal projection with the caller's allowed actions."""
-    await _live(ctx)
     typed = parse(ref)
     if typed is not None:
         return await _shown(ctx, _proposal_out(await adapter_view(ctx, *typed)))
@@ -396,7 +388,6 @@ async def proposal_undo_route(
 ) -> AgentProposalOut:
     """Undo inside 10 seconds by the same person: 409 `undo_window_closed` or `effect_started`
     (P-04-T29; `proposal_undo.py`)."""
-    await _live(ctx)
     typed = parse(proposal_id)
     if typed is not None:
         await undo_typed(ctx, *typed, body.decision_id)
@@ -462,7 +453,6 @@ async def suggestion_adopt_route(
     suggestion_id: UUID, body: AdoptSuggestionIn, ctx: Ctx
 ) -> AgentSuggestionOut:
     """Adopt through the target's registered applier (human only)."""
-    await _live(ctx)
     return _suggestion_out(
         await adopt_suggestion(
             ctx,
@@ -484,7 +474,6 @@ async def suggestion_dismiss_route(
     suggestion_id: UUID, body: DismissSuggestionIn, ctx: Ctx
 ) -> AgentSuggestionOut:
     """Dismiss (human only)."""
-    await _live(ctx)
     return _suggestion_out(
         await dismiss_suggestion(
             ctx, suggestion_id, seen_version=body.seen_version, reason_code=body.reason_code

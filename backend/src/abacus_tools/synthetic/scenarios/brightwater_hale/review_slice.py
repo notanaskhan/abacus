@@ -36,7 +36,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.timeline import Event
 
 SLICE: Final = "review"
 NEEDS: Final = ("people", "standards", "acceptance", "tax_board")
-FLAGS: Final = ("review.checkpoints", "assurance.materiality")  # grammar_api is FLAGS_ON's
+FLAGS: Final = ("review.checkpoints", "assurance.materiality")  # grammar_api retired: P-04-T62
 NORTHWIND: Final = "Northwind Robotics, Inc."
 RIDGELINE: Final = "Ridgeline Property Partners, LP"
 FELD: Final = "Jonah & Claire Feld"
