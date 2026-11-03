@@ -40,8 +40,15 @@ CONTROL_TABLES: frozenset[str] = frozenset(
 EBP_CONTRIBUTION_TABLES: frozenset[str] = frozenset(
     {"ebp_payrolls", "ebp_late_remittances", "ebp_late_remittance_events"}
 )
+# A-07-T07 (0664, DEC-2232): EQR and completion; subsequent events insert-only.
+A07_COMPLETION_TABLES: frozenset[str] = frozenset(
+    {"eqr_reviews", "eqr_checklist_items", "eqr_digest_cards", "completion_items"}
+    | {"subsequent_event_procedures", "subsequent_events", "legal_letters"}
+    | {"going_concern_evaluations", "filings"}
+)
 TABLES: frozenset[str] = (
     _HUMAN_RECORDS
+    | A07_COMPLETION_TABLES
     | EBP_CONTRIBUTION_TABLES
     | EBP_TABLES
     | PLANNING_TABLES
@@ -58,10 +65,14 @@ INSERT_ONLY: frozenset[str] = (
     | {"sum_snapshots"}
     | {"walkthroughs"}  # A-04-T25 (0657)
     | {"ebp_payrolls", "ebp_late_remittance_events"}  # A-05-T26 (0658)
+    | {"subsequent_events"}  # A-07-T07 (0664)
 )
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "eqr_concurrences": frozenset(
         {"tenant_id", "engagement_id", "digest_hash", "not_involved", "concurred_by", "actor_kind"}
+        # A-07-T07 (0664): a v2 concurrence's work-item columns (DEC-2261)
+        | {"work_item_id", "eqr_review_id", "concurrence_date", "checklist_snapshot_sha256"}
+        | {"notes_cleared_count", "mfa_verified_at", "actor_id"}
     ),
     "completion_records": frozenset(
         {"tenant_id", "engagement_id", "kind", "choice", "emphasis", "document_date"}
@@ -704,4 +715,93 @@ UPDATE_COLUMNS["ebp_late_remittances"] = frozenset(
     | {"engine_name", "engine_version", "inputs_hash", "finding_id", "correction_status"}
     | {"lost_earnings_deposited_on", "scc_notice_on", "form_5330_status", "version"}
     | {"updated_at"}
+)
+
+# A-07-T07 (0664, DEC-2232): EQR and completion. Digest-card content never changes (only the
+# reviewed and superseded columns move); subsequent events are insert-only.
+INSERT_COLUMNS.update(
+    {
+        "eqr_reviews": frozenset(
+            {"tenant_id", "engagement_id", "work_item_id", "eqr_user_id", "assignment_ref"}
+            | {"eligibility_snapshot", "status"}
+        ),
+        "eqr_checklist_items": frozenset(
+            {"tenant_id", "engagement_id", "work_item_id", "eqr_review_id", "item_key"}
+            | {"template_version_id", "position", "status", "sub_line", "updated_by"}
+        ),
+        "eqr_digest_cards": frozenset(
+            {"tenant_id", "engagement_id", "work_item_id", "eqr_review_id", "source_kind"}
+            | {
+                "source_ref",
+                "title",
+                "snapshot",
+                "snapshot_sha256",
+                "citation_ids",
+                "built_by_run_id",
+            }
+        ),
+        "completion_items": frozenset(
+            {"tenant_id", "engagement_id", "work_item_id", "item_key", "template_version_id"}
+            | {"position", "status", "derived", "evidence_text", "link_target", "gate_tag"}
+            | {"depends_on_client", "due_on", "na_basis_sealed", "na_by", "last_event_id"}
+        ),
+        "subsequent_event_procedures": frozenset(
+            {"tenant_id", "engagement_id", "work_item_id", "procedure_key", "performed_through"}
+            | {"performed_by", "status", "run_id"}
+        ),
+        "subsequent_events": frozenset(
+            {"tenant_id", "engagement_id", "work_item_id", "description_sealed", "recognition"}
+            | {"fs_effect_sealed", "note_ref", "citation_ids", "recorded_by", "actor_kind"}
+            | {"actor_id"}
+        ),
+        "legal_letters": frozenset(
+            {"tenant_id", "engagement_id", "work_item_id", "not_applicable", "basis_sealed"}
+            | {"request_item_id", "status"}
+        ),
+        "going_concern_evaluations": frozenset(
+            {"tenant_id", "engagement_id", "work_item_id", "decision_card_id", "inputs"}
+            | {"engine_version", "inputs_hash"}
+        ),
+        "filings": frozenset(
+            {"tenant_id", "engagement_id", "work_item_id", "form", "filer_name", "preparer_name"}
+            | {
+                "channel",
+                "due_on",
+                "extended_due_on",
+                "status",
+                "filed_on",
+                "ack_evidence_version_id",
+            }
+        ),
+    }
+)
+UPDATE_COLUMNS.update(
+    {
+        "eqr_reviews": frozenset({"eligibility_snapshot", "status", "version", "updated_at"}),
+        "eqr_checklist_items": frozenset(
+            {"status", "sub_line", "updated_by", "version", "updated_at"}
+        ),
+        "eqr_digest_cards": frozenset(
+            {"reviewed_at", "reviewed_by", "reviewed_actor_kind", "superseded_by"}
+        ),
+        "completion_items": frozenset(
+            {"status", "derived", "evidence_text", "link_target", "gate_tag", "depends_on_client"}
+            | {"due_on", "na_basis_sealed", "na_by", "last_event_id", "version", "updated_at"}
+        ),
+        "subsequent_event_procedures": frozenset(
+            {"performed_through", "performed_by", "status", "run_id", "version", "updated_at"}
+        ),
+        "legal_letters": frozenset(
+            {"not_applicable", "basis_sealed", "request_item_id", "status", "version"}
+            | {"updated_at"}
+        ),
+        "going_concern_evaluations": frozenset(
+            {"decision_card_id", "inputs", "engine_version", "inputs_hash", "version"}
+            | {"updated_at"}
+        ),
+        "filings": frozenset(
+            {"due_on", "extended_due_on", "status", "filed_on", "ack_evidence_version_id"}
+            | {"version", "updated_at"}
+        ),
+    }
 )
