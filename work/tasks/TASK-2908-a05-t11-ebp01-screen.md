@@ -4,7 +4,7 @@ title: A-05-T11 EBP-01 screen a-d (plan profile & service providers)
 spec: SPEC-640
 acceptance_criteria: [AC-9]
 risk_zone: green
-status: in-review
+status: done
 epic: A-05
 plan_key: A-05-T11
 branch: s24-a05-t11 (stacked on s24-a05-t10)

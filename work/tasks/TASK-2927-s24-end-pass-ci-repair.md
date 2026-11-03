@@ -4,7 +4,7 @@ title: S24 end pass CI repair; firm initial bundle budget 300 KB (founder decisi
 spec: SPEC-000  # #1074's red CI; chapter 04 §1 rule 13 and §11; scripts/bundle-budget.mjs
 acceptance_criteria: [AC-1]  # #1095's CI run green on the S24 end-pass tree
 risk_zone: green
-status: in-review
+status: done
 epic: F-05
 plan_key: F-05-T17
 branch: s24-end-pass-fix

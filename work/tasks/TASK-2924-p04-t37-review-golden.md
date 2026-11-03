@@ -4,7 +4,7 @@ title: P-04-T37 golden-figure tests for the review scenario
 spec: SPEC-000  # P-04-T37 row
 acceptance_criteria: [AC-1]
 risk_zone: amber
-status: in-review
+status: done
 epic: P-04
 plan_key: P-04-T37
 branch: s24-p04-t37 (on s24-p04-t36)

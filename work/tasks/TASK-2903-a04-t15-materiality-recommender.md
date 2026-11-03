@@ -4,7 +4,7 @@ title: A-04-T15 decisions.recommender for materiality (AUD-07)
 spec: SPEC-620
 acceptance_criteria: [AC-16, AC-25]
 risk_zone: red
-status: in-review
+status: done
 epic: A-04
 plan_key: A-04-T15
 branch: s24-a04-t15 (stacked on s24-a04-t12)
