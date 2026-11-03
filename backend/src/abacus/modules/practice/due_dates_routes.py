@@ -26,6 +26,8 @@ from abacus.modules.practice import due_dates
 from abacus.modules.practice.due_dates_contract import (
     DueDateOut,
     DueDates,
+    DueInstallmentOut,
+    InstallmentDatesOut,
     Jurisdiction,
     Location,
     PostponementOut,
@@ -61,6 +63,34 @@ def _out(found: DueDates, jurisdiction: Jurisdiction) -> DueDateOut:
         extended_due_on=found.extended_due_on,
         extended_rolled=found.extended_rolled,
         postponement=postponement,
+        reference_set_version_ids=list(found.reference_set_version_ids),
+        inputs_hash=found.inputs_hash,
+    )
+
+
+# C21 additive (T-03-T04): before "" so the literal path is matched first.
+@router.get("/installments", action="due_date.read", response_model=InstallmentDatesOut)
+async def practice_installments_route(
+    ctx: Ctx,
+    form: Annotated[str, Query(min_length=1, max_length=20)],
+    tax_year: Annotated[int, Query(ge=2000, le=2100)],
+    jurisdiction: Annotated[Jurisdiction, Query()] = "US",
+) -> InstallmentDatesOut:
+    """An estimate form's installment due dates with provenance; 404 for a form with none."""
+    await _gate(ctx)
+    try:
+        found = await due_dates.installments_for(form, tax_year, jurisdiction)
+    except LookupError:
+        raise NotFound("due_date") from None
+    return InstallmentDatesOut(
+        form=found.form,
+        tax_year=found.tax_year,
+        jurisdiction=jurisdiction,
+        period_end=found.period_end,
+        installments=[
+            DueInstallmentOut(quarter=i.quarter, due_on=i.due_on, rolled=i.rolled)
+            for i in found.installments
+        ],
         reference_set_version_ids=list(found.reference_set_version_ids),
         inputs_hash=found.inputs_hash,
     )

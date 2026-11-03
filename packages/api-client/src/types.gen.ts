@@ -10952,6 +10952,10 @@ export type DueDateRuleRow = {
      * Fye Rule
      */
     fye_rule: 'calendar_year' | 'fiscal_year' | 'any';
+    /**
+     * Installments
+     */
+    installments?: Array<InstallmentOffset>;
     original: DueDateOffset;
 };
 
@@ -10983,6 +10987,24 @@ export type DueDatesIn = {
      * Item Ids
      */
     item_ids: Array<string>;
+};
+
+/**
+ * DueInstallmentOut
+ */
+export type DueInstallmentOut = {
+    /**
+     * Due On
+     */
+    due_on: string;
+    /**
+     * Quarter
+     */
+    quarter: number;
+    /**
+     * Rolled
+     */
+    rolled: boolean;
 };
 
 /**
@@ -19853,6 +19875,42 @@ export type InherentFactorOut = {
 };
 
 /**
+ * InstallmentDatesOut
+ *
+ * C21 additive (T-03-T04): an estimate form's installment due dates with provenance.
+ */
+export type InstallmentDatesOut = {
+    /**
+     * Form
+     */
+    form: string;
+    /**
+     * Inputs Hash
+     */
+    inputs_hash: string;
+    /**
+     * Installments
+     */
+    installments: Array<DueInstallmentOut>;
+    /**
+     * Jurisdiction
+     */
+    jurisdiction: 'US' | 'DC';
+    /**
+     * Period End
+     */
+    period_end: string;
+    /**
+     * Reference Set Version Ids
+     */
+    reference_set_version_ids: Array<string>;
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+};
+
+/**
  * InstallmentIn
  *
  * One billing installment as a share of the fee, in basis points (5000 is 50%).
@@ -19866,6 +19924,28 @@ export type InstallmentIn = {
      * Share Bp
      */
     share_bp: number;
+};
+
+/**
+ * InstallmentOffset
+ *
+ * C21 additive, payload schema v2 (T-03-T04, DEC-2203): an estimated-tax installment's
+ * unrolled date, the `day` of the month `months_after_period_end` months from the period end
+ * (negative inside the year: a calendar-year 1040-ES runs -8, -6, -3 and +1 on the 15th).
+ */
+export type InstallmentOffset = {
+    /**
+     * Day
+     */
+    day: number;
+    /**
+     * Months After Period End
+     */
+    months_after_period_end: number;
+    /**
+     * Quarter
+     */
+    quarter: number;
 };
 
 /**
@@ -55082,6 +55162,66 @@ export type PracticeDueDatesResponses = {
 };
 
 export type PracticeDueDatesResponse = PracticeDueDatesResponses[keyof PracticeDueDatesResponses];
+
+export type PracticeInstallmentsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Form
+         */
+        form: string;
+        /**
+         * Tax Year
+         */
+        tax_year: number;
+        /**
+         * Jurisdiction
+         */
+        jurisdiction?: 'US' | 'DC';
+    };
+    url: '/v1/due-dates/installments';
+};
+
+export type PracticeInstallmentsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type PracticeInstallmentsError = PracticeInstallmentsErrors[keyof PracticeInstallmentsErrors];
+
+export type PracticeInstallmentsResponses = {
+    /**
+     * Successful Response
+     */
+    200: InstallmentDatesOut;
+};
+
+export type PracticeInstallmentsResponse = PracticeInstallmentsResponses[keyof PracticeInstallmentsResponses];
 
 export type CreateEngagementDraftData = {
     body: EngagementDraftIn;

@@ -64,6 +64,15 @@ class Rule:
     # The extended date's day of the month, when it is not the original's (5558: Jul 31 + 2½
     # months is Oct 15; 7004 for a 1041: Apr 15 + 5½ months is Sep 30).
     extension_day: int | None = None
+    # C21 v2 (T-03-T04): (quarter, months after period end, day) per estimated-tax installment.
+    installments: tuple[tuple[int, int, int], ...] = ()
+
+
+@dataclass(frozen=True)
+class Installment:
+    quarter: int
+    due_on: date
+    rolled: bool
 
 
 @dataclass(frozen=True)
@@ -183,6 +192,19 @@ def due_dates(
         postponement_notice_id=notice,
         postponed_to=postponed_to,
     )
+
+
+def installment_dates(
+    rule: Rule, period_end: date, holidays: frozenset[date]
+) -> tuple[Installment, ...]:
+    """The rule's installment due dates for a period end, each rolled past weekends and legal
+    holidays (IRC §7503): TY2027's Q4 1040-ES falls on Sat Jan 15, 2028, and Mon Jan 17 is a
+    holiday, so it is due Tue Jan 18."""
+    out: list[Installment] = []
+    for quarter, months, day in sorted(rule.installments):
+        due_on, rolled = roll(add_months(period_end, months, day), holidays)
+        out.append(Installment(quarter, due_on, rolled))
+    return tuple(out)
 
 
 def _ordinal(n: int) -> str:

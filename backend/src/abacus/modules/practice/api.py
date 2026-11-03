@@ -8,8 +8,20 @@ parts (I-01-T12): the client-activity projector and its daily prune.
 
 from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.practice.activity import rebuild_home_activity
-from abacus.modules.practice.due_dates import add_business_days, clock_due, due_dates_for
-from abacus.modules.practice.due_dates_contract import ClockDue, ClockKind, DueDates, Location
+from abacus.modules.practice.due_dates import (
+    add_business_days,
+    clock_due,
+    due_dates_for,
+    installments_for,
+)
+from abacus.modules.practice.due_dates_contract import (
+    ClockDue,
+    ClockKind,
+    DueDates,
+    InstallmentDue,
+    InstallmentDueDates,
+    Location,
+)
 from abacus.modules.practice.due_dates_routes import router as due_dates_router
 from abacus.modules.practice.home_contract import router as home_router
 from abacus.modules.practice.jobs import ACTIVITIES, SCHEDULES, SUBSCRIPTIONS, WORKFLOWS
@@ -36,9 +48,12 @@ __all__ = [
     "ClockKind",
     "DueDates",
     "HomeActivityPruneWorkflow",
+    "InstallmentDue",
+    "InstallmentDueDates",
     "Location",
     "add_business_days",
     "clock_due",
     "due_dates_for",
+    "installments_for",
     "rebuild_home_activity",
 ]
