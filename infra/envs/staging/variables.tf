@@ -180,3 +180,18 @@ variable "docuseal_webhook_enabled" {
   type        = bool
   default     = false
 }
+variable "textract_enabled" {
+  description = "Create the Textract endpoint and the worker's OCR policy (P-11-T22)."
+  type        = bool
+  default     = false
+}
+variable "textract_monthly_budget_usd" {
+  description = "The staging Textract cost budget per month."
+  type        = string
+  default     = "50"
+}
+variable "textract_quota_requests" {
+  description = "Textract quota codes to raise before the December x100 load test (Q-03-T160)."
+  type        = map(number)
+  default     = {}
+}
