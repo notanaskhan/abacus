@@ -65,6 +65,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"id", "tenant_id", "client_entity_id", "period_start", "period_end", "pulled_at"}
         | {"source", "raw_fingerprint", "line_count", "total_debit", "total_credit"}
         | {"label"}  # A-02-T04 (0149); `source_kind` is generated
+        | {"source_evidence_version_id", "extraction_run_id"}  # A-05-T28 (0659)
     ),
     "trial_balance_lines": frozenset(
         {"id", "tenant_id", "snapshot_id", "account_code", "account_name", "debit"}
