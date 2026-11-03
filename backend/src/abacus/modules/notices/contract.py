@@ -18,7 +18,7 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import date, datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, Annotated, Literal, NoReturn, cast
+from typing import TYPE_CHECKING, Annotated, Any, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
@@ -41,6 +41,8 @@ from abacus.modules.identity.api import (
 )
 from abacus.modules.notices.compute.bracket import FilingStatus
 from abacus.modules.organisations.api import MaskedTinOut
+
+JsonRow = dict[str, Any]  # Any: JSON columns as stored
 
 if TYPE_CHECKING:
     from abacus.modules.notices.intake import Intake
@@ -1201,8 +1203,14 @@ async def analysis_route(notice_id: UUID, ctx: Ctx) -> AnalysisOut:
     row = await analysis.latest(ctx, notice_id)
     if row is None:
         raise NotFound("notice_analysis")
-    checks = row["checks"] or {}
-    bracket_check = checks.get("bracket_check")
+    checks = cast(
+        JsonRow,
+        row["checks"] or {},
+    )
+    bracket_check = cast(
+        JsonRow | None,
+        checks.get("bracket_check"),
+    )
     out = AnalysisOut(
         version=row["version"],
         status=row["status"],
@@ -1334,13 +1342,64 @@ async def response_draft_route(
 ) -> ResponseOut:
     """From the firm's template for (analysis kind, position); provisional before a decision."""
     await _gate(ctx, notice_id, "notice_response.draft")
-    _not_yet()
+    from abacus.modules.notices import response
+
+    return await _response_out(ctx, await response.draft(ctx, notice_id))
+
+
+async def _response_out(ctx: AuthContext, found: object) -> ResponseOut:
+    """NOT-03's response as stored (N-04-T12): blocks with provenance, settings, readiness."""
+    from abacus.modules.notices import response, service
+
+    r = cast(response.Response, found)
+    n = await service.notice(ctx, r.notice_id)
+    code = response.blocked_code(
+        n.position, n.position if r.position_source == "decided" else None, r.blocks
+    )
+    settings = r.settings
+    return ResponseOut(
+        id=r.id,
+        version_no=r.version_no,
+        content_hash=r.content_hash,
+        template_key=r.template_key,
+        position=cast(Any, n.position),  # Any: the notices CHECK holds the words
+        position_source=cast(Any, r.position_source),  # Any: 0650's CHECK
+        position_mismatch=code == "position_mismatch",
+        blocks=[
+            BlockOut(
+                key=b.key,
+                origin=cast(Any, b.origin),  # Any: template or human
+                template_block_key=b.template_block_key,
+                text=b.text,
+                edited=b.edited,
+                citation_ids=[],
+            )
+            for b in r.blocks
+        ],
+        enclosures=[],
+        payment=None,
+        signer_contact_ids=list(settings.get("signer_contact_ids") or []),
+        channel=settings.get("channel"),
+        follow_up_days=int(settings.get("follow_up_days") or 60),
+        owner=None,
+        approvals=[],
+        readiness="waiting_decision" if code == "decision_pending" else "in_review",
+        readiness_facts=[
+            ReadinessFactOut(key="decision", met=n.position is not None, label="Position decided")
+        ],
+        envelope_id=None,
+        envelope_status=None,
+        locked=r.locked,
+        row_version=r.row_version,
+    )
 
 
 @router.get(f"{_N}/response", action="notice.read", response_model=ResponseOut, errors=(501,))
 async def response_route(notice_id: UUID, ctx: Ctx) -> ResponseOut:
     await _gate(ctx, notice_id, "notice.read")
-    _not_yet()
+    from abacus.modules.notices import response
+
+    return await _response_out(ctx, await response.response(ctx, notice_id))
 
 
 @router.put(
@@ -1354,7 +1413,21 @@ async def response_edit_route(
 ) -> ResponseOut:
     """409 `stale_version` (If-Match) or `response_locked` after send."""
     await _gate(ctx, notice_id, "notice_response.edit")
-    _not_yet()
+    from abacus.modules.notices import response
+
+    found = await response.edit(
+        ctx,
+        notice_id,
+        if_match,
+        blocks=[(b.key, b.text) for b in body.blocks],
+        settings={
+            "signer_contact_ids": body.signer_contact_ids,
+            "channel": body.channel,
+            "follow_up_days": body.follow_up_days,
+            "owner_user_id": body.owner_user_id,
+        },
+    )
+    return await _response_out(ctx, found)
 
 
 @router.post(
@@ -1366,7 +1439,9 @@ async def response_edit_route(
 async def response_regenerate_route(notice_id: UUID, ctx: Ctx, if_match: IfMatch) -> ResponseOut:
     """Template blocks re-rendered from current figures; human blocks kept."""
     await _gate(ctx, notice_id, "notice_response.edit")
-    _not_yet()
+    from abacus.modules.notices import response
+
+    return await _response_out(ctx, await response.regenerate(ctx, notice_id, if_match))
 
 
 @router.post(

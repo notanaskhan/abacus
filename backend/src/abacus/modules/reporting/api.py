@@ -13,7 +13,7 @@ from the browser. The shapes are frozen with C11 (S18 Contract Monday). P-11-T08
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable, Iterator, Mapping
+from collections.abc import Awaitable, Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Literal, cast, get_args
 from uuid import UUID
@@ -544,3 +544,18 @@ from abacus.modules.review.api import (  # noqa: E402
 
 _register_reviewable(FS_TARGET, fs_reviewables)
 _register_reviewable_facts(FS_TARGET, fs_facts)
+
+
+def template_blocks(
+    *,
+    layout_key: str,
+    body: Sequence[object],
+    clauses: Sequence[object],
+    values: Mapping[str, str],
+) -> list[tuple[str, str | None, str]]:
+    """N-04-T12 (DEC-2240): a published template's standard text for the given values, as
+    (block id, clause id, text) per top-level block: what a consumer drafts from and regenerates
+    against. Templates are database content; nothing here holds wording."""
+    from abacus.modules.reporting.compose import block_texts, standard
+
+    return block_texts(standard(layout_key=layout_key, body=body, clauses=clauses, values=values))

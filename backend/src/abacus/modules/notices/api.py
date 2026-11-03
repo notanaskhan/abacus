@@ -23,3 +23,18 @@ ROUTERS: tuple[AbacusRouter, ...] = (router,)
 from abacus.modules.notices.analysis import register_position_kind  # noqa: E402
 
 register_position_kind()  # N-04-T11 (DEC-2239): the `notice_position` card, reserved to the signer
+
+from abacus.modules.notices import response as _response  # noqa: E402
+from abacus.modules.review.api import (  # noqa: E402
+    register_gate_kind,
+    register_reviewable,
+    register_reviewable_facts,
+)
+
+# N-04-T12 (DEC-2240): the response is a reviewable whose facts refuse sign-off with
+# decision_pending, position_mismatch or explanation_required; the three gate kinds read it.
+register_reviewable(_response.TARGET, _response.reviewables)
+register_reviewable_facts(_response.TARGET, _response.facts)
+register_gate_kind("notice_position_decision", _response.position_decided)
+register_gate_kind("notice_response_signoff", _response.signoff_ready)
+register_gate_kind("notice_response_send", _response.send_ready)
