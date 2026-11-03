@@ -647,6 +647,55 @@ class AcceptedOut(BaseModel):
 # --- the gate and the routes ---------------------------------------------------------------------
 
 
+# --- EBP-03 sample (A-05-T23, DEC-2225): the eligibility test's 25 rows with the facts the grid
+# shows. The date of birth stays masked (A-05-T18's sealing; reveal is the logged per-field route),
+# so the screen's computation line names eligibility and entry, never the 21st birthday.
+
+EligibilityResult = Literal[
+    "not_started", "agent_tested", "needs_human", "pass", "exception", "no_effect"
+]
+
+
+class EligibilitySampleRowOut(BaseModel):
+    """One sampled participant in A-03's order: census against HR, and code's entry date."""
+
+    model_config = ConfigDict(frozen=True)
+
+    position: Annotated[int, Field(ge=1), classified("internal")]
+    item_id: Annotated[UUID, classified("internal")]
+    participant_id: Annotated[UUID, classified("internal")]
+    record_key: Annotated[str, Field(max_length=40), classified("internal")]  # "NW-1184"
+    census_name: Annotated[str, Field(max_length=200), classified("confidential")]
+    hr_first_name: Annotated[str | None, Field(max_length=100), classified("confidential")]
+    dob_masked: Annotated[Literal["••/••/••••"], classified("internal")]
+    census_hire: Annotated[date, classified("confidential")]
+    hr_hire: Annotated[date | None, classified("confidential")]
+    eligible_on: Annotated[date | None, classified("confidential")]
+    entry_on: Annotated[date | None, classified("confidential")]
+    recordkeeper_entry_on: Annotated[date | None, classified("confidential")]
+    rate_label: Annotated[str, Field(max_length=120), classified("confidential")]
+    result: Annotated[EligibilityResult, classified("internal")]
+    note: Annotated[str | None, Field(max_length=300), classified("confidential")] = None
+    hr_record_version_id: Annotated[UUID | None, classified("internal")] = None
+    missed_deferral: Annotated[Decimal | None, classified("confidential")] = None
+    missed_match: Annotated[Decimal | None, classified("confidential")] = None
+
+
+class EligibilitySampleOut(BaseModel):
+    """EBP-03's sample read: the rows, the tallies and the rungs the header shows."""
+
+    model_config = ConfigDict(frozen=True)
+
+    test_id: Annotated[UUID, classified("internal")]
+    version_no: Annotated[int, Field(ge=1), classified("internal")]
+    rows: Annotated[list[EligibilitySampleRowOut], classified("confidential")]
+    exceptions: Annotated[int, Field(ge=0), classified("internal")]
+    needs_human: Annotated[int, Field(ge=0), classified("internal")]
+    prepared_by: Annotated[str | None, Field(max_length=4), classified("internal")] = None
+    reviewed_by: Annotated[str | None, Field(max_length=4), classified("internal")] = None
+    allowed_actions: Annotated[list[str], classified("internal")]
+
+
 async def _gate(ctx: AuthContext, work_item_id: UUID, action: str, flag: Flag) -> None:
     """A person only, never a client principal; the action on the work item's engagement; the
     flag. Authorised before the flag, so no one learns a flag state they may not use."""
@@ -1111,6 +1160,18 @@ async def ebp_eligibility_route(work_item_id: UUID, ctx: Ctx) -> FiguresOut:
         ],
         None,
     )
+
+
+@router.get(
+    "/ebp/eligibility/sample",
+    action="ebp.read",
+    response_model=EligibilitySampleOut,
+    errors=(501,),
+)
+async def ebp_eligibility_sample_route(work_item_id: UUID, ctx: Ctx) -> EligibilitySampleOut:
+    """EBP-03's grid (A-05-T23 contract first, DEC-2225): 501 until the sample service lands."""
+    await _gate(ctx, work_item_id, "ebp.read", _E)
+    _not_yet()
 
 
 # EBP-04

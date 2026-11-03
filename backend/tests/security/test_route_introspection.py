@@ -56,6 +56,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/audits/{work_item_id}/cockpit", "engagement.read_metadata"),
     ("GET", "/v1/audits/{work_item_id}/ebp/contributions/reconciliation", "ebp.read"),
     ("GET", "/v1/audits/{work_item_id}/ebp/eligibility", "ebp.read"),
+    ("GET", "/v1/audits/{work_item_id}/ebp/eligibility/sample", "ebp.read"),
     ("GET", "/v1/audits/{work_item_id}/ebp/form-5500", "ebp_form5500.read"),
     ("GET", "/v1/audits/{work_item_id}/ebp/imports/{import_id}", "ebp.read"),
     ("GET", "/v1/audits/{work_item_id}/ebp/investments", "ebp.read"),
