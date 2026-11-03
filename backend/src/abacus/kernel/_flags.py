@@ -360,6 +360,11 @@ QUESTIONNAIRES_V1 = Flag(
     kind="boolean",
     default="false",
 )
+REPORTING_FS_DISCLOSURE = Flag(
+    name="reporting.fs_disclosure",
+    kind="boolean",
+    default="false",
+)
 REPORTING_GENERATED_DOCUMENTS = Flag(
     name="reporting.generated_documents",
     kind="boolean",
@@ -531,6 +536,7 @@ FLAGS: dict[str, Flag] = {
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
     "questionnaires.editor": QUESTIONNAIRES_EDITOR,
     "questionnaires.v1": QUESTIONNAIRES_V1,
+    "reporting.fs_disclosure": REPORTING_FS_DISCLOSURE,
     "reporting.generated_documents": REPORTING_GENERATED_DOCUMENTS,
     "retrieval.auto": RETRIEVAL_AUTO,
     "review.approve_agent_output": REVIEW_APPROVE_AGENT_OUTPUT,

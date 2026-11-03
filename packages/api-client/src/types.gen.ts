@@ -2180,6 +2180,20 @@ export type ApprovalBlockerOut = {
 };
 
 /**
+ * ApprovalRecordedOut
+ */
+export type ApprovalRecordedOut = {
+    /**
+     * Management Approval
+     */
+    management_approval: 'none' | 'sent_for_approval' | 'approved_by_management';
+    /**
+     * Recorded At
+     */
+    recorded_at: string;
+};
+
+/**
  * ApprovalRequestOut
  *
  * One `significant_risk` card over every pending significance and rebuttal proposal.
@@ -5451,6 +5465,26 @@ export type CheckOut = {
 };
 
 /**
+ * ChecklistAnswerIn
+ *
+ * 422 `reason_required` for N/A without a reason (the database refuses it too).
+ */
+export type ChecklistAnswerIn = {
+    /**
+     * Answer
+     */
+    answer: 'yes' | 'no' | 'na';
+    /**
+     * Note Ref
+     */
+    note_ref?: string | null;
+    /**
+     * Reason
+     */
+    reason?: string | null;
+};
+
+/**
  * ChecklistAppliesTo
  */
 export type ChecklistAppliesTo = {
@@ -5462,6 +5496,28 @@ export type ChecklistAppliesTo = {
      * Tax Year
      */
     tax_year: number;
+};
+
+/**
+ * ChecklistImportOut
+ */
+export type ChecklistImportOut = {
+    /**
+     * Dry Run
+     */
+    dry_run: boolean;
+    /**
+     * Problems
+     */
+    problems: Array<string>;
+    /**
+     * Template Id
+     */
+    template_id?: string | null;
+    /**
+     * Version
+     */
+    version?: number | null;
 };
 
 /**
@@ -5482,6 +5538,64 @@ export type ChecklistItem = {
      * Text
      */
     text: string;
+};
+
+/**
+ * ChecklistOut
+ */
+export type ChecklistOut = {
+    /**
+     * Answered
+     */
+    answered: number;
+    /**
+     * Items
+     */
+    items: Array<AbacusModulesReportingStatementsContractChecklistItemOut>;
+    /**
+     * Statement Document Id
+     */
+    statement_document_id: string;
+    /**
+     * Template Version Id
+     */
+    template_version_id?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
+ * ChecklistReviewIn
+ */
+export type ChecklistReviewIn = {
+    /**
+     * Item Keys
+     */
+    item_keys: Array<string>;
+};
+
+/**
+ * ChecklistTemplateVersionOut
+ */
+export type ChecklistTemplateVersionOut = {
+    /**
+     * Published At
+     */
+    published_at?: string | null;
+    /**
+     * Status
+     */
+    status: 'draft' | 'published';
+    /**
+     * Template Id
+     */
+    template_id: string;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**
@@ -10587,20 +10701,6 @@ export type DraftProblemOut = {
      * Field
      */
     field: string;
-};
-
-/**
- * DraftStartedOut
- */
-export type DraftStartedOut = {
-    /**
-     * Items
-     */
-    items: Array<string>;
-    /**
-     * Skipped
-     */
-    skipped: Array<string>;
 };
 
 /**
@@ -23274,6 +23374,44 @@ export type LineIn = {
 };
 
 /**
+ * LineItemOut
+ */
+export type LineItemOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Line Key
+     */
+    line_key: string;
+    /**
+     * Note Ref
+     */
+    note_ref?: string | null;
+    /**
+     * Position
+     */
+    position: number;
+    /**
+     * Section Key
+     */
+    section_key: string;
+    /**
+     * Statement Key
+     */
+    statement_key: string;
+    /**
+     * Values
+     */
+    values: Array<LinkedValueOut>;
+};
+
+/**
  * LineValueIn
  */
 export type LineValueIn = {
@@ -23285,6 +23423,28 @@ export type LineValueIn = {
      * Value
      */
     value: number | string;
+};
+
+/**
+ * LineageOut
+ *
+ * The verified sources behind one line (TB accounts, entries, the formula).
+ */
+export type LineageOut = {
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Line Item Id
+     */
+    line_item_id: string;
+    /**
+     * Sources
+     */
+    sources: Array<{
+        [key: string]: string;
+    }>;
 };
 
 /**
@@ -23414,6 +23574,44 @@ export type LinkedRefOut = {
      * Kind
      */
     kind: 'workpaper' | 'procedure_step' | 'k1_package';
+};
+
+/**
+ * LinkedValueOut
+ */
+export type LinkedValueOut = {
+    /**
+     * Citation Ids
+     */
+    citation_ids: Array<string>;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Off By
+     */
+    off_by?: string | null;
+    /**
+     * Override Reason
+     */
+    override_reason?: string | null;
+    /**
+     * Source
+     */
+    source: 'tb_linked' | 'formula' | 'override' | 'stale_override';
+    /**
+     * Ties
+     */
+    ties?: boolean | null;
+    /**
+     * Value
+     */
+    value: string;
+    /**
+     * Year
+     */
+    year: number;
 };
 
 /**
@@ -25148,6 +25346,18 @@ export type LogIntakeIn = {
      * Subject
      */
     subject: string;
+};
+
+/**
+ * ManagementApprovalIn
+ *
+ * Record mode: the signed approval the firm received, as evidence.
+ */
+export type ManagementApprovalIn = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
 };
 
 /**
@@ -37232,16 +37442,6 @@ export type SelectionSupportOut = {
 };
 
 /**
- * SendDraftIn
- */
-export type SendDraftIn = {
-    /**
-     * Note
-     */
-    note?: string | null;
-};
-
-/**
  * SendForSignatureOut
  */
 export type SendForSignatureOut = {
@@ -37377,6 +37577,20 @@ export type SendingDomainOut = {
      * Verified At
      */
     verified_at?: string | null;
+};
+
+/**
+ * SentDraftOut
+ */
+export type SentDraftOut = {
+    /**
+     * Approval Item Ref
+     */
+    approval_item_ref: string;
+    /**
+     * Deliverable Ref
+     */
+    deliverable_ref: string;
 };
 
 /**
@@ -40080,6 +40294,72 @@ export type StatementOut = {
      * Truncated
      */
     truncated: boolean;
+};
+
+/**
+ * StatementVersionOut
+ */
+export type StatementVersionOut = {
+    /**
+     * Content Hash
+     */
+    content_hash: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Drafted By Kind
+     */
+    drafted_by_kind: 'system' | 'human';
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Lines
+     */
+    lines: Array<LineItemOut>;
+    /**
+     * Out Of Date
+     */
+    out_of_date: boolean;
+    /**
+     * Source Snapshot Id
+     */
+    source_snapshot_id: string;
+    tie_out?: TieOutOut | null;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
+ * StatementsOut
+ */
+export type StatementsOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'statement.draft' | 'statement.tie_out' | 'statement.send_draft' | 'statement.record_management_approval' | 'disclosure_checklist.answer' | 'disclosure_checklist.review' | 'disclosure_checklist.export'>;
+    current?: StatementVersionOut | null;
+    /**
+     * Framework Key
+     */
+    framework_key?: string | null;
+    /**
+     * Management Approval
+     */
+    management_approval: 'none' | 'sent_for_approval' | 'approved_by_management';
+    /**
+     * Statement Document Id
+     */
+    statement_document_id?: string | null;
+    /**
+     * Status
+     */
+    status: 'draft' | 'in_review' | 'final' | 'signed_off';
 };
 
 /**
@@ -43029,6 +43309,40 @@ export type TieOutCheckOut = {
 };
 
 /**
+ * TieOutOut
+ *
+ * "63 of 63 tie"; `off` names each value that does not, its difference and the cause.
+ */
+export type TieOutOut = {
+    /**
+     * Engine Version
+     */
+    engine_version: string;
+    /**
+     * Inputs Hash
+     */
+    inputs_hash: string;
+    /**
+     * Off
+     */
+    off: Array<{
+        [key: string]: string;
+    }>;
+    /**
+     * Ran At
+     */
+    ran_at: string;
+    /**
+     * Tied
+     */
+    tied: number;
+    /**
+     * Total
+     */
+    total: number;
+};
+
+/**
  * TieOutTallyStatus
  */
 export type TieOutTallyStatus = 'tie' | 'off' | 'check' | 'pending' | 'ties_once_posted' | 'reconciled';
@@ -45691,6 +46005,30 @@ export type AbacusModulesAgentsRoutesCitationOut = {
 };
 
 /**
+ * DraftStartedOut
+ */
+export type AbacusModulesAgentsRoutesDraftStartedOut = {
+    /**
+     * Items
+     */
+    items: Array<string>;
+    /**
+     * Skipped
+     */
+    skipped: Array<string>;
+};
+
+/**
+ * SendDraftIn
+ */
+export type AbacusModulesAgentsRoutesSendDraftIn = {
+    /**
+     * Note
+     */
+    note?: string | null;
+};
+
+/**
  * ChecklistItemOut
  */
 export type AbacusModulesAssuranceCompletionRoutesChecklistItemOut = {
@@ -46299,6 +46637,76 @@ export type AbacusModulesReportingContractApprovalOut = {
      * By
      */
     by: string;
+};
+
+/**
+ * ChecklistItemOut
+ */
+export type AbacusModulesReportingStatementsContractChecklistItemOut = {
+    /**
+     * Answer
+     */
+    answer?: 'yes' | 'no' | 'na' | null;
+    /**
+     * Item Key
+     */
+    item_key: string;
+    /**
+     * Note Ref
+     */
+    note_ref?: string | null;
+    /**
+     * Reason
+     */
+    reason?: string | null;
+    /**
+     * Section
+     */
+    section: string;
+    /**
+     * State
+     */
+    state: 'empty' | 'suggested' | 'adopted' | 'answered' | 'reviewed';
+    /**
+     * Suggestion Id
+     */
+    suggestion_id?: string | null;
+    /**
+     * Text
+     */
+    text: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * DraftStartedOut
+ */
+export type AbacusModulesReportingStatementsContractDraftStartedOut = {
+    /**
+     * Run Id
+     */
+    run_id: string;
+};
+
+/**
+ * SendDraftIn
+ */
+export type AbacusModulesReportingStatementsContractSendDraftIn = {
+    /**
+     * Page Comments
+     */
+    page_comments?: boolean;
+    /**
+     * Recipient Contact Id
+     */
+    recipient_contact_id: string;
+    /**
+     * Watermark
+     */
+    watermark?: true;
 };
 
 /**
@@ -59743,6 +60151,126 @@ export type SetAccountsResponses = {
 
 export type SetAccountsResponse = SetAccountsResponses[keyof SetAccountsResponses];
 
+export type FsStatementsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/financial-statements';
+};
+
+export type FsStatementsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type FsStatementsError = FsStatementsErrors[keyof FsStatementsErrors];
+
+export type FsStatementsResponses = {
+    /**
+     * Successful Response
+     */
+    200: StatementsOut;
+};
+
+export type FsStatementsResponse = FsStatementsResponses[keyof FsStatementsResponses];
+
+export type StatementsDraftData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/financial-statements/draft';
+};
+
+export type StatementsDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type StatementsDraftError = StatementsDraftErrors[keyof StatementsDraftErrors];
+
+export type StatementsDraftResponses = {
+    /**
+     * Successful Response
+     */
+    202: AbacusModulesReportingStatementsContractDraftStartedOut;
+};
+
+export type StatementsDraftResponse = StatementsDraftResponses[keyof StatementsDraftResponses];
+
 export type FindingsData = {
     body?: never;
     headers?: {
@@ -60362,7 +60890,7 @@ export type PreviewFollowUpResponses = {
 export type PreviewFollowUpResponse = PreviewFollowUpResponses[keyof PreviewFollowUpResponses];
 
 export type SendDraftData = {
-    body: SendDraftIn;
+    body: AbacusModulesAgentsRoutesSendDraftIn;
     headers?: {
         /**
          * Authorization
@@ -66565,7 +67093,7 @@ export type DraftGuidanceResponses = {
     /**
      * Successful Response
      */
-    202: DraftStartedOut;
+    202: AbacusModulesAgentsRoutesDraftStartedOut;
 };
 
 export type DraftGuidanceResponse = DraftGuidanceResponses[keyof DraftGuidanceResponses];
@@ -89534,6 +90062,138 @@ export type MeteringResponses = {
 
 export type MeteringResponse = MeteringResponses[keyof MeteringResponses];
 
+export type ChecklistPublishData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Template Id
+         */
+        template_id: string;
+        /**
+         * Version
+         */
+        version: number;
+    };
+    query?: never;
+    url: '/v1/methodology/disclosure-checklists/{template_id}/versions/{version}/publish';
+};
+
+export type ChecklistPublishErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ChecklistPublishError = ChecklistPublishErrors[keyof ChecklistPublishErrors];
+
+export type ChecklistPublishResponses = {
+    /**
+     * Successful Response
+     */
+    200: ChecklistTemplateVersionOut;
+};
+
+export type ChecklistPublishResponse = ChecklistPublishResponses[keyof ChecklistPublishResponses];
+
+export type ChecklistImportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * Framework Key
+         */
+        framework_key: string;
+        /**
+         * Dry Run
+         */
+        dry_run?: boolean;
+    };
+    url: '/v1/methodology/disclosure-checklists:import';
+};
+
+export type ChecklistImportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ChecklistImportError = ChecklistImportErrors[keyof ChecklistImportErrors];
+
+export type ChecklistImportResponses = {
+    /**
+     * Successful Response
+     */
+    200: ChecklistImportOut;
+};
+
+export type ChecklistImportResponse = ChecklistImportResponses[keyof ChecklistImportResponses];
+
 export type CreateImportData = {
     body: MethodologyImportIn;
     headers: {
@@ -101676,6 +102336,624 @@ export type PublishVersionResponses = {
 
 export type PublishVersionResponse = PublishVersionResponses[keyof PublishVersionResponses];
 
+export type ChecklistData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Document Id
+         */
+        document_id: string;
+    };
+    query?: never;
+    url: '/v1/statement-documents/{document_id}/disclosure-checklist';
+};
+
+export type ChecklistErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ChecklistError = ChecklistErrors[keyof ChecklistErrors];
+
+export type ChecklistResponses = {
+    /**
+     * Successful Response
+     */
+    200: ChecklistOut;
+};
+
+export type ChecklistResponse = ChecklistResponses[keyof ChecklistResponses];
+
+export type ChecklistExportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Document Id
+         */
+        document_id: string;
+    };
+    query?: never;
+    url: '/v1/statement-documents/{document_id}/disclosure-checklist/export.xlsx';
+};
+
+export type ChecklistExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ChecklistExportError = ChecklistExportErrors[keyof ChecklistExportErrors];
+
+export type ChecklistExportResponses = {
+    /**
+     * Response Checklist Export
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type ChecklistExportResponse = ChecklistExportResponses[keyof ChecklistExportResponses];
+
+export type ChecklistAnswerData = {
+    body: ChecklistAnswerIn;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': number;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Document Id
+         */
+        document_id: string;
+        /**
+         * Item Key
+         */
+        item_key: string;
+    };
+    query?: never;
+    url: '/v1/statement-documents/{document_id}/disclosure-checklist/items/{item_key}';
+};
+
+export type ChecklistAnswerErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ChecklistAnswerError = ChecklistAnswerErrors[keyof ChecklistAnswerErrors];
+
+export type ChecklistAnswerResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesReportingStatementsContractChecklistItemOut;
+};
+
+export type ChecklistAnswerResponse = ChecklistAnswerResponses[keyof ChecklistAnswerResponses];
+
+export type ChecklistAdoptData = {
+    body?: never;
+    headers: {
+        /**
+         * If-Match
+         */
+        'If-Match': number;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Document Id
+         */
+        document_id: string;
+        /**
+         * Item Key
+         */
+        item_key: string;
+    };
+    query?: never;
+    url: '/v1/statement-documents/{document_id}/disclosure-checklist/items/{item_key}/adopt';
+};
+
+export type ChecklistAdoptErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ChecklistAdoptError = ChecklistAdoptErrors[keyof ChecklistAdoptErrors];
+
+export type ChecklistAdoptResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesReportingStatementsContractChecklistItemOut;
+};
+
+export type ChecklistAdoptResponse = ChecklistAdoptResponses[keyof ChecklistAdoptResponses];
+
+export type ChecklistReviewData = {
+    body: ChecklistReviewIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Document Id
+         */
+        document_id: string;
+    };
+    query?: never;
+    url: '/v1/statement-documents/{document_id}/disclosure-checklist/items:review';
+};
+
+export type ChecklistReviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ChecklistReviewError = ChecklistReviewErrors[keyof ChecklistReviewErrors];
+
+export type ChecklistReviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: ChecklistOut;
+};
+
+export type ChecklistReviewResponse = ChecklistReviewResponses[keyof ChecklistReviewResponses];
+
+export type LineageData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+        /**
+         * Line Id
+         */
+        line_id: string;
+    };
+    query?: never;
+    url: '/v1/statement-versions/{version_id}/line-items/{line_id}/lineage';
+};
+
+export type LineageErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type LineageError = LineageErrors[keyof LineageErrors];
+
+export type LineageResponses = {
+    /**
+     * Successful Response
+     */
+    200: LineageOut;
+};
+
+export type LineageResponse = LineageResponses[keyof LineageResponses];
+
+export type ManagementApprovalData = {
+    body: ManagementApprovalIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/statement-versions/{version_id}/management-approval:record';
+};
+
+export type ManagementApprovalErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ManagementApprovalError = ManagementApprovalErrors[keyof ManagementApprovalErrors];
+
+export type ManagementApprovalResponses = {
+    /**
+     * Successful Response
+     */
+    200: ApprovalRecordedOut;
+};
+
+export type ManagementApprovalResponse = ManagementApprovalResponses[keyof ManagementApprovalResponses];
+
+export type FsSendDraftData = {
+    body: AbacusModulesReportingStatementsContractSendDraftIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/statement-versions/{version_id}/send-draft';
+};
+
+export type FsSendDraftErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type FsSendDraftError = FsSendDraftErrors[keyof FsSendDraftErrors];
+
+export type FsSendDraftResponses = {
+    /**
+     * Successful Response
+     */
+    200: SentDraftOut;
+};
+
+export type FsSendDraftResponse = FsSendDraftResponses[keyof FsSendDraftResponses];
+
+export type TieOutResultData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/statement-versions/{version_id}/tie-out';
+};
+
+export type TieOutResultErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TieOutResultError = TieOutResultErrors[keyof TieOutResultErrors];
+
+export type TieOutResultResponses = {
+    /**
+     * Successful Response
+     */
+    200: TieOutOut;
+};
+
+export type TieOutResultResponse = TieOutResultResponses[keyof TieOutResultResponses];
+
+export type TieOutData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/v1/statement-versions/{version_id}/tie-out';
+};
+
+export type TieOutErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TieOutError = TieOutErrors[keyof TieOutErrors];
+
+export type TieOutResponses = {
+    /**
+     * Successful Response
+     */
+    202: TieOutOut;
+};
+
+export type TieOutResponse = TieOutResponses[keyof TieOutResponses];
+
 export type SuggestionAdoptData = {
     body: AdoptSuggestionIn;
     headers?: {
@@ -103640,7 +104918,7 @@ export type BulkAssignResponses = {
 
 export type BulkAssignResponse = BulkAssignResponses[keyof BulkAssignResponses];
 
-export type Estimates2Data = {
+export type TaxEstimatesData = {
     body?: never;
     headers?: {
         /**
@@ -103678,7 +104956,7 @@ export type Estimates2Data = {
     url: '/v1/tax/estimates';
 };
 
-export type Estimates2Errors = {
+export type TaxEstimatesErrors = {
     /**
      * Not authenticated
      */
@@ -103701,16 +104979,16 @@ export type Estimates2Errors = {
     501: ErrorOut;
 };
 
-export type Estimates2Error = Estimates2Errors[keyof Estimates2Errors];
+export type TaxEstimatesError = TaxEstimatesErrors[keyof TaxEstimatesErrors];
 
-export type Estimates2Responses = {
+export type TaxEstimatesResponses = {
     /**
      * Successful Response
      */
     200: ListPageEstimateRowOut;
 };
 
-export type Estimates2Response = Estimates2Responses[keyof Estimates2Responses];
+export type TaxEstimatesResponse = TaxEstimatesResponses[keyof TaxEstimatesResponses];
 
 export type EstimatesExportData = {
     body?: never;

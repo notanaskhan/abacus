@@ -199,6 +199,11 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "answer_effects": "t03_frozen_row",  # 0655 (T-03-T03)
     "walkthroughs": "walkthroughs_immutable",  # 0657 (A-04-T25)
     "ebp_late_remittance_events": "ebp_late_remittance_events_immutable",  # 0658 (A-05-T26)
+    "statement_versions": "statement_rows_immutable",  # 0660 (A-06-T19)
+    "line_items": "statement_rows_immutable",  # 0660 (A-06-T19)
+    "linked_values": "statement_rows_immutable",  # 0660 (A-06-T19)
+    "tie_out_runs": "statement_rows_immutable",  # 0660 (A-06-T19)
+    "statement_approvals": "statement_rows_immutable",  # 0660 (A-06-T19)
 }
 # Update columns for tables outside the modules (TASK-008); modules declare theirs.
 _PLATFORM_UPDATE_COLUMNS: dict[str, frozenset[str]] = {

@@ -15,3 +15,17 @@ actions:
   report_template.read:          {firm_admin: allow, practice_leader: allow, quality_partner: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, specialist: allow, client_service: allow, agent: deny, system: deny}   # list, version, SAMPLE preview
   report_template.import:        {firm_admin: allow, practice_leader: allow, quality_partner: allow, agent: deny, system: deny}   # dry run or draft version; never a migration
   report_template.publish:       {practice_leader: allow, quality_partner: allow, firm_admin: deny, agent: deny, system: deny, mfa_recent: required}   # human-only with a fresh second factor; a different person from the importer (the service's check)
+  # --- Statements v1 and the disclosure checklist (A-06-T19, DEC-2209; A-06 §4.3; AUD-20). Reads
+  # are the team's and reviewers'; the agent reads at a run's task_scope and drafts only through
+  # the deterministic draft run (never a send or an approval). Sending a draft and recording
+  # management's approval are a person's (I-AGENT-NEVER).
+  statement.read:                    {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: task_scope, system: deny, independence: required}   # GET …/financial-statements, lineage, tie-out
+  statement.draft:                   {engagement_partner: allow, manager: allow, senior: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny, independence: required}   # POST …/financial-statements/draft (202, code drafts)
+  statement.tie_out:                 {engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny, independence: required}   # POST /v1/statement-versions/{id}/tie-out
+  statement.send_draft:              {engagement_partner: allow, manager: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny, independence: required}   # POST …/send-draft (C10 deliverable + C18 item)
+  statement.record_management_approval: {engagement_partner: allow, manager: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny, independence: required}   # POST …/management-approval:record (record mode)
+  disclosure_checklist.read:         {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: task_scope, system: deny, independence: required}
+  disclosure_checklist.answer:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny, independence: required}   # PUT …/items/{key}, POST …/adopt
+  disclosure_checklist.review:       {engagement_partner: allow, manager: allow, senior: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny, independence: required}   # POST …/items:review
+  disclosure_checklist.export:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny, independence: required}   # GET …/export.xlsx
+

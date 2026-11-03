@@ -37,3 +37,26 @@
 
 Every operation answers 404 to a client principal, 404 with the flag off and 501
 `not_implemented` until its task.
+
+## Statements v1 (A-06-T19, 2026-11-03, DEC-2209)
+Stub behind `reporting.fs_disclosure` (404 off, 501 on until A-06-T25). Module:
+`reporting/statements_contract.py`. Tables: migration 0660, DEC-80's canonical model.
+
+| Operation | Method and path | Action |
+|---|---|---|
+| Current version tree with tie counts · code's draft (202) | `GET /v1/engagements/{id}/financial-statements` · `POST …/draft` | `statement.read` · `statement.draft` |
+| A line's verified sources | `GET /v1/statement-versions/{id}/line-items/{line_id}/lineage` | `statement.read` |
+| Tie-out run (202) and result | `POST /v1/statement-versions/{id}/tie-out` · `GET …/tie-out` | `statement.tie_out` · `statement.read` |
+| Disclosure checklist: read · answer · adopt · review · export | `GET /v1/statement-documents/{id}/disclosure-checklist` · `PUT …/items/{key}` · `POST …/items/{key}/adopt` · `POST …/items:review` · `GET …/export.xlsx` | `disclosure_checklist.read/answer/review/export` |
+| Send the DRAFT to the client (C10 deliverable + C18 `fs_draft`) | `POST /v1/statement-versions/{id}/send-draft` | `statement.send_draft` |
+| Record management's approval (record mode) | `POST /v1/statement-versions/{id}/management-approval:record` | `statement.record_management_approval` |
+| Template import (dry run first) · publish | `POST /v1/methodology/disclosure-checklists:import` · `POST …/{id}/versions/{v}/publish` | `disclosure_checklist_template.import` · `.publish` |
+
+- **Database rules.**
+  - A value whose source is `override` or `stale_override` needs `override_reason`.
+  - An `na` answer needs its `reason`.
+  - Versions, lines, values, tie-outs and approvals are insert-only (`statement_rows_immutable`).
+  - An approval row is the session's own human actor.
+  - A record-mode management approval needs its evidence.
+- **Sends and approvals.** Sending a draft and recording management's approval are a person's
+  acts (agent deny). Client approval is R-02's C18, never these routes.

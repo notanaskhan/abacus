@@ -64,7 +64,9 @@ publish_template = _publish_template
 RenderingRefused = _RenderingRefused
 
 # The routers the API mounts, in order (P-39; F-03-T07).
-ROUTERS = (templates_router, documents_router)
+from abacus.modules.reporting.statements_contract import statements_router  # noqa: E402
+
+ROUTERS = (templates_router, documents_router, statements_router)  # A-06-T19: statements stub
 
 KINDS: frozenset[str] = frozenset(get_args(GeneratedDocumentKind))
 LAYOUTS: frozenset[str] = frozenset(get_args(LayoutKey))

@@ -19,3 +19,8 @@ actions:
   firm_standard.draft:        {firm_partner: allow, owner_of_target: required, client_admin: deny, client_contributor: deny, agent: deny, system: deny}   # POST/PATCH/DELETE …/versions: draft from current, edit, discard
   firm_standard.import:       {practice_leader: allow, quality_partner: allow, firm_partner: allow, client_admin: deny, client_contributor: deny, agent: deny, system: deny}   # POST …/imports: to a draft, never a publish; one standard's import is its owner's (service)
   firm_standard.publish:      {firm_partner: allow, owner_of_target: required, client_admin: deny, client_contributor: deny, agent: deny, system: deny, mfa_recent: required}   # POST …/versions/{v}/publish: human only (CHECK published_actor_kind = 'human')
+  # --- Disclosure-checklist templates (A-06-T19, DEC-2209): firm content imported and published
+  # by a person (licensed text only under ADR-056).
+  disclosure_checklist_template.import:  {firm_admin: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # POST /v1/methodology/disclosure-checklists:import
+  disclosure_checklist_template.publish: {quality_partner: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny, mfa_recent: required}   # POST …/{id}/versions/{v}/publish
+
