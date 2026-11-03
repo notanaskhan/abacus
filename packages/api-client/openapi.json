@@ -24819,6 +24819,288 @@
         "title": "EligibilityCheckOut",
         "type": "object"
       },
+      "EligibilitySampleOut": {
+        "description": "EBP-03's sample read: the rows, the tallies and the rungs the header shows.",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "exceptions": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Exceptions",
+            "type": "integer"
+          },
+          "needs_human": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Needs Human",
+            "type": "integer"
+          },
+          "prepared_by": {
+            "anyOf": [
+              {
+                "maxLength": 4,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Prepared By"
+          },
+          "reviewed_by": {
+            "anyOf": [
+              {
+                "maxLength": 4,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reviewed By"
+          },
+          "rows": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/EligibilitySampleRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "test_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Test Id",
+            "type": "string"
+          },
+          "version_no": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "test_id",
+          "version_no",
+          "rows",
+          "exceptions",
+          "needs_human",
+          "allowed_actions"
+        ],
+        "title": "EligibilitySampleOut",
+        "type": "object"
+      },
+      "EligibilitySampleRowOut": {
+        "description": "One sampled participant in A-03's order: census against HR, and code's entry date.",
+        "properties": {
+          "census_hire": {
+            "cls": "confidential",
+            "format": "date",
+            "title": "Census Hire",
+            "type": "string"
+          },
+          "census_name": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "title": "Census Name",
+            "type": "string"
+          },
+          "dob_masked": {
+            "cls": "internal",
+            "const": "\u2022\u2022/\u2022\u2022/\u2022\u2022\u2022\u2022",
+            "title": "Dob Masked",
+            "type": "string"
+          },
+          "eligible_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Eligible On"
+          },
+          "entry_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Entry On"
+          },
+          "hr_first_name": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Hr First Name"
+          },
+          "hr_hire": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Hr Hire"
+          },
+          "hr_record_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Hr Record Version Id"
+          },
+          "item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Item Id",
+            "type": "string"
+          },
+          "missed_deferral": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Missed Deferral"
+          },
+          "missed_match": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Missed Match"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Note"
+          },
+          "participant_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Participant Id",
+            "type": "string"
+          },
+          "position": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Position",
+            "type": "integer"
+          },
+          "rate_label": {
+            "cls": "confidential",
+            "maxLength": 120,
+            "title": "Rate Label",
+            "type": "string"
+          },
+          "record_key": {
+            "cls": "internal",
+            "maxLength": 40,
+            "title": "Record Key",
+            "type": "string"
+          },
+          "recordkeeper_entry_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Recordkeeper Entry On"
+          },
+          "result": {
+            "cls": "internal",
+            "enum": [
+              "not_started",
+              "agent_tested",
+              "needs_human",
+              "pass",
+              "exception",
+              "no_effect"
+            ],
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "position",
+          "item_id",
+          "participant_id",
+          "record_key",
+          "census_name",
+          "hr_first_name",
+          "dob_masked",
+          "census_hire",
+          "hr_hire",
+          "eligible_on",
+          "entry_on",
+          "recordkeeper_entry_on",
+          "rate_label",
+          "result"
+        ],
+        "title": "EligibilitySampleRowOut",
+        "type": "object"
+      },
       "EmailPreviewIn": {
         "additionalProperties": false,
         "properties": {
@@ -102657,6 +102939,123 @@
           }
         },
         "summary": "Ebp Eligibility Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "ebp.read"
+      }
+    },
+    "/v1/audits/{work_item_id}/ebp/eligibility/sample": {
+      "get": {
+        "description": "EBP-03's grid (A-05-T23 contract first, DEC-2225): 501 until the sample service lands.",
+        "operationId": "ebp_eligibility_sample",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EligibilitySampleOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Ebp Eligibility Sample Route",
         "tags": [
           "assurance"
         ],

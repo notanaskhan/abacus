@@ -11616,6 +11616,126 @@ export type EligibilityCheckOut = {
 };
 
 /**
+ * EligibilitySampleOut
+ *
+ * EBP-03's sample read: the rows, the tallies and the rungs the header shows.
+ */
+export type EligibilitySampleOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<string>;
+    /**
+     * Exceptions
+     */
+    exceptions: number;
+    /**
+     * Needs Human
+     */
+    needs_human: number;
+    /**
+     * Prepared By
+     */
+    prepared_by?: string | null;
+    /**
+     * Reviewed By
+     */
+    reviewed_by?: string | null;
+    /**
+     * Rows
+     */
+    rows: Array<EligibilitySampleRowOut>;
+    /**
+     * Test Id
+     */
+    test_id: string;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
+ * EligibilitySampleRowOut
+ *
+ * One sampled participant in A-03's order: census against HR, and code's entry date.
+ */
+export type EligibilitySampleRowOut = {
+    /**
+     * Census Hire
+     */
+    census_hire: string;
+    /**
+     * Census Name
+     */
+    census_name: string;
+    /**
+     * Dob Masked
+     */
+    dob_masked: '••/••/••••';
+    /**
+     * Eligible On
+     */
+    eligible_on: string | null;
+    /**
+     * Entry On
+     */
+    entry_on: string | null;
+    /**
+     * Hr First Name
+     */
+    hr_first_name: string | null;
+    /**
+     * Hr Hire
+     */
+    hr_hire: string | null;
+    /**
+     * Hr Record Version Id
+     */
+    hr_record_version_id?: string | null;
+    /**
+     * Item Id
+     */
+    item_id: string;
+    /**
+     * Missed Deferral
+     */
+    missed_deferral?: string | null;
+    /**
+     * Missed Match
+     */
+    missed_match?: string | null;
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Participant Id
+     */
+    participant_id: string;
+    /**
+     * Position
+     */
+    position: number;
+    /**
+     * Rate Label
+     */
+    rate_label: string;
+    /**
+     * Record Key
+     */
+    record_key: string;
+    /**
+     * Recordkeeper Entry On
+     */
+    recordkeeper_entry_on: string | null;
+    /**
+     * Result
+     */
+    result: 'not_started' | 'agent_tested' | 'needs_human' | 'pass' | 'exception' | 'no_effect';
+};
+
+/**
  * EmailPreviewIn
  */
 export type EmailPreviewIn = {
@@ -48203,6 +48323,62 @@ export type EbpEligibilityResponses = {
 };
 
 export type EbpEligibilityResponse = EbpEligibilityResponses[keyof EbpEligibilityResponses];
+
+export type EbpEligibilitySampleData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/ebp/eligibility/sample';
+};
+
+export type EbpEligibilitySampleErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EbpEligibilitySampleError = EbpEligibilitySampleErrors[keyof EbpEligibilitySampleErrors];
+
+export type EbpEligibilitySampleResponses = {
+    /**
+     * Successful Response
+     */
+    200: EligibilitySampleOut;
+};
+
+export type EbpEligibilitySampleResponse = EbpEligibilitySampleResponses[keyof EbpEligibilitySampleResponses];
 
 export type EbpForm5500Data = {
     body?: never;

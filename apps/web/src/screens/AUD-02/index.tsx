@@ -39,8 +39,11 @@ import { type TrialBalanceOptions, useTrialBalancePane } from "../AUD-06/TrialBa
 import { MaterialityDock, useMaterialityCanvas } from "../AUD-07/Materiality";
 import { usePlanProfileCanvas } from "../EBP-01/PlanProfile";
 import { useProvisionsCanvas } from "../EBP-02/Provisions";
+import { useEligibilityCanvas } from "../EBP-03/Eligibility";
 import { type SampleSelectionOptions, useSampleSelectionCanvas } from "../AUD-11/SampleSelection";
 import { ViewerPane } from "../SHL-08";
+import { useOpenOverlay } from "../../app-core/open";
+import { ov } from "../../routes/to";
 import { COPY } from "./copy";
 
 // AUD-02 · Audit cockpit (A-01-T12; docs/screens/AUD-02.md): F-05's T2 RecordCockpit through the
@@ -104,6 +107,7 @@ const SAMPLE_SELECTION = "sample_selection";
 const MATERIALITY = "materiality";
 const PLAN_PROFILE = "ebp_01";
 const PLAN_REVIEW = "ebp_02";
+const ELIGIBILITY = "ebp_03"; // A-05-T23: Testing › Eligibility Testing
 
 type Sort = "missing_first" | "received_first";
 
@@ -244,6 +248,17 @@ function Cockpit({
     active: reviewOpen,
     ...(planReviewVersion === undefined ? {} : { version: planReviewVersion }),
   });
+  // EBP-03 (A-05-T23): Testing › Eligibility Testing, behind `ebp.modules`; a row opens its HR
+  // record in the viewer dock, and Adopt / Sign off open SHL-12 on the attribute test.
+  const eligibilityOpen = selected === ELIGIBILITY;
+  const openOverlay = useOpenOverlay();
+  const eligibility = useEligibilityCanvas(cockpit.work_item_id, {
+    active: eligibilityOpen,
+    onDock: (versionId) => onDock?.("viewer", versionId),
+    onSignOff: (testId, level) => {
+      openOverlay(ov.SHL12("attribute_test", testId, level));
+    },
+  });
   const openDoc = (r: SourceDocumentRowOut): void => {
     const version = r.latest_upload?.evidence_version_id ?? null;
     if (version !== null) onDock?.("viewer", version);
@@ -260,6 +275,8 @@ function Cockpit({
     canvas = planProfile;
   } else if (reviewOpen) {
     canvas = planReview;
+  } else if (eligibilityOpen) {
+    canvas = eligibility;
   } else if (row?.section_state === "blocked_on_decision" && row.blocked_on_name != null) {
     canvas = {
       title: row.title,
