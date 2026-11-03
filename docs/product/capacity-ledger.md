@@ -159,3 +159,12 @@ The retros are `docs/ops/pilot/retros/m14-ops-retro-ay.md` and `m14-ops-retro-n.
 - Q-04-T088 (N): change failure rate has no denominator (0 production releases); `main`'s `ci` had
   0 green of 48 runs since 2026-10-30; 0 hotfixes; 0 pages per week. Fractional SRE: kept per ADR-100,
   contracted at the first real go-live (DEC-2082).
+
+## Q-03 reserve review 2027 Q3 (Q-03-T162; 2026-11-03)
+
+S19-S25: 51 rows, 65.75 te planned; 2.75 te merged, 7.00 te in review (the S25 batch's lane rows),
+56.00 te not traced (an upper bound on what is undone). Escaped defects: 22 in S25, mostly
+integration and review gaps found at the batch. 2027 Q4 lanes: integration, escaped-defect and
+ADR-078 catch-up kept; window hardening held until the first live firm; pen tests deferred
+(DEC-1389); load, drills and SOC 2 waiting on environments. The review is
+`docs/quality/reserve-review-2027-q3.md`.
