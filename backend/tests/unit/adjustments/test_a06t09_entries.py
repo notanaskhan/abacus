@@ -19,7 +19,7 @@ from abacus.modules.adjustments import entries
 from abacus.modules.adjustments.entries import NewLine, UnbalancedEntry, balance
 from abacus.modules.adjustments.registry import INSERT_COLUMNS, UPDATE_COLUMNS
 from abacus.modules.ledger.trial_balances import (
-    _ADJUSTMENT_SOURCES,  # pyright: ignore[reportPrivateUsage]
+    _ADJUSTMENT_SOURCES,  # pyright: ignore[reportPrivateUsage] -- the registry under test
 )
 
 

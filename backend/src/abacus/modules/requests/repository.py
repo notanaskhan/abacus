@@ -29,7 +29,7 @@ from sqlalchemy.sql.elements import ColumnElement
 
 from abacus.kernel.errors import DomainConflict
 from abacus.kernel.listing import Position, capped_total, keyset, status_counts
-from abacus.modules.identity.api import AuthContext, visible, visible_items
+from abacus.modules.identity.api import Actor, AuthContext, visible, visible_items
 from abacus.modules.requests.guidance import Guidance
 from abacus.modules.requests.models import (
     BinderActivity,
@@ -146,7 +146,7 @@ async def insert_request_item(
 
 
 async def list_request_items(
-    session: AsyncSession, ctx: AuthContext, engagement_id: UUID
+    session: AsyncSession, ctx: Actor, engagement_id: UUID
 ) -> Sequence[tuple[RequestItem, UUID | None]]:
     """Each visible item of the engagement with the evidence version that last fulfilled it."""
     latest = (

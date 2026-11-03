@@ -39,7 +39,9 @@ describe.each(["findings", "misstatements", "review-notes", "fs-disclosure"] as 
     it("renders the audit bar and the planned body, Not built yet", async () => {
       show(tab);
       await waitFor(() => {
-        expect(document.querySelector(`[data-screen='evaluation'][data-tab='${tab}']`)).not.toBeNull();
+        expect(
+          document.querySelector(`[data-screen='evaluation'][data-tab='${tab}']`),
+        ).not.toBeNull();
         expect(document.body.textContent).toContain("Not built yet");
       });
     });

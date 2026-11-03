@@ -60,6 +60,12 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.completion.AdjustmentState
     summary: Approve once; record the client's answer once, after approval.
+  adopt_through_suggestion:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.fraud_brainstorm.AdoptThroughSuggestion
+    summary: A suggestion is adopted through C3's `POST /v1/suggestions/{id}/adopt`, which calls the
+      `fraud_minutes` applier, so the adoption is the person's recorded act (ADR-161).
   against_other_template:
     status: 422
     raised_by:
@@ -698,6 +704,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.connections.ledger_import.EmptyFile
+  engagement_archive_locked:
+    status: 422
+    raised_by:
+    - abacus.modules.review.slots.ArchiveLockedRefused
+    summary: 'The engagement''s file is archive-locked: the review record is closed (A-07).'
   engagement_archived:
     status: 409
     raised_by:
@@ -731,6 +742,10 @@ codes:
     raised_by:
     - abacus.modules.engagements.drafts.EntityOutsideClient
     summary: The client entity is not one of the draft's client's entities.
+  entry_not_sendable:
+    status: 422
+    raised_by:
+    - abacus.modules.adjustments.decisions.EntryNotSendable
   envelope_exists:
     status: 409
     raised_by:
@@ -763,6 +778,11 @@ codes:
     raised_by:
     - abacus.modules.engagements.team_errors.EqrApproverOnEngagement
     summary: The EQR's eligibility is approved by a quality owner with no role on this engagement.
+  eqr_must_be_excluded:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.fraud_brainstorm.EqrMustBeExcluded
+    summary: The engagement's EQR is never an attendee of the fraud brainstorm (AU-C 220).
   eqr_not_eligible:
     status: 409
     raised_by:
@@ -954,6 +974,10 @@ codes:
     raised_by:
     - abacus.modules.agents.follow_up_drafts.FollowUpV2Only
     summary: 'This follow-up was drafted from a binder: send it from the binder''s follow-up sheet.'
+  fraud_session_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.fraud_brainstorm.SessionInvalid
   gate_not_open:
     status: 409
     raised_by:
@@ -1083,6 +1107,12 @@ codes:
     raised_by:
     - abacus.modules.tax.engine_import.KindNotBuilt
     summary: '422: PDFs and acknowledgements arrive with the delivery and e-file tasks.'
+  import_map_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.ebp_imports.ImportMapInvalid
+    summary: 'The column map names a field this kind does not have, misses a required one, or names a
+      header the file does not carry (facts: the field names, never cell values).'
   import_not_parsing:
     status: 409
     raised_by:
@@ -1092,6 +1122,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.tax.engine_import.ImportPending
+  import_refused:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.ebp_imports.ImportRefused
+    summary: The import was recorded as refused; `facts` carry the code and the differences.
   import_row_invalid:
     status: 422
     raised_by:
@@ -1103,6 +1138,10 @@ codes:
     raised_by:
     - abacus.modules.signatures.imports.ImportScopeMismatch
     summary: The engagement, work item or a signer belongs to another client (`facts.field`).
+  import_unreadable:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.ebp_imports.ImportUnreadable
   importer_not_enabled:
     status: 409
     raised_by:
@@ -1459,6 +1498,15 @@ codes:
     - abacus.modules.signatures.portal.MfaRequired
     - abacus.modules.tax.k1_portal.K1MfaRequired
     summary: 'K-1s carry amounts (TRI): the portal session''s second step first (DEC-34).'
+  minutes_changed:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.fraud_brainstorm.MinutesChanged
+    summary: 'The minutes changed since the partner read them: approve the current hash.'
+  minutes_not_awaiting_approval:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.fraud_brainstorm.NothingToApprove
   mode_not_for_paper:
     status: 409
     raised_by:
@@ -1684,6 +1732,11 @@ codes:
     raised_by:
     - abacus.modules.assurance.materiality.NothingDecided
     summary: A reassessment needs a decided materiality.
+  nothing_pending:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.risks.NothingPending
+    summary: No significance or rebuttal waits for the partner.
   nothing_to_approve:
     status: 409
     raised_by:
@@ -1883,6 +1936,10 @@ codes:
     - abacus.modules.assurance.ebp_plan.PlanNumberInvalid
     summary: 'Not a Form 5500 plan number (line 1b): three digits 001 to 999, never the recordkeeper''s
       plan ID; `facts.reason` and `facts.helper` say which and where to look.'
+  plan_review_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.ebp_provisions.ReviewInvalid
   planning_invalid:
     status: 422
     raised_by:
@@ -1972,6 +2029,10 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.fieldwork.service.ProcedureBusy
+  projection_unavailable:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.findings.ProjectionUnavailable
   proposal_changed:
     status: 409
     raised_by:
@@ -2327,6 +2388,12 @@ codes:
     raised_by:
     - abacus.modules.requests.comments.SharingUnavailable
     summary: No scope check is registered, so nothing a firm member writes can be shared (D1).
+  sign_off_blocked:
+    status: 409
+    raised_by:
+    - abacus.modules.review.sign_offs.SignOffBlocked
+    summary: 'The target''s owner says it is not ready (A-05-T16: EBP-02 with provisions unverified);
+      `facts.reason` is the owner''s code and `facts.count` what is left.'
   sign_off_invalid:
     status: 422
     raised_by:
@@ -2698,14 +2765,25 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.ledger.trial_balances.TrialBalanceInvalid
+  unbalanced_entry:
+    status: 422
+    raised_by:
+    - abacus.modules.adjustments.entries.UnbalancedEntry
+    summary: An entry's debits and credits differ (or a line has both or neither side).
   uncited_change:
     status: 422
     raised_by:
     - abacus.modules.review.sign_offs.UncitedChange
     summary: 'R-SO-6: an agent value carries no citation (INV-2).'
+  uncited_finding:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.findings.UncitedFinding
+    summary: An agent's finding without a verified citation is never recorded (INV-2).
   undo_window_closed:
     status: 409
     raised_by:
+    - abacus.modules.adjustments.decisions.UndoWindowClosed
     - abacus.modules.agents.follow_up_drafts.FollowUpUndoClosed
     - abacus.modules.agents.proposal_undo.UndoWindowClosed
     - abacus.modules.evidence.exports.ExportUndoClosed
@@ -2791,6 +2869,11 @@ codes:
     raised_by:
     - abacus.modules.assurance.mapping.Unmapped
     summary: The preparer signs a mapping only when every account is mapped.
+  unmasked_model_input:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.ebp_attribute.UnmaskedModelInput
+    summary: 'A mode input carried an SSN pattern or a participant''s date of birth: refused, no run.'
   unregistered_kind:
     status: 422
     raised_by:
@@ -2831,12 +2914,15 @@ codes:
   version_conflict:
     status: 409
     raised_by:
+    - abacus.modules.adjustments.decisions.EntriesMoved
     - abacus.modules.assurance.ebp_plan.PlanMoved
+    - abacus.modules.assurance.findings.FindingMoved
+    - abacus.modules.assurance.fraud_brainstorm.SessionMoved
     - abacus.modules.assurance.risks.RiskMoved
     - abacus.modules.assurance.service_orgs.OrganizationMoved
     - abacus.modules.workpapers.core.VersionConflict
     - abacus.modules.workpapers.procedures.ProcedureMoved
-    summary: The paper moved on since the caller read it (AC1.6).
+    summary: An entry changed since the person read it (its version) or is in another state.
   version_frozen:
     status: 409
     raised_by:

@@ -1,8 +1,8 @@
 ---
 id: TASK-3028
 title: K-01-T25 J01 methodology steps and KNW-02 journey
-spec: SPEC-500
-acceptance_criteria: [KNW-02, KNW-03]
+spec: SPEC-000  # K-01-T25 row; K-01 §3.3, §3.5 (KNW-02, KNW-03)
+acceptance_criteria: [AC-1]
 risk_zone: green
 status: in-review
 epic: K-01

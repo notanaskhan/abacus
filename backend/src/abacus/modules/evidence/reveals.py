@@ -361,9 +361,24 @@ async def reveal_field(
         tx.record(
             "pii.revealed",
             target=Target("engagement", engagement_id),
-            after=Ref(reveal_id=row.id, field=field_ref.rsplit(":", 1)[-1]),
+            after=Ref(reveal_id=row.id),  # the field is on the reveal row (`field_ref`)
             scope=Scope(engagement_id=engagement_id),
         )
+    # Q-02: who saw which record's field, before the value leaves (as `reveal_pii` records a
+    # region; end-pass review S1). The field ref's middle part is the owner's record id.
+    await record_reads(
+        ctx.tenant,
+        ACCESS_KIND,
+        [
+            AccessSubject(
+                field_ref.split(":", 1)[0],
+                UUID(field_ref.split(":")[1]),
+                client_id=engagement.client_id,
+                engagement_id=engagement.id,
+            )
+        ],
+        flags=[_FLAGS.get(kind, "restricted")],
+    )
     plain = await open_value()
     name = (await names_of([ctx.user_id])).get(ctx.user_id, "")
     _reveals.add(1, {"kind": kind})

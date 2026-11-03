@@ -18,6 +18,7 @@ import argparse
 import json
 import re
 import sys
+import textwrap
 from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
@@ -190,7 +191,13 @@ def render_py(objects: list[StatusObject]) -> str:
         else:
             lines.append("    pass\n")
         if derived:
-            lines.append(f"    # derived, never stored: {', '.join(derived)}\n")
+            # Wrapped at the line limit (ruff E501 checks the generated module too).
+            wrapped = textwrap.wrap(
+                f"derived, never stored: {', '.join(derived)}",
+                width=93,
+                break_on_hyphens=False,
+            )
+            lines.extend(f"    # {part}\n" for part in wrapped)
         stored_lines.append(f"    {json.dumps(obj.name)}: (\n")
         stored_lines.extend(f"        {json.dumps(code)},\n" for code in stored)
         stored_lines.append("    ),\n")

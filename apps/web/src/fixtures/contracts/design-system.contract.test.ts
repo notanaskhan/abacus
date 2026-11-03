@@ -26,8 +26,10 @@ import type {
   ListPageEntryOut,
   ListPageFindingRowOut,
   ListPageMisstatementOut,
+  ListPageNoticeRowOut,
   ListPageAuditEventRow,
   ListPageActivityEventOut,
+  ListPageActivityItemOut,
   ListPageBinderRequestRowOut,
   ListPageBinderRowOut,
   ListPageChangeLogEntryOut,
@@ -125,6 +127,7 @@ function envelope<T>(page: ListPageShape<T>): ListEnvelope<T> {
 const LIST_PAGES = {
   ListPage_AccessLogRow_: (p: ListPageAccessLogRow) => envelope(p), // N-01: FIL-01 access log
   ListPage_ActivityEventOut_: (p: ListPageActivityEventOut) => envelope(p),
+  ListPage_ActivityItemOut_: (p: ListPageActivityItemOut) => envelope(p), // N-04-T02: a notice's activity
   ListPage_AuditEventRow_: (p: ListPageAuditEventRow) => envelope(p), // P-07-T57: Activity
   ListPage_BinderRequestRowOut_: (p: ListPageBinderRequestRowOut) => envelope(p),
   ListPage_BinderRowOut_: (p: ListPageBinderRowOut) => envelope(p),
@@ -166,6 +169,7 @@ const LIST_PAGES = {
   ListPage_EntryOut_: (p: ListPageEntryOut) => envelope(p),
   ListPage_FindingRowOut_: (p: ListPageFindingRowOut) => envelope(p),
   ListPage_MisstatementOut_: (p: ListPageMisstatementOut) => envelope(p),
+  ListPage_NoticeRowOut_: (p: ListPageNoticeRowOut) => envelope(p), // N-04-T02: NOT-01
 } as const;
 
 describe("P-36 list envelope (T1)", () => {

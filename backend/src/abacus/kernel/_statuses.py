@@ -562,7 +562,8 @@ class NoticeAnalysisStatus(StrEnum):
 
 class NoticeResponseReadinessStatus(StrEnum):
     pass
-    # derived, never stored: waiting_decision, in_review, approved, out_for_signature, ready_to_send, sent
+    # derived, never stored: waiting_decision, in_review, approved, out_for_signature,
+    # ready_to_send, sent
 
 
 class ConsentStatus(StrEnum):
@@ -1030,6 +1031,12 @@ class EbpParticipantStatus(StrEnum):
     TERMINATED = "terminated"
     RETIRED = "retired"
     DECEASED = "deceased"
+
+
+class EbpImportStatus(StrEnum):
+    MAPPED = "mapped"
+    IMPORTED = "imported"
+    REFUSED = "refused"
 
 
 class EbpFilerStatusStatus(StrEnum):
@@ -1938,6 +1945,11 @@ STORED: dict[str, tuple[str, ...]] = {
         "terminated",
         "retired",
         "deceased",
+    ),
+    "ebp_import": (
+        "mapped",
+        "imported",
+        "refused",
     ),
     "ebp_filer_status": (
     ),

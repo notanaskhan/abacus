@@ -1,8 +1,8 @@
 ---
 id: TASK-3021
 title: A-05-T19 tabular source imports
-spec: SPEC-641
-acceptance_criteria: [AC-F3]
+spec: SPEC-640
+acceptance_criteria: [AC-17]
 risk_zone: amber
 status: in-review
 epic: A-05

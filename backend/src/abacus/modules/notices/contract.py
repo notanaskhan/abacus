@@ -35,14 +35,22 @@ from abacus.modules.identity.api import (
     Resource,
     authorise,
     current_context,
+    mask_tins_for,
 )
+from abacus.modules.notices.compute.bracket import FilingStatus
+from abacus.modules.organisations.api import MaskedTinOut
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
 IfMatch = Annotated[int, Header(alias="If-Match", ge=1)]
 Tri = classified("restricted", tri=True)
 Money = Annotated[Decimal, Field(max_digits=18, decimal_places=2), Tri]
+# An amount the notice may not state: the classification sits outside the union (Pydantic drops
+# an Annotated member's metadata inside `X | None`).
+MaybeMoney = Annotated[Decimal | None, Field(max_digits=18, decimal_places=2), Tri]
 Last4 = Annotated[str, Field(pattern=r"^\d{4}$"), classified("confidential")]
+# A taxpayer ID on any payload is the masked object (kind, last four), never digits (P-12).
+MaskedTin = Annotated[MaskedTinOut | None, classified("restricted", pii_kind="tin")]
 Code = Annotated[str, Field(pattern=r"^[a-z][a-z0-9_]{0,59}$"), classified("internal")]
 
 Agency = Literal["irs", "state"]
@@ -75,6 +83,10 @@ Readiness = Literal[
     "waiting_decision", "in_review", "approved", "out_for_signature", "ready_to_send", "sent"
 ]
 Channel = Literal["dut", "fax", "mail"]
+# C7's `envelope` codes (status-vocabulary.yaml), as the signing provider reports them.
+EnvelopeStatus = Literal[
+    "draft", "sent", "viewed", "partially_signed", "completed", "declined", "expired", "voided"
+]
 PaymentMethod = Literal["irs_direct_pay", "eftps", "state_portal", "check", "later_bill"]
 BlockOrigin = Literal["template", "human", "agent"]
 NoticeAction = Literal[
@@ -108,6 +120,23 @@ FieldKey = Literal[
     "taxpayer.tin",
     "agency.name",
 ]
+# What a person may edit in intake: every field but the TIN, which is never typed into a
+# request (P-12; end-pass S5).
+EditableFieldKey = Literal[
+    "notice.code",
+    "notice.tax_year",
+    "notice.form",
+    "notice.date",
+    "notice.respond_by",
+    "notice.amount_tax",
+    "notice.amount_interest",
+    "notice.amount_penalty",
+    "notice.amount_total",
+    "notice.interest_to",
+    "notice.response_page",
+    "taxpayer.name",
+    "agency.name",
+]
 
 
 # --- shared facts -------------------------------------------------------------------------------
@@ -129,10 +158,10 @@ class AuthorizationOut(BaseModel):
 class AmountsOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    tax: Money | None = None
-    interest: Money | None = None
-    penalty: Money | None = None
-    total: Money | None = None
+    tax: MaybeMoney = None
+    interest: MaybeMoney = None
+    penalty: MaybeMoney = None
+    total: MaybeMoney = None
     interest_to: Annotated[date | None, classified("internal")] = None
 
 
@@ -169,12 +198,12 @@ class NoticeRowOut(BaseModel):
     respond_by_days: Annotated[int | None, classified("internal")]  # from the demo clock
     risk: Annotated[RiskBand, classified("internal")]
     sent_on: Annotated[date | None, classified("internal")]  # "Response sent Aug 12"
-    amounts: AmountsOut
+    amounts: Annotated[AmountsOut, classified("internal")]
     position: Annotated[Position | None, classified("internal")]  # "· disagreed"
     status: Annotated[NoticeStatus, classified("internal")]
     tile: Annotated[Tile | None, classified("internal")]  # escalated rows have none
-    assignee: NoticePersonOut | None
-    authorization: AuthorizationOut
+    assignee: Annotated[NoticePersonOut | None, classified("internal")]
+    authorization: Annotated[AuthorizationOut, classified("internal")]
     version: Annotated[int, Field(ge=1), classified("internal")]
 
 
@@ -231,7 +260,7 @@ class IntakeFieldOut(BaseModel):
 
     key: Annotated[FieldKey, classified("internal")]
     value_text: Annotated[str | None, Tri]
-    last4: Last4 | None = None
+    tin: MaskedTin = None
     confidence: Annotated[
         Decimal | None, Field(ge=0, le=1, decimal_places=3), classified("internal")
     ]
@@ -240,7 +269,7 @@ class IntakeFieldOut(BaseModel):
     helper: Annotated[str | None, classified("internal")] = None  # "Check page 1, top right"
     origin: Annotated[FieldOrigin, classified("internal")]
     confirmed: Annotated[bool, classified("internal")]
-    region: RegionOut | None = None
+    region: Annotated[RegionOut | None, classified("internal")] = None
     citation_id: Annotated[UUID | None, classified("internal")] = None
 
 
@@ -249,7 +278,7 @@ class MatchCandidateOut(BaseModel):
 
     client_entity_id: Annotated[UUID, classified("internal")]
     name: Annotated[str, classified("confidential")]
-    tin_last4: Last4 | None = None
+    tin: MaskedTin = None
 
 
 class MatchOut(BaseModel):
@@ -278,8 +307,8 @@ class IntakeOut(BaseModel):
     extraction_mode: Annotated[ExtractionMode | None, classified("internal")]
     manual_reason: Annotated[str | None, classified("internal")] = None  # in words, never guessed
     fields: Annotated[list[IntakeFieldOut], Field(max_length=40), Tri]
-    match: MatchOut
-    authorization: AuthorizationOut
+    match: Annotated[MatchOut, classified("internal")]
+    authorization: Annotated[AuthorizationOut, classified("internal")]
     duplicate_of: Annotated[UUID | None, classified("internal")] = None  # "Looks like N2"
     assignee_user_id: Annotated[UUID | None, classified("internal")] = None
     notify_user_ids: Annotated[list[UUID], classified("internal")] = []
@@ -290,11 +319,10 @@ class IntakeOut(BaseModel):
 class NoticeFieldEditIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    key: Annotated[FieldKey, classified("internal")]
+    key: Annotated[EditableFieldKey, classified("internal")]
     value_text: Annotated[str | None, Field(max_length=200), Tri] = None
-    tin: Annotated[
-        str | None, Field(pattern=r"^\d{9}$"), classified("restricted", pii_kind="tin")
-    ] = None
+    # No plain TIN in a request (P-12; end-pass S5): a misread taxpayer is corrected by picking
+    # the client entity (`IntakeUpdateIn.client_entity_id`), whose TIN organisations holds.
     confirm: Annotated[bool, classified("internal")] = False  # a low-confidence value accepted
 
 
@@ -356,18 +384,18 @@ class NoticeOut(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    row: NoticeRowOut
+    row: Annotated[NoticeRowOut, classified("internal")]
     notice_date: Annotated[date | None, classified("internal")]
     respond_by_source: Annotated[
         Literal["extracted", "entered", "corrected"] | None, classified("internal")
     ]
-    taxpayer_tin_last4: Last4 | None = None
+    taxpayer_tin: MaskedTin = None
     related_return_id: Annotated[UUID | None, classified("internal")]
     related_return_label: Annotated[str | None, classified("internal")]
     partner_owned: Annotated[bool, classified("internal")]
-    signer: NoticePersonOut | None
+    signer: Annotated[NoticePersonOut | None, classified("internal")]
     decision_id: Annotated[UUID | None, classified("internal")]
-    decided_by: NoticePersonOut | None
+    decided_by: Annotated[NoticePersonOut | None, classified("internal")]
     decided_at: Annotated[datetime | None, classified("internal")]
     follow_up_on: Annotated[date | None, classified("internal")]
     closed_on: Annotated[date | None, classified("internal")]
@@ -399,7 +427,7 @@ class ReturnAsFiledIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     source: Annotated[Literal["entry", "engine_import"], classified("internal")]
-    filing_status: Annotated[str | None, Field(max_length=40), classified("internal")] = None
+    filing_status: Annotated[FilingStatus | None, classified("internal")] = None
     filed_on: Annotated[date | None, classified("internal")] = None
     lines: Annotated[list[CitedLineIn], Field(max_length=200), Tri] = []
 
@@ -412,8 +440,8 @@ class ProposedItemIn(BaseModel):
     label: Annotated[str, Field(min_length=1, max_length=200), classified("internal")]
     payer_name: Annotated[str | None, Field(max_length=200), classified("confidential")] = None
     info_form: Annotated[str | None, Field(max_length=20), classified("internal")] = None
-    amount_shown: Money | None = None
-    amount_irs: Money | None = None
+    amount_shown: MaybeMoney = None
+    amount_irs: MaybeMoney = None
     citation_id: Annotated[UUID, classified("internal")]
 
 
@@ -430,10 +458,10 @@ class AnalysisRowOut(BaseModel):
 
     key: Annotated[str, classified("internal")]
     label: Annotated[str, classified("internal")]
-    as_filed: Money | None = None
-    irs: Money | None = None
-    information_returns: Money | None = None
-    difference: Money | None = None
+    as_filed: MaybeMoney = None
+    irs: MaybeMoney = None
+    information_returns: MaybeMoney = None
+    difference: MaybeMoney = None
     citation_ids: Annotated[list[UUID], classified("internal")]
 
 
@@ -463,7 +491,7 @@ class AnalysisChecksOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     difference_explained: Annotated[bool, classified("internal")]
-    bracket_check: BracketCheckOut | None
+    bracket_check: Annotated[BracketCheckOut | None, classified("internal")]
     total_foots: Annotated[bool, classified("internal")]
 
 
@@ -499,9 +527,9 @@ class AnalysisOut(BaseModel):
     rows: Annotated[list[AnalysisRowOut], Tri]
     information_returns: Annotated[list[InformationReturnOut], Tri]
     transcript_rows: Annotated[list[AnalysisRowOut], Tri]  # T-01's comparisons (live segment)
-    checks: AnalysisChecksOut | None
+    checks: Annotated[AnalysisChecksOut | None, classified("internal")]
     sources: Annotated[list[NoticeSourceOut], classified("internal")]
-    agent: AgentBlockOut
+    agent: Annotated[AgentBlockOut, classified("internal")]
     decision_card_id: Annotated[UUID | None, classified("internal")]
     engine_name: Annotated[str, classified("internal")]
     engine_version: Annotated[str, classified("internal")]
@@ -539,7 +567,7 @@ class NoticeNoteOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     id: Annotated[UUID, classified("internal")]
-    author: NoticePersonOut
+    author: Annotated[NoticePersonOut, classified("internal")]
     created_at: Annotated[datetime, classified("internal")]
 
 
@@ -584,7 +612,7 @@ class PaymentOut(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    amounts: AmountsOut
+    amounts: Annotated[AmountsOut, classified("internal")]
     method_label: Annotated[PaymentMethod | None, classified("internal")]
     paid_on: Annotated[date | None, classified("internal")]
     confirmation_request_item_id: Annotated[UUID | None, classified("internal")]
@@ -597,7 +625,7 @@ class ApprovalStepOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     level: Annotated[str, classified("internal")]
-    person: NoticePersonOut | None
+    person: Annotated[NoticePersonOut | None, classified("internal")]
     state: Annotated[Literal["done", "in_progress", "pending", "stale"], classified("internal")]
 
 
@@ -613,16 +641,16 @@ class ResponseOut(BaseModel):
     position_mismatch: Annotated[bool, classified("internal")]  # "Regenerate for Disagree"
     blocks: Annotated[list[BlockOut], Tri]
     enclosures: Annotated[list[EnclosureOut], classified("confidential")]
-    payment: PaymentOut | None
+    payment: Annotated[PaymentOut | None, classified("internal")]
     signer_contact_ids: Annotated[list[UUID], classified("internal")]
     channel: Annotated[Channel | None, classified("internal")]
     follow_up_days: Annotated[int, Field(ge=1, le=365), classified("internal")]
-    owner: NoticePersonOut | None
+    owner: Annotated[NoticePersonOut | None, classified("internal")]
     approvals: Annotated[list[ApprovalStepOut], classified("internal")]
     readiness: Annotated[Readiness, classified("internal")]
     readiness_facts: Annotated[list[ReadinessFactOut], classified("internal")]
     envelope_id: Annotated[UUID | None, classified("internal")]
-    envelope_status: Annotated[str | None, classified("internal")]  # C7's words
+    envelope_status: Annotated[EnvelopeStatus | None, classified("internal")]  # C7 `envelope`
     locked: Annotated[bool, classified("internal")]  # after send (`response_locked`)
     row_version: Annotated[int, Field(ge=1), classified("internal")]
 
@@ -680,7 +708,9 @@ class SentOut(BaseModel):
 
     sent_on: Annotated[date, classified("internal")]
     follow_up_on: Annotated[date, classified("internal")]
-    confirmation_last4: Last4 | None = None
+    confirmation_last4: Annotated[
+        str | None, Field(pattern=r"^\d{4}$"), classified("confidential")
+    ] = None
 
 
 class AgencyReplyIn(BaseModel):
@@ -696,13 +726,6 @@ class AgencyReplyIn(BaseModel):
 
 
 # --- gates and routes ---------------------------------------------------------------------------
-
-
-async def _gate_flag(ctx: AuthContext) -> None:
-    if ctx.client:
-        raise NotFound("notices")
-    if not await flag_enabled(ctx.tenant, NOTICES_WORKSPACE):
-        raise NotFound(NOTICES_WORKSPACE.name)
 
 
 async def _gate_firm(ctx: AuthContext, action: str) -> None:
@@ -727,6 +750,10 @@ async def _gate(ctx: AuthContext, notice_id: UUID, action: str) -> None:
 
 def _not_yet() -> NoReturn:
     raise NotImplementedYet
+
+
+# A stub whose response carries a TIN (`MaskedTinOut`) already returns through the central mask
+# (`mask_tins_for`; TASK-1207 item 6), so the implementation that replaces `_not_yet()` keeps it.
 
 
 router = AbacusRouter(prefix="/v1", tags=["notices"])
@@ -772,13 +799,13 @@ async def intake_create_route(
 ) -> IntakeOut:
     """Starts NoticeIntakeWorkflow; the sheet polls while `extracting`."""
     await _gate_firm(ctx, "notice_intake.create")
-    _not_yet()
+    return await mask_tins_for(ctx, _not_yet())
 
 
 @router.get(_I, action="notice_intake.read", response_model=IntakeOut, errors=(501,))
 async def intake_route(intake_id: UUID, ctx: Ctx) -> IntakeOut:
     await _gate_firm(ctx, "notice_intake.read")
-    _not_yet()
+    return await mask_tins_for(ctx, _not_yet())
 
 
 @router.put(_I, action="notice_intake.update", response_model=IntakeOut, errors=(409, 501))
@@ -786,7 +813,7 @@ async def intake_update_route(
     intake_id: UUID, body: IntakeUpdateIn, ctx: Ctx, if_match: IfMatch
 ) -> IntakeOut:
     await _gate_firm(ctx, "notice_intake.update")
-    _not_yet()
+    return await mask_tins_for(ctx, _not_yet())
 
 
 @router.post(
@@ -811,7 +838,7 @@ async def intake_attach_route(
     intake_id: UUID, body: IntakeAttachIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> IntakeOut:
     await _gate_firm(ctx, "notice_intake.confirm")
-    _not_yet()
+    return await mask_tins_for(ctx, _not_yet())
 
 
 @router.post(
@@ -821,13 +848,13 @@ async def intake_discard_route(
     intake_id: UUID, body: IntakeDiscardIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> IntakeOut:
     await _gate_firm(ctx, "notice_intake.confirm")
-    _not_yet()
+    return await mask_tins_for(ctx, _not_yet())
 
 
 @router.get(_N, action="notice.read", response_model=NoticeOut, errors=(501,))
 async def notice_route(notice_id: UUID, ctx: Ctx) -> NoticeOut:
     await _gate(ctx, notice_id, "notice.read")
-    _not_yet()
+    return await mask_tins_for(ctx, _not_yet())
 
 
 @router.patch(_N, action="notice.update", response_model=NoticeOut, errors=(409, 501))
@@ -836,7 +863,7 @@ async def notice_patch_route(
 ) -> NoticeOut:
     """`notice.assign` for `assignee_id` alone, `notice.update` otherwise (the service checks)."""
     await _gate(ctx, notice_id, "notice.assign" if _assign_only(body) else "notice.update")
-    _not_yet()
+    return await mask_tins_for(ctx, _not_yet())
 
 
 def _assign_only(body: NoticePatchIn) -> bool:
@@ -849,7 +876,7 @@ async def notice_start_route(
 ) -> NoticeOut:
     """received to classified, and the analysis starts."""
     await _gate(ctx, notice_id, "notice.start")
-    _not_yet()
+    return await mask_tins_for(ctx, _not_yet())
 
 
 @router.put(
@@ -935,7 +962,7 @@ async def note_route(
     response_model=ListPage[ActivityItemOut],
     errors=(501,),
 )
-async def activity_route(
+async def notice_activity_route(
     notice_id: UUID, ctx: Ctx, cursor: str | None = None
 ) -> ListPage[ActivityItemOut]:
     await _gate(ctx, notice_id, "notice.read")
@@ -1029,4 +1056,4 @@ async def agency_reply_route(
     notice_id: UUID, body: AgencyReplyIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> NoticeOut:
     await _gate(ctx, notice_id, "notice.agency_reply")
-    _not_yet()
+    return await mask_tins_for(ctx, _not_yet())

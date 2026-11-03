@@ -219,16 +219,22 @@ async def add_request_item(
     return view
 
 
-async def request_items_for(ctx: AuthContext, engagement_id: UUID) -> Sequence[RequestItemView]:
+async def request_items_for(ctx: Actor, engagement_id: UUID) -> Sequence[RequestItemView]:
+    """The engagement's visible items. A drafter run reads them as its agent (A-04-T22): no client
+    role and no comment read state of its own, so its counts stay empty."""
     ref = await get_ref(ctx, engagement_id)
     await authorise_items(ctx, "request_item.read", ref.resource())
-    client = await engagement_role_of(ctx.tenant, engagement_id, ctx.user_id) in (
-        "client_admin",
-        "client_contributor",
-    )
+    person = ctx if isinstance(ctx, AuthContext) else None
+    client = person is not None and await engagement_role_of(
+        ctx.tenant, engagement_id, person.user_id
+    ) in ("client_admin", "client_contributor")
     async with tenant_session(ctx.tenant) as session:
         rows = await list_request_items(session, ctx, engagement_id)
-        counts = await list_comment_counts(session, ctx, engagement_id, shared_only=client)
+        counts = (
+            {}
+            if person is None
+            else await list_comment_counts(session, person, engagement_id, shared_only=client)
+        )
     datasets = await available_datasets(ctx.tenant, ref.client_entity_id)
     shown = await drafted_guidance_to_clients(ctx.tenant) if client else True
     views: list[RequestItemView] = []

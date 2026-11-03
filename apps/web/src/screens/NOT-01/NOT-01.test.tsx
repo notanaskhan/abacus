@@ -111,7 +111,8 @@ describe("NOT-01", () => {
     await waitFor(() => {
       expect(screen.queryByText("Marcus & Dana Whitley")).toBeNull();
     });
-    expect(screen.getByText("Aurelio Santos")).toBeTruthy();
+    // The filtered page arrives after the old rows leave (one refetch).
+    expect(await screen.findByText("Aurelio Santos")).toBeTruthy();
   });
 
   it("f: no open notices", async () => {

@@ -125,11 +125,17 @@ export function auditHandlers(
     "GET /v1/work-items/{work_item_id}/findings": (request) =>
       find(request) === undefined
         ? json(NOT_FOUND, 404)
-        : json({ items: [], total: request.params.work_item_id === northwind?.work_item_id ? 9 : 0 }),
+        : json({
+            items: [],
+            total: request.params.work_item_id === northwind?.work_item_id ? 9 : 0,
+          }),
     "GET /v1/work-items/{work_item_id}/misstatements": (request) =>
       find(request) === undefined
         ? json(NOT_FOUND, 404)
-        : json({ items: [], total: request.params.work_item_id === northwind?.work_item_id ? 2 : 0 }),
+        : json({
+            items: [],
+            total: request.params.work_item_id === northwind?.work_item_id ? 2 : 0,
+          }),
     "GET /v1/review-notes": () => json({ items: [], total: 0 }),
     "GET /v1/audits/{work_item_id}/cockpit": (request) => {
       const row = find(request);

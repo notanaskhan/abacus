@@ -15,7 +15,7 @@ recorded client decision (`decisions.py`).
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Annotated, Any, Literal, NoReturn, cast
+from typing import Annotated, Any, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header
@@ -23,7 +23,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import ADJUSTMENTS_ENTRIES
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.modules.engagements.api import get_ref, work_item_engagement
@@ -185,17 +185,6 @@ async def _gate(ctx: AuthContext, work_item_id: UUID, action: str) -> None:
     await authorise(ctx, action, ref.resource())
     if not await flag_enabled(ctx.tenant, ADJUSTMENTS_ENTRIES):
         raise NotFound(ADJUSTMENTS_ENTRIES.name)
-
-
-async def _gate_flag(ctx: AuthContext) -> None:
-    if ctx.client:
-        raise NotFound("adjustments")
-    if not await flag_enabled(ctx.tenant, ADJUSTMENTS_ENTRIES):
-        raise NotFound(ADJUSTMENTS_ENTRIES.name)
-
-
-def _not_yet() -> NoReturn:
-    raise NotImplementedYet
 
 
 router = AbacusRouter(prefix="/v1", tags=["adjustments"])

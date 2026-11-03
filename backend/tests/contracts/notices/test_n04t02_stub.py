@@ -77,7 +77,9 @@ def _ctx(*, client: bool = False) -> AuthContext:
 
 
 def _params(method: str, path: str) -> set[str]:
-    return {p["name"] for p in cast(list[Json], PATHS[path][method].get("parameters", []))}
+    return {
+        cast(str, p["name"]) for p in cast(list[Json], PATHS[path][method].get("parameters", []))
+    }
 
 
 @pytest.mark.parametrize(("method", "path"), sorted(ROUTES))
@@ -129,10 +131,14 @@ def test_ac1_every_field_is_classified_and_amounts_are_tri() -> None:
 
 
 def test_ac1_no_out_model_carries_a_whole_tin_or_confirmation_number() -> None:
-    for model in (contract.IntakeFieldOut, contract.NoticeOut, contract.SentOut):
-        names = set(model.model_fields)
-        assert not names & {"tin", "confirmation_no", "taxpayer_tin"}, model.__name__
-    assert "last4" in contract.IntakeFieldOut.model_fields
+    # P-12 (the repo's rule, tests/contracts/clients): a TIN travels only as MaskedTinOut.
+    for model, field in (
+        (contract.IntakeFieldOut, "tin"),
+        (contract.NoticeOut, "taxpayer_tin"),
+        (contract.MatchCandidateOut, "tin"),
+    ):
+        assert contract.MaskedTinOut | None == model.model_fields[field].annotation, model.__name__
+    assert "confirmation_no" not in contract.SentOut.model_fields
     assert "confirmation_last4" in contract.SentOut.model_fields
 
 

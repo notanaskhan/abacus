@@ -1788,6 +1788,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "minutes_status",
                 "minutes_text",
                 "presumed_risk_conclusions",
+                "row_version",  # A-04-T19 (0651): the session's optimistic version
                 "updated_at",
             }
         ),
@@ -1816,6 +1817,79 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             | {"severity_suggestion_id", "status", "version"}
         ),
         "consultations": frozenset({"concluded_at", "conclusion_sealed", "status"}),
+        # N-04-T03 (0650): notices v1, their intakes and responses.
+        "notices": frozenset(
+            {
+                "agency",
+                "agency_name",
+                "amount_interest",
+                "amount_penalty",
+                "amount_tax",
+                "amount_total",
+                "assignee_user_id",
+                "authorization_id",
+                "authorization_kind",
+                "client_entity_id",
+                "client_id",
+                "client_visible",
+                "closed_on",
+                "decided_at",
+                "decision_id",
+                "escalated_reason",
+                "follow_up_on",
+                "form",
+                "interest_to",
+                "jurisdiction",
+                "notice_date",
+                "notice_type_key",
+                "partner_owned",
+                "position",
+                "related_return_id",
+                "respond_by",
+                "respond_by_source",
+                "row_version",
+                "source_evidence_version_id",
+                "source_intake_id",
+                "status",
+                "status_changed_at",
+                "tax_year",
+                "taxpayer_tin_last4",
+                "title",
+            }
+        ),
+        "notice_intakes": frozenset(
+            {
+                "assignee_user_id",
+                "authorization_facts",
+                "client_id",
+                "created_work_item_id",
+                "discarded_reason_code",
+                "duplicate_of_work_item_id",
+                "extraction_mode",
+                "match",
+                "notify_user_ids",
+                "row_version",
+                "status",
+            }
+        ),
+        "notice_responses": frozenset(
+            {
+                "binder_id",
+                "channel",
+                "current_version_id",
+                "enclosures",
+                "envelope_id",
+                "follow_up_days",
+                "generated_document_id",
+                "owner_user_id",
+                "payment",
+                "position_source",
+                "row_version",
+                "signer_contact_ids",
+                "template_key",
+                "template_version_id",
+            }
+        ),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
@@ -2024,6 +2098,15 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "engine_sync_events": "tax_return_events_immutable",  # 0465 (T-01-T19)
         "answer_versions": "answer_versions_immutable",  # 0467 (T-02-T16)
         "duplicate_resolutions": "duplicate_resolutions_immutable",  # 0468 (T-02-T17)
+        "notice_status_events": "notice_rows_immutable",  # 0650 (N-04-T03)
+        "notice_field_values": "notice_rows_immutable",  # 0650 (N-04-T03)
+        "notice_proposed_items": "notice_rows_immutable",  # 0650 (N-04-T03)
+        "notice_return_snapshots": "notice_rows_immutable",  # 0650 (N-04-T03)
+        "notice_analyses": "notice_rows_immutable",  # 0650 (N-04-T03)
+        "notice_notes": "notice_rows_immutable",  # 0650 (N-04-T03)
+        "notice_response_versions": "notice_rows_immutable",  # 0650 (N-04-T03)
+        "notice_sent_records": "notice_rows_immutable",  # 0650 (N-04-T03)
+        "notice_agency_replies": "notice_rows_immutable",  # 0650 (N-04-T03)
     }
     assert _evidence_problems(evidence) == []
 

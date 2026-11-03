@@ -179,43 +179,50 @@ export function StandardsView({
   ) : null;
   return (
     <div data-knw02="standards" className="flex justify-center px-[18px] py-[24px]">
-      <dl className="flex w-full max-w-[1000px] flex-col">
-        {rows.map(([key, value]) => (
-          <div key={key} className="flex min-h-[61px] items-center gap-[16px] hairline-b">
-            <dt className="w-[290px] flex-none text-body text-ink-2">{key}</dt>
-            <dd className="flex-1 text-body">{value}</dd>
-            {change}
+      <div className="w-full max-w-[1000px]">
+        {/* A <dl> group holds only its <dt> and <dd>: the row's control sits inside the <dd>. */}
+        <dl className="flex w-full flex-col">
+          {rows.map(([key, value]) => (
+            <div key={key} className="flex min-h-[61px] items-center gap-[16px] hairline-b">
+              <dt className="w-[290px] flex-none text-body text-ink-2">{key}</dt>
+              <dd className="flex flex-1 items-center gap-[16px] text-body">
+                <span className="flex-1">{value}</span>
+                {change}
+              </dd>
+            </div>
+          ))}
+          <div className="flex min-h-[61px] items-center gap-[16px] hairline-b">
+            <dt className="w-[290px] flex-none text-body text-ink-2">
+              {COPY.standards.default(family)}
+            </dt>
+            <dd className="flex flex-1 items-center gap-[16px] text-body">
+              <span className="flex-1">
+                {state.default_for_new_engagements
+                  ? COPY.standards.defaultOn(family, state.label)
+                  : COPY.standards.defaultOff}
+              </span>
+              <Toggle
+                label={COPY.standards.default(family)}
+                checked={state.default_for_new_engagements}
+                disabled={!editable || save.isPending}
+                onChange={(on) => {
+                  save.mutate({
+                    path: { version_id: state.version_id },
+                    body: {
+                      standards_set_id: state.standards_set_id,
+                      quality_management_ref: state.quality_management_ref ?? null,
+                      engagement_types: state.engagement_types,
+                      default_for_new_engagements: on,
+                      row_version: state.row_version,
+                    },
+                  });
+                }}
+              />
+            </dd>
           </div>
-        ))}
-        <div className="flex min-h-[61px] items-center gap-[16px] hairline-b">
-          <dt className="w-[290px] flex-none text-body text-ink-2">
-            {COPY.standards.default(family)}
-          </dt>
-          <dd className="flex-1 text-body">
-            {state.default_for_new_engagements
-              ? COPY.standards.defaultOn(family, state.label)
-              : COPY.standards.defaultOff}
-          </dd>
-          <Toggle
-            label={COPY.standards.default(family)}
-            checked={state.default_for_new_engagements}
-            disabled={!editable || save.isPending}
-            onChange={(on) => {
-              save.mutate({
-                path: { version_id: state.version_id },
-                body: {
-                  standards_set_id: state.standards_set_id,
-                  quality_management_ref: state.quality_management_ref ?? null,
-                  engagement_types: state.engagement_types,
-                  default_for_new_engagements: on,
-                  row_version: state.row_version,
-                },
-              });
-            }}
-          />
-        </div>
+        </dl>
         <p className="pt-[12px] text-meta text-ink-3">{COPY.standards.note(family, priorLabel)}</p>
-      </dl>
+      </div>
     </div>
   );
 }

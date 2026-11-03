@@ -33,7 +33,7 @@ from abacus.modules.agents.api import (
     SourcePaper,
 )
 from abacus.modules.engagements.api import lock_ref
-from abacus.modules.identity.api import AuthContext, authorise
+from abacus.modules.identity.api import AgentContext, AuthContext, authorise
 from abacus.modules.methodology.api import VersionStep
 from abacus.modules.review.api import record_value
 from abacus.modules.workpapers.core import CELL_TARGET
@@ -208,7 +208,7 @@ async def pack_problem(
 
 async def raise_draft_flag(
     tx: UnitOfWork,
-    agent: AuthContext,
+    agent: AgentContext,
     paper: SourcePaper,
     section_key: str | None,
     row_key: str | None,
@@ -216,8 +216,8 @@ async def raise_draft_flag(
 ) -> UUID:
     """A-04-T23 (AC2.2; DEC-2059): the agent's PBC GAP flag on the paper's row, in the run's unit
     of work, as the agent with its run (0581's CHECK); a person converts it (`flags.convert`)."""
-    run_id = getattr(agent, "agent_run_id", None)
-    if agent.tenant.actor_kind != "agent" or run_id is None:
+    run_id = agent.agent_run_id
+    if agent.tenant.actor_kind != "agent":
         raise NotFound("agent_run")
     flag_id = (
         await tx.session.execute(
@@ -229,7 +229,7 @@ async def raise_draft_flag(
                 row_key=row_key,
                 kind="pbc_gap",
                 text=text,
-                created_by=agent.user_id,
+                created_by=agent.initiator.user_id,  # the person the agent acts for
                 agent_run_id=run_id,
             )
             .returning(AttentionFlag.id)
@@ -248,8 +248,8 @@ async def raise_draft_flag(
     )
     tx.record(
         "attention_flag.raised",
-        target=Target("workpaper", paper.workpaper_id),
-        after=Ref(flag=str(flag_id), run=str(run_id)),
+        target=Target(TARGET, paper.workpaper_id),
+        after=Ref(flag=flag_id, run=run_id),
     )
     return flag_id
 

@@ -23,7 +23,7 @@ from abacus_tools.fakes.acceptance import Decision, open_engagement
 from abacus_tools.fakes.identity import ISSUER, FakeIdentityProvider
 
 Json = dict[str, object]
-Role = Literal["engagement_partner", "manager", "senior", "staff", "reviewer"]
+Role = Literal["engagement_partner", "manager", "senior", "staff", "reviewer", "eqr_reviewer"]
 FirmRole = Literal["firm_admin", "practice_leader", "quality_partner"]
 TENANT_HEADER: Final = "X-Abacus-Tenant"
 # Staff engagement roles bound by independence (SPEC-025 AC-7); firm and client roles aren't.

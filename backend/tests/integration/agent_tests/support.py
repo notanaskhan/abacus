@@ -96,6 +96,13 @@ class Event:
 STAFF_ROLES: Final = frozenset({"engagement_partner", "manager", "senior", "staff", "reviewer"})
 
 
+def firm_name(tenant_id: uuid.UUID) -> str:
+    """The name `Seeder.firm` gives a firm. A letter first: an all-digit suffix reads as an amount
+    to the scope checker, and a reminder naming the firm was then refused as out of scope
+    (R-01-T24; TASK-2927)."""
+    return f"Firm x{tenant_id.hex[:8]}"
+
+
 class Seeder:
     def __init__(self, dsn: str) -> None:
         self._dsn = dsn
@@ -194,9 +201,7 @@ class Seeder:
         await self.run(
             "INSERT INTO firms (tenant_id, name) VALUES ($1, $2)",
             tenant_id,
-            # A letter first: an all-digit suffix reads as an amount to the scope checker, and
-            # a reminder naming the firm was then refused as out of scope (R-01-T24; TASK-2927).
-            f"Firm x{tenant_id.hex[:8]}",
+            firm_name(tenant_id),
         )
         return tenant_id
 

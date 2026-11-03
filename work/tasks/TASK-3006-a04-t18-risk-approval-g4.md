@@ -2,7 +2,7 @@
 id: TASK-3006
 title: A-04-T18 risk approval card and G4 facts
 spec: SPEC-620
-acceptance_criteria: [AC4.3, AC4.4]
+acceptance_criteria: [AC-19, AC-20]
 risk_zone: amber
 status: in-review
 epic: A-04

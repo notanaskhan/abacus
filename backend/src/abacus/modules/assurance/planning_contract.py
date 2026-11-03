@@ -114,6 +114,7 @@ PlanningAction = Literal[
     "risk.route_for_approval",
     "fraud_session.edit",
     "fraud_minutes.approve",
+    "fraud_inquiry.request",  # A-04-T19: the session's allowed actions name it
     "control.edit",
     "deficiency.propose_severity",
     "exception.route",
@@ -1506,7 +1507,7 @@ def _session_out(found: object) -> FraudSessionOut:
         ],
         minutes_text=session.minutes_text,
         minutes_hash=session.minutes_hash,
-        minutes_status=session.minutes_status,
+        minutes_status=FraudMinutesStatus(session.minutes_status),
         minutes_source=session.minutes_source,
         approved_by_name=session.approved_by_name,
         approved_at=session.approved_at,
@@ -1524,7 +1525,7 @@ def _inquiry_out(found: object) -> FraudInquiryOut:
         respondent_name=i.respondent_name,
         questionnaire_id=i.questionnaire_id,
         sent=i.sent,
-        status=i.status,
+        status=FraudInquiryStatus(i.status),
         answered_at=i.answered_at,
     )
 

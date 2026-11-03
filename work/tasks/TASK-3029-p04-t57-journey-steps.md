@@ -2,7 +2,7 @@
 id: TASK-3029
 title: P-04-T57 review grammar journey steps
 spec: SPEC-308
-acceptance_criteria: [SHL-10, SHL-11, SHL-12, SHL-16]
+acceptance_criteria: [AC-5]
 risk_zone: green
 status: in-review
 epic: P-04

@@ -4259,6 +4259,26 @@ export const STATUS_REGISTRY = {
       "derived": false
     }
   },
+  "ebp_import": {
+    "mapped": {
+      "label": "Mapped",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "imported": {
+      "label": "Imported",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    },
+    "refused": {
+      "label": "Refused",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": false
+    }
+  },
   "ebp_filer_status": {
     "large_plan": {
       "label": "Large plan",

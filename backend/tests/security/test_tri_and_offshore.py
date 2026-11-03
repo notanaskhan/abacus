@@ -67,6 +67,17 @@ TIN_ROUTES = {
     ("PATCH", "/v1/audits/{work_item_id}/ebp/plan"): "masked",
     ("GET", "/v1/audits/{work_item_id}/ebp/providers"): "masked",
     ("GET", "/v1/audits/{work_item_id}/ebp/participants"): "masked",
+    # N-04-T02 (S25 stubs, DEC-2051): the intake and the notice carry only the masked TIN shape.
+    # The stubs answer 501 today; the services (N-04-T06 on) answer through `mask_tins_for`.
+    ("POST", "/v1/notice-intakes"): "masked",
+    ("GET", "/v1/notice-intakes/{intake_id}"): "masked",
+    ("PUT", "/v1/notice-intakes/{intake_id}"): "masked",
+    ("POST", "/v1/notice-intakes/{intake_id}/attach"): "masked",
+    ("POST", "/v1/notice-intakes/{intake_id}/discard"): "masked",
+    ("GET", "/v1/notices/{notice_id}"): "masked",
+    ("PATCH", "/v1/notices/{notice_id}"): "masked",
+    ("POST", "/v1/notices/{notice_id}:start"): "masked",
+    ("POST", "/v1/notices/{notice_id}/agency-replies"): "masked",
 }
 
 
@@ -179,8 +190,31 @@ async def test_i_offshore_only_the_not_offshore_actions_are_refused_at_the_condi
         # A-03-T01 (DEC-1550): the sample workbook keeps census fields onshore.
         "sample_set.export",
         "firm_export.download",
+        # N-04-T01 (DEC-2050): every notices write stays onshore (fail closed until reviewed).
+        "notice.agency_reply",
+        "notice.analyze",
+        "notice.assign",
+        "notice.note",
+        "notice.record_as_filed",
+        "notice.request_decision",
+        "notice.start",
+        "notice.update",
+        "notice_intake.confirm",
+        "notice_intake.create",
+        "notice_intake.update",
+        "notice_response.draft",
+        "notice_response.edit",
+        "notice_response.mark_sent",
+        "notice_response.send_for_signature",
     } == NOT_OFFSHORE
-    assert refused == NOT_OFFSHORE - {"firm_export.download", "email_template.test_send"}
+    notices = {a for a in NOT_OFFSHORE if a.startswith(("notice.", "notice_"))}
+    # Every other `not_offshore` action is reached here; a notices action only where the onshore
+    # manager holds it on this resource (the rest are checked on the firm below).
+    assert (
+        refused - notices
+        == NOT_OFFSHORE - {"firm_export.download", "email_template.test_send"} - notices
+    )
+    assert refused & notices
     admin = await env.net.seed.person(env.tenant_id, "security_admin")
     offshore_admin = await env.net.seed.person(env.tenant_id, "security_admin")
     await env.net.seed.run(

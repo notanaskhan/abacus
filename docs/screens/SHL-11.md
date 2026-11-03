@@ -41,6 +41,7 @@ Verbatim from spec.md through `src/screens/SHL-11/copy.ts` (the copy registry): 
 | Option context chips | SHL-07 citation popover | live |
 | Request more analysis… | the host's dock composer | planned (P-09); records an analysis request through C3 today |
 | Inbound | AUD-07, AUD-08, NOT-02, HOME-02, AUD-15, TAX-* | per the manifest |
+| A cited figure (Opens SHL-08 with the cited figure lit) | SHL-08, planned in the manifest (no builder yet) | planned (P-04-T60) |
 
 ## Deviations
 1. Artboards a, c, d, e, f, g and h have no letter in the spec's STATES list; the build's letters are the parity keys.
@@ -59,8 +60,3 @@ Start from `scenarios.ts` (one per artboard), mount through `installFixtureMode`
 | host | D | not run | O3 sheet 500, top 52 (`e2e/visual/tier-d-review.spec.ts`) |
 
 Gate: chapter 04 §9.3 keeps Tier C report-only, so the locks are listed and reported, not blocking (DEC-1970). Keyboard: Escape closes the topmost layer and focus returns to the opener.
-
-## Links
-| From | To (manifest builder) | Planned or live |
-|---|---|---|
-| A cited figure (Opens SHL-08 with the cited figure lit) | SHL-08, planned in the manifest (no builder yet) | planned (P-04-T60) |

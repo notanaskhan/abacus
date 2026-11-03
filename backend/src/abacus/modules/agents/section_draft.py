@@ -338,6 +338,8 @@ async def load_context(
     version = await version_steps(agent.tenant, engagement.methodology_version_id)
     steps = source.bound(version.steps, paper)
     mapping = mode_mapping(mode)
+    # The mapping reads as the run's agent: `authorise` applies the matrix's agent column within
+    # the run's task scope (ADR-005); the slot is typed for the agent, never a person's context.
     inputs = ModeInputs() if mapping is None else await mapping(agent, paper)
     # The mode's own cells join the section's; its code facts follow the paper's (F<n>).
     paper = replace(paper, cells=paper.cells + inputs.cells)
@@ -664,7 +666,12 @@ async def _raise_flags(
             continue
         raised.append(
             await raiser(
-                tx, agent, context.paper, context.paper.section_key, cell.row_key, flag.text
+                tx,
+                agent,
+                context.paper,
+                context.paper.section_key,
+                cell.row_key,
+                flag.text,
             )
         )
     return raised

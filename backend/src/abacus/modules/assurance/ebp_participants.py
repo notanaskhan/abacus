@@ -167,7 +167,7 @@ async def reveal(
         ctx,
         row.engagement_id,
         f"ebp_participant:{participant_id}:{field}",
-        "ssn" if field == "ssn" else "date_of_birth",
+        field,  # "ssn" | "dob": evidence's PII kinds (the access flag `pii_tin` | `pii_dob`)
         opened,
         context_ref=None if reason is None else reason[:120],
     )

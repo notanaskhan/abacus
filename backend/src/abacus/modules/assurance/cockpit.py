@@ -29,6 +29,7 @@ from sqlalchemy import select
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.logging import get_logger
+from abacus.modules.assurance.phase import follows_gate, next_phase
 from abacus.modules.assurance.sections import (
     BANDS,
     AuditSection,
@@ -105,6 +106,13 @@ class Cockpit:
     read_only_reason: str | None
     version: int
     allowed_actions: list[str]
+
+
+def _next_mode(current: str) -> str:
+    """Whether a person records the next phase (DEC-2078): `derived` once that phase follows a
+    registered gate (Fieldwork since A-04-T43's G4), or when no phase is left to record."""
+    step = next_phase(current)
+    return "derived" if step is None or follows_gate(step) else "recorded"
 
 
 async def _state(key: str, provider_call: Awaitable[SectionState | None]) -> SectionState | None:
@@ -206,7 +214,7 @@ async def audit_cockpit(ctx: AuthContext, work_item_id: UUID) -> Cockpit:
         overview=Overview(row.client_id, row.client_name, row.name, row.period_label, phase),
         bands=bands,
         dock_tabs=["agent", "viewer"] if content else [],
-        phase_mode=row.phase_source,
+        phase_mode=_next_mode(phase),
         read_only_reason="archived" if archived else None,
         version=item.version,
         allowed_actions=[] if archived or not content else sorted(set(ACTIONS) & can),

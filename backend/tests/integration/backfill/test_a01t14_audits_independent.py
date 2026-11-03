@@ -38,6 +38,7 @@ from abacus.kernel.db import TenantContext
 from abacus.kernel.flags import forget_flags
 from abacus.modules.assurance import api as assurance_api
 from abacus.modules.assurance.api import IndexTag, SectionState
+from abacus.modules.engagements import slots
 from abacus.modules.identity.api import Forbidden, agent_context_for_run
 
 from .support import Net, Person, Seeder
@@ -59,7 +60,9 @@ TILES: Final = ("planning", "fieldwork", "in_review", "ready_to_release", "relea
 
 
 @pytest.fixture(autouse=True)
-def flags() -> Iterator[None]:
+def flags(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
+    # A-04-T43 registers G4: these record-mode cases run with Fieldwork's gate uncomputed.
+    monkeypatch.delitem(slots._GATES, "G4", raising=False)  # pyright: ignore[reportPrivateUsage] -- the slot under test
     forget_flags()
     yield
     forget_flags()

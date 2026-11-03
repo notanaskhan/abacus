@@ -32,6 +32,7 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import re
 import secrets
 import zipfile
 from collections.abc import Mapping, Sequence
@@ -114,6 +115,10 @@ _ACTIONS: Final[tuple[SampleSetAction, ...]] = (
 _FORMULA_LEAD: Final = ("=", "+", "-", "@", "\t", "\r")
 _ZIP_TIME: Final = (1980, 1, 1, 0, 0, 0)
 _EPOCH: Final = datetime(2026, 1, 1)
+# openpyxl stamps the save time into `dcterms:modified` whatever `properties.modified` says, so
+# two exports a second apart differed; `_rebuild` sets it back to _EPOCH (TASK-2928).
+_MODIFIED: Final = re.compile(rb"(<dcterms:modified[^>]*>)[^<]*(</dcterms:modified>)")
+_EPOCH_STAMP: Final = _EPOCH.strftime("%Y-%m-%dT%H:%M:%SZ").encode()
 Row = Mapping[str, Any]  # Any: database rows and stored JSON of mixed column types
 
 
@@ -939,7 +944,12 @@ def _rebuild(raw: bytes) -> bytes:
             entry.compress_type = zipfile.ZIP_DEFLATED
             entry.external_attr = 0o644 << 16
             entry.create_system = 3
-            target.writestr(entry, source.read(name))
+            data = source.read(name)
+            if name == "docProps/core.xml":
+                data, count = _MODIFIED.subn(rb"\g<1>" + _EPOCH_STAMP + rb"\g<2>", data)
+                if count != 1:
+                    raise RuntimeError("docProps/core.xml has no modified stamp to pin")
+            target.writestr(entry, data)
     return out.getvalue()
 
 

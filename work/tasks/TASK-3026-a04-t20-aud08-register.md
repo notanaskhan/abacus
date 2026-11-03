@@ -2,7 +2,7 @@
 id: TASK-3026
 title: A-04-T20 AUD-08 risk register screen
 spec: SPEC-620
-acceptance_criteria: [AUD-08]
+acceptance_criteria: [AC-19, AC-20]
 risk_zone: green
 status: in-review
 epic: A-04

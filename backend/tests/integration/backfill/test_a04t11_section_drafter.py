@@ -41,6 +41,8 @@ pytestmark = pytest.mark.asyncio
 FLAGS: Final = ("workpapers.core", "workpapers.drafting", "methodology.programs")
 TEMPLATE: Final = "BH Audit Methodology · EBP"
 PROMPT: Final = "workpapers.section_draft@v1"
+# A-04-T22 (DEC-2058) gave the gap mode its own prompt; the answer is the same draft shape.
+GAP_PROMPT: Final = "workpapers.section_draft.gap@v1"
 PACK_ERROR: Final = (
     "Pack configuration error: BH-EBP-140 step 8 points to a SOC 1 bridge-letter template that "
     "EBP v3 does not include. No evidence written."
@@ -78,6 +80,7 @@ def _model() -> Iterator[None]:
     CALLS.clear()
     fake = FakeModel()
     fake.respond(PROMPT, _answer)
+    fake.respond(GAP_PROMPT, _answer)
     configure_provider(fake)
     yield
     configure_provider(None)

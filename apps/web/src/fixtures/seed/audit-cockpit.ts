@@ -192,7 +192,7 @@ export function northwindCockpit(
       { key: "reporting", collapsed: true, rows: [] },
     ],
     dock_tabs: ["agent", "viewer"],
-    phase_mode: "recorded",
+    phase_mode: "derived", // Planning: Fieldwork follows G4 (A-04-T43, DEC-2078)
     read_only_reason: null,
     version: 1,
     allowed_actions: [],

@@ -78,6 +78,8 @@ export interface ToolbarProps {
 
 // ---- Classes, written in full so Tailwind sees them -------------------------------------------
 
+// A screen artboard with no firm yet (`firm: ""`) still names the firm menu (axe button-name).
+const FIRM_MENU = "Firm menu";
 const FILL = "bg-nav-fill shadow-e1 hover:bg-sel-bg data-[force=hover]:bg-sel-bg";
 const NAV_ITEM = cn(
   "inline-flex h-[32px] flex-none items-center rounded-pill px-[12px] text-nav whitespace-nowrap text-ink-2",
@@ -323,7 +325,7 @@ export function Toolbar({
         <button
           type="button"
           title={firmTitle ?? firm}
-          aria-label={firmTitle ?? firm}
+          aria-label={firmTitle || firm || FIRM_MENU}
           aria-haspopup="menu"
           data-pressed={firmPressed}
           className={cn(FIRM, PRESS)}

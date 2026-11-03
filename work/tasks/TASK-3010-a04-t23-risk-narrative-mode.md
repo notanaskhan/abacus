@@ -2,7 +2,7 @@
 id: TASK-3010
 title: A-04-T23 mode risk_narrative — prompt, mapping, presumed risks by code, PBC GAP flags
 spec: SPEC-620
-acceptance_criteria: [AC2.1, AC2.2]
+acceptance_criteria: [AC-11]
 risk_zone: red
 status: in-review
 epic: A-04

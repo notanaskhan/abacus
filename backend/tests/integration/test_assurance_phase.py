@@ -39,6 +39,9 @@ async def engines(
     migrated_db: MigratedDatabase, monkeypatch: pytest.MonkeyPatch
 ) -> AsyncIterator[None]:
     monkeypatch.setenv("ABACUS_IDENTITY_DATABASE_URL", migrated_db.identity_url)
+    # A-04-T43 registers G4: record mode runs with Fieldwork's gate uncomputed, as A-01-T05
+    # left it; the AC-10 and AC-13 cases register their own provider.
+    monkeypatch.delitem(slots._GATES, "G4", raising=False)  # pyright: ignore[reportPrivateUsage] -- the slot under test
     settings.cache_clear()
     forget_flags()
     await dispose_engine()

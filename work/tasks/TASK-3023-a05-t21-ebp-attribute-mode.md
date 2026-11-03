@@ -1,8 +1,8 @@
 ---
 id: TASK-3023
 title: A-05-T21 mode ebp_attribute
-spec: SPEC-641
-acceptance_criteria: [AC-F4]
+spec: SPEC-640
+acceptance_criteria: [AC-19]
 risk_zone: red
 status: in-review
 epic: A-05

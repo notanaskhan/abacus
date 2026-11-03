@@ -10,7 +10,9 @@ import pytest
 
 from abacus.kernel import _flags
 from abacus.modules.identity.authz.matrix import RULES
-from abacus.modules.notifications import catalogue  # noqa: F401  (registers the kinds)
+from abacus.modules.notifications import (
+    catalogue,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers the kinds
+)
 from abacus.modules.notifications.kinds import kind_of
 from abacus_tools.codegen import feature_flags
 
@@ -96,4 +98,6 @@ def test_ac1_the_two_flags_exist_and_default_off() -> None:
 
 @pytest.mark.parametrize("code", KINDS)
 def test_ac1_the_seven_notice_kinds_are_registered(code: str) -> None:
-    assert kind_of(code).code == code
+    found = kind_of(code)
+    assert found is not None
+    assert found.code == code

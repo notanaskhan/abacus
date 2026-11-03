@@ -1,8 +1,8 @@
 ---
 id: TASK-3024
 title: A-05-T17 EBP-02 screen
-spec: SPEC-641
-acceptance_criteria: [EBP-02]
+spec: SPEC-640
+acceptance_criteria: [AC-15]
 risk_zone: green
 status: in-review
 epic: A-05

@@ -2,7 +2,7 @@
 id: TASK-3011
 title: A-04-T24 mode risk — register drafts as suggestions, Identify wording over code facts
 spec: SPEC-620
-acceptance_criteria: [AC4.6, AC4.7]
+acceptance_criteria: [AC-21]
 risk_zone: red
 status: in-review
 epic: A-04

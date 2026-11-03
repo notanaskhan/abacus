@@ -13,12 +13,7 @@ const ROWS: readonly (readonly [string, string, string, string])[] = [
   ["entry_dates", "Entry dates", "First of month following", "AA §2.02"],
   ["excluded_classes", "Excluded classes", "Union employees; nonresident aliens", "AA §2.03"],
   ["long_term_part_time", "Long-term part-time", "2 years with 500+ hours", "AA §2.04"],
-  [
-    "compensation",
-    "Compensation",
-    "W-2 wages + pre-tax deferrals; bonuses included",
-    "AA §3.01",
-  ],
+  ["compensation", "Compensation", "W-2 wages + pre-tax deferrals; bonuses included", "AA §3.01"],
   ["auto_enrollment", "Auto-enrollment", "QACA (§401(k)(13))", "AA §4.01"],
   ["default_deferral_rate", "Default deferral rate", "6%", "AA §4.02"],
   [
@@ -33,12 +28,7 @@ const ROWS: readonly (readonly [string, string, string, string])[] = [
   ["safe_harbor_match", "Safe harbor match", "100% of first 1% + 50% of next 5%", "AA §5.01"],
   ["match_vesting", "Match vesting", "100% after 2 years of service", "AA §6.02"],
   ["forfeitures", "Forfeitures", "Reduce employer contributions", "AA §6.04"],
-  [
-    "loans",
-    "Loans",
-    "Up to 2 outstanding; $1,000 minimum; payroll repayment",
-    "AA §7.01",
-  ],
+  ["loans", "Loans", "Up to 2 outstanding; $1,000 minimum; payroll repayment", "AA §7.01"],
   ["in_service_withdrawals", "In-service withdrawals", "Age 59½", "AA §8.01"],
   ["hardship", "Hardship", "Safe-harbor events; self-certification", "AA §8.02"],
   ["plan_expenses", "Plan expenses", "Reasonable expenses may be paid from plan", "AA §9.04"],

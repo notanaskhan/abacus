@@ -70,7 +70,9 @@ test.describe("P-04 review grammar journey steps", () => {
 
   test(
     "j23 4: the partner's bulk sheet signs or excludes each item with words (SHL-12 f)",
-    owner("P-04 · P-04-T57 fixture at L2; the L4 partner pass waits for A-09's Granite Peak seed · S25"),
+    owner(
+      "P-04 · P-04-T57 fixture at L2; the L4 partner pass waits for A-09's Granite Peak seed · S25",
+    ),
     async ({ journey }) => {
       test.fixme(journey.project !== "fixture", LIVE);
       await journey.as("margaret-okonkwo", sheet("SHL-12", "f"));

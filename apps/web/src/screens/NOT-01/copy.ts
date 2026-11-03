@@ -5,7 +5,7 @@ export const COPY = {
   title: "Notices",
   noun: "notices",
   search: "Search notices",
-  addNotice: "Add notice",
+  addNotice: "Add notice…", // it opens the O3 intake sheet: a dialog opener ends with "…" (kit rule)
   chips: {
     agency: "Agency",
     notice: "Notice",

@@ -26,10 +26,15 @@ register_engagement_owners(AUDIT_KINDS, audit_owners)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (router,)
+# The worker serves a module with SUBSCRIPTIONS (A-06-T10's send): no workflows or activities.
+WORKFLOWS: dict[type, str] = {}
+ACTIVITIES: tuple[object, ...] = ()
 
 __all__ = [
+    "ACTIVITIES",
     "ROUTERS",
     "SUBSCRIPTIONS",
+    "WORKFLOWS",
     "entries_of",
     "recorded_entries",
     "register_client_delivery",

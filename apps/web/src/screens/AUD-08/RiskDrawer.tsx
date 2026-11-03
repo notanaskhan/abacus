@@ -50,7 +50,11 @@ export function RiskDrawer({
         <span className="flex-1 text-[11.5px] text-ink-3">
           {COPY.drawer.routed(routedTo, time(data.routed_at))}
         </span>
-        <Button variant="secondary" icon="bell" {...(onRemind === undefined ? {} : { onClick: onRemind })}>
+        <Button
+          variant="secondary"
+          icon="bell"
+          {...(onRemind === undefined ? {} : { onClick: onRemind })}
+        >
           {COPY.drawer.remind(routedTo.split(" ")[0] ?? routedTo)}
         </Button>
       </div>
@@ -77,7 +81,10 @@ export function RiskDrawer({
         </section>
         <section data-aud08="rationale" className="rounded-pane bg-card p-[12px] shadow-e1">
           <h3 className="mb-[8px] text-section font-medium">{COPY.drawer.rationaleCard}</h3>
-          <AgentText text={data?.rationale ?? ""} className="text-[12.5px] leading-[1.55] text-ink" />
+          <AgentText
+            text={data?.rationale ?? ""}
+            className="text-[12.5px] leading-[1.55] text-ink"
+          />
           {(data?.citation_ids.length ?? 0) > 0 && (
             <p className="mt-[8px] text-micro text-ink-3">
               {COPY.drawer.citations(data?.citation_ids.length ?? 0)}

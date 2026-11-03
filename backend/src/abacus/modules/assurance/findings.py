@@ -181,7 +181,7 @@ async def record_finding(ctx: AuthContext, work_item_id: UUID, new: NewFinding) 
         tx.record(
             "audit_finding.recorded",
             target=Target(TARGET, finding_id),
-            after=Ref(issue=issue_id, by="agent" if agent else "human"),
+            after=Ref(issue=issue_id),  # who: the event's own actor (Ref holds identifiers only)
             scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
         )
     return await finding(ctx, finding_id)
@@ -251,7 +251,7 @@ async def findings_of(
     async with tenant_session(ctx.tenant) as session:
         rows = (await session.execute(text(_FINDINGS_OF), {"w": work_item_id})).mappings().all()
     found = await _rows(ctx, rows)
-    counts = dict.fromkeys(BANDS, 0)
+    counts: dict[str, int] = dict.fromkeys(BANDS, 0)
     for f in found:
         counts[f.band] += 1
     awaiting = sum(1 for f in found if f.deficiency_status == "proposed")
@@ -318,7 +318,7 @@ async def to_deficiency(ctx: AuthContext, finding_id: UUID) -> Finding:
         tx.record(
             "audit_finding.converted",
             target=Target(TARGET, finding_id),
-            after=Ref(to="deficiency"),
+            # the route (deficiency) is the row's; Ref holds identifiers only
             scope=Scope(engagement_id=engagement_id, work_item_id=work_item),
         )
     return await finding(ctx, finding_id)
@@ -384,7 +384,7 @@ async def to_misstatement(
         tx.record(
             "audit_finding.converted",
             target=Target(TARGET, finding_id),
-            after=Ref(to="misstatement", misstatement=misstatement_id),
+            after=Ref(misstatement=misstatement_id),
             scope=Scope(engagement_id=engagement_id, work_item_id=work_item),
         )
     return misstatement_id

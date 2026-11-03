@@ -50,8 +50,13 @@ from abacus.modules.assurance.materiality import propose as propose_materiality
 from abacus.modules.assurance.materiality import reassess as reassess_materiality
 from abacus.modules.assurance.materiality import register as register_materiality_kinds
 from abacus.modules.assurance.materiality import register_materiality_dependents
+from abacus.modules.assurance.phase import (
+    PHASE_GATES,
+    follows_gate,
+    record_phase,
+    update_profile,
+)
 from abacus.modules.assurance.phase import SUBSCRIPTIONS as PHASE_SUBSCRIPTIONS
-from abacus.modules.assurance.phase import record_phase, update_profile
 from abacus.modules.assurance.planning_contract import router as planning_router
 from abacus.modules.assurance.planning_gate import g4_facts
 from abacus.modules.assurance.providers import register as register_a01_providers
@@ -188,6 +193,7 @@ register_suggestion_target("materiality", engagement_of=work_item_engagement)
 
 __all__ = [
     "ACTIVITIES",
+    "PHASE_GATES",
     "ROUTERS",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
@@ -199,6 +205,7 @@ __all__ = [
     "SectionState",
     "adopt_trial_balance",
     "completion_router",
+    "follows_gate",
     "g4_facts",
     "import_grouping_csv",
     "mapping_live",

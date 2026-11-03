@@ -647,5 +647,24 @@ REVIEWED_FALLBACK: Final = frozenset(
         "ebp_provider.created",
         "ebp_check.recorded",
         "client_entity.plan_number_set",
+        # S25 (A-04-T18, T19, T21; A-05-T16, T19; A-06-T09, T10, T11): reviewed onto the trail
+        # with their own words in the record's activity (DEC-2077); no catalogue sentence yet.
+        "risk_register.approved",
+        "risk_register.returned",
+        "fraud_session.recorded",
+        "fraud_minutes.written",
+        "fraud_minutes.approved",
+        "fraud_inquiry.requested",
+        "attention_flag.raised",
+        "attention_flag.converted",
+        "ebp_plan_review.started",
+        "ebp_import.imported",
+        "ebp_import.refused",
+        "proposed_entry.proposed",
+        "approval_batch.created",
+        "proposed_entries.sent_to_client",
+        "proposed_entries.send_undone",
+        "audit_finding.recorded",
+        "audit_finding.converted",
     }
 )

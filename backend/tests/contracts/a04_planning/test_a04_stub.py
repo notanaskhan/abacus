@@ -22,7 +22,7 @@ from abacus.api.export_openapi import document
 from abacus.kernel import _flags
 from abacus.kernel.classification import unclassified_fields
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.modules.assurance import planning_contract as planning
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.identity.authz import _matrix
@@ -274,7 +274,17 @@ async def test_t01_the_gate_authorises_then_reads_the_flag_then_answers_501(
     )
     assert out.run_id == run  # A-04-T11 serves the draft route
     assert calls[-2:] == ["flag:workpapers.core", "flag:workpapers.drafting"]
-    with pytest.raises(NotImplementedYet):
+    # A-04-T19 serves the conversion: past the gates, an unknown flag is 404 (no 501 left). The
+    # service's read stands in for the database (a contract test has none; CI's has no dev DB).
+    from abacus.modules.workpapers import flags as flag_service
+
+    async def unknown(*_: object) -> object:
+        calls.append("convert")
+        raise NotFound("attention_flag")
+
+    monkeypatch.setattr(flag_service, "convert", unknown)
+    calls.clear()
+    with pytest.raises(NotFound):
         await core.attention_flag_convert_route(
             uuid.uuid4(),
             uuid.uuid4(),
@@ -283,6 +293,7 @@ async def test_t01_the_gate_authorises_then_reads_the_flag_then_answers_501(
             _ctx(),
             "k-2",
         )
+    assert "flag:workpapers.core" in calls and calls[-1] == "convert"
 
 
 async def test_t01_the_inventory_answers_with_either_flag(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -57,10 +57,12 @@ def test_review6_every_tin_response_is_refused_or_masked_for_an_offshore_reader(
 
 
 def test_review6_a_reveal_is_the_only_tin_route_left_unmasked() -> None:
+    # A `not_offshore` route that also masks (N-04's notice writes, DEC-2050) is not left
+    # unmasked; only the reveal leans on the refusal alone.
     refused = sorted(
         f"{method} {path}"
-        for method, path, action, _ in _tin_routes()
-        if RULES[action].not_offshore
+        for method, path, action, endpoint in _tin_routes()
+        if RULES[action].not_offshore and MASK_CALL not in inspect.getsource(endpoint)
     )
     assert refused == ["POST /v1/client-entities/{entity_id}/tin/reveal"]
 

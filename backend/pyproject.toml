@@ -183,6 +183,7 @@ only_mutate = [
     "src/abacus/modules/audit_trail/*",
     "src/abacus/*/compute/*",
     "src/abacus/modules/signatures/*",
+    "src/abacus/modules/review/*",  # P-04-T59 (DEC-2065)
 ]
 do_not_mutate = [
     "*/_matrix.py",

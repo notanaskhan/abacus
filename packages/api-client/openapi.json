@@ -3772,16 +3772,16 @@
           "interest": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Interest"
+            "cls": "restricted",
+            "title": "Interest",
+            "x-tri": true
           },
           "interest_to": {
             "anyOf": [
@@ -3799,44 +3799,44 @@
           "penalty": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Penalty"
+            "cls": "restricted",
+            "title": "Penalty",
+            "x-tri": true
           },
           "tax": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Tax"
+            "cls": "restricted",
+            "title": "Tax",
+            "x-tri": true
           },
           "total": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Total"
+            "cls": "restricted",
+            "title": "Total",
+            "x-tri": true
           }
         },
         "title": "AmountsOut",
@@ -3852,7 +3852,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "difference_explained": {
             "cls": "internal",
@@ -3876,7 +3877,8 @@
       "AnalysisOut": {
         "properties": {
           "agent": {
-            "$ref": "#/components/schemas/AgentBlockOut"
+            "$ref": "#/components/schemas/AgentBlockOut",
+            "cls": "internal"
           },
           "analysis_kind": {
             "cls": "internal",
@@ -3896,7 +3898,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "decision_card_id": {
             "anyOf": [
@@ -4070,16 +4073,16 @@
           "as_filed": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "As Filed"
+            "cls": "restricted",
+            "title": "As Filed",
+            "x-tri": true
           },
           "citation_ids": {
             "cls": "internal",
@@ -4093,44 +4096,44 @@
           "difference": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Difference"
+            "cls": "restricted",
+            "title": "Difference",
+            "x-tri": true
           },
           "information_returns": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Information Returns"
+            "cls": "restricted",
+            "title": "Information Returns",
+            "x-tri": true
           },
           "irs": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Irs"
+            "cls": "restricted",
+            "title": "Irs",
+            "x-tri": true
           },
           "key": {
             "cls": "internal",
@@ -4607,7 +4610,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "state": {
             "cls": "internal",
@@ -19016,6 +19020,7 @@
                 "risk.route_for_approval",
                 "fraud_session.edit",
                 "fraud_minutes.approve",
+                "fraud_inquiry.request",
                 "control.edit",
                 "deficiency.propose_severity",
                 "exception.route",
@@ -34411,6 +34416,7 @@
                 "risk.route_for_approval",
                 "fraud_session.edit",
                 "fraud_minutes.approve",
+                "fraud_inquiry.request",
                 "control.edit",
                 "deficiency.propose_severity",
                 "exception.route",
@@ -40798,19 +40804,6 @@
             "title": "Key",
             "type": "string"
           },
-          "last4": {
-            "anyOf": [
-              {
-                "cls": "confidential",
-                "pattern": "^\\d{4}$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last4"
-          },
           "low_confidence": {
             "cls": "internal",
             "title": "Low Confidence",
@@ -40846,7 +40839,20 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
+          },
+          "tin": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MaskedTinOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "x-pii-kind": "tin"
           },
           "value_text": {
             "anyOf": [
@@ -40916,7 +40922,8 @@
             "title": "Assignee User Id"
           },
           "authorization": {
-            "$ref": "#/components/schemas/AuthorizationOut"
+            "$ref": "#/components/schemas/AuthorizationOut",
+            "cls": "internal"
           },
           "created_work_item_id": {
             "anyOf": [
@@ -41002,7 +41009,8 @@
             "title": "Manual Reason"
           },
           "match": {
-            "$ref": "#/components/schemas/MatchOut"
+            "$ref": "#/components/schemas/MatchOut",
+            "cls": "internal"
           },
           "notify_user_ids": {
             "cls": "internal",
@@ -51270,18 +51278,17 @@
             "title": "Name",
             "type": "string"
           },
-          "tin_last4": {
+          "tin": {
             "anyOf": [
               {
-                "cls": "confidential",
-                "pattern": "^\\d{4}$",
-                "type": "string"
+                "$ref": "#/components/schemas/MaskedTinOut"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Tin Last4"
+            "cls": "restricted",
+            "x-pii-kind": "tin"
           }
         },
         "required": [
@@ -52012,6 +52019,7 @@
                 "risk.route_for_approval",
                 "fraud_session.edit",
                 "fraud_minutes.approve",
+                "fraud_inquiry.request",
                 "control.edit",
                 "deficiency.propose_severity",
                 "exception.route",
@@ -54098,25 +54106,10 @@
               "notice.interest_to",
               "notice.response_page",
               "taxpayer.name",
-              "taxpayer.tin",
               "agency.name"
             ],
             "title": "Key",
             "type": "string"
-          },
-          "tin": {
-            "anyOf": [
-              {
-                "pattern": "^\\d{9}$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "restricted",
-            "title": "Tin",
-            "x-pii-kind": "tin"
           },
           "value_text": {
             "anyOf": [
@@ -54173,7 +54166,8 @@
       "NoticeNoteOut": {
         "properties": {
           "author": {
-            "$ref": "#/components/schemas/NoticePersonOut"
+            "$ref": "#/components/schemas/NoticePersonOut",
+            "cls": "internal"
           },
           "created_at": {
             "cls": "internal",
@@ -54260,7 +54254,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "decision_id": {
             "anyOf": [
@@ -54369,7 +54364,8 @@
             "title": "Respond By Source"
           },
           "row": {
-            "$ref": "#/components/schemas/NoticeRowOut"
+            "$ref": "#/components/schemas/NoticeRowOut",
+            "cls": "internal"
           },
           "signer": {
             "anyOf": [
@@ -54379,20 +54375,20 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
-          "taxpayer_tin_last4": {
+          "taxpayer_tin": {
             "anyOf": [
               {
-                "cls": "confidential",
-                "pattern": "^\\d{4}$",
-                "type": "string"
+                "$ref": "#/components/schemas/MaskedTinOut"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Taxpayer Tin Last4"
+            "cls": "restricted",
+            "x-pii-kind": "tin"
           }
         },
         "required": [
@@ -54520,7 +54516,8 @@
             "type": "string"
           },
           "amounts": {
-            "$ref": "#/components/schemas/AmountsOut"
+            "$ref": "#/components/schemas/AmountsOut",
+            "cls": "internal"
           },
           "assignee": {
             "anyOf": [
@@ -54530,10 +54527,12 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "authorization": {
-            "$ref": "#/components/schemas/AuthorizationOut"
+            "$ref": "#/components/schemas/AuthorizationOut",
+            "cls": "internal"
           },
           "client_entity_id": {
             "cls": "internal",
@@ -56369,7 +56368,8 @@
         "description": "The Payment band: a method label, never an instrument (ADR P-27).",
         "properties": {
           "amounts": {
-            "$ref": "#/components/schemas/AmountsOut"
+            "$ref": "#/components/schemas/AmountsOut",
+            "cls": "internal"
           },
           "confirmation_request_item_id": {
             "anyOf": [
@@ -62702,44 +62702,36 @@
           "amount_irs": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                    "type": "string"
-                  }
-                ],
-                "cls": "restricted",
-                "x-tri": true
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Amount Irs"
+            "cls": "restricted",
+            "title": "Amount Irs",
+            "x-tri": true
           },
           "amount_shown": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                    "type": "string"
-                  }
-                ],
-                "cls": "restricted",
-                "x-tri": true
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Amount Shown"
+            "cls": "restricted",
+            "title": "Amount Shown",
+            "x-tri": true
           },
           "citation_id": {
             "cls": "internal",
@@ -65240,6 +65232,7 @@
                 "risk.route_for_approval",
                 "fraud_session.edit",
                 "fraud_minutes.approve",
+                "fraud_inquiry.request",
                 "control.edit",
                 "deficiency.propose_severity",
                 "exception.route",
@@ -65309,6 +65302,7 @@
                 "risk.route_for_approval",
                 "fraud_session.edit",
                 "fraud_minutes.approve",
+                "fraud_inquiry.request",
                 "control.edit",
                 "deficiency.propose_severity",
                 "exception.route",
@@ -67638,6 +67632,16 @@
           "envelope_status": {
             "anyOf": [
               {
+                "enum": [
+                  "draft",
+                  "sent",
+                  "viewed",
+                  "partially_signed",
+                  "completed",
+                  "declined",
+                  "expired",
+                  "voided"
+                ],
                 "type": "string"
               },
               {
@@ -67673,7 +67677,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "payment": {
             "anyOf": [
@@ -67683,7 +67688,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "position": {
             "anyOf": [
@@ -68677,7 +68683,13 @@
           "filing_status": {
             "anyOf": [
               {
-                "maxLength": 40,
+                "enum": [
+                  "single",
+                  "mfj",
+                  "mfs",
+                  "hoh",
+                  "qss"
+                ],
                 "type": "string"
               },
               {
@@ -75506,7 +75518,6 @@
           "confirmation_last4": {
             "anyOf": [
               {
-                "cls": "confidential",
                 "pattern": "^\\d{4}$",
                 "type": "string"
               },
@@ -75514,6 +75525,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Confirmation Last4"
           },
           "follow_up_on": {
@@ -75716,6 +75728,7 @@
                 "risk.route_for_approval",
                 "fraud_session.edit",
                 "fraud_minutes.approve",
+                "fraud_inquiry.request",
                 "control.edit",
                 "deficiency.propose_severity",
                 "exception.route",
@@ -78070,6 +78083,7 @@
                 "risk.route_for_approval",
                 "fraud_session.edit",
                 "fraud_minutes.approve",
+                "fraud_inquiry.request",
                 "control.edit",
                 "deficiency.propose_severity",
                 "exception.route",
@@ -194919,7 +194933,7 @@
     },
     "/v1/notices/{notice_id}/activity": {
       "get": {
-        "operationId": "activity",
+        "operationId": "notice_activity",
         "parameters": [
           {
             "in": "path",
@@ -195042,7 +195056,7 @@
             "description": "Contract stub: not implemented yet"
           }
         },
-        "summary": "Activity Route",
+        "summary": "Notice Activity Route",
         "tags": [
           "notices"
         ],

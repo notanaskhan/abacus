@@ -69,6 +69,12 @@ The S23 foundation rows (AC-1 to AC-5) and the S24 rows (AC-6 to AC-13) are numb
 | AC-11 | A-05-T13 | On the Northwind documents the mode proposes 20 provisions (18 for Version 1), flags the SPD quarterly-entry conflict and the Jan 1, 2025 catch-up amendment, and every quote verifies. |
 | AC-12 | A-05-T14 | The suite runs in CI on the fake route and its thresholds are frozen in suite.yaml before any EBP prompt merges. |
 | AC-13 | A-05-T15 | No plaintext SSN or DOB column exists, result rows are insert-only, and a human-only CHECK refuses an agent writing pass, exception or no_effect. |
+| AC-14 | A-05-T16 | Sign off answers 409 provisions_unverified until all 20 ticks exist, and EBP-03 reads the entry rule from the verified provision, never from the draft. |
+| AC-15 | A-05-T17 | Hovering a provision lights the same line in the viewer, 'Citations (20)' equals the row count, and Sign off stays disabled until every row is verified. |
+| AC-16 | A-05-T18 | A participant's SSN and date of birth are sealed and shown only through a logged, MFA-fresh, onshore person's reveal; an agent, a client principal or an offshore member is refused. |
+| AC-17 | A-05-T19 | The Northwind census imports 301 participants with SSNs sealed, and a register whose total does not foot is refused with the difference shown. |
+| AC-18 | A-05-T20 | Kwame's missed amounts are 2,472 and 1,442, Yuki's are 3,168 and 1,848, and the population query returns exactly 4 participants. |
+| AC-19 | A-05-T21 | Row 22's hire-date difference is marked Needs human with a computed no-effect note, and no model input contains an unmasked SSN or DOB. |
 
 ## 6. Decisions
 DEC-1857 (screen contracts, deviations, the agent-off path) and DEC-1858 (census PII masking and

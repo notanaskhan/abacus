@@ -42,7 +42,7 @@ test.describe("KNW-02 import review", () => {
     });
     await journey.as("margaret-okonkwo", screen("a2"), { clock: CLOCK });
     await journey.step("KNW-02 a2: the flagged step 7, split pp. 15–16", async (page) => {
-      const rows = page.locator("[data-step]");
+      const rows = page.locator('[data-knw02="import-steps"] [data-step]');
       await expect(rows).toHaveCount(1);
       await expect(rows.first()).toHaveAttribute("data-step", "7");
       await expect(rows.first()).toHaveAttribute("data-flagged", "true");

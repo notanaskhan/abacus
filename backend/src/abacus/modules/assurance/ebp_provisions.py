@@ -47,7 +47,7 @@ from abacus.modules.assurance.compute.ebp.provisions import (
 )
 from abacus.modules.engagements.api import assurance_item, get_ref
 from abacus.modules.evidence.api import review_material, version_view
-from abacus.modules.identity.api import AuthContext, Forbidden, authorise
+from abacus.modules.identity.api import AgentContext, AuthContext, Forbidden, authorise
 from abacus.modules.review.api import (
     FieldState,
     field_states,
@@ -162,7 +162,7 @@ async def start_review(
     )
 
 
-async def provisions_inputs(actor: AuthContext, paper: SourcePaper) -> ModeInputs:
+async def provisions_inputs(actor: AgentContext, paper: SourcePaper) -> ModeInputs:
     """The `ebp_provisions` mode's documents: the latest review's versions as D1 to D3, masked
     page text only (fail closed: a version not yet scanned is left out)."""
     async with tenant_session(actor.tenant) as session:
@@ -207,7 +207,7 @@ async def _states(
 
 async def _review_row(
     tenant: TenantContext, work_item_id: UUID, review_no: int | None
-) -> Row[Any] | None:
+) -> Row[Any] | None:  # Any: the row's columns are the query's (review_no, ids, amended)
     async with tenant_session(tenant) as session:
         if review_no is None:
             return (await session.execute(_LATEST, {"w": work_item_id})).first()
