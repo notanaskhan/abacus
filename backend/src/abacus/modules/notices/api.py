@@ -12,5 +12,10 @@ from abacus.modules.notices.kind import NoticeKind
 # F-03-T22: the `notice` work-item kind.
 register_work_item_kind("notice", NoticeKind())
 
+# N-04-T06: HOME-01's notices tile from the same visible rows NOT-01 tallies.
+from abacus.modules.notices.home_counts import register_home_counts  # noqa: E402
+
+register_home_counts()
+
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (router,)

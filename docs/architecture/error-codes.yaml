@@ -1079,6 +1079,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.engagements.transitions.IllegalTransition
+    - abacus.modules.notices.service.IllegalTransition
     - abacus.modules.organisations.live.IllegalTransition
     summary: The engagement cannot move from its state to the one asked for (DEC-39).
   import_already_run:
@@ -2940,6 +2941,7 @@ codes:
     - abacus.modules.assurance.internal_control.VersionConflict
     - abacus.modules.assurance.risks.RiskMoved
     - abacus.modules.assurance.service_orgs.OrganizationMoved
+    - abacus.modules.notices.service.VersionConflict
     - abacus.modules.workpapers.core.VersionConflict
     - abacus.modules.workpapers.procedures.ProcedureMoved
     summary: An entry changed since the person read it (its version) or is in another state.
