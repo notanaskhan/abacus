@@ -4,7 +4,7 @@ title: A-04-T16 independent acceptance tests for A-04-T03, T04, T06, T13 (ADR-07
 spec: SPEC-620
 acceptance_criteria: [AC-15, AC-16, AC-19]
 risk_zone: amber
-status: in-review
+status: done
 epic: A-04
 plan_key: A-04-T16
 branch: s24-a04-t16 (stacked on s24-a04-t13)
