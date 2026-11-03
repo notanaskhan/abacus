@@ -44,7 +44,12 @@ from abacus.modules.sampling.draw_workflow import SampleDrawWorkflow
 
 # A-03-T13: the item-request fan-out (its routes import it lazily; imported here so its errors
 # are the module's own at start-up).
-from abacus.modules.sampling.item_requests import RecipientNotContact, SampleNotApproved
+from abacus.modules.sampling.item_requests import (
+    ApprovedItem,
+    RecipientNotContact,
+    SampleNotApproved,
+    approved_items,
+)
 from abacus.modules.sampling.payments import (
     PAYMENTS_RULE_VERSION,
     Band,
@@ -124,6 +129,7 @@ __all__ = [
     "TIE_VERSION",
     "WORKFLOWS",
     "ApproveIn",
+    "ApprovedItem",
     "Band",
     "Bill",
     "Entry",
@@ -146,6 +152,7 @@ __all__ = [
     "UploadSourceIn",
     "VersionIn",
     "approve",
+    "approved_items",
     "attribute_size",
     "bills_by_party",
     "build_payments",

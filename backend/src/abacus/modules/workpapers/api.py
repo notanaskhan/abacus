@@ -12,6 +12,19 @@ from abacus.modules.review.api import (
     register_reviewable,
     register_reviewable_facts,
 )
+from abacus.modules.workpapers.attribute_grid import TARGET as ATTRIBUTE_TEST
+from abacus.modules.workpapers.attribute_grid import (
+    Attribute,
+    ExceptionPrefill,
+    Grid,
+    create_test,
+    exception_prefill,
+    grid,
+    mark,
+    record_agent_result,
+    test_facts,
+    test_reviewables,
+)
 from abacus.modules.workpapers.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.workpapers.contract import router as a04_router
 from abacus.modules.workpapers.core import (
@@ -76,6 +89,9 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 
 # SPEC-313 (TASK-331): papers appear in the sign-off matrix and count toward G5.
 register_reviewable("workpaper", workpaper_reviewables)
+# A-05-T22 (DEC-2212): an attribute test is adopted by its C3 sign-off (SHL-12).
+register_reviewable(ATTRIBUTE_TEST, test_reviewables)
+register_reviewable_facts(ATTRIBUTE_TEST, test_facts)
 # P-04-T14: one paper's facts (content hash, version, preparers) for the sign-off rules.
 register_reviewable_facts("workpaper", workpaper_facts)
 # A-02-T17 (C3): the trial balance's annotated fields (`wp_ref`, `area_override` per line). The
@@ -95,8 +111,11 @@ __all__ = [
     "ROUTERS",
     "WORKPAPER_KINDS",
     "AddressInvalid",
+    "Attribute",
     "CodeTaken",
     "DesignedLayout",
+    "ExceptionPrefill",
+    "Grid",
     "IssueLink",
     "NoAssuranceItem",
     "PackConfigurationError",
@@ -108,12 +127,17 @@ __all__ = [
     "bound_steps",
     "checks_for",
     "checks_router",
+    "create_test",
     "designed_layout",
     "draft_paper",
+    "exception_prefill",
+    "grid",
     "link_issue",
+    "mark",
     "pack_errors",
     "paper_engagement",
     "paper_of_kind",
+    "record_agent_result",
     "register_designed_layout",
     "register_sign_off_guard",  # A-05-T16 (DEC-2069)
     "resolve",

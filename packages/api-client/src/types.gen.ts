@@ -18321,40 +18321,25 @@ export type GreetingOut = {
 };
 
 /**
- * GridRowOut
- *
- * One capability row; cells per template computed from the compiled matrix and the firm's
- * overrides, or from `role-templates.yaml` for actions not yet in the matrix.
+ * GridCellOut
  */
-export type GridRowOut = {
+export type GridCellOut = {
     /**
-     * Actions
+     * Attribute Key
      */
-    actions: Array<string>;
+    attribute_key: string;
     /**
-     * Cells
+     * By
      */
-    cells: {
-        [key: string]: 'allow' | 'conditional' | 'delegated' | 'deny' | 'locked';
-    };
+    by: 'human' | 'agent' | 'system' | 'policy';
     /**
-     * Conditions
+     * Citation Ids
      */
-    conditions?: {
-        [key: string]: string;
-    };
+    citation_ids: Array<string>;
     /**
-     * Key
+     * Result
      */
-    key: string;
-    /**
-     * Locked
-     */
-    locked?: boolean;
-    /**
-     * Source
-     */
-    source: 'matrix' | 'policy';
+    result: 'not_started' | 'agent_tested' | 'needs_human' | 'pass' | 'exception' | 'no_effect';
 };
 
 /**
@@ -35193,7 +35178,7 @@ export type RoleTemplatesOut = {
     /**
      * Grid
      */
-    grid: Array<GridRowOut>;
+    grid: Array<AbacusModulesIdentitySettingsContractGridRowOut>;
     /**
      * Templates
      */
@@ -42958,6 +42943,40 @@ export type TemplateVersionRefOut = {
 };
 
 /**
+ * TestGridOut
+ *
+ * EBP-03 a/b, EBP-04 c, EBP-05: rows in sample order with each attribute's newest result.
+ */
+export type TestGridOut = {
+    /**
+     * Attributes
+     */
+    attributes: Array<string>;
+    /**
+     * Counts
+     */
+    counts: {
+        [key: string]: number;
+    };
+    /**
+     * Rows
+     */
+    rows: Array<AbacusModulesAssuranceEbpContractGridRowOut>;
+    /**
+     * Test Id
+     */
+    test_id: string;
+    /**
+     * Variant
+     */
+    variant: string;
+    /**
+     * Version No
+     */
+    version_no: number;
+};
+
+/**
  * TestIn
  */
 export type TestIn = {
@@ -42966,9 +42985,17 @@ export type TestIn = {
      */
     sample_set_id: string;
     /**
+     * Sample Version
+     */
+    sample_version?: number;
+    /**
      * Variant
      */
     variant: 'eligibility' | 'deferral' | 'match' | 'distribution' | 'loan';
+    /**
+     * Workpaper Id
+     */
+    workpaper_id?: string | null;
 };
 
 /**
@@ -46156,6 +46183,32 @@ export type AbacusModulesAssuranceCompletionRoutesEqrOut = {
 };
 
 /**
+ * GridRowOut
+ */
+export type AbacusModulesAssuranceEbpContractGridRowOut = {
+    /**
+     * Cells
+     */
+    cells: Array<GridCellOut>;
+    /**
+     * Item Id
+     */
+    item_id: string;
+    /**
+     * Position
+     */
+    position: number;
+    /**
+     * Record Key
+     */
+    record_key: string;
+    /**
+     * State
+     */
+    state: string;
+};
+
+/**
  * ProviderOut
  */
 export type AbacusModulesAssuranceEbpContractProviderOut = {
@@ -46586,6 +46639,43 @@ export type AbacusModulesFieldworkRoutesStartIn = {
      * Definition
      */
     definition?: 'journal_entry_testing' | 'unrecorded_liabilities';
+};
+
+/**
+ * GridRowOut
+ *
+ * One capability row; cells per template computed from the compiled matrix and the firm's
+ * overrides, or from `role-templates.yaml` for actions not yet in the matrix.
+ */
+export type AbacusModulesIdentitySettingsContractGridRowOut = {
+    /**
+     * Actions
+     */
+    actions: Array<string>;
+    /**
+     * Cells
+     */
+    cells: {
+        [key: string]: 'allow' | 'conditional' | 'delegated' | 'deny' | 'locked';
+    };
+    /**
+     * Conditions
+     */
+    conditions?: {
+        [key: string]: string;
+    };
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Locked
+     */
+    locked?: boolean;
+    /**
+     * Source
+     */
+    source: 'matrix' | 'policy';
 };
 
 /**
@@ -50081,6 +50171,62 @@ export type EbpTestCreateResponses = {
 };
 
 export type EbpTestCreateResponse = EbpTestCreateResponses[keyof EbpTestCreateResponses];
+
+export type EbpTestGridData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Test Id
+         */
+        test_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/tests/{test_id}';
+};
+
+export type EbpTestGridErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EbpTestGridError = EbpTestGridErrors[keyof EbpTestGridErrors];
+
+export type EbpTestGridResponses = {
+    /**
+     * Successful Response
+     */
+    200: TestGridOut;
+};
+
+export type EbpTestGridResponse = EbpTestGridResponses[keyof EbpTestGridResponses];
 
 export type EbpTestMarkData = {
     body: AbacusModulesAssuranceEbpContractResultIn;

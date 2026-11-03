@@ -40,6 +40,8 @@ STALE_SOURCES: Final[dict[str, tuple[str, str]]] = {
     "workpaper.content_changed": ("workpaper", "workpaper_id"),
     # A-03-T14 (TASK-5010): a newer trial balance version changed a signed mapping.
     "mapping_set.went_stale": ("mapping_set", "mapping_set_id"),
+    # A-05-T22 (DEC-2212): a person's mark is a new version of the attribute test.
+    "attribute_test.version_created": ("attribute_test", "test_id"),
 }
 
 

@@ -21,8 +21,9 @@ from __future__ import annotations
 
 from collections import Counter
 from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import Final, cast
-from uuid import UUID, uuid4
+from uuid import UUID, uuid4, uuid5
 
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid
@@ -237,3 +238,46 @@ async def create(
         run=run,
     )
     return ItemRequestsCreatedOut.model_validate(stored.body)
+
+
+@dataclass(frozen=True)
+class ApprovedItem:
+    """One item of an approved sample version (A-05-T22's attribute grid rows)."""
+
+    id: UUID
+    position: int
+    record_key: str
+
+
+async def approved_items(
+    ctx: AuthContext, sample_set_id: UUID, version_no: int
+) -> list[ApprovedItem]:
+    """The items of an **approved** sample version, in sample order; 409
+    `sample_not_approved` otherwise (A-05-T22; the same rule the request generator keeps)."""
+    found = await set_for(ctx, sample_set_id, "sample_set.read")
+    version = await version_row(ctx, sample_set_id, version_no)
+    if version["status"] != "approved":
+        raise SampleNotApproved(facts={"status": version["status"]})
+    del found
+    version_id = cast(UUID, version["id"])
+    async with tenant_session(ctx.tenant) as session:
+        rows = await repo.items(session, version_id)
+    return sorted(
+        (
+            ApprovedItem(
+                item_ref(version_id, int(cast(int, r["position"]))),
+                int(cast(int, r["position"])),
+                str(r["record_key"]),
+            )
+            for r in rows
+        ),
+        key=lambda i: i.position,
+    )
+
+
+_ITEM_NAMESPACE: Final = UUID("8f1b6a52-2a5e-4d34-b2a4-62c9d6f0a7e1")
+
+
+def item_ref(version_id: UUID, position: int) -> UUID:
+    """A sample item's stable id: items are keyed by (version, position), never re-drawn."""
+    return uuid5(_ITEM_NAMESPACE, f"{version_id}:{position}")
