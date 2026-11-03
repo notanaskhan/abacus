@@ -1,0 +1,56 @@
+"""The planning modes' mappings for the section drafter (A-04-T22-T24; A-04 §6; DEC-2058).
+
+A mapping adds to the context code builds for one mode: the documents the section is drafted from
+(as the masked page text agents read, P-03-T15) and what it still waits for from the client.
+Each is registered with `agents.api.register_mode_mapping` and reads as the run's agent, through
+its task scope.
+
+- **gap** (General Audit Planning, Service Organizations; AUD-04): the request items in the
+  `service_organizations` area. An item with evidence is a document (a SOC 1 report, a bridge
+  letter); an item still requested is a waiting input ("2 waiting inputs"), never guessed at.
+"""
+
+from __future__ import annotations
+
+from typing import Final
+
+from abacus.modules.agents.api import ModeDocument, ModeInputs, ModePage, SourcePaper
+from abacus.modules.evidence.api import review_material
+from abacus.modules.identity.api import AuthContext
+from abacus.modules.requests.api import request_items_for
+
+SERVICE_ORG_AREA: Final = "service_organizations"
+# A request with evidence is a document; one in these statuses is still waited for.
+_WAITING: Final = frozenset({"draft", "requested", "returned"})
+
+
+async def _documents_and_waits(
+    actor: AuthContext, paper: SourcePaper, areas: frozenset[str]
+) -> ModeInputs:
+    items = [
+        i for i in await request_items_for(actor, paper.engagement_id) if i.audit_area in areas
+    ]
+    documents: list[ModeDocument] = []
+    waiting: list[str] = []
+    for item in sorted(items, key=lambda i: i.created_at):
+        if item.evidence_version_id is None:
+            if item.status in _WAITING:
+                waiting.append(item.description)
+            continue
+        material = await review_material(actor.tenant, item.evidence_version_id, sheets=False)
+        if material is None or not material.pages:
+            continue  # not scanned yet: nothing for an agent (fail closed)
+        documents.append(
+            ModeDocument(
+                item.evidence_version_id,
+                item.description,
+                tuple(ModePage(n, text) for n, text in sorted(material.pages.items())),
+            )
+        )
+    return ModeInputs(tuple(documents), tuple(waiting))
+
+
+async def gap_inputs(actor: AuthContext, paper: SourcePaper) -> ModeInputs:
+    """AUD-04's Service Organizations section: SOC reports and bridge letters, and the requests
+    still open for them."""
+    return await _documents_and_waits(actor, paper, frozenset({SERVICE_ORG_AREA}))

@@ -243,7 +243,7 @@ SPECS: dict[str, dict[str, object]] = {   'decisions.recommender': {   'autonomy
                                                                'output_schema': 'SectionDraft',
                                                                'prompt': 'workpapers.section_draft@v1'}},
                                       'output_schema': 'SectionDraft',
-                                      'prompt': 'workpapers.section_draft@v1',
+                                      'prompt': 'workpapers.section_draft.gap@v1',
                                       'purpose': "Draft a workpaper section's values, each cited "
                                                  "to the firm's methodology or a source page, as "
                                                  'suggestions for a person to adopt.',
@@ -253,12 +253,13 @@ SPECS: dict[str, dict[str, object]] = {   'decisions.recommender': {   'autonomy
                                                         'procedure.read',
                                                         'methodology.read',
                                                         'evidence.read',
+                                                        'request_item.read',
                                                         'ebp.read',
                                                         'suggestion.create',
                                                         'section_draft.run'],
                                       'tier': 'medium',
                                       'tools': [],
                                       'untrusted_inputs': ['cells', 'documents'],
-                                      'version': 3,
+                                      'version': 4,
                                       'work_class': 'background'}}
 # fmt: on

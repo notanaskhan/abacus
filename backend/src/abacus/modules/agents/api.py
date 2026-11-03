@@ -125,11 +125,16 @@ from abacus.modules.agents.screenings import (
 from abacus.modules.agents.section_draft import DraftingNotEnabled
 from abacus.modules.agents.section_draft import start as start_section_draft
 from abacus.modules.agents.section_sources import (
+    ModeDocument,
+    ModeInputs,
+    ModeMapping,
+    ModePage,
     PackProblem,
     PackRefused,
     SectionSource,
     SourceCell,
     SourcePaper,
+    register_mode_mapping,
     register_mode_plan,
     register_section_source,
 )
@@ -337,6 +342,10 @@ __all__ = [
     "MatchRunInput",
     "MethodologyImportInput",
     "MethodologyImportWorkflow",
+    "ModeDocument",
+    "ModeInputs",
+    "ModeMapping",
+    "ModePage",
     "NamedReport",
     "NextTickInput",
     "OptionFact",
@@ -408,6 +417,7 @@ __all__ = [
     "recommend",
     "register_change_set_applier",
     "register_engagement_run_agent",
+    "register_mode_mapping",
     "register_mode_plan",
     "register_proposal_adapter",
     "register_section_source",

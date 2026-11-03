@@ -118,6 +118,31 @@ cases:
       citations:
       - step: S1
         quote: Obtain the plan document and amendments
+# A-04-T22 (DEC-2058): the Service Organizations section, cited to a step and a SOC 1 page.
+- id: northwind_gap_keystone_soc
+  mode: gap
+  engagement: Northwind Robotics 401(k) Plan PY2025
+  key: true
+  fast: true
+  steps:
+  - key: BH-EBP-110:4
+    text: Identify the service organizations relevant to the plan and obtain a SOC 1 Type 2 report for each, or plan direct tests.
+  documents:
+  - label: D1
+    name: Keystone Retirement Services SOC 1 Type 2 report
+    pages:
+    - 'Keystone Retirement Services, Inc. provides recordkeeping and trust services.'
+    - 'Section III. The report covers the period October 1, 2024 to September 30, 2025. Ridgeway Data Services is a subservice organization, presented using the carve-out method.'
+  fake_answer:
+    cells:
+    - cell: main!C4
+      text: Keystone Retirement Services, SOC 1 Type 2; Ridgeway Data Services carved out.
+      citations:
+      - step: S1
+        quote: obtain a SOC 1 Type 2 report for each
+      - document: D1
+        page: 2
+        quote: Ridgeway Data Services is a subservice organization, presented using the carve-out method
 # ---- risk_narrative (AUD-05) --------------------------------------------------------------------
 - id: northwind_risk_narrative_remittance
   mode: risk_narrative
