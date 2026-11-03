@@ -4,7 +4,7 @@ title: A-06-T07 SUM compute library (assurance/compute/sum.py)
 spec: SPEC-642
 acceptance_criteria: [AC-6]
 risk_zone: amber
-status: in-review
+status: done
 epic: A-06
 plan_key: A-06-T07
 branch: s24-a06-t07 (stacked on s24-a06-t01)
