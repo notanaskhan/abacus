@@ -4565,13 +4565,13 @@
           "actor_name": {
             "anyOf": [
               {
-                "cls": "confidential",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Actor Name"
           },
           "created_at": {
@@ -9122,7 +9122,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           }
         },
         "required": [
@@ -24162,13 +24163,13 @@
           "last_answer_by": {
             "anyOf": [
               {
-                "cls": "confidential",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Last Answer By"
           },
           "last_answer_on": {
@@ -24228,7 +24229,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "confidential"
           },
           "answered": {
             "cls": "internal",
@@ -24291,7 +24293,6 @@
           "parent_key": {
             "anyOf": [
               {
-                "cls": "internal",
                 "pattern": "^[a-z][a-z0-9_]{0,39}(\\.[a-z][a-z0-9_]{0,39})?$",
                 "type": "string"
               },
@@ -24299,6 +24300,7 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Parent Key"
           },
           "position": {
@@ -24326,7 +24328,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "triggered": {
             "anyOf": [
@@ -30351,16 +30354,16 @@
           "amount": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Amount"
+            "cls": "restricted",
+            "title": "Amount",
+            "x-tri": true
           },
           "confirmation": {
             "anyOf": [
@@ -30370,7 +30373,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "confidential"
           },
           "due_on": {
             "cls": "internal",
@@ -30460,16 +30464,16 @@
           "annual_required": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Annual Required"
+            "cls": "restricted",
+            "title": "Annual Required",
+            "x-tri": true
           },
           "client_entity_id": {
             "cls": "internal",
@@ -30485,13 +30489,13 @@
           "client_note": {
             "anyOf": [
               {
-                "cls": "confidential",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Client Note"
           },
           "forms": {
@@ -30510,7 +30514,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "installments": {
             "cls": "internal",
@@ -30587,30 +30592,30 @@
           "prior_year_tax": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Prior Year Tax"
+            "cls": "restricted",
+            "title": "Prior Year Tax",
+            "x-tri": true
           },
           "projected_withholding": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Projected Withholding"
+            "cls": "restricted",
+            "title": "Projected Withholding",
+            "x-tri": true
           },
           "row_version": {
             "cls": "internal",
@@ -30631,7 +30636,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "tax_year": {
             "cls": "internal",
@@ -30712,23 +30718,19 @@
           "prior_year_tax": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                    "type": "string"
-                  }
-                ],
-                "cls": "restricted",
-                "x-tri": true
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Prior Year Tax"
+            "cls": "restricted",
+            "title": "Prior Year Tax",
+            "x-tri": true
           },
           "prior_year_tax_source": {
             "anyOf": [
@@ -30749,23 +30751,19 @@
           "projected_withholding": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                    "type": "string"
-                  }
-                ],
-                "cls": "restricted",
-                "x-tri": true
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Projected Withholding"
+            "cls": "restricted",
+            "title": "Projected Withholding",
+            "x-tri": true
           }
         },
         "title": "EstimatePatchIn",
@@ -30790,16 +30788,16 @@
           "annual_required": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Annual Required"
+            "cls": "restricted",
+            "title": "Annual Required",
+            "x-tri": true
           },
           "client_entity_id": {
             "cls": "internal",
@@ -30815,13 +30813,13 @@
           "client_note": {
             "anyOf": [
               {
-                "cls": "confidential",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Client Note"
           },
           "forms": {
@@ -30840,7 +30838,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "jurisdiction_annual": {
             "additionalProperties": {
@@ -30913,7 +30912,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "tax_year": {
             "cls": "internal",
@@ -31664,13 +31664,13 @@
           "client_note": {
             "anyOf": [
               {
-                "cls": "confidential",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Client Note"
           },
           "confirmation": {
@@ -31681,7 +31681,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "confidential"
           },
           "days_to_extended_due": {
             "anyOf": [
@@ -31730,25 +31731,25 @@
           "filed_recorded_by_name": {
             "anyOf": [
               {
-                "cls": "confidential",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Filed Recorded By Name"
           },
           "likely_note": {
             "anyOf": [
               {
-                "cls": "confidential",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Likely Note"
           },
           "likely_reasons": {
@@ -31799,16 +31800,16 @@
           "paid_by_original_due": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Paid By Original Due"
+            "cls": "restricted",
+            "title": "Paid By Original Due",
+            "x-tri": true
           },
           "payments": {
             "cls": "internal",
@@ -31833,27 +31834,27 @@
           "projected_liability": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Projected Liability"
-          },
-          "projected_liability_note": {
-            "anyOf": [
-              {
-                "cls": "confidential",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
+            "cls": "restricted",
+            "title": "Projected Liability",
+            "x-tri": true
+          },
+          "projected_liability_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
             "title": "Projected Liability Note"
           },
           "projected_liability_source": {
@@ -31885,7 +31886,6 @@
           "safe_harbor_pct": {
             "anyOf": [
               {
-                "cls": "internal",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,6}0*$)\\d{0,3}\\.\\d{0,2}0*$)",
                 "type": "string"
               },
@@ -31893,21 +31893,22 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Safe Harbor Pct"
           },
           "safe_harbor_target": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Safe Harbor Target"
+            "cls": "restricted",
+            "title": "Safe Harbor Target",
+            "x-tri": true
           },
           "stamp": {
             "anyOf": [
@@ -31917,7 +31918,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "tax_return_id": {
             "cls": "internal",
@@ -31933,16 +31935,16 @@
           "withholding_plus_estimates": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Withholding Plus Estimates"
+            "cls": "restricted",
+            "title": "Withholding Plus Estimates",
+            "x-tri": true
           },
           "work_item_id": {
             "cls": "internal",
@@ -32085,13 +32087,13 @@
           "approved_by_name": {
             "anyOf": [
               {
-                "cls": "confidential",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Approved By Name"
           },
           "confirmation_evidence_version_id": {
@@ -32227,13 +32229,13 @@
           "client_note": {
             "anyOf": [
               {
-                "cls": "confidential",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Client Note"
           },
           "confirmation": {
@@ -32244,7 +32246,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "confidential"
           },
           "days_to_extended_due": {
             "anyOf": [
@@ -32267,13 +32270,13 @@
           "likely_note": {
             "anyOf": [
               {
-                "cls": "confidential",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Likely Note"
           },
           "likely_reasons": {
@@ -32324,16 +32327,16 @@
           "paid_by_original_due": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Paid By Original Due"
+            "cls": "restricted",
+            "title": "Paid By Original Due",
+            "x-tri": true
           },
           "payments": {
             "cls": "internal",
@@ -32358,27 +32361,27 @@
           "projected_liability": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Projected Liability"
-          },
-          "projected_liability_note": {
-            "anyOf": [
-              {
-                "cls": "confidential",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
+            "cls": "restricted",
+            "title": "Projected Liability",
+            "x-tri": true
+          },
+          "projected_liability_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
             "title": "Projected Liability Note"
           },
           "projected_liability_source": {
@@ -32410,7 +32413,6 @@
           "safe_harbor_pct": {
             "anyOf": [
               {
-                "cls": "internal",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,6}0*$)\\d{0,3}\\.\\d{0,2}0*$)",
                 "type": "string"
               },
@@ -32418,21 +32420,22 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Safe Harbor Pct"
           },
           "safe_harbor_target": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Safe Harbor Target"
+            "cls": "restricted",
+            "title": "Safe Harbor Target",
+            "x-tri": true
           },
           "stamp": {
             "anyOf": [
@@ -32442,7 +32445,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "tax_return_id": {
             "cls": "internal",
@@ -32458,16 +32462,16 @@
           "withholding_plus_estimates": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Withholding Plus Estimates"
+            "cls": "restricted",
+            "title": "Withholding Plus Estimates",
+            "x-tri": true
           },
           "work_item_id": {
             "cls": "internal",
@@ -32519,7 +32523,8 @@
         "description": "One box: `match_id` is `ev:<version>#field:<key>`, which SHL-08's regions accept. A TIN\nbox carries `mask_token` (\"\u2022\u2022\u2022-\u2022\u2022-6081\") and never `value_text`.",
         "properties": {
           "bbox": {
-            "$ref": "#/components/schemas/BoxOut"
+            "$ref": "#/components/schemas/BoxOut",
+            "cls": "internal"
           },
           "confidence": {
             "cls": "internal",
@@ -32681,7 +32686,8 @@
       "ExtractedTableOut": {
         "properties": {
           "bbox": {
-            "$ref": "#/components/schemas/BoxOut"
+            "$ref": "#/components/schemas/BoxOut",
+            "cls": "internal"
           },
           "page": {
             "cls": "internal",
@@ -46976,16 +46982,16 @@
           "paid_with_extension": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Paid With Extension"
+            "cls": "restricted",
+            "title": "Paid With Extension",
+            "x-tri": true
           },
           "reject_code": {
             "anyOf": [
@@ -50479,7 +50485,6 @@
           "off_by": {
             "anyOf": [
               {
-                "cls": "confidential",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
                 "type": "string"
               },
@@ -50487,6 +50492,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Off By"
           },
           "override_reason": {
@@ -59163,13 +59169,13 @@
           "published_by_name": {
             "anyOf": [
               {
-                "cls": "confidential",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Published By Name"
           },
           "questionnaire_id": {
@@ -65539,7 +65545,6 @@
           "parent_key": {
             "anyOf": [
               {
-                "cls": "internal",
                 "pattern": "^[a-z][a-z0-9_]{0,39}(\\.[a-z][a-z0-9_]{0,39})?$",
                 "type": "string"
               },
@@ -65547,6 +65552,7 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Parent Key"
           },
           "required": {
@@ -67659,7 +67665,6 @@
           "parent_key": {
             "anyOf": [
               {
-                "cls": "internal",
                 "pattern": "^[a-z][a-z0-9_]{0,39}(\\.[a-z][a-z0-9_]{0,39})?$",
                 "type": "string"
               },
@@ -67667,6 +67672,7 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Parent Key"
           },
           "required": {
@@ -67689,7 +67695,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "type": {
             "cls": "internal",
@@ -67950,7 +67957,8 @@
             "title": "Binder Id"
           },
           "counts": {
-            "$ref": "#/components/schemas/EditorCountsOut"
+            "$ref": "#/components/schemas/EditorCountsOut",
+            "cls": "internal"
           },
           "id": {
             "cls": "internal",
@@ -67997,7 +68005,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "title": {
             "cls": "confidential",
@@ -68175,7 +68184,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "confidential"
           },
           "saved": {
             "cls": "internal",
@@ -76694,44 +76704,44 @@
           "paid_by_original_due": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Paid By Original Due"
+            "cls": "restricted",
+            "title": "Paid By Original Due",
+            "x-tri": true
           },
           "projected_liability": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Projected Liability"
+            "cls": "restricted",
+            "title": "Projected Liability",
+            "x-tri": true
           },
           "safe_harbor_target": {
             "anyOf": [
               {
-                "cls": "restricted",
                 "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
-                "type": "string",
-                "x-tri": true
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Safe Harbor Target"
+            "cls": "restricted",
+            "title": "Safe Harbor Target",
+            "x-tri": true
           },
           "stamp": {
             "anyOf": [
@@ -76741,7 +76751,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "tax_return_id": {
             "cls": "internal",
@@ -85996,7 +86007,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "version_no": {
             "cls": "internal",
@@ -86044,7 +86056,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "framework_key": {
             "anyOf": [
@@ -87447,7 +87460,8 @@
       "TableCellOut": {
         "properties": {
           "bbox": {
-            "$ref": "#/components/schemas/BoxOut"
+            "$ref": "#/components/schemas/BoxOut",
+            "cls": "internal"
           },
           "confidence": {
             "cls": "internal",
@@ -87966,13 +87980,13 @@
           "contact_name": {
             "anyOf": [
               {
-                "cls": "confidential",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Contact Name"
           },
           "request_item_id": {
@@ -90726,13 +90740,13 @@
           "owner_name": {
             "anyOf": [
               {
-                "cls": "confidential",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Owner Name"
           },
           "versions": {
@@ -187016,7 +187030,7 @@
     },
     "/v1/human-gates": {
       "get": {
-        "description": "What waits on the caller; `counts` are per kind (\"3 decisions, 6 sign-offs, 2 exports\").\nP-04-T16: served from the projection behind `review.grammar_api`; a walled client's gates\nare never listed or counted. I-01-T07: `state` (open, snoozed by the caller, done), `band`,\n`office_id` (narrows, never authorises), `sort=deadline`, and each row's presentation facts.",
+        "description": "What waits on the caller; `counts` are per kind (\"3 decisions, 6 sign-offs, 2 exports\").\nP-04-T16: served from the projection; a walled client's gates\nare never listed or counted. I-01-T07: `state` (open, snoozed by the caller, done), `band`,\n`office_id` (narrows, never authorises), `sort=deadline`, and each row's presentation facts.",
         "operationId": "human_gate_list",
         "parameters": [
           {
@@ -187270,7 +187284,7 @@
     },
     "/v1/human-gates/counts": {
       "get": {
-        "description": "The one count source (I-01-T04): open gates waiting on the caller by DF-25 band, how many\nof them are overdue, and how many the caller snoozed (left out of `total`). A walled client's\ngates are never counted, and nothing says any were left out (DEC-43); `office_id` narrows and\nnever authorises (DEC-30). Behind `review.grammar_api`, like the list.",
+        "description": "The one count source (I-01-T04): open gates waiting on the caller by DF-25 band, how many\nof them are overdue, and how many the caller snoozed (left out of `total`). A walled client's\ngates are never counted, and nothing says any were left out (DEC-43); `office_id` narrows and\nnever authorises (DEC-30).",
         "operationId": "human_gate_counts",
         "parameters": [
           {
@@ -200127,7 +200141,7 @@
     },
     "/v1/notice-intakes": {
       "post": {
-        "description": "Starts NoticeIntakeWorkflow; the sheet polls while `extracting`.",
+        "description": "An intake from a stored file; the sheet polls while `extracting` (N-04-T07).",
         "operationId": "intake_create",
         "parameters": [
           {
@@ -200672,7 +200686,7 @@
     },
     "/v1/notice-intakes/{intake_id}/create": {
       "post": {
-        "description": "409 `low_confidence_unconfirmed`, `duplicate_unresolved`, `no_client`.",
+        "description": "409 `low_confidence_unconfirmed`, `duplicate_unresolved`, `no_notice_engagement`.",
         "operationId": "intake_confirm",
         "parameters": [
           {

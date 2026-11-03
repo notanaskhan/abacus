@@ -363,15 +363,17 @@ async def test_the_other_fixed_codes(world: World) -> None:
     assert (again.status_code, again.json()["detail"]) == (409, "already_signed")
 
 
-async def test_the_routes_are_404_with_the_flag_off(world: World) -> None:
+async def test_the_routes_need_no_flag(world: World) -> None:
+    """P-04-T62 (DEC-2221) retired `review.grammar_api`: with every firm flag off, the sign-off
+    routes still serve (they were 404 with the flag off before)."""
     await world.seed.run(
         "UPDATE feature_flag_states SET value = 'false' WHERE tenant_id = $1",
         world.team.tenant,
     )
     target = world.probe()
-    assert (await world.ladder("hannah", "probe_signed", target)).status_code == 404
+    assert (await world.ladder("hannah", "probe_signed", target)).status_code == 200
     found = await world.sign("ana", "probe_signed", target, "L1_preparer", "sha256:" + "a" * 64)
-    assert found.status_code == 404
+    assert found.status_code == 201
 
 
 async def test_rso3_a_reviewer_never_prepares_what_they_reviewed(world: World) -> None:
