@@ -13471,6 +13471,14 @@ export type EnvelopeDocumentOut = {
      */
     page_count: number;
     /**
+     * Page From
+     */
+    page_from?: number | null;
+    /**
+     * Page To
+     */
+    page_to?: number | null;
+    /**
      * Read Only
      */
     read_only: boolean;

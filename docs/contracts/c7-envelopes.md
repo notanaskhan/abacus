@@ -82,3 +82,10 @@ The evidence package: a §7216 consent's package is kept under the retention rec
 
 ## Freeze (N-02-T45; DEC-1666)
 C7 is **v1.1, frozen**: §1 to §8 and the dated additions above (N-02-T21, T25, T27, T29, T32, T33, T34, T38), with N-02-T28's countersignature session and envelope gates (DEC-1479) as built are the contract. Consumer suites: `backend/tests/contracts/c7_n02/`, F-06-T09 (`EnvelopeVM`), T-01-T04 (`c7_t01`), T-02-T05 (envelope summary). A change is additive (a new optional field with a default, a new source kind, a new event) and needs a v1.2 entry here accepted at a Contract Monday; removing or renaming anything, or narrowing who may call it, is a v2 with a migration plan. Rows merged after N-02-T45 add to it only as v1.2 entries.
+
+**v1.2 (additive, N-04-T08, 2026-11-03, DEC-2205; for N-04's NOT-03):**
+- **The `notice_response` source contract.** A source of kind `notice_response` drafts only purpose `notice_response` in family `general` (422 `source_contract_broken` otherwise).
+- **QN-5 identity floor.** The floor for purpose `notice_response` allows `email_code` (the provider's code at signing, after the portal sign-in with MFA for the signing scope), `in_person_id` and, for a firm countersigner, `firm_sso`. It never allows KBA (it is not an 8879). A firm's own `envelope_policies` row for the purpose can only narrow it.
+- **Page ranges.** An envelope document may be a page range of a version: `page_from`/`page_to`, both or neither, 1 ≤ from ≤ to ≤ `page_count` (0656). NOT-03's CP2000 response page is a one-page range, and `EnvelopeDocumentOut` carries the range.
+- **Declined payload.** `envelope.declined` gains `purpose`, `source_kind` and `source_id` (`envelope.completed` already carries them), so the notice hears its decline.
+- **G3 for `notice_response` engagements (QN-1).** G3 is met by the engagement's own letter, **or** by a signed `tax_compliance` letter of the same client entity whose clause set includes `notice_support` (on in the signed version, or on by the template's default) and whose own G3 is met. Code: `engagements.api.covering_letter_engagements`, read by signatures' G3 provider.
