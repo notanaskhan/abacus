@@ -12,8 +12,8 @@ With none registered, a draft is refused before anything is written (fail closed
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable, Sequence
-from dataclasses import dataclass
+from collections.abc import Awaitable, Callable, Mapping, Sequence
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Final
 from uuid import UUID
 
@@ -152,9 +152,25 @@ class ModeDocument:
 
 
 @dataclass(frozen=True)
+class ModeTarget:
+    """A-04-T24 (DEC-2060): where an adopted value on a mode's own cell lands (a risk's field,
+    through its owner's suggestion applier), instead of the paper's cell."""
+
+    target_type: str
+    target_id: UUID
+    field_key: str
+
+
+@dataclass(frozen=True)
 class ModeInputs:
     documents: tuple[ModeDocument, ...] = ()
     waiting_on: tuple[str, ...] = ()
+    # A-04-T24: the mode's own cells (A1 keys on its own sheet, as a grid of its records), each
+    # with the target its value lands on, and code facts ("risks_total = 10") for numbers by
+    # reference.
+    cells: tuple[SourceCell, ...] = ()
+    targets: Mapping[str, ModeTarget] = field(default_factory=dict[str, ModeTarget])
+    facts: tuple[tuple[str, dict[str, object]], ...] = ()
 
 
 # (the run's agent, as the actor the reads are authorised for; the paper as the source read it)
@@ -208,6 +224,7 @@ __all__ = [
     "ModeMapping",
     "ModePage",
     "ModePreparer",
+    "ModeTarget",
     "PackProblem",
     "PackRefused",
     "SectionSource",

@@ -29,6 +29,7 @@ from abacus.modules.workpapers.drafting import (
     apply_cell_suggestion,
     draft_paper,
     paper_engagement,
+    paper_of_kind,
 )
 from abacus.modules.workpapers.layouts import (
     AddressInvalid,
@@ -111,6 +112,7 @@ __all__ = [
     "link_issue",
     "pack_errors",
     "paper_engagement",
+    "paper_of_kind",
     "register_designed_layout",
     "resolve",
     "router",
