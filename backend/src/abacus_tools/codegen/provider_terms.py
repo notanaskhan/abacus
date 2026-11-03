@@ -90,20 +90,52 @@ def validate(entry: dict[str, object]) -> None:
         raise TermsInvalid("review_by is after approved_on and within 12 months")
 
 
+_DOCUMENT_ROUTES = frozenset({"textract"})
+
+
+def validate_document_service(entry: dict[str, object]) -> bool:
+    """Register v2 (P-11-T21): a document service entry. A draft needs only its facts; an
+    approved one meets the model-route rules too. True when it is approved (compiled in)."""
+    if entry.get("route") not in _DOCUMENT_ROUTES:
+        raise TermsInvalid("only textract is an eligible document service (ADR-153)")
+    status = entry.get("status")
+    if status not in ("draft", "approved"):
+        raise TermsInvalid("a document service entry is draft or approved")
+    if not isinstance(entry.get("ai_services_opt_out"), str):
+        raise TermsInvalid("ai_services_opt_out names its evidence")
+    basis = entry.get("tri_basis")
+    if basis is not None and (not isinstance(basis, str) or not basis.strip()):
+        raise TermsInvalid("tri_basis is counsel's words or null")
+    if status == "draft":
+        if entry.get("approved_on") is not None:
+            raise TermsInvalid("a draft entry carries no approval")
+        return False
+    validate({**entry, "route": "bedrock"})  # the model-route rules, but for its route
+    return True
+
+
 def render(source: str) -> str:
     document = cast(dict[str, object], yaml.safe_load(source) or {})
     entries = cast(list[dict[str, object]], document.get("entries") or [])
     for entry in entries:
         validate(entry)
     lines = [_HEADER]
-    if entries:
-        lines.append("from datetime import date\n\n")
     lines.append("from abacus.kernel.provider_terms import TermsEntry\n\n")
+    services = cast(list[dict[str, object]], document.get("document_services") or [])
+    approved = [s for s in services if validate_document_service(s)]
+    if (entries or approved) and "from datetime import date\n\n" not in lines:
+        lines.insert(1, "from datetime import date\n\n")
     lines.append(f'VERSION = "{hashlib.sha256(source.encode()).hexdigest()}"\n\n')
+    lines += _tuple("ENTRIES", entries, kind=None)
+    lines.append("\n")
+    lines += _tuple("DOCUMENT_SERVICES", approved, kind="document_service")
+    return "".join(lines)
+
+
+def _tuple(name: str, entries: list[dict[str, object]], *, kind: str | None) -> list[str]:
     if not entries:
-        lines.append("ENTRIES: tuple[TermsEntry, ...] = ()\n")
-        return "".join(lines)
-    lines.append("ENTRIES: tuple[TermsEntry, ...] = (\n")
+        return [f"{name}: tuple[TermsEntry, ...] = ()\n"]
+    lines = [f"{name}: tuple[TermsEntry, ...] = (\n"]
     for e in entries:
         approved, review = _date(e, "approved_on"), _date(e, "review_by")
         retention = cast(dict[str, object], e["retention"])
@@ -126,10 +158,21 @@ def render(source: str) -> str:
             "        subprocessors=(\n",
             *[f"            {_q(x)},\n" for x in subprocessors],
             "        ),\n",
+            *(
+                [
+                    f"        kind={_q(kind)},\n",
+                    f"        ai_services_opt_out={_q(e.get('ai_services_opt_out'))},\n",
+                    "        tri_basis="
+                    + ("None" if e.get("tri_basis") is None else _q(e.get("tri_basis")))
+                    + ",\n",
+                ]
+                if kind
+                else []
+            ),
             "    ),\n",
         ]
     lines.append(")\n")
-    return "".join(lines)
+    return lines
 
 
 def material(entry: dict[str, object]) -> str:

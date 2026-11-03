@@ -2,7 +2,8 @@
 
 `docs/operations/provider-terms.yaml` is rendered into `_provider_terms` by
 `abacus_tools.codegen.provider_terms`. A route carries client data only while an entry covers it
-(`approved_on <= today <= review_by`); only `bedrock` is ever eligible (ADR-113).
+(`approved_on <= today <= review_by`); only `bedrock` is an eligible model route (ADR-113) and
+only `textract` an eligible document service (register v2, P-11-T21).
 """
 
 from __future__ import annotations
@@ -23,13 +24,23 @@ class TermsEntry:
     material: str = ""
     retention_exceptions: tuple[tuple[str, int], ...] = ()
     subprocessors: tuple[str, ...] = ()
+    # Register v2 (P-11-T21): `model_route` (Bedrock) or `document_service` (Textract), with the
+    # document service's AI-services opt-out evidence and §7216 basis for TRI (None: no TRI).
+    kind: str = "model_route"
+    ai_services_opt_out: str | None = None
+    tri_basis: str | None = None
 
 
 def covering(route: str, on: date) -> TermsEntry | None:
-    """The newest entry covering `route` on `on`, or None."""
-    from abacus.kernel._provider_terms import ENTRIES
+    """The newest approved entry covering `route` on `on` (a model route or, register v2, a
+    document service such as `textract`), or None. A draft entry is never compiled in."""
+    from abacus.kernel._provider_terms import DOCUMENT_SERVICES, ENTRIES
 
-    found = [e for e in ENTRIES if e.route == route and e.approved_on <= on <= e.review_by]
+    found = [
+        e
+        for e in (*ENTRIES, *DOCUMENT_SERVICES)
+        if e.route == route and e.approved_on <= on <= e.review_by
+    ]
     return max(found, key=lambda e: e.approved_on) if found else None
 
 
