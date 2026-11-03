@@ -97,6 +97,9 @@ meaning.
 - **AC-31** (P-11-T03) The generated client exposes every C11 route returning seed-derived fixtures, each route declares one matrix action, and agent principals are refused final renders, regeneration and template publication.
 - **AC-32** (P-11-T04) The consumer suite asserts shapes, refusal codes (`missing_variable`, `final_requires_approval`, `document_locked`), human-only actions and audit event names, and runs green in the provider's CI.
 - **AC-33** (P-11-T05) Every table is tenant-RLS; versions, files, fields and events reject UPDATE and DELETE for every role; the mode CHECKs hold; the single-head check passes.
+- **AC-34** (P-11-T19) The C4 v1.1 OCR and box-extraction stubs answer 404 off and 501 on, every field is classified, and a TIN travels only as a mask token.
+- **AC-35** (P-11-T21) The provider-terms register v2 carries document services, and a draft entry never compiles in, so no call reaches it.
+- **AC-36** (P-11-T20) The C4 v1.1 consumer suite fails on any field-key, confidence, mask or refusal-reason drift.
 
 ## 6. Behaviour and flows
 `docs/plan/epics/P-11.md` §4.2 (tables), §4.3 (endpoints and matrix rows), §4.4 (renderer rules),

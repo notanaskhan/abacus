@@ -14475,7 +14475,7 @@ export const humanGateListQueryKey = (options?: Options<HumanGateListData>) => c
  * Human Gate List Route
  *
  * What waits on the caller; `counts` are per kind ("3 decisions, 6 sign-offs, 2 exports").
- * P-04-T16: served from the projection behind `review.grammar_api`; a walled client's gates
+ * P-04-T16: served from the projection; a walled client's gates
  * are never listed or counted. I-01-T07: `state` (open, snoozed by the caller, done), `band`,
  * `office_id` (narrows, never authorises), `sort=deadline`, and each row's presentation facts.
  */
@@ -14498,7 +14498,7 @@ export const humanGateListInfiniteQueryKey = (options?: Options<HumanGateListDat
  * Human Gate List Route
  *
  * What waits on the caller; `counts` are per kind ("3 decisions, 6 sign-offs, 2 exports").
- * P-04-T16: served from the projection behind `review.grammar_api`; a walled client's gates
+ * P-04-T16: served from the projection; a walled client's gates
  * are never listed or counted. I-01-T07: `state` (open, snoozed by the caller, done), `band`,
  * `office_id` (narrows, never authorises), `sort=deadline`, and each row's presentation facts.
  */
@@ -14535,7 +14535,7 @@ export const humanGateCountsQueryKey = (options?: Options<HumanGateCountsData>) 
  * The one count source (I-01-T04): open gates waiting on the caller by DF-25 band, how many
  * of them are overdue, and how many the caller snoozed (left out of `total`). A walled client's
  * gates are never counted, and nothing says any were left out (DEC-43); `office_id` narrows and
- * never authorises (DEC-30). Behind `review.grammar_api`, like the list.
+ * never authorises (DEC-30).
  */
 export const humanGateCountsOptions = (options?: Options<HumanGateCountsData>) => queryOptions<HumanGateCountsResponse, HumanGateCountsError, HumanGateCountsResponse, ReturnType<typeof humanGateCountsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -16689,7 +16689,7 @@ export const misstatementPassMutation = (options?: Partial<Options<MisstatementP
 /**
  * Intake Create Route
  *
- * Starts NoticeIntakeWorkflow; the sheet polls while `extracting`.
+ * An intake from a stored file; the sheet polls while `extracting` (N-04-T07).
  */
 export const intakeCreateMutation = (options?: Partial<Options<IntakeCreateData>>): UseMutationOptions<IntakeCreateResponse, IntakeCreateError, Options<IntakeCreateData>> => {
     const mutationOptions: UseMutationOptions<IntakeCreateResponse, IntakeCreateError, Options<IntakeCreateData>> = {
@@ -16760,7 +16760,7 @@ export const intakeAttachMutation = (options?: Partial<Options<IntakeAttachData>
 /**
  * Intake Confirm Route
  *
- * 409 `low_confidence_unconfirmed`, `duplicate_unresolved`, `no_client`.
+ * 409 `low_confidence_unconfirmed`, `duplicate_unresolved`, `no_notice_engagement`.
  */
 export const intakeConfirmMutation = (options?: Partial<Options<IntakeConfirmData>>): UseMutationOptions<IntakeConfirmResponse, IntakeConfirmError, Options<IntakeConfirmData>> => {
     const mutationOptions: UseMutationOptions<IntakeConfirmResponse, IntakeConfirmError, Options<IntakeConfirmData>> = {

@@ -182,6 +182,8 @@ STALE_EVENTS: Final = {
     "workpaper.content_changed",
     # A-03-T14 (TASK-5010): a new trial balance version makes a signed mapping's sign-off stale.
     "mapping_set.went_stale",
+    # A-05-T22 (DEC-2212): a person's mark is a new version of the attribute test.
+    "attribute_test.version_created",
 }
 
 
