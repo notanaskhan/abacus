@@ -940,6 +940,64 @@ def _not_yet() -> NoReturn:
     raise NotImplementedYet
 
 
+def _process_out(p: object) -> ProcessOut:
+    from abacus.modules.assurance.internal_control import Process
+
+    found = cast(Process, p)
+    return ProcessOut(
+        id=found.id,
+        process_name=found.process_name,
+        walkthrough_on=found.walkthrough_on,
+        design=ControlDesignStatus(found.design),
+        implementation=cast(
+            Literal["implemented", "not_implemented", "not_assessed"], found.implementation
+        ),
+        reliance=cast(Literal["none", "via_soc1", "tested"], found.reliance),
+        service_organization_id=found.service_organization_id,
+        row_version=found.row_version,
+    )
+
+
+_EXCEPTION_ACTIONS: tuple[str, ...] = ("deficiency.propose_severity", "exception.route")
+
+
+async def _exception_actions(ctx: AuthContext, engagement_id: UUID) -> list[PlanningAction]:
+    from abacus.modules.assurance.internal_control import exception_route_available
+
+    ref = await get_ref(ctx, engagement_id)
+    can = await allowed_actions(ctx, ref.resource(), _EXCEPTION_ACTIONS)
+    routable = exception_route_available("finding") or exception_route_available("misstatement")
+    # The route menu is hidden until A-06 registers its routers (AC6.4).
+    return [
+        cast(PlanningAction, a)
+        for a in _EXCEPTION_ACTIONS
+        if a in can and (a != "exception.route" or routable)
+    ]
+
+
+def _exception_out(e: object, actions: list[PlanningAction]) -> ControlExceptionOut:
+    """No concluded severity here: A-06's record supplies it once it registers (AC6.7)."""
+    from abacus.modules.assurance.internal_control import ControlException
+
+    row = cast(ControlException, e)
+    return ControlExceptionOut(
+        sheet_row=row.sheet_row,
+        address=row.address,
+        matter=row.matter,
+        description=row.description,
+        proposed_severity=cast(Proposable | None, row.proposed_severity),
+        concluded_severity=None,
+        disposition=ControlExceptionDispositionStatus(row.disposition),
+        coso_component=cast(CosoComponent, row.coso_component),
+        misstatement_candidate_amount=row.misstatement_candidate_amount,
+        routed_kind=cast(Literal["finding", "misstatement"] | None, row.routed_kind),
+        routed_ref=row.routed_ref,
+        suggestion_id=row.suggestion_id,
+        citation_ids=list(row.citation_ids),
+        allowed_actions=actions,
+    )
+
+
 async def _org_actions(ctx: AuthContext, engagement_id: UUID) -> list[PlanningAction]:
     ref = await get_ref(ctx, engagement_id)
     can = await allowed_actions(ctx, ref.resource(), ("service_org.edit",))
@@ -1655,7 +1713,10 @@ async def fraud_inquiry_create_route(
 async def processes_route(engagement_id: UUID, ctx: Ctx) -> ListPage[ProcessOut]:
     """Processes with walkthrough, design, implementation and reliance (AC6.6; T25)."""
     await _gate(ctx, engagement_id, "control.read", _IC)
-    _not_yet()
+    from abacus.modules.assurance import internal_control as ic
+
+    found = [_process_out(p) for p in await ic.processes(ctx, engagement_id)]
+    return ListPage[ProcessOut](items=found, total=len(found))
 
 
 @router.get(
@@ -1666,7 +1727,9 @@ async def processes_route(engagement_id: UUID, ctx: Ctx) -> ListPage[ProcessOut]
 )
 async def process_route(engagement_id: UUID, process_id: UUID, ctx: Ctx) -> ProcessOut:
     await _gate(ctx, engagement_id, "control.read", _IC)
-    _not_yet()
+    from abacus.modules.assurance import internal_control as ic
+
+    return _process_out(await ic.process(ctx, engagement_id, process_id))
 
 
 @router.put(
@@ -1684,7 +1747,19 @@ async def process_edit_route(
 ) -> ProcessOut:
     """Record design, implementation, reliance or a walkthrough; audited (T25)."""
     await _gate(ctx, engagement_id, "control.edit", _IC)
-    _not_yet()
+    from abacus.modules.assurance import internal_control as ic
+
+    found = await ic.edit_process(
+        ctx,
+        engagement_id,
+        process_id,
+        expected_version=body.expected_version,
+        design=body.design,
+        implementation=body.implementation,
+        reliance=body.reliance,
+        walkthrough_on=body.walkthrough_on,
+    )
+    return _process_out(found)
 
 
 @router.get(
@@ -1696,7 +1771,11 @@ async def process_edit_route(
 async def control_exceptions_route(engagement_id: UUID, ctx: Ctx) -> ListPage[ControlExceptionOut]:
     """The Exceptions sheet with Sheet!Cell addresses (AC6.2; T25)."""
     await _gate(ctx, engagement_id, "control.read", _IC)
-    _not_yet()
+    from abacus.modules.assurance import internal_control as ic
+
+    actions = await _exception_actions(ctx, engagement_id)
+    found = [_exception_out(e, actions) for e in await ic.exceptions(ctx, engagement_id)]
+    return ListPage[ControlExceptionOut](items=found, total=len(found))
 
 
 @router.patch(
@@ -1714,7 +1793,10 @@ async def exception_propose_severity_route(
 ) -> ControlExceptionOut:
     """A proposal only; concluding severity is reserved to the engagement partner (AC6.3; T25)."""
     await _gate(ctx, engagement_id, "deficiency.propose_severity", _IC)
-    _not_yet()
+    from abacus.modules.assurance import internal_control as ic
+
+    found = await ic.propose_severity(ctx, engagement_id, sheet_row, body.proposed_severity)
+    return _exception_out(found, await _exception_actions(ctx, engagement_id))
 
 
 @router.post(
@@ -1731,7 +1813,10 @@ async def send_to_findings_route(
 ) -> RoutedOut:
     """Through A-06's registered router; 503 `route_not_available` until it registers (AC6.4)."""
     await _gate(ctx, engagement_id, "exception.route", _IC)
-    _not_yet()
+    from abacus.modules.assurance import internal_control as ic
+
+    kind, ref = await ic.route_exception(ctx, engagement_id, sheet_row, "finding")
+    return RoutedOut(routed_kind=kind, routed_ref=ref)
 
 
 @router.post(
@@ -1748,7 +1833,10 @@ async def convert_to_misstatement_route(
 ) -> RoutedOut:
     """An AUD-16 candidate the same way; 409 `no_amount` without one (AC6.4)."""
     await _gate(ctx, engagement_id, "exception.route", _IC)
-    _not_yet()
+    from abacus.modules.assurance import internal_control as ic
+
+    kind, ref = await ic.route_exception(ctx, engagement_id, sheet_row, "misstatement")
+    return RoutedOut(routed_kind=kind, routed_ref=ref)
 
 
 @router.post(
@@ -1764,9 +1852,12 @@ async def exception_request_evidence_route(
     ctx: Ctx,
     idempotency_key: IdempotencyKey,
 ) -> RequestDraftOut:
-    """An SHL-14 prefill as a C5 draft; nothing is sent (AC6.4; T31)."""
+    """An SHL-14 prefill as a C5 draft; nothing is sent (AC6.4; T25)."""
     await _gate(ctx, engagement_id, "request_item.create", _IC)
-    _not_yet()
+    from abacus.modules.assurance import internal_control as ic
+
+    draft_id, items = await ic.request_evidence(ctx, engagement_id, sheet_row)
+    return RequestDraftOut(draft_id=draft_id, request_item_ids=items)
 
 
 @router.get(
