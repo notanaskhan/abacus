@@ -12,14 +12,20 @@ from abacus.modules.agents.api import (
     register_suggestion_applier,
     register_suggestion_target,
 )
-from abacus.modules.assurance import ebp_attribute, ebp_provisions, ebp_reconcile, ic_mode
+from abacus.modules.assurance import (
+    completion_errors,  # A-07 refusal codes (A-07-T06)
+    ebp_attribute,
+    ebp_provisions,
+    ebp_reconcile,
+    ic_mode,
+)
 from abacus.modules.assurance import mapping_live as mapping_live
 from abacus.modules.assurance.archive_gate import g9
 from abacus.modules.assurance.audits_contract import audits_router
 from abacus.modules.assurance.completion import g6, g7, on_entry_client_decision
+from abacus.modules.assurance.completion_contract import router as audit_completion_router
 from abacus.modules.assurance.completion_decisions import register_completion_decision_kinds
 from abacus.modules.assurance.completion_routes import dashboard_router
-from abacus.modules.assurance.completion_contract import router as audit_completion_router
 from abacus.modules.assurance.completion_routes import router as completion_router
 
 # A-04-T08/T09: the pure materiality engine, for the recommender's evaluation (BOUND-001).
@@ -71,6 +77,7 @@ from abacus.modules.assurance.planning_contract import router as planning_router
 from abacus.modules.assurance.planning_gate import g4_facts
 from abacus.modules.assurance.providers import register as register_a01_providers
 from abacus.modules.assurance.release import RELEASE_MODE_SETTING, g8
+from abacus.modules.assurance.release_contract import router as audit_release_router
 from abacus.modules.assurance.review_gates import register_review_gates
 from abacus.modules.assurance.risks import AUDIT_KINDS as RISK_KINDS
 from abacus.modules.assurance.risks import Edit as RiskEdit
@@ -85,7 +92,6 @@ from abacus.modules.assurance.risks import audit_owners as risk_owners
 from abacus.modules.assurance.risks import create as create_risk
 from abacus.modules.assurance.risks import edit as edit_risk
 from abacus.modules.assurance.risks import request_approval as request_risk_approval
-from abacus.modules.assurance.release_contract import router as audit_release_router
 from abacus.modules.assurance.routes import router
 from abacus.modules.assurance.run_badges import run_badges
 from abacus.modules.assurance.sections import (
@@ -230,6 +236,7 @@ __all__ = [
     "RunSummary",
     "SectionState",
     "adopt_trial_balance",
+    "completion_errors",
     "completion_router",
     "create_risk",
     "edit_risk",

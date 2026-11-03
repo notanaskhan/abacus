@@ -176,6 +176,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.requests.portal_questionnaires.AnswerInvalid
+  approval_required:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.completion_errors.ApprovalRequired
+    summary: 'The version has no engagement partner approval yet: nothing is sent.'
   approver_invalid:
     status: 422
     raised_by:
@@ -198,6 +203,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.completion.AlreadyLocked
+  archived:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.completion_errors.Archived
+    summary: 'The work item is locked: nothing changes outside an `archived_write` kind.'
   attachment_filed:
     status: 409
     raised_by:
@@ -298,6 +308,11 @@ codes:
     raised_by:
     - abacus.modules.methodology.lifecycle.ChecklistChanged
     summary: 'The checklist is not the one you approved: review it again.'
+  checklist_incomplete:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.completion_errors.ChecklistIncomplete
+    summary: An item or an EQR note is still open (EQR concurrence, archive lock).
   checklist_unmet:
     status: 409
     raised_by:
@@ -467,6 +482,7 @@ codes:
   content_changed:
     status: 409
     raised_by:
+    - abacus.modules.assurance.completion_errors.LetterContentChanged
     - abacus.modules.assurance.mapping_live.ContentChanged
     - abacus.modules.review.sign_offs.ContentChanged
     - abacus.modules.sampling.sample_sets.ContentChanged
@@ -499,6 +515,11 @@ codes:
     raised_by:
     - abacus.modules.connections.gl_import.CutoffInvalid
     summary: 'SPEC-038 Q2: the cut-off is 30 to 366 days after year end.'
+  date_mismatch:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.completion_errors.DateMismatch
+    summary: The letter's signature date is not the report date.
   deactivation_reason_invalid:
     status: 422
     raised_by:
@@ -539,6 +560,7 @@ codes:
   decision_required:
     status: 409
     raised_by:
+    - abacus.modules.assurance.completion_errors.DecisionRequired
     - abacus.modules.communications.intake_contract.DecisionRequired
     summary: An attachment in the apply has no decision, or a forced Hold was answered otherwise.
   decline_not_withdrawable:
@@ -787,6 +809,11 @@ codes:
     raised_by:
     - abacus.modules.engagements.team_errors.EqrApproverOnEngagement
     summary: The EQR's eligibility is approved by a quality owner with no role on this engagement.
+  eqr_ineligible:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.completion_errors.EqrIneligible
+    summary: The assignee fails P-07's eligibility re-check (on the team, the EP, or cooling-off).
   eqr_must_be_excluded:
     status: 422
     raised_by:
@@ -1004,6 +1031,11 @@ codes:
     - abacus.modules.organisations.contacts.GateUnmet
     - abacus.modules.review.issue_resolutions.LetterGateUnmet
     summary: A gate the step or the create requires is not met (C1 gate providers; `facts.gate`).
+  gates_not_met:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.completion_errors.GatesNotMet
+    summary: A gate the act needs is not met at the server (`facts.gates`).
   grant_exists:
     status: 409
     raised_by:
@@ -1209,6 +1241,11 @@ codes:
     raised_by:
     - abacus.modules.evidence.item_detail.IntegrityFailed
     summary: The stored content doesn't match its fingerprint, or is missing (ADR-016).
+  internal_amount_in_text:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.completion_errors.InternalAmountInText
+    summary: Client-facing letter text may not carry a materiality amount.
   invalid:
     status: 422
     raised_by:
@@ -1263,6 +1300,11 @@ codes:
     - abacus.modules.communications.intake_contract.ItemClosed
     - abacus.modules.evidence.uploads.ItemClosed
     summary: The item no longer takes evidence (ready for review or further on).
+  item_derived:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.completion_errors.ItemDerived
+    summary: A projected checklist item follows its events and cannot be marked by hand.
   item_not_open:
     status: 409
     raised_by:
@@ -1908,6 +1950,11 @@ codes:
     raised_by:
     - abacus.modules.methodology.extraction.PagePreviewUnavailable
     summary: Only a PDF source has page images (a DOCX is read as text).
+  paragraph_locked:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.completion_errors.ParagraphLocked
+    summary: A general paragraph is always included and is not firm-editable.
   parameters_invalid:
     status: 422
     raised_by:
@@ -2163,6 +2210,11 @@ codes:
     raised_by:
     - abacus.modules.tax.filed_delivery.ReleaseInProgress
     summary: '409: another publish of the same copy committed first; read the delivery again.'
+  release_mode_external:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.completion_errors.ReleaseModeExternal
+    summary: The firm releases and archives in its own tool (`assurance_release_mode = external`).
   release_mode_in_app:
     status: 409
     raised_by:
@@ -2348,6 +2400,11 @@ codes:
     raised_by:
     - abacus.modules.agents.screening_card.ScreeningRunning
     summary: 'A screening of this request''s files is still running: wait for it, then rerun.'
+  seal_mismatch:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.completion_errors.SealMismatch
+    summary: The recomputed seal differs from the locked manifest's (RB-29).
   seats_full:
     status: 409
     raised_by:
@@ -2565,6 +2622,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.agents.ai_policy_service.StaleDraft
+    - abacus.modules.assurance.completion_errors.StaleVersion
     - abacus.modules.assurance.mapping_live.StaleVersion
     - abacus.modules.assurance.phase.ProfileStale
     - abacus.modules.communications.follow_up_policy.FollowUpPolicyStale
