@@ -1,0 +1,16 @@
+# A-05-T34 (DEC-2252): Northwind Robotics 401(k) Plan PY2025, slice 2's figure book. Shared by the
+# EBP-06 (investments), EBP-07 (Form 5500) and EBP-08 (distributions) goldens.
+funds: '14800000.00'
+brokerwindow: '1700000.00'
+brokerwindow_accounts: 19
+loans: '312400.00'
+trust: '16812400.00'
+balances: '16812400.00'
+participants: 301
+receivable: '48600.00'
+net_assets: '16861000.00'
+distributions: '1284600.00'
+distribution_count: 64
+sample_seed: '0x7b13c4'
+sample: [45, 19, 23, 49, 22, 60, 61, 33, 14, 3]
+form_5500_uploaded: '2026-09-21'

@@ -340,6 +340,9 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.consents_7216 import SLIC
 from abacus_tools.synthetic.scenarios.brightwater_hale.ebp import FILES as EBP_FILES
 from abacus_tools.synthetic.scenarios.brightwater_hale.ebp import NEEDS as EBP_NEEDS
 from abacus_tools.synthetic.scenarios.brightwater_hale.ebp import SLICE as EBP_SLICE
+from abacus_tools.synthetic.scenarios.brightwater_hale.ebp2 import FILES as EBP2_FILES
+from abacus_tools.synthetic.scenarios.brightwater_hale.ebp2 import NEEDS as EBP2_NEEDS
+from abacus_tools.synthetic.scenarios.brightwater_hale.ebp2 import SLICE as EBP2_SLICE
 from abacus_tools.synthetic.scenarios.brightwater_hale.email_templates import (
     SLICE as EMAIL_TEMPLATES_SLICE,
 )
@@ -1800,6 +1803,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     COMPLIANCE_SLICE: COMPLIANCE_NEEDS,
     METHODOLOGY_SLICE: METHODOLOGY_NEEDS,  # K-01-T10: Grace imports, Margaret approves
     EBP_SLICE: EBP_NEEDS,  # A-05-T07: Dana's EBP source documents on Northwind
+    EBP2_SLICE: EBP2_NEEDS,  # A-05-T34: investments, Form 5500, distributions; Granite Peak's
     SAMPLING_SLICE: SAMPLING_NEEDS,  # A-03-T16: Table 2, BH FS groupings, Northwind's sample
     REPORT_TEMPLATES_SLICE: REPORT_TEMPLATES_NEEDS,  # P-11-T13: Grace imports, Margaret publishes
     CONNECTIONS_SLICE: CONNECTIONS_NEEDS,  # A-02-T27: Copperleaf's POR-16a connections
@@ -2241,6 +2245,31 @@ async def _ebp_documents_uploaded(_: asyncpg.Connection, __: Scenario, event: Ev
                 provenance=Provenance(source="client_upload", method="uploaded"),
                 requested_by=dana,
             )
+
+
+async def _ebp_documents_part2_uploaded(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
+    """A-05-T34: slice 2's documents through `evidence.api`: Northwind's from Dana Kowalski, the
+    plan administrator; Granite Peak's from Luis Ferrante, its CFO (one unit of work each)."""
+    by_client = {
+        "Northwind Robotics, Inc.": ("Dana Kowalski", "A1"),
+        "Granite Peak Outdoor Supply": ("Luis Ferrante", "A2"),
+    }
+    for client, (person, label) in by_client.items():
+        uploader = UUID(_PORTAL[person].id)
+        engagement = engagement_id_of(BY_LABEL[label])
+        files = [f for f in EBP2_FILES if f.client == client]
+        staged = [(f, await stage_content(TENANT, f.content())) for f in files]
+        async with uow(TenantContext(TENANT, "human", str(uploader))) as tx:
+            for file, stored in staged:
+                await add_version(
+                    tx,
+                    engagement_id=engagement,
+                    item=NewItem(title=file.file_name),
+                    stored=stored,
+                    media_type=file.media_type,
+                    provenance=Provenance(source="client_upload", method="uploaded"),
+                    requested_by=uploader,
+                )
 
 
 # --- the sampling slice (A-03-T16 part two; DEC-1767) --------------------------------------------
@@ -4363,6 +4392,7 @@ HANDLERS: Final[dict[str, Handler]] = {
     "requests.request_drafted": _request_drafted,
     "evidence.engagement_files_uploaded": _engagement_files_uploaded,
     "evidence.ebp_documents_uploaded": _ebp_documents_uploaded,  # A-05-T07
+    "evidence.ebp_documents_part2_uploaded": _ebp_documents_part2_uploaded,  # A-05-T34
     # A-03-T16 part two (DEC-1767): the sampling slice.
     "ledger.grouping_set_imported": _grouping_set_imported,
     "ledger.grouping_set_published": _grouping_set_published,
