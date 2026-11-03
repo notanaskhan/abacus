@@ -7,10 +7,12 @@
 # in the run's own unit of work under `section_draft.run`). Version 6 (A-04-T24; DEC-2060): risk's
 # own prompt, and its cells land on the register's risks. Version 7 (A-05-T21; DEC-2070):
 # ebp_attribute's own prompt and mapping (HR and payroll records, code's census-to-HR checks as
-# facts; SSN and DOB never in a model input). Source of truth: compiled into _specs.py by
+# facts; SSN and DOB never in a model input). Version 8 (A-05-T27; DEC-2219): ebp_reconcile's
+# own prompt and mapping (contribution documents; code's register totals as facts). Source of
+# truth: compiled into _specs.py by
 # `python -m abacus_tools.codegen.agent_specs`; a test fails if they drift.
 id: workpapers.section_drafter
-version: 7
+version: 8
 purpose: Draft a workpaper section's values, each cited to the firm's methodology or a source page, as suggestions for a person to adopt.
 shape: single_call
 # The default mode (`gap`) and every mode below share the base prompt until each mode's own prompt
@@ -81,7 +83,7 @@ modes:
     output_schema: SectionDraft
     max_cost_usd: "0.25"
   ebp_reconcile:
-    prompt: workpapers.section_draft@v1
+    prompt: workpapers.section_draft.ebp_reconcile@v1
     input_schema: SectionDraftInput
     output_schema: SectionDraft
     max_cost_usd: "0.25"
