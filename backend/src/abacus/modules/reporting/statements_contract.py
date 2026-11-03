@@ -77,7 +77,9 @@ class LinkedValueOut(BaseModel):
     citation_ids: Annotated[list[UUID], Internal]
     override_reason: Annotated[str | None, classified("confidential")] = None
     ties: Annotated[bool | None, Internal] = None
-    off_by: Amount | None = None
+    off_by: Annotated[
+        Decimal | None, Field(max_digits=20, decimal_places=2), classified("confidential")
+    ] = None
 
 
 class LineItemOut(BaseModel):
@@ -117,7 +119,7 @@ class StatementVersionOut(BaseModel):
     content_hash: Annotated[str, Internal]
     created_at: Annotated[datetime, Internal]
     lines: Annotated[list[LineItemOut], classified("confidential")]
-    tie_out: TieOutOut | None = None
+    tie_out: Annotated[TieOutOut | None, classified("internal")] = None
 
 
 class StatementsOut(BaseModel):
@@ -127,11 +129,11 @@ class StatementsOut(BaseModel):
     framework_key: Annotated[str | None, Internal] = None
     status: Annotated[DocumentStatus, Internal]
     management_approval: Annotated[ManagementApproval, Internal]
-    current: StatementVersionOut | None = None
+    current: Annotated[StatementVersionOut | None, classified("internal")] = None
     allowed_actions: Annotated[list[StatementAction], Internal]
 
 
-class DraftStartedOut(BaseModel):
+class StatementDraftStartedOut(BaseModel):
     model_config = _frozen()
 
     run_id: Annotated[UUID, Internal]
@@ -147,7 +149,7 @@ class LineageOut(BaseModel):
     citation_ids: Annotated[list[UUID], Internal]
 
 
-class ChecklistItemOut(BaseModel):
+class DisclosureItemOut(BaseModel):
     model_config = _frozen()
 
     item_key: Annotated[str, Internal]
@@ -166,7 +168,7 @@ class ChecklistOut(BaseModel):
 
     statement_document_id: Annotated[UUID, Internal]
     template_version_id: Annotated[UUID | None, Internal] = None
-    items: Annotated[list[ChecklistItemOut], classified("confidential")]
+    items: Annotated[list[DisclosureItemOut], classified("confidential")]
     answered: Annotated[int, Internal]
     total: Annotated[int, Internal]
 
@@ -187,7 +189,7 @@ class ChecklistReviewIn(BaseModel):
     item_keys: Annotated[list[str], Field(min_length=1, max_length=500), Internal]
 
 
-class SendDraftIn(BaseModel):
+class StatementSendDraftIn(BaseModel):
     model_config = _strict()
 
     recipient_contact_id: Annotated[UUID, Internal]
@@ -266,13 +268,13 @@ async def fs_statements_route(engagement_id: UUID, ctx: Ctx) -> StatementsOut:
 @statements_router.post(
     f"{_WI}/draft",
     action="statement.draft",
-    response_model=DraftStartedOut,
+    response_model=StatementDraftStartedOut,
     status_code=202,
     errors=(409, 501),
 )
 async def statements_draft_route(
     engagement_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
-) -> DraftStartedOut:
+) -> StatementDraftStartedOut:
     """Code drafts the statements from the final TB and the approved entries (deterministic)."""
     await _gate(ctx, engagement_id, "statement.draft")
     _not_yet()
@@ -311,7 +313,7 @@ async def tie_out_result_route(version_id: UUID, ctx: Ctx) -> TieOutOut:
     errors=(409, 501),
 )  # fmt: skip
 async def fs_send_draft_route(
-    version_id: UUID, body: SendDraftIn, ctx: Ctx, idempotency_key: IdempotencyKey
+    version_id: UUID, body: StatementSendDraftIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> SentDraftOut:
     """A DRAFT-watermarked PDF as a C10 draft deliverable and a C18 `fs_draft` item."""
     await _gate(ctx, None, "statement.send_draft")
@@ -343,12 +345,12 @@ async def checklist_route(document_id: UUID, ctx: Ctx) -> ChecklistOut:
 @statements_router.put(
     f"{_SD}/items/{{item_key}}",
     action="disclosure_checklist.answer",
-    response_model=ChecklistItemOut,
+    response_model=DisclosureItemOut,
     errors=(409, 501),
 )
 async def checklist_answer_route(
     document_id: UUID, item_key: str, body: ChecklistAnswerIn, ctx: Ctx, if_match: IfMatch
-) -> ChecklistItemOut:
+) -> DisclosureItemOut:
     await _gate(ctx, None, "disclosure_checklist.answer")
     _not_yet()
 
@@ -356,12 +358,12 @@ async def checklist_answer_route(
 @statements_router.post(
     f"{_SD}/items/{{item_key}}/adopt",
     action="disclosure_checklist.answer",
-    response_model=ChecklistItemOut,
+    response_model=DisclosureItemOut,
     errors=(409, 501),
 )
 async def checklist_adopt_route(
     document_id: UUID, item_key: str, ctx: Ctx, if_match: IfMatch
-) -> ChecklistItemOut:
+) -> DisclosureItemOut:
     """A person adopts the agent's suggested answer (it becomes theirs)."""
     await _gate(ctx, None, "disclosure_checklist.answer")
     _not_yet()

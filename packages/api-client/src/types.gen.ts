@@ -5551,7 +5551,7 @@ export type ChecklistOut = {
     /**
      * Items
      */
-    items: Array<AbacusModulesReportingStatementsContractChecklistItemOut>;
+    items: Array<DisclosureItemOut>;
     /**
      * Statement Document Id
      */
@@ -10446,6 +10446,48 @@ export type DiscardedOut = {
 };
 
 /**
+ * DisclosureItemOut
+ */
+export type DisclosureItemOut = {
+    /**
+     * Answer
+     */
+    answer?: 'yes' | 'no' | 'na' | null;
+    /**
+     * Item Key
+     */
+    item_key: string;
+    /**
+     * Note Ref
+     */
+    note_ref?: string | null;
+    /**
+     * Reason
+     */
+    reason?: string | null;
+    /**
+     * Section
+     */
+    section: string;
+    /**
+     * State
+     */
+    state: 'empty' | 'suggested' | 'adopted' | 'answered' | 'reviewed';
+    /**
+     * Suggestion Id
+     */
+    suggestion_id?: string | null;
+    /**
+     * Text
+     */
+    text: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * DisclosureOut
  */
 export type DisclosureOut = {
@@ -10701,6 +10743,20 @@ export type DraftProblemOut = {
      * Field
      */
     field: string;
+};
+
+/**
+ * DraftStartedOut
+ */
+export type DraftStartedOut = {
+    /**
+     * Items
+     */
+    items: Array<string>;
+    /**
+     * Skipped
+     */
+    skipped: Array<string>;
 };
 
 /**
@@ -37442,6 +37498,16 @@ export type SelectionSupportOut = {
 };
 
 /**
+ * SendDraftIn
+ */
+export type SendDraftIn = {
+    /**
+     * Note
+     */
+    note?: string | null;
+};
+
+/**
  * SendForSignatureOut
  */
 export type SendForSignatureOut = {
@@ -40165,6 +40231,16 @@ export type StatementDecisionsBody = {
 };
 
 /**
+ * StatementDraftStartedOut
+ */
+export type StatementDraftStartedOut = {
+    /**
+     * Run Id
+     */
+    run_id: string;
+};
+
+/**
  * StatementLineOut
  */
 export type StatementLineOut = {
@@ -40294,6 +40370,24 @@ export type StatementOut = {
      * Truncated
      */
     truncated: boolean;
+};
+
+/**
+ * StatementSendDraftIn
+ */
+export type StatementSendDraftIn = {
+    /**
+     * Page Comments
+     */
+    page_comments?: boolean;
+    /**
+     * Recipient Contact Id
+     */
+    recipient_contact_id: string;
+    /**
+     * Watermark
+     */
+    watermark?: true;
 };
 
 /**
@@ -46005,30 +46099,6 @@ export type AbacusModulesAgentsRoutesCitationOut = {
 };
 
 /**
- * DraftStartedOut
- */
-export type AbacusModulesAgentsRoutesDraftStartedOut = {
-    /**
-     * Items
-     */
-    items: Array<string>;
-    /**
-     * Skipped
-     */
-    skipped: Array<string>;
-};
-
-/**
- * SendDraftIn
- */
-export type AbacusModulesAgentsRoutesSendDraftIn = {
-    /**
-     * Note
-     */
-    note?: string | null;
-};
-
-/**
  * ChecklistItemOut
  */
 export type AbacusModulesAssuranceCompletionRoutesChecklistItemOut = {
@@ -46637,76 +46707,6 @@ export type AbacusModulesReportingContractApprovalOut = {
      * By
      */
     by: string;
-};
-
-/**
- * ChecklistItemOut
- */
-export type AbacusModulesReportingStatementsContractChecklistItemOut = {
-    /**
-     * Answer
-     */
-    answer?: 'yes' | 'no' | 'na' | null;
-    /**
-     * Item Key
-     */
-    item_key: string;
-    /**
-     * Note Ref
-     */
-    note_ref?: string | null;
-    /**
-     * Reason
-     */
-    reason?: string | null;
-    /**
-     * Section
-     */
-    section: string;
-    /**
-     * State
-     */
-    state: 'empty' | 'suggested' | 'adopted' | 'answered' | 'reviewed';
-    /**
-     * Suggestion Id
-     */
-    suggestion_id?: string | null;
-    /**
-     * Text
-     */
-    text: string;
-    /**
-     * Version
-     */
-    version: number;
-};
-
-/**
- * DraftStartedOut
- */
-export type AbacusModulesReportingStatementsContractDraftStartedOut = {
-    /**
-     * Run Id
-     */
-    run_id: string;
-};
-
-/**
- * SendDraftIn
- */
-export type AbacusModulesReportingStatementsContractSendDraftIn = {
-    /**
-     * Page Comments
-     */
-    page_comments?: boolean;
-    /**
-     * Recipient Contact Id
-     */
-    recipient_contact_id: string;
-    /**
-     * Watermark
-     */
-    watermark?: true;
 };
 
 /**
@@ -60266,7 +60266,7 @@ export type StatementsDraftResponses = {
     /**
      * Successful Response
      */
-    202: AbacusModulesReportingStatementsContractDraftStartedOut;
+    202: StatementDraftStartedOut;
 };
 
 export type StatementsDraftResponse = StatementsDraftResponses[keyof StatementsDraftResponses];
@@ -60890,7 +60890,7 @@ export type PreviewFollowUpResponses = {
 export type PreviewFollowUpResponse = PreviewFollowUpResponses[keyof PreviewFollowUpResponses];
 
 export type SendDraftData = {
-    body: AbacusModulesAgentsRoutesSendDraftIn;
+    body: SendDraftIn;
     headers?: {
         /**
          * Authorization
@@ -67093,7 +67093,7 @@ export type DraftGuidanceResponses = {
     /**
      * Successful Response
      */
-    202: AbacusModulesAgentsRoutesDraftStartedOut;
+    202: DraftStartedOut;
 };
 
 export type DraftGuidanceResponse = DraftGuidanceResponses[keyof DraftGuidanceResponses];
@@ -102513,7 +102513,7 @@ export type ChecklistAnswerResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesReportingStatementsContractChecklistItemOut;
+    200: DisclosureItemOut;
 };
 
 export type ChecklistAnswerResponse = ChecklistAnswerResponses[keyof ChecklistAnswerResponses];
@@ -102581,7 +102581,7 @@ export type ChecklistAdoptResponses = {
     /**
      * Successful Response
      */
-    200: AbacusModulesReportingStatementsContractChecklistItemOut;
+    200: DisclosureItemOut;
 };
 
 export type ChecklistAdoptResponse = ChecklistAdoptResponses[keyof ChecklistAdoptResponses];
@@ -102775,7 +102775,7 @@ export type ManagementApprovalResponses = {
 export type ManagementApprovalResponse = ManagementApprovalResponses[keyof ManagementApprovalResponses];
 
 export type FsSendDraftData = {
-    body: AbacusModulesReportingStatementsContractSendDraftIn;
+    body: StatementSendDraftIn;
     headers: {
         /**
          * Idempotency-Key

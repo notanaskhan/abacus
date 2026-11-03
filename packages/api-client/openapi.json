@@ -11864,7 +11864,7 @@
           "items": {
             "cls": "confidential",
             "items": {
-              "$ref": "#/components/schemas/abacus__modules__reporting__statements_contract__ChecklistItemOut"
+              "$ref": "#/components/schemas/DisclosureItemOut"
             },
             "title": "Items",
             "type": "array"
@@ -22443,6 +22443,105 @@
         "title": "DiscardedOut",
         "type": "object"
       },
+      "DisclosureItemOut": {
+        "properties": {
+          "answer": {
+            "anyOf": [
+              {
+                "enum": [
+                  "yes",
+                  "no",
+                  "na"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Answer"
+          },
+          "item_key": {
+            "cls": "internal",
+            "title": "Item Key",
+            "type": "string"
+          },
+          "note_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Note Ref"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Reason"
+          },
+          "section": {
+            "cls": "internal",
+            "title": "Section",
+            "type": "string"
+          },
+          "state": {
+            "cls": "internal",
+            "enum": [
+              "empty",
+              "suggested",
+              "adopted",
+              "answered",
+              "reviewed"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "suggestion_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Suggestion Id"
+          },
+          "text": {
+            "cls": "internal",
+            "title": "Text",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "item_key",
+          "section",
+          "text",
+          "state",
+          "version"
+        ],
+        "title": "DisclosureItemOut",
+        "type": "object"
+      },
       "DisclosureOut": {
         "properties": {
           "letter_wording": {
@@ -22897,6 +22996,34 @@
           "code"
         ],
         "title": "DraftProblemOut",
+        "type": "object"
+      },
+      "DraftStartedOut": {
+        "properties": {
+          "items": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "skipped": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Skipped",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items",
+          "skipped"
+        ],
+        "title": "DraftStartedOut",
         "type": "object"
       },
       "DraftTeamMemberIn": {
@@ -79644,6 +79771,26 @@
         "title": "SelectionSupportOut",
         "type": "object"
       },
+      "SendDraftIn": {
+        "additionalProperties": false,
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Note"
+          }
+        },
+        "title": "SendDraftIn",
+        "type": "object"
+      },
       "SendForSignatureOut": {
         "properties": {
           "confirmation_request_item_id": {
@@ -85359,6 +85506,21 @@
         "title": "StatementDecisionsBody",
         "type": "object"
       },
+      "StatementDraftStartedOut": {
+        "properties": {
+          "run_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id"
+        ],
+        "title": "StatementDraftStartedOut",
+        "type": "object"
+      },
       "StatementLineOut": {
         "properties": {
           "amount": {
@@ -85700,6 +85862,35 @@
           "approved_at"
         ],
         "title": "StatementOut",
+        "type": "object"
+      },
+      "StatementSendDraftIn": {
+        "additionalProperties": false,
+        "properties": {
+          "page_comments": {
+            "cls": "internal",
+            "default": true,
+            "title": "Page Comments",
+            "type": "boolean"
+          },
+          "recipient_contact_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Recipient Contact Id",
+            "type": "string"
+          },
+          "watermark": {
+            "cls": "internal",
+            "const": true,
+            "default": true,
+            "title": "Watermark",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "recipient_contact_id"
+        ],
+        "title": "StatementSendDraftIn",
         "type": "object"
       },
       "StatementVersionOut": {
@@ -97841,54 +98032,6 @@
         "title": "CitationOut",
         "type": "object"
       },
-      "abacus__modules__agents__routes__DraftStartedOut": {
-        "properties": {
-          "items": {
-            "cls": "internal",
-            "items": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "title": "Items",
-            "type": "array"
-          },
-          "skipped": {
-            "cls": "internal",
-            "items": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "title": "Skipped",
-            "type": "array"
-          }
-        },
-        "required": [
-          "items",
-          "skipped"
-        ],
-        "title": "DraftStartedOut",
-        "type": "object"
-      },
-      "abacus__modules__agents__routes__SendDraftIn": {
-        "additionalProperties": false,
-        "properties": {
-          "note": {
-            "anyOf": [
-              {
-                "maxLength": 500,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "confidential",
-            "title": "Note"
-          }
-        },
-        "title": "SendDraftIn",
-        "type": "object"
-      },
       "abacus__modules__assurance__completion_routes__ChecklistItemOut": {
         "properties": {
           "applicable": {
@@ -99224,149 +99367,6 @@
           "at"
         ],
         "title": "ApprovalOut",
-        "type": "object"
-      },
-      "abacus__modules__reporting__statements_contract__ChecklistItemOut": {
-        "properties": {
-          "answer": {
-            "anyOf": [
-              {
-                "enum": [
-                  "yes",
-                  "no",
-                  "na"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Answer"
-          },
-          "item_key": {
-            "cls": "internal",
-            "title": "Item Key",
-            "type": "string"
-          },
-          "note_ref": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Note Ref"
-          },
-          "reason": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "confidential",
-            "title": "Reason"
-          },
-          "section": {
-            "cls": "internal",
-            "title": "Section",
-            "type": "string"
-          },
-          "state": {
-            "cls": "internal",
-            "enum": [
-              "empty",
-              "suggested",
-              "adopted",
-              "answered",
-              "reviewed"
-            ],
-            "title": "State",
-            "type": "string"
-          },
-          "suggestion_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "internal",
-            "title": "Suggestion Id"
-          },
-          "text": {
-            "cls": "internal",
-            "title": "Text",
-            "type": "string"
-          },
-          "version": {
-            "cls": "internal",
-            "title": "Version",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "item_key",
-          "section",
-          "text",
-          "state",
-          "version"
-        ],
-        "title": "ChecklistItemOut",
-        "type": "object"
-      },
-      "abacus__modules__reporting__statements_contract__DraftStartedOut": {
-        "properties": {
-          "run_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Run Id",
-            "type": "string"
-          }
-        },
-        "required": [
-          "run_id"
-        ],
-        "title": "DraftStartedOut",
-        "type": "object"
-      },
-      "abacus__modules__reporting__statements_contract__SendDraftIn": {
-        "additionalProperties": false,
-        "properties": {
-          "page_comments": {
-            "cls": "internal",
-            "default": true,
-            "title": "Page Comments",
-            "type": "boolean"
-          },
-          "recipient_contact_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Recipient Contact Id",
-            "type": "string"
-          },
-          "watermark": {
-            "cls": "internal",
-            "const": true,
-            "default": true,
-            "title": "Watermark",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "recipient_contact_id"
-        ],
-        "title": "SendDraftIn",
         "type": "object"
       },
       "abacus__modules__sampling__contract__ApproveIn": {
@@ -129501,7 +129501,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__reporting__statements_contract__DraftStartedOut"
+                  "$ref": "#/components/schemas/StatementDraftStartedOut"
                 }
               }
             },
@@ -130977,7 +130977,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/abacus__modules__agents__routes__SendDraftIn"
+                "$ref": "#/components/schemas/SendDraftIn"
               }
             }
           },
@@ -144391,7 +144391,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__agents__routes__DraftStartedOut"
+                  "$ref": "#/components/schemas/DraftStartedOut"
                 }
               }
             },
@@ -222286,7 +222286,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__reporting__statements_contract__ChecklistItemOut"
+                  "$ref": "#/components/schemas/DisclosureItemOut"
                 }
               }
             },
@@ -222432,7 +222432,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/abacus__modules__reporting__statements_contract__ChecklistItemOut"
+                  "$ref": "#/components/schemas/DisclosureItemOut"
                 }
               }
             },
@@ -222990,7 +222990,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/abacus__modules__reporting__statements_contract__SendDraftIn"
+                "$ref": "#/components/schemas/StatementSendDraftIn"
               }
             }
           },
