@@ -449,6 +449,9 @@ async def envelope_poll(given: EnvelopeInput) -> str:
                         client_id=env.client_id,
                         engagement_id=env.engagement_id,
                         sent_by=env.sent_by,
+                        purpose=env.purpose,
+                        source_kind=env.source_kind,
+                        source_id=env.source_id,
                     )
                 )
         tx.record(

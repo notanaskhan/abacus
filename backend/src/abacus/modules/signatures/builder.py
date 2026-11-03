@@ -72,6 +72,12 @@ _DEFAULT_METHODS: Final[dict[str, frozenset[str]]] = {
     "consent": frozenset({"email_code", "in_person_id", "firm_sso"}),
     "general": frozenset({"email_code", "in_person_id", "firm_sso"}),
 }
+# QN-5 (N-04-T08, DEC-2205): the notice-response envelope (not an 8879, so never KBA): portal
+# sign-in with MFA for the signing scope plus the provider's email code at signing, or in
+# person. A firm's own row for the purpose still narrows it.
+_PURPOSE_DEFAULT_METHODS: Final[dict[str, frozenset[str]]] = {
+    "notice_response": frozenset({"email_code", "in_person_id", "firm_sso"}),
+}
 # A firm member signs through the firm's sign-in; a client never does.
 _FIRM_ONLY: Final = frozenset({"firm_sso"})
 _KBA_FAMILY: Final = "efile_authorization"
@@ -238,7 +244,11 @@ async def _allowed_methods(session: AsyncSession, family: str, purpose: str) -> 
             {"family": family, "purpose": purpose},
         )
     ).scalar_one_or_none()
-    allowed = frozenset(found) if found else _DEFAULT_METHODS[family]
+    allowed = (
+        frozenset(found)
+        if found
+        else _PURPOSE_DEFAULT_METHODS.get(purpose, _DEFAULT_METHODS[family])
+    )
     if family != _KBA_FAMILY:
         allowed -= {"kba"}
     return allowed | _FIRM_ONLY
@@ -338,9 +348,10 @@ async def create_draft(ctx: AuthContext, source_kind: str, source_id: UUID) -> U
                 text(
                     'INSERT INTO envelope_documents (tenant_id, envelope_id, "order", '
                     "evidence_version_id, generated_document_version_id, sha256, page_count, "
-                    "signer_visible, read_only, watermark, source_ref, placement, tri) VALUES "
-                    "(:tenant, :id, :n, :version, :generated, :sha, :pages, :visible, :read_only, "
-                    ":watermark, :ref, :placement, :tri)"
+                    "signer_visible, read_only, watermark, source_ref, placement, tri, page_from, "
+                    "page_to) VALUES (:tenant, :id, :n, :version, :generated, :sha, :pages, "
+                    ":visible, :read_only, :watermark, :ref, :placement, :tri, :page_from, "
+                    ":page_to)"
                 ),
                 {
                     "tenant": ctx.tenant_id,
@@ -356,6 +367,8 @@ async def create_draft(ctx: AuthContext, source_kind: str, source_id: UUID) -> U
                     "ref": doc.source_ref,
                     "placement": doc.placement,
                     "tri": doc.tri,
+                    "page_from": doc.page_from,
+                    "page_to": doc.page_to,
                 },
             )
         for n, signer in enumerate(draft.signers, start=1):

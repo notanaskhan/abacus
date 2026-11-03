@@ -45,6 +45,7 @@ from abacus.modules.signatures.imports import RECORD_TYPE
 
 CONSENT_SET: Final = "consent_set"
 TAX_RETURN: Final = "tax_return"
+NOTICE_RESPONSE: Final = "notice_response"
 EFILE_GATE: Final = "efile_authorization"
 AMOUNT_CHANGE: Final = "amount_change"
 SUPERSEDED_LABEL: Final = "Amounts changed after signing · re-sign required"
@@ -61,6 +62,8 @@ SOURCE_CONTRACTS: Final[dict[str, SourceContract]] = {
     TAX_RETURN: SourceContract(
         frozenset({"form_8879", "form_8879_pe", "form_8879_f"}), "efile_authorization"
     ),
+    # N-04-T08 (DEC-2205): N-04's response letter stays a notice response in the general family.
+    NOTICE_RESPONSE: SourceContract(frozenset({"notice_response"}), "general"),
 }
 
 

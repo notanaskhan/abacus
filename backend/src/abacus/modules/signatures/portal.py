@@ -146,6 +146,9 @@ class SignedCopyNotReady(DomainConflict):
 # --- The named signer --------------------------------------------------------------------------
 
 
+_SOURCE = text("SELECT purpose, source_kind, source_id FROM envelopes WHERE id = :id")
+
+
 @dataclass(frozen=True)
 class Mine:
     """One envelope as the signer sees it, with their own signer row."""
@@ -920,12 +923,18 @@ async def decline(ctx: AuthContext, envelope_id: UUID, reason: str, note: str | 
                 },
             )
         tx.record("envelope.declined", target=Target("envelope", mine.envelope_id))
+        source = (
+            await tx.session.execute(_SOURCE, {"id": mine.envelope_id})
+        ).one()  # N-04-T08: the source travels with the decline
         tx.emit(  # N-02-T24: the sender is told, as for a decline the poll reads
             EnvelopeDeclined(
                 envelope_id=mine.envelope_id,
                 client_id=mine.client_id,
                 engagement_id=mine.engagement_id,
                 sent_by=sent_by,
+                purpose=source.purpose,
+                source_kind=source.source_kind,
+                source_id=source.source_id,
             )
         )
     if mine.provider_envelope_id is not None:
