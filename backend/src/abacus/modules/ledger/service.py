@@ -6,7 +6,9 @@ twice returns the first snapshot (one snapshot per pull, §12).
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import hashlib
+from collections.abc import Awaitable, Callable, Mapping, Sequence
+from dataclasses import dataclass, replace
 from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
@@ -14,7 +16,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.db import TenantContext, tenant_session, transaction_context
-from abacus.kernel.errors import NotFound
+from abacus.kernel.errors import DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork
 from abacus.modules.ledger.normalise import NormalisedTrialBalance, validate
 from abacus.modules.ledger.repository import (
@@ -108,6 +110,102 @@ async def record_snapshot(
         "ledger_snapshot.created",
         target=Target("ledger_snapshot", snapshot_id),
         after=Ref(client_entity_id=client_entity_id, raw_fingerprint=raw_fingerprint),
+    )
+    return SnapshotRef(snapshot_id, created=True)
+
+
+DOCUMENT_SOURCE = "document_extraction"
+
+
+class LineUnverified(DomainInvalid):
+    """ADR P-58: every line of a document-extracted TB is cited and code-verified (C4)."""
+
+    code = "line_unverified"
+
+
+class DocumentUnbalanced(DomainInvalid):
+    """The extracted lines do not foot (debits = credits, and to the declared totals)."""
+
+    code = "document_unbalanced"
+
+
+# The caller's C4 check: which of these citations are verified and live on the engagement
+# (`evidence.api.supported_citations`), passed in so the ledger never imports evidence.
+CitationCheck = Callable[[Sequence[UUID]], Awaitable[frozenset[UUID]]]
+
+
+async def record_document_snapshot(
+    tx: UnitOfWork,
+    *,
+    client_entity_id: UUID,
+    period_start: date,
+    period_end: date,
+    tb: NormalisedTrialBalance,
+    line_citations: Mapping[str, UUID],
+    source_evidence_version_id: UUID,
+    extraction_run_id: UUID,
+    pulled_at: datetime,
+    supported: CitationCheck,
+) -> SnapshotRef:
+    """ADR P-58 (A-05-T28): a trial balance read from a document becomes a snapshot only when
+    code foots it and every line's citation (keyed by the line's `source_ref`) is verified
+    through C4. The snapshot names its document and extraction run; it is never adopted here
+    (adoption is A-02's human-only TB-of-record version)."""
+    if tb.total_debit != tb.total_credit or validate(
+        tb, period_start=period_start, period_end=period_end
+    ):
+        raise DocumentUnbalanced  # facts are identifiers only: no amounts in an error
+    missing = [line.account_code for line in tb.lines if line.source_ref not in line_citations]
+    if missing:
+        raise LineUnverified(facts={"account_code": missing[0]})
+    cited = [line_citations[line.source_ref] for line in tb.lines]
+    verified = await supported(cited)
+    for line, citation in zip(tb.lines, cited, strict=True):
+        if citation not in verified:
+            raise LineUnverified(facts={"account_code": line.account_code})
+    # Each stored line keeps its citation as its source reference (the provenance AUD-06 shows).
+    lines = tuple(
+        replace(line, source_ref=f"citation:{line_citations[line.source_ref]}")
+        for line in tb.lines
+    )
+    stored = replace(tb, lines=lines)
+    body = "|".join(
+        [str(source_evidence_version_id), str(extraction_run_id)]
+        + [f"{x.account_code}:{x.debit}:{x.credit}:{x.source_ref}" for x in lines]
+    )
+    fingerprint = hashlib.sha256(body.encode()).hexdigest()
+    tenant = await transaction_context(tx.session)
+    snapshot_id = await insert_snapshot(
+        tx.session,
+        tenant_id=tenant.tenant_id,
+        client_entity_id=client_entity_id,
+        period_start=stored.period_start,
+        period_end=stored.period_end,
+        pulled_at=pulled_at,
+        source=DOCUMENT_SOURCE,
+        raw_fingerprint=fingerprint,
+        line_count=len(lines),
+        total_debit=stored.total_debit,
+        total_credit=stored.total_credit,
+        source_evidence_version_id=source_evidence_version_id,
+        extraction_run_id=extraction_run_id,
+    )
+    if snapshot_id is None:
+        existing = await find_snapshot(
+            tx.session,
+            client_entity_id=client_entity_id,
+            period_start=stored.period_start,
+            period_end=stored.period_end,
+            raw_fingerprint=fingerprint,
+        )
+        if existing is None:
+            raise NotFound("ledger_snapshot")
+        return SnapshotRef(existing.id, created=False)
+    await insert_lines(tx.session, tenant.tenant_id, snapshot_id, lines)
+    tx.record(
+        "ledger_snapshot.created",
+        target=Target("ledger_snapshot", snapshot_id),
+        after=Ref(client_entity_id=client_entity_id, raw_fingerprint=fingerprint),
     )
     return SnapshotRef(snapshot_id, created=True)
 

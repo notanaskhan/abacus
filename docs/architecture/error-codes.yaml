@@ -150,6 +150,10 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.flow.AlreadyRequested
     summary: 'AC-4: every item already has a support request.'
+  already_routed:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.internal_control.AlreadyRouted
   already_signed:
     status: 409
     raised_by:
@@ -598,6 +602,11 @@ codes:
     raised_by:
     - abacus.modules.signatures.builder.DocumentOrderInvalid
     summary: A new document order must name every document of the envelope exactly once.
+  document_unbalanced:
+    status: 422
+    raised_by:
+    - abacus.modules.ledger.service.DocumentUnbalanced
+    summary: The extracted lines do not foot (debits = credits, and to the declared totals).
   draft_already_decided:
     status: 409
     raised_by:
@@ -1409,6 +1418,11 @@ codes:
     raised_by:
     - abacus.modules.identity.firm_settings.LevelNotAvailable
     summary: Manage and Portfolio come with the engagement agent (SPEC-024 Q3).
+  line_unverified:
+    status: 422
+    raised_by:
+    - abacus.modules.ledger.service.LineUnverified
+    summary: 'ADR P-58: every line of a document-extracted TB is cited and code-verified (C4).'
   list_not_done:
     status: 409
     raised_by:
@@ -1517,6 +1531,11 @@ codes:
     raised_by:
     - abacus.modules.requests.lifecycle.ModelTextNotPermitted
     summary: Unchanged model-drafted client wording can't be sent while the firm's P-25 is off.
+  no_amount:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.internal_control.NoAmount
+    summary: Convert to misstatement needs the row's misstatement candidate amount.
   no_assurance_item:
     status: 409
     raised_by:
@@ -2918,6 +2937,7 @@ codes:
     - abacus.modules.assurance.ebp_plan.PlanMoved
     - abacus.modules.assurance.findings.FindingMoved
     - abacus.modules.assurance.fraud_brainstorm.SessionMoved
+    - abacus.modules.assurance.internal_control.VersionConflict
     - abacus.modules.assurance.risks.RiskMoved
     - abacus.modules.assurance.service_orgs.OrganizationMoved
     - abacus.modules.workpapers.core.VersionConflict
