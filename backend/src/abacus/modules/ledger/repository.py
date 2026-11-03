@@ -54,6 +54,8 @@ async def insert_snapshot(
     line_count: int,
     total_debit: Decimal,
     total_credit: Decimal,
+    source_evidence_version_id: UUID | None = None,
+    extraction_run_id: UUID | None = None,
 ) -> UUID | None:
     """The new snapshot's ID, or None if this pull's snapshot already exists."""
     return (
@@ -71,6 +73,8 @@ async def insert_snapshot(
                 line_count=line_count,
                 total_debit=total_debit,
                 total_credit=total_credit,
+                source_evidence_version_id=source_evidence_version_id,
+                extraction_run_id=extraction_run_id,
             )
             .on_conflict_do_nothing(constraint="ledger_snapshots_pull")
             .returning(LedgerSnapshot.id)
