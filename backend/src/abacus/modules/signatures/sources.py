@@ -35,6 +35,7 @@ from abacus.kernel.errors import DomainConflict
 from abacus.modules.engagements.api import (
     GateFact,
     LetterSigning,
+    covering_letter_engagements,
     letter_for_envelope,
     letter_send_problems,
     recorded_letter,
@@ -46,7 +47,9 @@ from abacus.modules.engagements.api import (
 from abacus.modules.identity.api import AuthContext
 
 LETTER: Final = "engagement_letter"
-CONTRACTED: Final = frozenset({"consent_set", "tax_return"})  # consumers.SOURCE_CONTRACTS
+CONTRACTED: Final = frozenset(
+    {"consent_set", "tax_return", "notice_response"}
+)  # consumers.SOURCE_CONTRACTS
 LETTER_GATE: Final = "G3"
 
 
@@ -65,6 +68,10 @@ class SourceDocument:
     source_ref: str | None = None
     placement: str = "anchors"
     tri: bool = False
+    # C7 additive (N-04-T08, 0656): a page range of the evidence version (NOT-03's response
+    # page is one page of the generated letter's PDF); both or neither.
+    page_from: int | None = None
+    page_to: int | None = None
 
 
 @dataclass(frozen=True)
@@ -220,11 +227,23 @@ async def letter_signed_at(tenant: TenantContext, engagement_id: UUID) -> dateti
         return await session.scalar(_COMPLETED_AT, {"id": envelope_id})
 
 
-async def letter_gate(tenant: TenantContext, engagement_id: UUID) -> GateFact:
-    """G3: a qualifying letter envelope, or engagements' recorded letter."""
+async def _own_letter(tenant: TenantContext, engagement_id: UUID) -> GateFact:
     if await letter_envelope(tenant, engagement_id) is not None:
         return GateFact(met=True)
     return await recorded_letter(tenant, engagement_id)
+
+
+async def letter_gate(tenant: TenantContext, engagement_id: UUID) -> GateFact:
+    """G3: a qualifying letter envelope, or engagements' recorded letter. A `notice_response`
+    engagement is also met by a covering tax letter with the `notice_support` clause whose own
+    G3 is met (QN-1, N-04-T08, DEC-2205)."""
+    own = await _own_letter(tenant, engagement_id)
+    if own.met:
+        return own
+    for covering in await covering_letter_engagements(tenant, engagement_id):
+        if (await _own_letter(tenant, covering)).met:
+            return GateFact(met=True)
+    return own
 
 
 def register_letter_source() -> None:

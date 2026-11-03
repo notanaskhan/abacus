@@ -145,6 +145,9 @@ class EnvelopeDocumentOut(BaseModel):
     sha256: Annotated[str | None, classified("internal")]
     read_only: Annotated[bool, classified("internal")]
     tri: Annotated[bool, classified("internal")]
+    # C7 additive (N-04-T08): a page range of the version (NOT-03's one response page).
+    page_from: Annotated[int | None, classified("internal")] = None
+    page_to: Annotated[int | None, classified("internal")] = None
 
 
 class EvidenceItem(BaseModel):

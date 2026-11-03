@@ -89,6 +89,10 @@ class EnvelopeDeclined(DomainEvent):
     client_id: Annotated[UUID, classified("internal")]
     engagement_id: Annotated[UUID | None, classified("internal")]
     sent_by: Annotated[UUID | None, classified("internal")]
+    # C7 additive (N-04-T08, DEC-2205): the source, so a notice response hears its decline.
+    purpose: Annotated[str | None, classified("internal")] = None
+    source_kind: Annotated[str | None, classified("internal")] = None
+    source_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class EnvelopeExpired(DomainEvent):

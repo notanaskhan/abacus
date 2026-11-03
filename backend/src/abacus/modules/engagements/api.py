@@ -122,6 +122,7 @@ from abacus.modules.engagements.letter_send import (
     register_letter_envelope_status,
     register_letter_sender,
 )
+from abacus.modules.engagements.notice_letters import covering_letter_engagements
 from abacus.modules.engagements.pilot_w4 import w4_portal_activation
 from abacus.modules.engagements.roll_forward import (
     PriorItem,
@@ -489,6 +490,7 @@ __all__ = [
     "confirm_independence",
     "contact_ids_of_user",
     "contact_portal_user",
+    "covering_letter_engagements",
     "create_draft",
     "create_work_item",
     "decide_acceptance",

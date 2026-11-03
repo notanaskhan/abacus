@@ -28975,6 +28975,30 @@
             "title": "Page Count",
             "type": "integer"
           },
+          "page_from": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Page From"
+          },
+          "page_to": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Page To"
+          },
           "read_only": {
             "cls": "internal",
             "title": "Read Only",
