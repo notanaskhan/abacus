@@ -31947,7 +31947,7 @@ export type ResponseOut = {
     /**
      * Envelope Status
      */
-    envelope_status: string | null;
+    envelope_status: 'draft' | 'sent' | 'viewed' | 'partially_signed' | 'completed' | 'declined' | 'expired' | 'voided' | null;
     /**
      * Follow Up Days
      */
@@ -32401,7 +32401,7 @@ export type ReturnAsFiledIn = {
     /**
      * Filing Status
      */
-    filing_status?: string | null;
+    filing_status?: 'single' | 'mfj' | 'mfs' | 'hoh' | 'qss' | null;
     /**
      * Lines
      */

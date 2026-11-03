@@ -67632,6 +67632,16 @@
           "envelope_status": {
             "anyOf": [
               {
+                "enum": [
+                  "draft",
+                  "sent",
+                  "viewed",
+                  "partially_signed",
+                  "completed",
+                  "declined",
+                  "expired",
+                  "voided"
+                ],
                 "type": "string"
               },
               {
@@ -68673,7 +68683,13 @@
           "filing_status": {
             "anyOf": [
               {
-                "maxLength": 40,
+                "enum": [
+                  "single",
+                  "mfj",
+                  "mfs",
+                  "hoh",
+                  "qss"
+                ],
                 "type": "string"
               },
               {

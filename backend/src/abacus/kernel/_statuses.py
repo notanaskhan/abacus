@@ -1033,6 +1033,12 @@ class EbpParticipantStatus(StrEnum):
     DECEASED = "deceased"
 
 
+class EbpImportStatus(StrEnum):
+    MAPPED = "mapped"
+    IMPORTED = "imported"
+    REFUSED = "refused"
+
+
 class EbpFilerStatusStatus(StrEnum):
     pass
     # derived, never stored: large_plan, small_plan
@@ -1939,6 +1945,11 @@ STORED: dict[str, tuple[str, ...]] = {
         "terminated",
         "retired",
         "deceased",
+    ),
+    "ebp_import": (
+        "mapped",
+        "imported",
+        "refused",
     ),
     "ebp_filer_status": (
     ),
