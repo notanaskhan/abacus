@@ -35,7 +35,8 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.slices import register_sl
 from abacus_tools.synthetic.scenarios.brightwater_hale.timeline import Event
 
 SLICE: Final = "review"
-NEEDS: Final = ("people", "standards", "acceptance", "tax_board")
+# sampling: Northwind's G2 (Sep 14, before the TB L1; R-SO-5, DEC-2229).
+NEEDS: Final = ("people", "standards", "acceptance", "sampling", "tax_board")
 FLAGS: Final = ("review.checkpoints", "assurance.materiality")  # grammar_api retired: P-04-T62
 NORTHWIND: Final = "Northwind Robotics, Inc."
 RIDGELINE: Final = "Ridgeline Property Partners, LP"
@@ -242,8 +243,18 @@ def review_events() -> list[Event]:
         )
         for i in ISSUES
     ]
+    # The return exists from the setup instant, so a save dated before it (Apr 13) replays at
+    # setup and the handler stamps it with its own date.
     events += [
-        _event(f"feld:checkpoint:{seq}", at, "review.feld_checkpoint_saved", "KO", FELD, name=name)
+        _event(
+            f"feld:checkpoint:{seq}",
+            max(at, SETUP_AT),
+            "review.feld_checkpoint_saved",
+            "KO",
+            FELD,
+            name=name,
+            saved_at=at.isoformat(),
+        )
         for seq, name, at in CHECKPOINTS
     ]
     return events

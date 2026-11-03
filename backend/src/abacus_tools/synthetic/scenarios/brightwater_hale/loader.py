@@ -1819,12 +1819,21 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
 
 
 def expand_slices(slices: tuple[str, ...]) -> tuple[str, ...]:
-    """The slices with the ones they need first, each once, in the order asked."""
+    """The slices with the ones they need first, each once, in the order asked. Needs are
+    followed through (review needs tax_board, which needs binders)."""
     out: list[str] = []
+
+    def add(name: str, path: tuple[str, ...]) -> None:
+        if name in out:
+            return
+        if name in path:
+            raise ValueError(f"slice needs loop: {' -> '.join((*path, name))}")
+        for needed in SLICE_NEEDS.get(name, ()):
+            add(needed, (*path, name))
+        out.append(name)
+
     for name in slices:
-        for needed in (*SLICE_NEEDS.get(name, ()), name):
-            if needed not in out:
-                out.append(needed)
+        add(name, ())
     return tuple(out)
 
 
@@ -4310,13 +4319,16 @@ async def _ridgeline_issue_created(conn: asyncpg.Connection, _: Scenario, event:
 
 
 async def _feld_checkpoint_saved(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
-    """SHL-16: Kevin Osei saves a named checkpoint of the Feld 1040 as it is."""
-    await save_checkpoint(
-        await _staff_context(conn, event),
-        "tax_return",
-        UUID(RETURN_BY_LABEL["jonah-and-claire-feld"].id),
-        str(event.data["name"]),
-    )
+    """SHL-16: Kevin Osei saves a named checkpoint of the Feld 1040 as it is, at its own date
+    (Checkpoint 1 is dated Apr 13, before the setup instant it replays at)."""
+    ctx = await _staff_context(conn, event)
+    with frozen(datetime.fromisoformat(str(event.data["saved_at"]))):
+        await save_checkpoint(
+            ctx,
+            "tax_return",
+            UUID(RETURN_BY_LABEL["jonah-and-claire-feld"].id),
+            str(event.data["name"]),
+        )
 
 
 HANDLERS: Final[dict[str, Handler]] = {

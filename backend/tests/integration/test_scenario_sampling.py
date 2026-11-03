@@ -6,8 +6,8 @@ AUD-11 a's (the handoff and the A-03-T09 goldens), not the code's:
   with 13 groupings and 14 FS lines.
 - Participants: Version 1 on census v1 (409, seed 0x3C77D0, its register tie off by $182,300.00)
   and Version 2 on census v2 (412, seed 0x5E2A91, two ties), 25 items each; Ana Cruz confirms on
-  Sep 15 (DEC-1767), so Version 2 is prepared by Marcus Delaney (L1) and approved by Hannah
-  Leclerc (L2), its 25 the design's in draw order.
+  Sep 14 before E0 (DEC-1767, DEC-2229), so Version 2 is prepared by Marcus Delaney (L1) and
+  approved by Hannah Leclerc (L2), its 25 the design's in draw order.
 - Granite Peak FY2026 (TASK-2717; DEC-1768): the 128-account NetSuite TB (71,910,000 each side)
   adopted and mapped on BH FS groupings v1 with the predecessor's FY2025 mapping (122 keys,
   DEC-1769), confirmed by Caleb Dunn (L1) once G2 is met; the
