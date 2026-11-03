@@ -465,6 +465,7 @@ export const ACTIONS = [
   "sign_off.partner",
   "sign_off.prepare",
   "sign_off.read",
+  "sign_off.request_re_review",
   "sign_off.review",
   "signer.reveal_ip",
   "soc_report.evaluate",

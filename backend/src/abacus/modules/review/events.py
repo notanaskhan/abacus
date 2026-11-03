@@ -213,3 +213,18 @@ class CheckpointRejected(DomainEvent):
     target_type: Annotated[str, classified("internal")]
     target_id: Annotated[UUID, classified("internal")]
     decided_by: Annotated[UUID, classified("internal")]
+
+
+class SignOffReReviewRequested(DomainEvent):
+    """A-06-T14 (AUD-17, DEC-2214): a person asked the signer of a stale sign-off to look again.
+    The signer is told (C16 `sign_off_re_review`); nothing about the sign-off row changes."""
+
+    event_type: ClassVar[str] = "sign_off.re_review_requested"
+
+    sign_off_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    target_type: Annotated[str, classified("internal")]
+    target_id: Annotated[UUID, classified("internal")]
+    level: Annotated[int, classified("internal")]
+    signed_by: Annotated[UUID, classified("internal")]
+    requested_by: Annotated[UUID, classified("internal")]

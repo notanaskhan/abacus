@@ -398,6 +398,8 @@ CATALOGUE: Final[dict[str, Kind]] = {
     ),
     # P-04-T19 (SHL-12 e): the work a person signed changed after their sign-off.
     "sign_off.went_stale": Kind("sign_off_stale", _signer, "sign_off", "sign_off_id"),
+    # A-06-T14 (AUD-17): a person asked the stale signer to look again.
+    "sign_off.re_review_requested": Kind("sign_off_re_review", _signer, "sign_off", "sign_off_id"),
     # A-03-T14: a new trial balance version changed a signed mapping; its L1 and L2 signers.
     "mapping_set.went_stale": Kind("mapping_set_stale", _listed, "mapping_set", "mapping_set_id"),
     # P-04-T21: a note was raised; its assignee (or the target's preparers) is told.
@@ -570,6 +572,9 @@ TEMPLATES: Final[dict[str, str]] = {
         "Your sending domain wasn't verified within 72 hours. Check its DNS records."
     ),
     "sign_off.went_stale": "Work you signed off on {engagement} changed after sign-off.",
+    "sign_off.re_review_requested": (
+        "You were asked to review again work you signed off on {engagement}."
+    ),
     "mapping_set.went_stale": (
         "A new trial balance version on {engagement} changed the account mapping you signed."
     ),
@@ -777,6 +782,7 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     NotificationKind("extension_ack_rejected", "system", "ShieldAlert"),
     NotificationKind("extension_payment_approval_requested", "approval", "Gavel"),
     NotificationKind("estimate_due_soon", "deadline", "CalendarClock"),
+    NotificationKind("sign_off_re_review", "approval", "UserCheck"),  # A-06-T14
 )
 for _kind in _REGISTERED:
     register_kind(_kind)
