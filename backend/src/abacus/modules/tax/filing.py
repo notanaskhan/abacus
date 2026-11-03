@@ -540,6 +540,9 @@ class FilingAcknowledged(DomainEvent):
     engagement_id: Annotated[UUID | None, classified("internal")]
     status: Annotated[str, classified("internal")]
     jurisdictions: Annotated[list[str], classified("internal")]
+    # T-03-T08 (additive): an extension's ack names the extension and its reject code.
+    extension_id: Annotated[UUID | None, classified("internal")] = None
+    reject_code: Annotated[str | None, classified("internal")] = None
 
 
 @dataclass(frozen=True)

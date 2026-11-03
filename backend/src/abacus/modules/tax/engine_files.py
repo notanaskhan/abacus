@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
+from dataclasses import replace
 from datetime import date
 from typing import Annotated, ClassVar, Final
 from uuid import UUID
@@ -230,6 +231,11 @@ async def _import_other(
             return event_id
         if acks is None:  # unreachable: a kind is a PDF or a status report
             raise NotFound(TARGET)
+        # T-03-T08: extension rows resolve onto filing_extensions; return rows stay return acks.
+        from abacus.modules.tax.extension_acks import resolve
+
+        await resolve(tx, return_id, engagement_id, acks.acks)
+        acks = replace(acks, acks=tuple(a for a in acks.acks if not a.extension))
         rejected = [a for a in acks.acks if a.status == "rejected"]
         event_id = await repo.insert_event(
             tx.session,
@@ -243,27 +249,28 @@ async def _import_other(
                 },
             },
         )
-        await tx.session.execute(
-            text(
-                "INSERT INTO engine_acks (tenant_id, return_id, sync_event_id, jurisdiction, "
-                "submission_last4, status, status_at, reject_code, reject_text) VALUES (:t, :r, "
-                ":e, :j, :l, :s, :at, :rc, :rt)"
-            ),
-            [
-                {
-                    "t": ctx.tenant_id,
-                    "r": return_id,
-                    "e": event_id,
-                    "j": a.jurisdiction,
-                    "l": a.submission_last4,
-                    "s": a.status,
-                    "at": a.status_at,
-                    "rc": a.reject_code,
-                    "rt": a.reject_text,
-                }
-                for a in acks.acks
-            ],
-        )
+        if acks.acks:  # a report of extension rows only has no return ack to store
+            await tx.session.execute(
+                text(
+                    "INSERT INTO engine_acks (tenant_id, return_id, sync_event_id, "
+                    "jurisdiction, submission_last4, status, status_at, reject_code, "
+                    "reject_text) VALUES (:t, :r, :e, :j, :l, :s, :at, :rc, :rt)"
+                ),
+                [
+                    {
+                        "t": ctx.tenant_id,
+                        "r": return_id,
+                        "e": event_id,
+                        "j": a.jurisdiction,
+                        "l": a.submission_last4,
+                        "s": a.status,
+                        "at": a.status_at,
+                        "rc": a.reject_code,
+                        "rt": a.reject_text,
+                    }
+                    for a in acks.acks
+                ],
+            )
         tx.record(
             "engine_sync.acks_received",
             target=Target(TARGET, return_id),

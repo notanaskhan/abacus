@@ -167,6 +167,12 @@ ACKS_HEADER: Final = (
     "reject_code",
     "reject_text",
 )
+# T-03-T08 (DEC-2244): the status report's optional eighth column names the form, so an
+# extension submission's ack resolves to its filing extension; the seven-column report is
+# unchanged (every row a return ack).
+ACKS_HEADER_WITH_FORM: Final = (*ACKS_HEADER, "form")
+EXTENSION_FORMS: Final = frozenset({"4868", "7004", "8868", "4768", "IT-370"})
+_FORM: Final = re.compile(r"[A-Z0-9-]{2,12}")
 _PDF_NAME: Final = re.compile(
     r"([0-9]{4}[A-Z])_([A-Za-z0-9]{1,20})_V([0-9]{1,4})_([a-z0-9_]{1,40})\.pdf"
 )
@@ -209,6 +215,11 @@ class Ack:
     status_at: str
     reject_code: str | None
     reject_text: str | None
+    form: str | None = None
+
+    @property
+    def extension(self) -> bool:
+        return self.form in EXTENSION_FORMS
 
 
 @dataclass(frozen=True)
@@ -220,7 +231,12 @@ class AcksFile:
 def parse_acks(content: bytes) -> AcksFile:
     """The e-file status report: one row per jurisdiction, accepted or rejected, a rejection
     with its code. Only the submission id's last four is ever read (R-04)."""
-    rows = _rows(content, ACKS_HEADER)
+    try:
+        rows, header = _rows(content, ACKS_HEADER_WITH_FORM), ACKS_HEADER_WITH_FORM
+    except EngineFileInvalid as refused:
+        if refused.code != "unknown_header":
+            raise
+        rows, header = _rows(content, ACKS_HEADER), ACKS_HEADER
     if not rows:
         raise EngineFileInvalid("empty")
     ids = {r[0] for r in rows}
@@ -232,7 +248,8 @@ def parse_acks(content: bytes) -> AcksFile:
     acks: list[Ack] = []
     for n, r in enumerate(rows, start=2):
         if (
-            len(r) != len(ACKS_HEADER)
+            len(r) != len(header)
+            or (len(header) > len(ACKS_HEADER) and r[7] and not _FORM.fullmatch(r[7]))
             or not _JURISDICTION.fullmatch(r[1])
             or not _LAST4.fullmatch(r[2])
             or r[3] not in ("accepted", "rejected")
@@ -241,7 +258,8 @@ def parse_acks(content: bytes) -> AcksFile:
             or len(r[6]) > MAX_TEXT
         ):
             raise EngineFileInvalid("bad_row", n)
-        acks.append(Ack(r[1], r[2], r[3], r[4], r[5] or None, r[6] or None))
+        form = r[7] or None if len(header) > len(ACKS_HEADER) else None
+        acks.append(Ack(r[1], r[2], r[3], r[4], r[5] or None, r[6] or None, form))
     return AcksFile(return_id, tuple(acks))
 
 
