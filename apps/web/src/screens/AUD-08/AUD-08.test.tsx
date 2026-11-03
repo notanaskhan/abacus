@@ -133,3 +133,93 @@ describe("AUD-08", () => {
     expect(onDecide).toHaveBeenCalledWith(expect.any(String), "R3");
   });
 });
+
+// A-04-T26 (TASK-3221): AUD-08 c, e, f and g. Row acceptance: "AUD-08 c, e, f and g render at Tier
+// C, nothing auto-adopts, and with workpapers.drafting off every agent control is absent and Check
+// coverage shows the code result."
+describe("AUD-08 c, e, f, g (A-04-T26)", () => {
+  it("c: the Linkage tab shows dots and R8 Suggested", async () => {
+    show("c");
+    const tab = await waitFor(() => {
+      const found = document.querySelector<HTMLElement>(
+        '[role="tab"]:nth-child(5), button[aria-label="Linkage"]',
+      );
+      const byText = Array.from(document.querySelectorAll<HTMLElement>('[role="tab"]')).find(
+        (t) => t.textContent === "Linkage",
+      );
+      const el = byText ?? found;
+      expect(el).toBeTruthy();
+      return el as HTMLElement;
+    });
+    fireEvent.click(tab);
+    const matrix = await waitFor(() => {
+      const el = document.querySelector('[data-aud08="linkage"]');
+      expect(el).toBeTruthy();
+      return el as HTMLElement;
+    });
+    expect(matrix.querySelector('[data-risk="R8"]')?.textContent).toContain("Suggested");
+    expect(matrix.querySelectorAll('[data-dot="linked"]').length).toBeGreaterThan(0);
+  });
+
+  it("g: Identify risks with agent shows code's coverage and Open R8", async () => {
+    show("g");
+    const button = await waitFor(() => {
+      const el = Array.from(document.querySelectorAll("button")).find(
+        (b) => b.textContent === "Identify risks with agent",
+      );
+      expect(el).toBeTruthy();
+      return el as HTMLElement;
+    });
+    fireEvent.click(button);
+    const result = await waitFor(() => {
+      const el = document.querySelector('[data-aud08="identify-result"]');
+      expect(el).toBeTruthy();
+      return el as HTMLElement;
+    });
+    expect(result.textContent).toContain("(10 of 10)");
+    expect(result.textContent).toContain("Open R8 →");
+  });
+
+  it("drafting off: no agent control, Check coverage shows the code result", async () => {
+    show("drafting_off");
+    const check = await waitFor(() => {
+      const el = Array.from(document.querySelectorAll("button")).find(
+        (b) => b.textContent === "Check coverage",
+      );
+      expect(el).toBeTruthy();
+      return el as HTMLElement;
+    });
+    expect(document.body.textContent).not.toContain("Identify risks with agent");
+    fireEvent.click(check);
+    const result = await waitFor(() => {
+      const el = document.querySelector('[data-aud08="identify-result"]');
+      expect(el).toBeTruthy();
+      return el as HTMLElement;
+    });
+    expect(result.textContent).not.toContain("I compared");
+  });
+
+  it("f: a drafted rationale is ink-2 with Adopt · Edit · Discard and nothing auto-adopts", async () => {
+    restore = installFixtureMode(scenarios.f);
+    const r8 = aud08Register("a").risks[7];
+    if (r8 === undefined) throw new Error("R8");
+    render(
+      <QueryClientProvider client={newQueryClient()}>
+        <RiskDrawer
+          engagementId={NORTHWIND_AUDIT}
+          risk={r8}
+          cardId={null}
+          onClose={() => undefined}
+          onDecide={vi.fn()}
+        />
+      </QueryClientProvider>,
+    );
+    const footer = await waitFor(() => {
+      const el = document.querySelector('[data-aud08="drafted-footer"]');
+      expect(el).toBeTruthy();
+      return el as HTMLElement;
+    });
+    expect(footer.textContent).toContain("Adopt");
+    expect(document.querySelector("[data-drafted]")).toBeTruthy();
+  });
+});

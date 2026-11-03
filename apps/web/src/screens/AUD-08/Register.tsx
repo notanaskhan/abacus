@@ -2,9 +2,10 @@ import type { RegisterOut, RegisterRiskOut } from "@abacus/api-client";
 import { riskLinkageOptions, riskRegisterOptions } from "@abacus/api-client/query";
 import { PaneAction, Pill, Segmented, ViewStateBody, type ViewState, cn } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
-import type { JSX } from "react";
+import { type JSX, useState } from "react";
 import { useFlag } from "../../app-core/flags";
 import { AuditBar, isNotFound, useAuditCockpit } from "../../domain/audits";
+import { IdentifyRisks, LinkageMatrix, RevisingHeader } from "./AgentStates";
 import { COPY } from "./copy";
 
 // AUD-08 · Risk assessment register (A-04-T20; A-04 §3 AC4; the handoff spec and R2 revision): the
@@ -197,14 +198,19 @@ export function RiskRegisterPage({
   onFilter,
   onRisk,
   onBack,
+  revising = false,
 }: {
   auditId: string;
   filter: "unaddressed" | null;
   onFilter: (filter: "unaddressed" | null) => void;
   onRisk: (code: string) => void;
   onBack?: () => void;
+  /** A-04-T26 (e): the re-draft run after an agent-written Internal Control version. */
+  revising?: boolean;
 }): JSX.Element {
   const on = useFlag("assurance.risk_register") === true;
+  const drafting = useFlag("workpapers.drafting") === true;
+  const [tab, setTab] = useState<string>(COPY.tabs[0]);
   const cockpit = useAuditCockpit(auditId);
   const engagementId = cockpit.data?.engagement_id;
   const path = { path: { engagement_id: engagementId ?? "" } };
@@ -255,9 +261,17 @@ export function RiskRegisterPage({
                 size="small"
                 label={COPY.title}
                 options={COPY.tabs}
-                active={COPY.tabs[0]}
+                active={tab}
+                onChange={setTab}
               />
               <span className="flex-1" />
+              {engagementId !== undefined && (
+                <IdentifyRisks
+                  engagementId={engagementId}
+                  drafting={drafting}
+                  onOpenRisk={onRisk}
+                />
+              )}
               <PaneAction icon="file-spreadsheet" label={COPY.openExcel} />
             </div>
             <Tally
@@ -267,7 +281,12 @@ export function RiskRegisterPage({
                 onFilter(f ? "unaddressed" : null);
               }}
             />
+            {revising && <RevisingHeader />}
+            {tab === "Linkage" && linkage.data !== undefined && (
+              <LinkageMatrix linkage={linkage.data} />
+            )}
             <div
+              hidden={tab === "Linkage"}
               role="table"
               aria-label={COPY.title}
               className="mx-[12px] mb-[12px] overflow-hidden rounded-pane bg-card shadow-e1"

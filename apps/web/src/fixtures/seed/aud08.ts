@@ -5,7 +5,7 @@
 import type { LinkageOut, RegisterOut, RegisterRiskOut, RiskDrawerOut } from "@abacus/api-client";
 import { stableId } from "./prng";
 
-export type Aud08Variant = "a" | "b2" | "d";
+export type Aud08Variant = "a" | "b2" | "d" | "f";
 type Rating = "low" | "moderate" | "high";
 
 // code, area, level, assertions, IR, RMM, significance, fraud, response target, unaddressed
@@ -204,7 +204,24 @@ export function aud08Linkage(): LinkageOut {
   };
 }
 
+// A-04-T26 (f): R8 "Participant accounts — eligibility & deferral data", rationale drafted with the
+// agent and not adopted (the R2 revision's words).
+const R8_RATIONALE =
+  "Deferral rates change each year under QACA escalation (6% default, +1% a year to 15%), and Internal Control lists 4 auto-enrolled participants whose opt-out elections are outstanding, so census and deferral data may be incomplete. RMM High.";
+
 export function aud08Drawer(variant: Aud08Variant): RiskDrawerOut {
+  if (variant === "f") {
+    const r8 = risk(ROWS[7] as (typeof ROWS)[number], "a");
+    return {
+      risk: r8,
+      rationale: R8_RATIONALE,
+      rationale_suggestion_id: stableId("suggestion:northwind:R8:rationale"),
+      citation_ids: [1, 2, 3].map((n) => stableId(`citation:northwind:R8:${String(n)}`)),
+      versions: [],
+      routed_to_name: null,
+      routed_at: null,
+    };
+  }
   const r3 = risk(ROWS[2] as (typeof ROWS)[number], variant);
   return {
     risk: r3,

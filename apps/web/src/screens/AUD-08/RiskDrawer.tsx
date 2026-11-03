@@ -1,8 +1,13 @@
 import type { RegisterRiskOut } from "@abacus/api-client";
-import { riskDrawerOptions } from "@abacus/api-client/query";
+import {
+  riskDrawerOptions,
+  suggestionAdoptMutation,
+  suggestionDismissMutation,
+} from "@abacus/api-client/query";
 import { AgentText, Button, Drawer, Pill, time } from "@abacus/ui";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type { JSX } from "react";
+import { DraftedFooter, DraftedMarker } from "./AgentStates";
 import { COPY } from "./copy";
 
 // AUD-08 b and b2 (A-04-T20): the O2 rationale drawer (480) over `GET …/risks/{rid}`: the SAS 145
@@ -18,6 +23,7 @@ export function RiskDrawer({
   onClose,
   onDecide,
   onRemind,
+  onEdit,
 }: {
   engagementId: string;
   risk: RegisterRiskOut;
@@ -25,11 +31,22 @@ export function RiskDrawer({
   onClose: () => void;
   onDecide: (cardId: string, subject: string) => void;
   onRemind?: () => void;
+  /** Edit the drafted rationale in the host's editor; the model's text is never sent back as a
+   * person's edit (ADR-065). */
+  onEdit?: () => void;
 }): JSX.Element {
   const drawer = useQuery(
     riskDrawerOptions({ path: { engagement_id: engagementId, risk_id: risk.id } }),
   );
   const data = drawer.data;
+  // A-04-T26 (f): a drafted rationale waits for a person (C-31); nothing adopts by itself.
+  const suggestionId = data?.rationale_suggestion_id ?? null;
+  const drafted = suggestionId !== null;
+  const refresh = (): void => {
+    void drawer.refetch();
+  };
+  const adopt = useMutation({ ...suggestionAdoptMutation(), onSuccess: refresh });
+  const dismiss = useMutation({ ...suggestionDismissMutation(), onSuccess: refresh });
   const decides = risk.allowed_actions.includes("decision.decide");
   const routedTo = data?.routed_to_name ?? null;
   const footer =
@@ -80,15 +97,38 @@ export function RiskDrawer({
           ))}
         </section>
         <section data-aud08="rationale" className="rounded-pane bg-card p-[12px] shadow-e1">
-          <h3 className="mb-[8px] text-section font-medium">{COPY.drawer.rationaleCard}</h3>
+          <h3 className="mb-[8px] flex items-center text-section font-medium">
+            {COPY.drawer.rationaleCard}
+            {drafted && <DraftedMarker citations={data?.citation_ids.length ?? 0} />}
+          </h3>
           <AgentText
             text={data?.rationale ?? ""}
-            className="text-[12.5px] leading-[1.55] text-ink"
+            className={
+              drafted
+                ? "text-[12.5px] leading-[1.55] text-ink-2"
+                : "text-[12.5px] leading-[1.55] text-ink"
+            }
           />
           {(data?.citation_ids.length ?? 0) > 0 && (
             <p className="mt-[8px] text-micro text-ink-3">
               {COPY.drawer.citations(data?.citation_ids.length ?? 0)}
             </p>
+          )}
+          {suggestionId !== null && (
+            <DraftedFooter
+              onAdopt={() => {
+                adopt.mutate({ path: { suggestion_id: suggestionId }, body: { seen_version: 1 } });
+              }}
+              onEdit={() => {
+                onEdit?.();
+              }}
+              onDiscard={() => {
+                dismiss.mutate({
+                  path: { suggestion_id: suggestionId },
+                  body: { seen_version: 1 },
+                });
+              }}
+            />
           )}
         </section>
         <section className="rounded-pane bg-card p-[12px] shadow-e1">
