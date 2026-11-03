@@ -39,6 +39,28 @@ def test_only_main_and_batch_branches_and_red_or_green_runs_count() -> None:
     assert [r.id for r in lane.runs(raw)] == [1, 4, 5]
 
 
+def test_the_solo_editions_sprint_batch_branches_count() -> None:
+    # Q-03-T163: S24 and S25 batched on `s24-end-pass` and `s25-end-pass`; task branches still
+    # do not count.
+    raw = [
+        _run(1, "2027-10-04T10:00:00Z", "failure", "s25-end-pass"),
+        _run(2, "2027-10-04T11:00:00Z", "success", "s24-integration"),
+        _run(3, "2027-10-04T12:00:00Z", "failure", "s25-a05-t18"),
+        _run(4, "2027-10-04T13:00:00Z", "failure", "s20d-end-pass"),
+    ]
+    assert [r.id for r in lane.runs(raw)] == [1, 2, 4]
+
+
+def test_a_push_run_on_a_batch_branch_neither_breaks_nor_resolves() -> None:
+    # Q-03-T163: CI skips its stages on a branch push, so that run's success is not a green.
+    raw = [
+        _run(1, "2027-10-04T10:00:00Z", "failure", "s25-end-pass"),
+        {**_run(2, "2027-10-04T11:00:00Z", "success", "s25-end-pass"), "event": "push"},
+        {**_run(3, "2027-10-04T12:00:00Z", "success"), "event": "push"},  # main's push counts
+    ]
+    assert [r.id for r in lane.runs(raw)] == [1, 3]
+
+
 def test_a_streak_ends_at_the_next_green_on_its_own_branch() -> None:
     found = lane.runs(
         [
