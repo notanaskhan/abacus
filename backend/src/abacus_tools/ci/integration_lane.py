@@ -7,10 +7,11 @@
 
 The lane's acceptance: every red batch run of the period is resolved within one working day. A run
 is **red** when it completed with `failure` or `timed_out` on `main` or on a batch branch
-(`review-*`, `batch-*`); it is **resolved** at the completion of the next `success` on the same
-branch (cancelled and skipped runs neither break nor resolve). The time between counts working days
-only (Monday to Friday, in UTC; a weekend does not count against the lane). A red run that is still
-unresolved counts up to now.
+(`review-*`, `batch-*`, the solo edition's `s<NN>-end-pass`); it is **resolved** at the
+completion of the next `success` on the same branch (cancelled and skipped runs neither break nor
+resolve; on a branch other than `main`, a push run skips the stages and counts neither way). The
+time between counts working days only (Monday to Friday, in UTC; a weekend does not count against
+the lane). A red run that is still unresolved counts up to now.
 
 The report lists each red streak (the first red run and the green that ended it), its working-day
 age, and whether it breached one day. Exit 1 when any streak breached; 0 otherwise. It reads the
@@ -32,7 +33,10 @@ from typing import Final, cast
 
 from abacus.kernel.clock import system_now
 
-BATCH_BRANCH: Final = re.compile(r"^(main|review-[\w.-]+|batch-[\w.-]+)$")
+# The solo edition batches a sprint on `s<NN>[x]-end-pass` or `-integration` (S24, S25; Q-03-T163).
+BATCH_BRANCH: Final = re.compile(
+    r"^(main|review-[\w.-]+|batch-[\w.-]+|s\d+[a-z]?-(?:end-pass|integration))$"
+)
 RED: Final = frozenset({"failure", "timed_out"})
 GREEN: Final = "success"
 LIMIT: Final = timedelta(days=1)
@@ -74,6 +78,10 @@ def runs(raw: Iterable[dict[str, object]]) -> list[Run]:
         if item.get("status") not in (None, "completed") or not BATCH_BRANCH.match(branch):
             continue
         if conclusion not in RED and conclusion != GREEN:
+            continue
+        if branch != "main" and item.get("event") == "push":
+            # On a branch push the stages are skipped, so its "success" proves nothing; a batch
+            # branch counts through its pull request's runs (Q-03-T163).
             continue
         found.append(
             Run(

@@ -52,7 +52,14 @@ def test_t28_pull_requests_run_the_fixture_journeys_when_what_they_walk_changes(
     assert job["needs"] == ["changes"]
     run_steps = [s for s in _steps(job) if "run" in s]
     gated = [s for s in run_steps if "needs.changes.outputs.journeys == 'true'" in str(s["if"])]
-    assert any("make journeys JOURNEY_ARGS=--trace=on" in str(s["run"]) for s in gated)
+    # Q-03-T163 (DEC-2080): two shards, together the whole suite, each with traces on.
+    assert any(
+        "make journeys" in str(s["run"])
+        and "--trace=on" in str(s["run"])
+        and "--shard=${{ matrix.shard }}/2" in str(s["run"])
+        for s in gated
+    )
+    assert cast(dict[str, object], job["strategy"])["matrix"] == {"shard": [1, 2]}
     assert _publishes_traces_and_report(job)
     assert "journeys" in cast(list[str], ci["stage-2"]["needs"])
 

@@ -7,7 +7,8 @@
 // this runner (so fonts and anti-aliasing match), restores the head, and compares. A specimen the
 // base does not have is new and is listed, not failed. Without a usable base (a push, a base that
 // predates the gallery) there is nothing to compare, and the run is Tier D and parity only.
-// Tier A parity and Tier D block; the regression blocks unless VISUAL_REGRESSION_BLOCKING=false (pushes).
+// Tier A parity and Tier D block; the regression blocks unless VISUAL_REGRESSION_BLOCKING=false (pushes,
+// and a pull request labelled `visual-change` whose specimen diff was reviewed; Q-03-T163).
 //
 // Node only, no dependencies. Git commands touch only packages/ui and apps/web/src, and refuse a
 // dirty tree there unless CI is set.
