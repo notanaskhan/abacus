@@ -4,7 +4,7 @@ title: S24 end pass — review fixes, regenerated client, Q-03 2027 Q3 sweeps
 spec: SPEC-000  # S24 end review; Q-03-T152 to T158 rows
 acceptance_criteria: [AC-1]
 risk_zone: amber
-status: in-review
+status: done
 epic: Q-03
 plan_key: Q-03-T152
 branch: s24-end-pass
