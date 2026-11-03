@@ -146,6 +146,23 @@ describe("KNW-02 d · Standards mapping", () => {
   });
 });
 
+describe("KNW-02 d · the standards list's markup (ED-317, Q-03-T165)", () => {
+  it("each group of the <dl> holds only its <dt> and <dd>; the row's control sits inside the <dd>", async () => {
+    show("d");
+    const list = await waitFor(() => {
+      const found = document.querySelector<HTMLElement>('[data-knw02="standards"] dl');
+      if (found === null) throw new Error("no standards list");
+      return found;
+    });
+    const groups = [...list.children];
+    expect(groups.length).toBeGreaterThan(0);
+    for (const group of groups) {
+      expect(group.tagName).toBe("DIV");
+      expect([...group.children].map((c) => c.tagName)).toEqual(["DT", "DD"]);
+    }
+  });
+});
+
 describe("KNW-02 Activity and draft review", () => {
   it("Activity names each actor", async () => {
     show("c", { tab: "activity" });
