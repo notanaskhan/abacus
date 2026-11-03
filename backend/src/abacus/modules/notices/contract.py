@@ -26,6 +26,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import NOTICES_WORKSPACE
 from abacus.kernel.classification import classified
+from abacus.kernel.clock import system_now
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
@@ -1152,8 +1153,19 @@ async def notice_start_route(
 async def return_as_filed_route(
     notice_id: UUID, body: ReturnAsFiledIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> AnalysisRunOut:
+    """A person's return-as-filed snapshot, every line cited; then code re-runs (N-04-T11)."""
     await _gate(ctx, notice_id, "notice.record_as_filed")
-    _not_yet()
+    from abacus.modules.notices import analysis
+
+    await analysis.record_return_as_filed(
+        ctx,
+        notice_id,
+        source=body.source,
+        filing_status=body.filing_status,
+        filed_on=body.filed_on,
+        lines=[(line.key, line.label, line.value, line.citation_id) for line in body.lines],
+    )
+    return await _run_out(ctx, notice_id)
 
 
 @router.put(
@@ -1165,14 +1177,68 @@ async def return_as_filed_route(
 async def proposed_items_route(
     notice_id: UUID, body: ProposedItemsIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> AnalysisRunOut:
+    """A person's cited entry of the notice's proposed items; then code re-runs (N-04-T11)."""
     await _gate(ctx, notice_id, "notice.record_as_filed")
-    _not_yet()
+    from abacus.modules.notices import analysis
+
+    await analysis.record_proposed_items(ctx, notice_id, [i.model_dump() for i in body.items])
+    return await _run_out(ctx, notice_id)
+
+
+async def _run_out(ctx: AuthContext, notice_id: UUID) -> AnalysisRunOut:
+    from abacus.modules.notices import analysis
+
+    version, reused = await analysis.run(ctx, notice_id)
+    return AnalysisRunOut(version=version, status="ready", reused=reused)
 
 
 @router.get(f"{_N}/analysis", action="notice.read", response_model=AnalysisOut, errors=(501,))
 async def analysis_route(notice_id: UUID, ctx: Ctx) -> AnalysisOut:
+    """The newest analysis version as code recorded it (NOT-02 b, c, d)."""
     await _gate(ctx, notice_id, "notice.read")
-    _not_yet()
+    from abacus.modules.notices import analysis
+
+    row = await analysis.latest(ctx, notice_id)
+    if row is None:
+        raise NotFound("notice_analysis")
+    checks = row["checks"] or {}
+    bracket_check = checks.get("bracket_check")
+    out = AnalysisOut(
+        version=row["version"],
+        status=row["status"],
+        analysis_kind=row["analysis_kind"],
+        progress_label=None,
+        rows=[AnalysisRowOut(**r) for r in row["rows"]],
+        information_returns=[InformationReturnOut(**r) for r in row["information_returns"]],
+        transcript_rows=[],
+        checks=AnalysisChecksOut(
+            difference_explained=bool(checks.get("difference_explained")),
+            total_foots=bool(checks.get("total_foots", True)),
+            bracket_check=None
+            if not bracket_check or bracket_check.get("rate") is None
+            else BracketCheckOut(
+                rate=Decimal(bracket_check["rate"]),
+                expected=Decimal(bracket_check["expected"]),
+                notice=Decimal(bracket_check["notice"]),
+                agrees=bool(bracket_check["agrees"]),
+                reason=bracket_check.get("reason"),
+            ),
+        ),
+        sources=[],
+        agent=AgentBlockOut(
+            stage=row["agent_stage"],
+            run_id=row["agent_run_id"],
+            explanation=None,
+            recommended_position=row["recommended_position"],
+            refusal=None,
+            citation_ids=[],
+        ),
+        decision_card_id=None,
+        engine_name=row["engine_name"],
+        engine_version=row["engine_version"],
+        inputs_hash=row["inputs_hash"],
+    )
+    return await mask_tins_for(ctx, out)
 
 
 @router.post(
@@ -1187,7 +1253,7 @@ async def analysis_run_route(
 ) -> AnalysisRunOut:
     """Idempotent on `inputs_hash`."""
     await _gate(ctx, notice_id, "notice.analyze")
-    _not_yet()
+    return await _run_out(ctx, notice_id)
 
 
 @router.post(
@@ -1203,7 +1269,10 @@ async def decision_request_route(
     """Raises or refreshes the `notice_position` card (P-04), reserved to the notice's signer;
     deciding is `POST /v1/decision-cards/{id}/decide`, never a notices route."""
     await _gate(ctx, notice_id, "notice.request_decision")
-    _not_yet()
+    from abacus.modules.notices import analysis
+
+    card_id = await analysis.request_decision(ctx, notice_id, body.note)
+    return DecisionRequestOut(decision_card_id=card_id)
 
 
 @router.post(
@@ -1217,7 +1286,16 @@ async def note_route(
     notice_id: UUID, body: NoticeNoteIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> NoticeNoteOut:
     await _gate(ctx, notice_id, "notice.note")
-    _not_yet()
+    from abacus.modules.notices import analysis, service
+
+    note_id = await analysis.add_note(ctx, notice_id, body.body, body.decision_card_id)
+    name = (await service.names([ctx.user_id])).get(ctx.user_id, "")
+    initials = "".join(p[0] for p in name.split()[:2]).upper() or "?"
+    return NoticeNoteOut(
+        id=note_id,
+        author=NoticePersonOut(user_id=ctx.user_id, name=name, initials=initials),
+        created_at=system_now(),
+    )
 
 
 @router.get(

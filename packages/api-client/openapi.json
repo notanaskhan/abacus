@@ -214650,6 +214650,7 @@
     },
     "/v1/notices/{notice_id}/analysis": {
       "get": {
+        "description": "The newest analysis version as code recorded it (NOT-02 b, c, d).",
         "operationId": "analysis",
         "parameters": [
           {
@@ -215189,6 +215190,7 @@
     },
     "/v1/notices/{notice_id}/proposed-items": {
       "put": {
+        "description": "A person's cited entry of the notice's proposed items; then code re-runs (N-04-T11).",
         "operationId": "proposed_items",
         "parameters": [
           {
@@ -216156,6 +216158,7 @@
     },
     "/v1/notices/{notice_id}/return-as-filed": {
       "put": {
+        "description": "A person's return-as-filed snapshot, every line cited; then code re-runs (N-04-T11).",
         "operationId": "return_as_filed",
         "parameters": [
           {

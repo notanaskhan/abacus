@@ -11030,6 +11030,8 @@ export const agencyReply = <ThrowOnError extends boolean = false>(options: Optio
 
 /**
  * Analysis Route
+ *
+ * The newest analysis version as code recorded it (NOT-02 b, c, d).
  */
 export const analysis = <ThrowOnError extends boolean = false>(options: Options<AnalysisData, ThrowOnError>): RequestResult<AnalysisResponses, AnalysisErrors, ThrowOnError> => (options.client ?? client).get<AnalysisResponses, AnalysisErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -11079,6 +11081,8 @@ export const note = <ThrowOnError extends boolean = false>(options: Options<Note
 
 /**
  * Proposed Items Route
+ *
+ * A person's cited entry of the notice's proposed items; then code re-runs (N-04-T11).
  */
 export const proposedItems = <ThrowOnError extends boolean = false>(options: Options<ProposedItemsData, ThrowOnError>): RequestResult<ProposedItemsResponses, ProposedItemsErrors, ThrowOnError> => (options.client ?? client).put<ProposedItemsResponses, ProposedItemsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -11164,6 +11168,8 @@ export const sendForSignature = <ThrowOnError extends boolean = false>(options: 
 
 /**
  * Return As Filed Route
+ *
+ * A person's return-as-filed snapshot, every line cited; then code re-runs (N-04-T11).
  */
 export const returnAsFiled = <ThrowOnError extends boolean = false>(options: Options<ReturnAsFiledData, ThrowOnError>): RequestResult<ReturnAsFiledResponses, ReturnAsFiledErrors, ThrowOnError> => (options.client ?? client).put<ReturnAsFiledResponses, ReturnAsFiledErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
