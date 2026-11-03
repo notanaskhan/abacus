@@ -31563,6 +31563,22 @@
         "title": "EnvelopeSummary",
         "type": "object"
       },
+      "EpInvolvementOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InvolvementEntryOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "EpInvolvementOut",
+        "type": "object"
+      },
       "EqrCandidateOut": {
         "description": "ENG-05 c: a Replace EQR candidate with its eligibility (\"Not eligible \u2014 cooling-off\").",
         "properties": {
@@ -48200,6 +48216,49 @@
           "contact_id"
         ],
         "title": "InviteIn",
+        "type": "object"
+      },
+      "InvolvementEntryOut": {
+        "properties": {
+          "at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "by_name": {
+            "cls": "internal",
+            "title": "By Name",
+            "type": "string"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "decision",
+              "sign_off"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "outcome": {
+            "cls": "internal",
+            "title": "Outcome",
+            "type": "string"
+          },
+          "subject": {
+            "cls": "internal",
+            "title": "Subject",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "at",
+          "by_name",
+          "subject",
+          "outcome"
+        ],
+        "title": "InvolvementEntryOut",
         "type": "object"
       },
       "IssueClientContactOut": {
@@ -85568,6 +85627,219 @@
           "stale"
         ],
         "title": "SignOffLevelOut",
+        "type": "object"
+      },
+      "SignOffMatrixCellOut": {
+        "properties": {
+          "hash_prefix": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{8}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Hash Prefix"
+          },
+          "initials": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Initials"
+          },
+          "level": {
+            "cls": "internal",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Level",
+            "type": "integer"
+          },
+          "signed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Signed At"
+          },
+          "state": {
+            "cls": "internal",
+            "enum": [
+              "signed",
+              "stale",
+              "pending",
+              "not_required"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "version_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Version No"
+          }
+        },
+        "required": [
+          "level",
+          "state",
+          "initials",
+          "signed_at",
+          "version_no",
+          "hash_prefix"
+        ],
+        "title": "SignOffMatrixCellOut",
+        "type": "object"
+      },
+      "SignOffMatrixFooterOut": {
+        "description": "Prepared 25 \u00b7 Reviewed 24 \u00b7 Partner 8 of 13 \u00b7 EQR 0 of 6 \u00b7 Changed after sign-off 1.",
+        "properties": {
+          "changed_after_sign_off": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Changed After Sign Off",
+            "type": "integer"
+          },
+          "eqr_required": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Eqr Required",
+            "type": "integer"
+          },
+          "eqr_signed": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Eqr Signed",
+            "type": "integer"
+          },
+          "partner_required": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Partner Required",
+            "type": "integer"
+          },
+          "partner_signed": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Partner Signed",
+            "type": "integer"
+          },
+          "prepared": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Prepared",
+            "type": "integer"
+          },
+          "reviewed": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Reviewed",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "prepared",
+          "reviewed",
+          "partner_signed",
+          "partner_required",
+          "eqr_signed",
+          "eqr_required",
+          "changed_after_sign_off"
+        ],
+        "title": "SignOffMatrixFooterOut",
+        "type": "object"
+      },
+      "SignOffMatrixOut": {
+        "properties": {
+          "footer": {
+            "$ref": "#/components/schemas/SignOffMatrixFooterOut"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/SignOffMatrixRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "rows",
+          "footer"
+        ],
+        "title": "SignOffMatrixOut",
+        "type": "object"
+      },
+      "SignOffMatrixRowOut": {
+        "properties": {
+          "cells": {
+            "items": {
+              "$ref": "#/components/schemas/SignOffMatrixCellOut"
+            },
+            "title": "Cells",
+            "type": "array"
+          },
+          "code": {
+            "cls": "internal",
+            "title": "Code",
+            "type": "string"
+          },
+          "section": {
+            "cls": "internal",
+            "enum": [
+              "planning",
+              "fieldwork",
+              "completion",
+              "reporting"
+            ],
+            "title": "Section",
+            "type": "string"
+          },
+          "target_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Target Id",
+            "type": "string"
+          },
+          "target_type": {
+            "cls": "internal",
+            "title": "Target Type",
+            "type": "string"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_type",
+          "target_id",
+          "code",
+          "title",
+          "section",
+          "cells"
+        ],
+        "title": "SignOffMatrixRowOut",
         "type": "object"
       },
       "SignOffOut": {
@@ -244431,6 +244703,113 @@
         "x-abacus-action": "adjusted_tb.read"
       }
     },
+    "/v1/work-items/{work_item_id}/ep-involvement": {
+      "get": {
+        "description": "AUD-17 c: the EP's decisions and L4 sign-offs, oldest first (AU-C 220; A-06-T23).",
+        "operationId": "ep_involvement",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EpInvolvementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Ep Involvement Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "sign_off.read"
+      }
+    },
     "/v1/work-items/{work_item_id}/exports": {
       "get": {
         "description": "The export sheet's history for the work item, newest first (A-01-T18).",
@@ -245856,6 +246235,135 @@
           "sampling"
         ],
         "x-abacus-action": "sample_set.create"
+      }
+    },
+    "/v1/work-items/{work_item_id}/sign-off-matrix": {
+      "get": {
+        "description": "AUD-17: workpapers by L1 to L5 with the footer counts; L5 read-only (A-06-T23).",
+        "operationId": "sign_off_matrix",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "section",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "planning",
+                    "fieldwork",
+                    "completion",
+                    "reporting"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Section"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignOffMatrixOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Sign Off Matrix Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "sign_off.read"
       }
     },
     "/v1/work-items/{work_item_id}/sum": {

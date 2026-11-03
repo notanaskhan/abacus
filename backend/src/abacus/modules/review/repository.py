@@ -526,3 +526,23 @@ async def awaiting_cards_of(
             )
         ).scalars()
     )
+
+
+async def decided_cards_of(
+    session: AsyncSession, engagement_id: UUID, reserved_role: str
+) -> list[tuple[DecisionCard, Decision]]:
+    """A-06-T23: an engagement's decided cards reserved to `reserved_role`, oldest first."""
+    return [
+        (card, decision)
+        for card, decision in (
+            await session.execute(
+                select(DecisionCard, Decision)
+                .join(Decision, Decision.card_id == DecisionCard.id)
+                .where(
+                    DecisionCard.engagement_id == engagement_id,
+                    DecisionCard.reserved_role == reserved_role,
+                )
+                .order_by(Decision.created_at, Decision.id)
+            )
+        ).tuples()
+    ]

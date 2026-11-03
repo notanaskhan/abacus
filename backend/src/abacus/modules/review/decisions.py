@@ -67,6 +67,7 @@ from abacus.modules.review.repository import (
     card_list_query,
     cards_by_id,
     current_version,
+    decided_cards_of,
     decision_of,
     get_card,
     insert_analysis_request,
@@ -543,6 +544,31 @@ async def awaiting_cards(
             AwaitingCard(c.id, c.kind, c.question_key, c.reserved_user_id, c.created_at)
             for c in rows
         ]
+
+
+@dataclass(frozen=True)
+class DecidedCard:
+    """A decided card for the EP-involvement timeline (A-06-T23; AU-C 220): who decided which
+    question with which option, when. No rationale text."""
+
+    card_id: UUID
+    kind: str
+    question_key: str
+    option_key: str
+    decided_by: UUID
+    decided_at: datetime
+
+
+async def decided_cards(
+    tenant: TenantContext, engagement_id: UUID, reserved_role: str = "engagement_partner"
+) -> list[DecidedCard]:
+    """`review.api.decided_cards`: for an owner that has authorised on the engagement."""
+    async with tenant_session(tenant) as session:
+        rows = await decided_cards_of(session, engagement_id, reserved_role)
+    return [
+        DecidedCard(c.id, c.kind, c.question_key, d.option_key, d.decided_by, d.created_at)
+        for c, d in rows
+    ]
 
 
 async def _readable(ctx: AuthContext, card_id: UUID) -> tuple[DecisionCard, Resource]:

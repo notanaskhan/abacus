@@ -33,11 +33,13 @@ from abacus.modules.review.contract import (
 )
 from abacus.modules.review.decisions import (
     AwaitingCard,
+    DecidedCard,
     DecisionCardState,
     RationaleRequired,
     RecommendationChanged,
     awaiting_cards,
     decide_card,
+    decided_cards,
     raise_decision_card,
 )
 from abacus.modules.review.engagement_gates import register_engagement_gates
@@ -209,6 +211,7 @@ __all__ = [
     "CheckpointProposalHooks",
     "ComputedCard",
     "ContentChanged",
+    "DecidedCard",
     "DecisionCardState",
     "DecisionKind",
     "DocumentCitation",
@@ -261,6 +264,7 @@ __all__ = [
     "current_values",
     "decide_card",
     "decide_import",
+    "decided_cards",
     "decision_kind",
     "detect_stale",
     "field_owner",

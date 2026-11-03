@@ -14658,6 +14658,16 @@ export type EnvelopeSummary = {
 };
 
 /**
+ * EpInvolvementOut
+ */
+export type EpInvolvementOut = {
+    /**
+     * Items
+     */
+    items: Array<InvolvementEntryOut>;
+};
+
+/**
  * EqrCandidateOut
  *
  * ENG-05 c: a Replace EQR candidate with its eligibility ("Not eligible — cooling-off").
@@ -22569,6 +22579,32 @@ export type InviteIn = {
      * Contact Id
      */
     contact_id: string;
+};
+
+/**
+ * InvolvementEntryOut
+ */
+export type InvolvementEntryOut = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * By Name
+     */
+    by_name: string;
+    /**
+     * Kind
+     */
+    kind: 'decision' | 'sign_off';
+    /**
+     * Outcome
+     */
+    outcome: string;
+    /**
+     * Subject
+     */
+    subject: string;
 };
 
 /**
@@ -40307,6 +40343,113 @@ export type SignOffLevelOut = {
      * Stale
      */
     stale: boolean;
+};
+
+/**
+ * SignOffMatrixCellOut
+ */
+export type SignOffMatrixCellOut = {
+    /**
+     * Hash Prefix
+     */
+    hash_prefix: string | null;
+    /**
+     * Initials
+     */
+    initials: string | null;
+    /**
+     * Level
+     */
+    level: number;
+    /**
+     * Signed At
+     */
+    signed_at: string | null;
+    /**
+     * State
+     */
+    state: 'signed' | 'stale' | 'pending' | 'not_required';
+    /**
+     * Version No
+     */
+    version_no: number | null;
+};
+
+/**
+ * SignOffMatrixFooterOut
+ *
+ * Prepared 25 · Reviewed 24 · Partner 8 of 13 · EQR 0 of 6 · Changed after sign-off 1.
+ */
+export type SignOffMatrixFooterOut = {
+    /**
+     * Changed After Sign Off
+     */
+    changed_after_sign_off: number;
+    /**
+     * Eqr Required
+     */
+    eqr_required: number;
+    /**
+     * Eqr Signed
+     */
+    eqr_signed: number;
+    /**
+     * Partner Required
+     */
+    partner_required: number;
+    /**
+     * Partner Signed
+     */
+    partner_signed: number;
+    /**
+     * Prepared
+     */
+    prepared: number;
+    /**
+     * Reviewed
+     */
+    reviewed: number;
+};
+
+/**
+ * SignOffMatrixOut
+ */
+export type SignOffMatrixOut = {
+    footer: SignOffMatrixFooterOut;
+    /**
+     * Rows
+     */
+    rows: Array<SignOffMatrixRowOut>;
+};
+
+/**
+ * SignOffMatrixRowOut
+ */
+export type SignOffMatrixRowOut = {
+    /**
+     * Cells
+     */
+    cells: Array<SignOffMatrixCellOut>;
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Section
+     */
+    section: 'planning' | 'fieldwork' | 'completion' | 'reporting';
+    /**
+     * Target Id
+     */
+    target_id: string;
+    /**
+     * Target Type
+     */
+    target_type: string;
+    /**
+     * Title
+     */
+    title: string;
 };
 
 /**
@@ -112606,6 +112749,58 @@ export type AdjustedTbResponses = {
 
 export type AdjustedTbResponse = AdjustedTbResponses[keyof AdjustedTbResponses];
 
+export type EpInvolvementData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/work-items/{work_item_id}/ep-involvement';
+};
+
+export type EpInvolvementErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EpInvolvementError = EpInvolvementErrors[keyof EpInvolvementErrors];
+
+export type EpInvolvementResponses = {
+    /**
+     * Successful Response
+     */
+    200: EpInvolvementOut;
+};
+
+export type EpInvolvementResponse = EpInvolvementResponses[keyof EpInvolvementResponses];
+
 export type ListExportsData = {
     body?: never;
     headers?: {
@@ -113248,6 +113443,63 @@ export type SampleSetCreateResponses = {
 };
 
 export type SampleSetCreateResponse = SampleSetCreateResponses[keyof SampleSetCreateResponses];
+
+export type SignOffMatrixData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: {
+        /**
+         * Section
+         */
+        section?: 'planning' | 'fieldwork' | 'completion' | 'reporting' | null;
+    };
+    url: '/v1/work-items/{work_item_id}/sign-off-matrix';
+};
+
+export type SignOffMatrixErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SignOffMatrixError = SignOffMatrixErrors[keyof SignOffMatrixErrors];
+
+export type SignOffMatrixResponses = {
+    /**
+     * Successful Response
+     */
+    200: SignOffMatrixOut;
+};
+
+export type SignOffMatrixResponse = SignOffMatrixResponses[keyof SignOffMatrixResponses];
 
 export type SumData = {
     body?: never;
