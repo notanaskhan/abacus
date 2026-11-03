@@ -15,6 +15,7 @@ HUMAN_ONLY_ACTIONS: Final[frozenset[str]] = frozenset(
         "assurance.archive_recorded",
         "assurance.phase_recorded",
         "assurance.release_recorded",
+        "attribute_result.marked",
         "checkpoint.approved",
         "checkpoint.rejected",
         "checkpoint.restored",
@@ -23,6 +24,7 @@ HUMAN_ONLY_ACTIONS: Final[frozenset[str]] = frozenset(
         "contact.unlocked",
         "decision.decided",
         "decision.reassessed",
+        "deficiency.concluded",
         "delivery_packet.approved",
         "efile_ack.recorded",
         "engagement.acceptance_recorded",
@@ -75,6 +77,7 @@ HUMAN_ONLY_ACTIONS: Final[frozenset[str]] = frozenset(
         "suggestion.adopted",
         "suggestion.dismissed",
         "suggestion.edited",
+        "sum.concluded",
         "team.approved",
         "transmission.recorded",
     }
