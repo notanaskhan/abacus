@@ -4,7 +4,7 @@ title: A-04-T17 golden fixtures and independent acceptance tests for the materia
 spec: SPEC-620
 acceptance_criteria: [AC-15, AC-18]
 risk_zone: amber
-status: in-review
+status: done
 epic: A-04
 plan_key: A-04-T17
 branch: s24-a04-t17 (stacked on s24-a04-t12)

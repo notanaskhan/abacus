@@ -4,7 +4,7 @@ title: K-01-T23 KNW-02 a, a2 and b import review on the T3 triad
 spec: SPEC-000  # K-01-T23 row; K-01 §3.7 AC7.1 to AC7.3
 acceptance_criteria: [AC-1]
 risk_zone: green
-status: in-review
+status: done
 epic: K-01
 plan_key: K-01-T23
 branch: s24-k01-t23
