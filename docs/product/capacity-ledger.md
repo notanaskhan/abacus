@@ -156,3 +156,6 @@ firm figure is zero or no data. For re-baseline #4.
 | Pages per week, hotfixes, change failure rate | see Q-04-T088 (`docs/ops/pilot/retros/m14-ops-retro-n.md`) |
 
 The retros are `docs/ops/pilot/retros/m14-ops-retro-ay.md` and `m14-ops-retro-n.md`.
+- Q-04-T088 (N): change failure rate has no denominator (0 production releases); `main`'s `ci` had
+  0 green of 48 runs since 2026-10-30; 0 hotfixes; 0 pages per week. Fractional SRE: kept per ADR-100,
+  contracted at the first real go-live (DEC-2082).
