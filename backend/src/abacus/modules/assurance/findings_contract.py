@@ -151,6 +151,8 @@ class MisstatementOut(BaseModel):
     id: Annotated[UUID, classified("internal")]
     ref: Annotated[str, classified("internal")]  # AJE-1, PAJE-1, BCT-1, PY-1
     origin_ref: Annotated[str | None, classified("internal")]
+    # AUD-16 d (A-06-T22): "Rollover received Dec 31, 2025, recorded Jan 2, 2026".
+    description: Annotated[str | None, Field(max_length=500), classified("confidential")] = None
     type: Annotated[Literal["factual", "judgmental", "projected"], classified("internal")]
     nature: Annotated[Literal["misstatement", "reclassification"], classified("internal")]
     status: Annotated[MisstatementStatus, classified("internal")]
@@ -158,6 +160,106 @@ class MisstatementOut(BaseModel):
     finding_ref: Annotated[str | None, classified("internal")]
     proposed_entry_ref: Annotated[str | None, classified("internal")]
     allowed_actions: Actions
+
+
+Effect = Annotated[Decimal | None, classified("confidential")]  # None: nil, drawn "—"
+Label = Annotated[str | None, Field(max_length=300), classified("internal")]
+
+
+class SumThresholdsOut(BaseModel):
+    """The decided materiality the SUM is measured against (A-04's record; AUD-16 tally strip)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    overall: Money
+    pm: Money
+    ct: Money
+    label: Label  # "v2 · 1.5%"
+
+
+class SumRowOut(BaseModel):
+    """One statement row (AUD-16 a): the misstatement's signed effect per column, from its own
+    record (the projection, the entry's lines); prior-year rows are context, never accumulated."""
+
+    model_config = ConfigDict(frozen=True)
+
+    misstatement_id: Annotated[UUID | None, classified("internal")]
+    ref: Annotated[str, classified("internal")]  # PAJE-1, PY-1
+    group: Annotated[Literal["current", "prior_year"], classified("internal")]
+    description: Annotated[str, Field(max_length=500), classified("confidential")]
+    finding_ref: Annotated[str | None, classified("internal")]  # F-07 (AUD-15)
+    workpaper_ref: Annotated[str | None, classified("internal")]  # EBP-04
+    client_note: Annotated[str | None, Field(max_length=500), classified("confidential")]
+    type: Annotated[Literal["factual", "judgmental", "projected"], classified("internal")]
+    assets: Effect = None
+    liabilities: Effect = None
+    net_assets: Effect = None  # iron curtain
+    change_in_net_assets: Effect = None  # rollover
+    carried_from_py: Effect = None
+
+
+class SumTotalsOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    assets: Effect = None
+    liabilities: Effect = None
+    net_assets: Effect = None
+    change_in_net_assets: Effect = None
+    carried_from_py: Effect = None
+
+
+class SumBookedOut(BaseModel):
+    """A corrected (booked) misstatement: listed beside the SUM, never accumulated."""
+
+    model_config = ConfigDict(frozen=True)
+
+    ref: Annotated[str, classified("internal")]
+    description: Annotated[str, Field(max_length=500), classified("confidential")]
+    amount: Money
+    approval_label: Label  # "Client approved · Sep 25"
+
+
+class SumFactorOut(BaseModel):
+    """A qualitative factor as recorded (`record_value`); `flagged` is set by code, not the UI."""
+
+    model_config = ConfigDict(frozen=True)
+
+    factor: Annotated[str, Field(pattern=r"^[a-z][a-z0-9_]{0,59}$"), classified("internal")]
+    label: Annotated[str, Field(max_length=200), classified("internal")]
+    value: Annotated[str, Field(max_length=200), classified("confidential")]
+    flagged: Annotated[bool, classified("internal")]
+
+
+class SumConclusionOut(BaseModel):
+    """The `sum_conclusion` card (A-06-T13), reserved to the engagement partner."""
+
+    model_config = ConfigDict(frozen=True)
+
+    state: Annotated[Literal["not_requested", "awaiting", "concluded"], classified("internal")]
+    decision_card_id: Annotated[UUID | None, classified("internal")] = None
+    reserved_user_name: Label = None
+    outcome_label: Label = None  # "Immaterial individually and in aggregate"
+    decided_by_name: Label = None
+    decided_at: Annotated[datetime | None, classified("internal")] = None
+
+
+class SumSignOffOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    prepared_label: Label = None  # "Prepared · HL Sep 28"
+    partner_label: Label = None  # "Partner — awaiting conclusion" or "MO"
+    partner_signed: Annotated[bool, classified("internal")] = False
+
+
+class SumCountsOut(BaseModel):
+    """The control bar's counts by view (AUD-16 tabs)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    proposed: Annotated[int, Field(ge=0), classified("internal")] = 0
+    reclass: Annotated[int, Field(ge=0), classified("internal")] = 0
+    passed: Annotated[int, Field(ge=0), classified("internal")] = 0
+    below_ct: Annotated[int, Field(ge=0), classified("internal")] = 0
 
 
 class SumOut(BaseModel):
@@ -197,6 +299,29 @@ class SumOut(BaseModel):
     above_pm: Annotated[bool, classified("internal")]
     engine_version: Annotated[str, classified("internal")]
     inputs_hash: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$"), classified("internal")]
+    # AUD-16 a, e, f (A-06-T22; DEC-2254): the statement, the evaluation pane and the control
+    # bar's counts, all code's. `aggregate_view` names the larger of the two views.
+    aggregate_view: Annotated[Literal["rollover", "iron_curtain"], classified("internal")] = (
+        "rollover"
+    )
+    thresholds: SumThresholdsOut | None = None
+    rows: Annotated[list[SumRowOut], Field(max_length=500)] = Field(
+        default_factory=list[SumRowOut]
+    )
+    totals: SumTotalsOut | None = None
+    footnote: Annotated[str | None, Field(max_length=1000), classified("confidential")] = None
+    below_ct_count: Annotated[int, Field(ge=0), classified("internal")] = 0
+    below_ct_total: Effect = None
+    factors: Annotated[list[SumFactorOut], Field(max_length=20)] = Field(
+        default_factory=list[SumFactorOut]
+    )
+    booked: Annotated[list[SumBookedOut], Field(max_length=100)] = Field(
+        default_factory=list[SumBookedOut]
+    )
+    conclusion: SumConclusionOut | None = None
+    sign_off: SumSignOffOut | None = None
+    counts: SumCountsOut | None = None
+    allowed_actions: Actions = Field(default_factory=list[CompletionAction])
 
 
 class SumSnapshotOut(BaseModel):

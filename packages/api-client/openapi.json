@@ -84006,6 +84006,97 @@
         "title": "SendOut",
         "type": "object"
       },
+      "SendPreviewEntryOut": {
+        "description": "An entry as the client will read it: the firm template's wording, filled by code.",
+        "properties": {
+          "amount": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+            "title": "Amount",
+            "type": "string"
+          },
+          "client_wording": {
+            "cls": "confidential",
+            "maxLength": 2000,
+            "title": "Client Wording",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "ref": {
+            "cls": "internal",
+            "title": "Ref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "ref",
+          "amount",
+          "client_wording"
+        ],
+        "title": "SendPreviewEntryOut",
+        "type": "object"
+      },
+      "SendPreviewOut": {
+        "description": "AUD-16 O3 (A-06-T22; DEC-2254): the recipient and the template wording before a send. The\nwording is database content (DEC-79), never a model's.",
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/SendPreviewEntryOut"
+            },
+            "maxItems": 100,
+            "title": "Entries",
+            "type": "array"
+          },
+          "recipient_contact_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Recipient Contact Id",
+            "type": "string"
+          },
+          "recipient_name": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "title": "Recipient Name",
+            "type": "string"
+          },
+          "seen_versions": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Seen Versions",
+            "type": "object"
+          },
+          "template_label": {
+            "cls": "internal",
+            "maxLength": 200,
+            "title": "Template Label",
+            "type": "string"
+          },
+          "wording_template_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Wording Template Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "recipient_contact_id",
+          "recipient_name",
+          "wording_template_version_id",
+          "template_label",
+          "entries",
+          "seen_versions"
+        ],
+        "title": "SendPreviewOut",
+        "type": "object"
+      },
       "SendToPartnerIn": {
         "additionalProperties": false,
         "properties": {
@@ -91380,6 +91471,205 @@
         "title": "SuggestionStatus",
         "type": "string"
       },
+      "SumBookedOut": {
+        "description": "A corrected (booked) misstatement: listed beside the SUM, never accumulated.",
+        "properties": {
+          "amount": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Amount",
+            "type": "string"
+          },
+          "approval_label": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Approval Label"
+          },
+          "description": {
+            "cls": "confidential",
+            "maxLength": 500,
+            "title": "Description",
+            "type": "string"
+          },
+          "ref": {
+            "cls": "internal",
+            "title": "Ref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ref",
+          "description",
+          "amount",
+          "approval_label"
+        ],
+        "title": "SumBookedOut",
+        "type": "object"
+      },
+      "SumConclusionOut": {
+        "description": "The `sum_conclusion` card (A-06-T13), reserved to the engagement partner.",
+        "properties": {
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Decided At"
+          },
+          "decided_by_name": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Decided By Name"
+          },
+          "decision_card_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Decision Card Id"
+          },
+          "outcome_label": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Outcome Label"
+          },
+          "reserved_user_name": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Reserved User Name"
+          },
+          "state": {
+            "cls": "internal",
+            "enum": [
+              "not_requested",
+              "awaiting",
+              "concluded"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "title": "SumConclusionOut",
+        "type": "object"
+      },
+      "SumCountsOut": {
+        "description": "The control bar's counts by view (AUD-16 tabs).",
+        "properties": {
+          "below_ct": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Below Ct",
+            "type": "integer"
+          },
+          "passed": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Passed",
+            "type": "integer"
+          },
+          "proposed": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Proposed",
+            "type": "integer"
+          },
+          "reclass": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Reclass",
+            "type": "integer"
+          }
+        },
+        "title": "SumCountsOut",
+        "type": "object"
+      },
+      "SumFactorOut": {
+        "description": "A qualitative factor as recorded (`record_value`); `flagged` is code's, never the browser's.",
+        "properties": {
+          "factor": {
+            "cls": "internal",
+            "pattern": "^[a-z][a-z0-9_]{0,59}$",
+            "title": "Factor",
+            "type": "string"
+          },
+          "flagged": {
+            "cls": "internal",
+            "title": "Flagged",
+            "type": "boolean"
+          },
+          "label": {
+            "cls": "internal",
+            "maxLength": 200,
+            "title": "Label",
+            "type": "string"
+          },
+          "value": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "factor",
+          "label",
+          "value",
+          "flagged"
+        ],
+        "title": "SumFactorOut",
+        "type": "object"
+      },
       "SumOut": {
         "description": "Code's SUM (AC-6): the browser renders these numbers and computes none of them.",
         "examples": [
@@ -91410,10 +91700,69 @@
             "title": "Aggregate",
             "type": "string"
           },
+          "aggregate_view": {
+            "cls": "internal",
+            "default": "rollover",
+            "enum": [
+              "rollover",
+              "iron_curtain"
+            ],
+            "title": "Aggregate View",
+            "type": "string"
+          },
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "enum": [
+                "finding.update",
+                "finding.convert",
+                "finding.resolve",
+                "finding.mark_not_applicable",
+                "finding.request_decision",
+                "misstatement.update",
+                "misstatement.pass_to_sum",
+                "sum.update_factors",
+                "sum.request_conclusion",
+                "sum.snapshot",
+                "sum.export"
+              ],
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
           "approaching_pm": {
             "cls": "internal",
             "title": "Approaching Pm",
             "type": "boolean"
+          },
+          "below_ct_count": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Below Ct Count",
+            "type": "integer"
+          },
+          "below_ct_total": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Below Ct Total"
+          },
+          "booked": {
+            "items": {
+              "$ref": "#/components/schemas/SumBookedOut"
+            },
+            "maxItems": 100,
+            "title": "Booked",
+            "type": "array"
           },
           "column_set": {
             "cls": "internal",
@@ -91423,6 +91772,26 @@
             ],
             "title": "Column Set",
             "type": "string"
+          },
+          "conclusion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SumConclusionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "counts": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SumCountsOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "ct_tick_pct": {
             "cls": "internal",
@@ -91435,11 +91804,32 @@
             "title": "Engine Version",
             "type": "string"
           },
+          "factors": {
+            "items": {
+              "$ref": "#/components/schemas/SumFactorOut"
+            },
+            "maxItems": 20,
+            "title": "Factors",
+            "type": "array"
+          },
           "fill_pct_of_overall": {
             "cls": "confidential",
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Fill Pct Of Overall",
             "type": "string"
+          },
+          "footnote": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Footnote"
           },
           "inputs_hash": {
             "cls": "internal",
@@ -91470,6 +91860,44 @@
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Rollover",
             "type": "string"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/SumRowOut"
+            },
+            "maxItems": 500,
+            "title": "Rows",
+            "type": "array"
+          },
+          "sign_off": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SumSignOffOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "thresholds": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SumThresholdsOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "totals": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SumTotalsOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -91487,6 +91915,206 @@
           "inputs_hash"
         ],
         "title": "SumOut",
+        "type": "object"
+      },
+      "SumRowOut": {
+        "description": "One statement row (AUD-16 a): the misstatement's signed effect per column, from its own\nrecord (the projection, the entry's lines); prior-year rows are context, never accumulated.",
+        "properties": {
+          "assets": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Assets"
+          },
+          "carried_from_py": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Carried From Py"
+          },
+          "change_in_net_assets": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Change In Net Assets"
+          },
+          "client_note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Client Note"
+          },
+          "description": {
+            "cls": "confidential",
+            "maxLength": 500,
+            "title": "Description",
+            "type": "string"
+          },
+          "finding_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Finding Ref"
+          },
+          "group": {
+            "cls": "internal",
+            "enum": [
+              "current",
+              "prior_year"
+            ],
+            "title": "Group",
+            "type": "string"
+          },
+          "liabilities": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Liabilities"
+          },
+          "misstatement_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Misstatement Id"
+          },
+          "net_assets": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Net Assets"
+          },
+          "ref": {
+            "cls": "internal",
+            "title": "Ref",
+            "type": "string"
+          },
+          "type": {
+            "cls": "internal",
+            "enum": [
+              "factual",
+              "judgmental",
+              "projected"
+            ],
+            "title": "Type",
+            "type": "string"
+          },
+          "workpaper_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Workpaper Ref"
+          }
+        },
+        "required": [
+          "misstatement_id",
+          "ref",
+          "group",
+          "description",
+          "finding_ref",
+          "workpaper_ref",
+          "client_note",
+          "type"
+        ],
+        "title": "SumRowOut",
+        "type": "object"
+      },
+      "SumSignOffOut": {
+        "properties": {
+          "partner_label": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Partner Label"
+          },
+          "partner_signed": {
+            "cls": "internal",
+            "default": false,
+            "title": "Partner Signed",
+            "type": "boolean"
+          },
+          "prepared_label": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Prepared Label"
+          }
+        },
+        "title": "SumSignOffOut",
         "type": "object"
       },
       "SumSnapshotOut": {
@@ -91540,6 +92168,121 @@
           "decision_card_id"
         ],
         "title": "SumSnapshotOut",
+        "type": "object"
+      },
+      "SumThresholdsOut": {
+        "description": "The decided materiality the SUM is measured against (A-04's record; AUD-16 tally strip).",
+        "properties": {
+          "ct": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Ct",
+            "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Label"
+          },
+          "overall": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Overall",
+            "type": "string"
+          },
+          "pm": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Pm",
+            "type": "string"
+          }
+        },
+        "required": [
+          "overall",
+          "pm",
+          "ct",
+          "label"
+        ],
+        "title": "SumThresholdsOut",
+        "type": "object"
+      },
+      "SumTotalsOut": {
+        "properties": {
+          "assets": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Assets"
+          },
+          "carried_from_py": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Carried From Py"
+          },
+          "change_in_net_assets": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Change In Net Assets"
+          },
+          "liabilities": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Liabilities"
+          },
+          "net_assets": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Net Assets"
+          }
+        },
+        "title": "SumTotalsOut",
         "type": "object"
       },
       "SummaryOut": {
@@ -103274,6 +104017,19 @@
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Amount",
             "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Description"
           },
           "finding_ref": {
             "anyOf": [
@@ -246016,6 +246772,138 @@
           "adjustments"
         ],
         "x-abacus-action": "proposed_entry.send_to_client"
+      }
+    },
+    "/v1/work-items/{work_item_id}/proposed-entries:send-preview": {
+      "get": {
+        "description": "O3's preview: the client contact and the firm template's wording per entry (A-06-T22 stub;\nthe wording service lands with R-02's C18 template read).",
+        "operationId": "proposed_entries_send_preview",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "entry_ids",
+            "required": true,
+            "schema": {
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "maxItems": 100,
+              "minItems": 1,
+              "title": "Entry Ids",
+              "type": "array"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendPreviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Proposed Entries Send Preview Route",
+        "tags": [
+          "adjustments"
+        ],
+        "x-abacus-action": "proposed_entry.read"
       }
     },
     "/v1/work-items/{work_item_id}/sample-sets": {
