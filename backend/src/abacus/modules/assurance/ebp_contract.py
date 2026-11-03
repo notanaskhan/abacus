@@ -20,7 +20,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal, NoReturn, cast
+from typing import Annotated, Any, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Path, Query, Response
@@ -1177,22 +1177,71 @@ async def ebp_eligibility_sample_route(work_item_id: UUID, ctx: Ctx) -> Eligibil
 # EBP-04
 @router.get("/ebp/contributions/reconciliation", action="ebp.read", response_model=FiguresOut)
 async def ebp_contributions_route(work_item_id: UUID, ctx: Ctx) -> FiguresOut:
+    """Contributions receivable at year end by code from the payroll register (A-05-T30)."""
     await _gate(ctx, work_item_id, "ebp.read", _E)
+    from abacus.modules.assurance import ebp_remittances
+    from abacus.modules.engagements.api import engagement_metadata
+
+    item = await assurance_item(ctx.tenant, work_item_id)
+    year_end = (await engagement_metadata(ctx, item.engagement_id)).engagement.fiscal_period_end
+    found = await ebp_remittances.reconciliation(ctx.tenant, work_item_id, year_end)
     return _figures(
         "Contributions receivable",
         [
-            ("receivable_regular", "Regular payroll", "15060.00"),
-            ("receivable_late", "Late deposit", "33540.00"),
+            ("receivable_regular", "Regular payroll", str(found.regular)),
+            ("receivable_late", "Late deposit", str(found.late)),
         ],
-        "48600.00",
+        str(found.total),
     )
 
 
 @router.get("/ebp/late-remittances", action="ebp.read", response_model=list[LateRemittanceOut])
 async def ebp_late_remittances_route(work_item_id: UUID, ctx: Ctx) -> list[LateRemittanceOut]:
-    """The one late remittance (DF-34)."""
+    """The late remittances (DF-34): one row per late payroll, as code computed it (A-05-T30)."""
     await _gate(ctx, work_item_id, "ebp.read", _E)
-    return [_example(LateRemittanceOut, _LATE)]
+    from abacus.modules.assurance import ebp_remittances
+
+    return [_late_out(r) for r in await ebp_remittances.late_remittances(ctx.tenant, work_item_id)]
+
+
+def _late_out(r: object) -> LateRemittanceOut:
+    from abacus.modules.assurance.ebp_remittances import LateRemittance
+
+    found = cast(LateRemittance, r)
+    return LateRemittanceOut(
+        id=found.id,
+        payroll_date=found.payroll_date,
+        deposited_on=found.deposited_on or found.payroll_date,
+        amount=found.principal,
+        business_days=found.business_days,
+        calendar_days=found.calendar_days,
+        # The practice is the due date's lag: the payroll's lag less the days it ran late.
+        established_practice_days=max(found.business_days - found.business_days_late, 0),
+        lost_earnings=found.lost_earnings or Decimal(0),
+        status=cast(Any, found.status),  # Any: 0658's CHECK holds the words
+        form_5330=cast(Any, found.form_5330),  # Any: mapped from 0658's words
+    )
+
+
+@router.get("/ebp/schedule-h-4a", action="ebp.read", response_model=FiguresOut)
+async def ebp_schedule_4a_route(work_item_id: UUID, ctx: Ctx) -> FiguresOut:
+    """The line 4a preview: the late deferrals by code, one row per late remittance (A-05-T30)."""
+    await _gate(ctx, work_item_id, "ebp.read", _E)
+    from abacus.modules.assurance import ebp_remittances
+
+    rows = await ebp_remittances.late_remittances(ctx.tenant, work_item_id)
+    return _figures(
+        "Schedule H line 4a",
+        [
+            (
+                f"late_{r.payroll_date:%Y%m%d}",
+                f"Payroll {r.payroll_date:%b %-d, %Y}",
+                str(r.principal),
+            )
+            for r in rows
+        ],
+        str(ebp_remittances.schedule_h_4a(rows)),
+    )
 
 
 @router.post(
@@ -1209,9 +1258,21 @@ async def ebp_correction_route(
     ctx: Ctx,
     idempotency_key: IdempotencyKey,
 ) -> AcceptedOut:
-    """A person records the correction (EBP-04 f; T21)."""
+    """A person records the correction with evidence (EBP-04 f; A-05-T30): 422
+    `correction_evidence_required`, 409 `already_corrected`."""
     await _gate(ctx, work_item_id, "ebp_correction.record", _E)
-    _not_yet()
+    from abacus.modules.assurance import ebp_remittances
+
+    event_id = await ebp_remittances.record_correction(
+        ctx,
+        work_item_id,
+        remittance_id,
+        lost_earnings_deposited_on=body.lost_earnings_deposited_on,
+        scc_notice_on=body.scc_notice_on,
+        form_5330_status=body.form_5330_status,
+        evidence_version_ids=body.evidence_version_ids,
+    )
+    return AcceptedOut(id=event_id)
 
 
 # EBP-05, 06, 08, 09

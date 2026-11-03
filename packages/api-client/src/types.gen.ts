@@ -52268,6 +52268,58 @@ export type EbpProviderInviteResponses = {
 
 export type EbpProviderInviteResponse = EbpProviderInviteResponses[keyof EbpProviderInviteResponses];
 
+export type EbpSchedule4aData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/ebp/schedule-h-4a';
+};
+
+export type EbpSchedule4aErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EbpSchedule4aError = EbpSchedule4aErrors[keyof EbpSchedule4aErrors];
+
+export type EbpSchedule4aResponses = {
+    /**
+     * Successful Response
+     */
+    200: FiguresOut;
+};
+
+export type EbpSchedule4aResponse = EbpSchedule4aResponses[keyof EbpSchedule4aResponses];
+
 export type EbpTrustAdoptData = {
     body: TrustAdoptIn;
     headers: {

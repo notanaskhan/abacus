@@ -108531,6 +108531,7 @@
     },
     "/v1/audits/{work_item_id}/ebp/contributions/reconciliation": {
       "get": {
+        "description": "Contributions receivable at year end by code from the payroll register (A-05-T30).",
         "operationId": "ebp_contributions",
         "parameters": [
           {
@@ -109610,7 +109611,7 @@
     },
     "/v1/audits/{work_item_id}/ebp/late-remittances": {
       "get": {
-        "description": "The one late remittance (DF-34).",
+        "description": "The late remittances (DF-34): one row per late payroll, as code computed it (A-05-T30).",
         "operationId": "ebp_late_remittances",
         "parameters": [
           {
@@ -109721,7 +109722,7 @@
     },
     "/v1/audits/{work_item_id}/ebp/late-remittances/{remittance_id}/corrections": {
       "post": {
-        "description": "A person records the correction (EBP-04 f; T21).",
+        "description": "A person records the correction with evidence (EBP-04 f; A-05-T30): 422\n`correction_evidence_required`, 409 `already_corrected`.",
         "operationId": "ebp_correction",
         "parameters": [
           {
@@ -111368,6 +111369,113 @@
           "assurance"
         ],
         "x-abacus-action": "ebp_provider.invite"
+      }
+    },
+    "/v1/audits/{work_item_id}/ebp/schedule-h-4a": {
+      "get": {
+        "description": "The line 4a preview: the late deferrals by code, one row per late remittance (A-05-T30).",
+        "operationId": "ebp_schedule_4a",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FiguresOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Ebp Schedule 4A Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "ebp.read"
       }
     },
     "/v1/audits/{work_item_id}/ebp/trust-tb/adopt": {
