@@ -15,6 +15,7 @@ EVAL_SUITES: dict[str, tuple[str, int]] = {   'decisions.recommender': ('decisio
 EVAL_SUITE_MODES: dict[str, dict[str, int]] = {   'evidence.matcher': {'evidence.inbox_match@v2': 1},
     'workpapers.section_drafter': {   'workpapers.section_draft.ebp_attribute@v1': 1,
                                       'workpapers.section_draft.ebp_reconcile@v1': 1,
+                                      'workpapers.section_draft.ic@v1': 1,
                                       'workpapers.section_draft.risk@v1': 1,
                                       'workpapers.section_draft.risk_narrative@v1': 1,
                                       'workpapers.section_draft@v1': 1,
