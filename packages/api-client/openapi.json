@@ -39270,54 +39270,69 @@
         "title": "GreetingOut",
         "type": "object"
       },
-      "GridCellOut": {
+      "GridRowOut": {
+        "description": "One capability row; cells per template computed from the compiled matrix and the firm's\noverrides, or from `role-templates.yaml` for actions not yet in the matrix.",
         "properties": {
-          "attribute_key": {
-            "cls": "internal",
-            "title": "Attribute Key",
-            "type": "string"
-          },
-          "by": {
-            "cls": "internal",
-            "enum": [
-              "human",
-              "agent",
-              "system",
-              "policy"
-            ],
-            "title": "By",
-            "type": "string"
-          },
-          "citation_ids": {
+          "actions": {
             "cls": "internal",
             "items": {
-              "format": "uuid",
               "type": "string"
             },
-            "title": "Citation Ids",
+            "title": "Actions",
             "type": "array"
           },
-          "result": {
+          "cells": {
+            "additionalProperties": {
+              "enum": [
+                "allow",
+                "conditional",
+                "delegated",
+                "deny",
+                "locked"
+              ],
+              "type": "string"
+            },
+            "cls": "internal",
+            "title": "Cells",
+            "type": "object"
+          },
+          "conditions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "cls": "internal",
+            "default": {},
+            "title": "Conditions",
+            "type": "object"
+          },
+          "key": {
+            "cls": "internal",
+            "title": "Key",
+            "type": "string"
+          },
+          "locked": {
+            "cls": "internal",
+            "default": false,
+            "title": "Locked",
+            "type": "boolean"
+          },
+          "source": {
             "cls": "internal",
             "enum": [
-              "not_started",
-              "agent_tested",
-              "needs_human",
-              "pass",
-              "exception",
-              "no_effect"
+              "matrix",
+              "policy"
             ],
-            "title": "Result",
+            "title": "Source",
             "type": "string"
           }
         },
         "required": [
-          "attribute_key",
-          "result",
-          "by",
-          "citation_ids"
+          "key",
+          "actions",
+          "cells",
+          "source"
         ],
-        "title": "GridCellOut",
+        "title": "GridRowOut",
         "type": "object"
       },
       "GroupSubtotalOut": {
@@ -74806,7 +74821,7 @@
           "grid": {
             "cls": "internal",
             "items": {
-              "$ref": "#/components/schemas/abacus__modules__identity__settings_contract__GridRowOut"
+              "$ref": "#/components/schemas/GridRowOut"
             },
             "title": "Grid",
             "type": "array"
@@ -91475,6 +91490,56 @@
         "title": "TemplateVersionRefOut",
         "type": "object"
       },
+      "TestGridCellOut": {
+        "properties": {
+          "attribute_key": {
+            "cls": "internal",
+            "title": "Attribute Key",
+            "type": "string"
+          },
+          "by": {
+            "cls": "internal",
+            "enum": [
+              "human",
+              "agent",
+              "system",
+              "policy"
+            ],
+            "title": "By",
+            "type": "string"
+          },
+          "citation_ids": {
+            "cls": "internal",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "result": {
+            "cls": "internal",
+            "enum": [
+              "not_started",
+              "agent_tested",
+              "needs_human",
+              "pass",
+              "exception",
+              "no_effect"
+            ],
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "attribute_key",
+          "result",
+          "by",
+          "citation_ids"
+        ],
+        "title": "TestGridCellOut",
+        "type": "object"
+      },
       "TestGridOut": {
         "description": "EBP-03 a/b, EBP-04 c, EBP-05: rows in sample order with each attribute's newest result.",
         "properties": {
@@ -91497,7 +91562,7 @@
           "rows": {
             "cls": "confidential",
             "items": {
-              "$ref": "#/components/schemas/abacus__modules__assurance__ebp_contract__GridRowOut"
+              "$ref": "#/components/schemas/TestGridRowOut"
             },
             "title": "Rows",
             "type": "array"
@@ -91528,6 +91593,48 @@
           "version_no"
         ],
         "title": "TestGridOut",
+        "type": "object"
+      },
+      "TestGridRowOut": {
+        "properties": {
+          "cells": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/TestGridCellOut"
+            },
+            "title": "Cells",
+            "type": "array"
+          },
+          "item_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Item Id",
+            "type": "string"
+          },
+          "position": {
+            "cls": "internal",
+            "title": "Position",
+            "type": "integer"
+          },
+          "record_key": {
+            "cls": "confidential",
+            "title": "Record Key",
+            "type": "string"
+          },
+          "state": {
+            "cls": "internal",
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "position",
+          "item_id",
+          "record_key",
+          "state",
+          "cells"
+        ],
+        "title": "TestGridRowOut",
         "type": "object"
       },
       "TestIn": {
@@ -98214,48 +98321,6 @@
         "title": "EqrOut",
         "type": "object"
       },
-      "abacus__modules__assurance__ebp_contract__GridRowOut": {
-        "properties": {
-          "cells": {
-            "cls": "internal",
-            "items": {
-              "$ref": "#/components/schemas/GridCellOut"
-            },
-            "title": "Cells",
-            "type": "array"
-          },
-          "item_id": {
-            "cls": "internal",
-            "format": "uuid",
-            "title": "Item Id",
-            "type": "string"
-          },
-          "position": {
-            "cls": "internal",
-            "title": "Position",
-            "type": "integer"
-          },
-          "record_key": {
-            "cls": "confidential",
-            "title": "Record Key",
-            "type": "string"
-          },
-          "state": {
-            "cls": "internal",
-            "title": "State",
-            "type": "string"
-          }
-        },
-        "required": [
-          "position",
-          "item_id",
-          "record_key",
-          "state",
-          "cells"
-        ],
-        "title": "GridRowOut",
-        "type": "object"
-      },
       "abacus__modules__assurance__ebp_contract__ProviderOut": {
         "examples": [
           {
@@ -99228,71 +99293,6 @@
           }
         },
         "title": "StartIn",
-        "type": "object"
-      },
-      "abacus__modules__identity__settings_contract__GridRowOut": {
-        "description": "One capability row; cells per template computed from the compiled matrix and the firm's\noverrides, or from `role-templates.yaml` for actions not yet in the matrix.",
-        "properties": {
-          "actions": {
-            "cls": "internal",
-            "items": {
-              "type": "string"
-            },
-            "title": "Actions",
-            "type": "array"
-          },
-          "cells": {
-            "additionalProperties": {
-              "enum": [
-                "allow",
-                "conditional",
-                "delegated",
-                "deny",
-                "locked"
-              ],
-              "type": "string"
-            },
-            "cls": "internal",
-            "title": "Cells",
-            "type": "object"
-          },
-          "conditions": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "cls": "internal",
-            "default": {},
-            "title": "Conditions",
-            "type": "object"
-          },
-          "key": {
-            "cls": "internal",
-            "title": "Key",
-            "type": "string"
-          },
-          "locked": {
-            "cls": "internal",
-            "default": false,
-            "title": "Locked",
-            "type": "boolean"
-          },
-          "source": {
-            "cls": "internal",
-            "enum": [
-              "matrix",
-              "policy"
-            ],
-            "title": "Source",
-            "type": "string"
-          }
-        },
-        "required": [
-          "key",
-          "actions",
-          "cells",
-          "source"
-        ],
-        "title": "GridRowOut",
         "type": "object"
       },
       "abacus__modules__methodology__contract__ChecklistItemOut": {

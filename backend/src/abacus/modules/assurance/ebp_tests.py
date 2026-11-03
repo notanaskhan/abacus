@@ -10,10 +10,10 @@ from uuid import UUID
 
 from abacus.kernel.errors import DomainConflict, DomainInvalid
 from abacus.modules.assurance.ebp_contract import (
-    TestGridCellOut,
-    TestGridRowOut,
     ResultIn,
+    TestGridCellOut,
     TestGridOut,
+    TestGridRowOut,
     TestIn,
 )
 from abacus.modules.engagements.api import assurance_item
