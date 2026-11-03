@@ -1819,12 +1819,21 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
 
 
 def expand_slices(slices: tuple[str, ...]) -> tuple[str, ...]:
-    """The slices with the ones they need first, each once, in the order asked."""
+    """The slices with the ones they need first, each once, in the order asked. Needs are
+    followed through (review needs tax_board, which needs binders)."""
     out: list[str] = []
+
+    def add(name: str, path: tuple[str, ...]) -> None:
+        if name in out:
+            return
+        if name in path:
+            raise ValueError(f"slice needs loop: {' -> '.join((*path, name))}")
+        for needed in SLICE_NEEDS.get(name, ()):
+            add(needed, (*path, name))
+        out.append(name)
+
     for name in slices:
-        for needed in (*SLICE_NEEDS.get(name, ()), name):
-            if needed not in out:
-                out.append(needed)
+        add(name, ())
     return tuple(out)
 
 

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from datetime import datetime
+from typing import cast
 
 import pytest
 
@@ -41,11 +42,12 @@ async def test_the_review_slice_loads_and_the_feld_checkpoints_keep_their_dates(
     configure_engine(own_db.app_url)
     await loader.load(own_db.superuser_dsn, "2026-09-24", slices=("review",), wait=False)
     seed = Seeder(own_db.superuser_dsn)
-    saved = await seed.value(
-        "SELECT array_agg(created_at ORDER BY seq) FROM checkpoints "
-        "WHERE tenant_id = $1 AND cause = 'manual_save'",
-        TENANT,
+    saved = cast(
+        list[datetime] | None,
+        await seed.value(
+            "SELECT array_agg(created_at ORDER BY seq) FROM checkpoints "
+            "WHERE tenant_id = $1 AND cause = 'manual_save'",
+            TENANT,
+        ),
     )
-    assert isinstance(saved, list)
-    expected = [at for _, _, at in review_slice.CHECKPOINTS]
-    assert [d for d in saved if isinstance(d, datetime)] == expected
+    assert saved == [at for _, _, at in review_slice.CHECKPOINTS]

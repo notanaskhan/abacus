@@ -75,3 +75,8 @@ def test_the_feld_checkpoints_replay_after_the_return_and_keep_their_own_dates()
     first_save = kinds.index("review.feld_checkpoint_saved")
     assert kinds.index("tax.return_board_set") < first_save
     assert kinds.index("identity.seats_provisioned") < first_save
+
+
+def test_needs_are_followed_through_so_the_board_has_its_binders() -> None:
+    expanded = expand_slices((review_slice.SLICE,))
+    assert expanded.index("binders") < expanded.index("tax_board") < expanded.index("review")
