@@ -314,3 +314,33 @@ export function CheckPill({
     </Pill>
   );
 }
+
+/** At or above this, a read value is trusted at a glance (N-04-T09; NOT-01 b, d). */
+export const CONFIDENCE_GREEN = 0.95;
+
+export interface ConfidencePillProps {
+  /** The extractor's confidence, 0 to 1 (a decimal string from the wire is fine). */
+  value: number | string;
+  /** Words after the percent: "date partly obscured". */
+  note?: string | null;
+  className?: string;
+}
+
+/** C-xx ConfidencePill (N-04-T09): green-tint at 95% and above, amber below, the percent always
+ * in text so colour never carries the meaning alone. */
+export function ConfidencePill({ value, note, className }: ConfidencePillProps): JSX.Element {
+  const n = typeof value === "string" ? Number(value) : value;
+  // Floored, so a low value never prints as the green threshold (0.9499 reads 94%).
+  const pct = Math.floor((Number.isFinite(n) ? n : 0) * 100 + 1e-6);
+  const green = n >= CONFIDENCE_GREEN;
+  return (
+    <Pill
+      variant={green ? "green-tint" : "amber"}
+      size="sm"
+      data-confidence={green ? "high" : "low"}
+      {...(className === undefined ? {} : { className })}
+    >
+      {note == null || note === "" ? `${String(pct)}%` : `${String(pct)}% · ${note}`}
+    </Pill>
+  );
+}

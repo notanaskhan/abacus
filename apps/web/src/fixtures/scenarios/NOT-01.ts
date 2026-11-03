@@ -8,8 +8,11 @@
 //   g    `GET /v1/notices` never answers: skeleton rows
 //   off  `notices.workspace` off: C-20
 //
-// b, c and d (the intake sheet) are N-04-T09's. Dev and test only; src/screens/NOT-01/scenarios.ts
-// re-exports them.
+//   b    the intake sheet over a: Aurelio Santos's CP14, read (Sep 10, 2:16 PM; N-04-T09)
+//   c    the agent still reading 2 pages: Create notice disabled
+//   d    "Respond by" read at 71% · date partly obscured: Create notice disabled until confirmed
+//
+// Dev and test only; src/screens/NOT-01/scenarios.ts re-exports them.
 
 import type { CapabilitiesOut } from "@abacus/api-client";
 import {
@@ -22,6 +25,13 @@ import {
 import { noticeHandlers } from "../handlers/notices";
 import { seedScenario } from "../scenario";
 import { getSeed } from "../seed";
+import {
+  type IntakeVariant,
+  SANTOS_ENGAGEMENT,
+  SANTOS_INTAKE,
+  SANTOS_NOTICE,
+  santosIntake,
+} from "../seed/notice-intake";
 import { capabilitiesFor } from "../seed/shell";
 
 const E0 = seedScenario();
@@ -59,8 +69,30 @@ function at(
   };
 }
 
+/** The intake sheet's handlers (b, c, d): the read, a confirm that marks the field confirmed,
+ * and Create notice. */
+function intake(variant: IntakeVariant): Record<string, FixtureHandler> {
+  let current = santosIntake(variant);
+  return {
+    "GET /v1/notice-intakes/{intake_id}": () => json(current),
+    "PUT /v1/notice-intakes/{intake_id}": () => {
+      current = {
+        ...current,
+        version: current.version + 1,
+        fields: current.fields.map((f) => (f.low_confidence ? { ...f, confirmed: true } : f)),
+      };
+      return json(current);
+    },
+    "POST /v1/notice-intakes/{intake_id}/create": () =>
+      json({ notice_id: SANTOS_NOTICE, engagement_id: SANTOS_ENGAGEMENT }, 201),
+  };
+}
+
 export const scenarios = defineScenarios({
   a: at("a"),
+  b: at("b", intake("b")),
+  c: at("c", intake("c")),
+  d: at("d", intake("d")),
   e: at("e"),
   f: at("f", noticeHandlers([])),
   g: at("g", { "GET /v1/notices": () => never(), "GET /v1/notices/summary": () => never() }),
@@ -71,3 +103,10 @@ export type Not01State = keyof typeof scenarios;
 export const STATES = Object.keys(scenarios) as Not01State[];
 /** The search each artboard opens on (journeys and the gallery). */
 export const OPENS: Readonly<Record<string, string>> = { e: "?tile=new" };
+
+/** The intake each sheet state opens on. */
+export const INTAKE: Readonly<Partial<Record<Not01State, string>>> = {
+  b: SANTOS_INTAKE,
+  c: SANTOS_INTAKE,
+  d: SANTOS_INTAKE,
+};

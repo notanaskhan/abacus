@@ -16,8 +16,11 @@ export {
   type IconButtonVariant,
 } from "./components/button";
 export {
+  CONFIDENCE_GREEN,
   CheckPill,
   type CheckPillProps,
+  ConfidencePill,
+  type ConfidencePillProps,
   Count,
   type CountProps,
   type CountTone,
