@@ -46,8 +46,15 @@ A07_COMPLETION_TABLES: frozenset[str] = frozenset(
     | {"subsequent_event_procedures", "subsequent_events", "legal_letters"}
     | {"going_concern_evaluations", "filings"}
 )
+# A-05-T35 (0665, DEC-2234): EBP investments and Form 5500; evaluations and mappings insert-only.
+EBP_INVESTMENT_TABLES: frozenset[str] = frozenset(
+    {"ebp_trust_report_lines", "ebp_certification_points", "ebp_certification_evaluations"}
+    | {"ebp_form5500_drafts", "ebp_form5500_lines", "ebp_part_iv_answers"}
+    | {"ebp_supplemental_schedules", "ebp_schedule_h_mappings"}
+)
 TABLES: frozenset[str] = (
-    _HUMAN_RECORDS
+    EBP_INVESTMENT_TABLES
+    | _HUMAN_RECORDS
     | A07_COMPLETION_TABLES
     | EBP_CONTRIBUTION_TABLES
     | EBP_TABLES
@@ -66,6 +73,7 @@ INSERT_ONLY: frozenset[str] = (
     | {"walkthroughs"}  # A-04-T25 (0657)
     | {"ebp_payrolls", "ebp_late_remittance_events"}  # A-05-T26 (0658)
     | {"subsequent_events"}  # A-07-T07 (0664)
+    | {"ebp_certification_evaluations", "ebp_schedule_h_mappings"}  # A-05-T35 (0665)
 )
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "eqr_concurrences": frozenset(
@@ -801,6 +809,81 @@ UPDATE_COLUMNS.update(
         ),
         "filings": frozenset(
             {"due_on", "extended_due_on", "status", "filed_on", "ack_evidence_version_id"}
+            | {"version", "updated_at"}
+        ),
+    }
+)
+
+# A-05-T35 (0665, DEC-2234): EBP investments and Form 5500; evaluations and mappings insert-only.
+INSERT_COLUMNS.update(
+    {
+        "ebp_trust_report_lines": frozenset(
+            {"tenant_id", "engagement_id", "work_item_id", "evidence_version_id", "line_key"}
+            | {"fund_name", "boy", "eoy", "fair_value_level", "citation_id", "origin"}
+        ),
+        "ebp_certification_points": frozenset(
+            {"tenant_id", "engagement_id", "work_item_id", "evidence_version_id", "point_key"}
+            | {"proposed_answer", "citation_id"}
+        ),
+        "ebp_certification_evaluations": frozenset(
+            {"tenant_id", "engagement_id", "work_item_id", "point_id", "answer", "note"}
+            | {"actor_kind", "actor_id"}
+        ),
+        "ebp_form5500_drafts": frozenset(
+            {"tenant_id", "engagement_id", "work_item_id", "evidence_version_id", "received_at"}
+            | {"plan_year", "preparer_provider_id", "status"}
+        ),
+        "ebp_form5500_lines": frozenset(
+            {"tenant_id", "engagement_id", "work_item_id", "draft_id", "line_code", "caption"}
+            | {"fs_amount", "f5500_amount", "difference", "classification", "note_ref"}
+            | {
+                "f5500_citation_id",
+                "fs_ref",
+                "classified_by_kind",
+                "engine_version",
+                "inputs_hash",
+            }
+        ),
+        "ebp_part_iv_answers": frozenset(
+            {"tenant_id", "engagement_id", "work_item_id", "draft_id", "question", "draft_answer"}
+            | {"amount", "evidence_ref", "result", "issue_id"}
+        ),
+        "ebp_supplemental_schedules": frozenset(
+            {
+                "tenant_id",
+                "engagement_id",
+                "work_item_id",
+                "kind",
+                "rows",
+                "total",
+                "generated_document_id",
+            }
+            | {"engine_version", "inputs_hash"}
+        ),
+        "ebp_schedule_h_mappings": frozenset(
+            {"tenant_id", "version", "fs_caption_key", "schedule_h_line", "effective_plan_year"}
+            | {"published_at", "published_by"}
+        ),
+    }
+)
+UPDATE_COLUMNS.update(
+    {
+        "ebp_trust_report_lines": frozenset({"superseded_by", "version", "updated_at"}),
+        "ebp_certification_points": frozenset(
+            {"proposed_answer", "citation_id", "version", "updated_at"}
+        ),
+        "ebp_form5500_drafts": frozenset({"status", "version", "updated_at"}),
+        "ebp_form5500_lines": frozenset(
+            {"fs_amount", "f5500_amount", "difference", "classification", "note_ref"}
+            | {"fs_ref", "classified_by_kind", "engine_version", "inputs_hash", "version"}
+            | {"updated_at"}
+        ),
+        "ebp_part_iv_answers": frozenset(
+            {"draft_answer", "amount", "evidence_ref", "result", "issue_id", "version"}
+            | {"updated_at"}
+        ),
+        "ebp_supplemental_schedules": frozenset(
+            {"rows", "total", "generated_document_id", "engine_version", "inputs_hash"}
             | {"version", "updated_at"}
         ),
     }
