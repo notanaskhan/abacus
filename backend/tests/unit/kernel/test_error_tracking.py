@@ -270,6 +270,24 @@ def test_ac20_scrub_keeps_only_the_trace_and_span_ids_of_the_trace_context() -> 
     assert result["contexts"] == {"trace": {"trace_id": "a" * 32, "span_id": "b" * 16}}
 
 
+def test_ed300_a_span_id_with_a_tin_shaped_run_passes_verbatim() -> None:
+    # ED-300 (Q-03-T164): "c486040120f1dda1" holds 486040120, a valid SSN shape; the id is not a
+    # TIN, so it reaches Sentry as OpenTelemetry wrote it and still links the event to its trace.
+    event = hostile()
+    ids = {"trace_id": "1caf4acee8f69ce932d753fd2dc82804", "span_id": "c486040120f1dda1"}
+    event["contexts"] = {"trace": dict(ids)}
+    assert _scrubbed(event)["contexts"] == {"trace": ids}
+
+
+def test_ed300_a_trace_field_that_is_not_an_exact_hex_id_is_dropped() -> None:
+    # Only exact ids skip the mask, so nothing else can ride along in the trace context.
+    event = hostile()
+    event["contexts"] = {"trace": {"trace_id": "not-a-trace-id", "span_id": "c486040120f1dda1 x"}}
+    result = _scrubbed(event)
+    assert "contexts" not in result
+    assert "not-a-trace-id" not in json.dumps(result)
+
+
 def test_ac20_scrub_drops_other_contexts_when_there_is_no_trace() -> None:
     event = hostile()
     contexts = cast(dict[str, object], event["contexts"])

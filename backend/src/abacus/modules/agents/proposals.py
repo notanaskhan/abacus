@@ -300,7 +300,7 @@ def _live_human(ctx: Actor) -> bool:
 def _human(ctx: Actor, action: str) -> AuthContext:
     if not _live_human(ctx):
         raise Forbidden(action, "role")
-    return cast(AuthContext, ctx)
+    return cast(AuthContext, ctx)  # a person: _live_human above
 
 
 def as_person(ctx: Actor, action: str) -> AuthContext:

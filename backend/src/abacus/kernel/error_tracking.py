@@ -15,8 +15,9 @@ or EIN form in a tag, a frame or a name is replaced by its mask.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
-from typing import cast
+from typing import Final, cast
 
 import sentry_sdk
 from sentry_sdk.types import Event, Hint
@@ -34,6 +35,12 @@ from abacus.kernel.tin_patterns import scrub_tins
 
 _FRAME_KEYS = ("module", "function", "lineno", "in_app", "filename")
 _TAGS = ("route", "tenant_id", "error_type", "activity")
+# OpenTelemetry's ids as W3C trace context writes them. They pass verbatim: a random span id can
+# hold a run that reads as a TIN, so the scrubber would mask the id (ED-300, Q-03-T164).
+_TRACE_IDS: Final = {
+    "trace_id": re.compile(r"[0-9a-f]{32}"),
+    "span_id": re.compile(r"[0-9a-f]{16}"),
+}
 _configured = False
 
 
@@ -81,7 +88,11 @@ def _trace(contexts: object) -> dict[str, object] | None:
     if not isinstance(trace, Mapping):
         return None
     mapping = cast(Mapping[str, object], trace)
-    return {k: mapping[k] for k in ("trace_id", "span_id") if isinstance(mapping.get(k), str)}
+    return {
+        k: value
+        for k, shape in _TRACE_IDS.items()
+        if isinstance(value := mapping.get(k), str) and shape.fullmatch(value)
+    }
 
 
 def _masked(value: object) -> object:
@@ -114,14 +125,16 @@ def scrub(event: Event, _hint: Hint | None = None) -> Event | None:
     exception = _exceptions(raw.get("exception"))
     if exception is not None:
         kept["exception"] = exception
-    trace = _trace(raw.get("contexts"))
-    if trace:
-        kept["contexts"] = {"trace": trace}
     tags = raw.get("tags")
     if isinstance(tags, Mapping):
         tag_map = cast(Mapping[str, object], tags)
         kept["tags"] = {k: tag_map[k] for k in _TAGS if isinstance(tag_map.get(k), str)}
-    return cast(Event, _masked(kept))
+    masked = cast(dict[str, object], _masked(kept))
+    # Trace ids join after the mask: only exact hex ids are kept, so nothing else rides along.
+    trace = _trace(raw.get("contexts"))
+    if trace:
+        masked["contexts"] = {"trace": trace}
+    return cast(Event, masked)
 
 
 def configure_error_tracking(service: str) -> bool:

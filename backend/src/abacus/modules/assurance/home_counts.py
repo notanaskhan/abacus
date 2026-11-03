@@ -13,7 +13,7 @@ from abacus.modules.platform.api import HomeCount, HomeStatusCount, register_hom
 
 
 async def audits(viewer: object, office_id: UUID | None) -> HomeCount:
-    ctx = cast(AuthContext, viewer)
+    ctx = cast(AuthContext, viewer)  # HOME-01's count slot passes the signed-in person
     page, _summary = await audits_index(ctx, IndexFilters(office=office_id), cursor=None, limit=1)
     counts = page.counts or {}
     return HomeCount(

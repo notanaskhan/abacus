@@ -21,7 +21,7 @@ _ENGAGEMENT = cast(ColumnElement[UUID], AgentRun.engagement_id.expression)
 
 
 async def agent_runs_running(viewer: object, office_id: UUID | None) -> HomeCount:
-    ctx = cast(AuthContext, viewer)
+    ctx = cast(AuthContext, viewer)  # HOME-01's count slot passes the signed-in person
     async with tenant_session(ctx.tenant) as session:
         engagements = [
             e

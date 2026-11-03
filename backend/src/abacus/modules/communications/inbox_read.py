@@ -945,5 +945,6 @@ async def waiting_for_client(tenant: TenantContext, client_id: UUID) -> list[Wai
 async def inbox_waiting(viewer: object, office_id: UUID | None) -> HomeCount:
     """HOME-01's `inbox_waiting` pill: the summary's waiting count (I-01). Offices do not
     narrow intake: an unfiled attachment belongs to no office yet."""
-    made = await summary(cast(AuthContext, viewer))
+    person = cast(AuthContext, viewer)  # HOME-01's count slot passes the signed-in person
+    made = await summary(person)
     return HomeCount(total=made.waiting, target_filter="status=waiting")

@@ -313,7 +313,8 @@ async def countersign_gate(tenant: TenantContext, engagement_id: UUID) -> bool:
 async def signatures_out(viewer: object, office_id: UUID | None) -> HomeCount:
     """HOME-01's Signatures out tile: SIG-01's own count of visible envelopes out (DEC-43)."""
     del office_id  # an envelope belongs to no office
-    found = await hub.summary(cast(AuthContext, viewer))
+    person = cast(AuthContext, viewer)  # HOME-01's count slot passes the signed-in person
+    found = await hub.summary(person)
     return HomeCount(total=found.out, target_filter="tab=out")
 
 
