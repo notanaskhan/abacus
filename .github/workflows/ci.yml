@@ -20,7 +20,9 @@ jobs:
   stage-1:
     name: stage 1 (make check-fast)
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    # 15 (was 10) by founder decision, 2026-11-02 (TASK-2928): the stage needs about 12 minutes on
+    # a hosted runner (pyright 4, banned patterns 2, web lint 2); the 5-minute target stands.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

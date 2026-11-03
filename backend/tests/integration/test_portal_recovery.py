@@ -64,7 +64,7 @@ from abacus.modules.organisations import contacts as contacts_service
 from abacus.modules.portal.branding import activate_portal_host, add_portal_host
 from abacus_tools.harness.mailbox import LocalMailboxReader
 
-from .agent_tests.support import Person, Seeder
+from .agent_tests.support import Person, Seeder, firm_name
 from .conftest import MigratedDatabase
 
 RENEWED_BODY = "{{firm_name}} sent you a new link: {{app_link}}"
@@ -338,7 +338,7 @@ async def test_ac14_an_expired_reminder_renews_to_the_same_address_with_one_answ
     mail = LocalMailboxReader(tmp_path / "mailbox").messages()
     assert [m.to for m in mail] == [tess.email.lower()]
     token = mail[0].body.rsplit("#link=", 1)[1].strip()
-    assert mail[0].body.startswith(f"Firm {tess.tenant.hex[:8]} sent you a new link: https://")
+    assert mail[0].body.startswith(f"{firm_name(tess.tenant)} sent you a new link: https://")
     renewed = await resolve_secure_link(tess.tenant, token)
     assert renewed is not None and renewed.purpose == "reminder"
     assert renewed.contact_id == tess.contact_id
@@ -611,7 +611,7 @@ async def test_ac19_the_reset_names_the_person_and_emails_the_client(
     await deliver_mfa_reset_notice(notices[0])
     mail = LocalMailboxReader(tmp_path / "mailbox").messages()
     assert [m.to for m in mail] == [tess.email]
-    assert mail[0].body == f"Firm {tess.tenant.hex[:8]} reset your two-step verification."
+    assert mail[0].body == f"{firm_name(tess.tenant)} reset your two-step verification."
 
 
 async def test_review_a_person_whose_membership_here_ended_is_not_reset(seed: Seeder) -> None:
