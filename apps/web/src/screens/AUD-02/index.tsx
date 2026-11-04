@@ -40,6 +40,7 @@ import { MaterialityDock, useMaterialityCanvas } from "../AUD-07/Materiality";
 import { usePlanProfileCanvas } from "../EBP-01/PlanProfile";
 import { useProvisionsCanvas } from "../EBP-02/Provisions";
 import { useEligibilityCanvas } from "../EBP-03/Eligibility";
+import { type ContributionsOptions, useContributionsCanvas } from "../EBP-04";
 import {
   type ControlsOptions,
   FailedStepCard,
@@ -106,6 +107,8 @@ export interface AUD02Props {
   planReviewVersion?: number;
   /** AUD-09 (A-04-T32): the Internal Control row's sheet, cell and links. */
   controls?: ControlsOptions;
+  /** EBP-04 (A-05-T31): the Contributions & Remittance tab and links. */
+  contributions?: Omit<ContributionsOptions, "active" | "running">;
 }
 
 /** The rail row whose canvas is AUD-06 (A-02-T09). */
@@ -116,6 +119,7 @@ const MATERIALITY = "materiality";
 const PLAN_PROFILE = "ebp_01";
 const PLAN_REVIEW = "ebp_02";
 const ELIGIBILITY = "ebp_03"; // A-05-T23: Testing › Eligibility Testing
+const CONTRIBUTIONS = "ebp_04"; // A-05-T31: Testing › Contributions & Remittance
 
 type Sort = "missing_first" | "received_first";
 
@@ -209,6 +213,7 @@ function Cockpit({
   planEditing,
   planReviewVersion,
   controls,
+  contributions,
 }: Omit<AUD02Props, "auditId"> & { cockpit: AuditCockpitOut }): JSX.Element {
   // A-01-T24: "Export binder…" and the record-mode entries (DV-9, DV-4).
   const audit = useAuditActions(cockpit, overlay ?? null, onOverlay);
@@ -272,6 +277,14 @@ function Cockpit({
   // off, drawn by the canvas itself).
   const controlsOpen = selected === INTERNAL_CONTROL;
   const controlsCanvas = useControlsCanvas(cockpit, { ...controls, active: controlsOpen });
+  // EBP-04 (A-05-T31): Testing › Contributions & Remittance, behind `ebp.modules` (C-20 when off);
+  // the rail's own "running" state draws d.
+  const contributionsOpen = selected === CONTRIBUTIONS;
+  const contributionsCanvas = useContributionsCanvas(cockpit.work_item_id, {
+    ...contributions,
+    active: contributionsOpen,
+    running: row?.section_state === "running",
+  });
   const openDoc = (r: SourceDocumentRowOut): void => {
     const version = r.latest_upload?.evidence_version_id ?? null;
     if (version !== null) onDock?.("viewer", version);
@@ -292,6 +305,8 @@ function Cockpit({
     canvas = eligibility;
   } else if (controlsOpen) {
     canvas = controlsCanvas;
+  } else if (contributionsOpen) {
+    canvas = contributionsCanvas;
   } else if (row?.section_state === "blocked_on_decision" && row.blocked_on_name != null) {
     canvas = {
       title: row.title,
@@ -492,6 +507,7 @@ export function AuditCockpitPage({
     planEditing?: boolean;
     planReviewVersion?: number;
     controls?: ControlsOptions;
+    contributions?: Omit<ContributionsOptions, "active" | "running">;
   };
   onBack?: () => void;
 }): JSX.Element {
@@ -521,6 +537,7 @@ export function AuditCockpitPage({
         ? {}
         : { planReviewVersion: initial.planReviewVersion })}
       {...(initial.controls === undefined ? {} : { controls: initial.controls })}
+      {...(initial.contributions === undefined ? {} : { contributions: initial.contributions })}
     />
   );
 }

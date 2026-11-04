@@ -63622,6 +63622,12 @@
             "cls": "internal",
             "title": "Calendar Lag"
           },
+          "deferrals": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Deferrals",
+            "type": "string"
+          },
           "deferrals_pretax": {
             "cls": "confidential",
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
@@ -63684,6 +63690,7 @@
           "deferrals_pretax",
           "deferrals_roth",
           "match",
+          "deferrals",
           "total",
           "business_day_lag",
           "calendar_lag",

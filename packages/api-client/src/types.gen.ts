@@ -30061,6 +30061,10 @@ export type PayrollOut = {
      */
     calendar_lag: number | null;
     /**
+     * Deferrals
+     */
+    deferrals: string;
+    /**
      * Deferrals Pretax
      */
     deferrals_pretax: string;

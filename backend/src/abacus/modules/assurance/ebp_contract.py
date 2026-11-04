@@ -429,6 +429,7 @@ class PayrollOut(BaseModel):
     deferrals_pretax: Money
     deferrals_roth: Money
     match: Money
+    deferrals: Money  # pre-tax + Roth, by code
     total: Money
     business_day_lag: Annotated[int | None, Field(ge=0), classified("internal")]
     calendar_lag: Annotated[int | None, Field(ge=0), classified("internal")]
@@ -1227,6 +1228,7 @@ async def ebp_payrolls_route(work_item_id: UUID, ctx: Ctx) -> list[PayrollOut]:
             deferrals_pretax=p.deferrals_pretax,
             deferrals_roth=p.deferrals_roth,
             match=p.match,
+            deferrals=p.deferrals,
             total=p.total,
             business_day_lag=p.business_day_lag,
             calendar_lag=p.calendar_lag,

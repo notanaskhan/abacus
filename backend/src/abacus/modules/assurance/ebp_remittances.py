@@ -137,6 +137,7 @@ class Payroll:
     deferrals_pretax: Decimal
     deferrals_roth: Decimal
     match: Decimal
+    deferrals: Decimal
     total: Decimal
     business_day_lag: int | None
     calendar_lag: int | None
@@ -170,6 +171,7 @@ async def payrolls(tenant: TenantContext, work_item_id: UUID) -> list[Payroll]:
                 deferrals_pretax=p.deferrals_pretax,
                 deferrals_roth=p.deferrals_roth,
                 match=p.match,
+                deferrals=p.deferrals_pretax + p.deferrals_roth,
                 total=p.deferrals_pretax + p.deferrals_roth + p.match,
                 business_day_lag=p.business_day_lag,
                 calendar_lag=p.calendar_lag,

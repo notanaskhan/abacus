@@ -28,6 +28,7 @@ def test_a_payroll_carries_its_lags_and_total() -> None:
         "deferrals_pretax",
         "deferrals_roth",
         "match",
+        "deferrals",
         "total",
         "business_day_lag",
         "calendar_lag",
