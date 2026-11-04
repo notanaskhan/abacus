@@ -259,6 +259,25 @@ async def runs_for(
     return [_summary(r, names, facts.get(r.id)) for r in runs]
 
 
+async def run_initiators(
+    ctx: AuthContext, engagement_id: UUID, run_ids: Sequence[UUID]
+) -> dict[UUID, str]:
+    """The person each run acted for, by run id ("Marcus Delaney"), for "<person> via Agent"
+    attribution on records an agent wrote (INV-5). Runs off the engagement are left out."""
+    if not run_ids:
+        return {}
+    async with tenant_session(ctx.tenant) as session:
+        rows = (
+            await session.execute(
+                select(AgentRun.id, AgentRun.initiator_user_id).where(
+                    AgentRun.id.in_(list(run_ids)), AgentRun.engagement_id == engagement_id
+                )
+            )
+        ).all()
+    names = {m.user_id: m.display_name for m in await engagement_team(ctx, engagement_id)}
+    return {run_id: names.get(user_id, "Former member") for run_id, user_id in rows}
+
+
 async def _run(ctx: AuthContext, run_id: UUID, action: str) -> AgentRun:
     async with tenant_session(ctx.tenant) as session:
         run = await get_run(session, run_id)
