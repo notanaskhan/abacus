@@ -19,7 +19,7 @@ T-03-T05. Answers are tax return information (`tri`); wording is the firm's (int
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
@@ -411,6 +411,64 @@ def _not_yet() -> NoReturn:
     raise NotImplementedYet
 
 
+def _editor_out(found: object, actions: list[EditorAction]) -> QuestionnaireEditorOut:
+    from abacus.modules.requests.questionnaire_editor import Editor
+
+    e = cast(Editor, found)
+    counts = e.counts()
+    return QuestionnaireEditorOut(
+        id=e.id,
+        owner_kind=cast(OwnerKind, e.owner_kind),
+        title=e.title,
+        binder_id=None,
+        template=None,
+        sections=[
+            SectionOut(
+                id=sid,
+                key=key,
+                title=title,
+                position=pos,
+                question_count=sum(1 for q in e.questions if q.section_key == key),
+            )
+            for sid, key, title, pos in e.sections
+        ],
+        questions=[
+            EditorQuestionOut(
+                id=q.id,
+                key=q.key,
+                section_key=q.section_key,
+                parent_key=q.parent_key,
+                position=q.position,
+                type=cast(EditorQuestionType, q.type),
+                client_wording=q.client_wording,
+                internal_helper=q.internal_helper,
+                required=q.required,
+                show_when=ShowWhen.model_validate(q.show_when) if q.show_when else None,
+                choices=q.choices,
+                amount_parts=q.amount_parts,
+                effect_rules=[EffectRule.model_validate(r) for r in q.effect_rules],
+                answer=None,
+                triggered=None,
+                effects=[],
+                answered=q.answered,
+            )
+            for q in e.questions
+        ],
+        counts=EditorCountsOut(
+            questions=counts["questions"],
+            answered=counts["answered"],
+            conditional_follow_ups=counts["conditional_follow_ups"],
+            review_points_raised=counts["review_points_raised"],
+            requests_created=counts["requests_created"],
+            last_answer_on=counts["last_answer_on"],
+            last_answer_by=None,
+        ),
+        banner=None,
+        row_version=e.row_version,
+        allowed_actions=actions,
+    )
+
+
 questionnaire_editor_router = AbacusRouter(prefix="/v1", tags=["questionnaires"])
 _Q = "/questionnaires/{questionnaire_id}"
 _T = "/questionnaire-templates/{template_id}"
@@ -437,7 +495,11 @@ async def questionnaire_editor_route(questionnaire_id: UUID, ctx: Ctx) -> Questi
     """Sections, questions, follow-ups, logic, effect rules, answers, the effect log and counts.
     T-02's `GET /v1/questionnaires/{id}` keeps its v1 shape for POR-05's consumers (DEC-2201)."""
     await _gate(ctx, "questionnaire.read")
-    _not_yet()
+    from abacus.modules.requests import questionnaire_editor
+
+    return _editor_out(
+        await questionnaire_editor.editor(ctx, questionnaire_id), ["questionnaire.edit"]
+    )
 
 
 @questionnaire_editor_router.put(
@@ -453,7 +515,26 @@ async def questionnaire_save_route(
     """`questionnaire.edit` on a binder's organizer; a template draft's questionnaire needs
     `questionnaire_template.draft` (the service checks the owner kind)."""
     await _gate(ctx, "questionnaire.edit")
-    _not_yet()
+    from abacus.modules.requests import questionnaire_editor
+
+    saved, listed, fired = await questionnaire_editor.save(
+        ctx,
+        questionnaire_id,
+        if_match,
+        sections=[sec.model_dump() for sec in body.sections],
+        questions=[q.model_dump(mode="json") for q in body.questions],
+        dry_run=dry_run,
+    )
+    return QuestionnaireSaveOut(
+        saved=saved,
+        client_visible_changes=[ClientVisibleChangeOut.model_validate(c) for c in listed],
+        effects_to_fire=[EffectToFireOut.model_validate(f) for f in fired],
+        questionnaire=_editor_out(
+            await questionnaire_editor.editor(ctx, questionnaire_id), ["questionnaire.edit"]
+        )
+        if saved
+        else None,
+    )
 
 
 @questionnaire_editor_router.get(
@@ -470,7 +551,27 @@ async def questionnaire_preview_route(
 ) -> ClientPreviewOut:
     """The portal serializer's DTO for one question or the whole organizer."""
     await _gate(ctx, "questionnaire.read")
-    _not_yet()
+    from abacus.modules.requests import questionnaire_editor
+
+    e = await questionnaire_editor.editor(ctx, questionnaire_id)
+    shown = [q for q in e.questions if question is None or q.key == question]
+    return ClientPreviewOut(
+        firm_name="",
+        questions=[
+            PreviewQuestionOut(
+                key=q.key,
+                parent_key=q.parent_key,
+                type=cast(EditorQuestionType, q.type),
+                client_wording=q.client_wording,
+                required=q.required,
+                choices=q.choices,
+                amount_parts=q.amount_parts,
+                visible=q.parent_key is None,
+                answer=q.answer_value,
+            )
+            for q in shown
+        ],
+    )
 
 
 @questionnaire_editor_router.get(
