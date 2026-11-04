@@ -73,6 +73,7 @@ Owner is the builder for every row. `Last rehearsed` stays `never` until a rehea
 | RB-44 | T-02 pilot onboarding, shadow reconciliation against CCH and the Aug 17 / Aug 31 flips with rollback; the Aug 24 flag renewal | T-02-T34 | Fri Aug 13, 2027 (staging, test firm) | never | none | drafted |
 | RB-45 | K-1 invitation bounce and resend; a mis-released K-1 (undo, contain, register, supersede) | T-02-T34 | Fri Aug 27, 2027 (staging, test firm) | never | none | drafted |
 | RB-46 | Sampler and TB mapping: re-perform a sample from its record, a stale mapping, the Sep 21 and Oct 19 flips with rollback, retirement in the Oct 21 batch | A-03-T20 | Fri Sep 17, 2027 (staging, test firm) | never | none | drafted |
+| RB-47 | OCR on Textract: throttling and error alarms, stopping OCR (route block, firm flag), provider terms | P-11-T22, P-11-T23 | Fri Nov 12, 2027 (staging, test firm) | never | none | drafted |
 | — `review-grammar.md` | Review grammar: stale storms, human-gate projector rebuild, undo-window incidents, grant voids | P-04-T61 | at the next staging deploy (S26 batch close) | never | sign_offs.went_stale volume | drafted |
 | — `audit-planning-flip.md` | Audit planning flip: per-firm order (Oct 26 materiality, Nov 9 workpapers and risk register, Nov 23 internal control), rollback is flag off, decisions and versions persist | A-04-T40 | before the first real-firm flip | never | none | drafted |
 
