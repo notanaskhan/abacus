@@ -54,5 +54,21 @@ export const COPY = {
     "Report on line 4a, not on line 4d. The employer match is not a participant contribution.",
   raise: "Raise exception…",
   draft4a: "Draft 4a schedule",
-  testing: "The deferral and match recalculation opens with A-05-T32.",
+  testingGrid: {
+    title: (n: number) => `Deferral and match recalculation · ${String(n)} participants`,
+    participant: "Participant",
+    attribute: {
+      compensation: "Compensation",
+      deferral: "Deferrals",
+      match: "Match",
+    } as Record<string, string>,
+    result: {
+      exception: "Exception",
+      needs_human: "Needs review",
+      no_effect: "No effect",
+      agent_tested: "Agent tested",
+      not_started: "Not started",
+    } as Record<string, string>,
+    openEligibility: "Open in Eligibility",
+  },
 } as const;

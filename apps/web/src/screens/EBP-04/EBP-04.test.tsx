@@ -123,3 +123,25 @@ describe("EBP-04", () => {
     expect(c.textContent).not.toContain("Corrected");
   });
 });
+
+// A-05-T32 (TASK-3278). Row acceptance: "Rows 8 and 15 open their EBP-03 rows, and no recalculated
+// match exceeds 3.5% of compensation."
+describe("EBP-04 c · Testing (A-05-T32)", () => {
+  it("rows 8 and 15 link to EBP-03; no recalculated match exceeds 3.5% of compensation", async () => {
+    show("c");
+    const grid = await drawn("[data-ebp04='testing']");
+    await waitFor(() => {
+      expect(grid.querySelectorAll("[data-test-row]").length).toBe(25);
+    });
+    const linked = [...grid.querySelectorAll<HTMLElement>("[data-test-row]")]
+      .filter((r) => r.querySelector("[data-link='EBP-03']") !== null)
+      .map((r) => r.dataset.testRow);
+    expect(linked).toEqual(["8", "15"]);
+    const { ebp04Test } = await import("../../fixtures/seed/ebp04");
+    for (const row of ebp04Test().rows) {
+      const comp = Number(row.cells.find((c) => c.attribute_key === "compensation")?.expected);
+      const match = Number(row.cells.find((c) => c.attribute_key === "match")?.expected);
+      expect(match).toBeLessThanOrEqual(comp * 0.035 + 0.005);
+    }
+  });
+});

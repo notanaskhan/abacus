@@ -3,6 +3,7 @@
 //
 //   a            Thu Sep 24, 10:15 AM   late deposit found (Reconciliation)
 //   b            10:15 AM               Timeliness: the 26 payrolls
+//   c            10:15 AM               Testing: 25-participant recalculation (A-05-T32)
 //   d            10:15 AM               agent running: tallies Pending, Card A skeleton
 //   e            10:15 AM               concluded: AJE-1 Client approved
 //   f            Wed Sep 30, 3:10 PM    Corrected: the correction a person recorded
@@ -26,6 +27,7 @@ import {
   ebp04Late,
   ebp04Payrolls,
   ebp04Schedule,
+  ebp04Test,
 } from "../seed/ebp04";
 import { capabilitiesFor } from "../seed/shell";
 
@@ -96,6 +98,7 @@ function frame(
         [`GET ${E}/contributions/payrolls`]: () => json(ebp04Payrolls()),
         [`GET ${E}/late-remittances`]: () => json(ebp04Late(variant)),
         [`GET ${E}/schedule-h-4a`]: () => json(ebp04Schedule(variant)),
+        [`GET ${E}/contributions/test`]: () => json(ebp04Test()),
       };
     },
   };
@@ -104,6 +107,7 @@ function frame(
 export const scenarios = defineScenarios({
   a: frame("a"),
   b: frame("b"),
+  c: frame("c"),
   d: frame("d", { running: true }),
   e: frame("e", { variant: "e" }),
   f: frame("f", { variant: "f", clock: AT_F }),
@@ -112,9 +116,10 @@ export const scenarios = defineScenarios({
 
 export type Ebp04State = keyof typeof scenarios;
 export const STATES = Object.keys(scenarios) as Ebp04State[];
-export const TAB_OF: Record<Ebp04State, "reconciliation" | "timeliness"> = {
+export const TAB_OF: Record<Ebp04State, "reconciliation" | "timeliness" | "testing"> = {
   a: "reconciliation",
   b: "timeliness",
+  c: "testing",
   d: "reconciliation",
   e: "reconciliation",
   f: "reconciliation",

@@ -20,9 +20,10 @@ import {
   useFormat,
 } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
-import { type JSX, type ReactNode, useState } from "react";
+import { type JSX, useState } from "react";
 import { useFlag } from "../../app-core/flags";
 import { COPY } from "./copy";
+import { ContributionsTesting } from "./Testing";
 
 // EBP-04 · Contributions & remittance timeliness (A-05-T31; A-05 §3 F6, SPEC-640; the handoff
 // spec): the Testing › Contributions & Remittance canvas in the T2 cockpit, T6 grammar. The tally
@@ -31,7 +32,7 @@ import { COPY } from "./copy";
 // single late remittance with both day counts, lost earnings, the correction status and Form 5330
 // exactly as recorded, and the Schedule H line 4a preview) and Raise exception… / Draft 4a schedule.
 // "Corrected" is never inferred from the clock: it is the late remittance's recorded status (f). The
-// browser does no arithmetic (ADR-050). The Testing tab is A-05-T32's.
+// browser does no arithmetic (ADR-050). The Testing tab (c) is `Testing.tsx` (A-05-T32).
 
 export type ContributionsTab = "reconciliation" | "timeliness" | "testing";
 const TABS: readonly ContributionsTab[] = ["reconciliation", "timeliness", "testing"];
@@ -56,8 +57,8 @@ export interface ContributionsOptions {
   onDraft4a?: () => void;
   /** The Dec 26 deposit drawer (`?ov=payroll:<id>`). */
   onPayroll?: (payrollId: string) => void;
-  /** A-05-T32's Testing tab body. */
-  testing?: ReactNode;
+  /** A-05-T32: EBP-03 on a participant's sample item. */
+  onEligibility?: (itemId: string) => void;
 }
 
 function Tally({
@@ -404,7 +405,14 @@ export function useContributionsCanvas(
       >
         <Tally late={lates} receivable={receivable} ties={ties} running={running} />
         {tab === "testing" ? (
-          (options.testing ?? <p className="px-[12px] text-dense text-ink-3">{COPY.testing}</p>)
+          <ContributionsTesting
+            workItemId={workItemId}
+            enabled={enabled}
+            {...(options.onEligibility === undefined
+              ? {}
+              : { onEligibility: options.onEligibility })}
+            {...(options.onDraft4a === undefined ? {} : { onDraft4a: options.onDraft4a })}
+          />
         ) : tab === "timeliness" ? (
           <section className={cn(BLOCK, "mx-[12px]")}>
             <p className={BLOCK_HEAD}>{COPY.cardB(rows.length)}</p>
