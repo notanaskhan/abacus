@@ -112,6 +112,7 @@ from abacus.modules.agents.routes import (
     router,
     template_drafts_router,
 )
+from abacus.modules.agents.runs import run_initiators
 from abacus.modules.agents.runs_routes import engagement_runs_router, runs_router
 from abacus.modules.agents.screening_contract import screening_items_router, screenings_router
 from abacus.modules.agents.screenings import (
@@ -433,6 +434,7 @@ __all__ = [
     "review_citation_states",
     "review_sha256",
     "router",
+    "run_initiators",
     "run_outcome",
     "screen",
     "screening_responder",

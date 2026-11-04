@@ -230,7 +230,8 @@ async def record_finding(ctx: AuthContext, work_item_id: UUID, new: NewFinding) 
 
 _FINDINGS: Final = (
     "SELECT f.id, f.engagement_id, f.work_item_id, f.issue_id, f.ref, f.kind, f.route, "
-    "f.title, f.coso_component, f.why_surfaced_sealed, f.created_by_kind, f.evaluation, "
+    "f.title, f.coso_component, f.why_surfaced_sealed, f.created_by_kind, f.agent_run_id, "
+    "f.evaluation, "
     "f.created_at, d.status AS deficiency_status, d.severity_proposed, d.severity_concluded, "
     "d.decision_card_id FROM audit_findings f LEFT JOIN deficiencies d ON d.finding_id = f.id "
 )
@@ -242,6 +243,14 @@ async def _rows(ctx: AuthContext, rows: Sequence[RowMapping]) -> list[Finding]:
     if not rows:
         return []
     actions = await _actions(ctx, rows[0]["engagement_id"])
+    # INV-5: an agent-raised finding reads "<person> via Agent", the person the run acted for.
+    from abacus.modules.agents.api import run_initiators
+
+    behalf = await run_initiators(
+        ctx,
+        rows[0]["engagement_id"],
+        [r["agent_run_id"] for r in rows if r["agent_run_id"] is not None],
+    )
     out: list[Finding] = []
     for r in rows:
         issue = await issue_row(ctx.tenant, r["issue_id"])
@@ -264,7 +273,13 @@ async def _rows(ctx: AuthContext, rows: Sequence[RowMapping]) -> list[Finding]:
                 severity_proposed=r["severity_proposed"],
                 severity_concluded=r["severity_concluded"],
                 coso_component=r["coso_component"],
-                created_by_name="Accrued Agent" if r["created_by_kind"] == "agent" else "",
+                created_by_name=(
+                    f"{behalf[r['agent_run_id']]} via Agent"
+                    if r["created_by_kind"] == "agent" and r["agent_run_id"] in behalf
+                    else "Accrued Agent"
+                    if r["created_by_kind"] == "agent"
+                    else ""
+                ),
                 created_at=r["created_at"],
                 why_surfaced=why,
                 evaluation={
