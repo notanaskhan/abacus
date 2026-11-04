@@ -54,6 +54,7 @@ class Transport:
         *,
         headers: Mapping[str, str] | None = None,
         data: Mapping[str, str] | None = None,
+        content: bytes | None = None,
     ) -> EgressResponse: ...
 
 
@@ -71,9 +72,10 @@ class Logged:
         *,
         headers: Mapping[str, str] | None = None,
         data: Mapping[str, str] | None = None,
+        content: bytes | None = None,
     ) -> EgressResponse:
         self.sent.append((method.upper(), url))
-        return await self.inner.request(method, url, headers=headers, data=data)
+        return await self.inner.request(method, url, headers=headers, data=data, content=content)
 
 
 @dataclass

@@ -71,6 +71,7 @@ class RecordedQbo:
         *,
         headers: Mapping[str, str] | None = None,
         data: Mapping[str, str] | None = None,
+        content: bytes | None = None,
     ) -> EgressResponse:
         if qbo.OAUTH_PATH in url or qbo.REVOKE_PATH in url:
             tokens = {"access_token": "fake-at", "refresh_token": "fake-rt", "expires_in": 3600}
