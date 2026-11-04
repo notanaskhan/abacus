@@ -8,7 +8,7 @@ from typing import Any, cast
 
 from abacus.api.export_openapi import document
 
-DOC = cast(dict[str, Any], json.loads(document()))
+DOC = cast(dict[str, Any], json.loads(document()))  # Any: test doubles and JSON
 PATH = "/v1/audits/{work_item_id}/ebp/contributions/payrolls"
 
 
@@ -34,3 +34,15 @@ def test_a_payroll_carries_its_lags_and_total() -> None:
         "calendar_lag",
         "late",
     } <= set(props)
+
+
+def test_the_contributions_recalculation_is_a_grid_read_answering_501_until_built() -> None:
+    """A-05-T32 (DEC-2258): the shared grid; cells widened with the recorded and code values."""
+    op = DOC["paths"]["/v1/audits/{work_item_id}/ebp/contributions/test"]["get"]
+    assert "501" in op["responses"]
+    ok = op["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
+    assert ok.endswith("/TestGridOut")
+    cell = DOC["components"]["schemas"]["TestGridCellOut"]
+    assert {"value", "expected"} <= set(cell["properties"])
+    assert "value" not in cell.get("required", [])
+    assert "linked_item_id" in DOC["components"]["schemas"]["TestGridRowOut"]["properties"]

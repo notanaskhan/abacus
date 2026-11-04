@@ -7,7 +7,7 @@
 // pre-tax / Roth split is not drawn per payroll. f is the correction a person recorded on Sep 30.
 // Dev and test only.
 
-import type { FiguresOut, LateRemittanceOut, PayrollOut } from "@abacus/api-client";
+import type { FiguresOut, LateRemittanceOut, PayrollOut, TestGridOut } from "@abacus/api-client";
 import { stableId } from "./prng";
 
 export type Ebp04Variant = "a" | "e" | "f";
@@ -176,5 +176,52 @@ export function ebp04Schedule(variant: Ebp04Variant = "a"): FiguresOut {
     ],
     total: null,
     allowed_actions: ["ebp_schedule.draft"],
+  };
+}
+
+/** c (A-05-T32): the 25 EBP-03 sample participants' deferral and match recalculation. Compensation
+ * is synthetic (the handoff gives none): 52,000 + 1,850 per position; code's recalculated deferral
+ * is 6% and the QACA match 3.5% of compensation (100% of 1% + 50% of the next 5%). Rows 8 and 15
+ * missed deferrals after a late entry and trace to their EBP-03 items. Seed arithmetic only. */
+export function ebp04Test(): TestGridOut {
+  const rows = Array.from({ length: 25 }, (_, i) => {
+    const position = i + 1;
+    const comp = 52000 + position * 1850;
+    const flagged = position === 8 || position === 15;
+    // Integer cents, written as decimal strings (the API's shape).
+    const text = (cents: number): string =>
+      `${String(Math.floor(cents / 100))}.${String(cents % 100).padStart(2, "0")}`;
+    const cell = (key: string, value: number, expected: number, exception = false) => ({
+      attribute_key: key,
+      result: exception ? ("exception" as const) : ("pass" as const),
+      by: "system" as const,
+      citation_ids: [],
+      value: text(Math.round(value)),
+      expected: text(Math.round(expected)),
+    });
+    const deferral = comp * 6; // cents: 6% of compensation
+    const match = comp * 3.5; // cents: 3.5% of compensation
+    return {
+      position,
+      item_id: stableId(`test:northwind:contributions:${String(position)}`),
+      record_key: `NW-${String(1183 + position)}`,
+      state: flagged ? "exception" : "pass",
+      cells: [
+        cell("compensation", comp * 100, comp * 100),
+        cell("deferral", flagged ? deferral * 0.75 : deferral, deferral, flagged),
+        cell("match", flagged ? match * 0.75 : match, match, flagged),
+      ],
+      linked_item_id: flagged
+        ? stableId(`sample:northwind:eligibility:${String(position)}`)
+        : null,
+    };
+  });
+  return {
+    test_id: stableId("test:northwind:contributions"),
+    variant: "contributions_recalc",
+    attributes: ["compensation", "deferral", "match"],
+    rows,
+    counts: { pass: 23, exception: 2 },
+    version_no: 1,
   };
 }

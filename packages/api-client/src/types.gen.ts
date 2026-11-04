@@ -45592,9 +45592,17 @@ export type TestGridCellOut = {
      */
     citation_ids: Array<string>;
     /**
+     * Expected
+     */
+    expected?: string | null;
+    /**
      * Result
      */
     result: 'not_started' | 'agent_tested' | 'needs_human' | 'pass' | 'exception' | 'no_effect';
+    /**
+     * Value
+     */
+    value?: string | null;
 };
 
 /**
@@ -45643,6 +45651,10 @@ export type TestGridRowOut = {
      * Item Id
      */
     item_id: string;
+    /**
+     * Linked Item Id
+     */
+    linked_item_id?: string | null;
     /**
      * Position
      */
@@ -51593,6 +51605,62 @@ export type EbpContributionsResponses = {
 };
 
 export type EbpContributionsResponse = EbpContributionsResponses[keyof EbpContributionsResponses];
+
+export type EbpContributionsTestData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/ebp/contributions/test';
+};
+
+export type EbpContributionsTestErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EbpContributionsTestError = EbpContributionsTestErrors[keyof EbpContributionsTestErrors];
+
+export type EbpContributionsTestResponses = {
+    /**
+     * Successful Response
+     */
+    200: TestGridOut;
+};
+
+export type EbpContributionsTestResponse = EbpContributionsTestResponses[keyof EbpContributionsTestResponses];
 
 export type EbpEligibilityData = {
     body?: never;

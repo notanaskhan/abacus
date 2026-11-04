@@ -630,6 +630,10 @@ class TestGridCellOut(BaseModel):
     ]
     by: Annotated[Literal["human", "agent", "system", "policy"], classified("internal")]
     citation_ids: Annotated[list[UUID], classified("internal")]
+    # EBP-04 c (A-05-T32; DEC-2258): a recalculation cell's figure as recorded and code's own
+    # recalculation; None on a pure attribute (EBP-03).
+    value: MaybeMoney = None
+    expected: MaybeMoney = None
 
 
 class TestGridRowOut(BaseModel):
@@ -640,6 +644,8 @@ class TestGridRowOut(BaseModel):
     record_key: Annotated[str, classified("confidential")]
     state: Annotated[str, classified("internal")]
     cells: Annotated[list[TestGridCellOut], classified("internal")]
+    # EBP-04 c: the EBP-03 sample item the same participant's exception traces to.
+    linked_item_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class TestGridOut(BaseModel):
@@ -1236,6 +1242,16 @@ async def ebp_payrolls_route(work_item_id: UUID, ctx: Ctx) -> list[PayrollOut]:
         )
         for p in await ebp_remittances.payrolls(ctx.tenant, work_item_id)
     ]
+
+
+@router.get(
+    "/ebp/contributions/test", action="ebp.read", response_model=TestGridOut, errors=(501,)
+)
+async def ebp_contributions_test_route(work_item_id: UUID, ctx: Ctx) -> TestGridOut:
+    """EBP-04 c: the 25-participant deferral and match recalculation on the shared grid (A-05-T32
+    contract first, DEC-2258): 501 until the recalculation service lands."""
+    await _gate(ctx, work_item_id, "ebp.read", _E)
+    _not_yet()
 
 
 @router.get("/ebp/late-remittances", action="ebp.read", response_model=list[LateRemittanceOut])
