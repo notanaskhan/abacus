@@ -304,23 +304,23 @@ class SumOut(BaseModel):
     aggregate_view: Annotated[Literal["rollover", "iron_curtain"], classified("internal")] = (
         "rollover"
     )
-    thresholds: SumThresholdsOut | None = None
-    rows: Annotated[list[SumRowOut], Field(max_length=500)] = Field(
+    thresholds: Annotated[SumThresholdsOut | None, classified("internal")] = None
+    rows: Annotated[list[SumRowOut], Field(max_length=500), classified("internal")] = Field(
         default_factory=list[SumRowOut]
     )
-    totals: SumTotalsOut | None = None
+    totals: Annotated[SumTotalsOut | None, classified("internal")] = None
     footnote: Annotated[str | None, Field(max_length=1000), classified("confidential")] = None
     below_ct_count: Annotated[int, Field(ge=0), classified("internal")] = 0
     below_ct_total: Effect = None
-    factors: Annotated[list[SumFactorOut], Field(max_length=20)] = Field(
+    factors: Annotated[list[SumFactorOut], Field(max_length=20), classified("internal")] = Field(
         default_factory=list[SumFactorOut]
     )
-    booked: Annotated[list[SumBookedOut], Field(max_length=100)] = Field(
+    booked: Annotated[list[SumBookedOut], Field(max_length=100), classified("internal")] = Field(
         default_factory=list[SumBookedOut]
     )
-    conclusion: SumConclusionOut | None = None
-    sign_off: SumSignOffOut | None = None
-    counts: SumCountsOut | None = None
+    conclusion: Annotated[SumConclusionOut | None, classified("internal")] = None
+    sign_off: Annotated[SumSignOffOut | None, classified("internal")] = None
+    counts: Annotated[SumCountsOut | None, classified("internal")] = None
     allowed_actions: Actions = Field(default_factory=list[CompletionAction])
 
 
@@ -374,7 +374,7 @@ class SignOffMatrixRowOut(BaseModel):
     section: Annotated[
         Literal["planning", "fieldwork", "completion", "reporting"], classified("internal")
     ]
-    cells: list[SignOffMatrixCellOut]
+    cells: Annotated[list[SignOffMatrixCellOut], classified("internal")]
 
 
 class SignOffMatrixFooterOut(BaseModel):
@@ -394,8 +394,8 @@ class SignOffMatrixFooterOut(BaseModel):
 class SignOffMatrixOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    rows: list[SignOffMatrixRowOut]
-    footer: SignOffMatrixFooterOut
+    rows: Annotated[list[SignOffMatrixRowOut], classified("internal")]
+    footer: Annotated[SignOffMatrixFooterOut, classified("internal")]
 
 
 class InvolvementEntryOut(BaseModel):
@@ -411,7 +411,7 @@ class InvolvementEntryOut(BaseModel):
 class EpInvolvementOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    items: list[InvolvementEntryOut]
+    items: Annotated[list[InvolvementEntryOut], classified("internal")]
 
 
 # --- the routes ----------------------------------------------------------------------------------

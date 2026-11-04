@@ -143,7 +143,7 @@ class SendPreviewOut(BaseModel):
     recipient_name: Annotated[str, Field(max_length=200), classified("confidential")]
     wording_template_version_id: Annotated[UUID, classified("internal")]
     template_label: Annotated[str, Field(max_length=200), classified("internal")]
-    entries: Annotated[list[SendPreviewEntryOut], Field(max_length=100)]
+    entries: Annotated[list[SendPreviewEntryOut], Field(max_length=100), classified("internal")]
     seen_versions: Annotated[dict[str, int], classified("internal")]
 
 

@@ -21,7 +21,9 @@ from abacus.kernel.classification import unclassified_fields
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.modules.assurance import audits_contract
+from abacus.modules.assurance.completion_contract import router as completion_router
 from abacus.modules.assurance.ebp_contract import router as ebp_router
+from abacus.modules.assurance.release_contract import router as release_router
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.identity.authz.matrix import RULES
 
@@ -72,6 +74,9 @@ def test_ac3_each_route_declares_its_one_action_and_the_stub_answers(
 def test_ac3_the_family_has_exactly_these_routes() -> None:
     # A-05-T04's ebp-workpapers family lives under the same prefix; it has its own stub suite.
     ebp = {r.path for r in ebp_router.routes if isinstance(r, APIRoute)}
+    # A-07 (S27) lives there too, with its suite in tests/contracts/audit_completion.
+    ebp |= {r.path for r in completion_router.routes if isinstance(r, APIRoute)}
+    ebp |= {r.path for r in release_router.routes if isinstance(r, APIRoute)}
     family = {
         (m, p)
         for p, ops in PATHS.items()

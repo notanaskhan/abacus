@@ -163,13 +163,22 @@ async def test_ac2_a_client_principal_gets_404_before_anything_else() -> None:
         await schedules.extension_route(uuid.uuid4(), _ctx(client=True))
 
 
+class _PastTheGate(Exception):
+    """The live service was reached: the gate let the call through."""
+
+
+async def _past_the_gate(*_a: object, **_k: object) -> None:
+    raise _PastTheGate
+
+
 @pytest.mark.parametrize(
     ("module", "flag"),
     [(editor, "questionnaires.editor"), (schedules, "tax.extensions_estimates")],
 )
-async def test_ac2_the_gate_authorises_then_reads_the_flag_then_answers_501(
+async def test_ac2_the_gate_authorises_then_reads_the_flag_then_lets_the_route_run(
     monkeypatch: pytest.MonkeyPatch, module: object, flag: str
 ) -> None:
+    # T-03-T05 made the editor read live; the extension read still answers 501.
     calls: list[str] = []
     state = {"on": False}
 
@@ -187,8 +196,15 @@ async def test_ac2_the_gate_authorises_then_reads_the_flag_then_answers_501(
         await route(uuid.uuid4(), _ctx())
     assert calls[1] == f"flag:{flag}"
     state["on"] = True
-    with pytest.raises(NotImplementedYet):
-        await route(uuid.uuid4(), _ctx())
+    if module is editor:
+        from abacus.modules.requests import questionnaire_editor
+
+        monkeypatch.setattr(questionnaire_editor, "editor", _past_the_gate)
+        with pytest.raises(_PastTheGate):
+            await route(uuid.uuid4(), _ctx())
+    else:
+        with pytest.raises(NotImplementedYet):
+            await route(uuid.uuid4(), _ctx())
 
 
 async def test_ac2_flag_likely_alone_is_its_own_action(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -202,7 +218,11 @@ async def test_ac2_flag_likely_alone_is_its_own_action(monkeypatch: pytest.Monke
 
     monkeypatch.setattr(schedules, "authorise", authorise)
     monkeypatch.setattr(schedules, "flag_enabled", flag_enabled)
-    with pytest.raises(NotImplementedYet):
+    # T-03-T07 made the patch live; the service itself is its own test's.
+    from abacus.modules.tax import extensions
+
+    monkeypatch.setattr(extensions, "patch", _past_the_gate)
+    with pytest.raises(_PastTheGate):
         await schedules.extension_patch_route(
             uuid.uuid4(),
             schedules.ExtensionPatchIn(likely_to_extend=True, reason="k1_outstanding"),
