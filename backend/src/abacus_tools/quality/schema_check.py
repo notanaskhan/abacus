@@ -200,6 +200,7 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "walkthroughs": "walkthroughs_immutable",  # 0657 (A-04-T25)
     "ebp_late_remittance_events": "ebp_late_remittance_events_immutable",  # 0658 (A-05-T26)
     "subsequent_events": "a07_rows_immutable",  # 0664 (A-07-T07)
+    "ebp_certification_evaluations": "ebp_certification_evaluations_immutable",  # A-05-T35 (0665)
     "statement_versions": "statement_rows_immutable",  # 0660 (A-06-T19)
     "line_items": "statement_rows_immutable",  # 0660 (A-06-T19)
     "linked_values": "statement_rows_immutable",  # 0660 (A-06-T19)
