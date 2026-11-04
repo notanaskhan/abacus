@@ -29,6 +29,7 @@ task. Writes take `Idempotency-Key`.
 | GET `/ebp/participants` · POST `/ebp/participants/{id}/reveals` · POST `/ebp/imports` · GET `/ebp/imports/{id}` | `ParticipantsOut` · `RevealIn` → `ParticipantRevealOut` (`no-store`) · `ImportIn` → `ImportOut` (422 `import_refused`, recorded, with `facts.reason`, `column`, `difference`) | `ebp.read` · `pii.reveal` · `ebp_import.create` · `ebp.read` | T15; served T18 (reveal), T19 (imports, participants) |
 | POST `/tests` · PUT `/tests/{tid}/items/{iid}/results/{attr}` | `TestIn` · `ResultIn` | `test.create` · `test.mark` | T17 |
 | GET `/ebp/eligibility` | `FiguresOut` | `ebp.read` | T19 |
+| GET `/ebp/contributions/payrolls` | `list[PayrollOut]` (pay date, deposit, lags, total by code, late) | `ebp.read` | A-05-T31 (DEC-2257) |
 | GET `/ebp/contributions/reconciliation` · GET `/ebp/late-remittances` · POST `/ebp/late-remittances/{id}/corrections` | `FiguresOut` · `LateRemittanceOut` · `CorrectionIn` | `ebp.read` · `ebp_correction.record` | T20, T21 |
 | GET `/ebp/loans/rollforward` | `FiguresOut` | `ebp.read` | T31 |
 | GET `/ebp/investments?layer=` · POST `/ebp/trust-tb/adopt` · PUT `/ebp/certification/points/{key}` | `FiguresOut` · `TrustAdoptIn` · `CertificationPointIn` | `ebp.read` · `ledger_snapshot.create_from_document` · `ebp_certification.evaluate` | T26, T27, T28 |

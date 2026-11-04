@@ -129,6 +129,56 @@ def _api_form_5330(stored: str) -> str:
     return "not_required" if stored == "not_required_pte_2002_51" else stored
 
 
+@dataclass(frozen=True)
+class Payroll:
+    id: UUID
+    pay_date: date
+    deposit_date: date | None
+    deferrals_pretax: Decimal
+    deferrals_roth: Decimal
+    match: Decimal
+    total: Decimal
+    business_day_lag: int | None
+    calendar_lag: int | None
+    late: bool
+
+
+async def payrolls(tenant: TenantContext, work_item_id: UUID) -> list[Payroll]:
+    """The work item's payrolls, oldest first; late when a late remittance names the payroll."""
+    async with tenant_session(tenant) as session:
+        late_ids = set(
+            (
+                await session.execute(
+                    select(EbpLateRemittance.payroll_id).where(
+                        EbpLateRemittance.work_item_id == work_item_id
+                    )
+                )
+            ).scalars()
+        )
+        rows = (
+            await session.execute(
+                select(EbpPayroll)
+                .where(EbpPayroll.work_item_id == work_item_id)
+                .order_by(EbpPayroll.pay_date)
+            )
+        ).scalars()
+        return [
+            Payroll(
+                id=p.id,
+                pay_date=p.pay_date,
+                deposit_date=p.deposit_date,
+                deferrals_pretax=p.deferrals_pretax,
+                deferrals_roth=p.deferrals_roth,
+                match=p.match,
+                total=p.deferrals_pretax + p.deferrals_roth + p.match,
+                business_day_lag=p.business_day_lag,
+                calendar_lag=p.calendar_lag,
+                late=p.id in late_ids,
+            )
+            for p in rows
+        ]
+
+
 async def late_remittances(tenant: TenantContext, work_item_id: UUID) -> list[LateRemittance]:
     """`assurance.api.late_remittances`: every late payroll on the work item, oldest first."""
     async with tenant_session(tenant) as session:

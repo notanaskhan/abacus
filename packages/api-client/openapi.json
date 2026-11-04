@@ -63593,6 +63593,105 @@
         "title": "PaymentRowOut",
         "type": "object"
       },
+      "PayrollOut": {
+        "description": "One payroll on the remittance timeline (EBP-04 b and the 26-dot timeline; A-05-T31): the\ndeposit and its lag as code recorded them, and the payroll's total by code.",
+        "properties": {
+          "business_day_lag": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Business Day Lag"
+          },
+          "calendar_lag": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Calendar Lag"
+          },
+          "deferrals_pretax": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Deferrals Pretax",
+            "type": "string"
+          },
+          "deferrals_roth": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Deferrals Roth",
+            "type": "string"
+          },
+          "deposit_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Deposit Date"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "late": {
+            "cls": "internal",
+            "title": "Late",
+            "type": "boolean"
+          },
+          "match": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Match",
+            "type": "string"
+          },
+          "pay_date": {
+            "cls": "internal",
+            "format": "date",
+            "title": "Pay Date",
+            "type": "string"
+          },
+          "total": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "pay_date",
+          "deposit_date",
+          "deferrals_pretax",
+          "deferrals_roth",
+          "match",
+          "total",
+          "business_day_lag",
+          "calendar_lag",
+          "late"
+        ],
+        "title": "PayrollOut",
+        "type": "object"
+      },
       "PersonChipOut": {
         "properties": {
           "initials": {
@@ -91635,7 +91734,7 @@
         "type": "object"
       },
       "SumFactorOut": {
-        "description": "A qualitative factor as recorded (`record_value`); `flagged` is code's, never the browser's.",
+        "description": "A qualitative factor as recorded (`record_value`); `flagged` is set by code, not the UI.",
         "properties": {
           "factor": {
             "cls": "internal",
@@ -109555,6 +109654,117 @@
           "assurance"
         ],
         "x-abacus-action": "ebp_certification.evaluate"
+      }
+    },
+    "/v1/audits/{work_item_id}/ebp/contributions/payrolls": {
+      "get": {
+        "description": "The plan year's payrolls in pay-date order with their deposit lags (A-05-T31; DEC-2257).",
+        "operationId": "ebp_payrolls",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PayrollOut"
+                  },
+                  "title": "Response Ebp Payrolls",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Ebp Payrolls Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "ebp.read"
       }
     },
     "/v1/audits/{work_item_id}/ebp/contributions/reconciliation": {
