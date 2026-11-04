@@ -6,6 +6,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale import (
     binders,  # registers "binders" (P-06-T08)
     compliance,  # registers "compliance" (Q-02-T39)
     ebp,  # registers "ebp" (A-05-T07)
+    ebp2,  # registers "ebp2" (A-05-T34)
     email_templates,  # registers "email_templates" (R-01-T22)
     firm_people,  # registers "people" (G-01-T06)
     portal,  # registers "portal" (P-08-T14)
@@ -28,6 +29,7 @@ __all__ = [
     "build",
     "compliance",
     "ebp",
+    "ebp2",
     "email_templates",
     "firm_people",
     "portal",
