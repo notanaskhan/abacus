@@ -36,6 +36,9 @@ from abacus.modules.assurance.ebp_designed import register as register_ebp_desig
 from abacus.modules.assurance.ebp_designed import register_modes as register_ebp_modes
 from abacus.modules.assurance.ebp_plan import AUDIT_KINDS as EBP_PLAN_KINDS
 from abacus.modules.assurance.ebp_plan import audit_owners as ebp_plan_owners
+from abacus.modules.assurance.ebp_remittances import AUDIT_KINDS as LATE_REMITTANCE_KINDS
+from abacus.modules.assurance.ebp_remittances import audit_owners as late_remittance_owners
+from abacus.modules.assurance.ebp_remittances import late_remittances
 from abacus.modules.assurance.findings import AUDIT_KINDS as FINDING_KINDS
 from abacus.modules.assurance.findings import audit_owners as finding_owners
 from abacus.modules.assurance.findings_contract import router as findings_router
@@ -202,6 +205,7 @@ register_ebp_modes()
 # A-04-T07: the trail places a service organization on its engagement (SPEC-304; DEC-121).
 register_engagement_owners(SERVICE_ORG_KINDS, service_org_owners)
 register_engagement_owners(SOC_REPORT_KINDS, soc_report_owners)  # A-04-T31
+register_engagement_owners(LATE_REMITTANCE_KINDS, late_remittance_owners)  # A-05-T30
 # A-04-T12 (DEC-1950): the materiality cards' kinds and appliers; versions placed for the trail.
 register_materiality_kinds()
 register_approval_kind()  # A-04-T18 (DEC-2056): the `significant_risk` card
@@ -249,6 +253,7 @@ __all__ = [
     "follows_gate",
     "g4_facts",
     "import_grouping_csv",
+    "late_remittances",  # A-05-T30: AUD-27 and EBP-07 read the one late remittance
     "mapping_live",
     "materiality_engine",
     "propose_materiality",  # P-04-T36: the scenario loader proposes as the person named

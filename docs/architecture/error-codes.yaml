@@ -110,6 +110,11 @@ codes:
     raised_by:
     - abacus.modules.connections.ledger_import.AlreadyConnected
     summary: The entity's accounting system is connected; an export isn't needed.
+  already_corrected:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.ebp_remittances.AlreadyCorrected
+    summary: The late remittance is corrected; a later fact is a new event, not a correction.
   already_decided:
     status: 409
     raised_by:
@@ -501,6 +506,11 @@ codes:
     raised_by:
     - abacus.modules.platform.safeguards.ControlSetSamePerson
     summary: A second staff member publishes the set its importer imported.
+  correction_evidence_required:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.ebp_remittances.CorrectionEvidenceRequired
+    summary: A correction is recorded with the evidence that shows it (deposit, SCC notice).
   correction_not_allowed:
     status: 422
     raised_by:
