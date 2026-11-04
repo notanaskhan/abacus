@@ -1,7 +1,9 @@
 import { FlagOffState } from "@abacus/ui";
-import { createRoute } from "@tanstack/react-router";
+import { createRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import type { JSX } from "react";
 import { FeatureGate } from "../../app-core/flags";
+import { useOverlays } from "../../app-core/overlay-host";
+import { useParam } from "../params";
 import { appRoute, lazyScreen } from "../root";
 
 // NOT-01 (N-04-T05; docs/screens/NOT-01.md): `/notices` behind `notices.workspace`; flag off
@@ -29,6 +31,7 @@ interface NoticeFilters {
 }
 
 const Index = lazyScreen(async () => (await import("../../screens/NOT-01")).NOT01);
+const Workspace = lazyScreen(async () => (await import("../../screens/NOT-02")).NoticeWorkspace);
 
 interface NoticesSearch {
   agency?: string;
@@ -100,4 +103,68 @@ export const noticesRoute = createRoute({
   },
 });
 
-export const noticeRoutes = [noticesRoute] as const;
+// N-04-T14: NOT-02 `/notices/$noticeId?tab=response|activity&segment=information_returns|transcript`;
+// Decide opens SHL-11 on the `notice_position` card (`?ov=decision:<cardId>`), where the signer
+// decides with the rationale; Draft response lands on NOT-03 once N-04-T20 routes it.
+interface NoticeSearch {
+  tab?: "response" | "activity";
+  segment?: "information_returns" | "transcript";
+}
+export const noticeRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/notices/$noticeId",
+  validateSearch: (search: Record<string, unknown>): NoticeSearch => ({
+    ...(search.tab === "response" || search.tab === "activity" ? { tab: search.tab } : {}),
+    ...(search.segment === "information_returns" || search.segment === "transcript"
+      ? { segment: search.segment }
+      : {}),
+  }),
+  component: function NoticePage(): JSX.Element {
+    const noticeId = useParam("noticeId");
+    const navigate = useNavigate();
+    const search: NoticeSearch = useSearch({ strict: false });
+    const overlays = useOverlays();
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <FeatureGate
+          flag="notices.workspace"
+          fallback={<FlagOffState flag="notices.workspace" label="Notices" />}
+        >
+          <Workspace
+            noticeId={noticeId}
+            tab={search.tab ?? "analysis"}
+            onTab={(tab) => {
+              void navigate({
+                to: ".",
+                search: {
+                  ...(search.segment === undefined ? {} : { segment: search.segment }),
+                  ...(tab === "analysis" ? {} : { tab }),
+                },
+                replace: true,
+              });
+            }}
+            segment={search.segment ?? "notice_vs_return"}
+            onSegment={(segment) => {
+              void navigate({
+                to: ".",
+                search: {
+                  ...(search.tab === undefined ? {} : { tab: search.tab }),
+                  ...(segment === "notice_vs_return" ? {} : { segment }),
+                },
+                replace: true,
+              });
+            }}
+            onBack={() => {
+              void navigate({ to: "/notices" });
+            }}
+            onDecide={(cardId) => {
+              overlays.open("decision", cardId);
+            }}
+          />
+        </FeatureGate>
+      </div>
+    );
+  },
+});
+
+export const noticeRoutes = [noticesRoute, noticeRoute] as const;
