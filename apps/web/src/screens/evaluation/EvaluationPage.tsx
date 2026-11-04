@@ -9,6 +9,7 @@ import type { JSX } from "react";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { AuditBar, isNotFound, useAuditCockpit } from "../../domain/audits";
 import { FindingsRegister } from "../AUD-15";
+import { MisstatementsPane } from "../AUD-16";
 import { COPY } from "./copy";
 
 // The Evaluation chrome (A-06-T12; A-06 §5, chapter 04 §2.1): the audit bar, then the Evaluation
@@ -108,7 +109,16 @@ export function EvaluationPage({
             <AuditBar cockpit={cockpit.data} {...(onBack === undefined ? {} : { onBack })} />
             {tab !== "fs-disclosure" && <EvaluationTabs tab={tab} counts={counts} onTab={onTab} />}
             {tab === "findings" && <FindingsRegister auditId={auditId} />}
-            {tab !== "findings" && PLANNED_VISIBLE && (
+            {/* A-06-T22: AUD-16 under the Misstatements tab. */}
+            {tab === "misstatements" && (
+              <MisstatementsPane
+                auditId={auditId}
+                onFinding={() => {
+                  onTab("findings");
+                }}
+              />
+            )}
+            {tab !== "findings" && tab !== "misstatements" && PLANNED_VISIBLE && (
               <EmptyState icon="clock" title={COPY.planned}>
                 {COPY.plannedBody(SCREEN[tab])}
               </EmptyState>

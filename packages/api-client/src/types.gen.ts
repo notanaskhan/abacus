@@ -39542,6 +39542,65 @@ export type SendOut = {
 };
 
 /**
+ * SendPreviewEntryOut
+ *
+ * An entry as the client will read it: the firm template's wording, filled by code.
+ */
+export type SendPreviewEntryOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Client Wording
+     */
+    client_wording: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Ref
+     */
+    ref: string;
+};
+
+/**
+ * SendPreviewOut
+ *
+ * AUD-16 O3 (A-06-T22; DEC-2254): the recipient and the template wording before a send. The
+ * wording is database content (DEC-79), never a model's.
+ */
+export type SendPreviewOut = {
+    /**
+     * Entries
+     */
+    entries: Array<SendPreviewEntryOut>;
+    /**
+     * Recipient Contact Id
+     */
+    recipient_contact_id: string;
+    /**
+     * Recipient Name
+     */
+    recipient_name: string;
+    /**
+     * Seen Versions
+     */
+    seen_versions: {
+        [key: string]: number;
+    };
+    /**
+     * Template Label
+     */
+    template_label: string;
+    /**
+     * Wording Template Version Id
+     */
+    wording_template_version_id: string;
+};
+
+/**
  * SendToPartnerIn
  */
 export type SendToPartnerIn = {
@@ -43009,6 +43068,110 @@ export type SuggestionOut = {
 export type SuggestionStatus = 'pending' | 'adopted' | 'edited' | 'dismissed' | 'superseded' | 'expired';
 
 /**
+ * SumBookedOut
+ *
+ * A corrected (booked) misstatement: listed beside the SUM, never accumulated.
+ */
+export type SumBookedOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Approval Label
+     */
+    approval_label: string | null;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Ref
+     */
+    ref: string;
+};
+
+/**
+ * SumConclusionOut
+ *
+ * The `sum_conclusion` card (A-06-T13), reserved to the engagement partner.
+ */
+export type SumConclusionOut = {
+    /**
+     * Decided At
+     */
+    decided_at?: string | null;
+    /**
+     * Decided By Name
+     */
+    decided_by_name?: string | null;
+    /**
+     * Decision Card Id
+     */
+    decision_card_id?: string | null;
+    /**
+     * Outcome Label
+     */
+    outcome_label?: string | null;
+    /**
+     * Reserved User Name
+     */
+    reserved_user_name?: string | null;
+    /**
+     * State
+     */
+    state: 'not_requested' | 'awaiting' | 'concluded';
+};
+
+/**
+ * SumCountsOut
+ *
+ * The control bar's counts by view (AUD-16 tabs).
+ */
+export type SumCountsOut = {
+    /**
+     * Below Ct
+     */
+    below_ct?: number;
+    /**
+     * Passed
+     */
+    passed?: number;
+    /**
+     * Proposed
+     */
+    proposed?: number;
+    /**
+     * Reclass
+     */
+    reclass?: number;
+};
+
+/**
+ * SumFactorOut
+ *
+ * A qualitative factor as recorded (`record_value`); `flagged` is code's, never the browser's.
+ */
+export type SumFactorOut = {
+    /**
+     * Factor
+     */
+    factor: string;
+    /**
+     * Flagged
+     */
+    flagged: boolean;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Value
+     */
+    value: string;
+};
+
+/**
  * SumOut
  *
  * Code's SUM (AC-6): the browser renders these numbers and computes none of them.
@@ -43023,13 +43186,35 @@ export type SumOut = {
      */
     aggregate: string;
     /**
+     * Aggregate View
+     */
+    aggregate_view?: 'rollover' | 'iron_curtain';
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<'finding.update' | 'finding.convert' | 'finding.resolve' | 'finding.mark_not_applicable' | 'finding.request_decision' | 'misstatement.update' | 'misstatement.pass_to_sum' | 'sum.update_factors' | 'sum.request_conclusion' | 'sum.snapshot' | 'sum.export'>;
+    /**
      * Approaching Pm
      */
     approaching_pm: boolean;
     /**
+     * Below Ct Count
+     */
+    below_ct_count?: number;
+    /**
+     * Below Ct Total
+     */
+    below_ct_total?: string | null;
+    /**
+     * Booked
+     */
+    booked?: Array<SumBookedOut>;
+    /**
      * Column Set
      */
     column_set: 'ebp_net_assets' | 'commercial';
+    conclusion?: SumConclusionOut | null;
+    counts?: SumCountsOut | null;
     /**
      * Ct Tick Pct
      */
@@ -43039,9 +43224,17 @@ export type SumOut = {
      */
     engine_version: string;
     /**
+     * Factors
+     */
+    factors?: Array<SumFactorOut>;
+    /**
      * Fill Pct Of Overall
      */
     fill_pct_of_overall: string;
+    /**
+     * Footnote
+     */
+    footnote?: string | null;
     /**
      * Inputs Hash
      */
@@ -43062,6 +43255,92 @@ export type SumOut = {
      * Rollover
      */
     rollover: string;
+    /**
+     * Rows
+     */
+    rows?: Array<SumRowOut>;
+    sign_off?: SumSignOffOut | null;
+    thresholds?: SumThresholdsOut | null;
+    totals?: SumTotalsOut | null;
+};
+
+/**
+ * SumRowOut
+ *
+ * One statement row (AUD-16 a): the misstatement's signed effect per column, from its own
+ * record (the projection, the entry's lines); prior-year rows are context, never accumulated.
+ */
+export type SumRowOut = {
+    /**
+     * Assets
+     */
+    assets?: string | null;
+    /**
+     * Carried From Py
+     */
+    carried_from_py?: string | null;
+    /**
+     * Change In Net Assets
+     */
+    change_in_net_assets?: string | null;
+    /**
+     * Client Note
+     */
+    client_note: string | null;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Finding Ref
+     */
+    finding_ref: string | null;
+    /**
+     * Group
+     */
+    group: 'current' | 'prior_year';
+    /**
+     * Liabilities
+     */
+    liabilities?: string | null;
+    /**
+     * Misstatement Id
+     */
+    misstatement_id: string | null;
+    /**
+     * Net Assets
+     */
+    net_assets?: string | null;
+    /**
+     * Ref
+     */
+    ref: string;
+    /**
+     * Type
+     */
+    type: 'factual' | 'judgmental' | 'projected';
+    /**
+     * Workpaper Ref
+     */
+    workpaper_ref: string | null;
+};
+
+/**
+ * SumSignOffOut
+ */
+export type SumSignOffOut = {
+    /**
+     * Partner Label
+     */
+    partner_label?: string | null;
+    /**
+     * Partner Signed
+     */
+    partner_signed?: boolean;
+    /**
+     * Prepared Label
+     */
+    prepared_label?: string | null;
 };
 
 /**
@@ -43088,6 +43367,56 @@ export type SumSnapshotOut = {
      * Version No
      */
     version_no: number;
+};
+
+/**
+ * SumThresholdsOut
+ *
+ * The decided materiality the SUM is measured against (A-04's record; AUD-16 tally strip).
+ */
+export type SumThresholdsOut = {
+    /**
+     * Ct
+     */
+    ct: string;
+    /**
+     * Label
+     */
+    label: string | null;
+    /**
+     * Overall
+     */
+    overall: string;
+    /**
+     * Pm
+     */
+    pm: string;
+};
+
+/**
+ * SumTotalsOut
+ */
+export type SumTotalsOut = {
+    /**
+     * Assets
+     */
+    assets?: string | null;
+    /**
+     * Carried From Py
+     */
+    carried_from_py?: string | null;
+    /**
+     * Change In Net Assets
+     */
+    change_in_net_assets?: string | null;
+    /**
+     * Liabilities
+     */
+    liabilities?: string | null;
+    /**
+     * Net Assets
+     */
+    net_assets?: string | null;
 };
 
 /**
@@ -48586,6 +48915,10 @@ export type AbacusModulesAssuranceFindingsContractMisstatementOut = {
      * Amount
      */
     amount: string;
+    /**
+     * Description
+     */
+    description?: string | null;
     /**
      * Finding Ref
      */
@@ -113339,6 +113672,67 @@ export type ProposedEntriesSendResponses = {
 };
 
 export type ProposedEntriesSendResponse = ProposedEntriesSendResponses[keyof ProposedEntriesSendResponses];
+
+export type ProposedEntriesSendPreviewData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query: {
+        /**
+         * Entry Ids
+         */
+        entry_ids: Array<string>;
+    };
+    url: '/v1/work-items/{work_item_id}/proposed-entries:send-preview';
+};
+
+export type ProposedEntriesSendPreviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ProposedEntriesSendPreviewError = ProposedEntriesSendPreviewErrors[keyof ProposedEntriesSendPreviewErrors];
+
+export type ProposedEntriesSendPreviewResponses = {
+    /**
+     * Successful Response
+     */
+    200: SendPreviewOut;
+};
+
+export type ProposedEntriesSendPreviewResponse = ProposedEntriesSendPreviewResponses[keyof ProposedEntriesSendPreviewResponses];
 
 export type SampleSetsListData = {
     body?: never;

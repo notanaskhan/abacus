@@ -18,12 +18,12 @@ from decimal import Decimal
 from typing import Annotated, Any, Literal, cast
 from uuid import UUID
 
-from fastapi import Depends, Header
+from fastapi import Depends, Header, Query
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import ADJUSTMENTS_ENTRIES
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound
+from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.modules.engagements.api import get_ref, work_item_engagement
@@ -120,6 +120,31 @@ class AdjustmentSendOut(BaseModel):
 
     approval_batch_id: Annotated[UUID, classified("internal")]
     undo_until: Annotated[str, classified("internal")]  # ISO instant, 10 seconds out (DEC-24)
+
+
+class SendPreviewEntryOut(BaseModel):
+    """An entry as the client will read it: the firm template's wording, filled by code."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    ref: Annotated[str, classified("internal")]
+    amount: Money
+    client_wording: Annotated[str, Field(max_length=2000), classified("confidential")]
+
+
+class SendPreviewOut(BaseModel):
+    """AUD-16 O3 (A-06-T22; DEC-2254): the recipient and the template wording before a send. The
+    wording is database content (DEC-79), never a model's."""
+
+    model_config = ConfigDict(frozen=True)
+
+    recipient_contact_id: Annotated[UUID, classified("internal")]
+    recipient_name: Annotated[str, Field(max_length=200), classified("confidential")]
+    wording_template_version_id: Annotated[UUID, classified("internal")]
+    template_label: Annotated[str, Field(max_length=200), classified("internal")]
+    entries: Annotated[list[SendPreviewEntryOut], Field(max_length=100)]
+    seen_versions: Annotated[dict[str, int], classified("internal")]
 
 
 class BatchIn(BaseModel):
@@ -286,6 +311,23 @@ async def proposed_entries_send_route(
     return AdjustmentSendOut(
         approval_batch_id=sent.approval_batch_id, undo_until=sent.undo_until.isoformat()
     )
+
+
+@router.get(
+    f"{_WI}/proposed-entries:send-preview",
+    action="proposed_entry.read",
+    response_model=SendPreviewOut,
+    errors=(501,),
+)
+async def proposed_entries_send_preview_route(
+    work_item_id: UUID,
+    ctx: Ctx,
+    entry_ids: Annotated[list[UUID], Query(min_length=1, max_length=100)],
+) -> SendPreviewOut:
+    """O3's preview: the client contact and the firm template's wording per entry (A-06-T22 stub;
+    the wording service lands with R-02's C18 template read)."""
+    await _gate(ctx, work_item_id, "proposed_entry.read")
+    raise NotImplementedYet
 
 
 @router.post(
