@@ -16,7 +16,8 @@ Credentials are this connector's own JSON (`access_token`, `refresh_token`, `rea
 `expires_at`), sealed with the tenant's key at rest by the caller. A refresh that rotates the
 refresh token hands the new credentials to `on_rotate`, which the factory wires to reseal them;
 until it succeeds the old ones stay sealed. Provider text never leaves here: failures are short
-codes (`token_expired`, `invalid_grant`, `provider_unavailable`, `provider_error`).
+codes (`token_expired`, `invalid_grant`, `revoke_refused`, `provider_unavailable`,
+`provider_error`).
 """
 
 from __future__ import annotations
@@ -68,6 +69,8 @@ _INTUIT_DOMAIN: Final = ".intuit.com"
 _ENDPOINT_URL: Final = re.compile(r"https://([a-z0-9.-]+)(/[A-Za-z0-9._~/-]*)?")
 TID_HEADER: Final = "intuit_tid"
 _TID: Final = re.compile(r"[A-Za-z0-9-]{1,64}")
+_HEX_RUN: Final = re.compile(r"[0-9a-fA-F]{32,}")
+_OAUTH_CODE: Final = re.compile(r"[a-z_]{1,50}")
 MEDIA_TYPE: Final = "application/json"
 MINOR_VERSION: Final = "75"
 REALM_SEPARATOR: Final = "~"
@@ -119,6 +122,17 @@ def _endpoints_from(content: bytes) -> Endpoints | None:
         return None
     authorise, token, revoke = cast(list[str], found)
     return Endpoints(authorise, token, revoke)
+
+
+def tid_for_log(tid: str | None) -> str | None:
+    """`1-<8 hex>-<24 hex>` as one hex run (DEC-2901). Written with its hyphens, a nine-digit run
+    in it reads as a taxpayer ID and the log's backstop masks it, so support can't trace it; a
+    hex run of 32 or more is opaque to `kernel.tin_patterns`. To quote one to Intuit, put the
+    hyphens back after the first and ninth characters."""
+    if tid is None:
+        return None
+    compact = tid.replace("-", "")
+    return compact if _HEX_RUN.fullmatch(compact) else tid
 
 
 def intuit_tid(headers: Mapping[str, str]) -> str | None:
@@ -254,16 +268,19 @@ class QuickBooksOnlineConnector(Connector):
         endpoint: str,
         headers: dict[str, str],
         data: dict[str, str] | None = None,
+        content: bytes | None = None,
     ) -> EgressResponse:
         try:
-            response = await self._client.request(method, url, headers=headers, data=data)
+            response = await self._client.request(
+                method, url, headers=headers, data=data, content=content
+            )
         except EgressRefused:
             raise ConnectorError("egress_refused") from None
         except (TimeoutError, OSError):
             raise Unavailable("provider_unavailable") from None
         # Intuit's support traces a request by its intuit_tid (DEC-2099): never a token or body.
         fields = {"endpoint": endpoint, "status": response.status_code}
-        tid = intuit_tid(response.headers)
+        tid = tid_for_log(intuit_tid(response.headers))
         if response.status_code >= 400:
             _log.warning("qbo.response", intuit_tid=tid, **fields)
         else:
@@ -359,18 +376,26 @@ class QuickBooksOnlineConnector(Connector):
             await self._on_rotate(rotated.sealed_form())
 
     async def revoke(self) -> None:
+        """End the grant at Intuit (DEC-2901): a JSON body, as Intuit's SDKs send it, and only a
+        200 counts. A refusal never reads as revoked, so the caller records it as refused."""
         held = self._held()
         response = await self._call(
             "POST",
             (await self._endpoints()).revoke,
             endpoint="revoke",
-            headers=self._basic(),
-            data={"token": held.refresh_token},
+            headers={**self._basic(), "Content-Type": MEDIA_TYPE},
+            content=json.dumps({"token": held.refresh_token}).encode(),
         )
-        if response.status_code >= 500:
+        if response.status_code == 429 or response.status_code >= 500:
             raise Unavailable("provider_unavailable")
-        if response.status_code not in (200, 400):  # 400: already revoked
-            raise ConnectorError("provider_error")
+        if response.status_code != 200:
+            code = _oauth_error(response.content)
+            _log.warning(
+                "qbo.revoke_refused",
+                status=response.status_code,
+                error=code if _OAUTH_CODE.fullmatch(code) else None,
+            )
+            raise ConnectorError("revoke_refused")
 
     def _held(self) -> QboCredentials:
         if self._credentials is None:
@@ -421,6 +446,7 @@ class QuickBooksOnlineConnector(Connector):
 
 def _oauth_error(content: bytes) -> str:
     try:
-        return str(cast(dict[str, object], json.loads(content)).get("error", ""))
+        raw: object = json.loads(content)
     except ValueError:
         return ""
+    return str(cast(dict[str, object], raw).get("error", "")) if isinstance(raw, dict) else ""

@@ -145,6 +145,7 @@ class EgressClient:
         *,
         headers: Mapping[str, str] | None = None,
         data: Mapping[str, str] | None = None,
+        content: bytes | None = None,
     ) -> EgressResponse:
         target = check_egress(url, self._connector)  # checked once; this object is sent
         verb = method.upper()
@@ -154,7 +155,11 @@ class EgressClient:
             raise EgressRefused(f"{verb} is not a read")
         async with asyncio.timeout(TIMEOUT_SECONDS):
             async with self._client.stream(
-                method, target, headers=dict(headers or {}), data=dict(data) if data else None
+                method,
+                target,
+                headers=dict(headers or {}),
+                data=dict(data) if data else None,
+                content=content,
             ) as response:
                 body = bytearray()
                 async for chunk in response.aiter_bytes():

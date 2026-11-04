@@ -22,7 +22,8 @@ import pytest
 
 from abacus.kernel.clock import system_now
 from abacus.kernel.egress import EgressClient, EgressRefused, EgressResponse, configure_egress
-from abacus.modules.connections.connector import ConnectorError, Period
+from abacus.kernel.logging import get_logger
+from abacus.modules.connections.connector import ConnectorError, Period, Unavailable
 from abacus.modules.connections.connectors import quickbooks_online as qbo
 from abacus.modules.connections.qbo_format import parse_qbo_trial_balance
 from abacus.modules.integrations.api import egress_allowlist, egress_read_posts
@@ -60,6 +61,7 @@ class Recorder:
         *,
         headers: Mapping[str, str] | None = None,
         data: Mapping[str, str] | None = None,
+        content: bytes | None = None,
     ) -> EgressResponse:
         self.sent.append((method.upper(), url))
         if qbo.OAUTH_PATH in url:
@@ -232,13 +234,14 @@ class Discovering(Recorder):
         *,
         headers: Mapping[str, str] | None = None,
         data: Mapping[str, str] | None = None,
+        content: bytes | None = None,
     ) -> EgressResponse:
         if qbo.DISCOVERY_HOST in url:
             self.sent.append((method.upper(), url))
             return EgressResponse(
                 200, {"intuit_tid": "1-abc-2"}, json.dumps(self.document).encode()
             )
-        response = await super().request(method, url, headers=headers, data=data)
+        response = await super().request(method, url, headers=headers, data=data, content=content)
         return EgressResponse(response.status_code, {"Intuit_TID": "9-def-8"}, response.content)
 
 
@@ -314,3 +317,90 @@ async def test_dec2083_the_discovery_host_is_declared_for_this_connector_only() 
     assert qbo.DISCOVERY_HOST in hosts[qbo.PROVIDER]
     assert all(qbo.DISCOVERY_HOST not in h for k, h in hosts.items() if k != qbo.PROVIDER)
     assert (qbo.DISCOVERY_HOST, qbo.DISCOVERY_PATHS["sandbox"]) not in egress_read_posts()
+
+
+# DEC-2901: revoke sends what Intuit reads, only a 200 counts, a tid survives the log's backstop.
+
+
+@dataclass
+class Revoking(Recorder):
+    status: int = 200
+    body: bytes = b""
+    revoke_headers: dict[str, str] = field(default_factory=lambda: dict[str, str]())
+    revoke_data: Mapping[str, str] | None = None
+    revoke_content: bytes | None = None
+
+    async def request(
+        self,
+        method: str,
+        url: str,
+        *,
+        headers: Mapping[str, str] | None = None,
+        data: Mapping[str, str] | None = None,
+        content: bytes | None = None,
+    ) -> EgressResponse:
+        if qbo.REVOKE_PATH in url:
+            self.revoke_headers = dict(headers or {})
+            self.revoke_data, self.revoke_content = data, content
+            return EgressResponse(self.status, {}, self.body)
+        return await super().request(method, url, headers=headers, data=data, content=content)
+
+
+async def test_dec2901_revoke_sends_the_refresh_token_as_json() -> None:
+    recorder = Revoking()
+    await _connector(recorder, _held()).revoke()
+    assert recorder.revoke_headers["Content-Type"] == "application/json"
+    assert recorder.revoke_headers["Authorization"].startswith("Basic ")
+    assert recorder.revoke_data is None
+    assert json.loads(recorder.revoke_content or b"") == {"token": "rt-1"}
+
+
+@pytest.mark.parametrize(
+    ("status", "body"),
+    [
+        (400, b'{"error": "invalid_request"}'),
+        (400, b"not json"),
+        (400, b"[]"),
+        (401, b'{"error": "invalid_client"}'),
+        (403, b""),
+    ],
+)
+async def test_dec2901_a_refused_revoke_is_never_success(status: int, body: bytes) -> None:
+    with pytest.raises(ConnectorError, match="revoke_refused"):
+        await _connector(Revoking(status=status, body=body), _held()).revoke()
+
+
+@pytest.mark.parametrize("status", [429, 500, 503])
+async def test_dec2901_an_outage_is_retried_not_refused(status: int) -> None:
+    with pytest.raises(Unavailable):
+        await _connector(Revoking(status=status), _held()).revoke()
+
+
+async def test_dec2901_a_refusal_logs_a_code_shape_only(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    body = b'{"error": "Bearer rt-1 is <b>bad</b>"}'
+    with pytest.raises(ConnectorError):
+        await _connector(Revoking(status=400, body=body), _held()).revoke()
+    out = capsys.readouterr().out
+    lines = [json.loads(x) for x in out.splitlines() if x.startswith("{")]
+    refused = [e for e in lines if e.get("event") == "qbo.revoke_refused"]
+    assert refused and refused[0]["error"] is None and refused[0]["status"] == 400
+    assert "rt-1" not in out
+
+
+def test_dec2901_the_tid_in_the_run_keeps_every_character_through_the_log(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    # The shape the run garbled: a nine-digit run in the 24-hex tail.
+    tid = "1-6aebb390-6342c123456789abcdef0123"
+    compact = qbo.tid_for_log(tid)
+    assert compact == "16aebb3906342c123456789abcdef0123"
+    get_logger("test").info("qbo.response", intuit_tid=compact)
+    assert compact in capsys.readouterr().out
+    assert f"{compact[0]}-{compact[1:9]}-{compact[9:]}" == tid  # reversible for Intuit's support
+
+
+def test_dec2901_other_tid_shapes_pass_through() -> None:
+    assert qbo.tid_for_log("1-abc-2") == "1-abc-2"
+    assert qbo.tid_for_log(None) is None
