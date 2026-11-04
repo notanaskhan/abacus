@@ -41,6 +41,8 @@ class EffectRequest:
     rule_key: str
     template_version_id: UUID | None
     evidence_version_id: UUID | None = None
+    # The questionnaire's named owner: a handler that must name a person names this one.
+    owner_user_id: UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,6 +51,11 @@ class EffectResult:
 
     target_type: str
     target_id: UUID
+
+
+class HandlerUnavailable(Exception):
+    """A handler that cannot act for this firm now (its module's flag is off): the engine
+    records `pending_handler` and nothing moves (N-04-T13, DEC-2245)."""
 
 
 EffectHandler = Callable[[EffectRequest], Awaitable[EffectResult]]

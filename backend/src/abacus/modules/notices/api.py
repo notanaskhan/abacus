@@ -38,3 +38,7 @@ register_reviewable_facts(_response.TARGET, _response.facts)
 register_gate_kind("notice_position_decision", _response.position_decided)
 register_gate_kind("notice_response_signoff", _response.signoff_ready)
 register_gate_kind("notice_response_send", _response.send_ready)
+
+from abacus.modules.notices.intake_sources import register as _register_sources  # noqa: E402
+
+_register_sources()  # N-04-T13 (DEC-2245): the answer effect and the two triage destinations
