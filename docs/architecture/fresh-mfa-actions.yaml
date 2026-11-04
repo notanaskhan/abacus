@@ -142,3 +142,11 @@ actions:
   # Report templates (P-11-T06, DEC-1350): publishing a version of the firm's wording
   - action: report_template.publish
     group: standards
+  # A-07 completion, release and archive (A-07-T05; DEC-2231). report.release, archive.lock and
+  # eqr.concur join with their live handlers (A-07-T18, T30, T37; DEC-2261).
+  - action: rep_letter.approve
+    group: sign_off
+  - action: governance_comm.approve_send
+    group: release
+  - action: archive_addition.approve
+    group: sign_off

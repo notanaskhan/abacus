@@ -73,6 +73,9 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("questionnaire_template.publish", "standards", "firm_partner"),
     ("grouping_set.publish", "standards", "practice_leader"),
     ("report_template.publish", "standards", "practice_leader"),
+    ("rep_letter.approve", "sign_off", "engagement_partner"),
+    ("governance_comm.approve_send", "release", "engagement_partner"),
+    ("archive_addition.approve", "sign_off", "engagement_partner"),
 )
 ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/audit-events/exports/{export_id}/download", "audit_event.export"),
@@ -92,8 +95,28 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/audit-events/exports", "audit_event.export"),
     ("POST", "/v1/audit-events/exports/{export_id}/link", "audit_event.export"),
     ("POST", "/v1/audits/{work_item_id}/archive-record", "assurance.record_archive"),
+    (
+        "POST",
+        "/v1/audits/{work_item_id}/archive/additions/{addition_id}/approve",
+        "archive_addition.approve",
+    ),
+    (
+        "POST",
+        "/v1/audits/{work_item_id}/archive/additions/{addition_id}/reject",
+        "archive_addition.approve",
+    ),
     ("POST", "/v1/audits/{work_item_id}/ebp/participants/{participant_id}/reveals", "pii.reveal"),
+    (
+        "POST",
+        "/v1/audits/{work_item_id}/governance-communications/{communication_id}/approve-and-send",
+        "governance_comm.approve_send",
+    ),
     ("POST", "/v1/audits/{work_item_id}/release-record", "assurance.record_release"),
+    (
+        "POST",
+        "/v1/audits/{work_item_id}/representation-letter/versions/{version_no}/approve",
+        "rep_letter.approve",
+    ),
     ("POST", "/v1/client-entities/{entity_id}/tin/reveal", "tin.reveal"),
     ("POST", "/v1/clients/{client_id}/contacts/{contact_id}/mfa-reset", "contact.mfa_reset"),
     ("POST", "/v1/clients/{client_id}/contacts/{contact_id}/portal-unlock", "contact.unlock"),

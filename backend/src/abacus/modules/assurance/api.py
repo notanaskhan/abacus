@@ -85,6 +85,7 @@ from abacus.modules.assurance.risks import audit_owners as risk_owners
 from abacus.modules.assurance.risks import create as create_risk
 from abacus.modules.assurance.risks import edit as edit_risk
 from abacus.modules.assurance.risks import request_approval as request_risk_approval
+from abacus.modules.assurance.release_contract import router as audit_release_router
 from abacus.modules.assurance.routes import router
 from abacus.modules.assurance.run_badges import run_badges
 from abacus.modules.assurance.sections import (
@@ -130,6 +131,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     ebp_router,  # A-05-T04 ebp-workpapers v1 stub (docs/contracts/ebp-workpapers.md)
     findings_router,  # A-06-T05 completion family stub (docs/contracts/completion.md)
     audit_completion_router,  # A-07-T04 AUD-18/AUD-19 stub (docs/contracts/audit-completion.md)
+    audit_release_router,  # A-07-T05 AUD-21 to AUD-25 stub (docs/contracts/audit-completion.md)
 )
 
 # SPEC-313 (TASK-331): trial balances appear in the sign-off matrix and count toward G5.

@@ -79,6 +79,63 @@ The `going_concern` card is decided only through C3 (`POST /v1/decisions/{id}/de
 to the engagement partner. Refusals: `409 item_derived` (N/A on a projected item),
 `409 decision_required`, `409 stale_version`.
 
+## Letters, report, release and archive (AUD-21 to AUD-25) — stub, A-07-T05
+Code: `assurance/release_contract.py`. Every route answers 501 until its task and 404 for a firm
+with its flag off once A-07-T33 creates `audits.letters`, `audits.report_release` and
+`audits.archive`.
+
+| Operation | Method and path | Action | Live in |
+|---|---|---|---|
+| Representation letter | `GET …/representation-letter` · `…/versions` · `…/versions/{version_no}` | `rep_letter.read` | T24 |
+| Compose | `POST …/representation-letter/compose` (Idempotency-Key) → 202 | `rep_letter.draft` | T24 |
+| Toggle a representation | `PATCH …/representations/{key}` `{included, seen_version}` | `rep_letter.draft` | T24 |
+| Edit a firm-editable paragraph | `PUT …/paragraphs/{key}` `{text, seen_version}` | `rep_letter.draft` | T24 |
+| Request approval | `POST …/representation-letter/request-approval` | `rep_letter.request_approval` | T24 |
+| **Approve (human only, fresh MFA)** | `POST …/versions/{version_no}/approve` `{seen_hash}` | `rep_letter.approve` | T24 |
+| **Send (human only)** | `POST …/representation-letter/send` `{signer_contact_ids, seen_version}` (Idempotency-Key) | `rep_letter.send` | T24 |
+| Remind · re-date | `POST …/remind` · `POST …/re-date` (Idempotency-Key) | `envelope.remind` (N-02) · `rep_letter.send` | T24 |
+| Governance communications | `GET …/governance-communications` · `GET …/{id}` | `governance_comm.read` | T26 |
+| Create · compose · edit | `POST …/governance-communications {kind}` · `POST …/{id}/compose` (202) · `PATCH …/{id}/sections/{key}` | `governance_comm.draft` | T26 |
+| Request approval | `POST …/{id}/request-approval` | `governance_comm.request_approval` | T26 |
+| **Approve and send (human only, fresh MFA)** | `POST …/{id}/approve-and-send` (Idempotency-Key) | `governance_comm.approve_send` | T26 |
+| Recipients | `GET` · `PUT …/governance-recipients` | `governance_comm.read` · `governance_comm.manage_recipients` | T26 |
+| Report | `GET …/report` · `…/report/versions` · `…/versions/{a}/diff/{b}` · `…/report/reason-codes` | `report.read` | T27 |
+| A choice | `PATCH …/report/choices` `{field, value, reason_code?, seen_version}` | `report.draft` | T27 |
+| Request the opinion decision | `POST …/report/request-decision` `{field: opinion}` | `report.request_decision` | T27 |
+| Draft render | `POST …/report/documents` `{format, report_version}` (Idempotency-Key) → 202 | `report.generate` | T27 |
+| Report approval | C3's `POST /v1/sign-offs {target: audit_report_version, level: L4}` | `sign_off.l4` (P-04) | T27 |
+| Release readiness | `GET …/release` → gates, also-required, `gate_hash`, `viewer_can_release` | `report.read` | T30 |
+| **Release (human only, fresh MFA)** | `POST …/release` `{authorize: true, seen_gate_hash}` (Idempotency-Key) → 202 | `report.release` | T30 |
+| Filings | `GET …/filings` · `PATCH …/filings/{id}` | `report.read` · `filing.update` | T36 |
+| Archive | `GET …/archive` · `GET …/archive/manifest` · `GET …/archive/additions` | `archive.read` † | T31, T37 |
+| Binder index | `POST …/archive/binder-index` (202) | `archive.build_index` | T31 |
+| Request lock | `POST …/archive/request-lock` | `archive.request_lock` | T31 |
+| **Lock (human only, fresh MFA)** | `POST …/archive/lock` `{assembly_complete: true, then_roll_forward, seen_checklist_hash}` (Idempotency-Key) → 202 | `archive.lock` | T37 |
+| Add after lock | `POST …/archive/additions` (Idempotency-Key) | `archive_addition.create` † | T42 |
+| **Approve or reject an addition (human only, fresh MFA)** | `POST …/additions/{id}/approve` · `…/reject` | `archive_addition.approve` † | T42 |
+| Verify the seal | `POST …/archive/verify` (202) | `archive.verify` † | T42 |
+
+† `archived_exempt`: these act on a locked work item (kind `archive_addition` for the addition
+verbs; reads and verify change nothing). Every other mutating route answers `409 archived`.
+
+### Human-only actions and their audit events
+| Action | Fresh MFA | Audit event (identifiers and fingerprints only, DEC-60) |
+|---|---|---|
+| `eqr.concur` | yes (A-07-T18) | `eqr.concurred` |
+| `eqr.mark_reviewed` | — | `eqr.card_reviewed` |
+| `rep_letter.approve` | yes | `rep_letter.approved` |
+| `rep_letter.send` | — (live human) | `rep_letter.sent` |
+| `governance_comm.approve_send` | yes | `governance_communication.sent` |
+| `report.release` | yes (A-07-T30) | `report.released` |
+| `archive.lock` | yes (A-07-T37) | `archive.locked` |
+| `archive_addition.approve` | yes | `archive.addition_approved` · `archive.addition_rejected` |
+| `decision.decide` on `going_concern` and `opinion` | yes (C3) | `going_concern.decided` · `opinion.decided` |
+
+Refusals: `409 gates_not_met`, `409 content_changed`, `409 approval_required`,
+`409 decision_required`, `409 date_mismatch`, `422 internal_amount_in_text`, `409 archived`,
+`409 checklist_incomplete`, `403 ep_only`, `401 mfa_required`, `409 seal_mismatch`,
+`409 release_mode_external`, `409 stale_version`.
+
 ## Events (outbox; identifiers and enums only)
 `report.released`, `archive.locked`, `archive.addition_logged`,
 `governance_communication.sent`, `governance_communication.acknowledged` (A-07 §4.6).
