@@ -28,7 +28,10 @@ function show(state: Ebp04State): void {
     <QueryClientProvider client={newQueryClient()}>
       <AuditCockpitPage
         auditId={NORTHWIND_AUDIT}
-        initial={{ section: "ebp_04", contributions: { tab: TAB_OF[state] } }}
+        initial={{
+          section: "ebp_04",
+          contributions: { tab: TAB_OF[state], onEligibility: () => undefined },
+        }}
       />
     </QueryClientProvider>,
   );
