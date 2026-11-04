@@ -106,6 +106,9 @@ from abacus.modules.assurance.sections import (
 )
 from abacus.modules.assurance.service_orgs import AUDIT_KINDS as SERVICE_ORG_KINDS
 from abacus.modules.assurance.service_orgs import audit_owners as service_org_owners
+from abacus.modules.assurance.soc_reports import AUDIT_KINDS as SOC_REPORT_KINDS
+from abacus.modules.assurance.soc_reports import audit_owners as soc_report_owners
+from abacus.modules.assurance.soc_reports import register_reliance_kind
 from abacus.modules.assurance.tb_mapping_contract import MappingConfirmIn, MappingRunIn
 from abacus.modules.assurance.tb_mapping_contract import router as tb_mapping_router
 
@@ -198,10 +201,12 @@ register_engagement_owners(EBP_PLAN_KINDS, ebp_plan_owners)
 register_ebp_modes()
 # A-04-T07: the trail places a service organization on its engagement (SPEC-304; DEC-121).
 register_engagement_owners(SERVICE_ORG_KINDS, service_org_owners)
+register_engagement_owners(SOC_REPORT_KINDS, soc_report_owners)  # A-04-T31
 # A-04-T12 (DEC-1950): the materiality cards' kinds and appliers; versions placed for the trail.
 register_materiality_kinds()
 register_approval_kind()  # A-04-T18 (DEC-2056): the `significant_risk` card
 register_completion_decision_kinds()  # A-06-T13 (DEC-2213): severity and the SUM conclusion
+register_reliance_kind()  # A-04-T31 (DEC-2236): the `service_org_reliance` card
 register_engagement_owners(MATERIALITY_KINDS, materiality_owners)
 # A-04-T13 (DEC-1951): the register's rows placed for the trail; the agent's `risk` suggestions
 # written by their owner when a person adopts them (AC4.7).

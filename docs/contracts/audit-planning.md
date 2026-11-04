@@ -51,7 +51,7 @@ holds reads only through a run's task scope. The agent and the system are denied
 | Route | `POST …/exceptions/{row}/send-to-findings` · `/convert-to-misstatement` | `exception.route` | EP, manager, senior | `assurance.internal_control` |
 | Request evidence | `POST …/exceptions/{row}/request-evidence` | `request_item.create` (existing) | as that action | `assurance.internal_control` |
 | Service organizations | `GET`, `POST /service-organizations`, `GET`, `PATCH …/{id}` | `service_org.read` · `.edit` | team + reviewers · team | `assurance.service_orgs` or `workpapers.core` |
-| SOC report | `GET`, `PATCH /soc-reports/{id}`, `PATCH …/cuecs/{n}` | `service_org.read` · `soc_report.evaluate` | team + reviewers · EP, manager, senior | `assurance.service_orgs` |
+| SOC report | `GET`, `PATCH /soc-reports/{id}`, `PATCH …/cuecs/{n}` | `service_org.read` · `soc_report.evaluate` | team + reviewers · EP, manager, senior | `assurance.service_orgs` (live, A-04-T31: gap by `compute/soc_gap.py`; `bridge_letter_evidence_version_id` on PATCH bridges it) |
 | SOC 1 reader | `POST /soc-reports/{id}/drafts` (202) | `workpaper.draft` | EP, manager, senior | + `workpapers.drafting` |
 | Request drafts | `POST /soc-reports/{id}/requests` `{kind}` | `request_item.create` | as that action | `assurance.service_orgs` |
 | Reliance card | `POST /soc-reports/{id}/reliance-requests` | `soc_report.evaluate` | EP, manager, senior | `assurance.service_orgs` |

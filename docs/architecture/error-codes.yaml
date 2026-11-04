@@ -505,6 +505,16 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.requests.comments.CorrectionNotAllowed
+  cuec_evidence_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.soc_reports.CuecEvidenceMissing
+    summary: A CUEC has no evidence that the user control operated.
+  cuecs_required:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.soc_reports.NoCuecs
+    summary: CUEC evidence requests name at least one CUEC of this report.
   cursor_invalid:
     status: 422
     raised_by:
@@ -1014,6 +1024,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.assurance.fraud_brainstorm.SessionInvalid
+  gap_open:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.soc_reports.GapOpen
+    summary: The report leaves plan-year days uncovered and no bridge letter is in hand.
   gate_not_open:
     status: 409
     raised_by:
@@ -2221,6 +2236,11 @@ codes:
     - abacus.modules.assurance.release.ReleaseModeInApp
     summary: 'The firm releases reports in Accrued (`assurance_release_mode = in_app`): record mode is
       closed for release and archive.'
+  reliance_requested:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.soc_reports.RelianceRequested
+    summary: The engagement partner's reliance card is already raised or decided.
   relink_unverified:
     status: 422
     raised_by:
@@ -3022,6 +3042,7 @@ codes:
     - abacus.modules.assurance.internal_control.VersionConflict
     - abacus.modules.assurance.risks.RiskMoved
     - abacus.modules.assurance.service_orgs.OrganizationMoved
+    - abacus.modules.assurance.soc_reports.SocReportMoved
     - abacus.modules.notices.service.VersionConflict
     - abacus.modules.workpapers.attribute_grid.TestMoved
     - abacus.modules.workpapers.core.VersionConflict

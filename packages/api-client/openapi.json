@@ -86945,6 +86945,19 @@
         "additionalProperties": false,
         "description": "Adopt the evaluation's facts; the gap is recomputed by code, never read from model text.",
         "properties": {
+          "bridge_letter_evidence_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Bridge Letter Evidence Version Id"
+          },
           "expected_version": {
             "cls": "internal",
             "minimum": 1.0,

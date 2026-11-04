@@ -40956,6 +40956,10 @@ export type SocReportOut = {
  */
 export type SocReportPatchIn = {
     /**
+     * Bridge Letter Evidence Version Id
+     */
+    bridge_letter_evidence_version_id?: string | null;
+    /**
      * Expected Version
      */
     expected_version: number;

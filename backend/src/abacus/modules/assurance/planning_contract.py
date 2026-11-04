@@ -30,7 +30,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, Annotated, Literal, NoReturn, cast
+from typing import TYPE_CHECKING, Annotated, Any, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Path, Query
@@ -897,6 +897,8 @@ class SocReportPatchIn(BaseModel):
     period_start: Annotated[date | None, classified("internal")] = None
     period_end: Annotated[date | None, classified("internal")] = None
     report_date: Annotated[date | None, classified("internal")] = None
+    # A-04-T31: the received bridge letter (evidence version), which bridges the gap.
+    bridge_letter_evidence_version_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class CuecPatchIn(BaseModel):
@@ -938,6 +940,73 @@ async def _gate(
 
 def _not_yet() -> NoReturn:
     raise NotImplementedYet
+
+
+async def _soc_out(ctx: AuthContext, engagement_id: UUID, found: object) -> SocReportOut:
+    """A SOC evaluation as AUD-10 reads it: code's gap, the CUECs and the reader's actions."""
+    from abacus.modules.assurance.soc_reports import SocReport
+
+    r = cast(SocReport, found)
+    ref = await get_ref(ctx, engagement_id)
+    can = await allowed_actions(ctx, ref.resource(), ("soc_report.evaluate", "workpaper.draft"))
+    gap = r.gap
+    stamp = (
+        EngineStamp(
+            engine_name=gap.stamp.engine_name,
+            engine_version=gap.stamp.engine_version,
+            inputs_hash=gap.stamp.inputs_hash,
+            computed_at=system_now(),
+        )
+        if gap
+        else None
+    )
+    return SocReportOut(
+        id=r.row.id,
+        service_organization_id=r.row.service_organization_id,
+        evidence_version_id=r.row.evidence_version_id,
+        service_auditor_name=r.row.service_auditor_name,
+        report_type=cast(Any, r.row.report_type),  # Any: 0657's CHECK holds the words
+        opinion=cast(Any, r.row.opinion),  # Any: 0657's CHECK
+        period_start=r.row.period_start,
+        period_end=r.row.period_end,
+        report_date=r.row.report_date,
+        objectives_total=r.row.objectives_total,
+        objectives_relevant=r.row.objectives_relevant,
+        gap=SocGapOut(
+            start=gap.start if gap else None,
+            end=gap.end if gap else None,
+            days=gap.days if gap else 0,
+            bridged=gap.bridged if gap else False,
+            stamp=stamp,
+        ),
+        exceptions=[
+            SocExceptionOut(
+                co_ref=e.co_ref,
+                description=e.description,
+                impact=cast(Any, e.impact or "low"),  # Any: 0657's CHECK
+                impact_rationale=e.impact_rationale,
+                routed_ref=e.routed_ref,
+            )
+            for e in r.exceptions
+        ],
+        cuecs=[
+            CuecOut(
+                n=c.n,
+                text=c.text,
+                control_activity_id=c.control_activity_id,
+                status=CuecStatus(c.status),
+                page_citation_id=c.page_citation_id,
+            )
+            for c in r.cuecs
+        ],
+        cuecs_evidenced=r.cuecs_evidenced,
+        reliance_state=SocRelianceStatus(r.row.reliance_state),
+        reliance_card_id=r.row.reliance_card_id,
+        row_version=r.row.row_version,
+        allowed_actions=cast(
+            Actions, [a for a in ("soc_report.evaluate", "workpaper.draft") if a in can]
+        ),
+    )
 
 
 def _process_out(p: object) -> ProcessOut:
@@ -1958,7 +2027,11 @@ async def service_org_edit_route(
 async def soc_report_route(engagement_id: UUID, soc_report_id: UUID, ctx: Ctx) -> SocReportOut:
     """The evaluation with its computed gap and CUECs (AC7.1; T31)."""
     await _gate(ctx, engagement_id, "service_org.read", _SO)
-    _not_yet()
+    from abacus.modules.assurance import soc_reports
+
+    return await _soc_out(
+        ctx, engagement_id, await soc_reports.report(ctx, engagement_id, soc_report_id)
+    )
 
 
 @router.patch(
@@ -1976,7 +2049,21 @@ async def soc_report_edit_route(
 ) -> SocReportOut:
     """Record the report's facts; the gap is recomputed by code (AC7.6; T31)."""
     await _gate(ctx, engagement_id, "soc_report.evaluate", _SO)
-    _not_yet()
+    from abacus.modules.assurance import soc_reports
+
+    found = await soc_reports.evaluate(
+        ctx,
+        engagement_id,
+        soc_report_id,
+        expected_version=body.expected_version,
+        report_type=body.report_type,
+        opinion=body.opinion,
+        period_start=body.period_start,
+        period_end=body.period_end,
+        report_date=body.report_date,
+        bridge_letter_evidence_version_id=body.bridge_letter_evidence_version_id,
+    )
+    return await _soc_out(ctx, engagement_id, found)
 
 
 @router.patch(
@@ -1995,7 +2082,18 @@ async def cuec_edit_route(
 ) -> SocReportOut:
     """Map a CUEC to a control and its evidence; Evidenced once evidence is cited (T31)."""
     await _gate(ctx, engagement_id, "soc_report.evaluate", _SO)
-    _not_yet()
+    from abacus.modules.assurance import soc_reports
+
+    found = await soc_reports.map_cuec(
+        ctx,
+        engagement_id,
+        soc_report_id,
+        n,
+        expected_version=body.expected_version,
+        control_activity_id=body.control_activity_id,
+        evidence_version_ids=body.evidence_version_ids,
+    )
+    return await _soc_out(ctx, engagement_id, found)
 
 
 @router.post(
@@ -2030,7 +2128,12 @@ async def soc_report_requests_route(
 ) -> RequestDraftOut:
     """Request **drafts**: a bridge letter (POR-14) or CUEC evidence (POR-03) (AC7.4; T31)."""
     await _gate(ctx, engagement_id, "request_item.create", _SO)
-    _not_yet()
+    from abacus.modules.assurance import soc_reports
+
+    ids = await soc_reports.request_drafts(
+        ctx, engagement_id, soc_report_id, kind=body.kind, cuec_ns=body.cuec_ns
+    )
+    return RequestDraftOut(draft_id=ids[0], request_item_ids=ids)
 
 
 @router.post(
@@ -2046,4 +2149,7 @@ async def reliance_request_route(
     """Raise the `service_org_reliance` card (the EP decides, DEC-83); 409 `gap_open` and
     `cuec_evidence_missing`; never an agent's (AC7.2; T31)."""
     await _gate(ctx, engagement_id, "soc_report.evaluate", _SO)
-    _not_yet()
+    from abacus.modules.assurance import soc_reports
+
+    card_id = await soc_reports.request_reliance(ctx, engagement_id, soc_report_id)
+    return RelianceRequestOut(decision_card_id=card_id)
