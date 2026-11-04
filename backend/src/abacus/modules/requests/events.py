@@ -135,3 +135,14 @@ class CommentMentioned(DomainEvent):
     request_item_id: Annotated[UUID, classified("internal")]
     engagement_id: Annotated[UUID, classified("internal")]
     mentioned_user_ids: Annotated[list[UUID], classified("internal")]
+
+
+class QuestionnaireAnswered(DomainEvent):
+    """T-03-T06 (DEC-2242): a client answered (or re-answered) a question; identifiers only. The
+    answer-effects engine hears it."""
+
+    event_type: ClassVar[str] = "questionnaire.answered"
+
+    questionnaire_id: Annotated[UUID, classified("internal")]
+    question_id: Annotated[UUID, classified("internal")]
+    answer_id: Annotated[UUID, classified("internal")]

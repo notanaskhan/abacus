@@ -17,12 +17,13 @@ from abacus.modules.identity.api import (
     register_scopes_resolver,
 )
 from abacus.modules.platform.api import register_audit_value_resolver, register_pilot_metric_source
+from abacus.modules.requests.answer_effects import SUBSCRIPTIONS as EFFECT_SUBSCRIPTIONS
 from abacus.modules.requests.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.requests.audit_values import request_item_values
 from abacus.modules.requests.availability import register_available_datasets
 from abacus.modules.requests.binder_index import register_binder_consents, register_binder_tag
+from abacus.modules.requests.binders import SUBSCRIPTIONS as BINDER_SUBSCRIPTIONS
 from abacus.modules.requests.binders import (
-    SUBSCRIPTIONS,
     DropBinder,
     drop_binder,
     drop_binder_open,
@@ -382,3 +383,12 @@ __all__ = [
     "withdraw_upload",
     "work_item_questionnaires",
 ]
+
+# T-03-T06 (DEC-2242): the binders' subscriptions and the answer-effects engine's.
+SUBSCRIPTIONS = {**BINDER_SUBSCRIPTIONS, **EFFECT_SUBSCRIPTIONS}
+
+from abacus.modules.requests.answer_effect_handlers import (  # noqa: E402
+    register as _register_effects,
+)
+
+_register_effects()

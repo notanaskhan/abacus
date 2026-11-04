@@ -39,6 +39,7 @@ from abacus.modules.identity.api import (
     authorise,
     engagement_resource,
 )
+from abacus.modules.requests.events import QuestionnaireAnswered
 from abacus.modules.requests.questionnaires import (
     QuestionnaireView,
     TextRow,
@@ -215,7 +216,7 @@ async def save_answer(
                 text(
                     "INSERT INTO answer_versions (tenant_id, question_id, value, version_no, "
                     "answered_by) VALUES (:tenant, :id, CAST(:v AS jsonb), :n, :by) "
-                    "RETURNING answered_at"
+                    "RETURNING answered_at, id"
                 ),
                 {
                     "tenant": ctx.tenant_id,
@@ -225,13 +226,19 @@ async def save_answer(
                     "by": ctx.user_id,
                 },
             )
-        ).scalar_one()
+        ).one()
         tx.record(
             "questionnaire.answered",
             target=Target("question", question_id),
             after=Ref(questionnaire=questionnaire_id, version=current + 1),
         )
-    return saved, int(current) + 1
+        # T-03-T06: the answer-effects engine hears this (identifiers only).
+        tx.emit(
+            QuestionnaireAnswered(
+                questionnaire_id=questionnaire_id, question_id=question_id, answer_id=saved.id
+            )
+        )
+    return saved.answered_at, int(current) + 1
 
 
 async def _close(ctx: AuthContext, questionnaire_id: UUID, action: str) -> QuestionnaireView:

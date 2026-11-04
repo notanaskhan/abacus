@@ -1,0 +1,71 @@
+"""T-03-T06: the requests module's own answer-effect handler (DEC-2242).
+
+`create_request_item` adds a request item to the binder's engagement through P-06's request
+lifecycle, created by the system with the rule's provenance (the template version's publisher is
+the named creator, never the agent). The engine calls it once per (answer, rule): it records the
+effect row right after, and skips a pair already recorded.
+"""
+
+from __future__ import annotations
+
+from uuid import uuid4
+
+from sqlalchemy import text
+
+from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.uow import Ref, Target, uow
+from abacus.modules.requests.answer_effect_slots import (
+    EffectRequest,
+    EffectResult,
+    register_answer_effect,
+)
+from abacus.modules.requests.repository import request_list_for
+from abacus.modules.requests.service import (
+    _insert_item,  # pyright: ignore[reportPrivateUsage] -- the sibling module's own helper
+)
+
+
+async def create_request_item(request: EffectRequest) -> EffectResult:
+    tenant = TenantContext(request.tenant_id, "system", "answer_effects")
+    async with tenant_session(tenant) as session:
+        row = (
+            (
+                await session.execute(
+                    text(
+                        "SELECT qn.engagement_id, q.effect_rules, coalesce(tv.published_by, "
+                        "qn.created_by) AS creator FROM questions q "
+                        "JOIN questionnaires qn ON qn.id = q.questionnaire_id "
+                        "LEFT JOIN questionnaire_template_versions tv "
+                        "ON tv.id = coalesce(qn.source_template_version_id, "
+                        "qn.template_version_id) "
+                        "WHERE q.id = :q"
+                    ),
+                    {"q": request.question_id},
+                )
+            )
+            .mappings()
+            .one()
+        )
+    rule = next(r for r in row["effect_rules"] if r["key"] == request.rule_key)
+    async with uow(tenant) as tx:
+        list_id, _ = await request_list_for(tx.session, request.tenant_id, row["engagement_id"])
+        item = await _insert_item(
+            tx,
+            item_id=uuid4(),
+            tenant_id=request.tenant_id,
+            engagement_id=row["engagement_id"],
+            request_list_id=list_id,
+            description=str(rule["title"])[:2000],
+            audit_area="organizer",
+            created_by=row["creator"],
+        )
+        tx.record(
+            "request_item.created_by_answer_effect",
+            target=Target("request_item", item.id),
+            after=Ref(rule=request.rule_key, template_version=str(request.template_version_id)),
+        )
+    return EffectResult("request_item", item.id)
+
+
+def register() -> None:
+    register_answer_effect("create_request_item", create_request_item)
