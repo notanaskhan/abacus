@@ -155,3 +155,7 @@ actions:
     verb: confirm  # a person's pass, exception or no effect on the attribute grid (A-05-T22, 0661)
   - action: fraud_minutes.approved
     verb: approve  # the engagement partner approves the fraud brainstorming minutes (A-04-T19/T30, 0662)
+  - action: eqr.concurred
+    verb: approve  # the assigned EQR concurs (G6; SPEC-314 record mode and A-07-T18; 0664)
+  - action: eqr.card_reviewed
+    verb: confirm  # the assigned EQR marks a digest card reviewed (A-07-T18; 0664)
