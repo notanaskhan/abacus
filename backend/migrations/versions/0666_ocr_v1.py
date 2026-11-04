@@ -180,6 +180,10 @@ def upgrade() -> None:
             f"CREATE TRIGGER {table}_immutable BEFORE UPDATE OR DELETE ON {table} "
             "FOR EACH ROW EXECUTE FUNCTION trust_kit_immutable()"
         )
+        op.execute(
+            f"CREATE TRIGGER {table}_no_truncate BEFORE TRUNCATE ON {table} "
+            "FOR EACH STATEMENT EXECUTE FUNCTION trust_kit_immutable()"
+        )
     op.execute(
         """
         ALTER TABLE evidence_pages

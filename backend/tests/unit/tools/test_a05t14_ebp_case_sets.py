@@ -17,7 +17,19 @@ SUITE = sd.load()
 def test_ebp_case_sets_live_in_the_one_suite_with_frozen_thresholds() -> None:
     assert {"ebp_provisions", "ebp_attribute"} <= set(SUITE.modes)
     line = next(t for t in SUITE.thresholds if t.metric == "line_agreement")
-    assert (line.minimum, line.modes) == (0.98, ["ebp_provisions", "ebp_attribute"])
+    # S27 (A-04-T33, A-05-T33) extended the same gate to soc1 and the EBP v2 modes; never lowered.
+    assert (line.minimum, line.modes) == (
+        0.98,
+        [
+            "ebp_provisions",
+            "ebp_attribute",
+            "soc1",
+            "ebp_reconcile",
+            "ebp_trust",
+            "ebp_form5500",
+            "related_parties",
+        ],
+    )
     for mode in ("ebp_provisions", "ebp_attribute"):
         summary = sd.run(SUITE, mode=mode)
         assert summary.status == "passed", summary.failed_thresholds
