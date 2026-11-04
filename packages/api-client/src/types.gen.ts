@@ -30046,6 +30046,59 @@ export type PaymentRowOut = {
 };
 
 /**
+ * PayrollOut
+ *
+ * One payroll on the remittance timeline (EBP-04 b and the 26-dot timeline; A-05-T31): the
+ * deposit and its lag as code recorded them, and the payroll's total by code.
+ */
+export type PayrollOut = {
+    /**
+     * Business Day Lag
+     */
+    business_day_lag: number | null;
+    /**
+     * Calendar Lag
+     */
+    calendar_lag: number | null;
+    /**
+     * Deferrals
+     */
+    deferrals: string;
+    /**
+     * Deferrals Pretax
+     */
+    deferrals_pretax: string;
+    /**
+     * Deferrals Roth
+     */
+    deferrals_roth: string;
+    /**
+     * Deposit Date
+     */
+    deposit_date: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Late
+     */
+    late: boolean;
+    /**
+     * Match
+     */
+    match: string;
+    /**
+     * Pay Date
+     */
+    pay_date: string;
+    /**
+     * Total
+     */
+    total: string;
+};
+
+/**
  * PersonChipOut
  */
 export type PersonChipOut = {
@@ -43150,7 +43203,7 @@ export type SumCountsOut = {
 /**
  * SumFactorOut
  *
- * A qualitative factor as recorded (`record_value`); `flagged` is code's, never the browser's.
+ * A qualitative factor as recorded (`record_value`); `flagged` is set by code, not the UI.
  */
 export type SumFactorOut = {
     /**
@@ -51434,6 +51487,60 @@ export type EbpCertificationResponses = {
 };
 
 export type EbpCertificationResponse = EbpCertificationResponses[keyof EbpCertificationResponses];
+
+export type EbpPayrollsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/ebp/contributions/payrolls';
+};
+
+export type EbpPayrollsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EbpPayrollsError = EbpPayrollsErrors[keyof EbpPayrollsErrors];
+
+export type EbpPayrollsResponses = {
+    /**
+     * Response Ebp Payrolls
+     *
+     * Successful Response
+     */
+    200: Array<PayrollOut>;
+};
+
+export type EbpPayrollsResponse = EbpPayrollsResponses[keyof EbpPayrollsResponses];
 
 export type EbpContributionsData = {
     body?: never;

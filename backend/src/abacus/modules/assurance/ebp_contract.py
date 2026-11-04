@@ -417,6 +417,25 @@ _LATE: JsonDict = {
 }
 
 
+class PayrollOut(BaseModel):
+    """One payroll on the remittance timeline (EBP-04 b and the 26-dot timeline; A-05-T31): the
+    deposit and its lag as code recorded them, and the payroll's total by code."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    pay_date: Annotated[date, classified("internal")]
+    deposit_date: Annotated[date | None, classified("internal")]
+    deferrals_pretax: Money
+    deferrals_roth: Money
+    match: Money
+    deferrals: Money  # pre-tax + Roth, by code
+    total: Money
+    business_day_lag: Annotated[int | None, Field(ge=0), classified("internal")]
+    calendar_lag: Annotated[int | None, Field(ge=0), classified("internal")]
+    late: Annotated[bool, classified("internal")]
+
+
 class LateRemittanceOut(BaseModel):
     """The single late remittance with both day counts (DF-34): 9 business days from the pay date
     against the plan's established practice, 10 calendar days for lost earnings."""
@@ -1193,6 +1212,30 @@ async def ebp_contributions_route(work_item_id: UUID, ctx: Ctx) -> FiguresOut:
         ],
         str(found.total),
     )
+
+
+@router.get("/ebp/contributions/payrolls", action="ebp.read", response_model=list[PayrollOut])
+async def ebp_payrolls_route(work_item_id: UUID, ctx: Ctx) -> list[PayrollOut]:
+    """The plan year's payrolls in pay-date order with their deposit lags (A-05-T31; DEC-2257)."""
+    await _gate(ctx, work_item_id, "ebp.read", _E)
+    from abacus.modules.assurance import ebp_remittances
+
+    return [
+        PayrollOut(
+            id=p.id,
+            pay_date=p.pay_date,
+            deposit_date=p.deposit_date,
+            deferrals_pretax=p.deferrals_pretax,
+            deferrals_roth=p.deferrals_roth,
+            match=p.match,
+            deferrals=p.deferrals,
+            total=p.total,
+            business_day_lag=p.business_day_lag,
+            calendar_lag=p.calendar_lag,
+            late=p.late,
+        )
+        for p in await ebp_remittances.payrolls(ctx.tenant, work_item_id)
+    ]
 
 
 @router.get("/ebp/late-remittances", action="ebp.read", response_model=list[LateRemittanceOut])
