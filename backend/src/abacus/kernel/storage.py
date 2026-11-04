@@ -70,6 +70,14 @@ def kms_client(*, region: str | None = None) -> KMSClient:
     )
 
 
+def textract_client(*, region: str = "us-east-2") -> object:
+    """The OCR port's Textract client (P-11-T23), on the default credential chain. The port types
+    it through its own protocol; boto3 stays here (STORE-001)."""
+    return boto3.client(  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType] -- see s3_client
+        "textract", region_name=region, config=_service_config()
+    )
+
+
 def sesv2_client(*, region: str | None = None) -> SESV2Client:
     """An SES v2 client for `region` (the settings' `ses_region`), on the default credentials."""
     return boto3.client(  # pyright: ignore[reportUnknownMemberType] -- see s3_client

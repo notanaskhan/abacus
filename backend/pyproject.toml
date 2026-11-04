@@ -240,6 +240,13 @@ forbidden_modules = [
 ]
 
 [[tool.importlinter.contracts]]
+name = "Only evidence calls the OCR port (P-11-T23; DEC-2251)"
+type = "forbidden"
+source_modules = ["abacus.modules", "abacus.ai_gateway", "abacus.api"]
+forbidden_modules = ["abacus.kernel.ocr"]
+ignore_imports = ["abacus.modules.evidence.* -> abacus.kernel.ocr"]
+
+[[tool.importlinter.contracts]]
 name = "Clients never reach the model or the agent: TINs and client records stay out (P-07-T04)"
 type = "forbidden"
 source_modules = ["abacus.modules.organisations"]
