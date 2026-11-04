@@ -52,3 +52,17 @@ TASK-3240), so Trivy (fs, IaC, image), CodeQL and Inspector are not re-run here.
 - **uv.lock refresh and base-image digests**: not done here; they need the protected-manifest PR
   with `make check` and the replay histories green, and the weekly digest check in `build.yml`.
 - `supply_chain report --quarter 2026Q4`: every source 0 seen, 0 open; none past SLA.
+
+## 2027 Q4 front end (Q-03-T181, run 2026-11-04 on the plan's S27)
+- **pnpm audit --prod**: 0 findings (no runtime dependency carries an advisory).
+- **pnpm audit (all)**: the 3 high js-yaml findings under `@hey-api/openapi-ts` (build-time only;
+  GHSA-52cp-r559-cp3m, GHSA-5p4m-2wfm-xmqj, GHSA-2883-xcg3-v3hh) and 1 moderate (minimatch,
+  GHSA-g3hv-75wg-m249, below the bar) stand as Q-03-T170 recorded them: **open, inside SLA**
+  (high due 2026-12-03); the fix is still the protected-manifest PR (pnpm cannot move the
+  transitive pin, and `check_dependencies` refuses `overrides`).
+- **Pinned tool versions**: `pnpm-lock.yaml` holds `@playwright/test` and `playwright` 1.64.1,
+  `@axe-core/playwright` and `axe-core` 4.13.0, `@fontsource/geist` 5.3.0. The parity manifest's
+  `tools` still records Playwright **1.63.0**: drift. Per Q-03-T152's rule the parity rows are
+  re-measured with 1.64.1 before the manifest moves; that run is the S27 end pass's parity step
+  (Q-03-T186), and the manifest is not edited here.
+- **Dependency bumps**: none this quarter outside the protected-manifest PR above.
