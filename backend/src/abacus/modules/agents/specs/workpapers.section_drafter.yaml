@@ -11,10 +11,12 @@
 # own prompt and mapping (contribution documents; code's register totals as facts). Version 9
 # (A-04-T29; DEC-2220): ic's own prompt and mapping (control evidence; code's PM, CT and each
 # amount's comparison as facts). Version 10 (A-04-T35; DEC-2247): soc1's own prompt and mapping
-# (the SOC report's pages; the team's control activities as facts; no period gap by the model). Source of truth: compiled into _specs.py by
+# (the SOC report's pages; the team's control activities as facts; no period gap by the model).
+# Version 11 (A-05-T36; DEC-2249): ebp_trust's own prompt and mapping (the certified trust
+# report's pages; no totals by the model). Source of truth: compiled into _specs.py by
 # `python -m abacus_tools.codegen.agent_specs`; a test fails if they drift.
 id: workpapers.section_drafter
-version: 10
+version: 11
 purpose: Draft a workpaper section's values, each cited to the firm's methodology or a source page, as suggestions for a person to adopt.
 shape: single_call
 # The default mode (`gap`) and every mode below share the base prompt until each mode's own prompt
@@ -90,7 +92,7 @@ modes:
     output_schema: SectionDraft
     max_cost_usd: "0.25"
   ebp_trust:
-    prompt: workpapers.section_draft@v1
+    prompt: workpapers.section_draft.ebp_trust@v1
     input_schema: SectionDraftInput
     output_schema: SectionDraft
     max_cost_usd: "0.25"

@@ -17,6 +17,7 @@ from abacus.modules.assurance import (
     ebp_attribute,
     ebp_provisions,
     ebp_reconcile,
+    ebp_trust_mode,
     ic_mode,
     soc1_mode,
 )
@@ -174,6 +175,7 @@ register_mode_mapping(ebp_attribute.MODE, ebp_attribute.attribute_inputs)  # A-0
 register_mode_mapping(ebp_reconcile.MODE, ebp_reconcile.reconcile_inputs)  # A-05-T27
 register_mode_mapping(ic_mode.MODE, ic_mode.ic_inputs)  # A-04-T29
 register_mode_mapping(soc1_mode.MODE, soc1_mode.soc1_inputs)  # A-04-T35
+register_mode_mapping(ebp_trust_mode.MODE, ebp_trust_mode.trust_inputs)  # A-05-T36
 register_sign_off_guard(ebp_provisions.KIND, ebp_provisions.sign_off_guard)  # A-05-T16
 # A-04-T23 (DEC-2059): code inserts the presumed fraud risks before a narrative draft.
 register_mode_preparer("risk_narrative", presumed_preparer)
