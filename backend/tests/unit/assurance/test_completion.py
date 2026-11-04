@@ -129,7 +129,8 @@ def test_ac8_who_decides() -> None:
 
     assert allowed("report.release") == {"engagement_partner"}
     assert allowed("completion.decide") == {"engagement_partner"}
-    assert allowed("eqr.concur") == {"reviewer"}
+    # A-07-T04 (DEC-2230): the EQR reviewer role concurs too; the service checks the assignee.
+    assert allowed("eqr.concur") == {"reviewer", "eqr_reviewer"}
     assert allowed("archive.lock") == {"engagement_partner", "manager"}
     for action in ("report.release", "eqr.concur", "archive.lock", "completion.record"):
         assert "agent" not in allowed(action)

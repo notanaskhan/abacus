@@ -3078,7 +3078,7 @@ export const STATUS_REGISTRY = {
       "disc": "clock"
     },
     "locked": {
-      "label": "Locked · sealed",
+      "label": "Locked · WORM",
       "variant": "soon",
       "terminal": false,
       "derived": false,
@@ -3179,6 +3179,61 @@ export const STATUS_REGISTRY = {
     "nonrecognized": {
       "label": "Nonrecognized",
       "variant": "neutral",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "subsequent_event_procedure": {
+    "open": {
+      "label": "To do",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "ring"
+    },
+    "performed": {
+      "label": "Performed",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "bring_down": {
+    "not_scheduled": {
+      "label": "Not scheduled",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    },
+    "queued": {
+      "label": "Scheduled",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "completed": {
+      "label": "Brought down",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "going_concern": {
+    "not_requested": {
+      "label": "Not requested",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "awaiting_decision": {
+      "label": "Awaiting the partner",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "decided": {
+      "label": "Decided",
+      "variant": "green-tint",
       "terminal": true,
       "derived": false
     }

@@ -26,8 +26,10 @@ def _step(quote: str, step: str = "S1") -> DraftCitation:
 
 
 def test_one_suite_with_a_case_set_per_planning_mode_and_frozen_thresholds() -> None:
+    # S27 added soc1 (A-04-T33) and the EBP v2 modes (A-05-T33) to the one suite.
     assert set(SUITE.modes) == {
-        "gap", "risk_narrative", "risk", "ic", "ebp_provisions", "ebp_attribute"
+        "gap", "risk_narrative", "risk", "ic", "ebp_provisions", "ebp_attribute",
+        "soc1", "ebp_reconcile", "ebp_trust", "ebp_form5500", "related_parties",
     }  # fmt: skip
     for mode in SUITE.modes:
         assert any(c.key and c.mode == mode for c in SUITE.cases)
@@ -43,6 +45,7 @@ def test_one_suite_with_a_case_set_per_planning_mode_and_frozen_thresholds() -> 
         "coso_split": 1.0,
         "presumed_risk_prepopulation": 1.0,
         "line_agreement": 0.98,  # A-05-T14's EBP case sets
+        "forbidden_absent": 1.0,  # A-05-T33: the EBP v2 forbidden-content gate
     }
     assert set(SUITE.covers) == {"prompt_injection", "unicode_deception", "exfiltration_link"}
 

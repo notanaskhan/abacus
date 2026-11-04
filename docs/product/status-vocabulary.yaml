@@ -856,7 +856,7 @@ objects:
     source: "blueprint 3.3.1"
     codes:
       assembling:         {label: "Archive in {days} days", variant: muted, disc: clock, terminal: false, derived: false}
-      locked:             {label: "Locked · sealed", variant: soon, disc: lock, terminal: false, derived: false}   # DF-20, DV-2 (A-07-T03): "WORM" only if the SOC 2 auditor accepts it (OQ-2)
+      locked:             {label: "Locked · WORM", variant: soon, disc: lock, terminal: false, derived: false}   # DF-20; the blueprint's word (3.3.1); OQ-2 stays open
       post_lock_addition: {label: "Addition logged", variant: amber, terminal: false, derived: false}
       locking:            {label: "Locking…", variant: state, terminal: false, derived: true}   # DV-7: transient audit-bar pill while the seal computes; not stored
 
@@ -888,6 +888,26 @@ objects:
     codes:
       recognized:    {label: "Recognized", variant: state, terminal: true, derived: false}
       nonrecognized: {label: "Nonrecognized", variant: neutral, terminal: true, derived: false}
+
+  subsequent_event_procedure:   # subsequent_event_procedures.status
+    source: "A-07 §2.1 (AUD-19 b)"
+    codes:
+      open:      {label: "To do", variant: null, disc: ring, terminal: false, derived: false}
+      performed: {label: "Performed", variant: green-tint, terminal: true, derived: false}
+
+  bring_down:   # the report-date bring-down run (AUD-19 b)
+    source: "A-07 §2.1 (AUD-19 b)"
+    codes:
+      not_scheduled: {label: "Not scheduled", variant: muted, terminal: false, derived: false}
+      queued:        {label: "Scheduled", variant: state, terminal: false, derived: false}
+      completed:     {label: "Brought down", variant: green-tint, terminal: true, derived: false}
+
+  going_concern:   # the going_concern card's state (AUD-19 e)
+    source: "A-07 §2.1 (AUD-19 e)"
+    codes:
+      not_requested:     {label: "Not requested", variant: neutral, terminal: false, derived: false}
+      awaiting_decision: {label: "Awaiting the partner", variant: state, terminal: false, derived: false}
+      decided:           {label: "Decided", variant: green-tint, terminal: true, derived: false}
 
   legal_letter:   # legal_letters.status
     source: "A-07 §2.1 (AUD-19 c)"

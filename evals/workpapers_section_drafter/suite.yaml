@@ -501,7 +501,7 @@ cases:
     name: PayGrid Payroll Services SOC 1.pdf
     pages:
     - 'Our examination covered the period from January 1, 2025 through December 31, 2025, and in our opinion the description is fairly presented in all material respects: unmodified.'
-    - 'Eight control objectives were tested without exception. PayGrid uses Cloudvault Hosting, presented under the inclusive method.'
+    - '8 control objectives were tested without exception. PayGrid uses Cloudvault Hosting, presented under the inclusive method.'
   labels:
     values:
       soc!B2: January 1, 2025 to December 31, 2025
@@ -527,7 +527,7 @@ cases:
       citations:
       - document: D1
         page: 2
-        quote: Eight control objectives were tested without exception
+        quote: 8 control objectives were tested without exception
     - cell: soc!B5
       text: Cloudvault Hosting (inclusive)
       citations:

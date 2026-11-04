@@ -744,6 +744,23 @@ class SubsequentEventStatus(StrEnum):
     NONRECOGNIZED = "nonrecognized"
 
 
+class SubsequentEventProcedureStatus(StrEnum):
+    OPEN = "open"
+    PERFORMED = "performed"
+
+
+class BringDownStatus(StrEnum):
+    NOT_SCHEDULED = "not_scheduled"
+    QUEUED = "queued"
+    COMPLETED = "completed"
+
+
+class GoingConcernStatus(StrEnum):
+    NOT_REQUESTED = "not_requested"
+    AWAITING_DECISION = "awaiting_decision"
+    DECIDED = "decided"
+
+
 class LegalLetterStatus(StrEnum):
     NOT_APPLICABLE = "not_applicable"
     REQUESTED = "requested"
@@ -1809,6 +1826,20 @@ STORED: dict[str, tuple[str, ...]] = {
     "subsequent_event": (
         "recognized",
         "nonrecognized",
+    ),
+    "subsequent_event_procedure": (
+        "open",
+        "performed",
+    ),
+    "bring_down": (
+        "not_scheduled",
+        "queued",
+        "completed",
+    ),
+    "going_concern": (
+        "not_requested",
+        "awaiting_decision",
+        "decided",
     ),
     "legal_letter": (
         "not_applicable",

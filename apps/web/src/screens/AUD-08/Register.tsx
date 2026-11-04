@@ -287,12 +287,12 @@ export function RiskRegisterPage({
             )}
             <div
               hidden={tab === "Linkage"}
-              role="table"
+              role="region"
               aria-label={COPY.title}
               className="mx-[12px] mb-[12px] overflow-hidden rounded-pane bg-card shadow-e1"
             >
               <div
-                role="row"
+                aria-hidden
                 className={cn(
                   COLS,
                   "h-[30px] bg-nested px-[10px] text-[11.5px] font-medium text-ink-2",

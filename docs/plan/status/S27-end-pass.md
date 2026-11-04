@@ -58,3 +58,19 @@ finding after the fix round.
 | Q-03-T186 | Flaky quarantine unchanged | Parity re-measure on Playwright 1.64.1 (Q-03-T181's drift) and the production canary need the visual run and production |
 | I-01-T22 | — | HOME-02 Tier C/D parity, axe and keyboard need the visual run; j23/j13 full-stack steps need staging |
 | Q-04-T097 | — | The PF-X1 `home.approvals` flips run in the staging windows (staging deploy is the batch's) |
+
+## CI run 1 (PR #1218) and its fix round
+57 failing tests, 41 not in main's last run (a369a01fa, 39 failing). Root causes, all fixed in one
+commit on #1218:
+- 0666 had no BEFORE TRUNCATE trigger calling `trust_kit_immutable` on its four immutable tables
+  (schema check; it failed every migration up-down-up test in the shards).
+- The archive `locked` label returns to the blueprint's "Locked · WORM" (A-07-T03 had changed it;
+  OQ-2 stays open); vocabulary objects added for the A-07 subsequent-event procedure, bring-down
+  and going-concern states.
+- A soc1 eval case stated "8" against a quote that spelled "Eight" (number provenance).
+- Main's pinned expectations extended for S27's additions (spec v11, the suite's new modes and
+  `forbidden_absent`, `eqr_reviewer` on `eqr.concur` per DEC-2230, the status registry counts);
+  no threshold lowered.
+- AUD-08's register used `role="table"` without table children (axe, surfaced by j03 9): now a
+  labelled region.
+The remaining failures are main's own (the 39 above), left for their owners.
