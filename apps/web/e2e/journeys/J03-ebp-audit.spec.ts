@@ -314,3 +314,67 @@ test.describe("J03 signatures (N-02-T42)", () => {
     });
   });
 });
+
+// A-04-T34 (TASK-3285): J03 planning steps 8 to 10b in fixture mode, each step with axeStep and
+// assertInvariants (the journey harness). The register and the IC pack failure walk their screens'
+// own scenarios on Northwind's audit; steps whose screen or backend is not live yet are fixme with
+// the epic that lands them.
+test.describe("J03 planning (A-04-T34)", () => {
+  const RISKS = "/audits/_auditId_/risks";
+  const CONTROLS = "/audits/_auditId_/controls";
+
+  test.fixme(
+    "j03 8: Margaret decides materiality v2 on SHL-11 (AUD-07 d)",
+    owner("A-04 · AUD-07 is a cockpit section with no route of its own (DEC-1865) · P-10 run"),
+    async ({ journey }) => {
+      await journey.as("margaret-okonkwo", "/audits", { clock: DEMO_INSTANT });
+    },
+  );
+
+  test("j03 9: the risk register is EP approved and G4 met (AUD-08 d)", async ({ journey }) => {
+    test.fixme(journey.project !== "fixture", "AUD-08 live swap is A-04-T29's staging walk");
+    await journey.as("hannah-leclerc", RISKS, { scenario: "AUD-08:d", clock: DEMO_INSTANT });
+    await journey.step("J03 step 9: every risk EP approved (AUD-08 d)", async (page) => {
+      await expect(page.locator("[data-aud08='tally']")).toContainText("Approved");
+      await expect(page.locator("[data-risk]")).toHaveCount(10);
+    });
+  });
+
+  test("j03 10a: the IC pack failure quotes the run error and offers Retry (AUD-09 d)", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", "the seeded failure is the fixture's run (P-10)");
+    await journey.as("hannah-leclerc", CONTROLS, { scenario: "AUD-09:d", clock: DEMO_INSTANT });
+    await journey.step("J03 step 10a: the failed step and No evidence written.", async (page) => {
+      await expect(page.locator("[data-aud09='run-error']")).toContainText("BH-EBP-140 step 8");
+      await expect(page.locator("[data-aud09='footer']")).toHaveText("No evidence written.");
+      await expect(page.getByRole("button", { name: "Retry" })).toBeVisible();
+    });
+  });
+
+  test("j03 10a2: Exceptions!D2 names its two citations (AUD-09 b)", async ({ journey }) => {
+    test.fixme(journey.project !== "fixture", "AUD-09 live data is A-04-T25's on staging");
+    await journey.as("hannah-leclerc", CONTROLS, { scenario: "AUD-09:b", clock: DEMO_INSTANT });
+    await journey.step("J03 step 10a: the D2 citations in the footer", async (page) => {
+      await expect(page.locator("[data-aud09='footer']")).toContainText(
+        "Exceptions!D2 · 2 citations",
+      );
+    });
+  });
+
+  test.fixme(
+    "j03 10b: the Keystone SOC gap and the bridge letter (AUD-10)",
+    owner("A-04 · AUD-10 screen (A-04-T37) · S28"),
+    async ({ journey }) => {
+      await journey.as("hannah-leclerc", "/audits", { clock: DEMO_INSTANT });
+    },
+  );
+
+  test.fixme(
+    "j03 8b: Risk Assessment adopted and the fraud minutes approved (AUD-05)",
+    owner("A-04 · AUD-05 adopt walk needs P-10's run state · S28"),
+    async ({ journey }) => {
+      await journey.as("hannah-leclerc", "/audits", { clock: DEMO_INSTANT });
+    },
+  );
+});
