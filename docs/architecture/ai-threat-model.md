@@ -313,6 +313,25 @@ Delta #2 was planned for Aug 2 – 11, 2027 on the Thu Jul 29 train build, befor
 | KR-03 | TB1 | A details change carries a hostile file or a typed TIN | W-9/W-8 by upload only, scanned and staged as client content; a person at the firm accepts or rejects once | Tested: `backend/tests/integration/test_t02t20_k1_packages.py` (the decision). Planned: S20e (the upload) |
 | KR-04 | TB2 | A recipient is told about a K-1 on a return no grant of theirs reaches | `expected` names only K-1s on returns a grant already reaches; no amounts, documents or ids | Tested: `backend/tests/integration/test_t02t27_portal_k1_cards.py` |
 
+### Delta #3 surfaces (Q-03-T175; pen test #2 deferred under DEC-1389)
+
+The refresh stands on its own (pen-test deferral rule 3): notices, the release and archive schema,
+the runtime v2 schema rows S27 added, and the TY2027 TRI surfaces (OCR). Rows marked Planned are
+the end-review sweep's (Q-03-T184) or a later row's.
+
+| ID | Boundary | Threat | Mitigation | Coverage |
+|---|---|---|---|---|
+| NT-01 | TB3 | A notice's text steers the agent's explanation or a proposed position | Arithmetic is code (`notices.compute`); the agent explains through the gateway and its text renders only through AgentText; the position is a `notice_position` card reserved to the signer | Tested: `backend/tests/unit/notices/test_n04t11_analysis.py`, `backend/tests/unit/notices/test_n04t15_independent.py` |
+| NT-02 | TB2 | A preparer or the agent decides the position, or an offshore user reads the TIN-bearing return as filed | `notice.record_as_filed` and `notice.analyze` require `not_offshore`; every notice write denies the agent and every portal principal | Tested: `backend/tests/unit/notices/test_n04t15_independent.py` |
+| NT-03 | TB1 | A questionnaire answer routes a hostile upload into Notices | `route_upload_to_notices` makes a `notice_intakes` row with source `organizer`, scanned like any upload; with the module off the effect waits as `pending_handler` | Tested: `backend/tests/unit/notices/test_n04t13_intake_sources.py` |
+| NT-04 | TB8 | A response letter leaves with model wording or before approval | The draft is the firm template's blocks (`reporting.api.template_blocks`); send-for-signature is a person's with fresh MFA | Tested: `backend/tests/unit/notices/test_n04t12_response.py` |
+| RA-01 | TB2 | The agent, the system or a non-EQR concurs, releases or seals an archive | 0664's human-only CHECKs bound to `app.actor_kind`; the matrix denies the agent; release and archive carry fresh MFA | Tested: `backend/tests/contracts/audit_completion/test_audit_completion_stubs.py`. Planned: the live release service's tests (A-07) |
+| RA-02 | TB7 | A released report or a sealed archive is edited after the fact | Insert-only release and archive tables with immutable triggers; a correction is a new version | Planned: A-07's migration suite on 0664 |
+| RV-01 | TB2 | A misstatement send reaches the client without a person, or Undo does more than void the grant | Approve-and-send is `proposed_entry.send_to_client` with fresh MFA; the client sees nothing for 10 seconds; Undo calls only the batch undo | Tested: `apps/web/src/screens/AUD-16/AUD-16.test.tsx` (O3 calls), `backend/tests/contracts/c08_adjustments/test_a06t17_independent.py` |
+| OC-01 | TB3 | A page image or its OCR text reaches AWS for a firm whose terms do not cover it, or with the kill switch on | The OCR gate refuses in order: kill switch, flag, provider terms (AWS AI-services opt-out), boundary basis, consent; each refusal is audited without document text | Tested: `backend/tests/unit/evidence/test_p11t23_ocr_port.py` |
+| OC-02 | TB7 | A TIN or page text reaches logs, metrics or error tracking from the OCR port | The port logs counts and hashes only; layers are cached by image hash | Tested: `backend/tests/unit/evidence/test_p11t23_ocr_port.py` |
+| OC-03 | TB8 | The Textract role reads or writes beyond its prefix | The staging module's role is limited to the Textract APIs and the evidence prefix; apply is a human step | Tested: `infra/tests/test_textract.py` |
+
 ## Cross-tenant and TRI exposure: the short version
 
 A hostile string cannot read another firm's data because it never carries authority: it arrives as data inside a block, the model's reply is schema-checked, and anything the reply asks for goes through the same `authorise` and row-level-security path a person would. The remaining exposure is therefore (1) a query that skips the tenant session (CT-01, closed by the generated isolation test), (2) state shared across firms by design: caches, examples, embeddings (CT-03, CT-04, the least-tested rows), and (3) the model route and its terms (CT-07, DB-01 to DB-03). Tax return information and personal identifiers add a content-level risk that tenancy cannot address. The control is to refuse or mask them before they reach a model (TRI-01). The gateway refusal of unmasked TINs is built (Q-02-T32, ADR-167), and so is the consent gate (ADR-167 §3; T-01-T11): tax data reaches a model only with both §7216 consents in force (CG-01).
