@@ -2286,10 +2286,20 @@ codes:
     raised_by:
     - abacus.modules.evidence.firm_exports.RequesterNotActive
     summary: 'The requester is no longer an active security admin: the export can''t be approved.'
+  response_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.notices.response.ResponseExists
+    summary: The notice already has a response draft.
   response_invalid:
     status: 422
     raised_by:
     - abacus.modules.requests.client_responses.ResponseInvalid
+  response_locked:
+    status: 409
+    raised_by:
+    - abacus.modules.notices.response.ResponseLocked
+    summary: A sent response does not change.
   restricted_column:
     status: 422
     raised_by:
@@ -2684,6 +2694,7 @@ codes:
     - abacus.modules.integrations.engine_settings.SettingsStale
     - abacus.modules.methodology.lifecycle.VersionStale
     - abacus.modules.methodology.standards.StaleVersion
+    - abacus.modules.notices.response.StaleVersion
     - abacus.modules.organisations.consents.StaleVersion
     - abacus.modules.organisations.live.StaleVersion
     - abacus.modules.organisations.org_structure.StaleOrgStructure
@@ -2824,6 +2835,11 @@ codes:
     raised_by:
     - abacus.modules.communications.template_service.TemplateLintFailed
     summary: The draft breaks the text lint; facts name each rule and where, never the text.
+  template_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.notices.response.TemplateMissing
+    summary: The firm has no published notice-response template.
   template_name_invalid:
     status: 422
     raised_by:

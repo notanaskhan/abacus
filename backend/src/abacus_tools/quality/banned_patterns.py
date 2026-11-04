@@ -1665,9 +1665,11 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     | {"organisations", "engagements", "methodology", "requests", "evidence", "ledger"}
     | {"review", "workpapers", "adjustments", "reporting", "communications", "agents"}
     | {"integrations"},
+    # N-04-T12 (DEC-2240, DEC-2262): the response drafts from the firm's report template
+    # (methodology's versions, reporting's template blocks); neither imports notices.
     "notices": _BASE
     | {"organisations", "engagements", "requests", "evidence", "review", "signatures"}
-    | {"communications", "agents", "tax"},
+    | {"communications", "agents", "tax", "methodology", "reporting"},
     "workbench": _BASE | {"organisations", "engagements", "methodology", "agents", "integrations"},
     # T-02-T10: practice registers its due-dates rules into tax (`register_due_dates_source`).
     "practice": _BASE | {"organisations", "engagements", "integrations", "tax"},
