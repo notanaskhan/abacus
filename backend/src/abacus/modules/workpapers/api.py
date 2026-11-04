@@ -67,6 +67,7 @@ from abacus.modules.workpapers.service import (
     NoAssuranceItem,
     WorkpaperInvalid,
     create_workpaper,
+    matrix_sections,
     workpaper_facts,
     workpaper_reviewables,
 )
@@ -136,6 +137,7 @@ __all__ = [
     "grid",
     "link_issue",
     "mark",
+    "matrix_sections",  # A-06-T23: AUD-17 sections by paper kind
     "pack_errors",
     "paper_engagement",
     "paper_of_kind",

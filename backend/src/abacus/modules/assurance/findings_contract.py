@@ -19,7 +19,7 @@ from decimal import Decimal
 from typing import Annotated, Any, Literal, NoReturn, cast
 from uuid import UUID
 
-from fastapi import Depends, Header
+from fastapi import Depends, Header, Query
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import ASSURANCE_COMPLETION
@@ -223,6 +223,70 @@ class FactorIn(BaseModel):
     citation_ids: Annotated[list[UUID], Field(max_length=20), classified("internal")] = Field(
         default_factory=list[UUID]
     )
+
+
+# --- sign-off matrix and EP involvement (AUD-17; A-06-T23) ---------------------------------------
+
+
+class SignOffMatrixCellOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    level: Annotated[int, Field(ge=1, le=5), classified("internal")]
+    state: Annotated[Literal["signed", "stale", "pending", "not_required"], classified("internal")]
+    initials: Annotated[str | None, classified("internal")]
+    signed_at: Annotated[datetime | None, classified("internal")]
+    version_no: Annotated[int | None, classified("internal")]
+    hash_prefix: Annotated[str | None, Field(pattern=r"^[0-9a-f]{8}$"), classified("internal")]
+
+
+class SignOffMatrixRowOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    target_type: Annotated[str, classified("internal")]
+    target_id: Annotated[UUID, classified("internal")]
+    code: Annotated[str, classified("internal")]
+    title: Annotated[str, classified("confidential")]
+    section: Annotated[
+        Literal["planning", "fieldwork", "completion", "reporting"], classified("internal")
+    ]
+    cells: list[SignOffMatrixCellOut]
+
+
+class SignOffMatrixFooterOut(BaseModel):
+    """Prepared 25 · Reviewed 24 · Partner 8 of 13 · EQR 0 of 6 · Changed after sign-off 1."""
+
+    model_config = ConfigDict(frozen=True)
+
+    prepared: Annotated[int, Field(ge=0), classified("internal")]
+    reviewed: Annotated[int, Field(ge=0), classified("internal")]
+    partner_signed: Annotated[int, Field(ge=0), classified("internal")]
+    partner_required: Annotated[int, Field(ge=0), classified("internal")]
+    eqr_signed: Annotated[int, Field(ge=0), classified("internal")]
+    eqr_required: Annotated[int, Field(ge=0), classified("internal")]
+    changed_after_sign_off: Annotated[int, Field(ge=0), classified("internal")]
+
+
+class SignOffMatrixOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    rows: list[SignOffMatrixRowOut]
+    footer: SignOffMatrixFooterOut
+
+
+class InvolvementEntryOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    kind: Annotated[Literal["decision", "sign_off"], classified("internal")]
+    at: Annotated[datetime, classified("internal")]
+    by_name: Annotated[str, classified("internal")]
+    subject: Annotated[str, classified("internal")]
+    outcome: Annotated[str, classified("internal")]
+
+
+class EpInvolvementOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    items: list[InvolvementEntryOut]
 
 
 # --- the routes ----------------------------------------------------------------------------------
@@ -530,3 +594,67 @@ async def sum_snapshot_route(
 ) -> SumSnapshotOut:
     await _gate(ctx, work_item_id, "sum.snapshot")
     _not_yet()
+
+
+@router.get(f"{_WI}/sign-off-matrix", action="sign_off.read", response_model=SignOffMatrixOut)
+async def sign_off_matrix_route(
+    work_item_id: UUID,
+    ctx: Ctx,
+    section: Annotated[
+        Literal["planning", "fieldwork", "completion", "reporting"] | None, Query()
+    ] = None,
+) -> SignOffMatrixOut:
+    """AUD-17: workpapers by L1 to L5 with the footer counts; L5 read-only (A-06-T23)."""
+    await _gate(ctx, work_item_id, "sign_off.read")
+    from abacus.modules.assurance import review_matrix
+
+    engagement_id = await work_item_engagement(ctx.tenant, work_item_id)
+    found = await review_matrix.matrix(ctx.tenant, cast(UUID, engagement_id), section=section)
+    return SignOffMatrixOut(
+        rows=[
+            SignOffMatrixRowOut(
+                target_type=r.target_type,
+                target_id=r.target_id,
+                code=r.code,
+                title=r.title,
+                section=r.section,
+                cells=[
+                    SignOffMatrixCellOut(
+                        level=c.level,
+                        state=c.state,
+                        initials=c.initials,
+                        signed_at=c.signed_at,
+                        version_no=c.version_no,
+                        hash_prefix=c.hash_prefix,
+                    )
+                    for c in r.cells
+                ],
+            )
+            for r in found.rows
+        ],
+        footer=SignOffMatrixFooterOut(**vars(found.footer)),
+    )
+
+
+@router.get(f"{_WI}/ep-involvement", action="sign_off.read", response_model=EpInvolvementOut)
+async def ep_involvement_route(work_item_id: UUID, ctx: Ctx) -> EpInvolvementOut:
+    """AUD-17 c: the EP's decisions and L4 sign-offs, oldest first (AU-C 220; A-06-T23)."""
+    await _gate(ctx, work_item_id, "sign_off.read")
+    from abacus.modules.assurance import review_matrix
+    from abacus.modules.identity.api import names_of
+
+    engagement_id = await work_item_engagement(ctx.tenant, work_item_id)
+    entries = await review_matrix.ep_involvement(ctx.tenant, cast(UUID, engagement_id))
+    names = await names_of(sorted({e.by_user_id for e in entries}, key=str)) if entries else {}
+    return EpInvolvementOut(
+        items=[
+            InvolvementEntryOut(
+                kind=e.kind,
+                at=e.at,
+                by_name=names.get(e.by_user_id, ""),
+                subject=e.subject,
+                outcome=e.outcome,
+            )
+            for e in entries
+        ]
+    )

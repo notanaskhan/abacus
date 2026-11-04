@@ -628,3 +628,24 @@ async def workpaper_reviewables(tenant: TenantContext, engagement_id: UUID) -> l
             )
         )
     return out
+
+
+# A-06-T23 (DEC-2238): AUD-17's matrix section of each paper, by its kind. Planning papers
+# (A-04's four kinds) sit in Planning, the Form 5500 tie-out in Reporting, every other paper in
+# Fieldwork & testing.
+_PLANNING_KINDS = frozenset(
+    {"general_audit_planning", "risk_assessment", "internal_control", "service_organizations"}
+)
+_REPORTING_KINDS = frozenset({"ebp_form5500"})
+
+
+async def matrix_sections(tenant: TenantContext, engagement_id: UUID) -> dict[UUID, str]:
+    """Each paper's AUD-17 section: `planning`, `fieldwork` or `reporting` (by kind)."""
+    async with tenant_session(tenant) as session:
+        papers = await engagement_papers(session, engagement_id)
+    return {
+        p.id: "planning"
+        if p.kind in _PLANNING_KINDS
+        else ("reporting" if p.kind in _REPORTING_KINDS else "fieldwork")
+        for p in papers
+    }
