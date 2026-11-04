@@ -48,3 +48,18 @@ test("HOME-01 a: Client activity rows are 44", async ({ page }) => {
   expect(await rows.count()).toBeGreaterThan(0);
   for (const row of await rows.all()) expect((await box(row)).height).toBeGreaterThanOrEqual(44);
 });
+
+// HOME-02 (I-01-T22): the T9 close-review host: review pane 790 = 310 queue + 480 detail, evidence
+// 576, the subbar 42.
+for (const st of ["a", "c", "d", "g"]) {
+  test(`HOME-02 ${st}: review pane 790 = 310 + 480, evidence 576`, async ({ page }) => {
+    await page.goto(`/components/screens/HOME-02?st=${st}&frame=1&static=1`);
+    const app = page.locator(`[data-artboard='${st}'] [data-shell='app']`).first();
+    await expect(app).toBeVisible();
+    // The template's column holds the queue and its hairline; the pane holds column and detail.
+    const queue = app.locator("[data-home02='queue']");
+    expect((await box(queue.locator("xpath=.."))).width).toBe(310);
+    expect((await box(queue.locator("xpath=../.."))).width).toBe(790);
+    expect((await box(app.locator("[data-home02='evidence']"))).width).toBe(576);
+  });
+}

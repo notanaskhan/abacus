@@ -1578,6 +1578,7 @@ function Home02Frame({ state }: { state: Home02State }): JSX.Element {
         toolbar={bar.toolbar}
         height={860}
         initialDone={state === "show_done"}
+        initialSelecting={state === "e"}
         gate={home02Gate(state)}
         summaryOf={home02Summary}
       />

@@ -32,6 +32,8 @@ export interface EvidenceTable {
   label: string;
   /** The first column reads left; the rest are figures, right-aligned. */
   columns: readonly string[];
+  /** Column widths in px where the artboard fixes them (a's basis table). */
+  widths?: readonly number[];
   rows: readonly EvidenceRow[];
 }
 
@@ -46,7 +48,7 @@ export interface EvidenceSummary {
   title: string;
   /** The summary's option in the small segmented ("Basis"). */
   segment: string;
-  /** "Open in workpaper ↗" / "Open memo ↗": a planned link (TXP-08, TXP-01). */
+  /** "Open in workpaper" / "Open memo": a planned link (TXP-08, TXP-01). */
   planned?: string;
   tally?: readonly TallyItem[];
   /** A pill after the strip ("off 28,595"). */

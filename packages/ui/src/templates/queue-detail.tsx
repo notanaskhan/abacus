@@ -73,6 +73,10 @@ export interface QueueDetailLayoutProps {
    * alone (HOME-02 at `/home/approvals`; I-01-T16). `toolbar` is then ignored. */
   bare?: boolean;
   height?: number;
+  /** The record's height where it isn't the preset's: HOME-02's close-review has the subbar 42
+   * alone, no close tabs, so its panes run 750 tall. The split then fills the pane, so the queue
+   * and detail scroll apart and the footer stays pinned; T9's own artboards keep their flow. */
+  recordHeight?: number;
   className?: string;
 }
 
@@ -110,8 +114,10 @@ export function QueueDetailLayout({
   embedded = false,
   bare = false,
   height,
+  recordHeight,
   className,
 }: QueueDetailLayoutProps): JSX.Element {
+  const chrome = recordHeight === undefined ? CHROME[preset] : 46 + recordHeight + 22;
   const queuePane = (
     <Pane
       key="queue"
@@ -135,7 +141,10 @@ export function QueueDetailLayout({
           />
         </div>
       ) : preset === "close-review" ? (
-        <div data-queue-part="split" className="flex min-h-0 flex-1">
+        <div
+          data-queue-part="split"
+          className={cn("flex min-h-0 flex-1", recordHeight !== undefined && "h-full")}
+        >
           <div
             data-queue-part="queue"
             style={{ width: QUEUE_WIDTH[preset] }}
@@ -183,7 +192,7 @@ export function QueueDetailLayout({
       <div data-queue={preset} className="flex min-h-0 min-w-0 flex-1">
         <SplitLayout
           preset={preset}
-          height={height === undefined ? "viewport" : height - CHROME[preset]}
+          height={height === undefined ? "viewport" : height - chrome}
           narrow={false}
           className="w-full bg-transparent p-0"
         >

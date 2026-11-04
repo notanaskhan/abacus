@@ -110,8 +110,8 @@ function useNames(engagementId: string | null): (userId: string | null | undefin
 
 function TitleBand({ title, pill }: { title: string; pill?: ReactNode }): JSX.Element {
   return (
-    <div className="flex items-start gap-[10px] bg-shell px-[14px] py-[12px] hairline-b">
-      <h3 className="flex-1 text-record leading-[1.3] font-medium">{title}</h3>
+    <div className="flex items-start gap-[10px] bg-shell px-[14px] pt-[13px] pb-[12px] hairline-b">
+      <h3 className="flex-1 text-title font-medium">{title}</h3>
       {pill}
     </div>
   );
@@ -190,7 +190,7 @@ function Loading({ failed }: { failed: boolean }): JSX.Element {
 /** The footer's stacked full-width buttons over an optional ink-3 line (HOME-02 acceptance). */
 function Footer({ children, line }: { children: ReactNode; line?: string }): JSX.Element {
   return (
-    <div data-home02="footer" className="flex w-full flex-col gap-[8px]">
+    <div data-home02="footer" className="flex w-full flex-col gap-[8px] px-[4px]">
       {children}
       {line !== undefined && <p className="text-center text-meta text-ink-3">{line}</p>}
     </div>
@@ -286,7 +286,7 @@ function GateMoves({ gate }: { gate: HumanGateOut }): JSX.Element | null {
   const people = candidates.data?.candidates ?? [];
   return (
     <span className="flex flex-col items-center gap-[8px]">
-      <span className="flex justify-center gap-[16px]">
+      <span className="flex justify-center gap-[0px]">
         {reassign && (
           <Menu
             label={COPY.moves.reassignMenu}
@@ -294,7 +294,7 @@ function GateMoves({ gate }: { gate: HumanGateOut }): JSX.Element | null {
               if (open) setAskCandidates(true);
             }}
             trigger={
-              <Button variant="ghost" size="sm" opensDialog disabled={reassignWrite.isPending}>
+              <Button variant="ghost" size="md" opensDialog disabled={reassignWrite.isPending}>
                 {COPY.detailPane.reassign}
               </Button>
             }
@@ -337,7 +337,7 @@ function GateMoves({ gate }: { gate: HumanGateOut }): JSX.Element | null {
           <Menu
             label={COPY.moves.snoozeMenu}
             trigger={
-              <Button variant="ghost" size="sm" opensDialog disabled={snoozeWrite.isPending}>
+              <Button variant="ghost" size="md" opensDialog disabled={snoozeWrite.isPending}>
                 {COPY.detailPane.snooze}
               </Button>
             }
@@ -426,6 +426,9 @@ function DecisionBody({ gate, draft, onDraft }: DetailProps): JSX.Element {
         {card.context.map((c) => (
           <Kv key={c.key} label={c.label}>
             {c.value}
+            {c.key === "work_item" && PLANNED_VISIBLE && (
+              <Icon name="arrow-right" size={12} className="text-ink-3" />
+            )}
           </Kv>
         ))}
         <Kv label={COPY.detailPane.proposedBy}>
@@ -438,7 +441,7 @@ function DecisionBody({ gate, draft, onDraft }: DetailProps): JSX.Element {
       {why !== "" && (
         <>
           <Band>{COPY.detailPane.why}</Band>
-          <div className="flex gap-[10px] px-[14px] py-[12px] hairline-b">
+          <div className="flex gap-[10px] px-[14px] pt-[9px] pb-[11px] hairline-b">
             <span
               aria-hidden
               className="mt-[2px] flex size-[15px] flex-none items-center justify-center rounded-full bg-green text-card"
@@ -456,24 +459,22 @@ function DecisionBody({ gate, draft, onDraft }: DetailProps): JSX.Element {
             value: o.key,
             label: o.label,
             ...(open ? {} : { disabled: true }),
+            detail: (
+              <span data-option={o.key} className="flex flex-col gap-[4px]">
+                {o.key === recommended && (
+                  <Tag className="self-start">{COPY.detailPane.recommendation}</Tag>
+                )}
+                {o.detail !== null && (
+                  <span className="text-dense leading-[1.4] text-ink-2">{o.detail}</span>
+                )}
+              </span>
+            ),
           }))}
           {...(chosen === undefined ? {} : { value: chosen })}
           onChange={(v) => {
             if (open) onDraft({ ...draft, option: v });
           }}
         />
-        <ul className="mt-[6px] flex flex-col gap-[8px]">
-          {shown.map((o) => (
-            <li key={o.key} data-option={o.key} className="flex flex-col gap-[4px] pl-[26px]">
-              {o.key === recommended && (
-                <Tag className="self-start">{COPY.detailPane.recommendation}</Tag>
-              )}
-              {o.detail !== null && (
-                <span className="text-dense leading-[1.4] text-ink-2">{o.detail}</span>
-              )}
-            </li>
-          ))}
-        </ul>
       </div>
       {sources.length > 0 && (
         <>
@@ -547,6 +548,7 @@ function DecisionFooter({ gate, draft, onDraft }: DetailProps): JSX.Element | nu
           actor={actor}
           variant="primary"
           icon="check"
+          size="xl"
           className="w-full"
           disabled={!ready}
           loading={decide.phase === "busy"}
@@ -558,6 +560,7 @@ function DecisionFooter({ gate, draft, onDraft }: DetailProps): JSX.Element | nu
       {head.allowed_actions.includes("decision.request_analysis") && (
         <Button
           variant="secondary"
+          size="xl"
           className="w-full"
           opensDialog
           aria-haspopup="dialog"
@@ -673,6 +676,7 @@ function SignOffFooter({ gate }: DetailProps): JSX.Element | null {
         actor={actor}
         opensDialog
         variant="primary"
+        size="xl"
         className="w-full"
         aria-haspopup="dialog"
         disabled={!data.eligible}
@@ -683,6 +687,7 @@ function SignOffFooter({ gate }: DetailProps): JSX.Element | null {
       {blocker !== undefined && (
         <Button
           variant="secondary"
+          size="xl"
           className="w-full"
           aria-haspopup="dialog"
           onClick={() => {
@@ -760,6 +765,7 @@ function ProposalFooter({ gate }: DetailProps): JSX.Element | null {
           label={COPY.detailPane.approveAdjustments}
           icon="check"
           variant="primary"
+          size="xl"
           className="w-full"
           aria-haspopup="dialog"
           onClick={open}
@@ -768,6 +774,7 @@ function ProposalFooter({ gate }: DetailProps): JSX.Element | null {
       {allowed.includes("proposal.reject") && (
         <Button
           variant="secondary"
+          size="xl"
           className="w-full"
           opensDialog
           aria-haspopup="dialog"
@@ -811,6 +818,7 @@ function ApprovalFooter({ gate, href }: DetailProps): JSX.Element | null {
           label={COPY.detailPane.finalApproval}
           opensDialog
           variant="primary"
+          size="xl"
           className="w-full"
           aria-haspopup="dialog"
           onClick={() => {
@@ -830,6 +838,7 @@ function ApprovalFooter({ gate, href }: DetailProps): JSX.Element | null {
           label={COPY.detailPane.send}
           opensDialog
           variant="primary"
+          size="xl"
           className="w-full"
           disabled
         />

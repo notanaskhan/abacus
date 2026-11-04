@@ -45,6 +45,7 @@ import { OPENS as ENG02_OPENS, scenarios as eng02 } from "./scenarios/ENG-02";
 import { OPENS as ENG13_OPENS, scenarios as eng13 } from "./scenarios/ENG-13";
 import { OPENS as FIL01_OPENS, scenarios as fil01 } from "./scenarios/FIL-01";
 import { scenarios as home01 } from "./scenarios/HOME-01";
+import { scenarios as home02 } from "./scenarios/HOME-02";
 import { OPENS as INB01_OPENS, scenarios as inb01 } from "./scenarios/INB-01";
 import { scenarios as knw01 } from "./scenarios/KNW-01";
 import { scenarios as knw04 } from "./scenarios/KNW-04";
@@ -194,6 +195,7 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
     ),
   },
   "HOME-01": { scenarios: home01, opens: {} }, // I-01-T05
+  "HOME-02": { scenarios: home02, opens: {} }, // I-01-T22: j13 2-3
   "INB-01": {
     scenarios: onE0(inb01, ["inbox.firm_intake"]),
     opens: Object.fromEntries(
