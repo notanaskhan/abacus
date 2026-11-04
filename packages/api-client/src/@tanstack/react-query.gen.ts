@@ -18116,6 +18116,8 @@ export const analysisQueryKey = (options: Options<AnalysisData>) => createQueryK
 
 /**
  * Analysis Route
+ *
+ * The newest analysis version as code recorded it (NOT-02 b, c, d).
  */
 export const analysisOptions = (options: Options<AnalysisData>) => queryOptions<AnalysisResponse, AnalysisError, AnalysisResponse, ReturnType<typeof analysisQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -18188,6 +18190,8 @@ export const noteMutation = (options?: Partial<Options<NoteData>>): UseMutationO
 
 /**
  * Proposed Items Route
+ *
+ * A person's cited entry of the notice's proposed items; then code re-runs (N-04-T11).
  */
 export const proposedItemsMutation = (options?: Partial<Options<ProposedItemsData>>): UseMutationOptions<ProposedItemsResponse, ProposedItemsError, Options<ProposedItemsData>> => {
     const mutationOptions: UseMutationOptions<ProposedItemsResponse, ProposedItemsError, Options<ProposedItemsData>> = {
@@ -18318,6 +18322,8 @@ export const sendForSignatureMutation = (options?: Partial<Options<SendForSignat
 
 /**
  * Return As Filed Route
+ *
+ * A person's return-as-filed snapshot, every line cited; then code re-runs (N-04-T11).
  */
 export const returnAsFiledMutation = (options?: Partial<Options<ReturnAsFiledData>>): UseMutationOptions<ReturnAsFiledResponse, ReturnAsFiledError, Options<ReturnAsFiledData>> => {
     const mutationOptions: UseMutationOptions<ReturnAsFiledResponse, ReturnAsFiledError, Options<ReturnAsFiledData>> = {

@@ -1486,6 +1486,11 @@ codes:
     raised_by:
     - abacus.modules.identity.firm_settings.LevelNotAvailable
     summary: Manage and Portfolio come with the engagement agent (SPEC-024 Q3).
+  line_uncited:
+    status: 422
+    raised_by:
+    - abacus.modules.notices.analysis.LineUncited
+    summary: Every entered line carries its citation (identifiers only in facts).
   line_unverified:
     status: 422
     raised_by:
@@ -1839,6 +1844,11 @@ codes:
     raised_by:
     - abacus.modules.assurance.risks.NothingPending
     summary: No significance or rebuttal waits for the partner.
+  nothing_to_analyze:
+    status: 409
+    raised_by:
+    - abacus.modules.notices.analysis.NothingToAnalyze
+    summary: 'The notice has no proposed items yet: record them first.'
   nothing_to_approve:
     status: 409
     raised_by:

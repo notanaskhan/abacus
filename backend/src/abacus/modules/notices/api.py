@@ -19,3 +19,7 @@ register_home_counts()
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (router,)
+
+from abacus.modules.notices.analysis import register_position_kind  # noqa: E402
+
+register_position_kind()  # N-04-T11 (DEC-2239): the `notice_position` card, reserved to the signer
