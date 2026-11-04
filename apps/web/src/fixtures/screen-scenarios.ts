@@ -26,6 +26,9 @@ import { scenarios as adm08 } from "./scenarios/ADM-08";
 import { scenarios as aud01 } from "./scenarios/AUD-01";
 import { OPENS as NOT01_OPENS, scenarios as not01 } from "./scenarios/NOT-01";
 import { IDS as AUD03_IDS, scenarios as aud03 } from "./scenarios/AUD-03";
+import { NORTHWIND_AUDIT } from "./scenarios/AUD-06";
+import { scenarios as aud08 } from "./scenarios/AUD-08";
+import { scenarios as aud09 } from "./scenarios/AUD-09";
 import { scenarios as bnd01 } from "./scenarios/BND-01";
 import { OPENS as TAX02_OPENS, j06Scenario } from "./scenarios/TAX-02";
 import { OPENS as BND02_OPENS, scenarios as bnd02 } from "./scenarios/BND-02";
@@ -97,6 +100,13 @@ interface ScreenScenarios {
   ids?: Readonly<Record<string, Readonly<Record<string, string | null>>>>;
 }
 
+/** Every state of a Northwind audit screen opens on its audit (`_auditId_` in a journey path). */
+function northwind(
+  scenarios: Readonly<Record<string, unknown>>,
+): Record<string, { auditId: string }> {
+  return Object.fromEntries(Object.keys(scenarios).map((s) => [s, { auditId: NORTHWIND_AUDIT }]));
+}
+
 export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
   "ADM-01": { scenarios: adm01, opens: {} },
   "ADM-02": { scenarios: adm02, opens: ADM02_OPENS },
@@ -133,6 +143,13 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
   },
   "AUD-01": { scenarios: aud01, opens: {} }, // A-01-T26: j03 6, j04 1
   "AUD-03": { scenarios: aud03, opens: {}, ids: AUD03_IDS }, // A-01-T26: j03 4e, 5, 5c
+  // A-04-T34: j03 9 and 10a on Northwind's audit (AUD-08 register, AUD-09 IC pack failure).
+  "AUD-08": { scenarios: aud08, opens: {}, ids: northwind(aud08) },
+  "AUD-09": {
+    scenarios: aud09,
+    opens: { b: "?cell=D2", e: "?sheet=internal-control" },
+    ids: northwind(aud09),
+  },
   "BND-01": { scenarios: bnd01, opens: {} },
   "BND-02": { scenarios: bnd02, opens: {}, ids: BND02_OPENS },
   // P-07-T53: the gates and access walk opens the live routes on the screens' own states.
