@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Any, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Path, Query, Response
@@ -410,6 +410,71 @@ def _not_yet() -> NoReturn:
     raise NotImplementedYet
 
 
+async def _row_out(found: object) -> ExtensionRowOut:
+    """A TAX-13 a row from the stored lines and payments (T-03-T07, DEC-2243)."""
+    from abacus.modules.identity.api import names_of
+    from abacus.modules.tax.extensions import ReturnRow, money
+
+    r = cast(ReturnRow, found)
+    people = {p["proposed_by"] for p in r.payments} | {
+        p["approved_by"] for p in r.payments if p["approved_by"]
+    }
+    names = await names_of(sorted(people, key=str)) if people else {}
+    first = r.lines[0]
+    return ExtensionRowOut(
+        tax_return_id=r.tax_return_id,
+        work_item_id=r.work_item_id,
+        client_name=r.client_name,
+        return_form=str(first["form"]),
+        tax_year=r.tax_year,
+        lines=[
+            JurisdictionLineOut(
+                extension_id=x["id"],
+                jurisdiction=x["jurisdiction"],
+                form=x["form"],
+                status=cast(ExtensionStatus, x["status"]),
+                filed_on=x["filed_on"],
+                ack_received_at=x["ack_received_at"],
+                reject_code=x["reject_code"],
+            )
+            for x in r.lines
+        ],
+        projected_liability=money(first.get("projected_liability")),
+        projected_liability_source=first.get("projected_liability_source"),
+        withholding_plus_estimates=money(first.get("withholding_plus_estimates")),
+        safe_harbor_target=money(first.get("safe_harbor_target")),
+        safe_harbor_pct=money(first.get("safe_harbor_pct")),
+        payments=[
+            ExtensionPaymentOut(
+                id=p["id"],
+                kind=cast(PaymentKind, p["kind"]),
+                jurisdiction=p["jurisdiction"],
+                amount=Decimal(str(p["amount"])),
+                paid_on=p["paid_on"],
+                proposed_by_name=names.get(p["proposed_by"], ""),
+                approved_by_name=names.get(p["approved_by"]) if p["approved_by"] else None,
+                approved_at=p["approved_at"],
+                supersedes_id=p["supersedes_id"],
+                confirmation_evidence_version_id=p["confirmation_evidence_version_id"],
+            )
+            for p in r.payments
+        ],
+        original_due_on=min(x["original_due_on"] for x in r.lines),
+        extended_due_on=min(x["extended_due_on"] for x in r.lines),
+        likely_to_extend=r.likely,
+        likely_reasons=sorted(
+            {
+                c
+                for x in r.lines
+                for c in cast(list[Any], x["likely_reasons"] or [])  # Any: JSON from the database
+            }  # Any: JSON from the database or the document
+        ),
+        likely_note=next((x["likely_note"] for x in r.lines if x["likely_note"]), None),
+        row_version=max(x["row_version"] for x in r.lines),
+        allowed_actions=[],
+    )
+
+
 schedules_router = AbacusRouter(prefix="/v1", tags=["tax"])
 _X = "/tax/extensions/{extension_id}"
 _E = "/tax/estimates/{schedule_id}"
@@ -463,7 +528,16 @@ async def extensions_route(
     """Rows grouped per return; `counts` {extended, open, filed, likely, acks_pending} from the
     viewer's visible rows only (DEC-43)."""
     await _gate(ctx, "filing_extension.read")
-    _not_yet()
+    from abacus.modules.tax import extensions
+
+    found = await extensions.rows(ctx, tax_year)
+    if q:
+        found = [r for r in found if q.lower() in r.client_name.lower()]
+    return ListPage[ExtensionRowOut](
+        items=[await _row_out(r) for r in found],
+        total=len(found),
+        counts=extensions.counts(found),
+    )
 
 
 @schedules_router.post(
@@ -508,7 +582,18 @@ async def extensions_approve_route(
     caller (human only), then create and send the confirmation requests (the service also
     checks `filing_extension.confirmation_send`)."""
     await _gate(ctx, "filing_extension.approve_payment")
-    _not_yet()
+    from abacus.modules.tax import extensions
+
+    # The service authorises `filing_extension.confirmation_send` on the caller (AGENT-001).
+    approved, requested = await extensions.approve_and_request(
+        ctx, body.extension_ids, send_confirmations=body.send_confirmations
+    )
+    return ApproveAndRequestOut(
+        extensions=[],
+        checks=[],
+        approved_payment_ids=approved,
+        confirmation_request_item_ids=requested,
+    )
 
 
 @schedules_router.get(
@@ -527,7 +612,24 @@ async def extension_patch_route(
 ) -> ExtensionOut:
     """`filing_extension.flag_likely` for `likely_to_extend` alone, `mark_filed` otherwise."""
     await _gate(ctx, _patch_action(body))
-    _not_yet()
+    from abacus.modules.tax import extensions
+
+    tax_year = await extensions.patch(
+        ctx,
+        extension_id,
+        expected_version=if_match,
+        filed_on=body.filed_on,
+        form=body.form,
+        filed_form_evidence_version_id=body.filed_form_evidence_version_id,
+        likely_to_extend=body.likely_to_extend,
+        reason=body.reason,
+        note=body.note,
+    )
+    for row in await extensions.rows(ctx, tax_year):
+        if any(x["id"] == extension_id for x in row.lines):
+            out = await _row_out(row)
+            return ExtensionOut(**out.model_dump())
+    raise NotFound("filing_extension")
 
 
 def _patch_action(body: ExtensionPatchIn) -> str:

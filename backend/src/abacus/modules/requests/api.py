@@ -392,3 +392,8 @@ from abacus.modules.requests.answer_effect_handlers import (  # noqa: E402
 )
 
 _register_effects()
+
+# T-03 (S27): imported so its refusal codes are catalogued (the routes import it lazily).
+from abacus.modules.requests import (  # noqa: E402
+    questionnaire_editor as _questionnaire_editor,  # noqa: F401
+)

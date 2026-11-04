@@ -142,3 +142,8 @@ __all__ = [
     "set_extended",
     "share_k1_internal",
 ]
+
+# T-03 (S27): imported so its refusal codes are catalogued (the routes import it lazily).
+from abacus.modules.tax import (  # noqa: E402
+    extensions as _extensions,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- imported to register and catalogue it
+)

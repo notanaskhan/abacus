@@ -10,6 +10,9 @@
 // at run time, for what a type cannot say. Fixtures are Brightwater Hale, synthetic.
 import type {
   BinderStatus,
+  ListPageEstimateRowOut,
+  ListPageExtensionRowOut,
+  ListPagePaymentRowOut,
   CitationV2Out,
   ClientStatus,
   EngagementStatus,
@@ -170,6 +173,10 @@ const LIST_PAGES = {
   ListPage_FindingRowOut_: (p: ListPageFindingRowOut) => envelope(p),
   ListPage_MisstatementOut_: (p: ListPageMisstatementOut) => envelope(p),
   ListPage_NoticeRowOut_: (p: ListPageNoticeRowOut) => envelope(p), // N-04-T02: NOT-01
+  // S27 (T-03-T07): the extensions board's rows, estimates and payments.
+  ListPage_EstimateRowOut_: (p: ListPageEstimateRowOut) => envelope(p),
+  ListPage_ExtensionRowOut_: (p: ListPageExtensionRowOut) => envelope(p),
+  ListPage_PaymentRowOut_: (p: ListPagePaymentRowOut) => envelope(p),
 } as const;
 
 describe("P-36 list envelope (T1)", () => {
