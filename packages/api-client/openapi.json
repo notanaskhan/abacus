@@ -5147,6 +5147,7 @@
       "ArchiveAdditionsOut": {
         "properties": {
           "items": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/ArchiveAdditionOut"
             },
@@ -6343,6 +6344,7 @@
         "description": "GET \u2026/archive: the 60-day clock, nine items, the binder index, additions and the seal.",
         "properties": {
           "additions": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/ArchiveAdditionOut"
             },
@@ -6366,6 +6368,7 @@
             "type": "array"
           },
           "binder": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/BinderSectionOut"
             },
@@ -6373,6 +6376,7 @@
             "type": "array"
           },
           "checklist": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/ArchiveChecklistItemOut"
             },
@@ -6922,6 +6926,7 @@
             "type": "integer"
           },
           "items": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/AuditCompletionItemOut"
             },
@@ -8446,6 +8451,7 @@
             "type": "array"
           },
           "also_required": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/AlsoRequiredOut"
             },
@@ -8485,6 +8491,7 @@
             "type": "string"
           },
           "filings": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/FilingOut"
             },
@@ -8498,6 +8505,7 @@
             "type": "string"
           },
           "gates": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/GateCardOut"
             },
@@ -8571,6 +8579,7 @@
             "type": "array"
           },
           "choices": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/ReportChoiceOut"
             },
@@ -8585,9 +8594,11 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "documents": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/GeneratedReportDocumentOut"
             },
@@ -8605,6 +8616,7 @@
             "type": "string"
           },
           "paragraphs": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/ReportParagraphOut"
             },
@@ -32163,6 +32175,7 @@
             "type": "array"
           },
           "checklist": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/EqrChecklistItemOut"
             },
@@ -32189,9 +32202,11 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "digest_cards": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/EqrDigestCardOut"
             },
@@ -32211,6 +32226,7 @@
             "title": "Eqr Name"
           },
           "notes": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/EqrNoteRowOut"
             },
@@ -36519,6 +36535,7 @@
       "FilingsOut": {
         "properties": {
           "items": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/FilingOut"
             },
@@ -41161,9 +41178,11 @@
             "title": "Content Hash"
           },
           "row": {
-            "$ref": "#/components/schemas/GovernanceRowOut"
+            "$ref": "#/components/schemas/GovernanceRowOut",
+            "cls": "internal"
           },
           "sections": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/GovernanceSectionOut"
             },
@@ -41254,6 +41273,7 @@
             "type": "array"
           },
           "items": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/GovernanceRowOut"
             },
@@ -41367,6 +41387,7 @@
       "GovernanceRecipientsOut": {
         "properties": {
           "items": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/GovernanceRecipientOut"
             },
@@ -41594,6 +41615,7 @@
             "type": "array"
           },
           "citations": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/CitationChipOut"
             },
@@ -52793,6 +52815,7 @@
       "LetterParagraphOut": {
         "properties": {
           "citations": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/CitationChipOut"
             },
@@ -52979,6 +53002,7 @@
         "description": "One toggle in the structure pane (DV-5: general 1-11 locked, specific 12-15 by trigger).",
         "properties": {
           "citations": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/CitationChipOut"
             },
@@ -71875,6 +71899,7 @@
       "ReasonCodesOut": {
         "properties": {
           "items": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/ReportReasonCodeOut"
             },
@@ -74082,6 +74107,7 @@
             "type": "string"
           },
           "citations": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/CitationChipOut"
             },
@@ -74473,6 +74499,7 @@
       "ReportVersionsOut": {
         "properties": {
           "items": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/ReportVersionOut"
             },
@@ -74590,7 +74617,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "dated_as_of": {
             "anyOf": [
@@ -74624,6 +74652,7 @@
             "type": "boolean"
           },
           "paragraphs": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/LetterParagraphOut"
             },
@@ -74644,6 +74673,7 @@
             "title": "Report Date"
           },
           "representations": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/LetterRepresentationOut"
             },
@@ -74664,6 +74694,7 @@
             "title": "Signed On"
           },
           "signers": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/RepLetterSignerOut"
             },
@@ -91451,9 +91482,11 @@
             "type": "array"
           },
           "bring_down": {
-            "$ref": "#/components/schemas/BringDownOut"
+            "$ref": "#/components/schemas/BringDownOut",
+            "cls": "internal"
           },
           "events": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/SubsequentEventOut"
             },
@@ -91461,6 +91494,7 @@
             "type": "array"
           },
           "procedures": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/SubsequentEventProcedureOut"
             },
