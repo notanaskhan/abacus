@@ -427,6 +427,9 @@ export {
 // C-17 Issue kit (F-05-T55).
 export * from "./issues";
 
+// The client question renderer (T-03-T09): BND-03's preview dock, POR-05's grammar.
+export * from "./questionnaire";
+
 // C-15 / C-18 File kit, inbox visuals (F-05-T56).
 export * from "./inbox";
 export {

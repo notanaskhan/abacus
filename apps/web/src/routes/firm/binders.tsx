@@ -14,6 +14,9 @@ const BindersIndex = lazyScreen(
   async () => (await import("../../screens/BND-01")).BindersSearchPage,
 );
 const Binder = lazyScreen(async () => (await import("../../screens/BND-02")).BND02);
+const Questionnaire = lazyScreen(
+  async () => (await import("../../screens/BND-03")).QuestionnaireEditor,
+);
 
 // SHL-14 (P-06-T13): the request composer drawer over its host, `?ov=request:new:<binderId>` or
 // `?ov=request:<requestItemId>:<binderId>`. The drawer is its own chunk.
@@ -148,4 +151,34 @@ export const binderRoute = createRoute({
   },
 });
 
-export const binderRoutes = [bindersRoute, binderRoute] as const;
+// T-03-T09: BND-03 `/binders/questionnaires/$questionnaireId?section=<key>` (read states a, e; the
+// editing states land with T-03-T10). Requests and Activity return to the binder (BND-02).
+export const questionnaireRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/binders/questionnaires/$questionnaireId",
+  validateSearch: (search: Record<string, unknown>): { section?: string } =>
+    typeof search.section === "string" ? { section: search.section } : {},
+  component: function QuestionnairePage(): JSX.Element {
+    const { questionnaireId } = questionnaireRoute.useParams();
+    const search = questionnaireRoute.useSearch();
+    const navigate = questionnaireRoute.useNavigate();
+    return gated(
+      <Questionnaire
+        questionnaireId={questionnaireId}
+        section={search.section ?? null}
+        onSection={(section) => {
+          void navigate({ search: { section }, replace: true });
+        }}
+        onTab={(tab, binderId) => {
+          void navigate({
+            to: "/binders/$binderId",
+            params: { binderId },
+            search: tab === "activity" ? { tab: "activity" } : {},
+          });
+        }}
+      />,
+    );
+  },
+});
+
+export const binderRoutes = [bindersRoute, binderRoute, questionnaireRoute] as const;

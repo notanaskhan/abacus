@@ -19,7 +19,14 @@ export const bndScreens = {
     path: "/binders/$binderId",
     navArea: "Binders",
   },
-  "BND-03": { name: "Questionnaire editor", status: "planned", path: null, entry: true },
+  "BND-03": {
+    name: "Questionnaire editor",
+    // T-03-T09: a, e and the preview dock on fixtures; planned until T-03-T10 wires its TAX-03
+    // link (the screen's links rule) and builds b, c, d.
+    status: "planned",
+    path: "/binders/questionnaires/$questionnaireId",
+    entry: true,
+  },
   "BND-04": { name: "Request tracker", status: "planned", path: null, navArea: "Binders" },
   // seed-manifest: new screens are added above this line
 } as const satisfies Manifest;

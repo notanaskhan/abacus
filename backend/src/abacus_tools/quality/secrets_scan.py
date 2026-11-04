@@ -31,6 +31,12 @@ EXCLUDE: tuple[str, ...] = ()
 # (path glob, rule id, reason): findings that are known local fixtures, never real secrets.
 ALLOW: tuple[tuple[str, str, str], ...] = (
     (
+        "apps/web/src/fixtures/seed/bnd03.ts",
+        "SECRET-003",
+        "an answer effect's `rule_key` names the questionnaire rule (q5_yes_confirmations),"
+        " never a credential (T-03-T09)",
+    ),
+    (
         "apps/web/src/fixtures/seed/e0.standards.json",
         "SECRET-003",
         "firm standards' `key` fields name a checklist or policy (bh-1040-review-checklist),"
