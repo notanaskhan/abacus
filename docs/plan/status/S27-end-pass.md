@@ -55,9 +55,9 @@ finding after the fix round.
 | Q-03-T183 | AY-provided contract suites in the run above | Connector suites against provider sandboxes need credentials (human) |
 | Q-03-T184 | Compliance invariant catalogue and generated coverage (security suites green); DAST, Inspector and GuardDuty need the hosted stack | Hosted findings triage |
 | Q-03-T185 | Generated allow/deny/cross-tenant tests cover every new route (route introspection, matrix suites) | None found uncovered |
-| Q-03-T186 | Flaky quarantine unchanged | Parity re-measure on Playwright 1.64.1 (Q-03-T181's drift) and the production canary need the visual run and production |
-| I-01-T22 | — | HOME-02 Tier C/D parity, axe and keyboard need the visual run; j23/j13 full-stack steps need staging |
-| Q-04-T097 | — | The PF-X1 `home.approvals` flips run in the staging windows (staging deploy is the batch's) |
+| Q-03-T186 | Quarantine 0; parity re-measured on 1.64.1 (#1228) | 27 locked rows over tier and 47 unmeasured; the production canary needs production |
+| I-01-T22 | HOME-02 Tier C locked (a 2.90, c 1.75, d 1.99, e 2.37, f 0.19, g 0.99), Tier D, axe, keyboard, j13 2-3 on fixtures, RB-48 (#1221) | Staging walk, j23 2 and 4 full stack, both founders' approval of RB-48 |
+| Q-04-T097 | PF-X1 flips rehearsed, rollback refs and retirement booked (#1223) | Real-firm flips need a live firm and production |
 
 ## CI run 1 (PR #1218) and its fix round
 57 failing tests, 41 not in main's last run (a369a01fa, 39 failing). Root causes, all fixed in one
