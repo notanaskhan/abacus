@@ -536,6 +536,58 @@ class FiguresOut(BaseModel):
     allowed_actions: Actions
 
 
+class InvestmentRowOut(BaseModel):
+    """One certified line against the plan TB at the layer (EBP-06)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    key: Annotated[str, Field(max_length=80), classified("internal")]
+    label: Label
+    level: Annotated[Literal["level1", "nav", "not_certified", "other"], classified("internal")]
+    trust_eoy: MaybeMoney = None
+    trust_boy: MaybeMoney = None
+    tb_eoy: MaybeMoney = None
+    tb_boy: MaybeMoney = None
+    ties: Annotated[bool | None, classified("internal")] = None
+    off_by: MaybeMoney = None
+
+
+class CertificationPointOut(BaseModel):
+    """A person's evaluation of a point; the agent's answer is only ever `proposed_answer`."""
+
+    model_config = ConfigDict(frozen=True)
+
+    key: Annotated[str, Field(max_length=40), classified("internal")]
+    proposed_answer: Annotated[str | None, Field(max_length=500), classified("confidential")] = None
+    citation_id: Annotated[UUID | None, classified("internal")] = None
+    answer: Annotated[Literal["evaluated", "not_evaluated"], classified("internal")]
+    note: Annotated[str | None, Field(max_length=1000), classified("confidential")] = None
+
+
+class InvestmentsOut(BaseModel):
+    """EBP-06 by layer: agreement rows, the certified footing, chips and the sign-off hold."""
+
+    model_config = ConfigDict(frozen=True)
+
+    layer: Annotated[Literal["unadjusted", "aje", "rje", "final"], classified("internal")]
+    rows: Annotated[list[InvestmentRowOut], Field(max_length=500), classified("confidential")]
+    investments_eoy: MaybeMoney = None
+    investments_boy: MaybeMoney = None
+    level1_eoy: MaybeMoney = None
+    nav_eoy: MaybeMoney = None
+    net_assets: MaybeMoney = None
+    tb_balanced: Annotated[bool, classified("internal")]
+    py_ties: Annotated[bool, classified("internal")]
+    points: Annotated[list[CertificationPointOut], classified("confidential")]
+    hold_reason: Annotated[Literal["certification_unevaluated"] | None, classified("internal")] = (
+        None
+    )
+    unevaluated: Annotated[int, classified("internal")]
+    engine_version: Annotated[str, Field(max_length=40), classified("internal")]
+    inputs_hash: Annotated[str, Field(max_length=64), classified("internal")]
+    allowed_actions: Actions
+
+
 class TestIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -1345,15 +1397,79 @@ async def ebp_loans_route(work_item_id: UUID, ctx: Ctx) -> FiguresOut:
     )
 
 
-@router.get("/ebp/investments", action="ebp.read", response_model=FiguresOut)
+@router.get("/ebp/investments", action="ebp.read", response_model=InvestmentsOut, errors=(409,))
 async def ebp_investments_route(
     work_item_id: UUID,
     ctx: Ctx,
     layer: Annotated[Literal["unadjusted", "aje", "rje", "final"], Query()] = "final",
-) -> FiguresOut:
-    """Lines by layer (C9/C8); Final is 409 `layer_unavailable` until A-06 registers (T26)."""
+) -> InvestmentsOut:
+    """Lines by layer (C9/C8); Final is 409 `layer_unavailable` until A-06 registers."""
     await _gate(ctx, work_item_id, "ebp.read", _E)
-    return _example(FiguresOut, _NET_ASSETS)
+    from abacus.modules.assurance import ebp_investments
+
+    item = await assurance_item(ctx.tenant, work_item_id)
+    view = await ebp_investments.investments(ctx.tenant, item.engagement_id, work_item_id, layer)
+    found = view.agreement
+    rows = [
+        InvestmentRowOut(
+            key=a.line_key,
+            label=a.fund_name,
+            level=cast(Any, a.level),  # Any: the column's CHECK holds the three levels
+            trust_eoy=a.trust_eoy,
+            trust_boy=a.trust_boy,
+            tb_eoy=a.tb_eoy,
+            tb_boy=a.tb_boy,
+            ties=a.ties,
+            off_by=a.off_by,
+        )
+        for a in found.lines
+    ] + [
+        InvestmentRowOut(key=code, label=name, level="other", tb_eoy=amount)
+        for code, name, amount in view.extra
+    ]
+    return InvestmentsOut(
+        layer=layer,
+        rows=rows,
+        investments_eoy=found.investments_eoy,
+        investments_boy=found.investments_boy,
+        level1_eoy=found.level1_eoy,
+        nav_eoy=found.nav_eoy,
+        net_assets=view.net_assets,
+        tb_balanced=view.tb_balanced,
+        py_ties=found.py_ties,
+        points=[_point_out(p) for p in view.points],
+        hold_reason="certification_unevaluated" if view.unevaluated else None,
+        unevaluated=view.unevaluated,
+        engine_version=found.engine_version,
+        inputs_hash=found.inputs_hash,
+        allowed_actions=[],
+    )
+
+
+def _point_out(p: object) -> CertificationPointOut:
+    point = cast(Any, p)  # Any: ebp_investments.Point, imported where the route runs
+    return CertificationPointOut(
+        key=point.key,
+        proposed_answer=point.proposed_answer,
+        citation_id=point.citation_id,
+        answer=point.answer,
+        note=point.note,
+    )
+
+
+@router.get(
+    "/ebp/certification",
+    action="ebp.read",
+    response_model=list[CertificationPointOut],
+)
+async def ebp_certification_read_route(
+    work_item_id: UUID, ctx: Ctx
+) -> list[CertificationPointOut]:
+    """The six points in order; a point nobody evaluated reads `not_evaluated`."""
+    await _gate(ctx, work_item_id, "ebp.read", _E)
+    from abacus.modules.assurance import ebp_investments
+
+    return [_point_out(p) for p in await ebp_investments.points(ctx.tenant, work_item_id)]
 
 
 @router.post(
@@ -1375,7 +1491,7 @@ async def ebp_trust_adopt_route(
     "/ebp/certification/points/{point_key}",
     action="ebp_certification.evaluate",
     response_model=AcceptedOut,
-    errors=(501,),
+    errors=(409,),
 )
 async def ebp_certification_route(
     work_item_id: UUID,
@@ -1384,9 +1500,15 @@ async def ebp_certification_route(
     ctx: Ctx,
     idempotency_key: IdempotencyKey,
 ) -> AcceptedOut:
-    """A person evaluates a certification point (29 CFR 2520.103-8; T27)."""
+    """A person evaluates a certification point (29 CFR 2520.103-8; A-05-T39)."""
     await _gate(ctx, work_item_id, "ebp_certification.evaluate", _E)
-    _not_yet()
+    from abacus.modules.assurance import ebp_investments
+
+    return AcceptedOut(
+        id=await ebp_investments.evaluate_point(
+            ctx, work_item_id, point_key, body.answer, body.note
+        )
+    )
 
 
 @router.get("/ebp/participant-accounts/rollforward", action="ebp.read", response_model=FiguresOut)
