@@ -1,5 +1,12 @@
 import type { BlockOut, NoticeOut, ResponseOut } from "@abacus/api-client";
-import { agencyReplyMutation, markSentMutation, responseEditMutation, responseOptions, responseRegenerateMutation, sendForSignatureMutation } from "@abacus/api-client/query";
+import {
+  agencyReplyMutation,
+  markSentMutation,
+  responseEditMutation,
+  responseOptions,
+  responseRegenerateMutation,
+  sendForSignatureMutation,
+} from "@abacus/api-client/query";
 import { Button, PaperCard, Pill, Skeleton, Toggle, amount, cn } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, type ReactNode, useState } from "react";
@@ -30,7 +37,12 @@ function Band({ title, children }: { title: string; children: ReactNode }): JSX.
 
 function Kv({ k, v, strong = false }: { k: string; v: ReactNode; strong?: boolean }): JSX.Element {
   return (
-    <div className={cn("flex min-h-[33px] items-center justify-between gap-[12px] px-[14px] text-[13px] hairline-b", strong && "font-medium")}>
+    <div
+      className={cn(
+        "flex min-h-[33px] items-center justify-between gap-[12px] px-[14px] text-[13px] hairline-b",
+        strong && "font-medium",
+      )}
+    >
       <span className="text-ink-2">{k}</span>
       <span className="text-right tabular-nums">{v}</span>
     </div>
@@ -44,8 +56,8 @@ function Disc({ state }: { state: ResponseOut["approvals"][number]["state"] }): 
       aria-hidden="true"
       className={cn(
         "inline-block size-[15px] rounded-full",
-        state === "done" && "bg-olive",
-        state === "in_progress" && "bg-gradient-to-r from-olive to-olive/0 ring-[1px] ring-olive",
+        state === "done" && "bg-green",
+        state === "in_progress" && "bg-gradient-to-r from-green to-green/0 ring-[1px] ring-green",
         state === "pending" && "ring-[1px] ring-ink-3",
         state === "stale" && "bg-amber",
       )}
@@ -91,7 +103,11 @@ function Structure({
           <Kv k={COPY.payment.tax} v={money(amounts.tax)} />
           <Kv k={COPY.payment.interest} v={money(amounts.interest)} />
           <Kv k={COPY.payment.penalty} v={money(amounts.penalty)} />
-          <Kv k={COPY.payment.total} v={<span data-not03="total">{money(amounts.total)}</span>} strong />
+          <Kv
+            k={COPY.payment.total}
+            v={<span data-not03="total">{money(amounts.total)}</span>}
+            strong
+          />
           {payment?.method_label != null && (
             <Kv k={COPY.payment.method} v={COPY.payment.methods[payment.method_label]} />
           )}
@@ -102,8 +118,14 @@ function Structure({
       </Band>
       <Band title={COPY.bands.enclosures}>
         {found.enclosures.map((e) => (
-          <div key={e.n} data-enclosure={e.n} className="flex h-[34px] items-center justify-between px-[14px] text-[13px] hairline-b">
-            <span>{e.n} {e.label}</span>
+          <div
+            key={e.n}
+            data-enclosure={e.n}
+            className="flex h-[34px] items-center justify-between px-[14px] text-[13px] hairline-b"
+          >
+            <span>
+              {e.n} {e.label}
+            </span>
             <Toggle
               label={e.label}
               checked={e.on}
@@ -116,13 +138,20 @@ function Structure({
         ))}
       </Band>
       <Band title={COPY.bands.send}>
-        <Kv k={COPY.send.channel} v={found.channel === null ? "—" : COPY.send.channels[found.channel]} />
+        <Kv
+          k={COPY.send.channel}
+          v={found.channel === null ? "—" : COPY.send.channels[found.channel]}
+        />
         <Kv k={COPY.send.followUp} v={COPY.send.followUpValue(found.follow_up_days)} />
         <Kv k={COPY.send.owner} v={found.owner?.name ?? notice.row.assignee?.name ?? "—"} />
       </Band>
       <Band title={COPY.bands.approvals}>
         {found.approvals.map((step) => (
-          <div key={step.level} data-approval={step.level} className="flex h-[33px] items-center gap-[8px] px-[14px] text-[13px] hairline-b">
+          <div
+            key={step.level}
+            data-approval={step.level}
+            className="flex h-[33px] items-center gap-[8px] px-[14px] text-[13px] hairline-b"
+          >
             <Disc state={step.state} />
             <span>{step.level}</span>
             {step.person !== null && <span className="text-ink-3">{step.person.initials}</span>}
@@ -135,10 +164,17 @@ function Structure({
 
 function Paragraph({ block }: { block: BlockOut }): JSX.Element {
   return (
-    <p data-block={block.key} data-origin={block.origin} className="mb-[10px] text-[12px] leading-[1.55]">
+    <p
+      data-block={block.key}
+      data-origin={block.origin}
+      className="mb-[10px] text-[12px] leading-[1.55]"
+    >
       {block.text}
       {block.citation_ids.map((id, i) => (
-        <span key={id} className="ml-[3px] rounded-[3px] bg-chip px-[4px] text-[10.5px] hover:bg-match-bg">
+        <span
+          key={id}
+          className="ml-[3px] rounded-[3px] bg-chip px-[4px] text-[10.5px] hover:bg-match-bg"
+        >
           {i + 1}
         </span>
       ))}
@@ -231,8 +267,22 @@ function ReplySheet({ noticeId, onDone }: { noticeId: string; onDone: () => void
   };
   return (
     <div data-not03="reply" className="flex gap-[8px] p-[14px] hairline-t">
-      <Button variant="secondary" onClick={() => { save("resolved"); }}>{COPY.reply.resolved}</Button>
-      <Button variant="secondary" onClick={() => { save("escalated"); }}>{COPY.reply.escalated}</Button>
+      <Button
+        variant="secondary"
+        onClick={() => {
+          save("resolved");
+        }}
+      >
+        {COPY.reply.resolved}
+      </Button>
+      <Button
+        variant="secondary"
+        onClick={() => {
+          save("escalated");
+        }}
+      >
+        {COPY.reply.escalated}
+      </Button>
     </div>
   );
 }
@@ -247,7 +297,13 @@ export interface ResponseEditorProps {
   onDecision?: () => void;
 }
 
-export function ResponseEditor({ noticeId, notice, onApprove, onEnvelope, onDecision }: ResponseEditorProps): JSX.Element {
+export function ResponseEditor({
+  noticeId,
+  notice,
+  onApprove,
+  onEnvelope,
+  onDecision,
+}: ResponseEditorProps): JSX.Element {
   const client = useQueryClient();
   const [sheet, setSheet] = useState<"sent" | "reply" | null>(null);
   const query = useQuery(responseOptions({ path: { notice_id: noticeId } }));
@@ -272,13 +328,21 @@ export function ResponseEditor({ noticeId, notice, onApprove, onEnvelope, onDeci
       case "waiting_decision":
         return (
           <span className="flex items-center gap-[8px]">
-            <span data-not03="blocked" className="text-[12px] text-ink-3">{COPY.position.pending}</span>
-            <Button variant="primary" size="sm" disabled>{COPY.approve}</Button>
+            <span data-not03="blocked" className="text-[12px] text-ink-3">
+              {COPY.position.pending}
+            </span>
+            <Button variant="primary" size="sm" disabled>
+              {COPY.approve}
+            </Button>
           </span>
         );
       case "in_review":
         return (
-          <Button variant="primary" size="sm" {...(onApprove === undefined ? {} : { onClick: onApprove })}>
+          <Button
+            variant="primary"
+            size="sm"
+            {...(onApprove === undefined ? {} : { onClick: onApprove })}
+          >
             {COPY.approve}
           </Button>
         );
@@ -289,30 +353,53 @@ export function ResponseEditor({ noticeId, notice, onApprove, onEnvelope, onDeci
             size="sm"
             disabled={signature.isPending}
             onClick={() => {
-              signature.mutate({ path: { notice_id: noticeId }, headers: { "Idempotency-Key": crypto.randomUUID() } });
+              signature.mutate({
+                path: { notice_id: noticeId },
+                headers: { "Idempotency-Key": crypto.randomUUID() },
+              });
             }}
           >
             {COPY.sendForSignature}
           </Button>
         );
       case "out_for_signature":
-        return <Pill size="chip" variant="neutral">{COPY.envelope.sent}</Pill>;
+        return (
+          <Pill size="chip" variant="neutral">
+            {COPY.envelope.sent}
+          </Pill>
+        );
       case "ready_to_send":
         return (
-          <Button variant="primary" size="sm" onClick={() => { setSheet("sent"); }}>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              setSheet("sent");
+            }}
+          >
             {COPY.markSent}
           </Button>
         );
       case "sent":
         return (
-          <Button variant="secondary" size="sm" onClick={() => { setSheet("reply"); }}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setSheet("reply");
+            }}
+          >
             {COPY.logReply}
           </Button>
         );
     }
   };
   return (
-    <div data-screen="NOT-03" data-readiness={found.readiness} className="flex min-h-0 flex-1 gap-[10px] p-[10px]">
+    <div
+      data-screen="NOT-03"
+      data-readiness={found.readiness}
+      className="flex min-h-0 flex-1 gap-[10px] p-[10px]"
+    >
       <Structure
         found={found}
         notice={notice}
@@ -335,7 +422,10 @@ export function ResponseEditor({ noticeId, notice, onApprove, onEnvelope, onDeci
                 size="sm"
                 disabled={regenerate.isPending}
                 onClick={() => {
-                  regenerate.mutate({ path: { notice_id: noticeId }, headers: { "If-Match": version } });
+                  regenerate.mutate({
+                    path: { notice_id: noticeId },
+                    headers: { "If-Match": version },
+                  });
                 }}
               >
                 {COPY.regenerate}
@@ -345,12 +435,20 @@ export function ResponseEditor({ noticeId, notice, onApprove, onEnvelope, onDeci
           </span>
         </header>
         {found.position_mismatch && (
-          <div role="status" data-not03="mismatch" className="bg-amber-tint px-[14px] py-[6px] text-[12.5px] text-amber-ink">
+          <div
+            role="status"
+            data-not03="mismatch"
+            className="bg-amber-tint px-[14px] py-[6px] text-[12.5px] text-amber-ink"
+          >
             {COPY.mismatch}
           </div>
         )}
         {found.readiness === "out_for_signature" && (
-          <div role="status" data-not03="waiting" className="bg-shell px-[14px] py-[6px] text-[12.5px] text-ink-2">
+          <div
+            role="status"
+            data-not03="waiting"
+            className="bg-shell px-[14px] py-[6px] text-[12.5px] text-ink-2"
+          >
             {COPY.envelope.waiting}
           </div>
         )}
@@ -361,8 +459,23 @@ export function ResponseEditor({ noticeId, notice, onApprove, onEnvelope, onDeci
             ))}
           </PaperCard>
         </div>
-        {sheet === "sent" && <MarkSentSheet noticeId={noticeId} found={found} onDone={() => { setSheet(null); }} />}
-        {sheet === "reply" && <ReplySheet noticeId={noticeId} onDone={() => { setSheet(null); }} />}
+        {sheet === "sent" && (
+          <MarkSentSheet
+            noticeId={noticeId}
+            found={found}
+            onDone={() => {
+              setSheet(null);
+            }}
+          />
+        )}
+        {sheet === "reply" && (
+          <ReplySheet
+            noticeId={noticeId}
+            onDone={() => {
+              setSheet(null);
+            }}
+          />
+        )}
       </section>
     </div>
   );

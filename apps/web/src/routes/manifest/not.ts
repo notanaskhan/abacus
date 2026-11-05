@@ -19,8 +19,9 @@ export const notScreens = {
   },
   "NOT-03": {
     name: "Response letter editor & approval · CP2000 · TY2024 · Whitley",
-    // N-04-T20: a to g and d2 on fixtures, under NOT-02's Response tab.
-    status: "fixture",
+    // N-04-T20: a to g and d2 on fixtures, under NOT-02's Response tab; planned with NOT-02 until
+    // FIL-01's hold can name its notice (the screen's links rule).
+    status: "planned",
     path: "/notices/$noticeId",
   },
   // seed-manifest: new screens are added above this line

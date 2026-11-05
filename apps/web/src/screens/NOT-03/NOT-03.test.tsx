@@ -64,7 +64,9 @@ describe("NOT-03", () => {
 
   it("c: out for signature is waiting, with no approve or send control", async () => {
     show("c");
-    expect((await drawn("[data-not03='waiting']")).textContent).toContain("Waiting on Marcus and Dana");
+    expect((await drawn("[data-not03='waiting']")).textContent).toContain(
+      "Waiting on Marcus and Dana",
+    );
     expect(screen.queryByRole("button", { name: "Mark as sent…" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Approve…" })).toBeNull();
   });
@@ -86,6 +88,8 @@ describe("NOT-03", () => {
   it("g: approval is blocked with its reason in text", async () => {
     show("g");
     expect((await drawn("[data-not03='blocked']")).textContent).toContain("partner's decision");
-    expect((screen.getByRole("button", { name: "Approve…" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Approve…" }).disabled).toBe(
+      true,
+    );
   });
 });

@@ -35,12 +35,12 @@ export const COPY = {
     title: "Coverage",
     planYear: "Plan year",
     socPeriod: "SOC 1 period",
-    gap: (days: number): string => `Gap · ${days} days`,
+    gap: (days: number): string => `Gap · ${String(days)} days`,
     bridged: "Bridge letter · no changes reported",
     bridgeRow: "Bridge letter",
     remind: "Remind…",
     alt: (start: string, end: string, days: number): string =>
-      `SOC 1 period ${start} to ${end}, leaving ${days} days of the plan year uncovered.`,
+      `SOC 1 period ${start} to ${end}, leaving ${String(days)} days of the plan year uncovered.`,
   },
   evaluation: {
     title: "Report evaluation",
@@ -49,7 +49,7 @@ export const COPY = {
     typeAndPeriod: "Type and period",
     objectives: "Control objectives",
     objectivesValue: (total: number, relevant: number): string =>
-      `${total} (${relevant} relevant to this audit)`,
+      `${String(total)} (${String(relevant)} relevant to this audit)`,
     subservice: "Subservice organizations",
     reportDate: "Report date",
     gapProcedures: "Gap procedures",
@@ -64,7 +64,8 @@ export const COPY = {
   },
   exceptions: { title: "Exceptions noted by the service auditor", low: "Low", high: "High" },
   cuecs: {
-    title: (done: number, total: number): string => `CUEC mapping · ${done} of ${total} evidenced`,
+    title: (done: number, total: number): string =>
+      `CUEC mapping · ${String(done)} of ${String(total)} evidenced`,
     evidenced: "Evidenced",
     missing: "Evidence missing",
     internalControl: "Internal Control",

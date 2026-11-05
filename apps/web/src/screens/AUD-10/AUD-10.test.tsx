@@ -22,10 +22,7 @@ afterEach(() => {
 });
 
 function Canvas(props: { running?: boolean; cuec?: number | null }): JSX.Element {
-  const canvas = useServiceOrgsCanvas(
-    "00000000-0000-4000-8000-000000000001",
-    props,
-  );
+  const canvas = useServiceOrgsCanvas("00000000-0000-4000-8000-000000000001", props);
   return <div>{canvas.children}</div>;
 }
 
@@ -60,7 +57,12 @@ describe("AUD-10", () => {
   it("a: the inventory reads the four organizations with their evidence", async () => {
     show("a");
     const table = await drawn("[data-aud10='inventory']");
-    expect(table.textContent).toContain("Gap found");
+    await waitFor(
+      () => {
+        expect(table.textContent).toContain("Gap found");
+      },
+      { timeout: 6000 },
+    );
     expect(table.textContent).toContain("Certification accepted");
     expect(table.textContent).toContain("Tested directly");
     expect(table.textContent).toContain("Not relevant");

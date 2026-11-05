@@ -68,7 +68,9 @@ describe("TAX-13", () => {
     show("b", { tab: "estimates", taxYear: 2026 });
     const table = await drawn("[data-tax13='estimates'] tbody tr");
     expect(table).toBeTruthy();
-    expect(count("paid") + count("scheduled") + count("confirmation_requested")).toBe(count("due"));
+    expect(count("paid") + count("scheduled") + count("confirmation_requested")).toBe(
+      count("due"),
+    );
     expect(count("not_required")).toBe(2);
     expect(document.querySelectorAll("[data-tax13='estimates'] button")).toHaveLength(2);
   });
@@ -81,6 +83,9 @@ describe("TAX-13", () => {
     expect(blocked?.getAttribute("data-blocked")).toContain("G1 and G3");
     expect(blocked?.querySelector("button")?.hasAttribute("disabled")).toBe(true);
     const lakeshore = document.querySelector("[data-client='Lakeshore Literacy Alliance']");
-    expect(lakeshore?.querySelector("button:not([disabled])")?.textContent).toContain("Prepare 8868");
+    const prepare = Array.from(lakeshore?.querySelectorAll("button") ?? []).find((b) =>
+      b.textContent.includes("Prepare 8868"),
+    );
+    expect(prepare?.hasAttribute("disabled")).toBe(false);
   });
 });

@@ -85,7 +85,7 @@ describe("EBP-06", () => {
     show("c");
     expect((await drawn("[data-ebp06='hold']")).textContent).toContain("Sign-off is held");
     const button = Array.from(document.querySelectorAll("button")).find((b) =>
-      b.textContent?.includes("Sign off"),
+      b.textContent.includes("Sign off"),
     );
     expect(button?.hasAttribute("disabled")).toBe(true);
   });

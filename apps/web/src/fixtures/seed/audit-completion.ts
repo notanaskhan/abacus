@@ -37,7 +37,7 @@ const CHECKLIST_TITLES = [
 
 function checklist(done: number): EqrChecklistItemOut[] {
   return CHECKLIST_TITLES.map((title, i) => ({
-    item_key: `eqr_${i + 1}`,
+    item_key: `eqr_${String(i + 1)}`,
     position: i + 1,
     status: i < done ? "done" : "todo",
     sub_line: null,
@@ -90,16 +90,29 @@ export function aud18(state: "a" | "b" | "b2" | "c" | "d" | "e"): EqrReviewOut {
       state === "c" || state === "d"
         ? []
         : [
-            { id: stableId("eqr-note:1"), ref: "EQR-1", status: "responded", assignee_name: "Hannah Leclerc" },
-            { id: stableId("eqr-note:2"), ref: "EQR-2", status: "open", assignee_name: "Hannah Leclerc" },
+            {
+              id: stableId("eqr-note:1"),
+              ref: "EQR-1",
+              status: "responded",
+              assignee_name: "Hannah Leclerc",
+            },
+            {
+              id: stableId("eqr-note:2"),
+              ref: "EQR-2",
+              status: "open",
+              assignee_name: "Hannah Leclerc",
+            },
           ],
     concurrence: null,
-    blockers: state === "a" || state === "b" || state === "b2" ? ["checklist_open:4", "eqr_notes_open:2"] : [],
+    blockers:
+      state === "a" || state === "b" || state === "b2"
+        ? ["checklist_open:4", "eqr_notes_open:2"]
+        : [],
     viewer_is_eqr: state !== "e",
     allowed_actions:
       state === "e" || concurred ? [] : ["eqr.mark_reviewed", "eqr.checklist_update"],
     version: 1,
-  } as EqrReviewOut;
+  };
 }
 
 export function aud19(state: "a" | "a2" | "b" | "c" | "d" | "e" | "f"): AuditCompletionOut {
@@ -122,9 +135,7 @@ export function aud19(state: "a" | "a2" | "b" | "c" | "d" | "e" | "f"): AuditCom
   };
 }
 
-export function aud21(
-  state: "a" | "a2" | "b" | "c" | "d" | "e" | "f",
-): RepresentationLetterOut {
+export function aud21(state: "a" | "a2" | "b" | "c" | "d" | "e" | "f"): RepresentationLetterOut {
   const statuses: Record<typeof state, RepresentationLetterOut["status"]> = {
     a: "draft",
     a2: "approved",
@@ -153,9 +164,7 @@ export function aud21(
   };
 }
 
-export function aud22(
-  state: "a" | "a2" | "a3" | "b" | "c" | "d" | "e",
-): GovernanceListOut {
+export function aud22(state: "a" | "a2" | "a3" | "b" | "c" | "d" | "e"): GovernanceListOut {
   return {
     allowed_actions:
       state === "a2"
@@ -194,7 +203,13 @@ export function aud23(
 }
 
 function gate(g: GateCardOut["gate"], met: boolean, value: string | null): GateCardOut {
-  return { gate: g, met, required: true, value, blockers: met ? [] : ["envelope:out_for_signature"] };
+  return {
+    gate: g,
+    met,
+    required: true,
+    value,
+    blockers: met ? [] : ["envelope:out_for_signature"],
+  };
 }
 
 export function aud24(state: "a" | "b" | "c" | "d" | "e" | "f"): AuditReleaseOut {

@@ -1,6 +1,17 @@
 import type { EstimateRowOut, ExtensionRowOut } from "@abacus/api-client";
 import { extensionsOptions, taxEstimatesOptions } from "@abacus/api-client/query";
-import { Button, EmptyState, Pill, SearchField, Segmented, Skeleton, Tooltip, amount, cn, date } from "@abacus/ui";
+import {
+  Button,
+  EmptyState,
+  Pill,
+  SearchField,
+  Segmented,
+  Skeleton,
+  Tooltip,
+  amount,
+  cn,
+  date,
+} from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { useNow } from "../../app-core/clock";
@@ -16,7 +27,13 @@ type Tab = keyof typeof COPY.tabs;
 type Segment = keyof typeof COPY.segments;
 const SEGMENTS: readonly Segment[] = ["open", "filed", "likely"];
 const EXTENSION_TILES = ["extended", "open", "filed", "likely", "acks_pending"] as const;
-const ESTIMATE_TILES = ["due", "paid", "scheduled", "confirmation_requested", "not_required"] as const;
+const ESTIMATE_TILES = [
+  "due",
+  "paid",
+  "scheduled",
+  "confirmation_requested",
+  "not_required",
+] as const;
 type Tile = (typeof EXTENSION_TILES)[number] | (typeof ESTIMATE_TILES)[number];
 const URGENT_DAYS = 7;
 
@@ -74,22 +91,37 @@ function ExtensionRow({
   const line = row.lines[0];
   const blocked = row.prepare_blocked_reason ?? null;
   return (
-    <tr data-row={row.work_item_id} data-client={row.client_name} className="h-[40px] text-[12.5px] hairline-t">
+    <tr
+      data-row={row.work_item_id}
+      data-client={row.client_name}
+      className="h-[40px] text-[12.5px] hairline-t"
+    >
       <td className="px-[12px]">
-        <button type="button" className="text-left text-ink hover:underline" onClick={() => onReturn?.(row.tax_return_id)}>
+        <button
+          type="button"
+          className="text-left text-ink hover:underline"
+          onClick={() => onReturn?.(row.tax_return_id)}
+        >
           {row.client_name}
         </button>
       </td>
       <td>{row.return_form}</td>
       <td>{row.lines.map((l) => l.form).join(" + ")}</td>
-      <td>
-        {line?.filed_on == null ? COPY.notFiled : date(line.filed_on, { now })}
-      </td>
+      <td>{line?.filed_on == null ? COPY.notFiled : date(line.filed_on, { now })}</td>
       <td>
         {line === undefined || line.status === "not_filed" ? (
           COPY.ack.not_filed
         ) : (
-          <Pill size="chip" variant={line.status === "accepted" ? "green-tint" : line.status === "rejected" ? "red-tint" : "neutral"}>
+          <Pill
+            size="chip"
+            variant={
+              line.status === "accepted"
+                ? "green-tint"
+                : line.status === "rejected"
+                  ? "red-tint"
+                  : "neutral"
+            }
+          >
             {COPY.ack[line.status]}
           </Pill>
         )}
@@ -98,7 +130,9 @@ function ExtensionRow({
       <td className="text-right tabular-nums">{figure(row.withholding_plus_estimates)}</td>
       <td className="text-right tabular-nums">
         {figure(row.safe_harbor_target)}
-        {row.safe_harbor_pct != null && <span className="ml-[3px] text-ink-3">({row.safe_harbor_pct}%)</span>}
+        {row.safe_harbor_pct != null && (
+          <span className="ml-[3px] text-ink-3">({row.safe_harbor_pct}%)</span>
+        )}
       </td>
       <td data-col="paid" className="tabular-nums">
         {row.payments.length === 0
@@ -106,18 +140,23 @@ function ExtensionRow({
           : row.payments.map((p) => `${p.jurisdiction} ${figure(p.amount)}`).join(" · ")}
       </td>
       <td>
-        {row.confirmation?.confirmed === true
-          ? `✓ ${row.confirmation.contact_name ?? ""}`
-          : "—"}
+        {row.confirmation?.confirmed === true ? `✓ ${row.confirmation.contact_name ?? ""}` : "—"}
       </td>
       <td>
-        <span className={cn(urgent && "font-medium text-red-ink")} data-due={urgent ? "urgent" : "ok"}>
+        <span
+          className={cn(urgent && "font-medium text-red-ink")}
+          data-due={urgent ? "urgent" : "ok"}
+        >
           {date(row.extended_due_on, { now, withYear: true })}
-          {urgent && row.days_to_extended_due != null && ` · ${COPY.day(row.days_to_extended_due)}`}
+          {urgent &&
+            row.days_to_extended_due != null &&
+            ` · ${COPY.day(row.days_to_extended_due)}`}
         </span>
         {row.likely_to_extend && (
           <span className="ml-[6px] inline-flex items-center gap-[6px]">
-            <Pill size="chip" variant="amber">{COPY.likelyTag}</Pill>
+            <Pill size="chip" variant="amber">
+              {COPY.likelyTag}
+            </Pill>
             {blocked === null ? (
               <Button size="xs" variant="secondary" onClick={() => onPrepare?.(row)}>
                 {COPY.prepare(row.lines[0]?.form ?? "")}
@@ -138,18 +177,30 @@ function ExtensionRow({
   );
 }
 
-function EstimateRow({ row, onResend }: { row: EstimateRowOut; onResend?: (row: EstimateRowOut) => void }): JSX.Element {
+function EstimateRow({
+  row,
+  onResend,
+}: {
+  row: EstimateRowOut;
+  onResend?: (row: EstimateRowOut) => void;
+}): JSX.Element {
   const installment = row.installment;
   const awaiting = installment?.status === "confirmation_requested";
   return (
-    <tr data-row={row.schedule_id} data-client={row.client_name} className="h-[40px] text-[12.5px] hairline-t">
+    <tr
+      data-row={row.schedule_id}
+      data-client={row.client_name}
+      className="h-[40px] text-[12.5px] hairline-t"
+    >
       <td className="px-[12px]">{row.client_name}</td>
       <td>{row.forms.join(" · ")}</td>
       <td>{COPY.methods[row.method]}</td>
       <td className="text-right tabular-nums">{figure(row.annual_required)}</td>
       <td className="text-right tabular-nums">{figure(installment?.amount)}</td>
       <td data-col="status">
-        {installment === null || installment === undefined ? "—" : COPY.estimateStatus[installment.status]}
+        {installment === null || installment === undefined
+          ? "—"
+          : COPY.estimateStatus[installment.status]}
       </td>
       <td>
         {awaiting && (
@@ -215,7 +266,9 @@ export function Extensions({
   const page = tab === "estimates" ? estimates.data : extensions.data;
   const shown = page?.items.length ?? 0;
   const total = page?.total ?? 0;
-  const tabs: Tab[] = showPayments ? ["extensions", "estimates", "payments"] : ["extensions", "estimates"];
+  const tabs: Tab[] = showPayments
+    ? ["extensions", "estimates", "payments"]
+    : ["extensions", "estimates"];
   return (
     <div data-screen="TAX-13" data-tab={tab} className="flex min-h-0 flex-1 flex-col">
       <div className="relative flex h-[42px] shrink-0 items-center justify-center text-[15px] font-medium">
@@ -296,7 +349,11 @@ export function Extensions({
               </thead>
               <tbody>
                 {estimates.data?.items.map((row) => (
-                  <EstimateRow key={row.schedule_id} row={row} {...(onResend === undefined ? {} : { onResend })} />
+                  <EstimateRow
+                    key={row.schedule_id}
+                    row={row}
+                    {...(onResend === undefined ? {} : { onResend })}
+                  />
                 ))}
               </tbody>
             </table>

@@ -54,6 +54,8 @@ describe("screen scenarios on the firm entry", () => {
       "KNW-01", // K-01-T04
       "KNW-04", // K-02-T13
       "NOT-01", // N-04-T05: j09 1
+      "NOT-03", // N-04-T20
+      "TAX-13", // T-03-T11
       "SHL-03",
       "SHL-04",
       "SHL-14",

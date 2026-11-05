@@ -2,15 +2,7 @@
 // time, on the stub's paths. Writes stay out until each screen's task adds them.
 
 import { type FixtureHandler, json } from "../../app-core/fixture-mode";
-import {
-  aud18,
-  aud19,
-  aud21,
-  aud22,
-  aud23,
-  aud24,
-  aud25,
-} from "../seed/audit-completion";
+import { aud18, aud19, aud21, aud22, aud23, aud24, aud25 } from "../seed/audit-completion";
 
 const P = "/v1/audits/{work_item_id}";
 

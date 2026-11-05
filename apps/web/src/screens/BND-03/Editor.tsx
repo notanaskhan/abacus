@@ -173,7 +173,12 @@ function TypePicker({
   onChange: (type: EditorQuestionOut["type"]) => void;
 }): JSX.Element {
   return (
-    <div role="radiogroup" aria-label={COPY.editing.type} data-bnd03="type-picker" className="flex flex-wrap gap-[4px]">
+    <div
+      role="radiogroup"
+      aria-label={COPY.editing.type}
+      data-bnd03="type-picker"
+      className="flex flex-wrap gap-[4px]"
+    >
       {TYPES.map((type) => (
         <button
           key={type}
@@ -290,10 +295,20 @@ function QuestionCard({
         </Pill>
         {reordering && (
           <>
-            <Button variant="ghost" size="xs" aria-label={COPY.editing.up} onClick={() => onMove?.(-1)}>
+            <Button
+              variant="ghost"
+              size="xs"
+              aria-label={COPY.editing.up}
+              onClick={() => onMove?.(-1)}
+            >
               ↑
             </Button>
-            <Button variant="ghost" size="xs" aria-label={COPY.editing.down} onClick={() => onMove?.(1)}>
+            <Button
+              variant="ghost"
+              size="xs"
+              aria-label={COPY.editing.down}
+              onClick={() => onMove?.(1)}
+            >
               ↓
             </Button>
           </>
@@ -305,7 +320,10 @@ function QuestionCard({
         )}
       </header>
       {editing && (
-        <div data-bnd03="editing" className="flex flex-col gap-[8px] px-[12px] py-[8px] hairline-t">
+        <div
+          data-bnd03="editing"
+          className="flex flex-col gap-[8px] px-[12px] py-[8px] hairline-t"
+        >
           <label className="flex flex-col gap-[2px] text-[12px] text-ink-3">
             {COPY.editing.wording}
             <input
@@ -480,8 +498,7 @@ export function QuestionnaireEditor({
     if (order === null) return merged;
     return [...merged].sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key));
   }, [server, added, patches, order]);
-  const dirty =
-    Object.keys(patches).length + added.length + (order === null ? 0 : 1);
+  const dirty = Object.keys(patches).length + added.length + (order === null ? 0 : 1);
   const canEdit = (data?.allowed_actions ?? []).includes("questionnaire.edit");
   const patch = (key: string, change: Partial<EditorQuestionOut>): void => {
     setPatches((all) => ({ ...all, [key]: { ...all[key], ...change } }));
@@ -638,7 +655,11 @@ export function QuestionnaireEditor({
                     )}
                   </div>
                   {stale && (
-                    <div role="alert" data-bnd03="stale" className="flex items-center justify-between bg-red-tint px-[14px] py-[6px] text-[12.5px] text-red-ink">
+                    <div
+                      role="alert"
+                      data-bnd03="stale"
+                      className="flex items-center justify-between bg-red-tint px-[14px] py-[6px] text-[12.5px] text-red-ink"
+                    >
                       {COPY.editing.stale}
                       <Button
                         variant="secondary"
@@ -654,7 +675,10 @@ export function QuestionnaireEditor({
                     </div>
                   )}
                   {dirty > 0 && (
-                    <div data-bnd03="save-bar" className="sticky bottom-0 flex h-[44px] items-center justify-end gap-[8px] bg-card px-[14px] hairline-t">
+                    <div
+                      data-bnd03="save-bar"
+                      className="sticky bottom-0 flex h-[44px] items-center justify-end gap-[8px] bg-card px-[14px] hairline-t"
+                    >
                       <span className="flex-1 text-[12.5px] text-ink-3">
                         {COPY.editing.unsaved(dirty)}
                       </span>

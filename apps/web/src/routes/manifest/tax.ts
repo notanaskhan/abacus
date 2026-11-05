@@ -71,7 +71,13 @@ export const taxScreens = {
     path: "/tax-returns/$returnId/delivery",
   },
   // T-03-T11: a, b and c on fixtures; d and e with T-03-T16.
-  "TAX-13": { name: "Extensions, estimates & payments", status: "fixture", path: "/tax-returns/extensions" },
+  // T-03-T11: a to g on fixtures; the host wires TAX-01 and TAX-02. Planned until the row carries the
+  // client and engagement that Thornbury's CLI-07 link needs (the screen's links rule).
+  "TAX-13": {
+    name: "Extensions, estimates & payments",
+    status: "planned",
+    path: "/tax-returns/extensions",
+  },
   "TAX-14": {
     name: "Firm standards run · 1065 Review Checklist v4",
     status: "planned",

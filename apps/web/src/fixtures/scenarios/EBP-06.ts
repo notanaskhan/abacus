@@ -10,7 +10,12 @@
 // Dev and test only.
 
 import type { CapabilitiesOut } from "@abacus/api-client";
-import { type FixtureHandler, type Scenario, defineScenarios, json } from "../../app-core/fixture-mode";
+import {
+  type FixtureHandler,
+  type Scenario,
+  defineScenarios,
+  json,
+} from "../../app-core/fixture-mode";
 import { seedScenario } from "../scenario";
 import { getSeed } from "../seed";
 import { type Ebp06Variant, ebp06View } from "../seed/ebp06";
@@ -37,7 +42,8 @@ function frame(
     get handlers(): Record<string, FixtureHandler> {
       return {
         ...E0.handlers,
-        "GET /v1/me/capabilities": ({ persona }) => json(capabilities(persona, options.on ?? true)),
+        "GET /v1/me/capabilities": ({ persona }) =>
+          json(capabilities(persona, options.on ?? true)),
         [`GET ${E}/investments`]: ({ query }) =>
           json(ebp06View(variant, (query.get("layer") ?? "final") as "final" | "unadjusted")),
         [`PUT ${E}/certification/points/{point_key}`]: () => json({ id: crypto.randomUUID() }),

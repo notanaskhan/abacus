@@ -9,7 +9,12 @@
 //
 // Dev and test only.
 
-import { type FixtureHandler, type Scenario, defineScenarios, json } from "../../app-core/fixture-mode";
+import {
+  type FixtureHandler,
+  type Scenario,
+  defineScenarios,
+  json,
+} from "../../app-core/fixture-mode";
 import { auditHandlers } from "../handlers/audits";
 import { seedScenario } from "../scenario";
 import { getSeed } from "../seed";

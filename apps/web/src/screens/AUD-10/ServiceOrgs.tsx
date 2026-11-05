@@ -1,4 +1,9 @@
-import type { CuecOut, ServiceOrganizationOut, SocExceptionOut, SocReportOut } from "@abacus/api-client";
+import type {
+  CuecOut,
+  ServiceOrganizationOut,
+  SocExceptionOut,
+  SocReportOut,
+} from "@abacus/api-client";
 import { serviceOrgsOptions, socReportOptions } from "@abacus/api-client/query";
 import {
   type CockpitCanvas,
@@ -26,7 +31,8 @@ export const SERVICE_ORGS = "service_organizations";
 const FLAG = "assurance.service_orgs";
 const DAY = 86_400_000;
 const BLOCK = "mx-[12px] mt-[12px] overflow-hidden rounded-[12px] bg-card shadow-e1";
-const HEAD = "flex h-[32px] items-center justify-between px-[12px] text-[13px] font-medium hairline-b";
+const HEAD =
+  "flex h-[32px] items-center justify-between px-[12px] text-[13px] font-medium hairline-b";
 const ROW = "flex min-h-[29px] items-center gap-[8px] px-[12px] text-[12px] hairline-b";
 
 export interface ServiceOrgsOptions {
@@ -77,14 +83,15 @@ function Coverage({
   const to = Date.parse(`${planEnd}T12:00:00Z`);
   const span = Math.max(to - from, DAY);
   const gap = report.gap;
-  const days = gap.days ?? 0;
+  const days = gap.days;
   const socEnd = pct(report.period_end, from, span);
   const planLeft = pct(planStart, from, span);
   const label = (on: string): string => format.date(on);
   return (
     <section className={BLOCK} data-aud10="coverage">
       <div className={HEAD}>
-        {COPY.coverage.title} — {report.report_type ? COPY.evaluation.type[report.report_type] : ""}
+        {COPY.coverage.title} —{" "}
+        {report.report_type ? COPY.evaluation.type[report.report_type] : ""}
       </div>
       <div className="px-[12px] py-[10px] text-[11.5px]">
         <p className="sr-only" data-aud10="coverage-alt">
@@ -96,7 +103,7 @@ function Coverage({
             <div className="relative h-[14px]">
               <div
                 className="absolute top-0 h-[14px] rounded-[3px] bg-hair"
-                style={{ left: `${planLeft}%`, right: 0 }}
+                style={{ left: `${String(planLeft)}%`, right: 0 }}
               />
             </div>
           </div>
@@ -104,8 +111,8 @@ function Coverage({
             <div className="mb-[2px] text-ink-3">{COPY.coverage.socPeriod}</div>
             <div className="relative h-[14px]">
               <div
-                className="absolute top-0 h-[14px] rounded-[3px] bg-olive"
-                style={{ left: 0, width: `${socEnd}%` }}
+                className="absolute top-0 h-[14px] rounded-[3px] bg-green"
+                style={{ left: 0, width: `${String(socEnd)}%` }}
               />
               {days > 0 && (
                 <button
@@ -116,10 +123,10 @@ function Coverage({
                   onClick={() => onGap?.(report)}
                   className={cn(
                     "absolute top-0 h-[14px] rounded-[3px] bg-amber-tint ring-[1px] ring-amber",
-                    gap.bridged && "ring-olive",
+                    gap.bridged && "ring-green",
                   )}
                   style={{
-                    left: `${socEnd}%`,
+                    left: `${String(socEnd)}%`,
                     right: 0,
                     backgroundImage:
                       "repeating-linear-gradient(135deg, var(--hair) 0 2px, transparent 2px 6px)",
@@ -132,7 +139,10 @@ function Coverage({
         {days > 0 && (
           <div
             data-aud10="gap-label"
-            className={cn("mt-[6px] font-medium", gap.bridged ? "text-olive-ink" : "text-amber-ink")}
+            className={cn(
+              "mt-[6px] font-medium",
+              gap.bridged ? "text-green-ink" : "text-amber-ink",
+            )}
           >
             {gap.bridged ? COPY.coverage.bridged : COPY.coverage.gap(days)}
           </div>
@@ -142,7 +152,10 @@ function Coverage({
   );
 }
 
-function Evaluation({ report, subservice }: {
+function Evaluation({
+  report,
+  subservice,
+}: {
   report: SocReportOut;
   subservice: ServiceOrganizationOut["subservice_orgs"];
 }): JSX.Element {
@@ -167,7 +180,9 @@ function Evaluation({ report, subservice }: {
       subservice.length === 0
         ? "—"
         : subservice
-            .map((s) => (s.treatment === "carve_out" ? `${s.name} — ${COPY.evaluation.carveOut}` : s.name))
+            .map((s) =>
+              s.treatment === "carve_out" ? `${s.name} — ${COPY.evaluation.carveOut}` : s.name,
+            )
             .join("; "),
     ],
     [COPY.evaluation.reportDate, report.report_date ? format.date(report.report_date) : "—"],
@@ -185,7 +200,10 @@ function Evaluation({ report, subservice }: {
   );
 }
 
-function Exceptions({ rows, onFindings }: {
+function Exceptions({
+  rows,
+  onFindings,
+}: {
   rows: readonly SocExceptionOut[];
   onFindings?: (ref: string | null) => void;
 }): JSX.Element {
@@ -198,15 +216,26 @@ function Exceptions({ rows, onFindings }: {
           <div
             key={row.co_ref}
             data-impact={row.impact}
-            className={cn("flex flex-col gap-[2px] px-[12px] py-[8px] text-[12px] hairline-b", high && "bg-red-tint")}
+            className={cn(
+              "flex flex-col gap-[2px] px-[12px] py-[8px] text-[12px] hairline-b",
+              high && "bg-red-tint",
+            )}
           >
-            <span>{row.co_ref} {row.description}</span>
+            <span>
+              {row.co_ref} {row.description}
+            </span>
             <span className="text-[11.5px] text-ink-2">
               {high ? COPY.exceptions.high : COPY.exceptions.low}
               {row.impact_rationale ? `: ${row.impact_rationale}` : ""}
             </span>
             {high && onFindings !== undefined && (
-              <button type="button" className="self-start text-[11.5px] font-medium text-red-ink" onClick={() => onFindings(row.routed_ref ?? null)}>
+              <button
+                type="button"
+                className="self-start text-[11.5px] font-medium text-red-ink"
+                onClick={() => {
+                  onFindings(row.routed_ref ?? null);
+                }}
+              >
                 Findings
               </button>
             )}
@@ -217,7 +246,13 @@ function Exceptions({ rows, onFindings }: {
   );
 }
 
-function Cuecs({ report, selected, onCuec, onInternalControl, onDraftRequest }: {
+function Cuecs({
+  report,
+  selected,
+  onCuec,
+  onInternalControl,
+  onDraftRequest,
+}: {
   report: SocReportOut;
   selected: number | null;
   onCuec?: (n: number | null) => void;
@@ -239,24 +274,28 @@ function Cuecs({ report, selected, onCuec, onInternalControl, onDraftRequest }: 
             selected === row.n && "bg-match-bg",
           )}
         >
-          <span>{row.n} {row.text}</span>
+          <span>
+            {row.n} {row.text}
+          </span>
           <span className="flex items-center gap-[6px]">
-            {row.status === "evidence_missing" && row.n === 2 && onInternalControl !== undefined && (
-              <span
-                role="link"
-                tabIndex={0}
-                className="text-[11.5px] text-ink-2"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onInternalControl();
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") onInternalControl();
-                }}
-              >
-                {COPY.cuecs.internalControl}
-              </span>
-            )}
+            {row.status === "evidence_missing" &&
+              row.n === 2 &&
+              onInternalControl !== undefined && (
+                <span
+                  role="link"
+                  tabIndex={0}
+                  className="text-[11.5px] text-ink-2"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onInternalControl();
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") onInternalControl();
+                  }}
+                >
+                  {COPY.cuecs.internalControl}
+                </span>
+              )}
             <Pill size="state" variant={row.status === "evidenced" ? "green-tint" : "red-tint"}>
               {row.status === "evidenced" ? COPY.cuecs.evidenced : COPY.cuecs.missing}
             </Pill>
@@ -264,7 +303,10 @@ function Cuecs({ report, selected, onCuec, onInternalControl, onDraftRequest }: 
         </button>
       ))}
       {report.reliance_state === "pending" && (
-        <div data-aud10="reliance" className="flex min-h-[32px] items-center justify-between gap-[8px] bg-amber-tint px-[12px] py-[4px] text-[12px] text-amber-ink">
+        <div
+          data-aud10="reliance"
+          className="flex min-h-[32px] items-center justify-between gap-[8px] bg-amber-tint px-[12px] py-[4px] text-[12px] text-amber-ink"
+        >
           <span>{COPY.reliance.pending}</span>
           <Button variant="secondary" size="xs" onClick={() => onDraftRequest?.(report.id)}>
             {COPY.reliance.draftRequest}
@@ -297,7 +339,9 @@ function Inventory({ rows }: { rows: readonly ServiceOrganizationOut[] }): JSX.E
               <td>{row.relevant ? COPY.inventory.yes : COPY.inventory.no}</td>
               <td>{COPY.evidence[row.evidence_type]}</td>
               <td>
-                <Pill size="state" variant={TONE[row.status]}>{COPY.status[row.status]}</Pill>
+                <Pill size="state" variant={TONE[row.status]}>
+                  {COPY.status[row.status]}
+                </Pill>
               </td>
             </tr>
           ))}
@@ -358,7 +402,10 @@ export function useServiceOrgsCanvas(
         <Inventory rows={items} />
         {report.data !== undefined && (
           <>
-            <Coverage report={report.data} {...(options.onGap === undefined ? {} : { onGap: options.onGap })} />
+            <Coverage
+              report={report.data}
+              {...(options.onGap === undefined ? {} : { onGap: options.onGap })}
+            />
             <Evaluation report={report.data} subservice={owner?.subservice_orgs ?? []} />
             <Exceptions
               rows={report.data.exceptions}
