@@ -73,3 +73,4 @@ inside the Jan 1 – Apr 20, 2028 freeze. The rollout is `docs/runbooks/audit-pl
 | `workpapers.core`, `workpapers.drafting` | 2027-04-29 | **Renew** to Dec 30, 2027 | Flip Tue Nov 9; retire Dec 14 |
 | `assurance.internal_control` | 2027-04-29 | **Renew** to Dec 30, 2027 | Flip Tue Nov 23 (in the window); retire after the season if AUD-10 stayed dark |
 | `ledger.tb_mapping` | 2027-04-28 | **Renew** to Dec 30, 2027 | Flipped Oct 19 (Q-04-T092); retire Dec 14 |
+| `home.approvals` | 2027-04-28 | **Renew** to Dec 30, 2027 | Flips Tue Nov 2 and Nov 9 (Q-04-T097, RB-48); retire Dec 14 once on for every live firm |
