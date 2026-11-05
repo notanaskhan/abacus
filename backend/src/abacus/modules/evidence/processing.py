@@ -29,7 +29,7 @@ from abacus.kernel import _flags
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
 from abacus.kernel.errors import NotFound
-from abacus.kernel.flags import flag_enabled
+from abacus.kernel.flags import flag_enabled, flag_variant
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import Handler, OutboxEvent, Ref, Target, uow
 from abacus.modules.engagements.api import AccountRule, area_for, check_facts, version_detail
@@ -48,6 +48,7 @@ from abacus.modules.evidence.checks import (
 )
 from abacus.modules.evidence.cross_checks import Account, aging_cross_check, bank_cross_check
 from abacus.modules.evidence.events import (
+    EvidenceTextReady,
     EvidenceUploaded,
     EvidenceVersionCreated,
     InboxFileAdded,
@@ -78,7 +79,14 @@ from abacus.modules.evidence.repository import (
     stale_pdf_uploads,
 )
 from abacus.modules.evidence.service import engagement_snapshots
-from abacus.modules.evidence.workflow_types import INBOX, INTAKE, VERSION, UploadInput
+from abacus.modules.evidence.form_extraction_workflow import FormExtractionWorkflow
+from abacus.modules.evidence.workflow_types import (
+    INBOX,
+    INTAKE,
+    VERSION,
+    FormExtractionInput,
+    UploadInput,
+)
 from abacus.modules.evidence.workflows import TrustLayerBackfill, UploadProcessing
 from abacus.modules.ledger.api import snapshot_view
 from abacus.modules.requests.api import (
@@ -93,6 +101,7 @@ _log = get_logger(__name__)
 WORKFLOWS: dict[type, WorkClass] = {
     UploadProcessing: "interactive",
     TrustLayerBackfill: "background",
+    FormExtractionWorkflow: "background",  # P-11-T26
 }
 register_work_classes(WORKFLOWS)
 
@@ -156,7 +165,23 @@ async def on_evidence_version_created(event: OutboxEvent) -> None:
     await _start(event.tenant_id, VERSION, UUID(str(event.payload["evidence_version_id"])))
 
 
+async def on_evidence_text_ready(event: OutboxEvent) -> None:
+    """P-11-T26: a version's words are ready; code reads a known form if the firm's flag is on."""
+    tenant_id = event.tenant_id
+    version_id = str(event.payload["evidence_version_id"])
+    if await flag_variant(_system(tenant_id), _flags.EVIDENCE_FORM_EXTRACTION) == "off":
+        return
+    await dispatch(
+        FormExtractionWorkflow,
+        FormExtractionInput(str(tenant_id), version_id),
+        id=f"form_extraction:{tenant_id}:{version_id}",
+        id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE,
+        id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
+    )
+
+
 SUBSCRIPTIONS: dict[str, Handler] = {
+    EvidenceTextReady.event_type: on_evidence_text_ready,
     EvidenceVersionCreated.event_type: on_evidence_version_created,
     EvidenceUploaded.event_type: on_evidence_uploaded,
     InboxFileAdded.event_type: on_inbox_file_added,

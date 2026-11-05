@@ -102,6 +102,7 @@ class Word:
     top: float
     x1: float
     bottom: float
+    confidence: float = 1.0  # P-11-T25/T26: a text layer's words read 1.0; OCR's carry theirs
 
 
 @dataclass(frozen=True)
@@ -301,8 +302,11 @@ def layer_document(page: PageWords) -> bytes:
         "h": page.height,
         "rotation": page.rotation,
         "unread": page.unread,
+        # A word's confidence is written only when it isn't 1.0 (OCR): a text layer's object stays
+        # byte for byte what it was (P-11-T25).
         "words": [
             {"text": w.text, "x0": w.x0, "top": w.top, "x1": w.x1, "bottom": w.bottom}
+            | ({} if w.confidence == 1.0 else {"confidence": w.confidence})
             for w in page.words
         ],
     }
@@ -319,6 +323,7 @@ def parse_layer(raw: bytes) -> PageWords:
             float(cast(float, w["top"])),
             float(cast(float, w["x1"])),
             float(cast(float, w["bottom"])),
+            float(cast(float, w.get("confidence", 1.0))),
         )
         for w in cast(list[dict[str, object]], body["words"])
     )

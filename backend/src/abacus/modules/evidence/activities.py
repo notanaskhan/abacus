@@ -8,12 +8,19 @@ from __future__ import annotations
 
 from temporalio import activity
 
+from uuid import UUID
+
 from abacus.modules.evidence.drops import sort_drop
+from abacus.modules.evidence.form_extraction import extract_version
 from abacus.modules.evidence.masked_previews import masked_preview_upload, pending_masks
 from abacus.modules.evidence.pii import pii_scan_upload
 from abacus.modules.evidence.processing import check_upload, preview_upload, process_upload
 from abacus.modules.evidence.words import pending_words, words_upload
-from abacus.modules.evidence.workflow_types import BackfillInput, UploadInput
+from abacus.modules.evidence.workflow_types import (
+    BackfillInput,
+    FormExtractionInput,
+    UploadInput,
+)
 
 
 @activity.defn(name="upload.extract")
@@ -57,6 +64,12 @@ async def portal_drop_sort_activity(given: UploadInput) -> str:
     return await sort_drop(given)
 
 
+@activity.defn(name="forms.extract")
+async def forms_extract_activity(given: FormExtractionInput) -> int:
+    """P-11-T26: code identifies the form and reads its boxes."""
+    return await extract_version(UUID(given.tenant_id), UUID(given.evidence_version_id))
+
+
 @activity.defn(name="trust_layer.pending_words")
 async def pending_words_activity(given: BackfillInput) -> list[UploadInput]:
     """P-03-T05: the backfill's next batch."""
@@ -70,6 +83,7 @@ async def pending_masks_activity(given: BackfillInput) -> list[UploadInput]:
 
 
 ACTIVITIES = (
+    forms_extract_activity,
     extract_activity,
     check_activity,
     preview_activity,
