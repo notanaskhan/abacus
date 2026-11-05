@@ -4,10 +4,21 @@ Pre-registered (F-03-T08; ADR-140). N-04-T02 (DEC-2051): the notices v1 contract
 (`docs/contracts/notices.md`).
 """
 
+from abacus.kernel.audit_owners import register_client_owners, register_engagement_owners
 from abacus.modules.engagements.api import register_work_item_kind
 from abacus.modules.identity.api import AbacusRouter
+from abacus.modules.notices.audit_targets import (
+    CLIENT_KINDS,
+    ENGAGEMENT_KINDS,
+    intake_clients,
+    notice_engagements,
+)
 from abacus.modules.notices.contract import router
 from abacus.modules.notices.kind import NoticeKind
+
+# DEC-2264: the trail places a notice on its engagement and an intake on its client.
+register_engagement_owners(ENGAGEMENT_KINDS, notice_engagements)
+register_client_owners(CLIENT_KINDS, intake_clients)
 
 # F-03-T22: the `notice` work-item kind.
 register_work_item_kind("notice", NoticeKind())
