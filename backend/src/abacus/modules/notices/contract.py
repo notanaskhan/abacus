@@ -1454,9 +1454,14 @@ async def response_regenerate_route(notice_id: UUID, ctx: Ctx, if_match: IfMatch
 async def send_for_signature_route(
     notice_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> SendForSignatureOut:
-    """A C7 draft envelope (`notice_response`) and the payment-confirmation request."""
+    """A C7 draft envelope (`notice_response`); SIG-02 d opens it (A-04 N-04-T16)."""
     await _gate(ctx, notice_id, "notice_response.send_for_signature")
-    _not_yet()
+    from abacus.modules.notices import sending
+
+    return SendForSignatureOut(
+        envelope_id=await sending.send_for_signature(ctx, notice_id),
+        confirmation_request_item_id=None,
+    )
 
 
 @router.post(
@@ -1470,7 +1475,17 @@ async def mark_sent_route(
 ) -> SentOut:
     """Sent, then Awaiting IRS; 409 `not_ready` with the facts."""
     await _gate(ctx, notice_id, "notice_response.mark_sent")
-    _not_yet()
+    from abacus.modules.notices import sending
+
+    sent_on, follow_up, last4 = await sending.mark_sent(
+        ctx,
+        notice_id,
+        channel=body.channel,
+        confirmation_no=body.confirmation_no,
+        sent_on=body.sent_on,
+        follow_up_days=body.follow_up_days,
+    )
+    return SentOut(sent_on=sent_on, follow_up_on=follow_up, confirmation_last4=last4)
 
 
 @router.post(
@@ -1484,4 +1499,14 @@ async def agency_reply_route(
     notice_id: UUID, body: AgencyReplyIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> NoticeOut:
     await _gate(ctx, notice_id, "notice.agency_reply")
-    return await mask_tins_for(ctx, _not_yet())
+    from abacus.modules.notices import sending, service
+
+    await sending.agency_reply(
+        ctx,
+        notice_id,
+        outcome=body.outcome,
+        closed_on=body.closed_on,
+        note=body.note,
+        evidence_version_id=body.evidence_version_id,
+    )
+    return await mask_tins_for(ctx, await _notice_out(ctx, await service.notice(ctx, notice_id)))

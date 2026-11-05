@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 from typing import Literal, cast, get_args
 from uuid import UUID
 
+from abacus.kernel.db import TenantContext, transaction_context
 from abacus.kernel.uow import UnitOfWork
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.engagements.api import (
@@ -163,6 +164,10 @@ class RenderTicket:
 # the approver's user id and the content hash they approved, or None when it is not a human's.
 VariablesProvider = Callable[[OwnerRef, RenderScope], Awaitable[Mapping[str, str]]]
 ApprovalProvider = Callable[[ApprovalRef], Awaitable[tuple[UUID, str] | None]]
+# N-04-T16 (DEC-2311): the same, for a kind whose values need the transaction's tenant.
+TenantVariablesProvider = Callable[
+    [TenantContext, OwnerRef, RenderScope], Awaitable[Mapping[str, str]]
+]
 
 
 @dataclass(frozen=True)
@@ -174,6 +179,7 @@ class DocumentKind:
     source_events: tuple[str, ...] = ()
     retention_record_type: str = ""
     formats: tuple[RenderFormat, ...] = field(default=("pdf",))
+    tenant_variables_provider: TenantVariablesProvider | None = None
 
 
 class UnknownDocumentKind(LookupError):
@@ -239,7 +245,13 @@ async def render(tx: UnitOfWork, request: RenderRequest) -> RenderTicket:
     if request.mode != "draft":
         raise RenderRefused("final_requires_approval", "a final render goes through render_final")
     kind = document_kind(request.kind)
-    resolved = await kind.variables_provider(request.owner_ref, request.scope)
+    resolved = (
+        await kind.tenant_variables_provider(
+            await transaction_context(tx.session), request.owner_ref, request.scope
+        )
+        if kind.tenant_variables_provider is not None
+        else await kind.variables_provider(request.owner_ref, request.scope)
+    )
     declared = await docs.declared_keys(tx, request.template_version_id)
     variables, missing = docs.declared_values(declared, resolved)
     if missing:
