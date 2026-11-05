@@ -31578,6 +31578,7 @@
       "EpInvolvementOut": {
         "properties": {
           "items": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/InvolvementEntryOut"
             },
@@ -84183,6 +84184,7 @@
         "description": "AUD-16 O3 (A-06-T22; DEC-2254): the recipient and the template wording before a send. The\nwording is database content (DEC-79), never a model's.",
         "properties": {
           "entries": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/SendPreviewEntryOut"
             },
@@ -86000,9 +86002,11 @@
       "SignOffMatrixOut": {
         "properties": {
           "footer": {
-            "$ref": "#/components/schemas/SignOffMatrixFooterOut"
+            "$ref": "#/components/schemas/SignOffMatrixFooterOut",
+            "cls": "internal"
           },
           "rows": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/SignOffMatrixRowOut"
             },
@@ -86020,6 +86024,7 @@
       "SignOffMatrixRowOut": {
         "properties": {
           "cells": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/SignOffMatrixCellOut"
             },
@@ -91897,6 +91902,7 @@
             "title": "Below Ct Total"
           },
           "booked": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/SumBookedOut"
             },
@@ -91921,7 +91927,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "counts": {
             "anyOf": [
@@ -91931,7 +91938,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "ct_tick_pct": {
             "cls": "internal",
@@ -91945,6 +91953,7 @@
             "type": "string"
           },
           "factors": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/SumFactorOut"
             },
@@ -92002,6 +92011,7 @@
             "type": "string"
           },
           "rows": {
+            "cls": "internal",
             "items": {
               "$ref": "#/components/schemas/SumRowOut"
             },
@@ -92017,7 +92027,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "thresholds": {
             "anyOf": [
@@ -92027,7 +92038,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           },
           "totals": {
             "anyOf": [
@@ -92037,7 +92049,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "cls": "internal"
           }
         },
         "required": [
