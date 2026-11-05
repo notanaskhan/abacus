@@ -15,6 +15,9 @@ when the one run finishes.
 | Replay histories | Recorded and replaying: `notice-response-v1`, `section-draft-v1`, `upload-processing-v8`, `form-extraction-v1` |
 | Migrations 0667 to 0669 | Up, down and up pass on a small database. That isn't Q-03-T189's x100 rehearsal |
 
+## Gallery specimen diff, accepted
+CI's visual regression failed on 47 specimens. The new `ebp_participant_loan` group grows C-06's status map by 92 px, and every specimen below it moves by a subpixel, so its height reads 2 px more or less. `status.gen.ts` is the only file changed under `packages/ui`, and nothing else in `apps/web/src/gallery`. #1265 carries the `visual-change` label for this (DEC-2080).
+
 ## Not run
 - **Tier C parity and axe.** AUD-10, AUD-17, EBP-06, NOT-03 and TAX-13 have no parity rows, so A-04-T38's parity clause is open. The keyboard test passes.
 - **Mutation measurement for `assurance/compute`** (A-04-T41). CI's floors job checks that no floor dropped; the new engines don't raise one yet.
