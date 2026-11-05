@@ -42,6 +42,23 @@ export const COPY = {
     text: "Text",
     upload_if_yes: "Upload if yes",
   } as Record<string, string>,
+  // T-03-T10: the editing states b, c and d.
+  editing: {
+    edit: "Edit",
+    done: "Done",
+    wording: "Client wording",
+    type: "Type",
+    logic: (parent: string, equals: string) => `Show when ${parent.toUpperCase()} = ${equals}`,
+    up: "Move up",
+    down: "Move down",
+    newQuestion: "New question",
+    newWording: "Question for the client",
+    save: "Save",
+    discard: "Discard",
+    unsaved: (n: number) => `${String(n)} unsaved ${n === 1 ? "change" : "changes"}`,
+    stale: "Someone else changed this questionnaire. Reload to see their changes.",
+    reload: "Reload",
+  },
   dock: { title: "Client preview", desktop: "Desktop", phone: "Phone", label: "Preview size" },
   states: { notFound: "Questionnaire not found." },
 } as const;

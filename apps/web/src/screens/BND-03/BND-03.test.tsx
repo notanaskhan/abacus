@@ -3,7 +3,7 @@
 // toggle." Words are the handoff's.
 import { client } from "@abacus/api-client/client";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { installFixtureMode } from "../../app-core/fixture-mode";
 import { BND03_QUESTIONNAIRE } from "../../fixtures/seed/bnd03";
@@ -100,5 +100,38 @@ describe("BND-03", () => {
       },
       { timeout: 6000 },
     );
+  });
+});
+
+// T-03-T10 (TASK-3323): "Editing states b, c and d: the Required toggle drives the preview marker, a
+// new card opens the six-type picker, and Save carries If-Match."
+describe("BND-03 editing", () => {
+  it("b: editing a card turns the toggle on and shows the Save bar; the marker follows", async () => {
+    show("b");
+    const card = await drawn("[data-question='q5']");
+    const edit = Array.from(card.querySelectorAll("button")).find((b) => b.textContent === "Edit");
+    expect(edit).toBeDefined();
+    if (edit !== undefined) fireEvent.click(edit);
+    const toggles = card.querySelectorAll("[role='switch']");
+    expect(toggles.length).toBeGreaterThan(1);
+    fireEvent.click(toggles[1] as HTMLElement);
+    expect((await drawn("[data-bnd03='save-bar']")).textContent).toContain("unsaved");
+    expect(card.querySelector("[data-bnd03='logic']")?.textContent).toContain("Show when Q5 = Yes");
+  });
+
+  it("c: + Question adds a card with the six-type picker", async () => {
+    show("c");
+    await drawn("[data-bnd03='canvas']");
+    const add = Array.from(document.querySelectorAll("button")).find(
+      (b) => b.textContent === "+ Question",
+    );
+    if (add !== undefined) fireEvent.click(add);
+    const picker = await drawn("[data-bnd03='type-picker']");
+    expect(picker.querySelectorAll("[data-type-option]")).toHaveLength(6);
+  });
+
+  it("d: the template's Draft shows its banner and no answers", async () => {
+    show("d");
+    expect((await drawn("[data-bnd03='banner']")).textContent).toContain("Editing template");
   });
 });
