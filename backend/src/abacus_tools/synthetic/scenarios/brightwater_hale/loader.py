@@ -440,6 +440,12 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.portal_pbc import (
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.prng import stable_id
 from abacus_tools.synthetic.scenarios.brightwater_hale.report_templates import (
+    A07_NEEDS as A07_TEMPLATES_NEEDS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.report_templates import (
+    A07_SLICE as A07_TEMPLATES_SLICE,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.report_templates import (
     NEEDS as REPORT_TEMPLATES_NEEDS,
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.report_templates import (
@@ -1805,6 +1811,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     EBP_SLICE: EBP_NEEDS,  # A-05-T07: Dana's EBP source documents on Northwind
     EBP2_SLICE: EBP2_NEEDS,  # A-05-T34: investments, Form 5500, distributions; Granite Peak's
     SAMPLING_SLICE: SAMPLING_NEEDS,  # A-03-T16: Table 2, BH FS groupings, Northwind's sample
+    A07_TEMPLATES_SLICE: A07_TEMPLATES_NEEDS,  # A-07-T12: letters through C11's import
     REPORT_TEMPLATES_SLICE: REPORT_TEMPLATES_NEEDS,  # P-11-T13: Grace imports, Margaret publishes
     CONNECTIONS_SLICE: CONNECTIONS_NEEDS,  # A-02-T27: Copperleaf's POR-16a connections
     ACCEPTANCE_SLICE: ACCEPTANCE_NEEDS,

@@ -19,8 +19,12 @@ Opt-in (`--slice report_templates`, which brings `people` for Grace's and Margar
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import timedelta
-from typing import Final
+from pathlib import Path
+from typing import Any, Final, cast
+
+import yaml
 
 from abacus_tools.synthetic.scenarios.brightwater_hale.scenario import SETUP_AT
 from abacus_tools.synthetic.scenarios.brightwater_hale.slices import register_slice
@@ -489,7 +493,67 @@ BUNDLES: Final[tuple[Json, ...]] = (
 
 
 def bundle(name: str) -> Json:
-    return next(b for b in BUNDLES if b["name"] == name)
+    found = next((b for b in BUNDLES if b["name"] == name), None)
+    if found is not None:
+        return found
+    return next(
+        _a07_bundle(raw) for raw in a07_content()["bundles"] if raw["name"] == name
+    )  # A-07-T12
+
+
+A07_CONTENT: Final = Path(__file__).parent / "files" / "a07_templates.yaml"
+A07_SLICE: Final = "a07_templates"
+A07_NEEDS: Final = ("people", "report_templates")
+
+
+def a07_content() -> dict[str, Any]:  # Any: YAML
+    return cast(dict[str, Any], yaml.safe_load(A07_CONTENT.read_text(encoding="utf-8")))
+
+
+def _a07_bundle(raw: Mapping[str, Any]) -> Json:  # Any: YAML
+    """A-07-T12: a template bundle from the content file; no wording in this module (AGENTS 16)."""
+    paragraphs = raw["paragraphs"]
+    body: list[Json] = [_p(text) for text in paragraphs.get("general", ())]
+    body += [_p(str(item["text"])) for item in paragraphs.get("specific", ())]
+    return {
+        "family": raw["family"],
+        "name": raw["name"],
+        "layout_key": raw["layout"],
+        "body": body,
+        "clauses": [],
+        "variables": [],
+        "sample_data": {},
+    }
+
+
+@register_slice(A07_SLICE)
+def a07_template_events() -> list[Event]:
+    """A-07-T12 (DEC-2315): part 1's letters through C11's import. The checklists have no import
+    route until the A-07 services (A-07-T22), so they stay in the content file for now."""
+    events: list[Event] = []
+    for n, raw in enumerate(a07_content()["bundles"]):
+        name = str(raw["name"])
+        events.append(
+            Event(
+                f"report-template-import:{name}",
+                SETUP_AT + timedelta(minutes=50, seconds=n),
+                "reporting.template_imported",
+                IMPORTER,
+                A07_SLICE,
+                {"name": name},
+            )
+        )
+        events.append(
+            Event(
+                f"report-template-publish:{name}",
+                SETUP_AT + timedelta(minutes=55, seconds=n),
+                "reporting.template_published",
+                PUBLISHER,
+                A07_SLICE,
+                {"name": name},
+            )
+        )
+    return events
 
 
 @register_slice(SLICE)
