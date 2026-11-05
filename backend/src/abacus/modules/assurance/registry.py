@@ -9,7 +9,7 @@ from __future__ import annotations
 # A-01-T05 (0134): the record-mode phase events, insert-only and human-only when recorded.
 # A-01-T23 (0226): the external release and archive records, insert-only and human-only.
 _HUMAN_RECORDS: frozenset[str] = frozenset(
-    {"eqr_concurrences", "completion_records", "releases", "archives", "assurance_phase_events"}
+    {"eqr_concurrences", "completion_records", "releases", "assurance_phase_events"}
     | {"assurance_external_releases", "assurance_external_archives"}
 )
 # A-05-T06 (0610, DEC-1861): the EBP plan audit's first tables; checks and conflicts insert-only.
@@ -69,8 +69,16 @@ A07_LETTER_TABLES: frozenset[str] = (
     | {"representation_letters", "governance_communications", "governance_recipients"}
     | {"audit_reports"}
 )
+# A-07-T09 (0669, DEC-2303): the evidence archive; the children insert-only, and `archives` moves
+# by status (its v1 rows and a locked row frozen by trigger).
+A07_ARCHIVE_INSERT_ONLY: frozenset[str] = frozenset(
+    {"archive_binder_indexes", "archive_lock_decisions", "archive_manifests"}
+    | {"archive_additions", "archive_addition_decisions"}
+)
 TABLES: frozenset[str] = (
-    A07_LETTER_TABLES
+    A07_ARCHIVE_INSERT_ONLY
+    | {"archives"}
+    | A07_LETTER_TABLES
     | EBP_ACCOUNT_TABLES
     | EBP_INVESTMENT_TABLES
     | _HUMAN_RECORDS
@@ -94,6 +102,7 @@ INSERT_ONLY: frozenset[str] = (
     | {"subsequent_events"}  # A-07-T07 (0664)
     | {"ebp_certification_evaluations", "ebp_schedule_h_mappings"}  # A-05-T35 (0665)
     | A07_LETTER_INSERT_ONLY  # A-07-T08 (0668)
+    | A07_ARCHIVE_INSERT_ONLY  # A-07-T09 (0669)
 )
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "eqr_concurrences": frozenset(
@@ -112,6 +121,10 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "archives": frozenset(
         {"tenant_id", "engagement_id", "seal", "leaf_count", "manifest", "locked_by", "actor_kind"}
+        # A-07-T09 (0669): a v2 archive's work-item columns (DEC-2303)
+        | {"work_item_id", "release_id", "released_at", "release_date", "retention_policy_id"}
+        | {"retention_until", "status", "locked_at", "lock_decision_id", "manifest_id"}
+        | {"seal_sha256", "records_object_key", "records_version_id", "gate_snapshot_sha256"}
     ),
     "assurance_phase_events": frozenset(
         {"id", "tenant_id", "engagement_id", "work_item_id", "from_phase", "to_phase", "mode"}
@@ -1036,4 +1049,31 @@ UPDATE_COLUMNS.update(
             {"status", "current_version_id", "report_date", "city", "version", "updated_at"}
         ),
     }
+)
+
+# A-07-T09 (0669, DEC-2303): the evidence archive.
+INSERT_COLUMNS.update(
+    {
+        "archive_binder_indexes": _A07_SCOPE
+        | {"archive_id", "index_version", "sections", "sha256", "built_by_kind", "run_id"},
+        "archive_lock_decisions": _A07_SCOPE
+        | _A07_ACTOR
+        | {"archive_id", "decided_by", "assembly_complete_attested", "then_roll_forward"}
+        | {"checklist_snapshot", "checklist_sha256", "mfa_verified_at", "approval_grant_id"},
+        "archive_manifests": _A07_SCOPE
+        | {"archive_id", "manifest_version", "canonicalization", "evidence_leaf_count"}
+        | {"row_leaf_count", "run_record_count", "audit_checkpoint_seq_to"}
+        | {"audit_checkpoint_root", "merkle_root", "manifest_sha256", "records_object_key"}
+        | {"records_version_id", "compliance_retain_until"},
+        "archive_additions": _A07_SCOPE
+        | {"archive_id", "description_sealed", "reason_code", "evidence_version_id"}
+        | {"content_sha256", "added_by", "post_issuance_event_id", "addition_manifest_key"},
+        "archive_addition_decisions": _A07_SCOPE
+        | _A07_ACTOR
+        | {"addition_id", "decision", "decided_by", "reason_sealed", "mfa_verified_at"},
+    }
+)
+UPDATE_COLUMNS["archives"] = frozenset(
+    {"status", "locked_at", "locked_by", "lock_decision_id", "manifest_id", "seal_sha256"}
+    | {"records_object_key", "records_version_id", "gate_snapshot_sha256", "retention_until"}
 )
