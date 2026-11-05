@@ -62,7 +62,7 @@ const capitalTransferred = Math.round(
 export const BASIS_SUMMARY: EvidenceSummary = {
   title: "Basis at 12/31/2025 · Ridgeline",
   segment: "Basis",
-  planned: "Open in workpaper ↗",
+  planned: "Open in workpaper",
   tally: [
     { label: "OUTSIDE BASIS", value: n(BASIS_FOOTING.outsideBasis) },
     { label: "INSIDE SHARE", value: n(BASIS_FOOTING.insideShare) },
@@ -74,6 +74,7 @@ export const BASIS_SUMMARY: EvidenceSummary = {
   aside: { text: off(difference), variant: "amber" },
   table: {
     label: "Basis at 12/31/2025",
+    widths: [162, 72, 83.5, 88, 87.5, 83],
     columns: [
       "Partner",
       "Tax capital",
@@ -134,7 +135,7 @@ const capitalOff = ROLLFORWARD.scheduleL - ENDING;
 export const CAPITAL_SUMMARY: EvidenceSummary = {
   title: "Capital Accounts · Ridgeline",
   segment: "Capital Accounts",
-  planned: "Open in workpaper ↗",
+  planned: "Open in workpaper",
   tally: [
     { label: "ROLLFORWARD", value: n(ENDING) },
     { label: "SCHEDULE L", value: n(ROLLFORWARD.scheduleL) },
@@ -175,7 +176,7 @@ export const CAPITAL_SUMMARY: EvidenceSummary = {
 export const MEMO_SUMMARY: EvidenceSummary = {
   title: "Preparer memo · Ridgeline",
   segment: "Preparer memo",
-  planned: "Open memo ↗",
+  planned: "Open memo",
   paper: {
     title: "Ridgeline Property Partners, LP — 2025 Form 1065 preparer memo",
     byline: "Prepared by Olivia Brandt · Reviewed by Samuel Ito",
@@ -193,7 +194,7 @@ export const MEMO_SUMMARY: EvidenceSummary = {
 export const K1_SUMMARY: EvidenceSummary = {
   title: "2025 Schedule K-1 · Feld",
   segment: "2025 Schedule K-1",
-  planned: "Open source ↗",
+  planned: "Open source",
   table: {
     label: "2025 Schedule K-1 · Feld",
     columns: ["Item", "Current", "Proposed"],

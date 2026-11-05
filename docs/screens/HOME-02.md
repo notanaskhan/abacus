@@ -17,13 +17,13 @@ HOME-02 has 7 artboards (a–g) and 4 catalogue states (Show done, snoozed, reas
 
 | Artboard | Viewer (persona) | Clock | Snapshot | Data condition that produces it | Parity tier | Status |
 |---|---|---|---|---|---|---|
-| a | daniel-reyes | Mon Sep 14, 2026, 9:31 AM CT | E0 | Bands Decisions 3 · Sign-offs 6 · Approvals & sends 2 (= 11); `?gate=` the §754 decision card (open, reserved to Daniel as engagement partner); evidence: the Basis workpaper with the Pell Street II match | C report; **C lock at S27** (fixture data) | built: queue T16, detail T17 (DEC-1750), evidence T18 (DEC-1751) |
+| a | daniel-reyes | Mon Sep 14, 2026, 9:31 AM CT | E0 | Bands Decisions 3 · Sign-offs 6 · Approvals & sends 2 (= 11); `?gate=` the §754 decision card (open, reserved to Daniel as engagement partner); evidence: the Basis workpaper with the Pell Street II match | C locked (fixture data) | built: queue T16, detail T17 (DEC-1750), evidence T18 (DEC-1751) |
 | b | daniel-reyes | 9:36 AM | E0 + §754 decided | Daniel decided option 2 with a rationale at 9:36: the card is `decided`, the gate `done` (in Show done); badge 10, Decisions 2; Basis loses its block ("Ready to sign · difference explained"); row 10 still waits on Capital Accounts | C report only | built: T17 (decided card held in the detail; `?gate=` found among done rows) |
-| c | daniel-reyes | 9:31 AM | E0 | Sign-off request 7 (Capital Accounts) selected; `blocked {reason_code, facts: off 6,200}` from the open M-2 proposal awaiting Samuel Ito | C report; **C lock at S27** | built: detail T17, evidence T18 |
-| d | daniel-reyes | 9:31 AM | E0 | Sign-off request 4 (Summary & preparer memo) selected, not blocked, no open review notes; evidence: the TXP-01 memo paper | C report; **C lock at S27** | built: detail T17, evidence T18 |
-| e | daniel-reyes | 9:31 AM | E0 | Select mode: rows 4, 5, 6, 9 `bulk_eligible` and checked; 7 and 8 blocked → disabled "Blocked"; bottom bar "4 selected" | C report; **C lock at S27** | to build: T15, T19 |
-| f | daniel-reyes | 9:31 AM | E0 | Counts total 0 → queue EmptyState with "Show done"; detail empty; evidence header "Evidence" | C report; **C lock at S27** | to build: T16 |
-| g | samuel-ito | 9:31 AM | E0 | Samuel's gates: 0 `decision`, 4 `sign_off_request`, 2 `proposal` (6); the Feld passive-classification proposal selected (see Deviations DV-6) | C report; **C lock at S27** (queue column masked) | built: detail T17 |
+| c | daniel-reyes | 9:31 AM | E0 | Sign-off request 7 (Capital Accounts) selected; `blocked {reason_code, facts: off 6,200}` from the open M-2 proposal awaiting Samuel Ito | C locked | built: detail T17, evidence T18 |
+| d | daniel-reyes | 9:31 AM | E0 | Sign-off request 4 (Summary & preparer memo) selected, not blocked, no open review notes; evidence: the TXP-01 memo paper | C locked | built: detail T17, evidence T18 |
+| e | daniel-reyes | 9:31 AM | E0 | Select mode: rows 4, 5, 6, 9 `bulk_eligible` and checked; 7 and 8 blocked → disabled "Blocked"; bottom bar "4 selected" | C locked | to build: T15, T19 |
+| f | daniel-reyes | 9:31 AM | E0 | Counts total 0 → queue EmptyState with "Show done"; detail empty; evidence header "Evidence" | C locked | to build: T16 |
+| g | samuel-ito | 9:31 AM | E0 | Samuel's gates: 0 `decision`, 4 `sign_off_request`, 2 `proposal` (6); the Feld passive-classification proposal selected (see Deviations DV-6) | C locked (queue column masked) | built: detail T17 |
 | show-done (catalogue) | daniel-reyes | 9:36 AM | E0 + §754 decided | `GET /v1/human-gates?state=done` (last 30 days, newest first, OQ-7): the §754 row with "Decided · Daniel Reyes · 9:36 AM" | — (scenario test only) | to build: T15, T16 |
 | snoozed (catalogue) | daniel-reyes | 9:31 AM | E0 + snooze | Daniel snoozes the CP2000 position "Tomorrow 9 AM" (Sep 15, 9:00 AM; on or before its Sep 23 due date): it leaves the queue and every count (10 = 2 + 6 + 2) and lists under `state=snoozed` | — (scenario test only) | to build: T15, T19 |
 | reassigned (catalogue) | daniel-reyes | 9:31 AM | E0 + reassignment | Daniel reassigns the CP2000 position (a reserved decision card) to an eligible partner from `reassign-candidates`: it leaves his queue and counts (10 = 2 + 6 + 2); the new assignee receives `gate_reassigned` | — (scenario test only) | to build: T15, T19 |
@@ -170,8 +170,12 @@ N's sign-off of these deviations at Contract Monday (Mon Mar 8, 2027) is a solo-
 ## Parity
 | Artboard | Tier (A/B/C/D) | Diff % | Notes |
 |---|---|---|---|
-| a, c, d, e, f | C (report; lock at S27 on fixture data) | not run (unbuilt) | `data-contrast="reference"` |
-| g | C (report; lock at S27) | not run | queue column and segmented badge masked (DV-6); detail and evidence compared |
+| a | C (locked on fixture data, I-01-T22) | 2.90 | `data-contrast="reference"`; ✓ Decide masked (DV-1: disabled until a rationale exists, the artboard draws it enabled) |
+| c | C (locked on fixture data, I-01-T22) | 1.75 | `data-contrast="reference"` |
+| d | C (locked on fixture data, I-01-T22) | 1.99 | `data-contrast="reference"` |
+| e | C (locked on fixture data, I-01-T22) | 2.37 | `data-contrast="reference"`; the artboard opens in Select mode (`initialSelecting`) |
+| f | C (locked on fixture data, I-01-T22) | 0.19 | `data-contrast="reference"` |
+| g | C (locked, I-01-T22) | 0.99 | queue column and segmented masked (DV-6); detail and evidence compared |
 | b | C (report only) | not run | — |
 | show-done, snoozed, reassigned, overdue | — | — | catalogue states: scenario tests, no artboard |
 | host | D (blocking through T9) | — | review pane 790 = 310 + 0.5 hair + 480, evidence 576, band 49, rows 50–72, KV rows 44, stacked footer buttons 36, bulk bar 52 |
@@ -186,4 +190,6 @@ Accessibility (I-01 §5.5): the queue is a `listbox` with `aria-activedescendant
 - **b's clock.** README renders every frame at 9:31 AM, but b draws "Decided · Daniel Reyes · 9:36 AM"; the scenario clock is 9:36 AM (I-01 §5.3).
 - **Catalogue scenarios.** The snoozed and reassigned gate (CP2000 position), the reassign target and the overdue clock (Wed Sep 16, 9:31 AM) are composed here, not drawn; T15 may pick another seeded gate if the owner's rules refuse these.
 - **Memo body.** d's memo paragraphs are drawn on the artboard only; T15 transcribes them verbatim from the screenshot.
+- **"Form 706 Nov 2".** The handoff's third row reads "Form 706 Nov 2 · 49 days · Gate G1". The row's due words come from `due_on`, and no field names the form, so it reads "Nov 2 · 49 days · Gate G1" until the owner's resolver supplies a due label.
+- **"?" chip.** Decision rows draw the `circle-help` ring, not the handoff's filled "?" chip; `IssueItem.glyph` takes icons only. Under tier.
 - **C3 vs handoff wording.** `docs/contracts/review-grammar.md` illustrates the counts as "3 decisions, 6 sign-offs, 2 exports"; DF-25 puts exports under Approvals & sends, so the UI reads "2 approvals & sends".

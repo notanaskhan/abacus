@@ -26,7 +26,7 @@ import {
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { type FixtureHandler, installFixtureMode } from "../../../app-core/fixture-mode";
-import { homeGates } from "../../../fixtures/seed/home";
+import { detailed } from "../../../fixtures/scenarios/HOME-02";
 import "../../../routes/firm/sheets";
 import { newQueryClient } from "../../../testing/support";
 import { activityLines } from "../../HOME-01";
@@ -45,7 +45,7 @@ afterEach(() => {
 });
 
 const GATE_VERB = /^(✓ )?(Decide|Approve|Sign off|Send|Release|Post)\b/u;
-const DANIEL = homeGates("daniel-reyes");
+const DANIEL = detailed("daniel-reyes");
 const titleOf = (n: number): string => DANIEL[n - 1]?.title ?? "";
 
 function show(

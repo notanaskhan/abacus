@@ -39,19 +39,23 @@ export type TallyItem =
   | (TallyBase & { running: string })
   | (TallyBase & { signs: readonly { initials: string; when?: string; name: string }[] });
 
-function TallyPillOf({ pill }: { pill: TallyPillSpec }): JSX.Element {
+function TallyPillOf({ pill, compact }: { pill: TallyPillSpec; compact: boolean }): JSX.Element {
   return (
-    <Pill variant={pill.variant} size="sm" {...(pill.check === true ? { check: true } : {})}>
+    <Pill
+      variant={pill.variant}
+      size={compact ? "tally" : "sm"}
+      {...(pill.check === true ? { check: true } : {})}
+    >
       {pill.text}
     </Pill>
   );
 }
 
-function Second({ item }: { item: TallyItem }): JSX.Element {
+function Second({ item, compact }: { item: TallyItem; compact: boolean }): JSX.Element {
   if ("value" in item) {
     return (
       <span className="flex items-center gap-[6px]">
-        <span className="text-title font-normal tracking-[-0.01em] tabular-nums">
+        <span className="text-title font-normal tracking-[-0.01em] tabular-nums group-data-[density=compact]/tally:text-body group-data-[density=compact]/tally:leading-none">
           {item.value}
         </span>
         {item.info !== undefined && (
@@ -59,11 +63,11 @@ function Second({ item }: { item: TallyItem }): JSX.Element {
             <Icon name="info" size={15} className="text-ink-3" />
           </span>
         )}
-        {item.pill !== undefined && <TallyPillOf pill={item.pill} />}
+        {item.pill !== undefined && <TallyPillOf pill={item.pill} compact={compact} />}
       </span>
     );
   }
-  if ("pill" in item) return <TallyPillOf pill={item.pill} />;
+  if ("pill" in item) return <TallyPillOf pill={item.pill} compact={compact} />;
   if ("tally" in item) {
     return (
       <TallyPill code={item.tally} {...(item.vars === undefined ? {} : { vars: item.vars })} />
@@ -97,25 +101,40 @@ export interface TallyStripProps {
   items: readonly TallyItem[];
   /** The strip's accessible name. */
   label?: string;
+  /** compact: HOME-02's evidence tally, 37 tall, each card as wide as its words, value 13. */
+  density?: "default" | "compact";
   className?: string;
 }
 
-export function TallyStrip({ items, label = "Checks", className }: TallyStripProps): JSX.Element {
+export function TallyStrip({
+  items,
+  label = "Checks",
+  density = "default",
+  className,
+}: TallyStripProps): JSX.Element {
   const animate = useMotion();
   return (
-    <ul aria-label={label} data-tally-strip="" className={cn("flex gap-[8px]", className)}>
+    <ul
+      aria-label={label}
+      data-tally-strip=""
+      data-density={density}
+      className={cn("group/tally flex gap-[8px]", className)}
+    >
       {items.map((item, i) => (
         <li
           key={item.label}
           style={animate ? { animationDelay: `${String(i * TALLY_STAGGER_MS)}ms` } : undefined}
           className={cn(
-            "flex h-[52px] min-w-0 flex-[1_1_0%] flex-col justify-between rounded-nested bg-card px-[12px] py-[8px] shadow-e1",
+            "flex min-w-0 flex-col justify-between rounded-nested bg-card shadow-e1",
+            density === "compact"
+              ? "h-[37px] flex-none px-[10px] py-[4px]"
+              : "h-[52px] flex-[1_1_0%] px-[12px] py-[8px]",
             animate && "motion-reveal",
           )}
         >
           <span className="truncate text-kpi-label text-ink-3 uppercase">{item.label}</span>
           <span className="flex min-w-0 items-center gap-[8px]">
-            <Second item={item} />
+            <Second item={item} compact={density === "compact"} />
             {item.link !== undefined && (
               <button
                 type="button"

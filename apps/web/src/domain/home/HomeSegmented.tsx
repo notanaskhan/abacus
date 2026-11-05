@@ -38,11 +38,13 @@ export function HomeSegmented({
   total,
   segments,
   active = HOME_SEGMENTS.myWork,
+  size = "default",
   onChange,
 }: {
   total: number | undefined;
   segments: SegmentsOut | undefined;
   active?: string;
+  size?: "default" | "small";
   onChange?: (label: string) => void;
 }): JSX.Element {
   return (
@@ -50,6 +52,7 @@ export function HomeSegmented({
       label={HOME_SEGMENTS.label}
       options={homeSegmentOptions(total, segments)}
       active={active}
+      size={size}
       {...(onChange === undefined ? {} : { onChange })}
     />
   );

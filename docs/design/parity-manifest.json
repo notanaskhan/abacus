@@ -4659,6 +4659,67 @@
       "sha256": "6560d3f9f81767b92bd88d65083e194bd74c04792468dc118b2a3839ac213879",
       "crop": "window",
       "tier": "C"
+    },
+    "home-02a.window": {
+      "page": "screens/HOME-02?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/HOME-02 My approvals and review queue/screenshots/HOME-02a.png",
+      "sha256": "e0056519d7711a6e068729d0f3ed1de9a8683d135361d90b173f3a63f4d333cf",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-home02='footer'] > :first-child"
+      ]
+    },
+    "home-02c.window": {
+      "page": "screens/HOME-02?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/HOME-02 My approvals and review queue/screenshots/HOME-02c.png",
+      "sha256": "2d7e632ab8c3091181401654bec272b518eca22379243565b1dd8a8aa92c2b5f",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "home-02d.window": {
+      "page": "screens/HOME-02?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/HOME-02 My approvals and review queue/screenshots/HOME-02d.png",
+      "sha256": "945a6827f9cb3eedecb313922f47372517210afbbac98c0af0c404e68d099f8f",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "home-02e.window": {
+      "page": "screens/HOME-02?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/HOME-02 My approvals and review queue/screenshots/HOME-02e.png",
+      "sha256": "fb202cc8e9d0779e3d4bfc4463436926b4d71ecff72563b8238ace813051a57c",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "home-02f.window": {
+      "page": "screens/HOME-02?st=f",
+      "selector": "[data-artboard=\"f\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/HOME-02 My approvals and review queue/screenshots/HOME-02f.png",
+      "sha256": "48e547878768eb44989e8df2253d47e64329a37e8961cb218523a38af560ee31",
+      "crop": "window",
+      "tier": "C",
+      "locked": true
+    },
+    "home-02g.window": {
+      "page": "screens/HOME-02?st=g",
+      "selector": "[data-artboard=\"g\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/HOME-02 My approvals and review queue/screenshots/HOME-02g.png",
+      "sha256": "bc4884b5cce5f2a59896a6748106320b54cc9abaec969490ed62898d65378a71",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-home02='queue']",
+        "[data-home02='subbar'] [role='tablist']"
+      ]
     }
   }
 }

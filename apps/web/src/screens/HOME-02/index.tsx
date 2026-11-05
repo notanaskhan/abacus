@@ -5,6 +5,7 @@ import {
   ErrorState,
   type IssueGroup,
   type IssueItem,
+  Icon,
   IssueQueue,
   Skeleton,
   type ToolbarProps,
@@ -29,6 +30,7 @@ import {
   useApprovalsList,
   useDoneGates,
   useGateCounts,
+  useHome,
   visibleBands,
 } from "../../domain/home";
 import { COPY } from "./copy";
@@ -86,16 +88,41 @@ function checkOf(gate: HumanGateOut, picking: Picking | undefined): IssueItem["c
   };
 }
 
+/** A row's due words (`row.subline`): a decision counts the days and a day-away one reads in the
+ * red ink; every other class shows the date, and "Overdue" once past it. */
+function dueWords(
+  gate: HumanGateOut,
+  today: string,
+  now: Date,
+): { lead?: string; plain?: string; overdue: boolean } {
+  if (gate.due_on === null) return { overdue: false };
+  const on = formatDate(gate.due_on, { now });
+  const chip = dueChip(today, gate.due_on, (iso) => formatDate(iso, { now }));
+  if (chip.risk === "overdue") return { plain: chip.label, overdue: true };
+  if (gate.kind !== "decision") return { plain: on, overdue: false };
+  const days = Math.round((Date.parse(gate.due_on) - Date.parse(today)) / 86_400_000);
+  const counted = HOME_MESSAGES.due.inDays(on, days);
+  return chip.risk === "due_soon" && days <= 1
+    ? { lead: counted, overdue: false }
+    : { plain: counted, overdue: false };
+}
+
 function itemOf(gate: HumanGateOut, today: string, now: Date, picking?: Picking): IssueItem {
   const check = checkOf(gate, picking);
-  const due =
-    gate.due_on === null ? null : dueChip(today, gate.due_on, (iso) => formatDate(iso, { now }));
-  const words = gate.blocked ? HOME_MESSAGES.blocked : (gate.context ?? null);
+  const due = dueWords(gate, today, now);
+  // The owner's words name the block where they can ("Blocked · off 6,200"); the word itself
+  // otherwise, so a blocked row is never colour alone.
+  const words =
+    gate.blocked && gate.context?.startsWith(HOME_MESSAGES.blocked) !== true
+      ? HOME_MESSAGES.blocked
+      : (gate.context ?? null);
+  const rest = [due.plain, words].filter((p) => p != null && p !== "").join(" · ");
   return {
     id: gate.id,
     title: gate.title ?? gate.subkind,
-    sub: [due?.label, words].filter((p) => p != null && p !== "").join(" · "),
-    ...(gate.blocked || due?.risk === "overdue" ? { subTone: "amber" as const } : {}),
+    sub: rest,
+    ...(due.lead === undefined ? {} : { subLead: due.lead }),
+    ...(gate.blocked || due.overdue ? { subTone: "amber" as const } : {}),
     glyph: gate.blocked
       ? { icon: "triangle-alert", label: COPY.glyph.blocked, tone: "amber" }
       : GLYPH_OF[gate.kind],
@@ -132,6 +159,8 @@ export interface HOME02Props {
   toolbar?: ToolbarProps;
   height?: number;
   initialDone?: boolean;
+  /** Artboard e: Select mode with every eligible row checked. */
+  initialSelecting?: boolean;
   /** The owners' evidence summaries (I-01-T18): fixtures today, tax fixture-only until T-05. */
   summaryOf?: EvidenceSummaryOf;
 }
@@ -144,6 +173,7 @@ export function HOME02({
   toolbar,
   height,
   initialDone = false,
+  initialSelecting = false,
   summaryOf,
 }: HOME02Props): JSX.Element {
   const now = useNow();
@@ -154,26 +184,32 @@ export function HOME02({
   const [said, setSaid] = useState("");
   const [drafts, setDrafts] = useState<Readonly<Record<string, DecisionDraft>>>({});
   const held = useRef<HumanGateOut | null>(null);
-  const [selecting, setSelecting] = useState(false);
-  const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
+  const [selecting, setSelecting] = useState(initialSelecting);
+  // null: every eligible row, until the first toggle (artboard e).
+  const [pickedOverride, setPicked] = useState<ReadonlySet<string> | null>(
+    initialSelecting ? null : new Set(),
+  );
   const [bulkOpen, setBulkOpen] = useState(false);
+  const queueRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
+  const counts = useGateCounts(null);
+  const view = useHome(null).data;
+  const list = useApprovalsList(done ? "done" : "open");
+  const gates = list.data?.items ?? [];
+  const eligible = gates.filter(
+    (g) => g.kind === "sign_off_request" && g.bulk_eligible && !g.blocked,
+  );
+  const picked = pickedOverride ?? new Set(eligible.map((g) => g.id));
   const picking: Picking = {
     on: selecting,
     chosen: picked,
     toggle: (id, checked) => {
-      setPicked((prev) => {
-        const next = new Set(prev);
-        if (checked) next.add(id);
-        else next.delete(id);
-        return next;
-      });
+      const next = new Set(picked);
+      if (checked) next.add(id);
+      else next.delete(id);
+      setPicked(next);
     },
   };
-  const queueRef = useRef<HTMLDivElement>(null);
-  const queryClient = useQueryClient();
-  const counts = useGateCounts(null);
-  const list = useApprovalsList(done ? "done" : "open");
-  const gates = list.data?.items ?? [];
   const groups: IssueGroup[] =
     counts.data === undefined
       ? []
@@ -243,12 +279,12 @@ export function HOME02({
     selecting && chosenGates.length > 0 ? (
       <div
         data-home02="bulk-bar"
-        className="sticky bottom-0 flex h-[52px] items-center gap-[10px] bg-card px-[12px] shadow-[0_-0.5px_0_var(--color-hair)]"
+        className="sticky bottom-[8px] mx-[8px] flex h-[52px] items-center gap-[10px] rounded-nested bg-card px-[12px] shadow-e2"
       >
         <span className="flex-1 text-body">{COPY.bulk.selected(chosenGates.length)}</span>
         <Button
           variant="primary"
-          size="sm"
+          size="lg"
           aria-haspopup="dialog"
           onClick={() => {
             setBulkOpen(true);
@@ -263,30 +299,38 @@ export function HOME02({
       data-home02="subbar"
       className="relative flex h-(--subbar-h) flex-none items-center gap-[8px] px-(--edge-app)"
     >
-      <span className="flex items-baseline gap-[6px]">
-        <span className="text-record font-medium">{COPY.title}</span>
-        <span className="text-record text-ink-2">{session.user?.displayName ?? ""}</span>
+      <span className="flex items-baseline gap-[8px]">
+        <span className="text-title font-medium">{COPY.title}</span>
+        <span className="text-title text-ink-2">{session.user?.displayName ?? ""}</span>
       </span>
       <span className="absolute left-1/2 -translate-x-1/2">
         <HomeSegmented
           total={total}
-          segments={undefined}
+          segments={view?.segments}
           active={HOME_SEGMENTS.approvals}
+          size="small"
           onChange={(label) => {
             if (label === HOME_SEGMENTS.myWork) open(MY_WORK);
           }}
         />
       </span>
       <span className="ml-auto flex items-center gap-[8px]">
-        <span className="inline-flex h-[29px] items-center gap-[6px] rounded-pill bg-card px-[11px] text-body shadow-e1">
-          <span className="text-ink-2">{COPY.sort}</span>
+        <span className="inline-flex h-[29px] items-center gap-[8px] rounded-pill bg-card px-[11px] text-body shadow-e1">
+          <span className="flex items-center gap-[6px] text-ink-2">
+            <Icon name="list-filter" size={13} />
+            {COPY.sort}
+          </span>
           <span aria-hidden="true" className="h-[14px] w-px bg-rule" />
-          {COPY.deadline}
+          <span className="flex items-center gap-[6px]">
+            {COPY.deadline}
+            <Icon name="chevrons-up-down" size={12} className="text-ink-3" />
+          </span>
         </span>
         <Button
           variant="secondary"
           size="sm"
           aria-pressed={selecting}
+          className={selecting ? "bg-sel-bg" : undefined}
           disabled={done || !anyEligible}
           onClick={() => {
             setSelecting((s) => !s);
@@ -336,6 +380,7 @@ export function HOME02({
       <div ref={queueRef} onKeyDown={onKey} data-home02="queue">
         <IssueQueue
           variant="severity"
+          stacked
           label={COPY.queue}
           groups={groups}
           selected={selectedId}
@@ -371,6 +416,7 @@ export function HOME02({
           : { toolbar: { ...toolbar, active: "Home" }, embedded: true })}
         {...(height === undefined ? {} : { height })}
         record={record}
+        recordHeight={42}
         queue={{
           title: COPY.waiting,
           right: (
@@ -381,7 +427,7 @@ export function HOME02({
                 setDone((d) => !d);
                 setChosen(null);
               }}
-              className="text-body text-ink-3 hover:text-ink"
+              className="mr-[10px] text-body text-ink-3 hover:text-ink"
             >
               {done ? COPY.hideDone : COPY.showDone}
             </button>
