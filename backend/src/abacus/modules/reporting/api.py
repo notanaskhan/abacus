@@ -64,7 +64,12 @@ publish_template = _publish_template
 RenderingRefused = _RenderingRefused
 
 # The routers the API mounts, in order (P-39; F-03-T07).
+from abacus.kernel.audit_owners import register_engagement_owners  # noqa: E402
+from abacus.modules.reporting import statements as _statements  # noqa: E402
 from abacus.modules.reporting.statements_contract import statements_router  # noqa: E402
+
+# A-06-T25 (DEC-2304): the trail places a statement version and a checklist answer.
+register_engagement_owners(_statements.AUDIT_KINDS, _statements.audit_owners)
 
 ROUTERS = (templates_router, documents_router, statements_router)  # A-06-T19: statements stub
 

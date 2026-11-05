@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Any, Literal, NoReturn
 from uuid import UUID
 
 from fastapi import Depends, Header, Query, Response
@@ -28,7 +28,7 @@ from abacus.kernel._flags import REPORTING_FS_DISCLOSURE
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
-from abacus.modules.engagements.api import get_ref
+from abacus.modules.engagements.api import assurance_item_id, get_ref
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
@@ -134,9 +134,12 @@ class StatementsOut(BaseModel):
 
 
 class StatementDraftStartedOut(BaseModel):
+    """The version id is the deterministic run's record (DEC-2304)."""
+
     model_config = _frozen()
 
     run_id: Annotated[UUID, Internal]
+    version_no: Annotated[int, Internal]
 
 
 class LineageOut(BaseModel):
@@ -252,6 +255,105 @@ def _not_yet() -> NoReturn:
     raise NotImplementedYet
 
 
+async def _version_gate(ctx: AuthContext, version_id: UUID, action: str) -> None:
+    """The version's own engagement decides (A-06-T25): an id alone reaches no other audit."""
+    from abacus.modules.reporting import statements
+
+    if ctx.client:
+        raise NotFound("statement")
+    await statements.authorise_version(ctx, action, version_id)
+    if not await flag_enabled(ctx.tenant, REPORTING_FS_DISCLOSURE):
+        raise NotFound(REPORTING_FS_DISCLOSURE.name)
+
+
+async def _document_gate(ctx: AuthContext, document_id: UUID, action: str) -> None:
+    from abacus.modules.reporting import statements
+
+    if ctx.client:
+        raise NotFound("statement")
+    await statements.authorise_document(ctx, action, document_id)
+    if not await flag_enabled(ctx.tenant, REPORTING_FS_DISCLOSURE):
+        raise NotFound(REPORTING_FS_DISCLOSURE.name)
+
+
+async def _work_item(ctx: AuthContext, engagement_id: UUID) -> UUID:
+    """The engagement's assurance work item: the statements' scope (A-06 §4.2)."""
+    found = await assurance_item_id(ctx.tenant, engagement_id)
+    if found is None:
+        raise NotFound("work_item")
+    return found
+
+
+def _tie_out_out(row: dict[str, Any]) -> TieOutOut:
+    return TieOutOut(
+        total=row["total"],
+        tied=row["tied"],
+        off=row["off"],
+        engine_version=row["engine_version"],
+        inputs_hash=row["inputs_hash"],
+        ran_at=row["created_at"],
+    )
+
+
+def _version_out(view: Any) -> StatementVersionOut:  # noqa: ANN401  # Any: statements.VersionView
+    lines: dict[UUID, list[dict[str, Any]]] = {}
+    for row in view.lines:
+        lines.setdefault(row["line_id"], []).append(row)
+    off = {(o["line_key"], o["year"]): o for o in (view.tie_out or {}).get("off", [])}
+    return StatementVersionOut(
+        id=view.row["id"],
+        version_no=view.row["version_no"],
+        source_snapshot_id=view.row["source_snapshot_id"],
+        drafted_by_kind=view.row["drafted_by_kind"],
+        out_of_date=view.out_of_date,
+        content_hash=view.row["content_hash"],
+        created_at=view.row["created_at"],
+        lines=[
+            LineItemOut(
+                id=line_id,
+                statement_key=rows[0]["statement_key"],
+                section_key=rows[0]["section_key"],
+                line_key=rows[0]["line_key"],
+                label=rows[0]["label"],
+                position=rows[0]["position"],
+                note_ref=rows[0]["note_ref"],
+                values=[
+                    LinkedValueOut(
+                        id=r["value_id"],
+                        year=r["year"],
+                        value=r["value"],
+                        source=r["source"],
+                        citation_ids=list(r["citation_ids"]),
+                        override_reason=r["override_reason"],
+                        ties=None
+                        if view.tie_out is None
+                        else (r["line_key"], str(r["year"])) not in off,
+                        off_by=Decimal(off[(r["line_key"], str(r["year"]))]["off_by"])
+                        if (r["line_key"], str(r["year"])) in off
+                        else None,
+                    )
+                    for r in rows
+                ],
+            )
+            for line_id, rows in lines.items()
+        ],
+        tie_out=_tie_out_out(view.tie_out) if view.tie_out else None,
+    )
+
+
+async def _checklist_out(ctx: AuthContext, document_id: UUID) -> ChecklistOut:
+    from abacus.modules.reporting import statements
+
+    view = await statements.checklist(ctx.tenant, document_id)
+    return ChecklistOut(
+        statement_document_id=view.document_id,
+        template_version_id=view.template_version_id,
+        items=[DisclosureItemOut(**item) for item in view.items],
+        answered=view.answered,
+        total=view.total,
+    )
+
+
 statements_router = AbacusRouter(prefix="/v1", tags=["statements"])
 _WI = "/engagements/{engagement_id}/financial-statements"
 _SV = "/statement-versions/{version_id}"
@@ -262,7 +364,19 @@ _SD = "/statement-documents/{document_id}/disclosure-checklist"
 async def fs_statements_route(engagement_id: UUID, ctx: Ctx) -> StatementsOut:
     """The current version tree with tie counts."""
     await _gate(ctx, engagement_id, "statement.read")
-    _not_yet()
+    from abacus.modules.reporting import statements
+
+    view = await statements.current_of(ctx.tenant, await _work_item(ctx, engagement_id))
+    if view.document is None:
+        return StatementsOut(status="draft", management_approval="none", allowed_actions=[])
+    return StatementsOut(
+        statement_document_id=view.document["id"],
+        framework_key=view.document["framework_key"],
+        status=view.document["status"],
+        management_approval=view.document["management_approval"],
+        current=_version_out(view.current) if view.current else None,
+        allowed_actions=[],
+    )
 
 
 @statements_router.post(
@@ -277,7 +391,12 @@ async def statements_draft_route(
 ) -> StatementDraftStartedOut:
     """Code drafts the statements from the final TB and the approved entries (deterministic)."""
     await _gate(ctx, engagement_id, "statement.draft")
-    _not_yet()
+    from abacus.modules.reporting import statements
+
+    version_id, version_no = await statements.draft(
+        ctx, engagement_id, await _work_item(ctx, engagement_id)
+    )
+    return StatementDraftStartedOut(run_id=version_id, version_no=version_no)
 
 
 @statements_router.get(
@@ -287,8 +406,11 @@ async def statements_draft_route(
     errors=(501,),
 )
 async def lineage_route(version_id: UUID, line_id: UUID, ctx: Ctx) -> LineageOut:
-    await _gate(ctx, None, "statement.read")
-    _not_yet()
+    await _version_gate(ctx, version_id, "statement.read")
+    from abacus.modules.reporting import statements
+
+    sources, citations = await statements.lineage(ctx.tenant, version_id, line_id)
+    return LineageOut(line_item_id=line_id, sources=sources, citation_ids=citations)
 
 
 @statements_router.post(
@@ -296,16 +418,20 @@ async def lineage_route(version_id: UUID, line_id: UUID, ctx: Ctx) -> LineageOut
     errors=(501,),
 )  # fmt: skip
 async def tie_out_route(version_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey) -> TieOutOut:
-    await _gate(ctx, None, "statement.tie_out")
-    _not_yet()
+    await _version_gate(ctx, version_id, "statement.tie_out")
+    from abacus.modules.reporting import statements
+
+    return _tie_out_out(await statements.run_tie_out(ctx, version_id))
 
 
 @statements_router.get(
     f"{_SV}/tie-out", action="statement.read", response_model=TieOutOut, errors=(501,)
 )
 async def tie_out_result_route(version_id: UUID, ctx: Ctx) -> TieOutOut:
-    await _gate(ctx, None, "statement.read")
-    _not_yet()
+    await _version_gate(ctx, version_id, "statement.read")
+    from abacus.modules.reporting import statements
+
+    return _tie_out_out(await statements.last_tie_out(ctx.tenant, version_id))
 
 
 @statements_router.post(
@@ -338,8 +464,8 @@ async def management_approval_route(
     _SD, action="disclosure_checklist.read", response_model=ChecklistOut, errors=(501,)
 )
 async def checklist_route(document_id: UUID, ctx: Ctx) -> ChecklistOut:
-    await _gate(ctx, None, "disclosure_checklist.read")
-    _not_yet()
+    await _document_gate(ctx, document_id, "disclosure_checklist.read")
+    return await _checklist_out(ctx, document_id)
 
 
 @statements_router.put(
@@ -351,8 +477,13 @@ async def checklist_route(document_id: UUID, ctx: Ctx) -> ChecklistOut:
 async def checklist_answer_route(
     document_id: UUID, item_key: str, body: ChecklistAnswerIn, ctx: Ctx, if_match: IfMatch
 ) -> DisclosureItemOut:
-    await _gate(ctx, None, "disclosure_checklist.answer")
-    _not_yet()
+    await _document_gate(ctx, document_id, "disclosure_checklist.answer")
+    from abacus.modules.reporting import statements
+
+    item = await statements.answer_item(
+        ctx, document_id, item_key, body.answer, body.reason, body.note_ref, if_match
+    )
+    return DisclosureItemOut(**item)
 
 
 @statements_router.post(
@@ -365,8 +496,10 @@ async def checklist_adopt_route(
     document_id: UUID, item_key: str, ctx: Ctx, if_match: IfMatch
 ) -> DisclosureItemOut:
     """A person adopts the agent's suggested answer (it becomes theirs)."""
-    await _gate(ctx, None, "disclosure_checklist.answer")
-    _not_yet()
+    await _document_gate(ctx, document_id, "disclosure_checklist.answer")
+    from abacus.modules.reporting import statements
+
+    return DisclosureItemOut(**await statements.adopt_item(ctx, document_id, item_key, if_match))
 
 
 @statements_router.post(
@@ -378,8 +511,11 @@ async def checklist_adopt_route(
 async def checklist_review_route(
     document_id: UUID, body: ChecklistReviewIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ChecklistOut:
-    await _gate(ctx, None, "disclosure_checklist.review")
-    _not_yet()
+    await _document_gate(ctx, document_id, "disclosure_checklist.review")
+    from abacus.modules.reporting import statements
+
+    await statements.review_items(ctx, document_id, body.item_keys)
+    return await _checklist_out(ctx, document_id)
 
 
 @statements_router.get(
