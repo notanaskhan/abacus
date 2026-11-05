@@ -207,8 +207,8 @@ _BEFORE = [
     "transmission.recorded",
 ]
 _HUMAN_ONLY = sorted(
-    [*_BEFORE, "governance_communication.sent", "report.reissued", "report.released"]
-    + ["rep_letter.approved"]
+    {*_BEFORE, "governance_communication.sent", "report.reissued", "report.released"}
+    | {"rep_letter.approved"}
 )
 
 
