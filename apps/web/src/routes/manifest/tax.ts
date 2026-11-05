@@ -70,7 +70,8 @@ export const taxScreens = {
     status: "fixture",
     path: "/tax-returns/$returnId/delivery",
   },
-  "TAX-13": { name: "Extensions, estimates & payments · TY2025", status: "planned", path: null },
+  // T-03-T11: a, b and c on fixtures; d and e with T-03-T16.
+  "TAX-13": { name: "Extensions, estimates & payments", status: "fixture", path: "/tax-returns/extensions" },
   "TAX-14": {
     name: "Firm standards run · 1065 Review Checklist v4",
     status: "planned",

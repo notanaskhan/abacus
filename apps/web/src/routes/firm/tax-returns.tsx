@@ -34,6 +34,27 @@ function gated(children: JSX.Element): JSX.Element {
 const TAX01_SEARCH = ["tile", "office", "q", "tax_year"] as const;
 type TaxReturnsSearch = Partial<Record<(typeof TAX01_SEARCH)[number], string>>;
 
+// T-03-T11: TAX-13 `/tax-returns/extensions`.
+const Extensions = lazyScreen(async () => (await import("../../screens/TAX-13")).Extensions);
+export const taxExtensionsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/tax-returns/extensions",
+  component: function TaxExtensionsPage(): JSX.Element {
+    const navigate = useNavigate();
+    return gated(
+      <Extensions
+        taxYear={2025}
+        onBack={() => {
+          void navigate({ to: "/tax-returns" });
+        }}
+        onReturn={(returnId) => {
+          void navigate({ to: "/tax-returns/$returnId", params: { returnId } });
+        }}
+      />,
+    );
+  },
+});
+
 export const taxReturnsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/tax-returns",
@@ -141,6 +162,7 @@ export const taxReturnDeliveryRoute = createRoute({
 });
 
 export const taxReturnRoutes = [
+  taxExtensionsRoute,
   taxReturnsRoute,
   taxReturnRoute,
   taxReturnIntakeRoute,
