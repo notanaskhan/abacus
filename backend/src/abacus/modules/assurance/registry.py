@@ -58,8 +58,20 @@ EBP_ACCOUNT_TABLES: frozenset[str] = frozenset(
     | {"ebp_plan_expenses", "ebp_erisa_budget_lines", "ebp_compliance_tests"}
     | {"ebp_qualification_facts"}
 )
+# A-07-T08 (0668, DEC-2302): letters, report and release; versions and acts insert-only.
+A07_LETTER_INSERT_ONLY: frozenset[str] = frozenset(
+    {"representation_letter_versions", "representation_letter_approvals"}
+    | {"governance_communication_versions", "governance_communication_sends"}
+    | {"governance_acknowledgements", "audit_report_versions", "report_releases"}
+)
+A07_LETTER_TABLES: frozenset[str] = (
+    A07_LETTER_INSERT_ONLY
+    | {"representation_letters", "governance_communications", "governance_recipients"}
+    | {"audit_reports"}
+)
 TABLES: frozenset[str] = (
-    EBP_ACCOUNT_TABLES
+    A07_LETTER_TABLES
+    | EBP_ACCOUNT_TABLES
     | EBP_INVESTMENT_TABLES
     | _HUMAN_RECORDS
     | A07_COMPLETION_TABLES
@@ -81,6 +93,7 @@ INSERT_ONLY: frozenset[str] = (
     | {"ebp_payrolls", "ebp_late_remittance_events"}  # A-05-T26 (0658)
     | {"subsequent_events"}  # A-07-T07 (0664)
     | {"ebp_certification_evaluations", "ebp_schedule_h_mappings"}  # A-05-T35 (0665)
+    | A07_LETTER_INSERT_ONLY  # A-07-T08 (0668)
 )
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "eqr_concurrences": frozenset(
@@ -932,5 +945,95 @@ INSERT_COLUMNS.update(
         "ebp_qualification_facts": _EBP_SCOPE
         | _EBP_EVIDENCE
         | {"fact_key", "value", "result", "proposed_by_kind", "accepted_by", "accepted_at"},
+    }
+)
+UPDATE_COLUMNS.update(
+    {
+        "ebp_participant_loans": frozenset(
+            {"status", "vested_balance", "beginning_balance", "new_loans", "repayments"}
+            | {"offsets", "ending_balance", "limit_amount", "limit_result", "engine_version"}
+            | {"inputs_hash", "citation_id", "version", "updated_at"}
+        ),
+        "ebp_loan_offsets": frozenset({"citation_id", "form_1099r_code", "version", "updated_at"}),
+        "ebp_participant_balances": frozenset(
+            {"status", "beginning_balance", "contributions", "earnings", "distributions", "fees"}
+            | {"transfers", "ending_balance", "citation_id", "version", "updated_at"}
+        ),
+        "ebp_sdba_holdings": frozenset(
+            {"security_type", "market_value", "citation_id", "version", "updated_at"}
+        ),
+        "ebp_plan_expenses": frozenset(
+            {"disclosure_citation_id", "invoiced", "credits", "paid_from_plan", "schedule_h_line"}
+            | {"result", "issue_id", "citation_id", "version", "updated_at"}
+        ),
+        "ebp_erisa_budget_lines": frozenset({"amount", "citation_id", "version", "updated_at"}),
+        "ebp_compliance_tests": frozenset(
+            {"limit_amount", "limit_ref", "result", "accepted_by", "accepted_at", "finding_ref"}
+            | {"engine_version", "inputs_hash", "version", "updated_at"}
+        ),
+        "ebp_qualification_facts": frozenset(
+            {"value", "result", "accepted_by", "accepted_at", "citation_id", "version"}
+            | {"updated_at"}
+        ),
+    }
+)
+
+_A07_SCOPE: frozenset[str] = frozenset({"tenant_id", "engagement_id", "work_item_id"})
+_A07_ACTOR: frozenset[str] = frozenset({"actor_kind", "actor_id"})
+# A-07-T08 (0668, DEC-2302): letters, report and release.
+INSERT_COLUMNS.update(
+    {
+        "representation_letters": _A07_SCOPE
+        | {"template_id", "status", "current_version_id", "envelope_id", "dated_as_of"},
+        "representation_letter_versions": _A07_SCOPE
+        | {"letter_id", "version_no", "template_version_id", "representations"}
+        | {"edited_paragraphs_sealed", "sum_snapshot_id", "content_hash", "drafted_by_run_id"}
+        | {"created_by", "generated_document_id"},
+        "representation_letter_approvals": _A07_SCOPE
+        | _A07_ACTOR
+        | {"version_id", "approved_by", "seen_hash", "mfa_verified_at"},
+        "governance_communications": _A07_SCOPE
+        | {"kind", "standard", "combined_with_id", "due_rule", "due_on", "status"}
+        | {"current_version_id", "channel", "envelope_id"},
+        "governance_communication_versions": _A07_SCOPE
+        | {"communication_id", "version_no", "template_version_id", "sections_sealed"}
+        | {"section_refs", "content_hash", "drafted_by_run_id", "created_by"}
+        | {"generated_document_id"},
+        "governance_communication_sends": _A07_SCOPE
+        | _A07_ACTOR
+        | {"version_id", "sent_by", "governance_body_id", "recipient_contact_ids", "channel"}
+        | {"approval_grant_id", "mfa_verified_at"},
+        "governance_recipients": _A07_SCOPE | {"governance_body_id", "ack_required"},
+        "governance_acknowledgements": _A07_SCOPE
+        | {"communication_id", "version_id", "acknowledged_by_contact_id", "acknowledged_at"}
+        | {"channel"},
+        "audit_reports": _A07_SCOPE
+        | {"report_kind", "framework", "standards_set_id", "template_id", "status"}
+        | {"current_version_id", "report_date", "city"},
+        "audit_report_versions": _A07_SCOPE
+        | {"report_id", "version_no", "choices", "paragraphs", "report_date", "city", "dual_date"}
+        | {"reissue_of_release_id", "content_hash", "created_by"},
+        "report_releases": _A07_SCOPE
+        | _A07_ACTOR
+        | {"kind", "reissue_of_id", "report_version_id", "report_version_hash", "released_by"}
+        | {"released_at", "report_date", "city", "gate_snapshot", "gate_snapshot_sha256"}
+        | {"final_document_version_id", "deliverable_ids", "approval_grant_id"}
+        | {"idempotency_key"},
+    }
+)
+UPDATE_COLUMNS.update(
+    {
+        "representation_letters": frozenset(
+            {"status", "current_version_id", "envelope_id", "dated_as_of", "signed_on"}
+            | {"g7_met_at", "version", "updated_at"}
+        ),
+        "governance_communications": frozenset(
+            {"combined_with_id", "due_rule", "due_on", "status", "current_version_id", "channel"}
+            | {"envelope_id", "version", "updated_at"}
+        ),
+        "governance_recipients": frozenset({"ack_required", "version", "updated_at"}),
+        "audit_reports": frozenset(
+            {"status", "current_version_id", "report_date", "city", "version", "updated_at"}
+        ),
     }
 )
