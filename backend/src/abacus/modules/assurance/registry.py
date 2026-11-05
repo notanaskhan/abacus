@@ -52,8 +52,15 @@ EBP_INVESTMENT_TABLES: frozenset[str] = frozenset(
     | {"ebp_form5500_drafts", "ebp_form5500_lines", "ebp_part_iv_answers"}
     | {"ebp_supplemental_schedules", "ebp_schedule_h_mappings"}
 )
+# A-05-T41 (0667, DEC-2301): EBP loans, participant accounts and expenses.
+EBP_ACCOUNT_TABLES: frozenset[str] = frozenset(
+    {"ebp_participant_loans", "ebp_loan_offsets", "ebp_participant_balances", "ebp_sdba_holdings"}
+    | {"ebp_plan_expenses", "ebp_erisa_budget_lines", "ebp_compliance_tests"}
+    | {"ebp_qualification_facts"}
+)
 TABLES: frozenset[str] = (
-    EBP_INVESTMENT_TABLES
+    EBP_ACCOUNT_TABLES
+    | EBP_INVESTMENT_TABLES
     | _HUMAN_RECORDS
     | A07_COMPLETION_TABLES
     | EBP_CONTRIBUTION_TABLES
@@ -886,5 +893,44 @@ UPDATE_COLUMNS.update(
             {"rows", "total", "generated_document_id", "engine_version", "inputs_hash"}
             | {"version", "updated_at"}
         ),
+    }
+)
+
+_EBP_SCOPE: frozenset[str] = frozenset({"tenant_id", "engagement_id", "work_item_id"})
+_EBP_EVIDENCE: frozenset[str] = frozenset({"evidence_version_id", "citation_id"})
+_EBP_SEALED: frozenset[str] = frozenset({"ssn_sealed", "ssn_fp", "ssn_last4"})
+# A-05-T41 (0667, DEC-2301): EBP loans, participant accounts and expenses.
+INSERT_COLUMNS.update(
+    {
+        "ebp_participant_loans": _EBP_SCOPE
+        | _EBP_EVIDENCE
+        | {"participant_key", "loan_ref", "status", "originated_on", "term_months", "is_residence"}
+        | {"vested_balance", "beginning_balance", "new_loans", "repayments", "offsets"}
+        | {"ending_balance", "limit_amount", "limit_result", "engine_version", "inputs_hash"},
+        "ebp_loan_offsets": _EBP_SCOPE
+        | _EBP_EVIDENCE
+        | {"loan_id", "offset_on", "amount", "form_1099r_code", "reported_line"},
+        "ebp_participant_balances": _EBP_SCOPE
+        | _EBP_EVIDENCE
+        | _EBP_SEALED
+        | {"participant_key", "name", "status", "beginning_balance", "contributions", "earnings"}
+        | {"distributions", "fees", "transfers", "ending_balance"},
+        "ebp_sdba_holdings": _EBP_SCOPE
+        | _EBP_EVIDENCE
+        | _EBP_SEALED
+        | {"participant_key", "security_type", "description", "market_value"},
+        "ebp_plan_expenses": _EBP_SCOPE
+        | _EBP_EVIDENCE
+        | {"provider_id", "line_key", "description", "disclosure_citation_id", "invoiced"}
+        | {"credits", "paid_from_plan", "schedule_h_line", "result", "issue_id"},
+        "ebp_erisa_budget_lines": _EBP_SCOPE
+        | _EBP_EVIDENCE
+        | {"line_key", "kind", "amount", "occurred_on"},
+        "ebp_compliance_tests": _EBP_SCOPE
+        | {"test_key", "plan_year", "limit_amount", "limit_ref", "result", "proposed_by_kind"}
+        | {"accepted_by", "accepted_at", "finding_ref", "engine_version", "inputs_hash"},
+        "ebp_qualification_facts": _EBP_SCOPE
+        | _EBP_EVIDENCE
+        | {"fact_key", "value", "result", "proposed_by_kind", "accepted_by", "accepted_at"},
     }
 )
