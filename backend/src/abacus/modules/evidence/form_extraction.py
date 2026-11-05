@@ -255,7 +255,7 @@ def extract_table(table: TableMap, page: PageWords) -> tuple[Extracted, ...]:
     if header is None:
         return ()
     stop = _find_anchor(page, table.stop)
-    stop_top = stop[0].top if stop is not None else page.height
+    stop_top = stop[0].top if stop is not None and stop[0].top > header[0].top else page.height
     out: list[Extracted] = []
     for line in _lines_below(page, header[0].bottom - 1, stop_top):
         names: list[Word] = []

@@ -52,7 +52,7 @@ def test_ac_alert_days_by_notice() -> None:
 
 def test_ac_no_route_ever_calls_an_irs_host() -> None:
     source = Path(sending.__file__).read_text()
-    assert "irs.gov" not in source
+    assert "irs.gov" not in source.lower()
     tree = ast.parse(source)
     imports = {n.module for n in ast.walk(tree) if isinstance(n, ast.ImportFrom)} | {
         a.name for n in ast.walk(tree) if isinstance(n, ast.Import) for a in n.names

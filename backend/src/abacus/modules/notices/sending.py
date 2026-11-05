@@ -6,7 +6,7 @@
   accepted. A notice never reaches Sent unless the taxpayers signed (R-07, a property test).
 - **Mark sent.** A person's record: the confirmation is sealed with its last four, the follow-up is
   the sent date plus the days (Sep 17 + 60 = Nov 16), and Sent moves to Awaiting IRS in one unit of
-  work. No route calls an irs.gov host: the firm sends through DUT, fax or mail.
+  work. No route calls an agency: the firm sends through DUT, fax or mail.
 - **Agency replies.** A person's insert-only record: resolved closes, escalated escalates.
 """
 

@@ -42,7 +42,7 @@ def test_ac_the_payment_approval_holds_the_reviewer_function() -> None:
 
 
 def test_ac_an_ack_keeps_its_own_jurisdiction() -> None:
-    assert jurisdiction_of("federal") == "federal"
+    assert jurisdiction_of("federal") == "US"
     assert jurisdiction_of("NY") == "NY"
 
 

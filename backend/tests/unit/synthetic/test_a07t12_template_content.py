@@ -32,7 +32,7 @@ def test_ac_the_rep_letter_has_eleven_locked_and_four_triggered() -> None:
     letter = next(b for b in CONTENT["bundles"] if b["family"] == "representation_letter")
     assert len(letter["paragraphs"]["general"]) == 11
     specific = letter["paragraphs"]["specific"]
-    assert [p["no"] for p in specific] == [12, 13, 14, 15]
+    assert [p["n"] for p in specific] == [12, 13, 14, 15]
     assert all(p["trigger"] for p in specific)
 
 
