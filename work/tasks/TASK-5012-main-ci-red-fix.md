@@ -35,12 +35,20 @@ AC-3: stage 1, the unit shards and the integration shards finish inside their jo
   went live in N-04-T11; the reporting insert-only test, which named one trigger function.
 - **A harness gap.** The review and planning loaded tests reached the dev S3 gateway on 7070, which
   exists on a laptop and not on CI. They now take the `object_store` fixture.
+- **Coverage floors never met.** `compute` (100% line and branch since #1106) and `kernel/db` (97%
+  line) were under their floors; earlier runs never got that far. No floor moved: the untested
+  branches now have tests (`tests/unit/test_task5012_compute_branches.py`), and the bracket tax loop
+  lost a `break` whose exhausted arc could not run (same result: later brackets add nothing).
 - **Job limits.** Stage 1 (15 min), a unit shard (25) and three integration shards (60) were
   cancelled at their limits, hiding any failure behind them.
 
 ## Known limits
 An intake with no client yet, and a firm template's questionnaire, have no owner and stay hidden
-from the explorer (fail closed). The events remain in the audit chain.
+from the explorer (fail closed). The events remain in the audit chain. `kernel/db` keeps three
+untested lines inside its floor: `ping_identity`'s query and the relay engine's missing-URL refusal
+(UOW-002 keeps `relay_engine` out of everything but the unit of work).
 
 ## Progress log
 - 2026-11-05: built on main ab2cef04c; see the PR for the test evidence.
+- 2026-11-05: CI on b781d745f passed every test shard; the coverage floor failed. Tests added for
+  each gap the floor named, checked line by line against that run's report.
