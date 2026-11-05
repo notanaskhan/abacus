@@ -192,6 +192,14 @@ from abacus.modules.methodology.api import (
 from abacus.modules.methodology.api import (
     version_state as methodology_version_state,
 )
+from abacus.modules.notices.api import (
+    create_notice_from_intake,
+    create_notice_intake,
+    move_notice,
+    notice_engagement_for,
+    read_notice,
+    revise_notice_intake,
+)
 from abacus.modules.organisations.api import (
     ClientRecordChange,
     NewClient,
@@ -389,6 +397,12 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.methodology import (
 from abacus_tools.synthetic.scenarios.brightwater_hale.methodology import (
     workbook as methodology_workbook,
 )
+from abacus_tools.synthetic.scenarios.brightwater_hale.notices_content import (
+    NEEDS as NOTICES_NEEDS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.notices_content import (
+    SLICE as NOTICES_SLICE,
+)
 from abacus_tools.synthetic.scenarios.brightwater_hale.people import (
     FIRM_ROLES,
     SEATS,
@@ -439,18 +453,6 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.portal_pbc import (
     SLICE as PORTAL_PBC_SLICE,
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.prng import stable_id
-from abacus.modules.notices.intake import create as create_notice_intake
-from abacus.modules.notices.intake import create_notice as create_notice_from_intake
-from abacus.modules.notices.intake import notice_engagement_for
-from abacus.modules.notices.intake import revise as revise_notice_intake
-from abacus.modules.notices.service import move as move_notice
-from abacus.modules.notices.service import notice as read_notice
-from abacus_tools.synthetic.scenarios.brightwater_hale.notices_content import (
-    NEEDS as NOTICES_NEEDS,
-)
-from abacus_tools.synthetic.scenarios.brightwater_hale.notices_content import (
-    SLICE as NOTICES_SLICE,
-)
 from abacus_tools.synthetic.scenarios.brightwater_hale.report_templates import (
     A07_NEEDS as A07_TEMPLATES_NEEDS,
 )
@@ -4208,18 +4210,19 @@ async def _notice_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) ->
     revised = await revise_notice_intake(
         ctx,
         made.id,
-        expected_version=made.row_version,
+        made.row_version,
         fields=[
             ("notice_code", str(data["notice_code"]), False),
             ("tax_year", str(data["tax_year"]), False),
             ("respond_by", str(data["respond_by"]), False),
             ("amount_due", str(data["amount"]), False),
         ],
-        assignee_id=None,
+        client_id=None,
+        assignee_user_id=None,
         notify_user_ids=None,
     )
     assignee = user_id_of(_SEATS[str(data["assignee"])])
-    work_item, _ = await create_notice_from_intake(
+    work_item, __ = await create_notice_from_intake(
         ctx,
         revised.id,
         client_entity_id=entity,

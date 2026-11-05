@@ -1,6 +1,7 @@
 """N-04-T21 (TASK-3317; DEC-2316): the notices slice's seed counts, from the row.
 
-"make seed-demo produces every NOT artboard's data through service APIs, the fixture and seed exports
+"make seed-demo produces every NOT artboard's data through service APIs, the fixture and seed
+exports
 are equal, and no template text appears in any migration or constant." The loaded half and the
 export equivalence run in the integration pass.
 """
@@ -41,4 +42,10 @@ def test_ac_each_notice_has_a_service_event_and_a_client() -> None:
 def test_ac_the_template_variants_are_content() -> None:
     path = Path(nc.__file__).parent / "files" / "notice_templates.yaml"
     variants = yaml.safe_load(path.read_text())["variants"]
-    assert [v["key"] for v in variants] == ["agree", "partial", "disagree", "balance_due", "generic"]
+    assert [v["key"] for v in variants] == [
+        "agree",
+        "partial",
+        "disagree",
+        "balance_due",
+        "generic",
+    ]

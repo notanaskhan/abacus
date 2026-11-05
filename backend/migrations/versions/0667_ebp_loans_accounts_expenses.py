@@ -94,7 +94,8 @@ INSERTS: dict[str, tuple[str, ...]] = {
         *_SCOPED, *_EV, "line_key", "kind", "amount", "occurred_on",
     ),
     "ebp_compliance_tests": (
-        *_SCOPED, "test_key", "plan_year", "limit_amount", "limit_ref", "result", "proposed_by_kind",
+        *_SCOPED, "test_key", "plan_year", "limit_amount", "limit_ref", "result",
+        "proposed_by_kind",
         "accepted_by", "accepted_at", "finding_ref", "engine_version", "inputs_hash",
     ),
     "ebp_qualification_facts": (

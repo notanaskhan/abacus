@@ -103,6 +103,7 @@ _OUTCOMES = {
     "v5": "pii-scan",
     "v6": "portal-drop-sort",
     "v7": "masked-preview",
+    "v8": "ocr",
 }
 
 

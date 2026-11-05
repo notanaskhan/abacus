@@ -23,9 +23,13 @@ _JOINT: Final = frozenset({"mfj", "married_filing_jointly", "married_joint", "jo
 JsonRow = dict[str, Any]  # Any: the analysis's JSON
 
 
-async def _subjects(tenant: TenantContext, notice_id: UUID) -> tuple[UUID, tuple[DataSubject, ...]]:
-    """The notice's taxpayer. A joint return's spouse joins with T-01's return parties: until then a
-    joint notice's second consent is the gateway's refusal, never skipped (`entity_id` None fails)."""
+async def _subjects(
+    tenant: TenantContext, notice_id: UUID
+) -> tuple[UUID, tuple[DataSubject, ...]]:
+    """The notice's taxpayer. A joint return's spouse joins with T-01's return parties: until
+    then a
+    joint notice's second consent is the gateway's refusal, never skipped (`entity_id` None
+    fails)."""
     async with tenant_session(tenant) as session:
         row = (
             await session.execute(
@@ -51,7 +55,11 @@ def _handles(rows: Sequence[JsonRow]) -> tuple[tuple[str, str], ...]:
     )  # fmt: skip
 
 
-async def step(tenant: TenantContext, notice_id: UUID, facts: dict[str, Any]) -> AgentStep:  # Any: JSON
+async def step(
+    tenant: TenantContext,
+    notice_id: UUID,
+    facts: dict[str, Any],  # Any: JSON
+) -> AgentStep:
     engagement_id, subjects = await _subjects(tenant, notice_id)
     rows = cast("list[JsonRow]", facts.get("rows", []))
     result = await analyze_notice(

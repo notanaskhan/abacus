@@ -124,18 +124,34 @@ def draft(
             terms.append(key)
             out.append(
                 DraftLine(
-                    statement, section, key, line.label, position, note_refs.get(line.key),
-                    _values(year, line.cy, line.py, "tb_linked",
-                            accounts=accounts_of.get(line.key, ()), entries=entries),
-                )  # fmt: skip
+                    statement,
+                    section,
+                    key,
+                    line.label,
+                    position,
+                    note_refs.get(line.key),
+                    _values(
+                        year,
+                        line.cy,
+                        line.py,
+                        "tb_linked",
+                        accounts=accounts_of.get(line.key, ()),
+                        entries=entries,
+                    ),
+                )
             )
             position += 1
         total_key = f"{section}.total"
         out.append(
             DraftLine(
-                statement, section, total_key, f"Total {group.label}", position, None,
+                statement,
+                section,
+                total_key,
+                f"Total {group.label}",
+                position,
+                None,
                 _values(year, group.cy, group.py, "formula", terms=tuple(terms)),
-            )  # fmt: skip
+            )
         )
         position += 1
         class_terms.setdefault(group.class_, []).append(total_key)
@@ -148,10 +164,14 @@ def draft(
         cy, py = class_values[class_]
         out.append(
             DraftLine(
-                _STATEMENT_OF[class_], f"class_{class_}", f"class.{class_}.total",
-                f"Total {class_}", position, None,
+                _STATEMENT_OF[class_],
+                f"class_{class_}",
+                f"class.{class_}.total",
+                f"Total {class_}",
+                position,
+                None,
                 _values(year, cy, py, "formula", terms=tuple(terms)),
-            )  # fmt: skip
+            )
         )
         position += 1
     return tuple(out)
@@ -159,9 +179,7 @@ def draft(
 
 def _plain(line: DraftLine) -> dict[str, object]:
     body = asdict(line)
-    body["values"] = [
-        {**asdict(value), "value": str(value.value)} for value in line.values
-    ]  # fmt: skip
+    body["values"] = [{**asdict(value), "value": str(value.value)} for value in line.values]
     return body
 
 

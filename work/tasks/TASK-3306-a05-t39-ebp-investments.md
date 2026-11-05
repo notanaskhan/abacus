@@ -1,6 +1,6 @@
 ---
 id: TASK-3306
-title: A-05-T39 EBP-06 service: trust agreement, layers and the certification hold
+title: "A-05-T39 EBP-06 service: trust agreement, layers and the certification hold"
 spec: SPEC-000  # row (A-05-T39)
 acceptance_criteria: [AC-1]
 risk_zone: amber

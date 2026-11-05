@@ -252,7 +252,8 @@ async def extract_fields(
     lines: Sequence[tuple[str, str]],
     subjects: Sequence[DataSubject],
 ) -> NoticeExtractOutput | None:
-    """Field proposals for a notice with no code map; a citation outside `lines` drops its field."""
+    """Field proposals for a notice with no code map; a citation outside `lines` drops its
+    field."""
     if not await flag_enabled(tenant, NOTICES_RESPONDER):
         return None
     if await stage_for(tenant, RESPONDER) not in ("shadow", "live"):
@@ -313,7 +314,8 @@ async def extract_fields(
 
 def _task(request: ModelRequest) -> Mapping[str, Any]:  # Any: JSON
     return cast(
-        Mapping[str, Any], json.loads(request.user.split("## task\n", 1)[1].split("\n", 1)[0])
+        Mapping[str, Any],  # Any: JSON
+        json.loads(request.user.split("## task\n", 1)[1].split("\n", 1)[0]),
     )
 
 
@@ -335,15 +337,19 @@ def fake_analyze(request: ModelRequest) -> str:
 
 def fake_extract(request: ModelRequest) -> str:
     task = _task(request)
-    return json.dumps({"fields": []}) if not task["lines"] else json.dumps(
-        {
-            "fields": [
-                {
-                    "field_key": task["keys"][0],
-                    "value": task["lines"][0]["text"][:40],
-                    "confidence": 0.8,
-                    "citation": task["lines"][0]["ref"],
-                }
-            ]
-        }
+    return (
+        json.dumps({"fields": []})
+        if not task["lines"]
+        else json.dumps(
+            {
+                "fields": [
+                    {
+                        "field_key": task["keys"][0],
+                        "value": task["lines"][0]["text"][:40],
+                        "confidence": 0.8,
+                        "citation": task["lines"][0]["ref"],
+                    }
+                ]
+            }
+        )
     )

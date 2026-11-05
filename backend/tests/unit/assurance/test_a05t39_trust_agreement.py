@@ -11,6 +11,7 @@ from decimal import Decimal as D
 
 import pytest
 
+from abacus.kernel.db import TenantContext
 from abacus.modules.assurance import ebp_investments
 from abacus.modules.assurance.compute.ebp.trust_agreement import TbFigure, TrustLine, agree
 
@@ -24,9 +25,15 @@ _FUNDS = (
 )
 
 
+def _tenant() -> TenantContext:
+    return TenantContext(uuid.uuid4(), "system", "test")
+
+
 def _trust() -> list[TrustLine]:
     lines = [TrustLine(k, n, D(b), D(e), "level1") for k, n, e, b in _FUNDS]
-    lines.append(TrustLine("sdba", "Self-directed brokerage", D("1257000.00"), D("1605000.00"), "nav"))
+    lines.append(
+        TrustLine("sdba", "Self-directed brokerage", D("1257000.00"), D("1605000.00"), "nav")
+    )
     lines.append(
         TrustLine("notes", "Notes receivable from participants", D("288500.00"), D("312400.00"),
                   "not_certified")
@@ -72,5 +79,5 @@ def test_ac_a_missing_tb_line_does_not_tie() -> None:
 
 @pytest.mark.asyncio
 async def test_ac_sign_off_is_held_without_a_work_item() -> None:
-    held = await ebp_investments.sign_off_guard(None, uuid.uuid4(), None)  # type: ignore[arg-type]
+    held = await ebp_investments.sign_off_guard(_tenant(), uuid.uuid4(), None)
     assert held == (ebp_investments.UNEVALUATED, len(ebp_investments.POINT_KEYS))

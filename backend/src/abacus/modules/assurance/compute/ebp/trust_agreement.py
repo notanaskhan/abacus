@@ -89,9 +89,16 @@ def agree(trust: Sequence[TrustLine], tb_lines: Sequence[TbFigure]) -> Agreement
         py_ties = py_ties and boy_off == _ZERO
         agreed.append(
             Agreed(
-                line.line_key, line.fund_name, line.level, line.boy, line.eoy, tb_boy, tb_eoy,
-                found is not None and eoy_off == _ZERO and boy_off == _ZERO, eoy_off,
-            )  # fmt: skip
+                line.line_key,
+                line.fund_name,
+                line.level,
+                line.boy,
+                line.eoy,
+                tb_boy,
+                tb_eoy,
+                found is not None and eoy_off == _ZERO and boy_off == _ZERO,
+                eoy_off,
+            )
         )
         if line.level == "not_certified":
             below_eoy += line.eoy or _ZERO
@@ -104,6 +111,13 @@ def agree(trust: Sequence[TrustLine], tb_lines: Sequence[TbFigure]) -> Agreement
         elif line.level == "nav":
             nav += line.eoy or _ZERO
     return Agreement(
-        tuple(agreed), investments_eoy, investments_boy, level1, nav, below_eoy, below_boy,
-        py_ties, _hash(trust, tb),
-    )  # fmt: skip
+        tuple(agreed),
+        investments_eoy,
+        investments_boy,
+        level1,
+        nav,
+        below_eoy,
+        below_boy,
+        py_ties,
+        _hash(trust, tb),
+    )

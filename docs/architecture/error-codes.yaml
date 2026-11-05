@@ -698,6 +698,10 @@ codes:
     raised_by:
     - abacus.modules.evidence.duplicates.DuplicateResolved
     summary: The version's duplicate was already resolved.
+  duplicate_unresolved:
+    status: 409
+    raised_by:
+    - abacus.modules.notices.intake.DuplicateUnresolved
   duplicate_upload:
     status: 409
     raised_by:
@@ -976,6 +980,11 @@ codes:
     - abacus.modules.evidence.export_currency.FinalExportRequired
     summary: 'The archive needs a ready final binder export of this work item: none was named, or the
       one named is not final, not ready, voided or expired.'
+  final_tb_unavailable:
+    status: 409
+    raised_by:
+    - abacus.modules.reporting.statements.NoFinalTrialBalance
+    summary: Statements draft from a mapped, balanced final layer; there is none yet.
   finding_invalid:
     status: 422
     raised_by:
@@ -1481,6 +1490,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.tax.delivery.LetterRefused
+  letter_rendering:
+    status: 409
+    raised_by:
+    - abacus.modules.notices.sending.LetterRendering
+    summary: The letter's draft is rendering; send again once it is ready.
   letter_signer_missing:
     status: 409
     raised_by:
@@ -1522,6 +1536,11 @@ codes:
     raised_by:
     - abacus.modules.communications.intake_contract.LowConfidence
     summary: 'The top destination is below the bulk threshold or ambiguous: choose it in File….'
+  low_confidence_unconfirmed:
+    status: 409
+    raised_by:
+    - abacus.modules.notices.intake.LowConfidenceUnconfirmed
+    summary: A value read below 0.90 confidence waits for a person's confirmation or correction.
   mandatory_locked:
     status: 409
     raised_by:
@@ -1667,6 +1686,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.tax.delivery.NoLetterTemplate
+  no_notice_engagement:
+    status: 409
+    raised_by:
+    - abacus.modules.notices.intake.NoNoticeEngagement
+    summary: 'The client has no `notice_response` engagement yet (QN-1: created through ENG-01).'
   no_pending_version:
     status: 409
     raised_by:
@@ -1711,6 +1735,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.ebp_plan.NotAnEbpAudit
+  not_answered:
+    status: 409
+    raised_by:
+    - abacus.modules.reporting.statements.NotAnswered
+    summary: Only an answered or adopted item can be reviewed (`facts.item_key`).
   not_concludable:
     status: 409
     raised_by:
@@ -1780,6 +1809,12 @@ codes:
     raised_by:
     - abacus.modules.review.service.NotPrepared
     summary: L2 and above need a current preparer sign-off.
+  not_ready:
+    status: 409
+    raised_by:
+    - abacus.modules.notices.intake.NotReady
+    - abacus.modules.notices.sending.NotReady
+    summary: Facts name what blocks the step (`facts.blocking`).
   not_reassignable:
     status: 409
     raised_by:
@@ -1854,6 +1889,11 @@ codes:
     raised_by:
     - abacus.modules.assurance.risks.NothingPending
     summary: No significance or rebuttal waits for the partner.
+  nothing_to_adopt:
+    status: 409
+    raised_by:
+    - abacus.modules.reporting.statements.NoSuggestion
+    summary: Only an agent's suggested answer can be adopted.
   nothing_to_analyze:
     status: 409
     raised_by:
@@ -2211,6 +2251,7 @@ codes:
   reason_required:
     status: 422
     raised_by:
+    - abacus.modules.reporting.statements.ReasonRequired
     - abacus.modules.requests.binders.ReasonRequired
     - abacus.modules.workpapers.core.ReasonRequired
     summary: Unpublishing a binder needs a reason.
@@ -2935,6 +2976,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.ledger.trial_balances.TrialBalanceInvalid
+  trust_report_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.ebp_investments.NoTrustReport
+    summary: 'No adopted trust lines yet: the point cannot be evaluated against nothing.'
   unbalanced_entry:
     status: 422
     raised_by:
@@ -3096,7 +3142,9 @@ codes:
     - abacus.modules.assurance.risks.RiskMoved
     - abacus.modules.assurance.service_orgs.OrganizationMoved
     - abacus.modules.assurance.soc_reports.SocReportMoved
+    - abacus.modules.notices.intake.IntakeMoved
     - abacus.modules.notices.service.VersionConflict
+    - abacus.modules.reporting.statements.StaleAnswer
     - abacus.modules.tax.extensions.ExtensionMoved
     - abacus.modules.workpapers.attribute_grid.TestMoved
     - abacus.modules.workpapers.core.VersionConflict

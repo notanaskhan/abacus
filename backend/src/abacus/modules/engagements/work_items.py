@@ -140,15 +140,6 @@ async def portal_work_items(
     ]
 
 
-async def service_line_of(tenant: TenantContext, engagement_id: UUID) -> str | None:
-    """The engagement's service line (P-11-T25's §7216 scope), for a caller that names its
-    engagement: an identifier and a code, no client facts."""
-    async with tenant_session(tenant) as session:
-        return await session.scalar(
-            text("SELECT service_line FROM engagements WHERE id = :e"), {"e": engagement_id}
-        )
-
-
 async def assurance_item_id(tenant: TenantContext, engagement_id: UUID) -> UUID | None:
     """The engagement's assurance work item (one per attest engagement, migration 0068). For a
     caller that has authorised on the engagement."""

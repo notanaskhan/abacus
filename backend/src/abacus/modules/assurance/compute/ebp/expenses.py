@@ -2,7 +2,8 @@
 
 Expenses foot to Schedule H 2i (38,400 = 2i(1) 6,000 + 2i(2) 32,400), invoices less credits equal
 paid from plan (41,500 - 3,100), and the ERISA budget account rolls (1,200 + 2,650 - 3,100 = 750).
-Limits come from `reference/irs_plan_limits.yaml` **by plan year**, and a missing year is a refusal,
+Limits come from `reference/irs_plan_limits.yaml` **by plan year**, and a missing year is a
+refusal,
 never a prior year's limit. Decimal only.
 """
 

@@ -16,8 +16,7 @@ from temporalio.client import Client, WorkflowHistory
 from temporalio.worker import Worker
 
 from abacus.kernel.temporal import payload_codec
-from abacus.modules.evidence.form_extraction_workflow import FormExtractionWorkflow
-from abacus.modules.evidence.workflow_types import FormExtractionInput
+from abacus.modules.evidence.api import FormExtractionInput, FormExtractionWorkflow
 from abacus_tools.stack import Stack, connect, run_with_stack
 from abacus_tools.workflows.histories import decoded_and_scrubbed
 from abacus_tools.workflows.record_retrieval import refuse_overwrite

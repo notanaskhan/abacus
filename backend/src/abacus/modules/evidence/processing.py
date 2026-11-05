@@ -56,6 +56,7 @@ from abacus.modules.evidence.events import (
     UploadChecksRecorded,
 )
 from abacus.modules.evidence.extraction import EXTRACTOR_VERSION, Extraction, extract_isolated
+from abacus.modules.evidence.form_extraction_workflow import FormExtractionWorkflow
 from abacus.modules.evidence.intake_sources import source_of, target_type
 from abacus.modules.evidence.masked_text import masked_pages
 from abacus.modules.evidence.models import InboxFile, UploadExtraction
@@ -79,7 +80,6 @@ from abacus.modules.evidence.repository import (
     stale_pdf_uploads,
 )
 from abacus.modules.evidence.service import engagement_snapshots
-from abacus.modules.evidence.form_extraction_workflow import FormExtractionWorkflow
 from abacus.modules.evidence.workflow_types import (
     INBOX,
     INTAKE,

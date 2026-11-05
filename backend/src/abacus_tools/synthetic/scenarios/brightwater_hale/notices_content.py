@@ -1,5 +1,6 @@
 """The `notices` slice (N-04-T21; N-04 §5; DEC-2316): Brightwater Hale's notices through the
-service APIs under the demo clock, the same intake path a person uses: an intake from a stored file,
+service APIs under the demo clock, the same intake path a person uses: an intake from a stored
+file,
 the fields entered, Create notice, then the status moves through `notices.service`.
 
 Seed counts: 2 New, 3 Analyzing, 2 Response drafted, 2 Awaiting IRS; 3 CP2000, 2 CP14, 1 CP501,

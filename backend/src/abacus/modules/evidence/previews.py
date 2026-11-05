@@ -30,7 +30,9 @@ from dataclasses import dataclass
 from typing import Final, Literal, cast
 
 from PIL import Image, ImageDraw, ImageOps
-from pillow_heif import register_heif_opener
+from pillow_heif import (
+    register_heif_opener,  # pyright: ignore[reportUnknownVariableType] -- no stubs
+)
 
 from abacus.kernel.isolation import IsolationFailed, run_isolated
 from abacus.kernel.pdf_pages import png_of

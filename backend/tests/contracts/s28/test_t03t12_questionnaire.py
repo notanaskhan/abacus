@@ -1,6 +1,7 @@
 """T-03-T12 (TASK-3330): AC tests for the questionnaire service and answer effects, from the row:
 "The suite fails against a build where the preview leaks internal_helper, an effect runs twice or a
-non-owner publishes a template." The template freeze and owner-only publish, with T-03-T05's lifecycle
+non-owner publishes a template." The template freeze and owner-only publish, with T-03-T05's
+lifecycle
 routes partial, are pinned on the matrix here and join the database suite once the routes land.
 """
 
@@ -14,7 +15,12 @@ import pytest
 import yaml
 
 from abacus.modules.requests.answer_effects import matching, normalise
-from abacus.modules.requests.questionnaire_editor import CLIENT_FIELDS, client_view, effects_to_fire
+from abacus.modules.requests.questionnaire_editor import (
+    CLIENT_FIELDS,
+    Editor,
+    client_view,
+    effects_to_fire,
+)
 
 ROOT = Path(__file__).resolve().parents[4]
 
@@ -53,21 +59,21 @@ def test_ac_a_known_rule_never_fires_again_on_save() -> None:
             ],
         }
     ]
-    fired = effects_to_fire(current, proposed)  # type: ignore[arg-type]
+    fired = effects_to_fire(cast(Editor, current), proposed)
     assert [f["rule_key"] for f in fired] == ["r2"]
 
 
 def test_ac_a_rule_on_an_unanswered_question_does_not_fire() -> None:
     fresh = SimpleNamespace(key="q5", answered=False, effect_rules=[])
     proposed = [{"key": "q5", "effect_rules": [{"key": "r1", "kind": "k", "title": "t"}]}]
-    assert effects_to_fire(SimpleNamespace(questions=[fresh]), proposed) == []  # type: ignore[arg-type]
+    assert effects_to_fire(cast(Editor, SimpleNamespace(questions=[fresh])), proposed) == []
 
 
 def test_ac_normalise_and_matching_are_exact_after_case() -> None:
     assert normalise("Yes") == normalise(" yes ")
     assert normalise(True) == normalise("yes")
     rules = [{"key": "r", "when": {"equals": "yes"}}]
-    assert matching(rules, "No") == []  # type: ignore[arg-type]
+    assert matching(rules, "No") == []
 
 
 @pytest.mark.parametrize(

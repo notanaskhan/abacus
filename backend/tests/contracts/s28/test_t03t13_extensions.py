@@ -1,6 +1,8 @@
-"""T-03-T13 (TASK-3331): goldens and properties for extensions, from the row: "Golden YAML files carry
+"""T-03-T13 (TASK-3331): goldens and properties for extensions, from the row: "Golden YAML
+files carry
 source and reviewed_by fields, pass on exact Decimal and date equality, and tallies recompute from
-visible rows only." `counts` takes only the rows it is given, so a walled return can't reach a tally.
+visible rows only." `counts` takes only the rows it is given, so a walled return can't reach a
+tally.
 The TY2027 calendar cases need T-03-T07's estimate schedules (S27 partial) and are recorded there.
 """
 
@@ -15,11 +17,13 @@ import yaml
 from hypothesis import given
 from hypothesis import strategies as st
 
-from abacus.modules.tax.compute.payments import _pct  # pyright: ignore[reportPrivateUsage]
+from abacus.modules.tax.compute.payments import (
+    _pct,  # pyright: ignore[reportPrivateUsage] -- the rounding rule
+)
 from abacus.modules.tax.extensions import counts
 
 GOLDEN = cast(
-    dict[str, Any],
+    dict[str, Any],  # Any: YAML
     yaml.safe_load(
         (Path(__file__).resolve().parents[2] / "golden/tax/tax13_safe_harbor.yaml").read_text()
     ),

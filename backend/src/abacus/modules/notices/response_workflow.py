@@ -65,7 +65,9 @@ class NoticeResponseWorkflow:
             return True
         self._changed = False
         try:
-            await workflow.wait_condition(lambda: self._changed, timeout=timedelta(seconds=seconds))
+            await workflow.wait_condition(
+                lambda: self._changed, timeout=timedelta(seconds=seconds)
+            )
         except TimeoutError:
             return True
         return False
@@ -98,7 +100,8 @@ class NoticeResponseWorkflow:
                 continue
             if self._follow_up_on is not None or self._replied:
                 continue
-            assert self._respond_by is not None
+            if self._respond_by is None:
+                continue
             await workflow.execute_activity(
                 "notice_response.alert",
                 AlertInput(given.tenant_id, given.work_item_id, self._respond_by, days_left),

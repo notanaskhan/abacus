@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from datetime import date, datetime
-from typing import cast
+from typing import Final, cast
 from uuid import UUID
 
 from sqlalchemy import (

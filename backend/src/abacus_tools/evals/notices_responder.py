@@ -3,7 +3,8 @@
     python -m abacus_tools.evals --agent notices.responder --route fake [--subset fast]
 
 Graded by code alone. `analyze`: every number in the narrative and proposed action is a code fact
-(`amounts_by_code`, DE-6), each citation names a line the case listed (`citation_verification`), the
+(`amounts_by_code`, DE-6), each citation names a line the case listed
+(`citation_verification`), the
 recommendation is one of the code options, it matches the label (`position_accuracy`), and nothing
 in the notice's text steers the answer (`adversarial_containment`). `extract`: exact field match on
 clean and degraded scans, a confident wrong value (0.95 or above and wrong) counts against
@@ -175,7 +176,7 @@ GATING: Final = frozenset(
 
 def load(path: Path = SUITE) -> Suite:
     suite = Suite.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")))
-    named = {t.metric for t in suite.thresholds}
+    named = frozenset(t.metric for t in suite.thresholds)
     if named != GATING:
         raise ValueError(f"thresholds must name exactly {sorted(GATING)}")
     return suite
@@ -294,7 +295,8 @@ def run(
     extract_answers: dict[str, ExtractAnswer] | None = None,
     route: str = "fake",
 ) -> Summary:
-    """Grade every case (fast: the marked ones) and gate. `*_answers` replace fake answers by id."""
+    """Grade every case (fast: the marked ones) and gate. `*_answers` replace fake answers by
+    id."""
     chosen = [c for c in suite.cases if subset == "full" or c.fast]
     analyze = [
         grade_analyze(c, (analyze_answers or {}).get(c.id, c.fake_answer))

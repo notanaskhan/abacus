@@ -180,7 +180,7 @@ def _normalise(value_type: str, raw: str) -> tuple[str, bool]:
     if value_type == "date":
         for fmt in _DATE_FORMATS:
             try:
-                return datetime.strptime(cleaned, fmt).date().isoformat(), True  # noqa: DTZ007
+                return datetime.strptime(cleaned, fmt).date().isoformat(), True
             except ValueError:
                 continue
         return cleaned, False
@@ -193,9 +193,9 @@ def identify(pages: Sequence[PageWords]) -> FormMap | None:
     match = _TAX_YEAR.search(joined)
     year = int(match.group(1)) if match else None
     for form_map in load_maps():
-        if all(re.search(rf"\b{re.escape(a)}\b", joined) for a in form_map.anchors):
-            if year == form_map.tax_year:
-                return form_map
+        known = all(re.search(rf"\b{re.escape(a)}\b", joined) for a in form_map.anchors)
+        if known and year == form_map.tax_year:
+            return form_map
     return None
 
 
@@ -347,7 +347,6 @@ async def extract_version(tenant_id: UUID, version_id: UUID) -> int:
             )
         tx.emit(
             ExtractedFieldsRecorded(
-                tenant_id=tenant_id,
                 evidence_version_id=version_id,
                 form_type=form_map.form_type,
                 tax_year=form_map.tax_year,

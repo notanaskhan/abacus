@@ -420,7 +420,7 @@ class DecisionSuggestion(BaseModel):
     ]
 
 
-# --- N-04-T19: the notices responder's closed outputs (N-04 §6; DEC-2313) -------------------------
+# --- N-04-T19: the notices responder's closed outputs (N-04 §6; DEC-2313) --------
 
 
 class NoticeWhyParagraph(BaseModel):
@@ -431,7 +431,8 @@ class NoticeWhyParagraph(BaseModel):
 
 
 class NoticeAnalyzeOutput(BaseModel):
-    """A cited explanation and one of code's options: a tag on the card, never a position (INV-1)."""
+    """A cited explanation and one of code's options: a tag on the card, never a position
+    (INV-1)."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 

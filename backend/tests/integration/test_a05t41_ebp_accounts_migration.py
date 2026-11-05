@@ -2,7 +2,8 @@
 
 Row acceptance: "Upgrade and downgrade pass on the seed, and SSNs in the balance and SDBA schedules
 are sealed like the census." Also: forced RLS and no DELETE grant on every table; an offset is
-reported on line 2e(1) and nowhere else; an expense names a Schedule H 2i line; an expense exception
+reported on line 2e(1) and nowhere else; an expense names a Schedule H 2i line; an expense
+exception
 carries its issue.
 """
 

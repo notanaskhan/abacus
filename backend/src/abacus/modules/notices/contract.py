@@ -1075,6 +1075,11 @@ async def intake_confirm_route(
         related_return_id=body.related_return_id,
         create_anyway=body.create_anyway,
     )
+    # N-04-T16: the respond-by alerts and the follow-up timer, once the notice is committed.
+    from abacus.modules.notices import sending, service
+
+    created = await service.notice(ctx, notice_id)
+    await sending.start_timers(ctx.tenant_id, created, created.notice_type_key or "unknown")
     return CreatedNoticeOut(notice_id=notice_id, engagement_id=engagement_id)
 
 

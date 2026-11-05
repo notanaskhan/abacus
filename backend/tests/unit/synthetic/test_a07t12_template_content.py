@@ -1,6 +1,7 @@
 """A-07-T12 (TASK-3316; DEC-2315): template content part 1, from the row.
 
-"make seed-demo loads every template through the import endpoints, the licensed-text detector reports
+"make seed-demo loads every template through the import endpoints, the licensed-text detector
+reports
 zero hits, and no template wording appears in Python or TypeScript sources." Counts from the row:
 EQR 10, EBP completion 18, archive 9, the representation letter's 11 locked and 4 triggered.
 """

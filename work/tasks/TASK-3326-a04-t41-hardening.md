@@ -1,6 +1,6 @@
 ---
 id: TASK-3326
-title: A-04-T41 hardening: section draft replay, I-AGENT-NEVER, floor at the end pass
+title: "A-04-T41 hardening: section draft replay, I-AGENT-NEVER, floor at the end pass"
 spec: SPEC-000  # row (A-04-T41)
 acceptance_criteria: [AC-1]
 risk_zone: red

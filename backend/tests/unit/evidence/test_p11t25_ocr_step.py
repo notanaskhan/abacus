@@ -16,7 +16,10 @@ from PIL import Image
 from abacus.kernel.db import TenantContext
 from abacus.kernel.ocr import OcrPage, OcrWord
 from abacus.modules.evidence.ocr_normalise import rasterise
-from abacus.modules.evidence.ocr_step import _page_words, _system
+from abacus.modules.evidence.ocr_step import (
+    _page_words,  # pyright: ignore[reportPrivateUsage] -- the module's own helper
+    _system,  # pyright: ignore[reportPrivateUsage] -- the module's own helper
+)
 from abacus.modules.evidence.words import layer_document, parse_layer
 
 
@@ -49,7 +52,11 @@ def test_ac_a_multi_page_tiff_is_each_frame() -> None:
 def test_ac_ocr_words_carry_their_confidence_through_the_sealed_layer() -> None:
     read = OcrPage(
         "a" * 64,
-        (OcrWord("6081", (Decimal("1"), Decimal("2"), Decimal("3"), Decimal("4")), Decimal("0.84")),),
+        (
+            OcrWord(
+                "6081", (Decimal("1"), Decimal("2"), Decimal("3"), Decimal("4")), Decimal("0.84")
+            ),
+        ),
         None,
     )
     layer = _page_words(1, 612.0, 792.0, 0, read)

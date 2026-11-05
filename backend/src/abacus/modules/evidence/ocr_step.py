@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import asyncio
 from decimal import Decimal
-from typing import Final, Protocol
+from typing import Final
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext, tenant_session
@@ -22,36 +22,28 @@ from abacus.kernel.ocr import OcrPage, OcrProvider, TextractOcr
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.engagements.api import service_line_of
 from abacus.modules.evidence import storage
-from abacus.modules.evidence.events import EvidenceTextReady, OcrRunRefused
-from abacus.modules.evidence.intake_sources import source_of, target_type
+from abacus.modules.evidence.events import EvidenceTextReady, OcrRefusal, OcrRunRefused
+from abacus.modules.evidence.intake_sources import IntakeSource, source_of, target_type
+from abacus.modules.evidence.models import EvidenceVersion, InboxFile
 from abacus.modules.evidence.object_keys import under_key
-from abacus.modules.evidence.ocr_gate import GateFacts, first_refusal, record_run
+from abacus.modules.evidence.ocr_gate import GateFacts, Refusal, first_refusal, record_run
 from abacus.modules.evidence.ocr_normalise import IMAGES, PDF, PageImage, rasterise_isolated
 from abacus.modules.evidence.repository import OCR_VERSION, insert_pages, pages_of
 from abacus.modules.evidence.words import WORDS_VERSION, PageWords, Word, layer_document
 from abacus.modules.evidence.workflow_types import INBOX, INTAKE, VERSION, UploadInput
 from abacus.modules.identity.api import is_synthetic_firm
 
-class _Source(Protocol):
-    """What `source_of` answers, for a version, an inbox file or an attachment."""
-
-    @property
-    def engagement_id(self) -> UUID | None: ...
-    @property
-    def storage_key(self) -> str: ...
-    @property
-    def storage_version_id(self) -> str: ...
-    @property
-    def fingerprint(self) -> str: ...
-    @property
-    def size_bytes(self) -> int: ...
-    @property
-    def media_type(self) -> str: ...
-
-
 API: Final = "detect_text"
 TAX_LINE: Final = "tax"
 _log = get_logger(__name__)
+# The gate's refusal in the event's words (`evidence.events.OcrRefusal`).
+_REFUSAL: Final[dict[Refusal, OcrRefusal]] = {
+    "kill_switch": "kill_switch",
+    "flag_off": "flag_off",
+    "terms_not_covering": "provider_terms",
+    "boundary_basis": "boundary_basis",
+    "consent_missing": "consent_7216",
+}
 _provider: list[OcrProvider] = []
 
 
@@ -133,7 +125,7 @@ async def _read(
     version_id: UUID | None,
     inbox_id: UUID | None,
     attachment_id: UUID | None,
-    found: _Source,
+    found: EvidenceVersion | InboxFile | IntakeSource,
     due: list[int] | None,
 ) -> int:
     tenant_id = tenant.tenant_id
@@ -150,10 +142,9 @@ async def _read(
             async with uow(tenant) as tx:
                 tx.emit(
                     OcrRunRefused(
-                        tenant_id=tenant_id,
                         evidence_version_id=version_id,
                         engagement_id=found.engagement_id,
-                        reason=refused,  # type: ignore[arg-type]
+                        reason=_REFUSAL[refused],
                     )
                 )
         _log.info("upload.ocr_refused", kind=given.kind, reason=refused)
@@ -185,9 +176,7 @@ async def _read(
     under = under_key(found)
     rows: list[dict[str, object]] = []
     for image, page_read in results:
-        layer = _page_words(
-            image.page, image.width_pt, image.height_pt, image.rotation, page_read
-        )
+        layer = _page_words(image.page, image.width_pt, image.height_pt, image.rotation, page_read)
         put = (
             await storage.put(tenant_id, layer_document(layer), under=under)
             if layer.words
@@ -245,7 +234,6 @@ async def _publish_text_ready(
     async with uow(tenant) as tx:
         tx.emit(
             EvidenceTextReady(
-                tenant_id=tenant.tenant_id,
                 evidence_version_id=version_id,
                 engagement_id=engagement_id,
                 text_source=source,

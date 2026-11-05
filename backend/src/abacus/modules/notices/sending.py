@@ -27,7 +27,6 @@ from abacus.kernel.dispatch import dispatch, signal_workflow
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import OutboxEvent, Ref, Target, uow
 from abacus.modules.identity.api import AuthContext
-from abacus.modules.organisations.api import client_of_entity
 from abacus.modules.notices.events import (
     NoticeFollowUpDue,
     NoticeRespondBySoon,
@@ -42,6 +41,7 @@ from abacus.modules.notices.response_workflow_types import (
     NoticeResponseInput,
 )
 from abacus.modules.notices.service import Notice, move, notice
+from abacus.modules.organisations.api import client_of_entity
 from abacus.modules.reporting import api as c11
 from abacus.modules.signatures.api import (
     EnvelopeSource,
@@ -110,7 +110,7 @@ async def _response_row(tenant: TenantContext, work_item_id: UUID) -> JsonRow:
     return dict(row)
 
 
-# --- the letter (C11, DEC-2311: the provider now carries the tenant) ------------------------------
+# --- the letter (C11, DEC-2311: the provider now carries the tenant) --------
 
 
 async def letter_variables(
@@ -214,7 +214,11 @@ async def _enclosures(row: JsonRow) -> tuple[SourceDocument, ...]:
 
 
 async def _client_of(ctx: AuthContext, found: Notice) -> UUID:
-    client = await client_of_entity(ctx.tenant, found.client_entity_id)
+    client = (
+        None
+        if found.client_entity_id is None
+        else await client_of_entity(ctx.tenant, found.client_entity_id)
+    )
     if client is None:
         raise NotFound("client")
     return client
@@ -224,26 +228,17 @@ async def _draft_source(ctx: AuthContext, work_item_id: UUID) -> SourceDraft:
     """The letter, then the cited enclosures; the taxpayers sign (R-07)."""
     found = await notice(ctx, work_item_id)
     row = await _response_row(ctx.tenant, work_item_id)
-    async with tenant_session(ctx.tenant) as session:
-        letter = (
-            (
-                await session.execute(
-                    text(
-                        "SELECT id, content_hash FROM generated_document_versions "
-                        "WHERE generated_document_id = :d ORDER BY version_no DESC LIMIT 1"
-                    ),
-                    {"d": row["generated_document_id"]},
-                )
-            )
-            .mappings()
-            .one_or_none()
-        )
+    letter = (
+        None
+        if row["generated_document_id"] is None
+        else await c11.latest_document_version(ctx.tenant, row["generated_document_id"])
+    )
     if letter is None:
         raise LetterRendering
     documents = (
         SourceDocument(
-            sha256=str(letter["content_hash"]),
-            generated_document_version_id=letter["id"],
+            sha256=letter[1],
+            generated_document_version_id=letter[0],
             source_ref=f"notice_response:{row['id']}",
             tri=True,
         ),
@@ -274,7 +269,7 @@ async def send_for_signature(ctx: AuthContext, work_item_id: UUID) -> UUID:
         raise NotReady(facts={"blocking": "signoff"})
     row = await _response_row(ctx.tenant, work_item_id)
     if row["generated_document_id"] is None:
-        async with uow(ctx.tenant, ctx.actor) as tx:
+        async with uow(ctx.tenant) as tx:
             ticket = await c11.render(
                 tx,
                 c11.RenderRequest(
@@ -297,7 +292,7 @@ async def send_for_signature(ctx: AuthContext, work_item_id: UUID) -> UUID:
     if row["envelope_id"] is not None:
         return cast(UUID, row["envelope_id"])
     envelope_id = await create_draft(ctx, SOURCE, work_item_id)
-    async with uow(ctx.tenant, ctx.actor) as tx:
+    async with uow(ctx.tenant) as tx:
         await tx.session.execute(
             text(
                 "UPDATE notice_responses SET envelope_id = :e, row_version = row_version + 1 "
@@ -381,11 +376,7 @@ async def on_envelope_completed(event: OutboxEvent) -> None:
     if not found.ready:
         return
     async with uow(tenant) as tx:
-        tx.emit(
-            NoticeResponseReadyToSend(
-                tenant_id=event.tenant_id, work_item_id=row["work_item_id"], response_id=row["id"]
-            )
-        )
+        tx.emit(NoticeResponseReadyToSend(work_item_id=row["work_item_id"], response_id=row["id"]))
         tx.record(
             "notice_response.ready_to_send",
             target=Target("notice", row["work_item_id"]),
@@ -412,7 +403,8 @@ async def mark_sent(
     sent_on: date,
     follow_up_days: int | None,
 ) -> tuple[date, date, str | None]:
-    """A person records the send: sealed confirmation, then Sent to Awaiting IRS in one transaction."""
+    """A person records the send: sealed confirmation, then Sent to Awaiting IRS in one
+    transaction."""
     found = await notice(ctx, work_item_id)
     ready = await readiness(ctx, work_item_id)
     if not ready.ready:
@@ -422,13 +414,11 @@ async def mark_sent(
     due = follow_up_on(sent_on, days)
     last4 = confirmation_no[-4:] if confirmation_no else None
     sealed = (
-        await seal(
-            ctx.tenant_id, confirmation_no.encode(), f"notice_sent_record:{work_item_id}"
-        )
+        await seal(ctx.tenant_id, confirmation_no.encode(), f"notice_sent_record:{work_item_id}")
         if confirmation_no
         else None
     )
-    async with uow(ctx.tenant, ctx.actor) as tx:
+    async with uow(ctx.tenant) as tx:
         await tx.session.execute(
             text(
                 "INSERT INTO notice_sent_records (tenant_id, work_item_id, response_id, channel, "
@@ -452,8 +442,7 @@ async def mark_sent(
         await move(tx, moved, "awaiting_irs", actor_kind="system", actor_user_id=None)
         tx.emit(
             NoticeResponseSent(
-                tenant_id=ctx.tenant_id, work_item_id=work_item_id, sent_on=sent_on,
-                follow_up_on=due,
+                work_item_id=work_item_id, sent_on=sent_on, follow_up_on=due,
             )
         )  # fmt: skip
         tx.record(
@@ -484,7 +473,7 @@ async def agency_reply(
         if note
         else None
     )
-    async with uow(ctx.tenant, ctx.actor) as tx:
+    async with uow(ctx.tenant) as tx:
         await tx.session.execute(
             text(
                 "INSERT INTO notice_agency_replies (tenant_id, work_item_id, outcome, closed_on, "
@@ -524,7 +513,6 @@ async def send_alert(given: AlertInput) -> None:
     async with uow(TenantContext(tenant_id, "system", "notices:alerts")) as tx:
         tx.emit(
             NoticeRespondBySoon(
-                tenant_id=tenant_id,
                 work_item_id=UUID(given.work_item_id),
                 respond_by=date.fromisoformat(given.respond_by),
                 days_left=given.days_left,
@@ -537,7 +525,6 @@ async def send_follow_up(given: FollowUpInput) -> None:
     async with uow(TenantContext(tenant_id, "system", "notices:alerts")) as tx:
         tx.emit(
             NoticeFollowUpDue(
-                tenant_id=tenant_id,
                 work_item_id=UUID(given.work_item_id),
                 follow_up_on=date.fromisoformat(given.follow_up_on),
             )

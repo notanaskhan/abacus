@@ -1,6 +1,6 @@
 ---
 id: TASK-3312
-title: N-04-T16 response part 2: send for signature, readiness, mark sent, replies and timers
+title: "N-04-T16 response part 2: send for signature, readiness, mark sent, replies and timers"
 spec: SPEC-000  # row (N-04-T16)
 acceptance_criteria: [AC-1]
 risk_zone: amber

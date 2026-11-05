@@ -27,9 +27,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Scope, Target, uow
-from abacus.modules.evidence.api import verified_citation_ids
 from abacus.modules.adjustments.api import recorded_entries
 from abacus.modules.engagements.api import get_ref
+from abacus.modules.evidence.api import verified_citation_ids
 from abacus.modules.identity.api import AuthContext, authorise
 from abacus.modules.ledger.api import (
     EntrySet,
@@ -39,6 +39,7 @@ from abacus.modules.ledger.api import (
     statements_for,
     trial_balance_view,
 )
+from abacus.modules.methodology.api import disclosure_template_items
 from abacus.modules.reporting.compute import fs_draft, tie_out
 from abacus.modules.review.api import FieldOwner, record_value, register_field_owner
 
@@ -105,7 +106,7 @@ async def _source(tenant: TenantContext, engagement_id: UUID) -> Source:
             accounts[keys[account.fs_line_id]].append(account.account_code)
     return Source(
         current.id,
-        view.version.id,
+        view.version.snapshot_id,
         current.period_end,
         found,
         await recorded_entries(tenant, engagement_id),
@@ -180,7 +181,7 @@ async def draft(ctx: AuthContext, engagement_id: UUID, work_item_id: UUID) -> tu
     lines = fs_draft.draft(
         source.statements.groups, source.period_end.year, source.accounts_of, refs, {}
     )
-    async with uow(ctx.tenant, ctx.actor) as tx:
+    async with uow(ctx.tenant) as tx:
         await tx.session.execute(
             text(
                 "INSERT INTO statement_documents (tenant_id, engagement_id, work_item_id, "
@@ -456,7 +457,7 @@ async def run_tie_out(ctx: AuthContext, version_id: UUID) -> JsonRow:
         }
         for o in result.off
     ]
-    async with uow(ctx.tenant, ctx.actor) as tx:
+    async with uow(ctx.tenant) as tx:
         row = (
             (
                 await tx.session.execute(
@@ -512,7 +513,8 @@ async def lineage(
     for r in rows:
         ref = r["source_ref"]
         sources.extend(
-            {"kind": "tb_account", "year": str(r["year"]), "ref": a} for a in ref.get("accounts", ())
+            {"kind": "tb_account", "year": str(r["year"]), "ref": a}
+            for a in ref.get("accounts", ())
         )
         sources.extend(
             {"kind": "entry", "year": str(r["year"]), "ref": e} for e in ref.get("entries", ())
@@ -554,21 +556,14 @@ class ChecklistView:
     total: int
 
 
-async def checklist(tenant: TenantContext, document_id: UUID) -> ChecklistView:
+async def disclosure_view(tenant: TenantContext, document_id: UUID) -> ChecklistView:
     """The template's items with their answers, in template order; counts by code (142)."""
     document = await _resource_of_document(tenant, document_id)
     template = document["checklist_template_version_id"]
     if template is None:
         return ChecklistView(document_id, None, [], 0, 0)
+    template_items = await disclosure_template_items(tenant, template)
     async with tenant_session(tenant) as session:
-        template_items = (
-            await session.execute(
-                text(
-                    "SELECT items FROM disclosure_checklist_template_versions WHERE id = :t"
-                ),
-                {"t": template},
-            )
-        ).scalar_one()
         answers = (
             (
                 await session.execute(
@@ -595,7 +590,7 @@ async def checklist(tenant: TenantContext, document_id: UUID) -> ChecklistView:
             "suggestion_id": by_key.get(item["key"], {}).get("suggestion_id"),
             "version": by_key.get(item["key"], {}).get("version", 1),
         }
-        for item in cast(list[JsonRow], template_items)
+        for item in template_items
     ]
     answered = sum(1 for i in items if i["answer"] is not None and i["state"] != "suggested")
     return ChecklistView(document_id, template, items, answered, len(items))
@@ -635,7 +630,7 @@ async def answer_item(
     template = document["checklist_template_version_id"]
     if template is None:
         raise NotFound("disclosure_checklist")
-    async with uow(ctx.tenant, ctx.actor) as tx:
+    async with uow(ctx.tenant) as tx:
         existing = await _existing(tx.session, document_id, item_key)
         if existing is not None and int(existing["version"]) != if_match:
             raise StaleAnswer
@@ -692,12 +687,10 @@ async def answer_item(
     return await _one_item(ctx.tenant, document_id, item_key)
 
 
-async def adopt_item(
-    ctx: AuthContext, document_id: UUID, item_key: str, if_match: int
-) -> JsonRow:
+async def adopt_item(ctx: AuthContext, document_id: UUID, item_key: str, if_match: int) -> JsonRow:
     """A person adopts the agent's suggested answer: it becomes theirs (INV-1)."""
     document = await _resource_of_document(ctx.tenant, document_id)
-    async with uow(ctx.tenant, ctx.actor) as tx:
+    async with uow(ctx.tenant) as tx:
         existing = await _existing(tx.session, document_id, item_key)
         if existing is None or existing["state"] != "suggested" or existing["answer"] is None:
             raise NoSuggestion
@@ -737,7 +730,7 @@ async def adopt_item(
 async def review_items(ctx: AuthContext, document_id: UUID, item_keys: Sequence[str]) -> None:
     """A reviewer marks answered or adopted items reviewed; a suggestion cannot be reviewed."""
     document = await _resource_of_document(ctx.tenant, document_id)
-    async with uow(ctx.tenant, ctx.actor) as tx:
+    async with uow(ctx.tenant) as tx:
         for key in item_keys:
             existing = await _existing(tx.session, document_id, key)
             if existing is None or existing["state"] not in ("answered", "adopted"):
@@ -762,7 +755,7 @@ async def review_items(ctx: AuthContext, document_id: UUID, item_keys: Sequence[
 
 
 async def _one_item(tenant: TenantContext, document_id: UUID, item_key: str) -> JsonRow:
-    view = await checklist(tenant, document_id)
+    view = await disclosure_view(tenant, document_id)
     found = next((i for i in view.items if i["item_key"] == item_key), None)
     if found is None:
         raise NotFound("disclosure_checklist_item")
@@ -770,14 +763,18 @@ async def _one_item(tenant: TenantContext, document_id: UUID, item_key: str) -> 
 
 
 AUDIT_KINDS: Final = frozenset({"statement_version", _ANSWER_TARGET})
+_OWNERS: Final = {
+    "statement_version": text(
+        "SELECT id, engagement_id FROM statement_versions WHERE id = ANY(:ids)"
+    ),
+    _ANSWER_TARGET: text(
+        "SELECT id, engagement_id FROM disclosure_checklist_answers WHERE id = ANY(:ids)"
+    ),
+}
 
 
 async def audit_owners(tenant: TenantContext, kind: str, ids: Sequence[UUID]) -> dict[UUID, UUID]:
     """For a statement version or checklist answer an audit event names: id -> its engagement."""
-    table = "statement_versions" if kind == "statement_version" else "disclosure_checklist_answers"
     async with tenant_session(tenant) as session:
-        rows = await session.execute(
-            text(f"SELECT id, engagement_id FROM {table} WHERE id = ANY(:ids)"),  # noqa: S608
-            {"ids": list(ids)},
-        )
+        rows = await session.execute(_OWNERS[kind], {"ids": list(ids)})
         return {found: owned for found, owned in rows}
