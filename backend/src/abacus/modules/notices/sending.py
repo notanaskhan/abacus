@@ -26,8 +26,10 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.dispatch import dispatch, signal_workflow
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import OutboxEvent, Ref, Target, uow
+from abacus.modules.evidence.api import version_view
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.notices.events import (
+    NoticeCreated,
     NoticeFollowUpDue,
     NoticeRespondBySoon,
     NoticeResponseReadyToSend,
@@ -74,15 +76,28 @@ def workflow_id(tenant_id: UUID, work_item_id: UUID) -> str:
     return f"notice_response:{tenant_id}:{work_item_id}"
 
 
-async def start_timers(tenant_id: UUID, found: Notice, notice_type_key: str) -> None:
-    """Started at Create notice: the respond-by alerts and the follow-up timer."""
+async def on_notice_created(event: OutboxEvent) -> None:
+    """Create notice committed: the respond-by alerts and the follow-up timer. Through the outbox,
+    so Temporal being down delays them and never fails or loses the person's write."""
+    work_item_id = UUID(str(event.payload["work_item_id"]))
+    tenant = TenantContext(event.tenant_id, "system", "notices:timers")
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(
+                text("SELECT respond_by, notice_type_key FROM notices WHERE work_item_id = :w"),
+                {"w": work_item_id},
+            )
+        ).first()
+    if row is None:
+        return
     await dispatch(
         NoticeResponseWorkflow,
         NoticeResponseInput(
-            str(tenant_id), str(found.id),
-            found.respond_by.isoformat() if found.respond_by else None, notice_type_key,
+            str(event.tenant_id), str(work_item_id),
+            row.respond_by.isoformat() if row.respond_by else None,
+            row.notice_type_key or "unknown",
         ),
-        id=workflow_id(tenant_id, found.id),
+        id=workflow_id(event.tenant_id, work_item_id),
         id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE,
         id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
     )  # fmt: skip
@@ -384,7 +399,10 @@ async def on_envelope_completed(event: OutboxEvent) -> None:
         )
 
 
-SUBSCRIPTIONS: Final = {"envelope.completed": on_envelope_completed}
+SUBSCRIPTIONS: Final = {
+    "envelope.completed": on_envelope_completed,
+    NoticeCreated.event_type: on_notice_created,
+}
 
 
 # --- mark sent --------------------------------------------------------------------------------
@@ -466,8 +484,16 @@ async def agency_reply(
     note: str | None,
     evidence_version_id: UUID | None,
 ) -> None:
-    """A person records the agency's reply: resolved closes the notice, escalated escalates it."""
+    """A person records the agency's reply: resolved closes the notice, escalated escalates it.
+    The evidence is this notice's engagement's: the column has no key, so an id alone would reach
+    across a wall."""
     found = await notice(ctx, work_item_id)
+    if (
+        evidence_version_id is not None
+        and (await version_view(ctx.tenant, evidence_version_id)).engagement_id
+        != found.engagement_id
+    ):
+        raise NotFound("evidence_version")
     sealed = (
         await seal(ctx.tenant_id, note.encode(), f"notice_agency_reply:{work_item_id}")
         if note

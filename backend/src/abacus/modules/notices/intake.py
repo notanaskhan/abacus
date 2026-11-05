@@ -34,6 +34,7 @@ from abacus.kernel.flags import flag_variant
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.engagements.api import create_work_item
 from abacus.modules.identity.api import AuthContext
+from abacus.modules.notices.events import NoticeCreated
 
 LOW_CONFIDENCE: Final = Decimal("0.90")
 _READY: Final = frozenset({"ready", "manual_entry", "failed"})
@@ -373,6 +374,7 @@ async def create_notice(
         )
         if moved is None:
             raise IntakeMoved
+        tx.emit(NoticeCreated(work_item_id=work_item))
         tx.record(
             "notice.created",
             target=Target("notice", work_item),
