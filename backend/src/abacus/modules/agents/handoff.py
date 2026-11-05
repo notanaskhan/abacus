@@ -418,3 +418,47 @@ class DecisionSuggestion(BaseModel):
     reasons: Annotated[
         list[RecommendationReason], Field(min_length=1, max_length=3), classified("confidential")
     ]
+
+
+# --- N-04-T19: the notices responder's closed outputs (N-04 §6; DEC-2313) -------------------------
+
+
+class NoticeWhyParagraph(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    text: Annotated[str, Field(min_length=1, max_length=1200), classified("confidential")]
+    citations: Annotated[list[str], Field(max_length=12), classified("internal")]
+
+
+class NoticeAnalyzeOutput(BaseModel):
+    """A cited explanation and one of code's options: a tag on the card, never a position (INV-1)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    why_surfaced: Annotated[
+        list[NoticeWhyParagraph], Field(min_length=1, max_length=5), classified("confidential")
+    ]
+    proposed_action: Annotated[
+        str, Field(min_length=1, max_length=300), classified("confidential")
+    ]
+    recommended_option: Annotated[
+        str, Field(pattern=r"^[a-z][a-z0-9_]{0,39}$"), classified("internal")
+    ]
+    confidence: Annotated[float, Field(ge=0, le=1), classified("internal")]
+
+
+class NoticeProposedField(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    field_key: Annotated[str, Field(max_length=80), classified("internal")]
+    value: Annotated[str, Field(max_length=500), classified("restricted", tri=True)]
+    confidence: Annotated[float, Field(ge=0, le=1), classified("internal")]
+    citation: Annotated[str, Field(max_length=80), classified("internal")]
+
+
+class NoticeExtractOutput(BaseModel):
+    """Field proposals with origin "agent": a person confirms each before anything is created."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    fields: Annotated[list[NoticeProposedField], Field(max_length=40), classified("confidential")]

@@ -1,0 +1,39 @@
+# The notices responder (N-04-T19; N-04 §6; DEC-2313), library card #17. On the v1 specialist path:
+# single gateway calls inside the notices workflows, so P-10 can migrate it with no behaviour
+# change. Two modes on one spec: `analyze` (the default) and `extract` (a notice with no code map).
+# Source of truth: compiled into _specs.py by `python -m abacus_tools.codegen.agent_specs`.
+id: notices.responder
+version: 1
+purpose: Explain a notice's code-computed comparison with citations and recommend one of the options code offers, for a named person to decide.
+shape: single_call
+prompt: notices.analyze@v1
+tier: medium
+escalation_tier: medium
+input_schema: NoticeAnalyzeInput
+output_schema: NoticeAnalyzeOutput
+task_scope: [notice.read, evidence.read]
+tools: []
+limits:
+  max_output_tokens: 1200
+  max_cost_usd: "0.25"
+  max_steps: 1
+  max_seconds: 90
+autonomy: propose
+# Below this the recommendation is hidden (N-04 §6): the code analysis stands alone.
+confidence_routing:
+  below: "0.6"
+  route: hidden
+untrusted_inputs: [notice_text, document_text]
+evaluation_suite: evals/notices_responder
+work_class: background
+essential: false
+cheaper_tiers: []
+routes: [bedrock, direct]
+client_data: none
+data_classes: [tri]
+modes:
+  extract:
+    prompt: notices.extract@v1
+    input_schema: NoticeExtractInput
+    output_schema: NoticeExtractOutput
+    max_cost_usd: "0.08"

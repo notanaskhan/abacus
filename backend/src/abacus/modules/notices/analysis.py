@@ -328,7 +328,17 @@ async def run(ctx: AuthContext, notice_id: UUID) -> tuple[int, bool]:
         ).scalar()
     if existing is not None:
         return int(existing), True
-    step = await _agent_step(ctx.tenant, found.id, {"inputs_hash": computed["inputs_hash"]})
+    step = await _agent_step(
+        ctx.tenant,
+        found.id,
+        {
+            "inputs_hash": computed["inputs_hash"],
+            "initiator": ctx.user_id,
+            "rows": computed["rows"],
+            "checks": computed["checks"],
+            "information_returns": computed["information_returns"],
+        },
+    )
     async with uow(ctx.tenant) as tx:
         version = int(
             (

@@ -112,6 +112,9 @@ from abacus.modules.agents.routes import (
     router,
     template_drafts_router,
 )
+from abacus.modules.agents.notice_responder import AnalyzeFacts as AnalyzeFacts
+from abacus.modules.agents.notice_responder import analyze as analyze_notice
+from abacus.modules.agents.notice_responder import extract_fields as extract_notice_fields
 from abacus.modules.agents.runs import run_initiators
 from abacus.modules.agents.runs_routes import engagement_runs_router, runs_router
 from abacus.modules.agents.screening_contract import screening_items_router, screenings_router
@@ -434,6 +437,9 @@ __all__ = [
     "review_citation_states",
     "review_sha256",
     "router",
+    "AnalyzeFacts",
+    "analyze_notice",
+    "extract_notice_fields",
     "run_initiators",
     "run_outcome",
     "screen",
