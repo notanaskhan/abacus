@@ -173,7 +173,7 @@ async def test_ac1_the_gate_authorises_then_reads_the_flag_then_serves(
     monkeypatch.setattr(contract, "get_ref", get_ref)
     monkeypatch.setattr(contract, "authorise", authorise)
     monkeypatch.setattr(contract, "flag_enabled", flag)
-    # N-04-T16 serves sending for signature: the gate still comes first and hides a flag that's off.
+    # N-04-T16 serves sending for signature: the gate still comes first and hides a flag off.
     envelope = uuid.uuid4()
 
     async def sent(_ctx: AuthContext, _notice_id: uuid.UUID) -> uuid.UUID:
