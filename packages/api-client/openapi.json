@@ -12435,6 +12435,71 @@
         "title": "CertificationPointIn",
         "type": "object"
       },
+      "CertificationPointOut": {
+        "description": "A person's evaluation of a point; the agent's answer is only ever `proposed_answer`.",
+        "properties": {
+          "answer": {
+            "cls": "internal",
+            "enum": [
+              "evaluated",
+              "not_evaluated"
+            ],
+            "title": "Answer",
+            "type": "string"
+          },
+          "citation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Citation Id"
+          },
+          "key": {
+            "cls": "internal",
+            "maxLength": 40,
+            "title": "Key",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Note"
+          },
+          "proposed_answer": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Proposed Answer"
+          }
+        },
+        "required": [
+          "key",
+          "answer"
+        ],
+        "title": "CertificationPointOut",
+        "type": "object"
+      },
       "ChangeActorOut": {
         "properties": {
           "kind": {
@@ -17927,6 +17992,78 @@
           "status_url"
         ],
         "title": "CompletionRunAcceptedOut",
+        "type": "object"
+      },
+      "ComplianceTestOut": {
+        "properties": {
+          "accepted": {
+            "cls": "internal",
+            "title": "Accepted",
+            "type": "boolean"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Limit"
+          },
+          "limit_ref": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Limit Ref"
+          },
+          "plan_year": {
+            "cls": "internal",
+            "title": "Plan Year",
+            "type": "integer"
+          },
+          "result": {
+            "cls": "internal",
+            "enum": [
+              "pass",
+              "exception",
+              "exempt",
+              "proposed"
+            ],
+            "title": "Result",
+            "type": "string"
+          },
+          "test_key": {
+            "cls": "internal",
+            "maxLength": 80,
+            "title": "Test Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "test_key",
+          "plan_year",
+          "result",
+          "accepted"
+        ],
+        "title": "ComplianceTestOut",
         "type": "object"
       },
       "ComposerLetterOut": {
@@ -33441,6 +33578,268 @@
         "title": "ExclusionOut",
         "type": "object"
       },
+      "ExpenseRowOut": {
+        "description": "One expense with Sheet!Cell-citable amounts; `exception` by code (no 408(b)(2) on file).",
+        "properties": {
+          "citation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Citation Id"
+          },
+          "credits": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Credits"
+          },
+          "description": {
+            "cls": "internal",
+            "maxLength": 300,
+            "title": "Description",
+            "type": "string"
+          },
+          "disclosure_citation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Disclosure Citation Id"
+          },
+          "exception": {
+            "cls": "internal",
+            "default": false,
+            "title": "Exception",
+            "type": "boolean"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "invoiced": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Invoiced"
+          },
+          "line_key": {
+            "cls": "internal",
+            "maxLength": 80,
+            "title": "Line Key",
+            "type": "string"
+          },
+          "paid_from_plan": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Paid From Plan"
+          },
+          "provider_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Provider Id"
+          },
+          "schedule_h_line": {
+            "cls": "internal",
+            "enum": [
+              "2i(1)",
+              "2i(2)",
+              "2i(3)",
+              "2i(4)"
+            ],
+            "title": "Schedule H Line",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "line_key",
+          "description",
+          "schedule_h_line"
+        ],
+        "title": "ExpenseRowOut",
+        "type": "object"
+      },
+      "ExpensesOut": {
+        "description": "EBP-09 a: 38,400 = 2i(1) 6,000 + 2i(2) 32,400; 41,500 - 3,100.",
+        "properties": {
+          "credits": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Credits"
+          },
+          "engine_version": {
+            "cls": "internal",
+            "maxLength": 40,
+            "title": "Engine Version",
+            "type": "string"
+          },
+          "exceptions": {
+            "cls": "internal",
+            "title": "Exceptions",
+            "type": "integer"
+          },
+          "inputs_hash": {
+            "cls": "internal",
+            "maxLength": 64,
+            "title": "Inputs Hash",
+            "type": "string"
+          },
+          "invoiced": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Invoiced"
+          },
+          "invoices_tie": {
+            "cls": "internal",
+            "title": "Invoices Tie",
+            "type": "boolean"
+          },
+          "line_2i1": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Line 2I1"
+          },
+          "line_2i2": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Line 2I2"
+          },
+          "line_2i3": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Line 2I3"
+          },
+          "line_2i4": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Line 2I4"
+          },
+          "paid_from_plan": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Paid From Plan"
+          },
+          "rows": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/ExpenseRowOut"
+            },
+            "maxItems": 500,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "rows",
+          "invoices_tie",
+          "exceptions",
+          "engine_version",
+          "inputs_hash"
+        ],
+        "title": "ExpensesOut",
+        "type": "object"
+      },
       "ExplainAcceptedOut": {
         "description": "202: the explanation run started; its text arrives on the issue's detail.",
         "properties": {
@@ -47938,6 +48337,300 @@
         "title": "IntegrationStatus",
         "type": "string"
       },
+      "InvestmentRowOut": {
+        "description": "One certified line against the plan TB at the layer (EBP-06).",
+        "properties": {
+          "key": {
+            "cls": "internal",
+            "maxLength": 80,
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "cls": "internal",
+            "maxLength": 300,
+            "title": "Label",
+            "type": "string"
+          },
+          "level": {
+            "cls": "internal",
+            "enum": [
+              "level1",
+              "nav",
+              "not_certified",
+              "other"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "off_by": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Off By"
+          },
+          "tb_boy": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Tb Boy"
+          },
+          "tb_eoy": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Tb Eoy"
+          },
+          "ties": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Ties"
+          },
+          "trust_boy": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Trust Boy"
+          },
+          "trust_eoy": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Trust Eoy"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "level"
+        ],
+        "title": "InvestmentRowOut",
+        "type": "object"
+      },
+      "InvestmentsOut": {
+        "description": "EBP-06 by layer: agreement rows, the certified footing, chips and the sign-off hold.",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "enum": [
+                "ebp_plan.edit",
+                "ebp_provider.manage",
+                "ebp_provider.invite",
+                "ebp_provider.request",
+                "ebp_import.create",
+                "ebp_correction.record",
+                "ebp_schedule.draft",
+                "ebp_certification.evaluate",
+                "ebp_form5500.key",
+                "ebp_schedule.render",
+                "ebp_form5500.send_note",
+                "ebp_form5500.remind",
+                "test.create",
+                "test.mark",
+                "field.sign_off",
+                "estimate.evaluate",
+                "estimate.request_conclusion",
+                "related_party.manage",
+                "related_party.screen_out",
+                "party_in_interest.manage",
+                "pii.reveal"
+              ],
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "engine_version": {
+            "cls": "internal",
+            "maxLength": 40,
+            "title": "Engine Version",
+            "type": "string"
+          },
+          "hold_reason": {
+            "anyOf": [
+              {
+                "const": "certification_unevaluated",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Hold Reason"
+          },
+          "inputs_hash": {
+            "cls": "internal",
+            "maxLength": 64,
+            "title": "Inputs Hash",
+            "type": "string"
+          },
+          "investments_boy": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Investments Boy"
+          },
+          "investments_eoy": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Investments Eoy"
+          },
+          "layer": {
+            "cls": "internal",
+            "enum": [
+              "unadjusted",
+              "aje",
+              "rje",
+              "final"
+            ],
+            "title": "Layer",
+            "type": "string"
+          },
+          "level1_eoy": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Level1 Eoy"
+          },
+          "nav_eoy": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Nav Eoy"
+          },
+          "net_assets": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Net Assets"
+          },
+          "points": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/CertificationPointOut"
+            },
+            "title": "Points",
+            "type": "array"
+          },
+          "py_ties": {
+            "cls": "internal",
+            "title": "Py Ties",
+            "type": "boolean"
+          },
+          "rows": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/InvestmentRowOut"
+            },
+            "maxItems": 500,
+            "title": "Rows",
+            "type": "array"
+          },
+          "tb_balanced": {
+            "cls": "internal",
+            "title": "Tb Balanced",
+            "type": "boolean"
+          },
+          "unevaluated": {
+            "cls": "internal",
+            "title": "Unevaluated",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "layer",
+          "rows",
+          "tb_balanced",
+          "py_ties",
+          "points",
+          "unevaluated",
+          "engine_version",
+          "inputs_hash",
+          "allowed_actions"
+        ],
+        "title": "InvestmentsOut",
+        "type": "object"
+      },
       "InvitationAccessOut": {
         "properties": {
           "item_count": {
@@ -56775,6 +57468,428 @@
           "screening_running"
         ],
         "title": "LiveItemOut",
+        "type": "object"
+      },
+      "LoanOffsetOut": {
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Amount"
+          },
+          "form_1099r_code": {
+            "anyOf": [
+              {
+                "maxLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Form 1099R Code"
+          },
+          "loan_ref": {
+            "cls": "internal",
+            "maxLength": 40,
+            "title": "Loan Ref",
+            "type": "string"
+          },
+          "offset_on": {
+            "cls": "confidential",
+            "format": "date",
+            "title": "Offset On",
+            "type": "string"
+          },
+          "reported_line": {
+            "cls": "internal",
+            "const": "2e(1)",
+            "title": "Reported Line",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loan_ref",
+          "offset_on",
+          "reported_line"
+        ],
+        "title": "LoanOffsetOut",
+        "type": "object"
+      },
+      "LoanOffsetsOut": {
+        "properties": {
+          "rows": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/LoanOffsetOut"
+            },
+            "maxItems": 2000,
+            "title": "Rows",
+            "type": "array"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Total"
+          }
+        },
+        "required": [
+          "rows"
+        ],
+        "title": "LoanOffsetsOut",
+        "type": "object"
+      },
+      "LoanRowOut": {
+        "description": "One participant loan with its rollforward and, for a new loan, its IRC 72(p) limit.",
+        "properties": {
+          "beginning": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Beginning"
+          },
+          "ending": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Ending"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_residence": {
+            "cls": "internal",
+            "default": false,
+            "title": "Is Residence",
+            "type": "boolean"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Limit"
+          },
+          "loan_ref": {
+            "cls": "internal",
+            "maxLength": 40,
+            "title": "Loan Ref",
+            "type": "string"
+          },
+          "new": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "New"
+          },
+          "offsets": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Offsets"
+          },
+          "originated_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Originated On"
+          },
+          "participant_key": {
+            "cls": "confidential",
+            "maxLength": 40,
+            "title": "Participant Key",
+            "type": "string"
+          },
+          "repayments": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Repayments"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "active",
+              "new",
+              "paid_off",
+              "offset"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "term_months": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Term Months"
+          },
+          "vested_balance": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Vested Balance"
+          },
+          "within_limit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Within Limit"
+          }
+        },
+        "required": [
+          "id",
+          "participant_key",
+          "loan_ref",
+          "status"
+        ],
+        "title": "LoanRowOut",
+        "type": "object"
+      },
+      "LoansOut": {
+        "description": "EBP-05 a: 288,500 + 96,200 - 57,450 - 14,850 = 312,400; 41 + 5 - 7 - 3 = 36.",
+        "properties": {
+          "beginning": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Beginning"
+          },
+          "comparative_agrees": {
+            "cls": "internal",
+            "title": "Comparative Agrees",
+            "type": "boolean"
+          },
+          "comparative_off_by": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Comparative Off By"
+          },
+          "count_beginning": {
+            "cls": "internal",
+            "title": "Count Beginning",
+            "type": "integer"
+          },
+          "count_ending": {
+            "cls": "internal",
+            "title": "Count Ending",
+            "type": "integer"
+          },
+          "count_new": {
+            "cls": "internal",
+            "title": "Count New",
+            "type": "integer"
+          },
+          "count_offset": {
+            "cls": "internal",
+            "title": "Count Offset",
+            "type": "integer"
+          },
+          "count_paid_off": {
+            "cls": "internal",
+            "title": "Count Paid Off",
+            "type": "integer"
+          },
+          "ending": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Ending"
+          },
+          "engine_version": {
+            "cls": "internal",
+            "maxLength": 40,
+            "title": "Engine Version",
+            "type": "string"
+          },
+          "foots": {
+            "cls": "internal",
+            "title": "Foots",
+            "type": "boolean"
+          },
+          "inputs_hash": {
+            "cls": "internal",
+            "maxLength": 64,
+            "title": "Inputs Hash",
+            "type": "string"
+          },
+          "new": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "New"
+          },
+          "offsets": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Offsets"
+          },
+          "part_iv_4b": {
+            "cls": "internal",
+            "const": "no",
+            "title": "Part Iv 4B",
+            "type": "string"
+          },
+          "repayments": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Repayments"
+          },
+          "rows": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/LoanRowOut"
+            },
+            "maxItems": 2000,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "foots",
+          "count_beginning",
+          "count_new",
+          "count_paid_off",
+          "count_offset",
+          "count_ending",
+          "comparative_agrees",
+          "part_iv_4b",
+          "rows",
+          "engine_version",
+          "inputs_hash"
+        ],
+        "title": "LoansOut",
         "type": "object"
       },
       "LogEntryOut": {
@@ -70828,6 +71943,71 @@
           "version"
         ],
         "title": "PublishedVersionOut",
+        "type": "object"
+      },
+      "QualificationFactOut": {
+        "properties": {
+          "accepted": {
+            "cls": "internal",
+            "title": "Accepted",
+            "type": "boolean"
+          },
+          "citation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Citation Id"
+          },
+          "fact_key": {
+            "cls": "internal",
+            "maxLength": 80,
+            "title": "Fact Key",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "result": {
+            "cls": "internal",
+            "enum": [
+              "consistent",
+              "exception",
+              "not_evaluated"
+            ],
+            "title": "Result",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Value"
+          }
+        },
+        "required": [
+          "id",
+          "fact_key",
+          "result",
+          "accepted"
+        ],
+        "title": "QualificationFactOut",
         "type": "object"
       },
       "QualitativeFactorOut": {
@@ -90078,16 +91258,23 @@
         "type": "object"
       },
       "StatementDraftStartedOut": {
+        "description": "The version id is the deterministic run's record (DEC-2304).",
         "properties": {
           "run_id": {
             "cls": "internal",
             "format": "uuid",
             "title": "Run Id",
             "type": "string"
+          },
+          "version_no": {
+            "cls": "internal",
+            "title": "Version No",
+            "type": "integer"
           }
         },
         "required": [
-          "run_id"
+          "run_id",
+          "version_no"
         ],
         "title": "StatementDraftStartedOut",
         "type": "object"
@@ -92603,6 +93790,42 @@
           "request_item_id"
         ],
         "title": "SupportOut",
+        "type": "object"
+      },
+      "SupportPrefillOut": {
+        "description": "SHL-14's prefill: identifiers only. Nothing is sent by this route.",
+        "properties": {
+          "expense_line_key": {
+            "cls": "internal",
+            "maxLength": 80,
+            "title": "Expense Line Key",
+            "type": "string"
+          },
+          "provider_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Provider Id"
+          },
+          "request_kind": {
+            "cls": "internal",
+            "const": "tpa_support",
+            "title": "Request Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expense_line_key",
+          "request_kind"
+        ],
+        "title": "SupportPrefillOut",
         "type": "object"
       },
       "SupportSessionIn": {
@@ -109601,9 +110824,120 @@
         "x-abacus-action": "completion.update"
       }
     },
+    "/v1/audits/{work_item_id}/ebp/certification": {
+      "get": {
+        "description": "The six points in order; a point nobody evaluated reads `not_evaluated`.",
+        "operationId": "ebp_certification_read",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CertificationPointOut"
+                  },
+                  "title": "Response Ebp Certification Read",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Ebp Certification Read Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "ebp.read"
+      }
+    },
     "/v1/audits/{work_item_id}/ebp/certification/points/{point_key}": {
       "put": {
-        "description": "A person evaluates a certification point (29 CFR 2520.103-8; T27).",
+        "description": "A person evaluates a certification point (29 CFR 2520.103-8; A-05-T39).",
         "operationId": "ebp_certification",
         "parameters": [
           {
@@ -109721,6 +111055,16 @@
             },
             "description": "Not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -109730,16 +111074,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Ebp Certification Route",
@@ -109747,6 +111081,117 @@
           "assurance"
         ],
         "x-abacus-action": "ebp_certification.evaluate"
+      }
+    },
+    "/v1/audits/{work_item_id}/ebp/compliance-tests": {
+      "get": {
+        "description": "This plan year's tests and limits; an exemption is a proposal until a person accepts.",
+        "operationId": "ebp_compliance_tests",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ComplianceTestOut"
+                  },
+                  "title": "Response Ebp Compliance Tests",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Ebp Compliance Tests Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "ebp.read"
       }
     },
     "/v1/audits/{work_item_id}/ebp/contributions/payrolls": {
@@ -110301,6 +111746,113 @@
           }
         },
         "summary": "Ebp Eligibility Sample Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "ebp.read"
+      }
+    },
+    "/v1/audits/{work_item_id}/ebp/erisa-budget-account": {
+      "get": {
+        "description": "1,200 + 2,650 - 3,100 = 750 by code.",
+        "operationId": "ebp_budget_account",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FiguresOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Ebp Budget Account Route",
         "tags": [
           "assurance"
         ],
@@ -110936,7 +112488,7 @@
     },
     "/v1/audits/{work_item_id}/ebp/investments": {
       "get": {
-        "description": "Lines by layer (C9/C8); Final is 409 `layer_unavailable` until A-06 registers (T26).",
+        "description": "Lines by layer (C9/C8); Final is 409 `layer_unavailable` until A-06 registers.",
         "operationId": "ebp_investments",
         "parameters": [
           {
@@ -111003,7 +112555,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FiguresOut"
+                  "$ref": "#/components/schemas/InvestmentsOut"
                 }
               }
             },
@@ -111038,6 +112590,16 @@
               }
             },
             "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
           },
           "422": {
             "content": {
@@ -111326,8 +112888,227 @@
         "x-abacus-action": "ebp_correction.record"
       }
     },
+    "/v1/audits/{work_item_id}/ebp/loans/new": {
+      "get": {
+        "description": "The year's new loans, each with its IRC 72(p) limit by code.",
+        "operationId": "ebp_loans_new",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LoanRowOut"
+                  },
+                  "title": "Response Ebp Loans New",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Ebp Loans New Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "ebp.read"
+      }
+    },
+    "/v1/audits/{work_item_id}/ebp/loans/offsets": {
+      "get": {
+        "description": "Offsets: distributions on Schedule H line 2e(1), line 2g stays 0.",
+        "operationId": "ebp_loans_offsets",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanOffsetsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Ebp Loans Offsets Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "ebp.read"
+      }
+    },
     "/v1/audits/{work_item_id}/ebp/loans/rollforward": {
       "get": {
+        "description": "EBP-05 by code: rollforward, counts, the PY comparative; offsets are line 2e(1).",
         "operationId": "ebp_loans",
         "parameters": [
           {
@@ -111378,7 +113159,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FiguresOut"
+                  "$ref": "#/components/schemas/LoansOut"
                 }
               }
             },
@@ -111827,6 +113608,127 @@
         "x-abacus-action": "pii.reveal"
       }
     },
+    "/v1/audits/{work_item_id}/ebp/participants/{participant_key}/loan": {
+      "get": {
+        "description": "The EBP-05 drawer's loans.",
+        "operationId": "ebp_participant_loan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "participant_key",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9-]{1,40}$",
+              "title": "Participant Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LoanRowOut"
+                  },
+                  "title": "Response Ebp Participant Loan",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Ebp Participant Loan Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "ebp.read"
+      }
+    },
     "/v1/audits/{work_item_id}/ebp/plan": {
       "get": {
         "description": "Plan facts and the filer status card (EBP-01; T10); 404 `ebp_plan` until recorded.",
@@ -112072,6 +113974,7 @@
     },
     "/v1/audits/{work_item_id}/ebp/plan-expenses": {
       "get": {
+        "description": "EBP-09 a: expenses foot to Schedule H 2i; invoices less credits by code.",
         "operationId": "ebp_plan_expenses",
         "parameters": [
           {
@@ -112122,7 +114025,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FiguresOut"
+                  "$ref": "#/components/schemas/ExpensesOut"
                 }
               }
             },
@@ -112170,6 +114073,244 @@
           }
         },
         "summary": "Ebp Plan Expenses Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "ebp.read"
+      }
+    },
+    "/v1/audits/{work_item_id}/ebp/plan-expenses/{expense_id}/request-support": {
+      "post": {
+        "description": "SHL-14's prefill for the provider of this expense; a person edits and sends (POR-14).",
+        "operationId": "ebp_expense_support",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "expense_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Expense Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportPrefillOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Ebp Expense Support Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "ebp_provider.request"
+      }
+    },
+    "/v1/audits/{work_item_id}/ebp/plan-qualification": {
+      "get": {
+        "operationId": "ebp_plan_qualification",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/QualificationFactOut"
+                  },
+                  "title": "Response Ebp Plan Qualification",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Ebp Plan Qualification Route",
         "tags": [
           "assurance"
         ],
@@ -217196,7 +219337,7 @@
     },
     "/v1/notices/{notice_id}/response/send-for-signature": {
       "post": {
-        "description": "A C7 draft envelope (`notice_response`) and the payment-confirmation request.",
+        "description": "A C7 draft envelope (`notice_response`); SIG-02 d opens it (A-04 N-04-T16).",
         "operationId": "send_for_signature",
         "parameters": [
           {

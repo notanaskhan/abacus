@@ -5824,6 +5824,34 @@ export type CertificationPointIn = {
 };
 
 /**
+ * CertificationPointOut
+ *
+ * A person's evaluation of a point; the agent's answer is only ever `proposed_answer`.
+ */
+export type CertificationPointOut = {
+    /**
+     * Answer
+     */
+    answer: 'evaluated' | 'not_evaluated';
+    /**
+     * Citation Id
+     */
+    citation_id?: string | null;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Proposed Answer
+     */
+    proposed_answer?: string | null;
+};
+
+/**
  * ChangeActorOut
  */
 export type ChangeActorOut = {
@@ -8290,6 +8318,40 @@ export type CompletionRunAcceptedOut = {
      * Status Url
      */
     status_url: string;
+};
+
+/**
+ * ComplianceTestOut
+ */
+export type ComplianceTestOut = {
+    /**
+     * Accepted
+     */
+    accepted: boolean;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Limit
+     */
+    limit?: string | null;
+    /**
+     * Limit Ref
+     */
+    limit_ref?: string | null;
+    /**
+     * Plan Year
+     */
+    plan_year: number;
+    /**
+     * Result
+     */
+    result: 'pass' | 'exception' | 'exempt' | 'proposed';
+    /**
+     * Test Key
+     */
+    test_key: string;
 };
 
 /**
@@ -15519,6 +15581,114 @@ export type ExclusionOut = {
 };
 
 /**
+ * ExpenseRowOut
+ *
+ * One expense with Sheet!Cell-citable amounts; `exception` by code (no 408(b)(2) on file).
+ */
+export type ExpenseRowOut = {
+    /**
+     * Citation Id
+     */
+    citation_id?: string | null;
+    /**
+     * Credits
+     */
+    credits?: string | null;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Disclosure Citation Id
+     */
+    disclosure_citation_id?: string | null;
+    /**
+     * Exception
+     */
+    exception?: boolean;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Invoiced
+     */
+    invoiced?: string | null;
+    /**
+     * Line Key
+     */
+    line_key: string;
+    /**
+     * Paid From Plan
+     */
+    paid_from_plan?: string | null;
+    /**
+     * Provider Id
+     */
+    provider_id?: string | null;
+    /**
+     * Schedule H Line
+     */
+    schedule_h_line: '2i(1)' | '2i(2)' | '2i(3)' | '2i(4)';
+};
+
+/**
+ * ExpensesOut
+ *
+ * EBP-09 a: 38,400 = 2i(1) 6,000 + 2i(2) 32,400; 41,500 - 3,100.
+ */
+export type ExpensesOut = {
+    /**
+     * Credits
+     */
+    credits?: string | null;
+    /**
+     * Engine Version
+     */
+    engine_version: string;
+    /**
+     * Exceptions
+     */
+    exceptions: number;
+    /**
+     * Inputs Hash
+     */
+    inputs_hash: string;
+    /**
+     * Invoiced
+     */
+    invoiced?: string | null;
+    /**
+     * Invoices Tie
+     */
+    invoices_tie: boolean;
+    /**
+     * Line 2I1
+     */
+    line_2i1?: string | null;
+    /**
+     * Line 2I2
+     */
+    line_2i2?: string | null;
+    /**
+     * Line 2I3
+     */
+    line_2i3?: string | null;
+    /**
+     * Line 2I4
+     */
+    line_2i4?: string | null;
+    /**
+     * Paid From Plan
+     */
+    paid_from_plan?: string | null;
+    /**
+     * Rows
+     */
+    rows: Array<ExpenseRowOut>;
+};
+
+/**
  * ExplainAcceptedOut
  *
  * 202: the explanation run started; its text arrives on the issue's detail.
@@ -22422,6 +22592,118 @@ export type IntakeWaitingFileOut = {
 export type IntegrationStatus = 'available' | 'connecting' | 'connected' | 'needs_attention' | 'needs_reauth' | 'disconnected' | 'coming_soon' | 'paused';
 
 /**
+ * InvestmentRowOut
+ *
+ * One certified line against the plan TB at the layer (EBP-06).
+ */
+export type InvestmentRowOut = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Level
+     */
+    level: 'level1' | 'nav' | 'not_certified' | 'other';
+    /**
+     * Off By
+     */
+    off_by?: string | null;
+    /**
+     * Tb Boy
+     */
+    tb_boy?: string | null;
+    /**
+     * Tb Eoy
+     */
+    tb_eoy?: string | null;
+    /**
+     * Ties
+     */
+    ties?: boolean | null;
+    /**
+     * Trust Boy
+     */
+    trust_boy?: string | null;
+    /**
+     * Trust Eoy
+     */
+    trust_eoy?: string | null;
+};
+
+/**
+ * InvestmentsOut
+ *
+ * EBP-06 by layer: agreement rows, the certified footing, chips and the sign-off hold.
+ */
+export type InvestmentsOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'ebp_plan.edit' | 'ebp_provider.manage' | 'ebp_provider.invite' | 'ebp_provider.request' | 'ebp_import.create' | 'ebp_correction.record' | 'ebp_schedule.draft' | 'ebp_certification.evaluate' | 'ebp_form5500.key' | 'ebp_schedule.render' | 'ebp_form5500.send_note' | 'ebp_form5500.remind' | 'test.create' | 'test.mark' | 'field.sign_off' | 'estimate.evaluate' | 'estimate.request_conclusion' | 'related_party.manage' | 'related_party.screen_out' | 'party_in_interest.manage' | 'pii.reveal'>;
+    /**
+     * Engine Version
+     */
+    engine_version: string;
+    /**
+     * Hold Reason
+     */
+    hold_reason?: 'certification_unevaluated' | null;
+    /**
+     * Inputs Hash
+     */
+    inputs_hash: string;
+    /**
+     * Investments Boy
+     */
+    investments_boy?: string | null;
+    /**
+     * Investments Eoy
+     */
+    investments_eoy?: string | null;
+    /**
+     * Layer
+     */
+    layer: 'unadjusted' | 'aje' | 'rje' | 'final';
+    /**
+     * Level1 Eoy
+     */
+    level1_eoy?: string | null;
+    /**
+     * Nav Eoy
+     */
+    nav_eoy?: string | null;
+    /**
+     * Net Assets
+     */
+    net_assets?: string | null;
+    /**
+     * Points
+     */
+    points: Array<CertificationPointOut>;
+    /**
+     * Py Ties
+     */
+    py_ties: boolean;
+    /**
+     * Rows
+     */
+    rows: Array<InvestmentRowOut>;
+    /**
+     * Tb Balanced
+     */
+    tb_balanced: boolean;
+    /**
+     * Unevaluated
+     */
+    unevaluated: number;
+};
+
+/**
  * InvitationAccessOut
  */
 export type InvitationAccessOut = {
@@ -26887,6 +27169,190 @@ export type LiveItemOut = {
      * Uploading Files
      */
     uploading_files: number;
+};
+
+/**
+ * LoanOffsetOut
+ */
+export type LoanOffsetOut = {
+    /**
+     * Amount
+     */
+    amount?: string | null;
+    /**
+     * Form 1099R Code
+     */
+    form_1099r_code?: string | null;
+    /**
+     * Loan Ref
+     */
+    loan_ref: string;
+    /**
+     * Offset On
+     */
+    offset_on: string;
+    /**
+     * Reported Line
+     */
+    reported_line: '2e(1)';
+};
+
+/**
+ * LoanOffsetsOut
+ */
+export type LoanOffsetsOut = {
+    /**
+     * Rows
+     */
+    rows: Array<LoanOffsetOut>;
+    /**
+     * Total
+     */
+    total?: string | null;
+};
+
+/**
+ * LoanRowOut
+ *
+ * One participant loan with its rollforward and, for a new loan, its IRC 72(p) limit.
+ */
+export type LoanRowOut = {
+    /**
+     * Beginning
+     */
+    beginning?: string | null;
+    /**
+     * Ending
+     */
+    ending?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Is Residence
+     */
+    is_residence?: boolean;
+    /**
+     * Limit
+     */
+    limit?: string | null;
+    /**
+     * Loan Ref
+     */
+    loan_ref: string;
+    /**
+     * New
+     */
+    new?: string | null;
+    /**
+     * Offsets
+     */
+    offsets?: string | null;
+    /**
+     * Originated On
+     */
+    originated_on?: string | null;
+    /**
+     * Participant Key
+     */
+    participant_key: string;
+    /**
+     * Repayments
+     */
+    repayments?: string | null;
+    /**
+     * Status
+     */
+    status: 'active' | 'new' | 'paid_off' | 'offset';
+    /**
+     * Term Months
+     */
+    term_months?: number | null;
+    /**
+     * Vested Balance
+     */
+    vested_balance?: string | null;
+    /**
+     * Within Limit
+     */
+    within_limit?: boolean | null;
+};
+
+/**
+ * LoansOut
+ *
+ * EBP-05 a: 288,500 + 96,200 - 57,450 - 14,850 = 312,400; 41 + 5 - 7 - 3 = 36.
+ */
+export type LoansOut = {
+    /**
+     * Beginning
+     */
+    beginning?: string | null;
+    /**
+     * Comparative Agrees
+     */
+    comparative_agrees: boolean;
+    /**
+     * Comparative Off By
+     */
+    comparative_off_by?: string | null;
+    /**
+     * Count Beginning
+     */
+    count_beginning: number;
+    /**
+     * Count Ending
+     */
+    count_ending: number;
+    /**
+     * Count New
+     */
+    count_new: number;
+    /**
+     * Count Offset
+     */
+    count_offset: number;
+    /**
+     * Count Paid Off
+     */
+    count_paid_off: number;
+    /**
+     * Ending
+     */
+    ending?: string | null;
+    /**
+     * Engine Version
+     */
+    engine_version: string;
+    /**
+     * Foots
+     */
+    foots: boolean;
+    /**
+     * Inputs Hash
+     */
+    inputs_hash: string;
+    /**
+     * New
+     */
+    new?: string | null;
+    /**
+     * Offsets
+     */
+    offsets?: string | null;
+    /**
+     * Part Iv 4B
+     */
+    part_iv_4b: 'no';
+    /**
+     * Repayments
+     */
+    repayments?: string | null;
+    /**
+     * Rows
+     */
+    rows: Array<LoanRowOut>;
 };
 
 /**
@@ -33509,6 +33975,36 @@ export type PublishedVersionOut = {
      * Version Id
      */
     version_id: string;
+};
+
+/**
+ * QualificationFactOut
+ */
+export type QualificationFactOut = {
+    /**
+     * Accepted
+     */
+    accepted: boolean;
+    /**
+     * Citation Id
+     */
+    citation_id?: string | null;
+    /**
+     * Fact Key
+     */
+    fact_key: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Result
+     */
+    result: 'consistent' | 'exception' | 'not_evaluated';
+    /**
+     * Value
+     */
+    value?: string | null;
 };
 
 /**
@@ -42431,12 +42927,18 @@ export type StatementDecisionsBody = {
 
 /**
  * StatementDraftStartedOut
+ *
+ * The version id is the deterministic run's record (DEC-2304).
  */
 export type StatementDraftStartedOut = {
     /**
      * Run Id
      */
     run_id: string;
+    /**
+     * Version No
+     */
+    version_no: number;
 };
 
 /**
@@ -43550,6 +44052,26 @@ export type SupportOut = {
      * Request Item Id
      */
     request_item_id: string;
+};
+
+/**
+ * SupportPrefillOut
+ *
+ * SHL-14's prefill: identifiers only. Nothing is sent by this route.
+ */
+export type SupportPrefillOut = {
+    /**
+     * Expense Line Key
+     */
+    expense_line_key: string;
+    /**
+     * Provider Id
+     */
+    provider_id?: string | null;
+    /**
+     * Request Kind
+     */
+    request_kind: 'tpa_support';
 };
 
 /**
@@ -51436,6 +51958,60 @@ export type CompletionItemReopenResponses = {
 
 export type CompletionItemReopenResponse = CompletionItemReopenResponses[keyof CompletionItemReopenResponses];
 
+export type EbpCertificationReadData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/ebp/certification';
+};
+
+export type EbpCertificationReadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EbpCertificationReadError = EbpCertificationReadErrors[keyof EbpCertificationReadErrors];
+
+export type EbpCertificationReadResponses = {
+    /**
+     * Response Ebp Certification Read
+     *
+     * Successful Response
+     */
+    200: Array<CertificationPointOut>;
+};
+
+export type EbpCertificationReadResponse = EbpCertificationReadResponses[keyof EbpCertificationReadResponses];
+
 export type EbpCertificationData = {
     body: CertificationPointIn;
     headers: {
@@ -51480,13 +52056,13 @@ export type EbpCertificationErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EbpCertificationError = EbpCertificationErrors[keyof EbpCertificationErrors];
@@ -51499,6 +52075,60 @@ export type EbpCertificationResponses = {
 };
 
 export type EbpCertificationResponse = EbpCertificationResponses[keyof EbpCertificationResponses];
+
+export type EbpComplianceTestsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/ebp/compliance-tests';
+};
+
+export type EbpComplianceTestsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EbpComplianceTestsError = EbpComplianceTestsErrors[keyof EbpComplianceTestsErrors];
+
+export type EbpComplianceTestsResponses = {
+    /**
+     * Response Ebp Compliance Tests
+     *
+     * Successful Response
+     */
+    200: Array<ComplianceTestOut>;
+};
+
+export type EbpComplianceTestsResponse = EbpComplianceTestsResponses[keyof EbpComplianceTestsResponses];
 
 export type EbpPayrollsData = {
     body?: never;
@@ -51769,6 +52399,58 @@ export type EbpEligibilitySampleResponses = {
 };
 
 export type EbpEligibilitySampleResponse = EbpEligibilitySampleResponses[keyof EbpEligibilitySampleResponses];
+
+export type EbpBudgetAccountData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/ebp/erisa-budget-account';
+};
+
+export type EbpBudgetAccountErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EbpBudgetAccountError = EbpBudgetAccountErrors[keyof EbpBudgetAccountErrors];
+
+export type EbpBudgetAccountResponses = {
+    /**
+     * Successful Response
+     */
+    200: FiguresOut;
+};
+
+export type EbpBudgetAccountResponse = EbpBudgetAccountResponses[keyof EbpBudgetAccountResponses];
 
 export type EbpForm5500Data = {
     body?: never;
@@ -52099,6 +52781,10 @@ export type EbpInvestmentsErrors = {
      */
     404: ErrorOut;
     /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
      * Invalid request
      */
     422: ValidationErrorOut;
@@ -52110,7 +52796,7 @@ export type EbpInvestmentsResponses = {
     /**
      * Successful Response
      */
-    200: FiguresOut;
+    200: InvestmentsOut;
 };
 
 export type EbpInvestmentsResponse = EbpInvestmentsResponses[keyof EbpInvestmentsResponses];
@@ -52237,6 +52923,112 @@ export type EbpCorrectionResponses = {
 
 export type EbpCorrectionResponse = EbpCorrectionResponses[keyof EbpCorrectionResponses];
 
+export type EbpLoansNewData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/ebp/loans/new';
+};
+
+export type EbpLoansNewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EbpLoansNewError = EbpLoansNewErrors[keyof EbpLoansNewErrors];
+
+export type EbpLoansNewResponses = {
+    /**
+     * Response Ebp Loans New
+     *
+     * Successful Response
+     */
+    200: Array<LoanRowOut>;
+};
+
+export type EbpLoansNewResponse = EbpLoansNewResponses[keyof EbpLoansNewResponses];
+
+export type EbpLoansOffsetsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/ebp/loans/offsets';
+};
+
+export type EbpLoansOffsetsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EbpLoansOffsetsError = EbpLoansOffsetsErrors[keyof EbpLoansOffsetsErrors];
+
+export type EbpLoansOffsetsResponses = {
+    /**
+     * Successful Response
+     */
+    200: LoanOffsetsOut;
+};
+
+export type EbpLoansOffsetsResponse = EbpLoansOffsetsResponses[keyof EbpLoansOffsetsResponses];
+
 export type EbpLoansData = {
     body?: never;
     headers?: {
@@ -52284,7 +53076,7 @@ export type EbpLoansResponses = {
     /**
      * Successful Response
      */
-    200: FiguresOut;
+    200: LoansOut;
 };
 
 export type EbpLoansResponse = EbpLoansResponses[keyof EbpLoansResponses];
@@ -52466,6 +53258,64 @@ export type EbpParticipantRevealResponses = {
 
 export type EbpParticipantRevealResponse = EbpParticipantRevealResponses[keyof EbpParticipantRevealResponses];
 
+export type EbpParticipantLoanData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Participant Key
+         */
+        participant_key: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/ebp/participants/{participant_key}/loan';
+};
+
+export type EbpParticipantLoanErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EbpParticipantLoanError = EbpParticipantLoanErrors[keyof EbpParticipantLoanErrors];
+
+export type EbpParticipantLoanResponses = {
+    /**
+     * Response Ebp Participant Loan
+     *
+     * Successful Response
+     */
+    200: Array<LoanRowOut>;
+};
+
+export type EbpParticipantLoanResponse = EbpParticipantLoanResponses[keyof EbpParticipantLoanResponses];
+
 export type EbpPlanData = {
     body?: never;
     headers?: {
@@ -52625,10 +53475,124 @@ export type EbpPlanExpensesResponses = {
     /**
      * Successful Response
      */
-    200: FiguresOut;
+    200: ExpensesOut;
 };
 
 export type EbpPlanExpensesResponse = EbpPlanExpensesResponses[keyof EbpPlanExpensesResponses];
+
+export type EbpExpenseSupportData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Expense Id
+         */
+        expense_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/ebp/plan-expenses/{expense_id}/request-support';
+};
+
+export type EbpExpenseSupportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EbpExpenseSupportError = EbpExpenseSupportErrors[keyof EbpExpenseSupportErrors];
+
+export type EbpExpenseSupportResponses = {
+    /**
+     * Successful Response
+     */
+    200: SupportPrefillOut;
+};
+
+export type EbpExpenseSupportResponse = EbpExpenseSupportResponses[keyof EbpExpenseSupportResponses];
+
+export type EbpPlanQualificationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/ebp/plan-qualification';
+};
+
+export type EbpPlanQualificationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EbpPlanQualificationError = EbpPlanQualificationErrors[keyof EbpPlanQualificationErrors];
+
+export type EbpPlanQualificationResponses = {
+    /**
+     * Response Ebp Plan Qualification
+     *
+     * Successful Response
+     */
+    200: Array<QualificationFactOut>;
+};
+
+export type EbpPlanQualificationResponse = EbpPlanQualificationResponses[keyof EbpPlanQualificationResponses];
 
 export type EbpPlanReviewStartData = {
     body: PlanReviewIn;
