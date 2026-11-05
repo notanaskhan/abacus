@@ -536,6 +536,69 @@ class FiguresOut(BaseModel):
     allowed_actions: Actions
 
 
+class LoanRowOut(BaseModel):
+    """One participant loan with its rollforward and, for a new loan, its IRC 72(p) limit."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    participant_key: Annotated[str, Field(max_length=40), classified("confidential")]
+    loan_ref: Annotated[str, Field(max_length=40), classified("internal")]
+    status: Annotated[Literal["active", "new", "paid_off", "offset"], classified("internal")]
+    originated_on: Annotated[date | None, classified("confidential")] = None
+    term_months: Annotated[int | None, classified("internal")] = None
+    is_residence: Annotated[bool, classified("internal")] = False
+    vested_balance: MaybeMoney = None
+    beginning: MaybeMoney = None
+    new: MaybeMoney = None
+    repayments: MaybeMoney = None
+    offsets: MaybeMoney = None
+    ending: MaybeMoney = None
+    limit: MaybeMoney = None
+    within_limit: Annotated[bool | None, classified("internal")] = None
+
+
+class LoansOut(BaseModel):
+    """EBP-05 a: 288,500 + 96,200 - 57,450 - 14,850 = 312,400; 41 + 5 - 7 - 3 = 36."""
+
+    model_config = ConfigDict(frozen=True)
+
+    beginning: MaybeMoney = None
+    new: MaybeMoney = None
+    repayments: MaybeMoney = None
+    offsets: MaybeMoney = None
+    ending: MaybeMoney = None
+    foots: Annotated[bool, classified("internal")]
+    count_beginning: Annotated[int, classified("internal")]
+    count_new: Annotated[int, classified("internal")]
+    count_paid_off: Annotated[int, classified("internal")]
+    count_offset: Annotated[int, classified("internal")]
+    count_ending: Annotated[int, classified("internal")]
+    comparative_agrees: Annotated[bool, classified("internal")]
+    comparative_off_by: MaybeMoney = None
+    part_iv_4b: Annotated[Literal["no"], classified("internal")]
+    rows: Annotated[list[LoanRowOut], Field(max_length=2000), classified("confidential")]
+    engine_version: Annotated[str, Field(max_length=40), classified("internal")]
+    inputs_hash: Annotated[str, Field(max_length=64), classified("internal")]
+
+
+class LoanOffsetOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    loan_ref: Annotated[str, Field(max_length=40), classified("internal")]
+    offset_on: Annotated[date, classified("confidential")]
+    amount: MaybeMoney = None
+    form_1099r_code: Annotated[str | None, Field(max_length=2), classified("internal")] = None
+    reported_line: Annotated[Literal["2e(1)"], classified("internal")]
+
+
+class LoanOffsetsOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    rows: Annotated[list[LoanOffsetOut], Field(max_length=2000), classified("confidential")]
+    total: MaybeMoney = None
+
+
 class InvestmentRowOut(BaseModel):
     """One certified line against the plan TB at the layer (EBP-06)."""
 
@@ -1387,14 +1450,107 @@ async def ebp_correction_route(
 
 
 # EBP-05, 06, 08, 09
-@router.get("/ebp/loans/rollforward", action="ebp.read", response_model=FiguresOut)
-async def ebp_loans_route(work_item_id: UUID, ctx: Ctx) -> FiguresOut:
+@router.get("/ebp/loans/rollforward", action="ebp.read", response_model=LoansOut)
+async def ebp_loans_route(work_item_id: UUID, ctx: Ctx) -> LoansOut:
+    """EBP-05 by code: rollforward, counts, the PY comparative; offsets are line 2e(1)."""
     await _gate(ctx, work_item_id, "ebp.read", _E)
-    return _figures(
-        "Notes receivable from participants",
-        [("notes_eoy", "End of year", "312400.00")],
-        "312400.00",
+    from abacus.modules.assurance import ebp_loans
+
+    py = await ebp_loans.py_notes_receivable(ctx.tenant, work_item_id)
+    view = await ebp_loans.loans(ctx.tenant, work_item_id, py)
+    rolled = view.rollforward
+    return LoansOut(
+        beginning=rolled.beginning,
+        new=rolled.new,
+        repayments=rolled.repayments,
+        offsets=rolled.offsets,
+        ending=rolled.ending,
+        foots=rolled.foots,
+        count_beginning=rolled.count_beginning,
+        count_new=rolled.count_new,
+        count_paid_off=rolled.count_paid_off,
+        count_offset=rolled.count_offset,
+        count_ending=rolled.count_ending,
+        comparative_agrees=view.comparative.agrees,
+        comparative_off_by=view.comparative.off_by,
+        part_iv_4b="no",
+        rows=[_loan_out(r) for r in view.rows],
+        engine_version=rolled.engine_version,
+        inputs_hash=rolled.inputs_hash,
     )
+
+
+def _loan_out(r: object) -> LoanRowOut:
+    row = cast(Any, r)  # Any: ebp_loans.LoanRow, imported where the route runs
+    return LoanRowOut(
+        id=row.id,
+        participant_key=row.participant_key,
+        loan_ref=row.loan_ref,
+        status=row.status,
+        originated_on=row.originated_on,
+        term_months=row.term_months,
+        is_residence=row.is_residence,
+        vested_balance=row.vested_balance,
+        beginning=row.loan.beginning,
+        new=row.loan.new,
+        repayments=row.loan.repayments,
+        offsets=row.loan.offsets,
+        ending=row.loan.ending,
+        limit=row.limit.limit if row.limit else None,
+        within_limit=row.limit.within if row.limit else None,
+    )
+
+
+@router.get("/ebp/loans/new", action="ebp.read", response_model=list[LoanRowOut])
+async def ebp_loans_new_route(work_item_id: UUID, ctx: Ctx) -> list[LoanRowOut]:
+    """The year's new loans, each with its IRC 72(p) limit by code."""
+    await _gate(ctx, work_item_id, "ebp.read", _E)
+    from abacus.modules.assurance import ebp_loans
+
+    view = await ebp_loans.loans(ctx.tenant, work_item_id, None)
+    return [_loan_out(r) for r in view.rows if r.loan.new > 0]
+
+
+@router.get("/ebp/loans/offsets", action="ebp.read", response_model=LoanOffsetsOut)
+async def ebp_loans_offsets_route(work_item_id: UUID, ctx: Ctx) -> LoanOffsetsOut:
+    """Offsets: distributions on Schedule H line 2e(1), line 2g stays 0."""
+    await _gate(ctx, work_item_id, "ebp.read", _E)
+    from abacus.modules.assurance import ebp_loans
+
+    view = await ebp_loans.loans(ctx.tenant, work_item_id, None)
+    return LoanOffsetsOut(
+        rows=[
+            LoanOffsetOut(
+                loan_ref=o.loan_ref,
+                offset_on=o.offset_on,
+                amount=o.amount,
+                form_1099r_code=o.form_1099r_code,
+                reported_line=o.reported_line,
+            )
+            for o in view.offsets
+        ],
+        total=view.offsets_total,
+    )
+
+
+@router.get(
+    "/ebp/participants/{participant_key}/loan",
+    action="ebp.read",
+    response_model=list[LoanRowOut],
+)
+async def ebp_participant_loan_route(
+    work_item_id: UUID,
+    participant_key: Annotated[str, Path(pattern=r"^[A-Za-z0-9-]{1,40}$")],
+    ctx: Ctx,
+) -> list[LoanRowOut]:
+    """The EBP-05 drawer's loans."""
+    await _gate(ctx, work_item_id, "ebp.read", _E)
+    from abacus.modules.assurance import ebp_loans
+
+    return [
+        _loan_out(r)
+        for r in await ebp_loans.participant_loan(ctx.tenant, work_item_id, participant_key)
+    ]
 
 
 @router.get("/ebp/investments", action="ebp.read", response_model=InvestmentsOut, errors=(409,))
