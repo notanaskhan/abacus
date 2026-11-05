@@ -20,9 +20,9 @@ from pydantic import BaseModel
 from abacus.api.export_openapi import document
 from abacus.kernel.classification import tri_paths, unclassified_fields
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.modules.identity.api import AuthContext, Resource
-from abacus.modules.notices import contract
+from abacus.modules.notices import contract, sending
 
 Json = dict[str, object]
 DOC = cast(Json, json.loads(document()))
@@ -149,7 +149,7 @@ async def test_ac1_a_client_principal_gets_404_before_anything_else() -> None:
         await contract.notice_route(uuid.uuid4(), _ctx(client=True))
 
 
-async def test_ac1_the_gate_authorises_then_reads_the_flag_then_answers_501(
+async def test_ac1_the_gate_authorises_then_reads_the_flag_then_serves(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     calls: list[str] = []
@@ -173,13 +173,19 @@ async def test_ac1_the_gate_authorises_then_reads_the_flag_then_answers_501(
     monkeypatch.setattr(contract, "get_ref", get_ref)
     monkeypatch.setattr(contract, "authorise", authorise)
     monkeypatch.setattr(contract, "flag_enabled", flag)
-    # N-04-T11 made the analysis read live; sending for signature is still the stub.
+    # N-04-T16 serves sending for signature: the gate still comes first and hides a flag that's off.
+    envelope = uuid.uuid4()
+
+    async def sent(_ctx: AuthContext, _notice_id: uuid.UUID) -> uuid.UUID:
+        return envelope
+
+    monkeypatch.setattr(sending, "send_for_signature", sent)
     with pytest.raises(NotFound):
         await contract.send_for_signature_route(uuid.uuid4(), _ctx(), "key")
     assert calls == ["authorise:notice_response.send_for_signature", "flag:notices.workspace"]
     state["on"] = True
-    with pytest.raises(NotImplementedYet):
-        await contract.send_for_signature_route(uuid.uuid4(), _ctx(), "key")
+    served = await contract.send_for_signature_route(uuid.uuid4(), _ctx(), "key")
+    assert served.envelope_id == envelope
     # N-04-T06 serves the patch; the assignee alone is still `notice.assign`.
     assert contract._assign_only(contract.NoticePatchIn(assignee_id=uuid.uuid4()))  # pyright: ignore[reportPrivateUsage] -- the private helper under test
     assert not contract._assign_only(  # pyright: ignore[reportPrivateUsage] -- the private helper under test

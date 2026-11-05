@@ -88,6 +88,8 @@ def test_ac20_each_new_route_declares_exactly_one_action_and_a_response_model() 
 # TASK-019: taking, releasing and assigning a review return the assignment, so 200.
 REVIEW_QUEUE = "/v1/engagements/{engagement_id}/review-queue/{version_id}"
 NOT_CREATING = {
+    # A-05-T43: SHL-14's prefill for an expense's provider; a person sends it from the sheet.
+    "/v1/audits/{work_item_id}/ebp/plan-expenses/{expense_id}/request-support",
     # S26, S27: acts on an existing record or returns a batch's outcomes, so 200.
     "/v1/audits/{work_item_id}/archive/additions/{addition_id}/approve",
     "/v1/audits/{work_item_id}/archive/additions/{addition_id}/reject",
