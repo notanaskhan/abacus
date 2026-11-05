@@ -67,6 +67,11 @@ async def _words_failing_stub(given: UploadInput) -> int:
     raise ApplicationError("IntegrityError", non_retryable=True)
 
 
+@activity.defn(name="upload.ocr")
+async def _ocr_stub(given: UploadInput) -> int:
+    return 1
+
+
 @activity.defn(name="upload.pii_scan")
 async def _pii_scan_stub(given: UploadInput) -> int:
     return 2
@@ -124,6 +129,7 @@ async def _record(out: Path, version: str, stack: Stack, outcome: str | None = N
                 else _masked_preview_stub
             ),
             _drop_sort_stub,
+            _ocr_stub,
         ],
     ):
         handle = await client.start_workflow(

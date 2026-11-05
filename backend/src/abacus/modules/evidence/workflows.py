@@ -46,6 +46,7 @@ _RETRY = RetryPolicy(
     maximum_attempts=6,
 )
 BACKFILL_BATCH = 50
+_OCR_TIMEOUT = timedelta(minutes=30)  # P-11-T25: a page at a time through the provider
 
 
 @workflow.defn(name="upload_processing")
@@ -92,6 +93,20 @@ class UploadProcessing:
                 )
             except ActivityError:
                 workflow.logger.warning("upload.words_failed", extra={"kind": given.kind})
+        # v8 (P-11-T25): OCR for pages with no text layer, before the scan so the scan reads them.
+        # The gate's refusal is final and answered, not raised; a failure leaves the page
+        # `not_scannable`, never undoing the steps before it.
+        if workflow.patched("ocr"):
+            try:
+                await workflow.execute_activity(
+                    "upload.ocr",
+                    given,
+                    result_type=int,
+                    start_to_close_timeout=_OCR_TIMEOUT,
+                    retry_policy=_RETRY,
+                )
+            except ActivityError:
+                workflow.logger.warning("upload.ocr_failed", extra={"kind": given.kind})
         # v5 (P-03-T13): PII detection over the word layer. A scan that can't run never undoes
         # the steps before it. Until a scan lists a page, the word-layer readers (quotes,
         # search, relink) and a portal drop's matcher never read it; other agent material
