@@ -59,6 +59,18 @@ class FieldMap:
 
 
 @dataclass(frozen=True)
+class TableMap:
+    """N-04-T17: rows under a header line until a stop label. Each row's leading words are its
+    label; its money tokens fill `columns` in order. Values are read, never summed (AC8.7)."""
+
+    key: str
+    label: str
+    header: str
+    stop: str
+    columns: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class FormMap:
     form: str
     form_type: str
@@ -67,6 +79,7 @@ class FormMap:
     version: str
     anchors: tuple[str, ...]
     fields: tuple[FieldMap, ...]
+    tables: tuple[TableMap, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -93,6 +106,10 @@ def load_maps() -> tuple[FormMap, ...]:
                 tuple(
                     FieldMap(f["key"], f["label"], f["anchor"], f["value_type"])
                     for f in raw["fields"]
+                ),
+                tuple(
+                    TableMap(t["key"], t["label"], t["header"], t["stop"], tuple(t["columns"]))
+                    for t in raw.get("tables", ())
                 ),
             )
         )  # fmt: skip
@@ -210,6 +227,59 @@ def extract(form_map: FormMap, pages: Sequence[PageWords]) -> tuple[Extracted, .
                 )
             )  # fmt: skip
             break
+    for table in form_map.tables:
+        for page in pages:
+            cells = extract_table(table, page)
+            if cells:
+                out.extend(cells)
+                break
+    return tuple(out)
+
+
+def _slug(words: Sequence[str]) -> str:
+    joined = re.sub(r"[^a-z0-9]+", "_", " ".join(words).lower()).strip("_")
+    return (joined or "row")[:40]
+
+
+def _lines_below(page: PageWords, top: float, stop_top: float) -> list[list[Word]]:
+    lines: dict[int, list[Word]] = {}
+    for word in page.words:
+        if top < word.top < stop_top:
+            lines.setdefault(round(word.top / _LINE_TOLERANCE), []).append(word)
+    return [sorted(lines[k], key=lambda w: w.x0) for k in sorted(lines)]
+
+
+def extract_table(table: TableMap, page: PageWords) -> tuple[Extracted, ...]:
+    """A table's cells as separate fields; a row's unreadable amount is low confidence as read."""
+    header = _find_anchor(page, table.header)
+    if header is None:
+        return ()
+    stop = _find_anchor(page, table.stop)
+    stop_top = stop[0].top if stop is not None else page.height
+    out: list[Extracted] = []
+    for line in _lines_below(page, header[0].bottom - 1, stop_top):
+        names: list[Word] = []
+        cells: list[Word] = []
+        for word in line:
+            looks_like_amount = _MONEY.match(word.text.rstrip(".,;:")) is not None
+            (cells if cells or looks_like_amount else names).append(word)
+        if not names or not cells:
+            continue
+        slug = _slug([w.text for w in names])
+        name = " ".join(w.text for w in names)
+        for column, word in zip(table.columns, cells, strict=False):
+            value, readable = _normalise("money", word.text)
+            confidence = min(Decimal(str(word.confidence)), *(
+                Decimal(str(w.confidence)) for w in names
+            ))  # fmt: skip
+            out.append(
+                Extracted(
+                    f"{table.key}.{slug}.{column}", f"{table.label} · {name} · {column}"[:200],
+                    "money", value, page.page, (word.x0, word.top, word.x1, word.bottom),
+                    confidence.quantize(Decimal("0.001")),
+                    confidence < LOW_CONFIDENCE or not readable,
+                )
+            )  # fmt: skip
     return tuple(out)
 
 
