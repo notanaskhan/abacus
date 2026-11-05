@@ -24,6 +24,7 @@ import { OPENS as ADM10_OPENS, scenarios as adm10 } from "./scenarios/ADM-10";
 import { OPENS as ADM07_OPENS, scenarios as adm07 } from "./scenarios/ADM-07";
 import { scenarios as adm08 } from "./scenarios/ADM-08";
 import { scenarios as aud01 } from "./scenarios/AUD-01";
+import { scenarios as aud10 } from "./scenarios/AUD-10";
 import { OPENS as NOT01_OPENS, scenarios as not01 } from "./scenarios/NOT-01";
 import { IDS as AUD03_IDS, scenarios as aud03 } from "./scenarios/AUD-03";
 import { NORTHWIND_AUDIT } from "./scenarios/AUD-06";
@@ -146,6 +147,7 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
   "AUD-03": { scenarios: aud03, opens: {}, ids: AUD03_IDS }, // A-01-T26: j03 4e, 5, 5c
   // A-04-T34: j03 9 and 10a on Northwind's audit (AUD-08 register, AUD-09 IC pack failure).
   "AUD-08": { scenarios: aud08, opens: {}, ids: northwind(aud08) },
+  "AUD-10": { scenarios: aud10, opens: {} }, // A-04-T37
   "AUD-09": {
     scenarios: aud09,
     opens: { b: "?cell=D2", e: "?sheet=internal-control" },

@@ -47,6 +47,7 @@ import {
   INTERNAL_CONTROL,
   useControlsCanvas,
 } from "../AUD-09";
+import { SERVICE_ORGS, type ServiceOrgsOptions, useServiceOrgsCanvas } from "../AUD-10";
 import { type SampleSelectionOptions, useSampleSelectionCanvas } from "../AUD-11/SampleSelection";
 import { ViewerPane } from "../SHL-08";
 import { useOpenOverlay } from "../../app-core/open";
@@ -107,6 +108,8 @@ export interface AUD02Props {
   planReviewVersion?: number;
   /** AUD-09 (A-04-T32): the Internal Control row's sheet, cell and links. */
   controls?: ControlsOptions;
+  /** AUD-10 (A-04-T37): Service Organizations & SOC 1. */
+  serviceOrgs?: ServiceOrgsOptions;
   /** EBP-04 (A-05-T31): the Contributions & Remittance tab and links. */
   contributions?: Omit<ContributionsOptions, "active" | "running">;
 }
@@ -213,6 +216,7 @@ function Cockpit({
   planEditing,
   planReviewVersion,
   controls,
+  serviceOrgs,
   contributions,
 }: Omit<AUD02Props, "auditId"> & { cockpit: AuditCockpitOut }): JSX.Element {
   // A-01-T24: "Export binder…" and the record-mode entries (DV-9, DV-4).
@@ -277,6 +281,13 @@ function Cockpit({
   // off, drawn by the canvas itself).
   const controlsOpen = selected === INTERNAL_CONTROL;
   const controlsCanvas = useControlsCanvas(cockpit, { ...controls, active: controlsOpen });
+  // AUD-10 (A-04-T37): Planning › Service Organizations & SOC 1, behind `assurance.service_orgs`.
+  const serviceOrgsOpen = selected === SERVICE_ORGS;
+  const serviceOrgsCanvas = useServiceOrgsCanvas(cockpit.engagement_id, {
+    ...serviceOrgs,
+    active: serviceOrgsOpen,
+    running: serviceOrgsOpen && row?.section_state === "running",
+  });
   // EBP-04 (A-05-T31): Testing › Contributions & Remittance, behind `ebp.modules` (C-20 when off);
   // the rail's own "running" state draws d.
   const contributionsOpen = selected === CONTRIBUTIONS;
@@ -305,6 +316,8 @@ function Cockpit({
     canvas = eligibility;
   } else if (controlsOpen) {
     canvas = controlsCanvas;
+  } else if (serviceOrgsOpen) {
+    canvas = serviceOrgsCanvas;
   } else if (contributionsOpen) {
     canvas = contributionsCanvas;
   } else if (row?.section_state === "blocked_on_decision" && row.blocked_on_name != null) {
@@ -507,6 +520,7 @@ export function AuditCockpitPage({
     planEditing?: boolean;
     planReviewVersion?: number;
     controls?: ControlsOptions;
+    serviceOrgs?: ServiceOrgsOptions;
     contributions?: Omit<ContributionsOptions, "active" | "running">;
   };
   onBack?: () => void;
@@ -537,6 +551,7 @@ export function AuditCockpitPage({
         ? {}
         : { planReviewVersion: initial.planReviewVersion })}
       {...(initial.controls === undefined ? {} : { controls: initial.controls })}
+      {...(initial.serviceOrgs === undefined ? {} : { serviceOrgs: initial.serviceOrgs })}
       {...(initial.contributions === undefined ? {} : { contributions: initial.contributions })}
     />
   );
