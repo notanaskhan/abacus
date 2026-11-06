@@ -12291,11 +12291,15 @@ export type EligibilitySampleOut = {
     /**
      * Test Id
      */
-    test_id: string;
+    test_id: string | null;
     /**
      * Version No
      */
     version_no: number;
+    /**
+     * Workpaper Id
+     */
+    workpaper_id?: string | null;
 };
 
 /**
@@ -12307,7 +12311,7 @@ export type EligibilitySampleRowOut = {
     /**
      * Census Hire
      */
-    census_hire: string;
+    census_hire: string | null;
     /**
      * Census Name
      */
@@ -15154,6 +15158,10 @@ export type EstimateInstallmentOut = {
         [key: string]: string;
     };
     /**
+     * Paid Evidence Version Id
+     */
+    paid_evidence_version_id?: string | null;
+    /**
      * Paid On
      */
     paid_on?: string | null;
@@ -15161,6 +15169,10 @@ export type EstimateInstallmentOut = {
      * Quarter
      */
     quarter: number;
+    /**
+     * Row Version
+     */
+    row_version?: number;
     /**
      * Scheduled For
      */
@@ -15954,9 +15966,27 @@ export type ExtensionPatchIn = {
      */
     note?: string | null;
     /**
+     * Projected Liability
+     */
+    projected_liability?: number | string | null;
+    /**
+     * Projected Liability Ref
+     */
+    projected_liability_ref?: {
+        [key: string]: string;
+    } | null;
+    /**
+     * Projected Liability Source
+     */
+    projected_liability_source?: 'engine_import' | 'preparer_entry' | null;
+    /**
      * Reason
      */
     reason?: 'k1_outstanding' | 'binder_incomplete' | 'engagement_not_accepted' | 'preparer_flag' | null;
+    /**
+     * Withholding Plus Estimates
+     */
+    withholding_plus_estimates?: number | string | null;
 };
 
 /**
@@ -33750,6 +33780,10 @@ export type ProposedPaymentIn = {
      */
     amount: number | string;
     /**
+     * Form
+     */
+    form?: string | null;
+    /**
      * Jurisdiction
      */
     jurisdiction: string;
@@ -35078,6 +35112,10 @@ export type RegisterOut = {
      * Register Hash
      */
     register_hash: string;
+    /**
+     * Revising
+     */
+    revising?: boolean;
     /**
      * Risks
      */
@@ -41592,6 +41630,20 @@ export type SocExceptionOut = {
      * Routed Ref
      */
     routed_ref: string | null;
+};
+
+/**
+ * SocExceptionPatchIn
+ */
+export type SocExceptionPatchIn = {
+    /**
+     * Impact
+     */
+    impact: 'low' | 'high';
+    /**
+     * Impact Rationale
+     */
+    impact_rationale?: string | null;
 };
 
 /**
@@ -52383,10 +52435,6 @@ export type EbpEligibilitySampleErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EbpEligibilitySampleError = EbpEligibilitySampleErrors[keyof EbpEligibilitySampleErrors];
@@ -79924,6 +79972,138 @@ export type SocReportDraftResponses = {
 };
 
 export type SocReportDraftResponse = SocReportDraftResponses[keyof SocReportDraftResponses];
+
+export type SocExceptionEditData = {
+    body: SocExceptionPatchIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Soc Report Id
+         */
+        soc_report_id: string;
+        /**
+         * Co Ref
+         */
+        co_ref: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/soc-reports/{soc_report_id}/exceptions/{co_ref}';
+};
+
+export type SocExceptionEditErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type SocExceptionEditError = SocExceptionEditErrors[keyof SocExceptionEditErrors];
+
+export type SocExceptionEditResponses = {
+    /**
+     * Successful Response
+     */
+    200: SocReportOut;
+};
+
+export type SocExceptionEditResponse = SocExceptionEditResponses[keyof SocExceptionEditResponses];
+
+export type SocExceptionRouteData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+        /**
+         * Soc Report Id
+         */
+        soc_report_id: string;
+        /**
+         * Co Ref
+         */
+        co_ref: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/soc-reports/{soc_report_id}/exceptions/{co_ref}/send-to-findings';
+};
+
+export type SocExceptionRouteErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Service unavailable
+     */
+    503: ErrorOut;
+};
+
+export type SocExceptionRouteError = SocExceptionRouteErrors[keyof SocExceptionRouteErrors];
+
+export type SocExceptionRouteResponses = {
+    /**
+     * Successful Response
+     */
+    201: SocReportOut;
+};
+
+export type SocExceptionRouteResponse = SocExceptionRouteResponses[keyof SocExceptionRouteResponses];
 
 export type RelianceRequestData = {
     body?: never;

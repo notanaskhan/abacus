@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Version | v1 |
-| Status | stub behind `tax.extensions_estimates` (T-03-T02, 2026-11-03, DEC-2201): 404 off, 501 on until T-03-T07; freeze Fri Oct 29, 2027 |
+| Status | live behind `tax.extensions_estimates` (T-03-T02, 2026-11-03, DEC-2201; T-03-T07, DEC-2350): 404 off; freeze Fri Oct 29, 2027 |
 | Provider epic | T-03 (no C-id) |
 | Consumers | TAX-13; T-08 (HOME-03), R-03 (POR-10), T-04 (TAX-12 estimate reminders) |
 | Spec | SPEC-643 AC-4, AC-7, AC-9; `docs/plan/epics/T-03.md` §4.3 |

@@ -290,12 +290,17 @@ class Reconciliation:
     regular: Decimal
     late: Decimal
     total: Decimal
+    deferrals: Decimal = Decimal(0)
+    match: Decimal = Decimal(0)
+    trust_receipts: Decimal = Decimal(0)
 
 
 async def reconciliation(
     tenant: TenantContext, work_item_id: UUID, year_end: date
 ) -> Reconciliation:
-    """Contributions receivable at year end by code: payrolls of the plan year deposited after it,
+    """A-05-T31's waterfall (DEC-2356): the plan year's payroll and match, less what was deposited
+    after year end, is the trust's receipts for them. Receivable at year end by code: payrolls of
+    the plan year deposited after it,
     split into regular and late (the late remittance's payroll)."""
     async with tenant_session(tenant) as session:
         rows = (
@@ -303,7 +308,7 @@ async def reconciliation(
                 select(EbpPayroll).where(
                     EbpPayroll.work_item_id == work_item_id,
                     EbpPayroll.pay_date <= year_end,
-                    EbpPayroll.deposit_date > year_end,
+                    EbpPayroll.pay_date >= date(year_end.year, 1, 1),
                 )
             )
         ).scalars()
@@ -316,14 +321,19 @@ async def reconciliation(
                 )
             ).scalars()
         )
-    regular = late = Decimal(0)
+    regular = late = deferrals = match = Decimal(0)
     for p in rows:
         amount = p.deferrals_pretax + p.deferrals_roth + p.match
+        deferrals += p.deferrals_pretax + p.deferrals_roth
+        match += p.match
+        if p.deposit_date is None or p.deposit_date <= year_end:
+            continue
         if p.id in late_ids:
             late += amount
         else:
             regular += amount
-    return Reconciliation(regular, late, regular + late)
+    total = regular + late
+    return Reconciliation(regular, late, total, deferrals, match, deferrals + match - total)
 
 
 AUDIT_KINDS = frozenset({"ebp_late_remittance"})

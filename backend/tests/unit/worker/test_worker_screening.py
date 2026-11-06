@@ -90,6 +90,10 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "staff_invitation.issued",  # SPEC-024 (TASK-041)
         "request_item.classified",  # SPEC-022: automatic retrieval
         "inbox_file.added",  # SPEC-027 (TASK-050): the engagement agent
+        "filing.acknowledged",  # T-03-T07: estimates and the extension answer the ack
+        "notice_intake.started",  # N-04-T07 (DEC-2326)
+        "section_draft.finished",  # A-04-T29 (DEC-2327)
+        "ocr_run.refused",  # P-11: a refused OCR run
         "firm.agents_resumed",
         "engagement.created",
         "due_dates.changed",  # SPEC-027 (TASK-051)

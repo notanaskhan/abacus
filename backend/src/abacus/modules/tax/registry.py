@@ -212,7 +212,7 @@ UPDATE_COLUMNS["filing_extensions"] = frozenset(
     | {"filed_form_evidence_version_id", "ack_received_at", "reject_code"}
     | {"projected_liability", "projected_liability_source", "projected_liability_ref"}
     | {"withholding_plus_estimates", "safe_harbor_pct", "safe_harbor_target"}
-    | {"engine_version", "inputs_hash", "row_version"}
+    | {"engine_version", "inputs_hash", "row_version", "confirmation_request_item_id"}
 )
 UPDATE_COLUMNS["extension_payments"] = frozenset(
     {"approved_by", "approved_actor_kind", "approved_at", "paid_on"}
@@ -226,4 +226,5 @@ UPDATE_COLUMNS["estimate_schedules"] = frozenset(
 UPDATE_COLUMNS["estimate_installments"] = frozenset(
     {"due_on", "due_rules_version_id", "amount", "status", "scheduled_for", "paid_on"}
     | {"confirmation_request_item_id", "confirmed_by_contact_id", "confirmed_at", "row_version"}
+    | {"paid_evidence_version_id"}
 )

@@ -2064,6 +2064,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "confirmed_by_contact_id",
                 "due_on",
                 "due_rules_version_id",
+                "paid_evidence_version_id",
                 "paid_on",
                 "row_version",
                 "scheduled_for",
@@ -2096,6 +2097,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "filing_extensions": frozenset(
             {
                 "ack_received_at",
+                "confirmation_request_item_id",
                 "due_rules_version_id",
                 "engine_version",
                 "extended_due_on",

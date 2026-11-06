@@ -4217,9 +4217,6 @@ async def _notice_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) ->
             ("respond_by", str(data["respond_by"]), False),
             ("amount_due", str(data["amount"]), False),
         ],
-        client_id=None,
-        assignee_user_id=None,
-        notify_user_ids=None,
     )
     assignee = user_id_of(_SEATS[str(data["assignee"])])
     work_item, __ = await create_notice_from_intake(

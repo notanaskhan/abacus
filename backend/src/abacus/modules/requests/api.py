@@ -72,6 +72,8 @@ from abacus.modules.requests.lifecycle import (
     register_live_facts,
     request_item_scope,
     request_item_scopes,
+    send_created,
+    send_item,
     update_item,
 )
 from abacus.modules.requests.pbc_contract import pbc_portal_router
@@ -164,6 +166,8 @@ from abacus.modules.requests.service import (
     read_item,
     read_item_versions,
     reopen_after_undo,
+    request_item_sent,
+    request_item_state,
     request_items_for,
     review_hosts,
     review_targets,
@@ -201,6 +205,9 @@ WORKFLOWS: dict[type, str] = {}
 ACTIVITIES: tuple[object, ...] = ()
 
 # The routers the API mounts, in order (P-39; F-03-T07).
+from abacus.modules.requests.answer_effect_handlers import (  # noqa: E402 -- T-03-T06
+    effect_rule,
+)
 from abacus.modules.requests.answer_effect_slots import (  # noqa: E402 -- T-03-T02 slot
     EffectRequest,
     EffectResult,
@@ -208,6 +215,7 @@ from abacus.modules.requests.answer_effect_slots import (  # noqa: E402 -- T-03-
     answer_effect_handler,
     register_answer_effect,
 )
+from abacus.modules.requests.answer_effects import fire_staff_edit  # noqa: E402 -- T-03-T06
 from abacus.modules.requests.questionnaire_editor_contract import (  # noqa: E402 -- T-03-T02
     questionnaire_editor_router,
 )
@@ -323,6 +331,8 @@ __all__ = [
     "drop_binder_open",
     "drop_items",
     "drop_target",
+    "effect_rule",
+    "fire_staff_edit",
     "firm_router",
     "follow_up_candidates",
     "fulfil_by_rule",
@@ -368,6 +378,8 @@ __all__ = [
     "register_live_facts",
     "register_upload_facts",
     "reopen_after_undo",
+    "request_item_sent",
+    "request_item_state",
     "request_items_for",
     "review_hosts",
     "review_targets",
@@ -376,6 +388,8 @@ __all__ = [
     "save_portal_answer",
     "screening_subject",
     "selection_engagements",
+    "send_created",
+    "send_item",
     "send_question",
     "source_documents",
     "third_party_consented",

@@ -4,13 +4,22 @@ Pre-registered (F-03-T08; ADR-140). T-01-T02: the engine-bridge and e-file-recor
 (`engine_contract`). T-01-T18: final approval and its blocker slot (`approval`).
 """
 
+from datetime import date
+from uuid import UUID
+
+from sqlalchemy import text
+
 from abacus.kernel.audit_owners import register_engagement_owners, register_entity_owners
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.uow import OutboxEvent
 from abacus.modules.engagements.api import register_work_item_kind
 from abacus.modules.identity.api import AbacusRouter, register_scope_resolver
 from abacus.modules.organisations.api import register_office_facts
 from abacus.modules.platform.api import register_search_projection
+from abacus.modules.tax import answer_effects as _answer_effects
 from abacus.modules.tax import consent_capture, filed_delivery, filing, k1_release
+from abacus.modules.tax import extensions as _extensions
+from abacus.modules.tax import schedule_workflows as _schedule_workflows
 from abacus.modules.tax.approval import Blocker as ApprovalBlocker
 from abacus.modules.tax.approval import eligibility as final_approval_eligibility
 from abacus.modules.tax.approval import register as register_approval
@@ -49,7 +58,13 @@ from abacus.modules.tax.overview import on_binder_published, on_sign_off_recorde
 from abacus.modules.tax.returns_routes import returns_router
 from abacus.modules.tax.schedules_contract import schedules_router
 from abacus.modules.tax.status import TRANSITIONS, StaleReturn, TransitionRefused, next_status
+from abacus.modules.tax.tax_profile import (
+    authorization_on_file as authorization_on_file,
+)
 from abacus.modules.tax.tax_profile import register as register_tax_profile
+from abacus.modules.tax.tax_profile import return_for_entity as return_for_entity
+from abacus.modules.tax.tax_profile import return_label as return_label
+from abacus.modules.tax.tax_profile import transcript_comparison_lines
 from abacus.modules.tax.transitions import apply_transition, record_sync_state
 
 # T-01-T10: §7216 consent capture behind C19's routes, and the `consent_set` envelope source.
@@ -94,10 +109,18 @@ async def _reference_set_published(event: OutboxEvent) -> None:
     binding (T-01-T36)."""
     await on_reference_set_published(event)
     await filing.on_tolerances_published(event)
+    await _extensions.on_reference_set_published(event)
 
+
+async def _filing_acknowledged(event: OutboxEvent) -> None:
+    await _extensions.on_filing_acknowledged(event)
+
+
+_answer_effects.register()  # T-03-T06 (DEC-2352): review points from organizer answers
 
 SUBSCRIPTIONS = {
     "reference_set.published": _reference_set_published,
+    "filing.acknowledged": _filing_acknowledged,
     # T-01-T36: a return's approved checkpoint rechecks its 8879 binding (I-8879-DRIFT).
     "checkpoint.approved": filing.on_checkpoint_approved,
     # T-01-T10: a completed `consent_set` envelope signs its consents (C7 → C19).
@@ -111,13 +134,55 @@ SUBSCRIPTIONS = {
     **filed_delivery.SUBSCRIPTIONS,
 }
 # T-02-T21: `K1ReleaseWorkflow` and its activities (the worker composes every module's parts).
-WORKFLOWS: dict[type, str] = {**k1_release.WORKFLOWS}
-ACTIVITIES: tuple[object, ...] = k1_release.ACTIVITIES
+WORKFLOWS: dict[type, str] = {**k1_release.WORKFLOWS, **_schedule_workflows.WORKFLOWS}
+ACTIVITIES: tuple[object, ...] = (*k1_release.ACTIVITIES, *_schedule_workflows.ACTIVITIES)
+SCHEDULES = _schedule_workflows.SCHEDULES
+
+
+async def extension_for(tenant: TenantContext, tax_return_id: UUID) -> list[dict[str, object]]:
+    """C21-side read for T-08 and R-03: the return's lines (contract §2)."""
+    async with tenant_session(tenant) as session:
+        found = await session.execute(
+            text("SELECT * FROM filing_extensions WHERE tax_return_id = :r ORDER BY jurisdiction"),
+            {"r": tax_return_id},
+        )
+        return [dict(row) for row in found.mappings()]
+
+
+async def estimates_for(
+    tenant: TenantContext, client_entity_id: UUID, tax_year: int
+) -> list[dict[str, object]]:
+    async with tenant_session(tenant) as session:
+        found = await session.execute(
+            text(
+                "SELECT * FROM estimate_schedules WHERE client_entity_id = :c AND tax_year = :y "
+                "ORDER BY jurisdiction"
+            ),
+            {"c": client_entity_id, "y": tax_year},
+        )
+        return [dict(row) for row in found.mappings()]
+
+
+async def installments_due(
+    tenant: TenantContext, start: date, end: date
+) -> list[dict[str, object]]:
+    async with tenant_session(tenant) as session:
+        found = await session.execute(
+            text(
+                "SELECT i.*, s.client_entity_id, s.form, s.jurisdiction "
+                "FROM estimate_installments i JOIN estimate_schedules s ON s.id = i.schedule_id "
+                "WHERE i.due_on BETWEEN :a AND :b ORDER BY i.due_on, i.id"
+            ),
+            {"a": start, "b": end},
+        )
+        return [dict(row) for row in found.mappings()]
+
 
 __all__ = [
     "ACTIVITIES",
     "FORM_FOR_RULES",
     "ROUTERS",
+    "SCHEDULES",
     "SUBSCRIPTIONS",
     "TRANSITIONS",
     "WORKFLOWS",
@@ -130,9 +195,12 @@ __all__ = [
     "StaleReturn",
     "TransitionRefused",
     "apply_transition",
+    "estimates_for",
+    "extension_for",
     "filed_returns",
     "final_approval_eligibility",
     "import_engine_file",
+    "installments_due",
     "next_status",
     "recompute_unfiled",
     "record_sync_state",
@@ -141,9 +209,13 @@ __all__ = [
     "rule_texts",
     "set_extended",
     "share_k1_internal",
+    "transcript_comparison_lines",
 ]
 
 # T-03 (S27): imported so its refusal codes are catalogued (the routes import it lazily).
 from abacus.modules.tax import (  # noqa: E402
-    extensions as _extensions,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- imported to register and catalogue it
+    estimates as _estimates,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- codes
+)
+from abacus.modules.tax import (  # noqa: E402
+    extensions as _extensions_codes,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- imported to register and catalogue it
 )
