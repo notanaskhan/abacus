@@ -475,7 +475,7 @@ export const ebpEligibility = <ThrowOnError extends boolean = false>(options: Op
 /**
  * Ebp Eligibility Sample Route
  *
- * EBP-03's grid (A-05-T23 contract first, DEC-2225): 501 until the sample service lands.
+ * EBP-03's grid (A-05-T23, DEC-2225, DEC-2328): rows in A-03's order; none before a test.
  */
 export const ebpEligibilitySample = <ThrowOnError extends boolean = false>(options: Options<EbpEligibilitySampleData, ThrowOnError>): RequestResult<EbpEligibilitySampleResponses, EbpEligibilitySampleErrors, ThrowOnError> => (options.client ?? client).get<EbpEligibilitySampleResponses, EbpEligibilitySampleErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
