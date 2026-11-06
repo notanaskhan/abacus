@@ -33,6 +33,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "agent_run.trace_exported",
         "agent_stage.changed",  # Q-02-T06 (ED-120): a platform staff change of a firm's stage
         "ai.boundary_refused",
+        "answer_effect.recorded",  # reviewed 2026-11-05 (S26, S27)
         "approval_grant.consumed",
         "approval_grant.voided",
         "archive.locked",
@@ -41,6 +42,9 @@ REVIEWED_FALLBACK: Final = frozenset(
         "assurance.phase_recorded",
         "assurance.profile_updated",
         "assurance.release_recorded",  # A-01-T23: the recorded date and kind, as numbers
+        "attribute_result.marked",  # reviewed 2026-11-05 (S26, S27)
+        "attribute_result.recorded",  # reviewed 2026-11-05 (S26, S27)
+        "attribute_test.created",  # reviewed 2026-11-05 (S26, S27)
         "audit_chain.anchored",
         "auth.sign_in_refused",
         "autonomy_policy.updated",
@@ -98,11 +102,21 @@ REVIEWED_FALLBACK: Final = frozenset(
         "comment.redacted",
         "comment_thread.read",
         "conflict.cleared",
+        "control_activity.recorded",  # reviewed 2026-11-05 (S26, S27)
+        "control_exception.recorded",  # reviewed 2026-11-05 (S26, S27)
+        "control_exception.routed",  # reviewed 2026-11-05 (S26, S27)
+        "control_exception.severity_proposed",  # reviewed 2026-11-05 (S26, S27)
         "decision.refused_non_human",  # K-01-T06: an agent or the platform asked to approve
+        "ebp_late_remittance.correction_recorded",  # reviewed 2026-11-05 (S26, S27)
         "envelope.imported",  # N-02-T08: record-mode import (SIG-01 r)
         "envelope.provider_hint",  # N-02-T19: a verified Connect hint (duplicate flag only)
         "envelope.provider_unavailable",  # N-02-T18: kill switch, W7 or install off; not sent
         "envelope_import_file.staged",  # N-02-T08: a scanned file for an import
+        "extension_payment.approved",  # reviewed 2026-11-05 (S26, S27)
+        "filing_extension.ack_unmatched",  # reviewed 2026-11-05 (S26, S27)
+        "filing_extension.acknowledged",  # reviewed 2026-11-05 (S26, S27)
+        "filing_extension.filed_recorded",  # reviewed 2026-11-05 (S26, S27)
+        "filing_extension.flagged",  # reviewed 2026-11-05 (S26, S27)
         "human_gate.reassigned",  # I-01-T07: a person moved a gate to someone else (user ids)
         "conflict_check.run",
         "connection.checked",
@@ -299,6 +313,18 @@ REVIEWED_FALLBACK: Final = frozenset(
         "misstatement.recorded",
         "model.called",
         "nas.evaluated",
+        "notice.analysis_recorded",  # reviewed 2026-11-05 (S26, S27)
+        "notice.created",  # reviewed 2026-11-05 (S26, S27)
+        "notice.note_added",  # reviewed 2026-11-05 (S26, S27)
+        "notice.proposed_items_recorded",  # reviewed 2026-11-05 (S26, S27)
+        "notice.return_as_filed_recorded",  # reviewed 2026-11-05 (S26, S27)
+        "notice.status_changed",  # reviewed 2026-11-05 (S26, S27)
+        "notice_intake.created",  # reviewed 2026-11-05 (S26, S27)
+        "notice_intake.discarded",  # reviewed 2026-11-05 (S26, S27)
+        "notice_intake.updated",  # reviewed 2026-11-05 (S26, S27)
+        "notice_response.drafted",  # reviewed 2026-11-05 (S26, S27)
+        "notice_response.edited",  # reviewed 2026-11-05 (S26, S27)
+        "notice_response.regenerated",  # reviewed 2026-11-05 (S26, S27)
         "notification.created",
         "notification.read",
         "notification.read_all",
@@ -341,12 +367,14 @@ REVIEWED_FALLBACK: Final = frozenset(
         "procedure.started",
         "procedure.support_requested",
         "procedure_session.plan_approved",
+        "questionnaire.edited",  # reviewed 2026-11-05 (S26, S27)
         "report.released",
         "representation.added",
         "representation.removed",
         "request_item.client_assigned",
         "request_item.client_visibility_changed",
         "request_item.created",
+        "request_item.created_by_answer_effect",  # reviewed 2026-11-05 (S26, S27)
         "request_item.delegated",
         "request_item.delegation_ended",
         "request_item.deleted",
@@ -401,8 +429,13 @@ REVIEWED_FALLBACK: Final = frozenset(
         "secure_link.token_issued",
         "service_line_policy.updated",
         "session.ended",
+        "sign_off.re_review_requested",  # reviewed 2026-11-05 (S26, S27)
         "sign_off.recorded",
         "sign_off.went_stale",
+        "soc_report.bridge_letter_drafted",  # reviewed 2026-11-05 (S26, S27)
+        "soc_report.cuec_mapped",  # reviewed 2026-11-05 (S26, S27)
+        "soc_report.evaluated",  # reviewed 2026-11-05 (S26, S27)
+        "soc_report.reliance_requested",  # reviewed 2026-11-05 (S26, S27)
         "staff_invitation.accept_attempted",
         "staff_invitation.accepted",
         "staff_invitation.created",
