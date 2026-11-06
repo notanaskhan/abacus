@@ -4,7 +4,7 @@
 import { client } from "@abacus/api-client/client";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, waitFor } from "@testing-library/react";
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { installFixtureMode } from "../../app-core/fixture-mode";
 import { newQueryClient } from "../../testing/support";
 import { Extensions, type ExtensionsProps } from "./Extensions";
@@ -87,5 +87,27 @@ describe("TAX-13", () => {
       b.textContent.includes("Prepare 8868"),
     );
     expect(prepare?.hasAttribute("disabled")).toBe(false);
+  });
+});
+
+describe("T-03-T11: Open in Excel", () => {
+  it("fetches the view's workbook and hands it to the browser", async () => {
+    const created = vi.fn((_: Blob) => "blob:tax13");
+    Object.assign(URL, { createObjectURL: created, revokeObjectURL: vi.fn() });
+    show("a");
+    const button = await waitFor(
+      () => {
+        const found = [...document.querySelectorAll("button")].find(
+          (b) => b.textContent === "Open in Excel",
+        );
+        expect(found).toBeDefined();
+        return found as HTMLButtonElement;
+      },
+      { timeout: 6000 },
+    );
+    button.click();
+    await waitFor(() => {
+      expect(created).toHaveBeenCalledOnce();
+    });
   });
 });

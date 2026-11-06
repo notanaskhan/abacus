@@ -1,4 +1,5 @@
 import type { EstimateRowOut, ExtensionRowOut } from "@abacus/api-client";
+import { estimatesExport, extensionsExport } from "@abacus/api-client";
 import { extensionsOptions, taxEstimatesOptions } from "@abacus/api-client/query";
 import {
   Button,
@@ -226,6 +227,33 @@ export interface ExtensionsProps {
   showPayments?: boolean;
 }
 
+/** Only the visible rows of this view leave, with fresh MFA and an audit row (T-03-T07). */
+async function openInExcel(
+  tab: Tab,
+  taxYear: number,
+  quarter: number,
+  segment: Segment,
+): Promise<void> {
+  const { data } =
+    tab === "estimates"
+      ? await estimatesExport({
+          query: { tax_year: taxYear, quarter },
+          parseAs: "blob",
+          throwOnError: true,
+        })
+      : await extensionsExport({
+          query: { tax_year: taxYear, segment },
+          parseAs: "blob",
+          throwOnError: true,
+        });
+  const url = URL.createObjectURL(data as Blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${tab}-TY${String(taxYear)}.xlsx`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 export function Extensions({
   taxYear,
   quarter = 3,
@@ -311,7 +339,14 @@ export function Extensions({
         <span className="text-pane-title font-medium">
           {tab === "extensions" ? COPY.control(taxYear) : COPY.estimatesControl(taxYear, quarter)}
         </span>
-        <Button variant="ghost" size="sm" icon="cloud-download">
+        <Button
+          variant="ghost"
+          size="sm"
+          icon="cloud-download"
+          onClick={() => {
+            void openInExcel(tab, taxYear, quarter, segment);
+          }}
+        >
           {COPY.openInExcel}
         </Button>
       </div>
