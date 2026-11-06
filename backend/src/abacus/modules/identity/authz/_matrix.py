@@ -548,6 +548,20 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "mfa_recent": "required",
     },
+    "client_approval.ask": {
+        "client_admin": "allow",
+        "client_contributor": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "scope_only": "required",
+    },
+    "client_approval.read": {
+        "client_admin": "allow",
+        "client_contributor": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "scope_only": "required",
+    },
     "client_contact.invite": {
         "engagement_partner": "allow",
         "manager": "allow",
@@ -580,6 +594,14 @@ ACTIONS: dict[str, dict[str, str]] = {
     },
     "client_list.mark_done": {
         "client_admin": "allow",
+    },
+    "close_package.client_decide": {
+        "client_admin": "allow",
+        "client_contributor": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "scope_only": "required",
+        "mfa_recent": "required",
     },
     "comment.create": {
         "independence": "required",
@@ -3709,6 +3731,14 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "deny",
         "independence": "required",
     },
+    "proposed_entry.client_decide": {
+        "client_admin": "allow",
+        "client_contributor": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "scope_only": "required",
+        "mfa_recent": "required",
+    },
     "proposed_entry.create": {
         "engagement_partner": "allow",
         "manager": "allow",
@@ -5137,6 +5167,14 @@ ACTIONS: dict[str, dict[str, str]] = {
         "staff": "allow",
         "reviewer": "allow",
         "independence": "required",
+    },
+    "uncorrected_misstatements.acknowledge": {
+        "client_admin": "allow",
+        "client_contributor": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "scope_only": "required",
+        "mfa_recent": "required",
     },
     "upload_review.read": {
         "engagement_partner": "allow",

@@ -6,7 +6,7 @@
 | Template and host frame | T7 PortalLayout split (rail 336 · viewer 1030 with comment column 280; paper from T10) and T7-M · `Wave 2 - Client Portal.dc.html` |
 | Surface | client portal (never renders "Accrued") |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/POR-09 Deliverables - Northwind Robotics 401-k- Plan/` (README.md, spec.md; revision.md wins where present) |
-| Epic and tasks | R-02 · stubs T02 · bundle T04 · service T09 · serving T07 · screen T21 · threads T22 · parity T24 · SPEC-646 |
+| Epic and tasks | R-02 · stubs T02 · bundle T04 · service T09 · serving T07 · screen T17 · threads T22 · parity T24 · SPEC-646 |
 | Manifest status | planned (live with its screen task) |
 
 ## States
@@ -14,13 +14,13 @@ Clock is the demo clock (DEC-27): CDT (UTC−5) until Sun Nov 1, 2026, CST (UTC�
 
 | Artboard | Viewer (persona) | Clock | Data condition that produces it | Status |
 |---|---|---|---|---|
-| a | dana-kowalski | Tue Oct 6, 2026 11:10 AM CDT | Draft v3, DRAFT watermark, page 2 of 14, pin 1 (10:14 AM) and Hannah's reply (11:02 AM) | live (T09, T21, T22) |
-| a2 | dana-kowalski | Thu Oct 8, 2026 | Draft v4, confirm "Approve the 2025 financial statements (the latest draft)?" | live (T09, T21) |
-| b | dana-kowalski | Thu Oct 8, 2026 | Approved by you · Oct 8; watermark stays until release | live (T09, T21; DV-04) |
-| c | dana-kowalski | Fri Oct 9, 2026 10:30 AM CDT | Report 3 pages, FS 14 pages, both Final, no watermark, Download | live (T09, T21; A-07's release) |
-| d | meera-shah | Tue Sep 15, 2026 | Role union: 2025 Tax Return Not ready yet; My K-1s, Ridgeline K-1 released Sep 15 (468,008 / 6,992 / 2,356 / 228,000; 38%) | live (T21; DV-09) |
+| a | dana-kowalski | Tue Oct 6, 2026 11:10 AM CDT | Draft v3, DRAFT watermark, page 2 of 14, pin 1 (10:14 AM) and Hannah's reply (11:02 AM) | live (T09, T17, T22) |
+| a2 | dana-kowalski | Thu Oct 8, 2026 | Draft v4, confirm "Approve the 2025 financial statements (the latest draft)?" | live (T09, T17) |
+| b | dana-kowalski | Thu Oct 8, 2026 | Approved by you · Oct 8; watermark stays until release | live (T09, T17; DV-04) |
+| c | dana-kowalski | Fri Oct 9, 2026 10:30 AM CDT | Report 3 pages, FS 14 pages, both Final, no watermark, Download | live (T09, T17; A-07's release) |
+| d | meera-shah | Tue Sep 15, 2026 | Role union: 2025 Tax Return Not ready yet; My K-1s, Ridgeline K-1 released Sep 15 (468,008 / 6,992 / 2,356 / 228,000; 38%) | live (T17; DV-09) |
 | e | tess-moreno | Mon Sep 14, 2026 4:40 PM CDT | Copperleaf August package row, Waiting for approval, AR-C 70 legend on every page | fixture-only (DV-08) |
-| f | luis-ferrante | Tue Oct 6, 2026 11:10 AM CDT | Nothing delivered yet. | live (T21) |
+| f | luis-ferrante | Tue Oct 6, 2026 11:10 AM CDT | Nothing delivered yet. | live (T17) |
 | g | luis-ferrante | Fri Oct 23, 2026 10:20 AM CDT | Suggest edits, R2 revision | deferred (DV-06; A-10) |
 | h | luis-ferrante | Mon Oct 26, 2026 9:00 AM CDT | Changes after firm review, R2 revision | deferred (DV-06; A-10) |
 | i | marisol-vega | Fri Nov 13, 2026 4:00 PM CST | SOC 2 report, R2 revision | deferred (DV-06; X-01) |

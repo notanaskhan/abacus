@@ -6,7 +6,7 @@
 | Template and host frame | T7 rail 336 · paper pane 1030 with the T10 paper card; reduced nav; T7-M · `Wave 2 - Client Portal.dc.html` |
 | Surface | client portal (never renders "Accrued") |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/POR-15 Governance room - Northwind benefits committee/` (README.md, spec.md; revision.md wins where present) |
-| Epic and tasks | R-02 · stubs T02 · bundle T04 · service T12 · screen T15 · threads T22 · parity T24 · SPEC-646 |
+| Epic and tasks | R-02 · stubs T02 · bundle T04 · service T12 · screen T21 · threads T22 · parity T24 · SPEC-646 |
 | Manifest status | planned (live with its screen task) |
 
 ## States
@@ -14,12 +14,12 @@ Clock is the demo clock (DEC-27): CDT (UTC−5) until Sun Nov 1, 2026, CST (UTC�
 
 | Artboard | Viewer (persona) | Clock | Data condition that produces it | Status |
 |---|---|---|---|---|
-| a | victoria-lam | Mon Sep 21, 2026 8:30 AM CDT | Planning letter sent Sep 18 (dated Sep 17), acks Dana Sep 18 and Robert Sep 19, 2 of 3 | live (T12, T15) |
-| b | victoria-lam | 8:31 AM CDT | All acknowledged; rail reads Acknowledged by the committee · Sep 21 | live (T12, T15) |
-| c | victoria-lam | 8:30 AM CDT | Two private AU-C 240 inquiries, Send answers | live (T12, T15) |
-| d | victoria-lam | Tue Nov 24, 2026 CST | Completion letter Sent Oct 8 · acknowledged; AU-C 265/703 letter sent Nov 20, due Dec 8 | live (T12, T15; DV-12) |
-| e | victoria-lam | Mon Oct 12, 2026 | Reports tab: report and FS 14 pages, Download | live (T09, T15) |
-| f | victoria-lam | Wed Sep 16, 2026 | Nothing from your auditor yet. | live (T15) |
+| a | victoria-lam | Mon Sep 21, 2026 8:30 AM CDT | Planning letter sent Sep 18 (dated Sep 17), acks Dana Sep 18 and Robert Sep 19, 2 of 3 | live (T12, T21) |
+| b | victoria-lam | 8:31 AM CDT | All acknowledged; rail reads Acknowledged by the committee · Sep 21 | live (T12, T21) |
+| c | victoria-lam | 8:30 AM CDT | Two private AU-C 240 inquiries, Send answers | live (T12, T21) |
+| d | victoria-lam | Tue Nov 24, 2026 CST | Completion letter Sent Oct 8 · acknowledged; AU-C 265/703 letter sent Nov 20, due Dec 8 | live (T12, T21; DV-12) |
+| e | victoria-lam | Mon Oct 12, 2026 | Reports tab: report and FS 14 pages, Download | live (T09, T21) |
+| f | victoria-lam | Wed Sep 16, 2026 | Nothing from your auditor yet. | live (T21) |
 | loading, error, not allowed, flag off, M 390 | as the scenario | — | Skeleton after 200 ms; walls and out-of-scope grants answer 404 (INV-3, INV-4); the designed flag-off state, never a 404 page; M from the spec text | live |
 
 Parity tier: Tier C report-only through S34, locked at exit (R-02-T24); Tier D on toolbar and pane headers.
