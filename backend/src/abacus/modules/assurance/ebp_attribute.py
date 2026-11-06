@@ -149,7 +149,7 @@ async def _compare(tenant: TenantContext, work_item_id: UUID) -> tuple[list[Chec
             continue
         out.append(Check(key, "name", "match" if _same_name(c.name, hr.name) else "needs_human"))
         if c.hire_on is not None and hr.hire_on is not None:
-            # Opened with or without a rule: the mode's guard scans for it even when no note uses it.
+            # Opened with or without a rule: the mode's guard scans for it even if no note uses it.
             dob = await _dob(tenant, c) if c.hire_on != hr.hire_on else None
             if dob is not None:
                 opened.append(dob)
