@@ -63682,10 +63682,17 @@
             "title": "Published By Name"
           },
           "questionnaire_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "cls": "internal",
-            "format": "uuid",
-            "title": "Questionnaire Id",
-            "type": "string"
+            "title": "Questionnaire Id"
           },
           "status": {
             "cls": "internal",
@@ -63709,7 +63716,6 @@
           "id",
           "version",
           "status",
-          "questionnaire_id",
           "drafted_by_name"
         ],
         "title": "OrganizerTemplateVersionOut",
@@ -97584,18 +97590,25 @@
             "type": "array"
           },
           "form_family": {
-            "cls": "internal",
-            "enum": [
-              "1040",
-              "1041",
-              "1065",
-              "1120s",
-              "1120",
-              "990",
-              "706"
+            "anyOf": [
+              {
+                "enum": [
+                  "1040",
+                  "1041",
+                  "1065",
+                  "1120s",
+                  "1120",
+                  "990",
+                  "706"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "title": "Form Family",
-            "type": "string"
+            "cls": "internal",
+            "title": "Form Family"
           },
           "id": {
             "cls": "internal",
@@ -97604,10 +97617,17 @@
             "type": "string"
           },
           "key": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z][a-z0-9_]{0,39}(\\.[a-z][a-z0-9_]{0,39})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "cls": "internal",
-            "pattern": "^[a-z][a-z0-9_]{0,39}(\\.[a-z][a-z0-9_]{0,39})?$",
-            "title": "Key",
-            "type": "string"
+            "title": "Key"
           },
           "name": {
             "cls": "internal",
@@ -97650,9 +97670,7 @@
         },
         "required": [
           "id",
-          "key",
           "name",
-          "form_family",
           "versions",
           "allowed_actions"
         ],
@@ -98264,6 +98282,41 @@
           "expires_at"
         ],
         "title": "TemplatePreviewOut",
+        "type": "object"
+      },
+      "TemplatePublishIn": {
+        "additionalProperties": false,
+        "description": "T-03-T05: T-02's publish route gains this optional body (DEC-2201).",
+        "properties": {
+          "applies_to_tax_year": {
+            "anyOf": [
+              {
+                "maximum": 2100.0,
+                "minimum": 2000.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Applies To Tax Year"
+          },
+          "change_summary": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Change Summary"
+          }
+        },
+        "title": "TemplatePublishIn",
         "type": "object"
       },
       "TemplateRefOut": {
@@ -231330,7 +231383,7 @@
     },
     "/v1/questionnaire-templates/{template_id}/versions/{version}:publish": {
       "post": {
-        "description": "A person publishes the version (fresh MFA). 409 `version_published`.",
+        "description": "A person publishes the version (fresh MFA). 409 `version_published`; an owned template or\nan editor draft is the owner's alone (403), and a draft names its tax year (422\n`tax_year_required`).",
         "operationId": "publish_template",
         "parameters": [
           {
@@ -231386,6 +231439,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/TemplatePublishIn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "content": {

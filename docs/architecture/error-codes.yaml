@@ -658,6 +658,7 @@ codes:
     raised_by:
     - abacus.modules.methodology.drafts.DraftExists
     - abacus.modules.methodology.standards.DraftExists
+    - abacus.modules.requests.organizer_lifecycle.DraftExists
     summary: The template already has a draft or a version in review.
   draft_incomplete:
     status: 422
@@ -2024,10 +2025,11 @@ codes:
     - abacus.modules.identity.walls.OwnWall
     summary: 'A partner can''t lift a wall on themself: another partner must (ADR-026; DEC-73).'
   owner_not_partner:
-    status: 422
+    status: 409 or 422
     raised_by:
     - abacus.modules.methodology.standards.OwnerNotPartner
-    summary: The owner of a standard must be a partner member of the firm.
+    - abacus.modules.requests.organizer_lifecycle.OwnerNotPartner
+    summary: A template's owner is a partner member.
   pack_configuration_error:
     status: 409
     raised_by:
@@ -2898,6 +2900,11 @@ codes:
     raised_by:
     - abacus.modules.tax.tax_profile.TaxProfileFileUnavailable
     summary: The staged file is not the caller's own for this entity, or was already filed.
+  tax_year_required:
+    status: 422
+    raised_by:
+    - abacus.modules.requests.questionnaires.TaxYearRequired
+    summary: An editor draft is published for a named tax year.
   tb_same_snapshot:
     status: 409
     raised_by:
@@ -3211,7 +3218,10 @@ codes:
   version_published:
     status: 409
     raised_by:
+    - abacus.modules.requests.organizer_lifecycle.VersionPublished
+    - abacus.modules.requests.questionnaire_editor.VersionPublished
     - abacus.modules.requests.questionnaires.AlreadyPublished
+    summary: A published version never changes.
   wall_exists:
     status: 409
     raised_by:

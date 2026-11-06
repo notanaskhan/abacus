@@ -43,6 +43,8 @@ from abacus.modules.identity.api import (
     authorise,
     engagement_resource,
 )
+from abacus.modules.requests.events import QuestionnaireTemplatePublished
+from abacus.modules.requests.organizer_lifecycle import insert_structure, structure_of
 from abacus.modules.requests.questionnaire_templates import (
     Changes,
     Format,
@@ -80,6 +82,19 @@ class NotPublished(DomainConflict):
 
 class AlreadySent(DomainConflict):
     code = "question_sent"
+
+
+class NotTemplateOwner(Forbidden):
+    """403: only the template's owner publishes it (T-03 US-2.2)."""
+
+    def __init__(self) -> None:
+        super().__init__(PUBLISH, "condition")
+
+
+class TaxYearRequired(DomainInvalid):
+    """An editor draft is published for a named tax year."""
+
+    code = "tax_year_required"
 
 
 class QuestionnaireClosed(DomainConflict):
@@ -252,35 +267,64 @@ async def import_template(
     return ImportResult(template_id, int(version), False, (), changes)
 
 
-async def publish_version(ctx: AuthContext, template_id: UUID, version: int) -> TemplateView:
-    """A person publishes (fresh MFA through the matrix); the newest published is current."""
+async def publish_version(
+    ctx: AuthContext,
+    template_id: UUID,
+    version: int,
+    *,
+    applies_to_tax_year: int | None = None,
+    change_summary: str | None = None,
+) -> TemplateView:
+    """A person publishes (fresh MFA through the matrix); the newest published is current. A
+    template with an owner, and every editor draft, is the owner's to publish, for a tax year."""
     _person(ctx, PUBLISH)
     await authorise(ctx, PUBLISH, Resource.firm(ctx.tenant_id))
     async with uow(ctx.tenant) as tx:
         found = (
             await tx.session.execute(
                 text(
-                    "SELECT id, published_at FROM questionnaire_template_versions "
-                    "WHERE template_id = :t AND version = :v FOR UPDATE"
+                    "SELECT v.id, v.published_at, v.status, v.applies_to_tax_year, "
+                    "v.change_summary, t.owner_id FROM questionnaire_template_versions v "
+                    "JOIN questionnaire_templates t ON t.id = v.template_id "
+                    "WHERE v.template_id = :t AND v.version = :v FOR UPDATE OF v"
                 ),
                 {"t": template_id, "v": version},
             )
         ).first()
-        if found is None:
+        if found is None or found.status == "discarded":
             raise NotFound("questionnaire_template_version")
         if found.published_at is not None:
             raise AlreadyPublished(facts={"version": version})
+        drafted = found.status == "draft"
+        if (drafted or found.owner_id is not None) and found.owner_id != ctx.user_id:
+            raise NotTemplateOwner
+        year = applies_to_tax_year or found.applies_to_tax_year
+        if drafted and year is None:
+            raise TaxYearRequired
         await tx.session.execute(
             text(
                 "UPDATE questionnaire_template_versions SET published_by = :by, "
-                "published_at = abacus_now() WHERE id = :id"
+                "published_at = abacus_now(), applies_to_tax_year = :year, "
+                "change_summary = :summary, published_actor_kind = 'human', "
+                "status = CASE WHEN status = 'draft' THEN 'published' ELSE status END, "
+                "row_version = row_version + 1 WHERE id = :id"
             ),
-            {"by": ctx.user_id, "id": found.id},
+            {
+                "by": ctx.user_id,
+                "id": found.id,
+                "year": year,
+                "summary": change_summary or found.change_summary,
+            },
+        )
+        tx.emit(
+            QuestionnaireTemplatePublished(
+                template_id=template_id, version=version, applies_to_tax_year=year
+            )
         )
         tx.record(
             "questionnaire_template.published",
             target=Target("questionnaire_template", template_id),
-            after=Ref(version=version),
+            after=Ref(version=version, applies_to_tax_year=year) if year else Ref(version=version),
         )
     return next(t for t in await templates(ctx) if t.id == template_id)
 
@@ -295,7 +339,8 @@ async def templates(ctx: AuthContext) -> list[TemplateView]:
                 text(
                     "SELECT t.id, t.name, "
                     "max(v.version) FILTER (WHERE v.published_at IS NOT NULL) AS current, "
-                    "max(v.version) FILTER (WHERE v.published_at IS NULL) AS draft, "
+                    "max(v.version) FILTER (WHERE v.published_at IS NULL "
+                    "AND v.status IS DISTINCT FROM 'discarded') AS draft, "
                     "(SELECT p.id FROM questionnaire_template_versions p "
                     "WHERE p.template_id = t.id AND p.published_at IS NOT NULL "
                     "ORDER BY p.version DESC LIMIT 1) AS current_id "
@@ -357,7 +402,7 @@ async def attach_organizer(
         version = (
             await session.execute(
                 text(
-                    "SELECT v.content, v.published_at, t.name "
+                    "SELECT v.content, v.questionnaire_id, v.published_at, t.name "
                     "FROM questionnaire_template_versions v JOIN questionnaire_templates t "
                     "ON t.id = v.template_id WHERE v.id = :id"
                 ),
@@ -371,16 +416,16 @@ async def attach_organizer(
     await _engagement(ctx, binder.engagement_id, binder.work_item_id, CREATE)
     if version.published_at is None:
         raise NotPublished(facts={"template_version_id": str(template_version_id)})
-    template = from_content(version.content)
     async with uow(ctx.tenant) as tx:
         prior = await _prior_values(ctx, tx.session, binder.work_item_id)
         questionnaire_id = (
             await tx.session.execute(
                 text(
                     "INSERT INTO questionnaires (tenant_id, engagement_id, work_item_id, "
-                    "request_list_id, kind, template_version_id, title, due_on, data_class, "
-                    "created_by) VALUES (:tenant, :e, :w, :l, 'organizer', :v, :title, :due, "
-                    "'tri', :by) RETURNING id"
+                    "request_list_id, kind, template_version_id, "
+                    "source_template_version_id, title, due_on, data_class, created_by) "
+                    "VALUES (:tenant, :e, :w, :l, 'organizer', "
+                    ":v, :v, :title, :due, 'tri', :by) RETURNING id"
                 ),
                 {
                     "tenant": ctx.tenant_id,
@@ -394,51 +439,13 @@ async def attach_organizer(
                 },
             )
         ).scalar_one()
-        ids: dict[str, UUID] = {}
-        position = 0
-        for index, section in enumerate(template.sections):
-            section_id = uuid4()
-            await tx.session.execute(
-                text(
-                    "INSERT INTO questionnaire_sections (id, tenant_id, questionnaire_id, name, "
-                    "icon_key, position) VALUES (:id, :tenant, :q, :n, :icon, :p)"
-                ),
-                {
-                    "id": section_id,
-                    "tenant": ctx.tenant_id,
-                    "q": questionnaire_id,
-                    "n": section.name,
-                    "icon": section.icon_key,
-                    "p": index,
-                },
-            )
-            for q in section.questions:
-                ids[q.key] = uuid4()
-                await tx.session.execute(
-                    text(
-                        "INSERT INTO questions (id, tenant_id, questionnaire_id, section_id, "
-                        "question_key, position, type, client_wording, help_text, "
-                        "conditional_on_question_id, conditional_value, prior_year_value, "
-                        "origin, created_by) VALUES (:id, :tenant, :q, :s, :k, :p, :type, :w, "
-                        ":h, :cond, CAST(:cv AS jsonb), CAST(:py AS jsonb), 'template', :by)"
-                    ),
-                    {
-                        "id": ids[q.key],
-                        "tenant": ctx.tenant_id,
-                        "q": questionnaire_id,
-                        "s": section_id,
-                        "k": q.key,
-                        "p": position,
-                        "type": q.type,
-                        "w": q.client_wording,
-                        "h": q.help_text,
-                        "cond": ids.get(q.conditional_on) if q.conditional_on else None,
-                        "cv": json.dumps(q.conditional_value) if q.conditional_value else None,
-                        "py": json.dumps(prior[q.key]) if q.key in prior else None,
-                        "by": ctx.user_id,
-                    },
-                )
-                position += 1
+        position = await insert_structure(
+            tx,
+            ctx,
+            questionnaire_id,
+            await structure_of(tx.session, version.content, version.questionnaire_id),
+            prior=prior,
+        )
         # The attach is the person's send of the organizer's questions.
         await tx.session.execute(
             text(

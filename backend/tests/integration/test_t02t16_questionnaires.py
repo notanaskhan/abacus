@@ -83,7 +83,12 @@ async def test_ac_the_feld_organizer_has_24_questions_in_9_sections(board: Board
         )
         assert dry.status_code == 201, dry.text
         assert (len(cast(list[str], dry.json()["added"])), dry.json()["version"]) == (24, None)
-        assert await board.seed.value("SELECT count(*) FROM questionnaire_templates") == 0
+        assert (
+            await board.seed.value(
+                "SELECT count(*) FROM questionnaire_templates WHERE tenant_id = $1", board.tenant
+            )
+            == 0
+        )
         real = await call(
             "POST",
             path,

@@ -20505,7 +20505,9 @@ export const templateDiffOptions = (options: Options<TemplateDiffData>) => query
 /**
  * Publish Template Route
  *
- * A person publishes the version (fresh MFA). 409 `version_published`.
+ * A person publishes the version (fresh MFA). 409 `version_published`; an owned template or
+ * an editor draft is the owner's alone (403), and a draft names its tax year (422
+ * `tax_year_required`).
  */
 export const publishTemplateMutation = (options?: Partial<Options<PublishTemplateData>>): UseMutationOptions<PublishTemplateResponse, PublishTemplateError, Options<PublishTemplateData>> => {
     const mutationOptions: UseMutationOptions<PublishTemplateResponse, PublishTemplateError, Options<PublishTemplateData>> = {
