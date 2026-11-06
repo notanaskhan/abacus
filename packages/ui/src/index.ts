@@ -305,6 +305,12 @@ export {
   zoneName,
 } from "./format";
 // The shell's L1 (F-05-T18): AppShell, Toolbar and its nav overflow, PortalToolbar, RecordHeader,
+// A-06-T24: ReviewNoteThread v1.
+export {
+  type ReviewNoteMessage,
+  ReviewNoteThread,
+  type ReviewNoteThreadProps,
+} from "./issues/review-note-thread";
 // Tabsbar, Pane and PaneHeader, Timeline.
 export * from "./layout";
 export {

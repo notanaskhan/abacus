@@ -6,6 +6,9 @@ import {
 import { EmptyState, Segmented, type TabOption, ViewStateBody, type ViewState } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import type { JSX } from "react";
+import { useOpenOverlay } from "../../app-core/open";
+import { ov } from "../../routes/to";
+import { ReviewNotesPane } from "../AUD-17";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { AuditBar, isNotFound, useAuditCockpit } from "../../domain/audits";
 import { FindingsRegister } from "../AUD-15";
@@ -94,6 +97,7 @@ export function EvaluationPage({
   onBack?: () => void;
 }): JSX.Element {
   const cockpit = useAuditCockpit(auditId);
+  const open = useOpenOverlay();
   const counts = useCounts(auditId, cockpit.data?.engagement_id);
   let state: ViewState = { kind: "ready" };
   if (cockpit.isError) {
@@ -118,7 +122,17 @@ export function EvaluationPage({
                 }}
               />
             )}
-            {tab !== "findings" && tab !== "misstatements" && PLANNED_VISIBLE && (
+            {/* A-06-T24: AUD-17 under the Review notes tab. */}
+            {tab === "review-notes" && (
+              <ReviewNotesPane
+                engagementId={cockpit.data.engagement_id}
+                workItemId={cockpit.data.work_item_id}
+                onSignOff={(type, id, level) => {
+                  open(ov.SHL12(type, id, `L${level}`));
+                }}
+              />
+            )}
+            {tab === "fs-disclosure" && PLANNED_VISIBLE && (
               <EmptyState icon="clock" title={COPY.planned}>
                 {COPY.plannedBody(SCREEN[tab])}
               </EmptyState>

@@ -82,11 +82,8 @@ export const audScreens = {
     status: "planned",
     path: "/audits/$auditId/misstatements",
   },
-  "AUD-17": {
-    name: "Review notes & sign-off matrix",
-    status: "planned",
-    path: "/audits/$auditId/review-notes",
-  },
+  // A-06-T24: a to f on fixtures, under the Evaluation tabs.
+  "AUD-17": { name: "Review notes & sign-off matrix", status: "fixture", path: "/audits/$auditId/review-notes" },
   "AUD-18": { name: "EQR workspace", status: "planned", path: null },
   "AUD-19": {
     name: "Completion (checklist · subsequent events · legal letters · going concern)",
