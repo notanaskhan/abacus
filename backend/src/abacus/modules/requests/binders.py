@@ -25,6 +25,7 @@ from datetime import date, datetime, timedelta
 from typing import Final
 from uuid import UUID, uuid4
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel import clock
@@ -771,6 +772,53 @@ async def _insert(
     if name is not None:
         values["name"] = name
     return await insert_binder(tx.session, **values)
+
+
+async def part_for_send(
+    tx: UnitOfWork, ctx: AuthContext, engagement_id: UUID, work_item_id: UUID, name: str
+) -> UUID:
+    """A named part on a work item for requests sent as they are created (T-03-T07, DEC-31,
+    DEC-2358: "{year} estimated payments"), published at once like an engagement's first binder.
+    The caller authorised the send: a part holds only what that send files, so a person who may
+    send needs no binder right for it."""
+    found = (
+        await tx.session.execute(
+            select(RequestList.id).where(
+                RequestList.work_item_id == work_item_id,
+                RequestList.kind == "pbc",
+                RequestList.name == name,
+            )
+        )
+    ).scalar()
+    if found is not None:
+        return found
+    ref = await lock_ref(tx, engagement_id)
+    binder = await _insert(
+        tx,
+        ctx,
+        ref,
+        work_item_id,
+        "pbc",
+        name,
+        created_from="blank",
+        template_ref=None,
+        prior=None,
+    )
+    await set_binder(
+        tx.session,
+        binder.id,
+        allowed_from=("draft",),
+        status="published",
+        published_at=await clock.now(ctx.tenant),
+        published_by=ctx.user_id,
+    )
+    tx.record(
+        "binder.created",
+        target=Target("binder", binder.id),
+        after=Ref(work_item_id=work_item_id, part=binder.part, created_from=CREATED_FROM["blank"]),
+        scope=_scope(binder),
+    )
+    return binder.id
 
 
 def _part_name(name: str, part: int) -> str:
