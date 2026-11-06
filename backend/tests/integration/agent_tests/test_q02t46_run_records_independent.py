@@ -51,6 +51,13 @@ PERSIST: Final = "agents.persist_run_record"  # ADR-169 §3's activity
 CONTENT_KEYS: Final = ("model_text", "prompt_text", "quote", "text", "content")
 
 
+@pytest.fixture(autouse=True)
+async def _no_leftover_capacity(seed: Seeder) -> None:
+    """A block or a spent bucket from an earlier test on this worker must not turn a screen into
+    NotAdmitted("provider_capacity"), as test_screening.py says."""
+    await seed.run("DELETE FROM provider_capacity")
+
+
 def _persist_activity() -> Callable[[RunInput], Awaitable[None]]:
     for candidate in AGENT_ACTIVITIES:
         definition = getattr(candidate, "__temporal_activity_definition", None)
