@@ -4,7 +4,7 @@ title: S25 end pass (regenerate, gates, tests, security review)
 spec: SPEC-000  # S25 end review over #1075–#1104
 acceptance_criteria: [AC-1]
 risk_zone: amber
-status: in-review
+status: done
 branch: s25-end-pass (the S25 stack tip s25-p04-t57 + origin/s24-end-pass-fix)
 worktree: /Users/ayushkbhatia/Accrued/abacus-s25
 created: 2026-11-02

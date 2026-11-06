@@ -4,7 +4,7 @@ title: A-05-T18 census PII sealing and field reveal
 spec: SPEC-640
 acceptance_criteria: [AC-16]
 risk_zone: red
-status: in-review
+status: done
 epic: A-05
 plan_key: A-05-T18
 branch: s25-a05-t18 (stacked on s25-a05-t20)

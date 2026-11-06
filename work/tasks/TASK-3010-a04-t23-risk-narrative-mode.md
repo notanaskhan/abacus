@@ -4,7 +4,7 @@ title: A-04-T23 mode risk_narrative — prompt, mapping, presumed risks by code,
 spec: SPEC-620
 acceptance_criteria: [AC-11]
 risk_zone: red
-status: in-review
+status: done
 epic: A-04
 plan_key: A-04-T23
 branch: s25-a04-t23 (stacked on s25-a04-t22)

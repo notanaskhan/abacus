@@ -4,7 +4,7 @@ title: Q-04-T089 S25 support reserve, N lane on-call, rehearsed on the synthetic
 spec: SPEC-000  # row
 acceptance_criteria: [AC-1]  # every page acknowledged within 15 minutes; every SEV1/2 has a postmortem within 5 business days
 risk_zone: red
-status: in-review
+status: done
 epic: Q-04
 plan_key: Q-04-T089
 branch: s25-q04-t089

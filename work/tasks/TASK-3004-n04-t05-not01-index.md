@@ -4,7 +4,7 @@ title: N-04-T05 NOT-01 a, e, f, g on the T1 IndexList in fixture mode
 spec: SPEC-000  # row
 acceptance_criteria: [AC-1]
 risk_zone: green
-status: in-review
+status: done
 epic: N-04
 plan_key: N-04-T05
 branch: s25-n04-t05 (stacked on s25-n04-t04)

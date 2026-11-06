@@ -4,7 +4,7 @@ title: Q-04-T087 M14 ops retro part AY, rehearsed on the synthetic test firm
 spec: SPEC-000  # row
 acceptance_criteria: [AC-1]  # the retro numbers reproduce from snapshots and logs and are in the capacity ledger before re-baseline #4
 risk_zone: amber
-status: in-review
+status: done
 epic: Q-04
 plan_key: Q-04-T087
 branch: s25-q04-t087

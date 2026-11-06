@@ -4,7 +4,7 @@ title: Q-03-T162 quarterly reserve review 2027 Q3
 spec: SPEC-000  # row
 acceptance_criteria: [AC-1]  # the review is recorded in the capacity ledger and the next quarter's lanes are re-sized
 risk_zone: green
-status: in-review
+status: done
 epic: Q-03
 plan_key: Q-03-T162
 branch: s25-q03-t162

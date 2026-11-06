@@ -4,7 +4,7 @@ title: N-04-T04 notices compute library
 spec: SPEC-000  # row
 acceptance_criteria: [AC-1]
 risk_zone: amber
-status: in-review
+status: done
 epic: N-04
 plan_key: N-04-T04
 branch: s25-n04-t04 (stacked on s25-n04-t03)

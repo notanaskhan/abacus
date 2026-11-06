@@ -4,7 +4,7 @@ title: P-04-T59 review hardening
 spec: SPEC-000  # row
 acceptance_criteria: [AC-1]
 risk_zone: red
-status: in-review
+status: done
 epic: P-04
 plan_key: P-04-T59
 branch: s25-p04-t59 (stacked on s25-p04-t60)

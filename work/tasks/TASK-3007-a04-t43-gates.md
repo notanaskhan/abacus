@@ -4,7 +4,7 @@ title: A-04-T43 assurance/gates.py with the G4 provider
 spec: SPEC-620
 acceptance_criteria: [AC-22]
 risk_zone: red
-status: in-review
+status: done
 epic: A-04
 plan_key: A-04-T43
 branch: s25-a04-t43 (stacked on s25-a04-t18)
