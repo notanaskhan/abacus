@@ -70,4 +70,49 @@ export const COPY = {
     prospect: "Prospect",
   },
   empty: "No returns match.",
+  // T-03-T16: DV-TAX-13-1, the sheet says "requests", never "tasks" (DEC-14).
+  extend: {
+    title: (n: number): string => `Extend ${String(n)} ${n === 1 ? "return" : "returns"}`,
+    payment: "Payment with extension",
+    paymentFor: (client: string): string => `Payment with extension for ${client}`,
+    withForm: (jurisdiction: string, figure: string, form: string): string =>
+      `+ ${jurisdiction} ${figure} with ${form}`,
+    paidBy: (on: string, have: string, paying: string, total: string): string =>
+      `Paid by ${on}: ${have} + ${paying} = ${total}`,
+    meets: (pct: string): string => ` · meets the ${pct}% target`,
+    below: (pct: string): string => ` · below the ${pct}% target`,
+    invalid: "Enter an amount, like 10,000.",
+    approveNote: (name: string): string =>
+      `Payment amounts need reviewer approval. Sending approves them as ${name} and gives each client a request to confirm the extension and payment.`,
+    submitNote:
+      "Payment amounts need reviewer approval. Submitting sends them to each return's reviewers.",
+    send: "Send confirmation requests",
+    submit: "Submit for approval",
+    cancel: "Cancel",
+    sent: (n: number): string =>
+      `Sent ${String(n)} confirmation ${n === 1 ? "request" : "requests"}`,
+    submitted: (n: number): string =>
+      `Submitted ${String(n)} ${n === 1 ? "return" : "returns"} for approval`,
+    failed: "That didn't go through. Nothing was sent.",
+    missing: (n: number): string =>
+      `${String(n)} selected ${n === 1 ? "return isn't" : "returns aren't"} on the extension list yet, so ${n === 1 ? "it's" : "they're"} left out.`,
+    none: "None of the selected returns are on the extension list yet.",
+  },
+  markFiled: {
+    open: "Mark filed…",
+    title: (form: string): string => `Mark ${form} filed`,
+    filedOn: "Filed on",
+    form: "Filed form",
+    choose: "Choose the filed form",
+    noForm: "Add the filed form to this engagement's files first.",
+    action: "Mark filed",
+    note: "The acknowledgment arrives later. Until then the Ack cell reads Filed.",
+    done: (form: string): string => `${form} marked filed`,
+    failed: "That didn't save. Reload and try again.",
+  },
+  notConfirmed: "Not confirmed",
+  dueFrom: (on: string): string => `Due ${on}`,
+  dueTo: (on: string): string => `→ ${on}`,
+  selectAll: "Select all returns",
+  selectRow: (client: string): string => `Select ${client}`,
 } as const;
