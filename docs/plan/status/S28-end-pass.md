@@ -1,8 +1,13 @@
 # S28 end pass (TASK-3334; DEC-2325)
 
 One review after the build, on the S28 stack (#1230 onward), with #1229 merged into the tip so the
-results aren't hidden by main's older reds. Run 2026-11-05 on a laptop. CI results are added below
-when the one run finishes.
+results aren't hidden by main's older reds. Run 2026-11-05 on a laptop.
+
+## CI: no finished run before merge
+Merged 2026-11-06 at Ayush's call, without a finished CI run on the final tree. The verdict is the CI run on this PR's merge to main.
+- **ci 42058823384 (70ea036076):** integration shards 1, 3, 5, 6, 7 and 9 passed. Shard 2 failed on one test and gallery visual regression failed; both are handled below or in the tip, and the shard 2 fix passes locally only. Shards 4, 8 and 10 were cancelled by the next push, so they have no result.
+- **ci 42068876059 (9d057a1982):** failed at startup twice with no jobs; cause not established. A push run on that head passed stage 1.
+- **ci 42197774925 (40dc2b329b):** stopped about 4 minutes in, when the merge began. Only changed paths, render goldens and sampler corpus (py3.12) had finished, and all passed.
 
 ## Results
 | Check | Result |
