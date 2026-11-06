@@ -92,7 +92,7 @@ describe("TAX-13", () => {
 
 describe("T-03-T11: Open in Excel", () => {
   it("fetches the view's workbook and hands it to the browser", async () => {
-    const created = vi.fn((_: Blob) => "blob:tax13");
+    const created = vi.fn(() => "blob:tax13");
     Object.assign(URL, { createObjectURL: created, revokeObjectURL: vi.fn() });
     show("a");
     const button = await waitFor(

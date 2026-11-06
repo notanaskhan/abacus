@@ -143,6 +143,7 @@ class ReturnRow:
     engagement_id: UUID
     client_name: str
     tax_year: int
+    client_id: UUID | None = None
     lines: list[dict[str, Any]] = field(  # Any: JSON from the database
         default_factory=list[dict[str, Any]]  # Any: JSON from the database
     )  # Any: JSON from the database or the document
@@ -198,7 +199,12 @@ async def rows(ctx: AuthContext, tax_year: int) -> list[ReturnRow]:
             row = out.setdefault(
                 line["tax_return_id"],
                 ReturnRow(
-                    line["tax_return_id"], f.work_item_id, f.engagement_id, f.client_name, tax_year
+                    line["tax_return_id"],
+                    f.work_item_id,
+                    f.engagement_id,
+                    f.client_name,
+                    tax_year,
+                    f.client_id,
                 ),
             )
             row.lines.append(dict(line))

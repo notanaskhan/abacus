@@ -148,6 +148,8 @@ const LIKELY: Row[] = [
     likely_reasons: ["engagement_not_accepted"],
     original_due_on: "2026-11-02",
     days_to_extended_due: 231,
+    client_id: stableId("client:estate-of-walter-thornbury"),
+    engagement_id: stableId("engagement:thornbury-acceptance"),
     prepare_blocked_reason: "Engagement pending acceptance (CLI-07): G1 and G3 are not met",
     likely_note: "4768 extends time to file only; estate tax is still due Nov 2",
   }),

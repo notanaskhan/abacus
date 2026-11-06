@@ -34285,6 +34285,19 @@
             "title": "Allowed Actions",
             "type": "array"
           },
+          "client_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Client Id"
+          },
           "client_name": {
             "cls": "confidential",
             "title": "Client Name",
@@ -34337,6 +34350,19 @@
             ],
             "cls": "internal",
             "title": "Due Rules Version Id"
+          },
+          "engagement_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Engagement Id"
           },
           "extended_due_on": {
             "cls": "internal",
@@ -34859,6 +34885,19 @@
             "title": "Allowed Actions",
             "type": "array"
           },
+          "client_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Client Id"
+          },
           "client_name": {
             "cls": "confidential",
             "title": "Client Name",
@@ -34898,6 +34937,19 @@
             ],
             "cls": "internal",
             "title": "Days To Extended Due"
+          },
+          "engagement_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Engagement Id"
           },
           "extended_due_on": {
             "cls": "internal",
