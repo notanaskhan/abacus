@@ -117,7 +117,6 @@ async def _filing_acknowledged(event: OutboxEvent) -> None:
 
 
 _answer_effects.register()  # T-03-T06 (DEC-2352): review points from organizer answers
-_extensions.register_approval_kind()  # T-03-T07 (DEC-2350): submit-for-approval's card
 
 SUBSCRIPTIONS = {
     "reference_set.published": _reference_set_published,

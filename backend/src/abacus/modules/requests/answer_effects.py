@@ -30,6 +30,7 @@ from abacus.modules.requests.answer_effect_slots import (
     EffectResult,
     HandlerUnavailable,
     answer_effect_handler,
+    rule_fingerprint,
 )
 
 JsonMap = Mapping[str, Any]  # Any: rules, conditions and answers are JSON
@@ -165,7 +166,7 @@ async def _fire(
             tx.record(
                 "answer_effect.recorded",
                 target=Target("question", question_id),
-                after=Ref(rule=str(rule["key"]), pending=int(result is None)),
+                after=Ref(rule=rule_fingerprint(str(rule["key"])), pending=int(result is None)),
             )
 
 
@@ -271,7 +272,7 @@ async def fire_staff_edit(
             tx.record(
                 "answer_effect.recorded",
                 target=Target("question", question_id),
-                after=Ref(rule=rule_key, pending=int(result is None)),
+                after=Ref(rule=rule_fingerprint(rule_key), pending=int(result is None)),
             )
 
 

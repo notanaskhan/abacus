@@ -35,7 +35,7 @@ async def _issue(
 
 
 async def raise_review_point(request: EffectRequest) -> EffectResult:
-    return await _issue(request, priority="normal", blocks=())
+    return await _issue(request, priority="medium", blocks=())
 
 
 async def flag_internal_review(request: EffectRequest) -> EffectResult:

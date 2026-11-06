@@ -163,10 +163,10 @@ async def contribution_recalc(ctx: AuthContext, work_item_id: UUID) -> TestGridO
     what the participant's election gives on their compensation; `expected` is the plan's rule
     (QACA default 6% deferral and 3.5% match, `compute/ebp/eligibility.py`). Same record key in the
     newest EBP-03 grid links the row. The browser computes nothing."""
-    test_id = await latest_test_of_variant(ctx.tenant, work_item_id, "ebp_contribution_recalc")
-    if test_id is None:
+    latest = await latest_test_of_variant(ctx.tenant, work_item_id, "ebp_contribution_recalc")
+    if latest is None:
         raise NotFound("attribute_test")
-    out = await grid_out(ctx, work_item_id, test_id)
+    out = await grid_out(ctx, work_item_id, latest[0])
     keys = [r.record_key for r in out.rows]
     async with tenant_session(ctx.tenant) as session:
         people = {
@@ -186,7 +186,7 @@ async def contribution_recalc(ctx: AuthContext, work_item_id: UUID) -> TestGridO
     linked: dict[str, UUID] = {}
     eligibility = await latest_test_of_variant(ctx.tenant, work_item_id, "ebp_eligibility")
     if eligibility is not None:
-        grid_rows = (await grid_out(ctx, work_item_id, eligibility)).rows
+        grid_rows = (await grid_out(ctx, work_item_id, eligibility[0])).rows
         linked = {r.record_key: r.item_id for r in grid_rows}
     rows: list[TestGridRowOut] = []
     for row in out.rows:

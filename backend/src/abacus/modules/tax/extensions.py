@@ -7,12 +7,12 @@
 - **Prepare.** G1 and G3 first (409 `gate_unmet` with the facts), then the lines (the federal line
   from the published rules; a state line names its form), the proposed payments (a changed amount
   supersedes the row it changes) and per-line safe-harbor checks by `tax.compute.payments`.
-- **Submit for approval.** The proposer's path: one `extension_payment_approval` C3 card per
-  return, which its signer decides. Its applier approves as the decider.
+- **Submit for approval.** The proposer's path: the return's reviewers are told, and approve
+  through approve-and-request.
 - **Approve and request.** One unit of work as the caller (a person; the matrix holds the
   reviewer function on the return): any named returns are prepared, every proposed payment on the
-  chosen extensions is approved, and one confirmation request per return is created. The sends
-  follow, each its own (`requests.send_item`, its Undo window and its grant). A payment is a
+  chosen extensions is approved, and one confirmation request per return is created and sent
+  (`requests.send_created`, its Undo window and its grant). A payment is a
   method label and an amount; no route stores or transmits an instrument.
 - **Mark filed** is a person's record (date, form, the filed form's evidence version); Accrued
   never transmits an extension (DEC-49).
@@ -44,8 +44,15 @@ from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import DomainEvent, OutboxEvent, Ref, Target, UnitOfWork, uow
-from abacus.modules.engagements.api import gate_fact, work_item_facts
-from abacus.modules.identity.api import AuthContext, Resource, authorise, engagement_resource
+from abacus.modules.engagements.api import WorkItemFacts, gate_fact, work_item_facts
+from abacus.modules.identity.api import (
+    AuthContext,
+    Resource,
+    authorise,
+    engagement_resource,
+    may_read_unmasked,
+    offshore_consented,
+)
 from abacus.modules.tax.compute import payments as engine
 from abacus.modules.tax.due_dates import FORM_FOR_RULES, dates_for
 from abacus.modules.tax.engine_adapter import EXTENSION_FORMS
@@ -55,6 +62,7 @@ FEDERAL: Final = "US"
 READ: Final = "filing_extension.read"
 PREPARE: Final = "filing_extension.prepare"
 APPROVE: Final = "filing_extension.approve_payment"
+MARK_FILED: Final = "filing_extension.mark_filed"
 SEND: Final = "filing_extension.confirmation_send"
 REQUIRED_GATES: Final = ("G1", "G3")
 REVIEWER_FUNCTIONS: Final = ("detail_reviewer", "manager_reviewer", "signer")
@@ -81,7 +89,7 @@ class ExtensionAckRejected(DomainEvent):
     work_item_id: Annotated[UUID, classified("internal")]
     engagement_id: Annotated[UUID, classified("internal")]
     extension_id: Annotated[UUID, classified("internal")]
-    reject_code: Annotated[str, classified("restricted", tri=True)]
+    reject_code: Annotated[str, classified("internal")]  # the agency's code, as filing.py holds it
     recipient_user_ids: Annotated[list[UUID], classified("internal")] = Field(
         default_factory=list[UUID]
     )
@@ -268,8 +276,22 @@ async def on_return(ctx: AuthContext, engagement_id: UUID, return_id: UUID) -> R
     return replace(await engagement_resource(ctx.tenant, engagement_id), work_item_id=return_id)
 
 
-async def rows(ctx: AuthContext, tax_year: int) -> list[ReturnRow]:
+async def readable_returns(ctx: AuthContext) -> dict[UUID, WorkItemFacts]:
+    """The viewer's visible returns, less what an offshore reader may not read: amounts are tax
+    return information, so a client without the offshore consent is absent (the matrix's note on
+    `filing_extension.read`; DEC-52). Fail closed: no provider, no consent."""
     facts = {f.work_item_id: f for f in await work_item_facts(ctx, KIND)}
+    if await may_read_unmasked(ctx):
+        return facts
+    consented = {
+        client: await offshore_consented(ctx.tenant, client)
+        for client in {f.client_id for f in facts.values()}
+    }
+    return {k: f for k, f in facts.items() if consented[f.client_id]}
+
+
+async def rows(ctx: AuthContext, tax_year: int) -> list[ReturnRow]:
+    facts = await readable_returns(ctx)
     if not facts:
         return []
     async with tenant_session(ctx.tenant) as session:
@@ -469,17 +491,19 @@ async def _propose(
 
 
 async def _return_rows(
-    session: AsyncSession, return_ids: Sequence[UUID]
+    session: AsyncSession, return_ids: Sequence[UUID], engagements: Mapping[UUID, UUID]
 ) -> dict[UUID, dict[str, Any]]:  # Any: database rows
     found = await session.execute(
         text(
-            "SELECT r.work_item_id, r.form, r.tax_year, r.fiscal_year_end, w.engagement_id "
-            "FROM tax_returns r JOIN work_items w ON w.id = r.work_item_id "
-            "WHERE r.work_item_id = ANY(:ids) FOR UPDATE OF r"
+            "SELECT work_item_id, form, tax_year, fiscal_year_end FROM tax_returns "
+            "WHERE work_item_id = ANY(:ids) FOR UPDATE"
         ),
         {"ids": list(return_ids)},
     )
-    return {row["work_item_id"]: dict(row) for row in found.mappings()}
+    return {
+        row["work_item_id"]: {**row, "engagement_id": engagements[row["work_item_id"]]}
+        for row in found.mappings()
+    }
 
 
 async def _prepare_in(
@@ -490,11 +514,11 @@ async def _prepare_in(
 ) -> tuple[list[UUID], list[LineCheck]]:
     """Prepare inside the caller's unit of work. Every return is checked before anything is
     written, so one refusal leaves the whole selection as it was."""
-    visible = {f.work_item_id for f in await work_item_facts(ctx, KIND)}
+    visible = {f.work_item_id: f.engagement_id for f in await work_item_facts(ctx, KIND)}
     wanted = list(dict.fromkeys([*return_ids, *(p.return_id for p in payments)]))
     if any(r not in visible for r in wanted):
         raise NotFound("tax_return")
-    found = await _return_rows(tx.session, wanted)
+    found = await _return_rows(tx.session, wanted, visible)
     for return_id in wanted:
         if return_id not in found:
             raise NotFound("tax_return")
@@ -502,7 +526,9 @@ async def _prepare_in(
         await authorise(ctx, PREPARE, await on_return(ctx, engagement_id, return_id))
         unmet = await _unmet_gates(ctx.tenant, engagement_id)
         if unmet:
-            raise ExtensionGateUnmet(facts={"return_id": str(return_id), "gates": ",".join(unmet)})
+            raise ExtensionGateUnmet(
+                facts={"return_id": str(return_id), "gate": unmet[0], "unmet": len(unmet)}
+            )
     extension_ids: list[UUID] = []
     checks: list[LineCheck] = []
     for return_id in wanted:
@@ -551,7 +577,7 @@ async def prepare(
 
 async def _approve_in(
     tx: UnitOfWork, ctx: AuthContext, extension_ids: Sequence[UUID]
-) -> list[Any]:
+) -> list[Any]:  # Any: database rows
     """Approve every proposed payment on the extensions as the caller, authorised per return."""
     visible = {f.work_item_id: f for f in await work_item_facts(ctx, KIND)}
     pending = list(
@@ -600,8 +626,8 @@ async def approve_and_request(
     payments: Sequence[ProposedPayment] = (),
 ) -> tuple[list[UUID], list[UUID], list[LineCheck]]:
     """Prepare any named returns, approve as the caller and create one confirmation request per
-    return, attributed to the caller, in one unit of work; then send each (its own Undo window)."""
-    from abacus.modules.requests.api import BulkItem, create_items_bulk, send_item
+    return, attributed to the caller, sent, all in one unit of work."""
+    from abacus.modules.requests.api import BulkItem, create_items_bulk, send_created
 
     if send_confirmations:
         # A person sends the confirmation requests; the agent never does (AGENT-001).
@@ -620,9 +646,7 @@ async def approve_and_request(
             batch_id = uuid4()
             for return_id in dict.fromkeys(p["tax_return_id"] for p in pending):
                 mine = [p for p in pending if p["tax_return_id"] == return_id]
-                listed = ", ".join(
-                    f"{p['form']} {p['jurisdiction']} {p['amount']:,}" for p in mine
-                )
+                listed = ", ".join(sorted({str(p["jurisdiction"]) for p in mine}))
                 engagement_id = facts[return_id].engagement_id
                 ids = await create_items_bulk(
                     tx,
@@ -635,14 +659,13 @@ async def approve_and_request(
                             linked_ref={"type": "tax_return", "id": str(return_id)},
                         )
                     ],
-                    wave="extension_confirmation",
+                    wave="year_end",
                     due_on=min(p["original_due_on"] for p in mine),
                     batch_id=batch_id,
                 )
+                await send_created(tx, ctx, engagement_id, ids[0])
                 created.append((engagement_id, ids[0]))
                 await _link_confirmation(tx, return_id, ids[0])
-    for engagement_id, item_id in created:
-        await send_item(ctx, engagement_id, item_id)
     return [p["id"] for p in pending], [item for _, item in created], checks
 
 
@@ -695,13 +718,15 @@ async def send_confirmation(
     linked_ref: dict[str, object],
     link: Callable[[UnitOfWork, UUID], Awaitable[None]] | None = None,
 ) -> ConfirmationSent:
-    """One confirmation request, created in the engagement's binder and sent on the click."""
+    """One confirmation request, created in the engagement's binder and sent on the click. The
+    wording names jurisdictions and periods, never an amount or a form number: the scope check
+    reads any number in client text as an amount."""
     from abacus.modules.requests.api import (
         BulkItem,
         ItemPatch,
         create_items_bulk,
         request_item_sent,
-        send_item,
+        send_created,
         update_item,
     )
 
@@ -722,11 +747,11 @@ async def send_confirmation(
             due_on=due_on,
             batch_id=uuid4(),
         )
+        await send_created(tx, ctx, engagement_id, ids[0])
         if link is not None:
             await link(tx, ids[0])
     if contact_id is not None and user is not None:
         await update_item(ctx, engagement_id, ids[0], ItemPatch({"client_assignee_user_id": user}))
-    await send_item(ctx, engagement_id, ids[0])
     list_id, sent_at = await request_item_sent(ctx.tenant, ids[0])
     return ConfirmationSent(ids[0], list_id, sent_at, name)
 
@@ -737,8 +762,7 @@ async def request_one(
     row = await row_of(ctx, extension_id)
     line = next(x for x in row.lines if x["id"] == extension_id)
     await authorise(ctx, SEND, await on_return(ctx, row.engagement_id, row.tax_return_id))
-    live = [p for p in row.payments if p["filing_extension_id"] == extension_id]
-    listed = ", ".join(f"{line['form']} {line['jurisdiction']} {p['amount']:,}" for p in live)
+    listed = str(line["jurisdiction"])
 
     async def link(tx: UnitOfWork, item_id: UUID) -> None:
         await tx.session.execute(
@@ -757,10 +781,10 @@ async def request_one(
     return await send_confirmation(
         ctx,
         row.engagement_id,
-        description=f"Please confirm your extension payment: {listed or line['form']}",
+        description=f"Please confirm your extension payment: {listed}",
         due_on=line["original_due_on"],
         contact_id=contact_id,
-        wave="extension_confirmation",
+        wave="year_end",
         linked_ref={"type": "tax_return", "id": str(row.tax_return_id)},
         link=link,
     )
@@ -804,13 +828,13 @@ async def patch(
         )
         if row is None or row["tax_return_id"] not in visible:
             raise NotFound("filing_extension")
-        await authorise(
-            ctx,
-            action,
-            await on_return(
-                ctx, visible[row["tax_return_id"]].engagement_id, row["tax_return_id"]
-            ),
+        resource = await on_return(
+            ctx, visible[row["tax_return_id"]].engagement_id, row["tax_return_id"]
         )
+        await authorise(ctx, action, resource)
+        # The route declares `mark_filed` (its guard needs that very check); the matrix holds the
+        # three edits to the same people, so this refuses nobody the first check let through.
+        await authorise(ctx, MARK_FILED, resource)
         if row["row_version"] != expected_version:
             raise ExtensionMoved(facts={"current": row["row_version"]})
         if filed_on is not None:
@@ -913,23 +937,14 @@ async def _set_figures(
     )
 
 
-# --- submit for approval (C3's card, DEC-2350) -------------------------------------------
-
-APPROVAL_KIND: Final = "extension_payment_approval"
-_QUESTION: Final = "extension."
-
-
-def _options() -> tuple[tuple[str, str], ...]:
-    return (("approve", "Approve the payment amounts"), ("return", "Return to the preparer"))
+# --- submit for approval (DEC-2350) -------------------------------------------------------------
 
 
 async def submit_for_approval(ctx: AuthContext, extension_ids: Sequence[UUID]) -> list[UUID]:
-    """One card per return, reserved to its signer (a card's reserved role is one engagement role
-    or the `signer` function; DEC-2350), and the return's other reviewers are told, who approve
-    through approve-and-request. Raising it is the preparer's; its applier approves as the
-    decider and re-checks `filing_extension.approve_payment` on the return."""
-    from abacus.modules.review.api import raise_decision_card
-
+    """The preparer's path: the return's reviewers are told, and approve through
+    approve-and-request. HOME-02's row through C13 is T-03's cut-list item 3 (T-08 / I-01): a
+    preparer can't raise a C3 card (`decision_card.raise` is a manager's or senior's), and a card's
+    reserved role can't name "any of the reviewer functions". Returns the returns submitted."""
     visible = {f.work_item_id: f for f in await work_item_facts(ctx, KIND)}
     async with tenant_session(ctx.tenant) as session:
         found = await session.execute(
@@ -944,20 +959,14 @@ async def submit_for_approval(ctx: AuthContext, extension_ids: Sequence[UUID]) -
         returns = [r for r in found.scalars() if r in visible]
     if not returns:
         raise NothingToApprove
-    cards: list[UUID] = []
     for return_id in returns:
         engagement_id = visible[return_id].engagement_id
         await authorise(ctx, PREPARE, await on_return(ctx, engagement_id, return_id))
-        cards.append(
-            await raise_decision_card(
-                ctx,
-                engagement_id=engagement_id,
-                kind=APPROVAL_KIND,
-                question_key=f"{_QUESTION}{return_id.hex}",
-                work_item_id=return_id,
-            )
-        )
         async with uow(ctx.tenant) as tx:
+            tx.record(
+                "filing_extension.submitted_for_approval",
+                target=Target("work_item", return_id),
+            )
             tx.emit(
                 ExtensionApprovalRequested(
                     work_item_id=return_id,
@@ -970,56 +979,7 @@ async def submit_for_approval(ctx: AuthContext, extension_ids: Sequence[UUID]) -
                     ],
                 )
             )
-    return cards
-
-
-def register_approval_kind() -> None:
-    from abacus.modules.review.api import (
-        AppliedDecision,
-        CardOption,
-        CardSubject,
-        ComputedCard,
-        DecisionKind,
-        register_decision_kind,
-    )
-
-    async def options(tenant: TenantContext, subject: CardSubject) -> ComputedCard:
-        return_id = UUID(hex=subject.question_key.removeprefix(_QUESTION))
-        async with tenant_session(tenant) as session:
-            total = (
-                await session.execute(
-                    text(
-                        "SELECT count(*), coalesce(sum(p.amount), 0) FROM extension_payments p "
-                        "JOIN filing_extensions e ON e.id = p.filing_extension_id "
-                        "WHERE e.tax_return_id = :r AND p.approved_by IS NULL AND NOT EXISTS "
-                        "(SELECT 1 FROM extension_payments s WHERE s.supersedes_id = p.id)"
-                    ),
-                    {"r": return_id},
-                )
-            ).one()
-        figures = {"payments": str(total[0]), "amount": str(total[1])}
-        return ComputedCard(
-            options=tuple(CardOption(key, label, figures) for key, label in _options())
-        )
-
-    async def apply(tx: UnitOfWork, ctx: AuthContext, decided: AppliedDecision) -> None:
-        if decided.option_key != "approve":
-            return
-        return_id = UUID(hex=decided.question_key.removeprefix(_QUESTION))
-        ids = await tx.session.execute(
-            text("SELECT id FROM filing_extensions WHERE tax_return_id = :r"), {"r": return_id}
-        )
-        await _approve_in(tx, ctx, list(ids.scalars()))
-
-    register_decision_kind(
-        DecisionKind(
-            code=APPROVAL_KIND,
-            reserved_role="signer",
-            options=options,
-            questions={_QUESTION: "Extension payment amounts"},
-            apply=apply,
-        )
-    )
+    return returns
 
 
 # --- TaxCalendarSweep's date half (T-03 US-4.6) ------------------------------------------------
@@ -1095,6 +1055,11 @@ async def on_filing_acknowledged(event: OutboxEvent) -> None:
     work_item_id = UUID(str(event.payload["return_id"]))
     holders = await function_holders(tenant, work_item_id)
     async with uow(tenant) as tx:
+        tx.record(
+            "filing_extension.ack_rejection_notified",
+            target=Target("work_item", work_item_id),
+            after=Ref(extension=UUID(str(extension_id))),
+        )
         tx.emit(
             ExtensionAckRejected(
                 work_item_id=work_item_id,

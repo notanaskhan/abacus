@@ -32564,6 +32564,19 @@
             "type": "object",
             "x-tri": true
           },
+          "paid_evidence_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Paid Evidence Version Id"
+          },
           "paid_on": {
             "anyOf": [
               {
@@ -32582,6 +32595,12 @@
             "maximum": 4.0,
             "minimum": 1.0,
             "title": "Quarter",
+            "type": "integer"
+          },
+          "row_version": {
+            "cls": "internal",
+            "default": 1,
+            "title": "Row Version",
             "type": "integer"
           },
           "scheduled_for": {
@@ -34473,6 +34492,54 @@
             "cls": "confidential",
             "title": "Note"
           },
+          "projected_liability": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Projected Liability",
+            "x-tri": true
+          },
+          "projected_liability_ref": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Projected Liability Ref"
+          },
+          "projected_liability_source": {
+            "anyOf": [
+              {
+                "enum": [
+                  "engine_import",
+                  "preparer_entry"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Projected Liability Source"
+          },
           "reason": {
             "anyOf": [
               {
@@ -34490,6 +34557,23 @@
             ],
             "cls": "internal",
             "title": "Reason"
+          },
+          "withholding_plus_estimates": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Withholding Plus Estimates",
+            "x-tri": true
           }
         },
         "title": "ExtensionPatchIn",
@@ -71475,6 +71559,19 @@
             "title": "Amount",
             "x-tri": true
           },
+          "form": {
+            "anyOf": [
+              {
+                "maxLength": 12,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Form"
+          },
           "jurisdiction": {
             "cls": "internal",
             "maxLength": 12,
@@ -88341,6 +88438,38 @@
           "routed_ref"
         ],
         "title": "SocExceptionOut",
+        "type": "object"
+      },
+      "SocExceptionPatchIn": {
+        "additionalProperties": false,
+        "properties": {
+          "impact": {
+            "cls": "internal",
+            "enum": [
+              "low",
+              "high"
+            ],
+            "title": "Impact",
+            "type": "string"
+          },
+          "impact_rationale": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Impact Rationale"
+          }
+        },
+        "required": [
+          "impact"
+        ],
+        "title": "SocExceptionPatchIn",
         "type": "object"
       },
       "SocGapOut": {
@@ -111455,7 +111584,7 @@
     },
     "/v1/audits/{work_item_id}/ebp/contributions/test": {
       "get": {
-        "description": "EBP-04 c: the 25-participant deferral and match recalculation on the shared grid (A-05-T32\ncontract first, DEC-2258): 501 until the recalculation service lands.",
+        "description": "EBP-04 c: the 25-participant deferral and match recalculation on the shared grid (A-05-T32\ncontract first, DEC-2258; live with DEC-2356).",
         "operationId": "ebp_contributions_test",
         "parameters": [
           {
@@ -172376,6 +172505,302 @@
           "assurance"
         ],
         "x-abacus-action": "workpaper.draft"
+      }
+    },
+    "/v1/engagements/{engagement_id}/soc-reports/{soc_report_id}/exceptions/{co_ref}": {
+      "patch": {
+        "description": "A person adopts an exception's impact (AUD-10 e; DEC-2355): the mode only proposes it.",
+        "operationId": "soc_exception_edit",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "soc_report_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Soc Report Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "co_ref",
+            "required": true,
+            "schema": {
+              "maxLength": 40,
+              "minLength": 1,
+              "title": "Co Ref",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SocExceptionPatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SocReportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Soc Exception Edit Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "soc_report.evaluate"
+      }
+    },
+    "/v1/engagements/{engagement_id}/soc-reports/{soc_report_id}/exceptions/{co_ref}/send-to-findings": {
+      "post": {
+        "description": "AC7.5: a High-impact exception links to Findings through the exception router.",
+        "operationId": "soc_exception_route",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "engagement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Engagement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "soc_report_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Soc Report Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "co_ref",
+            "required": true,
+            "schema": {
+              "maxLength": 40,
+              "minLength": 1,
+              "title": "Co Ref",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SocReportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service unavailable"
+          }
+        },
+        "summary": "Soc Exception Route Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "soc_report.evaluate"
       }
     },
     "/v1/engagements/{engagement_id}/soc-reports/{soc_report_id}/reliance-requests": {
@@ -244351,7 +244776,7 @@
     },
     "/v1/tax/estimates": {
       "get": {
-        "description": "Schedules by the quarter's installment; `counts` {due, paid, scheduled,\nconfirmation_requested, not_required} from visible rows.",
+        "description": "Schedules by the quarter's installment; `counts` {due, paid, scheduled,\nconfirmation_requested, not_required} from visible rows; no `quarter`: the next one due.",
         "operationId": "tax_estimates",
         "parameters": [
           {
@@ -245744,7 +246169,7 @@
         "x-abacus-action": "filing_extension.read"
       },
       "patch": {
-        "description": "`filing_extension.flag_likely` for `likely_to_extend` alone, `mark_filed` otherwise.",
+        "description": "`flag_likely` for `likely_to_extend` alone, `prepare` for the figures, else `mark_filed`.\nAuthorised on the return by the service.",
         "operationId": "extension_patch",
         "parameters": [
           {
@@ -246177,7 +246602,7 @@
     },
     "/v1/tax/extensions:prepare": {
       "post": {
-        "description": "Extensions `prepared` with proposed payments and per-row safe-harbor checks; 409\n`gate_unmet` with the G1/G3 facts.",
+        "description": "Extensions `prepared` with proposed payments and per-row safe-harbor checks; 409\n`gate_unmet` with the G1/G3 facts. Authorised per return by the service.",
         "operationId": "extensions_prepare",
         "parameters": [
           {
@@ -246315,7 +246740,7 @@
     },
     "/v1/tax/extensions:submit-for-approval": {
       "post": {
-        "description": "The proposer's path: registers the C13 payment-approval gate for the return's reviewers.",
+        "description": "The proposer's path: the return's reviewers hear and approve (DEC-2350). Authorised per\nreturn by the service. `gate_id` stays empty until C13's row (T-03's cut list, T-08 / I-01).",
         "operationId": "extensions_submit",
         "parameters": [
           {

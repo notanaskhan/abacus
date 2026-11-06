@@ -44,7 +44,7 @@ def _book(title: str, header: Sequence[str], rows: Sequence[Sequence[Cell]]) -> 
 
 async def _audited(ctx: AuthContext, action: str, count: int) -> None:
     async with uow(ctx.tenant) as tx:
-        tx.record(action, target=Target("tenant", ctx.tenant_id), after=Ref(rows=count))
+        tx.record(action, target=Target("firm", ctx.tenant_id), after=Ref(rows=count))
 
 
 async def extensions(ctx: AuthContext, tax_year: int, segment: str | None) -> tuple[bytes, str]:

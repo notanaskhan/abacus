@@ -20,6 +20,7 @@ from abacus.modules.requests.answer_effect_slots import (
     EffectResult,
     HandlerUnavailable,
     register_answer_effect,
+    rule_fingerprint,
 )
 from abacus.modules.requests.repository import request_list_for
 from abacus.modules.requests.service import (
@@ -96,7 +97,7 @@ async def create_request_item(request: EffectRequest) -> EffectResult:
         tx.record(
             "request_item.created_by_answer_effect",
             target=Target("request_item", item.id),
-            after=Ref(rule=request.rule_key, template_version=str(request.template_version_id)),
+            after=Ref(rule=rule_fingerprint(request.rule_key)),
         )
     return EffectResult("request_item", item.id)
 
