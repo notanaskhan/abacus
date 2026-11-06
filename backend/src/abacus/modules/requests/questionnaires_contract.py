@@ -8,7 +8,7 @@ uploads where a "yes" asks for a file (through the evidence pipeline, fulfilling
 request), marks an organizer done, and an inquiry's addressee submits and locks it.
 
 Firm routes answer 404 for a client principal, 403 for a principal the matrix refuses and 404
-with `questionnaires.v1` off; they are live since T-02-T16. Portal routes answer 404 to a firm
+; they are live since T-02-T16. Portal routes answer 404 to a firm
 principal and 404 with the flag off; they are live since T-02-T22 but for attachments (501 until
 evidence's upload slot).
 
@@ -24,11 +24,9 @@ from uuid import UUID
 from fastapi import Depends, Header, Path, Query, Request
 from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
-from abacus.kernel._flags import QUESTIONNAIRES_V1
 from abacus.kernel._statuses import QuestionnaireStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import DomainTooLarge, NotFound, NotImplementedYet
-from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
@@ -174,8 +172,6 @@ async def _gate(ctx: AuthContext, action: str) -> None:
     if ctx.client:
         raise NotFound("questionnaire")
     await authorise(ctx, action, Resource.firm(ctx.tenant_id))
-    if not await flag_enabled(ctx.tenant, QUESTIONNAIRES_V1):
-        raise NotFound(QUESTIONNAIRES_V1.name)
 
 
 def _question_out(q: svc.QuestionView) -> QuestionOut:
@@ -231,15 +227,11 @@ async def _portal_gate(ctx: AuthContext) -> None:
     """A firm principal never reaches the portal's questionnaires (404), then the flag."""
     if not ctx.client:
         raise NotFound("questionnaire")
-    if not await flag_enabled(ctx.tenant, QUESTIONNAIRES_V1):
-        raise NotFound(QUESTIONNAIRES_V1.name)
 
 
 async def _portal_stub(ctx: AuthContext) -> NoReturn:
     if not ctx.client:
         raise NotFound("questionnaire")
-    if not await flag_enabled(ctx.tenant, QUESTIONNAIRES_V1):
-        raise NotFound(QUESTIONNAIRES_V1.name)
     raise NotImplementedYet
 
 

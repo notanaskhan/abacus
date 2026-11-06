@@ -32,7 +32,7 @@ def _file() -> bytes:
 
 
 async def _flags(b: Board) -> None:
-    for flag in ("questionnaires.v1", "questionnaires.editor"):
+    for flag in ("questionnaires.editor",):
         await b.seed.run(
             "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
             "VALUES ($1, $2, 'true', 't03-t05', 'T-03-T05')",

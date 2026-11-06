@@ -67,7 +67,7 @@ ORGANIZER: Final = "Load Tax Organizer"
 RECIPIENTS: Final = 4
 AUTHORIZATIONS: Final = ("form_8879", "tr_579_it")
 # The tax rollout flags (T-01, T-02) on for every synthetic firm with tax content.
-TAX_FLAGS: Final = ("tax.returns_v1", "tax.engine_bridge", "questionnaires.v1", "tax.k1_release")
+TAX_FLAGS: Final = ("tax.engine_bridge",)
 
 
 def returns_per_firm(firm: Firm) -> int:
@@ -366,6 +366,13 @@ async def _k1s(conn: asyncpg.Connection, ret: TaxReturn, counts: Counts) -> None
 
 
 async def _flags(conn: asyncpg.Connection, firm: Firm, counts: Counts) -> None:
+    # T-03-T19: tax routes stand behind the entitlement now (DEC-2329).
+    await conn.execute(
+        "INSERT INTO tenant_entitlements (tenant_id, module, valid_from, set_by) "
+        "VALUES ($1, 'tax_returns', '2000-01-01', $2) ON CONFLICT DO NOTHING",
+        firm.tenant,
+        LOADER,
+    )
     on = {
         str(r["flag"])
         for r in await tenant_rows(

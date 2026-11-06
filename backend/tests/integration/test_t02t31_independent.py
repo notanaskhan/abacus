@@ -52,11 +52,6 @@ def _csv(rows: list[str]) -> bytes:
 async def _world(b: Board) -> tuple[AuthContext, uuid.UUID, uuid.UUID, uuid.UUID]:
     """Samuel (manager) with the Feld organizer of three questions attached and sent; the Feld
     engagement and the questionnaire id."""
-    await b.seed.run(
-        "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
-        "VALUES ($1, 'questionnaires.v1', 'true', 't02-t31', 'T-02-T31')",
-        b.tenant,
-    )
     feld = b.returns["Feld Household 1040"]
     engagement = cast(
         uuid.UUID,

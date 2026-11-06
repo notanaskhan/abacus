@@ -30,7 +30,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.timeline import Event
 
 SLICE: Final = "tax_schedules"
 NEEDS: Final = ("people", "tax_board", "portal")
-FLAGS: Final = ("questionnaires.v1", "questionnaires.editor", "tax.extensions_estimates")
+FLAGS: Final = ("questionnaires.editor", "tax.extensions_estimates")
 TEMPLATE_NAME: Final = "1040 organizer"
 TEMPLATE_KEY: Final = "organizer_1040"
 OWNER: Final = "DR"

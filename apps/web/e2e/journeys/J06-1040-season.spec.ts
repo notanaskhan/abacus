@@ -18,7 +18,7 @@ const HOSTED_URL: Readonly<Record<string, string | undefined>> = {
 };
 const LIVE =
   "full stack: the T-01 slices (consents_7216, tax_board, tax_content) and the fake CCH seeded on the stack (T-01-T23, T-01-T22); staging once ABACUS_STAGING_URL is set (F-04-T28)";
-const TAX_FLAGS = ["tax.returns_v1", "tax.engine_bridge", "review.checkpoints"];
+const TAX_FLAGS = ["tax.engine_bridge", "review.checkpoints"];
 const CONSENT_FLAGS = ["consents.registry", "clients.tax_profile"];
 const TAX09 = "/tax-returns/_returnId_?ov=engine-sync:_returnId_";
 // J06 D2's day: Samuel exports and marks the Feld return exported on Wed Sep 16, 2026.

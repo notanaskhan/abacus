@@ -1,9 +1,9 @@
 """Tax returns v1, the routes (T-02-T01 stubs; T-02-T09 the board; tax-returns.md).
 
 Every route answers 404 for a client principal (INV-4), then the matrix (403), then 404 with
-`tax.returns_v1` off. The board's list, summary and bulk assignment are live (T-02-T09); the
-record, overview, intake, single assignment and transitions answer 501 until T-02-T13; the
-intake is live from T-02-T18 (`intake.py`).
+the `tax_returns` entitlement absent (DEC-2329). The board's list, summary and bulk assignment are
+live (T-02-T09); the record, overview, intake, single assignment and transitions answer 501 until
+T-02-T13; the intake is live from T-02-T18 (`intake.py`).
 """
 
 from __future__ import annotations
@@ -13,10 +13,8 @@ from uuid import UUID
 
 from fastapi import Depends, Header, Path, Query
 
-from abacus.kernel._flags import TAX_RETURNS_V1
 from abacus.kernel._statuses import ReturnStatus
 from abacus.kernel.errors import NotFound, NotImplementedYet
-from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.identity.api import (
@@ -26,6 +24,7 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
 )
+from abacus.modules.platform.api import entitlement
 from abacus.modules.tax import board, intake, overview
 from abacus.modules.tax.returns_contract import (
     AssignmentIn,
@@ -52,8 +51,8 @@ async def _gate(ctx: AuthContext, action: str) -> None:
     if ctx.client:
         raise NotFound("tax_return")
     await authorise(ctx, action, Resource.firm(ctx.tenant_id))
-    if not await flag_enabled(ctx.tenant, TAX_RETURNS_V1):
-        raise NotFound(TAX_RETURNS_V1.name)
+    if await entitlement(ctx.tenant, "tax_returns") is None:
+        raise NotFound("tax_returns")
 
 
 async def _stub(ctx: AuthContext, action: str) -> NoReturn:

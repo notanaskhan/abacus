@@ -70,7 +70,6 @@ FLAGS: Final = (
     "binders.engine",
     "portal.sign_in_v2",
     "portal.home_v2",
-    "tax.returns_v1",
     "knowledge.firm_standards",  # K-02-T18: KNW-04's standards
 )
 # Portals are served at `<slug>.<portal_base_domain>`; the local runtime config's domain.

@@ -60,7 +60,7 @@ NEEDS: Final = (
     "portal",
     "acceptance",  # Dana Kowalski's contact on Northwind, whom the inquiries address
 )
-FLAGS: Final = ("tax.k1_release", "questionnaires.v1")
+FLAGS: Final[tuple[str, ...]] = ()  # T-03-T19: `tax_board` grants the `tax_returns` entitlement
 SINK: Final = "example.test"
 
 

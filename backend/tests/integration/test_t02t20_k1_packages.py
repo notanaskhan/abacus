@@ -168,8 +168,8 @@ async def test_ac1_shared_ridgeline_drafts_block_feld_and_no_client_reaches_a_dr
 ) -> None:
     ridgeline, feld, samuel = await _ridgeline_with_drafts(board)
     await board.seed.run(
-        "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
-        "VALUES ($1, 'tax.k1_release', 'true', 'test-seed', 'T-02-T20')",
+        "INSERT INTO tenant_entitlements (tenant_id, module, valid_from, set_by) "
+        "VALUES ($1, 'tax_returns', '2000-01-01', 'test-seed') ON CONFLICT DO NOTHING",
         board.tenant,
     )
     with frozen(DEMO):
