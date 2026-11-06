@@ -75,7 +75,14 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/audits/{work_item_id}/ebp/loans/new", "ebp.read"),
     ("GET", "/v1/audits/{work_item_id}/ebp/loans/offsets", "ebp.read"),
     ("GET", "/v1/audits/{work_item_id}/ebp/loans/rollforward", "ebp.read"),
+    (
+        "GET",
+        "/v1/audits/{work_item_id}/ebp/participant-accounts/groups/{group}/accounts",
+        "ebp.read",
+    ),
     ("GET", "/v1/audits/{work_item_id}/ebp/participant-accounts/rollforward", "ebp.read"),
+    ("GET", "/v1/audits/{work_item_id}/ebp/participant-accounts/sdba", "ebp.read"),
+    ("GET", "/v1/audits/{work_item_id}/ebp/participant-accounts/vesting", "ebp.read"),
     ("GET", "/v1/audits/{work_item_id}/ebp/participants", "ebp.read"),
     ("GET", "/v1/audits/{work_item_id}/ebp/participants/{participant_key}/loan", "ebp.read"),
     ("GET", "/v1/audits/{work_item_id}/ebp/plan", "ebp.read"),
@@ -839,6 +846,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "/v1/audits/{work_item_id}/ebp/late-remittances/{remittance_id}/corrections",
         "ebp_correction.record",
     ),
+    ("POST", "/v1/audits/{work_item_id}/ebp/participant-accounts/run", "agent_run.start"),
     ("POST", "/v1/audits/{work_item_id}/ebp/participants/{participant_id}/reveals", "pii.reveal"),
     (
         "POST",
