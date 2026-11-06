@@ -1,4 +1,4 @@
-"""EBP-04 c (TASK-3362; DEC-2361): the participant's rate is their year's, from their entry date."""
+"""EBP-04 c (TASK-3362; DEC-2361): a participant's rate is their year's, from their entry date."""
 
 from __future__ import annotations
 
@@ -20,7 +20,11 @@ class _Ctx:
 
 async def test_a_person_with_no_dates_reads_the_default_rate() -> None:
     person = {"dob_sealed": None, "hire_on": None, "import_id": uuid4(), "participant_key": "P-1"}
-    rule = await ebp_tests._rule_of(_Ctx(), person, 2025)  # pyright: ignore[reportPrivateUsage,reportArgumentType]
+    rule = await ebp_tests._rule_of(  # pyright: ignore[reportPrivateUsage] -- the unit under test
+        _Ctx(),  # pyright: ignore[reportArgumentType] -- only its tenant_id is read
+        person,  # pyright: ignore[reportArgumentType] -- a row's shape, no database here
+        2025,
+    )
     assert rule is QACA
 
 
@@ -35,6 +39,10 @@ async def test_the_year_after_entry_adds_a_step(monkeypatch: pytest.MonkeyPatch)
         "import_id": uuid4(),
         "participant_key": "P-2",
     }
-    rule = await ebp_tests._rule_of(_Ctx(), person, 2025)  # pyright: ignore[reportPrivateUsage,reportArgumentType]
+    rule = await ebp_tests._rule_of(  # pyright: ignore[reportPrivateUsage] -- the unit under test
+        _Ctx(),  # pyright: ignore[reportArgumentType] -- only its tenant_id is read
+        person,  # pyright: ignore[reportArgumentType] -- a row's shape, no database here
+        2025,
+    )
     assert rule.default_pct > QACA.default_pct
     assert missed(Decimal(100000), rule).deferral > missed(Decimal(100000)).deferral

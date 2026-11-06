@@ -443,8 +443,8 @@ export const ebpPayrolls = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * Ebp Contributions Route
  *
- * EBP-04 a's waterfall by code, register to statements (A-05-T30, T31; DEC-2361). Keys are the
- * screen's; the tally's `tie.*` rows appear only when the tie holds. W-3's waits on its figure.
+ * EBP-04 a's waterfall by code, register to statements (A-05-T30, T31; DEC-2361). Keys are
+ * the screen's; `tie.*` rows appear only when the tie holds. W-3's waits on its figure.
  */
 export const ebpContributions = <ThrowOnError extends boolean = false>(options: Options<EbpContributionsData, ThrowOnError>): RequestResult<EbpContributionsResponses, EbpContributionsErrors, ThrowOnError> => (options.client ?? client).get<EbpContributionsResponses, EbpContributionsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

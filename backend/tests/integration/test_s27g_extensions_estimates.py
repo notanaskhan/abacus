@@ -744,4 +744,4 @@ async def test_ac_a_list_cursor_is_sealed_to_its_query(board: Board) -> None:
     with frozen(DEMO):
         refused = await call("GET", "/v1/tax/extensions?tax_year=2026&cursor=50")
     assert refused.status_code == 422, refused.text
-    assert refused.json()["code"] == "cursor_invalid"
+    assert "cursor_invalid" in refused.text

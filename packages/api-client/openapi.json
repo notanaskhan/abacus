@@ -111784,7 +111784,7 @@
     },
     "/v1/audits/{work_item_id}/ebp/contributions/reconciliation": {
       "get": {
-        "description": "EBP-04 a's waterfall by code, register to statements (A-05-T30, T31; DEC-2361). Keys are the\nscreen's; the tally's `tie.*` rows appear only when the tie holds. W-3's waits on its figure.",
+        "description": "EBP-04 a's waterfall by code, register to statements (A-05-T30, T31; DEC-2361). Keys are\nthe screen's; `tie.*` rows appear only when the tie holds. W-3's waits on its figure.",
         "operationId": "ebp_contributions",
         "parameters": [
           {
