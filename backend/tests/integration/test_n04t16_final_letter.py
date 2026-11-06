@@ -16,14 +16,14 @@ from abacus.modules.notices import sending
 from abacus.modules.reporting import api as c11
 
 from .agent_tests.support import Seeder
-from .test_p11t08_render_service import (  # noqa: F401 -- fixtures
+from .test_p11t08_render_service import (
     KIND,
     Values,
-    _request,
-    _world,
-    engines,
-    seed,
-    values,
+    _request,  # pyright: ignore[reportPrivateUsage] -- that file's world
+    _world,  # pyright: ignore[reportPrivateUsage] -- that file's world
+    engines,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- a fixture
+    seed,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- a fixture
+    values,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- a fixture
 )
 
 
