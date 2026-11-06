@@ -26,6 +26,8 @@ TABLES: frozenset[str] = frozenset(
     | {"pilot_enrolments", "pilot_metric_snapshots"}  # Q-04-T007 (0276): pilot enrolments
     # K-02-T03 (0400, ADR-300): the global reference sets; definers only.
     | {"reference_sets", "reference_set_versions", "reference_set_publications"}
+    # P-10-T06 (0684, ADR-148): agent-minute metering.
+    | {"agent_minute_ledger", "engagement_agent_budgets", "usage_month_rollups"}
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
 # G-02-T18 (0240): an incident's status changes only with its decisions (column grants and the
@@ -36,9 +38,21 @@ INSERT_ONLY: frozenset[str] = frozenset(
     | {"security_incident_timeline", "security_incident_decisions"}
     | {"security_incident_reminders"}
     | {"safeguards_control_set_log"}
+    | {"agent_minute_ledger"}  # P-10-T06 (0684): one row per run, by trigger
 )
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
+    "agent_minute_ledger": frozenset(
+        {"tenant_id", "usage_month", "run_id", "engagement_id", "work_item_ref", "service_line"}
+        | {"definition_id", "capability", "phase", "minutes", "agent_ms", "cost_usd"}
+    ),
+    "engagement_agent_budgets": frozenset(
+        {"tenant_id", "engagement_id", "minutes_per_usage_month", "alert_pct"}
+    ),
+    "usage_month_rollups": frozenset(
+        {"tenant_id", "usage_month", "service_line", "engagement_id", "capability", "phase"}
+        | {"minutes", "cost_usd"}
+    ),
     "security_incident_timeline": frozenset(
         {"tenant_id", "incident_id", "occurred_at", "code", "facts", "note", "source"}
         | {"author_user_id"}
@@ -61,6 +75,8 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
 }
 # Columns the app may update; tables not listed keep what their migration grants.
 UPDATE_COLUMNS: dict[str, frozenset[str]] = {
+    "engagement_agent_budgets": frozenset({"minutes_per_usage_month", "alert_pct"}),
+    "usage_month_rollups": frozenset({"minutes", "cost_usd"}),
     # G-02-T18 (0240): only with both decisions (the trigger).
     "security_incidents": frozenset({"status", "closed_at", "notification_started_at"}),
     # G-02-T20 (0242): edited in place against `version` by the QI; never deleted.
