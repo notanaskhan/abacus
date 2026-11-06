@@ -33,6 +33,7 @@ import { useFlag } from "../../app-core/flags";
 import { useDecisionCard } from "../../domain/review";
 import { ResponseEditor } from "../NOT-03";
 import { ViewerPane } from "../SHL-08";
+import { hrefOf, to } from "../../routes/to";
 import { COPY } from "./copy";
 
 // NOT-02 · Notice workspace (N-04-T14; N-04 §3; the handoff spec): the T3 Review preset (452 · 452 ·
@@ -599,6 +600,15 @@ function ActionPane({
       >
         <p className="text-dense font-medium">{COPY.authorization.title}</p>
         <p className="text-dense">{auth.on_file ? auth.label : COPY.authorization.none}</p>
+        {!auth.on_file && (
+          <a
+            data-not02="authorization-banner"
+            href={hrefOf(to.SIG01())}
+            className="text-dense font-medium text-red-ink hover:underline"
+          >
+            {COPY.authorization.toSend}
+          </a>
+        )}
         {auth.on_file && !auth.can_represent && (
           <div className="flex items-center gap-[8px] rounded-nested bg-amber-tint p-[8px] text-[12.5px] text-amber-ink">
             <span className="flex-1">{COPY.authorization.note}</span>

@@ -56,6 +56,7 @@ from abacus.modules.organisations.consents_contract import (
     ConsentRenewalIn,
     ConsentRequestIn,
     ConsentState,
+    OpenNoticeRowOut,
     TaxAuthorizationDesigneeOut,
     TaxAuthorizationIn,
     TaxAuthorizationOut,
@@ -180,6 +181,7 @@ from abacus.modules.organisations.slots import (
 # T-01-T43: the tax-profile family's live routes register on `consents_router` at import.
 from abacus.modules.organisations.tax_profile import (
     TaxProfileBackend,
+    register_open_notices,
     register_tax_profile_backend,
 )
 from abacus.modules.organisations.tin import (
@@ -282,6 +284,7 @@ __all__ = [
     "NewClient",
     "NewContact",
     "NewRelationship",
+    "OpenNoticeRowOut",
     "OverviewItem",
     "OverviewSection",
     "RoleAsked",
@@ -361,6 +364,7 @@ __all__ = [
     "register_conflict_subject_names",
     "register_consent_capture",
     "register_office_facts",
+    "register_open_notices",
     "register_open_requests",
     "register_overview_section",
     "register_screening_evidence",

@@ -125,3 +125,10 @@ notice_engagement_for = _intake.notice_engagement_for
 revise_notice_intake = _intake.revise
 move_notice = _service.move
 read_notice = _service.notice
+
+# N-04-T22: POR-02's info row and CLI-05's Open notices band.
+from abacus.modules.notices import portal_home as _portal_home  # noqa: E402
+from abacus.modules.organisations.api import register_open_notices  # noqa: E402
+
+portal_notice_rows = _portal_home.portal_notice_rows
+register_open_notices(_portal_home.open_notice_rows)

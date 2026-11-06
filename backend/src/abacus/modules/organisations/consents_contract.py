@@ -318,6 +318,17 @@ class TaxProfileIdentityOut(BaseModel):
     masked_tin: Annotated[MaskedTinOut | None, classified("restricted")] = None
 
 
+class OpenNoticeRowOut(BaseModel):
+    """N-04-T22 (US-8.3): one open notice on CLI-05's band; no amounts, no analysis."""
+
+    model_config = ConfigDict(frozen=True)
+
+    notice_id: Annotated[UUID, classified("internal")]
+    notice_code: Annotated[str, classified("confidential")]
+    tax_year: Annotated[int | None, classified("internal")] = None
+    respond_by: Annotated[date | None, classified("internal")] = None
+
+
 class TaxProfileOut(BaseModel):
     """CLI-05's rail: consents in force, authorizations on file, elections, a masked identity band
     (last four only; DEC-52) and open notices (planned)."""
@@ -330,6 +341,9 @@ class TaxProfileOut(BaseModel):
     authorizations: Annotated[list[TaxAuthorizationOut], classified("confidential")]
     elections: Annotated[list[TaxElectionOut], classified("restricted", tri=True)]
     open_notices: Annotated[int | None, classified("internal")]
+    open_notice_rows: Annotated[list[OpenNoticeRowOut], classified("confidential")] = Field(
+        default_factory=list[OpenNoticeRowOut]
+    )
     allowed_actions: Annotated[list[str], classified("internal")]
     # T-01-T14 (additive): the subbar and the Identity band.
     client_name: Annotated[str, classified("confidential")] = ""

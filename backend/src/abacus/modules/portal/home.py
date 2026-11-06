@@ -35,6 +35,7 @@ from abacus.modules.portal.home_sources import (
     Earlier,
     HomeScope,
     HomeTeamMember,
+    NoticeInfo,
     Todo,
     WorkCard,
 )
@@ -42,11 +43,13 @@ from abacus.modules.portal.home_sources import (
 # The sources P-08 ships register on import; later epics add their own modules (C5 v1.1).
 from abacus.modules.portal.home_sources import connections as _connections
 from abacus.modules.portal.home_sources import engagements as _engagements
+from abacus.modules.portal.home_sources import notices as _notices
 from abacus.modules.portal.home_sources import requests as _requests
 from abacus.modules.portal.home_sources import signatures as _signatures
 from abacus.modules.portal.home_sources import tax_filings as _tax_filings
 
 LOADED = (
+    _notices,
     _requests.requests_source,
     _engagements.engagements_source,
     _connections.connections_source,  # A-02-T23: the reconnect to-do
@@ -78,6 +81,7 @@ class HomeView:
     binder: Binder | None
     team: list[HomeTeamMember]
     earlier: list[Earlier]
+    notices_info: list[NoticeInfo]
     first_visit: bool
     welcome_dismissed: bool
     all_done: bool
@@ -136,6 +140,7 @@ async def read_home(ctx: AuthContext, scope_id: UUID | None) -> HomeView:
     binders: list[Binder] = []
     team: list[HomeTeamMember] = []
     earlier: list[Earlier] = []
+    notices: list[NoticeInfo] = []
     for _, source in home_sources.home_sources():
         part = await source(ctx, scope)
         todos += part.todos
@@ -143,6 +148,7 @@ async def read_home(ctx: AuthContext, scope_id: UUID | None) -> HomeView:
         binders += part.binders
         team += [m for m in part.team if m.user_id not in {t.user_id for t in team}]
         earlier += part.earlier
+        notices += part.notices
     async with tenant_session(ctx.tenant) as session:
         prefs = await repository.preference(session, ctx.user_id, grant.scope_kind, grant.scope_id)
     dismissed = prefs is not None and prefs["welcome_dismissed_at"] is not None
@@ -157,6 +163,7 @@ async def read_home(ctx: AuthContext, scope_id: UUID | None) -> HomeView:
         binder=binder,
         team=team,
         earlier=earlier,
+        notices_info=notices,
         first_visit=not dismissed,
         welcome_dismissed=dismissed,
         all_done=all(t.count == 0 for t in todos)
