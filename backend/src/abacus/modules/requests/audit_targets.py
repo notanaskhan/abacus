@@ -23,6 +23,11 @@ _OWNERS: dict[str, tuple[QueryableAttribute[UUID], QueryableAttribute[UUID | Non
 }
 # T-02-T16: questionnaire rows have no ORM model; a question is its questionnaire's engagement's.
 _TEXT_OWNERS = {
+    # T-03-T02: an edit; a firm template's questionnaire has no engagement, so stays hidden.
+    "questionnaire": text(
+        "SELECT id, engagement_id FROM questionnaires "
+        "WHERE id = ANY(:ids) AND engagement_id IS NOT NULL"
+    ),
     "question": text(
         "SELECT q.id, n.engagement_id FROM questions q JOIN questionnaires n "
         "ON n.id = q.questionnaire_id WHERE q.id = ANY(:ids)"
