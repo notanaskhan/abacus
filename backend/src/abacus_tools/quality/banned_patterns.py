@@ -1945,6 +1945,20 @@ def _check_never_tool(src: SourceFile) -> Iterator[Finding]:
                 )
 
 
+def _check_archived_write(src: SourceFile) -> Iterator[Finding]:
+    """A-07 F8 (ADR P-43): only the four allowlisted service functions call
+    `allow_archived_write`, and nothing else names the setting."""
+    for node in ast.walk(src.tree):
+        if isinstance(node, ast.Call) and _terminal_name(node.func) == "allow_archived_write":
+            yield Finding(node.lineno, "allow_archived_write outside the allowlisted services")
+        if (
+            isinstance(node, ast.Constant)
+            and isinstance(node.value, str)
+            and "app.archived_write" in node.value
+        ):
+            yield Finding(node.lineno, "app.archived_write is set only by the unit of work")
+
+
 def _check_client_decision(src: SourceFile) -> Iterator[Finding]:
     """R-02 AC-5: only `portal/approvals.py` and a provider's own record-mode service
     (`client_decisions.py`) may call a C18 provider's `decide()`, so no other path decides for a
@@ -3053,6 +3067,20 @@ RULES: list[Rule | TreeRule] = [
         adr="ADR-005, ADR-025",
         check=_check_human_decision,
         include=("src/abacus/modules/*",),
+    ),
+    Rule(
+        id="ARCHIVE-001",
+        description="Only the allowlisted services write past archived_guard()",
+        adr="ADR-159, A-07 F8",
+        check=_check_archived_write,
+        include=("src/abacus/*",),
+        exclude=(
+            "src/abacus/kernel/uow/__init__.py",
+            "src/abacus/modules/assurance/archive_additions.py",
+            "src/abacus/modules/assurance/post_issuance.py",
+            "src/abacus/modules/evidence/retention_extend.py",
+            "src/abacus/modules/evidence/destruction.py",
+        ),
     ),
     Rule(
         id="TOOL-001",
