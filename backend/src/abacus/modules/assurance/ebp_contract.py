@@ -729,6 +729,8 @@ class LoanRowOut(BaseModel):
     ending: MaybeMoney = None
     limit: MaybeMoney = None
     within_limit: Annotated[bool | None, classified("internal")] = None
+    # A-05-T44 (additive): the name the recordkeeper reports; the census's SSN stays masked.
+    participant_name: Annotated[str | None, classified("confidential")] = None
 
 
 class LoansOut(BaseModel):
@@ -763,6 +765,9 @@ class LoanOffsetOut(BaseModel):
     amount: MaybeMoney = None
     form_1099r_code: Annotated[str | None, Field(max_length=2), classified("internal")] = None
     reported_line: Annotated[Literal["2e(1)"], classified("internal")]
+    # A-05-T44 (additive).
+    participant_name: Annotated[str | None, classified("confidential")] = None
+    terminated_on: Annotated[date | None, classified("confidential")] = None
 
 
 class LoanOffsetsOut(BaseModel):
@@ -942,6 +947,9 @@ class TestGridRowOut(BaseModel):
     cells: Annotated[list[TestGridCellOut], classified("internal")]
     # EBP-04 c: the EBP-03 sample item the same participant's exception traces to.
     linked_item_id: Annotated[UUID | None, classified("internal")] = None
+    # EBP-05 b (A-05-T44, additive): a distribution's type and its 1099-R code.
+    detail: Annotated[str | None, classified("confidential")] = None
+    code: Annotated[str | None, Field(max_length=20), classified("internal")] = None
 
 
 class TestGridOut(BaseModel):
@@ -1598,6 +1606,16 @@ async def ebp_contributions_test_route(work_item_id: UUID, ctx: Ctx) -> TestGrid
     return await ebp_tests.contribution_recalc(ctx, work_item_id)
 
 
+@router.get(
+    "/ebp/distributions/test", action="ebp.read", response_model=TestGridOut, errors=(501,)
+)
+async def ebp_distributions_test_route(work_item_id: UUID, ctx: Ctx) -> TestGridOut:
+    """EBP-05 b: the 10 sampled distributions on the shared grid (A-05-T44, contract first). Its
+    service joins with the sampled-distributions read; until then 501 and the screen's fixture."""
+    await _gate(ctx, work_item_id, "ebp.read", _E)
+    _not_yet()
+
+
 @router.get("/ebp/late-remittances", action="ebp.read", response_model=list[LateRemittanceOut])
 async def ebp_late_remittances_route(work_item_id: UUID, ctx: Ctx) -> list[LateRemittanceOut]:
     """The late remittances (DF-34): one row per late payroll, as code computed it (A-05-T30)."""
@@ -1712,6 +1730,7 @@ async def ebp_loans_route(work_item_id: UUID, ctx: Ctx) -> LoansOut:
 def _loan_out(r: object) -> LoanRowOut:
     row = cast(Any, r)  # Any: ebp_loans.LoanRow, imported where the route runs
     return LoanRowOut(
+        participant_name=row.participant_name,
         id=row.id,
         participant_key=row.participant_key,
         loan_ref=row.loan_ref,
@@ -1750,6 +1769,8 @@ async def ebp_loans_offsets_route(work_item_id: UUID, ctx: Ctx) -> LoanOffsetsOu
     return LoanOffsetsOut(
         rows=[
             LoanOffsetOut(
+                participant_name=o.participant_name,
+                terminated_on=o.terminated_on,
                 loan_ref=o.loan_ref,
                 offset_on=o.offset_on,
                 amount=o.amount,

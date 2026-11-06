@@ -36,6 +36,7 @@ class LoanRow:
     vested_balance: Decimal | None
     loan: engine.Loan
     limit: engine.LoanLimit | None
+    participant_name: str | None = None
 
 
 @dataclass(frozen=True)
@@ -45,6 +46,8 @@ class OffsetRow:
     amount: Decimal
     form_1099r_code: str | None
     reported_line: str
+    participant_name: str | None = None
+    terminated_on: date | None = None
 
 
 @dataclass(frozen=True)
@@ -70,18 +73,28 @@ def _row(m: Mapping[str, Any]) -> LoanRow:  # Any: a row from the database
     return LoanRow(
         m["id"], m["participant_key"], m["loan_ref"], m["status"], m["originated_on"],
         m["term_months"], m["is_residence"], m["vested_balance"], loan, limit,
+        m.get("participant_name"),
     )  # fmt: skip
 
 
+# A-05-T44: the participant's name from the recordkeeper's balances, for the screen's tables.
 _LOANS = text(
     "SELECT id, participant_key, loan_ref, status, originated_on, term_months, is_residence, "
-    "vested_balance, beginning_balance, new_loans, repayments, offsets, ending_balance "
-    "FROM ebp_participant_loans WHERE work_item_id = :w ORDER BY loan_ref"
+    "vested_balance, beginning_balance, new_loans, repayments, offsets, ending_balance, "
+    "(SELECT b.name FROM ebp_participant_balances b WHERE b.work_item_id = :w "
+    "AND b.participant_key = l.participant_key ORDER BY b.created_at DESC LIMIT 1) "
+    "AS participant_name FROM ebp_participant_loans l WHERE work_item_id = :w ORDER BY loan_ref"
 )
 _OFFSETS = text(
-    "SELECT l.loan_ref, o.offset_on, o.amount, o.form_1099r_code, o.reported_line "
-    "FROM ebp_loan_offsets o JOIN ebp_participant_loans l ON l.tenant_id = o.tenant_id "
-    "AND l.id = o.loan_id WHERE o.work_item_id = :w ORDER BY o.offset_on, l.loan_ref"
+    "SELECT l.loan_ref, o.offset_on, o.amount, o.form_1099r_code, o.reported_line, "
+    "(SELECT b.name FROM ebp_participant_balances b WHERE b.work_item_id = :w "
+    "AND b.participant_key = l.participant_key ORDER BY b.created_at DESC LIMIT 1) "
+    "AS participant_name, "
+    "(SELECT p.termination_on FROM ebp_participants p WHERE p.work_item_id = :w "
+    "AND p.participant_key = l.participant_key ORDER BY p.created_at DESC LIMIT 1) "
+    "AS terminated_on FROM ebp_loan_offsets o JOIN ebp_participant_loans l "
+    "ON l.tenant_id = o.tenant_id AND l.id = o.loan_id WHERE o.work_item_id = :w "
+    "ORDER BY o.offset_on, l.loan_ref"
 )
 
 
@@ -97,7 +110,7 @@ async def loans(
     rolled = engine.rollforward([r.loan for r in found])
     offset_rows = tuple(
         OffsetRow(o["loan_ref"], o["offset_on"], o["amount"], o["form_1099r_code"],
-                  o["reported_line"])
+                  o["reported_line"], o["participant_name"], o["terminated_on"])
         for o in offsets
     )  # fmt: skip
     return LoansView(

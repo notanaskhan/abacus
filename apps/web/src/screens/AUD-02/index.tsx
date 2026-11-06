@@ -41,6 +41,7 @@ import { usePlanProfileCanvas } from "../EBP-01/PlanProfile";
 import { useProvisionsCanvas } from "../EBP-02/Provisions";
 import { useEligibilityCanvas } from "../EBP-03/Eligibility";
 import { type ContributionsOptions, useContributionsCanvas } from "../EBP-04";
+import { DISTRIBUTIONS_LOANS, type LoansOptions, useLoansCanvas } from "../EBP-05";
 import {
   type ControlsOptions,
   FailedStepCard,
@@ -115,6 +116,8 @@ export interface AUD02Props {
   investments?: InvestmentsOptions;
   /** EBP-04 (A-05-T31): the Contributions & Remittance tab and links. */
   contributions?: Omit<ContributionsOptions, "active" | "running">;
+  /** EBP-05 (A-05-T44): Distributions & Loans. */
+  loans?: Omit<LoansOptions, "active">;
 }
 
 /** The rail row whose canvas is AUD-06 (A-02-T09). */
@@ -222,6 +225,7 @@ function Cockpit({
   serviceOrgs,
   investments,
   contributions,
+  loans,
 }: Omit<AUD02Props, "auditId"> & { cockpit: AuditCockpitOut }): JSX.Element {
   // A-01-T24: "Export binder…" and the record-mode entries (DV-9, DV-4).
   const audit = useAuditActions(cockpit, overlay ?? null, onOverlay);
@@ -316,6 +320,9 @@ function Cockpit({
     active: contributionsOpen,
     running: row?.section_state === "running",
   });
+  // EBP-05 (A-05-T44): Testing › Distributions & Loans, behind `ebp.modules`.
+  const loansOpen = selected === DISTRIBUTIONS_LOANS;
+  const loansCanvas = useLoansCanvas(cockpit.work_item_id, { ...loans, active: loansOpen });
   const openDoc = (r: SourceDocumentRowOut): void => {
     const version = r.latest_upload?.evidence_version_id ?? null;
     if (version !== null) onDock?.("viewer", version);
@@ -342,6 +349,8 @@ function Cockpit({
     canvas = investmentsCanvas;
   } else if (contributionsOpen) {
     canvas = contributionsCanvas;
+  } else if (loansOpen) {
+    canvas = loansCanvas;
   } else if (row?.section_state === "blocked_on_decision" && row.blocked_on_name != null) {
     canvas = {
       title: row.title,
@@ -545,6 +554,7 @@ export function AuditCockpitPage({
     serviceOrgs?: ServiceOrgsOptions;
     investments?: InvestmentsOptions;
     contributions?: Omit<ContributionsOptions, "active" | "running">;
+    loans?: Omit<LoansOptions, "active">;
   };
   onBack?: () => void;
 }): JSX.Element {
@@ -577,6 +587,7 @@ export function AuditCockpitPage({
       {...(initial.serviceOrgs === undefined ? {} : { serviceOrgs: initial.serviceOrgs })}
       {...(initial.investments === undefined ? {} : { investments: initial.investments })}
       {...(initial.contributions === undefined ? {} : { contributions: initial.contributions })}
+      {...(initial.loans === undefined ? {} : { loans: initial.loans })}
     />
   );
 }
