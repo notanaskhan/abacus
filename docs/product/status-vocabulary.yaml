@@ -1431,6 +1431,7 @@ objects:
     codes:
       untested:    {label: "Untested", variant: muted, terminal: false, derived: false}
       testing:     {label: "Testing", variant: state, terminal: false, derived: false}
+      agent_tested: {label: "Agent tested", variant: state, terminal: false, derived: false}   # EBP-04's word; a person has not marked it yet
       pass:        {label: "Pass", variant: green-tint, terminal: true, derived: false}
       exception:   {label: "Exception", variant: red-tint, terminal: true, derived: false}
       needs_human: {label: "Needs human", variant: amber, terminal: false, derived: false}
