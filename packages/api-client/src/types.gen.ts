@@ -37481,6 +37481,10 @@ export type RiskDrawerOut = {
      */
     citation_ids: Array<string>;
     /**
+     * Pending Card Id
+     */
+    pending_card_id?: string | null;
+    /**
      * Rationale
      */
     rationale: string | null;
