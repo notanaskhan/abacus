@@ -172,7 +172,7 @@ class ModeInputs:
     cells: tuple[SourceCell, ...] = ()
     targets: Mapping[str, ModeTarget] = field(default_factory=dict[str, ModeTarget])
     facts: tuple[tuple[str, dict[str, object]], ...] = ()
-    # Names to pick from ("EBP-03, EBP-04"): shown as facts, but no support for any number (DEC-2385).
+    # Names to pick from ("EBP-03, EBP-04"): shown as facts, but support no number (DEC-2385).
     identifiers: tuple[tuple[str, dict[str, object]], ...] = ()
 
 

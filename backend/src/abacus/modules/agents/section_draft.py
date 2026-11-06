@@ -743,9 +743,9 @@ __all__ = [
     "Unsupported",
     "build_context",
     "draft",
+    "is_choice",
     "load_context",
     "model_available",
-    "is_choice",
     "provenance_ok",
     "start",
 ]
