@@ -104,6 +104,32 @@ _RETURN = text(
 )
 
 
+async def returns_for_entity(
+    session: AsyncSession, entity_id: UUID, tax_year: int, form: str | None
+) -> Sequence[UUID]:
+    rows = await session.scalars(
+        text(
+            "SELECT work_item_id FROM tax_returns WHERE client_entity_id = :entity "
+            "AND tax_year = :year AND (CAST(:form AS text) IS NULL OR form = :form)"
+        ),
+        {"entity": entity_id, "year": tax_year, "form": form},
+    )
+    return list(rows)
+
+
+async def return_facts(session: AsyncSession, return_id: UUID) -> Row | None:
+    return (
+        (
+            await session.execute(
+                text("SELECT tax_year, form, status FROM tax_returns WHERE work_item_id = :r"),
+                {"r": return_id},
+            )
+        )
+        .mappings()
+        .first()
+    )
+
+
 async def authorizations(session: AsyncSession, entity_id: UUID) -> Sequence[Row]:
     return (await session.execute(_AUTHORIZATIONS, {"entity": entity_id})).mappings().all()
 

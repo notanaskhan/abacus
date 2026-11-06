@@ -31,6 +31,12 @@ from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork, uow
 from abacus.modules.assurance.compute import soc_gap
 from abacus.modules.assurance.events import ServiceOrgRelianceConcluded
+from abacus.modules.assurance.internal_control import (
+    AlreadyRouted,
+    RouteNotAvailable,
+    RouteRequest,
+    exception_router,
+)
 from abacus.modules.engagements.api import assurance_item_id, engagement_metadata
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.review.api import (
@@ -273,6 +279,105 @@ async def evaluate(
             "soc_report.evaluated",
             target=Target("soc_report_evaluation", report_id),
             after=Ref(row_version=row.row_version, gap_days=row.gap_days or 0),
+            scope=Scope(engagement_id=engagement_id, work_item_id=work_item),
+        )
+    return await report(ctx, engagement_id, report_id)
+
+
+class ExceptionNotHigh(DomainConflict):
+    """AC7.5: only a High-impact exception routes to Findings."""
+
+    code = "exception_not_high"
+
+
+async def _exception(tx: UnitOfWork, report: SocReportEvaluation, co_ref: str) -> SocException:
+    found = await tx.session.scalar(
+        select(SocException)
+        .where(SocException.evaluation_id == report.id, SocException.co_ref == co_ref)
+        .with_for_update()
+    )
+    if found is None:
+        raise NotFound("soc_exception")
+    return found
+
+
+async def set_exception_impact(
+    ctx: AuthContext,
+    engagement_id: UUID,
+    report_id: UUID,
+    co_ref: str,
+    impact: str,
+    rationale: str | None,
+) -> SocReport:
+    """A person's adopted impact. A routed exception keeps the impact it was routed on."""
+    work_item = await _work_item(ctx.tenant, engagement_id)
+    async with uow(ctx.tenant) as tx:
+        report_row = await tx.session.scalar(
+            select(SocReportEvaluation).where(
+                SocReportEvaluation.id == report_id,
+                SocReportEvaluation.work_item_id == work_item,
+            )
+        )
+        if report_row is None:
+            raise NotFound("soc_report")
+        row = await _exception(tx, report_row, co_ref)
+        if row.routed_ref is not None:
+            raise AlreadyRouted(facts={"routed_ref": str(row.routed_ref)})
+        row.impact = impact
+        row.impact_rationale = rationale
+        row.updated_at = await now(ctx.tenant)
+        tx.record(
+            "soc_exception.impact_recorded",
+            target=Target("soc_report_evaluation", report_id),
+            after=Ref(high=int(impact == "high")),
+            scope=Scope(engagement_id=engagement_id, work_item_id=work_item),
+        )
+    return await report(ctx, engagement_id, report_id)
+
+
+async def route_exception(
+    ctx: AuthContext, engagement_id: UUID, report_id: UUID, co_ref: str
+) -> SocReport:
+    """AC7.5: through A-06's router, in one unit of work with the row's reference."""
+    router = exception_router("finding")
+    if router is None:
+        raise RouteNotAvailable
+    work_item = await _work_item(ctx.tenant, engagement_id)
+    async with uow(ctx.tenant) as tx:
+        report_row = await tx.session.scalar(
+            select(SocReportEvaluation).where(
+                SocReportEvaluation.id == report_id,
+                SocReportEvaluation.work_item_id == work_item,
+            )
+        )
+        if report_row is None:
+            raise NotFound("soc_report")
+        row = await _exception(tx, report_row, co_ref)
+        if row.routed_ref is not None:
+            raise AlreadyRouted(facts={"routed_ref": str(row.routed_ref)})
+        if row.impact != "high":
+            raise ExceptionNotHigh(facts={"impact": row.impact or ""})
+        row.routed_ref = await router(
+            tx,
+            RouteRequest(
+                engagement_id=engagement_id,
+                work_item_id=work_item,
+                control_exception_id=row.id,
+                address=row.co_ref,
+                matter=row.description[:300],
+                description=row.description,
+                proposed_severity=None,
+                coso_component=None,
+                amount=None,
+                citation_ids=(),
+                requested_by=ctx.user_id,
+            ),
+        )
+        row.updated_at = await now(ctx.tenant)
+        tx.record(
+            "soc_exception.routed",
+            target=Target("soc_report_evaluation", report_id),
+            after=Ref(routed=int(row.routed_ref is not None)),
             scope=Scope(engagement_id=engagement_id, work_item_id=work_item),
         )
     return await report(ctx, engagement_id, report_id)

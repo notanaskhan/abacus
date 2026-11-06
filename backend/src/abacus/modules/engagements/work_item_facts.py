@@ -85,6 +85,24 @@ async def work_item_facts(
     ]
 
 
+async def function_holders(
+    tenant: TenantContext, work_item_id: UUID
+) -> dict[str, tuple[UUID, ...]]:
+    """Function -> the people holding it now, for a system consumer that names who hears."""
+    async with tenant_session(tenant) as session:
+        assigned = await session.execute(
+            select(_assignments.c.function, _assignments.c.user_id)
+            .where(
+                _assignments.c.work_item_id == work_item_id, _assignments.c.removed_at.is_(None)
+            )
+            .order_by(_assignments.c.user_id)
+        )
+        held: dict[str, list[UUID]] = {}
+        for function, user in assigned.all():
+            held.setdefault(function, []).append(user)
+    return {f: tuple(people) for f, people in held.items()}
+
+
 async def work_item_offices(
     tenant: TenantContext, work_item_ids: Sequence[UUID]
 ) -> dict[UUID, UUID | None]:

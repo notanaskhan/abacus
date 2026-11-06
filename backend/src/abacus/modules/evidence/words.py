@@ -36,6 +36,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Final, Literal, cast
 from uuid import UUID
 
+from sqlalchemy import select
 from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 
 from abacus.kernel.db import TenantContext, tenant_session
@@ -355,6 +356,26 @@ async def read_page_layer(tenant_id: UUID, page: EvidencePage) -> PageWords:
         page.text_layer_size,
     )
     return parse_layer(await storage.get(tenant_id, stored))
+
+
+async def version_word_layers(tenant: TenantContext, version_id: UUID) -> list[PageWords]:
+    """A version's word layers, page by page; a page with no layer is skipped (N-04-T11)."""
+    async with tenant_session(tenant) as session:
+        pages = (
+            (
+                await session.execute(
+                    select(EvidencePage)
+                    .where(
+                        EvidencePage.evidence_version_id == version_id,
+                        EvidencePage.has_text_layer.is_(True),
+                    )
+                    .order_by(EvidencePage.page_no)
+                )
+            )
+            .scalars()
+            .all()
+        )
+    return [await read_page_layer(tenant.tenant_id, page) for page in pages]
 
 
 def _system(tenant_id: UUID) -> TenantContext:

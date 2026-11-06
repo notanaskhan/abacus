@@ -54,3 +54,9 @@ def test_ac_a_prior_year_is_never_substituted() -> None:
 
 def test_ac_an_expense_with_no_disclosure_is_an_exception() -> None:
     assert engine.tie(_expenses(disclosed=False)).exceptions == ("audit_fee",)
+
+
+def test_ac_an_amount_is_within_a_limit_up_to_and_including_it() -> None:
+    limit = engine.limits_for(2025)["402g"]
+    assert engine.within_limit(limit, "402g", 2025)
+    assert not engine.within_limit(limit + D("0.01"), "402g", 2025)
