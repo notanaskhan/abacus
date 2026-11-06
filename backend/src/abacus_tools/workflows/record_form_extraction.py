@@ -44,20 +44,28 @@ async def _run(client: Client) -> WorkflowHistory:
 
 
 async def _record(out: Path, version: str, stack: Stack) -> None:
-    path = refuse_overwrite(out / f"form-extraction-{version}-recorded.json")
     client = await connect(stack)
     async with Worker(
         client, task_queue=_TASK_QUEUE, workflows=[FormExtractionWorkflow], activities=[_extract]
     ):
-        history = await _run(client)
-    path.write_text(await decoded_and_scrubbed(history, payload_codec()), encoding="utf-8")
+        scrubbed = await decoded_and_scrubbed(await _run(client), payload_codec())
+    path = out / f"form-extraction-{version}-recorded.json"
+    path.write_text(scrubbed.to_json())
+    print(f"recorded {path}")
 
 
-def main() -> None:
-    out = Path(sys.argv[1])
-    version = sys.argv[2] if len(sys.argv) > 2 else "v1"
-    run_with_stack(lambda stack: _record(out, version, stack))
+def main(argv: list[str]) -> int:
+    out = Path(argv[0]) if argv else Path("tests/workflows/histories")
+    version = argv[1] if len(argv) > 1 else "v1"
+    if refuse_overwrite(out, [f"form-extraction-{version}-recorded.json"]):
+        return 1
+
+    async def record(stack: Stack) -> None:
+        await _record(out, version, stack)
+
+    run_with_stack(record)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main(sys.argv[1:]))

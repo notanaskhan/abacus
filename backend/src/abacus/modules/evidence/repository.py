@@ -989,6 +989,9 @@ async def stale_pdf_uploads(
 # --- The word layer (P-03-T05) and citations (P-03-T06) ----------------------------------------
 
 
+OCR_VERSION: Final = "ocr-1"  # P-11-T25: an OCR page's row beside its text-layer row
+
+
 async def pages_of(
     session: AsyncSession,
     *,
@@ -1017,14 +1020,16 @@ async def pages_of(
             else EvidencePage.inbox_file_id == inbox_file_id
         )
     )
-    return (
+    # P-11-T25: an OCR row for the same page wins over the page's text-layer row, so every reader
+    # (scan, masks, viewer, citations, search) sees a scan's words with no change of its own.
+    rows = (
         (
             await session.execute(
                 select(EvidencePage)
                 .where(
                     source,
                     _derived(EvidencePage.derivation_id, derivation_id),
-                    EvidencePage.extractor_version == extractor_version,
+                    EvidencePage.extractor_version.in_((extractor_version, OCR_VERSION)),
                 )
                 .order_by(EvidencePage.page_no)
             )
@@ -1032,6 +1037,11 @@ async def pages_of(
         .scalars()
         .all()
     )
+    best: dict[int, EvidencePage] = {}
+    for row in rows:
+        if row.page_no not in best or row.extractor_version == OCR_VERSION:
+            best[row.page_no] = row
+    return [best[page] for page in sorted(best)]
 
 
 async def insert_pages(session: AsyncSession, rows: Sequence[dict[str, object]]) -> int:

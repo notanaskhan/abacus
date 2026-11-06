@@ -12,6 +12,7 @@ from uuid import UUID
 
 from abacus.modules.evidence.drops import sort_drop
 from abacus.modules.evidence.form_extraction import extract_version
+from abacus.modules.evidence.ocr_step import ocr_upload
 from abacus.modules.evidence.masked_previews import masked_preview_upload, pending_masks
 from abacus.modules.evidence.pii import pii_scan_upload
 from abacus.modules.evidence.processing import check_upload, preview_upload, process_upload
@@ -64,6 +65,12 @@ async def portal_drop_sort_activity(given: UploadInput) -> str:
     return await sort_drop(given)
 
 
+@activity.defn(name="upload.ocr")
+async def ocr_activity(given: UploadInput) -> int:
+    """P-11-T25: OCR for pages with no text layer, behind the gate."""
+    return await ocr_upload(given)
+
+
 @activity.defn(name="forms.extract")
 async def forms_extract_activity(given: FormExtractionInput) -> int:
     """P-11-T26: code identifies the form and reads its boxes."""
@@ -83,6 +90,7 @@ async def pending_masks_activity(given: BackfillInput) -> list[UploadInput]:
 
 
 ACTIVITIES = (
+    ocr_activity,
     forms_extract_activity,
     extract_activity,
     check_activity,
