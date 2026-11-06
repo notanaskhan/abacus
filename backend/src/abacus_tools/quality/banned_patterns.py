@@ -882,6 +882,9 @@ _ISSUERS: dict[str, frozenset[str]] = {
     # R-01-T09 (DEC-323): the portal drop sort acts for the dropper on one drop, proven by the
     # drop's own inbox row read under the tenant's row-level security.
     "src/abacus/modules/evidence/drops.py": frozenset({"system_context_for_run"}),
+    # N-04-T11 (DEC-2359): the analysis cites as the platform acting for whoever ran it, proven by
+    # the running `notice_analyses` row read under the tenant's row-level security.
+    "src/abacus/modules/notices/analysis.py": frozenset({"system_context_for_run"}),
 }
 
 

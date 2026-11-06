@@ -139,6 +139,25 @@ async def points(tenant: TenantContext, work_item_id: UUID) -> tuple[Point, ...]
     return tuple(out)
 
 
+async def contributions_per_statements(
+    tenant: TenantContext, engagement_id: UUID
+) -> Decimal | None:
+    """EBP-04 a's tie (DEC-2361): contribution income on the final trial balance, deferrals, match
+    and rollovers, without the receivable that sits on the other side. No trial balance: None."""
+    tbs = await engagement_trial_balances(tenant, engagement_id)
+    if not tbs:
+        return None
+    current = max(tbs, key=lambda t: t.period_end)
+    view = await trial_balance_view(tenant, engagement_id, current.id, layer="final")
+    income = [
+        _at_layer(line, "final")
+        for line in view.lines
+        if any(word in line.account_name.lower() for word in ("contribution", "rollover"))
+        and "receivable" not in line.account_name.lower()
+    ]
+    return abs(sum(income, _ZERO)) if income else None
+
+
 async def investments(
     tenant: TenantContext, engagement_id: UUID, work_item_id: UUID, layer: str
 ) -> InvestmentsView:

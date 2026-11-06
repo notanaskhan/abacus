@@ -45,8 +45,14 @@ from abacus.modules.assurance.internal_control import (
 )
 from abacus.modules.engagements.api import assurance_item, get_ref, lock_ref, work_item_engagement
 from abacus.modules.evidence.api import verified_citation_ids
-from abacus.modules.identity.api import AuthContext, allowed_actions
-from abacus.modules.review.api import create_issue, issue_row, move_issue, record_rule_issue
+from abacus.modules.identity.api import AuthContext, allowed_actions, names_of
+from abacus.modules.review.api import (
+    create_issue,
+    decided_cards,
+    issue_row,
+    move_issue,
+    record_rule_issue,
+)
 from abacus.modules.workpapers.api import paper_id_of_kind
 
 TARGET: Final = "audit_finding"
@@ -410,9 +416,9 @@ async def to_misstatement(
     type_: Literal["factual", "judgmental", "projected"],
     amount: Decimal | None,
     column_set: Literal["ebp_net_assets", "commercial"],
+    fs_effect: Mapping[str, str] | None = None,
     projection_ref: UUID | None = None,
     sample_error: Decimal | None = None,
-    effect: Mapping[str, str] | None = None,
     nature: Literal["misstatement", "reclassification"] = "misstatement",
 ) -> UUID:
     """A misstatement from the finding: factual or judgmental with its amount; projected only from
@@ -483,7 +489,7 @@ async def to_misstatement(
                     "INSERT INTO audit_misstatements (tenant_id, engagement_id, work_item_id, "
                     "finding_id, ref, type, nature, status, amount, column_set, fs_effect, "
                     "projection) VALUES (:t, :e, :w, :f, :ref, :ty, :n, :st, :a, :cs, "
-                    "CAST(:fx AS jsonb), CAST(:pr AS jsonb)) RETURNING id"
+                    "CAST(:effect AS jsonb), CAST(:pr AS jsonb)) RETURNING id"
                 ),
                 {
                     "t": ctx.tenant_id,
@@ -496,7 +502,7 @@ async def to_misstatement(
                     "st": "below_ct" if below else "confirmed",
                     "a": amount,
                     "cs": column_set,
-                    "fx": json.dumps(dict(effect or {})),
+                    "effect": json.dumps(dict(fs_effect or {})),
                     "pr": projection,
                 },
             )
@@ -605,8 +611,9 @@ async def route_to_misstatement(tx: UnitOfWork, request: RouteRequest) -> UUID:
         await tx.session.execute(
             text(
                 "INSERT INTO audit_misstatements (tenant_id, engagement_id, work_item_id, ref, "
-                "origin_ref, type, status, amount, column_set) VALUES (:t, :e, :w, :ref, :origin, "
-                "'factual', 'candidate', :a, :cs) RETURNING id"
+                "origin_ref, type, status, amount, column_set, fs_effect) "
+                "VALUES (:t, :e, :w, :ref, :origin, 'factual', 'candidate', :a, :cs, "
+                "CAST(:effect AS jsonb)) RETURNING id"
             ),
             {
                 "t": tenant.tenant_id,
@@ -616,6 +623,7 @@ async def route_to_misstatement(tx: UnitOfWork, request: RouteRequest) -> UUID:
                 "origin": request.address[:20],
                 "a": request.amount,
                 "cs": "ebp_net_assets" if ebp else "commercial",
+                "effect": json.dumps({"description": request.description[:500]}),
             },
         )
     ).scalar_one()
@@ -626,6 +634,34 @@ async def route_to_misstatement(tx: UnitOfWork, request: RouteRequest) -> UUID:
         scope=_route_scope(request),
     )
     return UUID(str(misstatement_id))
+
+
+async def concluded_severities(
+    tenant: TenantContext, engagement_id: UUID
+) -> dict[UUID, tuple[str, str | None]]:
+    """AUD-09 f: by finding, its deficiency's concluded severity and the initials of who decided
+    it, for a route that has authorised on the engagement (DEC-2362)."""
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                text(
+                    "SELECT finding_id, severity_concluded, decision_card_id FROM deficiencies "
+                    "WHERE engagement_id = :e AND severity_concluded IS NOT NULL"
+                ),
+                {"e": engagement_id},
+            )
+        ).all()
+    if not rows:
+        return {}
+    deciders = {c.card_id: c.decided_by for c in await decided_cards(tenant, engagement_id)}
+    names = await names_of(sorted(set(deciders.values()), key=str))
+    out: dict[UUID, tuple[str, str | None]] = {}
+    for row in rows:
+        decider = deciders.get(row.decision_card_id)
+        name = names.get(decider) if decider else None
+        initials = "".join(part[0] for part in name.split()).upper() if name else None
+        out[row.finding_id] = (str(row.severity_concluded), initials)
+    return out
 
 
 def register_exception_routes() -> None:

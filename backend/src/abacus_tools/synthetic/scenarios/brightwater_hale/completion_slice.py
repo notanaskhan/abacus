@@ -16,7 +16,7 @@ keeps checklist text (ADR-056), and is never licensed text.
 - **Statements** (AUD-20): v1 before RJE-1 is recorded, then v2, v3, and Dana's Oct 8 approval.
 
 Not here, or not as designed (DEC-2373): findings raised by a person, so no agent run; Ana's change
-and response are a person's, not "via Agent"; no client note on PAJE-1/2; RJE-1 is in v1 from its
+and response are a person's, not "via Agent"; RJE-1 is in v1 from its
 approval, so v1's 14,850 difference isn't shown; no checklist answers; Granite Peak's AJE-3. Opt-in
 (`--slice completion`).
 """
@@ -92,6 +92,7 @@ class SeedEntry(NamedTuple):
     lines: tuple[tuple[str, str, str], ...]
     decision: str
     reason: str | None
+    note: str | None = None
 
 
 # AUD-17 a's named papers. The handoff's footer counts 26; it doesn't name the other 13.
@@ -212,6 +213,7 @@ ENTRIES: Final = (
         (("1250", "35300.00", "0"), ("4200", "0", "35300.00")),
         "client_declined",
         "sponsor will correct under EPCRS in 2026",
+        "Declined by Dana Kowalski · Sep 25 — sponsor will correct under EPCRS in 2026",
     ),
     SeedEntry(
         "F-08",
@@ -220,6 +222,7 @@ ENTRIES: Final = (
         (("5300", "13050.00", "0"), ("2100", "0", "13050.00")),
         "client_declined",
         "recorded when invoiced",
+        "Declined by Dana Kowalski · Sep 25 — recorded when invoiced",
     ),
 )
 PY_EFFECT: Final = {
