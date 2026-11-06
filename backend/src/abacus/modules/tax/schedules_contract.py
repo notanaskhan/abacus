@@ -640,6 +640,7 @@ def _patch_action(body: ExtensionPatchIn) -> str:
 @schedules_router.post(
     f"{_X}/confirmation-requests",
     action="filing_extension.confirmation_send",
+    status_code=201,
     response_model=ConfirmationRequestOut,
     errors=(409, 501),
 )
@@ -695,6 +696,7 @@ async def installment_patch_route(
 @schedules_router.post(
     f"{_Q}/confirmation-requests",
     action="estimate_schedule.confirmation_send",
+    status_code=201,
     response_model=ConfirmationRequestOut,
     errors=(409, 501),
 )
@@ -713,6 +715,7 @@ async def installment_confirmation_route(
 @schedules_router.post(
     f"{_Q}/follow-ups",
     action="follow_up.draft",
+    status_code=201,
     response_model=FollowUpDraftOut,
     errors=(409, 501),
 )

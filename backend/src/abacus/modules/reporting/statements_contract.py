@@ -532,6 +532,7 @@ async def checklist_export_route(document_id: UUID, ctx: Ctx) -> Response:
 @statements_router.post(
     "/methodology/disclosure-checklists:import",
     action="disclosure_checklist_template.import",
+    status_code=201,
     response_model=ChecklistImportOut,
     errors=(409, 501),
 )
