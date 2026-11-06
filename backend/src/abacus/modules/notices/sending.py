@@ -65,8 +65,6 @@ SOURCE: Final = "notice_response"
 APPROVAL_KIND: Final = "notice_response_sign_off"
 CONFIRMATION_ITEM: Final = "confirmation_request_item_id"
 CONFIRMATION_REQUEST: Final = "Upload your IRS payment confirmation"  # NOT-03c, verbatim
-# The link goes out to the IRS from the client's browser: Accrued never calls it (N-04 R-04).
-DIRECT_PAY: Final = "https://www.irs.gov/payments/direct-pay"
 CONFIRMATION_DAYS: Final = 14
 RECORD_TYPE: Final = "notice_response"
 JsonRow = dict[str, Any]  # Any: rows and JSON columns as stored
@@ -312,7 +310,7 @@ async def _with_confirmation_request(
     sent = await send_confirmation(
         ctx,
         found.engagement_id,
-        description=f"{CONFIRMATION_REQUEST}. Pay with IRS Direct Pay at {DIRECT_PAY}.",
+        description=f"{CONFIRMATION_REQUEST}. Pay with IRS Direct Pay, then upload it here.",
         due_on=found.respond_by or await today(ctx.tenant) + timedelta(days=CONFIRMATION_DAYS),
         contact_id=signers[0] if signers else None,
         wave="year_end",
