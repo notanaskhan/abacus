@@ -655,6 +655,12 @@ class ExpenseRowOut(BaseModel):
     paid_from_plan: MaybeMoney = None
     schedule_h_line: Annotated[Literal["2i(1)", "2i(2)", "2i(3)", "2i(4)"], classified("internal")]
     exception: Annotated[bool, classified("internal")] = False
+    # A-05-T45 (additive): the grid's Provider and 408(b)(2) words, and each cell's citations.
+    provider_name: Annotated[str | None, classified("confidential")] = None
+    disclosure_text: Annotated[str | None, classified("confidential")] = None
+    citation_labels: Annotated[list[str], Field(max_length=20), classified("confidential")] = (
+        Field(default_factory=list[str])
+    )
 
 
 class ExpensesOut(BaseModel):
