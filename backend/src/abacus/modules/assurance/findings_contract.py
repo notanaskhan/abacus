@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, Any, Literal, NoReturn, cast
+from typing import Annotated, Any, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
@@ -24,9 +24,10 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import ASSURANCE_COMPLETION
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
+from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.engagements.api import get_ref, work_item_engagement
 from abacus.modules.identity.api import AbacusRouter, AuthContext, authorise, current_context
 
@@ -438,10 +439,6 @@ async def _gate_flag(ctx: AuthContext) -> None:
         raise NotFound(ASSURANCE_COMPLETION.name)
 
 
-def _not_yet() -> NoReturn:
-    raise NotImplementedYet
-
-
 router = AbacusRouter(prefix="/v1", tags=["assurance"])
 _WI = "/work-items/{work_item_id}"
 
@@ -635,6 +632,95 @@ async def finding_request_decision_route(
     return DecisionRaisedOut(decision_card_id=await cd.request_severity_decision(ctx, finding_id))
 
 
+def _misstatement_out(r: Any) -> MisstatementOut:  # noqa: ANN401 -- the service's row
+    return MisstatementOut(
+        id=r.id,
+        ref=r.ref,
+        origin_ref=r.origin_ref,
+        description=None,
+        type=r.type,
+        nature=r.nature,
+        status=r.status,
+        amount=r.amount,
+        finding_ref=r.finding_ref,
+        proposed_entry_ref=None,
+        allowed_actions=[],
+    )
+
+
+def _sum_row(r: Any, group: Literal["current", "prior_year"]) -> SumRowOut:  # noqa: ANN401 -- a row
+    from abacus.modules.assurance.sum_service import effects
+
+    rollover, iron = effects(r)
+    effect = r.fs_effect
+    return SumRowOut(
+        misstatement_id=r.id,
+        ref=r.ref,
+        group=group,
+        description=str(effect.get("description") or r.origin_ref or r.ref),
+        finding_ref=r.finding_ref,
+        workpaper_ref=effect.get("workpaper_ref"),
+        client_note=effect.get("client_note"),
+        type=r.type,
+        assets=None if effect.get("assets") is None else Decimal(str(effect["assets"])),
+        liabilities=(
+            None if effect.get("liabilities") is None else Decimal(str(effect["liabilities"]))
+        ),
+        net_assets=iron,
+        change_in_net_assets=rollover,
+        carried_from_py=rollover if group == "prior_year" else None,
+    )
+
+
+async def _sum_out(
+    ctx: AuthContext, work_item_id: UUID, view: Literal["ebp_net_assets", "commercial"] | None
+) -> SumOut:
+    from abacus.modules.assurance import sum_service
+
+    found = await sum_service.sum_view(ctx.tenant, work_item_id, view)
+    r = found.result
+    return SumOut(
+        column_set=cast(ColumnSet, found.column_set),
+        rollover=r.rollover,
+        iron_curtain=r.iron_curtain,
+        aggregate=r.aggregate,
+        pct_of_pm=r.pct_of_pm,
+        fill_pct_of_overall=r.fill_pct_of_overall,
+        ct_tick_pct=r.ct_tick_pct,
+        pm_tick_pct=r.pm_tick_pct,
+        approaching_pm=r.approaching_pm,
+        above_pm=r.above_pm,
+        engine_version=r.engine_version,
+        inputs_hash=r.inputs_hash,
+        aggregate_view="iron_curtain" if abs(r.iron_curtain) > abs(r.rollover) else "rollover",
+        thresholds=SumThresholdsOut(
+            overall=found.overall, pm=found.pm, ct=found.ct, label=found.label
+        ),
+        rows=[_sum_row(x, "current") for x in found.current]
+        + [_sum_row(x, "prior_year") for x in found.prior_year],
+        totals=SumTotalsOut(
+            net_assets=r.iron_curtain,
+            change_in_net_assets=r.rollover,
+        ),
+        below_ct_count=len(r.below_ct),
+        below_ct_total=found.below_ct_total,
+        factors=[
+            SumFactorOut(factor=k, label=k.replace("_", " ").capitalize(), value=v, flagged=f)
+            for k, v, f in found.factors
+        ],
+        booked=[
+            SumBookedOut(
+                ref=x.ref,
+                description=str(x.fs_effect.get("description") or x.ref),
+                amount=x.amount,
+                approval_label=None,
+            )
+            for x in found.booked
+        ],
+        counts=SumCountsOut(**found.counts),
+    )
+
+
 @router.get(
     f"{_WI}/misstatements",
     action="misstatement.read",
@@ -647,7 +733,10 @@ async def misstatements_route(
     view: Literal["proposed", "reclass", "passed", "below_ct"] = "proposed",
 ) -> ListPage[MisstatementOut]:
     await _gate(ctx, work_item_id, "misstatement.read")
-    _not_yet()
+    from abacus.modules.assurance import sum_service
+
+    rows = await sum_service.misstatements(ctx.tenant, work_item_id, view)
+    return ListPage[MisstatementOut](items=[_misstatement_out(r) for r in rows], total=len(rows))
 
 
 @router.post(
@@ -661,7 +750,15 @@ async def misstatement_pass_route(
 ) -> MisstatementOut:
     """DF-28: the EP passes a declined misstatement on SUM with a reason (T09)."""
     await _gate_flag(ctx)
-    _not_yet()
+    from abacus.modules.assurance import sum_service
+
+    work_item = await sum_service.work_item_of(ctx.tenant, misstatement_id)
+    await _gate(ctx, work_item, "misstatement.pass_to_sum")
+    await sum_service.pass_on_sum(
+        ctx, misstatement_id, f"{body.reason_code}: {body.note or ''}".strip(": ")
+    )
+    rows = await sum_service.misstatements(ctx.tenant, work_item, "passed")
+    return _misstatement_out(next(r for r in rows if r.id == misstatement_id))
 
 
 @router.get(f"{_WI}/sum", action="sum.read", response_model=SumOut, errors=(501,))
@@ -670,7 +767,7 @@ async def sum_route(
 ) -> SumOut:
     """Code's SUM under both views (AUD-16 a; T13)."""
     await _gate(ctx, work_item_id, "sum.read")
-    _not_yet()
+    return await _sum_out(ctx, work_item_id, view)
 
 
 @router.put(
@@ -684,7 +781,13 @@ async def sum_factor_route(
 ) -> SumOut:
     """A qualitative factor through `review.api.record_value` with its citation (T13)."""
     await _gate(ctx, work_item_id, "sum.update_factors")
-    _not_yet()
+    from abacus.modules.assurance import sum_service
+
+    engagement_id = cast(UUID, await work_item_engagement(ctx.tenant, work_item_id))
+    await sum_service.record_factor(
+        ctx, engagement_id, work_item_id, factor, body.value, body.note, body.citation_ids
+    )
+    return await _sum_out(ctx, work_item_id, None)
 
 
 @router.post(
@@ -718,7 +821,31 @@ async def sum_snapshot_route(
     work_item_id: UUID, body: SnapshotIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> SumSnapshotOut:
     await _gate(ctx, work_item_id, "sum.snapshot")
-    _not_yet()
+    from abacus.modules.assurance import sum_service
+
+    engagement_id = cast(UUID, await work_item_engagement(ctx.tenant, work_item_id))
+
+    async def run() -> tuple[int, dict[str, object]]:
+        snapshot_id, number, inputs_hash = await sum_service.snapshot(
+            ctx, engagement_id, work_item_id, body.purpose
+        )
+        out = SumSnapshotOut(
+            id=snapshot_id,
+            version_no=number,
+            purpose=body.purpose,
+            inputs_hash=inputs_hash,
+            decision_card_id=None,
+        )
+        return 201, out.model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="sum.snapshot",
+        key=idempotency_key,
+        body={"work_item_id": str(work_item_id), **body.model_dump(mode="json")},
+        run=run,
+    )
+    return SumSnapshotOut.model_validate(stored.body)
 
 
 @router.get(f"{_WI}/sign-off-matrix", action="sign_off.read", response_model=SignOffMatrixOut)

@@ -52,6 +52,6 @@ def test_ac1_release_and_template_publish_need_a_fresh_second_factor() -> None:
 
 
 def test_ac2_the_remaining_flag_defaults_off() -> None:
-    # T-03-T19: the other three retired; the `tax_returns` entitlement gates their routes (DEC-2329).
+    # T-03-T19: the other three retired; the `tax_returns` entitlement gates their routes.
     for flag in (_flags.EVIDENCE_DUPLICATE_REVIEW,):
         assert flag.default == "false"

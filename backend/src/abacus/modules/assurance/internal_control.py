@@ -131,6 +131,11 @@ ExceptionRouter = Callable[[UnitOfWork, RouteRequest], Awaitable[UUID]]
 _ROUTERS: dict[RouteKind, ExceptionRouter] = {}
 
 
+def exception_router(kind: RouteKind) -> ExceptionRouter | None:
+    """The kind's registered router, for another row type routed the same way (AUD-10 e)."""
+    return _ROUTERS.get(kind)
+
+
 def register_exception_route(kind: RouteKind, router: ExceptionRouter) -> None:
     """A-06 registers the finding and misstatement routers; one per kind."""
     if kind in _ROUTERS and _ROUTERS[kind] is not router:

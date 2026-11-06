@@ -1,62 +1,100 @@
-"""T-03-T07: extensions (TAX-13 a; T-03 §3 F5; DEC-2243).
+"""T-03-T07: extensions (TAX-13 a, c, d, e; T-03 §3 F4; DEC-2243, DEC-2350).
 
 - **Rows.** Filing extensions grouped per return, only for returns the viewer may see
   (`engagements.api.work_item_facts`, walls applied), with the counts from those rows alone:
   `{extended, open, filed, likely, acks_pending}` (DEC-43: a walled return is absent, never
   counted).
+- **Prepare.** G1 and G3 first (409 `gate_unmet` with the facts), then the lines (the federal line
+  from the published rules; a state line names its form), the proposed payments (a changed amount
+  supersedes the row it changes) and per-line safe-harbor checks by `tax.compute.payments`.
+- **Submit for approval.** The proposer's path: the return's reviewers are told, and approve
+  through approve-and-request.
 - **Approve and request.** One unit of work as the caller (a person; the matrix holds the
-  reviewer function): every proposed payment on the chosen extensions is approved, then one
-  confirmation request item is created per return in its binder's engagement, attributed to the
-  caller. A payment is a method label and an amount; no route stores or transmits an instrument.
-- **Prepare and submit.** Prepare writes a return's lines with the preparer's projected liability
-  and code's safe-harbor target, and proposes payments (a later change supersedes). The G1 and G3
-  gates hold it (409 `gate_unmet`). Submit opens C13's gate for the return's reviewers.
+  reviewer function on the return): any named returns are prepared, every proposed payment on the
+  chosen extensions is approved, and one confirmation request per return is created and sent
+  (`requests.send_created`, its Undo window and its grant). A payment is a
+  method label and an amount; no route stores or transmits an instrument.
 - **Mark filed** is a person's record (date, form, the filed form's evidence version); Accrued
   never transmits an extension (DEC-49).
+- **The sweep.** A published reference set recomputes every open line's dates, each change
+  audited with both rule versions; a filed line keeps what it was filed under.
 
-Figures (projected liability, the safe-harbor target) are stored by code with their engine stamp
-(T-03-T04's `tax.compute.payments`); this module reads them.
+Every write authorises on the return (the engagement with the return as the work item), because
+`function_in` reads the caller's function there; the firm-level `_gate` only answers client
+principals and the flag for these. Figures (projected liability, the safe-harbor target) are
+stored by code with their engine stamp (T-03-T04's `tax.compute.payments`); a preparer enters the
+projected liability with its source (DEC-77: Accrued never computes tax).
 """
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+import json
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import date
 from decimal import Decimal
-from typing import Annotated, Any, ClassVar, Final
-from uuid import UUID
+from typing import Annotated, Any, ClassVar, Final, cast
+from uuid import UUID, uuid4
 
+from pydantic import Field
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
-from abacus.kernel.uow import DomainEvent, Ref, Target, uow
+from abacus.kernel.uow import DomainEvent, OutboxEvent, Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import WorkItemFacts, gate_fact, work_item_facts
-from abacus.modules.identity.api import AuthContext, Resource, authorise, engagement_resource
-from abacus.modules.tax.compute.payments import paid_by_original_due, parameters, safe_harbor
-from abacus.modules.tax.due_dates import dates_for
+from abacus.modules.identity.api import (
+    AuthContext,
+    Resource,
+    authorise,
+    engagement_resource,
+    may_read_unmasked,
+    offshore_consented,
+)
+from abacus.modules.tax.compute import payments as engine
+from abacus.modules.tax.due_dates import FORM_FOR_RULES, dates_for
+from abacus.modules.tax.engine_adapter import EXTENSION_FORMS
 
 KIND = "tax_return"
+FEDERAL: Final = "US"
+FLAG_LIKELY: Final = "filing_extension.flag_likely"
+LoaderDates = tuple[date, date, str]  # original due, extended due, the federal form
+READ: Final = "filing_extension.read"
 PREPARE: Final = "filing_extension.prepare"
 APPROVE: Final = "filing_extension.approve_payment"
+MARK_FILED: Final = "filing_extension.mark_filed"
 SEND: Final = "filing_extension.confirmation_send"
-FEDERAL: Final = "US"
-# The federal extension form for a return's form (the Code's, not the firm's: DEC-76). A state
-# line names its own form.
-EXTENSION_FORM: Final = {
-    "1040": "4868",
-    "1040x": "4868",
-    "1041": "7004",
-    "1065": "7004",
-    "1120": "7004",
-    "1120s": "7004",
-    "990": "8868",
-    "706": "4768",
-    "709": "8892",
-}
-_GATES: Final = ("G1", "G3")
+REQUIRED_GATES: Final = ("G1", "G3")
+REVIEWER_FUNCTIONS: Final = ("detail_reviewer", "manager_reviewer", "signer")
+
+
+class ExtensionApprovalRequested(DomainEvent):
+    """A preparer submitted extension payments for approval (identifiers only)."""
+
+    event_type: ClassVar[str] = "extension_payment.approval_requested"
+
+    work_item_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    by_user: Annotated[UUID | None, classified("internal")] = None
+    recipient_user_ids: Annotated[list[UUID], classified("internal")] = Field(
+        default_factory=list[UUID]
+    )
+
+
+class ExtensionAckRejected(DomainEvent):
+    """An imported ack rejected an extension: the preparer and the manager hear (no amounts)."""
+
+    event_type: ClassVar[str] = "extension.ack_rejected"
+
+    work_item_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    extension_id: Annotated[UUID, classified("internal")]
+    reject_code: Annotated[str, classified("internal")]  # the agency's code, as filing.py holds it
+    recipient_user_ids: Annotated[list[UUID], classified("internal")] = Field(
+        default_factory=list[UUID]
+    )
 
 
 class NothingToApprove(DomainConflict):
@@ -75,64 +113,47 @@ class ExtensionMoved(DomainConflict):
     code = "version_conflict"
 
 
-class GateUnmet(DomainConflict):
-    """The engagement isn't accepted or has no letter, so the extension can't be prepared."""
+class ExtensionGateUnmet(DomainConflict):
+    """The engagement's G1 or G3 is unmet: an extension can't be prepared (Thornbury's 4768)."""
 
     code = "gate_unmet"
 
 
-class StateLineNeedsForm(DomainInvalid):
-    """Only a federal line's extension form follows from the return."""
+class NoExtensionForm(DomainConflict):
+    """The published rules name no extension form or dates for this return's form."""
+
+    code = "no_extension_form"
+
+
+class StateFormRequired(DomainInvalid):
+    """A state line's first payment names its form (IT-370); only the federal form is a rule's."""
 
     code = "extension_form_required"
 
 
-class ExtensionSubmitted(DomainEvent):
-    """T-03-T07: C13's gate opens; a payment's approval closes it. Identifiers only."""
+class LiabilityNeedsSource(DomainInvalid):
+    """A projected liability carries where it came from (DEC-77, INV-2)."""
 
-    event_type: ClassVar[str] = "filing_extension.submitted"
-
-    extension_id: Annotated[UUID, classified("internal")]
-
-
-class ExtensionPaymentApproved(DomainEvent):
-    event_type: ClassVar[str] = "extension_payment.approved"
-
-    extension_id: Annotated[UUID, classified("internal")]
+    code = "projected_liability_source_required"
 
 
 @dataclass(frozen=True)
-class LineIn:
-    """A preparer's line. Accrued never computes the projected tax (T-03 US-4.2)."""
-
-    return_id: UUID
-    jurisdiction: str = FEDERAL
-    form: str | None = None
-    projected_liability: Decimal | None = None
-    projected_liability_source: str | None = None
-    withholding_plus_estimates: Decimal | None = None
-
-
-@dataclass(frozen=True)
-class PaymentIn:
+class ProposedPayment:
     return_id: UUID
     jurisdiction: str
     kind: str
     amount: Decimal
+    form: str | None = None
 
 
 @dataclass(frozen=True)
-class Check:
-    """The sheet's check line, from code."""
-
+class LineCheck:
     tax_return_id: UUID
     jurisdiction: str
     projected_liability: Decimal | None
-    safe_harbor_target: Decimal | None
-    paid_by_original_due: Decimal | None
-    meets_safe_harbor: bool | None
-    engine_name: str | None
-    engine_version: str | None
+    target: Decimal | None
+    paid: Decimal
+    meets: bool | None
     inputs_hash: str | None
 
 
@@ -149,21 +170,16 @@ class ReturnRow:
     payments: list[dict[str, Any]] = field(  # Any: JSON from the database
         default_factory=list[dict[str, Any]]  # Any: JSON from the database
     )  # Any: JSON from the database or the document
+    return_form: str = ""
 
     @property
     def likely(self) -> bool:
         return any(line["likely_to_extend"] for line in self.lines)
 
-
-def segment_of(row: ReturnRow) -> str:
-    """TAX-13 a's three views: Open, Filed & acks, Likely to extend."""
-    if row.likely and all(x["status"] == "not_filed" for x in row.lines):
-        return "likely"
-    return (
-        "filed"
-        if all(x["status"] in ("filed", "accepted", "rejected") for x in row.lines)
-        else "open"
-    )
+    @property
+    def primary(self) -> dict[str, Any]:  # Any: JSON from the database
+        """The federal line, whose figures the row shows; a state line only without one."""
+        return next((x for x in self.lines if x["jurisdiction"] == FEDERAL), self.lines[0])
 
 
 def counts(rows: Sequence[ReturnRow]) -> dict[str, int]:
@@ -177,16 +193,117 @@ def counts(rows: Sequence[ReturnRow]) -> dict[str, int]:
     }
 
 
-async def rows(ctx: AuthContext, tax_year: int) -> list[ReturnRow]:
+def in_segment(row: ReturnRow, segment: str | None) -> bool:
+    statuses = {x["status"] for x in row.lines}
+    if segment == "likely":
+        return row.likely
+    if segment == "open":
+        return bool(statuses & {"not_filed", "prepared"}) and (
+            "not_filed" not in statuses or not row.likely
+        )
+    if segment == "filed":
+        return bool(statuses & {"filed", "accepted", "rejected"})
+    return True
+
+
+def on_tile(row: ReturnRow, tile: str | None) -> bool:
+    statuses = {x["status"] for x in row.lines}
+    if tile == "extended":
+        return statuses != {"not_filed"}
+    if tile == "open":
+        return bool(statuses & {"not_filed", "prepared"})
+    if tile == "filed":
+        return bool(statuses & {"filed", "accepted"})
+    if tile == "likely":
+        return row.likely
+    if tile == "acks_pending":
+        return "filed" in statuses
+    return True
+
+
+def money(value: object) -> Decimal | None:
+    return None if value is None else Decimal(str(value))
+
+
+def _parameters(tax_year: int) -> engine.Parameters | None:
+    """The year's engine parameters; a year without a file has no target ("—"), never a guess."""
+    try:
+        return engine.parameters(tax_year)
+    except LookupError:
+        return None
+
+
+def line_check(
+    return_id: UUID,
+    line: Mapping[str, Any],  # Any: a database row
+    payments: Sequence[Mapping[str, Any]],  # Any: database rows
+    tax_year: int,
+) -> LineCheck:
+    """Withholding and estimates plus the line's payments made by the original due date, against
+    the stored target. Code's arithmetic (ADR-050)."""
+    target = money(line.get("safe_harbor_target"))
+    paid_on_time = [
+        Decimal(str(p["amount"]))
+        for p in payments
+        if p["filing_extension_id"] == line["id"]
+        and (p["paid_on"] is None or p["paid_on"] <= line["original_due_on"])
+    ]
+    withheld = money(line.get("withholding_plus_estimates")) or Decimal(0)
+    params = _parameters(tax_year)
+    if params is None:
+        paid = withheld + sum(paid_on_time, Decimal(0))
+        return LineCheck(
+            return_id,
+            str(line["jurisdiction"]),
+            money(line.get("projected_liability")),
+            None,
+            paid,
+            None,
+            None,
+        )
+    check = engine.paid_by_original_due(withheld, paid_on_time, target, params)
+    return LineCheck(
+        return_id,
+        str(line["jurisdiction"]),
+        money(line.get("projected_liability")),
+        check.target,
+        check.paid_by_original_due,
+        check.meets,
+        check.stamp.inputs_hash,
+    )
+
+
+async def on_return(ctx: AuthContext, engagement_id: UUID, return_id: UUID) -> Resource:
+    """The engagement with the return as the work item (`function_in` reads it there)."""
+    return replace(await engagement_resource(ctx.tenant, engagement_id), work_item_id=return_id)
+
+
+async def readable_returns(ctx: AuthContext) -> dict[UUID, WorkItemFacts]:
+    """The viewer's visible returns, less what an offshore reader may not read: amounts are tax
+    return information, so a client without the offshore consent is absent (the matrix's note on
+    `filing_extension.read`; DEC-52). Fail closed: no provider, no consent."""
     facts = {f.work_item_id: f for f in await work_item_facts(ctx, KIND)}
+    if await may_read_unmasked(ctx):
+        return facts
+    consented = {
+        client: await offshore_consented(ctx.tenant, client)
+        for client in {f.client_id for f in facts.values()}
+    }
+    return {k: f for k, f in facts.items() if consented[f.client_id]}
+
+
+async def rows(ctx: AuthContext, tax_year: int) -> list[ReturnRow]:
+    facts = await readable_returns(ctx)
     if not facts:
         return []
     async with tenant_session(ctx.tenant) as session:
         lines = (
             await session.execute(
                 text(
-                    "SELECT * FROM filing_extensions WHERE tax_year = :y "
-                    "AND tax_return_id = ANY(:ids) ORDER BY tax_return_id, jurisdiction"
+                    "SELECT e.*, r.form AS return_form FROM filing_extensions e "
+                    "JOIN tax_returns r ON r.work_item_id = e.tax_return_id "
+                    "WHERE e.tax_year = :y AND e.tax_return_id = ANY(:ids) "
+                    "ORDER BY e.tax_return_id, e.jurisdiction"
                 ),
                 {"y": tax_year, "ids": list(facts)},
             )
@@ -198,7 +315,12 @@ async def rows(ctx: AuthContext, tax_year: int) -> list[ReturnRow]:
             row = out.setdefault(
                 line["tax_return_id"],
                 ReturnRow(
-                    line["tax_return_id"], f.work_item_id, f.engagement_id, f.client_name, tax_year
+                    line["tax_return_id"],
+                    f.work_item_id,
+                    f.engagement_id,
+                    f.client_name,
+                    tax_year,
+                    return_form=str(line["return_form"]),
                 ),
             )
             row.lines.append(dict(line))
@@ -220,311 +342,256 @@ async def rows(ctx: AuthContext, tax_year: int) -> list[ReturnRow]:
     return sorted(out.values(), key=lambda r: r.client_name.lower())
 
 
-async def approve_and_request(
-    ctx: AuthContext, extension_ids: Sequence[UUID], *, send_confirmations: bool
-) -> tuple[list[UUID], list[UUID]]:
-    """Approve every proposed payment on the extensions as the caller, then one confirmation
-    request per return (attributed to the caller)."""
-    from abacus.modules.requests.api import NewRequestItem, add_request_item
-
-    if send_confirmations:
-        # A person sends the confirmation requests; the agent never does (AGENT-001).
-        await authorise(ctx, "filing_extension.confirmation_send", Resource.firm(ctx.tenant_id))
-
-    visible = {f.work_item_id: f for f in await work_item_facts(ctx, KIND)}
+async def row_of(ctx: AuthContext, extension_id: UUID) -> ReturnRow:
+    """The visible row that holds the extension; a walled one is not found."""
     async with tenant_session(ctx.tenant) as session:
-        returns = (
+        tax_year = (
             await session.execute(
-                text("SELECT DISTINCT tax_return_id FROM filing_extensions WHERE id = ANY(:ids)"),
-                {"ids": list(extension_ids)},
+                text("SELECT tax_year FROM filing_extensions WHERE id = :id"), {"id": extension_id}
             )
-        ).scalars()
-        chosen = [r for r in returns if r in visible]
-    # The reviewer function is the return's, so the firm-level gate can't decide it (US-4.4).
-    for return_id in chosen:
-        await _narrow(ctx, APPROVE, visible[return_id])
-    async with uow(ctx.tenant) as tx:
-        pending = list(
-            (
+        ).scalar()
+    if tax_year is None:
+        raise NotFound("filing_extension")
+    for row in await rows(ctx, int(tax_year)):
+        if any(x["id"] == extension_id for x in row.lines):
+            return row
+    raise NotFound("filing_extension")
+
+
+async def _unmet_gates(tenant: TenantContext, engagement_id: UUID) -> list[str]:
+    return [g for g in REQUIRED_GATES if not (await gate_fact(tenant, engagement_id, g)).met]
+
+
+async def blocked_reason(tenant: TenantContext, engagement_id: UUID) -> str | None:
+    """TAX-13 c's tooltip key: the engagement can't be extended yet."""
+    return "gate_unmet" if await _unmet_gates(tenant, engagement_id) else None
+
+
+async def _target_columns(
+    return_form: str, tax_year: int, liability: Decimal | None
+) -> dict[str, object]:
+    """The stored safe-harbor columns: code's, with the stamp the CHECK needs beside a target."""
+    params = _parameters(tax_year)
+    if params is None or liability is None:
+        return {"pct": None, "target": None, "version": None, "hash": None}
+    try:
+        harbor = engine.safe_harbor(return_form, liability, params)
+    except LookupError:
+        return {"pct": None, "target": None, "version": None, "hash": None}
+    return {
+        "pct": harbor.pct,
+        "target": harbor.target,
+        "version": harbor.stamp.engine_version if harbor.target is not None else None,
+        "hash": harbor.stamp.inputs_hash if harbor.target is not None else None,
+    }
+
+
+async def _line_for(
+    tx: UnitOfWork,
+    ctx: AuthContext,
+    return_row: Mapping[str, Any],  # Any: a database row
+    jurisdiction: str,
+    form: str | None,
+    loader_dates: LoaderDates | None = None,
+) -> dict[str, Any]:  # Any: a database row
+    """The return's line for a jurisdiction, created from the rules the first time."""
+    return_id = return_row["work_item_id"]
+    found = (
+        (
+            await tx.session.execute(
+                text(
+                    "SELECT * FROM filing_extensions WHERE tax_return_id = :r "
+                    "AND jurisdiction = :j FOR UPDATE"
+                ),
+                {"r": return_id, "j": jurisdiction},
+            )
+        )
+        .mappings()
+        .first()
+    )
+    if found is not None:
+        return dict(found)
+    dates = (
+        None
+        if loader_dates
+        else await dates_for(
+            str(return_row["form"]), int(return_row["tax_year"]), return_row["fiscal_year_end"]
+        )
+    )
+    if loader_dates is None and (dates is None or dates.extended_due_on is None):
+        raise NoExtensionForm(facts={"return_id": str(return_id)})
+    if jurisdiction == FEDERAL:
+        form = dates.extension_form if dates else loader_dates[2]  # type: ignore[index] -- above
+    elif form is None:
+        raise StateFormRequired(facts={"jurisdiction": jurisdiction})
+    if loader_dates is None and form not in EXTENSION_FORMS:
+        raise NoExtensionForm(facts={"return_id": str(return_id)})
+    versions = dates.reference_set_version_ids if dates else ()
+    original = dates.original_due_on if dates else loader_dates[0]  # type: ignore[index] -- above
+    extended = dates.extended_due_on if dates else loader_dates[1]  # type: ignore[index] -- above
+    created = (
+        (
+            await tx.session.execute(
+                text(
+                    "INSERT INTO filing_extensions (id, tenant_id, engagement_id, work_item_id, "
+                    "tax_return_id, tax_year, jurisdiction, form, original_due_on, "
+                    "extended_due_on, due_rules_version_id, created_by) VALUES (:id, :t, :e, :r, "
+                    ":r, :y, :j, :form, :orig, :ext, :rules, :by) RETURNING *"
+                ),
+                {
+                    "id": uuid4(),
+                    "t": ctx.tenant_id,
+                    "e": return_row["engagement_id"],
+                    "r": return_id,
+                    "y": return_row["tax_year"],
+                    "j": jurisdiction,
+                    "form": form,
+                    "orig": original,
+                    "ext": extended,
+                    "rules": versions[0] if versions else None,
+                    "by": ctx.user_id,
+                },
+            )
+        )
+        .mappings()
+        .one()
+    )
+    return dict(created)
+
+
+async def _propose(
+    tx: UnitOfWork, ctx: AuthContext, extension_id: UUID, kind: str, amount: Decimal
+) -> UUID | None:
+    """A proposed payment; a different amount supersedes the live row, the same one is no change
+    (a repeat of the same click writes nothing)."""
+    live = (
+        (
+            await tx.session.execute(
+                text(
+                    "SELECT id, amount FROM extension_payments p WHERE filing_extension_id = :e "
+                    "AND kind = :k AND NOT EXISTS (SELECT 1 FROM extension_payments s "
+                    "WHERE s.supersedes_id = p.id) FOR UPDATE"
+                ),
+                {"e": extension_id, "k": kind},
+            )
+        )
+        .mappings()
+        .first()
+    )
+    if live is not None and Decimal(str(live["amount"])) == amount:
+        return None
+    payment_id = uuid4()
+    await tx.session.execute(
+        text(
+            "INSERT INTO extension_payments (id, tenant_id, filing_extension_id, kind, amount, "
+            "proposed_by, supersedes_id) VALUES (:id, :t, :e, :k, :a, :by, :old)"
+        ),
+        {
+            "id": payment_id,
+            "t": ctx.tenant_id,
+            "e": extension_id,
+            "k": kind,
+            "a": amount,
+            "by": ctx.user_id,
+            "old": live["id"] if live is not None else None,
+        },
+    )
+    return payment_id
+
+
+async def _return_rows(
+    session: AsyncSession, return_ids: Sequence[UUID], engagements: Mapping[UUID, UUID]
+) -> dict[UUID, dict[str, Any]]:  # Any: database rows
+    found = await session.execute(
+        text(
+            "SELECT work_item_id, form, tax_year, fiscal_year_end FROM tax_returns "
+            "WHERE work_item_id = ANY(:ids) FOR UPDATE"
+        ),
+        {"ids": list(return_ids)},
+    )
+    return {
+        row["work_item_id"]: {**row, "engagement_id": engagements[row["work_item_id"]]}
+        for row in found.mappings()
+    }
+
+
+async def _prepare_in(
+    tx: UnitOfWork,
+    ctx: AuthContext,
+    return_ids: Sequence[UUID],
+    payments: Sequence[ProposedPayment],
+    loader_dates: Mapping[UUID, LoaderDates] | None = None,
+) -> tuple[list[UUID], list[LineCheck]]:
+    """Prepare inside the caller's unit of work. Every return is checked before anything is
+    written, so one refusal leaves the whole selection as it was."""
+    visible = {f.work_item_id: f.engagement_id for f in await work_item_facts(ctx, KIND)}
+    wanted = list(dict.fromkeys([*return_ids, *(p.return_id for p in payments)]))
+    if any(r not in visible for r in wanted):
+        raise NotFound("tax_return")
+    found = await _return_rows(tx.session, wanted, visible)
+    for return_id in wanted:
+        if return_id not in found:
+            raise NotFound("tax_return")
+        engagement_id = found[return_id]["engagement_id"]
+        await authorise(ctx, PREPARE, await on_return(ctx, engagement_id, return_id))
+        unmet = [] if loader_dates else await _unmet_gates(ctx.tenant, engagement_id)
+        if unmet:
+            raise ExtensionGateUnmet(
+                facts={"return_id": str(return_id), "gate": unmet[0], "unmet": len(unmet)}
+            )
+    extension_ids: list[UUID] = []
+    checks: list[LineCheck] = []
+    for return_id in wanted:
+        row = found[return_id]
+        mine = [p for p in payments if p.return_id == return_id]
+        jurisdictions = list(dict.fromkeys([FEDERAL, *(p.jurisdiction for p in mine)]))
+        lines: list[dict[str, Any]] = []  # Any: database rows
+        for jurisdiction in jurisdictions:
+            form = next((p.form for p in mine if p.jurisdiction == jurisdiction), None)
+            line = await _line_for(
+                tx, ctx, row, jurisdiction, form, (loader_dates or {}).get(return_id)
+            )
+            for p in (x for x in mine if x.jurisdiction == jurisdiction):
+                await _propose(tx, ctx, line["id"], p.kind, p.amount)
+            if line["status"] == "not_filed":
                 await tx.session.execute(
                     text(
-                        "SELECT p.id, p.amount, e.id AS extension_id, e.tax_return_id, "
-                        "e.jurisdiction, e.form "
-                        "FROM extension_payments p JOIN filing_extensions e "
-                        "ON e.id = p.filing_extension_id WHERE e.id = ANY(:ids) "
-                        "AND p.approved_by IS NULL FOR UPDATE OF p"
+                        "UPDATE filing_extensions SET status = 'prepared', "
+                        "row_version = row_version + 1 WHERE id = :id"
                     ),
-                    {"ids": list(extension_ids)},
+                    {"id": line["id"]},
                 )
-            ).mappings()
-        )
-        pending = [p for p in pending if p["tax_return_id"] in visible]
-        if not pending:
-            raise NothingToApprove
-        await tx.session.execute(
+            lines.append(line)
+            extension_ids.append(line["id"])
+        stored = await tx.session.execute(
             text(
-                "UPDATE extension_payments SET approved_by = :by, approved_actor_kind = 'human', "
-                "approved_at = abacus_now() WHERE id = ANY(:ids)"
+                "SELECT p.* FROM extension_payments p WHERE p.filing_extension_id = ANY(:ids) "
+                "AND NOT EXISTS (SELECT 1 FROM extension_payments s WHERE s.supersedes_id = p.id)"
             ),
-            {"by": ctx.user_id, "ids": [p["id"] for p in pending]},
+            {"ids": [x["id"] for x in lines]},
         )
-        touched = list(dict.fromkeys(p["extension_id"] for p in pending))
-        await tx.session.execute(
-            text(
-                "UPDATE filing_extensions SET status = 'prepared', row_version = row_version + 1 "
-                "WHERE id = ANY(:ids) AND status = 'not_filed'"
-            ),
-            {"ids": touched},
-        )
-        for extension_id in touched:
-            tx.emit(ExtensionPaymentApproved(extension_id=extension_id))
+        live = [dict(p) for p in stored.mappings()]
+        checks.extend(line_check(return_id, x, live, int(row["tax_year"])) for x in lines)
         tx.record(
-            "extension_payment.approved",
-            target=Target("work_item", pending[0]["tax_return_id"]),
-            after=Ref(payments=len(pending)),
-        )
-    approved = [p["id"] for p in pending]
-    requested: list[UUID] = []
-    if send_confirmations:
-        for return_id in dict.fromkeys(p["tax_return_id"] for p in pending):
-            mine = [p for p in pending if p["tax_return_id"] == return_id]
-            listed = ", ".join(f"{p['form']} {p['jurisdiction']} {p['amount']:,}" for p in mine)
-            item = await add_request_item(
-                ctx,
-                visible[return_id].engagement_id,
-                NewRequestItem(
-                    description=f"Please confirm your extension payments: {listed}"[:2000],
-                    audit_area="tax_payments",
-                ),
-            )
-            requested.append(item.id)
-            await _link_confirmation(ctx, return_id, [p["extension_id"] for p in mine], item.id)
-    return approved, requested
-
-
-async def _narrow(ctx: AuthContext, action: str, fact: WorkItemFacts) -> None:
-    base = await engagement_resource(ctx.tenant, fact.engagement_id)
-    await authorise(ctx, action, replace(base, work_item_id=fact.work_item_id))
-
-
-async def _link_confirmation(
-    ctx: AuthContext, return_id: UUID, extension_ids: Sequence[UUID], item_id: UUID
-) -> None:
-    async with uow(ctx.tenant) as tx:
-        await tx.session.execute(
-            text(
-                "UPDATE filing_extensions SET confirmation_request_item_id = :item, "
-                "row_version = row_version + 1 WHERE id = ANY(:ids)"
-            ),
-            {"item": item_id, "ids": list(extension_ids)},
-        )
-        tx.record(
-            "filing_extension.confirmation_requested",
+            "filing_extension.prepared",
             target=Target("work_item", return_id),
-            after=Ref(extensions=len(extension_ids), request_item=item_id),
+            after=Ref(lines=len(lines), payments=len(mine)),
         )
-
-
-def _check(
-    form: str,
-    return_id: UUID,
-    jurisdiction: str,
-    tax_year: int,
-    projected: Decimal | None,
-    withholding: Decimal | None,
-    payments: Sequence[Decimal],
-) -> tuple[Check, Decimal | None, Decimal | None]:
-    """The check line, the target and its percentage. A year or form without parameters has no
-    target, never a guess."""
-    try:
-        params = parameters(tax_year)
-        harbor = safe_harbor(form, projected, params)
-    except LookupError:
-        return (
-            Check(return_id, jurisdiction, projected, None, None, None, None, None, None),
-            None,
-            None,
-        )
-    paid = paid_by_original_due(withholding or Decimal(0), list(payments), harbor.target, params)
-    return (
-        Check(
-            return_id,
-            jurisdiction,
-            projected,
-            harbor.target,
-            paid.paid_by_original_due,
-            paid.meets,
-            harbor.stamp.engine_name,
-            harbor.stamp.engine_version,
-            harbor.stamp.inputs_hash,
-        ),
-        harbor.target,
-        harbor.pct,
-    )
+    return extension_ids, checks
 
 
 async def prepare(
     ctx: AuthContext,
     return_ids: Sequence[UUID],
+    payments: Sequence[ProposedPayment],
     *,
-    lines: Sequence[LineIn] = (),
-    payments: Sequence[PaymentIn] = (),
-    loader_dates: Mapping[UUID, tuple[date, date]] | None = None,
-) -> list[Check]:
-    """Each return's lines `prepared`, with its proposed payments. All or nothing.
-
-    `loader_dates` is the demo loader's alone: its firm has no published TY2025 rules and its tax
-    engagements carry no acceptance or letter, so it passes the board's dates and those gates
-    aren't read (DEC-2328). No route passes it."""
-    visible = {f.work_item_id: f for f in await work_item_facts(ctx, KIND)}
-    chosen = {*return_ids, *(x.return_id for x in lines), *(p.return_id for p in payments)}
-    if any(r not in visible for r in chosen):
-        raise NotFound(KIND)
-    for return_id in chosen:
-        fact = visible[return_id]
-        await _narrow(ctx, PREPARE, fact)
-        if loader_dates is not None:
-            continue
-        met = {g: (await gate_fact(ctx.tenant, fact.engagement_id, g)).met for g in _GATES}
-        if not all(met.values()):
-            raise GateUnmet(
-                facts={"g1_met": met["G1"], "g3_met": met["G3"], "return_id": str(return_id)}
-            )
-    wanted: dict[tuple[UUID, str], LineIn] = {(r, FEDERAL): LineIn(r) for r in chosen}
-    wanted.update({(x.return_id, x.jurisdiction): x for x in lines})
-    for p in payments:
-        wanted.setdefault((p.return_id, p.jurisdiction), LineIn(p.return_id, p.jurisdiction))
-    checks: list[Check] = []
+    loader_dates: Mapping[UUID, LoaderDates] | None = None,
+) -> tuple[list[UUID], list[LineCheck]]:
+    """`loader_dates` is the demo loader's alone: its firm has no published TY2025 rules and its
+    tax engagements carry no acceptance or letter, so it passes the board's dates and form, and
+    G1 and G3 and the form list aren't read (T-03-T15). No route passes it."""
     async with uow(ctx.tenant) as tx:
-        heads = {
-            r.work_item_id: r
-            for r in (
-                await tx.session.execute(
-                    text(
-                        "SELECT work_item_id, form, tax_year, fiscal_year_end FROM tax_returns "
-                        "WHERE work_item_id = ANY(:ids)"
-                    ),
-                    {"ids": list(chosen)},
-                )
-            ).all()
-        }
-        for (return_id, jurisdiction), line in wanted.items():
-            head = heads[return_id]
-            form = line.form or (
-                EXTENSION_FORM.get(head.form) if jurisdiction == FEDERAL else None
-            )
-            if form is None:
-                raise StateLineNeedsForm(facts={"jurisdiction": jurisdiction})
-            given = (loader_dates or {}).get(return_id)
-            dates = (
-                None if given else await dates_for(head.form, head.tax_year, head.fiscal_year_end)
-            )
-            original = given[0] if given else dates.original_due_on if dates else None
-            extended = given[1] if given else dates.extended_due_on if dates else None
-            if original is None or extended is None:
-                raise NotFound("due_date_rule")
-            mine = [
-                p.amount
-                for p in payments
-                if p.return_id == return_id and p.jurisdiction == jurisdiction
-            ]
-            check, target, pct = _check(
-                head.form,
-                return_id,
-                jurisdiction,
-                head.tax_year,
-                line.projected_liability,
-                line.withholding_plus_estimates,
-                mine,
-            )
-            checks.append(check)
-            fact = visible[return_id]
-            extension_id = (
-                await tx.session.execute(
-                    text(
-                        "INSERT INTO filing_extensions (tenant_id, engagement_id, work_item_id, "
-                        "tax_return_id, tax_year, jurisdiction, form, status, original_due_on, "
-                        "extended_due_on, due_rules_version_id, projected_liability, "
-                        "projected_liability_source, withholding_plus_estimates, safe_harbor_pct, "
-                        "safe_harbor_target, engine_version, inputs_hash, created_by) VALUES (:t, "
-                        ":e, :w, :w, :y, :j, :form, 'prepared', :orig, :ext, :rules, :proj, :src, "
-                        ":held, :pct, :target, :engine, :hash, :by) "
-                        "ON CONFLICT (tenant_id, tax_return_id, jurisdiction) DO UPDATE SET "
-                        "status = CASE WHEN filing_extensions.status = 'not_filed' "
-                        "THEN 'prepared' ELSE filing_extensions.status END, "
-                        "form = EXCLUDED.form, "
-                        "projected_liability = coalesce(EXCLUDED.projected_liability, "
-                        "filing_extensions.projected_liability), projected_liability_source = "
-                        "coalesce(EXCLUDED.projected_liability_source, "
-                        "filing_extensions.projected_liability_source), "
-                        "withholding_plus_estimates = "
-                        "coalesce(EXCLUDED.withholding_plus_estimates, "
-                        "filing_extensions.withholding_plus_estimates), safe_harbor_pct = "
-                        "coalesce(EXCLUDED.safe_harbor_pct, filing_extensions.safe_harbor_pct), "
-                        "safe_harbor_target = coalesce(EXCLUDED.safe_harbor_target, "
-                        "filing_extensions.safe_harbor_target), engine_version = "
-                        "coalesce(EXCLUDED.engine_version, filing_extensions.engine_version), "
-                        "inputs_hash = coalesce(EXCLUDED.inputs_hash, "
-                        "filing_extensions.inputs_hash), "
-                        "row_version = filing_extensions.row_version + 1 RETURNING id"
-                    ),
-                    {
-                        "t": ctx.tenant_id,
-                        "e": fact.engagement_id,
-                        "w": return_id,
-                        "y": head.tax_year,
-                        "j": jurisdiction,
-                        "form": form,
-                        "orig": original,
-                        "ext": extended,
-                        "rules": next(iter(dates.reference_set_version_ids), None)
-                        if dates
-                        else None,
-                        "proj": line.projected_liability,
-                        "src": line.projected_liability_source,
-                        "held": line.withholding_plus_estimates,
-                        "pct": pct,
-                        "target": target,
-                        "engine": check.engine_version if target is not None else None,
-                        "hash": check.inputs_hash if target is not None else None,
-                        "by": ctx.user_id,
-                    },
-                )
-            ).scalar_one()
-            for p in payments:
-                if p.return_id != return_id or p.jurisdiction != jurisdiction:
-                    continue
-                # A later change supersedes; an approved payment never changes.
-                earlier = (
-                    await tx.session.execute(
-                        text(
-                            "SELECT p.id FROM extension_payments p WHERE p.filing_extension_id = "
-                            ":e AND p.kind = :k AND NOT EXISTS (SELECT 1 FROM extension_payments "
-                            "s WHERE s.supersedes_id = p.id) ORDER BY p.proposed_at DESC LIMIT 1"
-                        ),
-                        {"e": extension_id, "k": p.kind},
-                    )
-                ).scalar_one_or_none()
-                await tx.session.execute(
-                    text(
-                        "INSERT INTO extension_payments (tenant_id, filing_extension_id, kind, "
-                        "amount, proposed_by, supersedes_id) VALUES (:t, :e, :k, :a, :by, :old)"
-                    ),
-                    {
-                        "t": ctx.tenant_id,
-                        "e": extension_id,
-                        "k": p.kind,
-                        "a": p.amount,
-                        "by": ctx.user_id,
-                        "old": earlier,
-                    },
-                )
-            tx.record(
-                "filing_extension.prepared",
-                target=Target("work_item", return_id),
-                after=Ref(extension=extension_id, payments=len(mine)),
-            )
-    return checks
+        return await _prepare_in(tx, ctx, return_ids, payments, loader_dates)
 
 
 async def flag_new_likely(
@@ -537,12 +604,12 @@ async def flag_new_likely(
     reason: str,
     note: str | None,
 ) -> UUID:
-    """A likely-to-extend row with nothing prepared: `not_filed`, so the gates don't hold it."""
-    visible = {f.work_item_id: f for f in await work_item_facts(ctx, KIND)}
-    fact = visible.get(return_id)
-    if fact is None:
-        raise NotFound(KIND)
-    await _narrow(ctx, "filing_extension.flag_likely", fact)
+    """A likely-to-extend line with nothing prepared: `not_filed`, so the gates don't hold it."""
+    visible = {f.work_item_id: f.engagement_id for f in await work_item_facts(ctx, KIND)}
+    engagement_id = visible.get(return_id)
+    if engagement_id is None:
+        raise NotFound("tax_return")
+    await authorise(ctx, FLAG_LIKELY, await on_return(ctx, engagement_id, return_id))
     async with uow(ctx.tenant) as tx:
         year = (
             await tx.session.execute(
@@ -552,18 +619,21 @@ async def flag_new_likely(
         made = (
             await tx.session.execute(
                 text(
-                    "INSERT INTO filing_extensions (tenant_id, engagement_id, work_item_id, "
+                    "INSERT INTO filing_extensions (id, tenant_id, engagement_id, work_item_id, "
                     "tax_return_id, tax_year, jurisdiction, form, likely_to_extend, "
                     "likely_reasons, likely_note, original_due_on, extended_due_on, created_by) "
-                    "VALUES (:t, :e, :w, :w, :y, 'US', :f, true, :r, :n, :o, :x, :by) RETURNING id"
+                    "VALUES (:id, :t, :e, :r, :r, :y, :j, :f, true, :why, :n, :o, :x, :by) "
+                    "RETURNING id"
                 ),
                 {
+                    "id": uuid4(),
                     "t": ctx.tenant_id,
-                    "e": fact.engagement_id,
-                    "w": return_id,
+                    "e": engagement_id,
+                    "r": return_id,
                     "y": year,
+                    "j": FEDERAL,
                     "f": form,
-                    "r": [reason],
+                    "why": [reason],
                     "n": note,
                     "o": original_due_on,
                     "x": extended_due_on,
@@ -579,100 +649,219 @@ async def flag_new_likely(
     return made
 
 
-async def submit(ctx: AuthContext, extension_ids: Sequence[UUID]) -> int:
-    """The preparer's path: C13's gate opens for the return's reviewers. The tax year."""
+async def _approve_in(
+    tx: UnitOfWork, ctx: AuthContext, extension_ids: Sequence[UUID]
+) -> list[Any]:  # Any: database rows
+    """Approve every proposed payment on the extensions as the caller, authorised per return."""
     visible = {f.work_item_id: f for f in await work_item_facts(ctx, KIND)}
-    async with uow(ctx.tenant) as tx:
-        found = (
-            (
-                await tx.session.execute(
-                    text(
-                        "SELECT id, tax_return_id, tax_year FROM filing_extensions "
-                        "WHERE id = ANY(:ids) FOR UPDATE"
-                    ),
-                    {"ids": list(extension_ids)},
-                )
+    pending = list(
+        (
+            await tx.session.execute(
+                text(
+                    "SELECT p.id, p.amount, e.tax_return_id, e.jurisdiction, e.form, "
+                    "e.original_due_on FROM extension_payments p JOIN filing_extensions e "
+                    "ON e.id = p.filing_extension_id WHERE e.id = ANY(:ids) "
+                    "AND p.approved_by IS NULL AND NOT EXISTS (SELECT 1 FROM extension_payments s "
+                    "WHERE s.supersedes_id = p.id) FOR UPDATE OF p"
+                ),
+                {"ids": list(extension_ids)},
             )
-            .mappings()
-            .all()
+        ).mappings()
+    )
+    pending = [p for p in pending if p["tax_return_id"] in visible]
+    if not pending:
+        raise NothingToApprove
+    for return_id in dict.fromkeys(p["tax_return_id"] for p in pending):
+        await authorise(
+            ctx, APPROVE, await on_return(ctx, visible[return_id].engagement_id, return_id)
         )
-        if len(found) != len(set(extension_ids)) or any(
-            r["tax_return_id"] not in visible for r in found
-        ):
-            raise NotFound("filing_extension")
-        for row in found:
-            await _narrow(ctx, PREPARE, visible[row["tax_return_id"]])
+    await tx.session.execute(
+        text(
+            "UPDATE extension_payments SET approved_by = :by, approved_actor_kind = 'human', "
+            "approved_at = abacus_now() WHERE id = ANY(:ids)"
+        ),
+        {"by": ctx.user_id, "ids": [p["id"] for p in pending]},
+    )
+    for return_id in dict.fromkeys(p["tax_return_id"] for p in pending):
+        tx.record(
+            "extension_payment.approved",
+            target=Target("work_item", return_id),
+            after=Ref(payments=sum(1 for p in pending if p["tax_return_id"] == return_id)),
+        )
+    return pending
+
+
+async def approve_and_request(
+    ctx: AuthContext,
+    extension_ids: Sequence[UUID],
+    *,
+    send_confirmations: bool,
+    return_ids: Sequence[UUID] = (),
+    payments: Sequence[ProposedPayment] = (),
+) -> tuple[list[UUID], list[UUID], list[LineCheck]]:
+    """Prepare any named returns, approve as the caller and create one confirmation request per
+    return, attributed to the caller, sent, all in one unit of work."""
+    from abacus.modules.requests.api import BulkItem, create_items_bulk, send_created
+
+    if send_confirmations:
+        # A person sends the confirmation requests; the agent never does (AGENT-001).
+        await authorise(ctx, SEND, Resource.firm(ctx.tenant_id))
+
+    created: list[tuple[UUID, UUID]] = []
+    async with uow(ctx.tenant) as tx:
+        chosen = list(extension_ids)
+        checks: list[LineCheck] = []
+        if return_ids or payments:
+            prepared, checks = await _prepare_in(tx, ctx, return_ids, payments)
+            chosen += prepared
+        pending = await _approve_in(tx, ctx, chosen)
+        if send_confirmations:
+            facts = {f.work_item_id: f for f in await work_item_facts(ctx, KIND)}
+            batch_id = uuid4()
+            for return_id in dict.fromkeys(p["tax_return_id"] for p in pending):
+                mine = [p for p in pending if p["tax_return_id"] == return_id]
+                listed = ", ".join(sorted({str(p["jurisdiction"]) for p in mine}))
+                engagement_id = facts[return_id].engagement_id
+                ids = await create_items_bulk(
+                    tx,
+                    ctx,
+                    engagement_id,
+                    [
+                        BulkItem(
+                            description=f"Please confirm your extension payments: {listed}"[:2000],
+                            audit_area="tax_payments",
+                            linked_ref={"type": "tax_return", "id": str(return_id)},
+                        )
+                    ],
+                    wave="year_end",
+                    due_on=min(p["original_due_on"] for p in mine),
+                    batch_id=batch_id,
+                )
+                await send_created(tx, ctx, engagement_id, ids[0])
+                created.append((engagement_id, ids[0]))
+                await _link_confirmation(tx, return_id, ids[0])
+    return [p["id"] for p in pending], [item for _, item in created], checks
+
+
+async def _link_confirmation(tx: UnitOfWork, return_id: UUID, item_id: UUID) -> None:
+    await tx.session.execute(
+        text(
+            "UPDATE filing_extensions SET confirmation_request_item_id = :item, "
+            "row_version = row_version + 1 WHERE tax_return_id = :r"
+        ),
+        {"item": item_id, "r": return_id},
+    )
+
+
+@dataclass(frozen=True)
+class ConfirmationSent:
+    request_item_id: UUID
+    request_list_id: UUID
+    sent_at: object
+    contact_name: str
+
+
+async def confirmation_contact(
+    ctx: AuthContext, engagement_id: UUID, contact_id: UUID | None
+) -> tuple[UUID | None, str]:
+    """Who the request goes to: the named contact, else the engagement's first client admin."""
+    from abacus.modules.engagements.api import contact_portal_user
+    from abacus.modules.identity.api import client_admins, names_of
+
+    user: UUID | None
+    if contact_id is not None:
+        user = await contact_portal_user(ctx.tenant, engagement_id, contact_id)
+        if user is None:
+            raise NotFound("contact")
+    else:
+        admins = await client_admins(ctx.tenant, engagement_id)
+        user = admins[0] if admins else None
+    if user is None:
+        return None, ""
+    return user, (await names_of([user])).get(user, "")
+
+
+async def send_confirmation(
+    ctx: AuthContext,
+    engagement_id: UUID,
+    *,
+    description: str,
+    due_on: date,
+    contact_id: UUID | None,
+    wave: str,
+    linked_ref: dict[str, object],
+    link: Callable[[UnitOfWork, UUID], Awaitable[None]] | None = None,
+) -> ConfirmationSent:
+    """One confirmation request, created in the engagement's binder and sent on the click. The
+    wording names jurisdictions and periods, never an amount or a form number: the scope check
+    reads any number in client text as an amount."""
+    from abacus.modules.requests.api import (
+        BulkItem,
+        ItemPatch,
+        create_items_bulk,
+        request_item_sent,
+        send_created,
+        update_item,
+    )
+
+    user, name = await confirmation_contact(ctx, engagement_id, contact_id)
+    async with uow(ctx.tenant) as tx:
+        ids = await create_items_bulk(
+            tx,
+            ctx,
+            engagement_id,
+            [
+                BulkItem(
+                    description=description[:2000],
+                    audit_area="tax_payments",
+                    linked_ref=linked_ref,
+                )
+            ],
+            wave=wave,
+            due_on=due_on,
+            batch_id=uuid4(),
+        )
+        await send_created(tx, ctx, engagement_id, ids[0])
+        if link is not None:
+            await link(tx, ids[0])
+    if contact_id is not None and user is not None:
+        await update_item(ctx, engagement_id, ids[0], ItemPatch({"client_assignee_user_id": user}))
+    list_id, sent_at = await request_item_sent(ctx.tenant, ids[0])
+    return ConfirmationSent(ids[0], list_id, sent_at, name)
+
+
+async def request_one(
+    ctx: AuthContext, extension_id: UUID, contact_id: UUID | None
+) -> ConfirmationSent:
+    row = await row_of(ctx, extension_id)
+    line = next(x for x in row.lines if x["id"] == extension_id)
+    await authorise(ctx, SEND, await on_return(ctx, row.engagement_id, row.tax_return_id))
+    listed = str(line["jurisdiction"])
+
+    async def link(tx: UnitOfWork, item_id: UUID) -> None:
         await tx.session.execute(
             text(
-                "UPDATE filing_extensions SET submitted_by = :by, submitted_at = abacus_now(), "
-                "row_version = row_version + 1 WHERE id = ANY(:ids)"
+                "UPDATE filing_extensions SET confirmation_request_item_id = :item, "
+                "row_version = row_version + 1 WHERE id = :id"
             ),
-            {"by": ctx.user_id, "ids": [r["id"] for r in found]},
+            {"item": item_id, "id": extension_id},
         )
-        for row in found:
-            tx.emit(ExtensionSubmitted(extension_id=row["id"]))
-            tx.record(
-                "filing_extension.submitted",
-                target=Target("work_item", row["tax_return_id"]),
-                after=Ref(extension=row["id"]),
-            )
-    return int(found[0]["tax_year"])
-
-
-async def request_confirmation(ctx: AuthContext, extension_id: UUID) -> tuple[Any, UUID]:
-    """One confirmation request in the return's binder, sent on the click. Any: the item's view."""
-    from abacus.modules.requests.api import NewRequestItem, add_request_item
-
-    visible = {f.work_item_id: f for f in await work_item_facts(ctx, KIND)}
-    async with tenant_session(ctx.tenant) as session:
-        row = (
-            (
-                await session.execute(
-                    text(
-                        "SELECT tax_return_id, jurisdiction, form "
-                        "FROM filing_extensions WHERE id = :id"
-                    ),
-                    {"id": extension_id},
-                )
-            )
-            .mappings()
-            .first()
+        tx.record(
+            "filing_extension.confirmation_requested",
+            target=Target("work_item", row.tax_return_id),
+            after=Ref(extension=extension_id, item=item_id),
         )
-    if row is None or row["tax_return_id"] not in visible:
-        raise NotFound("filing_extension")
-    fact = visible[row["tax_return_id"]]
-    await _narrow(ctx, SEND, fact)
-    item = await add_request_item(
+
+    return await send_confirmation(
         ctx,
-        fact.engagement_id,
-        NewRequestItem(
-            description=f"Please confirm your {row['form']} {row['jurisdiction']} payment",
-            audit_area="tax_payments",
-        ),
+        row.engagement_id,
+        description=f"Please confirm your extension payment: {listed}",
+        due_on=line["original_due_on"],
+        contact_id=contact_id,
+        wave="year_end",
+        linked_ref={"type": "tax_return", "id": str(row.tax_return_id)},
+        link=link,
     )
-    await _link_confirmation(ctx, row["tax_return_id"], [extension_id], item.id)
-    return item, row["tax_return_id"]
-
-
-async def open_payment_approvals(
-    tenant: TenantContext, engagement_id: UUID | None
-) -> list[tuple[UUID, UUID, UUID]]:
-    """C13: submitted extensions with an unapproved payment (id, engagement, work item)."""
-    async with tenant_session(tenant) as session:
-        rows = (
-            await session.execute(
-                text(
-                    "SELECT e.id, e.engagement_id, e.work_item_id FROM filing_extensions e "
-                    "WHERE e.submitted_at IS NOT NULL "
-                    "AND (:eng IS NULL OR e.engagement_id = :eng) AND EXISTS (SELECT 1 FROM "
-                    "extension_payments p WHERE p.filing_extension_id = e.id "
-                    "AND p.approved_by IS NULL AND NOT EXISTS (SELECT 1 FROM extension_payments "
-                    "s WHERE s.supersedes_id = p.id))"
-                ),
-                {"eng": engagement_id},
-            )
-        ).all()
-    return [(r.id, r.engagement_id, r.work_item_id) for r in rows]
 
 
 async def patch(
@@ -687,15 +876,24 @@ async def patch(
     likely_to_extend: bool | None,
     reason: str | None,
     note: str | None,
+    projected_liability: Decimal | None = None,
+    projected_liability_source: str | None = None,
+    projected_liability_ref: Mapping[str, str] | None = None,
+    withholding_plus_estimates: Decimal | None = None,
 ) -> int:
-    """Mark filed (a person's record with evidence) or flag likely to extend, one or the other;
-    against the row version the caller saw. Returns the extension's tax year."""
+    """Mark filed (a person's record with evidence), flag likely to extend, or enter the projected
+    liability and what was already paid, one or the other; against the row version the caller saw,
+    authorised on the return. Returns the extension's tax year."""
     visible = {f.work_item_id: f for f in await work_item_facts(ctx, KIND)}
     async with uow(ctx.tenant) as tx:
         row = (
             (
                 await tx.session.execute(
-                    text("SELECT * FROM filing_extensions WHERE id = :id FOR UPDATE"),
+                    text(
+                        "SELECT e.*, r.form AS return_form FROM filing_extensions e "
+                        "JOIN tax_returns r ON r.work_item_id = e.tax_return_id "
+                        "WHERE e.id = :id FOR UPDATE OF e"
+                    ),
                     {"id": extension_id},
                 )
             )
@@ -704,7 +902,13 @@ async def patch(
         )
         if row is None or row["tax_return_id"] not in visible:
             raise NotFound("filing_extension")
-        await _narrow(ctx, action, visible[row["tax_return_id"]])
+        resource = await on_return(
+            ctx, visible[row["tax_return_id"]].engagement_id, row["tax_return_id"]
+        )
+        await authorise(ctx, action, resource)
+        # The route declares `mark_filed` (its guard needs that very check); the matrix holds the
+        # three edits to the same people, so this refuses nobody the first check let through.
+        await authorise(ctx, MARK_FILED, resource)
         if row["row_version"] != expected_version:
             raise ExtensionMoved(facts={"current": row["row_version"]})
         if filed_on is not None:
@@ -731,6 +935,16 @@ async def patch(
                 after=Ref(extension=extension_id),
             )
             return int(row["tax_year"])
+        if projected_liability is not None or withholding_plus_estimates is not None:
+            await _set_figures(
+                tx,
+                dict(row),
+                projected_liability,
+                projected_liability_source,
+                projected_liability_ref,
+                withholding_plus_estimates,
+            )
+            return int(row["tax_year"])
         if likely_to_extend is not None:
             reasons = list(row["likely_reasons"] or [])
             if likely_to_extend and reason and reason not in reasons:
@@ -755,38 +969,181 @@ async def patch(
     return int(row["tax_year"])
 
 
-async def years_of(ctx: AuthContext, return_ids: set[UUID]) -> set[int]:
+async def _set_figures(
+    tx: UnitOfWork,
+    row: Mapping[str, Any],  # Any: a database row
+    projected_liability: Decimal | None,
+    source: str | None,
+    reference: Mapping[str, str] | None,
+    withheld: Decimal | None,
+) -> None:
+    """A preparer's figures with their source; code recomputes the target and its stamp."""
+    if projected_liability is not None and (source is None or not reference):
+        raise LiabilityNeedsSource
+    liability = (
+        projected_liability
+        if projected_liability is not None
+        else money(row["projected_liability"])
+    )
+    columns = await _target_columns(str(row["return_form"]), int(row["tax_year"]), liability)
+    await tx.session.execute(
+        text(
+            "UPDATE filing_extensions SET projected_liability = :l, "
+            "projected_liability_source = coalesce(:src, projected_liability_source), "
+            "projected_liability_ref = coalesce(CAST(:ref AS jsonb), projected_liability_ref), "
+            "withholding_plus_estimates = coalesce(:w, withholding_plus_estimates), "
+            "safe_harbor_pct = :pct, safe_harbor_target = :target, engine_version = :version, "
+            "inputs_hash = :hash, row_version = row_version + 1 WHERE id = :id"
+        ),
+        {
+            "l": liability,
+            "src": source,
+            "ref": json.dumps(reference) if reference else None,
+            "w": withheld,
+            "id": row["id"],
+            **columns,
+        },
+    )
+    tx.record(
+        "filing_extension.figures_entered",
+        target=Target("work_item", row["tax_return_id"]),
+        after=Ref(extension=row["id"]),
+    )
+
+
+# --- submit for approval (DEC-2350) -------------------------------------------------------------
+
+
+async def submit_for_approval(ctx: AuthContext, extension_ids: Sequence[UUID]) -> list[UUID]:
+    """The preparer's path: the return's reviewers are told, and approve through
+    approve-and-request. HOME-02's row through C13 is T-03's cut-list item 3 (T-08 / I-01): a
+    preparer can't raise a C3 card (`decision_card.raise` is a manager's or senior's), and a card's
+    reserved role can't name "any of the reviewer functions". Returns the returns submitted."""
+    visible = {f.work_item_id: f for f in await work_item_facts(ctx, KIND)}
     async with tenant_session(ctx.tenant) as session:
         found = await session.execute(
             text(
-                "SELECT DISTINCT tax_year FROM filing_extensions WHERE tax_return_id = ANY(:ids)"
+                "SELECT DISTINCT e.tax_return_id FROM extension_payments p "
+                "JOIN filing_extensions e ON e.id = p.filing_extension_id WHERE e.id = ANY(:ids) "
+                "AND p.approved_by IS NULL AND NOT EXISTS (SELECT 1 FROM extension_payments s "
+                "WHERE s.supersedes_id = p.id)"
             ),
-            {"ids": list(return_ids)},
+            {"ids": list(extension_ids)},
         )
-        return set(found.scalars())
-
-
-async def year_of(ctx: AuthContext, extension_id: UUID) -> int:
-    async with tenant_session(ctx.tenant) as session:
-        found = (
-            await session.execute(
-                text("SELECT tax_year FROM filing_extensions WHERE id = :id"),
-                {"id": extension_id},
+        returns = [r for r in found.scalars() if r in visible]
+    if not returns:
+        raise NothingToApprove
+    for return_id in returns:
+        engagement_id = visible[return_id].engagement_id
+        await authorise(ctx, PREPARE, await on_return(ctx, engagement_id, return_id))
+        async with uow(ctx.tenant) as tx:
+            tx.record(
+                "filing_extension.submitted_for_approval",
+                target=Target("work_item", return_id),
             )
-        ).scalar_one_or_none()
-    if found is None:
-        raise NotFound("filing_extension")
-    return int(found)
+            tx.emit(
+                ExtensionApprovalRequested(
+                    work_item_id=return_id,
+                    engagement_id=engagement_id,
+                    by_user=ctx.user_id,
+                    recipient_user_ids=[
+                        user
+                        for function in REVIEWER_FUNCTIONS
+                        for user in visible[return_id].assignees.get(function, ())
+                    ],
+                )
+            )
+    return returns
 
 
-async def extensions_of(ctx: AuthContext, return_ids: set[UUID]) -> list[UUID]:
-    async with tenant_session(ctx.tenant) as session:
-        found = await session.execute(
-            text("SELECT id FROM filing_extensions WHERE tax_return_id = ANY(:ids)"),
-            {"ids": list(return_ids)},
+# --- TaxCalendarSweep's date half (T-03 US-4.6) ------------------------------------------------
+
+
+async def recompute_open_lines(tenant: TenantContext) -> int:
+    """Every open line against the rules now in effect. A changed date is written with both rule
+    versions (`filing_extension.due_date_recomputed`, system actor), never silently; a filed line
+    keeps what it was filed under."""
+    async with tenant_session(tenant) as session:
+        open_lines = list(
+            (
+                await session.execute(
+                    text(
+                        "SELECT e.id, e.tax_return_id, e.original_due_on, e.extended_due_on, "
+                        "e.due_rules_version_id, r.form, r.tax_year, r.fiscal_year_end "
+                        "FROM filing_extensions e JOIN tax_returns r "
+                        "ON r.work_item_id = e.tax_return_id "
+                        "WHERE e.status IN ('not_filed', 'prepared')"
+                    )
+                )
+            ).mappings()
         )
-        return list(found.scalars())
+    changed = 0
+    for line in open_lines:
+        if str(line["form"]) not in FORM_FOR_RULES:
+            continue
+        dates = await dates_for(str(line["form"]), int(line["tax_year"]), line["fiscal_year_end"])
+        if dates is None or dates.extended_due_on is None:
+            continue
+        if (dates.original_due_on, dates.extended_due_on) == (
+            line["original_due_on"],
+            line["extended_due_on"],
+        ):
+            continue
+        versions = dates.reference_set_version_ids
+        new_rules = versions[0] if versions else None
+        async with uow(tenant) as tx:
+            await tx.session.execute(
+                text(
+                    "UPDATE filing_extensions SET original_due_on = :o, extended_due_on = :x, "
+                    "due_rules_version_id = :rules, row_version = row_version + 1 WHERE id = :id"
+                ),
+                {
+                    "o": dates.original_due_on,
+                    "x": dates.extended_due_on,
+                    "rules": new_rules,
+                    "id": line["id"],
+                },
+            )
+            tx.record(
+                "filing_extension.due_date_recomputed",
+                target=Target("work_item", line["tax_return_id"]),
+                before=Ref(rules=cast(UUID, line["due_rules_version_id"])),
+                after=Ref(rules=cast(UUID, new_rules)),
+            )
+        changed += 1
+    return changed
 
 
-def money(value: object) -> Decimal | None:
-    return None if value is None else Decimal(str(value))
+async def on_reference_set_published(event: OutboxEvent) -> None:
+    await recompute_open_lines(TenantContext(event.tenant_id, "system", "tax:extensions"))
+
+
+async def on_filing_acknowledged(event: OutboxEvent) -> None:
+    """ExtensionAckConsumer: a rejected extension tells the return's preparer and manager."""
+    extension_id = event.payload.get("extension_id")
+    if extension_id is None or event.payload.get("status") != "rejected":
+        return
+    from abacus.modules.engagements.api import function_holders
+
+    tenant = TenantContext(event.tenant_id, "system", "tax:extensions")
+    work_item_id = UUID(str(event.payload["return_id"]))
+    holders = await function_holders(tenant, work_item_id)
+    async with uow(tenant) as tx:
+        tx.record(
+            "filing_extension.ack_rejection_notified",
+            target=Target("work_item", work_item_id),
+            after=Ref(extension=UUID(str(extension_id))),
+        )
+        tx.emit(
+            ExtensionAckRejected(
+                work_item_id=work_item_id,
+                engagement_id=UUID(str(event.payload["engagement_id"])),
+                extension_id=UUID(str(extension_id)),
+                reject_code=str(event.payload.get("reject_code") or ""),
+                recipient_user_ids=[
+                    user
+                    for function in ("preparer", "manager_reviewer")
+                    for user in holders.get(function, ())
+                ],
+            )
+        )
