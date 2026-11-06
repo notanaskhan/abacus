@@ -92,7 +92,7 @@ from abacus.modules.evidence.workflow_types import (
     FormExtractionInput,
     UploadInput,
 )
-from abacus.modules.evidence.workflows import OcrBackfill, TrustLayerBackfill, UploadProcessing
+from abacus.modules.evidence.workflows import TrustLayerBackfill, UploadProcessing
 from abacus.modules.ledger.api import snapshot_view
 from abacus.modules.requests.api import (
     RequestItemDocumentKindChanged,
@@ -106,7 +106,6 @@ _log = get_logger(__name__)
 WORKFLOWS: dict[type, WorkClass] = {
     UploadProcessing: "interactive",
     TrustLayerBackfill: "background",
-    OcrBackfill: "background",  # P-11-T25
     FormExtractionWorkflow: "background",  # P-11-T26
 }
 register_work_classes(WORKFLOWS)

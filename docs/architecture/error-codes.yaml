@@ -318,6 +318,10 @@ codes:
     raised_by:
     - abacus.modules.assurance.completion_errors.ChecklistIncomplete
     summary: An item or an EQR note is still open (EQR concurrence, archive lock).
+  checklist_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.disclosure_checklists.ChecklistRefused
   checklist_unmet:
     status: 409
     raised_by:
@@ -3218,6 +3222,7 @@ codes:
   version_published:
     status: 409
     raised_by:
+    - abacus.modules.methodology.disclosure_checklists.ChecklistPublished
     - abacus.modules.requests.organizer_lifecycle.VersionPublished
     - abacus.modules.requests.questionnaire_editor.VersionPublished
     - abacus.modules.requests.questionnaires.AlreadyPublished

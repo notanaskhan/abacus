@@ -349,7 +349,9 @@ async def send_for_signature(ctx: AuthContext, work_item_id: UUID) -> UUID:
 
 async def confirmation_item_of(ctx: AuthContext, work_item_id: UUID) -> UUID | None:
     """The payment's confirmation request, when there is one."""
-    payment = (await _response_row(ctx.tenant, work_item_id))["payment"] or {}
+    payment = cast(
+        "dict[str, object]", (await _response_row(ctx.tenant, work_item_id))["payment"] or {}
+    )
     found = payment.get(CONFIRMATION_ITEM)
     return UUID(str(found)) if found else None
 

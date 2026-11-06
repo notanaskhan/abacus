@@ -52,8 +52,8 @@ def test_ac2_the_histories_are_committed() -> None:
         # v7 (P-03-T15): `patched("masked_preview")`, the masked rendition after the scan.
         "upload-processing-v7-masked-preview",
         "upload-processing-v8-ocr",
-        # v9 (P-11-T25): words and OCR before the checks; over 20 pages on `background`.
-        "upload-processing-v9-ocr-background",
+        # v9 (P-11-T25): words and OCR before the checks.
+        "upload-processing-v9-ocr-before-checks",
     ]
 
 

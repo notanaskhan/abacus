@@ -24,4 +24,4 @@ Fix the alert activities and close DEC-2311's payment partial.
 - 2026-11-06: built. `tests/unit/notices`, notices contract tests and N-04's core integration suite: 149 passed locally. No integration test runs the review decision through the outbox; it is unit-tested with stubs.
 
 ## Decisions made during this task
-DEC-2333
+DEC-2376

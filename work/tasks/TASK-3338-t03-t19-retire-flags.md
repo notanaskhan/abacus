@@ -26,4 +26,4 @@ Retire T-02's rollout flags now T-03 has adopted their paths; a firm without the
 - 2026-11-06: built. `test_t03t19_entitlement.py` and the T-02, portal-isolation and loaded-slice suites that depended on the flags: 38 passed, 1 xfailed. Web: 3,157 of 3,158 passed; `gates.ac.test.tsx` fails with or without this PR's fixture change, cause not yet established.
 
 ## Decisions made during this task
-DEC-2329
+DEC-2372

@@ -281,7 +281,7 @@ from abacus.modules.sampling.api import approve as approve_sample
 from abacus.modules.sampling.api import draw as draw_sample
 from abacus.modules.tax.api import (
     ProposedPayment,
-    create_schedule,
+    create_estimate_schedule,
     flag_new_likely,
     import_engine_file,
     patch_extension,
@@ -4286,7 +4286,7 @@ async def _estimate_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) 
     basis = next((r for r in BOARD if r.client == seed.client), None)
     # The return's own preparer: a schedule's writes authorise on its basis return.
     ctx = await _staff_context(conn, _as_actor(event, basis.preparer) if basis else event)
-    made = await create_schedule(
+    made = await create_estimate_schedule(
         ctx,
         client_entity_id=entity,
         basis_tax_return_id=UUID(basis.work_item_id) if basis else None,
@@ -4345,7 +4345,7 @@ async def _estimate_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) 
             ),
         )
     # `confirmation_requested` stays `not_confirmed`: the tile counts both as Awaiting, and asking
-    # needs an engagement lead, whom this firm's tax engagements don't have (DEC-2328).
+    # needs an engagement lead, whom this firm's tax engagements don't have (DEC-2371).
 
 
 async def _audit_item(conn: asyncpg.Connection, client: str) -> UUID:
@@ -4512,7 +4512,7 @@ async def _notice_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) ->
     stored = await stage_content(TENANT, f"{data['code']} {data['notice_code']}".encode())
     engagement = await notice_engagement_for(ctx, entity)
     if engagement is None:
-        # QN-1: the notice's own engagement, opened as the firm opens one (DEC-2335).
+        # QN-1: the notice's own engagement, opened as the firm opens one (DEC-2378).
         engagement = UUID(stable_id(f"engagement:notice:{data['code']}"))
         year = cast(int, data["tax_year"])
         await _engagement_row(

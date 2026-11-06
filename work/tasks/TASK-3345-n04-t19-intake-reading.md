@@ -25,4 +25,4 @@ Call the responder's `extract` from intake (DEC-2313), and give intakes a way ou
 - 2026-11-06: built, then rebuilt on N-04-T07: its workflow replaces my subscribers. `tests/integration/backfill/test_n04t19_intake_reading.py` (2) with `test_n04t07_intake_read.py`.
 
 ## Decisions made during this task
-DEC-2334
+DEC-2377

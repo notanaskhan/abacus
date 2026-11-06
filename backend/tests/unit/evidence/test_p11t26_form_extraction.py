@@ -132,7 +132,7 @@ def test_ac_a_text_layer_word_keeps_its_object_byte_for_byte() -> None:
 def test_a_value_is_stored_as_read_and_never_guessed(
     value_type: str, raw: str, expected: tuple[str, bool]
 ) -> None:
-    normalise = fx._normalise  # pyright: ignore[reportPrivateUsage]
+    normalise = fx._normalise  # pyright: ignore[reportPrivateUsage] -- the rule under test
     assert normalise(value_type, raw) == expected
 
 

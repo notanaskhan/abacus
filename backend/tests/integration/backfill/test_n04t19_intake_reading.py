@@ -1,4 +1,4 @@
-"""N-04-T19 (TASK-3345; DEC-2334): with no form map, the responder proposes over masked text.
+"""N-04-T19 (TASK-3345; DEC-2377): with no form map, the responder proposes over masked text.
 
 N-04 US-2.2: each value names its run for a person to confirm; nothing proposed, or no masked text,
 opens manual entry; nothing is guessed. `NoticeIntakeWorkflow` (N-04-T07) reads mapped forms.

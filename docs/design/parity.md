@@ -126,3 +126,7 @@ Never lower a tolerance, delete a manifest entry or re-crop to make a board pass
 - **For F-06:** new templates follow "Add a template" and "Lock a template"; keep one heading per
   lock task in DECISIONS.md; Tier D rows go in as each template merges; the baselines bucket (Q-01)
   replaces the local `ACCRUED_BASELINES_SOURCE` when it is wired, with the same layout.
+
+## When the visual run starts
+
+On a push to `main`, CI's path filter (`abacus_tools.ci.paths`) reads only that push's own diff. In a batch merge that is the last pull request's diff, so the last one has to touch a gallery path, or the visual run on the batch's final tree doesn't start.

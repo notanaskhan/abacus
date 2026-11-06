@@ -245,7 +245,8 @@ async def analyze(
 
 @dataclass(frozen=True)
 class ExtractProposal:
-    """The fields and the run they came from: an agent's value names its run (0650's CHECK)."""
+    """The fields and the run they came from: an agent's value names its run (0650's CHECK).
+    `notices.intake_read` records them as proposals a person confirms."""
 
     output: NoticeExtractOutput
     run_id: UUID

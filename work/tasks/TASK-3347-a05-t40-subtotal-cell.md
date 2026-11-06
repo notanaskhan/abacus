@@ -24,4 +24,4 @@ Close the parts of DEC-2319 that don't wait on another screen.
 - 2026-11-06: built. `EBP-06.test.tsx`: 8 passed; `test_a05t39_trust_agreement.py` and the A-05 contract suite: 102 passed. `tsc` clean for EBP-06.
 
 ## Decisions made during this task
-DEC-2336
+DEC-2379

@@ -1,4 +1,4 @@
-"""N-04-T21 (TASK-3346; DEC-2335) against Postgres: the notices slice loads through the services.
+"""N-04-T21 (TASK-3346; DEC-2378) against Postgres: the notices slice loads through the services.
 
 "make seed-demo produces every NOT artboard's data through service APIs." It had never been loaded,
 and its first run failed on the intake's source and field keys.

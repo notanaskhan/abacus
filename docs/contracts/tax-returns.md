@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Version | v1 |
-| Status | **frozen at v1** (T-02-T35, 2026-11-01, DEC-1674); live behind the `tax_returns` entitlement (DEC-2329) (T-02-T03 to T-02-T14, T-02-T19). Breaking changes need v2; additions follow handshake rule 5 |
+| Status | **frozen at v1** (T-02-T35, 2026-11-01, DEC-1674); live behind the `tax_returns` entitlement (DEC-2372) (T-02-T03 to T-02-T14, T-02-T19). Breaking changes need v2; additions follow handshake rule 5 |
 | Provider epic | T-02 |
 | Consumers | TAX-01, TAX-02, TAX-03 (T-02), HOME-01/02 (C13), T-01 (sync state through `tax.api.record_sync_state`), T-08 |
 | Spec | SPEC-502 AC-4; `docs/plan/epics/T-02.md` §4.3 |

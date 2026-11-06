@@ -43,7 +43,11 @@ from abacus.modules.tax.due_dates import (
 from abacus.modules.tax.engine_contract import engine_router, portal_filing_router
 from abacus.modules.tax.engine_import import import_file as import_engine_file
 from abacus.modules.tax.engine_sync import register as register_engine_sync
-from abacus.modules.tax.estimates import create_schedule, patch_installment, patch_schedule
+from abacus.modules.tax.estimates import (
+    create_estimate_schedule,
+    patch_installment,
+    patch_schedule,
+)
 from abacus.modules.tax.extensions import ProposedPayment, flag_new_likely
 from abacus.modules.tax.extensions import patch as patch_extension
 from abacus.modules.tax.extensions import prepare as prepare_extensions
@@ -200,7 +204,7 @@ __all__ = [
     "StaleReturn",
     "TransitionRefused",
     "apply_transition",
-    "create_schedule",
+    "create_estimate_schedule",
     "estimates_for",
     "extension_for",
     "filed_returns",

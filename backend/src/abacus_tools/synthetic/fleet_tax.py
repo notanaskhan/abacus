@@ -366,7 +366,7 @@ async def _k1s(conn: asyncpg.Connection, ret: TaxReturn, counts: Counts) -> None
 
 
 async def _flags(conn: asyncpg.Connection, firm: Firm, counts: Counts) -> None:
-    # T-03-T19: tax routes stand behind the entitlement now (DEC-2329).
+    # T-03-T19: tax routes stand behind the entitlement now (DEC-2372).
     await conn.execute(
         "INSERT INTO tenant_entitlements (tenant_id, module, valid_from, set_by) "
         "VALUES ($1, 'tax_returns', '2000-01-01', $2) ON CONFLICT DO NOTHING",

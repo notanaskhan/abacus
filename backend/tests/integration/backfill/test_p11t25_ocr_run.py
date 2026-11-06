@@ -1,4 +1,4 @@
-"""P-11-T25 (TASK-3343; DEC-2332): one scan through the real step, on Postgres and object storage.
+"""P-11-T25 (TASK-3343; DEC-2375): one scan through the real step, on Postgres and object storage.
 
 Row acceptance: "A scanned W-2 at a flagged firm gets OCR words ... and the version's bytes and
 fingerprint never change." The provider is `FakeOcr` over the synthetic corpus. Bug it caught: the

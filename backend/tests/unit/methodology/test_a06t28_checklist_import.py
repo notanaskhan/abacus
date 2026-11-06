@@ -1,4 +1,4 @@
-"""A-06-T28 (TASK-3339; DEC-2330): the checklist file's grammar and the slice's 142 items."""
+"""A-06-T28 (TASK-3339; DEC-2373): the checklist file's grammar and the slice's 142 items."""
 
 from __future__ import annotations
 

@@ -629,9 +629,11 @@ class PaymentOut(BaseModel):
 
 def _payment_out(raw: object) -> PaymentOut | None:
     """NOT-03's Payment band from the response's settings. A label, never an instrument."""
-    if not isinstance(raw, dict) or not raw.get("required"):
+    if not isinstance(raw, dict):
         return None
     payment = cast(dict[str, Any], raw)  # Any: JSON from the database
+    if not payment.get("required"):
+        return None
     item = payment.get("confirmation_request_item_id")
     return PaymentOut(
         amounts=AmountsOut(total=payment.get("amount")),

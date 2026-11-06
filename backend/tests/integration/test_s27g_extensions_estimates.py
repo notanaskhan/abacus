@@ -268,7 +268,7 @@ async def test_ac_a_walled_client_s_schedule_is_absent_for_a_firm_reader(board: 
         ),
     )
     with frozen(DEMO):
-        await estimates.create_schedule(
+        await estimates.create_estimate_schedule(
             samuel,
             client_entity_id=entity,
             basis_tax_return_id=feld,
@@ -343,7 +343,7 @@ async def test_ac_estimates_compute_in_code_and_paid_needs_evidence(board: Board
     )
     dates = [(q, date(2028, q * 3, 15), None) for q in (1, 2, 3, 4)]
     with frozen(DEMO):
-        schedule = await estimates.create_schedule(
+        schedule = await estimates.create_estimate_schedule(
             samuel,
             client_entity_id=entity,
             basis_tax_return_id=feld,
@@ -589,7 +589,7 @@ async def test_ac_the_due_soon_sweep_commits_through_a_real_unit_of_work(board: 
     )
     dates = [(q, date(2028, q * 3, 15), None) for q in (1, 2, 3, 4)]
     with frozen(DEMO):
-        await estimates.create_schedule(
+        await estimates.create_estimate_schedule(
             samuel,
             client_entity_id=entity,
             basis_tax_return_id=feld,

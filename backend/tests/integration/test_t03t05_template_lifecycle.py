@@ -1,4 +1,4 @@
-"""T-03-T05 (TASK-3335; DEC-2326): the organizer template lifecycle and the editor's wall.
+"""T-03-T05 (TASK-3335; DEC-2370): the organizer template lifecycle and the editor's wall.
 
 Row acceptance: "only the template owner can publish v7 with fresh MFA". US-2.2 and US-2.3: one
 draft at a time, a published version is frozen, a binder takes the version published for its tax

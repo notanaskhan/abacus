@@ -24,4 +24,4 @@ Close T-03-T05's recorded partial (DEC-2241): template detail, owner, draft, dis
 - 2026-11-06: built. `tests/integration/test_t03t05_template_lifecycle.py` plus contract, audit, app-gate and route-introspection suites: 1,782 passed locally.
 
 ## Decisions made during this task
-DEC-2326
+DEC-2370

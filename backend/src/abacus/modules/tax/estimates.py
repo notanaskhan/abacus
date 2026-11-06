@@ -454,7 +454,7 @@ async def draft_follow_up(
     return drafted[0].id, item_id, "reminder"
 
 
-async def create_schedule(
+async def create_estimate_schedule(
     ctx: AuthContext,
     *,
     client_entity_id: UUID,

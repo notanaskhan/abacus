@@ -71,7 +71,7 @@ export const taxScreens = {
     path: "/tax-returns/$returnId/delivery",
   },
   // T-03-T11: a, b and c on fixtures; d and e with T-03-T16.
-  // T-03-T11: a to g on fixtures; TAX-01, TAX-02 and CLI-07 wired from the screen (DEC-2331).
+  // T-03-T11: a to g on fixtures; TAX-01, TAX-02 and CLI-07 wired from the screen (DEC-2374).
   "TAX-13": {
     name: "Extensions, estimates & payments",
     status: "fixture",

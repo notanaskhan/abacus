@@ -61,7 +61,7 @@ async def first_refusal(tenant: TenantContext, facts: GateFacts) -> Refusal | No
 
 
 async def over_daily_cap(tenant: TenantContext, pages: int) -> bool:
-    """Whether reading `pages` more would pass the firm's daily cap (P-11-T25; DEC-2332)."""
+    """Whether reading `pages` more would pass the firm's daily cap (P-11-T25; DEC-2375)."""
     async with tenant_session(tenant) as session:
         used = await session.scalar(
             text(

@@ -1,4 +1,4 @@
-"""T-03-T15 (TASK-3337; DEC-2328): the slice foots to BND-03 and TAX-13, from the row.
+"""T-03-T15 (TASK-3337; DEC-2371): the slice foots to BND-03 and TAX-13, from the row.
 
 "make seed-demo and make fixtures produce identical data whose counts foot to every BND-03 and
 TAX-13 artboard at its clock." The loaded half is `tests/integration/test_t03t15_load.py`.
@@ -26,7 +26,7 @@ def test_ac_claire_answers_eight_of_nine() -> None:
 
 
 def test_ac_the_extension_tiles_foot() -> None:
-    # Likely is 1 of TAX-13 c's 2: Thornbury's 706 has no return to flag (DEC-2328).
+    # Likely is 1 of TAX-13 c's 2: Thornbury's 706 has no return to flag (DEC-2371).
     assert ts.counts() == {"extended": 161, "open": 79, "filed": 82, "likely": 1}
 
 

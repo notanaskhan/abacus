@@ -1,4 +1,4 @@
-"""The `tax_schedules` slice (T-03-T15; T-03 §5; BND-03, TAX-13; DEC-2328): the T-03 data through
+"""The `tax_schedules` slice (T-03-T15; T-03 §5; BND-03, TAX-13; DEC-2371): the T-03 data through
 the service and import paths a person uses, never a row written here.
 
 - **Organizer.** The firm's 1040 organizer, imported by Grace Holloway (v1 to v6, the file in
@@ -8,7 +8,7 @@ the service and import paths a person uses, never a row written here.
   likely. The named rows carry the handoff's figures; the rest take the board's rows, no figures.
 - **Estimates.** TAX-13 b's 7 schedules for TY2026.
 
-Not here (DEC-2328): Thornbury's 706 likely row (no return); TY2025 and TY2027 reference sets (a
+Not here (DEC-2371): Thornbury's 706 likely row (no return); TY2025 and TY2027 reference sets (a
 founder's two-person publish), so extensions take the board's dates; TY2025 and TY2026 engine
 parameters (a protected file per year), so those years have no targets or annual figures, only the
 counts foot; the April timeline's history (acks, Varga's re-file), so rows
@@ -94,7 +94,7 @@ class Likely(NamedTuple):
 
 
 # TAX-13 c's second row, Thornbury's 706, has no return: its engagement is still a prospect's and
-# the board holds only Walter's 1040 (DEC-2328).
+# the board holds only Walter's 1040 (DEC-2371).
 LIKELY: Final[tuple[Likely, ...]] = (
     Likely("Lakeshore Literacy Alliance", "8868", "binder_incomplete", None),
 )
