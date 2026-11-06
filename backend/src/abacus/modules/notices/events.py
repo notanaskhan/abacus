@@ -10,10 +10,30 @@ from abacus.kernel.classification import classified
 from abacus.kernel.uow import DomainEvent
 
 
+class NoticeIntakeStarted(DomainEvent):
+    """An intake waits for code to read its file: starts `NoticeIntakeWorkflow` (N-04-T07)."""
+
+    event_type: ClassVar[str] = "notice_intake.started"
+
+    intake_id: Annotated[UUID, classified("internal")]
+
+
+class NoticeIntakeReady(DomainEvent):
+    """Read, or opened for manual entry: the intake's owner may act (N-04 §4.6)."""
+
+    event_type: ClassVar[str] = "notice_intake.ready"
+
+    intake_id: Annotated[UUID, classified("internal")]
+    owner_id: Annotated[UUID, classified("internal")]
+
+
 class NoticeCreated(DomainEvent):
     event_type: ClassVar[str] = "notice.created"
 
     work_item_id: Annotated[UUID, classified("internal")]
+    # N-04-T07 (additive): who hears of it (the assignee; the signing partner when toggled).
+    assignee_id: Annotated[UUID | None, classified("internal")] = None
+    notify_user_ids: Annotated[tuple[UUID, ...], classified("internal")] = ()
 
 
 class NoticeRespondBySoon(DomainEvent):

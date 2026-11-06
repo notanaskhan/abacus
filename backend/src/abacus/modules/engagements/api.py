@@ -216,6 +216,7 @@ from abacus.modules.engagements.team import (
 )
 from abacus.modules.engagements.work_item_facts import (
     WorkItemFacts,
+    function_holders,
     work_item_facts,
     work_item_offices,
 )
@@ -507,6 +508,7 @@ __all__ = [
     "entity_of",
     "eqr_eligibility_due",
     "firm_router",
+    "function_holders",
     "g2_blocks",
     "gate_client_data",
     "gate_fact",

@@ -55,9 +55,10 @@ from abacus.modules.notices.intake_sources import register as _register_sources 
 _register_sources()  # N-04-T13 (DEC-2245): the answer effect and the two triage destinations
 
 # N-04-T16 (DEC-2311): the response's C11 kind, C7 source, workflow and consumer.
-from abacus.modules.notices import intake_reading as _intake_reading  # noqa: E402
 from abacus.modules.notices import sending as _sending  # noqa: E402
-from abacus.modules.notices.response_activities import ACTIVITIES as ACTIVITIES  # noqa: E402
+from abacus.modules.notices.response_activities import (  # noqa: E402
+    ACTIVITIES as _RESPONSE_ACTIVITIES,
+)
 from abacus.modules.notices.response_workflow import NoticeResponseWorkflow  # noqa: E402
 from abacus.modules.notices.response_workflow_types import (  # noqa: E402
     AlertInput as AlertInput,
@@ -70,8 +71,26 @@ from abacus.modules.notices.response_workflow_types import (  # noqa: E402
 )
 
 _sending.register()
-SUBSCRIPTIONS = {**_sending.SUBSCRIPTIONS, **_intake_reading.SUBSCRIPTIONS}
-WORKFLOWS: dict[type, str] = {NoticeResponseWorkflow: "time_sensitive"}
+
+# N-04-T07 (DEC-2326): the intake's read.
+from abacus.modules.notices import intake_read as _intake_read  # noqa: E402
+from abacus.modules.notices.intake_activities import (  # noqa: E402
+    ACTIVITIES as _INTAKE_ACTIVITIES,
+)
+from abacus.modules.notices.intake_workflow import NoticeIntakeWorkflow  # noqa: E402
+from abacus.modules.notices.intake_workflow_types import (  # noqa: E402
+    IntakeReadStep as IntakeReadStep,
+)
+from abacus.modules.notices.intake_workflow_types import (  # noqa: E402
+    NoticeIntakeInput as NoticeIntakeInput,
+)
+
+ACTIVITIES = (*_RESPONSE_ACTIVITIES, *_INTAKE_ACTIVITIES)
+SUBSCRIPTIONS = {**_sending.SUBSCRIPTIONS, **_intake_read.SUBSCRIPTIONS}
+WORKFLOWS: dict[type, str] = {
+    NoticeResponseWorkflow: "time_sensitive",
+    NoticeIntakeWorkflow: "interactive",
+}
 
 # N-04-T19 (DEC-2313): the analysis's agent step.
 from abacus.modules.notices.agent_step import step as _agent_step  # noqa: E402

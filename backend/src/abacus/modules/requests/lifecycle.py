@@ -309,43 +309,61 @@ async def send_item(ctx: AuthContext, engagement_id: UUID, item_id: UUID) -> Non
         binder = await get_binder(tx.session, item.request_list_id)
         if item.due_on is None and (binder is None or binder.default_due_on is None):
             raise DueDateRequired(facts={"count": 1, "request_item_0": str(item.id)})
-        # DV-11 (DEC-79): P-25 is off for every firm until N-03, so unchanged model text never
-        # reaches a client.
-        if (
-            item.drafted_wording_source == "model"
-            and item.drafted_wording_fingerprint == _fingerprint(item.description)
-        ):
-            raise ModelTextNotPermitted
-        check = comments.scope_check()
-        if check is None:
-            raise comments.SharingUnavailable
-        wording = "\n".join(t for t in (item.title, item.description) if t)
-        if await check(ctx, ref, wording):
-            raise OutOfScope
-        now = await clock.now(ctx.tenant)
-        await set_item_fields(tx.session, item.id, {"client_visible": True})
-        await stamp_sent(tx.session, [item.id], at=now, by=ctx.user_id)
-        event = RequestItemSent(
-            request_item_id=item.id, engagement_id=item.engagement_id, sent_by=ctx.user_id
-        )
-        undo_until = now + UNDO_WINDOW
-        grant = await issue_grant(
-            tx,
-            ctx,
-            action="request_item.send",
-            resource=resource,
-            subject=Target("request_item", item.id),
-            payload_sha256=event_sha256(event),
-            not_before=undo_until,
-            expires_at=undo_until + GRANT_LIFETIME,
-        )
-        tx.emit(event, not_before=undo_until, grant_id=grant)
-        tx.record(
-            "request_item.sent",
-            target=Target("request_item", item.id),
-            after=Ref(grant=grant),
-            scope=_scope(item),
-        )
+        await _send_in(tx, ctx, item, ref, resource)
+
+
+async def send_created(
+    tx: UnitOfWork, ctx: AuthContext, engagement_id: UUID, item_id: UUID
+) -> None:
+    """T-03-T07 (DEC-2350): a request created in the caller's unit of work, sent in it, so a
+    person's one click either happened or didn't. Same checks and Undo window as a send, without
+    the draft state a bulk-created request never had."""
+    _human(ctx, "request_item.send")
+    item, ref, resource = await _locked(tx, ctx, engagement_id, item_id, "request_item.send")
+    if item.sent_at is not None:
+        raise RequestAlreadySent(facts={"status": item.status})
+    await _send_in(tx, ctx, item, ref, resource)
+
+
+async def _send_in(
+    tx: UnitOfWork, ctx: AuthContext, item: RequestItem, ref: EngagementRef, resource: Resource
+) -> None:
+    # DV-11 (DEC-79): P-25 is off for every firm until N-03, so unchanged model text never
+    # reaches a client.
+    if item.drafted_wording_source == "model" and item.drafted_wording_fingerprint == _fingerprint(
+        item.description
+    ):
+        raise ModelTextNotPermitted
+    check = comments.scope_check()
+    if check is None:
+        raise comments.SharingUnavailable
+    wording = "\n".join(t for t in (item.title, item.description) if t)
+    if await check(ctx, ref, wording):
+        raise OutOfScope
+    now = await clock.now(ctx.tenant)
+    await set_item_fields(tx.session, item.id, {"client_visible": True})
+    await stamp_sent(tx.session, [item.id], at=now, by=ctx.user_id)
+    event = RequestItemSent(
+        request_item_id=item.id, engagement_id=item.engagement_id, sent_by=ctx.user_id
+    )
+    undo_until = now + UNDO_WINDOW
+    grant = await issue_grant(
+        tx,
+        ctx,
+        action="request_item.send",
+        resource=resource,
+        subject=Target("request_item", item.id),
+        payload_sha256=event_sha256(event),
+        not_before=undo_until,
+        expires_at=undo_until + GRANT_LIFETIME,
+    )
+    tx.emit(event, not_before=undo_until, grant_id=grant)
+    tx.record(
+        "request_item.sent",
+        target=Target("request_item", item.id),
+        after=Ref(grant=grant),
+        scope=_scope(item),
+    )
 
 
 async def undo_send(ctx: AuthContext, engagement_id: UUID, item_id: UUID) -> None:

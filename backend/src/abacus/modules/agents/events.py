@@ -168,3 +168,17 @@ class IntakeProposalsRecorded(DomainEvent):
     attachment_id: Annotated[UUID, classified("internal")]
     client_id: Annotated[UUID, classified("internal")]
     match_id: Annotated[UUID, classified("internal")]
+
+
+class SectionDraftFinished(DomainEvent):
+    """A-04-T29 (DEC-2327): a section drafter run completed. The agent wrote suggestions, never a
+    version (ADR-005), so this is the moment "the agent wrote Internal Control" (AC4.8).
+    Identifiers only; the initiator is who a follow-on run is started for."""
+
+    event_type: ClassVar[str] = "section_draft.finished"
+
+    run_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    workpaper_id: Annotated[UUID, classified("internal")]
+    mode: Annotated[str, classified("internal")]
+    initiator_user_id: Annotated[UUID, classified("internal")]
