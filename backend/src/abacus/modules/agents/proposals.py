@@ -70,6 +70,7 @@ from abacus.modules.agents.proposal_store import (
     lock_proposal,
     lock_suggestion,
     lock_suggestions,
+    pending_field_suggestions,
     rows_of,
     run_of,
     run_output_text,
@@ -1308,6 +1309,36 @@ async def _suggestion_readable(
     ref = await get_ref(ctx, found.engagement_id)
     await authorise(ctx, READ, ref.resource())  # a wall answers 404
     return found, ref.resource()
+
+
+@dataclass(frozen=True)
+class PendingSuggestion:
+    id: UUID
+    target_id: UUID
+    value: str
+    citation_ids: tuple[UUID, ...]
+    version: int
+
+
+async def pending_suggestions(
+    tenant: TenantContext, engagement_id: UUID, target_type: str, field_key: str
+) -> list[PendingSuggestion]:
+    """A target's owner reads what waits on one of its fields (A-04-T24): the caller authorised on
+    the engagement. A shadow run's value is never shown (ED-171)."""
+    async with tenant_session(tenant) as session:
+        rows = await pending_field_suggestions(session, engagement_id, target_type, field_key)
+    hidden = {r: await _hidden(tenant, r) for r in {row.agent_run_id for row in rows}}
+    return [
+        PendingSuggestion(
+            row.id,
+            row.target_id,
+            _text(row.proposed_value) or "",
+            tuple(row.citation_ids),
+            row.version,
+        )
+        for row in rows
+        if not hidden[row.agent_run_id]
+    ]
 
 
 async def suggestion_view(ctx: AuthContext, suggestion_id: UUID) -> SuggestionView:

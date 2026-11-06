@@ -97,6 +97,30 @@ async def set_proposal(
     return found.scalar_one()
 
 
+async def pending_field_suggestions(
+    session: AsyncSession, engagement_id: UUID, target_type: str, field_key: str
+) -> Sequence[Suggestion]:
+    """LIST_EXEMPT: one engagement's pending suggestions on one field of a target kind, after the
+    caller authorised on the engagement. One that a proposal carries is resolved with it."""
+    return (
+        (
+            await session.execute(
+                select(Suggestion)
+                .where(
+                    Suggestion.engagement_id == engagement_id,
+                    Suggestion.target_type == target_type,
+                    Suggestion.field_key == field_key,
+                    Suggestion.status == "pending",
+                    Suggestion.proposal_id.is_(None),
+                )
+                .order_by(Suggestion.created_at, Suggestion.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
 async def get_suggestion(session: AsyncSession, suggestion_id: UUID) -> Suggestion | None:
     return await session.get(Suggestion, suggestion_id)
 

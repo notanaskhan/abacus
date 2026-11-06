@@ -444,6 +444,17 @@ class RiskVersionOut(BaseModel):
     by_name: Annotated[str, classified("internal")]  # "Marcus Delaney via Agent" (INV-5)
 
 
+class SuggestedResponseOut(BaseModel):
+    """A drafted response waiting for a person (AUD-08 f; DEC-2382): nothing is linked yet."""
+
+    model_config = ConfigDict(frozen=True)
+
+    suggestion_id: Annotated[UUID, classified("internal")]
+    target_ref: Annotated[str, classified("internal")]
+    citations: Annotated[int, Field(ge=0), classified("internal")]
+    version: Annotated[int, Field(ge=1), classified("internal")]
+
+
 class RiskDrawerOut(BaseModel):
     """The O2 drawer `?ov=risk:<code>`: factors, rationale, citations and versions (AUD-08 b)."""
 
@@ -456,6 +467,7 @@ class RiskDrawerOut(BaseModel):
     versions: Annotated[list[RiskVersionOut], classified("internal")]
     routed_to_name: Annotated[str | None, classified("internal")]
     routed_at: Annotated[datetime | None, classified("internal")]
+    response_suggestion: Annotated[SuggestedResponseOut | None, classified("internal")] = None
 
 
 class RiskCreateIn(BaseModel):
@@ -515,6 +527,8 @@ class LinkCellOut(BaseModel):
     risk_code: Annotated[str, classified("internal")]
     target_ref: Annotated[str, classified("internal")]
     state: Annotated[RiskLinkageStatus, classified("internal")]
+    # A `suggested` cell: the pending suggestion a person adopts or discards (A-04-T24).
+    suggestion_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class LinkageOut(BaseModel):
@@ -1374,6 +1388,14 @@ async def _drawer_out(ctx: AuthContext, engagement_id: UUID, risk_id: UUID) -> R
         ],
         routed_to_name=None,  # the significant_risk card (A-04-T18)
         routed_at=None,
+        response_suggestion=None
+        if found.response_suggestion is None
+        else SuggestedResponseOut(
+            suggestion_id=found.response_suggestion.suggestion_id,
+            target_ref=found.response_suggestion.target_ref,
+            citations=found.response_suggestion.citations,
+            version=found.response_suggestion.version,
+        ),
     )
 
 
@@ -1393,7 +1415,12 @@ async def _linkage_out(ctx: AuthContext, engagement_id: UUID) -> LinkageOut:
             for t in found.targets
         ],
         cells=[
-            LinkCellOut(risk_code=c, target_ref=ref, state=cast(RiskLinkageStatus, st))
+            LinkCellOut(
+                risk_code=c,
+                target_ref=ref,
+                state=cast(RiskLinkageStatus, st),
+                suggestion_id=found.suggestions.get((c, ref)) if st == "suggested" else None,
+            )
             for c, ref, st in found.cells
         ],
     )

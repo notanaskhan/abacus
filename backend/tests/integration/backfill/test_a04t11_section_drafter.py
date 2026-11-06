@@ -18,6 +18,7 @@ import json
 import re
 import uuid
 from collections.abc import Iterator
+from dataclasses import replace
 from typing import Final, cast
 
 import pytest
@@ -27,6 +28,7 @@ from abacus.kernel.db import TenantContext
 from abacus.kernel.flags import forget_flags
 from abacus.modules.agents import section_draft
 from abacus.modules.agents.api import PackRefused
+from abacus.modules.agents.section_sources import ModeTarget
 from abacus.modules.agents.service import load_agent_context
 from abacus.modules.methodology.api import version_steps
 from abacus_tools.synthetic.scenarios.brightwater_hale.methodology import spec_of, workbook
@@ -213,6 +215,36 @@ async def test_ac_a_draft_writes_cited_suggestions_only_and_flags_the_unsupporte
         "unsupported"
     ]
     assert {(u["cell"], u["reason"]) for u in cast(list[Json], unsupported)} == {
+        ("B3", "uncited"),
+        ("B4", "number_without_provenance"),
+    }
+
+
+async def test_ac4_6_a_cell_with_a_closed_list_keeps_nothing_else(
+    world: tuple[Books, uuid.UUID], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A-04-T24 (DEC-2382): text outside the target's choices is dropped at the run, so it is never
+    stored, even with a verified citation."""
+    books_, version = world
+    paper = await _paper(
+        books_, "general_audit_planning", (await _keys(books_, version, "BH-EBP-110"))[:4]
+    )
+    status, body = await _start(books_, paper)
+    assert status == 202, body
+    run_id = uuid.UUID(cast(str, body["run_id"]))
+    real = section_draft.load_context
+
+    async def with_choices(*args: object, **kwargs: object) -> section_draft.DraftContext:
+        found = await real(*args, **kwargs)  # pyright: ignore[reportArgumentType] -- passed through
+        target = ModeTarget("risk", uuid.uuid4(), "response", ("EBP-03",))
+        return replace(found, targets={"main!B2": target})
+
+    monkeypatch.setattr(section_draft, "load_context", with_choices)
+    agent = await load_agent_context(books_.tenant_id, run_id)
+    outcome = await section_draft.draft(agent, paper, "gap", "planning")
+    assert outcome.suggestion_ids == ()
+    assert {(u.cell, u.reason) for u in outcome.unsupported} == {
+        ("B2", "not_a_choice"),
         ("B3", "uncited"),
         ("B4", "number_without_provenance"),
     }

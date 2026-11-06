@@ -12,9 +12,10 @@ its task scope.
   plan document, the SPD, the trust report, the SOC 1, ...), so Menu 1 and Menu 2 cite across them;
   the presumed fraud risks are code's (`risks.prepopulate_presumed`, the mode's preparer).
 - **risk** (the register, AUD-08): the register as its own grid on the `risk` sheet, one row per
-  risk (row n + 1 for Rn): B rationale, C assertions, D inherent risk, E control risk, each landing
-  on that risk's field through the `risk` applier; and code's coverage facts (risks, significant,
-  unaddressed codes), so "Identify risks" cites numbers by reference only.
+  risk (row n + 1 for Rn): B rationale, C assertions, D inherent risk, E control risk, F response,
+  each landing on that risk's field through the `risk` applier; and code's coverage facts (risks,
+  significant, unaddressed codes) and the sections a response may name, so "Identify risks" cites
+  numbers by reference only.
 """
 
 from __future__ import annotations
@@ -96,6 +97,7 @@ RISK_COLUMNS: Final = (
     ("C", "assertions"),
     ("D", "inherent_risk"),
     ("E", "control_risk"),
+    ("F", risks.RESPONSE_FIELD),
 )
 
 
@@ -116,17 +118,28 @@ async def risk_inputs(actor: AgentContext, paper: SourcePaper) -> ModeInputs:
     rows = sorted(await risks.rows_of(actor.tenant, paper.work_item_id), key=lambda r: r.code)
     cells: list[SourceCell] = []
     targets: dict[str, ModeTarget] = {}
+    responses = await risks.linked_refs(actor.tenant, paper.work_item_id)
+    sections = tuple(risks.response_targets())
     for row in rows:
         line = int(row.code[1:]) + 1
         for column, field_key in RISK_COLUMNS:
             key = f"{column}{line}"
+            current = (
+                responses.get(row.id, [])
+                if field_key == risks.RESPONSE_FIELD
+                else getattr(row, field_key)
+            )
             cells.append(
                 SourceCell(
-                    RISK_SHEET, key, f"{row.code} {row.area_label}", field_key,
-                    _text(getattr(row, field_key)),
+                    RISK_SHEET, key, f"{row.code} {row.area_label}", field_key, _text(current),
                 )
             )  # fmt: skip
-            targets[f"{RISK_SHEET}!{key}"] = ModeTarget(risks.TARGET, row.id, field_key)
+            targets[f"{RISK_SHEET}!{key}"] = ModeTarget(
+                risks.TARGET,
+                row.id,
+                field_key,
+                sections if field_key == risks.RESPONSE_FIELD else (),
+            )
     linked = frozenset(await risks.linked_ids(actor.tenant, paper.work_item_id))
     tally = risks.tally(rows, linked)
     unaddressed = [r.code for r in rows if r.id not in linked]
@@ -136,4 +149,9 @@ async def risk_inputs(actor: AgentContext, paper: SourcePaper) -> ModeInputs:
         ("risks_high_rmm", {"t": "decimal", "v": str(tally.high_rmm)}),
         ("risks_unaddressed", {"t": "text", "v": ", ".join(unaddressed)}),
     ]
-    return ModeInputs(cells=tuple(cells), targets=targets, facts=tuple(facts))
+    return ModeInputs(
+        cells=tuple(cells),
+        targets=targets,
+        facts=tuple(facts),
+        identifiers=(("response_targets", {"t": "text", "v": ", ".join(sections)}),),
+    )

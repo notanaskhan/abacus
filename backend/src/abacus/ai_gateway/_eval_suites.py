@@ -19,7 +19,7 @@ EVAL_SUITE_MODES: dict[str, dict[str, int]] = {   'evidence.matcher': {'evidence
                                       'workpapers.section_draft.ebp_reconcile@v1': 1,
                                       'workpapers.section_draft.ebp_trust@v1': 1,
                                       'workpapers.section_draft.ic@v1': 1,
-                                      'workpapers.section_draft.risk@v1': 1,
+                                      'workpapers.section_draft.risk@v2': 1,
                                       'workpapers.section_draft.risk_narrative@v1': 1,
                                       'workpapers.section_draft.soc1@v1': 1,
                                       'workpapers.section_draft@v1': 1,

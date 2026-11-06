@@ -96,12 +96,14 @@ from abacus.modules.agents.proposal_slots import (
     register_threshold_policy,
 )
 from abacus.modules.agents.proposals import (
+    PendingSuggestion,
     ProposalChanged,
     ProposalInvalid,
     ProposedRow,
     SuggestionChanged,
     create_proposal,
     create_suggestion,
+    pending_suggestions,
     register_checkpoint_hooks,
     register_proposal_state,
 )
@@ -369,6 +371,7 @@ __all__ = [
     "OverrideRate",
     "PackProblem",
     "PackRefused",
+    "PendingSuggestion",
     "PriorFact",
     "ProposalChanged",
     "ProposalInvalid",
@@ -436,6 +439,7 @@ __all__ = [
     "match",
     "match_intake",
     "override_rate",
+    "pending_suggestions",
     "recommend",
     "register_change_set_applier",
     "register_engagement_run_agent",
