@@ -18,6 +18,8 @@ import {
   json,
 } from "../../app-core/fixture-mode";
 import { seedScenario } from "../scenario";
+import { getSeed } from "../seed";
+import { capabilitiesFor } from "../seed/shell";
 import {
   TAX13_SHEET_IDS,
   tax13Estimates,
@@ -27,6 +29,7 @@ import {
   tax13SeasonE,
 } from "../seed/tax13";
 
+const seed = getSeed();
 const E0 = seedScenario();
 
 function frame(state: string): Scenario {
@@ -37,6 +40,8 @@ function frame(state: string): Scenario {
     get handlers(): Record<string, FixtureHandler> {
       return {
         ...E0.handlers,
+        "GET /v1/me/capabilities": ({ persona }) =>
+          json(capabilitiesFor(seed, persona ?? "samuel-ito")),
         "GET /v1/tax/extensions": ({ query }) => json(tax13Extensions(query.get("segment"))),
         "GET /v1/tax/estimates": () => json(tax13Estimates()),
         "GET /v1/tax/extensions/export.xlsx": () =>
@@ -57,6 +62,8 @@ function season(state: string, persona: string, clock: string, reviewer: boolean
     get handlers(): Record<string, FixtureHandler> {
       return {
         ...E0.handlers,
+        "GET /v1/me/capabilities": ({ persona: who }) =>
+          json(capabilitiesFor(seed, who ?? persona)),
         "GET /v1/tax/extensions": ({ query }) =>
           json(state === "e" ? tax13SeasonE() : tax13SeasonD(query.getAll("return_id"), reviewer)),
         "GET /v1/tax/extensions/{extension_id}": ({ params }) => {

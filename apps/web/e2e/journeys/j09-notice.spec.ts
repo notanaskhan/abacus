@@ -33,9 +33,10 @@ test.describe("J09 notice", () => {
   });
 
   test("j09 5-6: the response letter and its approval (NOT-03)", async ({ journey }) => {
-    await journey.as("kevin-osei", "/notices/_noticeId_", {
+    await journey.as("kevin-osei", "/notices/_noticeId_?tab=response", {
       clock: DEMO_INSTANT,
       scenario: "NOT-03:a",
+      flags: ["notices.workspace"],
     });
     await journey.step("J09 step 5: the response letter", async (page) => {
       await expect(page.locator("[data-screen='NOT-03']").first()).toBeVisible();
