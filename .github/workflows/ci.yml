@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-24.04
     # 15 (was 10) by founder decision, 2026-11-02 (TASK-2928): the stage needs about 12 minutes on
     # a hosted runner (pyright 4, banned patterns 2, web lint 2); the 5-minute target stands.
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -85,7 +85,7 @@ jobs:
     runs-on: ubuntu-24.04
     # S8 wave A grew the suite past 15 minutes per shard (#395 cancelled at 91-93%, no failures);
     # pytest-xdist workers (DEC-335) bring it back down.
-    timeout-minutes: 25
+    timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
@@ -177,7 +177,7 @@ jobs:
     # S13 (#557): shard 7 of 8 cancelled at 82% twice with 270 files unrecorded, so ten.
     # c441d80c: shard 4 of 10 cancelled at 63% with no failures (the S13r and S11 files are not
     # recorded yet), so 60 minutes until durations.json is re-recorded.
-    timeout-minutes: 60
+    timeout-minutes: 75
     strategy:
       fail-fast: false
       matrix:

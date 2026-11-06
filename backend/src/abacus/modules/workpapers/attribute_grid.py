@@ -42,6 +42,14 @@ Variant = Literal[
 HumanResult = Literal["pass", "exception", "no_effect"]
 AgentResult = Literal["agent_tested", "needs_human"]
 _HUMAN: Final = frozenset({"pass", "exception", "no_effect"})
+RowState = Literal["not_started", "agent_tested", "needs_human", "pass", "exception", "no_effect"]
+_STATE_ORDER: Final[tuple[RowState, ...]] = (
+    "exception",
+    "needs_human",
+    "agent_tested",
+    "no_effect",
+    "pass",
+)
 _ANCHOR: Final[dict[str, str]] = {
     "ebp_eligibility": "EBP-03",
     "ebp_contribution_recalc": "EBP-04",
@@ -100,10 +108,10 @@ class Row:
     cells: tuple[Cell, ...]
 
     @property
-    def state(self) -> str:
+    def state(self) -> RowState:
         """A row's state: exception if any cell is, then needs human, then the rest."""
         results = {c.result for c in self.cells}
-        for state in ("exception", "needs_human", "agent_tested", "no_effect", "pass"):
+        for state in _STATE_ORDER:
             if state in results:
                 return state
         return "not_started"

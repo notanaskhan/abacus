@@ -1197,6 +1197,7 @@ class EbpPartIvStatus(StrEnum):
 class EbpTestResultStatus(StrEnum):
     UNTESTED = "untested"
     TESTING = "testing"
+    AGENT_TESTED = "agent_tested"
     PASS = "pass"
     EXCEPTION = "exception"
     NEEDS_HUMAN = "needs_human"
@@ -2196,6 +2197,7 @@ STORED: dict[str, tuple[str, ...]] = {
     "ebp_test_result": (
         "untested",
         "testing",
+        "agent_tested",
         "pass",
         "exception",
         "needs_human",
