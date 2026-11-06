@@ -68,6 +68,17 @@ async def due_dates_for(form: str, tax_year: int, period_end: date) -> DueDates:
     return await _SOURCE[0](form, tax_year, period_end)
 
 
+# (extension form, tax year, period end, jurisdiction) -> the dates of the rule naming that form.
+ExtensionDatesSource = Callable[[str, int, date, str], Awaitable[DueDates]]
+_EXTENSION_SOURCE: list[ExtensionDatesSource] = []
+
+
+def register_extension_dates_source(source: ExtensionDatesSource) -> None:
+    if _EXTENSION_SOURCE and _EXTENSION_SOURCE[0] is not source:
+        raise ValueError("an extension-dates source is already registered")
+    _EXTENSION_SOURCE[:] = [source]
+
+
 # The return's form code (0089, 0403) as C21's due-date rows name it.
 FORM_FOR_RULES: Final[Mapping[str, str]] = {
     "1040": "1040",
@@ -112,6 +123,20 @@ class Pinned:
 
 def period_end(tax_year: int, fiscal_year_end: date | None) -> date:
     return fiscal_year_end or date(tax_year, 12, 31)
+
+
+async def dates_for_extension_form(
+    extension_form: str, tax_year: int, fiscal_year_end: date | None, jurisdiction: str
+) -> DueDates | None:
+    """A state line's dates. None when no published rule names the form: the line is refused."""
+    if not _EXTENSION_SOURCE:
+        return None
+    try:
+        return await _EXTENSION_SOURCE[0](
+            extension_form, tax_year, period_end(tax_year, fiscal_year_end), jurisdiction
+        )
+    except LookupError:
+        return None
 
 
 async def dates_for(form: str, tax_year: int, fiscal_year_end: date | None) -> DueDates | None:

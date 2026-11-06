@@ -657,3 +657,45 @@ def test_ac_an_answer_effects_rule_key_is_a_ref_the_audit_accepts() -> None:
     from abacus.modules.requests.answer_effect_slots import rule_fingerprint
 
     assert Ref(rule=rule_fingerprint("q2_residency"), pending=0).fields["pending"] == 0
+
+
+async def test_ac_a_state_line_takes_its_forms_rule_and_an_unnamed_form_is_refused(
+    board: Board, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """T-03 §4.2: the form validates against published rules, whose row gives the state's dates."""
+    feld = _feld(board)
+    samuel = await board.person("Samuel Ito", None)
+    await _member(board, feld, samuel.user_id, "manager")
+
+    async def state_rule(form: str, *_args: object) -> _Dates | None:
+        return _Dates() if form == "IL-1065-V" else None
+
+    monkeypatch.setattr(extensions, "dates_for_extension_form", state_rule)
+    call = _as(samuel)
+    payment = {"return_id": str(feld), "jurisdiction": "IL", "amount": "28044.00"}
+    with frozen(DEMO):
+        refused = await call(
+            "POST",
+            "/v1/tax/extensions:prepare",
+            json={
+                "return_ids": [str(feld)],
+                "payments": [{**payment, "form": "NOT-A-FORM"}],
+            },
+            headers={"Idempotency-Key": uuid.uuid4().hex},
+        )
+        taken = await call(
+            "POST",
+            "/v1/tax/extensions:prepare",
+            json={
+                "return_ids": [str(feld)],
+                "payments": [{**payment, "form": "IL-1065-V"}],
+            },
+            headers={"Idempotency-Key": uuid.uuid4().hex},
+        )
+    assert refused.status_code == 409, refused.text
+    assert taken.status_code == 200, taken.text
+    form = await board.seed.value(
+        "SELECT form FROM filing_extensions WHERE tax_return_id = $1 AND jurisdiction = 'IL'",
+        feld,
+    )
+    assert form == "IL-1065-V"
