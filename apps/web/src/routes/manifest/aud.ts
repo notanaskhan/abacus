@@ -89,7 +89,8 @@ export const audScreens = {
     status: "fixture",
     path: "/audits/$auditId/review-notes",
   },
-  "AUD-18": { name: "EQR workspace", status: "planned", path: null },
+  // A-07-T17: a to e on fixtures. Live with A-07-T18's service.
+  "AUD-18": { name: "EQR workspace", status: "fixture", path: "/audits/$auditId/eqr" },
   "AUD-19": {
     name: "Completion (checklist · subsequent events · legal letters · going concern)",
     status: "planned",

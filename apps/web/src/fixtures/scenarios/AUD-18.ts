@@ -20,12 +20,12 @@ function frame(state: string, persona: string, clock: string): Scenario {
 }
 
 export const scenarios = defineScenarios({
-  a: frame("a", "thomas-whitcombe", "2026-10-02T10:12:00-05:00"),
-  b: frame("b", "thomas-whitcombe", "2026-10-03T09:40:00-05:00"),
-  b2: frame("b2", "thomas-whitcombe", "2026-10-03T11:05:00-05:00"),
-  c: frame("c", "thomas-whitcombe", "2026-10-05T09:15:00-05:00"),
-  d: frame("d", "thomas-whitcombe", "2026-10-05T09:32:00-05:00"),
-  e: frame("e", "hannah-leclerc", "2026-10-02T10:12:00-05:00"),
+  a: frame("a", "thomas-whitcombe", "2026-10-05T11:05:00-05:00"),
+  b: frame("b", "thomas-whitcombe", "2026-10-05T16:40:00-05:00"),
+  b2: frame("b2", "thomas-whitcombe", "2026-10-05T16:40:00-05:00"),
+  c: frame("c", "thomas-whitcombe", "2026-10-05T16:41:00-05:00"),
+  d: frame("d", "thomas-whitcombe", "2026-10-05T11:05:00-05:00"),
+  e: frame("e", "hannah-leclerc", "2026-10-05T11:05:00-05:00"),
 });
 
 export type State = keyof typeof scenarios;
