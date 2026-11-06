@@ -4861,6 +4861,12 @@ export const STATUS_REGISTRY = {
       "terminal": false,
       "derived": false
     },
+    "agent_tested": {
+      "label": "Agent tested",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
     "pass": {
       "label": "Pass",
       "variant": "green-tint",
