@@ -562,7 +562,7 @@ async def mark_sent(
         tx.record(
             "notice_response.sent",
             target=Target("notice", work_item_id),
-            after=Ref(channel=channel, follow_up=due.isoformat()),
+            after=Ref(days_to_follow_up=(due - sent_on).days),
         )
     await signal_workflow(workflow_id(ctx.tenant_id, work_item_id), "sent", due.isoformat())
     return sent_on, due, last4
@@ -622,7 +622,7 @@ async def agency_reply(
         tx.record(
             "notice.agency_reply_recorded",
             target=Target("notice", work_item_id),
-            after=Ref(outcome=outcome),
+            after=Ref(resolved=int(outcome == "resolved")),
         )
     await signal_workflow(workflow_id(ctx.tenant_id, work_item_id), "agency_reply")
 

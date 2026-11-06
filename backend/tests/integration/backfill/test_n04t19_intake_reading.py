@@ -1,27 +1,24 @@
-"""N-04-T19 (TASK-3345; DEC-2334): an intake leaves `extracting`, by code, the agent or a person.
+"""N-04-T19 (TASK-3345; DEC-2377): with no form map, the responder proposes over masked text.
 
-N-04 US-2.2: a mapped notice's fields come from the code map; no map and no responder opens manual
-entry; a refused OCR opens manual entry; nothing is guessed. Bug this pins: nothing subscribed, so
-an intake at a firm with extraction on stayed `extracting` for good.
+N-04 US-2.2: each value names its run for a person to confirm; nothing proposed, or no masked text,
+opens manual entry; nothing is guessed. `NoticeIntakeWorkflow` (N-04-T07) reads mapped forms.
 """
 
 from __future__ import annotations
 
 import uuid
-from decimal import Decimal
-from types import SimpleNamespace
-from typing import cast
 
 import pytest
 
 from abacus.kernel.db import TenantContext
 from abacus.kernel.flags import forget_flags
-from abacus.kernel.uow import OutboxEvent, uow
+from abacus.kernel.uow import uow
+from abacus.modules.agents import api as agents_api
 from abacus.modules.agents.handoff import NoticeExtractOutput, NoticeProposedField
 from abacus.modules.agents.notice_responder import ExtractProposal
 from abacus.modules.evidence.api import NewItem, Provenance, add_version, stage_content
 from abacus.modules.identity.api import AuthContext
-from abacus.modules.notices import intake_reading
+from abacus.modules.notices import intake_read
 from abacus.modules.notices.intake import create as create_intake
 
 from .tb_support import Books, books
@@ -65,114 +62,41 @@ async def _intake(world: Books, monkeypatch: pytest.MonkeyPatch) -> tuple[uuid.U
     return made.id, version.id
 
 
-def _event(world: Books, version: uuid.UUID) -> OutboxEvent:
-    return cast(
-        OutboxEvent,
-        SimpleNamespace(
-            tenant_id=world.tenant_id,
-            payload={
-                "evidence_version_id": str(version),
-                "engagement_id": str(world.site.engagement_id),
-            },
-        ),
-    )
+async def _no_map(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def none_read(_tenant_id: object, _version: object) -> int:
+        return 0
+
+    async def no_fields(_tenant: object, _version: object) -> tuple[()]:
+        return ()
+
+    monkeypatch.setattr(intake_read, "extract_version", none_read)
+    monkeypatch.setattr(intake_read, "extracted_fields_of", no_fields)
 
 
-async def test_ac_a_mapped_notices_fields_come_from_code_and_it_is_ready(
+async def test_ac_no_map_and_no_masked_text_opens_manual_entry(
     world: Books, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    intake, version = await _intake(world, monkeypatch)
-
-    async def fields(_tenant: object, _version: object) -> list[dict[str, object]]:
-        return [
-            {
-                "field_key": "notice.number",
-                "value_text": "CP2000",
-                "confidence": Decimal("0.98"),
-                "low_confidence": False,
-            },
-            {
-                "field_key": "notice.respond_by",
-                "value_text": "2026-09-23",
-                "confidence": Decimal("0.71"),
-                "low_confidence": True,
-            },
-            {
-                "field_key": "not.a_field",
-                "value_text": "x",
-                "confidence": Decimal(1),
-                "low_confidence": False,
-            },
-        ]
-
-    monkeypatch.setattr(intake_reading, "recorded_form_fields", fields)
-    await intake_reading.on_fields_recorded(_event(world, version))
-    (row,) = await world.seed.rows(
-        "SELECT status, extraction_mode FROM notice_intakes WHERE id = $1", intake
-    )
-    assert tuple(row) == ("ready", "code_map")
-    values = await world.seed.rows(
-        "SELECT field_key, value_text, low_confidence, origin, recorded_actor_kind "
-        "FROM notice_field_values WHERE owner_id = $1 ORDER BY field_key",
-        intake,
-    )
-    assert [tuple(v) for v in values] == [
-        ("notice.code", "CP2000", False, "code_map", "system"),
-        ("notice.respond_by", "2026-09-23", True, "code_map", "system"),
-    ]
-
-
-async def test_ac_no_map_and_no_responder_opens_manual_entry(
-    world: Books, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    intake, version = await _intake(world, monkeypatch)
-
-    async def unknown(_tenant: object, _version: object) -> bool:
-        return False
+    intake, _version = await _intake(world, monkeypatch)
+    await _no_map(monkeypatch)
 
     async def no_text(_tenant: object, **_k: object) -> None:
         return None
 
-    monkeypatch.setattr(intake_reading, "form_is_known", unknown)
-    monkeypatch.setattr(intake_reading, "masked_pages", no_text)
-    await intake_reading.on_scanned(_event(world, version))
+    monkeypatch.setattr(intake_read, "masked_pages", no_text)
+    assert await intake_read.read_intake(world.tenant_id, intake, None) == "manual_entry"
     (row,) = await world.seed.rows(
         "SELECT status, extraction_mode FROM notice_intakes WHERE id = $1", intake
     )
     assert tuple(row) == ("manual_entry", "manual")
 
 
-async def test_ac_a_mapped_form_waits_for_its_own_event(
-    world: Books, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    intake, version = await _intake(world, monkeypatch)
-
-    async def known(_tenant: object, _version: object) -> bool:
-        return True
-
-    monkeypatch.setattr(intake_reading, "form_is_known", known)
-    await intake_reading.on_scanned(_event(world, version))
-    (row,) = await world.seed.rows("SELECT status FROM notice_intakes WHERE id = $1", intake)
-    assert row["status"] == "extracting"
-
-
-async def test_ac_a_refused_ocr_opens_manual_entry(
-    world: Books, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    intake, version = await _intake(world, monkeypatch)
-    await intake_reading.on_ocr_refused(_event(world, version))
-    (row,) = await world.seed.rows("SELECT status FROM notice_intakes WHERE id = $1", intake)
-    assert row["status"] == "manual_entry"
-
-
 async def test_ac_with_no_map_the_responders_proposal_is_recorded_as_the_agents(
     world: Books, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    intake, version = await _intake(world, monkeypatch)
+    intake, _version = await _intake(world, monkeypatch)
     run = uuid.uuid4()
 
-    async def unknown(_tenant: object, _version: object) -> bool:
-        return False
+    await _no_map(monkeypatch)
 
     async def pages(_tenant: object, **_k: object) -> dict[int, str]:
         return {1: "State notice"}
@@ -192,10 +116,9 @@ async def test_ac_with_no_map_the_responders_proposal_is_recorded_as_the_agents(
             run,
         )
 
-    monkeypatch.setattr(intake_reading, "form_is_known", unknown)
-    monkeypatch.setattr(intake_reading, "masked_pages", pages)
-    monkeypatch.setattr(intake_reading, "extract_notice_fields", propose)
-    await intake_reading.on_scanned(_event(world, version))
+    monkeypatch.setattr(intake_read, "masked_pages", pages)
+    monkeypatch.setattr(agents_api, "extract_notice_fields", propose)
+    assert await intake_read.read_intake(world.tenant_id, intake, None) == "ready"
     (row,) = await world.seed.rows(
         "SELECT status, extraction_mode FROM notice_intakes WHERE id = $1", intake
     )

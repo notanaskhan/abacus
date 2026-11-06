@@ -80,7 +80,7 @@ def test_ac_the_step_runs_as_the_system() -> None:
 async def test_ac_a_run_records_without_any_text_in_its_audit_reference(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Regression (DEC-2332): `Ref` refuses text, and this one held the refusal's name, so every
+    """Regression (DEC-2375): `Ref` refuses text, and this one held the refusal's name, so every
     run raised before the pages were read."""
     recorded: list[Ref] = []
 

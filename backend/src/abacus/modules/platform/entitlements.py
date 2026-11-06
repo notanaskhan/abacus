@@ -26,7 +26,7 @@ Module = Literal[
     "statements_studio",
     "office_addins",
     "insights",
-    "tax_returns",  # T-03-T19: Tax Returns and K-1 packages (DEC-2329)
+    "tax_returns",  # T-03-T19: Tax Returns and K-1 packages (DEC-2372)
 ]
 MODULES: Final = frozenset(get_args(Module))
 

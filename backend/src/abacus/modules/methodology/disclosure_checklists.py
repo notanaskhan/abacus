@@ -1,4 +1,4 @@
-"""A-06-T28: disclosure checklist templates as firm content (AGENTS 16; A-06 §4; DEC-2330).
+"""A-06-T28: disclosure checklist templates as firm content (AGENTS 16; A-06 §4; DEC-2373).
 
 A firm imports its checklist as CSV (`key, section, text`), parsed in the isolated child because
 the file is hostile content. A dry run lists the problems and writes nothing. A person publishes a

@@ -43,7 +43,7 @@ class SeedNotice(NamedTuple):
 
 
 # The nine rows of `apps/web/src/fixtures/seed/notices.ts`, the handoff's. N5 and N9 are unassigned
-# there; Create notice needs an assignee, so they sit with the filer here (DEC-2335).
+# there; Create notice needs an assignee, so they sit with the filer here (DEC-2378).
 NOTICES: Final[tuple[SeedNotice, ...]] = (
     SeedNotice("N1", "Marcus & Dana Whitley", "CP2000", "irs", 2024, date(2026, 8, 24),
                date(2026, 9, 23), "753.01", "analyzing", "KO"),

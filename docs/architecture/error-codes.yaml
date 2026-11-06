@@ -881,6 +881,11 @@ codes:
     - abacus.modules.evidence.withdrawals.EvidenceNotWithdrawable
     summary: 'Not a client''s detached-key upload (a firm upload, or one stored before detached-key mode):
       nothing can erase it, so it is not withdrawn (ADR-162 §8).'
+  exception_not_high:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.soc_reports.ExceptionNotHigh
+    summary: 'AC7.5: only a High-impact exception routes to Findings.'
   export_disabled:
     status: 409
     raised_by:
@@ -923,8 +928,8 @@ codes:
   extension_form_required:
     status: 422
     raised_by:
-    - abacus.modules.tax.extensions.StateLineNeedsForm
-    summary: Only a federal line's extension form follows from the return.
+    - abacus.modules.tax.extensions.StateFormRequired
+    summary: A state line's first payment names its form (IT-370); only the federal form is a rule's.
   fees_do_not_foot:
     status: 422
     raised_by:
@@ -1079,7 +1084,7 @@ codes:
     - abacus.modules.engagements.record.GateUnmet
     - abacus.modules.organisations.contacts.GateUnmet
     - abacus.modules.review.issue_resolutions.LetterGateUnmet
-    - abacus.modules.tax.extensions.GateUnmet
+    - abacus.modules.tax.extensions.ExtensionGateUnmet
     summary: A gate the step or the create requires is not met (C1 gate providers; `facts.gate`).
   gates_not_met:
     status: 409
@@ -1281,10 +1286,6 @@ codes:
     raised_by:
     - abacus.modules.identity.annual_independence.StatementMissing
     summary: The firm has not published its independence statement yet, so there is nothing to confirm.
-  installment_not_required:
-    status: 422
-    raised_by:
-    - abacus.modules.tax.estimates.InstallmentNotRequired
   intake_not_allowed:
     status: 409
     raised_by:
@@ -1667,7 +1668,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.tax.estimates.NoBasisReturn
-    summary: A confirmation request needs the basis return's engagement to live in.
+    summary: A confirmation request lives in a binder, which hangs off the basis return's engagement.
   no_client_copy:
     status: 409
     raised_by:
@@ -1688,6 +1689,11 @@ codes:
     raised_by:
     - abacus.modules.portal.settings.NothingToPublish
     summary: There is no draft to publish.
+  no_extension_form:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.extensions.NoExtensionForm
+    summary: The published rules name no extension form or dates for this return's form.
   no_failed_sync:
     status: 409
     raised_by:
@@ -2057,6 +2063,11 @@ codes:
     raised_by:
     - abacus.modules.methodology.extraction.PagePreviewUnavailable
     summary: Only a PDF source has page images (a DOCX is read as text).
+  paid_needs_evidence:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.estimates.PaidNeedsEvidence
+    summary: A paid installment rests on the client's evidence (T-03 US-5.3).
   paragraph_locked:
     status: 409
     raised_by:
@@ -2210,6 +2221,10 @@ codes:
     raised_by:
     - abacus.modules.engagements.roll_forward.PriorMismatch
     summary: The prior engagement isn't this client entity's, or is another type.
+  prior_year_tax_source_required:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.estimates.PriorTaxNeedsSource
   procedure_exists:
     status: 409
     raised_by:
@@ -2218,6 +2233,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.fieldwork.service.ProcedureBusy
+  projected_liability_source_required:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.extensions.LiabilityNeedsSource
+    summary: A projected liability carries where it came from (DEC-77, INV-2).
   projection_unavailable:
     status: 422
     raised_by:
@@ -3171,7 +3191,7 @@ codes:
     - abacus.modules.notices.intake.IntakeMoved
     - abacus.modules.notices.service.VersionConflict
     - abacus.modules.reporting.statements.StaleAnswer
-    - abacus.modules.tax.estimates.ScheduleMoved
+    - abacus.modules.tax.estimates.EstimateMoved
     - abacus.modules.tax.extensions.ExtensionMoved
     - abacus.modules.workpapers.attribute_grid.TestMoved
     - abacus.modules.workpapers.core.VersionConflict

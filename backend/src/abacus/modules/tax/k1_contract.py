@@ -8,7 +8,7 @@ only their own released packages (POR-13), downloads them (audited) and updates 
 address for a person to accept (DV-10).
 
 Firm routes answer 404 for a client principal, 403 for a principal the matrix refuses, 404 with
-the `tax_returns` entitlement absent (DEC-2329). Portal routes (T-02-T26, `tax/k1_portal.py`)
+the `tax_returns` entitlement absent (DEC-2372). Portal routes (T-02-T26, `tax/k1_portal.py`)
 answer 404 to a firm principal and without the entitlement; a recipient reads only their own
 released packages, with the second step for anything that carries amounts.
 

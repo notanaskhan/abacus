@@ -1,4 +1,4 @@
-"""T-03-T19 (DEC-2329): `tax_returns` joins a firm's modules (ADR-148, DEC-55).
+"""T-03-T19 (DEC-2372): `tax_returns` joins a firm's modules (ADR-148, DEC-55).
 
 `tax.returns_v1` and `tax.k1_release` retire, and this entitlement gates the same routes. A firm
 with either flag on keeps its access through a row written here. Expand only.

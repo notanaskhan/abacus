@@ -23,4 +23,4 @@ Make `--slice notices` actually load. DEC-2316 said export equivalence waits for
 - 2026-11-06: built. `tests/integration/test_n04t21_load.py` and the slice's unit tests: 7 passed. Create notice runs in the load through the service, not the route.
 
 ## Decisions made during this task
-DEC-2335
+DEC-2378

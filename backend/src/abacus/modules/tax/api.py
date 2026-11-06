@@ -4,17 +4,22 @@ Pre-registered (F-03-T08; ADR-140). T-01-T02: the engine-bridge and e-file-recor
 (`engine_contract`). T-01-T18: final approval and its blocker slot (`approval`).
 """
 
+from datetime import date
 from uuid import UUID
 
+from sqlalchemy import text
+
 from abacus.kernel.audit_owners import register_engagement_owners, register_entity_owners
-from abacus.kernel.db import TenantContext
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.uow import OutboxEvent
 from abacus.modules.engagements.api import register_work_item_kind
 from abacus.modules.identity.api import AbacusRouter, register_scope_resolver
 from abacus.modules.organisations.api import register_office_facts
 from abacus.modules.platform.api import register_search_projection
-from abacus.modules.review.api import GateSource, OpenGate, register_gate_source
+from abacus.modules.tax import answer_effects as _answer_effects
 from abacus.modules.tax import consent_capture, filed_delivery, filing, k1_release
+from abacus.modules.tax import extensions as _extensions
+from abacus.modules.tax import schedule_workflows as _schedule_workflows
 from abacus.modules.tax.approval import Blocker as ApprovalBlocker
 from abacus.modules.tax.approval import eligibility as final_approval_eligibility
 from abacus.modules.tax.approval import register as register_approval
@@ -32,14 +37,20 @@ from abacus.modules.tax.due_dates import (
     on_reference_set_published,
     recompute_unfiled,
     register_due_dates_source,
-    register_installments_source,
     rule_texts,
     set_extended,
 )
 from abacus.modules.tax.engine_contract import engine_router, portal_filing_router
 from abacus.modules.tax.engine_import import import_file as import_engine_file
 from abacus.modules.tax.engine_sync import register as register_engine_sync
-from abacus.modules.tax.extensions import open_payment_approvals
+from abacus.modules.tax.estimates import (
+    create_estimate_schedule,
+    patch_installment,
+    patch_schedule,
+)
+from abacus.modules.tax.extensions import ProposedPayment, flag_new_likely
+from abacus.modules.tax.extensions import patch as patch_extension
+from abacus.modules.tax.extensions import prepare as prepare_extensions
 from abacus.modules.tax.filed_delivery import FiledReturn, filed_returns
 from abacus.modules.tax.k1_contract import k1_router, portal_k1_router
 from abacus.modules.tax.k1_packages import draft_k1_blockers, package_scope
@@ -55,37 +66,21 @@ from abacus.modules.tax.overview import on_binder_published, on_sign_off_recorde
 from abacus.modules.tax.returns_routes import returns_router
 from abacus.modules.tax.schedules_contract import schedules_router
 from abacus.modules.tax.status import TRANSITIONS, StaleReturn, TransitionRefused, next_status
+from abacus.modules.tax.tax_profile import (
+    authorization_on_file as authorization_on_file,
+)
 from abacus.modules.tax.tax_profile import register as register_tax_profile
+from abacus.modules.tax.tax_profile import return_for_entity as return_for_entity
+from abacus.modules.tax.tax_profile import return_label as return_label
+from abacus.modules.tax.tax_profile import transcript_comparison_lines
 from abacus.modules.tax.transitions import apply_transition, record_sync_state
 
 # T-01-T10: §7216 consent capture behind C19's routes, and the `consent_set` envelope source.
 consent_capture.register()
 filing.register()  # T-01-T36: the `tax_return` envelope source (C7 v1.1)
 
-
 # F-03-T22: the `tax_return` work-item kind.
-async def open_extension_payments(
-    tenant: TenantContext, engagement_id: UUID | None
-) -> list[OpenGate]:
-    """T-03-T07: C13's "Waiting on you" for a submitted extension's unapproved payments."""
-    return [
-        OpenGate(extension_id, engagement, work_item_id=work_item, role="reviewer")
-        for extension_id, engagement, work_item in await open_payment_approvals(
-            tenant, engagement_id
-        )
-    ]
-
-
 register_work_item_kind("tax_return", TaxReturnKind())
-register_gate_source(
-    GateSource(
-        "extension_payment",
-        "send",
-        "filing_extension.read",
-        frozenset({"filing_extension.submitted", "extension_payment.approved"}),
-        open_extension_payments,
-    )
-)
 
 # DEC-121: the audit explorer asks which engagement each `tax_return` target belongs to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)
@@ -122,10 +117,18 @@ async def _reference_set_published(event: OutboxEvent) -> None:
     binding (T-01-T36)."""
     await on_reference_set_published(event)
     await filing.on_tolerances_published(event)
+    await _extensions.on_reference_set_published(event)
 
+
+async def _filing_acknowledged(event: OutboxEvent) -> None:
+    await _extensions.on_filing_acknowledged(event)
+
+
+_answer_effects.register()  # T-03-T06 (DEC-2352): review points from organizer answers
 
 SUBSCRIPTIONS = {
     "reference_set.published": _reference_set_published,
+    "filing.acknowledged": _filing_acknowledged,
     # T-01-T36: a return's approved checkpoint rechecks its 8879 binding (I-8879-DRIFT).
     "checkpoint.approved": filing.on_checkpoint_approved,
     # T-01-T10: a completed `consent_set` envelope signs its consents (C7 → C19).
@@ -139,23 +142,55 @@ SUBSCRIPTIONS = {
     **filed_delivery.SUBSCRIPTIONS,
 }
 # T-02-T21: `K1ReleaseWorkflow` and its activities (the worker composes every module's parts).
-WORKFLOWS: dict[type, str] = {**k1_release.WORKFLOWS}
-ACTIVITIES: tuple[object, ...] = k1_release.ACTIVITIES
+WORKFLOWS: dict[type, str] = {**k1_release.WORKFLOWS, **_schedule_workflows.WORKFLOWS}
+ACTIVITIES: tuple[object, ...] = (*k1_release.ACTIVITIES, *_schedule_workflows.ACTIVITIES)
+SCHEDULES = _schedule_workflows.SCHEDULES
 
-from abacus.modules.tax.estimates import create as create_estimate  # noqa: E402 -- T-03-T15
-from abacus.modules.tax.estimates import patch_installment  # noqa: E402 -- T-03-T15
-from abacus.modules.tax.extensions import (  # noqa: E402 -- T-03-T15
-    LineIn,
-    PaymentIn,
-    flag_new_likely,
-)
-from abacus.modules.tax.extensions import patch as patch_extension  # noqa: E402 -- T-03-T15
-from abacus.modules.tax.extensions import prepare as prepare_extensions  # noqa: E402 -- T-03-T15
+
+async def extension_for(tenant: TenantContext, tax_return_id: UUID) -> list[dict[str, object]]:
+    """C21-side read for T-08 and R-03: the return's lines (contract §2)."""
+    async with tenant_session(tenant) as session:
+        found = await session.execute(
+            text("SELECT * FROM filing_extensions WHERE tax_return_id = :r ORDER BY jurisdiction"),
+            {"r": tax_return_id},
+        )
+        return [dict(row) for row in found.mappings()]
+
+
+async def estimates_for(
+    tenant: TenantContext, client_entity_id: UUID, tax_year: int
+) -> list[dict[str, object]]:
+    async with tenant_session(tenant) as session:
+        found = await session.execute(
+            text(
+                "SELECT * FROM estimate_schedules WHERE client_entity_id = :c AND tax_year = :y "
+                "ORDER BY jurisdiction"
+            ),
+            {"c": client_entity_id, "y": tax_year},
+        )
+        return [dict(row) for row in found.mappings()]
+
+
+async def installments_due(
+    tenant: TenantContext, start: date, end: date
+) -> list[dict[str, object]]:
+    async with tenant_session(tenant) as session:
+        found = await session.execute(
+            text(
+                "SELECT i.*, s.client_entity_id, s.form, s.jurisdiction "
+                "FROM estimate_installments i JOIN estimate_schedules s ON s.id = i.schedule_id "
+                "WHERE i.due_on BETWEEN :a AND :b ORDER BY i.due_on, i.id"
+            ),
+            {"a": start, "b": end},
+        )
+        return [dict(row) for row in found.mappings()]
+
 
 __all__ = [
     "ACTIVITIES",
     "FORM_FOR_RULES",
     "ROUTERS",
+    "SCHEDULES",
     "SUBSCRIPTIONS",
     "TRANSITIONS",
     "WORKFLOWS",
@@ -165,31 +200,37 @@ __all__ = [
     "K1ReleaseFailure",
     "K1ReleaseInput",
     "K1ReleaseWorkflow",
-    "LineIn",
-    "PaymentIn",
+    "ProposedPayment",
     "StaleReturn",
     "TransitionRefused",
     "apply_transition",
-    "create_estimate",
+    "create_estimate_schedule",
+    "estimates_for",
+    "extension_for",
     "filed_returns",
     "final_approval_eligibility",
     "flag_new_likely",
     "import_engine_file",
+    "installments_due",
     "next_status",
     "patch_extension",
     "patch_installment",
+    "patch_schedule",
     "prepare_extensions",
     "recompute_unfiled",
     "record_sync_state",
     "register_due_dates_source",
     "register_final_approval_blocker",
-    "register_installments_source",
     "rule_texts",
     "set_extended",
     "share_k1_internal",
+    "transcript_comparison_lines",
 ]
 
 # T-03 (S27): imported so its refusal codes are catalogued (the routes import it lazily).
 from abacus.modules.tax import (  # noqa: E402
-    extensions as _extensions,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- imported to register and catalogue it
+    estimates as _estimates,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- codes
+)
+from abacus.modules.tax import (  # noqa: E402
+    extensions as _extensions_codes,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- imported to register and catalogue it
 )

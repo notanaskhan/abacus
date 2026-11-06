@@ -4,7 +4,7 @@ Recorded at the S28 build (2026-11-05, on main ab2cef04c plus the S28 stack #123
 marked done, and no gate they guard is treated as met (DEC-1389, DEC-1391).
 
 ## Code rows held back
-Update 2026-11-06: T-03-T15 and T-03-T19 are built with recorded partials (DEC-2328, DEC-2329), and A-06-T28 is built only as the checklist import and its 142 items (DEC-2330). The table is the state at the S28 build.
+Update 2026-11-06: T-03-T15 and T-03-T19 are built with recorded partials (DEC-2371, DEC-2372), and A-06-T28 is built only as the checklist import and its 142 items (DEC-2373). The table is the state at the S28 build.
 
 | Row | What holds it |
 |---|---|

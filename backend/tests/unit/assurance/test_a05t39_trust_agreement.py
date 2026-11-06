@@ -83,6 +83,11 @@ async def test_ac_sign_off_is_held_without_a_work_item() -> None:
     assert held == (ebp_investments.UNEVALUATED, len(ebp_investments.POINT_KEYS))
 
 
+def test_ac_a_level_with_no_subtotal_still_counts_in_the_investments() -> None:
+    found = agree([TrustLine("x", "Other fund", None, D("100.00"), "level2")], [])
+    assert (found.investments_eoy, found.level1_eoy, found.nav_eoy) == (D("100.00"), D(0), D(0))
+
+
 def test_ac_the_fund_subtotal_leaves_out_self_directed_brokerage() -> None:
     found = agree(
         [

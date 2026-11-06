@@ -18,11 +18,11 @@ Close DEC-2309's partials, and prove a scan reads end to end.
 
 ## Plan
 - `tests/integration/backfill/test_p11t25_ocr_run.py`: one scan through the real step.
-- Fixes from it; `ocr-v1` row; daily cap; migration 0672; history v9. The background class and the backfill were tried and removed (DEC-2332).
+- Fixes from it; `ocr-v1` row; daily cap; migration 0672; history v9. The background class and the backfill were tried and removed (DEC-2375).
 - Rollback: revert; `patched` keeps older histories replaying; downgrade 0672.
 
 ## Progress log
 - 2026-11-06: built. New integration test passes on Postgres and object storage: 2 passed. `tests/unit/evidence`, worker, audit and upload-processing replay suites pass locally.
 
 ## Decisions made during this task
-DEC-2332
+DEC-2375

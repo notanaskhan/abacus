@@ -1,4 +1,4 @@
-"""T-03-T19 (TASK-3338; DEC-2329): the retired flags' routes stand behind the entitlement.
+"""T-03-T19 (TASK-3338; DEC-2372): the retired flags' routes stand behind the entitlement.
 
 Row acceptance: "the retired flags are gone from feature-flags.yaml with _flags.py regenerated, and
 a firm without the tax entitlement still gets 404 on /tax-returns and the K-1 routes."

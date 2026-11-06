@@ -1,4 +1,4 @@
-"""T-03-T15 (TASK-3337; DEC-2328) against Postgres: the slice loads through the services."""
+"""T-03-T15 (TASK-3337; DEC-2371) against Postgres: the slice loads through the services."""
 
 from __future__ import annotations
 

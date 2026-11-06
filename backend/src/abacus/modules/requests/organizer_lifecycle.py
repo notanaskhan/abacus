@@ -1,4 +1,4 @@
-"""T-03-T05: the organizer template lifecycle (BND-03 d; T-03 §3 F2; DEC-2326).
+"""T-03-T05: the organizer template lifecycle (BND-03 d; T-03 §3 F2; DEC-2370).
 
 A template's versions come in two kinds. T-02's imported versions hold their structure in
 `content`. An editor version holds it in a questionnaire of its own (`owner_kind` =

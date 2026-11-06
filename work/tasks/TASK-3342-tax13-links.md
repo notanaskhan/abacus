@@ -23,4 +23,4 @@ Lift TAX-13 off `planned` (DEC-2325): wire TAX-01, TAX-02 and CLI-07 from the sc
 - 2026-11-06: built. `TAX-13.test.tsx`, `link-contract.test.ts`, `test_t03t07_schedules.py` and T-03 contract tests pass locally; `tsc` clean.
 
 ## Decisions made during this task
-DEC-2331
+DEC-2374

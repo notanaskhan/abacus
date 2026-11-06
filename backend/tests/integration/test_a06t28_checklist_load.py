@@ -1,4 +1,4 @@
-"""A-06-T28 (TASK-3339; DEC-2330) against Postgres: the slice imports and publishes the checklist,
+"""A-06-T28 (TASK-3339; DEC-2373) against Postgres: the slice imports and publishes the checklist,
 and a published version refuses a second publish."""
 
 from __future__ import annotations

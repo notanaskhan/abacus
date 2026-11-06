@@ -64,9 +64,6 @@ EVENTS: Final = {
     # N-02-T33: a letter waits on each partner's approval.
     "letter.approval_requested",
     "letter.approved",
-    # T-03-T07: a submitted extension's payments wait on the return's reviewer.
-    "filing_extension.submitted",
-    "extension_payment.approved",
 }
 # Contract §2: firm admin, practice leader (in scope), quality partner, engagement partner,
 # manager, senior, staff, reviewer, EQR reviewer.

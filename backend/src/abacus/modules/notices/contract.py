@@ -18,7 +18,7 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import date, datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, Annotated, Any, Literal, NoReturn, cast
+from typing import TYPE_CHECKING, Annotated, Any, Final, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
@@ -27,7 +27,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from abacus.kernel._flags import NOTICES_WORKSPACE
 from abacus.kernel.classification import classified
 from abacus.kernel.clock import system_now
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.modules.engagements.api import get_ref, work_item_engagement
@@ -777,10 +777,6 @@ async def _gate(ctx: AuthContext, notice_id: UUID, action: str) -> None:
         raise NotFound(NOTICES_WORKSPACE.name)
 
 
-def _not_yet() -> NoReturn:
-    raise NotImplementedYet
-
-
 # A stub whose response carries a TIN (`MaskedTinOut`) already returns through the central mask
 # (`mask_tins_for`; TASK-1207 item 6), so the implementation that replaces `_not_yet()` keeps it.
 
@@ -900,7 +896,81 @@ async def _notice_out(ctx: AuthContext, n: Notice) -> NoticeOut:
     )
 
 
-def _intake_out(found: Intake) -> IntakeOut:
+# The reason an intake opened for manual entry, in words (N-04 US-2.2): never guessed.
+_MANUAL_REASON: Final[dict[str, str]] = {
+    "no_map": "We don't have a map for this notice — enter the fields",
+    "no_file": "There's no file to read yet — enter the fields",
+    "kill_switch": "Reading is switched off for now — enter the fields",
+    "flag_off": "Read automatically isn't on",
+    "provider_terms": "The reading service isn't cleared for this firm — enter the fields",
+    "terms_not_covering": "The reading service isn't cleared for this firm — enter the fields",
+    "boundary_basis": "This taxpayer's file can't go to the reading service — enter the fields",
+    "consent_7216": "No §7216 consent covers this taxpayer — enter the fields",
+    "consent_missing": "No §7216 consent covers this taxpayer — enter the fields",
+    "daily_page_cap": "Today's reading limit is reached — enter the fields",
+    "size_limit": "This file is too large to read — enter the fields",
+    "provider_error": "Couldn't read this file — enter the fields",
+}
+_FAILED_REASON: Final = "Couldn't read this file — enter the fields"
+
+
+async def _match_out(ctx: AuthContext, found: Intake) -> MatchOut:
+    """Code's match or the person's pick. Names and the return's label are read here, for a person
+    already allowed the intake, so none is stored on it."""
+    from abacus.modules.organisations.api import entity_display_name
+    from abacus.modules.tax.api import return_label
+
+    match = found.match
+    entity = _uuid_of(match.get("client_entity_id"))
+    return_id = _uuid_of(match.get("return_id"))
+    ids = [UUID(str(c)) for c in cast("list[object]", match.get("candidates") or [])]
+    candidates = [
+        MatchCandidateOut(client_entity_id=c, name=await entity_display_name(ctx.tenant, c) or "")
+        for c in ids
+    ]
+    return MatchOut(
+        client_entity_id=entity,
+        client_name=None if entity is None else await entity_display_name(ctx.tenant, entity),
+        method=cast(
+            Literal["name_tin", "tin", "name", "manual"] | None, match.get("method") or None
+        ),
+        candidates=candidates,
+        return_id=return_id,
+        return_label=None if return_id is None else await return_label(ctx.tenant, return_id),
+        office=None,
+    )
+
+
+def _uuid_of(value: object) -> UUID | None:
+    return None if value is None else UUID(str(value))
+
+
+def _manual_reason(found: Intake) -> str | None:
+    if found.status == "failed":
+        return _FAILED_REASON
+    if found.status != "manual_entry":
+        return None
+    return _MANUAL_REASON.get(
+        str(found.match.get("manual_reason_code")), _MANUAL_REASON["flag_off"]
+    )
+
+
+async def _intake_read(ctx: AuthContext, found: Intake) -> IntakeOut:
+    return _intake_out(found, await _match_out(ctx, found))
+
+
+_NO_MATCH: Final = MatchOut(
+    client_entity_id=None,
+    client_name=None,
+    method=None,
+    candidates=[],
+    return_id=None,
+    return_label=None,
+    office=None,
+)
+
+
+def _intake_out(found: Intake, match: MatchOut = _NO_MATCH) -> IntakeOut:
     """The sheet's read; a TIN travels as its last four only."""
     auth = found.authorization
     kind = cast(AuthorizationKind, auth.get("kind", "none"))
@@ -912,7 +982,7 @@ def _intake_out(found: Intake) -> IntakeOut:
         pages=None,
         uploaded_by_label=None,
         extraction_mode=cast(ExtractionMode | None, found.extraction_mode),
-        manual_reason=None if found.status != "manual_entry" else "Read automatically isn't on",
+        manual_reason=_manual_reason(found),
         fields=[
             IntakeFieldOut(
                 key=cast(FieldKey, f.key),
@@ -925,15 +995,7 @@ def _intake_out(found: Intake) -> IntakeOut:
             )
             for f in found.fields
         ],
-        match=MatchOut(
-            client_entity_id=None,
-            client_name=None,
-            method=None,
-            candidates=[],
-            return_id=None,
-            return_label=None,
-            office=None,
-        ),
+        match=match,
         authorization=AuthorizationOut(
             kind=kind,
             label=str(auth.get("label", "None · blocked")),
@@ -1041,7 +1103,7 @@ async def intake_create_route(
         evidence_version_id=body.evidence_version_id,
         inbox_item_id=body.inbox_item_id,
     )
-    return await mask_tins_for(ctx, _intake_out(found))
+    return await mask_tins_for(ctx, (await _intake_read(ctx, found)))
 
 
 @router.get(_I, action="notice_intake.read", response_model=IntakeOut, errors=(501,))
@@ -1049,7 +1111,7 @@ async def intake_route(intake_id: UUID, ctx: Ctx) -> IntakeOut:
     await _gate_firm(ctx, "notice_intake.read")
     from abacus.modules.notices import intake
 
-    return await mask_tins_for(ctx, _intake_out(await intake.intake(ctx, intake_id)))
+    return await mask_tins_for(ctx, await _intake_read(ctx, await intake.intake(ctx, intake_id)))
 
 
 @router.put(_I, action="notice_intake.update", response_model=IntakeOut, errors=(409, 501))
@@ -1064,11 +1126,12 @@ async def intake_update_route(
         intake_id,
         if_match,
         fields=[(f.key, f.value_text, f.confirm) for f in body.fields],
-        client_id=None,
+        client_entity_id=body.client_entity_id,
+        related_return_id=body.related_return_id,
         assignee_user_id=body.assignee_user_id,
         notify_user_ids=body.notify_user_ids,
     )
-    return await mask_tins_for(ctx, _intake_out(found))
+    return await mask_tins_for(ctx, (await _intake_read(ctx, found)))
 
 
 @router.post(
@@ -1093,6 +1156,7 @@ async def intake_confirm_route(
         engagement_id=body.engagement_id,
         related_return_id=body.related_return_id,
         create_anyway=body.create_anyway,
+        notify_user_ids=body.notify_user_ids,
     )
     return CreatedNoticeOut(notice_id=notice_id, engagement_id=engagement_id)
 
@@ -1104,7 +1168,10 @@ async def intake_attach_route(
     intake_id: UUID, body: IntakeAttachIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> IntakeOut:
     await _gate_firm(ctx, "notice_intake.confirm")
-    return await mask_tins_for(ctx, _not_yet())
+    from abacus.modules.notices import intake
+
+    found = await intake.attach(ctx, intake_id, body.notice_id)
+    return await mask_tins_for(ctx, await _intake_read(ctx, found))
 
 
 @router.post(
@@ -1116,9 +1183,8 @@ async def intake_discard_route(
     await _gate_firm(ctx, "notice_intake.confirm")
     from abacus.modules.notices import intake
 
-    return await mask_tins_for(
-        ctx, _intake_out(await intake.discard(ctx, intake_id, body.reason_code))
-    )
+    found = await intake.discard(ctx, intake_id, body.reason_code)
+    return await mask_tins_for(ctx, await _intake_read(ctx, found))
 
 
 @router.get(_N, action="notice.read", response_model=NoticeOut, errors=(501,))
@@ -1237,7 +1303,9 @@ async def analysis_route(notice_id: UUID, ctx: Ctx) -> AnalysisOut:
         progress_label=None,
         rows=[AnalysisRowOut(**r) for r in row["rows"]],
         information_returns=[InformationReturnOut(**r) for r in row["information_returns"]],
-        transcript_rows=[],
+        transcript_rows=[
+            AnalysisRowOut(**r) for r in cast(list[JsonRow], checks.get("transcript_rows") or [])
+        ],
         checks=AnalysisChecksOut(
             difference_explained=bool(checks.get("difference_explained")),
             total_foots=bool(checks.get("total_foots", True)),

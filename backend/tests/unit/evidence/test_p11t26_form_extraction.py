@@ -10,6 +10,9 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+import pytest
+
+from abacus.modules.evidence import form_extraction as fx
 from abacus.modules.evidence.form_extraction import (
     Extracted,
     covers,
@@ -115,3 +118,23 @@ def test_ac_a_text_layer_word_keeps_its_object_byte_for_byte() -> None:
     assert parse_layer(raw).words == page.words
     ocr = _whitley(date_confidence=0.72)
     assert parse_layer(layer_document(ocr)).words == ocr.words
+
+
+@pytest.mark.parametrize(
+    ("value_type", "raw", "expected"),
+    [
+        ("money", "not a figure", ("not a figure", False)),
+        ("money", "$1,204.50.", ("1204.50", True)),
+        ("date", "someday", ("someday", False)),
+        ("text", " Claire Feld, ", ("Claire Feld", True)),
+    ],
+)
+def test_a_value_is_stored_as_read_and_never_guessed(
+    value_type: str, raw: str, expected: tuple[str, bool]
+) -> None:
+    normalise = fx._normalise  # pyright: ignore[reportPrivateUsage] -- the rule under test
+    assert normalise(value_type, raw) == expected
+
+
+def test_a_variant_covers_only_its_own_families() -> None:
+    assert not fx.covers("no_such_variant", "1040")

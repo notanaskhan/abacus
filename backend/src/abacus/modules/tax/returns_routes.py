@@ -1,7 +1,7 @@
 """Tax returns v1, the routes (T-02-T01 stubs; T-02-T09 the board; tax-returns.md).
 
 Every route answers 404 for a client principal (INV-4), then the matrix (403), then 404 with
-the `tax_returns` entitlement absent (DEC-2329). The board's list, summary and bulk assignment are
+the `tax_returns` entitlement absent (DEC-2372). The board's list, summary and bulk assignment are
 live (T-02-T09); the record, overview, intake, single assignment and transitions answer 501 until
 T-02-T13; the intake is live from T-02-T18 (`intake.py`).
 """

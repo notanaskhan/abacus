@@ -89,7 +89,7 @@ def test_ac17_the_slice_needs_the_binders_and_emits_one_event_per_return() -> No
     assert tax_board.NEEDS == ("binders",)
     events = [e for e in slice_events(tax_board.SLICE) if e.kind == "tax.return_board_set"]
     assert len(events) == 224
-    # T-03-T19 (DEC-2329): plus the one entitlement the returns' routes stand behind.
+    # T-03-T19 (DEC-2372): plus the one entitlement the returns' routes stand behind.
     others = [e for e in slice_events(tax_board.SLICE) if e.kind != "tax.return_board_set"]
     assert [(e.kind, e.data["module"]) for e in others] == [
         ("platform.entitlement_set", "tax_returns")

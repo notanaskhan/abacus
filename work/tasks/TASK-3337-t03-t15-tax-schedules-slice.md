@@ -24,4 +24,4 @@ Load BND-03 and TAX-13's data through the service and import paths (`--slice tax
 - 2026-11-06: built. `tests/unit/synthetic/test_t03t15_tax_schedules_slice.py` and `tests/integration/test_t03t15_load.py` (loads the slice on Postgres): pass locally.
 
 ## Decisions made during this task
-DEC-2328
+DEC-2371

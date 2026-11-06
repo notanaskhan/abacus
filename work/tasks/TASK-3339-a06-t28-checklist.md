@@ -23,4 +23,4 @@ The firm's checklist loads as content through its import route; the slice loads 
 - 2026-11-06: built. `tests/unit/methodology/test_a06t28_checklist_import.py`, `tests/integration/test_a06t28_checklist_load.py` and the C11 contract suite pass locally.
 
 ## Decisions made during this task
-DEC-2330
+DEC-2373

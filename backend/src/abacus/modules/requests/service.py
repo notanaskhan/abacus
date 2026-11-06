@@ -217,7 +217,7 @@ async def add_request_item(
             after=Ref(engagement_id=engagement_id),
         )
         tx.emit(RequestItemCreated(request_item_id=item_id, engagement_id=engagement_id))
-        view = replace(_view(item), request_list_id=list_id)
+        view = _view(item)
     return view
 
 
@@ -1089,6 +1089,41 @@ async def create_items_bulk(
     if due_on is not None and ids:
         await set_due_dates(tx.session, engagement_id, ids, due_on)
     return ids
+
+
+async def request_item_sent(tenant: TenantContext, item_id: UUID) -> tuple[UUID, datetime | None]:
+    """T-03-T07 (DEC-2350): the item's binder and when it was sent, for a caller that sent it."""
+    async with tenant_session(tenant) as session:
+        item = await get_request_item(session, item_id)
+    if item is None:
+        raise NotFound("request_item")
+    return item.request_list_id, item.sent_at
+
+
+@dataclass(frozen=True)
+class RequestItemState:
+    """A confirmation's facts (T-03-T07): TAX-13 reads the request item, never a task."""
+
+    confirmed: bool
+    confirmed_on: date | None
+    requested_on: date | None
+    contact_name: str | None
+
+
+_CONFIRMED: Final = frozenset({"fulfilled", "accepted", "complete"})
+
+
+async def request_item_state(tenant: TenantContext, item_id: UUID) -> RequestItemState | None:
+    async with tenant_session(tenant) as session:
+        item = await get_request_item(session, item_id)
+    if item is None:
+        return None
+    return RequestItemState(
+        confirmed=item.status in _CONFIRMED,
+        confirmed_on=None,
+        requested_on=item.sent_at.date() if item.sent_at else None,
+        contact_name=None,
+    )
 
 
 def _record_classified(

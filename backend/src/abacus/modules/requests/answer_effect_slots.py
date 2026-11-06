@@ -9,6 +9,7 @@ actor with the rule and publisher provenance; they never act as the agent.
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Final, Literal
@@ -28,6 +29,11 @@ EFFECT_KINDS: Final[frozenset[str]] = frozenset(
         "route_upload_to_notices",
     }
 )
+
+
+def rule_fingerprint(rule_key: str) -> str:
+    """A rule key as an audit `Ref` carries it: `Ref` refuses text, and the key is on the row."""
+    return hashlib.sha256(rule_key.encode()).hexdigest()
 
 
 @dataclass(frozen=True, slots=True)

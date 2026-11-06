@@ -8,7 +8,7 @@
   question is 409 `question_answered`; a missing existing question is retired (never deleted, so
   every answer keeps its question). `dry_run` returns the client-visible changes and the effect
   rules that would fire, and writes nothing.
-- **Walls and owners (DEC-2326).** A binder's organizer is read and saved against its engagement,
+- **Walls and owners (DEC-2370).** A binder's organizer is read and saved against its engagement,
   not the firm; a template's is a template action, and only a draft saves.
 - **Client preview.** The portal serializer's projection only (`client_wording`, `help_text`,
   type, choices, amount parts, required): no `internal_helper`, effect rule or tag can reach it.

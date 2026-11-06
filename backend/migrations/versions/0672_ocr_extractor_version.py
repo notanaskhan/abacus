@@ -1,4 +1,4 @@
-"""P-11-T25 (DEC-2332): `upload_extractions` takes `ocr-v1` rows (P-11 §4). Expand only.
+"""P-11-T25 (DEC-2375): `upload_extractions` takes `ocr-v1` rows (P-11 §4). Expand only.
 
 `0666_ocr_v1` said the table already keyed on `extractor_version`, but its CHECK allowed only
 `v<n>`, so no OCR-derived row could be stored.
