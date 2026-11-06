@@ -711,7 +711,8 @@ async def test_t30_grace_holloway_has_binder_and_invitation_actions_but_no_evide
     assert {"client_contact.invite", "client_contact.read"} <= offered  # invitations
     # N-01's Files browser (N-01 §4.4, ADR-158) gives a firm admin the metadata read only: the
     # tree and folders, never a file's content (DV-11). Every content action stays out.
-    metadata_only = {"evidence.read_metadata"}
+    # P-11 §4: "Read text again" on an unfiled file answers a status, never the file's text.
+    metadata_only = {"evidence.read_metadata", "evidence.ocr_retry"}
     content = {a for a in offered if a.startswith(("evidence.", "comment."))} - metadata_only
     assert not content, offered
     assert "evidence.read" not in offered
