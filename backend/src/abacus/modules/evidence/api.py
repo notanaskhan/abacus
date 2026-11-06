@@ -177,6 +177,7 @@ from abacus.modules.evidence.match_material import (
 from abacus.modules.evidence.matching import MIN_SCORE as SUGGESTION_MIN_SCORE
 from abacus.modules.evidence.matching import suggest as suggest_by_name
 from abacus.modules.evidence.ocr_contract import ocr_router
+from abacus.modules.evidence.ocr_step import start_ocr_backfill
 from abacus.modules.evidence.pii import column_families, masked_rows, pii_scan_upload
 from abacus.modules.evidence.pii_facts import tin_exposure
 from abacus.modules.evidence.portal_files import (
@@ -346,6 +347,7 @@ from abacus.modules.evidence.workflows import (
     FirmExportWorkflow,
     LegalHoldApply,
     LegalHoldRelease,
+    OcrBackfill,
     TrustLayerBackfill,
     UploadProcessing,
     firm_export_schedule_id,
@@ -543,6 +545,7 @@ __all__ = [
     "LegalHoldRelease",
     "MatchMaterial",
     "NewItem",
+    "OcrBackfill",
     "PendingDuplicate",
     "PolicyChange",
     "PortalFile",
@@ -672,6 +675,7 @@ __all__ = [
     "signer_page",
     "stage_content",
     "stale_pdfs",
+    "start_ocr_backfill",
     "start_trust_layer_backfill",
     "store_generated",
     "suggest_by_name",

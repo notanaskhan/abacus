@@ -161,6 +161,11 @@ def _from_pages(
     )
 
 
+def from_ocr_pages(count: int, pages: Sequence[str]) -> Extraction:
+    """P-11-T25: what OCR read, in the shape a PDF's text gives (SPEC-029's checks read it)."""
+    return _from_pages(count, pages, ())
+
+
 def _lines_of(page: object) -> tuple[TextLine, ...]:
     """pdfplumber's text lines with their boxes as fractions of the page."""
     width = float(getattr(page, "width", 0) or 0)

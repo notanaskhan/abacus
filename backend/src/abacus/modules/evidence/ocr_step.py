@@ -16,7 +16,10 @@ from decimal import Decimal
 from typing import Final
 from uuid import UUID
 
+from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
+
 from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.dispatch import dispatch, queue_for
 from abacus.kernel.logging import get_logger
 from abacus.kernel.ocr import OcrPage, OcrProvider, TextractOcr
 from abacus.kernel.uow import Ref, Target, uow
@@ -26,11 +29,30 @@ from abacus.modules.evidence.events import EvidenceTextReady, OcrRefusal, OcrRun
 from abacus.modules.evidence.intake_sources import IntakeSource, source_of, target_type
 from abacus.modules.evidence.models import EvidenceVersion, InboxFile
 from abacus.modules.evidence.object_keys import under_key
-from abacus.modules.evidence.ocr_gate import GateFacts, Refusal, first_refusal, record_run
+from abacus.modules.evidence.ocr_gate import (
+    GateFacts,
+    Refusal,
+    first_refusal,
+    over_daily_cap,
+    record_run,
+)
 from abacus.modules.evidence.ocr_normalise import IMAGES, PDF, PageImage, rasterise_isolated
-from abacus.modules.evidence.repository import OCR_VERSION, insert_pages, pages_of
+from abacus.modules.evidence.processing import record_ocr_extraction
+from abacus.modules.evidence.repository import (
+    OCR_VERSION,
+    insert_pages,
+    pages_of,
+    sources_without_ocr,
+)
 from abacus.modules.evidence.words import WORDS_VERSION, PageWords, Word, layer_document
-from abacus.modules.evidence.workflow_types import INBOX, INTAKE, VERSION, UploadInput
+from abacus.modules.evidence.workflow_types import (
+    INBOX,
+    INTAKE,
+    VERSION,
+    BackfillInput,
+    UploadInput,
+)
+from abacus.modules.evidence.workflows import BACKFILL_BATCH, OcrBackfill
 from abacus.modules.identity.api import is_synthetic_firm
 
 API: Final = "detect_text"
@@ -43,7 +65,9 @@ _REFUSAL: Final[dict[Refusal, OcrRefusal]] = {
     "terms_not_covering": "provider_terms",
     "boundary_basis": "boundary_basis",
     "consent_missing": "consent_7216",
+    "quota_exceeded": "daily_page_cap",
 }
+BACKGROUND_ABOVE_PAGES: Final = 20  # P-11 §4: a long scan never delays a person's upload
 _provider: list[OcrProvider] = []
 
 
@@ -131,6 +155,8 @@ async def _read(
     tenant_id = tenant.tenant_id
     facts = await _facts(tenant, found.engagement_id)
     refused = await first_refusal(tenant, facts)
+    if refused is None and await over_daily_cap(tenant, len(due) if due else 1):
+        refused = "quota_exceeded"
     engine = provider()
     if refused is not None:
         await record_run(
@@ -146,6 +172,10 @@ async def _read(
                         engagement_id=found.engagement_id,
                         reason=_REFUSAL[refused],
                     )
+                )
+                tx.record(
+                    "upload.ocr_refused",
+                    target=Target(target_type(given.kind), UUID(given.source_id)),
                 )
         _log.info("upload.ocr_refused", kind=given.kind, reason=refused)
         return 0
@@ -214,8 +244,69 @@ async def _read(
             target=Target(target_type(given.kind), UUID(given.source_id)),
             after=Ref(pages=added, run=run_id),
         )
+    # SPEC-029's checks read this row on a scan, as they read a PDF's text (P-11-T25).
+    await record_ocr_extraction(
+        given,
+        source=found,
+        page_count=len(results),
+        pages=[" ".join(w.text for w in page_read.words) for _, page_read in results],
+    )
     _log.info("upload.ocr_read", kind=given.kind, pages=len(rows))
     return len(rows)
+
+
+async def pending_ocr(given: BackfillInput) -> list[UploadInput]:
+    """The `upload.pending_ocr` activity's body: the next uploads with a page no reader has words
+    for and no OCR row yet, by id after the cursors (AC7.4)."""
+    tenant_id = UUID(given.tenant_id)
+    async with tenant_session(_system(tenant_id)) as session:
+        found = await sources_without_ocr(
+            session,
+            OCR_VERSION,
+            after_version=UUID(given.after_version) if given.after_version else None,
+            after_inbox=UUID(given.after_inbox) if given.after_inbox else None,
+            limit=BACKFILL_BATCH,
+        )
+    return [
+        UploadInput(given.tenant_id, VERSION if kind == "version" else INBOX, str(source))
+        for kind, source in found
+    ]
+
+
+def ocr_backfill_id(tenant_id: UUID) -> str:
+    return f"ocr_backfill:{tenant_id}"
+
+
+async def start_ocr_backfill(tenant_id: UUID) -> str:
+    """Start (or join) the firm's backfill; an operator command runs this (never a request)."""
+    workflow_id = ocr_backfill_id(tenant_id)
+    await dispatch(
+        OcrBackfill,
+        BackfillInput(str(tenant_id)),
+        id=workflow_id,
+        id_reuse_policy=WorkflowIDReusePolicy.ALLOW_DUPLICATE,
+        id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
+    )
+    return workflow_id
+
+
+async def ocr_queue(given: UploadInput) -> str:
+    """The work class's queue for this upload's OCR: more than 20 due pages run in `background`,
+    the rest where the upload already runs. Pages come from the word layer; an image or a file
+    with no layer yet counts as short."""
+    tenant = _system(UUID(given.tenant_id))
+    source_id = UUID(given.source_id)
+    async with tenant_session(tenant) as session:
+        pages = await pages_of(
+            session,
+            evidence_version_id=source_id if given.kind == VERSION else None,
+            inbox_file_id=source_id if given.kind == INBOX else None,
+            inbox_attachment_id=source_id if given.kind == INTAKE else None,
+            extractor_version=WORDS_VERSION,
+        )
+    due = sum(1 for p in pages if not p.has_text_layer)
+    work_class = "background" if due > BACKGROUND_ABOVE_PAGES else "interactive"
+    return queue_for(work_class)
 
 
 async def _publish_text_ready(
@@ -239,4 +330,9 @@ async def _publish_text_ready(
                 text_source=source,
                 pages=len(worded),
             )
+        )
+        tx.record(
+            "upload.text_ready",
+            target=Target("evidence_version", version_id),
+            after=Ref(pages=len(worded)),
         )
