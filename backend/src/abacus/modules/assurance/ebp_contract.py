@@ -1400,12 +1400,17 @@ async def ebp_eligibility_sample_route(work_item_id: UUID, ctx: Ctx) -> Eligibil
 async def ebp_contributions_route(work_item_id: UUID, ctx: Ctx) -> FiguresOut:
     """Contributions receivable at year end by code from the payroll register (A-05-T30)."""
     await _gate(ctx, work_item_id, "ebp.read", _E)
-    from abacus.modules.assurance import ebp_remittances
+    from abacus.modules.assurance import ebp_investments, ebp_remittances
     from abacus.modules.engagements.api import engagement_metadata
 
     item = await assurance_item(ctx.tenant, work_item_id)
     year_end = (await engagement_metadata(ctx, item.engagement_id)).engagement.fiscal_period_end
-    found = await ebp_remittances.reconciliation(ctx.tenant, work_item_id, year_end)
+    per_statements = await ebp_investments.contributions_per_statements(
+        ctx.tenant, item.engagement_id
+    )
+    found = await ebp_remittances.reconciliation(
+        ctx.tenant, work_item_id, year_end, per_statements
+    )
     return _figures(
         "Contributions receivable",
         [
@@ -1413,6 +1418,14 @@ async def ebp_contributions_route(work_item_id: UUID, ctx: Ctx) -> FiguresOut:
             ("tie.match", "Employer match", str(found.match)),
             ("tie.less_late", "Less deposited after year end", str(-found.total)),
             ("tie.trust_receipts", "Trust receipts", str(found.trust_receipts)),
+            ("tie.rollovers", "Rollovers received", str(found.rollovers)),
+            ("tie.receivable", "Receivable at year end", str(found.total)),
+            ("tie.reconciled", "Contributions reconciled", str(found.reconciled)),
+            *(
+                [("tie.per_statements", "Per financial statements", str(found.per_statements))]
+                if found.per_statements is not None
+                else []
+            ),
             ("receivable_regular", "Regular payroll", str(found.regular)),
             ("receivable_late", "Late deposit", str(found.late)),
         ],
