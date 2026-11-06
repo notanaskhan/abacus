@@ -176,7 +176,11 @@ from abacus.modules.evidence.intake_sources import IntakeSource, register_intake
 from abacus.modules.evidence.item_detail import Download as DocumentDownload
 from abacus.modules.evidence.item_detail import latest_document
 from abacus.modules.evidence.masked_previews import intake_masked_pages, masked_preview_upload
-from abacus.modules.evidence.masked_text import intake_masked_text
+from abacus.modules.evidence.masked_text import (
+    engagement_of_version,
+    intake_masked_text,
+    masked_pages,
+)
 from abacus.modules.evidence.match_material import (
     Candidate,
     MatchMaterial,
@@ -619,6 +623,7 @@ __all__ = [
     "drop_batch",
     "effective_decisions",
     "effective_policies",
+    "engagement_of_version",
     "engagement_snapshots",
     "evidence_versions_for",
     "export_manifest_json_schema",
@@ -651,6 +656,7 @@ __all__ = [
     "list_holds",
     "live_intake_keys",
     "mark_sources_superseded",
+    "masked_pages",
     "masked_preview_upload",
     "masked_rows",
     "match_material",

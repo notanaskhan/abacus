@@ -39,7 +39,7 @@ from abacus.modules.notices.events import NoticeCreated, NoticeIntakeStarted
 
 LOW_CONFIDENCE: Final = Decimal("0.90")
 _READY: Final = frozenset({"ready", "manual_entry", "failed"})
-_KIND: Final[dict[str, str]] = {
+FIELD_KINDS: Final[dict[str, str]] = {
     "notice.code": "code",
     "notice.tax_year": "int",
     "notice.form": "text",
@@ -224,7 +224,7 @@ async def revise(
     picked = await _picked(ctx, current, by_key, client_entity_id, related_return_id)
     async with uow(ctx.tenant) as tx:
         for key, value, confirm in fields:
-            if key not in _KIND or _KIND[key] == "tin":
+            if key not in FIELD_KINDS or FIELD_KINDS[key] == "tin":
                 continue  # a TIN is corrected by picking the client entity, never typed
             was = by_key.get(key)
             await tx.session.execute(
@@ -238,7 +238,7 @@ async def revise(
                     "t": ctx.tenant_id,
                     "id": intake_id,
                     "k": key,
-                    "vt": _KIND[key],
+                    "vt": FIELD_KINDS[key],
                     "v": value if value is not None else (was.value_text if was else None),
                     "conf": was.confidence if (confirm and was) else None,
                     "by": ctx.user_id,

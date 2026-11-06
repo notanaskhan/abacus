@@ -1,12 +1,14 @@
 """What `NoticeIntakeWorkflow` does (N-04-T07; N-04 US-2.2, US-2.3; DEC-2326).
 
 Code reads a mapped notice's fields from P-11's form extraction; nothing is guessed, and a value
-below 0.90 stays `low_confidence` for a person. No map, or a refusal by the OCR gate, opens manual
-entry with the reason in words. The client is matched by the taxpayer's last four and, where the
-map reads a name, the name (`name_tin`, else `tin`): one candidate is matched, several are the
-person's pick, none is the client picker. The return is matched on entity, year and (when read)
-form; the authorization comes from CLI-05's register; a notice with the same entity, code and date,
-or the same file bytes, is a possible duplicate. A person still decides all of it at Create notice.
+below 0.90 stays `low_confidence` for a person. With no map the responder proposes over masked text
+(N-04-T19), each value naming its run for a person to confirm; with the responder off, refused or
+empty, and on a refusal by the OCR gate, manual entry opens with the reason in words. The client is
+matched by the taxpayer's last four and, where the map reads a name, the name (`name_tin`, else
+`tin`): one candidate is matched, several are the person's pick, none is the client picker. The
+return is matched on entity, year and (when read) form; the authorization comes from CLI-05's
+register; a notice with the same entity, code and date, or the same file bytes, is a possible
+duplicate. A person still decides all of it at Create notice.
 """
 
 from __future__ import annotations
@@ -30,12 +32,15 @@ from abacus.modules.evidence.api import (
     EvidenceTextReady,
     OcrRunRefused,
     ReadField,
+    engagement_of_version,
     extract_version,
     extracted_fields_of,
+    masked_pages,
     ocr_refusal_of,
     versions_with_same_bytes,
 )
 from abacus.modules.notices.events import NoticeIntakeReady, NoticeIntakeStarted
+from abacus.modules.notices.intake import FIELD_KINDS
 from abacus.modules.notices.intake_workflow import NoticeIntakeWorkflow
 from abacus.modules.notices.intake_workflow_types import NoticeIntakeInput
 from abacus.modules.organisations.api import entities_with_tin_last4
@@ -66,6 +71,8 @@ _VALUE_TYPE: Final[dict[str, str]] = {
     "taxpayer.tin": "tin",
     "taxpayer.name": "text",
 }
+_AGENT_KEYS: Final = tuple(k for k, kind in FIELD_KINDS.items() if kind != "tin")
+_LOW_CONFIDENCE: Final = 0.90
 NO_MAP: Final = "no_map"
 NO_FILE: Final = "no_file"
 
@@ -244,7 +251,9 @@ async def read_intake(tenant_id: UUID, intake_id: UUID, refusal: str | None) -> 
     fields = await extracted_fields_of(tenant, version)
     facts = _facts_of(fields)
     if not facts:
-        return await _manual(tenant, intake_id, NO_MAP)
+        return await _proposed(tenant, intake_id, version) or await _manual(
+            tenant, intake_id, NO_MAP
+        )
     tin = facts.get("taxpayer.tin")
     last4 = (tin.last4 or (tin.value_text or "")[-4:] or None) if tin else None
     name = facts["taxpayer.name"].value_text if "taxpayer.name" in facts else None
@@ -269,6 +278,75 @@ async def read_intake(tenant_id: UUID, intake_id: UUID, refusal: str | None) -> 
         async with tenant_session(tenant) as session:
             now = await _status_and_version(session, intake_id)
         return "gone" if now is None else now[0]
+
+
+async def _proposed(tenant: TenantContext, intake_id: UUID, version: UUID) -> str | None:
+    """A form code has no map for: the responder's reading of the masked text, as a proposal. None
+    leaves the intake for manual entry."""
+    from abacus.ai_gateway.context import DataSubject
+    from abacus.modules.agents.api import extract_notice_fields
+
+    pages = await masked_pages(tenant, evidence_version_id=version)
+    engagement = await engagement_of_version(tenant, version)
+    async with tenant_session(tenant) as session:
+        initiator = await session.scalar(
+            text("SELECT created_by FROM notice_intakes WHERE id = :id"), {"id": intake_id}
+        )
+    if not pages or engagement is None or initiator is None:
+        return None
+    found = await extract_notice_fields(
+        tenant,
+        engagement_id=engagement,
+        initiator=initiator,
+        keys=_AGENT_KEYS,
+        lines=[(f"p{page}", body) for page, body in sorted(pages.items())],
+        # No entity until the client is matched: the §7216 gate then refuses (fail closed).
+        subjects=(DataSubject(None, None),),
+    )
+    kept = [] if found is None else [f for f in found.output.fields if f.field_key in FIELD_KINDS]
+    if found is None or not kept:
+        return None
+    tenant_id = tenant.tenant_id
+    try:
+        async with uow(tenant) as tx:
+            again = await _status_and_version(tx.session, intake_id)
+            if again is None or again[0] != "extracting":
+                raise _Moved
+            for field in kept:
+                await tx.session.execute(
+                    text(
+                        "INSERT INTO notice_field_values (tenant_id, owner_type, owner_id, "
+                        "field_key, value_type, value_text, confidence, low_confidence, origin, "
+                        "agent_run_id, recorded_actor_kind) VALUES (:t, 'intake', :id, :k, :vt, "
+                        ":v, :conf, :low, 'agent', :run, 'agent')"
+                    ),
+                    {
+                        "t": tenant_id,
+                        "id": intake_id,
+                        "k": field.field_key,
+                        "vt": FIELD_KINDS[field.field_key],
+                        "v": field.value,
+                        "conf": round(field.confidence, 3),
+                        "low": field.confidence < _LOW_CONFIDENCE,
+                        "run": found.run_id,
+                    },
+                )
+            await tx.session.execute(
+                text(
+                    "UPDATE notice_intakes SET status = 'ready', extraction_mode = 'agent', "
+                    "row_version = row_version + 1 WHERE id = :id"
+                ),
+                {"id": intake_id},
+            )
+            tx.emit(NoticeIntakeReady(intake_id=intake_id, owner_id=initiator))
+            tx.record(
+                "notice_intake.extracted",
+                target=Target("notice_intake", intake_id),
+                after=Ref(fields=len(kept)),
+            )
+    except _Moved:
+        return "gone"
+    return "ready"
 
 
 async def _store(
