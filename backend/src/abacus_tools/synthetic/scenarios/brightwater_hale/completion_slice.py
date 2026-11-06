@@ -14,6 +14,7 @@ keeps checklist text (ADR-056), and is never licensed text.
 - **Notes and sign-offs** (AUD-17 a): 14 notes (11 cleared, 2 open, 1 responded) and the named
   workpapers' sign-offs, Marcus Delaney's L2 on EBP-04 going stale when Ana Cruz changes the paper.
 - **Statements** (AUD-20): v1 before RJE-1 is recorded, then v2, v3, and Dana's Oct 8 approval.
+  The firm's 11 note headings and wording import and publish as firm content (DEC-2389).
 
 Not here, or not as designed (DEC-2373): findings raised by a person, so no agent run; Ana's change
 and response are a person's, not "via Agent"; RJE-1 is in v1 from its
@@ -50,6 +51,42 @@ _SECTIONS: Final = (
     "Parties in interest",
     "Supplemental schedules",
 )
+
+
+# The firm's notes for the plan set (AUD-20 f): the titles and Note 9's words are the design's; a
+# figure is `{{fs_line_key}}`, filled at draft from the version's own line. The design's other note
+# bodies aren't in the handoff, so those notes are headings (DEC-2389).
+NOTES_NAME: Final = "BH plan notes"
+NOTES_FRAMEWORK: Final = "us_gaap"
+_NOTES: Final = (
+    (1, "Description of the Plan", "", ""),
+    (2, "Significant Accounting Policies", "", ""),
+    (3, "Fair Value Measurements", "Total investments at fair value {{investments}}",
+     "investments"),
+    (4, "Information Certified by Harborline", "", ""),
+    (5, "Notes Receivable from Participants", "", "notes_receivable"),
+    (6, "Party-in-Interest Transactions", "", ""),
+    (7, "Tax Status", "", ""),
+    (8, "Reconciliation to Form 5500",
+     "Net assets per the financial statements {{net_assets}}. "
+     "Less contributions receivable ({{contributions_receivable}}).",
+     "net_assets;contributions_receivable"),
+    (9, "Delinquent Participant Contributions",
+     "Participant contributions of $33,540 withheld from the December 26, 2025 payroll were "
+     "remitted on January 9, 2026. The plan sponsor deposited lost earnings of $64.38 on "
+     "September 30, 2026 under the Department of Labor's Voluntary Fiduciary Correction Program "
+     "Self-Correction Component.", ""),
+    (10, "Plan Termination", "", ""),
+    (11, "Subsequent Events", "", ""),
+)  # fmt: skip
+
+
+def notes_csv() -> bytes:
+    out = io.StringIO()
+    writer = csv.writer(out)
+    writer.writerow(("number", "title", "body", "line_keys"))
+    writer.writerows(_NOTES)
+    return out.getvalue().encode()
 
 
 def checklist_csv() -> bytes:
@@ -410,6 +447,15 @@ def completion_events() -> list[Event]:
             "completion-checklist",
             SETUP_AT + timedelta(seconds=1),
             "methodology.checklist_loaded",
+            IMPORTER,
+            SLICE,
+        )
+    )
+    events.append(
+        Event(
+            "completion-notes",
+            SETUP_AT + timedelta(seconds=2),
+            "methodology.statement_notes_loaded",
             IMPORTER,
             SLICE,
         )

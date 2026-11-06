@@ -506,6 +506,8 @@ export const ACTIONS = [
   "statement.record_management_approval",
   "statement.send_draft",
   "statement.tie_out",
+  "statement_note_template.import",
+  "statement_note_template.publish",
   "subsequent_event.create",
   "subsequent_event.update",
   "suggestion.create",

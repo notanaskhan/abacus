@@ -600,6 +600,8 @@ REVIEWED_FALLBACK: Final = frozenset(
         "statement.draft_failed",  # reviewed 2026-11-06 (A-06-T25)
         "statement.tie_out_requested",  # reviewed 2026-11-06 (A-06-T25)
         "disclosure_checklist_template.published",  # reviewed 2026-11-06 (A-06-T28)
+        "statement_note_template.imported",  # reviewed 2026-11-07 (A-06-T25)
+        "statement_note_template.published",  # reviewed 2026-11-07 (A-06-T25)
         "notice.respond_by_alerted",  # reviewed 2026-11-06 (N-04-T16)
         "notice.follow_up_alerted",  # reviewed 2026-11-06 (N-04-T16)
         "notice_response.payment_confirmation_decided",  # reviewed 2026-11-06 (N-04-T16)

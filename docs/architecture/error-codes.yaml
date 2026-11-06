@@ -1906,6 +1906,10 @@ codes:
     raised_by:
     - abacus.modules.workpapers.attribute_grid.NoteRequired
     summary: An exception or a no-effect mark carries the person's note.
+  note_template_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.note_templates.NoteTemplateRefused
   notes_open:
     status: 409
     raised_by:

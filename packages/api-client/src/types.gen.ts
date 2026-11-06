@@ -43119,6 +43119,30 @@ export type StatementLineOut = {
 };
 
 /**
+ * StatementNoteOut
+ *
+ * A note as this draft rendered it; `unresolved` names figures it has no line for (DEC-2389).
+ */
+export type StatementNoteOut = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Number
+     */
+    number: number;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Unresolved
+     */
+    unresolved: Array<string>;
+};
+
+/**
  * StatementOut
  */
 export type StatementOut = {
@@ -43249,6 +43273,10 @@ export type StatementVersionOut = {
      * Lines
      */
     lines: Array<LineItemOut>;
+    /**
+     * Notes
+     */
+    notes?: Array<StatementNoteOut>;
     /**
      * Out Of Date
      */
@@ -98437,6 +98465,130 @@ export type ProgramStepsResponses = {
 };
 
 export type ProgramStepsResponse = ProgramStepsResponses[keyof ProgramStepsResponses];
+
+export type NoteTemplatePublishData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Template Id
+         */
+        template_id: string;
+        /**
+         * Version
+         */
+        version: number;
+    };
+    query?: never;
+    url: '/v1/methodology/statement-note-templates/{template_id}/versions/{version}/publish';
+};
+
+export type NoteTemplatePublishErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type NoteTemplatePublishError = NoteTemplatePublishErrors[keyof NoteTemplatePublishErrors];
+
+export type NoteTemplatePublishResponses = {
+    /**
+     * Successful Response
+     */
+    200: ChecklistTemplateVersionOut;
+};
+
+export type NoteTemplatePublishResponse = NoteTemplatePublishResponses[keyof NoteTemplatePublishResponses];
+
+export type NoteTemplateImportData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * Framework Key
+         */
+        framework_key: string;
+        /**
+         * Dry Run
+         */
+        dry_run?: boolean;
+    };
+    url: '/v1/methodology/statement-note-templates:import';
+};
+
+export type NoteTemplateImportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type NoteTemplateImportError = NoteTemplateImportErrors[keyof NoteTemplateImportErrors];
+
+export type NoteTemplateImportResponses = {
+    /**
+     * Successful Response
+     */
+    201: ChecklistImportOut;
+};
+
+export type NoteTemplateImportResponse = NoteTemplateImportResponses[keyof NoteTemplateImportResponses];
 
 export type ResolveStepData = {
     body?: never;
