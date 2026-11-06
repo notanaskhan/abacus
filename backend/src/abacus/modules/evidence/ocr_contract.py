@@ -13,12 +13,13 @@ returns its mask token only (reveal stays P-03's logged route). Text is hostile 
 Every route answers, in order: a client principal 404 (INV-4); the matrix action at the firm (the
 service narrows to the version with `visible()`, or the inbox preview's `evidence.upload` for an
 unfiled file); 404 with its flag off (`evidence.form_extraction` for fields and tables,
-`evidence.ocr` for retry); 501 until P-11-T22 onward.
+`evidence.ocr` for retry). Live since P-11-T27.
 """
 
 from __future__ import annotations
 
-from typing import Annotated, Literal, NoReturn
+from collections.abc import Sequence
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Path, Query
@@ -26,7 +27,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import EVIDENCE_FORM_EXTRACTION, EVIDENCE_OCR
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag, flag_enabled, flag_variant
 from abacus.modules.evidence.events import OcrRefusal
 from abacus.modules.identity.api import (
@@ -43,7 +44,7 @@ Internal = classified("internal")
 Confidence = Annotated[float, Field(ge=0, le=1), Internal]
 LOW_CONFIDENCE: float = 0.90
 
-ValueType = Literal["money", "date", "text", "code", "checkbox", "tin"]
+ValueType = Literal["money", "date", "text", "code", "checkbox", "tin", "percent"]
 ExtractorKind = Literal["text_layer_map", "ocr_map", "key_value"]
 
 
@@ -130,17 +131,15 @@ async def _gate(ctx: AuthContext, action: str, gate: Flag) -> None:
         raise NotFound(gate.name)
 
 
-def _not_yet() -> NoReturn:
-    raise NotImplementedYet
+def _box(bbox: Sequence[float]) -> BoxOut:
+    return BoxOut(x=bbox[0], y=bbox[1], w=bbox[2], h=bbox[3])
 
 
 ocr_router = AbacusRouter(prefix="/v1", tags=["trust kit"])
 _V = "/evidence-versions/{version_id}"
 
 
-@ocr_router.get(
-    f"{_V}/fields", action="evidence.read", response_model=ExtractedFieldsOut, errors=(501,)
-)
+@ocr_router.get(f"{_V}/fields", action="evidence.read", response_model=ExtractedFieldsOut)
 async def extracted_fields_route(
     version_id: VersionId,
     ctx: Ctx,
@@ -149,12 +148,34 @@ async def extracted_fields_route(
 ) -> ExtractedFieldsOut:
     """The boxes code read; an unsupported form or year answers no items (manual entry)."""
     await _gate(ctx, "evidence.read", EVIDENCE_FORM_EXTRACTION)
-    _not_yet()
+    from abacus.modules.evidence import ocr_reads
+
+    found = await ocr_reads.extracted_fields(ctx, version_id, form, key)
+    return ExtractedFieldsOut(
+        form_type=found.form_type,
+        tax_year=found.tax_year,
+        corrected=found.corrected,
+        form_map_version=found.form_map_version,
+        items=[
+            ExtractedFieldOut(
+                field_key=f.field_key,
+                label=f.label,
+                value_type=cast(ValueType, f.value_type),
+                value_text=f.value_text,
+                mask_token=f.mask_token,
+                page=f.page,
+                bbox=_box(f.bbox),
+                confidence=f.confidence,
+                low_confidence=f.low_confidence,
+                extractor_kind=cast(ExtractorKind, f.extractor_kind),
+                match_id=f.match_id,
+            )
+            for f in found.items
+        ],
+    )
 
 
-@ocr_router.get(
-    f"{_V}/tables", action="evidence.read", response_model=ExtractedTablesOut, errors=(501,)
-)
+@ocr_router.get(f"{_V}/tables", action="evidence.read", response_model=ExtractedTablesOut)
 async def extracted_tables_route(
     version_id: VersionId,
     ctx: Ctx,
@@ -162,14 +183,34 @@ async def extracted_tables_route(
 ) -> ExtractedTablesOut:
     """A statement page's transaction rows with cell boxes (CLS-05)."""
     await _gate(ctx, "evidence.read", EVIDENCE_FORM_EXTRACTION)
-    _not_yet()
+    from abacus.modules.evidence import ocr_reads
+
+    tables = await ocr_reads.extracted_tables(ctx, version_id, page)
+    return ExtractedTablesOut(
+        items=[
+            ExtractedTableOut(
+                table_id=t.table_id,
+                page=t.page,
+                bbox=_box(t.bbox),
+                rows=[
+                    [
+                        TableCellOut(text=c.text, bbox=_box(c.bbox), confidence=c.confidence)
+                        for c in row
+                    ]
+                    for row in t.rows
+                ],
+            )
+            for t in tables
+        ]
+    )
 
 
-@ocr_router.post(
-    f"{_V}/text/retry", action="evidence.ocr_retry", response_model=TextRetryOut, errors=(409, 501)
-)
+@ocr_router.post(f"{_V}/text/retry", action="evidence.ocr_retry", response_model=TextRetryOut)
 async def text_retry_route(version_id: VersionId, ctx: Ctx) -> TextRetryOut:
     """A person's "Read text again" after a cleared refusal; the agent and workers are refused
     by the matrix (INV-1)."""
     await _gate(ctx, "evidence.ocr_retry", EVIDENCE_OCR)
-    _not_yet()
+    from abacus.modules.evidence import ocr_reads
+
+    refused = await ocr_reads.retry_text(ctx, version_id)
+    return TextRetryOut(status="refused" if refused else "queued", reason=refused)
