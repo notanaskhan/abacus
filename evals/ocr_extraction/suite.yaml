@@ -1,0 +1,17 @@
+# OCR extraction conformance suite (P-11-T29; P-11 §8). PROTECTED (thresholds are the plan's,
+# ADR-079). Deterministic and code-only in CI: FakeOcr replays the recorded Textract JSON of the
+# synthetic scanned corpus (abacus_tools.synthetic.scanned_corpus), no model, no containers, and
+# tests/unit/evidence/test_ocr_extraction_suite.py blocks merges. The nightly run on real Textract
+# in staging reads the same cases; it's report-only for two weeks, then blocking once two runs in a
+# row pass. Synthetic values only.
+suite: ocr_extraction
+version: 1
+required_pass_rate: 1.0
+repeats: 1
+thresholds:
+  - {metric: tin_region_recall, minimum: 1.0}
+  - {metric: field_exact_match_clean, minimum: 0.98}
+  - {metric: field_exact_match_degraded, minimum: 0.95}
+  - {metric: respond_by_exact, minimum: 0.97}
+  - {metric: confident_wrong_rate, maximum: 0.005}
+  - {metric: low_confidence_flag_recall, minimum: 0.95}
