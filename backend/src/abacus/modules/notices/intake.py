@@ -17,6 +17,7 @@ the intake in this one (DEC-2218). Discard records its reason. Every write is au
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
@@ -273,6 +274,13 @@ def _money(value: str | None) -> Decimal | None:
         return None
 
 
+def notice_code_of(printed: str) -> str:
+    """The stored code from what a notice prints: "Notice of tax due" reads NOTICE-OF-TAX-DUE. The
+    column takes only capitals, digits and dashes (0089), and a state notice prints words."""
+    slug = re.sub(r"[^A-Z0-9-]+", "-", printed.upper()).strip("-")[:20].rstrip("-")
+    return slug if len(slug) >= 2 else "NOTICE"
+
+
 async def notice_engagement_for(ctx: AuthContext, client_entity_id: UUID) -> UUID | None:
     """QN-1: the client entity's `notice_response` engagement, if it has one."""
     from abacus.modules.engagements.api import notice_engagement
@@ -315,7 +323,7 @@ async def create_notice(
         client_entity_id=client_entity_id,
         due_on=respond_by,
         details={
-            "notice_code": code[:20],
+            "notice_code": notice_code_of(code),
             "received_on": (await clock.today(ctx.tenant)).isoformat(),
         },
     )

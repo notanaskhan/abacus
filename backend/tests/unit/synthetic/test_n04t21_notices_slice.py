@@ -8,11 +8,13 @@ export equivalence run in the integration pass.
 
 from __future__ import annotations
 
+import re
 from collections import Counter
 from pathlib import Path
 
 import yaml
 
+from abacus.modules.notices.intake import notice_code_of
 from abacus_tools.synthetic.scenarios.brightwater_hale import notices_content as nc
 from abacus_tools.synthetic.scenarios.brightwater_hale.slices import slice_events
 
@@ -30,7 +32,10 @@ def test_ac_the_notice_types_foot() -> None:
 
 def test_ac_the_whitley_row_carries_the_plans_figures() -> None:
     whitley = next(n for n in nc.NOTICES if n.code == "N1")
-    assert (whitley.amount, whitley.respond_by.isoformat()) == ("753.01", "2026-09-23")
+    assert (whitley.amount, whitley.respond_by.isoformat() if whitley.respond_by else None) == (
+        "753.01",
+        "2026-09-23",
+    )
 
 
 def test_ac_each_notice_has_a_service_event_and_a_client() -> None:
@@ -49,3 +54,12 @@ def test_ac_the_template_variants_are_content() -> None:
         "balance_due",
         "generic",
     ]
+
+
+def test_ac_every_seeded_notice_prints_a_code_the_column_takes() -> None:
+    assert notice_code_of("CP2000") == "CP2000"
+    assert notice_code_of("Notice of tax due") == "NOTICE-OF-TAX-DUE"
+    assert notice_code_of("Notice of deficiency") == "NOTICE-OF-DEFICIENCY"
+    assert notice_code_of("?") == "NOTICE"
+    for row in nc.NOTICES:
+        assert re.fullmatch(r"[A-Z0-9-]{2,20}", notice_code_of(row.notice_code))
