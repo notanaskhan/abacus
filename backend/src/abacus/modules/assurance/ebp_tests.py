@@ -5,16 +5,25 @@ attribute sets onto it. Attribute sets are the test design (code), not firm cont
 
 from __future__ import annotations
 
+from dataclasses import replace
+from datetime import date
 from decimal import Decimal
 from typing import Final, Literal, cast
 from uuid import UUID
 
-from sqlalchemy import text
+from sqlalchemy import RowMapping, text
 
+from abacus.kernel.crypto import open_sealed
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.numeric import quantize_half_up
-from abacus.modules.assurance.compute.ebp.eligibility import missed
+from abacus.modules.assurance.compute.ebp.eligibility import (
+    QACA,
+    Escalation,
+    entry,
+    escalation_rate,
+    missed,
+)
 from abacus.modules.assurance.ebp_contract import (
     ResultIn,
     TestGridCellOut,
@@ -22,7 +31,8 @@ from abacus.modules.assurance.ebp_contract import (
     TestGridRowOut,
     TestIn,
 )
-from abacus.modules.engagements.api import assurance_item
+from abacus.modules.assurance.ebp_participants import binding
+from abacus.modules.engagements.api import assurance_item, engagement_metadata
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.workpapers.api import (
     Attribute,
@@ -158,23 +168,46 @@ async def mark(
     await mark_cell(ctx, item.engagement_id, test_id, item_id, attribute, body.result, body.note)
 
 
+async def _rule_of(
+    ctx: AuthContext,
+    person: RowMapping,
+    plan_year: int,
+) -> Escalation:
+    """The participant's QACA rate this plan year, from their entry date (DEC-2361). The date of
+    birth opens here to place the entry and goes no further. Unknown either date: the default."""
+    if person["dob_sealed"] is None or person["hire_on"] is None:
+        return QACA
+    opened = await open_sealed(
+        ctx.tenant_id,
+        bytes(person["dob_sealed"]),
+        binding(person["import_id"], person["participant_key"], "dob"),
+    )
+    entered = entry(date.fromisoformat(opened.decode()), person["hire_on"]).entry_on
+    return replace(QACA, default_pct=escalation_rate(entered, plan_year))
+
+
 async def contribution_recalc(ctx: AuthContext, work_item_id: UUID) -> TestGridOut:
-    """EBP-04 c (A-05-T32; DEC-2356): the shared grid with code's figures on each cell. `value` is
-    what the participant's election gives on their compensation; `expected` is the plan's rule
-    (QACA default 6% deferral and 3.5% match, `compute/ebp/eligibility.py`). Same record key in the
-    newest EBP-03 grid links the row. The browser computes nothing."""
+    """EBP-04 c (A-05-T32; DEC-2356, DEC-2361): the shared grid with code's figures on each cell.
+    `value` is what the participant's election gives on their compensation, and for the match what
+    the census says was matched; `expected` is the plan's rule (QACA's rate for the participant's
+    year and 3.5% match, `compute/ebp/eligibility.py`). Same record key in the newest EBP-03 grid
+    links the row. The browser computes nothing."""
     latest = await latest_test_of_variant(ctx.tenant, work_item_id, "ebp_contribution_recalc")
     if latest is None:
         raise NotFound("attribute_test")
     out = await grid_out(ctx, work_item_id, latest[0])
     keys = [r.record_key for r in out.rows]
+    item = await assurance_item(ctx.tenant, work_item_id)
+    metadata = await engagement_metadata(ctx, item.engagement_id)
+    plan_year = metadata.engagement.fiscal_period_end.year
     async with tenant_session(ctx.tenant) as session:
         people = {
             row["participant_key"]: row
             for row in (
                 await session.execute(
                     text(
-                        "SELECT p.participant_key, p.compensation, p.deferral_election_pct "
+                        "SELECT p.participant_key, p.compensation, p.deferral_election_pct, "
+                        "p.match_ytd, p.hire_on, p.dob_sealed, p.import_id "
                         "FROM ebp_participants p JOIN ebp_source_imports i ON i.id = p.import_id "
                         "WHERE i.work_item_id = :w AND p.participant_key = ANY(:k) "
                         "ORDER BY p.created_at"
@@ -196,14 +229,14 @@ async def contribution_recalc(ctx: AuthContext, work_item_id: UUID) -> TestGridO
             rows.append(row.model_copy(update={"linked_item_id": linked.get(row.record_key)}))
             continue
         compensation = Decimal(str(comp))
-        rule = missed(compensation)
+        rule = missed(compensation, await _rule_of(ctx, person, plan_year))
         elected = quantize_half_up(
             compensation * Decimal(str(person["deferral_election_pct"] or 0)) / Decimal(100), 2
         )
         cells = [
             c.model_copy(update={"value": elected, "expected": rule.deferral})
             if c.attribute_key == "deferral"
-            else c.model_copy(update={"expected": rule.match})
+            else c.model_copy(update={"value": person["match_ytd"], "expected": rule.match})
             if c.attribute_key == "match"
             else c
             for c in row.cells

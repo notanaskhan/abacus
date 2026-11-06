@@ -652,6 +652,8 @@ export function NoticeWorkspace({
   const analysis = useQuery({
     ...analysisOptions({ path: { notice_id: noticeId } }),
     enabled: on,
+    // The run is background work (DEC-2359): the spinner stops when a version lands.
+    refetchInterval: (q) => (q.state.data?.status === "running" ? 3000 : false),
   });
   const cardId = analysis.data?.decision_card_id ?? "";
   const card = useDecisionCard(cardId);

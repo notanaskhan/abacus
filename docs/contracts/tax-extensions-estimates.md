@@ -53,3 +53,7 @@ versions are internal.
 These routes and the questionnaire editor routes (`questionnaires.md`, T-03 additive) are listed
 for pen test #2 (Q-03-T166). The pen test itself is deferred under DEC-1389
 (`docs/plan/status/pen-test-deferral.md`).
+
+## A state line's form (DEC-2357)
+
+A state line's form must be one a published `due_date_rules` row names as its extension form, and that row gives the line's dates. A form no row names answers 409 `no_extension_form`; TY2027 state rows roll on federal and DC holidays until T-08's state calendars (T-03 R19).

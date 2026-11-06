@@ -201,6 +201,17 @@ def tallies(rows: Sequence[Notice], on: date) -> NoticeTallies:
     )
 
 
+async def notice_for_run(tenant: TenantContext, notice_id: UUID) -> Notice | None:
+    """One notice for a run a person already started on it: tenant-scoped, no viewer (the start
+    authorised `notice.analyze`, and read it through `visible`)."""
+    query = select(*(_TABLE.c[n].label("id" if n == "work_item_id" else n) for n in _NAMES)).where(
+        _TABLE.c.work_item_id == notice_id
+    )
+    async with tenant_session(tenant) as session:
+        row = (await session.execute(query)).mappings().first()
+    return None if row is None else _notice(row)
+
+
 async def assignee_on_team(ctx: AuthContext, engagement_id: UUID, assignee: UUID) -> None:
     """An assignee must be able to read what they were given. Someone who can't joins the
     notice's engagement as staff, by the person assigning, who needs `engagement.member_add` (403
@@ -356,16 +367,16 @@ async def on_day(ctx: AuthContext) -> date:
     return await today(ctx.tenant)
 
 
-async def notice_letter_version(tenant: TenantContext, notice_id: UUID) -> UUID | None:
-    """The evidence version of the letter the notice was opened from (N-04-T11's word layer)."""
+async def notice_document_versions(tenant: TenantContext, notice_id: UUID) -> list[UUID]:
+    """The notice's files, oldest first: the letter it was opened from, then what was attached to
+    it (the 1099s filed to it, INB-02 d). N-04-T11's word-layer search reads them in order."""
     async with tenant_session(tenant) as session:
-        found = (
-            await session.execute(
-                text(
-                    "SELECT evidence_version_id FROM notice_intakes "
-                    "WHERE created_work_item_id = :w ORDER BY created_at LIMIT 1"
-                ),
-                {"w": notice_id},
-            )
-        ).scalar()
-    return None if found is None else UUID(str(found))
+        found = await session.execute(
+            text(
+                "SELECT evidence_version_id FROM notice_intakes "
+                "WHERE created_work_item_id = :w AND evidence_version_id IS NOT NULL "
+                "ORDER BY created_at, id"
+            ),
+            {"w": notice_id},
+        )
+        return [UUID(str(version)) for version in found.scalars()]

@@ -9,9 +9,9 @@ DEC-2350).
   (`tax.compute.payments`, ADR-050). A year without a parameter file computes nothing.
 - **Installments.** A recorded date moves the status: `paid_on` to Paid (with the evidence it rests
   on), `scheduled_for` to Scheduled. No route stores or initiates a payment (DEC-89).
-- **Confirmation requests** go in the basis return's engagement binder. A schedule without a basis
-  return refuses (409 `no_basis_return`): the "{year} estimated payments" binder part needs a
-  work item, and P-06's parts hang off one (recorded in DEC-2350).
+- **Confirmation requests** go in the basis return's "{year} estimated payments" binder part
+  (DEC-31, DEC-2358). A schedule without a basis return refuses (409 `no_basis_return`): P-06's
+  parts hang off a work item.
 - **Follow-ups** draft from the approved Reminder template; a person sends them (DEC-74).
 """
 
@@ -433,6 +433,7 @@ async def request_confirmation(
         wave="year_end",
         linked_ref={"type": "estimate_schedule", "id": str(schedule_id), "quarter": quarter},
         link=link,
+        part=(basis, f"{row.schedule['tax_year']} estimated payments"),
     )
 
 

@@ -19,10 +19,10 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Final
+from typing import Any, Final, cast
 from uuid import UUID
 
-from sqlalchemy import FetchedValue, insert, select
+from sqlalchemy import FetchedValue, insert, select, text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -285,6 +285,12 @@ async def record_correction(
     return event_id
 
 
+_LATEST_RECEIPTS = text(
+    "SELECT totals FROM ebp_source_imports WHERE work_item_id = :w AND kind = 'trust_receipts' "
+    "AND status = 'imported' ORDER BY created_at DESC LIMIT 1"
+)
+
+
 @dataclass(frozen=True)
 class Reconciliation:
     regular: Decimal
@@ -293,15 +299,26 @@ class Reconciliation:
     deferrals: Decimal = Decimal(0)
     match: Decimal = Decimal(0)
     trust_receipts: Decimal = Decimal(0)
+    # A-05-T31 (DEC-2361): the waterfall through to the statements. No trial balance: no tie.
+    rollovers: Decimal = Decimal(0)
+    reconciled: Decimal = Decimal(0)
+    per_statements: Decimal | None = None
+    ties: bool | None = None
+    # The trustee's own receipts against the register's. No receipts imported: no tie.
+    trust_ties: bool | None = None
 
 
 async def reconciliation(
-    tenant: TenantContext, work_item_id: UUID, year_end: date
+    tenant: TenantContext,
+    work_item_id: UUID,
+    year_end: date,
+    per_statements: Decimal | None = None,
 ) -> Reconciliation:
-    """A-05-T31's waterfall (DEC-2356): the plan year's payroll and match, less what was deposited
-    after year end, is the trust's receipts for them. Receivable at year end by code: payrolls of
-    the plan year deposited after it,
-    split into regular and late (the late remittance's payroll)."""
+    """A-05-T31's waterfall (DEC-2356, DEC-2361): the plan year's payroll and match, less what was
+    deposited after year end, is the trust's receipts for them; plus rollovers received (the
+    newest trust-receipts import) and the receivable is what the statements should show.
+    Receivable at year end by code: payrolls of the plan year deposited after it, split into
+    regular and late (the late remittance's payroll)."""
     async with tenant_session(tenant) as session:
         rows = (
             await session.execute(
@@ -321,6 +338,10 @@ async def reconciliation(
                 )
             ).scalars()
         )
+        receipts = cast(
+            dict[str, object] | None,
+            (await session.execute(_LATEST_RECEIPTS, {"w": work_item_id})).scalar_one_or_none(),
+        )
     regular = late = deferrals = match = Decimal(0)
     for p in rows:
         amount = p.deferrals_pretax + p.deferrals_roth + p.match
@@ -333,7 +354,30 @@ async def reconciliation(
         else:
             regular += amount
     total = regular + late
-    return Reconciliation(regular, late, total, deferrals, match, deferrals + match - total)
+    rollovers = Decimal(str((receipts or {}).get("rollover") or 0))
+    # The import's total holds rollovers beside payroll-sourced receipts.
+    receipts_due = deferrals + match - total + rollovers
+    steps = remittance.waterfall(
+        deferrals=deferrals,
+        match=match,
+        deposited_after_year_end=total,
+        rollovers=rollovers,
+        receivable=total,
+        per_statements=per_statements if per_statements is not None else Decimal(0),
+    )
+    return Reconciliation(
+        regular,
+        late,
+        total,
+        deferrals,
+        match,
+        deferrals + match - total,
+        rollovers,
+        steps.total,
+        per_statements,
+        None if per_statements is None else steps.foots,
+        None if not receipts else Decimal(str(receipts.get("amount") or 0)) == receipts_due,
+    )
 
 
 AUDIT_KINDS = frozenset({"ebp_late_remittance"})
