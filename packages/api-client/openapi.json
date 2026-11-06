@@ -91680,23 +91680,17 @@
         "type": "object"
       },
       "StatementDraftStartedOut": {
-        "description": "The version id is the deterministic run's record (DEC-2304).",
+        "description": "The deterministic run's record: `FsDraftWorkflow` writes the version, and the screen shows\nits skeleton until `GET` reads it (AUD-20c).",
         "properties": {
           "run_id": {
             "cls": "internal",
             "format": "uuid",
             "title": "Run Id",
             "type": "string"
-          },
-          "version_no": {
-            "cls": "internal",
-            "title": "Version No",
-            "type": "integer"
           }
         },
         "required": [
-          "run_id",
-          "version_no"
+          "run_id"
         ],
         "title": "StatementDraftStartedOut",
         "type": "object"
@@ -99952,6 +99946,22 @@
           "ran_at"
         ],
         "title": "TieOutOut",
+        "type": "object"
+      },
+      "TieOutStartedOut": {
+        "description": "`TieOutWorkflow` runs in the background; `GET` reads the result (AUD-20 c).",
+        "properties": {
+          "statement_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Statement Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "statement_version_id"
+        ],
+        "title": "TieOutStartedOut",
         "type": "object"
       },
       "TieOutTallyStatus": {
@@ -240804,7 +240814,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TieOutOut"
+                  "$ref": "#/components/schemas/TieOutStartedOut"
                 }
               }
             },

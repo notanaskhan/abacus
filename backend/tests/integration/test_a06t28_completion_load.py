@@ -11,18 +11,23 @@ from uuid import UUID
 
 import pytest
 
+from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
 from abacus.kernel.flags import forget_flags
 from abacus.modules.assurance.review_matrix import matrix
 from abacus.modules.assurance.sum_service import sum_view
+from abacus.modules.identity.api import AuthContext
+from abacus.modules.reporting import statements
 from abacus_tools.quality.schema_check import Database, provisioned_database
 from abacus_tools.synthetic.scenarios.brightwater_hale import loader
 from abacus_tools.synthetic.scenarios.brightwater_hale.loader import (
     BY_LABEL,
     TENANT,
     engagement_id_of,
+    user_id_of,
 )
+from abacus_tools.synthetic.scenarios.brightwater_hale.people import SEATS
 
 from .agent_tests.support import Seeder
 from .conftest import MigratedDatabase
@@ -141,6 +146,15 @@ async def test_ac_14_notes_in_their_states(loaded: Database) -> None:
     assert found == [("cleared", 11), ("open", 2), ("responded", 1)]
 
 
+async def test_ac_a25_each_version_names_its_deterministic_run(loaded: Database) -> None:
+    found = await _rows(
+        loaded,
+        "SELECT v.drafted_by_kind, r.agent_id, r.status FROM statement_versions v "
+        "JOIN agent_runs r ON r.id = v.run_id WHERE v.tenant_id = $1 ORDER BY v.version_no",
+    )
+    assert found == [("system", "reporting.fs_draft", "completed")] * 3
+
+
 async def test_ac_three_statement_versions_and_danas_approval(loaded: Database) -> None:
     versions = await _rows(
         loaded,
@@ -153,3 +167,48 @@ async def test_ac_three_statement_versions_and_danas_approval(loaded: Database) 
         "WHERE tenant_id = $1",
     )
     assert approved == [("approved_by_management", "record", True)]
+
+
+async def test_ac_a25_the_workflows_activities_write_a_version_and_a_retry_writes_none(
+    loaded: Database,
+) -> None:
+    """A-06-T25: the request opens the run; the activity, as the system, drafts from the run's own
+    row; a retried activity finds the version it already wrote; a tie-out emits its event."""
+    await dispose_engine()
+    configure_engine(loaded.app_url)
+    seed = Seeder(loaded.superuser_dsn)
+    engagement = engagement_id_of(BY_LABEL["A1"])
+    item = cast(
+        UUID,
+        await seed.value(
+            "SELECT id FROM work_items WHERE engagement_id = $1 AND kind = 'assurance'", engagement
+        ),
+    )
+    hannah = user_id_of(next(x for x in SEATS if x.initials == "HL"))
+    person = AuthContext(
+        TenantContext(TENANT, "human", str(hannah)), hannah, UUID(int=0), None, system_now()
+    )
+    system = TenantContext(TENANT, "system", "reporting:statements")
+    run = await statements.start_draft(person, engagement, item)
+    assert await seed.value("SELECT status FROM agent_runs WHERE id = $1", run) == "running"
+    first = await statements.draft_in_run(system, run)
+    assert await statements.draft_in_run(system, run) == first
+    assert await seed.value("SELECT status FROM agent_runs WHERE id = $1", run) == "completed"
+    assert first[1] == 4
+
+    failing = await statements.start_draft(person, engagement, item)
+    await statements.fail_draft_run(system, failing)
+    await statements.fail_draft_run(system, failing)
+    assert await seed.value("SELECT failure_code FROM agent_runs WHERE id = $1", failing) == (
+        "draft_failed"
+    )
+
+    await statements.start_tie_out(person, first[0])
+    tied = await statements.run_tie_out(system, first[0])
+    assert tied["total"] > 0
+    completed = await seed.value(
+        "SELECT count(*) FROM outbox WHERE tenant_id = $1 AND event_type = 'tie_out.completed'",
+        TENANT,
+    )
+    assert cast(int, completed) >= 1
+    await dispose_engine()
