@@ -52,7 +52,6 @@ function show(
         tab={tab}
         onTab={() => undefined}
         onRegister={() => undefined}
-        onRemind={() => undefined}
         onEscalate={onEscalate}
         onAdopt={() => undefined}
       />
@@ -109,6 +108,50 @@ describe("AUD-05", () => {
     fireEvent.click(button);
     expect(onEscalate).toHaveBeenCalledWith(expect.objectContaining({ id: PBC_FLAG }));
     expect(sent).toEqual([]);
+  });
+
+  it("c: Remind… drafts a follow-up, sends nothing, and the flag stays open", async () => {
+    show("c");
+    fireEvent.click(await drawn(`[data-remind='${PBC_FLAG}']`));
+    const status = await drawn("[data-aud05='remind-status']");
+    expect(status.textContent).toBe(
+      "Follow-up drafted. Nothing has been sent: a person sends it.",
+    );
+    expect(document.querySelector(`[data-escalate='${PBC_FLAG}']`)).not.toBeNull();
+  });
+
+  it("c: Remind… with nothing open to chase points to Escalate…", async () => {
+    const scenario = scenarios.c;
+    restore = installFixtureMode({
+      ...scenario,
+      get handlers() {
+        return {
+          ...scenario.handlers,
+          "POST /v1/engagements/{engagement_id}/workpapers/{workpaper_id}/flags/{flag_id}/remind":
+            () =>
+              new Response(JSON.stringify({ detail: "nothing_to_remind" }), {
+                status: 409,
+                headers: { "content-type": "application/json" },
+              }),
+        };
+      },
+    });
+    render(
+      <QueryClientProvider client={newQueryClient()}>
+        <NarrativePage
+          auditId={NORTHWIND_AUDIT}
+          workpaperId={RISK_PAPER}
+          tab="risk"
+          onTab={() => undefined}
+          onRegister={() => undefined}
+          onEscalate={() => undefined}
+          onAdopt={() => undefined}
+        />
+      </QueryClientProvider>,
+    );
+    fireEvent.click(await drawn(`[data-remind='${PBC_FLAG}']`));
+    const status = await drawn("[data-aud05='remind-status']");
+    expect(status.textContent).toBe("No open request to chase. Escalate… drafts one.");
   });
 
   it("d: Hannah's L2 reads Reviewed · HL and the note keeps its place", async () => {
