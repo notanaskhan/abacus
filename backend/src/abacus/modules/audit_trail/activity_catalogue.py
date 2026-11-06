@@ -38,6 +38,12 @@ def _a(category: Category, mark: Mark = "pl", *facts: str) -> CatalogueEntry:
 
 # G-02 §4.7 and the governance events ADM-07 renders first; the rest arrive through the fallback.
 CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
+    # S26, S27: human-only conclusions the fallback reads as neutral, and a code run (DEC-2264).
+    "deficiency.concluded": _a("decision", "ok"),
+    "sum.concluded": _a("decision", "ok"),
+    "notice.position_decided": _a("decision", "ok"),
+    "service_org.reliance_concluded": _a("decision", "ok"),
+    "ocr.run_recorded": _a("run"),
     # S15 (N-01, N-02): where the fallback reads the verb wrong. A sealed address revealed and a
     # message body read are access; a provider send and a reminder are communication.
     "signer.ip_revealed": _a("access"),
