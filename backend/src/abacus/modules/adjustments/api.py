@@ -16,6 +16,7 @@ from abacus.modules.adjustments.entries import (
     audit_owners,
     entries_of,
     recorded_entries,
+    register_entry_proposed_hook,
 )
 from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.ledger.api import register_adjustment_source
@@ -30,14 +31,27 @@ ROUTERS: tuple[AbacusRouter, ...] = (router,)
 WORKFLOWS: dict[type, str] = {}
 ACTIVITIES: tuple[object, ...] = ()
 
+from abacus.modules.adjustments.decisions import (  # noqa: E402 -- A-06-T28
+    record_client_decision as record_entry_decision,
+)
+from abacus.modules.adjustments.decisions import send as send_entries  # noqa: E402
+from abacus.modules.adjustments.entries import NewEntry, NewLine  # noqa: E402
+from abacus.modules.adjustments.entries import propose as propose_entry  # noqa: E402
+
 __all__ = [
     "ACTIVITIES",
     "ROUTERS",
     "SUBSCRIPTIONS",
     "WORKFLOWS",
+    "NewEntry",
+    "NewLine",
     "entries_of",
+    "propose_entry",
+    "record_entry_decision",
     "recorded_entries",
     "register_client_delivery",
     "register_entry_decision_hook",
+    "register_entry_proposed_hook",
     "router",
+    "send_entries",
 ]
