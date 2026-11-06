@@ -19,8 +19,9 @@ export const notScreens = {
   },
   "NOT-03": {
     name: "Response letter editor & approval · CP2000 · TY2024 · Whitley",
-    status: "planned",
-    path: null,
+    // N-04-T20: a to g and d2 on fixtures, under NOT-02's Response tab.
+    status: "fixture",
+    path: "/notices/$noticeId",
   },
   // seed-manifest: new screens are added above this line
 } as const satisfies Manifest;

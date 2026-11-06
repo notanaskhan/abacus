@@ -28,6 +28,7 @@ import { scenarios as ebp06 } from "./scenarios/EBP-06";
 import { scenarios as aud10 } from "./scenarios/AUD-10";
 import { scenarios as aud17 } from "./scenarios/AUD-17";
 import { OPENS as NOT01_OPENS, scenarios as not01 } from "./scenarios/NOT-01";
+import { scenarios as not03 } from "./scenarios/NOT-03";
 import { IDS as AUD03_IDS, scenarios as aud03 } from "./scenarios/AUD-03";
 import { NORTHWIND_AUDIT } from "./scenarios/AUD-06";
 import { scenarios as aud08 } from "./scenarios/AUD-08";
@@ -210,6 +211,7 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
   },
   "KNW-01": { scenarios: knw01, opens: {} }, // K-01-T04
   "KNW-04": { scenarios: knw04, opens: {} }, // K-02-T13
+  "NOT-03": { scenarios: not03, opens: {} }, // N-04-T20
   "NOT-01": { scenarios: not01, opens: NOT01_OPENS }, // N-04-T05: j09 1 (T26)
   "SHL-03": { scenarios: shl03, opens: {} },
   "SHL-04": { scenarios: shl04, opens: {} },

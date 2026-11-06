@@ -31,6 +31,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { useFlag } from "../../app-core/flags";
 import { useDecisionCard } from "../../domain/review";
+import { ResponseEditor } from "../NOT-03";
 import { ViewerPane } from "../SHL-08";
 import { COPY } from "./copy";
 
@@ -67,6 +68,10 @@ export interface WorkspaceProps {
   onBack?: () => void;
   /** NOT-03 once the response is drafted. */
   onResponse?: () => void;
+  /** N-04-T20: NOT-03's Approve… opens SHL-12. */
+  onApproveResponse?: () => void;
+  /** N-04-T20: SIG-02 d on the drafted envelope. */
+  onEnvelope?: (envelopeId: string) => void;
   /** SHL-11 for the reserved signer (`?ov=decision:<cardId>`): the sheet records the decision. */
   onDecide?: (cardId: string, optionKey: string, rationale: string) => void;
   /** Hover state for d (the 1099 corrections row lit on open). */
@@ -637,6 +642,8 @@ export function NoticeWorkspace({
   onSegment,
   onBack,
   onResponse,
+  onApproveResponse,
+  onEnvelope,
   onDecide,
   initialLit = false,
 }: WorkspaceProps): JSX.Element {
@@ -689,7 +696,14 @@ export function NoticeWorkspace({
                   }}
                 />
               </div>
-              {tab === "activity" ? (
+              {tab === "response" ? (
+                <ResponseEditor
+                  noticeId={noticeId}
+                  notice={notice.data}
+                  {...(onApproveResponse === undefined ? {} : { onApprove: onApproveResponse })}
+                  {...(onEnvelope === undefined ? {} : { onEnvelope })}
+                />
+              ) : tab === "activity" ? (
                 <Activity noticeId={noticeId} />
               ) : (
                 <div className="grid min-h-0 flex-1 grid-cols-[452px_452px_452px] gap-[10px] px-[12px] pt-[10px] pb-[12px]">
