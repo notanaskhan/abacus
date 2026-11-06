@@ -439,6 +439,18 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.portal_pbc import (
     SLICE as PORTAL_PBC_SLICE,
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.prng import stable_id
+from abacus.modules.notices.intake import create as create_notice_intake
+from abacus.modules.notices.intake import create_notice as create_notice_from_intake
+from abacus.modules.notices.intake import notice_engagement_for
+from abacus.modules.notices.intake import revise as revise_notice_intake
+from abacus.modules.notices.service import move as move_notice
+from abacus.modules.notices.service import notice as read_notice
+from abacus_tools.synthetic.scenarios.brightwater_hale.notices_content import (
+    NEEDS as NOTICES_NEEDS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.notices_content import (
+    SLICE as NOTICES_SLICE,
+)
 from abacus_tools.synthetic.scenarios.brightwater_hale.report_templates import (
     A07_NEEDS as A07_TEMPLATES_NEEDS,
 )
@@ -1811,6 +1823,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     EBP_SLICE: EBP_NEEDS,  # A-05-T07: Dana's EBP source documents on Northwind
     EBP2_SLICE: EBP2_NEEDS,  # A-05-T34: investments, Form 5500, distributions; Granite Peak's
     SAMPLING_SLICE: SAMPLING_NEEDS,  # A-03-T16: Table 2, BH FS groupings, Northwind's sample
+    NOTICES_SLICE: NOTICES_NEEDS,  # N-04-T21: N1-N9 through the intake path
     A07_TEMPLATES_SLICE: A07_TEMPLATES_NEEDS,  # A-07-T12: letters through C11's import
     REPORT_TEMPLATES_SLICE: REPORT_TEMPLATES_NEEDS,  # P-11-T13: Grace imports, Margaret publishes
     CONNECTIONS_SLICE: CONNECTIONS_NEEDS,  # A-02-T27: Copperleaf's POR-16a connections
@@ -4158,6 +4171,69 @@ async def _northwind_note_raised(conn: asyncpg.Connection, _: Scenario, event: E
     )
 
 
+_NOTICE_PATH: Final[dict[str, tuple[str, ...]]] = {
+    "received": (),
+    "classified": ("classified",),
+    "analyzing": ("classified", "analyzing"),
+    "response_drafted": ("classified", "analyzing", "response_drafted"),
+    "awaiting_irs": ("classified", "analyzing", "response_drafted", "approved", "sent",
+                     "awaiting_irs"),
+}  # fmt: skip
+
+
+async def _notice_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """N-04-T21: an intake from a stored file, the fields entered, Create notice, then the status
+    moves, each through `notices` the way a person's action reaches it (no row written here)."""
+    ctx = await _staff_context(conn, event)
+    data = event.data
+    client = await _client_id(conn, str(event.client))
+    entity = await _entity_id(conn, client, str(event.client))
+    stored = await stage_content(TENANT, f"{data['code']} {data['notice_code']}".encode())
+    engagement = await notice_engagement_for(ctx, entity)
+    if engagement is None:
+        raise LookupError(f"no notice engagement for {event.client}")
+    async with uow(TenantContext(TENANT, "human", str(ctx.user_id))) as tx:
+        version = await add_version(
+            tx,
+            engagement_id=engagement,
+            item=NewItem(title=f"{data['notice_code']} notice.pdf"),
+            stored=stored,
+            media_type="application/pdf",
+            provenance=Provenance(source="firm_upload", method="uploaded"),
+            requested_by=ctx.user_id,
+        )
+    made = await create_notice_intake(
+        ctx, source="manual", evidence_version_id=version.id, inbox_item_id=None
+    )
+    revised = await revise_notice_intake(
+        ctx,
+        made.id,
+        expected_version=made.row_version,
+        fields=[
+            ("notice_code", str(data["notice_code"]), False),
+            ("tax_year", str(data["tax_year"]), False),
+            ("respond_by", str(data["respond_by"]), False),
+            ("amount_due", str(data["amount"]), False),
+        ],
+        assignee_id=None,
+        notify_user_ids=None,
+    )
+    assignee = user_id_of(_SEATS[str(data["assignee"])])
+    work_item, _ = await create_notice_from_intake(
+        ctx,
+        revised.id,
+        client_entity_id=entity,
+        assignee_id=assignee,
+        engagement_id=engagement,
+        related_return_id=None,
+        create_anyway=True,
+    )
+    for status in _NOTICE_PATH[str(data["status"])]:
+        found = await read_notice(ctx, work_item)
+        async with uow(TenantContext(TENANT, "human", str(ctx.user_id))) as tx:
+            await move_notice(tx, found, status, actor_kind="human", actor_user_id=ctx.user_id)
+
+
 async def _materiality_proposed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     await propose_materiality(
         await _staff_context(conn, event),
@@ -4481,6 +4557,7 @@ HANDLERS: Final[dict[str, Handler]] = {
     "platform.pilot_enrolled": _pilot_enrolled,  # TASK-2470
     "standards.version_imported": _standard_imported,
     "standards.version_published": _standard_published,
+    "notices.seed_notice": _notice_seeded,  # N-04-T21
     "reporting.template_imported": _report_template_imported,
     "reporting.template_published": _report_template_published,
     # T-02-T23 (`--slice tax_content`): contacts and portal people, the engine's PDFs, then each
