@@ -46,7 +46,8 @@ async def _has_linked_risk(tenant: TenantContext, engagement_id: UUID) -> bool:
         found = await session.scalar(
             text(
                 "SELECT 1 FROM risk_linkages WHERE engagement_id = :e "
-                "AND target_kind = 'workpaper' AND upper(target_ref) = :target AND removed_at IS NULL LIMIT 1"
+                "AND target_kind = 'workpaper' AND upper(target_ref) = :target "
+                "AND removed_at IS NULL LIMIT 1"
             ),
             {"e": engagement_id, "target": IC_TARGET},
         )
