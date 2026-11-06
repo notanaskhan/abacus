@@ -22,7 +22,14 @@ from temporalio.worker import Replayer, UnsandboxedWorkflowRunner
 from abacus.modules.evidence.api import UploadInput, UploadProcessing
 
 HISTORIES = Path(__file__).resolve().parent / "histories"
-ALL = sorted(HISTORIES.glob("upload-processing-v*.json"))
+
+
+def _order(path: Path) -> tuple[int, str]:
+    """By version number: v10 comes after v9."""
+    return int(path.stem.removeprefix("upload-processing-v").split("-")[0]), path.name
+
+
+ALL = sorted(HISTORIES.glob("upload-processing-v*.json"), key=_order)
 IDS = [p.stem for p in ALL]
 
 
@@ -54,6 +61,9 @@ def test_ac2_the_histories_are_committed() -> None:
         "upload-processing-v8-ocr",
         # v9 (P-11-T25): words and OCR before the checks.
         "upload-processing-v9-ocr-before-checks",
+        # v10 (P-11-T25): `patched("ocr_background")`; a long scan waits for `LongOcr`.
+        "upload-processing-v10-ocr-long",
+        "upload-processing-v10-ocr-route",
     ]
 
 

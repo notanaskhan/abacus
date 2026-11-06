@@ -72,6 +72,16 @@ async def _ocr_stub(given: UploadInput) -> int:
     return 1
 
 
+@activity.defn(name="upload.ocr_route")
+async def _ocr_route_stub(given: UploadInput) -> str:
+    return "short"
+
+
+@activity.defn(name="upload.ocr_route")
+async def _ocr_route_long_stub(given: UploadInput) -> str:
+    return "long"
+
+
 @activity.defn(name="upload.pii_scan")
 async def _pii_scan_stub(given: UploadInput) -> int:
     return 2
@@ -105,6 +115,7 @@ _OUTCOMES = {
     "v7": "masked-preview",
     "v8": "ocr",
     "v9": "ocr-before-checks",
+    "v10": "ocr-route",
 }
 
 
@@ -132,6 +143,7 @@ async def _record(out: Path, version: str, stack: Stack, outcome: str | None = N
             ),
             _drop_sort_stub,
             _ocr_stub,
+            _ocr_route_long_stub if outcome == "ocr-long" else _ocr_route_stub,
         ],
     ):
         handle = await client.start_workflow(
@@ -141,6 +153,8 @@ async def _record(out: Path, version: str, stack: Stack, outcome: str | None = N
             id=f"recorder-upload-processing-{version}-{outcome or 'ok'}",
             task_queue=_TASK_QUEUE,
         )
+        if outcome == "ocr-long":  # `LongOcr` tells the upload when it's done
+            await handle.signal("long_ocr_done")
         await handle.result()
         scrubbed = await decoded_and_scrubbed(await handle.fetch_history(), payload_codec())
     path = out / _file_name(version, outcome)
@@ -152,7 +166,13 @@ def main(argv: list[str]) -> int:
     out = Path(argv[0]) if argv else Path("tests/workflows/histories")
     version = argv[1] if len(argv) > 1 else "v1"
     outcome = argv[2] if len(argv) > 2 else None
-    if outcome not in (None, "words-failed", "pii-scan-failed", "masked-preview-failed"):
+    if outcome not in (
+        None,
+        "words-failed",
+        "pii-scan-failed",
+        "masked-preview-failed",
+        "ocr-long",
+    ):
         print("outcome is words-failed, pii-scan-failed, masked-preview-failed or nothing")
         return 2
     if refuse_overwrite(out, [_file_name(version, outcome)]):

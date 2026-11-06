@@ -9863,12 +9863,6 @@ export type ConvertToMisstatementIn = {
     column_set?: 'ebp_net_assets' | 'commercial';
     fs_effect?: MisstatementEffectIn | null;
     /**
-     * Effect
-     */
-    effect?: {
-        [key: string]: string;
-    } | null;
-    /**
      * Nature
      */
     nature?: 'misstatement' | 'reclassification';
