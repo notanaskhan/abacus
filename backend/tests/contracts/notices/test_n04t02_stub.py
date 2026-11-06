@@ -179,7 +179,11 @@ async def test_ac1_the_gate_authorises_then_reads_the_flag_then_serves(
     async def sent(_ctx: AuthContext, _notice_id: uuid.UUID) -> uuid.UUID:
         return envelope
 
+    async def no_item(_ctx: AuthContext, _notice_id: uuid.UUID) -> None:
+        return None
+
     monkeypatch.setattr(sending, "send_for_signature", sent)
+    monkeypatch.setattr(sending, "confirmation_item_of", no_item)
     with pytest.raises(NotFound):
         await contract.send_for_signature_route(uuid.uuid4(), _ctx(), "key")
     assert calls == ["authorise:notice_response.send_for_signature", "flag:notices.workspace"]
