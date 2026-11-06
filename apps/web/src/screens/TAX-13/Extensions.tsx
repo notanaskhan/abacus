@@ -16,6 +16,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { useNow } from "../../app-core/clock";
+import { hrefOf, to } from "../../routes/to";
 import { COPY } from "./copy";
 
 // TAX-13 · Extensions, estimates & payments (T-03-T11; T-03 §3 F5; the handoff spec): the T6 workbook
@@ -80,11 +81,9 @@ function Tiles({
 
 function ExtensionRow({
   row,
-  onReturn,
   onPrepare,
 }: {
   row: ExtensionRowOut;
-  onReturn?: (id: string) => void;
   onPrepare?: (row: ExtensionRowOut) => void;
 }): JSX.Element {
   const now = useNow();
@@ -98,13 +97,12 @@ function ExtensionRow({
       className="h-[40px] text-[12.5px] hairline-t"
     >
       <td className="px-[12px]">
-        <button
-          type="button"
+        <a
+          href={hrefOf(to.TAX02({ returnId: row.tax_return_id }))}
           className="text-left text-ink hover:underline"
-          onClick={() => onReturn?.(row.tax_return_id)}
         >
           {row.client_name}
-        </button>
+        </a>
       </td>
       <td>{row.return_form}</td>
       <td>{row.lines.map((l) => l.form).join(" + ")}</td>
@@ -163,7 +161,22 @@ function ExtensionRow({
                 {COPY.prepare(row.lines[0]?.form ?? "")}
               </Button>
             ) : (
-              <Tooltip content={blocked}>
+              <Tooltip
+                content={
+                  row.client_id != null && row.engagement_id != null ? (
+                    <a
+                      className="underline"
+                      href={hrefOf(
+                        to.CLI07({ clientId: row.client_id, engagementId: row.engagement_id }),
+                      )}
+                    >
+                      {blocked}
+                    </a>
+                  ) : (
+                    blocked
+                  )
+                }
+              >
                 <span data-blocked={blocked}>
                   <Button size="xs" variant="secondary" disabled>
                     {COPY.prepare(row.lines[0]?.form ?? "")}
@@ -219,8 +232,6 @@ export interface ExtensionsProps {
   quarter?: number;
   tab?: Tab;
   segment?: Segment;
-  onBack?: () => void;
-  onReturn?: (id: string) => void;
   onPrepare?: (row: ExtensionRowOut) => void;
   onResend?: (row: EstimateRowOut) => void;
   /** DF-08: Payments is a composed union, hidden until its read exists. */
@@ -246,7 +257,7 @@ async function openInExcel(
           parseAs: "blob",
           throwOnError: true,
         });
-  const url = URL.createObjectURL(data as Blob);
+  const url = URL.createObjectURL(data);
   const link = document.createElement("a");
   link.href = url;
   link.download = `${tab}-TY${String(taxYear)}.xlsx`;
@@ -259,8 +270,6 @@ export function Extensions({
   quarter = 3,
   tab: initialTab = "extensions",
   segment: initialSegment = "open",
-  onBack,
-  onReturn,
   onPrepare,
   onResend,
   showPayments = false,
@@ -300,11 +309,12 @@ export function Extensions({
   return (
     <div data-screen="TAX-13" data-tab={tab} className="flex min-h-0 flex-1 flex-col">
       <div className="relative flex h-[42px] shrink-0 items-center justify-center text-[15px] font-medium">
-        {onBack !== undefined && (
-          <Button variant="secondary" size="sm" className="absolute left-[12px]" onClick={onBack}>
-            {COPY.back}
-          </Button>
-        )}
+        <a
+          href={hrefOf(to.TAX01())}
+          className="absolute left-[12px] text-[12.5px] font-normal text-ink-2 hover:underline"
+        >
+          {COPY.back}
+        </a>
         {COPY.title} <span className="ml-[6px] font-normal text-ink-2">TY{taxYear}</span>
       </div>
       <div className="flex h-[50px] shrink-0 items-center justify-center">
@@ -414,7 +424,6 @@ export function Extensions({
                   <ExtensionRow
                     key={row.work_item_id}
                     row={row}
-                    {...(onReturn === undefined ? {} : { onReturn })}
                     {...(onPrepare === undefined ? {} : { onPrepare })}
                   />
                 ))}

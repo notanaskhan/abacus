@@ -168,6 +168,8 @@ class ExtensionRowOut(BaseModel):
 
     tax_return_id: Annotated[UUID, Internal]
     work_item_id: Annotated[UUID, Internal]
+    client_id: Annotated[UUID | None, Internal] = None  # CLI-07's link (DEC-2325)
+    engagement_id: Annotated[UUID | None, Internal] = None
     client_name: Name
     client_note: OptName = None  # "(Walter's 2025 Form 1040)"
     return_form: Annotated[str, Internal]  # "1040", "1065", "2025 Form 990 (FYE Jun 30, 2026)"
@@ -510,6 +512,8 @@ async def _row_out(ctx: AuthContext, found: object) -> ExtensionRowOut:
     return ExtensionRowOut(
         tax_return_id=r.tax_return_id,
         work_item_id=r.work_item_id,
+        client_id=r.client_id,
+        engagement_id=r.engagement_id,
         client_name=r.client_name,
         return_form=r.return_form or str(first["form"]),
         tax_year=r.tax_year,

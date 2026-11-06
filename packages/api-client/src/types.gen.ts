@@ -15827,6 +15827,10 @@ export type ExtensionOut = {
      */
     allowed_actions: Array<'filing_extension.prepare' | 'filing_extension.approve_payment' | 'filing_extension.mark_filed' | 'filing_extension.flag_likely' | 'filing_extension.confirmation_send' | 'tax_schedule.export'>;
     /**
+     * Client Id
+     */
+    client_id?: string | null;
+    /**
      * Client Name
      */
     client_name: string;
@@ -15843,6 +15847,10 @@ export type ExtensionOut = {
      * Due Rules Version Id
      */
     due_rules_version_id?: string | null;
+    /**
+     * Engagement Id
+     */
+    engagement_id?: string | null;
     /**
      * Extended Due On
      */
@@ -16066,6 +16074,10 @@ export type ExtensionRowOut = {
      */
     allowed_actions: Array<'filing_extension.prepare' | 'filing_extension.approve_payment' | 'filing_extension.mark_filed' | 'filing_extension.flag_likely' | 'filing_extension.confirmation_send' | 'tax_schedule.export'>;
     /**
+     * Client Id
+     */
+    client_id?: string | null;
+    /**
      * Client Name
      */
     client_name: string;
@@ -16078,6 +16090,10 @@ export type ExtensionRowOut = {
      * Days To Extended Due
      */
     days_to_extended_due?: number | null;
+    /**
+     * Engagement Id
+     */
+    engagement_id?: string | null;
     /**
      * Extended Due On
      */
