@@ -29,15 +29,17 @@ import base64
 import json
 import re
 from collections.abc import Mapping, Sequence
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Final, Literal, cast
 from uuid import UUID, uuid4
 
+from sqlalchemy import text
+
 from abacus.kernel.clock import now
 from abacus.kernel.crypto import seal
-from abacus.kernel.db import tenant_session
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Scope, Target, uow
 from abacus.modules.engagements.api import engagement_resource_of
@@ -187,6 +189,49 @@ async def authorizations(ctx: AuthContext, entity_id: UUID) -> list[TaxAuthoriza
         rows = await repo.authorizations(session, entity_id)
     names = await _designee_names(rows)
     return [_authorization_out(r, names) for r in rows]
+
+
+_AUTHORIZATION_KIND: Final[dict[str, tuple[str, str]]] = {
+    "2848": ("form_2848", "2848 ✓"),
+    "8821": ("form_8821", "8821 ✓"),
+    "state": ("state_poa", "POA ✓"),
+}
+
+
+async def authorization_on_file(
+    tenant: TenantContext, entity_id: UUID, tax_year: int
+) -> tuple[str, str, UUID] | None:
+    """N-04-T07: the authorization on file for the entity and year, a Form 2848 before the rest
+    (only it represents); (kind, label, id), or None. Identifiers and labels: never a CAF."""
+    async with tenant_session(tenant) as session:
+        rows = await repo.authorizations(session, entity_id)
+    on_file = [r for r in rows if r["status"] == "on_file" and tax_year in r["tax_years"]]
+    for form in ("2848", "state", "8821"):
+        for row in on_file:
+            if row["form"] == form:
+                kind, label = _AUTHORIZATION_KIND[form]
+                return kind, label, row["id"]
+    return None
+
+
+async def return_for_entity(
+    tenant: TenantContext, entity_id: UUID, tax_year: int, form: str | None
+) -> UUID | None:
+    """N-04-T07: the entity's one return for the year (and form, when read); None when there is
+    none or several: a person picks."""
+    async with tenant_session(tenant) as session:
+        found = list(await repo.returns_for_entity(session, entity_id, tax_year, form))
+    return found[0] if len(found) == 1 else None
+
+
+async def return_label(tenant: TenantContext, return_id: UUID) -> str | None:
+    """ "TY2024 Form 1040 · Accepted": NOT-01b's Match card."""
+    async with tenant_session(tenant) as session:
+        row = await repo.return_facts(session, return_id)
+    if row is None:
+        return None
+    status = str(row["status"]).replace("_", " ").capitalize()
+    return f"TY{row['tax_year']} Form {row['form']} · {status}"
 
 
 async def add_authorization(
@@ -748,6 +793,48 @@ def _comparison_out(row: RowLike) -> TranscriptComparisonOut:
         engine_version=cast(str | None, row["engine_version"]),
         computed_at=cast(datetime, row["computed_at"]),
     )
+
+
+@dataclass(frozen=True)
+class ComparisonLine:
+    """A transcript line against the return (N-04-T11 reads it, identifiers and figures only)."""
+
+    line_no: int
+    form: str
+    payer_name: str | None
+    transcript_amount: Decimal
+    return_amount: Decimal | None
+    difference: Decimal | None
+
+
+async def transcript_comparison_lines(
+    tenant: TenantContext, client_entity_id: UUID, tax_year: int
+) -> list[ComparisonLine]:
+    """The newest wage-and-income comparison of the entity's year; none computed: empty."""
+    async with tenant_session(tenant) as session:
+        found = (
+            await session.execute(
+                text(
+                    "SELECT c.lines FROM transcript_comparisons c JOIN transcripts t "
+                    "ON t.id = c.transcript_id WHERE t.client_entity_id = :e AND t.tax_year = :y "
+                    "AND t.kind = 'wage_income' ORDER BY c.computed_at DESC, c.id DESC LIMIT 1"
+                ),
+                {"e": client_entity_id, "y": tax_year},
+            )
+        ).scalar()
+    if not found:
+        return []
+    return [
+        ComparisonLine(
+            int(cast(int, x["line_no"])),
+            str(x["form"]),
+            cast(str | None, x["payer_name"]),
+            Decimal(str(x["transcript_amount"])),
+            _decimal(x["return_amount"]),
+            _decimal(x["difference"]),
+        )
+        for x in cast(list[dict[str, object]], found)
+    ]
 
 
 async def comparison(ctx: AuthContext, transcript_id: UUID) -> TranscriptComparisonOut:
