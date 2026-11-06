@@ -178,6 +178,7 @@ class Seeder:
         sql: str,
         *args: object,
         at: str | None = None,
+        archived_write: str = "",
     ) -> None:
         """One statement in a transaction carrying a tenant, an actor and (for a synthetic firm)
         a business time: what the database's actor and clock checks read (P-04-T05)."""
@@ -189,6 +190,7 @@ class Seeder:
                     ("app.actor_kind", actor[0]),
                     ("app.actor_id", actor[1]),
                     ("app.now", at or ""),
+                    ("app.archived_write", archived_write),
                 )
                 for name, value in settings:
                     await conn.execute("SELECT set_config($1, $2, true)", name, value)
