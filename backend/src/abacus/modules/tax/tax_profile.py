@@ -29,11 +29,13 @@ import base64
 import json
 import re
 from collections.abc import Mapping, Sequence
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Final, Literal, cast
 from uuid import UUID, uuid4
+
+from sqlalchemy import text
 
 from abacus.kernel.clock import now
 from abacus.kernel.crypto import seal
@@ -791,6 +793,48 @@ def _comparison_out(row: RowLike) -> TranscriptComparisonOut:
         engine_version=cast(str | None, row["engine_version"]),
         computed_at=cast(datetime, row["computed_at"]),
     )
+
+
+@dataclass(frozen=True)
+class ComparisonLine:
+    """A transcript line against the return (N-04-T11 reads it, identifiers and figures only)."""
+
+    line_no: int
+    form: str
+    payer_name: str | None
+    transcript_amount: Decimal
+    return_amount: Decimal | None
+    difference: Decimal | None
+
+
+async def transcript_comparison_lines(
+    tenant: TenantContext, client_entity_id: UUID, tax_year: int
+) -> list[ComparisonLine]:
+    """The newest wage-and-income comparison of the entity's year; none computed: empty."""
+    async with tenant_session(tenant) as session:
+        found = (
+            await session.execute(
+                text(
+                    "SELECT c.lines FROM transcript_comparisons c JOIN transcripts t "
+                    "ON t.id = c.transcript_id WHERE t.client_entity_id = :e AND t.tax_year = :y "
+                    "AND t.kind = 'wage_income' ORDER BY c.computed_at DESC, c.id DESC LIMIT 1"
+                ),
+                {"e": client_entity_id, "y": tax_year},
+            )
+        ).scalar()
+    if not found:
+        return []
+    return [
+        ComparisonLine(
+            int(cast(int, x["line_no"])),
+            str(x["form"]),
+            cast(str | None, x["payer_name"]),
+            Decimal(str(x["transcript_amount"])),
+            _decimal(x["return_amount"]),
+            _decimal(x["difference"]),
+        )
+        for x in cast(list[dict[str, object]], found)
+    ]
 
 
 async def comparison(ctx: AuthContext, transcript_id: UUID) -> TranscriptComparisonOut:

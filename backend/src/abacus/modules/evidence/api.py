@@ -328,7 +328,13 @@ from abacus.modules.evidence.withdrawals import ACTIVITIES as WITHDRAWAL_ACTIVIT
 from abacus.modules.evidence.withdrawals import SUBSCRIPTIONS as WITHDRAWAL_SUBSCRIPTIONS
 from abacus.modules.evidence.withdrawals import WORKFLOWS as WITHDRAWAL_WORKFLOWS
 from abacus.modules.evidence.withdrawals import is_version_withdrawn, withdrawn_among
-from abacus.modules.evidence.words import WORDS_VERSION, start_trust_layer_backfill, words_upload
+from abacus.modules.evidence.words import (
+    WORDS_VERSION,
+    PageWords,
+    start_trust_layer_backfill,
+    version_word_layers,
+    words_upload,
+)
 from abacus.modules.evidence.workflow_types import INBOX as UPLOAD_INBOX
 from abacus.modules.evidence.workflow_types import (
     INTAKE,
@@ -554,6 +560,7 @@ __all__ = [
     "MatchMaterial",
     "NewItem",
     "OcrRunRefused",
+    "PageWords",
     "PendingDuplicate",
     "PolicyChange",
     "PortalFile",
@@ -702,6 +709,7 @@ __all__ = [
     "version_titles",
     "version_view",
     "version_with_fingerprint",
+    "version_word_layers",
     "versions_with_same_bytes",
     "viewer_page",
     "waiting_among",

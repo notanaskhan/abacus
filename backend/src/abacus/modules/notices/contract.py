@@ -1284,7 +1284,9 @@ async def analysis_route(notice_id: UUID, ctx: Ctx) -> AnalysisOut:
         progress_label=None,
         rows=[AnalysisRowOut(**r) for r in row["rows"]],
         information_returns=[InformationReturnOut(**r) for r in row["information_returns"]],
-        transcript_rows=[],
+        transcript_rows=[
+            AnalysisRowOut(**r) for r in cast(list[JsonRow], checks.get("transcript_rows") or [])
+        ],
         checks=AnalysisChecksOut(
             difference_explained=bool(checks.get("difference_explained")),
             total_foots=bool(checks.get("total_foots", True)),
