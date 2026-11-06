@@ -17,7 +17,10 @@ from abacus.kernel.flags import forget_flags
 from abacus.modules.notices import analysis
 
 from .tb_support import Books, Json
-from .test_n04t06_notices_core import _notice, world
+from .test_n04t06_notices_core import (
+    _notice,  # pyright: ignore[reportPrivateUsage] -- the same world's helper
+    world,
+)
 
 pytestmark = pytest.mark.asyncio
 
