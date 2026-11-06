@@ -74304,6 +74304,12 @@
             "title": "Register Hash",
             "type": "string"
           },
+          "revising": {
+            "cls": "internal",
+            "default": false,
+            "title": "Revising",
+            "type": "boolean"
+          },
           "risks": {
             "cls": "confidential",
             "items": {

@@ -54,10 +54,12 @@ from abacus.modules.evidence.drops_contract import drops_router, void_router
 from abacus.modules.evidence.duplicates import PendingDuplicate, pending_duplicates
 from abacus.modules.evidence.duplicates_contract import duplicates_router
 from abacus.modules.evidence.events import (
+    EvidenceTextReady,
     EvidenceVersionCreated,
     EvidenceVersionWithdrawn,
     InboxFileAdded,
     InboxFileExtracted,
+    OcrRunRefused,
     UploadChecksRecorded,
 )
 from abacus.modules.evidence.export_activities import ACTIVITIES as EXPORT_ACTIVITIES
@@ -103,6 +105,12 @@ from abacus.modules.evidence.export_sections import (
 from abacus.modules.evidence.export_sections import (
     section_csv as export_section_csv,
 )
+from abacus.modules.evidence.extracted_read import (
+    ReadField,
+    extracted_fields_of,
+    ocr_refusal_of,
+    versions_with_same_bytes,
+)
 from abacus.modules.evidence.extraction import Extraction, extract_isolated
 from abacus.modules.evidence.extraction import Table as ExtractedTable
 from abacus.modules.evidence.files_contract import files_router
@@ -119,6 +127,7 @@ from abacus.modules.evidence.firm_export_schedule import register_firm_export_st
 from abacus.modules.evidence.firm_export_schedule_contract import (
     schedule_router as firm_export_schedule_router,
 )
+from abacus.modules.evidence.form_extraction import extract_version
 from abacus.modules.evidence.form_extraction_workflow import FormExtractionWorkflow
 from abacus.modules.evidence.gate_facts import (
     decided_among,
@@ -504,6 +513,7 @@ __all__ = [
     "EngagementExportInput",
     "EngagementExportManifest",
     "EngagementExportWorkflow",
+    "EvidenceTextReady",
     "EvidenceVersionCreated",
     "EvidenceVersionRef",
     "EvidenceVersionSummary",
@@ -543,12 +553,14 @@ __all__ = [
     "LegalHoldRelease",
     "MatchMaterial",
     "NewItem",
+    "OcrRunRefused",
     "PendingDuplicate",
     "PolicyChange",
     "PortalFile",
     "Proposal",
     "ProposalChanged",
     "Provenance",
+    "ReadField",
     "RecordClass",
     "RecordedCitation",
     "RenderHashMismatch",
@@ -605,6 +617,8 @@ __all__ = [
     "extend_record",
     "extend_retention_for",
     "extract_isolated",
+    "extract_version",
+    "extracted_fields_of",
     "file_engine_copy",
     "file_handoff_copy",
     "file_intake_object",
@@ -631,6 +645,7 @@ __all__ = [
     "masked_rows",
     "match_material",
     "normalised_text",
+    "ocr_refusal_of",
     "page_quote_reason",
     "pdf_text",
     "pending_duplicates",
@@ -687,6 +702,7 @@ __all__ = [
     "version_titles",
     "version_view",
     "version_with_fingerprint",
+    "versions_with_same_bytes",
     "viewer_page",
     "waiting_among",
     "withdrawn_among",
