@@ -35079,6 +35079,10 @@ export type RegisterOut = {
      */
     register_hash: string;
     /**
+     * Revising
+     */
+    revising?: boolean;
+    /**
      * Risks
      */
     risks: Array<RegisterRiskOut>;

@@ -37,6 +37,7 @@ from abacus.modules.agents.engagement_runs import (
 )
 from abacus.modules.agents.entry_assess import ASSESSOR, ask, check
 from abacus.modules.agents.events import FollowUpSent
+from abacus.modules.agents.events import SectionDraftFinished as SectionDraftFinished
 from abacus.modules.agents.export_screening import screening_section
 from abacus.modules.agents.fake_responses import (
     SCREEN_PROMPT,
@@ -126,7 +127,13 @@ from abacus.modules.agents.screenings import (
     start_screening,
     workflow_id,
 )
+from abacus.modules.agents.section_draft import (
+    DraftCapReached as DraftCapReached,
+)
 from abacus.modules.agents.section_draft import DraftingNotEnabled
+from abacus.modules.agents.section_draft import (
+    followed_up_running as followed_up_running,
+)
 from abacus.modules.agents.section_draft import start as start_section_draft
 from abacus.modules.agents.section_sources import (
     ModeDocument,
@@ -378,6 +385,7 @@ __all__ = [
     "ScreeningResultView",
     "ScreeningWorkflow",
     "SectionDraft",
+    "SectionDraftFinished",
     "SectionDraftInput",
     "SectionDraftWorkflow",
     "SectionSource",
