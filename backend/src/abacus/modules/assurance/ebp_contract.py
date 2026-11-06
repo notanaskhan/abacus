@@ -37,6 +37,7 @@ from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.modules.assurance import ebp_provisions
+from abacus.modules.assurance.compute.ebp.accounts import Group as AccountGroup
 from abacus.modules.assurance.ebp_imports import ImportView, Ties, import_of, import_source
 from abacus.modules.assurance.ebp_participants import DOB_MASK, participants_of
 from abacus.modules.assurance.ebp_participants import reveal as reveal_participant_field
@@ -536,6 +537,108 @@ class FiguresOut(BaseModel):
     allowed_actions: Actions
 
 
+class AccountGroupOut(BaseModel):
+    """EBP-08's statement row; `crossfoots` by code."""
+
+    model_config = ConfigDict(frozen=True)
+
+    status: Label
+    participants: Annotated[int, classified("internal")]
+    beginning: Money
+    contributions: Money
+    earnings: Money
+    distributions: Money
+    fees: Money
+    transfers: Money
+    ending: Money
+    crossfoots: Annotated[bool, classified("internal")]
+
+
+class AccountTieOut(BaseModel):
+    """A tie to another screen; `ties` is None when that side can't be read yet."""
+
+    model_config = ConfigDict(frozen=True)
+
+    key: Label
+    expected: MaybeMoney
+    actual: Money
+    ties: Annotated[bool | None, classified("internal")]
+
+
+class AccountRollforwardOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    groups: Annotated[list[AccountGroupOut], Field(max_length=20), classified("confidential")]
+    total: AccountGroupOut
+    transfers_net_zero: Annotated[bool, classified("internal")]
+    ties: Annotated[list[AccountTieOut], Field(max_length=20), classified("confidential")]
+    forfeiture_account: Money
+    inputs_hash: Annotated[str, classified("internal")]
+    engine_version: Annotated[str, classified("internal")]
+    allowed_actions: Actions
+
+
+class AccountRowOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    participant_key: Annotated[str, classified("internal")]
+    name: Annotated[str, classified("confidential")]
+    ssn_mask: Annotated[str | None, classified("confidential")]
+    beginning: Money
+    contributions: Money
+    earnings: Money
+    distributions: Money
+    fees: Money
+    transfers: Money
+    ending: Money
+
+
+class AccountRowsOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    items: Annotated[list[AccountRowOut], Field(max_length=5000), classified("confidential")]
+
+
+class SdbaRowOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    security_type: Label
+    market_value: Money
+
+
+class SdbaOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    rows: Annotated[list[SdbaRowOut], Field(max_length=100), classified("confidential")]
+    total: Money
+    per_trust: MaybeMoney
+
+
+class VestingRowOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    participant_key: Annotated[str, classified("internal")]
+    name: Annotated[str, classified("confidential")]
+    ssn_mask: Annotated[str | None, classified("confidential")]
+    termination_on: Annotated[date, classified("internal")]
+    years_of_service: Annotated[Decimal | None, classified("confidential")]
+    vested_pct: Annotated[Decimal | None, classified("confidential")]
+    agrees: Annotated[bool | None, classified("internal")]
+
+
+class VestingOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    rows: Annotated[list[VestingRowOut], Field(max_length=500), classified("confidential")]
+    forfeitures_arising: Money
+
+
+class EbpRunStartedOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    run_id: Annotated[UUID, classified("internal")]
+
+
 class ExpenseRowOut(BaseModel):
     """One expense with Sheet!Cell-citable amounts; `exception` by code (no 408(b)(2) on file)."""
 
@@ -936,6 +1039,21 @@ def _not_yet() -> NoReturn:
 
 def _example[M: BaseModel](model: type[M], body: JsonDict) -> M:
     return model.model_validate(body)
+
+
+def _account_group(group: AccountGroup) -> AccountGroupOut:
+    return AccountGroupOut(
+        status=group.status,
+        participants=group.participants,
+        beginning=group.beginning,
+        contributions=group.contributions,
+        earnings=group.earnings,
+        distributions=group.distributions,
+        fees=group.fees,
+        transfers=group.transfers,
+        ending=group.ending,
+        crossfoots=group.crossfoots,
+    )
 
 
 def _figures(title: str, rows: list[tuple[str, str, str | None]], total: str | None) -> FiguresOut:
@@ -1780,14 +1898,129 @@ async def ebp_certification_route(
     )
 
 
-@router.get("/ebp/participant-accounts/rollforward", action="ebp.read", response_model=FiguresOut)
-async def ebp_participant_accounts_route(work_item_id: UUID, ctx: Ctx) -> FiguresOut:
+@router.get(
+    "/ebp/participant-accounts/rollforward",
+    action="ebp.read",
+    response_model=AccountRollforwardOut,
+)
+async def ebp_participant_accounts_route(work_item_id: UUID, ctx: Ctx) -> AccountRollforwardOut:
+    """EBP-08 d: by status, crossfooted and footed by code, with ties to EBP-04, 05, 06, 09."""
     await _gate(ctx, work_item_id, "ebp.read", _E)
-    return _figures(
-        "Participant accounts",
-        [("active", "Active", "13640900.00"), ("terminated", "Terminated", "3171500.00")],
-        "16812400.00",
+    from abacus.modules.assurance import ebp_accounts, ebp_expenses
+
+    expenses = await ebp_expenses.plan_expenses(ctx.tenant, work_item_id)
+    view = await ebp_accounts.accounts(ctx.tenant, work_item_id, fees_paid=expenses.tie.paid)
+    roll = view.rollforward
+    return AccountRollforwardOut(
+        groups=[_account_group(g) for g in roll.groups],
+        total=_account_group(roll.total),
+        transfers_net_zero=roll.transfers_net_zero,
+        ties=[
+            AccountTieOut(key=t.key, expected=t.expected, actual=t.actual, ties=t.ties)
+            for t in view.ties
+        ],
+        forfeiture_account=view.forfeiture_account,
+        inputs_hash=roll.inputs_hash,
+        engine_version=roll.engine_version,
+        allowed_actions=[],
     )
+
+
+@router.get(
+    "/ebp/participant-accounts/groups/{group}/accounts",
+    action="ebp.read",
+    response_model=AccountRowsOut,
+)
+async def ebp_account_group_route(
+    work_item_id: UUID, group: Annotated[str, Path(max_length=20)], ctx: Ctx
+) -> AccountRowsOut:
+    """The participant drill (O2). Masked SSNs only; an unknown group answers 404."""
+    await _gate(ctx, work_item_id, "ebp.read", _E)
+    from abacus.modules.assurance import ebp_accounts
+
+    rows = await ebp_accounts.group_accounts(ctx.tenant, work_item_id, group)
+    return AccountRowsOut(
+        items=[
+            AccountRowOut(
+                participant_key=r.participant_key,
+                name=r.name,
+                ssn_mask=r.ssn_mask,
+                beginning=r.account.beginning,
+                contributions=r.account.contributions,
+                earnings=r.account.earnings,
+                distributions=r.account.distributions,
+                fees=r.account.fees,
+                transfers=r.account.transfers,
+                ending=r.account.ending,
+            )
+            for r in rows
+        ]
+    )
+
+
+@router.get("/ebp/participant-accounts/sdba", action="ebp.read", response_model=SdbaOut)
+async def ebp_sdba_route(work_item_id: UUID, ctx: Ctx) -> SdbaOut:
+    """EBP-08 b: 924,300 + 612,450 + 68,250 = 1,605,000 by code; ties to EBP-06."""
+    await _gate(ctx, work_item_id, "ebp.read", _E)
+    from abacus.modules.assurance import ebp_accounts
+
+    by_type, total, trust = await ebp_accounts.sdba(ctx.tenant, work_item_id)
+    return SdbaOut(
+        rows=[SdbaRowOut(security_type=k, market_value=v) for k, v in sorted(by_type.items())],
+        total=total,
+        per_trust=trust,
+    )
+
+
+@router.get("/ebp/participant-accounts/vesting", action="ebp.read", response_model=VestingOut)
+async def ebp_vesting_route(work_item_id: UUID, ctx: Ctx) -> VestingOut:
+    """EBP-08 c: the plan year's terminations (DF-34) and the forfeitures arising."""
+    await _gate(ctx, work_item_id, "ebp.read", _E)
+    from abacus.modules.assurance import ebp_accounts
+
+    rows, forfeitures = await ebp_accounts.vesting(
+        ctx.tenant, work_item_id, await _plan_year(ctx, work_item_id)
+    )
+    return VestingOut(
+        rows=[
+            VestingRowOut(
+                participant_key=r.participant_key,
+                name=r.name,
+                ssn_mask=r.ssn_mask,
+                termination_on=r.termination_on,
+                years_of_service=r.years_of_service,
+                vested_pct=r.vested_pct,
+                agrees=r.agrees,
+            )
+            for r in rows
+        ],
+        forfeitures_arising=forfeitures,
+    )
+
+
+@router.post(
+    "/ebp/participant-accounts/run",
+    action="agent_run.start",
+    response_model=EbpRunStartedOut,
+    status_code=202,
+    errors=(409, 501),
+)
+async def ebp_participant_accounts_run_route(
+    work_item_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> EbpRunStartedOut:
+    """Begin…: the drafter's `ebp_reconcile` mode on this workpaper. A person's start; the agent
+    drafts suggestions only, and sign-off stays L3 and L4 (SHL-12)."""
+    await _gate(ctx, work_item_id, "agent_run.start", _E)
+    from abacus.modules.agents.api import start_section_draft
+    from abacus.modules.assurance import ebp_reconcile
+    from abacus.modules.workpapers.api import paper_of_kind
+
+    engagement_id = (await assurance_item(ctx.tenant, work_item_id)).engagement_id
+    paper = await paper_of_kind(ctx, engagement_id, "ebp_participant_accounts")
+    run_id = await start_section_draft(
+        ctx, engagement_id, paper, ebp_reconcile.MODE, None, idempotency_key
+    )
+    return EbpRunStartedOut(run_id=run_id)
 
 
 async def _plan_year(ctx: AuthContext, work_item_id: UUID) -> int:
