@@ -2,6 +2,9 @@
 // (seed/bnd03.ts), Kevin Osei at Mon Sep 14, 2026, 9:24 AM CT:
 //
 //   a            Payments & refunds selected: Q5 expanded with its follow-ups; the preview dock
+//   b            a + Q5 open to edit (T-03-T10): the Required toggle drives the preview marker
+//   c            a + a new card with the type picker (T-03-T10)
+//   d            template Draft v7: its banner and no answers (T-03-T10)
 //   e            Health coverage selected: "No questions in this section."
 //   off          `questionnaires.editor` off: C-20
 //
@@ -48,6 +51,9 @@ function frame(state: string, options: { variant?: Bnd03Variant; on?: boolean } 
 
 export const scenarios = defineScenarios({
   a: frame("a"),
+  b: frame("b"),
+  c: frame("c"),
+  d: frame("d", { variant: "d" }),
   e: frame("e", { variant: "e" }),
   off: frame("off", { on: false }),
 });
@@ -57,6 +63,9 @@ export const STATES = Object.keys(scenarios) as Bnd03State[];
 /** The section each artboard opens on. */
 export const SECTION_OF: Record<Bnd03State, string> = {
   a: "payments",
+  b: "payments",
+  c: "payments",
+  d: "payments",
   e: "health",
   off: "payments",
 };
