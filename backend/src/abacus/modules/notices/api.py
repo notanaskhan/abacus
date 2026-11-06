@@ -53,3 +53,12 @@ register_gate_kind("notice_response_send", _response.send_ready)
 from abacus.modules.notices.intake_sources import register as _register_sources  # noqa: E402
 
 _register_sources()  # N-04-T13 (DEC-2245): the answer effect and the two triage destinations
+
+# N-04-T16 (DEC-2311): the response's C11 kind, C7 source, workflow and consumer.
+from abacus.modules.notices import sending as _sending  # noqa: E402
+from abacus.modules.notices.response_activities import ACTIVITIES as ACTIVITIES  # noqa: E402
+from abacus.modules.notices.response_workflow import NoticeResponseWorkflow  # noqa: E402
+
+_sending.register()
+SUBSCRIPTIONS = _sending.SUBSCRIPTIONS
+WORKFLOWS: dict[type, str] = {NoticeResponseWorkflow: "time_sensitive"}
