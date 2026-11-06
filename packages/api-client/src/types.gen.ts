@@ -8739,6 +8739,22 @@ export type ConflictResultOut = {
 };
 
 /**
+ * ConflictSourceOut
+ *
+ * EBP-02 c: the document that disagrees (A-05-T17; DEC-2423): the viewer opens on it.
+ */
+export type ConflictSourceOut = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Note
+     */
+    note: string;
+};
+
+/**
  * ConnectionActivityOut
  *
  * One line of the connection's activity in the ADM-07 grammar (A-02-T16; INV-5):
@@ -31053,6 +31069,22 @@ export type PlanOut = {
 };
 
 /**
+ * PlanReviewDiffOut
+ *
+ * EBP-02 b2's ribbon: what the current version adds to this earlier one, from code.
+ */
+export type PlanReviewDiffOut = {
+    /**
+     * Added Labels
+     */
+    added_labels: Array<string>;
+    /**
+     * Current Version No
+     */
+    current_version_no: number;
+};
+
+/**
  * PlanReviewIn
  */
 export type PlanReviewIn = {
@@ -31088,6 +31120,7 @@ export type PlanReviewOut = {
      * Verified
      */
     verified: number;
+    version_diff?: PlanReviewDiffOut | null;
     /**
      * Version No
      */
@@ -34060,6 +34093,7 @@ export type ProvisionOut = {
      * Conflict
      */
     conflict: string | null;
+    conflict_source?: ConflictSourceOut | null;
     /**
      * Key
      */

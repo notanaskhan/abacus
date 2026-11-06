@@ -17,8 +17,11 @@ export const COPY = {
   signOffReason: "Verify every provision before signing off",
   reviewed: (initials: string, on: string): string => `Reviewed · ${initials} ${on}`,
   raise: "Raise exception…",
-  snapshot: "Read-only: the provisions read before the 2024 amendment",
+  readOnly: "Read-only",
   diff: (n: number): string => `+${String(n)} rows`,
+  adds: (version: number, labels: readonly string[]): string =>
+    `Version ${String(version)} adds ${labels.join(" and ")} from the 2024 amendment.`,
+  openVersion: (n: number): string => `Open Version ${String(n)}`,
   empty: "No plan review yet",
   emptyBody: "Begin a plan review from the plan documents to read its provisions.",
 } as const;

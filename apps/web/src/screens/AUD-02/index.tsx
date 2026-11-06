@@ -107,6 +107,8 @@ export interface AUD02Props {
   planEditing?: boolean;
   /** EBP-02 b2 (A-05-T17): the Plan Review canvas opens on an earlier review (`?version=`). */
   planReviewVersion?: number;
+  /** EBP-02's `?version=`: null is the current version. */
+  onPlanReviewVersion?: (version: number | null) => void;
   /** AUD-09 (A-04-T32): the Internal Control row's sheet, cell and links. */
   controls?: ControlsOptions;
   /** AUD-10 (A-04-T37): Service Organizations & SOC 1. */
@@ -218,6 +220,7 @@ function Cockpit({
   sampleSelection,
   planEditing,
   planReviewVersion,
+  onPlanReviewVersion,
   controls,
   serviceOrgs,
   investments,
@@ -266,15 +269,23 @@ function Cockpit({
   });
   // EBP-02 (A-05-T17): Fieldwork › Plan Review, behind `ebp.modules` (C-20 when off).
   const reviewOpen = selected === PLAN_REVIEW;
+  const openOverlay = useOpenOverlay();
   const planReview = useProvisionsCanvas(cockpit.work_item_id, {
     active: reviewOpen,
     ...(planReviewVersion === undefined ? {} : { version: planReviewVersion }),
+    ...(onPlanReviewVersion === undefined ? {} : { onOpenVersion: onPlanReviewVersion }),
+    onDock: (versionId) => onDock?.("viewer", versionId),
+    onSignOff: (workpaperId) => {
+      openOverlay(ov.SHL12("workpaper", workpaperId));
+    },
+    onRaise: () => {
+      openOverlay(ov.SHL15("new"));
+    },
   });
   // EBP-03 (A-05-T23): Testing › Eligibility Testing, behind `ebp.modules`; a row opens its HR
   // record in the viewer dock, and Adopt / Sign off open SHL-12 on the attribute test.
   const eligibilityOpen = selected === ELIGIBILITY;
   const pbcBinderId = docs.data?.groups?.[0]?.rows?.[0]?.binder_id;
-  const openOverlay = useOpenOverlay();
   const eligibility = useEligibilityCanvas(cockpit.work_item_id, {
     active: eligibilityOpen,
     onDock: (versionId) => onDock?.("viewer", versionId),
@@ -551,6 +562,7 @@ export function AuditCockpitPage({
   const [section, setSection] = useState(initial.section);
   const [dock, setDock] = useState<DockTab>(initial.dock ?? "agent");
   const [doc, setDoc] = useState<string | null>(initial.doc ?? null);
+  const [reviewVersion, setReviewVersion] = useState(initial.planReviewVersion);
   return (
     <AUD02
       auditId={auditId}
@@ -570,9 +582,10 @@ export function AuditCockpitPage({
         ? {}
         : { sampleSelection: initial.sampleSelection })}
       {...(initial.planEditing === undefined ? {} : { planEditing: initial.planEditing })}
-      {...(initial.planReviewVersion === undefined
-        ? {}
-        : { planReviewVersion: initial.planReviewVersion })}
+      {...(reviewVersion === undefined ? {} : { planReviewVersion: reviewVersion })}
+      onPlanReviewVersion={(version) => {
+        setReviewVersion(version ?? undefined);
+      }}
       {...(initial.controls === undefined ? {} : { controls: initial.controls })}
       {...(initial.serviceOrgs === undefined ? {} : { serviceOrgs: initial.serviceOrgs })}
       {...(initial.investments === undefined ? {} : { investments: initial.investments })}
