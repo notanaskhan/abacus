@@ -93,6 +93,13 @@ def band_of(kind: str) -> str:
 # subscriptions are fixed at import, before every owner has registered.
 C13_EVENTS: Final = frozenset(
     {
+        # A-07-T15: completion, letters, the report, release and the archive (in_app firms).
+        "eqr.concurred",
+        "rep_letter.approved",
+        "governance_communication.sent",
+        "report.released",
+        "archive.locked",
+        "archive_addition.decided",
         "proposal.recorded",  # agents: a screening, upload review, match or guidance draft
         "guidance_draft.decided",  # agents: a person approved or discarded a draft
         "review_decision.recorded",  # evidence: a decision on a version, or its undo
