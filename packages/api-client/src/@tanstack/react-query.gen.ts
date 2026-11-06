@@ -821,7 +821,8 @@ export const ebpContributionsQueryKey = (options: Options<EbpContributionsData>)
 /**
  * Ebp Contributions Route
  *
- * Contributions receivable at year end by code from the payroll register (A-05-T30).
+ * EBP-04 a's waterfall by code, register to statements (A-05-T30, T31; DEC-2361). Keys are the
+ * screen's; the tally's `tie.*` rows appear only when the tie holds. W-3's waits on its figure.
  */
 export const ebpContributionsOptions = (options: Options<EbpContributionsData>) => queryOptions<EbpContributionsResponse, EbpContributionsError, EbpContributionsResponse, ReturnType<typeof ebpContributionsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

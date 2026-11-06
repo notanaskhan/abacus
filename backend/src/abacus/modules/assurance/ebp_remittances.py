@@ -19,7 +19,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Final
+from typing import Any, Final, cast
 from uuid import UUID
 
 from sqlalchemy import FetchedValue, insert, select, text
@@ -304,6 +304,8 @@ class Reconciliation:
     reconciled: Decimal = Decimal(0)
     per_statements: Decimal | None = None
     ties: bool | None = None
+    # The trustee's own receipts against the register's. No receipts imported: no tie.
+    trust_ties: bool | None = None
 
 
 async def reconciliation(
@@ -336,9 +338,10 @@ async def reconciliation(
                 )
             ).scalars()
         )
-        receipts = (
-            await session.execute(_LATEST_RECEIPTS, {"w": work_item_id})
-        ).scalar_one_or_none()
+        receipts = cast(
+            dict[str, object] | None,
+            (await session.execute(_LATEST_RECEIPTS, {"w": work_item_id})).scalar_one_or_none(),
+        )
     regular = late = deferrals = match = Decimal(0)
     for p in rows:
         amount = p.deferrals_pretax + p.deferrals_roth + p.match
@@ -352,6 +355,8 @@ async def reconciliation(
             regular += amount
     total = regular + late
     rollovers = Decimal(str((receipts or {}).get("rollover") or 0))
+    # The import's total holds rollovers beside payroll-sourced receipts.
+    receipts_due = deferrals + match - total + rollovers
     steps = remittance.waterfall(
         deferrals=deferrals,
         match=match,
@@ -371,6 +376,7 @@ async def reconciliation(
         steps.total,
         per_statements,
         None if per_statements is None else steps.foots,
+        None if not receipts else Decimal(str(receipts.get("amount") or 0)) == receipts_due,
     )
 
 
