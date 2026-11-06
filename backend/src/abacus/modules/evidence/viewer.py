@@ -37,7 +37,7 @@ from uuid import UUID
 
 from sqlalchemy import select
 
-from abacus.kernel._flags import EVIDENCE_PII_REVEAL, EVIDENCE_VIEWER_UNLOCK
+from abacus.kernel._flags import EVIDENCE_OCR, EVIDENCE_PII_REVEAL, EVIDENCE_VIEWER_UNLOCK
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.flags import flag_enabled
@@ -45,6 +45,7 @@ from abacus.modules.engagements.api import get_ref
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.access import record_content_read
 from abacus.modules.evidence.citations.matching import Box, line_rects, normalised, quote_spans
+from abacus.modules.evidence.extracted_read import ocr_refusal_of
 from abacus.modules.evidence.extraction import ACTIVE_CONTENT
 from abacus.modules.evidence.masked_previews import PreviewOutdated
 from abacus.modules.evidence.masked_text import masked_pages
@@ -82,6 +83,7 @@ from abacus.modules.identity.api import (
 READ: Final = "evidence.read"
 REVEAL: Final = "pii.reveal"
 UNLOCK: Final = "evidence.unlock"
+OCR_RETRY: Final = "evidence.ocr_retry"
 MAX_HITS: Final = 200
 # Search costs (security review #4): every searched page is a sealed object decrypted per call.
 MIN_QUERY: Final = 3  # characters, after normalising
@@ -102,6 +104,13 @@ class ActiveContent(DomainConflict):
 
 
 @dataclass(frozen=True)
+class ViewerPageOcr:
+    mean_confidence: float | None = None
+    low_confidence_words: int = 0
+    refused_reason: str | None = None
+
+
+@dataclass(frozen=True)
 class ViewerPage:
     n: int
     width_pt: float
@@ -111,6 +120,9 @@ class ViewerPage:
     image_h: int
     text_layer: bool
     pii_scan: str  # done | not_scannable
+    # P-11-T31: where the page's words came from, and OCR's facts or the gate's refusal.
+    text_source: str | None = None
+    ocr: ViewerPageOcr | None = None
 
 
 @dataclass(frozen=True)
@@ -216,18 +228,42 @@ def _status(
     return "ready", None
 
 
+def _text_source(page: EvidencePage) -> str:
+    """Pages written before 0666 have no `text_source`: their layer flag says which it was."""
+    return page.text_source or ("text_layer" if page.has_text_layer else "none")
+
+
+def _page_ocr(page: EvidencePage, refusal: str | None) -> ViewerPageOcr | None:
+    """OCR's facts for a page it read; a refusal shows only on a page left without words."""
+    if page.text_source == "ocr":
+        mean = None if page.mean_confidence is None else float(page.mean_confidence)
+        return ViewerPageOcr(mean, page.low_conf_words or 0)
+    if refusal is not None and not page.has_text_layer:
+        return ViewerPageOcr(refused_reason=refusal)
+    return None
+
+
 async def _offered(
-    ctx: AuthContext, version: EvidenceVersion, *, masked: bool, locked: bool
+    ctx: AuthContext,
+    version: EvidenceVersion,
+    *,
+    masked: bool,
+    locked: bool,
+    refused: bool = False,
 ) -> list[str]:
     """`pii.reveal` when the version has a masked value, the reveal flag is on and every layer
     but fresh MFA allows it (P-03-T16; AC-28: an offshore member, a client principal or a role
     without it gets no chip); MFA is stepped up when the person acts. `evidence.unlock` when the
-    version is password-protected, the unlock flag is on and the person holds it (P-03-T19)."""
+    version is password-protected, the unlock flag is on and the person holds it (P-03-T19).
+    `evidence.ocr_retry` when the OCR gate refused the version and the firm's OCR flag is on
+    (P-11-T31)."""
     wanted: list[str] = []
     if masked and await flag_enabled(ctx.tenant, EVIDENCE_PII_REVEAL):
         wanted.append(REVEAL)
     if locked and not ctx.client and await flag_enabled(ctx.tenant, EVIDENCE_VIEWER_UNLOCK):
         wanted.append(UNLOCK)
+    if refused and not ctx.client and await flag_enabled(ctx.tenant, EVIDENCE_OCR):
+        wanted.append(OCR_RETRY)
     if not wanted:
         return []
     engagement = await get_ref(ctx, version.engagement_id)
@@ -296,6 +332,7 @@ async def viewer_manifest(ctx: AuthContext, version_id: UUID) -> ViewerManifest:
         masked=masked is not None,
         media_type=version.media_type,
     )
+    refusal = await ocr_refusal_of(ctx.tenant, version.id)
     pages: list[ViewerPage] = []
     for page in layer:
         width, height = float(page.width_pt), float(page.height_pt)
@@ -310,6 +347,8 @@ async def viewer_manifest(ctx: AuthContext, version_id: UUID) -> ViewerManifest:
                 image_h=image.height if image else round(height * PAGE_WIDTH / width),
                 text_layer=page.has_text_layer,
                 pii_scan=projection.scan_state(page.page_no),
+                text_source=_text_source(page),
+                ocr=_page_ocr(page, refusal),
             )
         )
     if not layer and source.kind == "image":
@@ -325,6 +364,8 @@ async def viewer_manifest(ctx: AuthContext, version_id: UUID) -> ViewerManifest:
                     image.height,
                     False,
                     projection.scan_state(1),
+                    "none",
+                    None if refusal is None else ViewerPageOcr(refused_reason=refusal),
                 )
             )
     masks = [
@@ -344,7 +385,11 @@ async def viewer_manifest(ctx: AuthContext, version_id: UUID) -> ViewerManifest:
         pii_masks=masks,
         derivation_id=derived,
         allowed_actions=await _offered(
-            ctx, version, masked=bool(masks), locked=status == "password_protected"
+            ctx,
+            version,
+            masked=bool(masks),
+            locked=status == "password_protected",
+            refused=refusal is not None,
         ),
         view="images" if await may_read_unmasked(ctx) else "text",
     )
