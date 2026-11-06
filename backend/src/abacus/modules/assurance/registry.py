@@ -40,6 +40,12 @@ CONTROL_TABLES: frozenset[str] = frozenset(
 EBP_CONTRIBUTION_TABLES: frozenset[str] = frozenset(
     {"ebp_payrolls", "ebp_late_remittances", "ebp_late_remittance_events"}
 )
+# A-05-T48 (0685): AUD-27's estimates, related parties and parties in interest; search runs
+# insert-only.
+EBP_ESTIMATES_RP_TABLES: frozenset[str] = frozenset(
+    {"accounting_estimates", "estimate_components", "related_parties"}
+    | {"related_party_search_runs", "parties_in_interest"}
+)
 # A-07-T07 (0664, DEC-2232): EQR and completion; subsequent events insert-only.
 A07_COMPLETION_TABLES: frozenset[str] = frozenset(
     {"eqr_reviews", "eqr_checklist_items", "eqr_digest_cards", "completion_items"}
@@ -99,6 +105,7 @@ INSERT_ONLY: frozenset[str] = (
     | {"sum_snapshots"}
     | {"walkthroughs"}  # A-04-T25 (0657)
     | {"ebp_payrolls", "ebp_late_remittance_events"}  # A-05-T26 (0658)
+    | {"related_party_search_runs"}  # A-05-T48 (0685)
     | {"subsequent_events"}  # A-07-T07 (0664)
     | {"ebp_certification_evaluations", "ebp_schedule_h_mappings"}  # A-05-T35 (0665)
     | A07_LETTER_INSERT_ONLY  # A-07-T08 (0668)
@@ -1077,4 +1084,42 @@ INSERT_COLUMNS.update(
 UPDATE_COLUMNS["archives"] = frozenset(
     {"status", "locked_at", "locked_by", "lock_decision_id", "manifest_id", "seal_sha256"}
     | {"records_object_key", "records_version_id", "gate_snapshot_sha256", "retention_until"}
+)
+
+# A-05-T48 (0685): AUD-27. A screen-out and a conclusion are a person's (the services, A-05 §4.3).
+_AUD27_SCOPE = frozenset({"tenant_id", "engagement_id", "work_item_id", "id"})
+INSERT_COLUMNS.update(
+    {
+        "accounting_estimates": _AUD27_SCOPE
+        | {"account_ref", "name", "balance", "significant_risk", "method", "rollforward"}
+        | {"retrospective", "range_low", "range_high", "bias", "disclosure_ref", "je_ref"}
+        | {"created_by_kind"},
+        "estimate_components": _AUD27_SCOPE | {"estimate_id", "label", "amount", "position"},
+        "related_parties": _AUD27_SCOPE
+        | {"name_sealed", "display_ref", "source", "relationship", "inquiry_ref"}
+        | {"created_by_kind"},
+        "related_party_search_runs": _AUD27_SCOPE
+        | {"run_id", "inputs", "candidates", "vendors_searched", "customers_searched"},
+        "parties_in_interest": _AUD27_SCOPE
+        | {"name", "erisa_relationship", "transactions", "exemption", "reporting"}
+        | {"created_by_kind"},
+    }
+)
+UPDATE_COLUMNS.update(
+    {
+        "accounting_estimates": frozenset(
+            {"account_ref", "balance", "significant_risk", "method", "rollforward"}
+            | {"retrospective", "range_low", "range_high", "bias", "disclosure_ref", "je_ref"}
+            | {"status", "decision_card_id", "finding_id", "version", "updated_at"}
+        ),
+        "estimate_components": frozenset({"label", "amount", "position"}),
+        "related_parties": frozenset(
+            {"status", "screened_out_reason", "screened_out_by", "screened_out_at", "finding_id"}
+            | {"inquiry_ref", "version", "updated_at"}
+        ),
+        "parties_in_interest": frozenset(
+            {"erisa_relationship", "transactions", "exemption", "reporting", "version"}
+            | {"updated_at"}
+        ),
+    }
 )
