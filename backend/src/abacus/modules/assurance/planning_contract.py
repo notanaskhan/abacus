@@ -445,7 +445,7 @@ class RiskVersionOut(BaseModel):
 
 
 class SuggestedResponseOut(BaseModel):
-    """A drafted response waiting for a person (AUD-08 f; DEC-2385): nothing is linked yet."""
+    """A drafted response waiting for a person (AUD-08 f; DEC-2480): nothing is linked yet."""
 
     model_config = ConfigDict(frozen=True)
 

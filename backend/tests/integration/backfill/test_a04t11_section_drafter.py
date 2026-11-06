@@ -223,7 +223,7 @@ async def test_ac_a_draft_writes_cited_suggestions_only_and_flags_the_unsupporte
 async def test_ac4_6_a_cell_with_a_closed_list_keeps_nothing_else(
     world: tuple[Books, uuid.UUID], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """A-04-T24 (DEC-2385): text outside the target's choices is dropped at the run, so it is never
+    """A-04-T24 (DEC-2480): text outside the target's choices is dropped at the run, so it is never
     stored, even with a verified citation."""
     books_, version = world
     paper = await _paper(

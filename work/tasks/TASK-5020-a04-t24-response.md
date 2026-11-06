@@ -46,7 +46,8 @@ citations."
 | The drawer | `AUD-08.test.tsx` f |
 
 ## Decisions made during this task
-DEC-2385.
+DEC-2480.
 
 ## Progress log
 - 2026-11-06: built. Security self-review findings fixed: `response_targets` is an identifier fact and supports no number, a response cell holds one of a closed list or is dropped as `not_a_choice`, and reading a pending response needs `proposal.read`. The first gate's two integration failures and the validate_docs failure are fixed too. Not yet run since those fixes: the owner held this session's tests so other sessions get the CPU. Run the targeted tests and check-fast before the PR.
+- 2026-11-07: Merged main, which took this row's first number while it was held; other sessions then held the next ones, so it moves to a block clear of them. End test pass on the merged branch: targeted backend tests 853 passed, AUD-08 web tests 11 passed, tsc, eslint and check-fast. Fixed on the way: a test input the schema refuses (now whitespace), lint, and a test's type.
