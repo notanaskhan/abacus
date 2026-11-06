@@ -73,6 +73,22 @@ async def _team_but_joiner(tenant_id: UUID, payload: dict[str, object]) -> list[
     return sorted({user for user, _ in await team_of(tenant_id, engagement_id) if user != joiner})
 
 
+async def _notice_intake_owner(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    del tenant_id
+    owner = _uuid(payload, "owner_id")
+    return [] if owner is None else [owner]
+
+
+async def _notice_assignee_and_notified(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """N-04-T07: the assignee, and whoever the person chose to notify at Create notice."""
+    del tenant_id
+    people = set(_uuids(payload, "notify_user_ids"))
+    assignee = _uuid(payload, "assignee_id")
+    if assignee is not None:
+        people.add(assignee)
+    return sorted(people)
+
+
 async def _added_member(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     added = _uuid(payload, "user_id")
     return [added] if added is not None else []
@@ -363,6 +379,13 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "envelope.signer_verification_failed": Kind(
         "envelope_signer_verification_failed", _envelope_sender, "envelope", "envelope_id"
     ),
+    # N-04-T07 (DEC-2326): an intake read or opened for entry, and a new notice. No amounts.
+    "notice_intake.ready": Kind(
+        "notice_intake_ready", _notice_intake_owner, "notice_intake", "intake_id", None
+    ),
+    "notice.created": Kind(
+        "notice_created", _notice_assignee_and_notified, "notice", "work_item_id", None
+    ),
     # Q-02-T33: the incident register (the platform module's events; firm-level).
     "incident.recorded": Kind(
         "incident_recorded", _incident_recorded, "security_incident", "incident_id", None
@@ -555,6 +578,8 @@ TEMPLATES: Final[dict[str, str]] = {
     "envelope.signer_verification_failed": (
         "A signer on {subject} failed identity checks and needs a handwritten signature."
     ),
+    "notice_intake.ready": "A notice you added is ready for you to review.",
+    "notice.created": "A notice was created and assigned. Open it to see what's due.",
     "incident.recorded": "A security incident was recorded: {subject}.",
     "incident.propagated": "Accrued reported a security incident affecting your firm: {subject}.",
     "wall.created": "An ethical wall is waiting for your approval.",
