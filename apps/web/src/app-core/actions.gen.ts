@@ -95,6 +95,7 @@ export const ACTIONS = [
   "consent.request",
   "consent_template.manage",
   "consent_template.publish",
+  "consultation.conclude",
   "consultation.create",
   "consultation.read",
   "contact.manage",

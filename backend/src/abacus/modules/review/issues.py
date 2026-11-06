@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import json
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Annotated, ClassVar, Final, cast
@@ -191,47 +191,122 @@ async def create_issue(
         if isinstance(existing, UUID):
             return existing  # an engine diagnostic seen before is the same issue (no write)
     async with uow(ctx.tenant) as tx:
-        await tx.session.execute(
-            text(
-                "INSERT INTO issues (id, tenant_id, engagement_id, work_item_id, record_ref, "
-                "kind, priority, title_sealed, assignee_user_id, assignee_agent, "
-                "client_contact_id, client_wording_sealed, internal_note_sealed, blocks, "
-                "source_ref) VALUES (:id, :t, :e, :w, CAST(:ref AS jsonb), :k, :p, :title, :a, "
-                ":agent, :contact, :wording, :note, CAST(:blocks AS text[]), :src)"
-            ),
-            {
-                "id": issue_id,
-                "t": ctx.tenant_id,
-                "e": engagement_id,
-                "w": work_item_id,
-                "ref": json.dumps({"type": record_type, "id": str(record_id)}),
-                "k": kind,
-                "p": priority,
-                "title": sealed["title_sealed"],
-                "a": assignee_user_id,
-                "agent": assignee_agent,
-                "contact": client_contact_id,
-                "wording": sealed["client_wording_sealed"],
-                "note": sealed["internal_note_sealed"],
-                "blocks": sorted(set(blocks)),
-                "src": source_ref,
-            },
+        await _write_issue(
+            tx,
+            ctx,
+            issue_id=issue_id,
+            engagement_id=engagement_id,
+            record_type=record_type,
+            record_id=record_id,
+            kind=kind,
+            priority=priority,
+            sealed=sealed,
+            client_contact_id=client_contact_id,
+            assignee_user_id=assignee_user_id,
+            assignee_agent=assignee_agent,
+            blocks=blocks,
+            source_ref=source_ref,
+            work_item_id=work_item_id,
         )
-        await tx.session.execute(
-            text(
-                "INSERT INTO issue_events (tenant_id, issue_id, event) VALUES (:t, :i, 'created')"
-            ),
-            {"t": ctx.tenant_id, "i": issue_id},
-        )
-        tx.record(
-            "issue.created",
-            target=Target(SUBJECT, issue_id),
-            after=Ref(record=record_id),  # kind and priority live on the row (Ref: ids only)
-            scope=Scope(engagement_id=engagement_id),
-        )
-        if assignee_user_id is not None:
-            await _assigned(tx, ctx, issue_id, engagement_id, assignee_user_id)
     return issue_id
+
+
+async def create_issue_in(
+    tx: UnitOfWork,
+    ctx: AuthContext,
+    *,
+    record_type: str,
+    record_id: UUID,
+    kind: str,
+    priority: str,
+    title: str,
+    work_item_id: UUID,
+) -> UUID:
+    """A-06-T11 (DEC-2421): an issue written in the caller's unit of work, so the record it roots
+    (a finding) and the issue commit or fail as one. Authorised as `create_issue` is."""
+    engagement_id, resource, _ = await _record(ctx, record_type, record_id)
+    await authorise(ctx, "issue.create", resource)
+    issue_id = uuid4()
+    await _write_issue(
+        tx,
+        ctx,
+        issue_id=issue_id,
+        engagement_id=engagement_id,
+        record_type=record_type,
+        record_id=record_id,
+        kind=kind,
+        priority=priority,
+        sealed={
+            "title_sealed": await seal_text(ctx.tenant, title, SUBJECT, issue_id, "title"),
+            "internal_note_sealed": None,
+            "client_wording_sealed": None,
+        },
+        client_contact_id=None,
+        assignee_user_id=None,
+        assignee_agent=False,
+        blocks=(),
+        source_ref=None,
+        work_item_id=work_item_id,
+    )
+    return issue_id
+
+
+async def _write_issue(
+    tx: UnitOfWork,
+    ctx: AuthContext,
+    *,
+    issue_id: UUID,
+    engagement_id: UUID,
+    record_type: str,
+    record_id: UUID,
+    kind: str,
+    priority: str,
+    sealed: Mapping[str, bytes | None],
+    client_contact_id: UUID | None,
+    assignee_user_id: UUID | None,
+    assignee_agent: bool,
+    blocks: Sequence[str],
+    source_ref: str | None,
+    work_item_id: UUID | None,
+) -> None:
+    await tx.session.execute(
+        text(
+            "INSERT INTO issues (id, tenant_id, engagement_id, work_item_id, record_ref, "
+            "kind, priority, title_sealed, assignee_user_id, assignee_agent, "
+            "client_contact_id, client_wording_sealed, internal_note_sealed, blocks, "
+            "source_ref) VALUES (:id, :t, :e, :w, CAST(:ref AS jsonb), :k, :p, :title, :a, "
+            ":agent, :contact, :wording, :note, CAST(:blocks AS text[]), :src)"
+        ),
+        {
+            "id": issue_id,
+            "t": ctx.tenant_id,
+            "e": engagement_id,
+            "w": work_item_id,
+            "ref": json.dumps({"type": record_type, "id": str(record_id)}),
+            "k": kind,
+            "p": priority,
+            "title": sealed["title_sealed"],
+            "a": assignee_user_id,
+            "agent": assignee_agent,
+            "contact": client_contact_id,
+            "wording": sealed["client_wording_sealed"],
+            "note": sealed["internal_note_sealed"],
+            "blocks": sorted(set(blocks)),
+            "src": source_ref,
+        },
+    )
+    await tx.session.execute(
+        text("INSERT INTO issue_events (tenant_id, issue_id, event) VALUES (:t, :i, 'created')"),
+        {"t": ctx.tenant_id, "i": issue_id},
+    )
+    tx.record(
+        "issue.created",
+        target=Target(SUBJECT, issue_id),
+        after=Ref(record=record_id),  # kind and priority live on the row (Ref: ids only)
+        scope=Scope(engagement_id=engagement_id),
+    )
+    if assignee_user_id is not None:
+        await _assigned(tx, ctx, issue_id, engagement_id, assignee_user_id)
 
 
 async def _assigned(

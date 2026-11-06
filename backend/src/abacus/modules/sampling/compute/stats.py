@@ -98,6 +98,23 @@ def projected_misstatement(
         return quantize_half_up(_dec(misstatement) * population_count / sample_count, 2)
 
 
+def misstatement_per_item(misstatement: Number, sample_count: int) -> Decimal:
+    """The mean misstatement per sampled item: 2,140 in 25 is 85.60."""
+    if sample_count <= 0:
+        raise ValueError("the sample must not be empty")
+    with localcontext(CONTEXT):
+        return quantize_half_up(_dec(misstatement) / sample_count, 2)
+
+
+def projection_carried(projected: Decimal) -> Decimal:
+    """The figure a projected misstatement carries: to the nearest hundred, half away from zero
+    (35,267.20 carries 35,300; DEC-2421). Under 50 keeps its exact figure, because a misstatement
+    is never zero."""
+    with localcontext(CONTEXT):
+        hundreds = quantize_half_up(projected / 100, 0)
+        return quantize_half_up(hundreds * 100, 2) if hundreds else projected
+
+
 def projected_misstatement_ratio(
     misstatement: Number, sample_amount: Number, population_amount: Number
 ) -> Decimal:

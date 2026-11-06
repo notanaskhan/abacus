@@ -70,6 +70,7 @@ from abacus.modules.review.issue_resolutions import move as move_issue
 from abacus.modules.review.issue_resolutions import register_client_request_sender
 from abacus.modules.review.issues import (
     create_issue,
+    create_issue_in,
     issue_row,
     record_engine_issue,  # T-01-T26: engine diagnostics
     record_rule_issue,
@@ -261,6 +262,7 @@ __all__ = [
     "checkpoint_deltas",
     "content_hash",
     "create_issue",  # P-04-T36: the scenario loader acts as the person named (as sign_target)
+    "create_issue_in",  # A-06-T11: the finding and its issue in one unit of work
     "current_checkpoint",
     "current_values",
     "decide_card",

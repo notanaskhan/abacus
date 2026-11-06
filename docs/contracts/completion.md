@@ -29,6 +29,9 @@
 | Resolve | `POST /v1/findings/{id}/resolve` | `finding.resolve` |
 | Request the partner's decision | `POST /v1/findings/{id}/request-decision` | `finding.request_decision` |
 | Misstatements | `GET /v1/work-items/{wi}/misstatements?view=` | `misstatement.read` |
+| Consultations | `GET /v1/work-items/{wi}/consultations` | `consultation.read` |
+| Raise a consultation | `POST /v1/work-items/{wi}/consultations` | `consultation.create` |
+| Conclude a consultation | `POST /v1/consultations/{id}/conclude` | `consultation.conclude` (the person consulted) |
 | Pass on SUM | `POST /v1/misstatements/{id}/pass-to-sum` | `misstatement.pass_to_sum` |
 | SUM | `GET /v1/work-items/{wi}/sum` | `sum.read` |
 | A qualitative factor | `PUT /v1/work-items/{wi}/sum/qualitative-factors/{factor}` | `sum.update_factors` |

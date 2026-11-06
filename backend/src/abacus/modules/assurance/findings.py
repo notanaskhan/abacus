@@ -3,24 +3,25 @@
 A finding is rooted on a P-04 issue (DEC-83: the issue holds lifecycle, assignee and events) and
 carries the audit's facts in 0644's `audit_findings`:
 
-- **Record** (`record_finding`): the issue on the workpaper it came from, then the finding with its
-  next `F-nn`. A finding the agent raises lands under evaluation with its `why_surfaced` sealed as
-  the agent's suggestion and must carry verified citations (422 `uncited_finding` otherwise,
-  INV-2); a person's finding needs none.
+- **Record** (`record_finding`): the issue on the workpaper it came from and the finding with its
+  next `F-nn`, in one unit of work. A finding the agent raises lands under evaluation with its
+  `why_surfaced` sealed as the agent's suggestion and must carry verified citations (422
+  `uncited_finding` otherwise, INV-2); a person's finding needs none.
 - **List** (`findings_of`): rows with the severity bands' counts (material weakness, significant
   deficiency, deficiency, not a deficiency) and the badge of findings awaiting the partner.
 - **Detail** with the code-computed evaluation (the row's `evaluation`, written by code only).
 - **Resolve / not applicable**: through the issue (`review.api.move_issue`); the matrix denies the
   agent both (`finding.resolve`, `finding.mark_not_applicable`).
 - **Convert** to a deficiency (Proposed, severity for the partner's card) or a misstatement
-  (factual or judgmental with its amount; a projected one takes its figure from sampling, which
-  answers 422 `projection_unavailable` until A-03's projection facts are exposed).
+  (factual or judgmental with its amount; a projected one takes the sample error and an approved
+  sample set, and its figure is sampling's, 422 `projection_unavailable` otherwise).
 
 Severity and the SUM conclusion stay the engagement partner's C3 cards (INV-1).
 """
 
 from __future__ import annotations
 
+import json
 import re
 import unicodedata
 from collections.abc import Sequence
@@ -45,7 +46,18 @@ from abacus.modules.assurance.internal_control import (
 from abacus.modules.engagements.api import assurance_item, get_ref, lock_ref, work_item_engagement
 from abacus.modules.evidence.api import verified_citation_ids
 from abacus.modules.identity.api import AuthContext, allowed_actions
-from abacus.modules.review.api import create_issue, issue_row, move_issue, record_rule_issue
+from abacus.modules.review.api import (
+    create_issue_in,
+    issue_row,
+    move_issue,
+    record_rule_issue,
+)
+from abacus.modules.sampling.api import (
+    misstatement_per_item,
+    projected_misstatement,
+    projection_carried,
+    sample_set_view,
+)
 from abacus.modules.workpapers.api import paper_id_of_kind
 
 TARGET: Final = "audit_finding"
@@ -165,21 +177,6 @@ async def record_finding(ctx: AuthContext, work_item_id: UUID, new: NewFinding) 
         live = {c for ids in verified.values() for c in ids}
         if not set(new.citation_ids) <= live:
             raise UncitedFinding
-    issue_id = await create_issue(
-        ctx,
-        record_type="workpaper",
-        record_id=new.workpaper_id,
-        kind="exception",
-        priority="medium",
-        title=new.title.strip(),
-        internal_note=None,
-        client_wording=None,
-        client_contact_id=None,
-        assignee_user_id=None,
-        assignee_agent=False,
-        blocks=(),
-        work_item_id=work_item_id,
-    )
     sealed = (
         None
         if new.why_surfaced is None
@@ -187,6 +184,16 @@ async def record_finding(ctx: AuthContext, work_item_id: UUID, new: NewFinding) 
     )
     async with uow(ctx.tenant) as tx:
         await lock_ref(tx, engagement_id)
+        issue_id = await create_issue_in(
+            tx,
+            ctx,
+            record_type="workpaper",
+            record_id=new.workpaper_id,
+            kind="exception",
+            priority="medium",
+            title=new.title.strip(),
+            work_item_id=work_item_id,
+        )
         number = (
             await tx.session.execute(
                 text("SELECT count(*) + 1 FROM audit_findings WHERE work_item_id = :w"),
@@ -386,34 +393,92 @@ async def to_deficiency(ctx: AuthContext, finding_id: UUID) -> Finding:
     return await finding(ctx, finding_id)
 
 
+@dataclass(frozen=True)
+class Converted:
+    id: UUID
+    ref: str
+    amount: Decimal
+
+
+@dataclass(frozen=True)
+class _Projection:
+    amount: Decimal
+    record: dict[str, str]  # the misstatement's `projection`
+    evaluation: dict[str, str]  # AUD-15's evaluation rows
+
+
+async def _projection(
+    ctx: AuthContext, engagement_id: UUID, sample_set_id: UUID | None, sample_error: Decimal | None
+) -> _Projection:
+    """2,140 in 25 of 412 is 35,267.20 and carries 35,300, all computed by sampling (ADR-050). The
+    sample set is on the finding's engagement and approved; anything else has no projection."""
+    if sample_set_id is None or not sample_error:
+        raise ProjectionUnavailable
+    try:
+        found = await sample_set_view(ctx, sample_set_id, None)
+    except NotFound as exc:
+        raise ProjectionUnavailable from exc
+    if found.engagement_id != engagement_id or found.status != "approved":
+        raise ProjectionUnavailable
+    size = found.parameters.final_size
+    records = found.population.record_count
+    try:
+        exact = projected_misstatement(sample_error, size, records)
+    except ValueError as exc:
+        raise ProjectionUnavailable from exc
+    carried = projection_carried(exact)
+    return _Projection(
+        amount=carried,
+        record={
+            "sample_set_id": str(sample_set_id),
+            "version_no": str(found.version_no),
+            "sample_error": str(sample_error),
+            "sample_size": str(size),
+            "population_count": str(records),
+            "exact": str(exact),
+            "carried": str(carried),
+            "method": "mean_per_item",
+        },
+        evaluation={
+            "sample_error": f"{sample_error:,.2f}",
+            "sample_size": str(size),
+            "per_item": f"{misstatement_per_item(sample_error, size):,.2f}",
+            "population": f"{records:,} {found.population.record_unit}",
+            "projected": f"{exact:,.0f} → {carried:,.0f}",
+            "method": "Mean per item",
+        },
+    )
+
+
 async def to_misstatement(
     ctx: AuthContext,
     finding_id: UUID,
     *,
     type_: Literal["factual", "judgmental", "projected"],
     amount: Decimal | None,
+    projection_ref: UUID | None,
     column_set: Literal["ebp_net_assets", "commercial"],
-) -> UUID:
-    """A misstatement from the finding: factual or judgmental with its amount; projected only from
-    sampling's projection (422 `projection_unavailable` until it is exposed)."""
-    if type_ == "projected" or amount is None or amount == 0:
-        raise (
-            ProjectionUnavailable
-            if type_ == "projected"
-            else DomainInvalid(facts={"field": "amount"})
-        )
+) -> Converted:
+    """A misstatement from the finding: factual or judgmental with its amount; projected with the
+    sample error as `amount` and its sample set as `projection_ref`, the figure sampling's."""
     work_item = await work_item_of(ctx.tenant, finding_id)
     engagement_id = await _engagement(ctx.tenant, work_item)
+    projection = None
+    if type_ == "projected":
+        projection = await _projection(ctx, engagement_id, projection_ref, amount)
+        amount = projection.amount
+    elif not amount:
+        raise DomainInvalid(facts={"field": "amount"})
     async with uow(ctx.tenant) as tx:
         await lock_ref(tx, engagement_id)
         moved = (
             await tx.session.execute(
                 text(
                     "UPDATE audit_findings SET route = 'converted_to_misstatement', "
-                    "version = version + 1 WHERE id = :id AND route = 'under_evaluation' "
-                    "RETURNING id"
+                    "evaluation = evaluation || CAST(:e AS jsonb), version = version + 1 "
+                    "WHERE id = :id AND route = 'under_evaluation' RETURNING id"
                 ),
-                {"id": finding_id},
+                {"id": finding_id, "e": json.dumps(projection.evaluation if projection else {})},
             )
         ).first()
         if moved is None:
@@ -424,22 +489,25 @@ async def to_misstatement(
                 {"w": work_item},
             )
         ).scalar_one()
+        ref = f"M-{number}"
         misstatement_id = (
             await tx.session.execute(
                 text(
                     "INSERT INTO audit_misstatements (tenant_id, engagement_id, work_item_id, "
-                    "finding_id, ref, type, status, amount, column_set) VALUES (:t, :e, :w, :f, "
-                    ":ref, :ty, 'confirmed', :a, :cs) RETURNING id"
+                    "finding_id, ref, type, status, amount, column_set, projection) VALUES "
+                    "(:t, :e, :w, :f, :ref, :ty, 'confirmed', :a, :cs, CAST(:p AS jsonb)) "
+                    "RETURNING id"
                 ),
                 {
                     "t": ctx.tenant_id,
                     "e": engagement_id,
                     "w": work_item,
                     "f": finding_id,
-                    "ref": f"M-{number}",
+                    "ref": ref,
                     "ty": type_,
                     "a": amount,
                     "cs": column_set,
+                    "p": json.dumps(projection.record) if projection else None,
                 },
             )
         ).scalar_one()
@@ -449,7 +517,7 @@ async def to_misstatement(
             after=Ref(misstatement=misstatement_id),
             scope=Scope(engagement_id=engagement_id, work_item_id=work_item),
         )
-    return misstatement_id
+    return Converted(misstatement_id, ref, amount)
 
 
 def _route_scope(request: RouteRequest) -> Scope:
