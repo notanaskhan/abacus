@@ -523,6 +523,13 @@ async def viewer_regions(
             row.id,
             row.value_text if values_shown else None,
         )
+    # P-11-T27: a box code read lights by its own match id, with its label; never its value.
+    if match_ids:
+        from abacus.modules.evidence.ocr_reads import field_regions
+
+        for match, page, rect, label in await field_regions(ctx, version.id, match_ids):
+            if match not in regions and len(regions) < MAX_REGIONS:
+                regions[match] = ViewerRegion(match, page, [rect], None, None, None, label)
     return list(regions.values())
 
 
