@@ -18,6 +18,15 @@ class NoticeIntakeStarted(DomainEvent):
     intake_id: Annotated[UUID, classified("internal")]
 
 
+class NoticeAnalysisRequested(DomainEvent):
+    """A person ran the analysis: starts `NoticeAnalysisWorkflow` for this running version."""
+
+    event_type: ClassVar[str] = "notice_analysis.requested"
+
+    notice_id: Annotated[UUID, classified("internal")]
+    version: Annotated[int, classified("internal")]
+
+
 class NoticeIntakeReady(DomainEvent):
     """Read, or opened for manual entry: the intake's owner may act (N-04 §4.6)."""
 
