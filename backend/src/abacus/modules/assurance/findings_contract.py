@@ -119,6 +119,21 @@ class FindingIn(BaseModel):
     agent_run_id: Annotated[UUID | None, classified("internal")] = None
 
 
+class MisstatementEffectIn(BaseModel):
+    """What the SUM statement shows for a misstatement (AUD-16 a; DEC-2360): its words and signed
+    effect per column. A column left out is nil; both views left out state the amount."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    description: Annotated[str | None, Field(max_length=500), classified("confidential")] = None
+    workpaper_ref: Annotated[str | None, Field(max_length=40), classified("internal")] = None
+    client_note: Annotated[str | None, Field(max_length=500), classified("confidential")] = None
+    assets: Annotated[Money | None, classified("confidential")] = None
+    liabilities: Annotated[Money | None, classified("confidential")] = None
+    net_assets: Annotated[Money | None, classified("confidential")] = None
+    change_in_net_assets: Annotated[Money | None, classified("confidential")] = None
+
+
 class ConvertToMisstatementIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -128,6 +143,14 @@ class ConvertToMisstatementIn(BaseModel):
     projection_ref: Annotated[UUID | None, classified("internal")] = None
     seen_version: Annotated[int, Field(ge=1), classified("internal")]
     column_set: Annotated[ColumnSet, classified("internal")] = "commercial"
+    fs_effect: Annotated[MisstatementEffectIn | None, classified("confidential")] = None
+
+
+class MisstatementEffectPatchIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    fs_effect: Annotated[MisstatementEffectIn, classified("confidential")]
+    seen_version: Annotated[int, Field(ge=1), classified("internal")]
 
 
 class ReasonIn(BaseModel):
@@ -562,7 +585,12 @@ async def finding_to_misstatement_route(
     work_item = await findings.work_item_of(ctx.tenant, finding_id)
     await _gate(ctx, work_item, "finding.convert")
     misstatement_id = await findings.to_misstatement(
-        ctx, finding_id, type_=body.type, amount=body.amount, column_set=body.column_set
+        ctx,
+        finding_id,
+        type_=body.type,
+        amount=body.amount,
+        column_set=body.column_set,
+        fs_effect=None if body.fs_effect is None else _effect_json(body.fs_effect),
     )
     found = await findings.finding(ctx, finding_id)
     return MisstatementOut(
@@ -637,7 +665,7 @@ def _misstatement_out(r: Any) -> MisstatementOut:  # noqa: ANN401 -- the service
         id=r.id,
         ref=r.ref,
         origin_ref=r.origin_ref,
-        description=None,
+        description=r.fs_effect.get("description"),
         type=r.type,
         nature=r.nature,
         status=r.status,
@@ -646,6 +674,11 @@ def _misstatement_out(r: Any) -> MisstatementOut:  # noqa: ANN401 -- the service
         proposed_entry_ref=None,
         allowed_actions=[],
     )
+
+
+def _effect_json(given: MisstatementEffectIn) -> dict[str, str]:
+    """Figures as text, as `sum_service.effects` reads them; a nil column isn't stored."""
+    return {k: str(v) for k, v in given.model_dump(exclude_none=True).items()}
 
 
 def _sum_row(r: Any, group: Literal["current", "prior_year"]) -> SumRowOut:  # noqa: ANN401 -- a row
@@ -678,6 +711,7 @@ async def _sum_out(
     from abacus.modules.assurance import sum_service
 
     found = await sum_service.sum_view(ctx.tenant, work_item_id, view)
+    strips = await sum_service.strips(ctx.tenant, work_item_id)
     r = found.result
     return SumOut(
         column_set=cast(ColumnSet, found.column_set),
@@ -699,6 +733,8 @@ async def _sum_out(
         rows=[_sum_row(x, "current") for x in found.current]
         + [_sum_row(x, "prior_year") for x in found.prior_year],
         totals=SumTotalsOut(
+            assets=sum_service.column_total(found.current, "assets"),
+            liabilities=sum_service.column_total(found.current, "liabilities"),
             net_assets=r.iron_curtain,
             change_in_net_assets=r.rollover,
         ),
@@ -718,6 +754,19 @@ async def _sum_out(
             for x in found.booked
         ],
         counts=SumCountsOut(**found.counts),
+        conclusion=SumConclusionOut(
+            state=cast(Literal["not_requested", "awaiting", "concluded"], strips.state),
+            decision_card_id=strips.card_id,
+            reserved_user_name=strips.reserved_user_name,
+            outcome_label=strips.outcome_label,
+            decided_by_name=strips.decided_by_name,
+            decided_at=strips.decided_at,
+        ),
+        sign_off=SumSignOffOut(
+            prepared_label=strips.prepared_label,
+            partner_label=strips.partner_label,
+            partner_signed=strips.partner_signed,
+        ),
     )
 
 
@@ -759,6 +808,32 @@ async def misstatement_pass_route(
     )
     rows = await sum_service.misstatements(ctx.tenant, work_item, "passed")
     return _misstatement_out(next(r for r in rows if r.id == misstatement_id))
+
+
+@router.patch(
+    "/misstatements/{misstatement_id}/effect",
+    action="misstatement.update",
+    response_model=MisstatementOut,
+    errors=(409, 501),
+)
+async def misstatement_effect_route(
+    misstatement_id: UUID,
+    body: MisstatementEffectPatchIn,
+    ctx: Ctx,
+    idempotency_key: IdempotencyKey,
+) -> MisstatementOut:
+    """AUD-16's Edit: a person states the row's words and effect (DEC-2360; 409 when it moved)."""
+    await _gate_flag(ctx)
+    from abacus.modules.assurance import sum_service
+
+    work_item = await sum_service.work_item_of(ctx.tenant, misstatement_id)
+    await _gate(ctx, work_item, "misstatement.update")
+    await sum_service.set_effect(
+        ctx, misstatement_id, body.seen_version, _effect_json(body.fs_effect)
+    )
+    return _misstatement_out(
+        await sum_service.misstatement(ctx.tenant, work_item, misstatement_id)
+    )
 
 
 @router.get(f"{_WI}/sum", action="sum.read", response_model=SumOut, errors=(501,))

@@ -21,9 +21,10 @@ Severity and the SUM conclusion stay the engagement partner's C3 cards (INV-1).
 
 from __future__ import annotations
 
+import json
 import re
 import unicodedata
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
@@ -393,6 +394,7 @@ async def to_misstatement(
     type_: Literal["factual", "judgmental", "projected"],
     amount: Decimal | None,
     column_set: Literal["ebp_net_assets", "commercial"],
+    fs_effect: Mapping[str, str] | None = None,
 ) -> UUID:
     """A misstatement from the finding: factual or judgmental with its amount; projected only from
     sampling's projection (422 `projection_unavailable` until it is exposed)."""
@@ -428,8 +430,9 @@ async def to_misstatement(
             await tx.session.execute(
                 text(
                     "INSERT INTO audit_misstatements (tenant_id, engagement_id, work_item_id, "
-                    "finding_id, ref, type, status, amount, column_set) VALUES (:t, :e, :w, :f, "
-                    ":ref, :ty, 'confirmed', :a, :cs) RETURNING id"
+                    "finding_id, ref, type, status, amount, column_set, fs_effect) "
+                    "VALUES (:t, :e, :w, :f, :ref, :ty, 'confirmed', :a, :cs, "
+                    "CAST(:effect AS jsonb)) RETURNING id"
                 ),
                 {
                     "t": ctx.tenant_id,
@@ -440,6 +443,7 @@ async def to_misstatement(
                     "ty": type_,
                     "a": amount,
                     "cs": column_set,
+                    "effect": json.dumps(dict(fs_effect or {})),
                 },
             )
         ).scalar_one()
@@ -524,8 +528,9 @@ async def route_to_misstatement(tx: UnitOfWork, request: RouteRequest) -> UUID:
         await tx.session.execute(
             text(
                 "INSERT INTO audit_misstatements (tenant_id, engagement_id, work_item_id, ref, "
-                "origin_ref, type, status, amount, column_set) VALUES (:t, :e, :w, :ref, :origin, "
-                "'factual', 'candidate', :a, :cs) RETURNING id"
+                "origin_ref, type, status, amount, column_set, fs_effect) "
+                "VALUES (:t, :e, :w, :ref, :origin, 'factual', 'candidate', :a, :cs, "
+                "CAST(:effect AS jsonb)) RETURNING id"
             ),
             {
                 "t": tenant.tenant_id,
@@ -535,6 +540,7 @@ async def route_to_misstatement(tx: UnitOfWork, request: RouteRequest) -> UUID:
                 "origin": request.address[:20],
                 "a": request.amount,
                 "cs": "ebp_net_assets" if ebp else "commercial",
+                "effect": json.dumps({"description": request.description[:500]}),
             },
         )
     ).scalar_one()
