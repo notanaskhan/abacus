@@ -234,6 +234,9 @@ from abacus.modules.engagements.team import (
     assign_eqr,
     team_approval,
 )
+from abacus.modules.engagements.transitions import (
+    archive_when_items_archived as archive_when_items_archived,
+)
 from abacus.modules.engagements.work_item_facts import (
     WorkItemFacts,
     function_holders,

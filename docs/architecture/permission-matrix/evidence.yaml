@@ -5,8 +5,8 @@ actions:
   # --- Legal holds (Q-02-T29, T30; conflict C-10; DEC-71 / P-14) ---
   # `level_in(partner)` is the derived `firm_partner` (DEC-132). Placing and lifting are human-only.
   legal_hold.read:          {firm_admin: allow, security_admin: allow, firm_partner: allow, quality_partner: allow, agent: deny, system: deny}   # metadata and counts; never the details text
-  legal_hold.place:         {firm_admin: allow, security_admin: allow, firm_partner: allow, agent: deny, system: deny, mfa_recent: required}
-  legal_hold.lift:          {firm_admin: allow, security_admin: allow, firm_partner: allow, agent: deny, system: deny, mfa_recent: required}
+  legal_hold.place:         {firm_admin: allow, security_admin: allow, firm_partner: allow, agent: deny, system: deny, mfa_recent: required, archived_exempt: legal_hold}
+  legal_hold.lift:          {firm_admin: allow, security_admin: allow, firm_partner: allow, agent: deny, system: deny, mfa_recent: required, archived_exempt: legal_hold}
   # --- OCR and box extraction, C4 v1.1 (P-11-T19, DEC-2204; P-11 §4.3) ---
   # A person re-runs OCR after a cleared refusal; an agent or worker never does (INV-1). Client
   # service only for unfiled inbox files under the intake scope (DEC-20; the service checks).
@@ -80,7 +80,7 @@ actions:
     senior: firm_setting(seniors_can_accept)
     agent: deny               # ADR-005
   review.assign:           {engagement_partner: allow, manager: allow, agent: deny, independence: required}
-  export.create:            {engagement_partner: allow, manager: allow, agent: deny, system: deny, independence: required, mfa_recent: required, not_offshore: required}   # TASK-1207: an export hands over client content (DEC-52); A-01 §4.4 (A-01-T17): independence, and the agent and system denied outright (INV-1); support roles hold no cell (SPEC-012: read-only)
+  export.create:            {engagement_partner: allow, manager: allow, agent: deny, system: deny, independence: required, mfa_recent: required, not_offshore: required, archived_exempt: export}   # TASK-1207: an export hands over client content (DEC-52); A-01 §4.4 (A-01-T17): independence, and the agent and system denied outright (INV-1); support roles hold no cell (SPEC-012: read-only)
   export.read:              {engagement_partner: allow, manager: allow, agent: deny, system: deny, independence: required}   # A-01-T17: the export sheet's history and poll (engagement-export v1)
   export.download:          {engagement_partner: allow, manager: allow, agent: deny, system: deny, independence: required, mfa_recent: required, not_offshore: required}   # A-01-T17: the service also requires the requester or an export.create holder on the engagement
   # --- Statement transactions (SPEC-312; TASK-324) ---
