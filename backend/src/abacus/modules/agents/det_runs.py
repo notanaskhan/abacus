@@ -1,6 +1,6 @@
 """A deterministic run's record (A-06-T16's seam; A-06 §6): no model is called, and the run names
 the person it acts for, so the work reads as that person via Agent. In the caller's unit of
-work."""
+work, and never a model call."""
 
 from __future__ import annotations
 
