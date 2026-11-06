@@ -267,8 +267,7 @@ class ExtensionBatchOut(BaseModel):
 
     extensions: Annotated[list[ExtensionRowOut], Internal]
     checks: Annotated[list[SafeHarborCheckOut], Internal]
-    gate_id: Annotated[UUID | None, Internal] = None  # submit-for-approval's card, one return
-    gate_ids: Annotated[list[UUID], Internal] = Field(default_factory=list[UUID])  # one per return
+    gate_id: Annotated[UUID | None, Internal] = None  # C13's row, when T-08 / I-01 register it
 
 
 class ApproveAndRequestOut(ExtensionBatchOut):
@@ -618,8 +617,9 @@ def _proposed(payments: list[ProposedPaymentIn]) -> list[Any]:  # Any: the servi
 
 
 def _installment_out(
-    i: dict[str, Any], confirmation: TaxConfirmationOut | None
-) -> EstimateInstallmentOut:  # Any: a database row
+    i: dict[str, Any],  # Any: a database row
+    confirmation: TaxConfirmationOut | None,
+) -> EstimateInstallmentOut:
     from abacus.modules.tax.estimates import money
 
     return EstimateInstallmentOut(
@@ -804,18 +804,15 @@ async def extensions_prepare_route(
 async def extensions_submit_route(
     body: ExtensionSubmitIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ExtensionBatchOut:
-    """The proposer's path: one C3 card per return for its signer, and its other reviewers hear
-    (DEC-2350). Authorised per return by the service."""
+    """The proposer's path: the return's reviewers hear and approve (DEC-2350). Authorised per
+    return by the service. `gate_id` stays empty until C13's row (T-03's cut list, T-08 / I-01)."""
     await _gate_on_return(ctx)
     from abacus.modules.tax import extensions
 
     async def run() -> tuple[int, dict[str, object]]:
-        cards = await extensions.submit_for_approval(ctx, body.extension_ids)
+        await extensions.submit_for_approval(ctx, body.extension_ids)
         out = ExtensionBatchOut(
-            extensions=await _rows_for_extensions(ctx, body.extension_ids),
-            checks=[],
-            gate_id=cards[0] if len(cards) == 1 else None,
-            gate_ids=cards,
+            extensions=await _rows_for_extensions(ctx, body.extension_ids), checks=[]
         )
         return 200, out.model_dump(mode="json")
 

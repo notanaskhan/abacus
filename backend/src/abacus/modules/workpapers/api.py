@@ -42,7 +42,6 @@ from abacus.modules.workpapers.drafting import (
 from abacus.modules.workpapers.drafting import (
     apply_cell_suggestion,
     draft_paper,
-    latest_test_of_variant,
     paper_engagement,
     paper_id_of_kind,
     paper_of_kind,

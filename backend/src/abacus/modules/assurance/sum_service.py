@@ -2,7 +2,8 @@
 
 Code's SUM reads the misstatements a person recorded and the materiality in force, and hands them
 to `compute/sum.py`. The browser renders these numbers and computes none. A booked misstatement is
-listed beside the SUM, never accumulated; a prior-year carry is context, never accumulated.
+listed beside the SUM, never accumulated; a prior-year carry goes to the engine with its own
+effects, as its goldens do (35,300 - 1,150 = 34,150).
 Passing a misstatement on the SUM is the engagement partner's act, with a sealed reason (DF-28).
 Factors go through `review.api.record_value`; `flagged` is set by code. A snapshot freezes the
 totals and factors for the partner's `sum_conclusion` card and A-07's letter.

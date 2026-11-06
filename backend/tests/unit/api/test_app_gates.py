@@ -517,6 +517,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/risks/approval-requests",
         "/v1/engagements/{engagement_id}/risks/{risk_id}/responses",
         "/v1/engagements/{engagement_id}/fraud-inquiries",
+        # DEC-2355: a High-impact SOC exception routed to Findings creates the finding.
+        "/v1/engagements/{engagement_id}/soc-reports/{soc_report_id}/exceptions/{co_ref}/send-to-findings",
         "/v1/engagements/{engagement_id}/internal-control/exceptions/{sheet_row}/request-evidence",
         "/v1/engagements/{engagement_id}/service-organizations",
         "/v1/engagements/{engagement_id}/soc-reports/{soc_report_id}/requests",

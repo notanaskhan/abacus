@@ -26,6 +26,9 @@ def test_ac1_every_catalogued_event_is_subscribed() -> None:
 
 def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
     assert set(CATALOGUE) == {
+        "extension_payment.approval_requested",  # T-03-T07 (DEC-2350)
+        "extension.ack_rejected",  # T-03-T07 (DEC-2350)
+        "estimate.due_soon",  # T-03-T07 (DEC-2350)
         "support_session.requested",
         "support_session.emergency_approved",
         "budget.soft_crossed",

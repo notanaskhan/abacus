@@ -34,17 +34,29 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import DomainEvent, Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import function_holders, work_item_facts
-from abacus.modules.identity.api import AuthContext, Resource, authorise, firm_tenant_ids
-from abacus.modules.identity.authz import visible_clients
+from abacus.modules.identity.api import (
+    AuthContext,
+    Resource,
+    authorise,
+    firm_tenant_ids,
+    may_read_unmasked,
+    offshore_consented,
+    visible_clients,
+)
 from abacus.modules.organisations.api import client_name_column
 from abacus.modules.tax.compute import payments as engine
-from abacus.modules.tax.extensions import ConfirmationSent, on_return, send_confirmation
+from abacus.modules.tax.extensions import (
+    ConfirmationSent,
+    on_return,
+    readable_returns,
+    send_confirmation,
+)
 
 READ: Final = "estimate_schedule.read"
 UPDATE: Final = "estimate_schedule.update"
 SEND: Final = "estimate_schedule.confirmation_send"
 DUE_SOON_DAYS: Final = 7
-_ENTITIES: Final = table("client_entities", column("id"))
+_ENTITIES: Final = table("client_entities", column("id"), column("client_id"))
 _NOT_REQUIRED: Final = ("not_required_withholding", "not_required_estate_first_years", "prospect")
 
 
@@ -129,10 +141,18 @@ async def rows(ctx: AuthContext, tax_year: int) -> list[ScheduleRow]:
     async with tenant_session(ctx.tenant) as session:
         visible = (
             await session.execute(
-                select(_ENTITIES.c.id, client_name_column(_ENTITIES.c.id)).where(allowed)
+                select(
+                    _ENTITIES.c.id, client_name_column(_ENTITIES.c.id), _ENTITIES.c.client_id
+                ).where(allowed)
             )
         ).all()
-        names: dict[UUID, str] = {row[0]: row[1] or "" for row in visible}
+        readable = await may_read_unmasked(ctx)
+        names: dict[UUID, str] = {
+            row[0]: row[1] or ""
+            for row in visible
+            # Amounts are TRI: an offshore reader needs the client's consent (DEC-52).
+            if readable or await offshore_consented(ctx.tenant, row[2])
+        }
         if not names:
             return []
         found = (
@@ -384,8 +404,6 @@ async def request_confirmation(
         raise NotFound("estimate_installment")
     engagement_id, basis = await _basis(ctx, row)
     await authorise(ctx, SEND, await on_return(ctx, engagement_id, basis))
-    amount = found["amount"]
-    amount_text = "" if amount is None else f" of {amount:,}"
 
     async def link(tx: UnitOfWork, item_id: UUID) -> None:
         await tx.session.execute(
@@ -408,11 +426,11 @@ async def request_confirmation(
         engagement_id,
         description=(
             f"Please confirm your {row.schedule['tax_year']} Q{quarter} "
-            f"{row.schedule['form']} estimated payment{amount_text}"
+            f"{row.schedule['jurisdiction']} estimated payment"
         ),
         due_on=found["due_on"],
         contact_id=contact_id,
-        wave="estimate_confirmation",
+        wave="year_end",
         linked_ref={"type": "estimate_schedule", "id": str(schedule_id), "quarter": quarter},
         link=link,
     )
@@ -512,7 +530,7 @@ class PaymentRow:
 async def payments(ctx: AuthContext, tax_year: int) -> list[PaymentRow]:
     """Approved extension payments and PTET on visible returns, and paid installments of visible
     clients, read only. A proposal isn't a payment; a superseded row isn't one either."""
-    facts = {f.work_item_id: f for f in await work_item_facts(ctx, "tax_return")}
+    facts = await readable_returns(ctx)
     out: list[PaymentRow] = []
     async with tenant_session(ctx.tenant) as session:
         if facts:
@@ -575,7 +593,7 @@ async def send_due_soon(tenant: TenantContext) -> int:
                         "FROM estimate_installments i JOIN estimate_schedules s "
                         "ON s.id = i.schedule_id WHERE i.status IN ('not_confirmed', "
                         "'confirmation_requested') AND i.due_on >= :on "
-                        "AND i.due_on <= CAST(:on AS date) + :days "
+                        "AND i.due_on <= CAST(:on AS date) + CAST(:days AS integer) "
                         "AND s.basis_tax_return_id IS NOT NULL"
                     ),
                     {"on": on, "days": DUE_SOON_DAYS},
@@ -589,6 +607,11 @@ async def send_due_soon(tenant: TenantContext) -> int:
         if not people:
             continue
         async with uow(tenant) as tx:
+            tx.record(
+                "estimate_installment.due_soon_notified",
+                target=Target("estimate_schedule", row["schedule_id"]),
+                after=Ref(quarter=int(row["quarter"]), recipients=len(people)),
+            )
             tx.emit(
                 EstimateDueSoon(
                     schedule_id=row["schedule_id"],

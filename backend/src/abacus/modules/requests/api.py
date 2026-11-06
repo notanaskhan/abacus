@@ -72,6 +72,7 @@ from abacus.modules.requests.lifecycle import (
     register_live_facts,
     request_item_scope,
     request_item_scopes,
+    send_created,
     send_item,
     update_item,
 )
@@ -387,6 +388,7 @@ __all__ = [
     "save_portal_answer",
     "screening_subject",
     "selection_engagements",
+    "send_created",
     "send_item",
     "send_question",
     "source_documents",

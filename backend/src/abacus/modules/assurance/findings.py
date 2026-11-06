@@ -552,14 +552,16 @@ def register_exception_routes() -> None:
     register_exception_route("misstatement", route_to_misstatement)
 
 
-AUDIT_KINDS: Final = frozenset({TARGET})
+_AUDIT_OWNERS: Final = {
+    TARGET: text("SELECT id, engagement_id FROM audit_findings WHERE id = ANY(:ids)"),
+    "audit_misstatement": text(
+        "SELECT id, engagement_id FROM audit_misstatements WHERE id = ANY(:ids)"
+    ),
+}
+AUDIT_KINDS: Final = frozenset(_AUDIT_OWNERS)
 
 
 async def audit_owners(tenant: TenantContext, kind: str, ids: Sequence[UUID]) -> dict[UUID, UUID]:
-    del kind
     async with tenant_session(tenant) as session:
-        rows = await session.execute(
-            text("SELECT id, engagement_id FROM audit_findings WHERE id = ANY(:ids)"),
-            {"ids": list(ids)},
-        )
+        rows = await session.execute(_AUDIT_OWNERS[kind], {"ids": list(ids)})
         return {found: owned for found, owned in rows}

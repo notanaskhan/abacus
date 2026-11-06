@@ -2156,6 +2156,7 @@ async def soc_exception_edit_route(
     "/soc-reports/{soc_report_id}/exceptions/{co_ref}/send-to-findings",
     action="soc_report.evaluate",
     response_model=SocReportOut,
+    status_code=201,
     errors=(409, 503),
 )
 async def soc_exception_route_route(
