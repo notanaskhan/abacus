@@ -45,8 +45,8 @@ async def _has_linked_risk(tenant: TenantContext, engagement_id: UUID) -> bool:
     async with tenant_session(tenant) as session:
         found = await session.scalar(
             text(
-                "SELECT 1 FROM risk_linkages WHERE engagement_id = :e AND target_kind = 'workpaper' "
-                "AND upper(target_ref) = :target AND removed_at IS NULL LIMIT 1"
+                "SELECT 1 FROM risk_linkages WHERE engagement_id = :e "
+                "AND target_kind = 'workpaper' AND upper(target_ref) = :target AND removed_at IS NULL LIMIT 1"
             ),
             {"e": engagement_id, "target": IC_TARGET},
         )
@@ -66,7 +66,8 @@ async def on_section_draft_finished(event: OutboxEvent) -> None:
     if person is None:
         return
     # A refusal (the cap, no model, a person no longer allowed) ends here: the person can still use
-    # AUD-08's "Draft with agent" (A-04 §1 item 3). Redelivery starts nothing more: the key is the run.
+    # AUD-08's "Draft with agent" (A-04 §1 item 3). Redelivery starts nothing more: the key is the
+    # run.
     from abacus.modules.workpapers.api import paper_of_kind
 
     with suppress(DomainConflict, Forbidden, NotFound):

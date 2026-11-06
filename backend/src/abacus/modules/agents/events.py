@@ -172,8 +172,8 @@ class IntakeProposalsRecorded(DomainEvent):
 
 class SectionDraftFinished(DomainEvent):
     """A-04-T29 (DEC-2327): a section drafter run completed. The agent wrote suggestions, never a
-    version (ADR-005), so this is the moment "the agent wrote Internal Control" (AC4.8). Identifiers
-    only; the initiator is who a follow-on run is started for."""
+    version (ADR-005), so this is the moment "the agent wrote Internal Control" (AC4.8).
+    Identifiers only; the initiator is who a follow-on run is started for."""
 
     event_type: ClassVar[str] = "section_draft.finished"
 
