@@ -206,10 +206,27 @@ async def test_i_offshore_only_the_not_offshore_actions_are_refused_at_the_condi
         "notice_response.edit",
         "notice_response.mark_sent",
         "notice_response.send_for_signature",
+        # S26, S27: tax payments, the questionnaire editor and more stay onshore (T-03-T01).
+        "estimate_schedule.confirmation_send",
+        "estimate_schedule.update",
+        "filing_extension.approve_payment",
+        "filing_extension.confirmation_send",
+        "filing_extension.flag_likely",
+        "filing_extension.mark_filed",
+        "filing_extension.prepare",
+        "questionnaire.edit",
+        "tax_schedule.export",
     } == NOT_OFFSHORE
-    notices = {a for a in NOT_OFFSHORE if a.startswith(("notice.", "notice_"))}
-    # Every other `not_offshore` action is reached here; a notices action only where the onshore
-    # manager holds it on this resource (the rest are checked on the firm below).
+    notices = {
+        a
+        for a in NOT_OFFSHORE
+        if a.startswith(
+            ("notice.", "notice_", "filing_extension.", "estimate_schedule.", "tax_schedule.")
+        )
+        or a == "questionnaire.edit"
+    }
+    # Every other `not_offshore` action is reached here; a notices or T-03 action only where the
+    # onshore manager holds it on this resource (the rest are checked on the firm below).
     assert (
         refused - notices
         == NOT_OFFSHORE - {"firm_export.download", "email_template.test_send"} - notices
