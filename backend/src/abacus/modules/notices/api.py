@@ -74,6 +74,18 @@ _sending.register()
 
 # N-04-T07 (DEC-2326): the intake's read.
 from abacus.modules.notices import intake_read as _intake_read  # noqa: E402
+
+# N-04-T11 (DEC-2359): the analysis runs in the background.
+from abacus.modules.notices.analysis_activities import (  # noqa: E402
+    ACTIVITIES as _ANALYSIS_ACTIVITIES,
+)
+from abacus.modules.notices.analysis_activities import (  # noqa: E402
+    SUBSCRIPTIONS as _ANALYSIS_SUBSCRIPTIONS,
+)
+from abacus.modules.notices.analysis_workflow import NoticeAnalysisWorkflow  # noqa: E402
+from abacus.modules.notices.analysis_workflow_types import (  # noqa: E402
+    NoticeAnalysisInput as NoticeAnalysisInput,
+)
 from abacus.modules.notices.intake_activities import (  # noqa: E402
     ACTIVITIES as _INTAKE_ACTIVITIES,
 )
@@ -85,11 +97,16 @@ from abacus.modules.notices.intake_workflow_types import (  # noqa: E402
     NoticeIntakeInput as NoticeIntakeInput,
 )
 
-ACTIVITIES = (*_RESPONSE_ACTIVITIES, *_INTAKE_ACTIVITIES)
-SUBSCRIPTIONS = {**_sending.SUBSCRIPTIONS, **_intake_read.SUBSCRIPTIONS}
+ACTIVITIES = (*_RESPONSE_ACTIVITIES, *_INTAKE_ACTIVITIES, *_ANALYSIS_ACTIVITIES)
+SUBSCRIPTIONS = {
+    **_sending.SUBSCRIPTIONS,
+    **_intake_read.SUBSCRIPTIONS,
+    **_ANALYSIS_SUBSCRIPTIONS,
+}
 WORKFLOWS: dict[type, str] = {
     NoticeResponseWorkflow: "time_sensitive",
     NoticeIntakeWorkflow: "interactive",
+    NoticeAnalysisWorkflow: "background",
 }
 
 # N-04-T19 (DEC-2313): the analysis's agent step.
