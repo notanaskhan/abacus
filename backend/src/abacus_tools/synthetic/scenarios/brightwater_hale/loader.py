@@ -83,7 +83,7 @@ from contextlib import asynccontextmanager, contextmanager, suppress
 from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
-from typing import Final, Literal, cast
+from typing import Any, Final, Literal, cast
 from urllib.parse import urlsplit
 from uuid import UUID
 
@@ -241,11 +241,15 @@ from abacus.modules.requests.api import (
     latest_version_of,
     move_after_review,
     publish_questionnaire_template,
+    questionnaire_from_template,
     questionnaire_templates,
     save_portal_answer,
     send_question,
     update_item,
 )
+from abacus.modules.requests.organizer_lifecycle import assign_owner as assign_template_owner
+from abacus.modules.requests.questionnaire_editor import editor as questionnaire_editor_read
+from abacus.modules.requests.questionnaire_editor import save as save_questionnaire
 from abacus.modules.review.api import STATEMENTS as SIGN_OFF_STATEMENTS
 from abacus.modules.review.api import (
     create_issue,
@@ -274,6 +278,12 @@ from abacus.modules.sampling.api import (
 from abacus.modules.sampling.api import approve as approve_sample
 from abacus.modules.sampling.api import draw as draw_sample
 from abacus.modules.tax.api import import_engine_file, share_k1_internal
+from abacus.modules.tax.estimates import create as create_estimate
+from abacus.modules.tax.estimates import patch_installment
+from abacus.modules.tax.estimates import request_confirmation as request_estimate_confirmation
+from abacus.modules.tax.extensions import LineIn, PaymentIn, flag_new_likely
+from abacus.modules.tax.extensions import patch as patch_extension
+from abacus.modules.tax.extensions import prepare as prepare_extensions
 from abacus.modules.workpapers.api import create_workpaper
 from abacus_tools import deploy_lock
 from abacus_tools.db_connect import connect as connect_db
@@ -282,6 +292,7 @@ from abacus_tools.flags import set_flag
 from abacus_tools.local.db_guard import violations
 from abacus_tools.synthetic.documents import positioned_pdf
 from abacus_tools.synthetic.scenarios.brightwater_hale import sampling_content
+from abacus_tools.synthetic.scenarios.brightwater_hale import tax_schedules as _tax_schedules
 from abacus_tools.synthetic.scenarios.brightwater_hale.acceptance import (
     CONTACTS,
     THORNBURY_ANSWERS,
@@ -538,7 +549,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.standards import SLICE as
 from abacus_tools.synthetic.scenarios.brightwater_hale.standards import (
     spec_of as standard_spec,
 )
-from abacus_tools.synthetic.scenarios.brightwater_hale.tax_board import BOARD_BY_LABEL
+from abacus_tools.synthetic.scenarios.brightwater_hale.tax_board import BOARD, BOARD_BY_LABEL
 from abacus_tools.synthetic.scenarios.brightwater_hale.tax_board import NEEDS as TAX_BOARD_NEEDS
 from abacus_tools.synthetic.scenarios.brightwater_hale.tax_board import SLICE as TAX_BOARD_SLICE
 from abacus_tools.synthetic.scenarios.brightwater_hale.tax_content import (
@@ -1838,6 +1849,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     STANDARDS_SLICE: STANDARDS_NEEDS,  # K-02-T18: Margaret creates; each owner publishes
     SIGNATURES_SLICE: SIGNATURES_NEEDS,  # N-02-T36: SIG-01 at E0 over the tax clients
     TAX_CONTENT_SLICE: TAX_CONTENT_NEEDS,  # T-02-T23: K-1 sets, the organizer, questions
+    _tax_schedules.SLICE: _tax_schedules.NEEDS,  # T-03-T15: organizer v6, TAX-13's rows
     PILOT_SLICE: PILOT_NEEDS,  # TASK-2470: PF-X1's enrolments name the Feld return and Northwind
     REVIEW_SLICE: REVIEW_NEEDS,  # P-04-T36: the review grammar's objects on registered owners
     PLANNING_SLICE: PLANNING_NEEDS,  # A-04-T28: Northwind's planning day; G4 met at 4:40 PM
@@ -4029,6 +4041,229 @@ async def _organizer_answered(conn: asyncpg.Connection, _: Scenario, event: Even
     )
 
 
+# --- T-03-T15 (`--slice tax_schedules`): organizer v6, TAX-13's rows, through the services ------
+
+
+def _as_actor(event: Event, actor: str) -> Event:
+    return replace(event, actor=actor)
+
+
+async def _organizer_v6_loaded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Grace imports v1 to v6; Daniel owns the template and publishes v6 for TY2025."""
+    ctx = await _staff_context(conn, event)
+    found = None
+    for _version in range(_tax_schedules.VERSIONS):
+        found = await import_questionnaire_template(
+            ctx, _tax_schedules.TEMPLATE_NAME, _tax_schedules.organizer_csv(), "csv", dry_run=False
+        )
+    assert found is not None and found.template_id is not None  # noqa: S101 -- VERSIONS is 6
+    owner = await _staff_context(conn, _as_actor(event, _tax_schedules.OWNER))
+    await assign_template_owner(
+        ctx,
+        found.template_id,
+        owner.user_id,
+        key=_tax_schedules.TEMPLATE_KEY,
+        form_family="1040",
+    )
+    await publish_questionnaire_template(
+        owner,
+        found.template_id,
+        _tax_schedules.VERSIONS,
+        applies_to_tax_year=_tax_schedules.TAX_YEAR,
+    )
+
+
+async def _organizer_feld(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Kevin attaches v6 to the Feld 2025 Binder and adds its rules; Claire answers 8 of 9."""
+    ctx = await _staff_context(conn, event)
+    feld = UUID(next(r for r in BOARD if r.client == "Jonah & Claire Feld").work_item_id)
+    made = await questionnaire_from_template(
+        ctx, _tax_schedules.TEMPLATE_KEY, _tax_schedules.TAX_YEAR, await _binder_of(conn, feld)
+    )
+    found = await questionnaire_editor_read(ctx, made)
+    questions: list[dict[str, Any]] = []  # Any: the save's own shape
+    for q in found.questions:
+        rule = _tax_schedules.RULES.get(q.key)
+        questions.append(
+            {
+                "key": q.key,
+                "section_key": q.section_key,
+                "parent_key": q.parent_key,
+                "type": q.type,
+                "client_wording": q.client_wording,
+                "show_when": {"parent_key": q.parent_key, "equals": "Yes"}
+                if q.parent_key
+                else None,
+                "choices": ["Direct deposit", "Apply to next year", "Paper check"]
+                if q.key == "q6"
+                else [],
+                "effect_rules": [
+                    {"key": rule[0], "kind": rule[1], "when_equals": "Yes", "title": rule[2]}
+                ]
+                if rule
+                else [],
+            }
+        )
+    await save_questionnaire(
+        ctx,
+        made,
+        found.row_version,
+        sections=[{"key": key, "title": title} for _s, key, title, _p in found.sections],
+        questions=questions,
+        dry_run=False,
+    )
+    claire = await _portal_context(conn, "Claire Feld")
+    latest = await questionnaire_editor_read(ctx, made)
+    for q in latest.questions:
+        value = _tax_schedules.ANSWERS.get(q.key)
+        if value is None:
+            continue
+        typed: object = value if q.type == "choice" else value == "Yes"
+        await save_portal_answer(claire, made, q.id, typed, 1)
+
+
+async def _extension_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    row = BOARD_BY_LABEL[str(event.data["label"])]
+    ctx = await _staff_context(conn, _as_actor(event, row.preparer))
+    item = UUID(row.work_item_id)
+    seed = next((x for x in _tax_schedules.LINES if x.client == row.client), None)
+    lines = (
+        [
+            LineIn(
+                item,
+                projected_liability=_tax_schedules.money(seed.projected),
+                projected_liability_source="preparer_entry" if seed.projected else None,
+                withholding_plus_estimates=_tax_schedules.money(seed.held),
+            ),
+            *(
+                LineIn(item, jurisdiction, form)
+                for jurisdiction, form, _a in seed.payments
+                if jurisdiction != "US"
+            ),
+        ]
+        if seed
+        else []
+    )
+    await prepare_extensions(
+        ctx,
+        [item],
+        lines=lines,
+        payments=[
+            PaymentIn(
+                item,
+                jurisdiction,
+                "ptet" if row.client == _tax_schedules.PTET else "extension_payment",
+                Decimal(amount),
+            )
+            for jurisdiction, _f, amount in (seed.payments if seed else ())
+        ],
+        loader_dates={item: (row.original_due, row.extended_due)},
+    )
+    if event.data["state"] != "filed":
+        return
+    engagement = cast(
+        UUID,
+        await tenant_value(
+            conn, TENANT, "SELECT engagement_id FROM work_items WHERE id = $1", item
+        ),
+    )
+    stored = await stage_content(TENANT, f"filed extension {row.label}".encode())
+    async with uow(TenantContext(TENANT, "human", str(ctx.user_id))) as tx:
+        version = await add_version(
+            tx,
+            engagement_id=engagement,
+            item=NewItem(title="Filed extension.pdf"),
+            stored=stored,
+            media_type="application/pdf",
+            provenance=Provenance(source="firm_upload", method="uploaded"),
+            requested_by=ctx.user_id,
+        )
+    extension = await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM filing_extensions WHERE tax_return_id = $1 AND jurisdiction = 'US'",
+        item,
+    )
+    found = await conn_extension_version(conn, cast(UUID, extension))
+    await patch_extension(
+        ctx,
+        cast(UUID, extension),
+        action="filing_extension.mark_filed",
+        expected_version=found,
+        filed_on=row.original_due,
+        form=None,
+        filed_form_evidence_version_id=version.id,
+        likely_to_extend=None,
+        reason=None,
+        note=None,
+    )
+
+
+async def conn_extension_version(conn: asyncpg.Connection, extension: UUID) -> int:
+    return cast(
+        int,
+        await tenant_value(
+            conn, TENANT, "SELECT row_version FROM filing_extensions WHERE id = $1", extension
+        ),
+    )
+
+
+async def _likely_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    seed = next(x for x in _tax_schedules.LIKELY if x.client == event.data["client"])
+    row = next(r for r in BOARD if r.client == seed.client and not r.extended)
+    ctx = await _staff_context(conn, _as_actor(event, row.preparer))
+    await flag_new_likely(
+        ctx,
+        UUID(row.work_item_id),
+        form=seed.form,
+        original_due_on=row.original_due,
+        extended_due_on=row.extended_due,
+        reason=seed.reason,
+        note=seed.note,
+    )
+
+
+_ESTIMATE_QUARTERS: Final[dict[int, date]] = {
+    1: date(2026, 4, 15),
+    2: date(2026, 6, 15),
+    3: date(2026, 9, 15),
+    4: date(2027, 1, 15),
+}
+
+
+async def _estimate_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    seed = next(x for x in _tax_schedules.ESTIMATES if x.client == event.data["client"])
+    ctx = await _staff_context(conn, event)
+    client = await _client_id(conn, seed.client)
+    entity = await _entity_id(conn, client, seed.client)
+    basis = next((r for r in BOARD if r.client == seed.client), None)
+    made = await create_estimate(
+        ctx,
+        entity,
+        basis_tax_return_id=UUID(basis.work_item_id) if basis else None,
+        tax_year=_tax_schedules.ESTIMATE_YEAR,
+        jurisdiction="US",
+        form="1040-ES",
+        method=seed.method,
+        prior_year_tax=_tax_schedules.money(seed.prior_year_tax),
+        prior_agi_over_threshold=None,
+        projected_withholding=_tax_schedules.money(seed.withholding),
+        payment_method_label="irs_direct_pay",
+        quarters=_ESTIMATE_QUARTERS,
+    )
+    if seed.status in ("paid", "scheduled"):
+        await patch_installment(
+            ctx,
+            made,
+            3,
+            expected_version=1,
+            scheduled_for=date(2026, 9, 15) if seed.status == "scheduled" else None,
+            paid_on=date(2026, 9, 10) if seed.status == "paid" else None,
+        )
+    elif seed.status == "confirmation_requested" and basis:
+        await request_estimate_confirmation(ctx, made, 3)
+
+
 async def _audit_item(conn: asyncpg.Connection, client: str) -> UUID:
     audit = next(a for a in AUDITS if a.client == client)
     found = await tenant_value(
@@ -4561,6 +4796,12 @@ HANDLERS: Final[dict[str, Handler]] = {
     "standards.version_imported": _standard_imported,
     "standards.version_published": _standard_published,
     "notices.seed_notice": _notice_seeded,  # N-04-T21
+    # T-03-T15
+    "tax.organizer_v6_loaded": _organizer_v6_loaded,
+    "tax.organizer_feld": _organizer_feld,
+    "tax.extension_seeded": _extension_seeded,
+    "tax.likely_seeded": _likely_seeded,
+    "tax.estimate_seeded": _estimate_seeded,
     "reporting.template_imported": _report_template_imported,
     "reporting.template_published": _report_template_published,
     # T-02-T23 (`--slice tax_content`): contacts and portal people, the engine's PDFs, then each

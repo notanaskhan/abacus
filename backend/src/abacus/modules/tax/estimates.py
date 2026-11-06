@@ -108,14 +108,22 @@ def _computed(row: dict[str, Any]) -> tuple[Decimal | None, Stamp | None, tuple[
     return annual.annual, annual.stamp, installment_amounts(annual.annual, params).amounts
 
 
-async def _write_quarters(tx: UnitOfWork, ctx: AuthContext, row: dict[str, Any]) -> None:
+async def _write_quarters(
+    tx: UnitOfWork,
+    ctx: AuthContext,
+    row: dict[str, Any],  # Any: JSON from the database
+    quarters: Mapping[int, date] | None = None,
+) -> None:
     """Quarters from rules and code. A paid or scheduled quarter keeps its status; a schedule that
     owes nothing has every open quarter `not_required`."""
-    annual, _, amounts = _computed(row)
-    dates = await installments_due(row["form"], int(row["tax_year"]), row["jurisdiction"])
+    _, _, amounts = _computed(row)
+    dates = quarters or await installments_due(
+        row["form"], int(row["tax_year"]), row["jurisdiction"]
+    )
     for quarter, due_on in sorted(dates.items()):
         amount = amounts[quarter - 1] if quarter <= len(amounts) else None
-        status = "not_required" if annual is None else "not_confirmed"
+        # A missing parameter file is an unknown figure, not a schedule that owes nothing.
+        status = "not_confirmed" if row["method"] in OWED else "not_required"
         await tx.session.execute(
             text(
                 "INSERT INTO estimate_installments (tenant_id, schedule_id, quarter, due_on, "
@@ -149,8 +157,11 @@ async def create(
     prior_agi_over_threshold: bool | None,
     projected_withholding: Decimal | None,
     payment_method_label: str | None,
+    quarters: Mapping[int, date] | None = None,
 ) -> UUID:
-    """A schedule and its quarters, through this one door (T-03-T15 loads through it too)."""
+    """A schedule and its quarters, through this one door (T-03-T15 loads through it too).
+    `quarters` is the demo loader's: its firm has no published rules (DEC-2328). No route passes
+    it."""
     walled = await walled_from(ctx.tenant, ctx.user_id)
     async with uow(ctx.tenant) as tx:
         client = (
@@ -198,7 +209,7 @@ async def create(
                 },
             )
         ).scalar_one()
-        await _write_quarters(tx, ctx, row)
+        await _write_quarters(tx, ctx, row, quarters)
         tx.record(
             "estimate_schedule.created",
             target=Target("estimate_schedule", row["id"]),

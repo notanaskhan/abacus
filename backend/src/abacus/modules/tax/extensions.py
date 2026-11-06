@@ -20,7 +20,7 @@ Figures (projected liability, the safe-harbor target) are stored by code with th
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import date
 from decimal import Decimal
@@ -369,8 +369,13 @@ async def prepare(
     *,
     lines: Sequence[LineIn] = (),
     payments: Sequence[PaymentIn] = (),
+    loader_dates: Mapping[UUID, tuple[date, date]] | None = None,
 ) -> list[Check]:
-    """Each return's lines `prepared`, with its proposed payments. All or nothing."""
+    """Each return's lines `prepared`, with its proposed payments. All or nothing.
+
+    `loader_dates` is the demo loader's alone: its firm has no published TY2025 rules and its tax
+    engagements carry no acceptance or letter, so it passes the board's dates and those gates
+    aren't read (DEC-2328). No route passes it."""
     visible = {f.work_item_id: f for f in await work_item_facts(ctx, KIND)}
     chosen = {*return_ids, *(x.return_id for x in lines), *(p.return_id for p in payments)}
     if any(r not in visible for r in chosen):
@@ -378,6 +383,8 @@ async def prepare(
     for return_id in chosen:
         fact = visible[return_id]
         await _narrow(ctx, PREPARE, fact)
+        if loader_dates is not None:
+            continue
         met = {g: (await gate_fact(ctx.tenant, fact.engagement_id, g)).met for g in _GATES}
         if not all(met.values()):
             raise GateUnmet(
@@ -408,8 +415,13 @@ async def prepare(
             )
             if form is None:
                 raise StateLineNeedsForm(facts={"jurisdiction": jurisdiction})
-            dates = await dates_for(head.form, head.tax_year, head.fiscal_year_end)
-            if dates is None or dates.extended_due_on is None:
+            given = (loader_dates or {}).get(return_id)
+            dates = (
+                None if given else await dates_for(head.form, head.tax_year, head.fiscal_year_end)
+            )
+            original = given[0] if given else dates.original_due_on if dates else None
+            extended = given[1] if given else dates.extended_due_on if dates else None
+            if original is None or extended is None:
                 raise NotFound("due_date_rule")
             mine = [
                 p.amount
@@ -463,9 +475,11 @@ async def prepare(
                         "y": head.tax_year,
                         "j": jurisdiction,
                         "form": form,
-                        "orig": dates.original_due_on,
-                        "ext": dates.extended_due_on,
-                        "rules": next(iter(dates.reference_set_version_ids), None),
+                        "orig": original,
+                        "ext": extended,
+                        "rules": next(iter(dates.reference_set_version_ids), None)
+                        if dates
+                        else None,
                         "proj": line.projected_liability,
                         "src": line.projected_liability_source,
                         "held": line.withholding_plus_estimates,
@@ -511,6 +525,58 @@ async def prepare(
                 after=Ref(extension=extension_id, payments=len(mine)),
             )
     return checks
+
+
+async def flag_new_likely(
+    ctx: AuthContext,
+    return_id: UUID,
+    *,
+    form: str,
+    original_due_on: date,
+    extended_due_on: date,
+    reason: str,
+    note: str | None,
+) -> UUID:
+    """A likely-to-extend row with nothing prepared: `not_filed`, so the gates don't hold it."""
+    visible = {f.work_item_id: f for f in await work_item_facts(ctx, KIND)}
+    fact = visible.get(return_id)
+    if fact is None:
+        raise NotFound(KIND)
+    await _narrow(ctx, "filing_extension.flag_likely", fact)
+    async with uow(ctx.tenant) as tx:
+        year = (
+            await tx.session.execute(
+                text("SELECT tax_year FROM tax_returns WHERE work_item_id = :w"), {"w": return_id}
+            )
+        ).scalar_one()
+        made = (
+            await tx.session.execute(
+                text(
+                    "INSERT INTO filing_extensions (tenant_id, engagement_id, work_item_id, "
+                    "tax_return_id, tax_year, jurisdiction, form, likely_to_extend, "
+                    "likely_reasons, likely_note, original_due_on, extended_due_on, created_by) "
+                    "VALUES (:t, :e, :w, :w, :y, 'US', :f, true, :r, :n, :o, :x, :by) RETURNING id"
+                ),
+                {
+                    "t": ctx.tenant_id,
+                    "e": fact.engagement_id,
+                    "w": return_id,
+                    "y": year,
+                    "f": form,
+                    "r": [reason],
+                    "n": note,
+                    "o": original_due_on,
+                    "x": extended_due_on,
+                    "by": ctx.user_id,
+                },
+            )
+        ).scalar_one()
+        tx.record(
+            "filing_extension.flagged",
+            target=Target("work_item", return_id),
+            after=Ref(likely=1),
+        )
+    return made
 
 
 async def submit(ctx: AuthContext, extension_ids: Sequence[UUID]) -> int:
