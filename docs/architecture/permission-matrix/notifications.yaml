@@ -1,0 +1,9 @@
+# The notifications module's actions (ADR-027; P-39). Compiled with every other module's file into
+# identity/authz/_matrix.py by `make regenerate`.
+#
+# `events.subscribe` (P-10-T08; ADR P-15): the multiplexed invalidation stream, the caller's own.
+# Each topic is re-authorised through `notifications.register_topic`; a client person reaches only
+# `portal:{grant_scope}` topics.
+
+actions:
+  events.subscribe:         {firm_admin: allow, security_admin: allow, practice_leader: allow, quality_partner: allow, firm_partner: allow, firm_manager: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, specialist: allow, client_service: allow, client_admin: allow, client_contributor: allow, agent: deny, system: deny}
