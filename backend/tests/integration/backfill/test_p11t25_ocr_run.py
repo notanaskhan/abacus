@@ -80,7 +80,7 @@ async def test_ac_a_scan_gets_words_and_an_extraction_and_its_bytes_never_change
     world: Books, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(ocr_step, "first_refusal", _open_gate)
-    monkeypatch.setattr(ocr_step, "_facts", _facts)
+    monkeypatch.setattr(ocr_step, "gate_facts", _facts)
     version, fingerprint = await _scan(world)
     given = UploadInput(str(world.tenant_id), VERSION, str(version))
     assert await ocr_step.ocr_upload(given) == 1
@@ -117,7 +117,7 @@ async def test_ac_a_firm_over_its_daily_cap_is_refused_and_reads_nothing(
         return True
 
     monkeypatch.setattr(ocr_step, "first_refusal", _open_gate)
-    monkeypatch.setattr(ocr_step, "_facts", _facts)
+    monkeypatch.setattr(ocr_step, "gate_facts", _facts)
     monkeypatch.setattr(ocr_step, "over_daily_cap", over)
     version, _ = await _scan(world)
     given = UploadInput(str(world.tenant_id), VERSION, str(version))
@@ -206,7 +206,7 @@ async def test_ac74_a_page_no_scan_could_read_is_read_masked_and_rendered_again(
     assert given in await ocr_step.pending_ocr(BackfillInput(str(world.tenant_id)))
 
     monkeypatch.setattr(ocr_step, "first_refusal", _open_gate)
-    monkeypatch.setattr(ocr_step, "_facts", _facts)
+    monkeypatch.setattr(ocr_step, "gate_facts", _facts)
     assert await ocr_step.ocr_upload(given) == 1
     assert engine.apis == ["detect_text", "analyze_forms"]
     assert given not in await ocr_step.pending_ocr(BackfillInput(str(world.tenant_id)))

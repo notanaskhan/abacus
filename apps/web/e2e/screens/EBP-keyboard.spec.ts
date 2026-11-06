@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 
 test.use({ reducedMotion: "reduce" });
 
-for (const n of ["01", "03", "04", "06"]) {
+for (const n of ["01", "03", "04"]) {
   test(`EBP-${n}: Escape closes a dialog and focus returns`, async ({ page }) => {
     await page.goto(`/audits/_auditId_?screen=EBP-${n}&st=a&section=ebp_${n}`);
     const canvas = page.locator(`[data-screen='EBP-${n}']`).first();

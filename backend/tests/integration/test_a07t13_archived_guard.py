@@ -35,19 +35,10 @@ async def _locked(seeder: Seeder) -> tuple[Person, uuid.UUID, uuid.UUID]:
     who = await seeder.person(tenant_id)
     entity_id = await seeder.entity(tenant_id)
     engagement_id = await seeder.engagement(tenant_id, entity_id, who.user_id)
-    client_id = await seeder.value(
-        "SELECT client_id FROM client_entities WHERE id = $1", entity_id
+    work_item = await seeder.value(  # the engagement's own assurance item
+        "SELECT id FROM work_items WHERE engagement_id = $1", engagement_id
     )
-    work_item = uuid.uuid4()
-    await seeder.run(
-        "INSERT INTO work_items (id, tenant_id, engagement_id, client_id, kind, name, created_by) "
-        "VALUES ($1, $2, $3, $4, 'assurance', 'PY2025 audit', $5)",
-        work_item,
-        tenant_id,
-        engagement_id,
-        client_id,
-        who.user_id,
-    )
+    assert isinstance(work_item, uuid.UUID)
     await seeder.run(
         "UPDATE work_items SET archive_locked_at = now(), status = 'archived', "
         "archived_at = now() WHERE id = $1",
@@ -59,16 +50,21 @@ async def _locked(seeder: Seeder) -> tuple[Person, uuid.UUID, uuid.UUID]:
 def test_a_write_to_a_guarded_table_raises_archived(private_db: sc.Database) -> None:
     seeder = Seeder(private_db.superuser_dsn)
     who, engagement_id, work_item = asyncio.run(_locked(seeder))
-    with pytest.raises(asyncpg.PostgresError, match="archived") as raised:
-        asyncio.run(
-            seeder.run(
+
+    # The guard reads the work item under RLS, so it needs the firm's GUC, as every app write has.
+    async def _write() -> None:
+        async with seeder.held() as conn, conn.transaction():
+            await conn.execute("SELECT set_config('app.tenant_id', $1, true)", str(who.tenant_id))
+            await conn.execute(
                 "INSERT INTO accounting_estimates (tenant_id, engagement_id, work_item_id, name, "
                 "created_by_kind) VALUES ($1, $2, $3, 'Fair value', 'human')",
                 who.tenant_id,
                 engagement_id,
                 work_item,
             )
-        )
+
+    with pytest.raises(asyncpg.PostgresError, match="archived") as raised:
+        asyncio.run(_write())
     assert raised.value.sqlstate == "AB409"
 
 
@@ -85,6 +81,7 @@ def test_the_kind_lets_only_its_tables_through(private_db: sc.Database) -> None:
 
     async def _with_kind(kind: str) -> None:
         async with seeder.held() as conn, conn.transaction():
+            await conn.execute("SELECT set_config('app.tenant_id', $1, true)", str(who.tenant_id))
             await conn.execute("SELECT set_config('app.archived_write', $1, true)", kind)
             await conn.execute(
                 "INSERT INTO accounting_estimates (tenant_id, engagement_id, work_item_id, "
@@ -108,7 +105,7 @@ def test_the_trail_goes_on(private_db: sc.Database) -> None:
     assert "audit_events" not in guarded
     assert "access_events" not in guarded
     assert not guarded & set(EXEMPT)
-    assert {"evidence_versions", "proposed_entries", "agent_runs", "workpapers"} <= guarded
+    assert {"evidence_versions", "proposed_entries", "sign_offs", "workpapers"} <= guarded
 
 
 def test_every_exemption_has_a_reason() -> None:
