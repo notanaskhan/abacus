@@ -8,6 +8,8 @@ database half lands at the integration pass; the staging clause waits for a stag
 from __future__ import annotations
 
 import ast
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from datetime import date
 from pathlib import Path
 from types import SimpleNamespace
@@ -17,6 +19,7 @@ from uuid import uuid4
 import pytest
 
 from abacus.kernel.errors import NotFound
+from abacus.kernel.uow import OutboxEvent
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.notices import sending
 from abacus.modules.notices.response_workflow import ALERTS, CP3219A_ALERTS, alert_days
@@ -91,3 +94,83 @@ async def test_ac_an_agency_reply_cites_only_its_own_engagements_evidence(
             note=None,
             evidence_version_id=uuid4(),
         )
+
+
+def test_ac_a_payment_due_waits_for_the_accepted_confirmation_then_is_ready() -> None:
+    due = {"required": True, sending.CONFIRMATION_ITEM: "x"}
+    assert not readiness_of(True, due, []).ready
+    assert readiness_of(True, {**due, "confirmation_accepted": True}, []).ready
+
+
+async def test_ac_a_payment_gets_one_confirmation_request_and_none_without_a_payment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    item_id = uuid4()
+    made: list[object] = []
+
+    async def add(_ctx: object, _engagement: object, new: object) -> SimpleNamespace:
+        made.append(new)
+        return SimpleNamespace(id=item_id)
+
+    monkeypatch.setattr(sending, "add_request_item", add)
+    ctx = cast(AuthContext, SimpleNamespace())
+    helper = sending._with_confirmation_request  # pyright: ignore[reportPrivateUsage]
+    assert await helper(ctx, uuid4(), None) is None
+    assert await helper(ctx, uuid4(), {"required": False}) == {"required": False}
+    once = await helper(ctx, uuid4(), {"required": True})
+    assert once == {"required": True, sending.CONFIRMATION_ITEM: str(item_id)}
+    assert await helper(ctx, uuid4(), once) == once
+    assert len(made) == 1
+
+
+@pytest.mark.parametrize(("status", "publishes"), [("accepted", True), ("uploaded", False)])
+async def test_ac_staff_accepting_the_confirmation_moves_the_band_once(
+    monkeypatch: pytest.MonkeyPatch, status: str, publishes: bool
+) -> None:
+    """US-7.2: only an accepted upload marks the payment, and only a signed letter publishes."""
+    item = uuid4()
+    row = {
+        "id": uuid4(),
+        "work_item_id": uuid4(),
+        "payment": {"required": True, sending.CONFIRMATION_ITEM: str(item)},
+        "enclosures": [],
+        "envelope_id": uuid4(),
+    }
+    published: list[bool] = []
+    written: list[dict[str, object]] = []
+
+    class _Session:
+        async def execute(self, _sql: object, params: dict[str, object] | None = None) -> object:
+            if params and "p" in params:
+                written.append(params)
+            return SimpleNamespace(mappings=lambda: SimpleNamespace(all=lambda: [row]))
+
+    @asynccontextmanager
+    async def session(_tenant: object) -> AsyncIterator[_Session]:
+        yield _Session()
+
+    @asynccontextmanager
+    async def unit(_tenant: object) -> AsyncIterator[SimpleNamespace]:
+        yield SimpleNamespace(session=_Session(), record=lambda *_a, **_k: None)
+
+    async def items(_tenant: object, _version: object) -> list[SimpleNamespace]:
+        return [SimpleNamespace(id=item, status=status)]
+
+    async def envelope(_tenant: object, _id: object) -> str:
+        return "completed"
+
+    async def publish(_tenant: object, _row: object, *, signed: bool) -> None:
+        published.append(signed)
+
+    monkeypatch.setattr(sending, "items_of_version", items)
+    monkeypatch.setattr(sending, "tenant_session", session)
+    monkeypatch.setattr(sending, "uow", unit)
+    monkeypatch.setattr(sending, "envelope_status", envelope)
+    monkeypatch.setattr(sending, "_publish_when_ready", publish)
+    event = cast(
+        OutboxEvent,
+        SimpleNamespace(tenant_id=uuid4(), payload={"evidence_version_id": str(uuid4())}),
+    )
+    await sending.on_review_decision(event)
+    assert published == ([True] if publishes else [])
+    assert len(written) == (1 if publishes else 0)

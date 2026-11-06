@@ -627,6 +627,23 @@ class PaymentOut(BaseModel):
     request_state: Annotated[str | None, classified("internal")]
 
 
+def _payment_out(raw: object) -> PaymentOut | None:
+    """NOT-03's Payment band from the response's settings. A label, never an instrument."""
+    if not isinstance(raw, dict) or not raw.get("required"):
+        return None
+    payment = cast(dict[str, Any], raw)  # Any: JSON from the database
+    item = payment.get("confirmation_request_item_id")
+    return PaymentOut(
+        amounts=AmountsOut(total=payment.get("amount")),
+        method_label=payment.get("method_label"),
+        paid_on=payment.get("paid_on"),
+        confirmation_request_item_id=UUID(str(item)) if item else None,
+        request_state=("accepted" if payment.get("confirmation_accepted") else "requested")
+        if item
+        else None,
+    )
+
+
 class ApprovalStepOut(BaseModel):
     """P-04's ladder: Prepared KO ✓ · Reviewed SI in progress · Approved DR ring."""
 
@@ -1377,7 +1394,7 @@ async def _response_out(ctx: AuthContext, found: object) -> ResponseOut:
             for b in r.blocks
         ],
         enclosures=[],
-        payment=None,
+        payment=_payment_out(settings.get("payment")),
         signer_contact_ids=list(settings.get("signer_contact_ids") or []),
         channel=settings.get("channel"),
         follow_up_days=int(settings.get("follow_up_days") or 60),
@@ -1458,9 +1475,10 @@ async def send_for_signature_route(
     await _gate(ctx, notice_id, "notice_response.send_for_signature")
     from abacus.modules.notices import sending
 
+    envelope_id = await sending.send_for_signature(ctx, notice_id)
     return SendForSignatureOut(
-        envelope_id=await sending.send_for_signature(ctx, notice_id),
-        confirmation_request_item_id=None,
+        envelope_id=envelope_id,
+        confirmation_request_item_id=await sending.confirmation_item_of(ctx, notice_id),
     )
 
 

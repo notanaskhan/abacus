@@ -12,6 +12,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from datetime import date, timedelta
@@ -46,17 +47,21 @@ from abacus.modules.notices.response_workflow_types import (
 from abacus.modules.notices.service import Notice, move, notice
 from abacus.modules.organisations.api import client_of_entity
 from abacus.modules.reporting import api as c11
+from abacus.modules.requests.api import NewRequestItem, add_request_item, items_of_version
 from abacus.modules.signatures.api import (
     EnvelopeSource,
     SourceDocument,
     SourceDraft,
     SourceSigner,
     create_draft,
+    envelope_status,
     envelope_summary_for,
     register_envelope_source,
 )
 
 SOURCE: Final = "notice_response"
+CONFIRMATION_ITEM: Final = "confirmation_request_item_id"
+CONFIRMATION_REQUEST: Final = "Upload your IRS payment confirmation"  # NOT-03c, verbatim
 RECORD_TYPE: Final = "notice_response"
 JsonRow = dict[str, Any]  # Any: rows and JSON columns as stored
 
@@ -278,6 +283,21 @@ async def _draft_source(ctx: AuthContext, work_item_id: UUID) -> SourceDraft:
 # --- send for signature -----------------------------------------------------------------------
 
 
+async def _with_confirmation_request(
+    ctx: AuthContext, engagement_id: UUID, payment: dict[str, object] | None
+) -> dict[str, object] | None:
+    """US-7.1: a payment by the taxpayers gets one request for its confirmation. Accrued never
+    takes a payment or holds an instrument (ADR P-27); the client uploads a confirmation."""
+    if not payment or not payment.get("required") or payment.get(CONFIRMATION_ITEM):
+        return payment
+    item = await add_request_item(
+        ctx,
+        engagement_id,
+        NewRequestItem(description=CONFIRMATION_REQUEST, audit_area="tax_payments"),
+    )
+    return {**payment, CONFIRMATION_ITEM: str(item.id)}
+
+
 async def send_for_signature(ctx: AuthContext, work_item_id: UUID) -> UUID:
     """The partner's sign-off holds; the letter is rendered once; a C7 draft for SIG-02 d."""
     found = await notice(ctx, work_item_id)
@@ -308,13 +328,16 @@ async def send_for_signature(ctx: AuthContext, work_item_id: UUID) -> UUID:
     if row["envelope_id"] is not None:
         return cast(UUID, row["envelope_id"])
     envelope_id = await create_draft(ctx, SOURCE, work_item_id)
+    payment = await _with_confirmation_request(
+        ctx, found.engagement_id, cast("dict[str, object] | None", row["payment"])
+    )
     async with uow(ctx.tenant) as tx:
         await tx.session.execute(
             text(
-                "UPDATE notice_responses SET envelope_id = :e, row_version = row_version + 1 "
-                "WHERE id = :r"
+                "UPDATE notice_responses SET envelope_id = :e, payment = CAST(:p AS jsonb), "
+                "row_version = row_version + 1 WHERE id = :r"
             ),
-            {"e": envelope_id, "r": row["id"]},
+            {"e": envelope_id, "p": json.dumps(payment) if payment else None, "r": row["id"]},
         )
         tx.record(
             "notice_response.sent_for_signature",
@@ -322,6 +345,13 @@ async def send_for_signature(ctx: AuthContext, work_item_id: UUID) -> UUID:
             after=Ref(envelope=envelope_id),
         )
     return envelope_id
+
+
+async def confirmation_item_of(ctx: AuthContext, work_item_id: UUID) -> UUID | None:
+    """The payment's confirmation request, when there is one."""
+    payment = (await _response_row(ctx.tenant, work_item_id))["payment"] or {}
+    found = payment.get(CONFIRMATION_ITEM)
+    return UUID(str(found)) if found else None
 
 
 # --- readiness --------------------------------------------------------------------------------
@@ -388,8 +418,17 @@ async def on_envelope_completed(event: OutboxEvent) -> None:
         )
     if row is None:
         return
-    found = readiness_of(True, row["payment"], row["enclosures"] or [])
-    if not found.ready:
+    await _publish_when_ready(tenant, dict(row), signed=True)
+
+
+async def _publish_when_ready(
+    tenant: TenantContext,
+    row: dict[str, Any],  # Any: JSON from the database
+    *,
+    signed: bool,
+) -> None:
+    """Ready to send, once: the signature's event or the confirmation's, whichever came last."""
+    if not readiness_of(signed, row["payment"], row["enclosures"] or []).ready:
         return
     async with uow(tenant) as tx:
         tx.emit(
@@ -406,8 +445,56 @@ async def on_envelope_completed(event: OutboxEvent) -> None:
         )
 
 
+async def on_review_decision(event: OutboxEvent) -> None:
+    """US-7.2: staff accepting (or undoing) the client's confirmation moves the payment band."""
+    tenant = TenantContext(event.tenant_id, "system", "notices:payment_confirmation")
+    items = await items_of_version(tenant, UUID(str(event.payload["evidence_version_id"])))
+    if not items:
+        return
+    status = {str(i.id): i.status for i in items}
+    async with tenant_session(tenant) as session:
+        rows = (
+            (
+                await session.execute(
+                    text(
+                        "SELECT id, work_item_id, payment, enclosures, envelope_id "
+                        "FROM notice_responses WHERE payment ->> :key = ANY(:ids)"
+                    ),
+                    {"key": CONFIRMATION_ITEM, "ids": list(status)},
+                )
+            )
+            .mappings()
+            .all()
+        )
+    for row in rows:
+        accepted = status[row["payment"][CONFIRMATION_ITEM]] == "accepted"
+        if bool(row["payment"].get("confirmation_accepted")) == accepted:
+            continue
+        payment = {**row["payment"], "confirmation_accepted": accepted}
+        async with uow(tenant) as tx:
+            await tx.session.execute(
+                text(
+                    "UPDATE notice_responses SET payment = CAST(:p AS jsonb), "
+                    "row_version = row_version + 1 WHERE id = :r"
+                ),
+                {"p": json.dumps(payment), "r": row["id"]},
+            )
+            tx.record(
+                "notice_response.payment_confirmation_decided",
+                target=Target("notice", row["work_item_id"]),
+                after=Ref(accepted=int(accepted)),
+            )
+        if accepted and row["envelope_id"] is not None:
+            await _publish_when_ready(
+                tenant,
+                {**row, "payment": payment},
+                signed=await envelope_status(tenant, row["envelope_id"]) == "completed",
+            )
+
+
 SUBSCRIPTIONS: Final = {
     "envelope.completed": on_envelope_completed,
+    "review_decision.recorded": on_review_decision,
     NoticeCreated.event_type: on_notice_created,
 }
 
@@ -563,6 +650,11 @@ async def send_alert(given: AlertInput) -> None:
                 assignee_user_id=await _assignee_of(tx.session, work_item_id),
             )
         )
+        tx.record(
+            "notice.respond_by_alerted",
+            target=Target("notice", work_item_id),
+            after=Ref(days_left=given.days_left),
+        )
 
 
 async def send_follow_up(given: FollowUpInput) -> None:
@@ -576,3 +668,4 @@ async def send_follow_up(given: FollowUpInput) -> None:
                 assignee_user_id=await _assignee_of(tx.session, work_item_id),
             )
         )
+        tx.record("notice.follow_up_alerted", target=Target("notice", work_item_id))
