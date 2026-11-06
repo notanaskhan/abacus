@@ -108,6 +108,8 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "gate.met",  # A-01-T05: the phase a computed gate opens is derived
         "evidence_text.ready",  # P-11-T26: form extraction starts
         "notice.created",  # N-04-T16: the notice's timers start
+        "extracted_fields.recorded",  # N-04-T19: an intake's fields from the code map
+        "ocr_run.refused",  # N-04-T19: an intake opens in manual entry
         "notice.respond_by_soon",  # N-04-T16: C16 to the assignee
         "notice.follow_up_due",  # N-04-T16: C16 to the assignee
         "notice_response.ready_to_send",  # N-04-T16: C16 to the assignee

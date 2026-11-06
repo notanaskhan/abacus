@@ -243,6 +243,14 @@ async def analyze(
     return AnalyzeResult(stage, run_id, recommended, answer)
 
 
+@dataclass(frozen=True)
+class ExtractProposal:
+    """The fields and the run they came from: an agent's value names its run (0650's CHECK)."""
+
+    output: NoticeExtractOutput
+    run_id: UUID
+
+
 async def extract_fields(
     tenant: TenantContext,
     *,
@@ -251,7 +259,7 @@ async def extract_fields(
     keys: Sequence[str],
     lines: Sequence[tuple[str, str]],
     subjects: Sequence[DataSubject],
-) -> NoticeExtractOutput | None:
+) -> ExtractProposal | None:
     """Field proposals for a notice with no code map; a citation outside `lines` drops its
     field."""
     if not await flag_enabled(tenant, NOTICES_RESPONDER):
@@ -309,7 +317,7 @@ async def extract_fields(
             output={"fields": len(kept)},
         ):
             tx.record("agent_run.completed", target=Target("agent_run", run_id))
-    return NoticeExtractOutput(fields=kept)
+    return ExtractProposal(NoticeExtractOutput(fields=kept), run_id)
 
 
 def _task(request: ModelRequest) -> Mapping[str, Any]:  # Any: JSON

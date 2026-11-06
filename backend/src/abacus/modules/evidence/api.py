@@ -167,7 +167,7 @@ from abacus.modules.evidence.intake_sources import IntakeSource, register_intake
 from abacus.modules.evidence.item_detail import Download as DocumentDownload
 from abacus.modules.evidence.item_detail import latest_document
 from abacus.modules.evidence.masked_previews import intake_masked_pages, masked_preview_upload
-from abacus.modules.evidence.masked_text import intake_masked_text
+from abacus.modules.evidence.masked_text import intake_masked_text, masked_pages
 from abacus.modules.evidence.match_material import (
     Candidate,
     MatchMaterial,
@@ -461,6 +461,11 @@ register_audit_value_resolver("pii_reveal", pii_reveal_values)
 # A-01-T10 (C5 v1.1, DEC-313): a request row's latest upload and the matcher's confidence.
 register_upload_facts(upload_facts)
 
+from abacus.modules.evidence.form_extraction import (  # noqa: E402 -- N-04-T19
+    form_is_known,
+    recorded_form_fields,
+)
+
 __all__ = [
     "ACTIVITIES",
     "ANCHOR_ID",
@@ -617,6 +622,7 @@ __all__ = [
     "final_export_for_archive",
     "firm_export_schedule_id",
     "firm_router",
+    "form_is_known",
     "get_record",
     "held_intake_objects",
     "holds_covering",
@@ -630,6 +636,7 @@ __all__ = [
     "list_holds",
     "live_intake_keys",
     "mark_sources_superseded",
+    "masked_pages",
     "masked_preview_upload",
     "masked_rows",
     "match_material",
@@ -650,6 +657,7 @@ __all__ = [
     "record_citations",
     "record_generated",
     "record_intake_key",
+    "recorded_form_fields",
     "register_citable",
     "register_export_audit_trail",
     "register_export_section",

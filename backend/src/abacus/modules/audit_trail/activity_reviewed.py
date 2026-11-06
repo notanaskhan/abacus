@@ -605,6 +605,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "notice.respond_by_alerted",  # reviewed 2026-11-06 (N-04-T16)
         "notice.follow_up_alerted",  # reviewed 2026-11-06 (N-04-T16)
         "notice_response.payment_confirmation_decided",  # reviewed 2026-11-06 (N-04-T16)
+        "notice_intake.read",  # reviewed 2026-11-06 (N-04-T19)
         "upload.ocr_refused",  # reviewed 2026-11-06 (P-11-T25)
         "upload.text_ready",  # reviewed 2026-11-06 (P-11-T25)
         "questionnaire_template.drafted",  # reviewed 2026-11-06 (T-03-T05)

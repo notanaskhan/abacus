@@ -55,6 +55,7 @@ from abacus.modules.notices.intake_sources import register as _register_sources 
 _register_sources()  # N-04-T13 (DEC-2245): the answer effect and the two triage destinations
 
 # N-04-T16 (DEC-2311): the response's C11 kind, C7 source, workflow and consumer.
+from abacus.modules.notices import intake_reading as _intake_reading  # noqa: E402
 from abacus.modules.notices import sending as _sending  # noqa: E402
 from abacus.modules.notices.response_activities import ACTIVITIES as ACTIVITIES  # noqa: E402
 from abacus.modules.notices.response_workflow import NoticeResponseWorkflow  # noqa: E402
@@ -69,7 +70,7 @@ from abacus.modules.notices.response_workflow_types import (  # noqa: E402
 )
 
 _sending.register()
-SUBSCRIPTIONS = _sending.SUBSCRIPTIONS
+SUBSCRIPTIONS = {**_sending.SUBSCRIPTIONS, **_intake_reading.SUBSCRIPTIONS}
 WORKFLOWS: dict[type, str] = {NoticeResponseWorkflow: "time_sensitive"}
 
 # N-04-T19 (DEC-2313): the analysis's agent step.
