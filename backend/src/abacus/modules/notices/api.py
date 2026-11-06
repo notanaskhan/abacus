@@ -62,3 +62,9 @@ from abacus.modules.notices.response_workflow import NoticeResponseWorkflow  # n
 _sending.register()
 SUBSCRIPTIONS = _sending.SUBSCRIPTIONS
 WORKFLOWS: dict[type, str] = {NoticeResponseWorkflow: "time_sensitive"}
+
+# N-04-T19 (DEC-2313): the analysis's agent step.
+from abacus.modules.notices.agent_step import step as _agent_step  # noqa: E402
+from abacus.modules.notices.analysis import register_agent_step  # noqa: E402
+
+register_agent_step(_agent_step)
