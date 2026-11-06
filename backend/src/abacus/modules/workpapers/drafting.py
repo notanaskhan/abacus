@@ -20,7 +20,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from uuid import UUID
 
-from sqlalchemy import insert
+from sqlalchemy import insert, text
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
@@ -263,6 +263,22 @@ async def paper_of_kind(ctx: AuthContext, engagement_id: UUID, kind: str) -> UUI
     if found is None:
         raise NotFound("workpaper")
     return found.id
+
+
+async def paper_id_of_kind(tenant: TenantContext, engagement_id: UUID, kind: str) -> UUID | None:
+    """A system handler's lookup of the engagement's paper of `kind` (A-06's exception router);
+    the caller's route authorised the person."""
+    async with tenant_session(tenant) as session:
+        found = (
+            await session.execute(
+                text(
+                    "SELECT id FROM workpapers WHERE engagement_id = :e AND kind = :k "
+                    "ORDER BY created_at LIMIT 1"
+                ),
+                {"e": engagement_id, "k": kind},
+            )
+        ).scalar()
+    return None if found is None else UUID(str(found))
 
 
 SOURCE = SectionSource(draft_paper, bound, pack_problem, raise_draft_flag)

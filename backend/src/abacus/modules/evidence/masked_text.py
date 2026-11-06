@@ -10,12 +10,23 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from sqlalchemy import select
+
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.tin_patterns import scrub_tins
+from abacus.modules.evidence.models import EvidenceVersion
 from abacus.modules.evidence.pii import DETECTOR_VERSION
 from abacus.modules.evidence.projection import projection_of
 from abacus.modules.evidence.repository import pages_of, scan_run_for
 from abacus.modules.evidence.words import WORDS_VERSION, read_page_layer
+
+
+async def engagement_of_version(tenant: TenantContext, version_id: UUID) -> UUID | None:
+    """The engagement a version sits on: an agent's read of it runs there (N-04-T19)."""
+    async with tenant_session(tenant) as session:
+        return await session.scalar(
+            select(EvidenceVersion.engagement_id).where(EvidenceVersion.id == version_id)
+        )
 
 
 async def masked_pages(
