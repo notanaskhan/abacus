@@ -2805,6 +2805,132 @@ export const STATUS_REGISTRY = {
       "derived": false
     }
   },
+  "agent_run_step": {
+    "queued": {
+      "label": "Queued",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "ring"
+    },
+    "dispatched": {
+      "label": "Dispatched",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "running": {
+      "label": "Running",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "spinner"
+    },
+    "waiting_on_inputs": {
+      "label": "Waiting on inputs",
+      "variant": "muted",
+      "terminal": false,
+      "derived": false
+    },
+    "blocked": {
+      "label": "Blocked",
+      "variant": null,
+      "terminal": false,
+      "derived": false,
+      "disc": "triangle_amber"
+    },
+    "succeeded": {
+      "label": "Succeeded",
+      "variant": null,
+      "terminal": true,
+      "derived": false,
+      "disc": "check_olive"
+    },
+    "failed": {
+      "label": "Failed",
+      "variant": null,
+      "terminal": true,
+      "derived": false,
+      "disc": "x_brick"
+    },
+    "cancelled": {
+      "label": "Cancelled",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    },
+    "skipped": {
+      "label": "Skipped",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "agent_plan": {
+    "proposed": {
+      "label": "Plan ready — approve?",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "approved": {
+      "label": "Approved",
+      "variant": "green",
+      "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "attribution": "Approved by {person} · {time}"
+      }
+    },
+    "edited": {
+      "label": "Approved with edits",
+      "variant": "green",
+      "terminal": true,
+      "derived": false
+    },
+    "cancelled": {
+      "label": "Plan cancelled",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false,
+      "contextLabels": {
+        "attribution": "Plan cancelled by {person} · {time}"
+      }
+    },
+    "standing": {
+      "label": "Standing plan",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "agent_question": {
+    "open": {
+      "label": "Needs your answer",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "answered": {
+      "label": "Answered",
+      "variant": null,
+      "terminal": true,
+      "derived": false,
+      "disc": "check_olive"
+    },
+    "skipped": {
+      "label": "Skipped",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    },
+    "expired": {
+      "label": "Expired",
+      "variant": "muted",
+      "terminal": true,
+      "derived": false
+    }
+  },
   "workbench_session": {
     "live": {
       "label": "Live",

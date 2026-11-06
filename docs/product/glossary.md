@@ -513,6 +513,8 @@ UI labels (N-04-T01): **Response sent** (status `sent`), **Awaiting agency** (st
 | Run record | The insert-only record of a completed specialist run: versions, model, route, inputs' hashes, records read, citations and outcome, kept for the engagement's retention after traces expire. | `agent_run_records` | — |
 | Run step | One step of an agent run. Never "task". | `agent_run_steps` | `task` |
 | Plan / question / artifact / event | P-47. | `agent_plans`, `agent_questions`, `run_artifacts`, `run_events` | — |
+| Run sign-off | A person's sign-off of a run, its open issues and decisions acknowledged. Human only. | `run_sign_offs` | — |
+| Agent feedback | A person's thumbs and reason codes on a step or item. | `agent_feedback` | — |
 | Proposal (agent change set) | Groups suggestions (X-14). | `proposals`, `proposal_rows` | — |
 | Learned context | UI label; no "memory", "trained" or "learned" in copy. | `memory_items`, `corrections`, `agent_feedback` | — |
 | Review package | SHL-19. | `review_packages` | — |
@@ -526,6 +528,7 @@ UI labels (N-04-T01): **Response sent** (status `sent`), **Awaiting agency** (st
 | Library agent | Platform rows, published through PLT-01. | `library_agents`, `agent_installs` | — |
 | Agent (firm-made) | Only narrows a capability. | `agent_definitions` (+ versions) | — |
 | Session | A workbench session. Distinct from `support_session`. | `workbench_sessions`, `session_items` | — |
+| Session item | One insert-only, schema-versioned entry of a session's thread. | `session_items` | — |
 | Saved prompt | A user's saved request text. Never a bare `prompt`. | `saved_prompts` | — |
 | Schedule / trigger | P-50, P-51. | `agent_schedules`, `triggers` | — |
 
