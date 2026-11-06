@@ -11,6 +11,7 @@ from abacus.modules.notifications.contract import feed_router, preferences_route
 from abacus.modules.notifications.email import ACTIVITIES as EMAIL_ACTIVITIES
 from abacus.modules.notifications.email import WORKFLOWS as EMAIL_WORKFLOWS
 from abacus.modules.notifications.email import configure_email_starter
+from abacus.modules.notifications.events_contract import events_router
 from abacus.modules.notifications.kinds import (
     NotificationKind,
     Row,
@@ -56,7 +57,7 @@ WORKFLOWS: dict[type, str] = {**EMAIL_WORKFLOWS, **PURGE_WORKFLOWS}
 ACTIVITIES: tuple[object, ...] = (*EMAIL_ACTIVITIES, *PURGE_ACTIVITIES)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
-ROUTERS: tuple[AbacusRouter, ...] = (feed_router, router, preferences_router)
+ROUTERS: tuple[AbacusRouter, ...] = (feed_router, router, preferences_router, events_router)
 
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)
