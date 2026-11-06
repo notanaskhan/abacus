@@ -710,6 +710,9 @@ class InvestmentsOut(BaseModel):
     investments_boy: MaybeMoney = None
     level1_eoy: MaybeMoney = None
     nav_eoy: MaybeMoney = None
+    # DEC-2319: "Total mutual funds & CITs", code's, so the screen does no arithmetic.
+    funds_eoy: MaybeMoney = None
+    funds_boy: MaybeMoney = None
     net_assets: MaybeMoney = None
     tb_balanced: Annotated[bool, classified("internal")]
     py_ties: Annotated[bool, classified("internal")]
@@ -1665,6 +1668,8 @@ async def ebp_investments_route(
         investments_boy=found.investments_boy,
         level1_eoy=found.level1_eoy,
         nav_eoy=found.nav_eoy,
+        funds_eoy=found.funds_eoy,
+        funds_boy=found.funds_boy,
         net_assets=view.net_assets,
         tb_balanced=view.tb_balanced,
         py_ties=found.py_ties,

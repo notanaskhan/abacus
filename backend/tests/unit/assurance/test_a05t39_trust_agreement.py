@@ -81,3 +81,18 @@ def test_ac_a_missing_tb_line_does_not_tie() -> None:
 async def test_ac_sign_off_is_held_without_a_work_item() -> None:
     held = await ebp_investments.sign_off_guard(_tenant(), uuid.uuid4(), None)
     assert held == (ebp_investments.UNEVALUATED, len(ebp_investments.POINT_KEYS))
+
+
+def test_ac_the_fund_subtotal_leaves_out_self_directed_brokerage() -> None:
+    found = agree(
+        [
+            TrustLine("krs_500", "KRS 500 Index Fund", D("10.00"), D("20.00"), "level1"),
+            TrustLine("stable", "Stable Value (CIT)", D("1.00"), D("2.00"), "nav"),
+            TrustLine("broker", "Self-directed brokerage", D("5.00"), D("7.00"), "level1"),
+            TrustLine("sdba_x", "Self-directed account", D("1.00"), D("1.00"), "level1"),
+            TrustLine("note", "Uncertified", D("9.00"), D("9.00"), "not_certified"),
+        ],
+        [],
+    )
+    assert (found.funds_boy, found.funds_eoy) == (D("11.00"), D("22.00"))
+    assert (found.investments_boy, found.investments_eoy) == (D("17.00"), D("30.00"))

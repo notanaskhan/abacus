@@ -48772,6 +48772,32 @@
             "title": "Engine Version",
             "type": "string"
           },
+          "funds_boy": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Funds Boy"
+          },
+          "funds_eoy": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Funds Eoy"
+          },
           "hold_reason": {
             "anyOf": [
               {

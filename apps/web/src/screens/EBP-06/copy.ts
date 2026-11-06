@@ -24,6 +24,8 @@ export const COPY = {
   assets: "ASSETS",
   investments: "INVESTMENTS AT FAIR VALUE",
   total: "Total investments at fair value",
+  funds: "Mutual funds & collective trusts",
+  fundsTotal: "Total mutual funds & CITs",
   netAssets: "Net assets available for benefits",
   refs: { trust: "Trust", tb: "TB" },
   certification: {

@@ -77,6 +77,8 @@ export function ebp06View(
     rows: [...FUNDS, NOTES, receivable],
     investments_eoy: "16500000.00",
     investments_boy: "13940000.00",
+    funds_eoy: "14895000.00",
+    funds_boy: "12683000.00",
     level1_eoy: "15336520.00",
     nav_eoy: "1163480.00",
     net_assets: unadjusted ? "16812400.00" : "16861000.00",

@@ -70,6 +70,27 @@ describe("EBP-06", () => {
     expect(notes.querySelector("[data-mark='ms']")).toBeNull();
   });
 
+  it("a: the funds subtotal is the server's and brokerage follows it", async () => {
+    show("a");
+    const total = await drawn('[data-row="funds_total"]');
+    expect(total.textContent).toContain("Total mutual funds & CITs");
+    expect(total.textContent).toContain("14,895,000.00");
+    expect(total.textContent).toContain("12,683,000.00");
+    const broker = document.querySelector('[data-row="broker"]');
+    expect(total.compareDocumentPosition(broker as Node)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it("a: clicking an amount lights that cell alone", async () => {
+    show("a");
+    const row = await drawn('[data-row="krs_500"]');
+    const [, boy, eoy] = Array.from(row.querySelectorAll("td"));
+    (eoy as HTMLElement).click();
+    await waitFor(() => {
+      expect((eoy as HTMLElement).hasAttribute("data-lit")).toBe(true);
+    });
+    expect((boy as HTMLElement).hasAttribute("data-lit")).toBe(false);
+  });
+
   it("a: the level line foots", async () => {
     show("a");
     expect((await drawn("[data-ebp06='levels']")).textContent).toContain("16,500,000.00");

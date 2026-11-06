@@ -17,6 +17,7 @@ from typing import Final
 ENGINE_NAME: Final = "ebp_trust_agreement"
 ENGINE_VERSION: Final = "1"
 _ZERO: Final = Decimal(0)
+_BROKERAGE: Final = ("broker", "sdba")  # a line key's start: outside "mutual funds & CITs"
 
 
 @dataclass(frozen=True)
@@ -60,6 +61,8 @@ class Agreement:
     py_ties: bool
     inputs_hash: str
     engine_version: str = ENGINE_VERSION
+    funds_eoy: Decimal = _ZERO  # certified lines less self-directed brokerage (EBP-06's subtotal)
+    funds_boy: Decimal = _ZERO
 
 
 def normalised(name: str) -> str:
@@ -79,6 +82,7 @@ def agree(trust: Sequence[TrustLine], tb_lines: Sequence[TbFigure]) -> Agreement
     tb = {normalised(f.name): f for f in tb_lines}
     agreed: list[Agreed] = []
     investments_eoy = investments_boy = level1 = nav = below_eoy = below_boy = _ZERO
+    funds_eoy = funds_boy = _ZERO
     py_ties = True
     for line in trust:
         found = tb.get(normalised(line.fund_name))
@@ -106,6 +110,9 @@ def agree(trust: Sequence[TrustLine], tb_lines: Sequence[TbFigure]) -> Agreement
             continue
         investments_eoy += line.eoy or _ZERO
         investments_boy += line.boy or _ZERO
+        if not line.line_key.startswith(_BROKERAGE):
+            funds_eoy += line.eoy or _ZERO
+            funds_boy += line.boy or _ZERO
         if line.level == "level1":
             level1 += line.eoy or _ZERO
         elif line.level == "nav":
@@ -120,4 +127,6 @@ def agree(trust: Sequence[TrustLine], tb_lines: Sequence[TbFigure]) -> Agreement
         below_boy,
         py_ties,
         _hash(trust, tb),
+        funds_eoy=funds_eoy,
+        funds_boy=funds_boy,
     )
