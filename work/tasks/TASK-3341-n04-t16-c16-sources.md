@@ -1,6 +1,6 @@
 ---
 id: TASK-3341
-title: N-04-T16: notice clocks and readiness reach the assignee through C16
+title: N-04-T16 notice clocks and readiness reach the assignee through C16
 spec: SPEC-000  # row (N-04-T16)
 acceptance_criteria: [AC-1]
 risk_zone: amber

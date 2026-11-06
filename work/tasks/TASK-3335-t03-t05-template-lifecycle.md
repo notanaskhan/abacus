@@ -1,6 +1,6 @@
 ---
 id: TASK-3335
-title: T-03-T05: organizer template lifecycle and the editor's wall
+title: T-03-T05 organizer template lifecycle and the editor's wall
 spec: SPEC-000  # row (T-03-T05)
 acceptance_criteria: [AC-1]
 risk_zone: amber

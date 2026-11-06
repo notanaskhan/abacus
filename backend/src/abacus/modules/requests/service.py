@@ -139,6 +139,8 @@ class RequestItemView:
     # SPEC-032 (TASK-062): comments the reader may see on it and its versions; any unread.
     comment_count: int = 0
     unread_comments: bool = False
+    # T-03-T07: set on a new item, for a confirmation request's reply.
+    request_list_id: UUID | None = None
 
 
 def _view(

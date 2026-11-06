@@ -1,6 +1,6 @@
 ---
 id: TASK-3340
-title: T-03-T11: TAX-13 Open in Excel fetches the view's workbook
+title: T-03-T11 TAX-13 Open in Excel fetches the view's workbook
 spec: SPEC-000  # row (T-03-T11)
 acceptance_criteria: [AC-1]
 risk_zone: green

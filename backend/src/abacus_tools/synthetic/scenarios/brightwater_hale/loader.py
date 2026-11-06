@@ -235,6 +235,7 @@ from abacus.modules.reporting.api import (
 )
 from abacus.modules.requests.api import (
     ItemPatch,
+    assign_template_owner,
     attach_organizer,
     create_questionnaire,
     draft_question,
@@ -243,15 +244,14 @@ from abacus.modules.requests.api import (
     latest_version_of,
     move_after_review,
     publish_questionnaire_template,
+    questionnaire_editor_read,
     questionnaire_from_template,
     questionnaire_templates,
     save_portal_answer,
+    save_questionnaire,
     send_question,
     update_item,
 )
-from abacus.modules.requests.organizer_lifecycle import assign_owner as assign_template_owner
-from abacus.modules.requests.questionnaire_editor import editor as questionnaire_editor_read
-from abacus.modules.requests.questionnaire_editor import save as save_questionnaire
 from abacus.modules.review.api import STATEMENTS as SIGN_OFF_STATEMENTS
 from abacus.modules.review.api import (
     create_issue,
@@ -279,11 +279,17 @@ from abacus.modules.sampling.api import (
 )
 from abacus.modules.sampling.api import approve as approve_sample
 from abacus.modules.sampling.api import draw as draw_sample
-from abacus.modules.tax.api import import_engine_file, share_k1_internal
-from abacus.modules.tax.estimates import create_schedule, patch_installment, patch_schedule
-from abacus.modules.tax.extensions import ProposedPayment, flag_new_likely
-from abacus.modules.tax.extensions import patch as patch_extension
-from abacus.modules.tax.extensions import prepare as prepare_extensions
+from abacus.modules.tax.api import (
+    ProposedPayment,
+    create_schedule,
+    flag_new_likely,
+    import_engine_file,
+    patch_extension,
+    patch_installment,
+    patch_schedule,
+    prepare_extensions,
+    share_k1_internal,
+)
 from abacus.modules.workpapers.api import create_workpaper
 from abacus_tools import deploy_lock
 from abacus_tools.db_connect import connect as connect_db
@@ -4087,13 +4093,14 @@ async def _organizer_v6_loaded(conn: asyncpg.Connection, _: Scenario, event: Eve
         found = await import_questionnaire_template(
             ctx, _tax_schedules.TEMPLATE_NAME, _tax_schedules.organizer_csv(), "csv", dry_run=False
         )
-    assert found is not None and found.template_id is not None  # noqa: S101 -- VERSIONS is 6
+    if found is None or found.template_id is None:
+        raise LookupError("the organizer import made no template")
     owner = await _staff_context(conn, _as_actor(event, _tax_schedules.OWNER))
     await assign_template_owner(
         ctx,
         found.template_id,
         owner.user_id,
-        key=_tax_schedules.TEMPLATE_KEY,
+        key=_tax_schedules.TEMPLATE_CODE,
         form_family="1040",
     )
     await publish_questionnaire_template(
@@ -4109,7 +4116,7 @@ async def _organizer_feld(conn: asyncpg.Connection, _: Scenario, event: Event) -
     ctx = await _staff_context(conn, event)
     feld = UUID(next(r for r in BOARD if r.client == "Jonah & Claire Feld").work_item_id)
     made = await questionnaire_from_template(
-        ctx, _tax_schedules.TEMPLATE_KEY, _tax_schedules.TAX_YEAR, await _binder_of(conn, feld)
+        ctx, _tax_schedules.TEMPLATE_CODE, _tax_schedules.TAX_YEAR, await _binder_of(conn, feld)
     )
     found = await questionnaire_editor_read(ctx, made)
     questions: list[dict[str, Any]] = []  # Any: the save's own shape

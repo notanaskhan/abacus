@@ -60,8 +60,9 @@ async def test_ac_the_organizer_is_v6_owned_and_feld_answered_eight(loaded: Data
         await seed.value(
             "SELECT v.version FROM questionnaire_template_versions v "
             "JOIN questionnaire_templates t ON t.id = v.template_id "
-            "WHERE t.tenant_id = $1 AND t.key = 'organizer_1040' AND v.published_at IS NOT NULL",
+            "WHERE t.tenant_id = $1 AND t.key = $2 AND v.published_at IS NOT NULL",
             TENANT,
+            "organizer_1040",
         )
         == 6
     )

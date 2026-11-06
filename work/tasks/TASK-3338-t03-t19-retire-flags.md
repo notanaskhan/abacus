@@ -1,6 +1,6 @@
 ---
 id: TASK-3338
-title: T-03-T19: retire tax.returns_v1, tax.k1_release and questionnaires.v1 for a tax_returns entitlement
+title: T-03-T19 retire tax.returns_v1, tax.k1_release and questionnaires.v1 for a tax_returns entitlement
 spec: SPEC-000  # row (T-03-T19)
 acceptance_criteria: [AC-1]
 risk_zone: red

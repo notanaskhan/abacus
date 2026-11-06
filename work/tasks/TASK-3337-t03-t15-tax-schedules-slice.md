@@ -1,6 +1,6 @@
 ---
 id: TASK-3337
-title: T-03-T15: Brightwater Hale organizer v6, extensions and estimates through services
+title: T-03-T15 Brightwater Hale organizer v6, extensions and estimates through services
 spec: SPEC-000  # row (T-03-T15)
 acceptance_criteria: [AC-1]
 risk_zone: green

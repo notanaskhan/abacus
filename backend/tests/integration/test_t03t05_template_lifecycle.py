@@ -23,6 +23,7 @@ seed = t02t09.seed
 board = t02t09.board
 
 T = "/v1/questionnaire-templates"
+CODE = "organizer_1040"
 
 
 def _file() -> bytes:
@@ -53,10 +54,11 @@ async def _published_template(b: Board, owner: uuid.UUID) -> tuple[str, Json]:
     assert made.status_code == 201, made.text
     template_id = made.json()["template_id"]
     await b.seed.run(
-        "UPDATE questionnaire_templates SET key = 'organizer_1040', form_family = '1040', "
+        "UPDATE questionnaire_templates SET key = $3, form_family = '1040', "
         "owner_id = $1 WHERE id = $2",
         owner,
         uuid.UUID(template_id),
+        CODE,
     )
     return template_id, cast(Json, made.json())
 
@@ -233,7 +235,7 @@ async def test_us23_a_binder_takes_its_years_version_and_keeps_it(board: Board) 
         await owner(
             "POST", f"{T}/{template_id}/versions/1:publish", json={"applies_to_tax_year": 2025}
         )
-        made = await questionnaire_from_template(samuel, "organizer_1040", 2025, binder)
+        made = await questionnaire_from_template(samuel, CODE, 2025, cast(uuid.UUID, binder))
         (row,) = await board.seed.rows(
             "SELECT q.source_template_version_id, v.version FROM questionnaires q "
             "JOIN questionnaire_template_versions v ON v.id = q.source_template_version_id "
@@ -279,7 +281,7 @@ async def test_the_wall_holds_a_binders_answers_from_the_firm_level_gate(board: 
         await owner(
             "POST", f"{T}/{template_id}/versions/1:publish", json={"applies_to_tax_year": 2025}
         )
-        made = await questionnaire_from_template(samuel, "organizer_1040", 2025, binder)
+        made = await questionnaire_from_template(samuel, CODE, 2025, cast(uuid.UUID, binder))
         await board.seed.run(
             "INSERT INTO ethical_walls (tenant_id, user_id, client_id, created_by) "
             "SELECT $1, $2, client_id, $2 FROM engagements WHERE id = $3",
