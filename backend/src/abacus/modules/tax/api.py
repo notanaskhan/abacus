@@ -64,6 +64,7 @@ from abacus.modules.tax.tax_profile import (
 from abacus.modules.tax.tax_profile import register as register_tax_profile
 from abacus.modules.tax.tax_profile import return_for_entity as return_for_entity
 from abacus.modules.tax.tax_profile import return_label as return_label
+from abacus.modules.tax.tax_profile import transcript_comparison_lines
 from abacus.modules.tax.transitions import apply_transition, record_sync_state
 
 # T-01-T10: §7216 consent capture behind C19's routes, and the `consent_set` envelope source.
@@ -209,6 +210,7 @@ __all__ = [
     "rule_texts",
     "set_extended",
     "share_k1_internal",
+    "transcript_comparison_lines",
 ]
 
 # T-03 (S27): imported so its refusal codes are catalogued (the routes import it lazily).
