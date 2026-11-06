@@ -636,6 +636,19 @@ async def latest_document_version(
     return None if row is None else (row.id, row.content_hash)
 
 
+async def document_is_final(tenant: TenantContext, document_id: UUID) -> bool:
+    """N-04-T16: a person's final render of this document exists."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text(
+                "SELECT 1 FROM generated_document_versions "
+                "WHERE generated_document_id = :d AND mode = 'final' LIMIT 1"
+            ),
+            {"d": document_id},
+        )
+    return found is not None
+
+
 # A-06-T25, T28: the run record's port, the workflows' inputs, and the slice's path.
 from abacus.modules.reporting.statements import (  # noqa: E402
     RunRecordPort as RunRecordPort,
