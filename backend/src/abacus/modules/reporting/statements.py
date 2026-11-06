@@ -18,15 +18,17 @@ from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Final, cast
+from typing import Annotated, Any, Final, cast
 from uuid import UUID
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
-from abacus.kernel.uow import Ref, Scope, Target, uow
+from abacus.kernel.safe_xlsx import Cell, Sheet, workbook
+from abacus.kernel.uow import DomainEvent, Ref, Scope, Target, uow
 from abacus.modules.adjustments.api import recorded_entries
 from abacus.modules.engagements.api import get_ref
 from abacus.modules.evidence.api import verified_citation_ids
@@ -679,6 +681,16 @@ async def _answer_value(
 register_field_owner(FieldOwner(_ANSWER_TARGET, _answer_value, frozenset()))
 
 
+class FsApprovedByManagement(DomainEvent):
+    """A-06-T29: management approved a statement version, recorded or through C18. A-07's AUD-24
+    "also required" and AUD-19's item read it. Identifiers only."""
+
+    event_type = "fs.approved_by_management"
+    statement_version_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    work_item_id: Annotated[UUID, classified("internal")]
+
+
 @dataclass(frozen=True)
 class ChecklistView:
     document_id: UUID
@@ -686,6 +698,28 @@ class ChecklistView:
     items: list[JsonRow]
     answered: int
     total: int
+
+
+CHECKLIST_COLUMNS: Final = ("Section", "Item", "Answer", "N/A reason", "Note", "State")
+
+
+def checklist_workbook(view: ChecklistView) -> bytes:
+    """A-06-T29: the checklist as a workbook. Answers and reasons are text a person typed, so
+    `safe_xlsx` keeps them from running as formulas. Counts stay code's."""
+    rows: list[list[Cell]] = [list(CHECKLIST_COLUMNS)]
+    rows += [
+        [
+            item["section"],
+            item["text"],
+            item["answer"],
+            item["reason"],
+            item["note_ref"],
+            item["state"],
+        ]
+        for item in view.items
+    ]
+    rows.append(["Answered", f"{view.answered} of {view.total}", None, None, None, None])
+    return workbook([Sheet("Disclosure checklist", rows)])
 
 
 async def disclosure_view(tenant: TenantContext, document_id: UUID) -> ChecklistView:
