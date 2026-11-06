@@ -9805,6 +9805,10 @@ export type ControlExceptionOut = {
      * Citation Ids
      */
     citation_ids: Array<string>;
+    /**
+     * Concluded By Initials
+     */
+    concluded_by_initials?: string | null;
     concluded_severity: DeficiencySeverityStatus | null;
     /**
      * Coso Component

@@ -1,4 +1,4 @@
-"""EBP-04 a (TASK-3362; DEC-2361): the waterfall reaches the statements, and says when it doesn't."""
+"""EBP-04 a (TASK-3362; DEC-2361): the waterfall reaches the statements, or says it doesn't."""
 
 from __future__ import annotations
 
@@ -49,3 +49,10 @@ async def test_ac_the_waterfall_ties_to_the_statements_when_there_is_a_figure(
     assert tied.ties is True
     off = await ebp_remittances.reconciliation(tenant, world.work_item_id, year_end, Decimal(2999))
     assert off.ties is False
+
+
+async def test_ac_aud09_reads_the_conclusion_by_the_finding_it_routed_to(world: Books) -> None:
+    from abacus.modules.assurance.findings import concluded_severities
+
+    tenant = TenantContext(world.tenant_id, "system", "test")
+    assert await concluded_severities(tenant, world.site.engagement_id) == {}

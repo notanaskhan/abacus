@@ -198,9 +198,11 @@ function Timeline({ payrolls }: { payrolls: readonly PayrollOut[] }): JSX.Elemen
 function PayrollTable({
   payrolls,
   onPayroll,
+  totals,
 }: {
   payrolls: readonly PayrollOut[];
   onPayroll?: ((id: string) => void) | undefined;
+  totals?: { deferrals: string; match: string } | null | undefined;
 }): JSX.Element {
   const fmt = useFormat();
   const C = COPY.columns;
@@ -254,6 +256,20 @@ function PayrollTable({
           </span>
         </button>
       ))}
+      {totals != null && (
+        <div
+          role="row"
+          data-ebp04="payrolls-total"
+          className="grid h-[32px] grid-cols-[100px_1fr_1fr_90px_80px_80px] items-center border-t-[0.5px] border-stroke text-cell font-medium"
+        >
+          <span className="px-[8px]">{COPY.total}</span>
+          <Amount value={totals.deferrals} style="money" className="px-[8px] text-right" />
+          <Amount value={totals.match} style="money" className="px-[8px] text-right" />
+          <span />
+          <span />
+          <span />
+        </div>
+      )}
     </div>
   );
 }
@@ -365,6 +381,15 @@ export function useContributionsCanvas(
     .map((r) => ({ key: r.key, label: r.label.toUpperCase() }));
   const receivable =
     (figures.data?.rows ?? []).find((r) => r.key.startsWith("receivable"))?.amount ?? null;
+  // The table's foot is the server's figures: the browser sums nothing.
+  const figureOf = (key: string) =>
+    (figures.data?.rows ?? []).find((r) => r.key === key)?.amount ?? null;
+  const deferralsTotal = figureOf("deferrals");
+  const matchTotal = figureOf("match");
+  const payrollTotals =
+    deferralsTotal === null || matchTotal === null
+      ? null
+      : { deferrals: deferralsTotal, match: matchTotal };
   const canDraft = (schedule.data?.allowed_actions ?? []).includes("ebp_schedule.draft");
 
   return {
@@ -417,7 +442,7 @@ export function useContributionsCanvas(
           <section className={cn(BLOCK, "mx-[12px]")}>
             <p className={BLOCK_HEAD}>{COPY.cardB(rows.length)}</p>
             <Timeline payrolls={rows} />
-            <PayrollTable payrolls={rows} onPayroll={options.onPayroll} />
+            <PayrollTable payrolls={rows} onPayroll={options.onPayroll} totals={payrollTotals} />
           </section>
         ) : (
           <>

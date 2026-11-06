@@ -21089,6 +21089,19 @@
             "title": "Citation Ids",
             "type": "array"
           },
+          "concluded_by_initials": {
+            "anyOf": [
+              {
+                "maxLength": 8,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Concluded By Initials"
+          },
           "concluded_severity": {
             "anyOf": [
               {
@@ -111771,7 +111784,7 @@
     },
     "/v1/audits/{work_item_id}/ebp/contributions/reconciliation": {
       "get": {
-        "description": "Contributions receivable at year end by code from the payroll register (A-05-T30).",
+        "description": "EBP-04 a's waterfall by code, register to statements (A-05-T30, T31; DEC-2361). Keys are the\nscreen's; the tally's `tie.*` rows appear only when the tie holds. W-3's waits on its figure.",
         "operationId": "ebp_contributions",
         "parameters": [
           {
