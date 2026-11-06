@@ -29,7 +29,6 @@ export function RiskDrawerHost({ ref, close }: OverlayRenderProps): JSX.Element 
     <RiskDrawer
       engagementId={engagementId}
       risk={risk}
-      cardId={register.data.approved_card_id ?? null}
       onClose={close}
       onDecide={(cardId) => {
         overlays.open("decision", cardId);

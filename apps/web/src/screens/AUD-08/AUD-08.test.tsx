@@ -3,12 +3,13 @@
 // controls." Words and figures are the handoff's.
 import { client } from "@abacus/api-client/client";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
+import { toast } from "@abacus/ui";
+import { cleanup, fireEvent, render, waitFor, within } from "@testing-library/react";
 import { type JSX, useState } from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { installFixtureMode } from "../../app-core/fixture-mode";
+import { installFixtureMode, json } from "../../app-core/fixture-mode";
 import { NORTHWIND_AUDIT } from "../../fixtures/scenarios/AUD-06";
-import { aud08Register } from "../../fixtures/seed/aud08";
+import { R3_CARD, aud08Register } from "../../fixtures/seed/aud08";
 import { newQueryClient } from "../../testing/support";
 import { RiskRegisterPage } from "./Register";
 import { RiskDrawer } from "./RiskDrawer";
@@ -46,8 +47,26 @@ function show(state: Aud08State): void {
   );
 }
 
-function drawer(state: Aud08State, onDecide = vi.fn()): void {
-  restore = installFixtureMode(scenarios[state]);
+function drawer(
+  state: Aud08State,
+  onDecide = vi.fn(),
+  onNotify: (path: string) => void = () => undefined,
+): void {
+  const scenario = scenarios[state];
+  restore = installFixtureMode({
+    ...scenario,
+    handlers: {
+      ...scenario.handlers,
+      "POST /v1/decision-cards/{card_id}/notify": (request) => {
+        onNotify(request.path);
+        return json({
+          card_id: R3_CARD,
+          notified_user_id: "00000000-0000-4000-8000-000000000002",
+          notified_at: "2026-09-14T14:30:00-05:00",
+        });
+      },
+    },
+  });
   const variant = state === "b2" ? "b2" : "a";
   const r3 = aud08Register(variant).risks[2];
   if (r3 === undefined) throw new Error("R3");
@@ -56,7 +75,6 @@ function drawer(state: Aud08State, onDecide = vi.fn()): void {
       <RiskDrawer
         engagementId="00000000-0000-4000-8000-000000000001"
         risk={r3}
-        cardId={aud08Register(variant).approved_card_id ?? null}
         onClose={() => undefined}
         onDecide={onDecide}
       />
@@ -119,6 +137,21 @@ describe("AUD-08", () => {
     expect(document.body.textContent).not.toContain("Approve as significant risk");
     const rationale = await drawn("[data-aud08='rationale']");
     expect(rationale.textContent).toContain("9 business days later");
+  });
+
+  it("b: Remind calls C3's notify on the pending card and confirms in words (DEC-2420)", async () => {
+    const notified: string[] = [];
+    const shown = vi.spyOn(toast, "show");
+    drawer("b", vi.fn(), (path) => notified.push(path));
+    const footer = await drawn("[data-aud08='routed-footer']");
+    fireEvent.click(within(footer).getByRole("button", { name: "Remind Margaret…" }));
+    await waitFor(() => {
+      expect(notified).toEqual([`/v1/decision-cards/${R3_CARD}/notify`]);
+    });
+    await waitFor(() => {
+      expect(shown).toHaveBeenCalledWith({ kind: "success", text: "Reminded Margaret Okonkwo." });
+    });
+    shown.mockRestore();
   });
 
   it("b2: only Margaret sees Approve as significant risk; it opens SHL-11 with R3", async () => {
@@ -208,7 +241,6 @@ describe("AUD-08 c, e, f, g (A-04-T26)", () => {
         <RiskDrawer
           engagementId={NORTHWIND_AUDIT}
           risk={r8}
-          cardId={null}
           onClose={() => undefined}
           onDecide={vi.fn()}
         />
@@ -249,7 +281,6 @@ describe("AUD-08 c, e, f, g (A-04-T26)", () => {
         <RiskDrawer
           engagementId={NORTHWIND_AUDIT}
           risk={r8}
-          cardId={null}
           onClose={() => undefined}
           onDecide={vi.fn()}
           onEdit={onEdit}
