@@ -118,6 +118,8 @@ class RequestItemView:
     # SPEC-020: whether client users see it, and the client contributor it's assigned to.
     client_visible: bool = True
     client_assignee_user_id: UUID | None = None
+    # T-03-T07: set on a new item, for a confirmation request's reply.
+    request_list_id: UUID | None = None
     # SPEC-022: what an A item needs, where its tier came from, and whether the live connection
     # can deliver it now.
     dataset: str | None = None
@@ -215,7 +217,7 @@ async def add_request_item(
             after=Ref(engagement_id=engagement_id),
         )
         tx.emit(RequestItemCreated(request_item_id=item_id, engagement_id=engagement_id))
-        view = _view(item)
+        view = replace(_view(item), request_list_id=list_id)
     return view
 
 

@@ -1782,6 +1782,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/tax-returns/{return_id}/transitions", "tax_return.status_change"),
     ("POST", "/v1/tax-returns/{return_id}/transmissions", "transmission.record"),
     ("POST", "/v1/tax-returns:bulk-assign", "tax_return.assign"),
+    ("POST", "/v1/tax/estimates", "estimate_schedule.update"),
     (
         "POST",
         "/v1/tax/estimates/{schedule_id}/installments/{quarter}/confirmation-requests",

@@ -114,6 +114,9 @@ C13_EVENTS: Final = frozenset(
         # N-02-T33 (engagements): the letter waits on the engagement partners' approval.
         "letter.approval_requested",
         "letter.approved",
+        # T-03-T07 (tax): an extension's payments wait on the return's reviewer.
+        "filing_extension.submitted",
+        "extension_payment.approved",
     }
 )
 READ: Final = "human_gate.read"

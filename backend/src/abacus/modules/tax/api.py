@@ -4,12 +4,16 @@ Pre-registered (F-03-T08; ADR-140). T-01-T02: the engine-bridge and e-file-recor
 (`engine_contract`). T-01-T18: final approval and its blocker slot (`approval`).
 """
 
+from uuid import UUID
+
 from abacus.kernel.audit_owners import register_engagement_owners, register_entity_owners
+from abacus.kernel.db import TenantContext
 from abacus.kernel.uow import OutboxEvent
 from abacus.modules.engagements.api import register_work_item_kind
 from abacus.modules.identity.api import AbacusRouter, register_scope_resolver
 from abacus.modules.organisations.api import register_office_facts
 from abacus.modules.platform.api import register_search_projection
+from abacus.modules.review.api import GateSource, OpenGate, register_gate_source
 from abacus.modules.tax import consent_capture, filed_delivery, filing, k1_release
 from abacus.modules.tax.approval import Blocker as ApprovalBlocker
 from abacus.modules.tax.approval import eligibility as final_approval_eligibility
@@ -28,12 +32,14 @@ from abacus.modules.tax.due_dates import (
     on_reference_set_published,
     recompute_unfiled,
     register_due_dates_source,
+    register_installments_source,
     rule_texts,
     set_extended,
 )
 from abacus.modules.tax.engine_contract import engine_router, portal_filing_router
 from abacus.modules.tax.engine_import import import_file as import_engine_file
 from abacus.modules.tax.engine_sync import register as register_engine_sync
+from abacus.modules.tax.extensions import open_payment_approvals
 from abacus.modules.tax.filed_delivery import FiledReturn, filed_returns
 from abacus.modules.tax.k1_contract import k1_router, portal_k1_router
 from abacus.modules.tax.k1_packages import draft_k1_blockers, package_scope
@@ -56,8 +62,30 @@ from abacus.modules.tax.transitions import apply_transition, record_sync_state
 consent_capture.register()
 filing.register()  # T-01-T36: the `tax_return` envelope source (C7 v1.1)
 
+
 # F-03-T22: the `tax_return` work-item kind.
+async def open_extension_payments(
+    tenant: TenantContext, engagement_id: UUID | None
+) -> list[OpenGate]:
+    """T-03-T07: C13's "Waiting on you" for a submitted extension's unapproved payments."""
+    return [
+        OpenGate(extension_id, engagement, work_item_id=work_item, role="reviewer")
+        for extension_id, engagement, work_item in await open_payment_approvals(
+            tenant, engagement_id
+        )
+    ]
+
+
 register_work_item_kind("tax_return", TaxReturnKind())
+register_gate_source(
+    GateSource(
+        "extension_payment",
+        "send",
+        "filing_extension.read",
+        frozenset({"filing_extension.submitted", "extension_payment.approved"}),
+        open_extension_payments,
+    )
+)
 
 # DEC-121: the audit explorer asks which engagement each `tax_return` target belongs to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)
@@ -138,6 +166,7 @@ __all__ = [
     "record_sync_state",
     "register_due_dates_source",
     "register_final_approval_blocker",
+    "register_installments_source",
     "rule_texts",
     "set_extended",
     "share_k1_internal",

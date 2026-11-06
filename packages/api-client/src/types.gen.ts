@@ -15135,6 +15135,54 @@ export type ErrorOut = {
 };
 
 /**
+ * EstimateCreateIn
+ *
+ * A schedule for one client, year and jurisdiction; code computes the figures.
+ */
+export type EstimateCreateIn = {
+    /**
+     * Basis Tax Return Id
+     */
+    basis_tax_return_id?: string | null;
+    /**
+     * Client Entity Id
+     */
+    client_entity_id: string;
+    /**
+     * Form
+     */
+    form: string;
+    /**
+     * Jurisdiction
+     */
+    jurisdiction?: string;
+    /**
+     * Method
+     */
+    method: 'prior_year_100' | 'prior_year_110' | 'current_year_90' | 'not_required_withholding' | 'not_required_estate_first_years' | 'prospect';
+    /**
+     * Payment Method Label
+     */
+    payment_method_label?: 'irs_direct_pay' | 'eftps' | 'ny_online_services' | 'state_portal' | 'check' | 'other' | null;
+    /**
+     * Prior Agi Over Threshold
+     */
+    prior_agi_over_threshold?: boolean | null;
+    /**
+     * Prior Year Tax
+     */
+    prior_year_tax?: number | string | null;
+    /**
+     * Projected Withholding
+     */
+    projected_withholding?: number | string | null;
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+};
+
+/**
  * EstimateInstallmentOut
  */
 export type EstimateInstallmentOut = {
@@ -15805,6 +15853,39 @@ export type ExtensionBatchOut = {
 };
 
 /**
+ * ExtensionLineIn
+ *
+ * A preparer's line: Accrued never computes the projected tax (T-03 US-4.2). A state line
+ * names its form; a federal line's follows from the return.
+ */
+export type ExtensionLineIn = {
+    /**
+     * Form
+     */
+    form?: string | null;
+    /**
+     * Jurisdiction
+     */
+    jurisdiction?: string;
+    /**
+     * Projected Liability
+     */
+    projected_liability?: number | string | null;
+    /**
+     * Projected Liability Source
+     */
+    projected_liability_source?: 'engine_import' | 'preparer_entry' | null;
+    /**
+     * Return Id
+     */
+    return_id: string;
+    /**
+     * Withholding Plus Estimates
+     */
+    withholding_plus_estimates?: number | string | null;
+};
+
+/**
  * ExtensionOut
  *
  * The detail: rule and engine versions, the approval trail and evidence refs.
@@ -16014,6 +16095,10 @@ export type ExtensionPaymentOut = {
  * 409 `gate_unmet` with the G1/G3 facts for a return whose engagement is not accepted.
  */
 export type ExtensionPrepareIn = {
+    /**
+     * Lines
+     */
+    lines?: Array<ExtensionLineIn>;
     /**
      * Payments
      */
@@ -112684,6 +112769,65 @@ export type TaxEstimatesResponses = {
 };
 
 export type TaxEstimatesResponse = TaxEstimatesResponses[keyof TaxEstimatesResponses];
+
+export type EstimateCreateData = {
+    body: EstimateCreateIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/tax/estimates';
+};
+
+export type EstimateCreateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EstimateCreateError = EstimateCreateErrors[keyof EstimateCreateErrors];
+
+export type EstimateCreateResponses = {
+    /**
+     * Successful Response
+     */
+    201: EstimateOut;
+};
+
+export type EstimateCreateResponse = EstimateCreateResponses[keyof EstimateCreateResponses];
 
 export type EstimatesExportData = {
     body?: never;

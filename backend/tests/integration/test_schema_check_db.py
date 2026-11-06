@@ -2096,6 +2096,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "filing_extensions": frozenset(
             {
                 "ack_received_at",
+                "confirmation_request_item_id",
                 "due_rules_version_id",
                 "engine_version",
                 "extended_due_on",
@@ -2113,6 +2114,8 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "projected_liability_source",
                 "reject_code",
                 "row_version",
+                "submitted_at",
+                "submitted_by",
                 "safe_harbor_pct",
                 "safe_harbor_target",
                 "status",

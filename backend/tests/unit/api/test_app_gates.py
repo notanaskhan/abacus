@@ -486,6 +486,7 @@ def test_ac20_creating_routes_answer_201() -> None:
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)
     decisions = "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/decision/"
     assert created == {
+        "/v1/tax/estimates",  # T-03-T07: a schedule's inputs; code computes its figures
         "/v1/engagements",
         "/v1/engagements/{engagement_id}/request-items",
         # N-04-T02: a notice from its intake, a decision request, a note, the response, its

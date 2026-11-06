@@ -32494,6 +32494,140 @@
         "title": "ErrorOut",
         "type": "object"
       },
+      "EstimateCreateIn": {
+        "additionalProperties": false,
+        "description": "A schedule for one client, year and jurisdiction; code computes the figures.",
+        "properties": {
+          "basis_tax_return_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Basis Tax Return Id"
+          },
+          "client_entity_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Client Entity Id",
+            "type": "string"
+          },
+          "form": {
+            "cls": "internal",
+            "maxLength": 16,
+            "minLength": 2,
+            "title": "Form",
+            "type": "string"
+          },
+          "jurisdiction": {
+            "cls": "internal",
+            "default": "US",
+            "maxLength": 12,
+            "minLength": 2,
+            "title": "Jurisdiction",
+            "type": "string"
+          },
+          "method": {
+            "cls": "internal",
+            "enum": [
+              "prior_year_100",
+              "prior_year_110",
+              "current_year_90",
+              "not_required_withholding",
+              "not_required_estate_first_years",
+              "prospect"
+            ],
+            "title": "Method",
+            "type": "string"
+          },
+          "payment_method_label": {
+            "anyOf": [
+              {
+                "enum": [
+                  "irs_direct_pay",
+                  "eftps",
+                  "ny_online_services",
+                  "state_portal",
+                  "check",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Payment Method Label"
+          },
+          "prior_agi_over_threshold": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Prior Agi Over Threshold"
+          },
+          "prior_year_tax": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Prior Year Tax",
+            "x-tri": true
+          },
+          "projected_withholding": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Projected Withholding",
+            "x-tri": true
+          },
+          "tax_year": {
+            "cls": "internal",
+            "maximum": 2100.0,
+            "minimum": 2000.0,
+            "title": "Tax Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "client_entity_id",
+          "tax_year",
+          "form",
+          "method"
+        ],
+        "title": "EstimateCreateIn",
+        "type": "object"
+      },
       "EstimateInstallmentOut": {
         "properties": {
           "amount": {
@@ -34044,6 +34178,94 @@
         "title": "ExtensionBatchOut",
         "type": "object"
       },
+      "ExtensionLineIn": {
+        "additionalProperties": false,
+        "description": "A preparer's line: Accrued never computes the projected tax (T-03 US-4.2). A state line\nnames its form; a federal line's follows from the return.",
+        "properties": {
+          "form": {
+            "anyOf": [
+              {
+                "maxLength": 12,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Form"
+          },
+          "jurisdiction": {
+            "cls": "internal",
+            "default": "US",
+            "maxLength": 12,
+            "minLength": 2,
+            "title": "Jurisdiction",
+            "type": "string"
+          },
+          "projected_liability": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Projected Liability",
+            "x-tri": true
+          },
+          "projected_liability_source": {
+            "anyOf": [
+              {
+                "enum": [
+                  "engine_import",
+                  "preparer_entry"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Projected Liability Source"
+          },
+          "return_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Return Id",
+            "type": "string"
+          },
+          "withholding_plus_estimates": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Withholding Plus Estimates",
+            "x-tri": true
+          }
+        },
+        "required": [
+          "return_id"
+        ],
+        "title": "ExtensionLineIn",
+        "type": "object"
+      },
       "ExtensionOut": {
         "description": "The detail: rule and engine versions, the approval trail and evidence refs.",
         "properties": {
@@ -34582,6 +34804,15 @@
         "additionalProperties": false,
         "description": "409 `gate_unmet` with the G1/G3 facts for a return whose engagement is not accepted.",
         "properties": {
+          "lines": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ExtensionLineIn"
+            },
+            "maxItems": 400,
+            "title": "Lines",
+            "type": "array"
+          },
           "payments": {
             "cls": "internal",
             "items": {
@@ -244587,6 +244818,142 @@
           "tax"
         ],
         "x-abacus-action": "estimate_schedule.read"
+      },
+      "post": {
+        "description": "A schedule's inputs; code computes the annual payment and the quarters.",
+        "operationId": "estimate_create",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EstimateCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstimateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Estimate Create Route",
+        "tags": [
+          "tax"
+        ],
+        "x-abacus-action": "estimate_schedule.update"
       }
     },
     "/v1/tax/estimates/export.xlsx": {
@@ -245032,7 +245399,7 @@
     },
     "/v1/tax/estimates/{schedule_id}/installments/{quarter}/confirmation-requests": {
       "post": {
-        "description": "In the basis return's binder, or a \"{year} estimated payments\" binder part (DEC-31).",
+        "description": "In the basis return's binder (a prospect has none: 409 `no_basis_return`).",
         "operationId": "installment_confirmation",
         "parameters": [
           {

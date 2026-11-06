@@ -338,7 +338,7 @@ async def assign_owner(ctx: AuthContext, template_id: UUID, owner_id: UUID) -> T
         tx.record(
             "questionnaire_template.owner_assigned",
             target=Target(SUBJECT, template_id),
-            after=Ref(owner_id=str(owner_id)),
+            after=Ref(owner_id=owner_id),
         )
     return await detail(ctx, template_id)
 
