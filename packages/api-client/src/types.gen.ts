@@ -43018,17 +43018,14 @@ export type StatementDecisionsBody = {
 /**
  * StatementDraftStartedOut
  *
- * The version id is the deterministic run's record (DEC-2304).
+ * The deterministic run's record: `FsDraftWorkflow` writes the version, and the screen shows
+ * its skeleton until `GET` reads it (AUD-20c).
  */
 export type StatementDraftStartedOut = {
     /**
      * Run Id
      */
     run_id: string;
-    /**
-     * Version No
-     */
-    version_no: number;
 };
 
 /**
@@ -46782,6 +46779,18 @@ export type TieOutOut = {
      * Total
      */
     total: number;
+};
+
+/**
+ * TieOutStartedOut
+ *
+ * `TieOutWorkflow` runs in the background; `GET` reads the result (AUD-20 c).
+ */
+export type TieOutStartedOut = {
+    /**
+     * Statement Version Id
+     */
+    statement_version_id: string;
 };
 
 /**
@@ -110862,7 +110871,7 @@ export type TieOutResponses = {
     /**
      * Successful Response
      */
-    202: TieOutOut;
+    202: TieOutStartedOut;
 };
 
 export type TieOutResponse = TieOutResponses[keyof TieOutResponses];

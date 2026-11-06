@@ -56,6 +56,7 @@ AGENT_LABEL: Final = {
     "requests.guidance_drafter": "Guidance drafter",
     "fieldwork.entry_assessor": "Entry assessor",
     "engagement.agent": "Engagement agent",
+    "reporting.fs_draft": "Statements draft",
 }
 State = Literal["queued", "running", "succeeded", "needs_input", "failed"]
 # DEC-87 (TASK-5002): content for the engagement's people and oversight in scope; metadata for

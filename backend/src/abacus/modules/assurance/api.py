@@ -256,6 +256,12 @@ register_suggestion_applier("risk", apply_risk_suggestion, engagement_of=risk_en
 # A-04-T15 (DEC-1953): the recommender's suggestion names the work item's materiality.
 register_suggestion_target("materiality", engagement_of=work_item_engagement)
 
+# A-06-T25: reporting may not import agents; the statements' run record arrives through here.
+from abacus.modules.agents.api import (  # noqa: E402
+    close_deterministic_run,
+    deterministic_run_facts,
+    open_deterministic_run,
+)
 from abacus.modules.assurance.completion_decisions import (  # noqa: E402 -- A-06-T28
     request_severity_decision,
     request_sum_conclusion,
@@ -270,6 +276,11 @@ from abacus.modules.assurance.mapping import start as start_mapping  # noqa: E40
 from abacus.modules.assurance.sum_service import pass_on_sum, record_prior_year  # noqa: E402
 from abacus.modules.assurance.sum_service import record_factor as record_sum_factor  # noqa: E402
 from abacus.modules.assurance.sum_service import snapshot as sum_snapshot  # noqa: E402
+from abacus.modules.reporting.api import RunRecordPort, register_run_record  # noqa: E402
+
+register_run_record(
+    RunRecordPort(open_deterministic_run, close_deterministic_run, deterministic_run_facts)
+)
 
 __all__ = [
     "ACTIVITIES",

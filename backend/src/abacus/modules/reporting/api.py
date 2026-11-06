@@ -509,6 +509,10 @@ class _SourceSubscriptions(Mapping[str, Callable[[OutboxEvent], Awaitable[None]]
     def __getitem__(self, event_type: str) -> Callable[[OutboxEvent], Awaitable[None]]:
         if event_type == RENDER_REQUESTED:
             return _render_requested
+        if event_type == DRAFT_REQUESTED:
+            return _draft_requested
+        if event_type == TIE_OUT_REQUESTED:
+            return _tie_out_requested
         kinds = self._events()[event_type]
 
         async def handle(event: OutboxEvent) -> None:
@@ -519,14 +523,17 @@ class _SourceSubscriptions(Mapping[str, Callable[[OutboxEvent], Awaitable[None]]
         return handle
 
     def __iter__(self) -> Iterator[str]:
-        return iter((RENDER_REQUESTED, *(e for e in self._events() if e != RENDER_REQUESTED)))
+        own = (RENDER_REQUESTED, DRAFT_REQUESTED, TIE_OUT_REQUESTED)
+        return iter((*own, *(e for e in self._events() if e not in own)))
 
     def __len__(self) -> int:
-        return len(set(self._events()) | {RENDER_REQUESTED})
+        return len(set(self._events()) | {RENDER_REQUESTED, DRAFT_REQUESTED, TIE_OUT_REQUESTED})
 
 
 # P-11-T11 (DEC-1561): a version's render job runs on the relay's delivery of its event.
 RENDER_REQUESTED = "generated_document.render_requested"
+DRAFT_REQUESTED = "statement.draft_requested"
+TIE_OUT_REQUESTED = "statement.tie_out_requested"
 
 
 async def _render_requested(event: OutboxEvent) -> None:
@@ -536,11 +543,43 @@ async def _render_requested(event: OutboxEvent) -> None:
     await on_render_requested(event)
 
 
+async def _draft_requested(event: OutboxEvent) -> None:
+    # Imported here: the jobs reach agents.api and `kernel.dispatch` (A-06-T25).
+    from abacus.modules.reporting.statements_jobs import on_draft_requested
+
+    await on_draft_requested(event)
+
+
+async def _tie_out_requested(event: OutboxEvent) -> None:
+    from abacus.modules.reporting.statements_jobs import on_tie_out_requested
+
+    await on_tie_out_requested(event)
+
+
 SUBSCRIPTIONS: Mapping[str, Callable[[OutboxEvent], Awaitable[None]]] = _SourceSubscriptions()
 # The worker composes WORKFLOWS and ACTIVITIES beside SUBSCRIPTIONS for every module that has one.
+from abacus.modules.reporting.statements_jobs import (  # noqa: E402 -- A-06-T25
+    draft_activity,
+    draft_failed_activity,
+    tie_out_activity,
+)
+from abacus.modules.reporting.statements_workflows import (  # noqa: E402
+    DRAFT_ACTIVITY as DRAFT_ACTIVITY,
+)
+from abacus.modules.reporting.statements_workflows import (  # noqa: E402
+    DRAFT_FAILED_ACTIVITY as DRAFT_FAILED_ACTIVITY,
+)
+from abacus.modules.reporting.statements_workflows import (  # noqa: E402
+    TIE_OUT_ACTIVITY as TIE_OUT_ACTIVITY,
+)
+from abacus.modules.reporting.statements_workflows import (  # noqa: E402
+    FsDraftWorkflow,
+    TieOutWorkflow,
+)
+
 # The render job is a relay subscription, not a workflow (DEC-1561).
-WORKFLOWS: dict[type, str] = {}
-ACTIVITIES: tuple[object, ...] = ()
+WORKFLOWS: dict[type, str] = {FsDraftWorkflow: "interactive", TieOutWorkflow: "background"}
+ACTIVITIES: tuple[object, ...] = (draft_activity, draft_failed_activity, tie_out_activity)
 
 # N-02-T32 (DEC-1458): the engagement letter renders through C11 by engagements' port, since
 # engagements may not import reporting (ADR-008).
@@ -597,7 +636,10 @@ async def latest_document_version(
     return None if row is None else (row.id, row.content_hash)
 
 
-# A-06-T28: the completion slice's path.
+# A-06-T25, T28: the run record's port, the workflows' inputs, and the slice's path.
+from abacus.modules.reporting.statements import (  # noqa: E402
+    RunRecordPort as RunRecordPort,
+)
 from abacus.modules.reporting.statements import (  # noqa: E402
     draft as draft_statements,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- for the loader
 )
@@ -605,5 +647,14 @@ from abacus.modules.reporting.statements import (  # noqa: E402
     record_management_approval as record_management_approval,
 )
 from abacus.modules.reporting.statements import (  # noqa: E402
+    register_run_record as register_run_record,
+)
+from abacus.modules.reporting.statements import (  # noqa: E402
     run_tie_out as run_statement_tie_out,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- for the loader
+)
+from abacus.modules.reporting.statements_workflow_types import (  # noqa: E402
+    FsDraftInput as FsDraftInput,
+)
+from abacus.modules.reporting.statements_workflow_types import (  # noqa: E402
+    TieOutInput as TieOutInput,
 )

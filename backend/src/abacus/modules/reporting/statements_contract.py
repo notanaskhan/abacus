@@ -137,12 +137,20 @@ class StatementsOut(BaseModel):
 
 
 class StatementDraftStartedOut(BaseModel):
-    """The version id is the deterministic run's record (DEC-2304)."""
+    """The deterministic run's record: `FsDraftWorkflow` writes the version, and the screen shows
+    its skeleton until `GET` reads it (AUD-20c)."""
 
     model_config = _frozen()
 
     run_id: Annotated[UUID, Internal]
-    version_no: Annotated[int, Internal]
+
+
+class TieOutStartedOut(BaseModel):
+    """`TieOutWorkflow` runs in the background; `GET` reads the result (AUD-20 c)."""
+
+    model_config = _frozen()
+
+    statement_version_id: Annotated[UUID, Internal]
 
 
 class LineageOut(BaseModel):
@@ -397,10 +405,8 @@ async def statements_draft_route(
     await _gate(ctx, engagement_id, "statement.draft")
     from abacus.modules.reporting import statements
 
-    version_id, version_no = await statements.draft(
-        ctx, engagement_id, await _work_item(ctx, engagement_id)
-    )
-    return StatementDraftStartedOut(run_id=version_id, version_no=version_no)
+    run_id = await statements.start_draft(ctx, engagement_id, await _work_item(ctx, engagement_id))
+    return StatementDraftStartedOut(run_id=run_id)
 
 
 @statements_router.get(
@@ -418,14 +424,17 @@ async def lineage_route(version_id: UUID, line_id: UUID, ctx: Ctx) -> LineageOut
 
 
 @statements_router.post(
-    f"{_SV}/tie-out", action="statement.tie_out", response_model=TieOutOut, status_code=202,
-    errors=(501,),
+    f"{_SV}/tie-out", action="statement.tie_out", response_model=TieOutStartedOut,
+    status_code=202, errors=(501,),
 )  # fmt: skip
-async def tie_out_route(version_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey) -> TieOutOut:
+async def tie_out_route(
+    version_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> TieOutStartedOut:
     await _version_gate(ctx, version_id, "statement.tie_out")
     from abacus.modules.reporting import statements
 
-    return _tie_out_out(await statements.run_tie_out(ctx, version_id))
+    await statements.start_tie_out(ctx, version_id)
+    return TieOutStartedOut(statement_version_id=version_id)
 
 
 @statements_router.get(

@@ -4480,7 +4480,7 @@ async def _completion_tied(conn: asyncpg.Connection, _: Scenario, event: Event) 
         "ORDER BY version_no DESC LIMIT 1",
         item,
     )
-    await run_statement_tie_out(await _staff_context(conn, event), cast(UUID, version))
+    await run_statement_tie_out((await _staff_context(conn, event)).tenant, cast(UUID, version))
 
 
 async def _completion_approved(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:

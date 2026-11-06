@@ -601,7 +601,7 @@ async def finding_to_misstatement_route(
         origin_ref=None,
         type=body.type,
         nature=body.nature,
-        status=cast(Any, made.status),
+        status=cast(Any, made.status),  # Any: the column's CHECK holds the Literal
         amount=made.amount,
         finding_ref=found.ref,
         proposed_entry_ref=None,
