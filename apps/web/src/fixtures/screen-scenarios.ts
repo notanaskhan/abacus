@@ -29,6 +29,7 @@ import { scenarios as ebp06 } from "./scenarios/EBP-06";
 import { scenarios as ebp09 } from "./scenarios/EBP-09";
 import { scenarios as aud10 } from "./scenarios/AUD-10";
 import { scenarios as aud17 } from "./scenarios/AUD-17";
+import { scenarios as aud18 } from "./scenarios/AUD-18";
 import { scenarios as aud20 } from "./scenarios/AUD-20";
 import { OPENS as NOT01_OPENS, scenarios as not01 } from "./scenarios/NOT-01";
 import { scenarios as not03 } from "./scenarios/NOT-03";
@@ -159,6 +160,7 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
   "EBP-09": { scenarios: ebp09, opens: {} }, // A-05-T45
   "AUD-10": { scenarios: aud10, opens: {} }, // A-04-T37
   "AUD-17": { scenarios: aud17, opens: {} }, // A-06-T24
+  "AUD-18": { scenarios: aud18, opens: {} }, // A-07-T17
   "AUD-20": { scenarios: aud20, opens: {} }, // A-06-T30
   "AUD-09": {
     scenarios: aud09,
