@@ -92,7 +92,9 @@ describe("NOT-01 composed states (DEC-2329)", () => {
     });
     expect(create().disabled).toBe(true);
     expect(screen.getByRole("button", { name: "Create anyway" })).toBeTruthy();
-    expect(document.querySelector("[data-intake='duplicate']")?.textContent).toMatch(/same notice/u);
+    expect(document.querySelector("[data-intake='duplicate']")?.textContent).toMatch(
+      /same notice/u,
+    );
   });
 
   it("manual entry names its reason, offers empty fields and shows no confidence", async () => {

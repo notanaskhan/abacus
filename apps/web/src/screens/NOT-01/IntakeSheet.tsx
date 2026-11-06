@@ -192,7 +192,9 @@ function Extracted({
 export function canCreate(intake: IntakeOut | undefined): boolean {
   return (
     intake !== undefined &&
-    (intake.status === "ready" || intake.status === "manual_entry" || intake.status === "failed") &&
+    (intake.status === "ready" ||
+      intake.status === "manual_entry" ||
+      intake.status === "failed") &&
     !intake.fields.some((f) => f.low_confidence && !f.confirmed) &&
     intake.match.client_entity_id !== null &&
     intake.duplicate_of == null
