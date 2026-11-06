@@ -937,6 +937,38 @@ objects:
       acknowledged:         {label: "Acknowledged", variant: green, terminal: true, derived: false, context_labels: {attribution: "Acknowledged {date} · {body}"}}
       overdue:              {label: "Overdue", variant: red-tint, terminal: false, derived: true}   # from due_on (AU-C 265: release + 60 days); never stored
 
+  deliverable:   # portal client words (POR-09; DF-31; R-02 §4.2, R-02-T04)
+    source: "R-02 §4.2 (POR-09)"
+    codes:
+      for_your_review:      {label: "For your review", variant: amber, terminal: false, derived: true}
+      approved_by_you:      {label: "Approved by you", variant: green-tint, terminal: false, derived: true}
+      waiting_for_approval: {label: "Waiting for approval", variant: amber, terminal: false, derived: true}
+      in_sign:              {label: "In sign", client_label: "In Sign", variant: neutral, terminal: false, derived: true}
+      signed:               {label: "Signed", variant: green-tint, terminal: false, derived: true}
+      final:                {label: "Final", variant: green, terminal: true, derived: true}
+      released:             {label: "Released", variant: green-tint, terminal: true, derived: true}
+      not_ready_yet:        {label: "Not ready yet", variant: null, disc: ring, terminal: false, derived: true}
+      replaced:             {label: "Replaced", variant: neutral, terminal: true, derived: true, context_labels: {firm_named: "Replaced by {firm}"}}
+
+  client_approval_item:   # portal client words (POR-08; DF-31; R-02 §4.2, R-02-T04)
+    source: "R-02 §4.2 (POR-08)"
+    codes:
+      waiting:       {label: "Waiting for you", variant: amber, terminal: false, derived: true}
+      approved:      {label: "Approved", variant: green-tint, terminal: true, derived: true}
+      declined:      {label: "Declined", variant: red-tint, terminal: true, derived: true}
+      accepted:      {label: "Accepted", variant: green-tint, terminal: true, derived: true}
+      not_recorded:  {label: "Not recorded", variant: neutral, terminal: true, derived: true}
+      acknowledged:  {label: "Acknowledged", variant: green-tint, terminal: true, derived: true}
+      question_sent: {label: "Question sent", variant: neutral, terminal: false, derived: true}
+
+  governance_room_letter:   # portal client words (POR-15; DF-31; R-02 §4.2, R-02-T04)
+    source: "R-02 §4.2 (POR-15)"
+    codes:
+      new:               {label: "New", variant: amber, terminal: false, derived: true}
+      not_yet:           {label: "Not yet", variant: null, disc: ring, terminal: false, derived: true}
+      sent_acknowledged: {label: "Sent · acknowledged", variant: green-tint, terminal: true, derived: true}
+      acknowledged:      {label: "Acknowledged", variant: green-tint, terminal: true, derived: true}
+
   audit_report:   # audit_reports.status projection (AUD-23)
     source: "A-07 §4.2 (AUD-23)"
     codes:

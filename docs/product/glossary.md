@@ -529,6 +529,20 @@ UI labels (N-04-T01): **Response sent** (status `sent`), **Awaiting agency** (st
 | Saved prompt | A user's saved request text. Never a bare `prompt`. | `saved_prompts` | — |
 | Schedule / trigger | P-50, P-51. | `agent_schedules`, `triggers` | — |
 
+## New terms: portal approvals and deliverables
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Deliverable | A finished or draft document the firm publishes to a client's audiences, once per source (C10). UI: "Deliverables". | `deliverables` | — |
+| Deliverable version | One insert-only version of a deliverable, on an evidence version. | `deliverable_versions` | — |
+| Deliverable audience | A scope that may read a deliverable: client, entity, engagement, work item or governance room. | `deliverable_audiences` | — |
+| Deliverable receipt | Who opened or downloaded a version, rebuilt from audit events. | `deliverable_receipts` | — |
+| Client approval item | One decision put to a client through C18. UI: "Approvals". | `client_approval_item` | "approval" for a review decision |
+| Governance body | A client's committee or board, one model for POR-15 and POR-22 (DEC-93). | `governance_bodies` | — |
+| Governance room | A body's private channel on one audit: A-07's `governance_recipients` row. UI: "Governance room". | `governance_room` | — |
+| Uncorrected misstatement acknowledgement | Management's human-only acknowledgement of a SUM snapshot's net effect. | `uncorrected_misstatement_acknowledgements` | — |
+| My K-1s | POR-09's band of K-1s released to this person. | UI label only | — |
+
 ## Legacy identifiers: rename or freeze
 
 | Identifier | Problem | Action | When |
