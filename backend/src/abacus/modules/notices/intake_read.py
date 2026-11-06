@@ -280,7 +280,7 @@ async def _store(
     client: ClientMatch,
     client_id: UUID | None,
     return_id: UUID | None,
-    authorization: Mapping[str, object],
+    authorization_facts: Mapping[str, object],
     code: str | None,
     on: date | None,
 ) -> str:
@@ -295,7 +295,7 @@ async def _store(
             text(
                 "UPDATE notice_intakes SET status = 'ready', extraction_mode = 'code_map', "
                 "client_id = :client, match = CAST(:match AS jsonb), "
-                "authorization_facts = CAST(:auth AS jsonb), duplicate_of_work_item_id = :dup, "
+                "authorization_facts = CAST(:facts AS jsonb), duplicate_of_work_item_id = :dup, "
                 "row_version = row_version + 1 WHERE id = :id RETURNING created_by"
             ),
             {
@@ -308,7 +308,7 @@ async def _store(
                         "return_id": _text(return_id),
                     }
                 ),
-                "auth": json.dumps(authorization),
+                "facts": json.dumps(authorization_facts),
                 "dup": await duplicate_of(
                     tx.session, tenant, client.client_entity_id, code, on, version
                 ),
