@@ -1,106 +1,112 @@
-"""T-03-T07: TAX-13's Excel exports (T-03 §3 F5; ADR-042; DEC-2327).
-
-Only the visible rows of the current view are written. The route holds the fresh second factor
-(the matrix); the audit event names the tab and records the row count, never an amount. Workbooks
-are openpyxl with pinned timestamps; every text cell is written as a string, never a formula.
-"""
+"""TAX-13's Open in Excel (T-03-T07; DEC-2350): the viewer's visible rows of the current segment.
+Client strings are written as text, never formulas (ADR-052). The audit event carries the row count
+only: no name or amount."""
 
 from __future__ import annotations
 
-import io
-from datetime import UTC, date, datetime
+from collections.abc import Sequence
 from decimal import Decimal
-from typing import Final
+from io import BytesIO
+from typing import Final, cast
 
 from openpyxl import Workbook
+from openpyxl.cell.cell import Cell as Cell_
 
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.identity.api import AuthContext
-from abacus.modules.tax import estimates, extensions
+from abacus.modules.tax import estimates as est
+from abacus.modules.tax import extensions as ext
 
-_PINNED: Final = datetime(2000, 1, 1, tzinfo=UTC).replace(tzinfo=None)
+XLSX: Final = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+Cell = str | int | Decimal | None
 
 
-def _book(
-    title: str, header: list[str], rows: list[list[str | Decimal | date | int | None]]
-) -> bytes:
+def _book(title: str, header: Sequence[str], rows: Sequence[Sequence[Cell]]) -> bytes:
     book = Workbook()
-    book.properties.created = _PINNED
-    book.properties.modified = _PINNED
     sheet = book.active
-    assert sheet is not None  # noqa: S101 -- a new workbook always has its first sheet
+    if sheet is None:  # a new Workbook always has its first sheet
+        sheet = book.create_sheet()
     sheet.title = title
-    sheet.append(header)
+    sheet.append(list(header))
     for row in rows:
-        sheet.append(row)
-    # Always a string: a client's name that starts "=" never becomes a formula.
-    for cells in sheet.iter_rows(min_row=1):
-        for cell in cells:
-            if isinstance(cell.value, str):
-                cell.data_type = "s"
-    out = io.BytesIO()
+        at = sheet.max_row + 1
+        for col, value in enumerate(row, start=1):
+            cell = cast(Cell_, sheet.cell(row=at, column=col))
+            cell.value = value
+            if isinstance(value, str):
+                cell.data_type = "s"  # a client's "=..." stays text (ADR-052)
+            elif isinstance(value, Decimal):
+                cell.number_format = "#,##0.00"
+    out = BytesIO()
     book.save(out)
     return out.getvalue()
 
 
-async def _audit(ctx: AuthContext, action: str, count: int) -> None:
+async def _audited(ctx: AuthContext, action: str, count: int) -> None:
     async with uow(ctx.tenant) as tx:
-        tx.record(
-            action,
-            target=Target("firm", ctx.tenant_id),
-            after=Ref(rows=count),
-        )
+        tx.record(action, target=Target("firm", ctx.tenant_id), after=Ref(rows=count))
 
 
-async def extensions_workbook(ctx: AuthContext, tax_year: int, segment: str | None) -> bytes:
-    found = await extensions.rows(ctx, tax_year)
-    if segment:
-        found = [r for r in found if extensions.segment_of(r) == segment]
-    rows: list[list[str | Decimal | date | int | None]] = [
-        [
-            r.client_name,
-            line["jurisdiction"],
-            line["form"],
-            line["status"],
-            line["original_due_on"],
-            line["extended_due_on"],
-            extensions.money(line["projected_liability"]),
-            extensions.money(line["safe_harbor_target"]),
-        ]
-        for r in found
-        for line in r.lines
-    ]
-    await _audit(ctx, "tax_schedule.extensions_exported", len(rows))
-    return _book(
+async def extensions(ctx: AuthContext, tax_year: int, segment: str | None) -> tuple[bytes, str]:
+    found = [r for r in await ext.rows(ctx, tax_year) if ext.in_segment(r, segment)]
+    rows: list[list[Cell]] = []
+    for r in found:
+        for line in r.lines:
+            paid = ext.line_check(r.tax_return_id, line, r.payments, tax_year)
+            rows.append(
+                [
+                    r.client_name,
+                    r.return_form,
+                    str(line["form"]),
+                    str(line["jurisdiction"]),
+                    str(line["status"]),
+                    str(line["extended_due_on"]),
+                    paid.projected_liability,
+                    paid.target,
+                    paid.paid,
+                ]
+            )
+    await _audited(ctx, "tax_schedule.extensions_exported", len(rows))
+    data = _book(
         "Extensions",
-        [
+        (
             "Client",
-            "Jurisdiction",
+            "Return",
             "Form",
+            "Jurisdiction",
             "Status",
-            "Original due",
             "Extended due",
             "Projected liability",
             "Safe-harbor target",
-        ],
+            "Paid by original due",
+        ),
         rows,
     )
+    return data, f"extensions-{tax_year}.xlsx"
 
 
-async def estimates_workbook(ctx: AuthContext, tax_year: int, quarter: int | None) -> bytes:
-    found = await estimates.schedules(ctx, tax_year)
-    rows: list[list[str | Decimal | date | int | None]] = [
-        [s.client_name, s.form, s.method, q.quarter, q.due_on, q.amount, q.status, q.paid_on]
-        for s in found
-        for q in s.installments
-        if quarter is None or q.quarter == quarter
-    ]
-    await _audit(ctx, "tax_schedule.estimates_exported", len(rows))
-    return _book(
+async def estimates(ctx: AuthContext, tax_year: int, quarter: int | None) -> tuple[bytes, str]:
+    found = await est.rows(ctx, tax_year)
+    rows: list[list[Cell]] = []
+    for r in found:
+        for i in r.installments:
+            if quarter is not None and i["quarter"] != quarter:
+                continue
+            rows.append(
+                [
+                    r.client_name,
+                    str(r.schedule["form"]),
+                    str(r.schedule["jurisdiction"]),
+                    int(i["quarter"]),
+                    str(i["due_on"]),
+                    est.money(i["amount"]),
+                    str(i["status"]),
+                ]
+            )
+    await _audited(ctx, "tax_schedule.estimates_exported", len(rows))
+    data = _book(
         "Estimates",
-        ["Client", "Form", "Method", "Quarter", "Due", "Amount", "Status", "Paid on"],
+        ("Client", "Form", "Jurisdiction", "Quarter", "Due", "Amount", "Status"),
         rows,
     )
-
-
-__all__ = ["estimates_workbook", "extensions_workbook"]
+    return data, f"estimates-{tax_year}.xlsx"

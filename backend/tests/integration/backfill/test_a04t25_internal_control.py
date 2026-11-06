@@ -99,7 +99,7 @@ async def test_ac6_2_exceptions_d2_resolves_to_row_2_with_two_citations(world: B
     assert len(d2.citation_ids) == 2
     assert d2.proposed_severity == "significant_deficiency"
     assert d2.concluded_severity is None
-    assert "exception.route" not in d2.allowed_actions  # hidden until A-06 registers
+    assert "exception.route" in d2.allowed_actions  # A-06 registers its routes (DEC-2354)
 
 
 async def test_ac6_3_a_proposal_never_concludes(world: Books) -> None:

@@ -273,6 +273,7 @@ function Cockpit({
   // EBP-03 (A-05-T23): Testing › Eligibility Testing, behind `ebp.modules`; a row opens its HR
   // record in the viewer dock, and Adopt / Sign off open SHL-12 on the attribute test.
   const eligibilityOpen = selected === ELIGIBILITY;
+  const pbcBinderId = docs.data?.groups?.[0]?.rows?.[0]?.binder_id;
   const openOverlay = useOpenOverlay();
   const eligibility = useEligibilityCanvas(cockpit.work_item_id, {
     active: eligibilityOpen,
@@ -280,6 +281,14 @@ function Cockpit({
     onSignOff: (testId, level) => {
       openOverlay(ov.SHL12("attribute_test", testId, level));
     },
+    // "Request opt-out forms": the SHL-14 composer over the work item's PBC binder.
+    ...(pbcBinderId === undefined
+      ? {}
+      : {
+          onRequestOptOut: () => {
+            openOverlay(ov.SHL14("new", pbcBinderId));
+          },
+        }),
   });
   // AUD-09 (A-04-T32): Planning › Internal Control, behind `assurance.internal_control` (C-20 when
   // off, drawn by the canvas itself).
