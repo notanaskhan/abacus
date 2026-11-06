@@ -694,7 +694,10 @@ class TestGridRowOut(BaseModel):
     position: Annotated[int, classified("internal")]
     item_id: Annotated[UUID, classified("internal")]
     record_key: Annotated[str, classified("confidential")]
-    state: Annotated[str, classified("internal")]
+    state: Annotated[
+        Literal["not_started", "agent_tested", "needs_human", "pass", "exception", "no_effect"],
+        classified("internal"),
+    ]
     cells: Annotated[list[TestGridCellOut], classified("internal")]
     # EBP-04 c: the EBP-03 sample item the same participant's exception traces to.
     linked_item_id: Annotated[UUID | None, classified("internal")] = None
