@@ -43733,7 +43733,7 @@ export type SubserviceOrgOut = {
 /**
  * SuggestedResponseOut
  *
- * A drafted response waiting for a person (AUD-08 f; DEC-2385): nothing is linked yet.
+ * A drafted response waiting for a person (AUD-08 f; DEC-2480): nothing is linked yet.
  */
 export type SuggestedResponseOut = {
     /**
