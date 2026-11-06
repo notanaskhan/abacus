@@ -4,7 +4,7 @@ title: Q-04-T088 M14 ops retro part N, rehearsed on the synthetic test firm
 spec: SPEC-000  # row
 acceptance_criteria: [AC-1]  # the retro states each figure with its source and a decision on the fractional SRE
 risk_zone: red
-status: in-review
+status: done
 epic: Q-04
 plan_key: Q-04-T088
 branch: s25-q04-t088

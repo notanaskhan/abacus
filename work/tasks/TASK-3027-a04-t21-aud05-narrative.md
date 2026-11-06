@@ -4,7 +4,7 @@ title: A-04-T21 AUD-05 narrative workpaper screen
 spec: SPEC-620
 acceptance_criteria: [AC-11, AC-12, AC-13]
 risk_zone: green
-status: in-review
+status: done
 epic: A-04
 plan_key: A-04-T21
 branch: s25-a04-t21 (stacked on s25-a04-t20)

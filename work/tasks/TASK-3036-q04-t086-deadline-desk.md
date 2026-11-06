@@ -4,7 +4,7 @@ title: Q-04-T086 deadline week Oct 11-15 partner desk, rehearsed on the syntheti
 spec: SPEC-000  # row
 acceptance_criteria: [AC-1]  # every champion contact is logged with its first-response time inside the SLA
 risk_zone: amber
-status: in-review
+status: done
 epic: Q-04
 plan_key: Q-04-T086
 branch: s25-q04-t086

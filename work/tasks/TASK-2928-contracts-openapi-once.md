@@ -4,7 +4,7 @@ title: Build the OpenAPI document once per process; stage 1 timeout 15 minutes
 spec: SPEC-000  # ADR-013 export; CI stage 2 "schema and api-client" (15-minute limit)
 acceptance_criteria: [AC-1]  # the schema and api-client job completes on CI
 risk_zone: green
-status: in-review
+status: done
 epic: F-01
 plan_key: F-01-T06
 branch: ci-contracts-openapi-cache

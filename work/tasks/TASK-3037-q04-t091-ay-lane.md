@@ -4,7 +4,7 @@ title: Q-04-T091 S25 support reserve, AY lane, rehearsed on the synthetic test f
 spec: SPEC-000  # row
 acceptance_criteria: [AC-1]  # hours are logged at the sprint review and first responses met the SLA, or RK-07 is raised
 risk_zone: amber
-status: in-review
+status: done
 epic: Q-04
 plan_key: Q-04-T091
 branch: s25-q04-t091

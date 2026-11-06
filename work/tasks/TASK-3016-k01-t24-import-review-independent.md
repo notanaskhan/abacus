@@ -4,7 +4,7 @@ title: K-01-T24 independent acceptance tests for K-01-T18's import review
 spec: SPEC-000  # K-01-T24 row; K-01 §3.4, §6, §7
 acceptance_criteria: [AC-1]
 risk_zone: amber
-status: in-review
+status: done
 epic: K-01
 plan_key: K-01-T24
 branch: s25-k01-t24 (stacked on s25-a06-t08)

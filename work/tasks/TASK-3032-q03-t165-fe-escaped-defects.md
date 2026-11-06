@@ -4,7 +4,7 @@ title: Q-03-T165 front-end escaped-defect fix-forward, 2027 Q3 part 4
 spec: SPEC-000  # row
 acceptance_criteria: [AC-1]  # every escaped UI defect of the period has a fix and a test, logged with the layer that missed it
 risk_zone: green
-status: in-review
+status: done
 epic: Q-03
 plan_key: Q-03-T165
 branch: s25-q03-t165

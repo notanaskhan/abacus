@@ -4,7 +4,7 @@ title: P-04-T60 screen contracts SHL-09 to SHL-16 with deviations
 spec: SPEC-000  # row
 acceptance_criteria: [AC-1]
 risk_zone: green
-status: in-review
+status: done
 epic: P-04
 plan_key: P-04-T60
 branch: s25-p04-t60 (stacked on s25-k01-t24)

@@ -4,7 +4,7 @@ title: Q-03-T163 integration and conflict lane, 2027 Q3 part 1
 spec: SPEC-000  # row
 acceptance_criteria: [AC-1]  # every red batch run of the period is resolved within one working day and no generated file is hand-merged
 risk_zone: red
-status: in-review
+status: done
 epic: Q-03
 plan_key: Q-03-T163
 branch: s25-q03-t163

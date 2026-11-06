@@ -4,7 +4,7 @@ title: A-04-T22 mode gap — prompt, mapping and the drafter's document channel
 spec: SPEC-620
 acceptance_criteria: [AC-1, AC-23]
 risk_zone: red
-status: in-review
+status: done
 epic: A-04
 plan_key: A-04-T22
 branch: s25-a04-t22 (stacked on s25-a04-t43)

@@ -4,7 +4,7 @@ title: A-06-T09 adjustments service part 1 — propose, balance, thresholds, adj
 spec: SPEC-642
 acceptance_criteria: [AC-1]
 risk_zone: red
-status: in-review
+status: done
 epic: A-06
 plan_key: A-06-T09
 branch: s25-a06-t09 (stacked on s25-a04-t24)
