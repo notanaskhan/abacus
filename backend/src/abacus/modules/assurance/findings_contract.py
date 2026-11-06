@@ -141,9 +141,14 @@ class ConvertToMisstatementIn(BaseModel):
     # Null for projected: the projection is code's.
     amount: Annotated[Money | None, classified("confidential")] = None
     projection_ref: Annotated[UUID | None, classified("internal")] = None
+    # The sample's own error: code projects it over the population (A-06 F3).
+    sample_error: Annotated[Money | None, classified("confidential")] = None
     seen_version: Annotated[int, Field(ge=1), classified("internal")]
     column_set: Annotated[ColumnSet, classified("internal")] = "commercial"
     fs_effect: Annotated[MisstatementEffectIn | None, classified("confidential")] = None
+    nature: Annotated[Literal["misstatement", "reclassification"], classified("internal")] = (
+        "misstatement"
+    )
 
 
 class MisstatementEffectPatchIn(BaseModel):
@@ -579,7 +584,7 @@ async def finding_to_misstatement_route(
     finding_id: UUID, body: ConvertToMisstatementIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> MisstatementOut:
     """A projected misstatement takes its figure from sampling (422 `projection_unavailable`
-    until A-03 exposes its projection facts; T11)."""
+    without a sample set and its error; T11)."""
     from abacus.modules.assurance import findings
 
     work_item = await findings.work_item_of(ctx.tenant, finding_id)
@@ -591,16 +596,20 @@ async def finding_to_misstatement_route(
         amount=body.amount,
         column_set=body.column_set,
         fs_effect=None if body.fs_effect is None else _effect_json(body.fs_effect),
+        projection_ref=body.projection_ref,
+        sample_error=body.sample_error,
+        nature=body.nature,
     )
     found = await findings.finding(ctx, finding_id)
+    made = await findings.misstatement_facts(ctx.tenant, misstatement_id)
     return MisstatementOut(
         id=misstatement_id,
-        ref=f"M-{found.ref.removeprefix('F-')}",
+        ref=made.ref,
         origin_ref=None,
         type=body.type,
-        nature="misstatement",
-        status="confirmed",
-        amount=body.amount or Decimal(0),
+        nature=body.nature,
+        status=cast(Any, made.status),
+        amount=made.amount,
         finding_ref=found.ref,
         proposed_entry_ref=None,
         allowed_actions=[],

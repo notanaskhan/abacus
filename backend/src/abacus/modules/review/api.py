@@ -76,6 +76,7 @@ from abacus.modules.review.issues import (
 )
 from abacus.modules.review.matrix import review_gate
 from abacus.modules.review.mfa import MfaRequired
+from abacus.modules.review.notes import note_event as review_note_event
 from abacus.modules.review.notes import notes_for, open_note_counts, open_notes
 from abacus.modules.review.notes import raise_on_target as raise_review_note
 from abacus.modules.review.notification_states import register_notification_states
@@ -306,6 +307,7 @@ __all__ = [
     "register_reviewable",
     "register_reviewable_facts",
     "register_suggestion_owner",
+    "review_note_event",
     "reviewable_fact_types",
     "reviewable_facts",
     "reviewables_of",

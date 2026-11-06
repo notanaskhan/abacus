@@ -7809,7 +7809,7 @@ export const findingToDeficiency = <ThrowOnError extends boolean = false>(option
  * Finding To Misstatement Route
  *
  * A projected misstatement takes its figure from sampling (422 `projection_unavailable`
- * until A-03 exposes its projection facts; T11).
+ * without a sample set and its error; T11).
  */
 export const findingToMisstatement = <ThrowOnError extends boolean = false>(options: Options<FindingToMisstatementData, ThrowOnError>): RequestResult<FindingToMisstatementResponses, FindingToMisstatementErrors, ThrowOnError> => (options.client ?? client).post<FindingToMisstatementResponses, FindingToMisstatementErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
