@@ -398,6 +398,8 @@ NOT_CREATING = {
     "/v1/engagements/{engagement_id}/internal-control/exceptions/{sheet_row}/convert-to-misstatement",
     # A-06-T03, T04 (S24): a finding's conversion and resolution, a misstatement passed to the
     # SUM, a client's recorded decision and a rejection act on existing rows, so 200.
+    # A-06-T11: a consultation concluded acts on the row, so 200.
+    "/v1/consultations/{consultation_id}/conclude",
     "/v1/findings/{finding_id}/convert-to-deficiency",
     "/v1/findings/{finding_id}/convert-to-misstatement",
     "/v1/findings/{finding_id}/resolve",
@@ -783,6 +785,7 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/work-items/{work_item_id}/proposed-entries:approve-and-send",
         "/v1/approval-batches",
         "/v1/work-items/{work_item_id}/findings",
+        "/v1/work-items/{work_item_id}/consultations",  # A-06-T11
         "/v1/findings/{finding_id}/request-decision",
         "/v1/work-items/{work_item_id}/sum/snapshots",
         "/v1/work-items/{work_item_id}/sum/request-conclusion",

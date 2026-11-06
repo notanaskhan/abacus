@@ -9420,6 +9420,82 @@ export type ConsentTermsOut = {
 };
 
 /**
+ * ConsultationConcludeIn
+ */
+export type ConsultationConcludeIn = {
+    /**
+     * Conclusion
+     */
+    conclusion: string;
+};
+
+/**
+ * ConsultationIn
+ */
+export type ConsultationIn = {
+    /**
+     * Consulted With User Id
+     */
+    consulted_with_user_id: string;
+    /**
+     * Question
+     */
+    question: string;
+};
+
+/**
+ * ConsultationOut
+ */
+export type ConsultationOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'finding.update' | 'finding.convert' | 'finding.resolve' | 'finding.mark_not_applicable' | 'finding.request_decision' | 'misstatement.update' | 'misstatement.pass_to_sum' | 'sum.update_factors' | 'sum.request_conclusion' | 'consultation.conclude' | 'sum.snapshot' | 'sum.export'>;
+    /**
+     * Concluded At
+     */
+    concluded_at: string | null;
+    /**
+     * Conclusion
+     */
+    conclusion: string | null;
+    /**
+     * Consulted With Name
+     */
+    consulted_with_name: string;
+    /**
+     * Consulted With User Id
+     */
+    consulted_with_user_id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Question
+     */
+    question: string;
+    /**
+     * Raised By Name
+     */
+    raised_by_name: string;
+    /**
+     * Ref
+     */
+    ref: string;
+    status: ConsultationStatus;
+};
+
+/**
+ * ConsultationStatus
+ */
+export type ConsultationStatus = 'open' | 'concluded';
+
+/**
  * ContactAccessIn
  *
  * CLI-04 e "Change scope": the contact's whole grant set after the change.
@@ -17231,7 +17307,7 @@ export type FindingDetailOut = {
     /**
      * Allowed Actions
      */
-    allowed_actions: Array<'finding.update' | 'finding.convert' | 'finding.resolve' | 'finding.mark_not_applicable' | 'finding.request_decision' | 'misstatement.update' | 'misstatement.pass_to_sum' | 'sum.update_factors' | 'sum.request_conclusion' | 'sum.snapshot' | 'sum.export'>;
+    allowed_actions: Array<'finding.update' | 'finding.convert' | 'finding.resolve' | 'finding.mark_not_applicable' | 'finding.request_decision' | 'misstatement.update' | 'misstatement.pass_to_sum' | 'sum.update_factors' | 'sum.request_conclusion' | 'consultation.conclude' | 'sum.snapshot' | 'sum.export'>;
     /**
      * Citation Ids
      */
@@ -25999,6 +26075,40 @@ export type ListPageConsentOut = {
      * Items
      */
     items: Array<ConsentOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
+ * ListPage[ConsultationOut]
+ */
+export type ListPageConsultationOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<ConsultationOut>;
     /**
      * Next Cursor
      */
@@ -43827,7 +43937,7 @@ export type SumOut = {
     /**
      * Allowed Actions
      */
-    allowed_actions?: Array<'finding.update' | 'finding.convert' | 'finding.resolve' | 'finding.mark_not_applicable' | 'finding.request_decision' | 'misstatement.update' | 'misstatement.pass_to_sum' | 'sum.update_factors' | 'sum.request_conclusion' | 'sum.snapshot' | 'sum.export'>;
+    allowed_actions?: Array<'finding.update' | 'finding.convert' | 'finding.resolve' | 'finding.mark_not_applicable' | 'finding.request_decision' | 'misstatement.update' | 'misstatement.pass_to_sum' | 'sum.update_factors' | 'sum.request_conclusion' | 'consultation.conclude' | 'sum.snapshot' | 'sum.export'>;
     /**
      * Approaching Pm
      */
@@ -49593,7 +49703,7 @@ export type AbacusModulesAssuranceFindingsContractMisstatementOut = {
     /**
      * Allowed Actions
      */
-    allowed_actions: Array<'finding.update' | 'finding.convert' | 'finding.resolve' | 'finding.mark_not_applicable' | 'finding.request_decision' | 'misstatement.update' | 'misstatement.pass_to_sum' | 'sum.update_factors' | 'sum.request_conclusion' | 'sum.snapshot' | 'sum.export'>;
+    allowed_actions: Array<'finding.update' | 'finding.convert' | 'finding.resolve' | 'finding.mark_not_applicable' | 'finding.request_decision' | 'misstatement.update' | 'misstatement.pass_to_sum' | 'sum.update_factors' | 'sum.request_conclusion' | 'consultation.conclude' | 'sum.snapshot' | 'sum.export'>;
     /**
      * Amount
      */
@@ -62485,6 +62595,70 @@ export type RevokeConsentResponses = {
 };
 
 export type RevokeConsentResponse = RevokeConsentResponses[keyof RevokeConsentResponses];
+
+export type ConsultationConcludeData = {
+    body: ConsultationConcludeIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Consultation Id
+         */
+        consultation_id: string;
+    };
+    query?: never;
+    url: '/v1/consultations/{consultation_id}/conclude';
+};
+
+export type ConsultationConcludeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsultationConcludeError = ConsultationConcludeErrors[keyof ConsultationConcludeErrors];
+
+export type ConsultationConcludeResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConsultationOut;
+};
+
+export type ConsultationConcludeResponse = ConsultationConcludeResponses[keyof ConsultationConcludeResponses];
 
 export type GetContactData = {
     body?: never;
@@ -114447,6 +114621,122 @@ export type AdjustedTbResponses = {
 };
 
 export type AdjustedTbResponse = AdjustedTbResponses[keyof AdjustedTbResponses];
+
+export type ConsultationsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/work-items/{work_item_id}/consultations';
+};
+
+export type ConsultationsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsultationsError = ConsultationsErrors[keyof ConsultationsErrors];
+
+export type ConsultationsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageConsultationOut;
+};
+
+export type ConsultationsResponse = ConsultationsResponses[keyof ConsultationsResponses];
+
+export type ConsultationCreateData = {
+    body: ConsultationIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/work-items/{work_item_id}/consultations';
+};
+
+export type ConsultationCreateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsultationCreateError = ConsultationCreateErrors[keyof ConsultationCreateErrors];
+
+export type ConsultationCreateResponses = {
+    /**
+     * Successful Response
+     */
+    201: ConsultationOut;
+};
+
+export type ConsultationCreateResponse = ConsultationCreateResponses[keyof ConsultationCreateResponses];
 
 export type EpInvolvementData = {
     body?: never;

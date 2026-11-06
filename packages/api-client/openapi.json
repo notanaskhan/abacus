@@ -20285,6 +20285,163 @@
         "title": "ConsentTermsOut",
         "type": "object"
       },
+      "ConsultationConcludeIn": {
+        "additionalProperties": false,
+        "properties": {
+          "conclusion": {
+            "cls": "confidential",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Conclusion",
+            "type": "string"
+          }
+        },
+        "required": [
+          "conclusion"
+        ],
+        "title": "ConsultationConcludeIn",
+        "type": "object"
+      },
+      "ConsultationIn": {
+        "additionalProperties": false,
+        "properties": {
+          "consulted_with_user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Consulted With User Id",
+            "type": "string"
+          },
+          "question": {
+            "cls": "confidential",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question",
+          "consulted_with_user_id"
+        ],
+        "title": "ConsultationIn",
+        "type": "object"
+      },
+      "ConsultationOut": {
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "enum": [
+                "finding.update",
+                "finding.convert",
+                "finding.resolve",
+                "finding.mark_not_applicable",
+                "finding.request_decision",
+                "misstatement.update",
+                "misstatement.pass_to_sum",
+                "sum.update_factors",
+                "sum.request_conclusion",
+                "consultation.conclude",
+                "sum.snapshot",
+                "sum.export"
+              ],
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "concluded_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Concluded At"
+          },
+          "conclusion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Conclusion"
+          },
+          "consulted_with_name": {
+            "cls": "internal",
+            "title": "Consulted With Name",
+            "type": "string"
+          },
+          "consulted_with_user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Consulted With User Id",
+            "type": "string"
+          },
+          "created_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "question": {
+            "cls": "confidential",
+            "title": "Question",
+            "type": "string"
+          },
+          "raised_by_name": {
+            "cls": "internal",
+            "title": "Raised By Name",
+            "type": "string"
+          },
+          "ref": {
+            "cls": "internal",
+            "title": "Ref",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ConsultationStatus",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "id",
+          "ref",
+          "question",
+          "raised_by_name",
+          "consulted_with_user_id",
+          "consulted_with_name",
+          "status",
+          "conclusion",
+          "concluded_at",
+          "created_at",
+          "allowed_actions"
+        ],
+        "title": "ConsultationOut",
+        "type": "object"
+      },
+      "ConsultationStatus": {
+        "enum": [
+          "open",
+          "concluded"
+        ],
+        "title": "ConsultationStatus",
+        "type": "string"
+      },
       "ContactAccessIn": {
         "additionalProperties": false,
         "description": "CLI-04 e \"Change scope\": the contact's whole grant set after the change.",
@@ -37235,6 +37392,7 @@
                 "misstatement.pass_to_sum",
                 "sum.update_factors",
                 "sum.request_conclusion",
+                "consultation.conclude",
                 "sum.snapshot",
                 "sum.export"
               ],
@@ -55524,6 +55682,66 @@
           "total"
         ],
         "title": "ListPage[ConsentOut]",
+        "type": "object"
+      },
+      "ListPage_ConsultationOut_": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "cls": "internal",
+            "title": "Counts",
+            "type": "object"
+          },
+          "facets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Facet"
+              },
+              "type": "array"
+            },
+            "cls": "internal",
+            "title": "Facets",
+            "type": "object"
+          },
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/ConsultationOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Cursor"
+          },
+          "total": {
+            "cls": "internal",
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_capped": {
+            "cls": "internal",
+            "default": false,
+            "title": "Total Capped",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListPage[ConsultationOut]",
         "type": "object"
       },
       "ListPage_ControlExceptionOut_": {
@@ -93314,6 +93532,7 @@
                 "misstatement.pass_to_sum",
                 "sum.update_factors",
                 "sum.request_conclusion",
+                "consultation.conclude",
                 "sum.snapshot",
                 "sum.export"
               ],
@@ -105733,6 +105952,7 @@
                 "misstatement.pass_to_sum",
                 "sum.update_factors",
                 "sum.request_conclusion",
+                "consultation.conclude",
                 "sum.snapshot",
                 "sum.export"
               ],
@@ -134299,6 +134519,154 @@
           "consents"
         ],
         "x-abacus-action": "consent.record"
+      }
+    },
+    "/v1/consultations/{consultation_id}/conclude": {
+      "post": {
+        "description": "Concluded only by the person consulted (403 `not_the_consulted_person`; 0644's guard).",
+        "operationId": "consultation_conclude",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "consultation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Consultation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsultationConcludeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Consultation Conclude Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "consultation.conclude"
       }
     },
     "/v1/contacts/{contact_id}": {
@@ -186692,7 +187060,7 @@
     },
     "/v1/findings/{finding_id}/convert-to-misstatement": {
       "post": {
-        "description": "A projected misstatement takes its figure from sampling (422 `projection_unavailable`\nuntil A-03 exposes its projection facts; T11).",
+        "description": "A projected misstatement takes its figure from sampling: 422 `projection_unavailable`\nunless `projection_ref` is an approved sample set on the engagement (T11; DEC-2421).",
         "operationId": "finding_to_misstatement",
         "parameters": [
           {
@@ -248638,6 +249006,259 @@
           "adjustments"
         ],
         "x-abacus-action": "adjusted_tb.read"
+      }
+    },
+    "/v1/work-items/{work_item_id}/consultations": {
+      "get": {
+        "description": "The work item's consultations; someone consulted reads those naming them (T11; DEC-2421).",
+        "operationId": "consultations",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPage_ConsultationOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Consultations Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "consultation.read"
+      },
+      "post": {
+        "description": "Raise a question to another firm member (T11; DEC-83).",
+        "operationId": "consultation_create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsultationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Consultation Create Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "consultation.create"
       }
     },
     "/v1/work-items/{work_item_id}/ep-involvement": {

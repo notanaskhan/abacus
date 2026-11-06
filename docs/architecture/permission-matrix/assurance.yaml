@@ -141,5 +141,6 @@ actions:
   sum.request_conclusion:     {engagement_partner: allow, manager: allow, agent: deny, system: deny, independence: required}   # a frozen snapshot and the sum_conclusion card
   sum.snapshot:               {engagement_partner: allow, manager: allow, agent: deny, system: deny, independence: required}   # the rep-letter attachment (A-07)
   sum.export:                 {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny, independence: required}   # deterministic SUM workbook; audited
-  consultation.read:          {engagement_partner: allow, manager: allow, agent: deny, system: deny, independence: required}
-  consultation.create:        {engagement_partner: allow, manager: allow, agent: deny, system: deny, independence: required}   # concluded only by the person consulted (database guard)
+  consultation.read:          {engagement_partner: allow, manager: allow, senior: allow, reviewer: allow, eqr_reviewer: allow, specialist: allow, quality_partner: in_scope, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, agent: deny, system: deny, independence: required}   # beyond EP and manager, only the ones naming them (DEC-2421)
+  consultation.create:        {engagement_partner: allow, manager: allow, agent: deny, system: deny, independence: required}
+  consultation.conclude:      {engagement_partner: allow, manager: allow, senior: allow, reviewer: allow, eqr_reviewer: allow, specialist: allow, quality_partner: in_scope, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, agent: deny, system: deny, independence: required}   # concluded only by the person consulted (service and database guard)

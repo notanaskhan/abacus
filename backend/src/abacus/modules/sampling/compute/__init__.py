@@ -20,8 +20,10 @@ from abacus.modules.sampling.compute.canonical import (
 from abacus.modules.sampling.compute.stats import (
     attribute_size,
     binomial_cdf,
+    misstatement_per_item,
     projected_misstatement,
     projected_misstatement_ratio,
+    projection_carried,
     udl,
     udl_percent,
 )
@@ -40,9 +42,11 @@ __all__ = [
     "attribute_size",
     "binomial_cdf",
     "canonical",
+    "misstatement_per_item",
     "normalise_key",
     "projected_misstatement",
     "projected_misstatement_ratio",
+    "projection_carried",
     "sampler",
     "udl",
     "udl_percent",

@@ -23,6 +23,7 @@ from fastapi import Depends, Header, Query
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import ASSURANCE_COMPLETION
+from abacus.kernel._statuses import ConsultationStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
@@ -45,6 +46,7 @@ CompletionAction = Literal[
     "misstatement.pass_to_sum",
     "sum.update_factors",
     "sum.request_conclusion",
+    "consultation.conclude",
     "sum.snapshot",
     "sum.export",
 ]
@@ -123,11 +125,40 @@ class ConvertToMisstatementIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     type: Annotated[Literal["factual", "judgmental", "projected"], classified("internal")]
-    # Null for projected: the projection is code's.
+    # Projected: the sample error, and `projection_ref` is its sample set; the figure is code's.
     amount: Annotated[Money | None, classified("confidential")] = None
     projection_ref: Annotated[UUID | None, classified("internal")] = None
     seen_version: Annotated[int, Field(ge=1), classified("internal")]
     column_set: Annotated[ColumnSet, classified("internal")] = "commercial"
+
+
+class ConsultationIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    question: Annotated[str, Field(min_length=1, max_length=4000), classified("confidential")]
+    consulted_with_user_id: Annotated[UUID, classified("internal")]
+
+
+class ConsultationConcludeIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    conclusion: Annotated[str, Field(min_length=1, max_length=4000), classified("confidential")]
+
+
+class ConsultationOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    ref: Annotated[str, classified("internal")]  # C-01
+    question: Annotated[str, classified("confidential")]
+    raised_by_name: Annotated[str, classified("internal")]
+    consulted_with_user_id: Annotated[UUID, classified("internal")]
+    consulted_with_name: Annotated[str, classified("internal")]
+    status: Annotated[ConsultationStatus, classified("internal")]
+    conclusion: Annotated[str | None, classified("confidential")]
+    concluded_at: Annotated[datetime | None, classified("internal")]
+    created_at: Annotated[datetime, classified("internal")]
+    allowed_actions: Actions
 
 
 class ReasonIn(BaseModel):
@@ -555,24 +586,29 @@ async def finding_to_deficiency_route(
 async def finding_to_misstatement_route(
     finding_id: UUID, body: ConvertToMisstatementIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> MisstatementOut:
-    """A projected misstatement takes its figure from sampling (422 `projection_unavailable`
-    until A-03 exposes its projection facts; T11)."""
+    """A projected misstatement takes its figure from sampling: 422 `projection_unavailable`
+    unless `projection_ref` is an approved sample set on the engagement (T11; DEC-2421)."""
     from abacus.modules.assurance import findings
 
     work_item = await findings.work_item_of(ctx.tenant, finding_id)
     await _gate(ctx, work_item, "finding.convert")
-    misstatement_id = await findings.to_misstatement(
-        ctx, finding_id, type_=body.type, amount=body.amount, column_set=body.column_set
+    converted = await findings.to_misstatement(
+        ctx,
+        finding_id,
+        type_=body.type,
+        amount=body.amount,
+        projection_ref=body.projection_ref,
+        column_set=body.column_set,
     )
     found = await findings.finding(ctx, finding_id)
     return MisstatementOut(
-        id=misstatement_id,
-        ref=f"M-{found.ref.removeprefix('F-')}",
+        id=converted.id,
+        ref=converted.ref,
         origin_ref=None,
         type=body.type,
         nature="misstatement",
         status="confirmed",
-        amount=body.amount or Decimal(0),
+        amount=converted.amount,
         finding_ref=found.ref,
         proposed_entry_ref=None,
         allowed_actions=[],
@@ -885,6 +921,83 @@ async def sign_off_matrix_route(
             for r in found.rows
         ],
         footer=SignOffMatrixFooterOut(**vars(found.footer)),
+    )
+
+
+def _consultation_out(found: object) -> ConsultationOut:
+    from abacus.modules.assurance import consultations
+
+    c = cast(consultations.Consultation, found)
+    return ConsultationOut(
+        id=c.id,
+        ref=c.ref,
+        question=c.question,
+        raised_by_name=c.raised_by_name,
+        consulted_with_user_id=c.consulted_with_user_id,
+        consulted_with_name=c.consulted_with_name,
+        status=cast(ConsultationStatus, c.status),
+        conclusion=c.conclusion,
+        concluded_at=c.concluded_at,
+        created_at=c.created_at,
+        allowed_actions=cast(list[CompletionAction], list(c.allowed_actions)),
+    )
+
+
+@router.get(
+    f"{_WI}/consultations",
+    action="consultation.read",
+    response_model=ListPage[ConsultationOut],
+    errors=(501,),
+)
+async def consultations_route(work_item_id: UUID, ctx: Ctx) -> ListPage[ConsultationOut]:
+    """The work item's consultations; someone consulted reads those naming them (T11; DEC-2421)."""
+    await _gate(ctx, work_item_id, "consultation.read")
+    from abacus.modules.assurance import consultations
+
+    found = await consultations.consultations_of(ctx, work_item_id)
+    return ListPage(items=[_consultation_out(c) for c in found], total=len(found))
+
+
+@router.post(
+    f"{_WI}/consultations",
+    action="consultation.create",
+    response_model=ConsultationOut,
+    status_code=201,
+    errors=(501,),
+)
+async def consultation_create_route(
+    work_item_id: UUID, body: ConsultationIn, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> ConsultationOut:
+    """Raise a question to another firm member (T11; DEC-83)."""
+    await _gate(ctx, work_item_id, "consultation.create")
+    from abacus.modules.assurance import consultations
+
+    return _consultation_out(
+        await consultations.raise_consultation(
+            ctx,
+            work_item_id,
+            question=body.question,
+            consulted_with_user_id=body.consulted_with_user_id,
+        )
+    )
+
+
+@router.post(
+    "/consultations/{consultation_id}/conclude",
+    action="consultation.conclude",
+    response_model=ConsultationOut,
+    errors=(409, 501),
+)
+async def consultation_conclude_route(
+    consultation_id: UUID, body: ConsultationConcludeIn, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> ConsultationOut:
+    """Concluded only by the person consulted (403 `not_the_consulted_person`; 0644's guard)."""
+    from abacus.modules.assurance import consultations
+
+    work_item = await consultations.work_item_of(ctx.tenant, consultation_id)
+    await _gate(ctx, work_item, "consultation.conclude")
+    return _consultation_out(
+        await consultations.conclude(ctx, consultation_id, conclusion=body.conclusion)
     )
 
 
