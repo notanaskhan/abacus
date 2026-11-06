@@ -41,7 +41,15 @@ _OVERRIDE = re.compile(r"DEC-[0-9]{2,4}")
 _NAME = re.compile(r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$")
 # platform.entitlements.MODULES: a flag may not name one of these areas.
 _ENTITLEMENT_MODULES = frozenset(
-    {"attest", "internal_audit", "group_audit", "statements_studio", "office_addins", "insights"}
+    {
+        "attest",
+        "internal_audit",
+        "group_audit",
+        "statements_studio",
+        "office_addins",
+        "insights",
+        "tax_returns",
+    }
 )
 _FIELDS = {"name", "description", "owner", "created", "expires", "kind", "values", "default"} | {
     "override",  # DEC-137

@@ -20,7 +20,13 @@ from abacus.kernel.errors import DomainForbidden
 from abacus.modules.identity.api import AuthContext, current_context
 
 Module = Literal[
-    "attest", "internal_audit", "group_audit", "statements_studio", "office_addins", "insights"
+    "attest",
+    "internal_audit",
+    "group_audit",
+    "statements_studio",
+    "office_addins",
+    "insights",
+    "tax_returns",  # T-03-T19: Tax Returns and K-1 packages (DEC-2329)
 ]
 MODULES: Final = frozenset(get_args(Module))
 

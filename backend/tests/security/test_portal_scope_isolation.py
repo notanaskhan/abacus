@@ -648,17 +648,13 @@ def test_r01_the_judgement_catches_a_planted_cross_scope_room_read() -> None:
 # draft or an unknown id: 404) and `docs/contracts/questionnaires.md` (an inquiry is its
 # addressee's only). Delta #2's build, the K-1 room and POR-05, is what these probes cover.
 
-T02_FLAGS = ("tax.k1_release", "questionnaires.v1")
-
 
 async def _t02_flags(seed: Seeder, firm: Firm) -> None:
-    for flag in T02_FLAGS:
-        await seed.run(
-            "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
-            "VALUES ($1, $2, 'true', 'test-seed', 'T-02-T30')",
-            firm.tenant,
-            flag,
-        )
+    await seed.run(
+        "INSERT INTO tenant_entitlements (tenant_id, module, valid_from, set_by) "
+        "VALUES ($1, 'tax_returns', '2000-01-01', 'test-seed')",
+        firm.tenant,
+    )
 
 
 async def _k1(

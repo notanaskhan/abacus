@@ -3046,6 +3046,17 @@ async def _flag_set(_: asyncpg.Connection, __: Scenario, event: Event) -> None:
     await set_flag(TENANT, str(event.data["flag"]), "true", LOADER, "Brightwater Hale scenario")
 
 
+async def _entitlement_set(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """A firm's module, as the operator console sets it (ADR-148; the app can't write these)."""
+    await conn.execute(
+        "INSERT INTO tenant_entitlements (tenant_id, module, valid_from, set_by) "
+        "VALUES ($1, $2, '2000-01-01', $3) ON CONFLICT DO NOTHING",
+        TENANT,
+        str(event.data["module"]),
+        LOADER,
+    )
+
+
 async def _methodology_imported(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     """K-01-T10: the version's workbook through `methodology.api`, as a firm admin imports it."""
     data = event.data
@@ -4754,6 +4765,7 @@ HANDLERS: Final[dict[str, Handler]] = {
     "notifications.preference_set": _preference_set,
     # Q-02-T39 (`--slice compliance`): flags first, then policies, holds and the incident.
     "platform.flag_set": _flag_set,
+    "platform.entitlement_set": _entitlement_set,
     "evidence.retention_policy_set": _retention_policy_set,
     "evidence.legal_hold_placed": _legal_hold_placed,
     "platform.incident_recorded": _incident_recorded,

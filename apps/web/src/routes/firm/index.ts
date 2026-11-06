@@ -53,7 +53,7 @@ export const firmRoutes = [
   ...settingsRoutes,
   // A-01-T11, A-01-T12: AUD-01 and AUD-02 behind `audits.cockpit`.
   ...auditRoutes,
-  // T-02-T12: TAX-01 behind `tax.returns_v1`.
+  // T-02-T12: TAX-01 behind the `tax_returns` entitlement.
   ...taxReturnRoutes,
   // N-02-T40: SIG-01 behind `signatures.envelopes`.
   ...signatureRoutes,

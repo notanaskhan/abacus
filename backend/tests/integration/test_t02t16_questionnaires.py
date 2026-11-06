@@ -54,11 +54,6 @@ async def _binder(b: Board, item: uuid.UUID) -> uuid.UUID:
 
 
 async def test_ac_the_feld_organizer_has_24_questions_in_9_sections(board: Board) -> None:
-    await board.seed.run(
-        "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
-        "VALUES ($1, 'questionnaires.v1', 'true', 't02-t16', 'T-02-T16')",
-        board.tenant,
-    )
     feld = board.returns["Feld Household 1040"]
     binder = await _binder(board, feld)
     samuel = await board.person("Samuel Ito", None)  # partner level: imports and publishes

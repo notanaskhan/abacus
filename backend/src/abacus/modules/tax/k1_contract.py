@@ -8,9 +8,9 @@ only their own released packages (POR-13), downloads them (audited) and updates 
 address for a person to accept (DV-10).
 
 Firm routes answer 404 for a client principal, 403 for a principal the matrix refuses, 404 with
-`tax.k1_release` off. Portal routes (T-02-T26, `tax/k1_portal.py`) answer 404 to a firm principal
-and with the flag off; a recipient reads only their own released packages, with the second step
-for anything that carries amounts.
+the `tax_returns` entitlement absent (DEC-2329). Portal routes (T-02-T26, `tax/k1_portal.py`)
+answer 404 to a firm principal and without the entitlement; a recipient reads only their own
+released packages, with the second step for anything that carries amounts.
 
 Classification: box amounts are TRI; recipient names and addresses confidential; a TIN shows its
 last four only.
@@ -26,11 +26,9 @@ from uuid import UUID
 from fastapi import Depends, Header, Path, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import TAX_K1_RELEASE
 from abacus.kernel._statuses import K1PackageStatus, RecipientDetailsChangeStatus
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound
-from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.modules.identity.api import (
     AbacusRouter,
@@ -40,6 +38,7 @@ from abacus.modules.identity.api import (
     mask_tins_for,
 )
 from abacus.modules.organisations.api import MaskedTinOut
+from abacus.modules.platform.api import entitlement
 from abacus.modules.tax import k1_disclosures, k1_portal, k1_release
 from abacus.modules.tax import k1_packages as k1
 
@@ -312,8 +311,8 @@ async def _gate(ctx: AuthContext) -> None:
     the issuing return (a principal it refuses answers 403 or 404 there)."""
     if ctx.client:
         raise NotFound("k1_package")
-    if not await flag_enabled(ctx.tenant, TAX_K1_RELEASE):
-        raise NotFound(TAX_K1_RELEASE.name)
+    if await entitlement(ctx.tenant, "tax_returns") is None:
+        raise NotFound("tax_returns")
 
 
 def _doc_out(d: k1.DocumentView) -> K1DocumentOut:
@@ -617,8 +616,8 @@ async def _portal_gate(ctx: AuthContext) -> None:
     """A firm principal never reaches the portal routes; then the flag."""
     if not ctx.client:
         raise NotFound("k1_package")
-    if not await flag_enabled(ctx.tenant, TAX_K1_RELEASE):
-        raise NotFound(TAX_K1_RELEASE.name)
+    if await entitlement(ctx.tenant, "tax_returns") is None:
+        raise NotFound("tax_returns")
 
 
 @portal_k1_router.get("/k1s", action="portal_k1.read", response_model=list[K1PackageOut])

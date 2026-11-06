@@ -6,17 +6,17 @@ import type { Manifest } from "./types";
 export const taxScreens = {
   "TAX-01": {
     name: "Tax Returns · practice board",
-    // T-02-T12 on fixtures behind `tax.returns_v1`; links wired (DEC-1273); live once walked on
+    // T-02-T12 on fixtures behind the `tax_returns` entitlement; links wired (DEC-1273); live once walked on
     // staging.
     status: "fixture",
     path: "/tax-returns",
     navArea: "Tax Returns",
   },
-  // T-02-T14: a–f on fixtures behind `tax.returns_v1`; planned until its designed links are wired
+  // T-02-T14: a–f on fixtures behind the `tax_returns` entitlement; planned until its designed links are wired
   // (link-contract rule 1) and walked on staging (DEC-195; DEC-1272).
-  // T-02-T14 on fixtures behind `tax.returns_v1`; links wired (DEC-1273).
+  // T-02-T14 on fixtures behind the `tax_returns` entitlement; links wired (DEC-1273).
   "TAX-02": { name: "Return › Overview", status: "fixture", path: "/tax-returns/$returnId" },
-  // T-02-T19: a–f on fixtures over the live intake read (T-02-T18) behind `tax.returns_v1`.
+  // T-02-T19: a–f on fixtures over the live intake read (T-02-T18) behind the `tax_returns` entitlement.
   "TAX-03": {
     name: "Return › Intake · Feld 2025 Form 1040",
     status: "fixture",

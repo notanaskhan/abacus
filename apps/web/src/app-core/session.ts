@@ -15,6 +15,7 @@ export const MODULES = [
   "statements_studio",
   "office_addins",
   "insights",
+  "tax_returns",
 ] as const;
 export type Module = (typeof MODULES)[number];
 

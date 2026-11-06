@@ -184,8 +184,8 @@ class Board:
 async def board(seed: Seeder) -> Board:
     tenant = await seed.firm()
     await seed.run(
-        "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
-        "VALUES ($1, 'tax.returns_v1', 'true', 't02-t09', 'T-02-T09')",
+        "INSERT INTO tenant_entitlements (tenant_id, module, valid_from, set_by) "
+        "VALUES ($1, 'tax_returns', '2000-01-01', 'test-seed')",
         tenant,
     )
     offices = {

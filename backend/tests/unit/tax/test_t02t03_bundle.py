@@ -51,11 +51,7 @@ def test_ac1_release_and_template_publish_need_a_fresh_second_factor() -> None:
     assert RULES["questionnaire_template.publish"].mfa_recent
 
 
-def test_ac2_the_four_flags_default_off() -> None:
-    for flag in (
-        _flags.TAX_RETURNS_V1,
-        _flags.TAX_K1_RELEASE,
-        _flags.QUESTIONNAIRES_V1,
-        _flags.EVIDENCE_DUPLICATE_REVIEW,
-    ):
+def test_ac2_the_remaining_flag_defaults_off() -> None:
+    # T-03-T19: the other three retired; the `tax_returns` entitlement gates their routes (DEC-2329).
+    for flag in (_flags.EVIDENCE_DUPLICATE_REVIEW,):
         assert flag.default == "false"

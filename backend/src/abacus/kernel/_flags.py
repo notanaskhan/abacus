@@ -355,11 +355,6 @@ QUESTIONNAIRES_EDITOR = Flag(
     kind="boolean",
     default="false",
 )
-QUESTIONNAIRES_V1 = Flag(
-    name="questionnaires.v1",
-    kind="boolean",
-    default="false",
-)
 REPORTING_FS_DISCLOSURE = Flag(
     name="reporting.fs_disclosure",
     kind="boolean",
@@ -427,16 +422,6 @@ TAX_ENGINE_BRIDGE = Flag(
 )
 TAX_EXTENSIONS_ESTIMATES = Flag(
     name="tax.extensions_estimates",
-    kind="boolean",
-    default="false",
-)
-TAX_K1_RELEASE = Flag(
-    name="tax.k1_release",
-    kind="boolean",
-    default="false",
-)
-TAX_RETURNS_V1 = Flag(
-    name="tax.returns_v1",
     kind="boolean",
     default="false",
 )
@@ -530,7 +515,6 @@ FLAGS: dict[str, Flag] = {
     "portal.third_party_room": PORTAL_THIRD_PARTY_ROOM,
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
     "questionnaires.editor": QUESTIONNAIRES_EDITOR,
-    "questionnaires.v1": QUESTIONNAIRES_V1,
     "reporting.fs_disclosure": REPORTING_FS_DISCLOSURE,
     "reporting.generated_documents": REPORTING_GENERATED_DOCUMENTS,
     "retrieval.auto": RETRIEVAL_AUTO,
@@ -545,8 +529,6 @@ FLAGS: dict[str, Flag] = {
     "tax.delivery_efile": TAX_DELIVERY_EFILE,
     "tax.engine_bridge": TAX_ENGINE_BRIDGE,
     "tax.extensions_estimates": TAX_EXTENSIONS_ESTIMATES,
-    "tax.k1_release": TAX_K1_RELEASE,
-    "tax.returns_v1": TAX_RETURNS_V1,
     "upload_review.enabled": UPLOAD_REVIEW_ENABLED,
     "uploads.processing": UPLOADS_PROCESSING,
     "workpapers.core": WORKPAPERS_CORE,

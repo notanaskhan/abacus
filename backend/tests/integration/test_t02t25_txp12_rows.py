@@ -33,8 +33,8 @@ board = t02t09.board
 
 async def _flag(b: Board) -> None:
     await b.seed.run(
-        "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
-        "VALUES ($1, 'tax.k1_release', 'true', 'test-seed', 'T-02-T25')",
+        "INSERT INTO tenant_entitlements (tenant_id, module, valid_from, set_by) "
+        "VALUES ($1, 'tax_returns', '2000-01-01', 'test-seed') ON CONFLICT DO NOTHING",
         b.tenant,
     )
 
