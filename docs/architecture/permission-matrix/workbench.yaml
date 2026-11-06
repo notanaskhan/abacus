@@ -1,0 +1,11 @@
+# The workbench module's actions (ADR-027; P-39). Compiled with every other module's file into
+# identity/authz/_matrix.py by `make regenerate`.
+#
+# Sessions (P-10-T08; P-10 §4.3; ADR P-23; DEC-87): every firm person's own, plus what a team may
+# read; the service applies DEC-87's visibility (walled rows omitted, a client they can't open is
+# `locked`). Portal principals hold none. A session holds no decision action.
+
+actions:
+  session.create:           {firm_admin: allow, practice_leader: allow, quality_partner: allow, firm_partner: allow, firm_manager: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, specialist: allow, agent: deny, system: deny}
+  session.read:             {firm_admin: allow, practice_leader: allow, quality_partner: allow, firm_partner: allow, firm_manager: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, specialist: allow, agent: deny, system: deny}
+  session.manage:           {firm_admin: allow, practice_leader: allow, quality_partner: allow, firm_partner: allow, firm_manager: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, specialist: allow, agent: deny, system: deny}
