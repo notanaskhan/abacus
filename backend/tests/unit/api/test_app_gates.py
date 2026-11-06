@@ -88,6 +88,28 @@ def test_ac20_each_new_route_declares_exactly_one_action_and_a_response_model() 
 # TASK-019: taking, releasing and assigning a review return the assignment, so 200.
 REVIEW_QUEUE = "/v1/engagements/{engagement_id}/review-queue/{version_id}"
 NOT_CREATING = {
+    # S26, S27: acts on an existing record or returns a batch's outcomes, so 200.
+    "/v1/audits/{work_item_id}/archive/additions/{addition_id}/approve",
+    "/v1/audits/{work_item_id}/archive/additions/{addition_id}/reject",
+    "/v1/audits/{work_item_id}/archive/request-lock",
+    "/v1/audits/{work_item_id}/completion/items/{item_key}/not-applicable",
+    "/v1/audits/{work_item_id}/completion/items/{item_key}/reopen",
+    "/v1/audits/{work_item_id}/eqr/digest/{card_id}/reviewed",
+    "/v1/audits/{work_item_id}/eqr/request",
+    "/v1/audits/{work_item_id}/governance-communications/{communication_id}/request-approval",
+    "/v1/audits/{work_item_id}/representation-letter/remind",
+    "/v1/audits/{work_item_id}/representation-letter/request-approval",
+    "/v1/audits/{work_item_id}/representation-letter/versions/{version_no}/approve",
+    "/v1/evidence-versions/{version_id}/text/retry",
+    "/v1/methodology/disclosure-checklists/{template_id}/versions/{version}/publish",
+    "/v1/sign-offs/{sign_off_id}/request-re-review",
+    "/v1/statement-documents/{document_id}/disclosure-checklist/items/{item_key}/adopt",
+    "/v1/statement-documents/{document_id}/disclosure-checklist/items:review",
+    "/v1/statement-versions/{version_id}/management-approval:record",
+    "/v1/statement-versions/{version_id}/send-draft",
+    "/v1/tax/extensions:approve-and-request",
+    "/v1/tax/extensions:prepare",
+    "/v1/tax/extensions:submit-for-approval",
     # S25 (N-04-T02, A-06-T10, A-06-T11): acts on an existing intake, notice, batch or finding.
     "/v1/notice-intakes/{intake_id}/attach",
     "/v1/notice-intakes/{intake_id}/discard",
@@ -446,6 +468,17 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/drafts",
         "/v1/engagements/{engagement_id}/risks/{risk_id}/drafts",
         "/v1/engagements/{engagement_id}/soc-reports/{soc_report_id}/drafts",
+        # S26, S27: a build, a composition, a tie-out or a release starts work, so 202.
+        "/v1/audits/{work_item_id}/archive/binder-index",
+        "/v1/audits/{work_item_id}/archive/lock",
+        "/v1/audits/{work_item_id}/archive/verify",
+        "/v1/audits/{work_item_id}/eqr/digest:build",
+        "/v1/audits/{work_item_id}/governance-communications/{communication_id}/compose",
+        "/v1/audits/{work_item_id}/release",
+        "/v1/audits/{work_item_id}/report/documents",
+        "/v1/audits/{work_item_id}/representation-letter/compose",
+        "/v1/engagements/{engagement_id}/financial-statements/draft",
+        "/v1/statement-versions/{version_id}/tie-out",
     }
     created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)
@@ -749,6 +782,23 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/findings/{finding_id}/request-decision",
         "/v1/work-items/{work_item_id}/sum/snapshots",
         "/v1/work-items/{work_item_id}/sum/request-conclusion",
+        # S26, S27: each creates a row (an addition, a card, a letter, a draft, a request).
+        "/v1/audits/{work_item_id}/archive/additions",
+        "/v1/audits/{work_item_id}/eqr/concur",
+        "/v1/audits/{work_item_id}/going-concern/request-decision",
+        "/v1/audits/{work_item_id}/governance-communications",
+        "/v1/audits/{work_item_id}/governance-communications/{communication_id}/approve-and-send",
+        "/v1/audits/{work_item_id}/legal-letters/request",
+        "/v1/audits/{work_item_id}/report/request-decision",
+        "/v1/audits/{work_item_id}/representation-letter/re-date",
+        "/v1/audits/{work_item_id}/representation-letter/send",
+        "/v1/audits/{work_item_id}/subsequent-events",
+        "/v1/audits/{work_item_id}/subsequent-events/procedures",
+        "/v1/questionnaire-templates/{template_id}/versions",
+        "/v1/methodology/disclosure-checklists:import",
+        "/v1/tax/extensions/{extension_id}/confirmation-requests",
+        "/v1/tax/estimates/{schedule_id}/installments/{quarter}/confirmation-requests",
+        "/v1/tax/estimates/{schedule_id}/installments/{quarter}/follow-ups",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING

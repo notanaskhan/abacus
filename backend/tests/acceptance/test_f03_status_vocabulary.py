@@ -487,6 +487,7 @@ LOWER_CASE_BY_SOURCE = {"tie", "off {amount}"}
 # compound the table spells with capitals.
 CAPITALISED_BY_SOURCE = {
     "TB-linked",
+    "Notices",  # N-04's upload slot names the area: "Routed to Notices" (T-03-T01; verbatim)
     "Interim",  # AUD-06 g spells the chip "TB: Interim · 8/31/2026" (A-02-T02; verbatim, DEC-15)
     # The product's name for its one agent: AUD-08 and TPL-20 cells "Suggested by Accrued Agent"
     # (A-04-T01; verbatim, DEC-15).
