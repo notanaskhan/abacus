@@ -199,6 +199,23 @@ async def _test(tenant: TenantContext, test_id: UUID) -> Mapping[str, object]:
     return dict(found)
 
 
+async def latest_test_of_variant(
+    tenant: TenantContext, work_item_id: UUID, variant: str
+) -> tuple[UUID, str] | None:
+    """A-05-T23: the work item's latest test of this variant, and its content hash."""
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(
+                text(
+                    "SELECT id, content_hash FROM attribute_tests WHERE work_item_id = :w "
+                    "AND variant = :v ORDER BY created_at DESC LIMIT 1"
+                ),
+                {"w": work_item_id, "v": variant},
+            )
+        ).first()
+    return None if row is None else (row.id, row.content_hash)
+
+
 async def grid(ctx: AuthContext, engagement_id: UUID, test_id: UUID) -> Grid:
     """Rows in sample order with each attribute's newest result and the counts EBP-03 shows."""
     test = await _test(ctx.tenant, test_id)

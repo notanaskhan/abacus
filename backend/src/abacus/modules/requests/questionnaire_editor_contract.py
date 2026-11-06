@@ -666,6 +666,10 @@ async def questionnaire_save_route(
         dry_run=dry_run,
         change_summary=body.change_summary,
     )
+    if saved and fired:
+        from abacus.modules.requests.answer_effects import fire_staff_edit
+
+        await fire_staff_edit(ctx, questionnaire_id, fired)
     latest = await questionnaire_editor.editor(ctx, questionnaire_id) if saved else None
     return QuestionnaireSaveOut(
         saved=saved,

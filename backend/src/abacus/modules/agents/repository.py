@@ -65,6 +65,24 @@ def _shown_run(run_id: QueryableAttribute[UUID]) -> ColumnElement[bool]:
 shown_run = _shown_run
 
 
+async def latest_completed_run(
+    session: AsyncSession, agent_id: str, engagement_id: UUID, mode: str
+) -> UUID | None:
+    """The engagement's latest completed run of this agent in this mode (the mode is on its output:
+    runs have no mode column)."""
+    return await session.scalar(
+        select(AgentRun.id)
+        .where(
+            AgentRun.agent_id == agent_id,
+            AgentRun.engagement_id == engagement_id,
+            AgentRun.status == "completed",
+            AgentRun.output["mode"].astext == mode,
+        )
+        .order_by(AgentRun.finished_at.desc())
+        .limit(1)
+    )
+
+
 async def insert_run(
     session: AsyncSession,
     *,

@@ -54,10 +54,12 @@ from abacus.modules.evidence.drops_contract import drops_router, void_router
 from abacus.modules.evidence.duplicates import PendingDuplicate, pending_duplicates
 from abacus.modules.evidence.duplicates_contract import duplicates_router
 from abacus.modules.evidence.events import (
+    EvidenceTextReady,
     EvidenceVersionCreated,
     EvidenceVersionWithdrawn,
     InboxFileAdded,
     InboxFileExtracted,
+    OcrRunRefused,
     UploadChecksRecorded,
 )
 from abacus.modules.evidence.export_activities import ACTIVITIES as EXPORT_ACTIVITIES
@@ -103,6 +105,12 @@ from abacus.modules.evidence.export_sections import (
 from abacus.modules.evidence.export_sections import (
     section_csv as export_section_csv,
 )
+from abacus.modules.evidence.extracted_read import (
+    ReadField,
+    extracted_fields_of,
+    ocr_refusal_of,
+    versions_with_same_bytes,
+)
 from abacus.modules.evidence.extraction import Extraction, extract_isolated
 from abacus.modules.evidence.extraction import Table as ExtractedTable
 from abacus.modules.evidence.files_contract import files_router
@@ -119,6 +127,7 @@ from abacus.modules.evidence.firm_export_schedule import register_firm_export_st
 from abacus.modules.evidence.firm_export_schedule_contract import (
     schedule_router as firm_export_schedule_router,
 )
+from abacus.modules.evidence.form_extraction import extract_version
 from abacus.modules.evidence.form_extraction_workflow import FormExtractionWorkflow
 from abacus.modules.evidence.gate_facts import (
     decided_among,
@@ -320,7 +329,13 @@ from abacus.modules.evidence.withdrawals import ACTIVITIES as WITHDRAWAL_ACTIVIT
 from abacus.modules.evidence.withdrawals import SUBSCRIPTIONS as WITHDRAWAL_SUBSCRIPTIONS
 from abacus.modules.evidence.withdrawals import WORKFLOWS as WITHDRAWAL_WORKFLOWS
 from abacus.modules.evidence.withdrawals import is_version_withdrawn, withdrawn_among
-from abacus.modules.evidence.words import WORDS_VERSION, start_trust_layer_backfill, words_upload
+from abacus.modules.evidence.words import (
+    WORDS_VERSION,
+    PageWords,
+    start_trust_layer_backfill,
+    version_word_layers,
+    words_upload,
+)
 from abacus.modules.evidence.workflow_types import INBOX as UPLOAD_INBOX
 from abacus.modules.evidence.workflow_types import (
     INTAKE,
@@ -506,6 +521,7 @@ __all__ = [
     "EngagementExportInput",
     "EngagementExportManifest",
     "EngagementExportWorkflow",
+    "EvidenceTextReady",
     "EvidenceVersionCreated",
     "EvidenceVersionRef",
     "EvidenceVersionSummary",
@@ -546,12 +562,15 @@ __all__ = [
     "MatchMaterial",
     "NewItem",
     "OcrBackfill",
+    "OcrRunRefused",
+    "PageWords",
     "PendingDuplicate",
     "PolicyChange",
     "PortalFile",
     "Proposal",
     "ProposalChanged",
     "Provenance",
+    "ReadField",
     "RecordClass",
     "RecordedCitation",
     "RenderHashMismatch",
@@ -608,6 +627,8 @@ __all__ = [
     "extend_record",
     "extend_retention_for",
     "extract_isolated",
+    "extract_version",
+    "extracted_fields_of",
     "file_engine_copy",
     "file_handoff_copy",
     "file_intake_object",
@@ -634,6 +655,7 @@ __all__ = [
     "masked_rows",
     "match_material",
     "normalised_text",
+    "ocr_refusal_of",
     "page_quote_reason",
     "pdf_text",
     "pending_duplicates",
@@ -691,6 +713,8 @@ __all__ = [
     "version_titles",
     "version_view",
     "version_with_fingerprint",
+    "version_word_layers",
+    "versions_with_same_bytes",
     "viewer_page",
     "waiting_among",
     "withdrawn_among",

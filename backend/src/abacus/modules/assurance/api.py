@@ -48,6 +48,7 @@ from abacus.modules.assurance.ebp_remittances import audit_owners as late_remitt
 from abacus.modules.assurance.ebp_remittances import late_remittances
 from abacus.modules.assurance.findings import AUDIT_KINDS as FINDING_KINDS
 from abacus.modules.assurance.findings import audit_owners as finding_owners
+from abacus.modules.assurance.findings import register_exception_routes
 from abacus.modules.assurance.findings_contract import router as findings_router
 from abacus.modules.assurance.fraud_brainstorm import AUDIT_KINDS as FRAUD_KINDS
 from abacus.modules.assurance.fraud_brainstorm import GATE_KIND as FRAUD_GATE
@@ -56,6 +57,7 @@ from abacus.modules.assurance.fraud_brainstorm import apply_minutes_suggestion, 
 from abacus.modules.assurance.fraud_brainstorm import audit_owners as fraud_owners
 from abacus.modules.assurance.gates import register as register_gates
 from abacus.modules.assurance.home_counts import register_home_counts
+from abacus.modules.assurance.ic_redraft import SUBSCRIPTIONS as IC_REDRAFT_SUBSCRIPTIONS
 from abacus.modules.assurance.internal_control import AUDIT_KINDS as CONTROL_KINDS
 from abacus.modules.assurance.internal_control import (
     ExceptionRouter,
@@ -192,7 +194,9 @@ register_firm_setting(RELEASE_MODE_SETTING)
 # A-01-T05 (SPEC-330 AC-13): C1's `gate.met` derives the phase a computed gate opens. The worker
 # collects these with every module's; assurance has no workflows of its own yet.
 # A-03-T14: a new trial balance version leaves a signed mapping stale (`mapping_set.went_stale`).
-SUBSCRIPTIONS = dict(PHASE_SUBSCRIPTIONS) | dict(MAPPING_SUBSCRIPTIONS)
+SUBSCRIPTIONS = (
+    dict(PHASE_SUBSCRIPTIONS) | dict(MAPPING_SUBSCRIPTIONS) | dict(IC_REDRAFT_SUBSCRIPTIONS)
+)
 WORKFLOWS: dict[type, str] = {}
 ACTIVITIES: tuple[object, ...] = ()
 
@@ -205,6 +209,7 @@ register_audit_segment("review", None)
 register_a01_providers()
 # I-01-T08: this module's HOME-01 tile or pill (platform.register_home_count).
 register_home_counts()
+register_exception_routes()  # DEC-2354: AUD-09 and AUD-10's routes into Findings and the SUM
 # I-01-T08 (C13): SPEC-004's review queue as `evidence_review` gates.
 register_review_gates()
 
