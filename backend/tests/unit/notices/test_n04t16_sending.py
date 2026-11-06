@@ -8,7 +8,7 @@ database half lands at the integration pass; the staging clause waits for a stag
 from __future__ import annotations
 
 import ast
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import date
 from pathlib import Path
@@ -114,7 +114,7 @@ async def test_ac_a_payment_gets_one_confirmation_request_and_none_without_a_pay
 
     monkeypatch.setattr(sending, "add_request_item", add)
     ctx = cast(AuthContext, SimpleNamespace())
-    helper = sending._with_confirmation_request  # pyright: ignore[reportPrivateUsage]
+    helper = sending._with_confirmation_request  # pyright: ignore[reportPrivateUsage] -- own helper
     assert await helper(ctx, uuid4(), None) is None
     assert await helper(ctx, uuid4(), {"required": False}) == {"required": False}
     once = await helper(ctx, uuid4(), {"required": True})
@@ -129,7 +129,7 @@ async def test_ac_staff_accepting_the_confirmation_moves_the_band_once(
 ) -> None:
     """US-7.2: only an accepted upload marks the payment, and only a signed letter publishes."""
     item = uuid4()
-    row = {
+    row: dict[str, object] = {
         "id": uuid4(),
         "work_item_id": uuid4(),
         "payment": {"required": True, sending.CONFIRMATION_ITEM: str(item)},
@@ -143,15 +143,19 @@ async def test_ac_staff_accepting_the_confirmation_moves_the_band_once(
         async def execute(self, _sql: object, params: dict[str, object] | None = None) -> object:
             if params and "p" in params:
                 written.append(params)
-            return SimpleNamespace(mappings=lambda: SimpleNamespace(all=lambda: [row]))
+            rows = cast("list[object]", [row])
+            return SimpleNamespace(mappings=lambda: SimpleNamespace(all=lambda: rows))
 
     @asynccontextmanager
-    async def session(_tenant: object) -> AsyncIterator[_Session]:
+    async def session(_tenant: object) -> AsyncGenerator[_Session]:
         yield _Session()
 
     @asynccontextmanager
-    async def unit(_tenant: object) -> AsyncIterator[SimpleNamespace]:
-        yield SimpleNamespace(session=_Session(), record=lambda *_a, **_k: None)
+    async def unit(_tenant: object) -> AsyncGenerator[SimpleNamespace]:
+        def record(*_a: object, **_k: object) -> None:
+            return None
+
+        yield SimpleNamespace(session=_Session(), record=record)
 
     async def items(_tenant: object, _version: object) -> list[SimpleNamespace]:
         return [SimpleNamespace(id=item, status=status)]

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import io
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from decimal import Decimal
 from types import SimpleNamespace
@@ -91,12 +91,13 @@ async def test_ac_a_run_records_without_any_text_in_its_audit_reference(
             recorded.append(after)
 
     @asynccontextmanager
-    async def fake_uow(_tenant: object) -> AsyncIterator[_Tx]:
+    async def fake_uow(_tenant: object) -> AsyncGenerator[_Tx]:
         yield _Tx()
 
     monkeypatch.setattr(ocr_gate, "uow", fake_uow)
     tenant = TenantContext(uuid.uuid4(), "system", "test")
-    for refused in (None, "quota_exceeded"):
+    choices: tuple[ocr_gate.Refusal | None, ...] = (None, "quota_exceeded")
+    for refused in choices:
         await ocr_gate.record_run(
             tenant,
             evidence_version_id=None,
@@ -104,7 +105,7 @@ async def test_ac_a_run_records_without_any_text_in_its_audit_reference(
             provider="fake",
             api="detect_text",
             pages=[1],
-            refused=refused,  # type: ignore[arg-type]
+            refused=refused,
             synthetic_firm=True,
             request_ids=[],
         )
@@ -118,7 +119,7 @@ async def test_ac_the_daily_cap_counts_what_the_firm_already_read(
     monkeypatch: pytest.MonkeyPatch, used: int, pages: int, over: bool
 ) -> None:
     @asynccontextmanager
-    async def session(_tenant: object) -> AsyncIterator[object]:
+    async def session(_tenant: object) -> AsyncGenerator[object]:
         yield SimpleNamespace(scalar=AsyncMock(return_value=used))
 
     monkeypatch.setattr(ocr_gate, "tenant_session", session)

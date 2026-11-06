@@ -13,7 +13,7 @@ from temporalio import activity
 from abacus.modules.evidence.drops import sort_drop
 from abacus.modules.evidence.form_extraction import extract_version
 from abacus.modules.evidence.masked_previews import masked_preview_upload, pending_masks
-from abacus.modules.evidence.ocr_step import ocr_queue, ocr_upload, pending_ocr
+from abacus.modules.evidence.ocr_step import ocr_upload
 from abacus.modules.evidence.pii import pii_scan_upload
 from abacus.modules.evidence.processing import check_upload, preview_upload, process_upload
 from abacus.modules.evidence.words import pending_words, words_upload
@@ -71,18 +71,6 @@ async def ocr_activity(given: UploadInput) -> int:
     return await ocr_upload(given)
 
 
-@activity.defn(name="upload.ocr_queue")
-async def ocr_queue_activity(given: UploadInput) -> str:
-    """P-11-T25: the queue this upload's OCR runs on."""
-    return await ocr_queue(given)
-
-
-@activity.defn(name="upload.pending_ocr")
-async def pending_ocr_activity(given: BackfillInput) -> list[UploadInput]:
-    """P-11-T25: the next uploads the OCR backfill reads."""
-    return await pending_ocr(given)
-
-
 @activity.defn(name="forms.extract")
 async def forms_extract_activity(given: FormExtractionInput) -> int:
     """P-11-T26: code identifies the form and reads its boxes."""
@@ -113,6 +101,4 @@ ACTIVITIES = (
     portal_drop_sort_activity,
     pending_words_activity,
     pending_masks_activity,
-    ocr_queue_activity,
-    pending_ocr_activity,
 )

@@ -1163,57 +1163,6 @@ async def sources_without_masks(
     return [("version", v) for v in versions] + [("inbox", i) for i in inbox]
 
 
-async def sources_without_ocr(
-    session: AsyncSession,
-    ocr_version: str,
-    *,
-    after_version: UUID | None,
-    after_inbox: UUID | None,
-    limit: int,
-) -> list[tuple[str, UUID]]:
-    """P-11-T25 (AC7.4): versions, then inbox files, by id after the cursors, with a page that has
-    no text layer and no OCR row (LIST_EXEMPT: the system backfill only). Never a withdrawn
-    version."""
-    bare = (
-        select(EvidencePage.id)
-        .where(EvidencePage.has_text_layer.is_(False))
-        .correlate_except(EvidencePage)
-    )
-    read = (
-        select(EvidencePage.id)
-        .where(EvidencePage.extractor_version == ocr_version)
-        .correlate_except(EvidencePage)
-    )
-    version_query = select(EvidenceVersion.id).where(
-        bare.where(EvidencePage.evidence_version_id == EvidenceVersion.id).exists(),
-        ~read.where(EvidencePage.evidence_version_id == EvidenceVersion.id).exists(),
-        not_withdrawn(),
-    )
-    if after_version is not None:
-        version_query = version_query.where(EvidenceVersion.id > after_version)
-    versions = (
-        (await session.execute(version_query.order_by(EvidenceVersion.id).limit(limit)))
-        .scalars()
-        .all()
-    )
-    inbox_query = select(InboxFile.id).where(
-        bare.where(EvidencePage.inbox_file_id == InboxFile.id).exists(),
-        ~read.where(EvidencePage.inbox_file_id == InboxFile.id).exists(),
-    )
-    if after_inbox is not None:
-        inbox_query = inbox_query.where(InboxFile.id > after_inbox)
-    inbox = (
-        (
-            await session.execute(
-                inbox_query.order_by(InboxFile.id).limit(max(limit - len(versions), 0))
-            )
-        )
-        .scalars()
-        .all()
-    )
-    return [("version", v) for v in versions] + [("inbox", i) for i in inbox]
-
-
 async def next_citation_n(session: AsyncSession, cited_from_type: str, cited_from_id: UUID) -> int:
     """The next position in an anchor's stack (1 for a new anchor)."""
     found = (

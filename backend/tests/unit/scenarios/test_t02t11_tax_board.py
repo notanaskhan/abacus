@@ -87,6 +87,10 @@ def test_ac17_the_named_rows_are_the_fixture_seeds_field_for_field() -> None:
 
 def test_ac17_the_slice_needs_the_binders_and_emits_one_event_per_return() -> None:
     assert tax_board.NEEDS == ("binders",)
-    events = slice_events(tax_board.SLICE)
+    events = [e for e in slice_events(tax_board.SLICE) if e.kind == "tax.return_board_set"]
     assert len(events) == 224
-    assert {e.kind for e in events} == {"tax.return_board_set"}
+    # T-03-T19 (DEC-2329): plus the one entitlement the returns' routes stand behind.
+    others = [e for e in slice_events(tax_board.SLICE) if e.kind != "tax.return_board_set"]
+    assert [(e.kind, e.data["module"]) for e in others] == [
+        ("platform.entitlement_set", "tax_returns")
+    ]
