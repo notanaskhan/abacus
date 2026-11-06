@@ -45666,7 +45666,7 @@ export type TestGridRowOut = {
     /**
      * State
      */
-    state: string;
+    state: 'not_started' | 'agent_tested' | 'needs_human' | 'pass' | 'exception' | 'no_effect';
 };
 
 /**
@@ -96793,7 +96793,7 @@ export type ChecklistImportResponses = {
     /**
      * Successful Response
      */
-    200: ChecklistImportOut;
+    201: ChecklistImportOut;
 };
 
 export type ChecklistImportResponse = ChecklistImportResponses[keyof ChecklistImportResponses];
@@ -105417,7 +105417,7 @@ export type TemplateDraftResponses = {
     /**
      * Successful Response
      */
-    200: OrganizerTemplateVersionOut;
+    201: OrganizerTemplateVersionOut;
 };
 
 export type TemplateDraftResponse = TemplateDraftResponses[keyof TemplateDraftResponses];
@@ -111959,7 +111959,7 @@ export type InstallmentConfirmationResponses = {
     /**
      * Successful Response
      */
-    200: ConfirmationRequestOut;
+    201: ConfirmationRequestOut;
 };
 
 export type InstallmentConfirmationResponse = InstallmentConfirmationResponses[keyof InstallmentConfirmationResponses];
@@ -112027,7 +112027,7 @@ export type InstallmentFollowUpResponses = {
     /**
      * Successful Response
      */
-    200: FollowUpDraftOut;
+    201: FollowUpDraftOut;
 };
 
 export type InstallmentFollowUpResponse = InstallmentFollowUpResponses[keyof InstallmentFollowUpResponses];
@@ -112345,7 +112345,7 @@ export type ExtensionConfirmationResponses = {
     /**
      * Successful Response
      */
-    200: ConfirmationRequestOut;
+    201: ConfirmationRequestOut;
 };
 
 export type ExtensionConfirmationResponse = ExtensionConfirmationResponses[keyof ExtensionConfirmationResponses];
