@@ -707,6 +707,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "fraud_inquiry.requested",
         "attention_flag.raised",
         "attention_flag.converted",
+        "attention_flag.reminded",
         "ebp_plan_review.started",
         "ebp_import.imported",
         "ebp_import.refused",

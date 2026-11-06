@@ -179233,7 +179233,7 @@
     },
     "/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/flags/{flag_id}/remind": {
       "post": {
-        "description": "A follow-up **draft** to the contact; a person sends it (T19).",
+        "description": "A follow-up **draft** to the contacts; a person sends it, and the flag stays open (T19;\nbehind `binders.engine`, as the follow-up routes that send it are). It writes the flag's\nhistory and answers with its text, so it needs `attention_flag.convert` as Convert does, and\nthe independence check that action carries. 409 `nothing_to_remind`.",
         "operationId": "attention_flag_remind",
         "parameters": [
           {
@@ -179370,16 +179370,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Attention Flag Remind Route",

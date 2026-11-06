@@ -62,10 +62,11 @@ SERVED: dict[tuple[str, str], str] = {
     ("patch", f"{E}/risks/{{risk_id}}"): "risk.edit",
     ("post", f"{E}/risks/{{risk_id}}/responses"): "risk.link",
     ("delete", f"{E}/risks/{{risk_id}}/responses"): "risk.link",
+    # A-04-T19 (DEC-2483): Remind drafts through C5; it needs convert as well as follow_up.draft.
+    ("post", f"{WP}/flags/{{flag_id}}/remind"): "follow_up.draft",
 }
 ROUTES: dict[tuple[str, str], str] = {
     ("post", f"{WP}/flags/{{flag_id}}/convert"): "attention_flag.convert",
-    ("post", f"{WP}/flags/{{flag_id}}/remind"): "follow_up.draft",
     ("post", f"{E}/risks/approval-requests"): "risk.route_for_approval",
     ("post", f"{E}/risks/{{risk_id}}/drafts"): "workpaper.draft",
     ("get", f"{E}/fraud-brainstorm"): "fraud_session.read",
@@ -294,6 +295,44 @@ async def test_t01_the_gate_authorises_then_reads_the_flag_then_answers_501(
             "k-2",
         )
     assert "flag:workpapers.core" in calls and calls[-1] == "convert"
+
+
+async def test_a04t19_remind_needs_both_flags_and_reaches_the_service(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from abacus.kernel.errors import NotFound as Gone
+    from abacus.modules.workpapers import flags as flag_service
+
+    calls: list[str] = []
+
+    async def get_ref(_ctx: AuthContext, _eid: uuid.UUID) -> object:
+        return SimpleNamespace(resource=lambda: "engagement")
+
+    async def allow(_ctx: AuthContext, action: str, _res: object) -> None:
+        calls.append(action)
+
+    async def only_core(_tenant: object, f: object) -> bool:
+        return getattr(f, "name", "") == "workpapers.core"
+
+    async def all_on(_tenant: object, _f: object) -> bool:
+        return True
+
+    async def unknown(*_: object) -> object:
+        calls.append("remind")
+        raise Gone("attention_flag")
+
+    monkeypatch.setattr(core, "get_ref", get_ref)
+    monkeypatch.setattr(core, "authorise", allow)
+    monkeypatch.setattr(core, "flag_enabled", only_core)
+    monkeypatch.setattr(flag_service, "remind", unknown)
+    ids = (uuid.uuid4(), uuid.uuid4(), uuid.uuid4())
+    with pytest.raises(NotFound):  # binders.engine off: the follow-up can't be sent
+        await core.attention_flag_remind_route(*ids, _ctx(), "k-3")
+    assert calls == ["attention_flag.convert", "follow_up.draft"]
+    monkeypatch.setattr(core, "flag_enabled", all_on)
+    with pytest.raises(NotFound):
+        await core.attention_flag_remind_route(*ids, _ctx(), "k-3")
+    assert calls[-1] == "remind"
 
 
 async def test_t01_the_inventory_answers_with_either_flag(monkeypatch: pytest.MonkeyPatch) -> None:
