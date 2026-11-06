@@ -216,7 +216,16 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     methodology_import_router,  # K-01-T18: import review (KNW-02 c, d)
 )
 
+from abacus.modules.methodology.disclosure_checklists import (  # noqa: E402 -- A-06-T28
+    MAX_BYTES as CHECKLIST_MAX_BYTES,
+)
+from abacus.modules.methodology.disclosure_checklists import (  # noqa: E402 -- A-06-T28
+    import_checklist,
+    publish_checklist,
+)
+
 __all__ = [
+    "CHECKLIST_MAX_BYTES",
     "METHODOLOGY_USAGE_TYPE",
     "ROUTERS",
     "AccountRule",
@@ -296,6 +305,7 @@ __all__ = [
     "extract_source",
     "fail_document_import",
     "finish_document_import",
+    "import_checklist",
     "import_report_template",
     "import_source",
     "import_standard_workbook",
@@ -310,6 +320,7 @@ __all__ = [
     "parse_workbook",
     "pii_hold",
     "policy_payload",
+    "publish_checklist",
     "publish_drafted_version",
     "publish_report_template",
     "publish_standard",

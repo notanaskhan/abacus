@@ -180,8 +180,10 @@ from abacus.modules.ledger.api import (
 from abacus.modules.methodology.api import (
     EngagementType,
     create_standard,
+    import_checklist,
     import_standard_workbook,
     import_template,
+    publish_checklist,
     publish_standard,
     standard_by_key,
     standard_workbook,
@@ -289,6 +291,7 @@ from abacus_tools.fakes.identity import ISSUER
 from abacus_tools.flags import set_flag
 from abacus_tools.local.db_guard import violations
 from abacus_tools.synthetic.documents import positioned_pdf
+from abacus_tools.synthetic.scenarios.brightwater_hale import completion_slice as _completion
 from abacus_tools.synthetic.scenarios.brightwater_hale import sampling_content
 from abacus_tools.synthetic.scenarios.brightwater_hale import tax_schedules as _tax_schedules
 from abacus_tools.synthetic.scenarios.brightwater_hale.acceptance import (
@@ -1848,6 +1851,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     SIGNATURES_SLICE: SIGNATURES_NEEDS,  # N-02-T36: SIG-01 at E0 over the tax clients
     TAX_CONTENT_SLICE: TAX_CONTENT_NEEDS,  # T-02-T23: K-1 sets, the organizer, questions
     _tax_schedules.SLICE: _tax_schedules.NEEDS,  # T-03-T15: organizer v6, TAX-13's rows
+    _completion.SLICE: _completion.NEEDS,  # A-06-T28: the ASC 962 checklist
     PILOT_SLICE: PILOT_NEEDS,  # TASK-2470: PF-X1's enrolments name the Feld return and Northwind
     REVIEW_SLICE: REVIEW_NEEDS,  # P-04-T36: the review grammar's objects on registered owners
     PLANNING_SLICE: PLANNING_NEEDS,  # A-04-T28: Northwind's planning day; G4 met at 4:40 PM
@@ -4050,6 +4054,24 @@ async def _organizer_answered(conn: asyncpg.Connection, _: Scenario, event: Even
     )
 
 
+async def _checklist_loaded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """A-06-T28: Grace imports the firm's checklist; Daniel publishes v1."""
+    made = await import_checklist(
+        await _staff_context(conn, event),
+        _completion.NAME,
+        _completion.FRAMEWORK,
+        _completion.checklist_csv(),
+        dry_run=False,
+    )
+    if made.template_id is None or made.version is None:
+        raise LookupError(f"checklist refused: {made.problems}")
+    await publish_checklist(
+        await _staff_context(conn, _as_actor(event, _completion.PUBLISHER)),
+        made.template_id,
+        made.version,
+    )
+
+
 # --- T-03-T15 (`--slice tax_schedules`): organizer v6, TAX-13's rows, through the services ------
 
 
@@ -4849,6 +4871,7 @@ HANDLERS: Final[dict[str, Handler]] = {
     "standards.version_imported": _standard_imported,
     "standards.version_published": _standard_published,
     "notices.seed_notice": _notice_seeded,  # N-04-T21
+    "methodology.checklist_loaded": _checklist_loaded,  # A-06-T28
     # T-03-T15
     "tax.organizer_v6_loaded": _organizer_v6_loaded,
     "tax.organizer_feld": _organizer_feld,
