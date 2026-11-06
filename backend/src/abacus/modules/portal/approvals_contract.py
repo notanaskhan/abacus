@@ -15,11 +15,11 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, Self
 from uuid import UUID
 
 from fastapi import Depends, Header, Path, Query
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotImplementedYet
@@ -146,6 +146,12 @@ class ProposedEntryDecideIn(BaseModel):
     seen_hash: SeenHash
     reason: Reason | None = None
 
+    @model_validator(mode="after")
+    def _a_decline_says_why(self) -> Self:
+        if self.decision == "decline" and self.reason is None:
+            raise ValueError("a decline needs a reason")
+        return self
+
 
 class ApprovalAcknowledgeIn(BaseModel):
     model_config = _strict()
@@ -162,6 +168,14 @@ class PackageDecideIn(BaseModel):
     seen_hash: SeenHash
     reason_code: Annotated[DeclineReason | None, Internal] = None
     note: Reason | None = None
+
+    @model_validator(mode="after")
+    def _a_decline_says_why(self) -> Self:
+        if self.decision == "decline" and self.reason_code is None:
+            raise ValueError("a decline needs a reason")
+        if self.reason_code == "other" and self.note is None:
+            raise ValueError("`other` needs a note")
+        return self
 
 
 class ApprovalQuestionIn(BaseModel):
