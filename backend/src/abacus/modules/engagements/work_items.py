@@ -365,6 +365,14 @@ _CURRENT_ON_CLIENT = text(
     "AND r.assigned_at >= a.assigned_at) "
     "ORDER BY a.engagement_id, a.work_item_id, a.function"
 )
+_HOLDERS = text(
+    "SELECT a.user_id FROM work_item_assignments a "
+    "WHERE a.work_item_id = :w AND a.function = :f AND a.removed_at IS NULL "
+    "AND NOT EXISTS (SELECT 1 FROM work_item_assignments r "
+    "WHERE r.work_item_id = a.work_item_id AND r.user_id = a.user_id "
+    "AND r.function = a.function AND r.removed_at IS NOT NULL "
+    "AND r.assigned_at >= a.assigned_at)"
+)
 _UNASSIGN = text(
     "INSERT INTO work_item_assignments "
     "(tenant_id, work_item_id, engagement_id, user_id, function, assigned_by, removed_at) "
@@ -409,8 +417,20 @@ async def end_wall_assignments(
     return len(rows)
 
 
+async def holders_of(tenant: TenantContext, work_item_id: UUID, function: str) -> list[UUID]:
+    """Who holds the function on the work item now; a removal row undoes an assignment."""
+    async with tenant_session(tenant) as session:
+        rows = await session.scalars(_HOLDERS, {"w": work_item_id, "f": function})
+        return sorted(rows, key=str)
+
+
 async def assign_work_item(
-    ctx: AuthContext, work_item_id: UUID, user_id: UUID, function: str
+    ctx: AuthContext,
+    work_item_id: UUID,
+    user_id: UUID,
+    function: str,
+    *,
+    authorised_under: str = "work_item.assign",
 ) -> None:
     """Assign `user_id` the `function` on the work item, in one unit of work with its audit event.
     The assignee must be a staff member of the engagement's team and not walled from its client:
@@ -430,7 +450,7 @@ async def assign_work_item(
         raise NotFound
     async with uow(ctx.tenant) as tx:
         ref = await lock_ref(tx, engagement_id)
-        await authorise(ctx, "work_item.assign", ref.resource())
+        await authorise(ctx, authorised_under, ref.resource())
         standing = await team_standing(ctx.tenant, engagement_id, user_id)
         if standing in ("none", "client"):
             raise NotFound("team_member")

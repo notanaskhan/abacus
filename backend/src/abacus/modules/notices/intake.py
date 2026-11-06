@@ -34,8 +34,8 @@ from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.flags import flag_variant
 from abacus.kernel.uow import Ref, Target, uow
-from abacus.modules.engagements.api import create_work_item
-from abacus.modules.identity.api import AuthContext
+from abacus.modules.engagements.api import assign_work_item, create_work_item, holders_of
+from abacus.modules.identity.api import AuthContext, team_of
 from abacus.modules.notices.events import (
     NoticeCreated,
     NoticeIntakeStarted,
@@ -80,6 +80,9 @@ class NoNoticeEngagement(DomainConflict):
     """The client has no `notice_response` engagement yet (QN-1: created through ENG-01)."""
 
     code = "no_notice_engagement"
+
+
+_CREATE: Final = "notice_intake.confirm"
 
 
 class IntakeMoved(DomainConflict):
@@ -502,7 +505,36 @@ async def create_notice(
             target=Target("notice", work_item),
             after=Ref(intake=intake_id, past_duplicate=int(current.duplicate_of is not None)),
         )
+    await _assign_functions(
+        ctx,
+        work_item,
+        engagement,
+        assignee_id,
+        related_return_id or _uuid(current.match.get("return_id")),
+    )
     return work_item, engagement
+
+
+async def _assign_functions(
+    ctx: AuthContext,
+    work_item: UUID,
+    engagement: UUID,
+    assignee: UUID,
+    related_return: UUID | None,
+) -> None:
+    """N-04 F2: the assignee prepares; the manager reviewer and signer are the related return's, or
+    the one person holding that role on the client's team. Without these no one on a notice holds
+    a function, and every action the matrix gates on one is refused (DEC-2392)."""
+    from abacus.modules.notices.service import assignee_on_team
+
+    await assign_work_item(ctx, work_item, assignee, "preparer", authorised_under=_CREATE)
+    team = await team_of(ctx.tenant_id, engagement)
+    for function, role in (("manager_reviewer", "manager"), ("signer", "engagement_partner")):
+        people = await holders_of(ctx.tenant, related_return, function) if related_return else []
+        people = people or sorted({u for u, held in team if held == role}, key=str)
+        if len(people) == 1:
+            await assignee_on_team(ctx, engagement, people[0])
+            await assign_work_item(ctx, work_item, people[0], function, authorised_under=_CREATE)
 
 
 def _uuid(value: object) -> UUID | None:

@@ -24,7 +24,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.slices import register_sl
 from abacus_tools.synthetic.scenarios.brightwater_hale.timeline import Event
 
 SLICE: Final = "notices"
-NEEDS: Final = ("people", "tax_board")
+NEEDS: Final = ("people", "tax_board", "report_templates")
 FLAGS: Final = ("notices.workspace",)
 FILER: Final = "GH"  # Grace Holloway logs a notice on the day it arrives
 

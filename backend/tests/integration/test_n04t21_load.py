@@ -7,6 +7,7 @@ and its first run failed on the intake's source and field keys.
 from __future__ import annotations
 
 import asyncio
+import json
 from collections.abc import Iterator
 from datetime import date
 from types import SimpleNamespace
@@ -20,11 +21,15 @@ from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
 from abacus.kernel.flags import forget_flags
 from abacus.modules.identity.api import AuthContext
-from abacus.modules.notices import sending
+from abacus.modules.notices import analysis, response, sending
 from abacus.modules.notices.service import notice
+from abacus.modules.reporting.compose import block_texts, compose
+from abacus.modules.review.api import decide_card
 from abacus_tools.quality.schema_check import Database, provisioned_database
 from abacus_tools.synthetic.scenarios.brightwater_hale import loader
 from abacus_tools.synthetic.scenarios.brightwater_hale import notices_content as nc
+from abacus_tools.synthetic.scenarios.brightwater_hale.people import SEATS
+from abacus_tools.synthetic.scenarios.brightwater_hale.report_templates import bundle
 
 from .agent_tests.support import Seeder
 from .conftest import MigratedDatabase
@@ -56,6 +61,16 @@ def loaded(own_db: Database, object_store: str) -> Iterator[Database]:
         yield own_db
     settings.cache_clear()
     forget_flags()
+
+
+def _person(user: UUID) -> AuthContext:
+    return AuthContext(
+        TenantContext(loader.TENANT, "human", str(user)), user, UUID(int=0), None, system_now()
+    )
+
+
+def loaded_tenant() -> TenantContext:
+    return TenantContext(loader.TENANT, "system", "test")
 
 
 async def test_ac_the_loaded_notices_foot_to_the_seed(loaded: Database) -> None:
@@ -171,4 +186,104 @@ async def test_ac_the_confirmation_request_reaches_the_client_on_the_senders_cli
         True,
         row["respond_by"],
     )
+    await dispose_engine()
+
+
+async def test_ac_a_disagree_letter_says_disagree_and_carries_what_the_person_wrote(
+    loaded: Database,
+) -> None:
+    """The chain from analysis to the letter the taxpayers sign, run whole for the first time
+    (DEC-2392). It said "we agree" on a Disagree notice and dropped the person's explanation."""
+    await dispose_engine()
+    configure_engine(loaded.app_url)
+    seed = Seeder(loaded.superuser_dsn)
+    found = (
+        await seed.rows(
+            "SELECT work_item_id, assignee_user_id FROM notices WHERE tenant_id = $1 "
+            "AND status = 'analyzing' AND position IS NULL ORDER BY work_item_id LIMIT 1",
+            loader.TENANT,
+        )
+    )[0]
+    work_item, kevin = cast(UUID, found["work_item_id"]), cast(UUID, found["assignee_user_id"])
+    ctx = _person(kevin)
+
+    await seed.run(  # as code's form map would; a person's entry needs a real citation first
+        "INSERT INTO notice_proposed_items (tenant_id, work_item_id, kind, line_key, label, "
+        "amount_irs, origin, recorded_actor_kind) "
+        "VALUES ($1, $2, 'line_change', 'interest', 'Interest', 753.01, 'code_map', 'system')",
+        loader.TENANT,
+        work_item,
+    )
+    version, _status, _reused = await analysis.start(ctx, work_item)
+    assert await analysis.complete_run(loader.TENANT, work_item, version) == "ready"
+    before = await response.draft(ctx, work_item)
+    assert before.position_source == "provisional"
+    response_id = before.id
+
+    card = await analysis.request_decision(ctx, work_item, None)
+    row = (
+        await seed.rows(
+            "SELECT version_no, reserved_user_id FROM decision_cards WHERE id = $1", card
+        )
+    )[0]
+    assert row["reserved_user_id"] == loader.user_id_of(
+        next(x for x in SEATS if x.initials == "DR")
+    )
+    await decide_card(
+        _person(cast(UUID, row["reserved_user_id"])),
+        card,
+        option_key="disagree",
+        factors=(),
+        rationale="The basis is on the return",
+        seen_version=int(row["version_no"]),
+    )
+
+    # A draft from before the decision answers no position.
+    stale = await response.facts(loaded_tenant(), response_id)
+    assert stale is not None and stale.blocked_code == "position_mismatch"
+    fresh = await response.regenerate(ctx, work_item, before.row_version)
+    assert fresh.position_source == "decided"
+    text_of = {b.key: b.text for b in fresh.blocks}
+    assert "disagree with them" in text_of["clause:disagree"]
+    assert text_of["clause:agree"] == ""
+    needs = await response.facts(loaded_tenant(), response_id)
+    assert needs is not None and needs.blocked_code == "explanation_required"
+
+    written = "The broker reported no basis; Form 8949 shows 13,200.00."
+    edited = await response.edit(
+        ctx,
+        work_item,
+        fresh.row_version,
+        blocks=[("clause:disagree", written)],
+        settings={},
+    )
+    ready = await response.facts(loaded_tenant(), response_id)
+    assert ready is not None and ready.blocked_code is None
+    assert edited.row_version > fresh.row_version
+
+    envelope = await sending.send_for_signature(
+        _person(cast(UUID, row["reserved_user_id"])), work_item
+    )
+    assert envelope is not None
+    snapshot = await seed.value(
+        "SELECT s.snapshot FROM generated_document_snapshots s "
+        "JOIN generated_document_versions v ON v.id = s.version_id "
+        "JOIN notice_responses r ON r.generated_document_id = v.generated_document_id "
+        "WHERE r.work_item_id = $1 ORDER BY v.version_no DESC LIMIT 1",
+        work_item,
+    )
+    sealed = json.loads(cast(str, snapshot))
+    assert sealed["clauses"] == {"agree": False, "disagree": True, "partially_agree": False}
+    assert sealed["overrides"]["clause:disagree"] == [written]
+    assert sealed["variables"]["taxpayer.names"]
+    template = bundle("BH Notice Response · CP2000")
+    letter = compose(
+        layout_key="notice_response",
+        body=cast("list[object]", template["body"]),
+        clauses=cast("list[object]", template["clauses"]),
+        snapshot=sealed,
+    )
+    words = " ".join(t for _key, _clause, t in block_texts(letter))
+    assert written in words
+    assert "agree with them" not in words
     await dispose_engine()

@@ -1441,7 +1441,7 @@ async def _response_out(ctx: AuthContext, found: object) -> ResponseOut:
     r = cast(response.Response, found)
     n = await service.notice(ctx, r.notice_id)
     code = response.blocked_code(
-        n.position, n.position if r.position_source == "decided" else None, r.blocks
+        n.position, response.drafted_for(n.position, r.position_source), r.blocks
     )
     settings = r.settings
     return ResponseOut(

@@ -52,22 +52,39 @@ def _overrides(raw: object) -> dict[str, list[str]]:
     return out
 
 
-def _with_overrides(blocks: Sequence[object], overrides: Mapping[str, list[str]]) -> list[object]:
+def _paragraphs(texts: Sequence[str]) -> list[object]:
+    return [{"type": "paragraph", "runs": [{"type": "text", "text": p}]} for p in texts]
+
+
+def _block_key(n: int, block: Mapping[str, object]) -> str:
+    """A top-level block's id, as `block_texts` names it for a consumer's editor."""
+    if block.get("type") == "section":
+        return f"section:{block.get('id')}"
+    if block.get("type") == "clause":
+        return f"clause:{block.get('clause_id')}"
+    return f"block:{n + 1}"
+
+
+def _with_overrides(
+    blocks: Sequence[object], overrides: Mapping[str, list[str]], *, top: bool = True
+) -> list[object]:
+    """A section by its id; at the top level, any block by `_block_key` (DEC-2392), so what a person
+    wrote over a paragraph or a clause is what the document says."""
     placed: list[object] = []
-    for block in blocks:
+    for n, block in enumerate(blocks):
         if not isinstance(block, Mapping):
             placed.append(block)
             continue
         b = dict(cast(Mapping[str, object], block))
         inner = b.get("blocks")
+        if top and _block_key(n, b) in overrides:
+            placed.extend(_paragraphs(overrides[_block_key(n, b)]))
+            continue
         if b.get("type") == "section" and str(b.get("id")) in overrides:
-            b["blocks"] = [
-                {"type": "paragraph", "runs": [{"type": "text", "text": p}]}
-                for p in overrides[str(b["id"])]
-            ]
+            b["blocks"] = _paragraphs(overrides[str(b["id"])])
             b["override"] = True
         elif isinstance(inner, list):
-            b["blocks"] = _with_overrides(cast(list[object], inner), overrides)
+            b["blocks"] = _with_overrides(cast(list[object], inner), overrides, top=False)
         placed.append(b)
     return placed
 
