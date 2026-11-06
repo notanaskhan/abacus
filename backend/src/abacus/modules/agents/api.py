@@ -37,6 +37,7 @@ from abacus.modules.agents.engagement_runs import (
 )
 from abacus.modules.agents.entry_assess import ASSESSOR, ask, check
 from abacus.modules.agents.events import FollowUpSent
+from abacus.modules.agents.events import SectionDraftFinished as SectionDraftFinished
 from abacus.modules.agents.export_screening import screening_section
 from abacus.modules.agents.fake_responses import (
     SCREEN_PROMPT,
@@ -46,6 +47,7 @@ from abacus.modules.agents.fake_responses import (
 from abacus.modules.agents.fake_responses import install as install_fake_responses
 from abacus.modules.agents.fake_responses import install_review as install_fake_reviews
 from abacus.modules.agents.field_citations import register_field_citations_reader
+from abacus.modules.agents.follow_up_drafts import draft_for as draft_follow_ups
 from abacus.modules.agents.follow_up_drafts import on_follow_up_sent
 from abacus.modules.agents.follow_up_routes import follow_ups_router
 from abacus.modules.agents.follow_ups import reminder_history_of
@@ -126,7 +128,13 @@ from abacus.modules.agents.screenings import (
     start_screening,
     workflow_id,
 )
+from abacus.modules.agents.section_draft import (
+    DraftCapReached as DraftCapReached,
+)
 from abacus.modules.agents.section_draft import DraftingNotEnabled
+from abacus.modules.agents.section_draft import (
+    followed_up_running as followed_up_running,
+)
 from abacus.modules.agents.section_draft import start as start_section_draft
 from abacus.modules.agents.section_sources import (
     ModeDocument,
@@ -378,6 +386,7 @@ __all__ = [
     "ScreeningResultView",
     "ScreeningWorkflow",
     "SectionDraft",
+    "SectionDraftFinished",
     "SectionDraftInput",
     "SectionDraftWorkflow",
     "SectionSource",
@@ -412,6 +421,7 @@ __all__ = [
     "create_screening_run",
     "create_suggestion",
     "draft",
+    "draft_follow_ups",
     "effective_ai_policy",
     "engagement_graph",
     "extract_notice_fields",

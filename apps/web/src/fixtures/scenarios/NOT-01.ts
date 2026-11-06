@@ -85,6 +85,9 @@ function intake(variant: IntakeVariant): Record<string, FixtureHandler> {
     },
     "POST /v1/notice-intakes/{intake_id}/create": () =>
       json({ notice_id: SANTOS_NOTICE, engagement_id: SANTOS_ENGAGEMENT }, 201),
+    "POST /v1/notice-intakes/{intake_id}/attach": () => json(current),
+    "GET /v1/firm/members": () =>
+      json([{ user_id: "fixture-grace", display_name: "Grace Holloway" }]),
   };
 }
 
@@ -93,6 +96,9 @@ export const scenarios = defineScenarios({
   b: at("b", intake("b")),
   c: at("c", intake("c")),
   d: at("d", intake("d")),
+  duplicate: at("duplicate", intake("duplicate")),
+  manual: at("manual", intake("manual")),
+  no_client: at("no_client", intake("no_client")),
   e: at("e"),
   f: at("f", noticeHandlers([])),
   g: at("g", { "GET /v1/notices": () => never(), "GET /v1/notices/summary": () => never() }),
@@ -109,4 +115,7 @@ export const INTAKE: Readonly<Partial<Record<Not01State, string>>> = {
   b: SANTOS_INTAKE,
   c: SANTOS_INTAKE,
   d: SANTOS_INTAKE,
+  duplicate: SANTOS_INTAKE,
+  manual: SANTOS_INTAKE,
+  no_client: SANTOS_INTAKE,
 };
