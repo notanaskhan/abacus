@@ -28,6 +28,8 @@ function frame(state: string): Scenario {
         ...E0.handlers,
         "GET /v1/tax/extensions": ({ query }) => json(tax13Extensions(query.get("segment"))),
         "GET /v1/tax/estimates": () => json(tax13Estimates()),
+        "GET /v1/tax/extensions/export.xlsx": () => new Response(new Blob(["PK"]), { status: 200 }),
+        "GET /v1/tax/estimates/export.xlsx": () => new Response(new Blob(["PK"]), { status: 200 }),
       };
     },
   };
