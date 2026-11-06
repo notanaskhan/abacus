@@ -280,7 +280,6 @@ from abacus.modules.sampling.api import draw as draw_sample
 from abacus.modules.tax.api import import_engine_file, share_k1_internal
 from abacus.modules.tax.estimates import create as create_estimate
 from abacus.modules.tax.estimates import patch_installment
-from abacus.modules.tax.estimates import request_confirmation as request_estimate_confirmation
 from abacus.modules.tax.extensions import LineIn, PaymentIn, flag_new_likely
 from abacus.modules.tax.extensions import patch as patch_extension
 from abacus.modules.tax.extensions import prepare as prepare_extensions
@@ -4233,10 +4232,11 @@ _ESTIMATE_QUARTERS: Final[dict[int, date]] = {
 
 async def _estimate_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     seed = next(x for x in _tax_schedules.ESTIMATES if x.client == event.data["client"])
-    ctx = await _staff_context(conn, event)
     client = await _client_id(conn, seed.client)
     entity = await _entity_id(conn, client, seed.client)
     basis = next((r for r in BOARD if r.client == seed.client), None)
+    # The return's own preparer: the confirmation request needs that engagement's visibility.
+    ctx = await _staff_context(conn, _as_actor(event, basis.preparer) if basis else event)
     made = await create_estimate(
         ctx,
         entity,
@@ -4260,8 +4260,8 @@ async def _estimate_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) 
             scheduled_for=date(2026, 9, 15) if seed.status == "scheduled" else None,
             paid_on=date(2026, 9, 10) if seed.status == "paid" else None,
         )
-    elif seed.status == "confirmation_requested" and basis:
-        await request_estimate_confirmation(ctx, made, 3)
+    # `confirmation_requested` stays `not_confirmed`: the tile counts both as Awaiting, and asking
+    # needs an engagement lead, whom this firm's tax engagements don't have (DEC-2328).
 
 
 async def _audit_item(conn: asyncpg.Connection, client: str) -> UUID:
