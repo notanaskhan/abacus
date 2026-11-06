@@ -1486,6 +1486,10 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/evidence/repository.py", "pages_of"),
         ("src/abacus/modules/evidence/repository.py", "insert_pages"),
         ("src/abacus/modules/evidence/repository.py", "sources_without_words"),
+        (
+            "src/abacus/modules/evidence/repository.py",
+            "sources_without_ocr",
+        ),  # P-11-T25: the system backfill
         # P-03-T15: the masking backfill's batch, as the system on the firm's own uploads.
         ("src/abacus/modules/evidence/repository.py", "sources_without_masks"),
         # P-03-T08, T09: the events of citations already read through `visible()` or authorised

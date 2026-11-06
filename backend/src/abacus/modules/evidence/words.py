@@ -107,6 +107,17 @@ class Word:
 
 
 @dataclass(frozen=True)
+class KeyHint:
+    """A form's key and its value's box from OCR (P-11 AC7.3): sealed with the words."""
+
+    key: str
+    x0: float
+    top: float
+    x1: float
+    bottom: float
+
+
+@dataclass(frozen=True)
 class PageWords:
     page: int  # from 1
     width: float  # page points, after /Rotate
@@ -116,6 +127,7 @@ class PageWords:
     # Reviews N1, R1 to R3: the page shows content no scan reads before OCR (a picture, glyph-sized
     # vector shapes, a sideways digit): its upright text is masked, the rest is not.
     unread: bool = False
+    hints: tuple[KeyHint, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -310,6 +322,17 @@ def layer_document(page: PageWords) -> bytes:
             | ({} if w.confidence == 1.0 else {"confidence": w.confidence})
             for w in page.words
         ],
+        # Only an OCR page with a form's keys has these: any other layer stays byte for byte.
+        **(
+            {
+                "hints": [
+                    {"key": h.key, "x0": h.x0, "top": h.top, "x1": h.x1, "bottom": h.bottom}
+                    for h in page.hints
+                ]
+            }
+            if page.hints
+            else {}
+        ),
     }
     return json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
 
@@ -335,6 +358,16 @@ def parse_layer(raw: bytes) -> PageWords:
         int(cast(int, body["rotation"])),
         words,
         bool(body.get("unread", False)),
+        tuple(
+            KeyHint(
+                str(h["key"]),
+                float(cast(float, h["x0"])),
+                float(cast(float, h["top"])),
+                float(cast(float, h["x1"])),
+                float(cast(float, h["bottom"])),
+            )
+            for h in cast(list[dict[str, object]], body.get("hints", []))
+        ),
     )
 
 

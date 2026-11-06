@@ -275,7 +275,9 @@ from abacus.modules.assurance.internal_control import route_exception  # noqa: E
 from abacus.modules.assurance.mapping import start as start_mapping  # noqa: E402
 from abacus.modules.assurance.sum_service import pass_on_sum, record_prior_year  # noqa: E402
 from abacus.modules.assurance.sum_service import record_factor as record_sum_factor  # noqa: E402
-from abacus.modules.assurance.sum_service import set_effect as set_misstatement_effect  # noqa: E402
+from abacus.modules.assurance.sum_service import (  # noqa: E402
+    set_effect as set_misstatement_effect,
+)
 from abacus.modules.assurance.sum_service import snapshot as sum_snapshot  # noqa: E402
 from abacus.modules.reporting.api import RunRecordPort, register_run_record  # noqa: E402
 
@@ -284,7 +286,6 @@ register_run_record(
 )
 
 __all__ = [
-    "set_misstatement_effect",
     "ACTIVITIES",
     "PHASE_GATES",
     "ROUTERS",
@@ -336,6 +337,7 @@ __all__ = [
     "request_sum_conclusion",
     "route_exception",
     "router",
+    "set_misstatement_effect",
     "start_mapping",
     "sum_snapshot",
     "update_profile",

@@ -21289,6 +21289,16 @@
             ],
             "cls": "confidential"
           },
+          "nature": {
+            "cls": "internal",
+            "default": "misstatement",
+            "enum": [
+              "misstatement",
+              "reclassification"
+            ],
+            "title": "Nature",
+            "type": "string"
+          },
           "projection_ref": {
             "anyOf": [
               {
@@ -21301,6 +21311,27 @@
             ],
             "cls": "internal",
             "title": "Projection Ref"
+          },
+          "sample_error": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                    "type": "string"
+                  }
+                ],
+                "cls": "confidential"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Sample Error"
           },
           "seen_version": {
             "cls": "internal",
@@ -186865,7 +186896,7 @@
     },
     "/v1/findings/{finding_id}/convert-to-misstatement": {
       "post": {
-        "description": "A projected misstatement takes its figure from sampling (422 `projection_unavailable`\nuntil A-03 exposes its projection facts; T11).",
+        "description": "A projected misstatement takes its figure from sampling (422 `projection_unavailable`\nwithout a sample set and its error; T11).",
         "operationId": "finding_to_misstatement",
         "parameters": [
           {

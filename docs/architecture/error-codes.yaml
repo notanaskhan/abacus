@@ -1639,6 +1639,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.fraud_brainstorm.NothingToApprove
+  misstatement_moved:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.sum_service.MisstatementMoved
+    summary: Someone changed the misstatement since this person read it.
   misstatement_not_passable:
     status: 409
     raised_by:

@@ -136,6 +136,7 @@ from abacus.modules.assurance.api import (
     request_severity_decision,
     request_sum_conclusion,
     route_exception,
+    set_misstatement_effect,
     start_mapping,
     sum_snapshot,
     update_profile,
@@ -4286,17 +4287,17 @@ async def _completion_client_decision(conn: asyncpg.Connection, _: Scenario, eve
     if seed.note is not None:
         # AUD-16's client note, on what the misstatement already states (DEC-2360's writer).
         misstatement = await _completion_misstatement(conn, seed.finding)
-        row = await tenant_row(
-            conn,
-            TENANT,
-            "SELECT version, fs_effect FROM audit_misstatements WHERE id = $1",
-            misstatement,
+        version = await tenant_value(
+            conn, TENANT, "SELECT version FROM audit_misstatements WHERE id = $1", misstatement
+        )
+        stated = await tenant_value(
+            conn, TENANT, "SELECT fs_effect FROM audit_misstatements WHERE id = $1", misstatement
         )
         await set_misstatement_effect(
             ctx,
             misstatement,
-            int(cast(int, cast(Any, row)["version"])),
-            {**json.loads(cast(str, cast(Any, row)["fs_effect"])), "client_note": seed.note},
+            int(cast(int, version)),
+            {**json.loads(cast(str, stated)), "client_note": seed.note},
         )
 
 
