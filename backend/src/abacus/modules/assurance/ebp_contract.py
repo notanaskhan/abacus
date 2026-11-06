@@ -246,6 +246,25 @@ _PROVISION: JsonDict = {
 }
 
 
+class ConflictSourceOut(BaseModel):
+    """EBP-02 c: the document that disagrees (A-05-T17; DEC-2423): the viewer opens on it."""
+
+    model_config = ConfigDict(frozen=True)
+
+    evidence_version_id: Annotated[UUID, classified("internal")]
+    # "The SPD (2025, p. 6) says entry is on the first day of each calendar quarter."
+    note: Annotated[str, Field(max_length=500), classified("confidential")]
+
+
+class PlanReviewDiffOut(BaseModel):
+    """EBP-02 b2's ribbon: what the current version adds to this earlier one, from code."""
+
+    model_config = ConfigDict(frozen=True)
+
+    current_version_no: Annotated[int, Field(ge=1), classified("internal")]
+    added_labels: Annotated[list[str], Field(max_length=200), classified("internal")]
+
+
 class ProvisionOut(BaseModel):
     model_config = _ex(_PROVISION)
 
@@ -262,6 +281,7 @@ class ProvisionOut(BaseModel):
         str | None, Field(pattern=r"^[A-Z]{1,3}[0-9]{1,5}$"), classified("internal")
     ] = None
     value_hash: Annotated[str | None, Field(max_length=80), classified("internal")] = None
+    conflict_source: Annotated[ConflictSourceOut | None, classified("confidential")] = None
 
 
 class PlanReviewOut(BaseModel):
@@ -280,6 +300,7 @@ class PlanReviewOut(BaseModel):
     sign_offs: Annotated[list[SignOffChipOut], Field(max_length=10), classified("internal")] = (
         Field(default_factory=list[SignOffChipOut])
     )
+    version_diff: Annotated[PlanReviewDiffOut | None, classified("internal")] = None
 
 
 class PlanReviewIn(BaseModel):
@@ -1171,6 +1192,14 @@ async def ebp_plan_review_route(
         allowed_actions=actions,
         workpaper_id=found.workpaper_id,
         sign_offs=await _chips(found.sign_offs),
+        version_diff=(
+            None
+            if found.version_diff is None
+            else PlanReviewDiffOut(
+                current_version_no=found.version_diff.current_no,
+                added_labels=list(found.version_diff.added_labels),
+            )
+        ),
     )
 
 

@@ -88,6 +88,7 @@ interface CockpitSearch {
   section?: string;
   dock?: "agent" | "viewer";
   doc?: string;
+  version?: number;
 }
 
 export const auditRoute = createRoute({
@@ -97,6 +98,8 @@ export const auditRoute = createRoute({
     ...(typeof search.section === "string" ? { section: search.section } : {}),
     ...(search.dock === "agent" || search.dock === "viewer" ? { dock: search.dock } : {}),
     ...(typeof search.doc === "string" ? { doc: search.doc } : {}),
+    // EBP-02 b2: the earlier plan review, read-only.
+    ...(typeof search.version === "number" ? { version: search.version } : {}),
   }),
   component: function AuditPage(): JSX.Element {
     const auditId = useParam("auditId");
@@ -117,6 +120,15 @@ export const auditRoute = createRoute({
         doc={search.doc ?? null}
         onDock={(dock, doc) => {
           go({ ...search, dock, ...(doc == null ? {} : { doc }) });
+        }}
+        {...(search.version === undefined ? {} : { planReviewVersion: search.version })}
+        onPlanReviewVersion={(version) => {
+          go({
+            ...(search.section === undefined ? {} : { section: search.section }),
+            ...(search.dock === undefined ? {} : { dock: search.dock }),
+            ...(search.doc === undefined ? {} : { doc: search.doc }),
+            ...(version === null ? {} : { version }),
+          });
         }}
         onBack={() => {
           void navigate({ to: "/audits" });

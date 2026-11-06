@@ -18924,6 +18924,29 @@
         "title": "ConflictResultOut",
         "type": "object"
       },
+      "ConflictSourceOut": {
+        "description": "EBP-02 c: the document that disagrees (A-05-T17; DEC-2423): the viewer opens on it.",
+        "properties": {
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "note": {
+            "cls": "confidential",
+            "maxLength": 500,
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evidence_version_id",
+          "note"
+        ],
+        "title": "ConflictSourceOut",
+        "type": "object"
+      },
       "ConnectionActivityOut": {
         "description": "One line of the connection's activity in the ADM-07 grammar (A-02-T16; INV-5):\n\"Connected by Tess Moreno (client)\", \"Reconnected by \u2026\", \"Disconnected by \u2026\".",
         "properties": {
@@ -65960,6 +65983,32 @@
         "title": "PlanOut",
         "type": "object"
       },
+      "PlanReviewDiffOut": {
+        "description": "EBP-02 b2's ribbon: what the current version adds to this earlier one, from code.",
+        "properties": {
+          "added_labels": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 200,
+            "title": "Added Labels",
+            "type": "array"
+          },
+          "current_version_no": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Current Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "current_version_no",
+          "added_labels"
+        ],
+        "title": "PlanReviewDiffOut",
+        "type": "object"
+      },
       "PlanReviewIn": {
         "additionalProperties": false,
         "properties": {
@@ -66044,6 +66093,17 @@
             "minimum": 0.0,
             "title": "Verified",
             "type": "integer"
+          },
+          "version_diff": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlanReviewDiffOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
           },
           "version_no": {
             "cls": "internal",
@@ -72212,6 +72272,17 @@
             ],
             "cls": "confidential",
             "title": "Conflict"
+          },
+          "conflict_source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConflictSourceOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
           },
           "key": {
             "cls": "internal",

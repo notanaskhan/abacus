@@ -89,6 +89,43 @@ describe("EBP-02", () => {
     expect(ticks.every((t) => t.disabled)).toBe(true);
   });
 
+  it("b2: the ribbon reads +2 rows and names what Version 2 adds; Open Version 2 returns", async () => {
+    show("b2");
+    const ribbon = await drawn("[data-ebp02='snapshot']");
+    expect(ribbon.textContent).toContain("+2 rows");
+    expect(ribbon.textContent).toContain(
+      "Version 2 adds Long-term part-time and Catch-up from the 2024 amendment.",
+    );
+    expect(document.body.textContent).toContain("Read-only");
+    expect(signOff()).toBeUndefined();
+    fireEvent.click(
+      [...ribbon.querySelectorAll("button")].find((b) =>
+        b.textContent.startsWith("Open Version 2"),
+      ) as HTMLButtonElement,
+    );
+    await drawn("[data-screen='EBP-02'][data-version='2']");
+    expect(document.querySelector("[data-ebp02='snapshot']")).toBeNull();
+  });
+
+  it("a: the Version 2 pill opens Version 1", async () => {
+    show("a");
+    const pill = await drawn("[data-ebp02='version']");
+    fireEvent.click(pill);
+    await drawn("[data-screen='EBP-02'][data-version='1']");
+  });
+
+  it("c: the row states the SPD's words, offers Raise exception… and opens the SPD", async () => {
+    show("c");
+    const band = await drawn("[data-ebp02='conflict']");
+    expect(band.textContent).toContain(
+      "The SPD (2025, p. 6) says entry is on the first day of each calendar quarter.",
+    );
+    expect(band.textContent).toContain("Raise exception…");
+    const row = await drawn("[data-provision='entry_dates']");
+    fireEvent.click(row);
+    await drawn("[data-audit-dock='viewer']");
+  });
+
   it("c: Entry dates carries the amber SPD: quarterly pill", async () => {
     show("c");
     const entry = await drawn("[data-provision='entry_dates']");
