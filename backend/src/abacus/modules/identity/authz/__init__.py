@@ -638,7 +638,7 @@ async def authorise(
         finally:
             _delegating.reset(token)
     # 4. Attributes.
-    if resource.archived and not rule.reads:
+    if resource.archived and not rule.reads and rule.archived_exempt is None:
         raise _deny(ctx, action, "attribute")
     mfa_at = ctx.mfa_at if isinstance(ctx, AuthContext) else None
     # allowed_actions() leaves MFA recency and a reason to the moment of acting: the UI steps up.

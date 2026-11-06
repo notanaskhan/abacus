@@ -21,6 +21,7 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from sqlalchemy.exc import DBAPIError
 from starlette.types import Receive, Scope, Send
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
@@ -30,6 +31,7 @@ from abacus.api.request_context import RequestContextCapture
 from abacus.kernel.clock import check_startup as check_clock
 from abacus.kernel.config import settings
 from abacus.kernel.controls import ReadOnlyMode
+from abacus.kernel.db.archive_guard import ARCHIVED_SQLSTATE
 from abacus.kernel.egress import configure_egress
 from abacus.kernel.error_tracking import configure_error_tracking, flush_errors, report
 from abacus.kernel.errors import (
@@ -42,6 +44,7 @@ from abacus.kernel.errors import (
     DomainUnsupported,
     NotFound,
     NotImplementedYet,
+    RowArchived,
     ServiceUnavailable,
 )
 from abacus.kernel.logging import get_logger
@@ -127,6 +130,15 @@ async def _rate_limited(_request: Request, exc: Exception) -> JSONResponse:
 
 async def _conflict(_request: Request, exc: Exception) -> JSONResponse:
     return JSONResponse(_coded(cast(DomainConflict, exc)), status_code=409)
+
+
+async def _db_error(_request: Request, exc: Exception) -> JSONResponse:
+    """A-07-T14: `archived_guard()`'s SQLSTATE is the only database error with an answer here;
+    anything else is the 500 it always was."""
+    orig = getattr(exc, "orig", None)
+    if getattr(orig, "sqlstate", None) == ARCHIVED_SQLSTATE:
+        return JSONResponse(_coded(RowArchived()), status_code=409)
+    raise exc
 
 
 async def _domain_invalid(_request: Request, exc: Exception) -> JSONResponse:
@@ -264,6 +276,7 @@ def create_app() -> FastAPI:
     app.add_exception_handler(identity.Forbidden, _forbidden)
     app.add_exception_handler(NotFound, _not_found)
     app.add_exception_handler(DomainConflict, _conflict)
+    app.add_exception_handler(DBAPIError, _db_error)
     app.add_exception_handler(DomainForbidden, _domain_forbidden)
     app.add_exception_handler(DomainRateLimited, _rate_limited)
     app.add_exception_handler(DomainInvalid, _domain_invalid)
