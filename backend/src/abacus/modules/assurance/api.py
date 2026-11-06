@@ -48,6 +48,7 @@ from abacus.modules.assurance.ebp_remittances import audit_owners as late_remitt
 from abacus.modules.assurance.ebp_remittances import late_remittances
 from abacus.modules.assurance.findings import AUDIT_KINDS as FINDING_KINDS
 from abacus.modules.assurance.findings import audit_owners as finding_owners
+from abacus.modules.assurance.findings import register_exception_routes
 from abacus.modules.assurance.findings_contract import router as findings_router
 from abacus.modules.assurance.fraud_brainstorm import AUDIT_KINDS as FRAUD_KINDS
 from abacus.modules.assurance.fraud_brainstorm import GATE_KIND as FRAUD_GATE
@@ -208,6 +209,7 @@ register_audit_segment("review", None)
 register_a01_providers()
 # I-01-T08: this module's HOME-01 tile or pill (platform.register_home_count).
 register_home_counts()
+register_exception_routes()  # DEC-2354: AUD-09 and AUD-10's routes into Findings and the SUM
 # I-01-T08 (C13): SPEC-004's review queue as `evidence_review` gates.
 register_review_gates()
 
