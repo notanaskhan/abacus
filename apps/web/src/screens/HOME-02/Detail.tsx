@@ -37,7 +37,7 @@ import type { OverlayRef } from "../../app-core/overlays";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { useSession } from "../../app-core/session";
 import { useEngagementTeam } from "../../domain/engagements";
-import { invalidateGates } from "../../domain/home";
+import { fallbackTitle, invalidateGates } from "../../domain/home";
 import {
   levelOf,
   useDecisionCard,
@@ -793,7 +793,7 @@ function ApprovalBody({ gate }: DetailProps): JSX.Element {
   const now = useNow();
   return (
     <div data-home02-detail="generic" data-subkind={gate.subkind} className="flex flex-col">
-      <TitleBand title={gate.title ?? gate.subkind} />
+      <TitleBand title={gate.title ?? fallbackTitle(gate.subkind)} />
       <dl>
         {gate.due_on !== null && (
           <Kv label={COPY.detailPane.due}>{formatDate(gate.due_on, { now })}</Kv>
@@ -824,23 +824,6 @@ function ApprovalFooter({ gate, href }: DetailProps): JSX.Element | null {
           onClick={() => {
             openOverlay(ov.SHL12(gate.subject.type, gate.subject.id, "L4_partner"));
           }}
-        />
-      </Footer>
-    );
-  }
-  if (gate.kind === "send" && PLANNED_VISIBLE) {
-    // SIG-01 "To send" is planned (N-02): the verb shows, disabled, until its host is routed.
-    return (
-      <Footer>
-        <HumanAction
-          verb="Send"
-          actor={actor}
-          label={COPY.detailPane.send}
-          opensDialog
-          variant="primary"
-          size="xl"
-          className="w-full"
-          disabled
         />
       </Footer>
     );

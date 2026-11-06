@@ -1,7 +1,7 @@
 import { workItemsOptions } from "@abacus/api-client/query";
 import { FlagOffState } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
-import { createRoute, useNavigate, useSearch } from "@tanstack/react-router";
+import { Navigate, createRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { type JSX, useEffect } from "react";
 import { FeatureGate, useFlag } from "../../app-core/flags";
 import { useParam } from "../params";
@@ -24,7 +24,6 @@ const screens = {
   Planning: lazyScreen(async () => (await import("../../legacy/Planning")).Planning),
   Findings: lazyScreen(async () => (await import("../../legacy/Findings")).Findings),
   Fieldwork: lazyScreen(async () => (await import("../../legacy/Fieldwork")).Fieldwork),
-  Review: lazyScreen(async () => (await import("../../legacy/Review")).Review),
   Workpapers: lazyScreen(async () => (await import("../../legacy/Workpapers")).Workpapers),
   Workpaper: lazyScreen(async () => (await import("../../legacy/Workpaper")).Workpaper),
   CompletionRelease: lazyScreen(
@@ -186,9 +185,10 @@ const activityRoute = createRoute({
 const reviewRoute = createRoute({
   getParentRoute: () => engagementRoute,
   path: "/review",
+  // I-01-T23: the queue moved to HOME-02; AUD-03 and BND-02 host each review (SPEC-004 map in
+  // the row's task file).
   component: function ReviewPage(): JSX.Element {
-    const engagementId = useParam("engagementId");
-    return <screens.Review engagementId={engagementId} />;
+    return <Navigate to="/home/approvals" replace />;
   },
 });
 

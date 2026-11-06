@@ -1,6 +1,6 @@
 """Public interface of the practice module; other modules import only this (ADR-008).
 
-First routes: the C13 home half (I-01-T02), `GET /v1/home` behind `home.dashboard`. C21 part A
+First routes: the C13 home half (I-01-T02), `GET /v1/home`. C21 part A
 (K-02-T07): `GET /v1/due-dates` and the calendar module API (`due_dates_for`, `add_business_days`,
 `clock_due`). Worker
 parts (I-01-T12): the client-activity projector and its daily prune.

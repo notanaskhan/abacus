@@ -1,4 +1,4 @@
-// Where a Waiting-on-you row opens while `home.approvals` is off (I-01-T13; I-01 AC2.4, DV-3):
+// How a gate's host route resolves (I-01-T13; I-01 AC2.4, DV-3; HOME-02 opens the same hosts):
 // the host screen where its gate is decided, until HOME-02 takes over (I-01-T21).
 //
 // - A row whose owner gave it a `subject_route` opens that: a screen code with its ids
