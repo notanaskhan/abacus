@@ -536,6 +536,78 @@ class FiguresOut(BaseModel):
     allowed_actions: Actions
 
 
+class ExpenseRowOut(BaseModel):
+    """One expense with Sheet!Cell-citable amounts; `exception` by code (no 408(b)(2) on file)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    provider_id: Annotated[UUID | None, classified("internal")] = None
+    line_key: Annotated[str, Field(max_length=80), classified("internal")]
+    description: Label
+    disclosure_citation_id: Annotated[UUID | None, classified("internal")] = None
+    citation_id: Annotated[UUID | None, classified("internal")] = None
+    invoiced: MaybeMoney = None
+    credits: MaybeMoney = None
+    paid_from_plan: MaybeMoney = None
+    schedule_h_line: Annotated[
+        Literal["2i(1)", "2i(2)", "2i(3)", "2i(4)"], classified("internal")
+    ]
+    exception: Annotated[bool, classified("internal")] = False
+
+
+class ExpensesOut(BaseModel):
+    """EBP-09 a: 38,400 = 2i(1) 6,000 + 2i(2) 32,400; 41,500 - 3,100."""
+
+    model_config = ConfigDict(frozen=True)
+
+    rows: Annotated[list[ExpenseRowOut], Field(max_length=500), classified("confidential")]
+    invoiced: MaybeMoney = None
+    credits: MaybeMoney = None
+    paid_from_plan: MaybeMoney = None
+    line_2i1: MaybeMoney = None
+    line_2i2: MaybeMoney = None
+    line_2i3: MaybeMoney = None
+    line_2i4: MaybeMoney = None
+    invoices_tie: Annotated[bool, classified("internal")]
+    exceptions: Annotated[int, classified("internal")]
+    engine_version: Annotated[str, Field(max_length=40), classified("internal")]
+    inputs_hash: Annotated[str, Field(max_length=64), classified("internal")]
+
+
+class ComplianceTestOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    test_key: Annotated[str, Field(max_length=80), classified("internal")]
+    plan_year: Annotated[int, classified("internal")]
+    limit: MaybeMoney = None
+    limit_ref: Annotated[str | None, Field(max_length=120), classified("internal")] = None
+    result: Annotated[Literal["pass", "exception", "exempt", "proposed"], classified("internal")]
+    accepted: Annotated[bool, classified("internal")]
+
+
+class QualificationFactOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    fact_key: Annotated[str, Field(max_length=80), classified("internal")]
+    value: Annotated[str | None, Field(max_length=500), classified("confidential")] = None
+    result: Annotated[Literal["consistent", "exception", "not_evaluated"], classified("internal")]
+    citation_id: Annotated[UUID | None, classified("internal")] = None
+    accepted: Annotated[bool, classified("internal")]
+
+
+class SupportPrefillOut(BaseModel):
+    """SHL-14's prefill: identifiers only. Nothing is sent by this route."""
+
+    model_config = ConfigDict(frozen=True)
+
+    provider_id: Annotated[UUID | None, classified("internal")] = None
+    expense_line_key: Annotated[str, Field(max_length=80), classified("internal")]
+    request_kind: Annotated[Literal["tpa_support"], classified("internal")]
+
+
 class LoanRowOut(BaseModel):
     """One participant loan with its rollforward and, for a new loan, its IRC 72(p) limit."""
 
@@ -1680,10 +1752,133 @@ async def ebp_participant_accounts_route(work_item_id: UUID, ctx: Ctx) -> Figure
     )
 
 
-@router.get("/ebp/plan-expenses", action="ebp.read", response_model=FiguresOut)
-async def ebp_plan_expenses_route(work_item_id: UUID, ctx: Ctx) -> FiguresOut:
+async def _plan_year(ctx: AuthContext, work_item_id: UUID) -> int:
+    from abacus.modules.engagements.api import engagement_metadata
+
+    item = await assurance_item(ctx.tenant, work_item_id)
+    return (await engagement_metadata(ctx, item.engagement_id)).engagement.fiscal_period_end.year
+
+
+@router.get("/ebp/plan-expenses", action="ebp.read", response_model=ExpensesOut)
+async def ebp_plan_expenses_route(work_item_id: UUID, ctx: Ctx) -> ExpensesOut:
+    """EBP-09 a: expenses foot to Schedule H 2i; invoices less credits by code."""
     await _gate(ctx, work_item_id, "ebp.read", _E)
-    return _figures("Administrative expenses", [], None)
+    from abacus.modules.assurance import ebp_expenses
+
+    view = await ebp_expenses.plan_expenses(ctx.tenant, work_item_id)
+    tied = view.tie
+    return ExpensesOut(
+        rows=[
+            ExpenseRowOut(
+                id=r["id"],
+                provider_id=r["provider_id"],
+                line_key=r["line_key"],
+                description=r["description"],
+                disclosure_citation_id=r["disclosure_citation_id"],
+                citation_id=r["citation_id"],
+                invoiced=r["invoiced"],
+                credits=r["credits"],
+                paid_from_plan=r["paid_from_plan"],
+                schedule_h_line=r["schedule_h_line"],
+                exception=r["line_key"] in tied.exceptions,
+            )
+            for r in view.rows
+        ],
+        invoiced=tied.invoiced,
+        credits=tied.credits,
+        paid_from_plan=tied.paid,
+        line_2i1=tied.by_line.get("2i(1)", Decimal(0)),
+        line_2i2=tied.by_line.get("2i(2)", Decimal(0)),
+        line_2i3=tied.by_line.get("2i(3)", Decimal(0)),
+        line_2i4=tied.by_line.get("2i(4)", Decimal(0)),
+        invoices_tie=tied.invoices_tie,
+        exceptions=len(tied.exceptions),
+        engine_version=tied.engine_version,
+        inputs_hash=tied.inputs_hash,
+    )
+
+
+@router.get("/ebp/erisa-budget-account", action="ebp.read", response_model=FiguresOut)
+async def ebp_budget_account_route(work_item_id: UUID, ctx: Ctx) -> FiguresOut:
+    """1,200 + 2,650 - 3,100 = 750 by code."""
+    await _gate(ctx, work_item_id, "ebp.read", _E)
+    from abacus.modules.assurance import ebp_expenses
+
+    roll = await ebp_expenses.budget_account(ctx.tenant, work_item_id)
+    return _figures(
+        "ERISA budget account",
+        [
+            ("beginning", "Jan 1", str(roll.beginning)),
+            ("revenue_share", "Credits", str(roll.revenue_share)),
+            ("applied", "Applied", str(roll.applied)),
+        ],
+        str(roll.ending),
+    )
+
+
+@router.get("/ebp/compliance-tests", action="ebp.read", response_model=list[ComplianceTestOut])
+async def ebp_compliance_tests_route(work_item_id: UUID, ctx: Ctx) -> list[ComplianceTestOut]:
+    """This plan year's tests and limits; an exemption is a proposal until a person accepts."""
+    await _gate(ctx, work_item_id, "ebp.read", _E)
+    from abacus.modules.assurance import ebp_expenses
+
+    rows = await ebp_expenses.compliance_tests(
+        ctx.tenant, work_item_id, await _plan_year(ctx, work_item_id)
+    )
+    return [
+        ComplianceTestOut(
+            id=r.id,
+            test_key=r.test_key,
+            plan_year=r.plan_year,
+            limit=r.limit,
+            limit_ref=r.limit_ref,
+            result=cast(Any, r.result),  # Any: the column's CHECK plus `proposed`
+            accepted=r.accepted_at is not None,
+        )
+        for r in rows
+    ]
+
+
+@router.get(
+    "/ebp/plan-qualification", action="ebp.read", response_model=list[QualificationFactOut]
+)
+async def ebp_plan_qualification_route(
+    work_item_id: UUID, ctx: Ctx
+) -> list[QualificationFactOut]:
+    await _gate(ctx, work_item_id, "ebp.read", _E)
+    from abacus.modules.assurance import ebp_expenses
+
+    return [
+        QualificationFactOut(
+            id=r["id"],
+            fact_key=r["fact_key"],
+            value=r["value"],
+            result=r["result"],
+            citation_id=r["citation_id"],
+            accepted=r["accepted_at"] is not None,
+        )
+        for r in await ebp_expenses.qualification(ctx.tenant, work_item_id)
+    ]
+
+
+@router.post(
+    "/ebp/plan-expenses/{expense_id}/request-support",
+    action="ebp_provider.request",
+    response_model=SupportPrefillOut,
+)
+async def ebp_expense_support_route(
+    work_item_id: UUID, expense_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> SupportPrefillOut:
+    """SHL-14's prefill for the provider of this expense; a person edits and sends (POR-14)."""
+    await _gate(ctx, work_item_id, "ebp_provider.request", _E)
+    from abacus.modules.assurance import ebp_expenses
+
+    found = await ebp_expenses.support_prefill(ctx.tenant, work_item_id, expense_id)
+    return SupportPrefillOut(
+        provider_id=found.provider_id,
+        expense_line_key=found.expense_line_key,
+        request_kind=found.request_kind,
+    )
 
 
 # EBP-07

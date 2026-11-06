@@ -1,0 +1,20 @@
+# IRS qualified-plan limits by plan year (A-05-T43; ADR P-62 engine-parameter side; DEC-2307).
+# PROTECTED: reviewed with the audit CPA and pinned by golden tests (protected-paths.md). A plan
+# year missing here is a refusal, never the nearest year's limits. Source: IRS annual
+# cost-of-living notices. `requires_review` stays true until a CPA signs (docs/quality/golden-reviews).
+version: 1
+requires_review: true
+reviewed_by: null
+source: "IRS annual cost-of-living adjustment notices"
+limits:
+  "2024":
+    "402g": "23000.00"
+    catch_up: "7500.00"
+    "415c": "69000.00"
+    "401a17": "345000.00"
+  "2025":
+    "402g": "23500.00"
+    catch_up: "7500.00"
+    catch_up_60_63: "11250.00"
+    "415c": "70000.00"
+    "401a17": "350000.00"
