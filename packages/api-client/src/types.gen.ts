@@ -22696,6 +22696,14 @@ export type InvestmentsOut = {
      */
     engine_version: string;
     /**
+     * Funds Boy
+     */
+    funds_boy?: string | null;
+    /**
+     * Funds Eoy
+     */
+    funds_eoy?: string | null;
+    /**
      * Hold Reason
      */
     hold_reason?: 'certification_unevaluated' | null;

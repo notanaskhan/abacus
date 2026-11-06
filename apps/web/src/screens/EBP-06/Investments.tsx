@@ -3,6 +3,7 @@ import { ebpCertificationMutation, ebpInvestmentsOptions } from "@abacus/api-cli
 import {
   type CockpitCanvas,
   Button,
+  MATCH_CELL,
   PaneAction,
   Pill,
   Segmented,
@@ -11,7 +12,7 @@ import {
   cn,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { JSX } from "react";
+import { type JSX, useState } from "react";
 import { useFlag } from "../../app-core/flags";
 import { COPY } from "./copy";
 
@@ -52,6 +53,8 @@ function Row({
   selected: boolean;
   onSelect?: (key: string) => void;
 }): JSX.Element {
+  // The spec's click: the cell lights in the match colour, once at a time on this row.
+  const [litCell, setLitCell] = useState<"boy" | "eoy" | null>(null);
   const certified = row.level === "level1" || row.level === "nav";
   const mark = row.ties === true ? (certified ? COPY.ms : COPY.tick) : null;
   return (
@@ -66,7 +69,11 @@ function Row({
       {[row.trust_boy ?? row.tb_boy, row.trust_eoy ?? row.tb_eoy].map((value, i) => (
         <td
           key={i === 0 ? "boy" : "eoy"}
-          className="pr-[8px] text-right tabular-nums whitespace-nowrap"
+          {...(litCell === (i === 0 ? "boy" : "eoy") ? { "data-lit": "" } : {})}
+          onClick={() => {
+            setLitCell(i === 0 ? "boy" : "eoy");
+          }}
+          className={cn("pr-[8px] text-right tabular-nums whitespace-nowrap", MATCH_CELL)}
         >
           {money(value)}
           {mark !== null && (
@@ -165,6 +172,9 @@ function Table({
   onSelect?: (key: string) => void;
 }): JSX.Element {
   const invested = view.rows.filter((r) => r.level === "level1" || r.level === "nav");
+  // The server's own split: a line that isn't a fund or CIT follows the subtotal, by its key.
+  const brokerage = invested.filter((r) => /^(broker|sdba)/u.test(r.key));
+  const funds = invested.filter((r) => !brokerage.includes(r));
   const below = view.rows.filter((r) => r.level === "not_certified" || r.level === "other");
   const rowProps = onSelect === undefined ? {} : { onSelect };
   return (
@@ -188,7 +198,21 @@ function Table({
             {COPY.investments}
           </td>
         </tr>
-        {invested.map((row) => (
+        <tr className="h-[29px] text-[12px] font-medium hairline-t">
+          <td colSpan={4} className="px-[20px]">
+            {COPY.funds}
+          </td>
+        </tr>
+        {funds.map((row) => (
+          <Row key={row.key} row={row} selected={selected === row.key} {...rowProps} />
+        ))}
+        <tr data-row="funds_total" className="h-[29px] text-[12px] font-medium hairline-t">
+          <td className="px-[12px]">{COPY.fundsTotal}</td>
+          <td className="pr-[8px] text-right tabular-nums">{money(view.funds_boy)}</td>
+          <td className="pr-[8px] text-right tabular-nums">{money(view.funds_eoy)}</td>
+          <td className="px-[8px] text-[11.5px] font-normal text-ink-3">{COPY.refs.tb}</td>
+        </tr>
+        {brokerage.map((row) => (
           <Row key={row.key} row={row} selected={selected === row.key} {...rowProps} />
         ))}
         <tr data-row="total" className="h-[29px] text-[12px] font-medium hairline-t">
