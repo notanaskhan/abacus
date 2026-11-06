@@ -1,5 +1,25 @@
 // SHL-08 copy, verbatim from the handoff (SHL-08 spec.md frames A, B, E, F; revision R2 change 4).
 export const COPY = {
+  // P-11-T31: how a page's words were read, in the status words of the copy registry (DF-31).
+  ocr: {
+    textLayer: "Text from the PDF",
+    read: "Text read by OCR",
+    readConfidence: (pct: number) => `Text read by OCR · ${String(pct)}% confidence`,
+    none: "No readable text on this page",
+    low: "Low confidence",
+    lowLabel: (n: number) => `${String(n)} fields read with low confidence`,
+    retry: "Read text again",
+    refused: {
+      kill_switch: "Text reading is paused.",
+      flag_off: "Text reading is off for this firm.",
+      provider_terms: "Text reading isn't permitted under the current provider terms.",
+      boundary_basis: "Text reading isn't permitted for this firm.",
+      consent_7216: "Text reading needs the taxpayer's consent.",
+      daily_page_cap: "Today's text-reading limit is reached.",
+      size_limit: "This file is too large for text reading.",
+      provider_error: "Text reading didn't finish. Try again.",
+    },
+  },
   figure: (name: string | null): string =>
     name === null ? "Linked figure" : `Linked figure · ${name}`,
   source: (n: number, of: number): string => `Source ${String(n)} of ${String(of)}`,

@@ -38,6 +38,7 @@ import { COPY } from "./copy";
 import { LinkedFigures } from "./LinkedFigures";
 import { type MaskedReveal, RevealLine, useMaskedReveal } from "./MaskedValue";
 import { type LockedTarget, UnlockPanel } from "./UnlockPanel";
+import { OcrNotes } from "./OcrNotes";
 import { type ViewerData, useViewerData } from "./useViewerManifest";
 
 export interface ViewerAnchor {
@@ -337,6 +338,15 @@ export function EvidenceViewerBody({
       />
     ) : undefined;
   const { reveal } = viewer;
+  // P-11-T31: the page the lit region sits on (page 1 when nothing is lit), read how, what's low.
+  const ocrNotes = (
+    <OcrNotes
+      versionId={viewer.versionId}
+      pages={data.manifest?.pages ?? []}
+      page={data.file.regions.find((r) => r.match === match)?.page ?? 1}
+      canRetry={(data.manifest?.allowed_actions ?? []).includes("evidence.ocr_retry")}
+    />
+  );
   const line =
     reveal.line !== null || reveal.announce !== "" || viewer.found !== null ? (
       <>
@@ -348,13 +358,13 @@ export function EvidenceViewerBody({
         )}
       </>
     ) : null;
-  const above =
-    line === null && card === undefined ? undefined : (
-      <>
-        {line}
-        {card}
-      </>
-    );
+  const above = (
+    <>
+      {line}
+      {ocrNotes}
+      {card}
+    </>
+  );
   return (
     <>
       <RevealStepUp open={reveal.stepUp} onOpenChange={reveal.setStepUp} />
@@ -375,7 +385,7 @@ export function EvidenceViewerBody({
         {...(stack !== null && match !== null
           ? { stack: { match, edges: stack.items.length > 2 ? 2 : 1 } as const }
           : {})}
-        {...(above === undefined ? {} : { aboveWell: above })}
+        aboveWell={above}
         {...(reveal.slot === undefined ? {} : { reveal: reveal.slot })}
         onFind={viewer.onFind}
         {...(viewer.alsoCited === null || host === "dock"
