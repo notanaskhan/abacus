@@ -899,6 +899,17 @@ class EligibilitySampleRowOut(BaseModel):
     missed_match: Annotated[Decimal | None, classified("confidential")] = None
 
 
+class EntryRuleOut(BaseModel):
+    """The entry rule EBP-03 computed from: the verified provisions' (A-05-T16; DEC-2482). While it
+    is `unverified` or `unreadable` the ages and months are null and no row has an entry date."""
+
+    model_config = ConfigDict(frozen=True)
+
+    state: Annotated[Literal["verified", "unverified", "unreadable"], classified("internal")]
+    minimum_age: Annotated[int | None, Field(ge=0, le=99), classified("internal")] = None
+    service_months: Annotated[int | None, Field(ge=0, le=99), classified("internal")] = None
+
+
 class EligibilitySampleOut(BaseModel):
     """EBP-03's sample read: the rows, the tallies and the rungs the header shows."""
 
@@ -914,6 +925,7 @@ class EligibilitySampleOut(BaseModel):
     allowed_actions: Annotated[list[str], classified("internal")]
     # DEC-2328: the paper an exception's AUD-15 draft finding sits on.
     workpaper_id: Annotated[UUID | None, classified("internal")] = None
+    entry_rule: Annotated[EntryRuleOut, classified("internal")]
 
 
 async def _gate(ctx: AuthContext, work_item_id: UUID, action: str, flag: Flag) -> None:

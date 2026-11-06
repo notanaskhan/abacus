@@ -3,9 +3,10 @@
 Code computes every eligibility figure EBP-03 shows; the model only reads the HR record's fields
 (mode `ebp_attribute`), and a person concludes each row.
 
-- **Entry** (the verified provision, never the draft): the first of the month following the later
-  of the participant's 21st birthday and hire + 3 months (a birthday on Feb 29 counts from Feb 28
-  in a common year; hire + 3 months keeps the day, clamped to the month's end).
+- **Entry** (the verified provision, never the draft; `EntryRule`, read by `entry_rule_from`): the
+  first of the month following the later of the participant's birthday at the minimum age and hire
+  plus the service months (21 and 3 on Northwind; a birthday on Feb 29 counts from Feb 28 in a
+  common year; hire plus the months keeps the day, clamped to the month's end).
 - **Auto-escalation** (QACA): the default rate, plus the step for each plan year after the year of
   entry, to the cap (6% + 1% a year to 15%: a 2023 entrant is at 8% for 2025, a 2025 entrant 6%).
 - **Missed amounts** (a missed auto-enrollment): the missed deferral at the default rate and the
@@ -24,13 +25,15 @@ from __future__ import annotations
 import calendar
 import hashlib
 import json
-from collections.abc import Sequence
+import re
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal, localcontext
 from typing import Final
 
 from abacus.kernel.numeric import CONTEXT, quantize_half_up
+from abacus.modules.assurance.compute.ebp.provisions import normalise
 
 ENGINE_NAME: Final = "ebp_eligibility"
 ENGINE_VERSION: Final = "1"
@@ -49,9 +52,31 @@ QACA: Final = Escalation()
 
 
 @dataclass(frozen=True)
+class EntryRule:
+    """A plan's entry rule. EBP-03 builds it from the verified provisions; the default is
+    Northwind's, the engine's own golden figures."""
+
+    minimum_age: int = 21
+    service_months: int = 3
+
+
+STANDARD_RULE: Final = EntryRule()
+ENTRY_RULE_KEYS: Final = ("minimum_age", "service_requirement", "entry_dates")
+# Checked on the raw wording: `normalise` strips symbols, so "<21", "≠21" or "-3 months" would read
+# as a value.
+_READABLE: Final = re.compile(r"[A-Za-z0-9 (),.]+")
+_AGE: Final = re.compile(r"(?:age )?([0-9]{1,2})(?: year)?(?: old)?")
+_SERVICE: Final = re.compile(r"([0-9]{1,2}) month(?: of)?(?: elapsed time| service)?")
+_ENTRY_DATES: Final = frozenset(
+    {"first of month following", "first of month following eligibility"}
+)
+
+
+@dataclass(frozen=True)
 class Entry:
-    eligible_on: date  # the later of age 21 and hire + 3 months
+    eligible_on: date  # the later of the minimum age and hire plus the service months
     entry_on: date
+    service_on: date  # hire plus the service months: what may be shown (DEC-2225)
     inputs_hash: str
     engine_name: str = ENGINE_NAME
     engine_version: str = ENGINE_VERSION
@@ -108,10 +133,35 @@ def first_of_following_month(day: date) -> date:
     return date(day.year + 1, 1, 1) if day.month == 12 else date(day.year, day.month + 1, 1)
 
 
-def entry(dob: date, hire_date: date) -> Entry:
-    eligible = max(birthday(dob, 21), add_months(hire_date, 3))
+def entry_rule_from(provisions: Mapping[str, str]) -> EntryRule | None:
+    """The rule the verified wording states, or None: a wording code cannot read exactly (quarterly
+    entry dates, a year of service in hours) is left for a person, never guessed at."""
+    raw = [provisions.get(key, "") for key in ENTRY_RULE_KEYS]
+    if not all(_READABLE.fullmatch(wording) for wording in raw):
+        return None
+    age = _AGE.fullmatch(normalise(raw[0]))
+    service = _SERVICE.fullmatch(normalise(raw[1]))
+    if age is None or service is None:
+        return None
+    if normalise(raw[2]) not in _ENTRY_DATES:
+        return None
+    return EntryRule(int(age.group(1)), int(service.group(1)))
+
+
+def entry(dob: date, hire_date: date, rule: EntryRule = STANDARD_RULE) -> Entry:
+    served = add_months(hire_date, rule.service_months)
+    eligible = max(birthday(dob, rule.minimum_age), served)
     return Entry(
-        eligible, first_of_following_month(eligible), _hash("entry", dob=dob, hire=hire_date)
+        eligible,
+        first_of_following_month(eligible),
+        served,
+        _hash(
+            "entry",
+            dob=dob,
+            hire=hire_date,
+            minimum_age=rule.minimum_age,
+            service_months=rule.service_months,
+        ),
     )
 
 
@@ -130,10 +180,10 @@ def missed(compensation: Decimal, rule: Escalation = QACA) -> Missed:
     return Missed(deferral, match, _hash("missed", comp=compensation, rate=rule.default_pct))
 
 
-def review(dob: date, census_hire: date, hr_hire: date) -> Review:
+def review(dob: date, census_hire: date, hr_hire: date, rule: EntryRule = STANDARD_RULE) -> Review:
     if census_hire == hr_hire:
         return Review(False, False, None)
-    same = entry(dob, census_hire).entry_on == entry(dob, hr_hire).entry_on
+    same = entry(dob, census_hire, rule).entry_on == entry(dob, hr_hire, rule).entry_on
     return Review(
         True, same, "No effect on entry: both dates give the same entry date" if same else None
     )
