@@ -80,6 +80,7 @@ function frame(state: Ebp03Variant): Scenario {
         ...(cockpit === undefined ? {} : { [COCKPIT]: withEligibility(cockpit) }),
         "GET /v1/me/capabilities": ({ persona }) => json(capabilities(persona)),
         [`GET ${P}/eligibility/sample`]: () => json(sample),
+        "POST /v1/work-items/{work_item_id}/findings": () => json({ id: "fixture-finding" }, 201),
         "PUT /v1/audits/{work_item_id}/tests/{test_id}/items/{item_id}/results/{attribute}": ({
           params,
         }) => {

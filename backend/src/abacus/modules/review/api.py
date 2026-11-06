@@ -72,6 +72,7 @@ from abacus.modules.review.issues import (
     create_issue,
     issue_row,
     record_engine_issue,  # T-01-T26: engine diagnostics
+    record_rule_issue,
 )
 from abacus.modules.review.matrix import review_gate
 from abacus.modules.review.mfa import MfaRequired
@@ -287,6 +288,7 @@ __all__ = [
     "rebuild_human_gates",
     "record_engine_issue",
     "record_import_proposal",
+    "record_rule_issue",
     "record_sign_off",
     "record_text_reads",
     "record_value",

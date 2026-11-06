@@ -17,12 +17,12 @@ updated: 2026-11-06
 Call the responder's `extract` from intake (DEC-2313), and give intakes a way out of `extracting`.
 
 ## Plan
-- `notices/intake_reading.py`: subscribers on `extracted_fields.recorded`, `upload_checks.recorded` and `ocr_run.refused`.
+- `notices/intake_read.py` (main's N-04-T07 read step): with no form map, `_proposed` calls the responder in `extract` mode over masked text and records each value with its run; nothing proposed opens manual entry.
 - `evidence.api`: `form_is_known`, `recorded_form_fields`, `masked_pages`.
 - `extract_fields` returns the run id.
 
 ## Progress log
-- 2026-11-06: built. `tests/integration/backfill/test_n04t19_intake_reading.py` (5) with worker, notices and agents suites: 901 passed. The model call and `form_is_known` are stubbed, so no test runs a real extraction from a page to an intake.
+- 2026-11-06: built, then rebuilt on N-04-T07: its workflow replaces my subscribers. `tests/integration/backfill/test_n04t19_intake_reading.py` (2) with `test_n04t07_intake_read.py`.
 
 ## Decisions made during this task
 DEC-2334

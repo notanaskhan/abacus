@@ -725,6 +725,11 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "/v1/engagements/{engagement_id}/soc-reports/{soc_report_id}/cuecs/{n}",
         "soc_report.evaluate",
     ),
+    (
+        "PATCH",
+        "/v1/engagements/{engagement_id}/soc-reports/{soc_report_id}/exceptions/{co_ref}",
+        "soc_report.evaluate",
+    ),
     ("PATCH", "/v1/engagements/{engagement_id}/workpapers/{workpaper_id}/cells", "workpaper.edit"),
     ("PATCH", "/v1/firm/offices/{office_id}", "org_structure.manage"),
     ("PATCH", "/v1/firm/settings/{section}", "firm.manage_settings"),
@@ -1318,6 +1323,11 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ),
     (
         "POST",
+        "/v1/engagements/{engagement_id}/soc-reports/{soc_report_id}/exceptions/{co_ref}/send-to-findings",
+        "soc_report.evaluate",
+    ),
+    (
+        "POST",
         "/v1/engagements/{engagement_id}/soc-reports/{soc_report_id}/reliance-requests",
         "soc_report.evaluate",
     ),
@@ -1782,7 +1792,6 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/tax-returns/{return_id}/transitions", "tax_return.status_change"),
     ("POST", "/v1/tax-returns/{return_id}/transmissions", "transmission.record"),
     ("POST", "/v1/tax-returns:bulk-assign", "tax_return.assign"),
-    ("POST", "/v1/tax/estimates", "estimate_schedule.update"),
     (
         "POST",
         "/v1/tax/estimates/{schedule_id}/installments/{quarter}/confirmation-requests",

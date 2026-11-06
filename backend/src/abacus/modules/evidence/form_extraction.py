@@ -291,44 +291,6 @@ def _system(tenant_id: UUID) -> TenantContext:
     return TenantContext(tenant_id, "system", "evidence.form_extraction")
 
 
-async def form_is_known(tenant: TenantContext, version_id: UUID) -> bool:
-    """Whether code has a map for this version's form that the firm's extraction covers."""
-    async with tenant_session(tenant) as session:
-        pages = await pages_of(
-            session,
-            evidence_version_id=version_id,
-            inbox_file_id=None,
-            inbox_attachment_id=None,
-            extractor_version=WORDS_VERSION,
-        )
-    layers = [await read_page_layer(tenant.tenant_id, page) for page in pages]
-    form_map = identify(layers)
-    if form_map is None:
-        return False
-    return covers(await flag_variant(tenant, EVIDENCE_FORM_EXTRACTION), form_map.family)
-
-
-async def recorded_form_fields(
-    tenant: TenantContext, version_id: UUID
-) -> list[dict[str, Any]]:  # Any: columns of a result row
-    """The boxes code read: never a sealed value, only the plain text a reader may be shown."""
-    async with tenant_session(tenant) as session:
-        rows = (
-            (
-                await session.execute(
-                    text(
-                        "SELECT field_key, value_text, confidence, low_confidence "
-                        "FROM extracted_fields WHERE evidence_version_id = :v"
-                    ),
-                    {"v": version_id},
-                )
-            )
-            .mappings()
-            .all()
-        )
-    return [dict(r) for r in rows]
-
-
 async def extract_version(tenant_id: UUID, version_id: UUID) -> int:
     """`forms.extract`: identify, extract and record; returns the fields written. Idempotent."""
     tenant = _system(tenant_id)

@@ -331,3 +331,18 @@ async def status_of(tenant: TenantContext, work_item_id: UUID) -> str:
 
 async def on_day(ctx: AuthContext) -> date:
     return await today(ctx.tenant)
+
+
+async def notice_letter_version(tenant: TenantContext, notice_id: UUID) -> UUID | None:
+    """The evidence version of the letter the notice was opened from (N-04-T11's word layer)."""
+    async with tenant_session(tenant) as session:
+        found = (
+            await session.execute(
+                text(
+                    "SELECT evidence_version_id FROM notice_intakes "
+                    "WHERE created_work_item_id = :w ORDER BY created_at LIMIT 1"
+                ),
+                {"w": notice_id},
+            )
+        ).scalar()
+    return None if found is None else UUID(str(found))

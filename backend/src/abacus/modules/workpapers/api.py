@@ -20,6 +20,7 @@ from abacus.modules.workpapers.attribute_grid import (
     create_test,
     exception_prefill,
     grid,
+    latest_test_of_variant,
     mark,
     record_agent_result,
     test_facts,
@@ -42,6 +43,7 @@ from abacus.modules.workpapers.drafting import (
     apply_cell_suggestion,
     draft_paper,
     paper_engagement,
+    paper_id_of_kind,
     paper_of_kind,
 )
 from abacus.modules.workpapers.guards import register_sign_off_guard
@@ -135,11 +137,13 @@ __all__ = [
     "draft_paper",
     "exception_prefill",
     "grid",
+    "latest_test_of_variant",
     "link_issue",
     "mark",
     "matrix_sections",  # A-06-T23: AUD-17 sections by paper kind
     "pack_errors",
     "paper_engagement",
+    "paper_id_of_kind",
     "paper_of_kind",
     "record_agent_result",
     "register_designed_layout",

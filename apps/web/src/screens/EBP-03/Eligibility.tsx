@@ -1,5 +1,6 @@
 import type { EligibilitySampleRowOut } from "@abacus/api-client";
 import {
+  auditFindingCreateMutation,
   ebpEligibilitySampleOptions,
   ebpEligibilitySampleQueryKey,
   ebpTestMarkMutation,
@@ -14,6 +15,7 @@ import {
   type ViewState,
   amount,
   cn,
+  toast,
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
@@ -135,6 +137,16 @@ export function useEligibilityCanvas(
       void queryClient.invalidateQueries({ queryKey: ebpEligibilitySampleQueryKey(path) });
     },
   });
+  // "Raise exception…": an AUD-15 draft finding on the paper, naming the sample's exceptions.
+  const raise = useMutation({
+    ...auditFindingCreateMutation(),
+    onSuccess: () => {
+      toast.show({ kind: "success", text: COPY.raised });
+    },
+    onError: () => {
+      toast.show({ kind: "error", text: COPY.raiseFailed });
+    },
+  });
   const [chosen, setChosen] = useState<number | null>(null);
 
   let state: ViewState = { kind: "ready" };
@@ -189,7 +201,7 @@ export function useEligibilityCanvas(
           disabled={!adopted || pending || data.reviewed_by != null}
           {...(adopted ? {} : { title: COPY.adoptFirst })}
           onClick={() => {
-            if (data !== undefined) onSignOff?.(data.test_id, "L2");
+            if (data?.test_id != null) onSignOff?.(data.test_id, "L2");
           }}
         />
         <PaneAction icon="file" label={COPY.sourceDocs} />
@@ -204,7 +216,7 @@ export function useEligibilityCanvas(
               size="sm"
               disabled={pending}
               onClick={() => {
-                onSignOff?.(data.test_id, "L1");
+                if (data.test_id != null) onSignOff?.(data.test_id, "L1");
               }}
             >
               {COPY.adopt}
@@ -305,6 +317,7 @@ export function useEligibilityCanvas(
                         row={r}
                         canMark={canMark}
                         onMark={() => {
+                          if (data.test_id == null) return;
                           mark.mutate({
                             path: {
                               work_item_id: workItemId,
@@ -356,7 +369,25 @@ export function useEligibilityCanvas(
                 <Button
                   variant="tonal"
                   size="sm"
-                  {...(onRaise === undefined ? {} : { onClick: onRaise })}
+                  disabled={
+                    raise.isPending ||
+                    raise.isSuccess ||
+                    data.workpaper_id == null ||
+                    !data.allowed_actions.includes("finding.create")
+                  }
+                  onClick={() => {
+                    if (data.workpaper_id == null) return;
+                    raise.mutate({
+                      path: { work_item_id: workItemId },
+                      body: {
+                        title: COPY.findingTitle(exceptions.length),
+                        kind: "compliance",
+                        workpaper_id: data.workpaper_id,
+                      },
+                      headers: { "Idempotency-Key": crypto.randomUUID() },
+                    });
+                    onRaise?.();
+                  }}
                 >
                   {COPY.raise}
                 </Button>
