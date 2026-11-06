@@ -181,6 +181,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.requests.portal_questionnaires.AnswerInvalid
+  approval_kind_not_registered:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.client_approvals.ApprovalKindNotRegistered
+    summary: 'No provider is registered for this kind (AC-1): nothing is written.'
   approval_required:
     status: 409
     raised_by:
@@ -211,8 +216,10 @@ codes:
   archived:
     status: 409
     raised_by:
+    - abacus.kernel.errors.RowArchived
     - abacus.modules.assurance.completion_errors.Archived
-    summary: 'The work item is locked: nothing changes outside an `archived_write` kind.'
+    summary: '`archived_guard()` refused a write (A-07-T13; SQLSTATE AB409): the work item is locked,
+      or its engagement archived. The API answers 409 `archived`, whichever route reached the row.'
   attachment_filed:
     status: 409
     raised_by:
@@ -675,6 +682,11 @@ codes:
     - abacus.modules.engagements.drafts.DraftIncomplete
     - abacus.modules.engagements.intake.IntakeIncomplete
     summary: 'A step of the draft still has a problem (`facts.step`): validate it to see which.'
+  draft_without_watermark:
+    status: 422
+    raised_by:
+    - abacus.modules.reporting.deliverables.DraftWithoutWatermark
+    summary: A draft version whose P-11 generated document carries no DRAFT watermark (AC-18).
   drafted_guidance_not_allowed:
     status: 409
     raised_by:
@@ -1354,6 +1366,11 @@ codes:
     raised_by:
     - abacus.modules.review.issue_resolutions.IssueStatusRefused
     summary: The issue cannot move there from where it is (`facts.status`).
+  item_changed:
+    status: 409
+    raised_by:
+    - abacus.modules.engagements.client_approvals.ItemChanged
+    summary: 'The decide call''s `seen_hash` is not the item''s current one (AC-4): reload.'
   item_closed:
     status: 409
     raised_by:
@@ -3024,6 +3041,10 @@ codes:
     - abacus.modules.organisations.tin.TinKindNotAllowed
     summary: An SSN or ITIN can't be stored for a firm that isn't synthetic until the §7216 consent gate
       (C19) lands; an EIN can (P-07 OQ-4, DEC-52).
+  tool_not_registered:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.tools.registry.ToolNotRegistered
   transcript_not_comparable:
     status: 409
     raised_by:

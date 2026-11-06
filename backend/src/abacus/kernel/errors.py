@@ -59,6 +59,13 @@ class DomainConflict(_Coded):
     code: ClassVar[str] = "conflict"
 
 
+class RowArchived(DomainConflict):
+    """`archived_guard()` refused a write (A-07-T13; SQLSTATE AB409): the work item is locked, or
+    its engagement archived. The API answers 409 `archived`, whichever route reached the row."""
+
+    code = "archived"
+
+
 class DomainInvalid(_Coded):
     """The request is well-formed but breaks a domain rule: 422 with the class's fixed `code`
     (never a message from the request or the database)."""

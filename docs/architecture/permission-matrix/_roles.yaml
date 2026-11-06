@@ -15,6 +15,8 @@
 #   walled: deny              ADR-026 — overrides every role
 #   tenant_mismatch: deny     ADR-014 / ADR-023
 #   archived_write: deny      archived engagements are read-only
+#   archived_exempt: <kind>   A-07-T14: this action still acts after a lock (archive_addition,
+#                             verify, legal_hold, export); ADR P-43's trigger guards the rest
 #   access_expired: deny      expired client grants and connections
 #
 # Roles without an engagement relationship (firm_admin, practice_leader, quality_partner)
