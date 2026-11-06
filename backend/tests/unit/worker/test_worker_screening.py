@@ -127,6 +127,8 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "engagement_export.expired",
         "engagement_export.voided",
         "proposed_entries.sent_to_client",  # A-06-T10: the held send goes out after commit
+        "questionnaire.answered",  # T-03-T04: an answer's effects run after commit
+        "attribute_test.version_created",  # A-05-T22: a sign-off on the older version goes stale
         # P-07-T47 (DEC-539): the C13 projector's engagement gates.
         "acceptance.decided",
         "independence.confirmed",
