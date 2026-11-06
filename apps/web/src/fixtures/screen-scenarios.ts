@@ -32,8 +32,12 @@ import { scenarios as aud17 } from "./scenarios/AUD-17";
 import { scenarios as aud18 } from "./scenarios/AUD-18";
 import { scenarios as aud20 } from "./scenarios/AUD-20";
 import { OPENS as NOT01_OPENS, scenarios as not01 } from "./scenarios/NOT-01";
+import { scenarios as bnd03 } from "./scenarios/BND-03";
+import { BND03_QUESTIONNAIRE } from "./seed/bnd03";
+import { scenarios as not02 } from "./scenarios/NOT-02";
+import { NOT02_NOTICE } from "./seed/not02";
 import { scenarios as not03 } from "./scenarios/NOT-03";
-import { scenarios as tax13 } from "./scenarios/TAX-13";
+import { TAX13_OPENS, scenarios as tax13 } from "./scenarios/TAX-13";
 import { IDS as AUD03_IDS, scenarios as aud03 } from "./scenarios/AUD-03";
 import { NORTHWIND_AUDIT } from "./scenarios/AUD-06";
 import { scenarios as aud08 } from "./scenarios/AUD-08";
@@ -108,6 +112,13 @@ interface ScreenScenarios {
   opens: Readonly<Record<string, string>>;
   /** Per state, the ids of the records it opens (`binderId`, `requestId`). */
   ids?: Readonly<Record<string, Readonly<Record<string, string | null>>>>;
+}
+
+/** Every state of NOT-02 and NOT-03 opens on the Whitley notice (`_noticeId_` in a journey path). */
+function noticeIds(
+  scenarios: Readonly<Record<string, unknown>>,
+): Record<string, { noticeId: string }> {
+  return Object.fromEntries(Object.keys(scenarios).map((s) => [s, { noticeId: NOT02_NOTICE }]));
 }
 
 /** Every state of a Northwind audit screen opens on its audit (`_auditId_` in a journey path). */
@@ -220,9 +231,17 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
   },
   "KNW-01": { scenarios: knw01, opens: {} }, // K-01-T04
   "KNW-04": { scenarios: knw04, opens: {} }, // K-02-T13
-  "NOT-03": { scenarios: not03, opens: {} }, // N-04-T20
-  "TAX-13": { scenarios: tax13, opens: {} }, // T-03-T11
+  "NOT-02": { scenarios: not02, opens: {}, ids: noticeIds(not02) }, // N-04-T26
+  "NOT-03": { scenarios: not03, opens: {}, ids: noticeIds(not03) }, // N-04-T20, T26
+  "TAX-13": { scenarios: tax13, opens: TAX13_OPENS }, // T-03-T11, T16
   "NOT-01": { scenarios: not01, opens: NOT01_OPENS }, // N-04-T05: j09 1 (T26)
+  "BND-03": {
+    scenarios: bnd03,
+    opens: {},
+    ids: Object.fromEntries(
+      Object.keys(bnd03).map((s) => [s, { questionnaireId: BND03_QUESTIONNAIRE }]),
+    ),
+  }, // T-03-T17
   "SHL-03": { scenarios: shl03, opens: {} },
   "SHL-04": { scenarios: shl04, opens: {} },
   "SHL-14": {
