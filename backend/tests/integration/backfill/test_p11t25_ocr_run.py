@@ -19,7 +19,7 @@ from PIL import Image
 from abacus.kernel.db import TenantContext
 from abacus.kernel.ocr import Api, FakeOcr, OcrKeyValue, OcrPage, OcrWord
 from abacus.kernel.uow import uow
-from abacus.modules.evidence import masked_previews, ocr_step, pii
+from abacus.modules.evidence import masked_previews, ocr_gate, ocr_step, pii
 from abacus.modules.evidence.api import (
     LongOcr,
     NewItem,
@@ -279,3 +279,17 @@ async def test_ac_a_long_scan_hands_off_and_the_route_stays_short_otherwise(
     monkeypatch.setattr(ocr_step, "BACKGROUND_ABOVE_PAGES", 0)
     assert await ocr_step.route_ocr(given) == ocr_step.LONG
     assert started == [(LongOcr, given)]
+
+
+async def test_ac_a_forms_call_counts_towards_the_next_reads_cap(
+    world: Books, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    version, _ = await _scan(world)
+    tenant = TenantContext(world.tenant_id, "system", "ocr:test")
+    await ocr_gate.record_run(
+        tenant, evidence_version_id=version, inbox_file_id=None, provider="fake",
+        api=ocr_step.FORMS_API, pages=[1, 2], refused=None, synthetic_firm=True, request_ids=[],
+    )  # fmt: skip
+    monkeypatch.setattr(ocr_gate, "DAILY_PAGE_CAP", 3)
+    assert not await ocr_gate.over_daily_cap(tenant, 1)
+    assert await ocr_gate.over_daily_cap(tenant, 2)
