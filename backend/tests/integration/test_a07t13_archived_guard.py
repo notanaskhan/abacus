@@ -52,19 +52,18 @@ def test_a_write_to_a_guarded_table_raises_archived(private_db: sc.Database) -> 
     who, engagement_id, work_item = asyncio.run(_locked(seeder))
 
     # The guard reads the work item under RLS, so it needs the firm's GUC, as every app write has.
-    async def _write() -> None:
-        async with seeder.held() as conn, conn.transaction():
-            await conn.execute("SELECT set_config('app.tenant_id', $1, true)", str(who.tenant_id))
-            await conn.execute(
+    with pytest.raises(asyncpg.PostgresError, match="archived") as raised:
+        asyncio.run(
+            seeder.as_actor(
+                who.tenant_id,
+                ("human", str(who.user_id)),
                 "INSERT INTO accounting_estimates (tenant_id, engagement_id, work_item_id, name, "
                 "created_by_kind) VALUES ($1, $2, $3, 'Fair value', 'human')",
                 who.tenant_id,
                 engagement_id,
                 work_item,
             )
-
-    with pytest.raises(asyncpg.PostgresError, match="archived") as raised:
-        asyncio.run(_write())
+        )
     assert raised.value.sqlstate == "AB409"
 
 
@@ -79,20 +78,20 @@ def test_the_kind_lets_only_its_tables_through(private_db: sc.Database) -> None:
     seeder = Seeder(private_db.superuser_dsn)
     who, engagement_id, work_item = asyncio.run(_locked(seeder))
 
-    async def _with_kind(kind: str) -> None:
-        async with seeder.held() as conn, conn.transaction():
-            await conn.execute("SELECT set_config('app.tenant_id', $1, true)", str(who.tenant_id))
-            await conn.execute("SELECT set_config('app.archived_write', $1, true)", kind)
-            await conn.execute(
+    # A kind this table doesn't name lets nothing through.
+    with pytest.raises(asyncpg.PostgresError, match="archived"):
+        asyncio.run(
+            seeder.as_actor(
+                who.tenant_id,
+                ("human", str(who.user_id)),
                 "INSERT INTO accounting_estimates (tenant_id, engagement_id, work_item_id, "
                 "name, created_by_kind) VALUES ($1, $2, $3, 'x', 'human')",
                 who.tenant_id,
                 engagement_id,
                 work_item,
+                archived_write="archive_addition",
             )
-
-    with pytest.raises(asyncpg.PostgresError, match="archived"):
-        asyncio.run(_with_kind("archive_addition"))
+        )
 
 
 def test_the_trail_goes_on(private_db: sc.Database) -> None:

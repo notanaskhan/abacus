@@ -5287,6 +5287,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Amount"
           },
           "decided_at": {
@@ -5489,6 +5490,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Amount"
           },
           "decided_at": {
@@ -5611,6 +5613,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Credit"
           },
           "debit": {
@@ -5624,6 +5627,7 @@
                 "type": "null"
               }
             ],
+            "cls": "confidential",
             "title": "Debit"
           }
         },
@@ -66384,6 +66388,7 @@
                 "type": "null"
               }
             ],
+            "cls": "restricted",
             "title": "Note"
           },
           "reason_code": {
@@ -74141,6 +74146,7 @@
                 "type": "null"
               }
             ],
+            "cls": "restricted",
             "title": "Reason"
           },
           "seen_hash": {
