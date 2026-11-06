@@ -118,8 +118,6 @@ class RequestItemView:
     # SPEC-020: whether client users see it, and the client contributor it's assigned to.
     client_visible: bool = True
     client_assignee_user_id: UUID | None = None
-    # T-03-T07: set on a new item, for a confirmation request's reply.
-    request_list_id: UUID | None = None
     # SPEC-022: what an A item needs, where its tier came from, and whether the live connection
     # can deliver it now.
     dataset: str | None = None
@@ -141,6 +139,8 @@ class RequestItemView:
     # SPEC-032 (TASK-062): comments the reader may see on it and its versions; any unread.
     comment_count: int = 0
     unread_comments: bool = False
+    # T-03-T07: set on a new item, for a confirmation request's reply.
+    request_list_id: UUID | None = None
 
 
 def _view(

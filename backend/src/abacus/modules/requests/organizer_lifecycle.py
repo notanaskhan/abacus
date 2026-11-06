@@ -2,8 +2,8 @@
 
 A template's versions come in two kinds. T-02's imported versions hold their structure in
 `content`. An editor version holds it in a questionnaire of its own (`owner_kind` =
-`template_version`). Both read here as `Section` rows, so a draft, a diff and a binder's organizer
-treat them the same.
+`template_version`). Both read here as `Group` rows, so a draft, a comparison and a binder's
+organizer treat them the same.
 
 - **Draft.** From the newest published version, or blank when there is none; one at a time
   (409 `draft_exists`).
@@ -73,7 +73,7 @@ class Question:
 
 
 @dataclass(frozen=True)
-class Section:
+class Group:
     key: str
     name: str
     icon_key: str | None
@@ -120,11 +120,11 @@ def _status(stored: str | None, published_at: datetime | None) -> str:
 
 async def structure_of(
     session: AsyncSession, content: object, questionnaire_id: UUID | None
-) -> tuple[Section, ...]:
+) -> tuple[Group, ...]:
     """A version's sections and questions, from whichever place it holds them."""
     if questionnaire_id is None:
         return tuple(
-            Section(
+            Group(
                 f"s{index}",
                 s.name,
                 s.icon_key,
@@ -173,7 +173,7 @@ async def structure_of(
         .all()
     )
     return tuple(
-        Section(
+        Group(
             s.key,
             s.name,
             s.icon_key,
@@ -204,7 +204,7 @@ async def insert_structure(
     tx: UnitOfWork,
     ctx: AuthContext,
     questionnaire_id: UUID,
-    sections: tuple[Section, ...],
+    sections: tuple[Group, ...],
     *,
     prior: dict[str, Any],  # Any: JSON from the database or the document
 ) -> int:
@@ -456,13 +456,11 @@ async def discard(ctx: AuthContext, template_id: UUID, version: int) -> VersionV
     )
 
 
-def _flat(sections: tuple[Section, ...]) -> dict[str, Question]:
+def _flat(sections: tuple[Group, ...]) -> dict[str, Question]:
     return {q.key: q for s in sections for q in s.questions}
 
 
-def diff_of(
-    before: tuple[Section, ...], after: tuple[Section, ...]
-) -> list[dict[str, str | None]]:
+def changes_of(before: tuple[Group, ...], after: tuple[Group, ...]) -> list[dict[str, str | None]]:
     """Questions by key in key order: added, removed, and changed in any field."""
     old, new = _flat(before), _flat(after)
     out: list[dict[str, str | None]] = []
@@ -482,7 +480,7 @@ def diff_of(
     return out
 
 
-async def diff(
+async def version_changes(
     ctx: AuthContext, template_id: UUID, version: int, against: int | None
 ) -> tuple[int, list[dict[str, str | None]]]:
     """`version` against `against`, by default the version it was drafted from, else the one
@@ -503,15 +501,14 @@ async def diff(
         current = rows.get(version)
         if current is None:
             raise NotFound("questionnaire_template_version")
-        if against is None:
-            drafted_from = next(
-                (v for v, r in rows.items() if r.id == current.drafted_from_version_id), None
-            )
-            against = drafted_from if drafted_from is not None else version - 1
-        other = rows.get(against)
+        drafted_from = next(
+            (v for v, r in rows.items() if r.id == current.drafted_from_version_id), None
+        )
+        base = against if against is not None else drafted_from or version - 1
+        other = rows.get(base)
         if other is None:
             raise NotFound("questionnaire_template_version")
-        return against, diff_of(
+        return base, changes_of(
             await structure_of(session, other.content, other.questionnaire_id),
             await structure_of(session, current.content, current.questionnaire_id),
         )
@@ -538,19 +535,19 @@ async def version_for(ctx: AuthContext, template_key: str, tax_year: int) -> UUI
 
 __all__ = [
     "DraftExists",
+    "Group",
     "OwnerNotPartner",
     "Question",
-    "Section",
     "TemplateDetail",
     "VersionPublished",
     "VersionView",
     "assign_owner",
+    "changes_of",
     "detail",
-    "diff",
-    "diff_of",
     "discard",
     "insert_structure",
     "new_draft",
     "structure_of",
+    "version_changes",
     "version_for",
 ]

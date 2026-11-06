@@ -40,11 +40,7 @@ export const taxExtensionsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/tax-returns/extensions",
   component: function TaxExtensionsPage(): JSX.Element {
-    return gated(
-      <Extensions
-        taxYear={2025}
-      />,
-    );
+    return gated(<Extensions taxYear={2025} />);
   },
 });
 

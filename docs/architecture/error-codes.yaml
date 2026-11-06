@@ -318,6 +318,10 @@ codes:
     raised_by:
     - abacus.modules.assurance.completion_errors.ChecklistIncomplete
     summary: An item or an EQR note is still open (EQR concurrence, archive lock).
+  checklist_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.disclosure_checklists.ChecklistRefused
   checklist_unmet:
     status: 409
     raised_by:
@@ -1277,6 +1281,10 @@ codes:
     raised_by:
     - abacus.modules.identity.annual_independence.StatementMissing
     summary: The firm has not published its independence statement yet, so there is nothing to confirm.
+  installment_not_required:
+    status: 422
+    raised_by:
+    - abacus.modules.tax.estimates.InstallmentNotRequired
   intake_not_allowed:
     status: 409
     raised_by:
@@ -1655,6 +1663,11 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.tax.filing.NoAuthorizationForm
+  no_basis_return:
+    status: 409
+    raised_by:
+    - abacus.modules.tax.estimates.NoBasisReturn
+    summary: A confirmation request needs the basis return's engagement to live in.
   no_client_copy:
     status: 409
     raised_by:
@@ -3158,6 +3171,7 @@ codes:
     - abacus.modules.notices.intake.IntakeMoved
     - abacus.modules.notices.service.VersionConflict
     - abacus.modules.reporting.statements.StaleAnswer
+    - abacus.modules.tax.estimates.ScheduleMoved
     - abacus.modules.tax.extensions.ExtensionMoved
     - abacus.modules.workpapers.attribute_grid.TestMoved
     - abacus.modules.workpapers.core.VersionConflict
@@ -3188,6 +3202,7 @@ codes:
   version_published:
     status: 409
     raised_by:
+    - abacus.modules.methodology.disclosure_checklists.ChecklistPublished
     - abacus.modules.requests.organizer_lifecycle.VersionPublished
     - abacus.modules.requests.questionnaire_editor.VersionPublished
     - abacus.modules.requests.questionnaires.AlreadyPublished

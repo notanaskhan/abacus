@@ -1,6 +1,6 @@
 ---
 id: TASK-3342
-title: T-03-T11: TAX-13 leaves planned with its designed links wired
+title: T-03-T11 TAX-13 leaves planned with its designed links wired
 spec: SPEC-000  # row (T-03-T11)
 acceptance_criteria: [AC-1]
 risk_zone: green

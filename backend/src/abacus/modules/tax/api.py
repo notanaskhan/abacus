@@ -142,6 +142,16 @@ SUBSCRIPTIONS = {
 WORKFLOWS: dict[type, str] = {**k1_release.WORKFLOWS}
 ACTIVITIES: tuple[object, ...] = k1_release.ACTIVITIES
 
+from abacus.modules.tax.estimates import create as create_estimate  # noqa: E402 -- T-03-T15
+from abacus.modules.tax.estimates import patch_installment  # noqa: E402 -- T-03-T15
+from abacus.modules.tax.extensions import (  # noqa: E402 -- T-03-T15
+    LineIn,
+    PaymentIn,
+    flag_new_likely,
+)
+from abacus.modules.tax.extensions import patch as patch_extension  # noqa: E402 -- T-03-T15
+from abacus.modules.tax.extensions import prepare as prepare_extensions  # noqa: E402 -- T-03-T15
+
 __all__ = [
     "ACTIVITIES",
     "FORM_FOR_RULES",
@@ -155,13 +165,20 @@ __all__ = [
     "K1ReleaseFailure",
     "K1ReleaseInput",
     "K1ReleaseWorkflow",
+    "LineIn",
+    "PaymentIn",
     "StaleReturn",
     "TransitionRefused",
     "apply_transition",
+    "create_estimate",
     "filed_returns",
     "final_approval_eligibility",
+    "flag_new_likely",
     "import_engine_file",
     "next_status",
+    "patch_extension",
+    "patch_installment",
+    "prepare_extensions",
     "recompute_unfiled",
     "record_sync_state",
     "register_due_dates_source",

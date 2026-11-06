@@ -229,6 +229,16 @@ async def questionnaire_from_template(
     return (await attach_organizer(ctx, binder_id, version_id, None)).id
 
 
+from abacus.modules.requests.organizer_lifecycle import (  # noqa: E402 -- T-03-T05
+    assign_owner as assign_template_owner,
+)
+from abacus.modules.requests.questionnaire_editor import (  # noqa: E402 -- T-03-T05
+    editor as questionnaire_editor_read,
+)
+from abacus.modules.requests.questionnaire_editor import (  # noqa: E402 -- T-03-T05
+    save as save_questionnaire,
+)
+
 ROUTERS: tuple[AbacusRouter, ...] = (
     router,
     firm_router,
@@ -310,6 +320,7 @@ __all__ = [
     "add_request_item",
     "answer_effect_handler",
     "apply_drafted_guidance",
+    "assign_template_owner",
     "attach_organizer",
     "awaiting_review",
     "awaiting_review_count",
@@ -357,6 +368,7 @@ __all__ = [
     "prior_year_link",
     "publish_questionnaire_template",
     "questionnaire",
+    "questionnaire_editor_read",
     "questionnaire_from_template",
     "questionnaire_templates",
     "read_item",
@@ -378,6 +390,7 @@ __all__ = [
     "room_items",
     "router",
     "save_portal_answer",
+    "save_questionnaire",
     "screening_subject",
     "selection_engagements",
     "send_question",

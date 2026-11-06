@@ -18,14 +18,15 @@ from decimal import Decimal
 from typing import Any, Final
 from uuid import UUID
 
-from sqlalchemy import text
+from sqlalchemy import RowMapping, text
 
 from abacus.kernel.clock import today
-from abacus.kernel.db import tenant_session
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import work_item_facts
 from abacus.modules.identity.api import AuthContext, walled_from
+from abacus.modules.organisations.api import client_of_entity, entity_name
 from abacus.modules.tax.compute.payments import (
     Stamp,
     installment_amounts,
@@ -87,7 +88,9 @@ class Schedule:
     installments: tuple[Installment, ...]
 
 
-def _computed(row: dict[str, Any]) -> tuple[Decimal | None, Stamp | None, tuple[Decimal, ...]]:
+def _computed(
+    row: dict[str, Any],  # Any: JSON from the database
+) -> tuple[Decimal | None, Stamp | None, tuple[Decimal, ...]]:
     """The annual payment and quarters, or nothing for a not-required or prospect method, or a
     year whose parameters aren't published (never a guess)."""
     if row["method"] not in OWED:
@@ -163,15 +166,10 @@ async def create(
     `quarters` is the demo loader's: its firm has no published rules (DEC-2328). No route passes
     it."""
     walled = await walled_from(ctx.tenant, ctx.user_id)
+    client = await client_of_entity(ctx.tenant, client_entity_id)
+    if client is None or client in walled:
+        raise NotFound("client_entity")
     async with uow(ctx.tenant) as tx:
-        client = (
-            await tx.session.execute(
-                text("SELECT client_id FROM client_entities WHERE id = :e"),
-                {"e": client_entity_id},
-            )
-        ).scalar_one_or_none()
-        if client is None or client in walled:
-            raise NotFound("client_entity")
         row: dict[str, Any] = {  # Any: JSON from the database
             "tax_year": tax_year,
             "jurisdiction": jurisdiction,
@@ -226,9 +224,8 @@ async def schedules(ctx: AuthContext, tax_year: int) -> list[Schedule]:
             (
                 await session.execute(
                     text(
-                        "SELECT s.*, e.client_id, e.name AS client_name FROM estimate_schedules s "
-                        "JOIN client_entities e ON e.id = s.client_entity_id "
-                        "WHERE s.tax_year = :y ORDER BY e.name, s.jurisdiction"
+                        "SELECT * FROM estimate_schedules WHERE tax_year = :y "
+                        "ORDER BY jurisdiction"
                     ),
                     {"y": tax_year},
                 )
@@ -236,7 +233,8 @@ async def schedules(ctx: AuthContext, tax_year: int) -> list[Schedule]:
             .mappings()
             .all()
         )
-        shown = [h for h in heads if h["client_id"] not in walled]
+        facts = await _entity_facts(ctx.tenant, {h["client_entity_id"] for h in heads})
+        shown = [h for h in heads if facts[h["client_entity_id"]][0] not in walled]
         quarters = (
             (
                 await session.execute(
@@ -250,16 +248,35 @@ async def schedules(ctx: AuthContext, tax_year: int) -> list[Schedule]:
             .mappings()
             .all()
         )
-    return [_schedule(h, [q for q in quarters if q["schedule_id"] == h["id"]]) for h in shown]
+    found = [
+        _schedule(
+            h,
+            [q for q in quarters if q["schedule_id"] == h["id"]],
+            facts[h["client_entity_id"]],
+        )
+        for h in shown
+    ]
+    return sorted(found, key=lambda s: s.client_name.lower())
 
 
-def _schedule(h: Mapping[str, Any], quarters: Sequence[Mapping[str, Any]]) -> Schedule:
-    # Any: columns of a result mapping
+async def _entity_facts(
+    tenant: TenantContext, entity_ids: set[UUID]
+) -> dict[UUID, tuple[UUID, str]]:
+    """Each client entity's client and name, from their owner (ADR-008)."""
+    out: dict[UUID, tuple[UUID, str]] = {}
+    for entity in entity_ids:
+        client = await client_of_entity(tenant, entity)
+        if client is not None:
+            out[entity] = (client, await entity_name(tenant, entity) or "")
+    return out
+
+
+def _schedule(h: RowMapping, quarters: Sequence[RowMapping], facts: tuple[UUID, str]) -> Schedule:
     return Schedule(
         h["id"],
         h["client_entity_id"],
-        h["client_id"],
-        h["client_name"],
+        facts[0],
+        facts[1],
         h["basis_tax_return_id"],
         h["tax_year"],
         h["jurisdiction"],
@@ -295,17 +312,19 @@ async def one(ctx: AuthContext, schedule_id: UUID) -> Schedule:
         head = (
             (
                 await session.execute(
-                    text(
-                        "SELECT s.*, e.client_id, e.name AS client_name FROM estimate_schedules s "
-                        "JOIN client_entities e ON e.id = s.client_entity_id WHERE s.id = :s"
-                    ),
+                    text("SELECT * FROM estimate_schedules WHERE id = :s"),
                     {"s": schedule_id},
                 )
             )
             .mappings()
             .first()
         )
-        if head is None or head["client_id"] in walled:
+        if head is None:
+            raise NotFound("estimate_schedule")
+        facts = (await _entity_facts(ctx.tenant, {head["client_entity_id"]})).get(
+            head["client_entity_id"]
+        )
+        if facts is None or facts[0] in walled:
             raise NotFound("estimate_schedule")
         quarters = (
             (
@@ -320,7 +339,7 @@ async def one(ctx: AuthContext, schedule_id: UUID) -> Schedule:
             .mappings()
             .all()
         )
-    return _schedule(head, quarters)
+    return _schedule(head, quarters, facts)
 
 
 async def patch(
@@ -465,11 +484,11 @@ async def request_confirmation(
     return item, await one(ctx, schedule_id)
 
 
-def quarter_of(rows: list[Schedule], quarter: int | None) -> int:
+async def quarter_of(ctx: AuthContext, rows: list[Schedule], quarter: int | None) -> int:
     """The named quarter, else the next one due, else the last."""
     if quarter is not None:
         return quarter
-    on = today()
+    on = await today(ctx.tenant)
     due = sorted(q.due_on for s in rows for q in s.installments if q.due_on >= on)
     if not due:
         return 4

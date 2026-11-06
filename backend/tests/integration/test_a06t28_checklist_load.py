@@ -41,7 +41,8 @@ async def test_ac_the_checklist_is_142_published_items(loaded: Database) -> None
     seed = Seeder(loaded.superuser_dsn)
     (row,) = await seed.rows(
         "SELECT v.status, jsonb_array_length(v.items) AS n, "
-        "v.published_by IS NOT NULL AS by_person FROM disclosure_checklist_template_versions v WHERE v.tenant_id = $1",
+        "v.published_by IS NOT NULL AS by_person FROM disclosure_checklist_template_versions v "
+        "WHERE v.tenant_id = $1",
         loader.TENANT,
     )
     assert (row["status"], row["n"], row["by_person"]) == ("published", 142, True)

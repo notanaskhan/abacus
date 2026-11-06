@@ -28,7 +28,8 @@ def _book(
     book.properties.created = _PINNED
     book.properties.modified = _PINNED
     sheet = book.active
-    assert sheet is not None  # noqa: S101 -- a new workbook always has its first sheet
+    if sheet is None:
+        raise ValueError("a new workbook always has its first sheet")
     sheet.title = title
     sheet.append(header)
     for row in rows:

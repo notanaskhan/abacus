@@ -1,6 +1,6 @@
 ---
 id: TASK-3336
-title: T-03-T07: prepare, submit, estimates, payments union and exports
+title: T-03-T07 prepare, submit, estimates, payments union and exports
 spec: SPEC-000  # row (T-03-T07)
 acceptance_criteria: [AC-1]
 risk_zone: amber

@@ -840,7 +840,7 @@ async def tax_estimates_route(
     from abacus.modules.tax import estimates
 
     found = await estimates.schedules(ctx, tax_year)
-    shown = estimates.quarter_of(found, quarter)
+    shown = await estimates.quarter_of(ctx, found, quarter)
     counts = estimates.tile_counts(found, shown)
     if q:
         found = [s for s in found if q.lower() in s.client_name.lower()]

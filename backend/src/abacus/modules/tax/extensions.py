@@ -625,8 +625,10 @@ async def submit(ctx: AuthContext, extension_ids: Sequence[UUID]) -> int:
     return int(found[0]["tax_year"])
 
 
-async def request_confirmation(ctx: AuthContext, extension_id: UUID) -> tuple[Any, UUID]:
-    """One confirmation request in the return's binder, sent on the click. Any: the item's view."""
+async def request_confirmation(
+    ctx: AuthContext, extension_id: UUID
+) -> tuple[Any, UUID]:  # Any: requests' item view, which tax doesn't import at load
+    """One confirmation request in the return's binder, sent on the click."""
     from abacus.modules.requests.api import NewRequestItem, add_request_item
 
     visible = {f.work_item_id: f for f in await work_item_facts(ctx, KIND)}

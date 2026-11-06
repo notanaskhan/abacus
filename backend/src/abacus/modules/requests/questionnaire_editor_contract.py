@@ -791,7 +791,7 @@ async def template_diff_route(
     await _gate(ctx, "questionnaire_template.read")
     from abacus.modules.requests import organizer_lifecycle
 
-    base, changes = await organizer_lifecycle.diff(ctx, template_id, version, against)
+    base, changes = await organizer_lifecycle.version_changes(ctx, template_id, version, against)
     return TemplateDiffOut(
         version=version,
         against=base,

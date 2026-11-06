@@ -17,6 +17,7 @@ from openpyxl import load_workbook
 
 from abacus.kernel.clock import frozen
 from abacus.modules.engagements.gates import GateFact
+from abacus.modules.identity.api import AuthContext
 from abacus.modules.tax import estimates, extensions
 
 from . import test_t02t09_practice_board as t02t09
@@ -74,7 +75,7 @@ async def _setup(b: Board) -> tuple[uuid.UUID, uuid.UUID]:
 
 async def _member(
     b: Board, name: str, engagement: uuid.UUID, role: str, function: str = "first_level_reviewer"
-) -> object:
+) -> AuthContext:
     person = await b.person(name, None)
     await b.seed.run(
         "INSERT INTO work_item_assignments (tenant_id, work_item_id, engagement_id, user_id, "
@@ -221,7 +222,7 @@ async def test_a_person_without_the_reviewer_function_cannot_approve(
                 "SELECT submitted_by FROM filing_extensions WHERE id = $1",
                 uuid.UUID(cast(str, extension)),
             )
-            == cast(object, staff).user_id  # type: ignore[attr-defined]
+            == staff.user_id
         )
 
 
@@ -300,6 +301,8 @@ async def test_feld_foots_and_a_prospect_has_no_binder_to_ask_in(
         listed = await call("GET", E, params={"tax_year": YEAR, "quarter": 3})
         assert listed.status_code == 200, listed.text
         assert cast(Json, listed.json()["counts"])["paid"] == 1
+        next_due = await call("GET", E, params={"tax_year": YEAR})
+        assert next_due.status_code == 200, next_due.text
         union = await call("GET", "/v1/tax/payments", params={"tax_year": YEAR})
         assert union.status_code == 200, union.text
         assert [p["source_kind"] for p in cast(list[Json], union.json()["items"])] == [
@@ -315,7 +318,7 @@ async def test_feld_foots_and_a_prospect_has_no_binder_to_ask_in(
             assert row[0].data_type == "s"
 
         prospect = await estimates.create(
-            cast(object, await board.person("Nora Vale", None)),  # type: ignore[arg-type]
+            await board.person("Nora Vale", None),
             cast(uuid.UUID, entity),
             basis_tax_return_id=None,
             tax_year=YEAR + 1,

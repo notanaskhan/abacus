@@ -1,6 +1,6 @@
 ---
 id: TASK-3339
-title: A-06-T28: disclosure checklist import, publish and the 142 items
+title: A-06-T28 disclosure checklist import, publish and the 142 items
 spec: SPEC-000  # row (A-06-T28)
 acceptance_criteria: [AC-1]
 risk_zone: amber
