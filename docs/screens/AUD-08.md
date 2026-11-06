@@ -18,7 +18,7 @@
 | c | hannah-leclerc | 2:30 PM | `?tab=linkage` | R1→Journal entries; R2, R3→EBP-04; R4, R5→EBP-06; R6, R7→EBP-05; R9→EBP-09; R10→Parties in interest + EBP-04; R8 has no dot; EBP-03 outlined "Suggested" | live (EBP targets planned until A-05) |
 | d | hannah-leclerc | 4:40 PM | E0 | Margaret decided at 4:40 PM: R3 "Approved · MO", R5 "Rebuttal approved · MO", every row "EP approved"; G4 met | live |
 | e | hannah-leclerc | 2:30 PM | override | "Revising after Internal Control…": a `risk` run for R3 started by the re-draft consumer, skeleton rows, polling C6 v1 | live; spinner masked until P-09 |
-| f | hannah-leclerc | 2:30 PM | `?ov=risk:R8` | R8's rationale, assertions and EBP-03 response arrive as pending suggestions with three citations; "Suggested by Accrued Agent · 3 citations · not yet adopted"; Adopt · Edit · Discard | live with `workpapers.drafting` |
+| f | hannah-leclerc | 2:30 PM | `?ov=risk:R8` | R8's rationale, assertions and EBP-03 response arrive as pending suggestions with three citations; "Suggested by Accrued Agent · 3 citations · not yet adopted"; Adopt · Edit · Discard. An adopted rationale shows no marker and no footer; a re-draft shows under it (DEC-2481) | live with `workpapers.drafting` |
 | g | hannah-leclerc | 2:30 PM | interact | "Identify risks with agent": "10 of 10" and "R8" from code facts; nothing added without a person | live; with drafting off the control reads "Check coverage" (code text only) |
 | loading, not allowed, off | as AUD-04 | — | — | `assurance.risk_register` off: C-20 state; G4 hidden on ENG-02 | live |
 

@@ -455,6 +455,17 @@ class SuggestedResponseOut(BaseModel):
     version: Annotated[int, Field(ge=1), classified("internal")]
 
 
+class SuggestedRationaleOut(BaseModel):
+    """A drafted rationale waiting for a person (AUD-08 f; DEC-2481): the row holds none of it."""
+
+    model_config = ConfigDict(frozen=True)
+
+    suggestion_id: Annotated[UUID, classified("internal")]
+    text: Annotated[str, Field(max_length=20_000), classified("confidential")]
+    citations: Annotated[int, Field(ge=0), classified("internal")]
+    version: Annotated[int, Field(ge=1), classified("internal")]
+
+
 class RiskDrawerOut(BaseModel):
     """The O2 drawer `?ov=risk:<code>`: factors, rationale, citations and versions (AUD-08 b)."""
 
@@ -462,12 +473,14 @@ class RiskDrawerOut(BaseModel):
 
     risk: Annotated[RegisterRiskOut, classified("confidential")]
     rationale: Annotated[str | None, Field(max_length=20_000), classified("confidential")]
-    rationale_suggestion_id: Annotated[UUID | None, classified("internal")]
     citation_ids: Annotated[list[UUID], Field(max_length=50), classified("internal")]
     versions: Annotated[list[RiskVersionOut], classified("internal")]
     routed_to_name: Annotated[str | None, classified("internal")]
     routed_at: Annotated[datetime | None, classified("internal")]
     response_suggestion: Annotated[SuggestedResponseOut | None, classified("internal")] = None
+    rationale_suggestion: Annotated[SuggestedRationaleOut | None, classified("confidential")] = (
+        None
+    )
 
 
 class RiskCreateIn(BaseModel):
@@ -1389,7 +1402,6 @@ async def _drawer_out(ctx: AuthContext, engagement_id: UUID, risk_id: UUID) -> R
     return RiskDrawerOut(
         risk=_risk_out(found.risk, found.linked, found.actions),
         rationale=found.risk.rationale,
-        rationale_suggestion_id=found.rationale_suggestion_id,
         citation_ids=list(found.citation_ids),
         versions=[
             RiskVersionOut(version_no=v.version_no, at=v.at, by_name=v.by_name)
@@ -1404,6 +1416,14 @@ async def _drawer_out(ctx: AuthContext, engagement_id: UUID, risk_id: UUID) -> R
             target_ref=found.response_suggestion.target_ref,
             citations=found.response_suggestion.citations,
             version=found.response_suggestion.version,
+        ),
+        rationale_suggestion=None
+        if found.rationale_suggestion is None
+        else SuggestedRationaleOut(
+            suggestion_id=found.rationale_suggestion.suggestion_id,
+            text=found.rationale_suggestion.text,
+            citations=found.rationale_suggestion.citations,
+            version=found.rationale_suggestion.version,
         ),
     )
 

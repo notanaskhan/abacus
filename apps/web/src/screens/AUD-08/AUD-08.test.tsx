@@ -6,9 +6,9 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { type JSX, useState } from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { installFixtureMode } from "../../app-core/fixture-mode";
+import { installFixtureMode, json } from "../../app-core/fixture-mode";
 import { NORTHWIND_AUDIT } from "../../fixtures/scenarios/AUD-06";
-import { aud08Register } from "../../fixtures/seed/aud08";
+import { aud08Drawer, aud08Register } from "../../fixtures/seed/aud08";
 import { newQueryClient } from "../../testing/support";
 import { RiskRegisterPage } from "./Register";
 import { RiskDrawer } from "./RiskDrawer";
@@ -221,6 +221,89 @@ describe("AUD-08 c, e, f, g (A-04-T26)", () => {
     });
     expect(footer.textContent).toContain("Adopt");
     expect(document.querySelector("[data-drafted]")).toBeTruthy();
+    // The proposed wording is on show, and it is the suggestion's, not the row's (DEC-2481).
+    const proposed = document.querySelector('[data-aud08="proposed-rationale"]');
+    expect(proposed?.textContent).toContain("QACA escalation");
+  });
+
+  it("b: an adopted rationale is the person's: no marker and no Adopt", async () => {
+    restore = installFixtureMode(scenarios.b);
+    const r3 = aud08Register("a").risks[2];
+    if (r3 === undefined) throw new Error("R3");
+    render(
+      <QueryClientProvider client={newQueryClient()}>
+        <RiskDrawer
+          engagementId={NORTHWIND_AUDIT}
+          risk={r3}
+          cardId={null}
+          onClose={() => undefined}
+          onDecide={vi.fn()}
+        />
+      </QueryClientProvider>,
+    );
+    const card = await waitFor(() => {
+      const el = document.querySelector('[data-aud08="rationale"]');
+      expect(el?.textContent).toContain("9 business days later");
+      return el as HTMLElement;
+    });
+    expect(card.querySelector("[data-drafted]")).toBeNull();
+    expect(card.querySelector('[data-aud08="drafted-footer"]')).toBeNull();
+    expect(card.querySelector('[data-aud08="proposed-rationale"]')).toBeNull();
+  });
+
+  it("a re-draft keeps the adopted wording in view, and Adopt carries the suggestion's version", async () => {
+    const seen: unknown[] = [];
+    const b = scenarios.b;
+    restore = installFixtureMode({
+      ...b,
+      handlers: {
+        ...b.handlers,
+        "GET /v1/engagements/{engagement_id}/risks/{risk_id}": () =>
+          new Response(
+            JSON.stringify({
+              ...aud08Drawer("a"),
+              rationale_suggestion: {
+                suggestion_id: "11111111-1111-4111-8111-111111111111",
+                text: "A re-drafted rationale",
+                citations: 2,
+                version: 4,
+              },
+            }),
+            { status: 200, headers: { "content-type": "application/json" } },
+          ),
+        "POST /v1/suggestions/{suggestion_id}/adopt": (request) => {
+          seen.push(request.body);
+          return json({});
+        },
+      },
+    });
+    const r3 = aud08Register("a").risks[2];
+    if (r3 === undefined) throw new Error("R3");
+    render(
+      <QueryClientProvider client={newQueryClient()}>
+        <RiskDrawer
+          engagementId={NORTHWIND_AUDIT}
+          risk={r3}
+          cardId={null}
+          onClose={() => undefined}
+          onDecide={vi.fn()}
+        />
+      </QueryClientProvider>,
+    );
+    const proposed = await waitFor(() => {
+      const el = document.querySelector('[data-aud08="proposed-rationale"]');
+      expect(el).toBeTruthy();
+      return el as HTMLElement;
+    });
+    expect(proposed.textContent).toContain("A re-drafted rationale");
+    expect(document.querySelector('[data-aud08="rationale"]')?.textContent).toContain(
+      "9 business days later",
+    );
+    const adopt = document.querySelector('[data-aud08="drafted-footer"] button');
+    fireEvent.click(adopt as HTMLButtonElement);
+    await waitFor(() => {
+      expect(seen).toEqual([{ seen_version: 4 }]);
+    });
   });
 
   it("f: the drafted response stays pending: EBP-03 with Adopt · Edit · Discard, nothing linked", async () => {

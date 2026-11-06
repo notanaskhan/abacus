@@ -37549,10 +37549,7 @@ export type RiskDrawerOut = {
      * Rationale
      */
     rationale: string | null;
-    /**
-     * Rationale Suggestion Id
-     */
-    rationale_suggestion_id: string | null;
+    rationale_suggestion?: SuggestedRationaleOut | null;
     response_suggestion?: SuggestedResponseOut | null;
     risk: RegisterRiskOut;
     /**
@@ -43728,6 +43725,30 @@ export type SubserviceOrgOut = {
      * Treatment
      */
     treatment: 'carve_out' | 'inclusive';
+};
+
+/**
+ * SuggestedRationaleOut
+ *
+ * A drafted rationale waiting for a person (AUD-08 f; DEC-2481): the row holds none of it.
+ */
+export type SuggestedRationaleOut = {
+    /**
+     * Citations
+     */
+    citations: number;
+    /**
+     * Suggestion Id
+     */
+    suggestion_id: string;
+    /**
+     * Text
+     */
+    text: string;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**
