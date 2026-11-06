@@ -776,6 +776,36 @@ objects:
       rejected:            {label: "Rejected", variant: red-tint, terminal: true, derived: false, context_labels: {attribution: "Rejected by {person} · reason: {reason}"}}   # SHL-10 f; SHL-16 e
       superseded:          {label: "Superseded", variant: soon, terminal: true, derived: false}   # no source wording; the document and return pattern
 
+  agent_run_step:   # agent_run_steps.state: a run step or tool card (SHL-13, WB-03; chapter 05 §5.2.2; P-10-T07). Never "task".
+    source: "chapter 05 §5.2.2; P-10 §4.2"
+    codes:
+      queued:            {label: "Queued", variant: null, disc: ring, terminal: false, derived: false}
+      dispatched:        {label: "Dispatched", variant: neutral, terminal: false, derived: false}
+      running:           {label: "Running", variant: null, disc: spinner, terminal: false, derived: false}
+      waiting_on_inputs: {label: "Waiting on inputs", variant: muted, terminal: false, derived: false}
+      blocked:           {label: "Blocked", variant: null, disc: triangle_amber, terminal: false, derived: false}
+      succeeded:         {label: "Succeeded", variant: null, disc: check_olive, terminal: true, derived: false}
+      failed:            {label: "Failed", variant: null, disc: x_brick, terminal: true, derived: false}
+      cancelled:         {label: "Cancelled", variant: muted, terminal: true, derived: false}
+      skipped:           {label: "Skipped", variant: muted, terminal: true, derived: false}
+
+  agent_plan:   # agent_plans.state, insert-only versions; a decision is a new row (P-10 §4.2). The human act is a plan decision.
+    source: "P-10 §4.2; SHL-13; WB-03"
+    codes:
+      proposed:  {label: "Plan ready — approve?", variant: amber, terminal: false, derived: false}
+      approved:  {label: "Approved", variant: green, terminal: true, derived: false, context_labels: {attribution: "Approved by {person} · {time}"}}
+      edited:    {label: "Approved with edits", variant: green, terminal: true, derived: false}
+      cancelled: {label: "Plan cancelled", variant: muted, terminal: true, derived: false, context_labels: {attribution: "Plan cancelled by {person} · {time}"}}
+      standing:  {label: "Standing plan", variant: green-tint, terminal: false, derived: false}   # Auto mode: standing approval per engagement type (P-49)
+
+  agent_question:   # agent_questions.state (SHL-13 ask card; a new message goes first and the question stays open, AC-S2)
+    source: "P-10 §3.4, §3.7; SHL-13"
+    codes:
+      open:     {label: "Needs your answer", variant: amber, terminal: false, derived: false}
+      answered: {label: "Answered", variant: null, disc: check_olive, terminal: true, derived: false}
+      skipped:  {label: "Skipped", variant: muted, terminal: true, derived: false}
+      expired:  {label: "Expired", variant: muted, terminal: true, derived: false}
+
   workbench_session:
     source: "blueprint 3.3.1"
     codes:
