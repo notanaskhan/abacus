@@ -12291,11 +12291,15 @@ export type EligibilitySampleOut = {
     /**
      * Test Id
      */
-    test_id: string;
+    test_id: string | null;
     /**
      * Version No
      */
     version_no: number;
+    /**
+     * Workpaper Id
+     */
+    workpaper_id?: string | null;
 };
 
 /**
@@ -12307,7 +12311,7 @@ export type EligibilitySampleRowOut = {
     /**
      * Census Hire
      */
-    census_hire: string;
+    census_hire: string | null;
     /**
      * Census Name
      */
@@ -52383,10 +52387,6 @@ export type EbpEligibilitySampleErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type EbpEligibilitySampleError = EbpEligibilitySampleErrors[keyof EbpEligibilitySampleErrors];

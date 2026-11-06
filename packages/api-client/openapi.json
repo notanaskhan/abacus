@@ -26223,16 +26223,36 @@
             "type": "array"
           },
           "test_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "cls": "internal",
-            "format": "uuid",
-            "title": "Test Id",
-            "type": "string"
+            "title": "Test Id"
           },
           "version_no": {
             "cls": "internal",
             "minimum": 1.0,
             "title": "Version No",
             "type": "integer"
+          },
+          "workpaper_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Workpaper Id"
           }
         },
         "required": [
@@ -26250,10 +26270,17 @@
         "description": "One sampled participant in A-03's order: census against HR, and code's entry date.",
         "properties": {
           "census_hire": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "cls": "confidential",
-            "format": "date",
-            "title": "Census Hire",
-            "type": "string"
+            "title": "Census Hire"
           },
           "census_name": {
             "cls": "confidential",
@@ -111645,7 +111672,7 @@
     },
     "/v1/audits/{work_item_id}/ebp/eligibility/sample": {
       "get": {
-        "description": "EBP-03's grid (A-05-T23 contract first, DEC-2225): 501 until the sample service lands.",
+        "description": "EBP-03's grid (A-05-T23, DEC-2225, DEC-2328): rows in A-03's order; none before a test.",
         "operationId": "ebp_eligibility_sample",
         "parameters": [
           {
@@ -111741,16 +111768,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Ebp Eligibility Sample Route",

@@ -20,6 +20,7 @@ from abacus.modules.workpapers.attribute_grid import (
     create_test,
     exception_prefill,
     grid,
+    latest_test_of_variant,
     mark,
     record_agent_result,
     test_facts,
@@ -135,6 +136,7 @@ __all__ = [
     "draft_paper",
     "exception_prefill",
     "grid",
+    "latest_test_of_variant",
     "link_issue",
     "mark",
     "matrix_sections",  # A-06-T23: AUD-17 sections by paper kind
