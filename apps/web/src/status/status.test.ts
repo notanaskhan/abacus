@@ -105,7 +105,7 @@ describe("ac1 every blueprint 3.3.1 and addendum 3.2 row resolves", () => {
     // +16 (N-04-T01): notice_intake 6, notice_analysis 4, notice_response_readiness 6.
     // +3 (A-05-T19): ebp_import.
     // +69 (S27): the A-07 completion, release and archive codes and the N-04 and T-03 rows.
-    expect(ROWS).toHaveLength(715);
+    expect(ROWS).toHaveLength(716); // DEC-2264: ebp_test_result.agent_tested
   });
 
   it("resolves each code to a word, a kit variant or a line, and never to match", () => {

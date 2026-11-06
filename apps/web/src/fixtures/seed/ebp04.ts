@@ -205,7 +205,7 @@ export function ebp04Test(): TestGridOut {
       position,
       item_id: stableId(`test:northwind:contributions:${String(position)}`),
       record_key: `NW-${String(1183 + position)}`,
-      state: flagged ? "exception" : "pass",
+      state: flagged ? ("exception" as const) : ("pass" as const),
       cells: [
         cell("compensation", comp * 100, comp * 100),
         cell("deferral", flagged ? deferral * 0.75 : deferral, deferral, flagged),

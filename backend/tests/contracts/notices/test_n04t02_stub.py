@@ -21,7 +21,7 @@ from abacus.api.export_openapi import document
 from abacus.kernel.classification import tri_paths, unclassified_fields
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import NotFound, NotImplementedYet
-from abacus.modules.identity.api import AuthContext
+from abacus.modules.identity.api import AuthContext, Resource
 from abacus.modules.notices import contract
 
 Json = dict[str, object]
@@ -159,7 +159,8 @@ async def test_ac1_the_gate_authorises_then_reads_the_flag_then_answers_501(
         return uuid.uuid4()
 
     async def get_ref(_ctx: AuthContext, _eid: uuid.UUID) -> object:
-        return SimpleNamespace(resource=lambda: "engagement")
+        # The gate scopes the check to the notice's work item (DEC-2089), so a real Resource.
+        return SimpleNamespace(resource=lambda: Resource.firm(uuid.uuid4()))
 
     async def authorise(_ctx: AuthContext, action: str, resource: object) -> None:
         calls.append(f"authorise:{action}")
@@ -172,12 +173,13 @@ async def test_ac1_the_gate_authorises_then_reads_the_flag_then_answers_501(
     monkeypatch.setattr(contract, "get_ref", get_ref)
     monkeypatch.setattr(contract, "authorise", authorise)
     monkeypatch.setattr(contract, "flag_enabled", flag)
+    # N-04-T11 made the analysis read live; sending for signature is still the stub.
     with pytest.raises(NotFound):
-        await contract.analysis_route(uuid.uuid4(), _ctx())
-    assert calls == ["authorise:notice.read", "flag:notices.workspace"]
+        await contract.send_for_signature_route(uuid.uuid4(), _ctx(), "key")
+    assert calls == ["authorise:notice_response.send_for_signature", "flag:notices.workspace"]
     state["on"] = True
     with pytest.raises(NotImplementedYet):
-        await contract.analysis_route(uuid.uuid4(), _ctx())
+        await contract.send_for_signature_route(uuid.uuid4(), _ctx(), "key")
     # N-04-T06 serves the patch; the assignee alone is still `notice.assign`.
     assert contract._assign_only(contract.NoticePatchIn(assignee_id=uuid.uuid4()))  # pyright: ignore[reportPrivateUsage] -- the private helper under test
     assert not contract._assign_only(  # pyright: ignore[reportPrivateUsage] -- the private helper under test
