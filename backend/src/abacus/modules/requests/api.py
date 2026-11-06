@@ -72,6 +72,7 @@ from abacus.modules.requests.lifecycle import (
     register_live_facts,
     request_item_scope,
     request_item_scopes,
+    send_item,
     update_item,
 )
 from abacus.modules.requests.pbc_contract import pbc_portal_router
@@ -164,6 +165,8 @@ from abacus.modules.requests.service import (
     read_item,
     read_item_versions,
     reopen_after_undo,
+    request_item_sent,
+    request_item_state,
     request_items_for,
     review_hosts,
     review_targets,
@@ -368,6 +371,8 @@ __all__ = [
     "register_live_facts",
     "register_upload_facts",
     "reopen_after_undo",
+    "request_item_sent",
+    "request_item_state",
     "request_items_for",
     "review_hosts",
     "review_targets",
@@ -376,6 +381,7 @@ __all__ = [
     "save_portal_answer",
     "screening_subject",
     "selection_engagements",
+    "send_item",
     "send_question",
     "source_documents",
     "third_party_consented",

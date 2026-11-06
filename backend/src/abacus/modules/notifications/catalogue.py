@@ -433,6 +433,14 @@ CATALOGUE: Final[dict[str, Kind]] = {
     ),
     "tax_return.efile_relocked": Kind("efile_relocked", _listed, "tax_return", "work_item_id"),
     "engine_ack.rejected": Kind("ack_rejected", _listed, "tax_return", "work_item_id"),
+    # T-03-T07 (DEC-2350): TAX-13's three; the kinds were registered by T-03-T01.
+    "extension.ack_rejected": Kind(
+        "extension_ack_rejected", _listed, "tax_return", "work_item_id"
+    ),
+    "extension_payment.approval_requested": Kind(
+        "extension_payment_approval_requested", _listed, "tax_return", "work_item_id"
+    ),
+    "estimate.due_soon": Kind("estimate_due_soon", _listed, "estimate_schedule", "schedule_id"),
     # P-07-T47 (P-07 §4.8): acceptance, risk review, independence and team approval.
     "acceptance.sent_to_partner": Kind(
         "acceptance_awaiting_partner", _partners, "acceptance_record", "record_id"
@@ -595,6 +603,11 @@ TEMPLATES: Final[dict[str, str]] = {
     "tax_return.ready_to_transmit": "A return on {engagement} reached the tax engine.",
     "tax_return.efile_relocked": "A return on {engagement} was locked for e-file again.",
     "engine_ack.rejected": "The e-file for a return on {engagement} was rejected.",
+    "extension.ack_rejected": "An extension for a return on {engagement} was rejected.",
+    "extension_payment.approval_requested": (
+        "Extension payments on {engagement} are waiting for approval."
+    ),
+    "estimate.due_soon": "An estimated-tax installment falls due within the week.",
     "acceptance.sent_to_partner": "An acceptance on {engagement} is waiting for your decision.",
     "acceptance.review_requested": (
         "You were asked for a risk review of an acceptance on {engagement}."

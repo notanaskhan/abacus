@@ -46,6 +46,7 @@ from abacus.modules.agents.fake_responses import (
 from abacus.modules.agents.fake_responses import install as install_fake_responses
 from abacus.modules.agents.fake_responses import install_review as install_fake_reviews
 from abacus.modules.agents.field_citations import register_field_citations_reader
+from abacus.modules.agents.follow_up_drafts import draft_for as draft_follow_ups
 from abacus.modules.agents.follow_up_drafts import on_follow_up_sent
 from abacus.modules.agents.follow_up_routes import follow_ups_router
 from abacus.modules.agents.follow_ups import reminder_history_of
@@ -412,6 +413,7 @@ __all__ = [
     "create_screening_run",
     "create_suggestion",
     "draft",
+    "draft_follow_ups",
     "effective_ai_policy",
     "engagement_graph",
     "extract_notice_fields",
