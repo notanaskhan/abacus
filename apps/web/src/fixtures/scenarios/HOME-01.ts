@@ -39,7 +39,7 @@ function capabilities(persona: string | undefined, brief: boolean): Capabilities
   const base = capabilitiesFor(seed, persona ?? "daniel-reyes");
   return {
     ...base,
-    flags: { ...base.flags, "home.dashboard": true, "today_brief.enabled": brief },
+    flags: { ...base.flags, "today_brief.enabled": brief },
   };
 }
 

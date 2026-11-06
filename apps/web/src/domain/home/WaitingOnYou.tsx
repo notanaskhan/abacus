@@ -8,7 +8,7 @@ import type { HumanGateCountsOut, HumanGateOut } from "@abacus/api-client";
 import { AgentText, Icon, Pill, cn, date } from "@abacus/ui";
 import type { JSX } from "react";
 import { type Band, dueChip, glyphOf, summaryParts, visibleBands } from "./gateClasses";
-import { HOME_MESSAGES } from "./messages";
+import { HOME_MESSAGES, GATE_SUBKIND_TITLE } from "./messages";
 
 export interface WaitingOnYouProps {
   counts: HumanGateCountsOut;
@@ -23,7 +23,9 @@ export interface WaitingOnYouProps {
 
 /** A registered gate name read as words when the owner's resolver has not titled the row yet
  * ("acceptance_decision_due" → "Acceptance decision due"). */
-function fallbackTitle(subkind: string): string {
+export function fallbackTitle(subkind: string): string {
+  const named = GATE_SUBKIND_TITLE[subkind];
+  if (named !== undefined) return named;
   const words = subkind.replaceAll("_", " ");
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
