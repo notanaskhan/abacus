@@ -46,3 +46,4 @@ without text fails to entering the fields; nothing is guessed.
 
 ## Progress log
 - 2026-11-06: built on main 49922a2fd; integration, unit and replay tests pass locally.
+- 2026-11-06: the end pass moved the two notification kinds into the catalogue (its own test pins the set and each needs an email sentence).

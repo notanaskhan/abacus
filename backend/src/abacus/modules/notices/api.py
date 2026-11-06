@@ -72,13 +72,10 @@ from abacus.modules.notices.response_workflow_types import (  # noqa: E402
 
 _sending.register()
 
-# N-04-T07 (DEC-2326): the intake's read, and its producers of the two C16 kinds.
+# N-04-T07 (DEC-2326): the intake's read.
 from abacus.modules.notices import intake_read as _intake_read  # noqa: E402
 from abacus.modules.notices.intake_activities import (  # noqa: E402
     ACTIVITIES as _INTAKE_ACTIVITIES,
-)
-from abacus.modules.notices.intake_notifications import (  # noqa: E402
-    register_kinds as _register_kinds,
 )
 from abacus.modules.notices.intake_workflow import NoticeIntakeWorkflow  # noqa: E402
 from abacus.modules.notices.intake_workflow_types import (  # noqa: E402
@@ -88,7 +85,6 @@ from abacus.modules.notices.intake_workflow_types import (  # noqa: E402
     NoticeIntakeInput as NoticeIntakeInput,
 )
 
-_register_kinds()
 ACTIVITIES = (*_RESPONSE_ACTIVITIES, *_INTAKE_ACTIVITIES)
 SUBSCRIPTIONS = {**_sending.SUBSCRIPTIONS, **_intake_read.SUBSCRIPTIONS}
 WORKFLOWS: dict[type, str] = {
