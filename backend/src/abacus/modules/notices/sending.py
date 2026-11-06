@@ -118,7 +118,7 @@ async def _response_row(tenant: TenantContext, work_item_id: UUID) -> JsonRow:
             (
                 await session.execute(
                     text(
-                        "SELECT id, engagement_id, current_version_id, enclosures, payment, "
+                        "SELECT id, current_version_id, enclosures, payment, "
                         "signer_contact_ids, channel, follow_up_days, envelope_id, "
                         "generated_document_id, template_version_id, row_version "
                         "FROM notice_responses WHERE work_item_id = :w"
@@ -649,6 +649,8 @@ async def agency_reply(
             "closed" if outcome == "resolved" else "escalated",
             actor_kind="human",
             actor_user_id=ctx.user_id,
+            closed_on=(closed_on or await today(ctx.tenant)) if outcome == "resolved" else None,
+            escalated_reason=None if outcome == "resolved" else (note or "agency_reply"),
         )
         tx.record(
             "notice.agency_reply_recorded",

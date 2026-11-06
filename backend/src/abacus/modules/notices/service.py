@@ -34,7 +34,8 @@ from abacus.kernel.clock import today
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
-from abacus.modules.identity.api import AuthContext, names_of, visible
+from abacus.modules.engagements.api import add_to_team, get_ref
+from abacus.modules.identity.api import AuthContext, could, names_of, visible
 
 OPEN: Final = frozenset(
     {"received", "classified", "analyzing", "response_drafted", "approved", "escalated"}
@@ -211,6 +212,15 @@ async def notice_for_run(tenant: TenantContext, notice_id: UUID) -> Notice | Non
     return None if row is None else _notice(row)
 
 
+async def assignee_on_team(ctx: AuthContext, engagement_id: UUID, assignee: UUID) -> None:
+    """An assignee must be able to read what they were given. Someone who can't joins the
+    notice's engagement as staff, by the person assigning, who needs `engagement.member_add` (403
+    otherwise); a walled assignee still can't read it, and `could` stays false for them."""
+    resource = (await get_ref(ctx, engagement_id)).resource()
+    if not await could(ctx, assignee, "notice.read", resource):
+        await add_to_team(ctx, engagement_id, assignee, "staff")
+
+
 async def notice(ctx: AuthContext, notice_id: UUID) -> Notice:
     """One notice the viewer may read; walled or unknown: 404 (never a hint it exists)."""
     for found in await visible_notices(ctx):
@@ -232,17 +242,28 @@ async def move(
     actor_kind: str,
     actor_user_id: UUID | None,
     reason_code: str | None = None,
+    closed_on: date | None = None,
+    escalated_reason: str | None = None,
 ) -> None:
-    """The one status move, with its event row; 409 `illegal_transition` otherwise."""
+    """The one status move, with its event row; 409 `illegal_transition` otherwise. Closed needs
+    its date and Escalated its reason: the columns' CHECKs refuse either without."""
     if to not in TRANSITIONS.get(found.status, frozenset()):
         raise IllegalTransition(facts={"from_status": found.status, "to_status": to})
     moved = await tx.session.scalar(
         text(
             "UPDATE notices SET status = :to, status_changed_at = abacus_now(), "
+            "closed_on = coalesce(:closed, closed_on), "
+            "escalated_reason = coalesce(:why, escalated_reason), "
             "row_version = row_version + 1 WHERE work_item_id = :id AND status = :from "
             "RETURNING work_item_id"
         ),
-        {"to": to, "id": found.id, "from": found.status},
+        {
+            "to": to,
+            "id": found.id,
+            "from": found.status,
+            "closed": closed_on,
+            "why": escalated_reason,
+        },
     )
     if moved is None:
         raise VersionConflict
@@ -292,6 +313,8 @@ async def edit(
     found = await notice(ctx, notice_id)
     if found.row_version != expected_version:
         raise VersionConflict
+    if assignee_id is not None:
+        await assignee_on_team(ctx, found.engagement_id, assignee_id)
     async with uow(ctx.tenant) as tx:
         moved = await tx.session.scalar(
             text(

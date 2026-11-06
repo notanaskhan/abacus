@@ -381,6 +381,9 @@ async def create_notice(
     engagement = engagement_id or await notice_engagement_for(ctx, client_entity_id)
     if engagement is None:
         raise NoNoticeEngagement
+    from abacus.modules.notices.service import assignee_on_team
+
+    await assignee_on_team(ctx, engagement, assignee_id)
     values = {f.key: f for f in current.fields}
     code = (values["notice.code"].value_text if "notice.code" in values else None) or "NOTICE"
     year = values.get("notice.tax_year")
