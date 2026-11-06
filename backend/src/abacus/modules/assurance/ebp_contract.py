@@ -883,7 +883,7 @@ class EligibilitySampleRowOut(BaseModel):
     census_name: Annotated[str, Field(max_length=200), classified("confidential")]
     hr_first_name: Annotated[str | None, Field(max_length=100), classified("confidential")]
     dob_masked: Annotated[Literal["••/••/••••"], classified("internal")]
-    census_hire: Annotated[date, classified("confidential")]
+    census_hire: Annotated[date | None, classified("confidential")]  # None: not on the census
     hr_hire: Annotated[date | None, classified("confidential")]
     eligible_on: Annotated[date | None, classified("confidential")]
     entry_on: Annotated[date | None, classified("confidential")]
@@ -901,7 +901,7 @@ class EligibilitySampleOut(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    test_id: Annotated[UUID, classified("internal")]
+    test_id: Annotated[UUID | None, classified("internal")]  # None: no test yet, so no rows
     version_no: Annotated[int, Field(ge=1), classified("internal")]
     rows: Annotated[list[EligibilitySampleRowOut], classified("confidential")]
     exceptions: Annotated[int, Field(ge=0), classified("internal")]
@@ -909,6 +909,8 @@ class EligibilitySampleOut(BaseModel):
     prepared_by: Annotated[str | None, Field(max_length=4), classified("internal")] = None
     reviewed_by: Annotated[str | None, Field(max_length=4), classified("internal")] = None
     allowed_actions: Annotated[list[str], classified("internal")]
+    # DEC-2328: the paper an exception's AUD-15 draft finding sits on.
+    workpaper_id: Annotated[UUID | None, classified("internal")] = None
 
 
 async def _gate(ctx: AuthContext, work_item_id: UUID, action: str, flag: Flag) -> None:
@@ -1381,12 +1383,13 @@ async def ebp_eligibility_route(work_item_id: UUID, ctx: Ctx) -> FiguresOut:
     "/ebp/eligibility/sample",
     action="ebp.read",
     response_model=EligibilitySampleOut,
-    errors=(501,),
 )
 async def ebp_eligibility_sample_route(work_item_id: UUID, ctx: Ctx) -> EligibilitySampleOut:
-    """EBP-03's grid (A-05-T23 contract first, DEC-2225): 501 until the sample service lands."""
+    """EBP-03's grid (A-05-T23, DEC-2225, DEC-2328): rows in A-03's order; none before a test."""
     await _gate(ctx, work_item_id, "ebp.read", _E)
-    _not_yet()
+    from abacus.modules.assurance import ebp_eligibility_sample
+
+    return await ebp_eligibility_sample.sample(ctx, work_item_id)
 
 
 # EBP-04

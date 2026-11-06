@@ -37,6 +37,10 @@ export const COPY = {
   missed: (name: string, entry: string, deferral: string, match: string) =>
     `${name} — entry ${entry}; missed deferrals ${deferral}, missed QACA match ${match}`,
   raise: "Raise exception…",
+  raised: "Draft finding recorded on the Findings register.",
+  raiseFailed: "Couldn't record the finding. Try again.",
+  findingTitle: (n: number) =>
+    `Opt-out elections missing for ${String(n)} auto-enrolled participants with no deferrals`,
   requestOptOut: "Request opt-out forms",
   citations: (n: number) => `Citations (${String(n)})`,
   procedures: "Procedures (1)",
