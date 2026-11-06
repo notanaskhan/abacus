@@ -429,6 +429,71 @@ async def record_engine_issue(
     )
 
 
+async def record_rule_issue(
+    tenant: TenantContext,
+    *,
+    engagement_id: UUID,
+    work_item_id: UUID,
+    record_type: str,
+    record_id: UUID,
+    kind: str,
+    priority: str,
+    title: str,
+    source_ref: str,
+    blocks: Sequence[str] = (),
+) -> UUID:
+    """T-03-T06 (DEC-2352): the system raises an issue for a published rule, once per
+    `(work item, source_ref)`. The rule is a person's (the template's publisher), so no caller is
+    authorised here; only the owning module's effect handler reaches this, and a person resolves
+    the issue (P-04's human-only resolve)."""
+    async with tenant_session(tenant) as session:
+        existing = await session.scalar(
+            text(
+                "SELECT id FROM issues WHERE work_item_id IS NOT DISTINCT FROM :w "
+                "AND source_ref = :s"
+            ),
+            {"w": work_item_id, "s": source_ref},
+        )
+    if isinstance(existing, UUID):
+        return existing
+    issue_id = uuid4()
+    sealed_title = await seal_text(tenant, title, SUBJECT, issue_id, "title")
+    async with uow(tenant) as tx:
+        await tx.session.execute(
+            text(
+                "INSERT INTO issues (id, tenant_id, engagement_id, work_item_id, record_ref, "
+                "kind, priority, title_sealed, assignee_agent, blocks, source_ref) VALUES "
+                "(:id, :t, :e, :w, CAST(:ref AS jsonb), :k, :p, :title, false, "
+                "CAST(:blocks AS text[]), :src)"
+            ),
+            {
+                "id": issue_id,
+                "t": tenant.tenant_id,
+                "e": engagement_id,
+                "w": work_item_id,
+                "ref": json.dumps({"type": record_type, "id": str(record_id)}),
+                "k": kind,
+                "p": priority,
+                "title": sealed_title,
+                "blocks": sorted(set(blocks)),
+                "src": source_ref,
+            },
+        )
+        await tx.session.execute(
+            text(
+                "INSERT INTO issue_events (tenant_id, issue_id, event) VALUES (:t, :i, 'created')"
+            ),
+            {"t": tenant.tenant_id, "i": issue_id},
+        )
+        tx.record(
+            "issue.created",
+            target=Target(SUBJECT, issue_id),
+            after=Ref(record=record_id),
+            scope=Scope(engagement_id=engagement_id),
+        )
+    return issue_id
+
+
 # P-04-T31: the part-2 service reads an issue and its record the same way.
 issue_row = _one
 issue_record = _record

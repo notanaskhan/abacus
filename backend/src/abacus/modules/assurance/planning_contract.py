@@ -30,7 +30,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, Annotated, Any, Literal, NoReturn, cast
+from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Path, Query
@@ -62,7 +62,7 @@ from abacus.kernel._statuses import (
 )
 from abacus.kernel.classification import classified
 from abacus.kernel.clock import system_now
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.modules.engagements.api import assurance_item_id, get_ref
@@ -432,6 +432,8 @@ class RegisterOut(BaseModel):
     register_hash: Hash
     approved_card_id: Annotated[UUID | None, classified("internal")]
     allowed_actions: Actions
+    # AUD-08 e (A-04-T29): the re-draft after Internal Control is running; the page polls.
+    revising: Annotated[bool, classified("internal")] = False
 
 
 class RiskVersionOut(BaseModel):
@@ -909,6 +911,15 @@ class CuecPatchIn(BaseModel):
     evidence_version_ids: Annotated[list[UUID], Field(max_length=20), classified("internal")] = []
 
 
+class SocExceptionPatchIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    impact: Annotated[Literal["low", "high"], classified("internal")]
+    impact_rationale: Annotated[str | None, Field(max_length=2000), classified("confidential")] = (
+        None
+    )
+
+
 class SocRequestsIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -936,10 +947,6 @@ async def _gate(
     states = [await flag_enabled(ctx.tenant, f) for f in flags]
     if not (any(states) if any_of else all(states)):
         raise NotFound(flags[0].name)
-
-
-def _not_yet() -> NoReturn:
-    raise NotImplementedYet
 
 
 async def _soc_out(ctx: AuthContext, engagement_id: UUID, found: object) -> SocReportOut:
@@ -1396,11 +1403,12 @@ async def _linkage_out(ctx: AuthContext, engagement_id: UUID) -> LinkageOut:
 async def risk_register_route(engagement_id: UUID, ctx: Ctx) -> RegisterOut:
     """The register with its code tally; no "$" anywhere (AC4.1; T13)."""
     await _gate(ctx, engagement_id, "risk.read", _RR)
-    from abacus.modules.assurance import risks
+    from abacus.modules.assurance import ic_redraft, risks
 
     found = await risks.register(ctx, engagement_id)
     t = found.tally
     return RegisterOut(
+        revising=await ic_redraft.revising(ctx, engagement_id),
         tally=TallyOut(
             risks=t.risks,
             significant=t.significant,
@@ -2109,7 +2117,60 @@ async def soc_report_draft_route(
     """The SOC 1 reader run (mode `soc1`): suggestions with page citations (AC7.6; T35)."""
     await _gate(ctx, engagement_id, "workpaper.draft", _SO)
     await _gate(ctx, engagement_id, "workpaper.draft", WORKPAPERS_DRAFTING)
-    _not_yet()
+    from abacus.modules.agents.api import start_section_draft
+    from abacus.modules.assurance import soc1_mode, soc_reports
+    from abacus.modules.workpapers.api import paper_of_kind
+
+    await soc_reports.report(ctx, engagement_id, soc_report_id)  # 404 for another engagement's
+    paper = await paper_of_kind(ctx, engagement_id, "service_organizations")
+    run_id = await start_section_draft(
+        ctx, engagement_id, paper, soc1_mode.MODE, None, idempotency_key
+    )
+    return RunStartedOut(run_id=run_id)
+
+
+@router.patch(
+    "/soc-reports/{soc_report_id}/exceptions/{co_ref}",
+    action="soc_report.evaluate",
+    response_model=SocReportOut,
+    errors=(409,),
+)
+async def soc_exception_edit_route(
+    engagement_id: UUID,
+    soc_report_id: UUID,
+    co_ref: Annotated[str, Path(min_length=1, max_length=40)],
+    body: SocExceptionPatchIn,
+    ctx: Ctx,
+) -> SocReportOut:
+    """A person adopts an exception's impact (AUD-10 e; DEC-2355): the mode only proposes it."""
+    await _gate(ctx, engagement_id, "soc_report.evaluate", _SO)
+    from abacus.modules.assurance import soc_reports
+
+    found = await soc_reports.set_exception_impact(
+        ctx, engagement_id, soc_report_id, co_ref, body.impact, body.impact_rationale
+    )
+    return await _soc_out(ctx, engagement_id, found)
+
+
+@router.post(
+    "/soc-reports/{soc_report_id}/exceptions/{co_ref}/send-to-findings",
+    action="soc_report.evaluate",
+    response_model=SocReportOut,
+    status_code=201,
+    errors=(409, 503),
+)
+async def soc_exception_route_route(
+    engagement_id: UUID,
+    soc_report_id: UUID,
+    co_ref: Annotated[str, Path(min_length=1, max_length=40)],
+    ctx: Ctx,
+) -> SocReportOut:
+    """AC7.5: a High-impact exception links to Findings through the exception router."""
+    await _gate(ctx, engagement_id, "soc_report.evaluate", _SO)
+    from abacus.modules.assurance import soc_reports
+
+    found = await soc_reports.route_exception(ctx, engagement_id, soc_report_id, co_ref)
+    return await _soc_out(ctx, engagement_id, found)
 
 
 @router.post(

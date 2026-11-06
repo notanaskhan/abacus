@@ -280,9 +280,8 @@ from abacus.modules.sampling.api import (
 from abacus.modules.sampling.api import approve as approve_sample
 from abacus.modules.sampling.api import draw as draw_sample
 from abacus.modules.tax.api import import_engine_file, share_k1_internal
-from abacus.modules.tax.estimates import create as create_estimate
-from abacus.modules.tax.estimates import patch_installment
-from abacus.modules.tax.extensions import LineIn, PaymentIn, flag_new_likely
+from abacus.modules.tax.estimates import create_schedule, patch_installment, patch_schedule
+from abacus.modules.tax.extensions import ProposedPayment, flag_new_likely
 from abacus.modules.tax.extensions import patch as patch_extension
 from abacus.modules.tax.extensions import prepare as prepare_extensions
 from abacus.modules.workpapers.api import create_workpaper
@@ -4154,77 +4153,87 @@ async def _organizer_feld(conn: asyncpg.Connection, _: Scenario, event: Event) -
         await save_portal_answer(claire, made, q.id, typed, 1)
 
 
-async def _extension_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
-    row = BOARD_BY_LABEL[str(event.data["label"])]
-    ctx = await _staff_context(conn, _as_actor(event, row.preparer))
-    item = UUID(row.work_item_id)
-    seed = next((x for x in _tax_schedules.LINES if x.client == row.client), None)
-    lines = (
-        [
-            LineIn(
-                item,
-                projected_liability=_tax_schedules.money(seed.projected),
-                projected_liability_source="preparer_entry" if seed.projected else None,
-                withholding_plus_estimates=_tax_schedules.money(seed.held),
-            ),
-            *(
-                LineIn(item, jurisdiction, form)
-                for jurisdiction, form, _a in seed.payments
-                if jurisdiction != "US"
-            ),
-        ]
-        if seed
-        else []
-    )
-    await prepare_extensions(
-        ctx,
-        [item],
-        lines=lines,
-        payments=[
-            PaymentIn(
-                item,
-                jurisdiction,
-                "ptet" if row.client == _tax_schedules.PTET else "extension_payment",
-                Decimal(amount),
-            )
-            for jurisdiction, _f, amount in (seed.payments if seed else ())
-        ],
-        loader_dates={item: (row.original_due, row.extended_due)},
-    )
-    if event.data["state"] != "filed":
-        return
+async def _stored_evidence(
+    conn: asyncpg.Connection, ctx: AuthContext, work_item: UUID, title: str
+) -> UUID:
+    """A filed form or a payment confirmation: a person's upload on the return's engagement."""
     engagement = cast(
         UUID,
         await tenant_value(
-            conn, TENANT, "SELECT engagement_id FROM work_items WHERE id = $1", item
+            conn, TENANT, "SELECT engagement_id FROM work_items WHERE id = $1", work_item
         ),
     )
-    stored = await stage_content(TENANT, f"filed extension {row.label}".encode())
+    stored = await stage_content(TENANT, f"{title} {work_item}".encode())
     async with uow(TenantContext(TENANT, "human", str(ctx.user_id))) as tx:
         version = await add_version(
             tx,
             engagement_id=engagement,
-            item=NewItem(title="Filed extension.pdf"),
+            item=NewItem(title=f"{title}.pdf"),
             stored=stored,
             media_type="application/pdf",
             provenance=Provenance(source="firm_upload", method="uploaded"),
             requested_by=ctx.user_id,
         )
-    extension = await tenant_value(
-        conn,
-        TENANT,
-        "SELECT id FROM filing_extensions WHERE tax_return_id = $1 AND jurisdiction = 'US'",
-        item,
+    return version.id
+
+
+async def _extension_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    row = BOARD_BY_LABEL[str(event.data["label"])]
+    ctx = await _staff_context(conn, _as_actor(event, row.preparer))
+    item = UUID(row.work_item_id)
+    seed = next((x for x in _tax_schedules.LINES if x.client == row.client), None)
+    form = _tax_schedules.federal_form(row.form)
+    await prepare_extensions(
+        ctx,
+        [item],
+        [
+            ProposedPayment(
+                item,
+                jurisdiction,
+                "ptet" if row.client == _tax_schedules.PTET else "extension_payment",
+                Decimal(amount),
+                None if jurisdiction == "US" else state_form,
+            )
+            for jurisdiction, state_form, amount in (seed.payments if seed else ())
+        ],
+        loader_dates={item: (row.original_due, row.extended_due, form)},
     )
-    found = await conn_extension_version(conn, cast(UUID, extension))
+    extension = cast(
+        UUID,
+        await tenant_value(
+            conn,
+            TENANT,
+            "SELECT id FROM filing_extensions WHERE tax_return_id = $1 AND jurisdiction = 'US'",
+            item,
+        ),
+    )
+    if seed is not None and seed.projected is not None:
+        await patch_extension(
+            ctx,
+            extension,
+            action="filing_extension.prepare",
+            expected_version=await conn_extension_version(conn, extension),
+            filed_on=None,
+            form=None,
+            filed_form_evidence_version_id=None,
+            likely_to_extend=None,
+            reason=None,
+            note=None,
+            projected_liability=_tax_schedules.money(seed.projected),
+            projected_liability_source="preparer_entry",
+            projected_liability_ref={"worksheet": "synthetic"},
+            withholding_plus_estimates=_tax_schedules.money(seed.held),
+        )
+    if event.data["state"] != "filed":
+        return
     await patch_extension(
         ctx,
-        cast(UUID, extension),
+        extension,
         action="filing_extension.mark_filed",
-        expected_version=found,
+        expected_version=await conn_extension_version(conn, extension),
         filed_on=row.original_due,
         form=None,
-        filed_form_evidence_version_id=version.id,
+        filed_form_evidence_version_id=await _stored_evidence(conn, ctx, item, "Filed extension"),
         likely_to_extend=None,
         reason=None,
         note=None,
@@ -4268,30 +4277,65 @@ async def _estimate_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) 
     client = await _client_id(conn, seed.client)
     entity = await _entity_id(conn, client, seed.client)
     basis = next((r for r in BOARD if r.client == seed.client), None)
-    # The return's own preparer: the confirmation request needs that engagement's visibility.
+    # The return's own preparer: a schedule's writes authorise on its basis return.
     ctx = await _staff_context(conn, _as_actor(event, basis.preparer) if basis else event)
-    made = await create_estimate(
+    made = await create_schedule(
         ctx,
-        entity,
+        client_entity_id=entity,
         basis_tax_return_id=UUID(basis.work_item_id) if basis else None,
         tax_year=_tax_schedules.ESTIMATE_YEAR,
         jurisdiction="US",
         form="1040-ES",
         method=seed.method,
-        prior_year_tax=_tax_schedules.money(seed.prior_year_tax),
-        prior_agi_over_threshold=None,
-        projected_withholding=_tax_schedules.money(seed.withholding),
-        payment_method_label="irs_direct_pay",
-        quarters=_ESTIMATE_QUARTERS,
+        due_dates=[(q, due, None) for q, due in _ESTIMATE_QUARTERS.items()],
     )
-    if seed.status in ("paid", "scheduled"):
+    if seed.prior_year_tax is not None:
+        await patch_schedule(
+            ctx,
+            made,
+            expected_version=1,
+            values={
+                "prior_year_tax": _tax_schedules.money(seed.prior_year_tax),
+                "prior_year_tax_source": "preparer_entry",
+                "projected_withholding": _tax_schedules.money(seed.withholding),
+                "payment_method_label": "irs_direct_pay",
+            },
+        )
+
+    async def third_quarter_version() -> int:
+        # Patching the schedule recomputes its open installments, which moves their versions.
+        return cast(
+            int,
+            await tenant_value(
+                conn,
+                TENANT,
+                "SELECT row_version FROM estimate_installments "
+                "WHERE schedule_id = $1 AND quarter = 3",
+                made,
+            ),
+        )
+
+    if seed.status == "scheduled":
         await patch_installment(
             ctx,
             made,
             3,
-            expected_version=1,
-            scheduled_for=date(2026, 9, 15) if seed.status == "scheduled" else None,
-            paid_on=date(2026, 9, 10) if seed.status == "paid" else None,
+            expected_version=await third_quarter_version(),
+            scheduled_for=date(2026, 9, 15),
+            paid_on=None,
+            evidence_version_id=None,
+        )
+    elif seed.status == "paid" and basis:
+        await patch_installment(
+            ctx,
+            made,
+            3,
+            expected_version=await third_quarter_version(),
+            scheduled_for=None,
+            paid_on=date(2026, 9, 10),
+            evidence_version_id=await _stored_evidence(
+                conn, ctx, UUID(basis.work_item_id), "Payment confirmation"
+            ),
         )
     # `confirmation_requested` stays `not_confirmed`: the tile counts both as Awaiting, and asking
     # needs an engagement lead, whom this firm's tax engagements don't have (DEC-2328).
@@ -4485,9 +4529,6 @@ async def _notice_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) ->
             ("respond_by", str(data["respond_by"]), False),
             ("amount_due", str(data["amount"]), False),
         ],
-        client_id=None,
-        assignee_user_id=None,
-        notify_user_ids=None,
     )
     assignee = user_id_of(_SEATS[str(data["assignee"])])
     work_item, __ = await create_notice_from_intake(

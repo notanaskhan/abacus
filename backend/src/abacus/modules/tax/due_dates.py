@@ -41,6 +41,8 @@ class DueDates(Protocol):
     @property
     def extended_due_on(self) -> date | None: ...
     @property
+    def extension_form(self) -> str | None: ...
+    @property
     def reference_set_version_ids(self) -> Sequence[UUID]: ...
     @property
     def rule_text(self) -> str | None: ...
@@ -51,42 +53,6 @@ class DueDates(Protocol):
 # (form, tax year, period end) -> the dates; `LookupError` when no published rule answers.
 DueDatesSource = Callable[[str, int, date], Awaitable[DueDates]]
 _SOURCE: list[DueDatesSource] = []
-
-
-class InstallmentDue(Protocol):
-    @property
-    def quarter(self) -> int: ...
-    @property
-    def due_on(self) -> date: ...
-
-
-class InstallmentDates(Protocol):
-    @property
-    def installments(self) -> Sequence[InstallmentDue]: ...
-
-
-# (estimate form, tax year, jurisdiction) -> its installments; `LookupError` when no rule answers.
-InstallmentsSource = Callable[[str, int, str], Awaitable[InstallmentDates]]
-_INSTALLMENTS: list[InstallmentsSource] = []
-
-
-def register_installments_source(source: InstallmentsSource) -> None:
-    """T-03-T07: practice's installments, the same way (tax never imports practice)."""
-    if _INSTALLMENTS and _INSTALLMENTS[0] is not source:
-        raise ValueError("an installments source is already registered")
-    _INSTALLMENTS[:] = [source]
-
-
-async def installments_due(form: str, tax_year: int, jurisdiction: str) -> dict[int, date]:
-    """The form's quarters and dates; empty when no published rule answers (the row then shows no
-    dates, never a guess)."""
-    if not _INSTALLMENTS:
-        return {}
-    try:
-        found = await _INSTALLMENTS[0](form, tax_year, jurisdiction)
-    except LookupError:
-        return {}
-    return {i.quarter: i.due_on for i in found.installments}
 
 
 def register_due_dates_source(source: DueDatesSource) -> None:

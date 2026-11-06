@@ -55,7 +55,6 @@ SCHEDULES: dict[tuple[str, str], str] = {
     ("patch", X): "filing_extension.mark_filed",
     ("post", f"{X}/confirmation-requests"): "filing_extension.confirmation_send",
     ("get", "/v1/tax/estimates"): "estimate_schedule.read",
-    ("post", "/v1/tax/estimates"): "estimate_schedule.update",
     ("get", "/v1/tax/estimates/export.xlsx"): "tax_schedule.export",
     ("patch", E): "estimate_schedule.update",
     ("patch", I): "estimate_schedule.update",
@@ -179,7 +178,7 @@ async def _past_the_gate(*_a: object, **_k: object) -> None:
 async def test_ac2_the_gate_authorises_then_reads_the_flag_then_lets_the_route_run(
     monkeypatch: pytest.MonkeyPatch, module: object, flag: str
 ) -> None:
-    # T-03-T05 and T-03-T07 made both reads live.
+    # T-03-T05 made the editor read live, T-03-T07 the extension read (DEC-2350).
     calls: list[str] = []
     state = {"on": False}
 
@@ -204,25 +203,30 @@ async def test_ac2_the_gate_authorises_then_reads_the_flag_then_lets_the_route_r
         with pytest.raises(_PastTheGate):
             await route(uuid.uuid4(), _ctx())
     else:
-        from abacus.modules.tax import extensions
-
-        monkeypatch.setattr(extensions, "year_of", _past_the_gate)
+        monkeypatch.setattr(schedules, "_extension_out", _past_the_gate)
         with pytest.raises(_PastTheGate):
             await route(uuid.uuid4(), _ctx())
 
 
 async def test_ac2_flag_likely_alone_is_its_own_action(monkeypatch: pytest.MonkeyPatch) -> None:
-    seen: list[object] = []
+    """A write holding `function_in` authorises on the return in the service (DEC-2350), so the
+    route names the action and the firm-level `authorise` is never called: at the firm that
+    condition refuses everyone."""
+    firm: list[str] = []
+    named: list[str] = []
+
+    async def authorise(_ctx: AuthContext, action: str, resource: object) -> None:
+        firm.append(action)
 
     async def flag_enabled(_tenant: object, f: object) -> bool:
         return True
 
-    async def patch(*_a: object, **k: object) -> None:
-        seen.append(k["action"])
+    async def patch(_ctx: object, _id: object, *, action: str, **_kw: object) -> None:
+        named.append(action)
         raise _PastTheGate
 
+    monkeypatch.setattr(schedules, "authorise", authorise)
     monkeypatch.setattr(schedules, "flag_enabled", flag_enabled)
-    # DEC-2327: the action is held by a function on the return, so the service authorises it.
     from abacus.modules.tax import extensions
 
     monkeypatch.setattr(extensions, "patch", patch)
@@ -233,7 +237,8 @@ async def test_ac2_flag_likely_alone_is_its_own_action(monkeypatch: pytest.Monke
             _ctx(),
             1,
         )
-    assert seen == ["filing_extension.flag_likely"]
+    assert named == ["filing_extension.flag_likely"]
+    assert firm == []
 
 
 def test_ac6_the_effect_slot_fails_closed_and_takes_one_handler_per_kind() -> None:
