@@ -60,8 +60,9 @@ export const audScreens = {
     status: "planned",
     path: "/audits/$auditId/controls", // A-04-T32: a–e live, f on fixtures until A-06 registers
   },
-  // A-04-T37: a to e on fixtures, the AUD-02 cockpit's Service Organizations canvas.
-  "AUD-10": { name: "Service organizations & SOC 1 evaluation", status: "fixture", path: null },
+  // A-04-T37: a to e on fixtures, the AUD-02 cockpit's Service Organizations canvas; planned until
+  // its AUD-11 link has a builder (no path of its own, the links rule).
+  "AUD-10": { name: "Service organizations & SOC 1 evaluation", status: "planned", path: null },
   // A-03-T11: a, b, d, the picker and the C-20 states on fixtures, the AUD-02 cockpit's Sample
   // Selection canvas (no path of its own); c, e and f are A-03-T15's.
   "AUD-11": { name: "Sampling", status: "fixture", path: null },
@@ -83,7 +84,11 @@ export const audScreens = {
     path: "/audits/$auditId/misstatements",
   },
   // A-06-T24: a to f on fixtures, under the Evaluation tabs.
-  "AUD-17": { name: "Review notes & sign-off matrix", status: "fixture", path: "/audits/$auditId/review-notes" },
+  "AUD-17": {
+    name: "Review notes & sign-off matrix",
+    status: "fixture",
+    path: "/audits/$auditId/review-notes",
+  },
   "AUD-18": { name: "EQR workspace", status: "planned", path: null },
   "AUD-19": {
     name: "Completion (checklist · subsequent events · legal letters · going concern)",

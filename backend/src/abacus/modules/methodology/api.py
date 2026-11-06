@@ -7,6 +7,12 @@ K-02-T10.
 `methodology` imports only `identity` and `platform`.
 """
 
+from typing import Any
+from uuid import UUID
+
+from sqlalchemy import text
+
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.methodology.catalog import (
     CatalogItem,
@@ -339,3 +345,18 @@ __all__ = [
     "version_state",
     "version_steps",
 ]
+
+
+async def disclosure_template_items(
+    tenant: TenantContext, version_id: UUID
+) -> list[dict[str, Any]]:  # Any: the template's items as JSON
+    """A-06-T25: a disclosure-checklist template version's items, in the firm's order."""
+    async with tenant_session(tenant) as session:
+        return list(
+            (
+                await session.execute(
+                    text("SELECT items FROM disclosure_checklist_template_versions WHERE id = :t"),
+                    {"t": version_id},
+                )
+            ).scalar_one()
+        )

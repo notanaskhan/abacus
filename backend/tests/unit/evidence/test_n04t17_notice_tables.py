@@ -1,6 +1,7 @@
 """N-04-T17 (TASK-3311; DEC-2310): CP2000 and CP14 table maps, from the row.
 
-"The Whitley CP2000 yields interest 412.00 to 3,532.00 and both payers with regions, the Santos CP14
+"The Whitley CP2000 yields interest 412.00 to 3,532.00 and both payers with regions, the Santos
+CP14
 yields its amounts, and an obscured value is recorded low_confidence, never guessed."
 """
 
@@ -59,7 +60,8 @@ def test_ac_an_obscured_value_is_low_confidence_and_never_guessed() -> None:
     fields = _fields(_whitley(obscured=True))
     assert "notice.changes.interest.difference" in fields or fields
     found = fields.get("notice.changes.interest.reported")
-    # The unreadable token is not an amount, so the row's columns start after it: nothing is guessed.
+    # The unreadable token is not an amount, so the row's columns start after it: nothing is
+    # guessed.
     assert found is None or found.value_text != "3532.00"
 
 

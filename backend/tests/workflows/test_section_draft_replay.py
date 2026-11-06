@@ -1,5 +1,6 @@
 """A-04-T41 (ADR-090): `SectionDraftWorkflow` replays its recorded history (offline). The plan's
-`DecisionRecommendWorkflow` is one call in the proposer's request (DEC-1953), so it has no history."""
+`DecisionRecommendWorkflow` is one call in the proposer's request (DEC-1953), so it has no
+history."""
 
 from __future__ import annotations
 

@@ -116,7 +116,9 @@ describe("BND-03 editing", () => {
     expect(toggles.length).toBeGreaterThan(1);
     fireEvent.click(toggles[1] as HTMLElement);
     expect((await drawn("[data-bnd03='save-bar']")).textContent).toContain("unsaved");
-    expect(card.querySelector("[data-bnd03='logic']")?.textContent).toContain("Show when Q5 = Yes");
+    expect(card.querySelector("[data-bnd03='logic']")?.textContent).toContain(
+      "Show when Q5 = Yes",
+    );
   });
 
   it("c: + Question adds a card with the six-type picker", async () => {

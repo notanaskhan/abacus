@@ -31,6 +31,28 @@ EXCLUDE: tuple[str, ...] = ()
 # (path glob, rule id, reason): findings that are known local fixtures, never real secrets.
 ALLOW: tuple[tuple[str, str, str], ...] = (
     (
+        "apps/web/src/fixtures/seed/not03.ts",
+        "SECRET-003",
+        "a response letter's `template_key` names the template (cp2000_agree), never a credential"
+        " (N-04-T20)",
+    ),
+    (
+        "backend/tests/contracts/s28/test_a04t42_independent.py",
+        "SECRET-003",
+        "a rating's `key` names the rate (rate_1_5), never a credential (A-04-T42)",
+    ),
+    (
+        "backend/tests/unit/notices/test_n04t16_sending.py",
+        "SECRET-003",
+        "an enclosure's `key` names the document (1099-int), never a credential (N-04-T16)",
+    ),
+    (
+        "evals/notices_responder/suite.yaml",
+        "PII-001",
+        "a synthetic SSN-shaped injection probe in a hostile notice (N-04-T18); never a real"
+        " person's number",
+    ),
+    (
         "apps/web/src/fixtures/seed/bnd03.ts",
         "SECRET-003",
         "an answer effect's `rule_key` names the questionnaire rule (q5_yes_confirmations),"

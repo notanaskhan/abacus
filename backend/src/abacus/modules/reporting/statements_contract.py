@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, Any, Literal, NoReturn
+from typing import TYPE_CHECKING, Annotated, Any, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query, Response
@@ -36,6 +36,9 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
 )
+
+if TYPE_CHECKING:
+    from abacus.modules.reporting.statements import VersionView
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -284,7 +287,7 @@ async def _work_item(ctx: AuthContext, engagement_id: UUID) -> UUID:
     return found
 
 
-def _tie_out_out(row: dict[str, Any]) -> TieOutOut:
+def _tie_out_out(row: dict[str, Any]) -> TieOutOut:  # Any: a row from the database
     return TieOutOut(
         total=row["total"],
         tied=row["tied"],
@@ -295,11 +298,12 @@ def _tie_out_out(row: dict[str, Any]) -> TieOutOut:
     )
 
 
-def _version_out(view: Any) -> StatementVersionOut:  # noqa: ANN401  # Any: statements.VersionView
-    lines: dict[UUID, list[dict[str, Any]]] = {}
+def _version_out(view: VersionView) -> StatementVersionOut:
+    lines: dict[UUID, list[dict[str, Any]]] = {}  # Any: rows from the database
     for row in view.lines:
         lines.setdefault(row["line_id"], []).append(row)
-    off = {(o["line_key"], o["year"]): o for o in (view.tie_out or {}).get("off", [])}
+    runs = cast("list[dict[str, str]]", [] if view.tie_out is None else view.tie_out["off"])
+    off = {(o["line_key"], o["year"]): o for o in runs}
     return StatementVersionOut(
         id=view.row["id"],
         version_no=view.row["version_no"],
@@ -344,7 +348,7 @@ def _version_out(view: Any) -> StatementVersionOut:  # noqa: ANN401  # Any: stat
 async def _checklist_out(ctx: AuthContext, document_id: UUID) -> ChecklistOut:
     from abacus.modules.reporting import statements
 
-    view = await statements.checklist(ctx.tenant, document_id)
+    view = await statements.disclosure_view(ctx.tenant, document_id)
     return ChecklistOut(
         statement_document_id=view.document_id,
         template_version_id=view.template_version_id,

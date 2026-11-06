@@ -1,7 +1,8 @@
 """The synthetic scanned corpus (P-11-T28; P-11 §8; DEC-2314; DEC-78).
 
 Test-only faces drawn from Brightwater Hale's figures, rasterised with skew, noise, JPEG and a
-phone's perspective, each with the Textract-shaped JSON `FakeOcr` replays. Deterministic from a seed:
+phone's perspective, each with the Textract-shaped JSON `FakeOcr` replays. Deterministic from a
+seed:
 the same seed gives the same bytes and the same SHA-256 keys. Fictional people and payers only. The
 faces live in `abacus_tools` (ADR-101): no production layout ever carries them (DEC-78), and no
 template or rule reads them. Golden values: `backend/tests/golden/scanned_corpus.yaml`.
@@ -201,12 +202,10 @@ def _render(face: Face, rng: random.Random) -> tuple[bytes, str]:
             x += _CHAR * len(token) + _CHAR
     skew = rng.uniform(-1.2, 1.2)
     image = image.rotate(skew, fillcolor="white", resample=Image.Resampling.BILINEAR)
-    pixels = image.load()
-    assert pixels is not None
     for _ in range(4000):
         spot = (rng.randrange(WIDTH), rng.randrange(HEIGHT))
         level = rng.randrange(180, 255)
-        pixels[spot] = (level, level, level)
+        image.putpixel(spot, (level, level, level))
     if face.finish == "phone":
         drift = rng.uniform(0.006, 0.02)
         image = image.transform(
@@ -226,7 +225,7 @@ def _render(face: Face, rng: random.Random) -> tuple[bytes, str]:
 
 def generate(seed: int = DEFAULT_SEED) -> tuple[CorpusPage, ...]:
     """Every face, one page each, the same bytes for the same seed."""
-    rng = random.Random(seed)  # noqa: S311 -- synthetic layout noise, never a secret
+    rng = random.Random(seed)  # synthetic layout noise, never a secret
     pages: list[CorpusPage] = []
     for face in FACES:
         image, media = _render(face, rng)

@@ -128,7 +128,7 @@ export function EvaluationPage({
                 engagementId={cockpit.data.engagement_id}
                 workItemId={cockpit.data.work_item_id}
                 onSignOff={(type, id, level) => {
-                  open(ov.SHL12(type, id, `L${level}`));
+                  open(ov.SHL12(type, id, `L${String(level)}`));
                 }}
               />
             )}

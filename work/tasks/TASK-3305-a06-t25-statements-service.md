@@ -1,6 +1,6 @@
 ---
 id: TASK-3305
-title: A-06-T25 statements service: draft, lineage, tie-out and checklist answers
+title: "A-06-T25 statements service: draft, lineage, tie-out and checklist answers"
 spec: SPEC-000  # row (A-06-T25)
 acceptance_criteria: [AC-1]
 risk_zone: amber

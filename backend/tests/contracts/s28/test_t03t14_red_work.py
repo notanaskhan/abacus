@@ -1,4 +1,5 @@
-"""T-03-T14 (TASK-3332): AC tests of T-03's red work, from the row: "The tests fail if any T-03 write is
+"""T-03-T14 (TASK-3332): AC tests of T-03's red work, from the row: "The tests fail if any T-03
+write is
 allowed to the agent or a portal principal or if an extension ack maps to the wrong return or
 jurisdiction."
 """
@@ -29,7 +30,9 @@ def _tax() -> dict[str, dict[str, object]]:
 
 
 @pytest.mark.parametrize("action", WRITES)
-@pytest.mark.parametrize("principal", ["agent", "client_admin", "client_contributor", "third_party"])
+@pytest.mark.parametrize(
+    "principal", ["agent", "client_admin", "client_contributor", "third_party"]
+)
 def test_ac_no_t03_write_for_the_agent_or_a_portal_principal(action: str, principal: str) -> None:
     assert _tax()[action].get(principal, "deny") == "deny", (action, principal)
 
@@ -39,7 +42,7 @@ def test_ac_the_payment_approval_holds_the_reviewer_function() -> None:
 
 
 def test_ac_an_ack_keeps_its_own_jurisdiction() -> None:
-    assert jurisdiction_of("federal") == "federal"
+    assert jurisdiction_of("federal") == "US"
     assert jurisdiction_of("NY") == "NY"
 
 

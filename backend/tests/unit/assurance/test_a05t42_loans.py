@@ -20,9 +20,7 @@ def test_ac_the_rollforward_foots_to_312_400_with_36_loans() -> None:
            engine.Loan("O2", D("5200.00"), D(0), D(0), D("5200.00"), D(0)),
            engine.Loan("O3", D("4800.00"), D(0), D(0), D("4800.00"), D(0))]
     )  # fmt: skip
-    new = [
-        engine.Loan(f"N{i}", D(0), D("19240.00"), D(0), D(0), D("19240.00")) for i in range(5)
-    ]
+    new = [engine.Loan(f"N{i}", D(0), D("19240.00"), D(0), D(0), D("19240.00")) for i in range(5)]
     rolled = engine.rollforward([*beginning, *new])
     assert (rolled.count_beginning, rolled.count_new, rolled.count_paid_off,
             rolled.count_offset, rolled.count_ending) == (41, 5, 7, 3, 36)  # fmt: skip

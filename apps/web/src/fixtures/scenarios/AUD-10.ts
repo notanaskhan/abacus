@@ -27,7 +27,10 @@ const P = "/v1/engagements/{engagement_id}";
 
 function capabilities(persona: string | undefined, on: boolean): CapabilitiesOut {
   const base = capabilitiesFor(seed, persona ?? "marcus-delaney");
-  return { ...base, flags: { ...base.flags, "audits.cockpit": true, "assurance.service_orgs": on } };
+  return {
+    ...base,
+    flags: { ...base.flags, "audits.cockpit": true, "assurance.service_orgs": on },
+  };
 }
 
 function frame(
@@ -42,7 +45,8 @@ function frame(
     get handlers(): Record<string, FixtureHandler> {
       return {
         ...E0.handlers,
-        "GET /v1/me/capabilities": ({ persona }) => json(capabilities(persona, options.on ?? true)),
+        "GET /v1/me/capabilities": ({ persona }) =>
+          json(capabilities(persona, options.on ?? true)),
         [`GET ${P}/service-organizations`]: () => json(aud10Orgs(variant)),
         [`GET ${P}/soc-reports/{soc_report_id}`]: () => json(aud10Report(variant)),
       };

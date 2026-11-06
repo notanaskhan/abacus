@@ -52,6 +52,7 @@ def test_ac14_the_worker_hosts_connections_and_agents() -> None:
         "evidence",  # SPEC-029 (TASK-054): upload processing
         "fieldwork",  # SPEC-037 (TASK-083): procedure selection
         "identity",  # P-08-T17: access changes end portal sessions and trusted devices
+        "notices",  # N-04-T16: the respond-by alerts and the follow-up timer
         "notifications",
         "platform",  # Q-01-T45: tenant provisioning
         "portal",  # R-01-T13: the request owner hears of a third party's upload
@@ -105,6 +106,8 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "portal.link_renew_requested",  # P-08-T21: a renewed link's email, token at delivery
         "portal_mfa.reset_notice_requested",  # P-08-T21: the firm reset the second step
         "gate.met",  # A-01-T05: the phase a computed gate opens is derived
+        "evidence_text.ready",  # P-11-T26: form extraction starts
+        "notice.created",  # N-04-T16: the notice's timers start
         "evidence_version.withdrawn",  # P-06-T19: the withdrawal purge starts
         "fulfilment.voided",  # R-01 Story 2.2 (TASK-1248): the gates recompute
         "upload_review.recorded",  # P-06-T20: the screening aggregate recomposes

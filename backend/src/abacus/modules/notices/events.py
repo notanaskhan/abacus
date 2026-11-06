@@ -10,6 +10,12 @@ from abacus.kernel.classification import classified
 from abacus.kernel.uow import DomainEvent
 
 
+class NoticeCreated(DomainEvent):
+    event_type: ClassVar[str] = "notice.created"
+
+    work_item_id: Annotated[UUID, classified("internal")]
+
+
 class NoticeRespondBySoon(DomainEvent):
     event_type: ClassVar[str] = "notice.respond_by_soon"
 

@@ -18,7 +18,9 @@ from dataclasses import dataclass, field
 from typing import Literal, cast, get_args
 from uuid import UUID
 
-from abacus.kernel.db import TenantContext, transaction_context
+from sqlalchemy import text
+
+from abacus.kernel.db import TenantContext, tenant_session, transaction_context
 from abacus.kernel.uow import UnitOfWork
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.engagements.api import (
@@ -576,3 +578,20 @@ def template_blocks(
     from abacus.modules.reporting.compose import block_texts, standard
 
     return block_texts(standard(layout_key=layout_key, body=body, clauses=clauses, values=values))
+
+
+async def latest_document_version(
+    tenant: TenantContext, document_id: UUID
+) -> tuple[UUID, str] | None:
+    """N-04-T16: a generated document's newest version: its id and content hash (C7's source)."""
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(
+                text(
+                    "SELECT id, content_hash FROM generated_document_versions "
+                    "WHERE generated_document_id = :d ORDER BY version_no DESC LIMIT 1"
+                ),
+                {"d": document_id},
+            )
+        ).first()
+    return None if row is None else (row.id, row.content_hash)

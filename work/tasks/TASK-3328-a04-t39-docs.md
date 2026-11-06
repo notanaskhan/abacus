@@ -1,6 +1,6 @@
 ---
 id: TASK-3328
-title: A-04-T39 docs: planning runbook, consumer notes, module README
+title: "A-04-T39 docs: planning runbook, consumer notes, module README"
 spec: SPEC-000  # row (A-04-T39)
 acceptance_criteria: [AC-1]
 risk_zone: green

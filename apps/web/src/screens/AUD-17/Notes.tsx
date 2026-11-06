@@ -1,4 +1,9 @@
-import type { ReviewNoteDetailOut, ReviewNoteItemOut, SignOffMatrixCellOut, SignOffMatrixRowOut } from "@abacus/api-client";
+import type {
+  ReviewNoteDetailOut,
+  ReviewNoteItemOut,
+  SignOffMatrixCellOut,
+  SignOffMatrixRowOut,
+} from "@abacus/api-client";
 import {
   epInvolvementOptions,
   reviewNoteClearMutation,
@@ -64,7 +69,7 @@ function SignOffCell({
     return (
       <button
         type="button"
-        data-cell={`${row.code}:L${cell.level}`}
+        data-cell={`${row.code}:L${String(cell.level)}`}
         aria-label={`${COPY.matrix.levels[cell.level - 1] ?? ""} ${row.title}`}
         className="inline-block size-[15px] rounded-full ring-[1px] ring-ink-3"
         onClick={() => {
@@ -78,7 +83,7 @@ function SignOffCell({
       <span className="relative inline-block">
         <button
           type="button"
-          data-cell={`${row.code}:L${cell.level}`}
+          data-cell={`${row.code}:L${String(cell.level)}`}
           data-state="stale"
           aria-expanded={open}
           onClick={() => {
@@ -119,9 +124,9 @@ function SignOffCell({
   return (
     <button
       type="button"
-      data-cell={`${row.code}:L${cell.level}`}
+      data-cell={`${row.code}:L${String(cell.level)}`}
       data-state="signed"
-      className="rounded-[4px] bg-olive px-[5px] text-[10.5px] leading-[18px] font-medium text-white"
+      className="rounded-[4px] bg-green px-[5px] text-[10.5px] leading-[18px] font-medium text-on-dark"
       onClick={() => {
         onSignOff(row.target_type, row.target_id, cell.level);
       }}
@@ -148,7 +153,11 @@ function MatrixPane({
   const rows = matrix.data?.rows ?? [];
   const footer = matrix.data?.footer;
   return (
-    <section aria-label={COPY.matrix.title} data-aud17="matrix-pane" className="flex min-h-0 flex-1 flex-col">
+    <section
+      aria-label={COPY.matrix.title}
+      data-aud17="matrix-pane"
+      className="flex min-h-0 flex-1 flex-col"
+    >
       <h3 className="flex h-[46px] items-center justify-center text-pane-title font-medium hairline-b">
         {COPY.matrix.title}
       </h3>
@@ -166,7 +175,8 @@ function MatrixPane({
         <div data-aud17="involvement" className="min-h-0 flex-1 overflow-y-auto p-[16px]">
           <Timeline
             label={COPY.matrix.segments.involvement}
-            events={(involvement.data?.items ?? []).map((e) => ({
+            events={(involvement.data?.items ?? []).map((e, i) => ({
+              id: `${e.kind}-${String(i)}`,
               date: date(e.at, { now }),
               state: e.kind === "sign_off" ? ("done" as const) : ("half" as const),
               title: `${e.subject} ${e.outcome}`,
@@ -180,7 +190,9 @@ function MatrixPane({
             <table className="w-full text-[12.5px]" data-aud17="matrix">
               <thead>
                 <tr className="h-[30px] bg-band-hd text-th font-medium text-ink-3">
-                  <th className="w-[236px] px-[12px] text-left font-medium">{COPY.matrix.workpaper}</th>
+                  <th className="w-[236px] px-[12px] text-left font-medium">
+                    {COPY.matrix.workpaper}
+                  </th>
                   {COPY.matrix.levels.map((l) => (
                     <th key={l} className="w-[64px] text-center font-medium">
                       {l}
@@ -222,8 +234,8 @@ function MatrixPane({
                 workpapers: rows.length,
                 prepared: footer.prepared,
                 reviewed: footer.reviewed,
-                partner: `${footer.partner_signed} of ${footer.partner_required}`,
-                eqr: `${footer.eqr_signed} of ${footer.eqr_required}`,
+                partner: `${String(footer.partner_signed)} of ${String(footer.partner_required)}`,
+                eqr: `${String(footer.eqr_signed)} of ${String(footer.eqr_required)}`,
                 changed: footer.changed_after_sign_off,
               })}
             </div>
@@ -241,7 +253,7 @@ function messagesOf(detail: ReviewNoteDetailOut, now: Date): ReviewNoteMessage[]
   return detail.events
     .filter((e) => e.body != null && e.body !== "")
     .map((e, i) => ({
-      id: `${e.at}:${i}`,
+      id: `${e.at}:${String(i)}`,
       who: e.actor_name,
       at: date(e.at, { now }),
       body: e.body,
@@ -268,7 +280,9 @@ function Thread({ noteId, onCleared }: { noteId: string; onCleared: () => void }
   const can = (action: string): boolean => note.allowed_actions.includes(action);
   return (
     <div data-aud17="thread" className="flex min-h-0 flex-1 flex-col">
-      <h3 className="bg-shell px-[14px] py-[12px] text-[15px] leading-[1.3] font-medium">{body}</h3>
+      <h3 className="bg-shell px-[14px] py-[12px] text-[15px] leading-[1.3] font-medium">
+        {body}
+      </h3>
       {[
         [COPY.kv.anchor, note.anchor?.ref ?? ""],
         [COPY.kv.author, note.raised_by_initials],

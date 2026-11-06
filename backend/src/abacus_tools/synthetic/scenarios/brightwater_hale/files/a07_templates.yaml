@@ -68,10 +68,10 @@ bundles:
         - "Subsequent events requiring adjustment or disclosure are reflected."
         - "Uncorrected misstatements are immaterial, individually and together."
       specific:
-        - {no: 12, trigger: late_remittance, text: "The late deposit was corrected and reported."}
-        - {no: 13, trigger: certified_investments, text: "The certification covers the investment information."}
-        - {no: 14, trigger: going_concern_doubt, text: "Our plans are described in the notes."}
-        - {no: 15, trigger: related_party_found, text: "The related-party transaction is disclosed."}
+        - {n: 12, trigger: late_remittance, text: "The late deposit was corrected and reported."}
+        - {n: 13, trigger: certified_investments, text: "The certification covers the investment information."}
+        - {n: 14, trigger: going_concern_doubt, text: "Our plans are described in the notes."}
+        - {n: 15, trigger: related_party_found, text: "The related-party transaction is disclosed."}
   - family: governance_letter
     name: "BH Governance · AU-C 260 Completion v1"
     layout: letter

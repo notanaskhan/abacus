@@ -41,7 +41,7 @@ export const COPY = {
       eqr: string;
       changed: number;
     }): string =>
-      `${p.workpapers} workpapers · Prepared ${p.prepared} · Reviewed ${p.reviewed} · Partner ${p.partner} · EQR ${p.eqr} · Changed after sign-off ${p.changed}`,
+      `${String(p.workpapers)} workpapers · Prepared ${String(p.prepared)} · Reviewed ${String(p.reviewed)} · Partner ${p.partner} · EQR ${p.eqr} · Changed after sign-off ${String(p.changed)}`,
     staleTitle: "Changed after sign-off",
     staleBody: "Content hash changed",
     requestReReview: "Request re-review",

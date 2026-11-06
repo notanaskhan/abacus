@@ -39,6 +39,8 @@ from abacus.modules.assurance.draft_mappings import gap_inputs, risk_inputs, ris
 from abacus.modules.assurance.ebp_contract import router as ebp_router
 from abacus.modules.assurance.ebp_designed import register as register_ebp_designed
 from abacus.modules.assurance.ebp_designed import register_modes as register_ebp_modes
+from abacus.modules.assurance.ebp_investments import AUDIT_KINDS as CERTIFICATION_KINDS
+from abacus.modules.assurance.ebp_investments import audit_owners as certification_owners
 from abacus.modules.assurance.ebp_plan import AUDIT_KINDS as EBP_PLAN_KINDS
 from abacus.modules.assurance.ebp_plan import audit_owners as ebp_plan_owners
 from abacus.modules.assurance.ebp_remittances import AUDIT_KINDS as LATE_REMITTANCE_KINDS
@@ -218,6 +220,7 @@ register_engagement_owners(SOC_REPORT_KINDS, soc_report_owners)  # A-04-T31
 register_engagement_owners(CONTROL_KINDS, control_owners)  # A-04-T25 (DEC-2264)
 register_engagement_owners(DECISION_KINDS, decision_owners)  # A-06-T13 (DEC-2264)
 register_engagement_owners(LATE_REMITTANCE_KINDS, late_remittance_owners)  # A-05-T30
+register_engagement_owners(CERTIFICATION_KINDS, certification_owners)  # A-05-T39
 # A-04-T12 (DEC-1950): the materiality cards' kinds and appliers; versions placed for the trail.
 register_materiality_kinds()
 register_approval_kind()  # A-04-T18 (DEC-2056): the `significant_risk` card

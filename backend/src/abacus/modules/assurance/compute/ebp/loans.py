@@ -105,7 +105,7 @@ def loan_limit(
     plan_cap: Decimal | None = None,
 ) -> LoanLimit:
     """IRC 72(p): the lesser of 50,000 and half the vested balance; the plan's rule if tighter."""
-    half = quantize_half_up(vested_balance / 2, Decimal("0.01"))
+    half = quantize_half_up(vested_balance / 2, 2)
     limit = min(LIMIT_CAP, half) if plan_cap is None else min(LIMIT_CAP, half, plan_cap)
     within_amount = amount <= limit
     within_term = is_residence or term_months <= TERM_MONTHS
@@ -127,7 +127,7 @@ _DEFAULT_RATE: Final[dict[str, Decimal]] = {
 def withholding(kind: DistributionKind, gross: Decimal, offset: Decimal = _ZERO) -> Decimal:
     """The rate on the whole taxable amount, offsets included, limited to the cash paid."""
     rate = _DEFAULT_RATE[kind]
-    computed = quantize_half_up((gross + offset) * rate, Decimal("0.01"))
+    computed = quantize_half_up((gross + offset) * rate, 2)
     return min(computed, gross)
 
 

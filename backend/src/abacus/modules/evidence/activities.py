@@ -6,14 +6,14 @@ else (storage or database unavailable) raises and the workflow retries.
 
 from __future__ import annotations
 
-from temporalio import activity
-
 from uuid import UUID
+
+from temporalio import activity
 
 from abacus.modules.evidence.drops import sort_drop
 from abacus.modules.evidence.form_extraction import extract_version
-from abacus.modules.evidence.ocr_step import ocr_upload
 from abacus.modules.evidence.masked_previews import masked_preview_upload, pending_masks
+from abacus.modules.evidence.ocr_step import ocr_upload
 from abacus.modules.evidence.pii import pii_scan_upload
 from abacus.modules.evidence.processing import check_upload, preview_upload, process_upload
 from abacus.modules.evidence.words import pending_words, words_upload

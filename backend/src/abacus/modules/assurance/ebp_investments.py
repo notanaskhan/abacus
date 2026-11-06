@@ -23,7 +23,7 @@ from abacus.kernel.uow import Ref, Scope, Target, uow
 from abacus.modules.assurance.compute.ebp import trust_agreement
 from abacus.modules.engagements.api import assurance_item
 from abacus.modules.identity.api import AuthContext
-from abacus.modules.ledger.api import engagement_trial_balances, trial_balance_view
+from abacus.modules.ledger.api import TbLine, engagement_trial_balances, trial_balance_view
 
 KIND: Final = "ebp_investments"
 UNEVALUATED: Final = "certification_unevaluated"
@@ -66,17 +66,19 @@ class InvestmentsView:
     unevaluated: int
 
 
-def _at_layer(line: Any, layer: str) -> Decimal:  # noqa: ANN401  # Any: the ledger's TbLine
+def _at_layer(line: TbLine, layer: str) -> Decimal:
     if layer == "unadjusted":
-        return cast(Decimal, line.eoy)
+        return line.eoy
     if layer == "aje":
-        return cast(Decimal, line.eoy + (line.aje or _ZERO))
+        return line.eoy + (line.aje or _ZERO)
     if layer == "rje":
-        return cast(Decimal, line.eoy + (line.rje or _ZERO))
-    return cast(Decimal, line.final if line.final is not None else line.eoy)
+        return line.eoy + (line.rje or _ZERO)
+    return line.final if line.final is not None else line.eoy
 
 
-async def _trust_lines(tenant: TenantContext, work_item_id: UUID) -> list[trust_agreement.TrustLine]:
+async def _trust_lines(
+    tenant: TenantContext, work_item_id: UUID
+) -> list[trust_agreement.TrustLine]:
     async with tenant_session(tenant) as session:
         rows = (
             (
@@ -101,7 +103,8 @@ async def _trust_lines(tenant: TenantContext, work_item_id: UUID) -> list[trust_
 
 
 async def points(tenant: TenantContext, work_item_id: UUID) -> tuple[Point, ...]:
-    """Every point in the rule's order, with its newest evaluation; a missing one is unevaluated."""
+    """Every point in the rule's order, with its newest evaluation; a missing one is
+    unevaluated."""
     async with tenant_session(tenant) as session:
         rows = (
             (
@@ -157,9 +160,8 @@ async def investments(
         if trust_agreement.normalised(line.account_name) not in names
         and "receivable" in line.account_name.lower()
     )
-    total = (
-        sum((a.tb_eoy or _ZERO for a in agreement.lines), _ZERO)
-        + sum((amount for _, _, amount in extra), _ZERO)
+    total = sum((a.tb_eoy or _ZERO for a in agreement.lines), _ZERO) + sum(
+        (amount for _, _, amount in extra), _ZERO
     )
     found = await points(tenant, work_item_id)
     return InvestmentsView(
@@ -176,11 +178,12 @@ async def investments(
 async def evaluate_point(
     ctx: AuthContext, work_item_id: UUID, point_key: str, answer: str, note: str | None
 ) -> UUID:
-    """A person's evaluation of one point, an insert-only event (0665: human, the transaction's)."""
+    """A person's evaluation of one point, an insert-only event (0665: human, the
+    transaction's)."""
     if point_key not in POINT_KEYS:
         raise NotFound("ebp_certification_point")
     item = await assurance_item(ctx.tenant, work_item_id)
-    async with uow(ctx.tenant, ctx.actor) as tx:
+    async with uow(ctx.tenant) as tx:
         point = (
             await tx.session.execute(
                 text(

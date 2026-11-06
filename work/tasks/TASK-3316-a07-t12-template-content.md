@@ -1,6 +1,6 @@
 ---
 id: TASK-3316
-title: A-07-T12 template content part 1: letters by import, checklists as content
+title: "A-07-T12 template content part 1: letters by import, checklists as content"
 spec: SPEC-000  # row (A-07-T12)
 acceptance_criteria: [AC-1]
 risk_zone: amber

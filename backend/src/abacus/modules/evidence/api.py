@@ -119,6 +119,7 @@ from abacus.modules.evidence.firm_export_schedule import register_firm_export_st
 from abacus.modules.evidence.firm_export_schedule_contract import (
     schedule_router as firm_export_schedule_router,
 )
+from abacus.modules.evidence.form_extraction_workflow import FormExtractionWorkflow
 from abacus.modules.evidence.gate_facts import (
     decided_among,
     effective_decisions,
@@ -327,6 +328,7 @@ from abacus.modules.evidence.workflow_types import (
     ExportPackageFacts,
     FirmExportFacts,
     FirmExportInput,
+    FormExtractionInput,
     LegalHoldInput,
     UploadInput,
     WithdrawalPurgeInput,
@@ -521,6 +523,8 @@ __all__ = [
     "FirmExportInput",
     "FirmExportScheduleWorkflow",
     "FirmExportWorkflow",
+    "FormExtractionInput",
+    "FormExtractionWorkflow",
     "GeneratedFile",
     "GlBalanceRow",
     "GlHeader",

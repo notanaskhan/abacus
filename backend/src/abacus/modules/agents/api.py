@@ -72,6 +72,9 @@ from abacus.modules.agents.issue_client_requests import send_issue_to_client
 from abacus.modules.agents.knowledge import KnowledgeHit, knowledge_context, search_knowledge
 from abacus.modules.agents.methodology_citations import register_methodology_step
 from abacus.modules.agents.methodology_import_workflow import MethodologyImportWorkflow
+from abacus.modules.agents.notice_responder import AnalyzeFacts as AnalyzeFacts
+from abacus.modules.agents.notice_responder import analyze as analyze_notice
+from abacus.modules.agents.notice_responder import extract_fields as extract_notice_fields
 from abacus.modules.agents.pilot_w7 import w7_override_rate
 from abacus.modules.agents.proposal_slots import (
     AdoptedValue,
@@ -112,9 +115,6 @@ from abacus.modules.agents.routes import (
     router,
     template_drafts_router,
 )
-from abacus.modules.agents.notice_responder import AnalyzeFacts as AnalyzeFacts
-from abacus.modules.agents.notice_responder import analyze as analyze_notice
-from abacus.modules.agents.notice_responder import extract_fields as extract_notice_fields
 from abacus.modules.agents.runs import run_initiators
 from abacus.modules.agents.runs_routes import engagement_runs_router, runs_router
 from abacus.modules.agents.screening_contract import screening_items_router, screenings_router
@@ -205,6 +205,7 @@ from abacus.modules.agents.workflow_types import (
     NextTickInput,
     RunInput,
     ScreeningInput,
+    SectionDraftInput,
     SlotGrant,
 )
 from abacus.modules.agents.workflows import (
@@ -311,6 +312,7 @@ __all__ = [
     "AgentRunNotRunning",
     "AgentSpec",
     "AiPolicyLoosened",
+    "AnalyzeFacts",
     "ApprovedChangeSet",
     "ApproverMustDiffer",
     "ChangeSetApplier",
@@ -376,6 +378,7 @@ __all__ = [
     "ScreeningResultView",
     "ScreeningWorkflow",
     "SectionDraft",
+    "SectionDraftInput",
     "SectionDraftWorkflow",
     "SectionSource",
     "ShadowReportChanged",
@@ -395,6 +398,7 @@ __all__ = [
     "UploadReviewWorkflow",
     "VerifiedCitation",
     "active_engagement_runs",
+    "analyze_notice",
     "apply_proposal",
     "ask",
     "check",
@@ -410,6 +414,7 @@ __all__ = [
     "draft",
     "effective_ai_policy",
     "engagement_graph",
+    "extract_notice_fields",
     "fail_run",
     "graph_router",
     "install_fake_responses",
@@ -437,9 +442,6 @@ __all__ = [
     "review_citation_states",
     "review_sha256",
     "router",
-    "AnalyzeFacts",
-    "analyze_notice",
-    "extract_notice_fields",
     "run_initiators",
     "run_outcome",
     "screen",

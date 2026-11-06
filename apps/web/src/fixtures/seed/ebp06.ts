@@ -8,11 +8,17 @@ export const EBP06_WORK_ITEM = "6f1c2a90-0000-4000-8000-0000000000e6";
 export type Ebp06Variant = "a" | "b" | "c" | "d" | "e";
 type Level = InvestmentRowOut["level"];
 
-function row(key: string, label: string, boy: string, eoy: string, level: Level): InvestmentRowOut {
+function row(
+  key: string,
+  label: string,
+  boy: string,
+  eoy: string,
+  level: Level,
+): InvestmentRowOut {
   return {
     key, label, level, trust_boy: boy, trust_eoy: eoy, tb_boy: boy, tb_eoy: eoy, ties: true,
     off_by: "0.00",
-  };  // prettier-ignore
+  }; // prettier-ignore
 }
 
 const FUNDS: InvestmentRowOut[] = [
@@ -24,11 +30,20 @@ const FUNDS: InvestmentRowOut[] = [
   row("stable", "Harborline Stable Value Fund (CIT)", "1036000.00", "1163480.00", "nav"),
   row("broker", "Self-directed brokerage — BrokerWindow", "1257000.00", "1605000.00", "level1"),
 ];
-const NOTES = row("notes", "Notes receivable from participants", "288500.00", "312400.00", "not_certified");
+const NOTES = row(
+  "notes",
+  "Notes receivable from participants",
+  "288500.00",
+  "312400.00",
+  "not_certified",
+);
 
 const POINT_TEXT: readonly [string, string][] = [
-  ["qualifying_institution", "Harborline Trust Company, state-chartered trust company examined by the Illinois DFPR (qualifying institution, 29 CFR 2520.103-8)"],
-  ["complete_and_accurate", "\"complete and accurate\""],
+  [
+    "qualifying_institution",
+    "Harborline Trust Company, state-chartered trust company examined by the Illinois DFPR (qualifying institution, 29 CFR 2520.103-8)",
+  ],
+  ["complete_and_accurate", '"complete and accurate"'],
   ["period", "Jan 1 – Dec 31, 2025"],
   ["signer_and_date", "Vice President, Retirement Trust Operations, Sep 11, 2026"],
   ["covers", "investments"],

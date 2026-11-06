@@ -3,10 +3,12 @@
 // tables, Send to client shows template wording only, Undo calls only the compensating command." Read
 // from the source so a new control or sum fails here.
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const read = (rel: string): string => readFileSync(resolve(__dirname, rel), "utf8");
+const { process } = globalThis as unknown as { process: { cwd: () => string } };
+const read = (rel: string): string =>
+  readFileSync(join(process.cwd(), "src", "screens", "AUD-16", rel), "utf8");
 const FILES = {
   workbook: read("./Workbook.tsx"),
   send: read("./SendEntries.tsx"),

@@ -16,8 +16,12 @@ from temporalio.client import Client, WorkflowHistory
 from temporalio.worker import Worker
 
 from abacus.kernel.temporal import payload_codec
-from abacus.modules.agents.workflow_types import RunInput, ScreeningOutcome, SectionDraftInput
-from abacus.modules.agents.workflows import SectionDraftWorkflow
+from abacus.modules.agents.api import (
+    RunInput,
+    SectionDraftInput,
+    SectionDraftWorkflow,
+    SlotGrant,
+)
 from abacus_tools.stack import Stack, connect, run_with_stack
 from abacus_tools.workflows.histories import decoded_and_scrubbed
 from abacus_tools.workflows.record_retrieval import refuse_overwrite
@@ -29,8 +33,8 @@ _PAPER = "00000000-0000-0000-0000-0000000000d2"
 
 
 @activity.defn(name="screening.acquire_slot")
-async def _acquire(given: RunInput) -> bool:
-    return True
+async def _acquire(given: RunInput) -> SlotGrant:
+    return SlotGrant(granted=True, max_wait_seconds=60)
 
 
 @activity.defn(name="screening.release_slot")
@@ -39,11 +43,11 @@ async def _release(given: RunInput) -> None:
 
 
 @activity.defn(name="section_draft.draft")
-async def _draft(given: SectionDraftInput) -> ScreeningOutcome:
-    return ScreeningOutcome(status="completed")
+async def _draft(given: SectionDraftInput) -> dict[str, str]:
+    return {"status": "completed", "run_id": _RUN}
 
 
-@activity.defn(name="agents.persist_run")
+@activity.defn(name="agents.persist_run_record")
 async def _persist(given: RunInput) -> None:
     return None
 

@@ -550,9 +550,7 @@ class ExpenseRowOut(BaseModel):
     invoiced: MaybeMoney = None
     credits: MaybeMoney = None
     paid_from_plan: MaybeMoney = None
-    schedule_h_line: Annotated[
-        Literal["2i(1)", "2i(2)", "2i(3)", "2i(4)"], classified("internal")
-    ]
+    schedule_h_line: Annotated[Literal["2i(1)", "2i(2)", "2i(3)", "2i(4)"], classified("internal")]
     exception: Annotated[bool, classified("internal")] = False
 
 
@@ -693,7 +691,9 @@ class CertificationPointOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     key: Annotated[str, Field(max_length=40), classified("internal")]
-    proposed_answer: Annotated[str | None, Field(max_length=500), classified("confidential")] = None
+    proposed_answer: Annotated[str | None, Field(max_length=500), classified("confidential")] = (
+        None
+    )
     citation_id: Annotated[UUID | None, classified("internal")] = None
     answer: Annotated[Literal["evaluated", "not_evaluated"], classified("internal")]
     note: Annotated[str | None, Field(max_length=1000), classified("confidential")] = None
@@ -1600,7 +1600,7 @@ async def ebp_loans_offsets_route(work_item_id: UUID, ctx: Ctx) -> LoanOffsetsOu
                 offset_on=o.offset_on,
                 amount=o.amount,
                 form_1099r_code=o.form_1099r_code,
-                reported_line=o.reported_line,
+                reported_line="2e(1)",
             )
             for o in view.offsets
         ],
@@ -1842,9 +1842,7 @@ async def ebp_compliance_tests_route(work_item_id: UUID, ctx: Ctx) -> list[Compl
 @router.get(
     "/ebp/plan-qualification", action="ebp.read", response_model=list[QualificationFactOut]
 )
-async def ebp_plan_qualification_route(
-    work_item_id: UUID, ctx: Ctx
-) -> list[QualificationFactOut]:
+async def ebp_plan_qualification_route(work_item_id: UUID, ctx: Ctx) -> list[QualificationFactOut]:
     await _gate(ctx, work_item_id, "ebp.read", _E)
     from abacus.modules.assurance import ebp_expenses
 
@@ -1877,7 +1875,7 @@ async def ebp_expense_support_route(
     return SupportPrefillOut(
         provider_id=found.provider_id,
         expense_line_key=found.expense_line_key,
-        request_kind=found.request_kind,
+        request_kind="tpa_support",
     )
 
 

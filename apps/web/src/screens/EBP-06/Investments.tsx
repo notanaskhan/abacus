@@ -27,7 +27,7 @@ type Layer = keyof typeof COPY.layers;
 const LAYERS: readonly Layer[] = ["unadjusted", "aje", "rje", "final"];
 
 const money = (v: string | null | undefined): string =>
-  v === null || v === undefined ? "" : amount(v, "cents").text;
+  v === null || v === undefined ? "" : amount(v, "cents", { zero: "explicit" }).text;
 
 export interface InvestmentsOptions {
   active?: boolean;
@@ -64,12 +64,18 @@ function Row({
     >
       <td className="px-[12px]">{row.label}</td>
       {[row.trust_boy ?? row.tb_boy, row.trust_eoy ?? row.tb_eoy].map((value, i) => (
-        <td key={i === 0 ? "boy" : "eoy"} className="pr-[8px] text-right tabular-nums whitespace-nowrap">
+        <td
+          key={i === 0 ? "boy" : "eoy"}
+          className="pr-[8px] text-right tabular-nums whitespace-nowrap"
+        >
           {money(value)}
           {mark !== null && (
             <span
               data-mark={certified ? "ms" : "tick"}
-              className={cn("ml-[6px] text-[10.5px]", certified ? "font-medium text-olive" : "text-ink-3")}
+              className={cn(
+                "ml-[6px] text-[10.5px]",
+                certified ? "font-medium text-green" : "text-ink-3",
+              )}
             >
               {mark}
             </span>
@@ -117,7 +123,10 @@ function Certification({
           </span>
           <span className="flex-1">{point.proposed_answer ?? ""}</span>
           {point.answer === "evaluated" ? (
-            <span aria-label={COPY.certification.evaluated} className="size-[15px] rounded-full bg-olive" />
+            <span
+              aria-label={COPY.certification.evaluated}
+              className="size-[15px] rounded-full bg-green"
+            />
           ) : (
             <Button
               size="xs"
@@ -138,7 +147,9 @@ function Certification({
       ))}
       <div className="flex min-h-[33px] items-center gap-[8px] px-[12px] text-[12px]">
         <span className="w-[140px] shrink-0 text-ink-2">{COPY.certification.levels}</span>
-        <span data-ebp06="levels" className="tabular-nums">{levels}</span>
+        <span data-ebp06="levels" className="tabular-nums">
+          {levels}
+        </span>
       </div>
     </section>
   );
@@ -168,10 +179,14 @@ function Table({
       </thead>
       <tbody>
         <tr className="h-[29px] text-[12px] font-medium hairline-t">
-          <td colSpan={4} className="px-[12px]">{COPY.assets}</td>
+          <td colSpan={4} className="px-[12px]">
+            {COPY.assets}
+          </td>
         </tr>
         <tr className="h-[29px] text-[12px] font-medium hairline-t">
-          <td colSpan={4} className="px-[12px]">{COPY.investments}</td>
+          <td colSpan={4} className="px-[12px]">
+            {COPY.investments}
+          </td>
         </tr>
         {invested.map((row) => (
           <Row key={row.key} row={row} selected={selected === row.key} {...rowProps} />
@@ -185,7 +200,10 @@ function Table({
         {below.map((row) => (
           <Row key={row.key} row={row} selected={selected === row.key} {...rowProps} />
         ))}
-        <tr data-row="net_assets" className="h-[29px] border-t-[3px] border-double border-ink text-[12px] font-medium">
+        <tr
+          data-row="net_assets"
+          className="h-[29px] border-t-[3px] border-double border-ink text-[12px] font-medium"
+        >
           <td className="px-[12px]">{COPY.netAssets}</td>
           <td />
           <td className="pr-[8px] text-right tabular-nums">{money(view.net_assets)}</td>
@@ -222,11 +240,7 @@ export function useInvestmentsCanvas(
           </Pill>
         )}
         <PaneAction label={COPY.edit} />
-        <PaneAction
-          label={COPY.signOff}
-          disabled={held}
-          {...signOffProps}
-        />
+        <PaneAction label={COPY.signOff} disabled={held} {...signOffProps} />
         <PaneAction label={COPY.sourceDocs} {...sourceProps} />
       </>
     ),

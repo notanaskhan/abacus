@@ -507,7 +507,8 @@ A07_NEEDS: Final = ("people", "report_templates")
 
 
 def a07_content() -> dict[str, Any]:  # Any: YAML
-    return cast(dict[str, Any], yaml.safe_load(A07_CONTENT.read_text(encoding="utf-8")))
+    loaded = yaml.safe_load(A07_CONTENT.read_text(encoding="utf-8"))
+    return cast(dict[str, Any], loaded)  # Any: YAML
 
 
 def _a07_bundle(raw: Mapping[str, Any]) -> Json:  # Any: YAML

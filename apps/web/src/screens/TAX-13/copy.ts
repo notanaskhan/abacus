@@ -5,8 +5,9 @@ export const COPY = {
   title: "Extensions & estimates",
   tabs: { extensions: "Extensions", estimates: "Estimates", payments: "Payments" },
   segments: { open: "Open on extension", filed: "Filed", likely: "Likely to extend" },
-  control: (year: number): string => `Extensions · TY${year}`,
-  estimatesControl: (year: number, q: number): string => `Estimates · TY${year} Q${q}`,
+  control: (year: number): string => `Extensions · TY${String(year)}`,
+  estimatesControl: (year: number, q: number): string =>
+    `Estimates · TY${String(year)} Q${String(q)}`,
   openInExcel: "Open in Excel",
   extendSelected: "Extend selected…",
   tiles: {
@@ -23,7 +24,7 @@ export const COPY = {
   },
   search: "Search clients",
   pane: "Extended returns",
-  showing: (n: number, total: number): string => `Showing ${n} of ${total}`,
+  showing: (n: number, total: number): string => `Showing ${String(n)} of ${String(total)}`,
   columns: {
     client: "Client",
     return: "Return",
@@ -41,9 +42,15 @@ export const COPY = {
     q: "Installment",
     status: "Status",
   },
-  ack: { accepted: "Accepted", rejected: "Rejected", filed: "Filed", prepared: "Prepared", not_filed: "—" },
+  ack: {
+    accepted: "Accepted",
+    rejected: "Rejected",
+    filed: "Filed",
+    prepared: "Prepared",
+    not_filed: "—",
+  },
   notFiled: "Not filed",
-  day: (n: number): string => `${n} ${n === 1 ? "day" : "days"}`,
+  day: (n: number): string => `${String(n)} ${n === 1 ? "day" : "days"}`,
   likelyTag: "Likely to extend",
   prepare: (form: string): string => `Prepare ${form}…`,
   estimateStatus: {

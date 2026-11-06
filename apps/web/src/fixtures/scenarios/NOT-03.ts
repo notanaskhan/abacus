@@ -11,14 +11,23 @@
 //
 // Dev and test only.
 
-import { type FixtureHandler, type Scenario, defineScenarios, json } from "../../app-core/fixture-mode";
+import {
+  type FixtureHandler,
+  type Scenario,
+  defineScenarios,
+  json,
+} from "../../app-core/fixture-mode";
 import { seedScenario } from "../scenario";
 import { not02Notice } from "../seed/not02";
 import { type Not03Variant, not03Response } from "../seed/not03";
 
 const E0 = seedScenario();
 
-function frame(state: Not03Variant, persona = "samuel-ito", clock = "2026-09-14T10:02:00-05:00"): Scenario {
+function frame(
+  state: Not03Variant,
+  persona = "samuel-ito",
+  clock = "2026-09-14T10:02:00-05:00",
+): Scenario {
   return {
     state,
     persona,
@@ -29,7 +38,10 @@ function frame(state: Not03Variant, persona = "samuel-ito", clock = "2026-09-14T
         "GET /v1/notices/{notice_id}": () => json(not02Notice("c", persona)),
         "GET /v1/notices/{notice_id}/response": () => json(not03Response(state)),
         "POST /v1/notices/{notice_id}/response/send-for-signature": () =>
-          json({ envelope_id: "00000000-0000-4000-8000-0000000000d3", confirmation_request_item_id: null }),
+          json({
+            envelope_id: "00000000-0000-4000-8000-0000000000d3",
+            confirmation_request_item_id: null,
+          }),
         "POST /v1/notices/{notice_id}/response/mark-sent": () =>
           json({ sent_on: "2026-09-17", follow_up_on: "2026-11-16", confirmation_last4: "4821" }),
       };

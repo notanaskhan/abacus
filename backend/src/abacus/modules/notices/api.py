@@ -58,6 +58,15 @@ _register_sources()  # N-04-T13 (DEC-2245): the answer effect and the two triage
 from abacus.modules.notices import sending as _sending  # noqa: E402
 from abacus.modules.notices.response_activities import ACTIVITIES as ACTIVITIES  # noqa: E402
 from abacus.modules.notices.response_workflow import NoticeResponseWorkflow  # noqa: E402
+from abacus.modules.notices.response_workflow_types import (  # noqa: E402
+    AlertInput as AlertInput,
+)
+from abacus.modules.notices.response_workflow_types import (  # noqa: E402
+    FollowUpInput as FollowUpInput,
+)
+from abacus.modules.notices.response_workflow_types import (  # noqa: E402
+    NoticeResponseInput as NoticeResponseInput,
+)
 
 _sending.register()
 SUBSCRIPTIONS = _sending.SUBSCRIPTIONS
@@ -68,3 +77,14 @@ from abacus.modules.notices.agent_step import step as _agent_step  # noqa: E402
 from abacus.modules.notices.analysis import register_agent_step  # noqa: E402
 
 register_agent_step(_agent_step)
+
+# N-04-T21: the scenario loader reaches the intake path through this interface.
+from abacus.modules.notices import intake as _intake  # noqa: E402
+from abacus.modules.notices import service as _service  # noqa: E402
+
+create_notice_intake = _intake.create
+create_notice_from_intake = _intake.create_notice
+notice_engagement_for = _intake.notice_engagement_for
+revise_notice_intake = _intake.revise
+move_notice = _service.move
+read_notice = _service.notice

@@ -24,9 +24,27 @@ interface Note {
 }
 
 const NOTES: readonly Note[] = [
-  { ref: "RN-12", body: "Show the Dec 26 lag is not a pattern — compare all 26 biweekly remittances", status: "open", by: "MO", anchor: "EBP-04!F31" },
-  { ref: "RN-14", body: "Rep letter: add the specific representation on correcting the 4 missed deferrals", status: "open", by: "HL", anchor: "AUD-21 §3" },
-  { ref: "RN-13", body: "Show how the $35,300 projection was computed", status: "responded", by: "MO", anchor: "EBP-04!K18" },
+  {
+    ref: "RN-12",
+    body: "Show the Dec 26 lag is not a pattern — compare all 26 biweekly remittances",
+    status: "open",
+    by: "MO",
+    anchor: "EBP-04!F31",
+  },
+  {
+    ref: "RN-14",
+    body: "Rep letter: add the specific representation on correcting the 4 missed deferrals",
+    status: "open",
+    by: "HL",
+    anchor: "AUD-21 §3",
+  },
+  {
+    ref: "RN-13",
+    body: "Show how the $35,300 projection was computed",
+    status: "responded",
+    by: "MO",
+    anchor: "EBP-04!K18",
+  },
 ];
 
 const CLEARED_COUNT = 11;
@@ -49,12 +67,21 @@ function item(n: Note, status = n.status): ReviewNoteItemOut {
 
 function cleared(i: number): ReviewNoteItemOut {
   return item(
-    { ref: `RN-${String(i + 1).padStart(2, "0")}`, body: "", status: "cleared", by: "HL", anchor: "EBP-03!C4" },
+    {
+      ref: `RN-${String(i + 1).padStart(2, "0")}`,
+      body: "",
+      status: "cleared",
+      by: "HL",
+      anchor: "EBP-03!C4",
+    },
     "cleared",
   );
 }
 
-export function aud17Notes(variant: Aud17Variant = "a"): { items: ReviewNoteItemOut[]; total: number } {
+export function aud17Notes(variant: Aud17Variant = "a"): {
+  items: ReviewNoteItemOut[];
+  total: number;
+} {
   if (variant === "f") return { items: [], total: 0 };
   const live = NOTES.map((n) =>
     variant === "b" && n.ref === "RN-13" ? item(n, "cleared") : item(n),
@@ -71,11 +98,37 @@ export function aud17Detail(noteId: string, variant: Aud17Variant = "a"): Review
   const events: ReviewNoteDetailOut["events"] =
     found.ref === "RN-13"
       ? [
-          { actor_name: "Margaret Okonkwo", actor_user_id: stableId("user:MO"), at: "2026-09-30T16:05:00-05:00", body: "The SUM carries $35,300 as projected. Put the projection on the workpaper: sample error, sample size, population and method.", event: "raised" },
-          { actor_name: "Ana Cruz via Agent", actor_user_id: stableId("user:ana-cruz"), at: "2026-10-02T13:58:00-05:00", body: "Addressed in v3: added the projection table at EBP-04!K18:K24.", event: "responded" },
-          { actor_name: "Ana Cruz", actor_user_id: stableId("user:ana-cruz"), at: "2026-10-02T14:04:00-05:00", body: "Reviewed the agent's change and adopted it as v3 (L1).", event: "responded" },
+          {
+            actor_name: "Margaret Okonkwo",
+            actor_user_id: stableId("user:MO"),
+            at: "2026-09-30T16:05:00-05:00",
+            body: "The SUM carries $35,300 as projected. Put the projection on the workpaper: sample error, sample size, population and method.",
+            event: "raised",
+          },
+          {
+            actor_name: "Ana Cruz via Agent",
+            actor_user_id: stableId("user:ana-cruz"),
+            at: "2026-10-02T13:58:00-05:00",
+            body: "Addressed in v3: added the projection table at EBP-04!K18:K24.",
+            event: "responded",
+          },
+          {
+            actor_name: "Ana Cruz",
+            actor_user_id: stableId("user:ana-cruz"),
+            at: "2026-10-02T14:04:00-05:00",
+            body: "Reviewed the agent's change and adopted it as v3 (L1).",
+            event: "responded",
+          },
         ]
-      : [{ actor_name: "Margaret Okonkwo", actor_user_id: stableId("user:MO"), at: "2026-09-30T16:05:00-05:00", body: found.body, event: "raised" }];
+      : [
+          {
+            actor_name: "Margaret Okonkwo",
+            actor_user_id: stableId("user:MO"),
+            at: "2026-09-30T16:05:00-05:00",
+            body: found.body,
+            event: "raised",
+          },
+        ];
   return {
     body: found.body,
     events,
@@ -84,8 +137,24 @@ export function aud17Detail(noteId: string, variant: Aud17Variant = "a"): Review
 }
 
 function cell(level: number, spec: string): SignOffMatrixCellOut {
-  if (spec === "—") return { hash_prefix: null, initials: null, level, signed_at: null, state: "not_required", version_no: null };
-  if (spec === "o") return { hash_prefix: null, initials: null, level, signed_at: null, state: "pending", version_no: null };
+  if (spec === "—")
+    return {
+      hash_prefix: null,
+      initials: null,
+      level,
+      signed_at: null,
+      state: "not_required",
+      version_no: null,
+    };
+  if (spec === "o")
+    return {
+      hash_prefix: null,
+      initials: null,
+      level,
+      signed_at: null,
+      state: "pending",
+      version_no: null,
+    };
   const stale = spec.startsWith("!");
   return {
     hash_prefix: "7f3a",
@@ -97,7 +166,12 @@ function cell(level: number, spec: string): SignOffMatrixCellOut {
   };
 }
 
-function row(section: SignOffMatrixRowOut["section"], code: string, title: string, cells: string): SignOffMatrixRowOut {
+function row(
+  section: SignOffMatrixRowOut["section"],
+  code: string,
+  title: string,
+  cells: string,
+): SignOffMatrixRowOut {
   return {
     cells: cells.split(" ").map((spec, i) => cell(i + 1, spec)),
     code,
@@ -110,7 +184,15 @@ function row(section: SignOffMatrixRowOut["section"], code: string, title: strin
 
 export function aud17Matrix(): SignOffMatrixOut {
   return {
-    footer: { changed_after_sign_off: 1, eqr_required: 6, eqr_signed: 0, partner_required: 13, partner_signed: 8, prepared: 25, reviewed: 24 },
+    footer: {
+      changed_after_sign_off: 1,
+      eqr_required: 6,
+      eqr_signed: 0,
+      partner_required: 13,
+      partner_signed: 8,
+      prepared: 25,
+      reviewed: 24,
+    },
     rows: [
       row("planning", "TB", "Trial Balance", "MD — HL — —"),
       row("planning", "MAT", "Materiality (v3)", "MD — HL MO o"),

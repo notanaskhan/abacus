@@ -1156,6 +1156,13 @@ class EbpParticipantStatus(StrEnum):
     DECEASED = "deceased"
 
 
+class EbpParticipantLoanStatus(StrEnum):
+    ACTIVE = "active"
+    NEW = "new"
+    PAID_OFF = "paid_off"
+    OFFSET = "offset"
+
+
 class EbpImportStatus(StrEnum):
     MAPPED = "mapped"
     IMPORTED = "imported"
@@ -2168,6 +2175,12 @@ STORED: dict[str, tuple[str, ...]] = {
         "terminated",
         "retired",
         "deceased",
+    ),
+    "ebp_participant_loan": (
+        "active",
+        "new",
+        "paid_off",
+        "offset",
     ),
     "ebp_import": (
         "mapped",

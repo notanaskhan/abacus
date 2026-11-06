@@ -132,7 +132,9 @@ _RELEASE = (
 )
 
 
-def _release_args(ids: dict[str, uuid.UUID], kind: str, of: uuid.UUID | None) -> tuple[object, ...]:
+def _release_args(
+    ids: dict[str, uuid.UUID], kind: str, of: uuid.UUID | None
+) -> tuple[object, ...]:
     return (
         ids["tenant"], ids["engagement"], ids["item"], kind, of, ids["version"], _SHA,
         ids["person"], json.dumps({"g8": True}), _SHA, ids["document"],

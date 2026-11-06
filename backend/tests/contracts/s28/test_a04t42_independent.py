@@ -1,7 +1,9 @@
-"""A-04-T42 (TASK-3327): AC tests for A-04's agent work, from the row and without editing that code.
+"""A-04-T42 (TASK-3327): AC tests for A-04's agent work, from the row and without editing that
+code.
 
 "Tests ... fail if any A-04 agent path writes a value, decision or sign-off, if the agent's decide
-answers anything but 403, if a number without provenance reaches a suggestion, or if G4 reads met with
+answers anything but 403, if a number without provenance reaches a suggestion, or if G4 reads
+met with
 a pending proposal." The database half (G4 at 4:40 PM, reopened after an edit to R4) runs in the
 integration pass through the planning slice.
 """
@@ -42,10 +44,12 @@ FACTS = RecommendFacts(
 )  # fmt: skip
 
 
-def _answer(key: str = "rate_1_5", text: str = "Mid-range.", facts: str = "policy") -> DecisionSuggestion:
+def _answer(
+    key: str = "rate_1_5", text: str = "Mid-range.", facts: str = "policy"
+) -> DecisionSuggestion:
     return DecisionSuggestion(
         recommended_option_key=key,
-        reasons=[RecommendationReason(text=text, facts=[facts])],  # type: ignore[list-item]
+        reasons=[RecommendationReason(text=text, facts=[facts])],
     )
 
 

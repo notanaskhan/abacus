@@ -5,8 +5,8 @@ Offline: `Replayer` needs no Temporal server and no codec. The history was recor
 `abacus_tools.workflows.record_upload_processing` with a stub activity; it is never re-recorded.
 TASK-055 and TASK-056 add steps behind `workflow.patched(...)` and must keep it replaying; so do
 P-03-T05's `words` step (v4), P-03-T13's `pii_scan` step (v5), R-01-T09's
-`portal_drop_sort` step (v6) and P-03-T15's `masked_preview` step (v7), which replaces the
-unmasked preview for new runs.
+`portal_drop_sort` step (v6), P-03-T15's `masked_preview` step (v7), which replaces the
+unmasked preview for new runs, and P-11-T25's `ocr` step (v8).
 """
 
 from __future__ import annotations
@@ -51,6 +51,7 @@ def test_ac2_the_histories_are_committed() -> None:
         "upload-processing-v7-masked-preview-failed",
         # v7 (P-03-T15): `patched("masked_preview")`, the masked rendition after the scan.
         "upload-processing-v7-masked-preview",
+        "upload-processing-v8-ocr",
     ]
 
 

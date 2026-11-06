@@ -1,6 +1,6 @@
 ---
 id: TASK-3310
-title: P-11-T25 UploadProcessing OCR step: normalise, read, seal, publish
+title: "P-11-T25 UploadProcessing OCR step: normalise, read, seal, publish"
 spec: SPEC-000  # row (P-11-T25)
 acceptance_criteria: [AC-1]
 risk_zone: red

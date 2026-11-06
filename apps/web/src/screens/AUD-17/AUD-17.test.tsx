@@ -58,7 +58,7 @@ describe("AUD-17", () => {
       "Partner 8 of 13 · EQR 0 of 6 · Changed after sign-off 1",
     );
     expect((await drawn("[data-aud17='legend']")).textContent).toContain(
-      "a review note blocks sign-off; a comment never does",
+      "A review note blocks sign-off; a comment never does",
     );
   });
 

@@ -2180,6 +2180,127 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "subsequent_event_procedures": frozenset(
             {"performed_by", "performed_through", "run_id", "status", "updated_at", "version"}
         ),
+        # S28 (0667 to 0669; A-05-T41, A-07-T08, T09): EBP accounts, letters, report, archive.
+        "archives": frozenset(
+            {
+                "gate_snapshot_sha256",
+                "lock_decision_id",
+                "locked_at",
+                "locked_by",
+                "manifest_id",
+                "records_object_key",
+                "records_version_id",
+                "retention_until",
+                "seal_sha256",
+                "status",
+            }
+        ),
+        "audit_reports": frozenset(
+            {"city", "current_version_id", "report_date", "status", "updated_at", "version"}
+        ),
+        "ebp_compliance_tests": frozenset(
+            {
+                "accepted_at",
+                "accepted_by",
+                "engine_version",
+                "finding_ref",
+                "inputs_hash",
+                "limit_amount",
+                "limit_ref",
+                "result",
+                "updated_at",
+                "version",
+            }
+        ),
+        "ebp_erisa_budget_lines": frozenset({"amount", "citation_id", "updated_at", "version"}),
+        "ebp_loan_offsets": frozenset({"citation_id", "form_1099r_code", "updated_at", "version"}),
+        "ebp_participant_balances": frozenset(
+            {
+                "beginning_balance",
+                "citation_id",
+                "contributions",
+                "distributions",
+                "earnings",
+                "ending_balance",
+                "fees",
+                "status",
+                "transfers",
+                "updated_at",
+                "version",
+            }
+        ),
+        "ebp_participant_loans": frozenset(
+            {
+                "beginning_balance",
+                "citation_id",
+                "ending_balance",
+                "engine_version",
+                "inputs_hash",
+                "limit_amount",
+                "limit_result",
+                "new_loans",
+                "offsets",
+                "repayments",
+                "status",
+                "updated_at",
+                "version",
+                "vested_balance",
+            }
+        ),
+        "ebp_plan_expenses": frozenset(
+            {
+                "citation_id",
+                "credits",
+                "disclosure_citation_id",
+                "invoiced",
+                "issue_id",
+                "paid_from_plan",
+                "result",
+                "schedule_h_line",
+                "updated_at",
+                "version",
+            }
+        ),
+        "ebp_qualification_facts": frozenset(
+            {
+                "accepted_at",
+                "accepted_by",
+                "citation_id",
+                "result",
+                "updated_at",
+                "value",
+                "version",
+            }
+        ),
+        "ebp_sdba_holdings": frozenset(
+            {"citation_id", "market_value", "security_type", "updated_at", "version"}
+        ),
+        "governance_communications": frozenset(
+            {
+                "channel",
+                "combined_with_id",
+                "current_version_id",
+                "due_on",
+                "due_rule",
+                "envelope_id",
+                "status",
+                "updated_at",
+                "version",
+            }
+        ),
+        "governance_recipients": frozenset({"ack_required", "updated_at", "version"}),
+        "representation_letters": frozenset(
+            {
+                "current_version_id",
+                "dated_as_of",
+                "envelope_id",
+                "g7_met_at",
+                "signed_on",
+                "status",
+                "updated_at",
+                "version",
+            }
+        ),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
@@ -2413,6 +2534,18 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "subsequent_events": "a07_rows_immutable",
         "tie_out_runs": "statement_rows_immutable",
         "walkthroughs": "walkthroughs_immutable",
+        "archive_addition_decisions": "a07_rows_immutable",  # S28
+        "archive_additions": "a07_rows_immutable",  # S28
+        "archive_binder_indexes": "a07_rows_immutable",  # S28
+        "archive_lock_decisions": "a07_rows_immutable",  # S28
+        "archive_manifests": "a07_rows_immutable",  # S28
+        "audit_report_versions": "a07_rows_immutable",  # S28
+        "governance_acknowledgements": "a07_rows_immutable",  # S28
+        "governance_communication_sends": "a07_rows_immutable",  # S28
+        "governance_communication_versions": "a07_rows_immutable",  # S28
+        "report_releases": "a07_rows_immutable",  # S28
+        "representation_letter_approvals": "a07_rows_immutable",  # S28
+        "representation_letter_versions": "a07_rows_immutable",  # S28
     }
     assert _evidence_problems(evidence) == []
 

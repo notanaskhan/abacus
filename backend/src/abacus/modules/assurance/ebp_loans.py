@@ -8,10 +8,11 @@ distribution on line 2e(1) everywhere. The routes have authorised the action and
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
-from typing import Final
+from typing import Any, Final, cast
 from uuid import UUID
 
 from sqlalchemy import text
@@ -56,8 +57,7 @@ class LoansView:
     part_iv_4b: str
 
 
-def _row(r: object) -> LoanRow:
-    m = dict(r)  # type: ignore[call-overload]
+def _row(m: Mapping[str, Any]) -> LoanRow:  # Any: a row from the database
     loan = engine.Loan(
         m["loan_ref"], m["beginning_balance"], m["new_loans"], m["repayments"], m["offsets"],
         m["ending_balance"],
@@ -93,7 +93,7 @@ async def loans(
     async with tenant_session(tenant) as session:
         rows = (await session.execute(_LOANS, {"w": work_item_id})).mappings().all()
         offsets = (await session.execute(_OFFSETS, {"w": work_item_id})).mappings().all()
-    found = tuple(_row(r) for r in rows)
+    found = tuple(_row(cast("Mapping[str, Any]", r)) for r in rows)
     rolled = engine.rollforward([r.loan for r in found])
     offset_rows = tuple(
         OffsetRow(o["loan_ref"], o["offset_on"], o["amount"], o["form_1099r_code"],
@@ -113,7 +113,8 @@ async def loans(
 async def participant_loan(
     tenant: TenantContext, work_item_id: UUID, participant_key: str
 ) -> tuple[LoanRow, ...]:
-    """The EBP-05 drawer: this participant's loans (the note and amortization are the citations)."""
+    """The EBP-05 drawer: this participant's loans (the note and amortization are the
+    citations)."""
     view = await loans(tenant, work_item_id, None)
     found = tuple(r for r in view.rows if r.participant_key == participant_key)
     if not found:

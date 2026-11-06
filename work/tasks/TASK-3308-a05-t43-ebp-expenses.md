@@ -1,6 +1,6 @@
 ---
 id: TASK-3308
-title: A-05-T43 EBP-09 service: expenses, budget account, limits by plan year and compliance
+title: "A-05-T43 EBP-09 service: expenses, budget account, limits by plan year and compliance"
 spec: SPEC-000  # row (A-05-T43)
 acceptance_criteria: [AC-1]
 risk_zone: amber

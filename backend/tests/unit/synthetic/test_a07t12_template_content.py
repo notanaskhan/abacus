@@ -1,6 +1,7 @@
 """A-07-T12 (TASK-3316; DEC-2315): template content part 1, from the row.
 
-"make seed-demo loads every template through the import endpoints, the licensed-text detector reports
+"make seed-demo loads every template through the import endpoints, the licensed-text detector
+reports
 zero hits, and no template wording appears in Python or TypeScript sources." Counts from the row:
 EQR 10, EBP completion 18, archive 9, the representation letter's 11 locked and 4 triggered.
 """
@@ -31,7 +32,7 @@ def test_ac_the_rep_letter_has_eleven_locked_and_four_triggered() -> None:
     letter = next(b for b in CONTENT["bundles"] if b["family"] == "representation_letter")
     assert len(letter["paragraphs"]["general"]) == 11
     specific = letter["paragraphs"]["specific"]
-    assert [p["no"] for p in specific] == [12, 13, 14, 15]
+    assert [p["n"] for p in specific] == [12, 13, 14, 15]
     assert all(p["trigger"] for p in specific)
 
 

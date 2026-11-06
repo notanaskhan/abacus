@@ -124,7 +124,8 @@ def _extend_archives() -> None:
             ADD COLUMN lock_decision_id uuid NULL,
             ADD COLUMN manifest_id uuid NULL,
             ADD COLUMN seal_sha256 text NULL CHECK (seal_sha256 {_SHA}),
-            ADD COLUMN records_object_key text NULL CHECK (char_length(records_object_key) <= 1024),
+            ADD COLUMN records_object_key text NULL
+                CHECK (char_length(records_object_key) <= 1024),
             ADD COLUMN records_version_id text NULL CHECK (char_length(records_version_id) <= 256),
             ADD COLUMN gate_snapshot_sha256 text NULL CHECK (gate_snapshot_sha256 {_SHA}),
             ALTER COLUMN seal DROP NOT NULL,

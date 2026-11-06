@@ -14,7 +14,9 @@ from dataclasses import dataclass
 from typing import Final
 
 from PIL import Image, ImageOps, ImageSequence
-from pillow_heif import register_heif_opener
+from pillow_heif import (
+    register_heif_opener,  # pyright: ignore[reportUnknownVariableType] -- no stubs
+)
 
 from abacus.kernel.isolation import run_isolated
 
@@ -22,9 +24,7 @@ OCR_DPI: Final = 200
 MAX_PAGES: Final = 500
 MAX_PIXELS: Final = 80_000_000
 PDF: Final = "application/pdf"
-IMAGES: Final = frozenset(
-    {"image/png", "image/jpeg", "image/tiff", "image/heic", "image/heif"}
-)
+IMAGES: Final = frozenset({"image/png", "image/jpeg", "image/tiff", "image/heic", "image/heif"})
 
 
 @dataclass(frozen=True)
@@ -55,7 +55,9 @@ def _pdf_pages(content: bytes, wanted: frozenset[int] | None) -> tuple[PageImage
             page = document[index]
             width, height = page.get_size()
             bitmap = page.render(scale=OCR_DPI / 72)
-            out.append(PageImage(number, _png(bitmap.to_pil()), width, height, page.get_rotation()))
+            out.append(
+                PageImage(number, _png(bitmap.to_pil()), width, height, page.get_rotation())
+            )
         return tuple(out)
     finally:
         document.close()
@@ -76,7 +78,9 @@ def _image_pages(content: bytes) -> tuple[PageImage, ...]:
     return tuple(out)
 
 
-def rasterise(content: bytes, media_type: str, wanted: Sequence[int] | None) -> tuple[PageImage, ...]:
+def rasterise(
+    content: bytes, media_type: str, wanted: Sequence[int] | None
+) -> tuple[PageImage, ...]:
     """The named pages (all of them with None), upright and ready to read."""
     if media_type == PDF:
         return _pdf_pages(content, None if wanted is None else frozenset(wanted))

@@ -4726,6 +4726,32 @@ export const STATUS_REGISTRY = {
       "derived": false
     }
   },
+  "ebp_participant_loan": {
+    "active": {
+      "label": "Active",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "new": {
+      "label": "New",
+      "variant": "state",
+      "terminal": false,
+      "derived": false
+    },
+    "paid_off": {
+      "label": "Paid off",
+      "variant": "state",
+      "terminal": true,
+      "derived": false
+    },
+    "offset": {
+      "label": "Offset",
+      "variant": "state",
+      "terminal": true,
+      "derived": false
+    }
+  },
   "ebp_import": {
     "mapped": {
       "label": "Mapped",

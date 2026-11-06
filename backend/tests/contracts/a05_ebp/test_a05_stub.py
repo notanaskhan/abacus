@@ -66,6 +66,8 @@ ROUTES: dict[tuple[str, str], str] = {
 }
 # A-05-T10 (S24): EBP-01's plan edit and provider add are served, so they document no 501.
 SERVED = {
+    # S28: a person's evaluation of one certification point (A-05-T39).
+    ("put", f"{A}/ebp/certification/points/{{point_key}}"),
     ("patch", f"{A}/ebp/plan"),
     ("post", f"{A}/ebp/providers"),
     # S25: plan reviews (A-05-T16), the participant reveal (T18) and imports (T19) are served too.
