@@ -320,7 +320,15 @@ async def detail(ctx: AuthContext, template_id: UUID) -> TemplateDetail:
     )
 
 
-async def assign_owner(ctx: AuthContext, template_id: UUID, owner_id: UUID) -> TemplateDetail:
+async def assign_owner(
+    ctx: AuthContext,
+    template_id: UUID,
+    owner_id: UUID,
+    *,
+    key: str | None = None,
+    form_family: str | None = None,
+) -> TemplateDetail:
+    """The owner and, once, a T-02 import's key and form family (binders find a version by key)."""
     _person(ctx, ASSIGN)
     if owner_id not in await partner_members(ctx.tenant_id):
         raise OwnerNotPartner
@@ -328,9 +336,10 @@ async def assign_owner(ctx: AuthContext, template_id: UUID, owner_id: UUID) -> T
         found = (
             await tx.session.execute(
                 text(
-                    "UPDATE questionnaire_templates SET owner_id = :o WHERE id = :t RETURNING id"
+                    "UPDATE questionnaire_templates SET owner_id = :o, key = coalesce(:k, key), "
+                    "form_family = coalesce(:f, form_family) WHERE id = :t RETURNING id"
                 ),
-                {"o": owner_id, "t": template_id},
+                {"o": owner_id, "k": key, "f": form_family, "t": template_id},
             )
         ).first()
         if found is None:
@@ -338,7 +347,7 @@ async def assign_owner(ctx: AuthContext, template_id: UUID, owner_id: UUID) -> T
         tx.record(
             "questionnaire_template.owner_assigned",
             target=Target(SUBJECT, template_id),
-            after=Ref(owner_id=str(owner_id)),
+            after=Ref(owner_id=owner_id),
         )
     return await detail(ctx, template_id)
 

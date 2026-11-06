@@ -256,6 +256,43 @@ async def test_ac_a_walled_return_is_absent_for_the_viewer(board: Board) -> None
     assert listed.json()["counts"]["extended"] == 0
 
 
+async def test_ac_a_walled_client_s_schedule_is_absent_for_a_firm_reader(board: Board) -> None:
+    """The visibility column is the entity's client, not the entity: a wall names a client."""
+    feld = _feld(board)
+    samuel = await board.person("Samuel Ito", None)
+    await _member(board, feld, samuel.user_id, "manager")
+    entity = cast(
+        uuid.UUID,
+        await board.seed.value(
+            "SELECT client_entity_id FROM tax_returns WHERE work_item_id = $1", feld
+        ),
+    )
+    with frozen(DEMO):
+        await estimates.create_schedule(
+            samuel,
+            client_entity_id=entity,
+            basis_tax_return_id=feld,
+            tax_year=2029,
+            jurisdiction="US",
+            form="1040-ES",
+            method="prior_year_110",
+            due_dates=[(q, date(2030, q * 3, 15), None) for q in (1, 2, 3, 4)],
+        )
+        # A manager on the engagement reads through the client's engagements.
+        assert len(await estimates.rows(samuel, 2029)) == 1
+        leader = await board.person("Walled Leader", "practice_leader")
+        assert len(await estimates.rows(leader, 2029)) == 1
+        await board.seed.run(
+            "INSERT INTO ethical_walls (tenant_id, user_id, client_id, created_by) "
+            "VALUES ($1, $2, $3, $4)",
+            board.tenant,
+            leader.user_id,
+            board.clients["Feld Household"],
+            board.partner,
+        )
+        assert await estimates.rows(leader, 2029) == []
+
+
 async def test_ac_the_liability_needs_its_source_and_code_stores_the_target(board: Board) -> None:
     feld = _feld(board)
     samuel = await board.person("Samuel Ito", None)

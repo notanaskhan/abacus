@@ -137,7 +137,7 @@ def on_tile(row: ScheduleRow, quarter: int, tile: str | None) -> bool:
 
 
 async def rows(ctx: AuthContext, tax_year: int) -> list[ScheduleRow]:
-    allowed = await visible_clients(ctx, READ, _ENTITIES.c.id)
+    allowed = await visible_clients(ctx, READ, _ENTITIES.c.client_id)
     async with tenant_session(ctx.tenant) as session:
         visible = (
             await session.execute(
@@ -467,7 +467,9 @@ async def create_schedule(
 ) -> UUID:
     """T-03-T15's content path (service, never constants): a schedule and its four installments,
     dated from C21 by the caller."""
-    await authorise(ctx, UPDATE, Resource.firm(ctx.tenant_id))
+    await authorise(
+        ctx, UPDATE, await resource_of(ctx, {"basis_tax_return_id": basis_tax_return_id})
+    )
     schedule_id = uuid4()
     async with uow(ctx.tenant) as tx:
         await tx.session.execute(

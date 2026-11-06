@@ -59,6 +59,8 @@ from abacus.modules.tax.engine_adapter import EXTENSION_FORMS
 
 KIND = "tax_return"
 FEDERAL: Final = "US"
+FLAG_LIKELY: Final = "filing_extension.flag_likely"
+LoaderDates = tuple[date, date, str]  # original due, extended due, the federal form
 READ: Final = "filing_extension.read"
 PREPARE: Final = "filing_extension.prepare"
 APPROVE: Final = "filing_extension.approve_payment"
@@ -390,6 +392,7 @@ async def _line_for(
     return_row: Mapping[str, Any],  # Any: a database row
     jurisdiction: str,
     form: str | None,
+    loader_dates: LoaderDates | None = None,
 ) -> dict[str, Any]:  # Any: a database row
     """The return's line for a jurisdiction, created from the rules the first time."""
     return_id = return_row["work_item_id"]
@@ -408,18 +411,24 @@ async def _line_for(
     )
     if found is not None:
         return dict(found)
-    dates = await dates_for(
-        str(return_row["form"]), int(return_row["tax_year"]), return_row["fiscal_year_end"]
+    dates = (
+        None
+        if loader_dates
+        else await dates_for(
+            str(return_row["form"]), int(return_row["tax_year"]), return_row["fiscal_year_end"]
+        )
     )
-    if dates is None or dates.extended_due_on is None:
+    if loader_dates is None and (dates is None or dates.extended_due_on is None):
         raise NoExtensionForm(facts={"return_id": str(return_id)})
     if jurisdiction == FEDERAL:
-        form = dates.extension_form
+        form = dates.extension_form if dates else loader_dates[2]  # type: ignore[index] -- above
     elif form is None:
         raise StateFormRequired(facts={"jurisdiction": jurisdiction})
-    if form not in EXTENSION_FORMS:
+    if loader_dates is None and form not in EXTENSION_FORMS:
         raise NoExtensionForm(facts={"return_id": str(return_id)})
-    versions = dates.reference_set_version_ids
+    versions = dates.reference_set_version_ids if dates else ()
+    original = dates.original_due_on if dates else loader_dates[0]  # type: ignore[index] -- above
+    extended = dates.extended_due_on if dates else loader_dates[1]  # type: ignore[index] -- above
     created = (
         (
             await tx.session.execute(
@@ -437,8 +446,8 @@ async def _line_for(
                     "y": return_row["tax_year"],
                     "j": jurisdiction,
                     "form": form,
-                    "orig": dates.original_due_on,
-                    "ext": dates.extended_due_on,
+                    "orig": original,
+                    "ext": extended,
                     "rules": versions[0] if versions else None,
                     "by": ctx.user_id,
                 },
@@ -511,6 +520,7 @@ async def _prepare_in(
     ctx: AuthContext,
     return_ids: Sequence[UUID],
     payments: Sequence[ProposedPayment],
+    loader_dates: Mapping[UUID, LoaderDates] | None = None,
 ) -> tuple[list[UUID], list[LineCheck]]:
     """Prepare inside the caller's unit of work. Every return is checked before anything is
     written, so one refusal leaves the whole selection as it was."""
@@ -524,7 +534,7 @@ async def _prepare_in(
             raise NotFound("tax_return")
         engagement_id = found[return_id]["engagement_id"]
         await authorise(ctx, PREPARE, await on_return(ctx, engagement_id, return_id))
-        unmet = await _unmet_gates(ctx.tenant, engagement_id)
+        unmet = [] if loader_dates else await _unmet_gates(ctx.tenant, engagement_id)
         if unmet:
             raise ExtensionGateUnmet(
                 facts={"return_id": str(return_id), "gate": unmet[0], "unmet": len(unmet)}
@@ -538,7 +548,9 @@ async def _prepare_in(
         lines: list[dict[str, Any]] = []  # Any: database rows
         for jurisdiction in jurisdictions:
             form = next((p.form for p in mine if p.jurisdiction == jurisdiction), None)
-            line = await _line_for(tx, ctx, row, jurisdiction, form)
+            line = await _line_for(
+                tx, ctx, row, jurisdiction, form, (loader_dates or {}).get(return_id)
+            )
             for p in (x for x in mine if x.jurisdiction == jurisdiction):
                 await _propose(tx, ctx, line["id"], p.kind, p.amount)
             if line["status"] == "not_filed":
@@ -569,10 +581,72 @@ async def _prepare_in(
 
 
 async def prepare(
-    ctx: AuthContext, return_ids: Sequence[UUID], payments: Sequence[ProposedPayment]
+    ctx: AuthContext,
+    return_ids: Sequence[UUID],
+    payments: Sequence[ProposedPayment],
+    *,
+    loader_dates: Mapping[UUID, LoaderDates] | None = None,
 ) -> tuple[list[UUID], list[LineCheck]]:
+    """`loader_dates` is the demo loader's alone: its firm has no published TY2025 rules and its
+    tax engagements carry no acceptance or letter, so it passes the board's dates and form, and
+    G1 and G3 and the form list aren't read (T-03-T15). No route passes it."""
     async with uow(ctx.tenant) as tx:
-        return await _prepare_in(tx, ctx, return_ids, payments)
+        return await _prepare_in(tx, ctx, return_ids, payments, loader_dates)
+
+
+async def flag_new_likely(
+    ctx: AuthContext,
+    return_id: UUID,
+    *,
+    form: str,
+    original_due_on: date,
+    extended_due_on: date,
+    reason: str,
+    note: str | None,
+) -> UUID:
+    """A likely-to-extend line with nothing prepared: `not_filed`, so the gates don't hold it."""
+    visible = {f.work_item_id: f.engagement_id for f in await work_item_facts(ctx, KIND)}
+    engagement_id = visible.get(return_id)
+    if engagement_id is None:
+        raise NotFound("tax_return")
+    await authorise(ctx, FLAG_LIKELY, await on_return(ctx, engagement_id, return_id))
+    async with uow(ctx.tenant) as tx:
+        year = (
+            await tx.session.execute(
+                text("SELECT tax_year FROM tax_returns WHERE work_item_id = :w"), {"w": return_id}
+            )
+        ).scalar_one()
+        made = (
+            await tx.session.execute(
+                text(
+                    "INSERT INTO filing_extensions (id, tenant_id, engagement_id, work_item_id, "
+                    "tax_return_id, tax_year, jurisdiction, form, likely_to_extend, "
+                    "likely_reasons, likely_note, original_due_on, extended_due_on, created_by) "
+                    "VALUES (:id, :t, :e, :r, :r, :y, :j, :f, true, :why, :n, :o, :x, :by) "
+                    "RETURNING id"
+                ),
+                {
+                    "id": uuid4(),
+                    "t": ctx.tenant_id,
+                    "e": engagement_id,
+                    "r": return_id,
+                    "y": year,
+                    "j": FEDERAL,
+                    "f": form,
+                    "why": [reason],
+                    "n": note,
+                    "o": original_due_on,
+                    "x": extended_due_on,
+                    "by": ctx.user_id,
+                },
+            )
+        ).scalar_one()
+        tx.record(
+            "filing_extension.flagged",
+            target=Target("work_item", return_id),
+            after=Ref(likely=1),
+        )
+    return made
 
 
 async def _approve_in(
