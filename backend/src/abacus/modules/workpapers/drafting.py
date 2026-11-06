@@ -281,6 +281,23 @@ async def paper_id_of_kind(tenant: TenantContext, engagement_id: UUID, kind: str
     return None if found is None else UUID(str(found))
 
 
+async def latest_test_of_variant(
+    tenant: TenantContext, work_item_id: UUID, variant: str
+) -> UUID | None:
+    """The work item's newest attribute test of `variant` (A-05's EBP-04 c reads it)."""
+    async with tenant_session(tenant) as session:
+        found = (
+            await session.execute(
+                text(
+                    "SELECT id FROM attribute_tests WHERE work_item_id = :w AND variant = :v "
+                    "ORDER BY created_at DESC, id DESC LIMIT 1"
+                ),
+                {"w": work_item_id, "v": variant},
+            )
+        ).scalar()
+    return None if found is None else UUID(str(found))
+
+
 SOURCE = SectionSource(draft_paper, bound, pack_problem, raise_draft_flag)
 
 __all__ = [
