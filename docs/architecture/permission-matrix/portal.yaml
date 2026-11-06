@@ -51,3 +51,10 @@ actions:
   tcwg.read:                {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}   # POR-15 a, c, d, e
   tcwg.acknowledge:         {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required, mfa_recent: required}   # POR-15 b: one row per member and version
   tcwg.ask:                 {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}   # POR-15: the author-only thread
+  # --- C18 (R-02-T03 stub; R-02 §4.4; DEC-2403). I-AGENT-NEVER: every decision action is denied to agent and system. The designation check
+  # (owner or approver of record; SKE designee where OQ-1 asks) narrows it in `engagements/client_approvals.py`, so a contributor gets 403 `not_decider`.
+  client_approval.read:     {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}   # POR-08 lists and details
+  client_approval.ask:      {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}   # POR-08 d: a question on the item's thread
+  proposed_entry.client_decide: {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required, mfa_recent: required}   # POR-08 e: accept or decline, attest clients
+  uncorrected_misstatements.acknowledge: {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required, mfa_recent: required}   # POR-08 e2
+  close_package.client_decide: {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required, mfa_recent: required}   # POR-08 a to c: C-02 or A-08 registers the kind
