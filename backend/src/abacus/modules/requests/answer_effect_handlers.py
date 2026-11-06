@@ -8,7 +8,8 @@ effect row right after, and skips a pair already recorded.
 
 from __future__ import annotations
 
-from uuid import uuid4
+from dataclasses import dataclass
+from uuid import UUID, uuid4
 
 from sqlalchemy import text
 
@@ -17,12 +18,45 @@ from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.requests.answer_effect_slots import (
     EffectRequest,
     EffectResult,
+    HandlerUnavailable,
     register_answer_effect,
 )
 from abacus.modules.requests.repository import request_list_for
 from abacus.modules.requests.service import (
     _insert_item,  # pyright: ignore[reportPrivateUsage] -- the sibling module's own helper
 )
+
+
+@dataclass(frozen=True)
+class EffectRule:
+    """What another module's handler needs of the rule it acts on (T-03-T06)."""
+
+    engagement_id: UUID
+    work_item_id: UUID
+    title: str
+
+
+async def effect_rule(request: EffectRequest) -> EffectRule:
+    tenant = TenantContext(request.tenant_id, "system", "answer_effects")
+    async with tenant_session(tenant) as session:
+        row = (
+            (
+                await session.execute(
+                    text(
+                        "SELECT qn.engagement_id, qn.work_item_id, q.effect_rules "
+                        "FROM questions q "
+                        "JOIN questionnaires qn ON qn.id = q.questionnaire_id WHERE q.id = :q"
+                    ),
+                    {"q": request.question_id},
+                )
+            )
+            .mappings()
+            .one()
+        )
+    if row["engagement_id"] is None or row["work_item_id"] is None:
+        raise HandlerUnavailable  # a template-owned question has no return to raise it on
+    rule = next(r for r in row["effect_rules"] if r["key"] == request.rule_key)
+    return EffectRule(row["engagement_id"], row["work_item_id"], str(rule["title"])[:500])
 
 
 async def create_request_item(request: EffectRequest) -> EffectResult:

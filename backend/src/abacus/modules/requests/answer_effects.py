@@ -24,6 +24,7 @@ from sqlalchemy import text
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.uow import OutboxEvent, Ref, Target, uow
+from abacus.modules.identity.api import AuthContext
 from abacus.modules.requests.answer_effect_slots import (
     EffectRequest,
     EffectResult,
@@ -182,6 +183,96 @@ async def _uploaded_version(tenant: TenantContext, answer_id: UUID) -> UUID | No
         else None
     )
     return UUID(str(found)) if found else None
+
+
+async def fire_staff_edit(
+    ctx: AuthContext, questionnaire_id: UUID, fired: Sequence[JsonMap]
+) -> None:
+    """A staff edit made an existing answer trigger a new rule (T-03 §4.2): the same handlers,
+    attributed to the editor, with no answer row. One row per (question, rule): a repeat of the
+    same save writes nothing more."""
+    tenant = ctx.tenant
+    async with tenant_session(tenant) as session:
+        head = (
+            (
+                await session.execute(
+                    text(
+                        "SELECT id AS questionnaire_id, created_by, "
+                        "coalesce(source_template_version_id, template_version_id) AS tv "
+                        "FROM questionnaires WHERE id = :q"
+                    ),
+                    {"q": questionnaire_id},
+                )
+            )
+            .mappings()
+            .one()
+        )
+        questions = {
+            r["question_key"]: r["id"]
+            for r in (
+                await session.execute(
+                    text("SELECT id, question_key FROM questions WHERE questionnaire_id = :q"),
+                    {"q": questionnaire_id},
+                )
+            ).mappings()
+        }
+    for effect in fired:
+        question_id = questions.get(str(effect["question_key"]))
+        if question_id is None:
+            continue
+        rule_key, kind = str(effect["rule_key"]), str(effect["kind"])
+        async with tenant_session(tenant) as session:
+            done = (
+                await session.execute(
+                    text(
+                        "SELECT 1 FROM answer_effects WHERE question_id = :q AND rule_key = :r "
+                        "AND answer_id IS NULL"
+                    ),
+                    {"q": question_id, "r": rule_key},
+                )
+            ).scalar()
+        if done:
+            continue
+        handler = answer_effect_handler(kind)
+        result: EffectResult | None = None
+        if handler is not None:
+            try:
+                result = await handler(
+                    EffectRequest(
+                        tenant_id=tenant.tenant_id,
+                        questionnaire_id=questionnaire_id,
+                        question_id=question_id,
+                        answer_id=None,
+                        rule_key=rule_key,
+                        template_version_id=head["tv"],
+                        owner_user_id=head["created_by"],
+                    )
+                )
+            except HandlerUnavailable:
+                result = None
+        async with uow(tenant) as tx:
+            await tx.session.execute(
+                text(
+                    "INSERT INTO answer_effects (tenant_id, question_id, rule_key, effect_kind, "
+                    "target_type, target_id, actor_kind, actor_user_id, template_version_id) "
+                    "VALUES (:t, :q, :rule, :kind, :tt, :tid, 'human', :by, :tv)"
+                ),
+                {
+                    "t": tenant.tenant_id,
+                    "q": question_id,
+                    "rule": rule_key,
+                    "kind": "pending_handler" if result is None else RESULT_KIND[kind],
+                    "tt": None if result is None else result.target_type,
+                    "tid": None if result is None else result.target_id,
+                    "by": ctx.user_id,
+                    "tv": head["tv"],
+                },
+            )
+            tx.record(
+                "answer_effect.recorded",
+                target=Target("question", question_id),
+                after=Ref(rule=rule_key, pending=int(result is None)),
+            )
 
 
 async def effect_log(tenant: TenantContext, questionnaire_id: UUID) -> list[JsonRow]:
