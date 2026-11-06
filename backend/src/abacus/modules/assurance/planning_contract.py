@@ -456,7 +456,7 @@ class SuggestedResponseOut(BaseModel):
 
 
 class SuggestedRationaleOut(BaseModel):
-    """A drafted rationale waiting for a person (AUD-08 f; DEC-2386): the row holds none of it."""
+    """A drafted rationale waiting for a person (AUD-08 f; DEC-2481): the row holds none of it."""
 
     model_config = ConfigDict(frozen=True)
 

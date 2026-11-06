@@ -43730,7 +43730,7 @@ export type SubserviceOrgOut = {
 /**
  * SuggestedRationaleOut
  *
- * A drafted rationale waiting for a person (AUD-08 f; DEC-2386): the row holds none of it.
+ * A drafted rationale waiting for a person (AUD-08 f; DEC-2481): the row holds none of it.
  */
 export type SuggestedRationaleOut = {
     /**

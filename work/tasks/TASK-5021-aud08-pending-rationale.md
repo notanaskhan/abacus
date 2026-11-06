@@ -42,7 +42,8 @@ Edit · Discard only while one waits.
 - [ ] A re-draft keeps the adopted wording in view, and Adopt sends the suggestion's version.
 
 ## Decisions made during this task
-DEC-2386.
+DEC-2481.
 
 ## Progress log
 - 2026-11-06: built, with tests written first. Not yet run: the owner held this session's tests so other sessions get the CPU. Run the T24 test command plus `src/screens/AUD-08` before the PR.
+- 2026-11-07: Merged main, which took this row's first number while it was held; other sessions then held the next ones, so it moves to a block clear of them. End test pass with T24: targeted backend tests 857 passed, AUD-08 web tests 13 passed, tsc, eslint and check-fast. Fixed on the way: the re-draft test read a request method the fixture does not have, and the rationale check moved out of a className (ADR-065 lint).

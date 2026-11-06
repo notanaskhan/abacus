@@ -231,7 +231,7 @@ async def test_ac4_7_a_pending_response_reads_from_the_store_and_a_shadow_run_ne
 async def test_a_pending_rationale_is_drawn_with_its_own_text_and_version(
     world: SimpleNamespace,
 ) -> None:
-    """DEC-2386: the drawer's Adopt names the waiting suggestion and shows what it proposes."""
+    """DEC-2481: the drawer's Adopt names the waiting suggestion and shows what it proposes."""
     shown = await _suggestion(
         world, await _run(world), "Census data may be incomplete", "rationale"
     )
@@ -253,7 +253,7 @@ async def test_the_newest_pending_rationale_is_the_one_drawn(world: SimpleNamesp
 
 
 async def test_an_adopted_rationale_offers_no_adopt(world: SimpleNamespace) -> None:
-    """The bug DEC-2386 fixes: this read the adopted value's suggestion as if still waiting."""
+    """The bug DEC-2481 fixes: this read the adopted value's suggestion as if still waiting."""
     person = world.firm.person()
     suggestion = await _suggestion(world, await _run(world), "Adopted wording", "rationale")
     async with uow(person.tenant) as tx:

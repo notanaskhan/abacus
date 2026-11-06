@@ -484,7 +484,7 @@ async def drawer(ctx: AuthContext, engagement_id: UUID, risk_id: UUID) -> Drawer
         None,
     )
     # Pending, not the field's history: an adopted value is the person's and waits on nobody. The
-    # store reads oldest first; a re-draft is the one to decide (DEC-2386).
+    # store reads oldest first; a re-draft is the one to decide (DEC-2481).
     rationales = [
         p for p in await _pending_of(ctx, engagement_id, "rationale") if p.target_id == row.id
     ]

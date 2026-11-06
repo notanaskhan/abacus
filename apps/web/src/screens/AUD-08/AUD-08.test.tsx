@@ -221,7 +221,7 @@ describe("AUD-08 c, e, f, g (A-04-T26)", () => {
     });
     expect(footer.textContent).toContain("Adopt");
     expect(document.querySelector("[data-drafted]")).toBeTruthy();
-    // The proposed wording is on show, and it is the suggestion's, not the row's (DEC-2386).
+    // The proposed wording is on show, and it is the suggestion's, not the row's (DEC-2481).
     const proposed = document.querySelector('[data-aud08="proposed-rationale"]');
     expect(proposed?.textContent).toContain("QACA escalation");
   });

@@ -93210,7 +93210,7 @@
         "type": "object"
       },
       "SuggestedRationaleOut": {
-        "description": "A drafted rationale waiting for a person (AUD-08 f; DEC-2386): the row holds none of it.",
+        "description": "A drafted rationale waiting for a person (AUD-08 f; DEC-2481): the row holds none of it.",
         "properties": {
           "citations": {
             "cls": "internal",
