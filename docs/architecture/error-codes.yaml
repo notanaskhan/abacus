@@ -1639,6 +1639,16 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.fraud_brainstorm.NothingToApprove
+  misstatement_moved:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.sum_service.MisstatementMoved
+    summary: Someone changed the misstatement since this person read it.
+  misstatement_not_passable:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.sum_service.NotPassable
+    summary: Only a misstatement the client declined to book can be passed on the SUM.
   mode_not_for_paper:
     status: 409
     raised_by:
@@ -1909,6 +1919,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.materiality.NothingDecided
+    - abacus.modules.assurance.sum_service.NoMateriality
     summary: A reassessment needs a decided materiality.
   nothing_pending:
     status: 409

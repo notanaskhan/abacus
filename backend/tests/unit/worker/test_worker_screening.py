@@ -92,6 +92,7 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "inbox_file.added",  # SPEC-027 (TASK-050): the engagement agent
         "filing.acknowledged",  # T-03-T07: estimates and the extension answer the ack
         "notice_intake.started",  # N-04-T07 (DEC-2326)
+        "notice_analysis.requested",  # N-04-T11 (DEC-2359)
         "section_draft.finished",  # A-04-T29 (DEC-2327)
         "ocr_run.refused",  # P-11: a refused OCR run
         "firm.agents_resumed",
@@ -112,6 +113,8 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "gate.met",  # A-01-T05: the phase a computed gate opens is derived
         "evidence_text.ready",  # P-11-T26: form extraction starts
         "notice.created",  # N-04-T16: the notice's timers start
+        "statement.draft_requested",  # A-06-T25: starts FsDraftWorkflow
+        "statement.tie_out_requested",  # A-06-T25: starts TieOutWorkflow
         "notice.respond_by_soon",  # N-04-T16: C16 to the assignee
         "notice.follow_up_due",  # N-04-T16: C16 to the assignee
         "notice_response.ready_to_send",  # N-04-T16: C16 to the assignee

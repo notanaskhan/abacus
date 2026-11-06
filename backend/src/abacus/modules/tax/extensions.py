@@ -54,8 +54,12 @@ from abacus.modules.identity.api import (
     offshore_consented,
 )
 from abacus.modules.tax.compute import payments as engine
-from abacus.modules.tax.due_dates import FORM_FOR_RULES, dates_for
-from abacus.modules.tax.engine_adapter import EXTENSION_FORMS
+from abacus.modules.tax.due_dates import (
+    FORM_FOR_RULES,
+    DueDates,
+    dates_for,
+    dates_for_extension_form,
+)
 
 KIND = "tax_return"
 FEDERAL: Final = "US"
@@ -388,6 +392,20 @@ async def _target_columns(
     }
 
 
+async def _line_dates(
+    jurisdiction: str,
+    extension_form: str | None,
+    return_form: str,
+    tax_year: int,
+    fiscal_year_end: date | None,
+) -> DueDates | None:
+    """A federal line reads its return's rule; a state line the rule naming its own form, so a
+    form no published rule names is refused (T-03 §4.2; DEC-2357)."""
+    if jurisdiction == FEDERAL or extension_form is None:
+        return await dates_for(return_form, tax_year, fiscal_year_end)
+    return await dates_for_extension_form(extension_form, tax_year, fiscal_year_end, jurisdiction)
+
+
 async def _line_for(
     tx: UnitOfWork,
     ctx: AuthContext,
@@ -413,21 +431,23 @@ async def _line_for(
     )
     if found is not None:
         return dict(found)
+    if jurisdiction != FEDERAL and form is None:
+        raise StateFormRequired(facts={"jurisdiction": jurisdiction})
     dates = (
         None
         if loader_dates
-        else await dates_for(
-            str(return_row["form"]), int(return_row["tax_year"]), return_row["fiscal_year_end"]
+        else await _line_dates(
+            jurisdiction,
+            form,
+            str(return_row["form"]),
+            int(return_row["tax_year"]),
+            return_row["fiscal_year_end"],
         )
     )
     if loader_dates is None and (dates is None or dates.extended_due_on is None):
         raise NoExtensionForm(facts={"return_id": str(return_id)})
     if jurisdiction == FEDERAL:
         form = dates.extension_form if dates else loader_dates[2]  # type: ignore[index] -- above
-    elif form is None:
-        raise StateFormRequired(facts={"jurisdiction": jurisdiction})
-    if loader_dates is None and form not in EXTENSION_FORMS:
-        raise NoExtensionForm(facts={"return_id": str(return_id)})
     versions = dates.reference_set_version_ids if dates else ()
     original = dates.original_due_on if dates else loader_dates[0]  # type: ignore[index] -- above
     extended = dates.extended_due_on if dates else loader_dates[1]  # type: ignore[index] -- above
@@ -793,21 +813,23 @@ async def send_confirmation(
     wave: str,
     linked_ref: dict[str, object],
     link: Callable[[UnitOfWork, UUID], Awaitable[None]] | None = None,
+    part: tuple[UUID, str] | None = None,
 ) -> ConfirmationSent:
     """One confirmation request, created in the engagement's binder and sent on the click. The
     wording names jurisdictions and periods, never an amount or a form number: the scope check
-    reads any number in client text as an amount."""
+    reads any number in client text as an amount. `part` (work item, name) files it in that binder
+    part instead. The contact it goes to is its assignee, so TAX-13 can name them."""
     from abacus.modules.requests.api import (
         BulkItem,
-        ItemPatch,
         create_items_bulk,
+        part_for_send,
         request_item_sent,
         send_created,
-        update_item,
     )
 
     user, name = await confirmation_contact(ctx, engagement_id, contact_id)
     async with uow(ctx.tenant) as tx:
+        filed_in = await part_for_send(tx, ctx, engagement_id, part[0], part[1]) if part else None
         ids = await create_items_bulk(
             tx,
             ctx,
@@ -817,17 +839,17 @@ async def send_confirmation(
                     description=description[:2000],
                     audit_area="tax_payments",
                     linked_ref=linked_ref,
+                    client_assignee_user_id=user,
                 )
             ],
             wave=wave,
             due_on=due_on,
             batch_id=uuid4(),
+            request_list_id=filed_in,
         )
         await send_created(tx, ctx, engagement_id, ids[0])
         if link is not None:
             await link(tx, ids[0])
-    if contact_id is not None and user is not None:
-        await update_item(ctx, engagement_id, ids[0], ItemPatch({"client_assignee_user_id": user}))
     list_id, sent_at = await request_item_sent(ctx.tenant, ids[0])
     return ConfirmationSent(ids[0], list_id, sent_at, name)
 
@@ -1071,7 +1093,8 @@ async def recompute_open_lines(tenant: TenantContext) -> int:
                 await session.execute(
                     text(
                         "SELECT e.id, e.tax_return_id, e.original_due_on, e.extended_due_on, "
-                        "e.due_rules_version_id, r.form, r.tax_year, r.fiscal_year_end "
+                        "e.due_rules_version_id, e.jurisdiction, e.form AS extension_form, "
+                        "r.form, r.tax_year, r.fiscal_year_end "
                         "FROM filing_extensions e JOIN tax_returns r "
                         "ON r.work_item_id = e.tax_return_id "
                         "WHERE e.status IN ('not_filed', 'prepared')"
@@ -1083,7 +1106,13 @@ async def recompute_open_lines(tenant: TenantContext) -> int:
     for line in open_lines:
         if str(line["form"]) not in FORM_FOR_RULES:
             continue
-        dates = await dates_for(str(line["form"]), int(line["tax_year"]), line["fiscal_year_end"])
+        dates = await _line_dates(
+            str(line["jurisdiction"]),
+            str(line["extension_form"]),
+            str(line["form"]),
+            int(line["tax_year"]),
+            line["fiscal_year_end"],
+        )
         if dates is None or dates.extended_due_on is None:
             continue
         if (dates.original_due_on, dates.extended_due_on) == (

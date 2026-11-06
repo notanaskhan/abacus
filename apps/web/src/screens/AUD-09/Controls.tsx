@@ -105,7 +105,7 @@ function SeverityCell({ row }: { row: ControlExceptionOut }): JSX.Element {
         bold
         data-concluded={row.concluded_severity}
       >
-        {word}
+        {row.concluded_by_initials ? COPY.concluded(word, row.concluded_by_initials) : word}
       </Pill>
     );
   }

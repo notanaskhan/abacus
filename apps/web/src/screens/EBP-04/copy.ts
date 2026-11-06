@@ -19,6 +19,7 @@ export const COPY = {
   },
   cardA: "Payroll → trust → financial statements",
   cardB: (n: number) => `Remittance timeliness · ${String(n)} payrolls`,
+  total: "Total",
   practice: (days: number, timely: number, n: number) =>
     `Established practice: ${String(days)} business days (${String(timely)} of ${String(n)}). DOL standard: as soon as reasonably segregable.`,
   daysLabel: (n: number) => `${String(n)} business days`,

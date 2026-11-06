@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping, Sequence
+from contextvars import ContextVar
 from dataclasses import dataclass, replace
 from datetime import date, timedelta
 from typing import Any, Final, cast
@@ -23,6 +24,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 
+from abacus.kernel.clock import today
 from abacus.kernel.crypto import seal
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.dispatch import dispatch, signal_workflow
@@ -60,6 +62,7 @@ from abacus.modules.signatures.api import (
 )
 
 SOURCE: Final = "notice_response"
+APPROVAL_KIND: Final = "notice_response_sign_off"
 CONFIRMATION_ITEM: Final = "confirmation_request_item_id"
 CONFIRMATION_REQUEST: Final = "Upload your IRS payment confirmation"  # NOT-03c, verbatim
 RECORD_TYPE: Final = "notice_response"
@@ -115,7 +118,7 @@ async def _response_row(tenant: TenantContext, work_item_id: UUID) -> JsonRow:
             (
                 await session.execute(
                     text(
-                        "SELECT id, engagement_id, current_version_id, enclosures, payment, "
+                        "SELECT id, current_version_id, enclosures, payment, "
                         "signer_contact_ids, channel, follow_up_days, envelope_id, "
                         "generated_document_id, template_version_id, row_version "
                         "FROM notice_responses WHERE work_item_id = :w"
@@ -173,9 +176,15 @@ async def letter_variables(
     return values
 
 
-async def _no_approval(ref: c11.ApprovalRef) -> tuple[UUID, str] | None:
-    del ref
-    return None
+# The sign-off the sender is acting on, in this call: no other caller can render a letter final.
+_approving: ContextVar[tuple[c11.ApprovalRef, UUID] | None] = ContextVar(
+    "abacus_notice_letter_approval", default=None
+)
+
+
+async def _letter_approval(ref: c11.ApprovalRef) -> tuple[UUID, str] | None:
+    held = _approving.get()
+    return None if held is None or held[0] != ref else (held[1], ref.content_hash)
 
 
 def register() -> None:
@@ -189,7 +198,7 @@ def register() -> None:
                 layout="notice_response",
                 variables_provider=_no_variables,
                 tenant_variables_provider=letter_variables,
-                approval_provider=_no_approval,
+                approval_provider=_letter_approval,
                 retention_record_type=RECORD_TYPE,
             )
         )
@@ -298,6 +307,24 @@ async def _with_confirmation_request(
     return {**payment, CONFIRMATION_ITEM: str(item.id)}
 
 
+async def _final_letter(ctx: AuthContext, row: JsonRow) -> None:
+    """What the taxpayers sign is the final letter (US-7.1), the sender's act under the partner's
+    sign-off, which `send_for_signature` has just checked. A repeated call changes nothing."""
+    document = cast(UUID, row["generated_document_id"])
+    if await c11.document_is_final(ctx.tenant, document):
+        return
+    latest = await c11.latest_document_version(ctx.tenant, document)
+    if latest is None:
+        raise LetterRendering
+    ref = c11.ApprovalRef(APPROVAL_KIND, cast(UUID, row["id"]), latest[1])
+    token = _approving.set((ref, ctx.user_id))
+    try:
+        async with uow(ctx.tenant) as tx:
+            await c11.render_final(tx, document, ref, c11.Requester("human", user_id=ctx.user_id))
+    finally:
+        _approving.reset(token)
+
+
 async def send_for_signature(ctx: AuthContext, work_item_id: UUID) -> UUID:
     """The partner's sign-off holds; the letter is rendered once; a C7 draft for SIG-02 d."""
     found = await notice(ctx, work_item_id)
@@ -325,8 +352,10 @@ async def send_for_signature(ctx: AuthContext, work_item_id: UUID) -> UUID:
                 ),
                 {"g": ticket.generated_document_id, "r": row["id"]},
             )
+        row = await _response_row(ctx.tenant, work_item_id)
     if row["envelope_id"] is not None:
         return cast(UUID, row["envelope_id"])
+    await _final_letter(ctx, row)
     envelope_id = await create_draft(ctx, SOURCE, work_item_id)
     payment = await _with_confirmation_request(
         ctx, found.engagement_id, cast("dict[str, object] | None", row["payment"])
@@ -472,7 +501,9 @@ async def on_review_decision(event: OutboxEvent) -> None:
         accepted = status[row["payment"][CONFIRMATION_ITEM]] == "accepted"
         if bool(row["payment"].get("confirmation_accepted")) == accepted:
             continue
-        payment = {**row["payment"], "confirmation_accepted": accepted}
+        # The day staff accepted the upload: the IRS's own date isn't read from the file.
+        paid_on = (await today(tenant)).isoformat() if accepted else None
+        payment = {**row["payment"], "confirmation_accepted": accepted, "paid_on": paid_on}
         async with uow(tenant) as tx:
             await tx.session.execute(
                 text(
@@ -618,6 +649,8 @@ async def agency_reply(
             "closed" if outcome == "resolved" else "escalated",
             actor_kind="human",
             actor_user_id=ctx.user_id,
+            closed_on=(closed_on or await today(ctx.tenant)) if outcome == "resolved" else None,
+            escalated_reason=None if outcome == "resolved" else (note or "agency_reply"),
         )
         tx.record(
             "notice.agency_reply_recorded",

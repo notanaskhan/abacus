@@ -46,11 +46,15 @@ _RETRY = RetryPolicy(
     maximum_attempts=6,
 )
 BACKFILL_BATCH = 50
+_LONG_OCR_WAIT = timedelta(hours=4)  # P-11-T25: then the scan runs on what it has (fail closed)
 _OCR_TIMEOUT = timedelta(minutes=30)  # P-11-T25: a page at a time through the provider
 
 
 @workflow.defn(name="upload_processing")
 class UploadProcessing:
+    def __init__(self) -> None:
+        self._long_ocr_done = False
+
     @workflow.run
     async def run(self, given: UploadInput) -> str:
         status = await workflow.execute_activity(
@@ -132,6 +136,10 @@ class UploadProcessing:
                 workflow.logger.warning("upload.portal_drop_sort_failed")
         return status
 
+    @workflow.signal(name="long_ocr_done")
+    def long_ocr_done(self) -> None:
+        self._long_ocr_done = True
+
     async def _words_and_ocr(self, given: UploadInput) -> None:
         # v4 (P-03-T05): the word layer, for versions and inbox files alike. A layer that can't
         # be built never undoes the steps before it; the backfill tries the upload again.
@@ -151,14 +159,30 @@ class UploadProcessing:
         # `not_scannable`, never undoing the steps before it.
         if workflow.patched("ocr"):
             try:
-                await workflow.execute_activity(
-                    "upload.ocr",
-                    given,
-                    result_type=int,
-                    start_to_close_timeout=_OCR_TIMEOUT,
-                    retry_policy=_RETRY,
-                )
-            except ActivityError:
+                # v10 (P-11-T25): more than 20 pages run as `LongOcr` in `background`, and this
+                # waits for it. A long wait ends the same as a failure: the pages stay refused.
+                if workflow.patched("ocr_background") and (
+                    await workflow.execute_activity(
+                        "upload.ocr_route",
+                        given,
+                        result_type=str,
+                        start_to_close_timeout=_TIMEOUT,
+                        retry_policy=_RETRY,
+                    )
+                    == "long"
+                ):
+                    await workflow.wait_condition(
+                        lambda: self._long_ocr_done, timeout=_LONG_OCR_WAIT
+                    )
+                else:
+                    await workflow.execute_activity(
+                        "upload.ocr",
+                        given,
+                        result_type=int,
+                        start_to_close_timeout=_OCR_TIMEOUT,
+                        retry_policy=_RETRY,
+                    )
+            except (ActivityError, TimeoutError):
                 workflow.logger.warning("upload.ocr_failed", extra={"kind": given.kind})
 
 
@@ -325,6 +349,89 @@ class TrustLayerBackfill:
                     "trust_layer.upload_failed",
                     extra={"kind": upload.kind, "source_id": upload.source_id},
                 )
+        versions = [u.source_id for u in batch if u.kind == VERSION]
+        inbox = [u.source_id for u in batch if u.kind != VERSION]
+        reached = BackfillInput(
+            given.tenant_id,
+            versions[-1] if versions else given.after_version,
+            inbox[-1] if inbox else given.after_inbox,
+            given.done + len(batch),
+            given.failed + failed,
+        )
+        if len(batch) >= BACKFILL_BATCH:
+            workflow.continue_as_new(reached)
+        return reached.done
+
+
+@workflow.defn(name="long_ocr")
+class LongOcr:
+    """P-11-T25: a long scan's OCR on the background queue (ADR-071: a workflow's class chooses its
+    queue, never an activity). It always tells the upload, so a failure never leaves it waiting."""
+
+    @workflow.run
+    async def run(self, given: UploadInput) -> int:
+        read = 0
+        try:
+            read = await workflow.execute_activity(
+                "upload.ocr",
+                given,
+                result_type=int,
+                start_to_close_timeout=_OCR_TIMEOUT,
+                retry_policy=_RETRY,
+            )
+        except ActivityError:
+            workflow.logger.warning("upload.ocr_failed", extra={"kind": given.kind})
+        await workflow.execute_activity(
+            "upload.ocr_finished",
+            given,
+            start_to_close_timeout=_TIMEOUT,
+            retry_policy=_RETRY,
+        )
+        return read
+
+
+@workflow.defn(name="ocr_backfill")
+class OcrBackfill:
+    """P-11-T25 (AC7.4): a flagged firm's `not_scannable` pages get OCR, a re-scan and a masked
+    rendition again, the same idempotent activities new uploads run. Batches by id cursor; a file
+    that fails is counted and passed. Started by an operator (`abacus_tools.ocr_backfill`)."""
+
+    @workflow.run
+    async def run(self, given: BackfillInput) -> int:
+        batch = await workflow.execute_activity(
+            "upload.pending_ocr",
+            given,
+            result_type=list[UploadInput],
+            start_to_close_timeout=_TIMEOUT,
+            retry_policy=_RETRY,
+        )
+        failed = 0
+        for upload in batch:
+            try:
+                await workflow.execute_activity(
+                    "upload.ocr",
+                    upload,
+                    result_type=int,
+                    start_to_close_timeout=_OCR_TIMEOUT,
+                    retry_policy=_RETRY,
+                )
+                await workflow.execute_activity(
+                    "upload.pii_scan",
+                    upload,
+                    result_type=int,
+                    start_to_close_timeout=_TIMEOUT,
+                    retry_policy=_RETRY,
+                )
+                await workflow.execute_activity(
+                    "upload.masked_preview",
+                    upload,
+                    result_type=str,
+                    start_to_close_timeout=_TIMEOUT,
+                    retry_policy=_RETRY,
+                )
+            except ActivityError:
+                failed += 1
+                workflow.logger.warning("upload.ocr_backfill_failed", extra={"kind": upload.kind})
         versions = [u.source_id for u in batch if u.kind == VERSION]
         inbox = [u.source_id for u in batch if u.kind != VERSION]
         reached = BackfillInput(

@@ -110,12 +110,15 @@ register_citable("workpaper_cell", verify_workpaper_cell, display_workpaper_cell
 register_section_source(SECTION_SOURCE)
 register_suggestion_applier(CELL_TARGET, apply_cell_suggestion, engagement_of=paper_engagement)
 
+from abacus.modules.workpapers.service import CellEdit, set_cells  # noqa: E402 -- A-06-T28
+
 __all__ = [
     "CELL_TARGET",
     "ROUTERS",
     "WORKPAPER_KINDS",
     "AddressInvalid",
     "Attribute",
+    "CellEdit",
     "CodeTaken",
     "DesignedLayout",
     "ExceptionPrefill",
@@ -150,6 +153,7 @@ __all__ = [
     "register_sign_off_guard",  # A-05-T16 (DEC-2069)
     "resolve",
     "router",
+    "set_cells",
     "tie_digests",
     "validate_pack",
     "work_item_papers",

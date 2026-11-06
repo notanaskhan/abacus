@@ -13,7 +13,12 @@ from temporalio import activity
 from abacus.modules.evidence.drops import sort_drop
 from abacus.modules.evidence.form_extraction import extract_version
 from abacus.modules.evidence.masked_previews import masked_preview_upload, pending_masks
-from abacus.modules.evidence.ocr_step import ocr_upload
+from abacus.modules.evidence.ocr_step import (
+    ocr_finished,
+    ocr_upload,
+    pending_ocr,
+    route_ocr,
+)
 from abacus.modules.evidence.pii import pii_scan_upload
 from abacus.modules.evidence.processing import check_upload, preview_upload, process_upload
 from abacus.modules.evidence.words import pending_words, words_upload
@@ -71,6 +76,24 @@ async def ocr_activity(given: UploadInput) -> int:
     return await ocr_upload(given)
 
 
+@activity.defn(name="upload.ocr_route")
+async def ocr_route_activity(given: UploadInput) -> str:
+    """P-11-T25: more than 20 pages hand off to `LongOcr`."""
+    return await route_ocr(given)
+
+
+@activity.defn(name="upload.ocr_finished")
+async def ocr_finished_activity(given: UploadInput) -> None:
+    """P-11-T25: `LongOcr` tells the upload it can go on."""
+    await ocr_finished(given)
+
+
+@activity.defn(name="upload.pending_ocr")
+async def pending_ocr_activity(given: BackfillInput) -> list[UploadInput]:
+    """P-11-T25: the next uploads the OCR backfill reads."""
+    return await pending_ocr(given)
+
+
 @activity.defn(name="forms.extract")
 async def forms_extract_activity(given: FormExtractionInput) -> int:
     """P-11-T26: code identifies the form and reads its boxes."""
@@ -91,6 +114,9 @@ async def pending_masks_activity(given: BackfillInput) -> list[UploadInput]:
 
 ACTIVITIES = (
     ocr_activity,
+    ocr_route_activity,
+    ocr_finished_activity,
+    pending_ocr_activity,
     forms_extract_activity,
     extract_activity,
     check_activity,
