@@ -42,6 +42,20 @@ from abacus.modules.reporting.contract import (
     templates_router,
 )
 from abacus.modules.reporting.contract import TemplateImportIn as TemplateImportIn
+from abacus.modules.reporting.deliverables import AudienceReceipt as AudienceReceipt
+from abacus.modules.reporting.deliverables import DeliverableAudience as DeliverableAudience
+from abacus.modules.reporting.deliverables import DeliverableSpec as DeliverableSpec
+from abacus.modules.reporting.deliverables import DraftWithoutWatermark as DraftWithoutWatermark
+from abacus.modules.reporting.deliverables import ExpectedDeliverable as ExpectedDeliverable
+from abacus.modules.reporting.deliverables import PublishedDeliverable as PublishedDeliverable
+from abacus.modules.reporting.deliverables import WorkItemDeliverable as WorkItemDeliverable
+from abacus.modules.reporting.deliverables import (
+    deliverables_for_work_item as deliverables_for_work_item,
+)
+from abacus.modules.reporting.deliverables import expected_deliverables as expected_deliverables
+from abacus.modules.reporting.deliverables import publish_deliverable as publish_deliverable
+from abacus.modules.reporting.deliverables import supersede_deliverable as supersede_deliverable
+from abacus.modules.reporting.deliverables import withdraw_deliverable as withdraw_deliverable
 from abacus.modules.reporting.engagement_letters import (
     finalise_engagement_letter,
     lock_engagement_letter,

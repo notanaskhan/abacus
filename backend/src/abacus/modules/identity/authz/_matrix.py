@@ -956,6 +956,20 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "deny",
         "independence": "required",
     },
+    "deliverable.comment": {
+        "client_admin": "allow",
+        "client_contributor": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "scope_only": "required",
+    },
+    "deliverable.download": {
+        "client_admin": "allow",
+        "client_contributor": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "scope_only": "required",
+    },
     "deliverable.publish": {
         "client_service": "allow",
         "manager": "allow",
@@ -963,6 +977,13 @@ ACTIONS: dict[str, dict[str, str]] = {
         "client_contributor": "deny",
         "agent": "deny",
         "system": "deny",
+    },
+    "deliverable.read": {
+        "client_admin": "allow",
+        "client_contributor": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "scope_only": "required",
     },
     "delivery_packet.approve": {
         "engagement_partner": "allow",
@@ -4648,6 +4669,14 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "independence": "required",
     },
+    "statement.client_approve": {
+        "client_admin": "allow",
+        "client_contributor": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "scope_only": "required",
+        "mfa_recent": "required",
+    },
     "statement.draft": {
         "engagement_partner": "allow",
         "manager": "allow",
@@ -4926,6 +4955,28 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "deny",
         "not_offshore": "required",
         "mfa_recent": "required",
+    },
+    "tcwg.acknowledge": {
+        "client_admin": "allow",
+        "client_contributor": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "scope_only": "required",
+        "mfa_recent": "required",
+    },
+    "tcwg.ask": {
+        "client_admin": "allow",
+        "client_contributor": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "scope_only": "required",
+    },
+    "tcwg.read": {
+        "client_admin": "allow",
+        "client_contributor": "allow",
+        "agent": "deny",
+        "system": "deny",
+        "scope_only": "required",
     },
     "team.approve": {
         "engagement_partner": "allow",
