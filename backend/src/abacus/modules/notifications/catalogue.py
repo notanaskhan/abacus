@@ -386,6 +386,16 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "notice.created": Kind(
         "notice_created", _notice_assignee_and_notified, "notice", "work_item_id", None
     ),
+    # N-04-T16 (DEC-2311): a notice's clocks and readiness, to its assignee.
+    "notice.respond_by_soon": Kind(
+        "notice_respond_by_soon", _assignee, "notice", "work_item_id", None
+    ),
+    "notice.follow_up_due": Kind(
+        "notice_follow_up_due", _assignee, "notice", "work_item_id", None
+    ),
+    "notice_response.ready_to_send": Kind(
+        "notice_response_ready_to_send", _assignee, "notice", "work_item_id", None
+    ),
     # Q-02-T33: the incident register (the platform module's events; firm-level).
     "incident.recorded": Kind(
         "incident_recorded", _incident_recorded, "security_incident", "incident_id", None
@@ -588,6 +598,9 @@ TEMPLATES: Final[dict[str, str]] = {
     ),
     "notice_intake.ready": "A notice you added is ready for you to review.",
     "notice.created": "A notice was created and assigned. Open it to see what's due.",
+    "notice.respond_by_soon": "The response on {subject} is due soon.",
+    "notice.follow_up_due": "A follow-up on {subject} is due.",
+    "notice_response.ready_to_send": "The response on {subject} is ready to send.",
     "incident.recorded": "A security incident was recorded: {subject}.",
     "incident.propagated": "Accrued reported a security incident affecting your firm: {subject}.",
     "wall.created": "An ethical wall is waiting for your approval.",

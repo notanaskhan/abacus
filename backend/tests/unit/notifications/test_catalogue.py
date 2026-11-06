@@ -102,6 +102,9 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "envelope.signer_verification_failed",  # N-02-T27 (DF-11, to the sender)
         "notice_intake.ready",  # N-04-T07 (DEC-2326, to the intake's owner)
         "notice.created",  # N-04-T07 (DEC-2326, the assignee and whoever was chosen)
+        "notice.respond_by_soon",  # N-04-T16 (C16, to the assignee)
+        "notice.follow_up_due",  # N-04-T16 (C16, to the assignee)
+        "notice_response.ready_to_send",  # N-04-T16 (C16, to the assignee)
         "fraud_minutes.awaiting_approval",  # A-04-T19 (`fraud_minutes_awaiting_approval`, the EPs)
     }
 

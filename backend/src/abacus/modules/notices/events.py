@@ -42,6 +42,7 @@ class NoticeRespondBySoon(DomainEvent):
     work_item_id: Annotated[UUID, classified("internal")]
     respond_by: Annotated[date, classified("internal")]
     days_left: Annotated[int, classified("internal")]
+    assignee_user_id: Annotated[UUID | None, classified("internal")] = None  # C16's recipient
 
 
 class NoticeFollowUpDue(DomainEvent):
@@ -49,6 +50,7 @@ class NoticeFollowUpDue(DomainEvent):
 
     work_item_id: Annotated[UUID, classified("internal")]
     follow_up_on: Annotated[date, classified("internal")]
+    assignee_user_id: Annotated[UUID | None, classified("internal")] = None  # C16's recipient
 
 
 class NoticeResponseReadyToSend(DomainEvent):
@@ -56,6 +58,7 @@ class NoticeResponseReadyToSend(DomainEvent):
 
     work_item_id: Annotated[UUID, classified("internal")]
     response_id: Annotated[UUID, classified("internal")]
+    assignee_user_id: Annotated[UUID | None, classified("internal")] = None  # C16's recipient
 
 
 class NoticeResponseSent(DomainEvent):
@@ -64,3 +67,4 @@ class NoticeResponseSent(DomainEvent):
     work_item_id: Annotated[UUID, classified("internal")]
     sent_on: Annotated[date, classified("internal")]
     follow_up_on: Annotated[date, classified("internal")]
+    assignee_user_id: Annotated[UUID | None, classified("internal")] = None  # C16's recipient

@@ -19,6 +19,7 @@ from typing import Any, Final, cast
 from uuid import UUID
 
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 
 from abacus.kernel.crypto import seal
@@ -391,7 +392,13 @@ async def on_envelope_completed(event: OutboxEvent) -> None:
     if not found.ready:
         return
     async with uow(tenant) as tx:
-        tx.emit(NoticeResponseReadyToSend(work_item_id=row["work_item_id"], response_id=row["id"]))
+        tx.emit(
+            NoticeResponseReadyToSend(
+                work_item_id=row["work_item_id"],
+                response_id=row["id"],
+                assignee_user_id=await _assignee_of(tx.session, row["work_item_id"]),
+            )
+        )
         tx.record(
             "notice_response.ready_to_send",
             target=Target("notice", row["work_item_id"]),
@@ -534,24 +541,38 @@ async def agency_reply(
 # --- the workflow's activities ----------------------------------------------------------------
 
 
+async def _assignee_of(session: AsyncSession, work_item_id: UUID) -> UUID | None:
+    """C16's recipient (N-04-T16, DEC-2311): whoever holds the notice when the event fires."""
+    return (
+        await session.execute(
+            text("SELECT assignee_user_id FROM notices WHERE work_item_id = :w"),
+            {"w": work_item_id},
+        )
+    ).scalar_one_or_none()
+
+
 async def send_alert(given: AlertInput) -> None:
     tenant_id = UUID(given.tenant_id)
+    work_item_id = UUID(given.work_item_id)
     async with uow(TenantContext(tenant_id, "system", "notices:alerts")) as tx:
         tx.emit(
             NoticeRespondBySoon(
-                work_item_id=UUID(given.work_item_id),
+                work_item_id=work_item_id,
                 respond_by=date.fromisoformat(given.respond_by),
                 days_left=given.days_left,
+                assignee_user_id=await _assignee_of(tx.session, work_item_id),
             )
         )
 
 
 async def send_follow_up(given: FollowUpInput) -> None:
     tenant_id = UUID(given.tenant_id)
+    work_item_id = UUID(given.work_item_id)
     async with uow(TenantContext(tenant_id, "system", "notices:alerts")) as tx:
         tx.emit(
             NoticeFollowUpDue(
-                work_item_id=UUID(given.work_item_id),
+                work_item_id=work_item_id,
                 follow_up_on=date.fromisoformat(given.follow_up_on),
+                assignee_user_id=await _assignee_of(tx.session, work_item_id),
             )
         )
