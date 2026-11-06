@@ -94,6 +94,11 @@ describe("EBP-04", () => {
     await waitFor(() => {
       expect(table.querySelectorAll("[data-payroll]").length).toBe(26);
     });
+    await waitFor(() => {
+      const total = table.querySelector("[data-ebp04='payrolls-total']");
+      expect(total?.textContent).toContain("$878,400.00");
+      expect(total?.textContent).toContain("$392,100.00");
+    });
   });
 
   it("d: agent running: tallies Pending and Card A a skeleton", async () => {

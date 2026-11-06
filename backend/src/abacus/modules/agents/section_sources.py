@@ -159,7 +159,7 @@ class ModeTarget:
     target_type: str
     target_id: UUID
     field_key: str
-    choices: tuple[str, ...] = ()  # when set, the cell's text must be one of these (DEC-2382)
+    choices: tuple[str, ...] = ()  # when set, the cell's text must be one of these (DEC-2385)
 
 
 @dataclass(frozen=True)
@@ -172,7 +172,7 @@ class ModeInputs:
     cells: tuple[SourceCell, ...] = ()
     targets: Mapping[str, ModeTarget] = field(default_factory=dict[str, ModeTarget])
     facts: tuple[tuple[str, dict[str, object]], ...] = ()
-    # Names to pick from ("EBP-03, EBP-04"): shown as facts, but no support for any number (DEC-2382).
+    # Names to pick from ("EBP-03, EBP-04"): shown as facts, but no support for any number (DEC-2385).
     identifiers: tuple[tuple[str, dict[str, object]], ...] = ()
 
 

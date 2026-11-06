@@ -33,7 +33,7 @@ from __future__ import annotations
 import re
 import unicodedata
 import uuid
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Final, Literal
@@ -59,9 +59,10 @@ from abacus.modules.evidence.repository import (
     latest_checks,
     newest_extraction,
     pages_of,
+    rescan_version,
     scan_run_for,
 )
-from abacus.modules.evidence.words import WORDS_VERSION, read_page_layer
+from abacus.modules.evidence.words import WORDS_VERSION, KeyHint, read_page_layer
 from abacus.modules.evidence.workflow_types import INBOX, INTAKE, VERSION, UploadInput
 from abacus.modules.requests.api import items_of_version
 
@@ -644,6 +645,64 @@ def masked_rows(rows: Sequence[Sequence[str]]) -> tuple[tuple[str, ...], ...]:
     return tuple(out)
 
 
+def names_a_tin(words: Iterable[str]) -> bool:
+    """Whether a page's words hold a label naming a taxpayer ID (`LABELS`' tin and ein families):
+    what makes it worth asking OCR for the form's key-value positions."""
+    plain = f" {_phrase(' '.join(words))} "
+    return any(f" {phrase} " in plain for family, phrase in LABELS if family in ("tin", "ein"))
+
+
+def key_families(key: str) -> set[Family]:
+    """The label families a form's key names, read as a label line reads."""
+    words = [_KeyWord(part) for part in key.split()]
+    return {family for family, _x0, _x1 in _labels(_Line(tuple(words), 0.0, 0.0, 0.0, 0.0))}
+
+
+@dataclass(frozen=True)
+class _KeyWord:
+    text: str
+    x0: float = 0.0
+    top: float = 0.0
+    x1: float = 0.0
+    bottom: float = 0.0
+
+
+def detect_hinted(
+    page_no: int,
+    words: Sequence[WordLike],
+    hints: Sequence[KeyHint],
+    already: Sequence[Found],
+) -> list[Found]:
+    """What a form's key names but no line reading anchored (P-11 AC7.3): the words inside the
+    value's box, under the key's families. Anything already found on the page stays as found."""
+    out: list[Found] = []
+    taken = [f.box for f in already if f.page == page_no]
+    for hint in hints:
+        families = key_families(hint.key)
+        if not families:
+            continue
+        inside = sorted(
+            (
+                w
+                for w in words
+                if hint.x0 <= (w.x0 + w.x1) / 2 <= hint.x1
+                and hint.top <= (w.top + w.bottom) / 2 <= hint.bottom
+            ),
+            key=lambda w: (round(w.top, 1), w.x0),
+        )
+        if not inside:
+            continue
+        box = _box(inside)
+        if any(box[0] < t[2] and t[0] < box[2] and box[1] < t[3] and t[1] < box[3] for t in taken):
+            continue
+        classified = _classify(_joined(inside), families)
+        if classified is None:
+            continue
+        out.append(_found(page_no, classified[0], classified[1], inside, True))
+        taken.append(box)
+    return out
+
+
 # --- One layer's scan (shared by the upload activity and the unlock, P-03-T19) -------------------
 
 
@@ -657,6 +716,7 @@ class ScanPage:
     width: float
     height: float
     unread: bool = False
+    hints: Sequence[KeyHint] = ()
 
 
 def scan_layer(pages: Sequence[ScanPage]) -> tuple[list[Found], list[int], list[int]]:
@@ -674,9 +734,12 @@ def scan_layer(pages: Sequence[ScanPage]) -> tuple[list[Found], list[int], list[
             continued, previous = False, None
             continue
         size = (page.width, page.height)
-        found.extend(
-            detect_on_page(page.page_no, page.words, page.rotation, *size, continued=continued)
+        on_page = detect_on_page(
+            page.page_no, page.words, page.rotation, *size, continued=continued
         )
+        found.extend(on_page)
+        if page.rotation == 0:  # OCR's boxes are upright; a turned page keeps its label reading
+            found.extend(detect_hinted(page.page_no, page.words, page.hints, on_page))
         here = PageWordsAt(page.page_no, page.words, page.rotation, *size)
         if previous is not None and not continued:
             found.extend(across_break(previous, here))  # M-B: an unlabelled split TIN
@@ -741,8 +804,6 @@ async def pii_scan_upload(given: UploadInput) -> int:
             inbox_attachment_id=attachment_id,
             detector_version=DETECTOR_VERSION,
         )
-        if done is not None:
-            return done.region_count
         source = await source_of(session, tenant, given.kind, source_id)
         if source is None:
             if version_id is not None and await is_withdrawn(session, version_id):
@@ -764,7 +825,17 @@ async def pii_scan_upload(given: UploadInput) -> int:
             extractor_version=WORDS_VERSION,
         )
     if not pages:
+        if done is not None:
+            return done.region_count
         return 0  # no word layer: no run, so no page reads as scanned (fail closed)
+    # OCR gave words to a page this source's scan couldn't read (AC7.4): scan it all again under
+    # the re-scan's version, which readers prefer. The first run and its regions stay.
+    detector = DETECTOR_VERSION
+    if done is not None:
+        worded = {p.page_no for p in pages if p.has_text_layer}
+        if done.detector_version != DETECTOR_VERSION or worded <= set(done.pages_scanned):
+            return done.region_count
+        detector = rescan_version(DETECTOR_VERSION)
     to_scan: list[ScanPage] = []
     for page in pages:
         layer = await read_page_layer(tenant_id, page) if page.has_text_layer else None
@@ -776,6 +847,7 @@ async def pii_scan_upload(given: UploadInput) -> int:
                 float(page.width_pt),
                 float(page.height_pt),
                 layer.unread if layer is not None else False,
+                layer.hints if layer is not None else (),
             )
         )
     found, scanned, unscannable = scan_layer(to_scan)
@@ -798,7 +870,7 @@ async def pii_scan_upload(given: UploadInput) -> int:
                 ),
                 "last4": item.last4,
                 "label_anchored": item.label_anchored,
-                "detector_version": DETECTOR_VERSION,
+                "detector_version": detector,
             }
         )
     async with uow(tenant) as tx:
@@ -809,7 +881,7 @@ async def pii_scan_upload(given: UploadInput) -> int:
             inbox_file_id=inbox_id,
             inbox_attachment_id=attachment_id,
             derivation_id=None,
-            detector_version=DETECTOR_VERSION,
+            detector_version=detector,
             pages_scanned=scanned,
             pages_not_scannable=unscannable,
             region_count=len(rows),
@@ -818,6 +890,7 @@ async def pii_scan_upload(given: UploadInput) -> int:
             await insert_pii_regions(tx.session, rows)
             if (
                 given.announce
+                and done is None
                 and extraction is not None
                 and not isinstance(source, IntakeSource)  # an intake file announces on filing
                 and await _announce(tx.session, source, version_id)

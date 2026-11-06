@@ -177,7 +177,9 @@ jobs:
     # S13 (#557): shard 7 of 8 cancelled at 82% twice with 270 files unrecorded, so ten.
     # c441d80c: shard 4 of 10 cancelled at 63% with no failures (the S13r and S11 files are not
     # recorded yet), so 60 minutes until durations.json is re-recorded.
-    timeout-minutes: 75
+    # 100 (was 75) by founder decision, 2026-11-06 (TASK-3385): shard 9 cancelled at 94% with no
+    # failures, while shard 5 took 25 minutes. Re-recording durations.json is still owed.
+    timeout-minutes: 100
     strategy:
       fail-fast: false
       matrix:
@@ -347,7 +349,9 @@ jobs:
     name: stage 2 gallery axe (${{ matrix.shard }}/3)
     needs: [changes]
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    # 45 (was 25) by founder decision, 2026-11-06 (TASK-3385): shard 1 cancelled twice, while
+    # shard 3 took 5 minutes.
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -418,7 +422,9 @@ jobs:
     runs-on: ubuntu-24.04
     # Q-03-T163 (DEC-2080): two shards. 191 journeys took 9.7 to 12.7 minutes on a laptop and ran
     # past 15 on a runner (#1106), so the suite splits rather than the limit growing.
-    timeout-minutes: 15
+    # 30 (was 15) by founder decision, 2026-11-06 (TASK-3385): shard 2 cancelled twice, while
+    # shard 1 took 8 minutes.
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:

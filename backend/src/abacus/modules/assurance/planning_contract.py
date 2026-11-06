@@ -75,7 +75,7 @@ from abacus.modules.identity.api import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Mapping, Sequence
 
     from abacus.modules.assurance.compute.materiality import Option as MaterialityOption
     from abacus.modules.assurance.compute.materiality import Thresholds as MaterialityThresholds
@@ -445,7 +445,7 @@ class RiskVersionOut(BaseModel):
 
 
 class SuggestedResponseOut(BaseModel):
-    """A drafted response waiting for a person (AUD-08 f; DEC-2382): nothing is linked yet."""
+    """A drafted response waiting for a person (AUD-08 f; DEC-2385): nothing is linked yet."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -456,7 +456,7 @@ class SuggestedResponseOut(BaseModel):
 
 
 class SuggestedRationaleOut(BaseModel):
-    """A drafted rationale waiting for a person (AUD-08 f; DEC-2383): the row holds none of it."""
+    """A drafted rationale waiting for a person (AUD-08 f; DEC-2386): the row holds none of it."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -757,6 +757,9 @@ class ControlExceptionOut(BaseModel):
     description: Annotated[str, classified("confidential")]
     proposed_severity: Annotated[Proposable | None, classified("internal")]
     concluded_severity: Annotated[DeficiencySeverityStatus | None, classified("internal")]
+    concluded_by_initials: Annotated[str | None, Field(max_length=8), classified("internal")] = (
+        None
+    )
     disposition: Annotated[ControlExceptionDispositionStatus, classified("internal")]
     coso_component: Annotated[CosoComponent | None, classified("internal")]  # 0663
     misstatement_candidate_amount: Annotated[Decimal | None, classified("confidential")]
@@ -1078,18 +1081,24 @@ async def _exception_actions(ctx: AuthContext, engagement_id: UUID) -> list[Plan
     ]
 
 
-def _exception_out(e: object, actions: list[PlanningAction]) -> ControlExceptionOut:
-    """No concluded severity here: A-06's record supplies it once it registers (AC6.7)."""
+def _exception_out(
+    e: object,
+    actions: list[PlanningAction],
+    concluded: Mapping[UUID, tuple[str, str | None]] | None = None,
+) -> ControlExceptionOut:
+    """`concluded`: A-06's record, by the finding the exception routed to (AC6.7; DEC-2362)."""
     from abacus.modules.assurance.internal_control import ControlException
 
     row = cast(ControlException, e)
+    severity, initials = (concluded or {}).get(row.routed_ref or row.id, (None, None))
     return ControlExceptionOut(
         sheet_row=row.sheet_row,
         address=row.address,
         matter=row.matter,
         description=row.description,
         proposed_severity=cast(Proposable | None, row.proposed_severity),
-        concluded_severity=None,
+        concluded_severity=cast(DeficiencySeverityStatus | None, severity),
+        concluded_by_initials=initials,
         disposition=ControlExceptionDispositionStatus(row.disposition),
         coso_component=cast(CosoComponent, row.coso_component),
         misstatement_candidate_amount=row.misstatement_candidate_amount,
@@ -1896,9 +1905,13 @@ async def control_exceptions_route(engagement_id: UUID, ctx: Ctx) -> ListPage[Co
     """The Exceptions sheet with Sheet!Cell addresses (AC6.2; T25)."""
     await _gate(ctx, engagement_id, "control.read", _IC)
     from abacus.modules.assurance import internal_control as ic
+    from abacus.modules.assurance.findings import concluded_severities
 
     actions = await _exception_actions(ctx, engagement_id)
-    found = [_exception_out(e, actions) for e in await ic.exceptions(ctx, engagement_id)]
+    concluded = await concluded_severities(ctx.tenant, engagement_id)
+    found = [
+        _exception_out(e, actions, concluded) for e in await ic.exceptions(ctx, engagement_id)
+    ]
     return ListPage[ControlExceptionOut](items=found, total=len(found))
 
 

@@ -738,6 +738,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("PATCH", "/v1/follow-ups/{follow_up_id}", "follow_up.draft"),
     ("PATCH", "/v1/issues/{issue_id}", "issue.update"),
     ("PATCH", "/v1/methodology/versions/{version_id}/steps/{step_id}", "methodology.manage"),
+    ("PATCH", "/v1/misstatements/{misstatement_id}/effect", "misstatement.update"),
     ("PATCH", "/v1/notices/{notice_id}", "notice.update"),
     ("PATCH", "/v1/standards/{standard_id}/versions/{version_id}", "firm_standard.draft"),
     ("PATCH", "/v1/tax/estimates/{schedule_id}", "estimate_schedule.update"),

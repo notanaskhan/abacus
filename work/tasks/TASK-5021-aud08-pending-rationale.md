@@ -42,7 +42,7 @@ Edit · Discard only while one waits.
 - [ ] A re-draft keeps the adopted wording in view, and Adopt sends the suggestion's version.
 
 ## Decisions made during this task
-DEC-2383.
+DEC-2386.
 
 ## Progress log
 - 2026-11-06: built, with tests written first. Not yet run: the owner held this session's tests so other sessions get the CPU. Run the T24 test command plus `src/screens/AUD-08` before the PR.

@@ -29,7 +29,7 @@ from abacus.kernel._flags import TAX_EXTENSIONS_ESTIMATES
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
-from abacus.kernel.listing import ListPage
+from abacus.kernel.listing import ListPage, Position, decode_cursor, encode_cursor, query_hash
 from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.identity.api import (
     AbacusRouter,
@@ -445,8 +445,23 @@ def _xlsx(data: bytes, name: str) -> Response:
 _PAGE = 100
 
 
-def _offset(cursor: str | None) -> int:
-    return int(cursor) if cursor and cursor.isdigit() else 0
+def _offset(ctx: AuthContext, cursor: str | None, resource: str, query: str) -> int:
+    """A sealed position (kernel.listing): anything this list did not issue answers 422."""
+    if not cursor:
+        return 0
+    found = decode_cursor(cursor, tenant_id=ctx.tenant_id, resource=resource, query=query)
+    return int(cast(int, found.key))
+
+
+def _next(ctx: AuthContext, at: int, total: int, resource: str, query: str) -> str | None:
+    if at + _PAGE >= total:
+        return None
+    return encode_cursor(
+        Position(at + _PAGE, str(at + _PAGE)),
+        tenant_id=ctx.tenant_id,
+        resource=resource,
+        query=query,
+    )
 
 
 def _stamp(version: object, inputs_hash: object) -> EngineStampOut | None:
@@ -758,13 +773,14 @@ async def extensions_route(
         and extensions.on_tile(r, tile)
         and (not q or q.lower() in r.client_name.lower())
     ]
-    at = _offset(cursor)
+    query = query_hash(tax_year=tax_year, segment=segment, tile=tile, q=q)
+    at = _offset(ctx, cursor, "tax.extensions", query)
     page = found[at : at + _PAGE]
     return ListPage[ExtensionRowOut](
         items=[await _row_out(ctx, r) for r in page],
         total=len(found),
         counts=extensions.counts(visible),
-        next_cursor=str(at + _PAGE) if at + _PAGE < len(found) else None,
+        next_cursor=_next(ctx, at, len(found), "tax.extensions", query),
     )
 
 
@@ -988,7 +1004,8 @@ async def tax_estimates_route(
         for r in visible
         if estimates.on_tile(r, chosen, tile) and (not q or q.lower() in r.client_name.lower())
     ]
-    at = _offset(cursor)
+    query = query_hash(tax_year=tax_year, quarter=chosen, tile=tile, q=q)
+    at = _offset(ctx, cursor, "tax.estimates", query)
     page = found[at : at + _PAGE]
     items: list[EstimateRowOut] = []
     for r in page:
@@ -1009,7 +1026,7 @@ async def tax_estimates_route(
         items=items,
         total=len(found),
         counts=estimates.counts(visible, chosen),
-        next_cursor=str(at + _PAGE) if at + _PAGE < len(found) else None,
+        next_cursor=_next(ctx, at, len(found), "tax.estimates", query),
     )
 
 
@@ -1136,7 +1153,8 @@ async def payments_route(
     from abacus.modules.tax import estimates
 
     found = await estimates.payments(ctx, tax_year)
-    at = _offset(cursor)
+    query = query_hash(tax_year=tax_year)
+    at = _offset(ctx, cursor, "tax.payments", query)
     return ListPage[PaymentRowOut](
         items=[
             PaymentRowOut(
@@ -1152,5 +1170,5 @@ async def payments_route(
             for p in found[at : at + _PAGE]
         ],
         total=len(found),
-        next_cursor=str(at + _PAGE) if at + _PAGE < len(found) else None,
+        next_cursor=_next(ctx, at, len(found), "tax.payments", query),
     )

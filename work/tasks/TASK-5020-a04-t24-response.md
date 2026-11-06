@@ -46,7 +46,7 @@ citations."
 | The drawer | `AUD-08.test.tsx` f |
 
 ## Decisions made during this task
-DEC-2382.
+DEC-2385.
 
 ## Progress log
 - 2026-11-06: built. Security self-review findings fixed: `response_targets` is an identifier fact and supports no number, a response cell holds one of a closed list or is dropped as `not_a_choice`, and reading a pending response needs `proposal.read`. The first gate's two integration failures and the validate_docs failure are fixed too. Not yet run since those fixes: the owner held this session's tests so other sessions get the CPU. Run the targeted tests and check-fast before the PR.

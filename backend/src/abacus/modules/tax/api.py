@@ -19,7 +19,7 @@ from abacus.modules.platform.api import register_search_projection
 from abacus.modules.tax import answer_effects as _answer_effects
 from abacus.modules.tax import consent_capture, filed_delivery, filing, k1_release
 from abacus.modules.tax import extensions as _extensions
-from abacus.modules.tax import schedule_workflows as _schedule_workflows
+from abacus.modules.tax import schedule_jobs as _schedule_jobs
 from abacus.modules.tax.approval import Blocker as ApprovalBlocker
 from abacus.modules.tax.approval import eligibility as final_approval_eligibility
 from abacus.modules.tax.approval import register as register_approval
@@ -37,6 +37,7 @@ from abacus.modules.tax.due_dates import (
     on_reference_set_published,
     recompute_unfiled,
     register_due_dates_source,
+    register_extension_dates_source,
     rule_texts,
     set_extended,
 )
@@ -142,9 +143,9 @@ SUBSCRIPTIONS = {
     **filed_delivery.SUBSCRIPTIONS,
 }
 # T-02-T21: `K1ReleaseWorkflow` and its activities (the worker composes every module's parts).
-WORKFLOWS: dict[type, str] = {**k1_release.WORKFLOWS, **_schedule_workflows.WORKFLOWS}
-ACTIVITIES: tuple[object, ...] = (*k1_release.ACTIVITIES, *_schedule_workflows.ACTIVITIES)
-SCHEDULES = _schedule_workflows.SCHEDULES
+WORKFLOWS: dict[type, str] = {**k1_release.WORKFLOWS, **_schedule_jobs.WORKFLOWS}
+ACTIVITIES: tuple[object, ...] = (*k1_release.ACTIVITIES, *_schedule_jobs.ACTIVITIES)
+SCHEDULES = _schedule_jobs.SCHEDULES
 
 
 async def extension_for(tenant: TenantContext, tax_return_id: UUID) -> list[dict[str, object]]:
@@ -220,6 +221,7 @@ __all__ = [
     "recompute_unfiled",
     "record_sync_state",
     "register_due_dates_source",
+    "register_extension_dates_source",
     "register_final_approval_blocker",
     "rule_texts",
     "set_extended",

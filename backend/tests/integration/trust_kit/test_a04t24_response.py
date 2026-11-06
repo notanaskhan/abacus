@@ -1,4 +1,4 @@
-"""A-04-T24's response (TASK-5020; A-04 §3.4 AC4.6, AC4.7; DEC-2382): "R8's drafted rationale and
+"""A-04-T24's response (TASK-5020; A-04 §3.4 AC4.6, AC4.7; DEC-2385): "R8's drafted rationale and
 EBP-03 response arrive as pending suggestions", and adopting one writes the `risk_linkages` row.
 Against Postgres: the pending suggestion is drawn as a `suggested` cell with no row written, the
 adopting unit of work writes the live link naming it, and nothing else reaches the table."""
@@ -231,7 +231,7 @@ async def test_ac4_7_a_pending_response_reads_from_the_store_and_a_shadow_run_ne
 async def test_a_pending_rationale_is_drawn_with_its_own_text_and_version(
     world: SimpleNamespace,
 ) -> None:
-    """DEC-2383: the drawer's Adopt names the waiting suggestion and shows what it proposes."""
+    """DEC-2386: the drawer's Adopt names the waiting suggestion and shows what it proposes."""
     shown = await _suggestion(
         world, await _run(world), "Census data may be incomplete", "rationale"
     )
@@ -253,7 +253,7 @@ async def test_the_newest_pending_rationale_is_the_one_drawn(world: SimpleNamesp
 
 
 async def test_an_adopted_rationale_offers_no_adopt(world: SimpleNamespace) -> None:
-    """The bug DEC-2383 fixes: this read the adopted value's suggestion as if it were still waiting."""
+    """The bug DEC-2386 fixes: this read the adopted value's suggestion as if it were still waiting."""
     person = world.firm.person()
     suggestion = await _suggestion(world, await _run(world), "Adopted wording", "rationale")
     async with uow(person.tenant) as tx:
