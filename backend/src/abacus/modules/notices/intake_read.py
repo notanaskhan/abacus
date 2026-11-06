@@ -3,7 +3,9 @@
 Code reads a mapped notice's fields from P-11's form extraction; nothing is guessed, and a value
 below 0.90 stays `low_confidence` for a person. With no map the responder proposes over masked text
 (N-04-T19), each value naming its run for a person to confirm; with the responder off, refused or
-empty, and on a refusal by the OCR gate, manual entry opens with the reason in words. The client is
+empty, and on a refusal by the OCR gate, manual entry opens with the reason in words. The §7216 gate
+refuses a reading with no taxpayer, so the responder tries again once a person has named the client
+and the year, without touching a value the person typed (DEC-2387). The client is
 matched by the taxpayer's last four and, where the map reads a name, the name (`name_tin`, else
 `tin`): one candidate is matched, several are the person's pick, none is the client picker. The
 return is matched on entity, year and (when read) form; the authorization comes from CLI-05's
@@ -39,9 +41,16 @@ from abacus.modules.evidence.api import (
     ocr_refusal_of,
     versions_with_same_bytes,
 )
-from abacus.modules.notices.events import NoticeIntakeReady, NoticeIntakeStarted
+from abacus.modules.notices.events import (
+    NoticeIntakeReady,
+    NoticeIntakeStarted,
+    NoticeIntakeTaxpayerNamed,
+)
 from abacus.modules.notices.intake import FIELD_KINDS
-from abacus.modules.notices.intake_workflow import NoticeIntakeWorkflow
+from abacus.modules.notices.intake_workflow import (
+    NoticeIntakeRereadWorkflow,
+    NoticeIntakeWorkflow,
+)
 from abacus.modules.notices.intake_workflow_types import NoticeIntakeInput
 from abacus.modules.organisations.api import entities_with_tin_last4
 
@@ -280,9 +289,28 @@ async def read_intake(tenant_id: UUID, intake_id: UUID, refusal: str | None) -> 
         return "gone" if now is None else now[0]
 
 
-async def _proposed(tenant: TenantContext, intake_id: UUID, version: UUID) -> str | None:
-    """A form code has no map for: the responder's reading of the masked text, as a proposal. None
-    leaves the intake for manual entry."""
+async def _typed_keys(session: AsyncSession, intake_id: UUID) -> set[str]:
+    rows = await session.scalars(
+        text(
+            "SELECT field_key FROM notice_field_values "
+            "WHERE owner_type = 'intake' AND owner_id = :id AND origin = 'human'"
+        ),
+        {"id": intake_id},
+    )
+    return set(rows)
+
+
+async def _proposed(
+    tenant: TenantContext,
+    intake_id: UUID,
+    version: UUID,
+    *,
+    entity_id: UUID | None = None,
+    tax_year: int | None = None,
+    waiting_in: str = "extracting",
+) -> str | None:
+    """A form code has no map for: the responder's reading of the masked text, as a proposal, never
+    over a value a person typed. None leaves the intake for manual entry."""
     from abacus.ai_gateway.context import DataSubject
     from abacus.modules.agents.api import extract_notice_fields
 
@@ -292,16 +320,17 @@ async def _proposed(tenant: TenantContext, intake_id: UUID, version: UUID) -> st
         initiator = await session.scalar(
             text("SELECT created_by FROM notice_intakes WHERE id = :id"), {"id": intake_id}
         )
+        typed = await _typed_keys(session, intake_id)
     if not pages or engagement is None or initiator is None:
         return None
     found = await extract_notice_fields(
         tenant,
         engagement_id=engagement,
         initiator=initiator,
-        keys=_AGENT_KEYS,
+        keys=tuple(k for k in _AGENT_KEYS if k not in typed),
         lines=[(f"p{page}", body) for page, body in sorted(pages.items())],
-        # No entity until the client is matched: the §7216 gate then refuses (fail closed).
-        subjects=(DataSubject(None, None),),
+        # No entity until a person names the client: the §7216 gate then refuses (fail closed).
+        subjects=(DataSubject(entity_id, tax_year),),
     )
     kept = [] if found is None else [f for f in found.output.fields if f.field_key in FIELD_KINDS]
     if found is None or not kept:
@@ -310,8 +339,12 @@ async def _proposed(tenant: TenantContext, intake_id: UUID, version: UUID) -> st
     try:
         async with uow(tenant) as tx:
             again = await _status_and_version(tx.session, intake_id)
-            if again is None or again[0] != "extracting":
+            if again is None or again[0] != waiting_in:
                 raise _Moved
+            typed = await _typed_keys(tx.session, intake_id)
+            kept = [f for f in kept if f.field_key not in typed]
+            if not kept:
+                raise _Moved  # the person typed them all while the responder read
             for field in kept:
                 await tx.session.execute(
                     text(
@@ -427,6 +460,46 @@ async def _manual(tenant: TenantContext, intake_id: UUID, reason: str) -> str:
     return "manual_entry"
 
 
+async def reread_named(tenant_id: UUID, intake_id: UUID) -> str:
+    """A person named the taxpayer and the year: read a notice no form map read again, under the
+    §7216 gate. A refusal or an empty reading leaves manual entry as the person has it; idempotent,
+    since a read that landed moved the intake out of it (N-04-T19; DEC-2387)."""
+    tenant = _system(tenant_id)
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(
+                text(
+                    "SELECT i.status, i.evidence_version_id, i.match->>'manual_reason_code' AS "
+                    "reason, i.match->>'client_entity_id' AS entity, (SELECT v.value_text FROM "
+                    "notice_field_values v WHERE v.owner_type = 'intake' AND v.owner_id = i.id "
+                    "AND v.field_key = 'notice.tax_year' ORDER BY v.created_at DESC LIMIT 1) AS "
+                    "tax_year FROM notice_intakes i WHERE i.id = :id"
+                ),
+                {"id": intake_id},
+            )
+        ).first()
+    if row is None:
+        return "gone"
+    year = year_of(row.tax_year)
+    if (
+        row.status != "manual_entry"
+        or row.reason != NO_MAP
+        or row.evidence_version_id is None
+        or row.entity is None
+        or year is None
+    ):
+        return str(row.status)
+    read = await _proposed(
+        tenant,
+        intake_id,
+        row.evidence_version_id,
+        entity_id=UUID(str(row.entity)),
+        tax_year=year,
+        waiting_in="manual_entry",
+    )
+    return read or "manual_entry"
+
+
 async def read_if_ready(tenant_id: UUID, intake_id: UUID) -> str:
     """The workflow's first question: a file read before the intake existed publishes no more
     events, so read what is already there; otherwise wait for the signal."""
@@ -505,8 +578,21 @@ async def on_ocr_refused(event: OutboxEvent) -> None:
         )
 
 
+async def on_taxpayer_named(event: OutboxEvent) -> None:
+    # A later pick may read what an earlier one's consent refused; a read running is left to finish.
+    intake_id = UUID(str(event.payload["intake_id"]))
+    await dispatch(
+        NoticeIntakeRereadWorkflow,
+        NoticeIntakeInput(str(event.tenant_id), str(intake_id)),
+        id=f"notice_intake_reread:{event.tenant_id}:{intake_id}",
+        id_reuse_policy=WorkflowIDReusePolicy.ALLOW_DUPLICATE,
+        id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
+    )
+
+
 SUBSCRIPTIONS: Final[dict[str, Handler]] = {
     NoticeIntakeStarted.event_type: on_intake_started,
+    NoticeIntakeTaxpayerNamed.event_type: on_taxpayer_named,
     EvidenceTextReady.event_type: on_text_ready,
     OcrRunRefused.event_type: on_ocr_refused,
 }

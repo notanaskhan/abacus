@@ -9,7 +9,10 @@ import pytest
 from temporalio.client import WorkflowHistory
 from temporalio.worker import Replayer
 
-from abacus.modules.notices.intake_workflow import NoticeIntakeWorkflow
+from abacus.modules.notices.intake_workflow import (
+    NoticeIntakeRereadWorkflow,
+    NoticeIntakeWorkflow,
+)
 
 HISTORIES = Path(__file__).resolve().parent / "histories"
 ALL = sorted(HISTORIES.glob("notice-intake-v*.json"))
@@ -24,3 +27,9 @@ def test_ac_the_histories_are_committed() -> None:
 async def test_ac_the_workflow_replays_its_recorded_history(path: Path) -> None:
     history = WorkflowHistory.from_json("test-notice-intake", path.read_text(encoding="utf-8"))
     await Replayer(workflows=[NoticeIntakeWorkflow]).replay_workflow(history)
+
+
+async def test_ac_the_reread_replays_its_recorded_history() -> None:
+    path = HISTORIES / "notice-intake-reread-v1.json"
+    history = WorkflowHistory.from_json("test-notice-reread", path.read_text(encoding="utf-8"))
+    await Replayer(workflows=[NoticeIntakeRereadWorkflow]).replay_workflow(history)

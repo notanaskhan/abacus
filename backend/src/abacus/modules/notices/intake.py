@@ -36,7 +36,11 @@ from abacus.kernel.flags import flag_variant
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.engagements.api import create_work_item
 from abacus.modules.identity.api import AuthContext
-from abacus.modules.notices.events import NoticeCreated, NoticeIntakeStarted
+from abacus.modules.notices.events import (
+    NoticeCreated,
+    NoticeIntakeStarted,
+    NoticeIntakeTaxpayerNamed,
+)
 
 LOW_CONFIDENCE: Final = Decimal("0.90")
 _READY: Final = frozenset({"ready", "manual_entry", "failed"})
@@ -223,6 +227,7 @@ async def revise(
         raise NotReady(facts={"status": current.status})
     by_key = {f.key: f for f in current.fields}
     picked = await _picked(ctx, current, by_key, client_entity_id, related_return_id)
+    named = _taxpayer_named(current, by_key, fields, client_entity_id)
     async with uow(ctx.tenant) as tx:
         for key, value, confirm in fields:
             if key not in FIELD_KINDS or FIELD_KINDS[key] == "tin":
@@ -270,12 +275,37 @@ async def revise(
         )
         if moved is None:
             raise IntakeMoved
+        if named is not None:
+            tx.emit(NoticeIntakeTaxpayerNamed(intake_id=intake_id, client_entity_id=named))
         tx.record(
             "notice_intake.updated",
             target=Target("notice_intake", intake_id),
             after=Ref(version=expected_version + 1),
         )
     return await intake(ctx, intake_id)
+
+
+def _taxpayer_named(
+    current: Intake,
+    by_key: Mapping[str, FieldValue],
+    fields: Sequence[tuple[str, str | None, bool]],
+    client_entity_id: UUID | None,
+) -> UUID | None:
+    """The entity, when this revise leaves a notice no form map read with both a taxpayer and a
+    year: what the §7216 gate needs to answer for the responder (N-04-T19; DEC-2387)."""
+    from abacus.modules.notices.intake_read import NO_MAP, year_of
+
+    if current.status != "manual_entry" or current.match.get("manual_reason_code") != NO_MAP:
+        return None
+    typed = {key: value for key, value, _confirm in fields if value is not None}
+    if client_entity_id is None and "notice.tax_year" not in typed:
+        return None
+    was = by_key.get("notice.tax_year")
+    year = typed.get("notice.tax_year", was.value_text if was else None)
+    entity = client_entity_id or current.match.get("client_entity_id")
+    if year_of(year) is None or entity is None:
+        return None
+    return UUID(str(entity))
 
 
 @dataclass(frozen=True)
