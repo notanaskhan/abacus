@@ -4,6 +4,7 @@
 
 import type {
   EstimateRowOut,
+  EvidenceVersionOut,
   ExtensionRowOut,
   ListPageEstimateRowOut,
   ListPageExtensionRowOut,
@@ -161,6 +162,101 @@ export function tax13Extensions(segment: string | null): ListPageExtensionRowOut
   const items = segment === "likely" ? LIKELY : OPEN;
   return { items, total: segment === "likely" ? 2 : 163, counts: COUNTS };
 }
+
+// T-03-T16: the April timeline. d, Fri Apr 10: 38 extended, 123 likely, the six unfiled rows still
+// to extend. e, Tue Apr 14, 4:05 PM: 149 extended, Feld Filed (ack pending), Varga Rejected.
+const REVIEWER_ACTIONS: Row["allowed_actions"] = [
+  "filing_extension.prepare",
+  "filing_extension.approve_payment",
+  "filing_extension.mark_filed",
+  "filing_extension.confirmation_send",
+];
+const PREPARER_ACTIONS: Row["allowed_actions"] = [
+  "filing_extension.prepare",
+  "filing_extension.mark_filed",
+];
+const NAMED = ["Ridgeline", "Harborview"];
+const ENGAGEMENT = stableId("engagement:tax13-season");
+
+export function tax13SeasonD(
+  returnIds: readonly string[],
+  reviewer = true,
+): ListPageExtensionRowOut {
+  const items = OPEN.map((row): Row => {
+    if (NAMED.some((n) => row.client_name.startsWith(n))) {
+      return { ...row, days_to_extended_due: null };
+    }
+    return {
+      ...row,
+      allowed_actions: reviewer ? REVIEWER_ACTIONS : PREPARER_ACTIONS,
+      engagement_id: ENGAGEMENT,
+      confirmation: null,
+      days_to_extended_due: null,
+      likely_to_extend: true,
+      lines: row.lines.map((l) => ({ ...l, filed_on: null, status: "not_filed" as const })),
+    };
+  });
+  return {
+    items:
+      returnIds.length === 0 ? items : items.filter((r) => returnIds.includes(r.tax_return_id)),
+    total: returnIds.length === 0 ? 161 : returnIds.length,
+    counts: { extended: 38, open: 38, filed: 0, likely: 123, acks_pending: 0 },
+  };
+}
+
+const ACK_ON_APR_14: Readonly<Record<string, Row["lines"][number]["status"]>> = {
+  "Jonah & Claire Feld": "filed",
+  "Elena Varga": "rejected",
+};
+
+export function tax13SeasonE(): ListPageExtensionRowOut {
+  const items = OPEN.map((row): Row => {
+    if (row.client_name.startsWith("Estate of Walter Thornbury")) {
+      return {
+        ...row,
+        allowed_actions: REVIEWER_ACTIONS,
+        engagement_id: ENGAGEMENT,
+        days_to_extended_due: null,
+        likely_to_extend: true,
+        lines: row.lines.map((l) => ({ ...l, filed_on: null, status: "prepared" as const })),
+      };
+    }
+    const status = ACK_ON_APR_14[row.client_name];
+    return {
+      ...row,
+      days_to_extended_due: null,
+      lines: row.lines.map((l) => ({
+        ...l,
+        ...(status === undefined ? {} : { status }),
+        ...(status === "rejected" ? { reject_code: "IND-031-04" } : {}),
+      })),
+    };
+  });
+  return {
+    items,
+    total: 161,
+    counts: { extended: 149, open: 149, filed: 0, likely: 12, acks_pending: 1 },
+  };
+}
+
+export const tax13FiledForm: EvidenceVersionOut = {
+  created_at: "2026-04-14T14:00:00-05:00",
+  evidence_item_id: stableId("evidence-item:tax13-filed-form"),
+  id: stableId("evidence-version:tax13-filed-form"),
+  method: "uploaded",
+  period_end: null,
+  period_start: null,
+  pulled_at: null,
+  source: "Form 4868 confirmation.pdf",
+  version_no: 1,
+};
+
+/** The three returns on artboard d's sheet: Feld, Shah, Varga. */
+export const TAX13_SHEET_IDS: readonly string[] = [
+  "Jonah & Claire Feld",
+  "Meera Shah",
+  "Elena Varga",
+].map((name) => stableId(`tax-return:${name}`));
 
 function estimate(
   name: string,

@@ -166,13 +166,13 @@ describe("TAX-01 artboards", () => {
     });
   });
 
-  it("d: Extend… and Run firm standards… are drawn disabled outside production", async () => {
+  it("d: Extend… is live (T-03-T16); Run firm standards… is drawn disabled outside production", async () => {
     show("d");
     await ready();
     const bar = screen.getByRole("region", { name: "3 selected" });
     expect(
       within(bar).getByRole("button", { name: COPY.bulk.extend }).hasAttribute("disabled"),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       within(bar).getByRole("button", { name: COPY.bulk.standards }).hasAttribute("disabled"),
     ).toBe(true);
