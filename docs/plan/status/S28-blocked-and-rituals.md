@@ -4,6 +4,8 @@ Recorded at the S28 build (2026-11-05, on main ab2cef04c plus the S28 stack #123
 marked done, and no gate they guard is treated as met (DEC-1389, DEC-1391).
 
 ## Code rows held back
+Update 2026-11-06: T-03-T15 and T-03-T19 are built with recorded partials (DEC-2328, DEC-2329), and A-06-T28 is built only as the checklist import and its 142 items (DEC-2330). The table is the state at the S28 build.
+
 | Row | What holds it |
 |---|---|
 | T-03-T15 | The Brightwater Hale extensions and estimates load through service APIs, and no service creates a `filing_extensions` or `estimate_schedules` row yet: that's T-03-T07's recorded partial (prepare, estimates). Writing rows directly would break the row's own rule. Organizer v6 and the Feld questionnaire exist through `tax_content`. |

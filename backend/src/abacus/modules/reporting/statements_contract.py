@@ -21,7 +21,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Annotated, Any, Literal, NoReturn, cast
 from uuid import UUID
 
-from fastapi import Depends, Header, Query, Response
+from fastapi import Depends, Header, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import REPORTING_FS_DISCLOSURE
@@ -541,6 +541,7 @@ async def checklist_export_route(document_id: UUID, ctx: Ctx) -> Response:
     errors=(409, 501),
 )
 async def checklist_import_route(
+    request: Request,
     ctx: Ctx,
     name: Annotated[str, Query(min_length=1, max_length=200)],
     framework_key: Annotated[str, Query(pattern=r"^[a-z][a-z0-9_]{1,39}$")],
@@ -548,7 +549,20 @@ async def checklist_import_route(
 ) -> ChecklistImportOut:
     """The firm's checklist file as the raw body (DEC-1369's import grammar); dry run first."""
     await _gate(ctx, None, "disclosure_checklist_template.import")
-    _not_yet()
+    from abacus.modules.methodology.api import CHECKLIST_MAX_BYTES, import_checklist
+
+    content = bytearray()
+    async for chunk in request.stream():
+        content += chunk
+        if len(content) > CHECKLIST_MAX_BYTES:
+            break  # the parser refuses it as too large, without holding the rest
+    found = await import_checklist(ctx, name, framework_key, bytes(content), dry_run=dry_run)
+    return ChecklistImportOut(
+        template_id=found.template_id,
+        version=found.version,
+        dry_run=found.dry_run,
+        problems=list(found.problems),
+    )
 
 
 @statements_router.post(
@@ -562,4 +576,12 @@ async def checklist_publish_route(
 ) -> ChecklistTemplateVersionOut:
     """A person publishes with fresh MFA; a published version never changes."""
     await _gate(ctx, None, "disclosure_checklist_template.publish")
-    _not_yet()
+    from abacus.modules.methodology.api import publish_checklist
+
+    found = await publish_checklist(ctx, template_id, version)
+    return ChecklistTemplateVersionOut(
+        template_id=found.template_id,
+        version=found.version,
+        status="published",
+        published_at=cast(datetime, found.published_at),
+    )

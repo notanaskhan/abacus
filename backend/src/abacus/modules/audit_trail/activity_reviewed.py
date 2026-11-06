@@ -600,6 +600,8 @@ REVIEWED_FALLBACK: Final = frozenset(
         "estimate_installment.confirmation_requested",  # reviewed 2026-11-06 (T-03-T07)
         "tax_schedule.extensions_exported",  # reviewed 2026-11-06 (T-03-T07)
         "tax_schedule.estimates_exported",  # reviewed 2026-11-06 (T-03-T07)
+        "disclosure_checklist_template.imported",  # reviewed 2026-11-06 (A-06-T28)
+        "disclosure_checklist_template.published",  # reviewed 2026-11-06 (A-06-T28)
         "questionnaire_template.drafted",  # reviewed 2026-11-06 (T-03-T05)
         "questionnaire_template.discarded",  # reviewed 2026-11-06 (T-03-T05)
         "questionnaire_template.owner_assigned",  # reviewed 2026-11-06 (T-03-T05)
