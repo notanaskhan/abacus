@@ -1275,8 +1275,8 @@ async def proposed_items_route(
 async def _run_out(ctx: AuthContext, notice_id: UUID) -> AnalysisRunOut:
     from abacus.modules.notices import analysis
 
-    version, reused = await analysis.run(ctx, notice_id)
-    return AnalysisRunOut(version=version, status="ready", reused=reused)
+    version, status, reused = await analysis.start(ctx, notice_id)
+    return AnalysisRunOut(version=version, status=cast(AnalysisStatus, status), reused=reused)
 
 
 @router.get(f"{_N}/analysis", action="notice.read", response_model=AnalysisOut, errors=(501,))
@@ -1346,7 +1346,7 @@ async def analysis_route(notice_id: UUID, ctx: Ctx) -> AnalysisOut:
 async def analysis_run_route(
     notice_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> AnalysisRunOut:
-    """Idempotent on `inputs_hash`."""
+    """Starts `NoticeAnalysisWorkflow`; NOT-02 polls the analysis. Idempotent on `inputs_hash`."""
     await _gate(ctx, notice_id, "notice.analyze")
     return await _run_out(ctx, notice_id)
 

@@ -1,4 +1,4 @@
-"""A-04-T24's response (TASK-5020; A-04 §3.4 AC4.6, AC4.7; DEC-2382): "R8's drafted rationale and
+"""A-04-T24's response (TASK-5020; A-04 §3.4 AC4.6, AC4.7; DEC-2385): "R8's drafted rationale and
 EBP-03 response arrive as pending suggestions", and adopting one writes the `risk_linkages` row.
 Against Postgres: the pending suggestion is drawn as a `suggested` cell with no row written, the
 adopting unit of work writes the live link naming it, and nothing else reaches the table."""

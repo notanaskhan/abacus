@@ -17,7 +17,7 @@ Management override is never rebuttable: 422 `presumption_not_rebuttable` here a
 0613 (AC4.5). Approving is the partner's act on the `significant_risk` card (A-04-T18), never
 here; the agent's drafts arrive as suggestions a person adopts through the `risk` applier.
 
-A drafted response (A-04-T24; DEC-2382) is a suggestion on the risk's `response` field, one section
+A drafted response (A-04-T24; DEC-2385) is a suggestion on the risk's `response` field, one section
 code from `response_targets`. While it waits, the linkage matrix and the drawer read it from the
 suggestion, so no agent writes `risk_linkages`; adopting it writes the live link, naming the
 suggestion. Model text that is not a registered section is never drawn and never adopted.

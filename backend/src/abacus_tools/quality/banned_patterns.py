@@ -882,6 +882,9 @@ _ISSUERS: dict[str, frozenset[str]] = {
     # R-01-T09 (DEC-323): the portal drop sort acts for the dropper on one drop, proven by the
     # drop's own inbox row read under the tenant's row-level security.
     "src/abacus/modules/evidence/drops.py": frozenset({"system_context_for_run"}),
+    # N-04-T11 (DEC-2359): the analysis cites as the platform acting for whoever ran it, proven by
+    # the running `notice_analyses` row read under the tenant's row-level security.
+    "src/abacus/modules/notices/analysis.py": frozenset({"system_context_for_run"}),
 }
 
 
@@ -1483,6 +1486,10 @@ LIST_EXEMPT = frozenset(
         ("src/abacus/modules/evidence/repository.py", "pages_of"),
         ("src/abacus/modules/evidence/repository.py", "insert_pages"),
         ("src/abacus/modules/evidence/repository.py", "sources_without_words"),
+        (
+            "src/abacus/modules/evidence/repository.py",
+            "sources_without_ocr",
+        ),  # P-11-T25: the system backfill
         # P-03-T15: the masking backfill's batch, as the system on the firm's own uploads.
         ("src/abacus/modules/evidence/repository.py", "sources_without_masks"),
         # P-03-T08, T09: the events of citations already read through `visible()` or authorised

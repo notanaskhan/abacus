@@ -299,6 +299,12 @@ register_intake_candidates(intake_candidates)
 register_pilot_metric_source("w7", w7_override_rate)  # Q-04-T008 (DEC-825)
 register_client_request_sender(send_issue_to_client)  # P-04-T31 (DEC-828)
 
+from abacus.modules.agents.det_runs import (  # noqa: E402 -- A-06-T25
+    close_deterministic_run,
+    deterministic_run_facts,
+    open_deterministic_run,
+)
+
 __all__ = [
     "ACTIVITIES",
     "AGENTS",
@@ -416,6 +422,7 @@ __all__ = [
     "check",
     "check_live",
     "check_suggestion_target",
+    "close_deterministic_run",
     "create_draft_run",
     "create_intake_match_run",
     "create_match_run",
@@ -423,6 +430,7 @@ __all__ = [
     "create_review_run",
     "create_screening_run",
     "create_suggestion",
+    "deterministic_run_facts",
     "draft",
     "draft_follow_ups",
     "effective_ai_policy",
@@ -438,6 +446,7 @@ __all__ = [
     "load_agent_context",
     "match",
     "match_intake",
+    "open_deterministic_run",
     "override_rate",
     "pending_suggestions",
     "recommend",

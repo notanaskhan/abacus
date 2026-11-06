@@ -478,6 +478,9 @@ register_audit_value_resolver("pii_reveal", pii_reveal_values)
 # A-01-T10 (C5 v1.1, DEC-313): a request row's latest upload and the matcher's confidence.
 register_upload_facts(upload_facts)
 
+from abacus.modules.evidence.ocr_step import start_ocr_backfill  # noqa: E402 -- P-11-T25
+from abacus.modules.evidence.workflows import LongOcr, OcrBackfill  # noqa: E402
+
 __all__ = [
     "ACTIVITIES",
     "ANCHOR_ID",
@@ -561,8 +564,10 @@ __all__ = [
     "LegalHoldApply",
     "LegalHoldInput",
     "LegalHoldRelease",
+    "LongOcr",
     "MatchMaterial",
     "NewItem",
+    "OcrBackfill",
     "OcrRunRefused",
     "PageWords",
     "PendingDuplicate",
@@ -700,6 +705,7 @@ __all__ = [
     "signer_page",
     "stage_content",
     "stale_pdfs",
+    "start_ocr_backfill",
     "start_trust_layer_backfill",
     "store_generated",
     "suggest_by_name",

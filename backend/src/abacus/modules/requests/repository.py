@@ -302,6 +302,17 @@ async def fulfilling_versions(session: AsyncSession, item_id: UUID) -> Sequence[
     )
 
 
+async def last_fulfilment_at(session: AsyncSession, item_id: UUID) -> datetime | None:
+    """When the item's newest live fulfilment landed, for a caller that read the item."""
+    return (
+        await session.execute(
+            select(func.max(Fulfilment.created_at)).where(
+                Fulfilment.request_item_id == item_id, live_fulfilment()
+            )
+        )
+    ).scalar()
+
+
 async def get_request_item(
     session: AsyncSession, item_id: UUID, *, lock: bool = False
 ) -> RequestItem | None:

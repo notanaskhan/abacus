@@ -48,6 +48,7 @@ from abacus.modules.evidence.repository import (
     pages_of,
     pii_regions_of,
     preview_for,
+    rerender_version,
     scan_run_for,
     sources_without_masks,
 )
@@ -95,8 +96,30 @@ async def masked_preview_upload(given: UploadInput) -> str:
             inbox_attachment_id=attachment_id,
             renderer_version=MASKED_RENDERER_VERSION,
         )
+        # P-11 AC7.4: a re-scan found masks the first rendition doesn't have: render it again,
+        # under its own version. A rendition is insert-only, and the newest is the one served.
+        renderer = MASKED_RENDERER_VERSION
         if done is not None:
-            return done.kind
+            current = await scan_run_for(
+                session,
+                evidence_version_id=version_id,
+                inbox_file_id=inbox_id,
+                inbox_attachment_id=attachment_id,
+                detector_version=DETECTOR_VERSION,
+            )
+            again = rerender_version(MASKED_RENDERER_VERSION)
+            if current is None or current.detector_version == DETECTOR_VERSION:
+                return done.kind
+            newer = await preview_for(
+                session,
+                evidence_version_id=version_id,
+                inbox_file_id=inbox_id,
+                inbox_attachment_id=attachment_id,
+                renderer_version=again,
+            )
+            if newer is not None:
+                return newer.kind
+            renderer = again
         source = await source_of(session, tenant, given.kind, source_id)
         if source is None:
             if version_id is not None and await is_withdrawn(session, version_id):
@@ -162,7 +185,7 @@ async def masked_preview_upload(given: UploadInput) -> str:
             evidence_version_id=version_id,
             inbox_file_id=inbox_id,
             inbox_attachment_id=attachment_id,
-            renderer_version=MASKED_RENDERER_VERSION,
+            renderer_version=renderer,
             mask_version=MASK_VERSION,
             kind=rendered.kind,
             reason=rendered.reason,

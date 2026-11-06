@@ -276,3 +276,16 @@ async def test_ac_an_answer_raises_one_issue_on_the_return(
 def test_ac_extensions_store_no_instrument_on_a_proposal() -> None:
     fields = set(extensions.ProposedPayment.__dataclass_fields__)
     assert not fields & {"account", "routing", "card", "iban", "bank"}
+
+
+def test_ac_a_sealed_position_reads_only_under_the_query_it_was_issued_for() -> None:
+    from abacus.kernel.listing import CursorInvalid, Position, decode_cursor, encode_cursor
+
+    tenant = uuid4()
+    token = encode_cursor(
+        Position(50, "50"), tenant_id=tenant, resource="tax.extensions", query="a"
+    )
+    found = decode_cursor(token, tenant_id=tenant, resource="tax.extensions", query="a")
+    assert found.key == 50
+    with pytest.raises(CursorInvalid):
+        decode_cursor(token, tenant_id=tenant, resource="tax.extensions", query="b")

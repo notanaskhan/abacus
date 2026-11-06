@@ -9805,6 +9805,10 @@ export type ControlExceptionOut = {
      * Citation Ids
      */
     citation_ids: Array<string>;
+    /**
+     * Concluded By Initials
+     */
+    concluded_by_initials?: string | null;
     concluded_severity: DeficiencySeverityStatus | null;
     /**
      * Coso Component
@@ -9857,10 +9861,19 @@ export type ConvertToMisstatementIn = {
      * Column Set
      */
     column_set?: 'ebp_net_assets' | 'commercial';
+    fs_effect?: MisstatementEffectIn | null;
+    /**
+     * Nature
+     */
+    nature?: 'misstatement' | 'reclassification';
     /**
      * Projection Ref
      */
     projection_ref?: string | null;
+    /**
+     * Sample Error
+     */
+    sample_error?: number | string | null;
     /**
      * Seen Version
      */
@@ -29023,6 +29036,54 @@ export type MinutesIn = {
 };
 
 /**
+ * MisstatementEffectIn
+ *
+ * What the SUM statement shows for a misstatement (AUD-16 a; DEC-2360): its words and signed
+ * effect per column. A column left out is nil; both views left out state the amount.
+ */
+export type MisstatementEffectIn = {
+    /**
+     * Assets
+     */
+    assets?: number | string | null;
+    /**
+     * Change In Net Assets
+     */
+    change_in_net_assets?: number | string | null;
+    /**
+     * Client Note
+     */
+    client_note?: string | null;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Liabilities
+     */
+    liabilities?: number | string | null;
+    /**
+     * Net Assets
+     */
+    net_assets?: number | string | null;
+    /**
+     * Workpaper Ref
+     */
+    workpaper_ref?: string | null;
+};
+
+/**
+ * MisstatementEffectPatchIn
+ */
+export type MisstatementEffectPatchIn = {
+    fs_effect: MisstatementEffectIn;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+};
+
+/**
  * MisstatementIn
  */
 export type MisstatementIn = {
@@ -43009,17 +43070,14 @@ export type StatementDecisionsBody = {
 /**
  * StatementDraftStartedOut
  *
- * The version id is the deterministic run's record (DEC-2304).
+ * The deterministic run's record: `FsDraftWorkflow` writes the version, and the screen shows
+ * its skeleton until `GET` reads it (AUD-20c).
  */
 export type StatementDraftStartedOut = {
     /**
      * Run Id
      */
     run_id: string;
-    /**
-     * Version No
-     */
-    version_no: number;
 };
 
 /**
@@ -43675,7 +43733,7 @@ export type SubserviceOrgOut = {
 /**
  * SuggestedResponseOut
  *
- * A drafted response waiting for a person (AUD-08 f; DEC-2382): nothing is linked yet.
+ * A drafted response waiting for a person (AUD-08 f; DEC-2385): nothing is linked yet.
  */
 export type SuggestedResponseOut = {
     /**
@@ -46797,6 +46855,18 @@ export type TieOutOut = {
      * Total
      */
     total: number;
+};
+
+/**
+ * TieOutStartedOut
+ *
+ * `TieOutWorkflow` runs in the background; `GET` reads the result (AUD-20 c).
+ */
+export type TieOutStartedOut = {
+    /**
+     * Statement Version Id
+     */
+    statement_version_id: string;
 };
 
 /**
@@ -100048,6 +100118,70 @@ export type WorkbookTemplateResponses = {
 
 export type WorkbookTemplateResponse = WorkbookTemplateResponses[keyof WorkbookTemplateResponses];
 
+export type MisstatementEffectData = {
+    body: MisstatementEffectPatchIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Misstatement Id
+         */
+        misstatement_id: string;
+    };
+    query?: never;
+    url: '/v1/misstatements/{misstatement_id}/effect';
+};
+
+export type MisstatementEffectErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type MisstatementEffectError = MisstatementEffectErrors[keyof MisstatementEffectErrors];
+
+export type MisstatementEffectResponses = {
+    /**
+     * Successful Response
+     */
+    200: AbacusModulesAssuranceFindingsContractMisstatementOut;
+};
+
+export type MisstatementEffectResponse = MisstatementEffectResponses[keyof MisstatementEffectResponses];
+
 export type MisstatementPassData = {
     body: ReasonIn;
     headers: {
@@ -110877,7 +111011,7 @@ export type TieOutResponses = {
     /**
      * Successful Response
      */
-    202: TieOutOut;
+    202: TieOutStartedOut;
 };
 
 export type TieOutResponse = TieOutResponses[keyof TieOutResponses];
