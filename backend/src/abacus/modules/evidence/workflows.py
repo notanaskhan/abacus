@@ -60,6 +60,11 @@ class UploadProcessing:
             start_to_close_timeout=_TIMEOUT,
             retry_policy=_RETRY,
         )
+        # v9 (P-11-T25): the words and OCR come before the checks, so SPEC-029's checks run on a
+        # scan's words.
+        read_first = workflow.patched("ocr_before_checks")
+        if read_first:
+            await self._words_and_ocr(given)
         # v2 (TASK-055): an evidence version is then checked; an inbox file waits until it's
         # assigned to an item (SPEC-029 Q8).
         if workflow.patched("checks") and given.kind == VERSION:
@@ -80,33 +85,8 @@ class UploadProcessing:
                 start_to_close_timeout=_TIMEOUT,
                 retry_policy=_RETRY,
             )
-        # v4 (P-03-T05): the word layer, for versions and inbox files alike. A layer that can't
-        # be built never undoes the steps before it; the backfill tries the upload again.
-        if workflow.patched("words"):
-            try:
-                await workflow.execute_activity(
-                    "upload.words",
-                    given,
-                    result_type=int,
-                    start_to_close_timeout=_TIMEOUT,
-                    retry_policy=_RETRY,
-                )
-            except ActivityError:
-                workflow.logger.warning("upload.words_failed", extra={"kind": given.kind})
-        # v8 (P-11-T25): OCR for pages with no text layer, before the scan so the scan reads them.
-        # The gate's refusal is final and answered, not raised; a failure leaves the page
-        # `not_scannable`, never undoing the steps before it.
-        if workflow.patched("ocr"):
-            try:
-                await workflow.execute_activity(
-                    "upload.ocr",
-                    given,
-                    result_type=int,
-                    start_to_close_timeout=_OCR_TIMEOUT,
-                    retry_policy=_RETRY,
-                )
-            except ActivityError:
-                workflow.logger.warning("upload.ocr_failed", extra={"kind": given.kind})
+        if not read_first:
+            await self._words_and_ocr(given)
         # v5 (P-03-T13): PII detection over the word layer. A scan that can't run never undoes
         # the steps before it. Until a scan lists a page, the word-layer readers (quotes,
         # search, relink) and a portal drop's matcher never read it; other agent material
@@ -151,6 +131,48 @@ class UploadProcessing:
             except ActivityError:
                 workflow.logger.warning("upload.portal_drop_sort_failed")
         return status
+
+    async def _words_and_ocr(self, given: UploadInput) -> None:
+        # v4 (P-03-T05): the word layer, for versions and inbox files alike. A layer that can't
+        # be built never undoes the steps before it; the backfill tries the upload again.
+        if workflow.patched("words"):
+            try:
+                await workflow.execute_activity(
+                    "upload.words",
+                    given,
+                    result_type=int,
+                    start_to_close_timeout=_TIMEOUT,
+                    retry_policy=_RETRY,
+                )
+            except ActivityError:
+                workflow.logger.warning("upload.words_failed", extra={"kind": given.kind})
+        # v8 (P-11-T25): OCR for pages with no text layer, before the scan so the scan reads them.
+        # The gate's refusal is final and answered, not raised; a failure leaves the page
+        # `not_scannable`, never undoing the steps before it.
+        if workflow.patched("ocr"):
+            try:
+                # v10 (P-11-T25): more than 20 pages run in `background`.
+                queue = (
+                    await workflow.execute_activity(
+                        "upload.ocr_queue",
+                        given,
+                        result_type=str,
+                        start_to_close_timeout=_TIMEOUT,
+                        retry_policy=_RETRY,
+                    )
+                    if workflow.patched("ocr_background")
+                    else None
+                )
+                await workflow.execute_activity(
+                    "upload.ocr",
+                    given,
+                    result_type=int,
+                    start_to_close_timeout=_OCR_TIMEOUT,
+                    retry_policy=_RETRY,
+                    task_queue=queue,
+                )
+            except ActivityError:
+                workflow.logger.warning("upload.ocr_failed", extra={"kind": given.kind})
 
 
 # --- Withdrawal purge (P-06-T19; ADR-162 §7). v1, recorded in its history. --------------------
@@ -270,6 +292,62 @@ class LegalHoldRelease:
             start_to_close_timeout=_TIMEOUT,
             retry_policy=_HOLD_RETRY,
         )
+
+
+@workflow.defn(name="ocr_backfill")
+class OcrBackfill:
+    """P-11-T25 (AC7.4): a flagged firm's `not_scannable` pages get OCR, the PII scan and the
+    masked rendition, the same idempotent activities new uploads run. Batches by id cursor; a file
+    that fails is counted and passed. Started by an operator (`abacus_tools.ocr_backfill`)."""
+
+    @workflow.run
+    async def run(self, given: BackfillInput) -> int:
+        batch = await workflow.execute_activity(
+            "upload.pending_ocr",
+            given,
+            result_type=list[UploadInput],
+            start_to_close_timeout=_TIMEOUT,
+            retry_policy=_RETRY,
+        )
+        failed = 0
+        for upload in batch:
+            try:
+                await workflow.execute_activity(
+                    "upload.ocr",
+                    upload,
+                    result_type=int,
+                    start_to_close_timeout=_OCR_TIMEOUT,
+                    retry_policy=_RETRY,
+                )
+                await workflow.execute_activity(
+                    "upload.pii_scan",
+                    upload,
+                    result_type=int,
+                    start_to_close_timeout=_TIMEOUT,
+                    retry_policy=_RETRY,
+                )
+                await workflow.execute_activity(
+                    "upload.masked_preview",
+                    upload,
+                    result_type=str,
+                    start_to_close_timeout=_TIMEOUT,
+                    retry_policy=_RETRY,
+                )
+            except ActivityError:
+                failed += 1
+                workflow.logger.warning("upload.ocr_backfill_failed", extra={"kind": upload.kind})
+        versions = [u.source_id for u in batch if u.kind == VERSION]
+        inbox = [u.source_id for u in batch if u.kind != VERSION]
+        reached = BackfillInput(
+            given.tenant_id,
+            versions[-1] if versions else given.after_version,
+            inbox[-1] if inbox else given.after_inbox,
+            given.done + len(batch),
+            given.failed + failed,
+        )
+        if len(batch) >= BACKFILL_BATCH:
+            workflow.continue_as_new(reached)
+        return reached.done
 
 
 @workflow.defn(name="trust_layer_backfill")

@@ -72,6 +72,11 @@ async def _ocr_stub(given: UploadInput) -> int:
     return 1
 
 
+@activity.defn(name="upload.ocr_queue")
+async def _ocr_queue_stub(given: UploadInput) -> str:
+    return _TASK_QUEUE
+
+
 @activity.defn(name="upload.pii_scan")
 async def _pii_scan_stub(given: UploadInput) -> int:
     return 2
@@ -104,6 +109,7 @@ _OUTCOMES = {
     "v6": "portal-drop-sort",
     "v7": "masked-preview",
     "v8": "ocr",
+    "v9": "ocr-background",
 }
 
 
@@ -131,6 +137,7 @@ async def _record(out: Path, version: str, stack: Stack, outcome: str | None = N
             ),
             _drop_sort_stub,
             _ocr_stub,
+            _ocr_queue_stub,
         ],
     ):
         handle = await client.start_workflow(

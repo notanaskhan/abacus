@@ -9,12 +9,19 @@ from __future__ import annotations
 
 import io
 import uuid
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from decimal import Decimal
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
+import pytest
 from PIL import Image
 
 from abacus.kernel.db import TenantContext
 from abacus.kernel.ocr import OcrPage, OcrWord
+from abacus.kernel.uow import Ref
+from abacus.modules.evidence import ocr_gate
 from abacus.modules.evidence.ocr_normalise import rasterise
 from abacus.modules.evidence.ocr_step import (
     _page_words,  # pyright: ignore[reportPrivateUsage] -- the module's own helper
@@ -68,3 +75,52 @@ def test_ac_the_step_runs_as_the_system() -> None:
     tenant = _system(uuid.uuid4())
     assert isinstance(tenant, TenantContext)
     assert tenant.actor_kind == "system"
+
+
+async def test_ac_a_run_records_without_any_text_in_its_audit_reference(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Regression (DEC-2332): `Ref` refuses text, and this one held the refusal's name, so every
+    run raised before the pages were read."""
+    recorded: list[Ref] = []
+
+    class _Tx:
+        session = SimpleNamespace(scalar=AsyncMock(return_value=uuid.uuid4()))
+
+        def record(self, _action: str, *, target: object, after: Ref) -> None:
+            recorded.append(after)
+
+    @asynccontextmanager
+    async def fake_uow(_tenant: object) -> AsyncIterator[_Tx]:
+        yield _Tx()
+
+    monkeypatch.setattr(ocr_gate, "uow", fake_uow)
+    tenant = TenantContext(uuid.uuid4(), "system", "test")
+    for refused in (None, "quota_exceeded"):
+        await ocr_gate.record_run(
+            tenant,
+            evidence_version_id=None,
+            inbox_file_id=None,
+            provider="fake",
+            api="detect_text",
+            pages=[1],
+            refused=refused,  # type: ignore[arg-type]
+            synthetic_firm=True,
+            request_ids=[],
+        )
+    assert [r.fields for r in recorded] == [{"pages": 1, "refused": 0}, {"pages": 1, "refused": 1}]
+
+
+@pytest.mark.parametrize(
+    ("used", "pages", "over"), [(4999, 1, False), (5000, 1, True), (0, 5001, True)]
+)
+async def test_ac_the_daily_cap_counts_what_the_firm_already_read(
+    monkeypatch: pytest.MonkeyPatch, used: int, pages: int, over: bool
+) -> None:
+    @asynccontextmanager
+    async def session(_tenant: object) -> AsyncIterator[object]:
+        yield SimpleNamespace(scalar=AsyncMock(return_value=used))
+
+    monkeypatch.setattr(ocr_gate, "tenant_session", session)
+    tenant = TenantContext(uuid.uuid4(), "system", "test")
+    assert await ocr_gate.over_daily_cap(tenant, pages) is over
