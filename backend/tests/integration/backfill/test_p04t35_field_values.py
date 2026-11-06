@@ -340,7 +340,7 @@ async def test_ac6_an_unverifiable_reference_writes_nothing(world: World) -> Non
 # --- Scope -------------------------------------------------------------------------------------
 
 
-async def test_ac7_flag_off_and_other_firms_are_404(world: World) -> None:
+async def test_ac7_other_firms_are_404_and_the_retired_flag_changes_nothing(world: World) -> None:
     target = await _return(world)
     await _imported(world, target, "2190")
     other = await make_world(world.net, "Granite Peak Holdings")
@@ -351,7 +351,8 @@ async def test_ac7_flag_off_and_other_firms_are_404(world: World) -> None:
         world.tenant_id,
     )
     forget_flags()
-    assert (await world.call("GET", _path(target), "samuel")).status_code == 404
+    # P-04-T62 (DEC-2221): a leftover row for the retired flag no longer turns the read off.
+    assert (await world.call("GET", _path(target), "samuel")).status_code == 200
 
 
 # --- FIELD-001 ---------------------------------------------------------------------------------
