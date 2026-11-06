@@ -47,7 +47,8 @@ clause do not read `verified_provisions` yet, and EBP-03's escalation rate and m
 use the engine's QACA constants. So the row stays `partial`.
 
 ## Decisions made during this task
-DEC-2387.
+DEC-2482.
 
 ## Progress log
 - 2026-11-06: built; targeted tests and check-fast passed on the first commit. Security self-review findings then fixed: the attribute guard opens the date of birth with or without a rule, wordings with symbols count as unreadable, a row with no hire date opens nothing. Tests for these are written but not yet run: the owner held this session's tests so other sessions get the CPU. Run them before the PR.
+- 2026-11-07: Merged main, which took this row's first number while it was held; other sessions then held the next ones, so it moves to a block clear of them. End test pass on the merged branch: targeted backend tests 66 passed, EBP-03 web tests 14 passed, tsc, eslint and check-fast. One comment line shortened.

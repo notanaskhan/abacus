@@ -16,7 +16,7 @@ comparison).
 - **Downstream** (EBP-03's entry rule, EBP-04's match formula, EBP-09's expenses clause) reads
   `verified_provisions`: only ticked values, never a draft. `entry_rule_read` is EBP-03's reader:
   until all three of its provisions are ticked, and in wording code can read, there is no rule
-  and code computes no entry date (DEC-2387).
+  and code computes no entry date (DEC-2482).
 - **Conflicts**: code compares the governing wording with the SPD (`compute.conflicts`) over the
   values a person enters for the SPD; only a person raises one (SHL-15 → AUD-15).
 """

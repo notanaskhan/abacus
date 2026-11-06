@@ -1,4 +1,4 @@
-"""A-05-T16's EBP-03 clause (TASK-5018; DEC-2387): "EBP-03 reads the entry rule from the verified
+"""A-05-T16's EBP-03 clause (TASK-5018; DEC-2482): "EBP-03 reads the entry rule from the verified
 provision, never from the draft." Here: the wording code reads, what a draft or an unreadable
 wording gives, and that the engine computes from the rule it is given.
 """

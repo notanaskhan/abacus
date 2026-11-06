@@ -14392,7 +14392,7 @@ export type EntryOut = {
 /**
  * EntryRuleOut
  *
- * The entry rule EBP-03 computed from: the verified provisions' (A-05-T16; DEC-2387). While it
+ * The entry rule EBP-03 computed from: the verified provisions' (A-05-T16; DEC-2482). While it
  * is `unverified` or `unreadable` the ages and months are null and no row has an entry date.
  */
 export type EntryRuleOut = {

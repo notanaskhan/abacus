@@ -9,7 +9,7 @@ distribution packet fields) with region citations; it never sees an SSN or a dat
   `hr_roster` kind), so SSN and date of birth are compared on their firm-keyed fingerprints, and
   name and hire date on the stored values. Any difference is **Needs human**; a hire-date
   difference carries the eligibility engine's note when both dates give the same entry ("No effect
-  on entry"), computed under the verified entry rule (none until it is verified, DEC-2387) with the
+  on entry"), computed under the verified entry rule (none until it is verified, DEC-2482) with the
   census date of birth opened by code, never shown or logged.
 - **The mode's inputs** (`attribute_inputs`): the HR and payroll records as documents and code's
   results as facts (participant key, attribute, result, note): tokens only. `assert_masked`
