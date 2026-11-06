@@ -48,6 +48,7 @@ import {
   useControlsCanvas,
 } from "../AUD-09";
 import { SERVICE_ORGS, type ServiceOrgsOptions, useServiceOrgsCanvas } from "../AUD-10";
+import { INVESTMENTS, type InvestmentsOptions, useInvestmentsCanvas } from "../EBP-06";
 import { type SampleSelectionOptions, useSampleSelectionCanvas } from "../AUD-11/SampleSelection";
 import { ViewerPane } from "../SHL-08";
 import { useOpenOverlay } from "../../app-core/open";
@@ -110,6 +111,8 @@ export interface AUD02Props {
   controls?: ControlsOptions;
   /** AUD-10 (A-04-T37): Service Organizations & SOC 1. */
   serviceOrgs?: ServiceOrgsOptions;
+  /** EBP-06 (A-05-T40): Investments & Certification. */
+  investments?: InvestmentsOptions;
   /** EBP-04 (A-05-T31): the Contributions & Remittance tab and links. */
   contributions?: Omit<ContributionsOptions, "active" | "running">;
 }
@@ -217,6 +220,7 @@ function Cockpit({
   planReviewVersion,
   controls,
   serviceOrgs,
+  investments,
   contributions,
 }: Omit<AUD02Props, "auditId"> & { cockpit: AuditCockpitOut }): JSX.Element {
   // A-01-T24: "Export binder…" and the record-mode entries (DV-9, DV-4).
@@ -288,6 +292,13 @@ function Cockpit({
     active: serviceOrgsOpen,
     running: serviceOrgsOpen && row?.section_state === "running",
   });
+  // EBP-06 (A-05-T40): Fieldwork › Investments & Certification, behind `ebp.modules`.
+  const investmentsOpen = selected === INVESTMENTS;
+  const investmentsCanvas = useInvestmentsCanvas(cockpit.work_item_id, {
+    ...investments,
+    active: investmentsOpen,
+    running: investmentsOpen && row?.section_state === "running",
+  });
   // EBP-04 (A-05-T31): Testing › Contributions & Remittance, behind `ebp.modules` (C-20 when off);
   // the rail's own "running" state draws d.
   const contributionsOpen = selected === CONTRIBUTIONS;
@@ -318,6 +329,8 @@ function Cockpit({
     canvas = controlsCanvas;
   } else if (serviceOrgsOpen) {
     canvas = serviceOrgsCanvas;
+  } else if (investmentsOpen) {
+    canvas = investmentsCanvas;
   } else if (contributionsOpen) {
     canvas = contributionsCanvas;
   } else if (row?.section_state === "blocked_on_decision" && row.blocked_on_name != null) {
@@ -521,6 +534,7 @@ export function AuditCockpitPage({
     planReviewVersion?: number;
     controls?: ControlsOptions;
     serviceOrgs?: ServiceOrgsOptions;
+    investments?: InvestmentsOptions;
     contributions?: Omit<ContributionsOptions, "active" | "running">;
   };
   onBack?: () => void;
@@ -552,6 +566,7 @@ export function AuditCockpitPage({
         : { planReviewVersion: initial.planReviewVersion })}
       {...(initial.controls === undefined ? {} : { controls: initial.controls })}
       {...(initial.serviceOrgs === undefined ? {} : { serviceOrgs: initial.serviceOrgs })}
+      {...(initial.investments === undefined ? {} : { investments: initial.investments })}
       {...(initial.contributions === undefined ? {} : { contributions: initial.contributions })}
     />
   );
