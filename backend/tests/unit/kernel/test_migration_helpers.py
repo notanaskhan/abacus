@@ -140,3 +140,10 @@ def test_ac13_insert_columns_rejects_invalid_column_names_without_emitting(bad: 
     with pytest.raises(ValueError):
         insert_columns(cast(Operations, op), "t", ["good", bad])
     assert op.statements == []
+
+
+def test_insert_columns_refuses_an_empty_column_list() -> None:
+    op = RecordingOp()
+    with pytest.raises(ValueError, match="at least one column"):
+        insert_columns(cast(Operations, op), "orders", [])
+    assert op.statements == []
