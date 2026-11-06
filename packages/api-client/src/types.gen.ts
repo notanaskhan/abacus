@@ -25425,6 +25425,10 @@ export type LinkCellOut = {
     risk_code: string;
     state: RiskLinkageStatus;
     /**
+     * Suggestion Id
+     */
+    suggestion_id?: string | null;
+    /**
      * Target Ref
      */
     target_ref: string;
@@ -37549,6 +37553,7 @@ export type RiskDrawerOut = {
      * Rationale Suggestion Id
      */
     rationale_suggestion_id: string | null;
+    response_suggestion?: SuggestedResponseOut | null;
     risk: RegisterRiskOut;
     /**
      * Routed At
@@ -43723,6 +43728,30 @@ export type SubserviceOrgOut = {
      * Treatment
      */
     treatment: 'carve_out' | 'inclusive';
+};
+
+/**
+ * SuggestedResponseOut
+ *
+ * A drafted response waiting for a person (AUD-08 f; DEC-2480): nothing is linked yet.
+ */
+export type SuggestedResponseOut = {
+    /**
+     * Citations
+     */
+    citations: number;
+    /**
+     * Suggestion Id
+     */
+    suggestion_id: string;
+    /**
+     * Target Ref
+     */
+    target_ref: string;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**

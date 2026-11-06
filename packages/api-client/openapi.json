@@ -54462,6 +54462,19 @@
             "$ref": "#/components/schemas/RiskLinkageStatus",
             "cls": "internal"
           },
+          "suggestion_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Suggestion Id"
+          },
           "target_ref": {
             "cls": "internal",
             "title": "Target Ref",
@@ -80034,6 +80047,17 @@
             "cls": "internal",
             "title": "Rationale Suggestion Id"
           },
+          "response_suggestion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SuggestedResponseOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
           "risk": {
             "$ref": "#/components/schemas/RegisterRiskOut",
             "cls": "confidential"
@@ -93186,6 +93210,42 @@
           "treatment"
         ],
         "title": "SubserviceOrgOut",
+        "type": "object"
+      },
+      "SuggestedResponseOut": {
+        "description": "A drafted response waiting for a person (AUD-08 f; DEC-2480): nothing is linked yet.",
+        "properties": {
+          "citations": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Citations",
+            "type": "integer"
+          },
+          "suggestion_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Suggestion Id",
+            "type": "string"
+          },
+          "target_ref": {
+            "cls": "internal",
+            "title": "Target Ref",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "suggestion_id",
+          "target_ref",
+          "citations",
+          "version"
+        ],
+        "title": "SuggestedResponseOut",
         "type": "object"
       },
       "SuggestionOut": {

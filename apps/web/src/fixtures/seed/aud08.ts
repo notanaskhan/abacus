@@ -220,6 +220,12 @@ export function aud08Drawer(variant: Aud08Variant): RiskDrawerOut {
       versions: [],
       routed_to_name: null,
       routed_at: null,
+      response_suggestion: {
+        suggestion_id: stableId("suggestion:northwind:R8:response"),
+        target_ref: "EBP-03",
+        citations: 3,
+        version: 1,
+      },
     };
   }
   const r3 = risk(ROWS[2] as (typeof ROWS)[number], variant);
