@@ -75,6 +75,7 @@ FIRM_LEVEL: Final = frozenset(
         "reference_set_version",  # K-02-T12: a platform rules table took effect (no client)
         "disclosure_checklist_template",  # A-06-T28: the firm's checklist content
         "statement_note_template",  # A-06-T25: the firm's note content
+        "statement_document",  # A-06-T25: a person picks its checklist (DEC-2390)
         "questionnaire_template",  # T-02-T16: the firm's organizer template and its versions
         "consent_export",  # T-01-T16: a person's export of the consent registry (a filter)
         "envelope_policy",  # N-02: the firm's envelope fallback policy (the firm is its id)

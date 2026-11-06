@@ -252,11 +252,15 @@ from abacus.modules.portal.api import (
 )
 from abacus.modules.reporting.api import (
     TemplateImportIn,
+    answer_statements_item,
     draft_statements,
     import_template_bundle,
+    pick_statements_checklist,
     publish_template,
     record_management_approval,
+    review_statements_items,
     run_statement_tie_out,
+    statements_checklist_options,
 )
 from abacus.modules.requests.api import (
     ItemPatch,
@@ -4470,6 +4474,56 @@ async def _completion_drafted(conn: asyncpg.Connection, _: Scenario, event: Even
     await draft_statements(await _staff_context(conn, event), engagement, item)
 
 
+async def _completion_document(conn: asyncpg.Connection) -> UUID:
+    return cast(
+        UUID,
+        await tenant_value(
+            conn,
+            TENANT,
+            "SELECT id FROM statement_documents WHERE work_item_id = $1",
+            (await _northwind_work_item(conn))[1],
+        ),
+    )
+
+
+async def _completion_checklist_picked(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    ctx = await _staff_context(conn, event)
+    options = await statements_checklist_options(ctx.tenant)
+    chosen = next(o for o in options if o["name"] == _completion.NAME)
+    await pick_statements_checklist(ctx, await _completion_document(conn), chosen["id"])
+
+
+async def _completion_checklist_answered(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    """Ana answers the 142 (97 Yes, 45 N/A with their reason); Hannah reviews next (AUD-20)."""
+    ctx = await _staff_context(conn, event)
+    document = await _completion_document(conn)
+    for n in range(1, _completion.ITEMS + 1):
+        yes = n <= _completion.ANSWERED_YES
+        await answer_statements_item(
+            ctx,
+            document,
+            f"dc_{n:03d}",
+            "yes" if yes else "na",
+            None if yes else _completion.NA_REASON,
+            None,
+            1,
+        )
+
+
+async def _completion_checklist_reviewed(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    await review_statements_items(
+        await _staff_context(conn, event),
+        await _completion_document(conn),
+        [f"dc_{n:03d}" for n in range(1, _completion.ITEMS + 1)],
+    )
+
+
 async def _completion_groupings(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     ctx = await _staff_context(conn, event)
     await import_grouping_csv(
@@ -5382,6 +5436,9 @@ HANDLERS: Final[dict[str, Handler]] = {
     "completion.sum_snapshot": _completion_snapshot,
     "completion.sum_concluded": _completion_concluded,
     "completion.statement_drafted": _completion_drafted,
+    "completion.checklist_picked": _completion_checklist_picked,
+    "completion.checklist_answered": _completion_checklist_answered,
+    "completion.checklist_reviewed": _completion_checklist_reviewed,
     "completion.statement_approved": _completion_approved,
     "completion.statement_tied": _completion_tied,
     "completion.ebp_groupings": _completion_groupings,

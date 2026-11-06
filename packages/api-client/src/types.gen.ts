@@ -6078,6 +6078,28 @@ export type ChecklistItem = {
 };
 
 /**
+ * ChecklistOptionOut
+ */
+export type ChecklistOptionOut = {
+    /**
+     * Framework Key
+     */
+    framework_key: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * ChecklistOut
  */
 export type ChecklistOut = {
@@ -6101,6 +6123,16 @@ export type ChecklistOut = {
      * Total
      */
     total: number;
+};
+
+/**
+ * ChecklistPickIn
+ */
+export type ChecklistPickIn = {
+    /**
+     * Template Version Id
+     */
+    template_version_id: string;
 };
 
 /**
@@ -110834,6 +110866,116 @@ export type ChecklistReviewResponses = {
 };
 
 export type ChecklistReviewResponse = ChecklistReviewResponses[keyof ChecklistReviewResponses];
+
+export type ChecklistPickData = {
+    body: ChecklistPickIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Document Id
+         */
+        document_id: string;
+    };
+    query?: never;
+    url: '/v1/statement-documents/{document_id}/disclosure-checklist/template';
+};
+
+export type ChecklistPickErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ChecklistPickError = ChecklistPickErrors[keyof ChecklistPickErrors];
+
+export type ChecklistPickResponses = {
+    /**
+     * Successful Response
+     */
+    200: ChecklistOut;
+};
+
+export type ChecklistPickResponse = ChecklistPickResponses[keyof ChecklistPickResponses];
+
+export type ChecklistOptionsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Document Id
+         */
+        document_id: string;
+    };
+    query?: never;
+    url: '/v1/statement-documents/{document_id}/disclosure-checklist/templates';
+};
+
+export type ChecklistOptionsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ChecklistOptionsError = ChecklistOptionsErrors[keyof ChecklistOptionsErrors];
+
+export type ChecklistOptionsResponses = {
+    /**
+     * Response Checklist Options
+     *
+     * Successful Response
+     */
+    200: Array<ChecklistOptionOut>;
+};
+
+export type ChecklistOptionsResponse = ChecklistOptionsResponses[keyof ChecklistOptionsResponses];
 
 export type LineageData = {
     body?: never;

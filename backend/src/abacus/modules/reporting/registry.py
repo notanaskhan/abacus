@@ -176,7 +176,14 @@ INSERT_COLUMNS["statement_approvals"] = frozenset(
     }
 )
 UPDATE_COLUMNS["statement_documents"] = frozenset(
-    {"current_version_no", "management_approval", "row_version", "status", "updated_at"}
+    {
+        "checklist_template_version_id",
+        "current_version_no",
+        "management_approval",
+        "row_version",
+        "status",
+        "updated_at",
+    }
 )
 UPDATE_COLUMNS["disclosure_checklist_answers"] = frozenset(
     {

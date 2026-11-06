@@ -39,7 +39,11 @@ from abacus.modules.ledger.api import (
     statements_for,
     trial_balance_view,
 )
-from abacus.modules.methodology.api import disclosure_template_items, published_notes
+from abacus.modules.methodology.api import (
+    disclosure_template_items,
+    published_checklists,
+    published_notes,
+)
 from abacus.modules.reporting.compute import fs_draft, tie_out
 from abacus.modules.reporting.events import (
     StatementDraftRequested,
@@ -71,6 +75,12 @@ class StaleAnswer(DomainConflict):
     """The answer changed since it was read (`If-Match`)."""
 
     code = "version_conflict"
+
+
+class ChecklistAnswered(DomainConflict):
+    """An answered checklist can't change version; its answers name the one they were given on."""
+
+    code = "checklist_answered"
 
 
 class NoSuggestion(DomainConflict):
@@ -797,6 +807,44 @@ async def _existing(tx_session: AsyncSession, document_id: UUID, item_key: str) 
         .one_or_none()
     )
     return dict(row) if row else None
+
+
+async def checklist_options(tenant: TenantContext) -> list[JsonRow]:
+    """The firm's published checklists a person may pick for a document (AUD-20's picker)."""
+    return await published_checklists(tenant)
+
+
+async def pick_checklist(ctx: AuthContext, document_id: UUID, template_version_id: UUID) -> None:
+    """A person picks the document's checklist from the firm's published ones. Answers belong to
+    the version they were given against, so an answered checklist stays (DEC-2390)."""
+    document = await _resource_of_document(ctx.tenant, document_id)
+    if not any(o["id"] == template_version_id for o in await published_checklists(ctx.tenant)):
+        raise NotFound("disclosure_checklist_template_version")
+    async with uow(ctx.tenant) as tx:
+        answered = await tx.session.scalar(
+            text(
+                "SELECT count(*) FROM disclosure_checklist_answers "
+                "WHERE statement_document_id = :d"
+            ),
+            {"d": document_id},
+        )
+        if answered:
+            raise ChecklistAnswered(facts={"answered": int(answered)})
+        await tx.session.execute(
+            text(
+                "UPDATE statement_documents SET checklist_template_version_id = :tv, "
+                "row_version = row_version + 1, updated_at = clock_timestamp() WHERE id = :d"
+            ),
+            {"tv": template_version_id, "d": document_id},
+        )
+        tx.record(
+            "disclosure_checklist.template_picked",
+            target=Target("statement_document", document_id),
+            after=Ref(template_version_id=template_version_id),
+            scope=Scope(
+                engagement_id=document["engagement_id"], work_item_id=document["work_item_id"]
+            ),
+        )
 
 
 async def answer_item(

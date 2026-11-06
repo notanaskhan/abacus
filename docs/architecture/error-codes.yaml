@@ -308,6 +308,11 @@ codes:
     raised_by:
     - abacus.modules.review.gate_actions.CandidateNotEligible
     summary: The person can't take this gate (not a holder of its role, or walled off).
+  checklist_answered:
+    status: 409
+    raised_by:
+    - abacus.modules.reporting.statements.ChecklistAnswered
+    summary: An answered checklist can't change version; its answers name the one they were given on.
   checklist_changed:
     status: 409
     raised_by:

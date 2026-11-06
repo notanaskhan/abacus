@@ -1,11 +1,11 @@
 """A-06-T25: the statements' note templates as firm content (AGENTS 16; A-06 §4; DEC-2389).
 
 A firm imports its notes as CSV (`number, title, body, line_keys`), parsed in the isolated child
-because the file is hostile content. `line_keys` names the FS lines that carry the note's reference,
-semicolon-separated; a body may name a line's figure as `{{line.key}}`, which code fills at draft
-time. A dry run lists the problems and writes nothing. A person publishes a version with fresh MFA
-(the matrix), and a published version never changes. Problems are codes with where they are, never
-the cell's text. No note wording lives in code or a migration.
+because the file is hostile content. `line_keys` names the FS lines that carry the note's
+reference, semicolon-separated; a body may name a line's figure as `{{line.key}}`, which code fills
+at draft time. A dry run lists the problems and writes nothing. A person publishes a version with
+fresh MFA (the matrix), and a published version never changes. Problems are codes with where they
+are, never the cell's text. No note wording lives in code or a migration.
 """
 
 from __future__ import annotations

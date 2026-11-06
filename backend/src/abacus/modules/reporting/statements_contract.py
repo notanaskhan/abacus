@@ -112,7 +112,7 @@ class TieOutOut(BaseModel):
 
 
 class StatementNoteOut(BaseModel):
-    """A note as this draft rendered it; `unresolved` names figures it has no line for (DEC-2389)."""
+    """A note as this draft rendered it; `unresolved` names figures with no line (DEC-2389)."""
 
     model_config = _frozen()
 
@@ -243,6 +243,21 @@ class ApprovalRecordedOut(BaseModel):
 
     management_approval: Annotated[ManagementApproval, Internal]
     recorded_at: Annotated[datetime, Internal]
+
+
+class ChecklistOptionOut(BaseModel):
+    model_config = _frozen()
+
+    id: Annotated[UUID, Internal]
+    name: Annotated[str, Internal]
+    framework_key: Annotated[str, Internal]
+    version: Annotated[int, Internal]
+
+
+class ChecklistPickIn(BaseModel):
+    model_config = _frozen()
+
+    template_version_id: Annotated[UUID, Internal]
 
 
 class ChecklistImportOut(BaseModel):
@@ -501,6 +516,34 @@ async def management_approval_route(
 )
 async def checklist_route(document_id: UUID, ctx: Ctx) -> ChecklistOut:
     await _document_gate(ctx, document_id, "disclosure_checklist.read")
+    return await _checklist_out(ctx, document_id)
+
+
+@statements_router.get(
+    f"{_SD}/templates",
+    action="disclosure_checklist.read",
+    response_model=list[ChecklistOptionOut],
+)
+async def checklist_options_route(document_id: UUID, ctx: Ctx) -> list[ChecklistOptionOut]:
+    """The firm's published checklists, for AUD-20's picker (DEC-2390)."""
+    await _document_gate(ctx, document_id, "disclosure_checklist.read")
+    from abacus.modules.reporting import statements
+
+    return [ChecklistOptionOut(**o) for o in await statements.checklist_options(ctx.tenant)]
+
+
+@statements_router.put(
+    f"{_SD}/template",
+    action="disclosure_checklist.answer",
+    response_model=ChecklistOut,
+    errors=(409,),
+)
+async def checklist_pick_route(document_id: UUID, body: ChecklistPickIn, ctx: Ctx) -> ChecklistOut:
+    """A person picks the document's checklist; an answered one stays as it is (DEC-2390)."""
+    await _document_gate(ctx, document_id, "disclosure_checklist.answer")
+    from abacus.modules.reporting import statements
+
+    await statements.pick_checklist(ctx, document_id, body.template_version_id)
     return await _checklist_out(ctx, document_id)
 
 

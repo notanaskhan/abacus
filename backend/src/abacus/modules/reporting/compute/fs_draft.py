@@ -213,35 +213,38 @@ def references_of(notes: Sequence[NoteInput]) -> dict[str, str]:
 
 
 def _figure(value: Decimal) -> str:
-    written = f"{abs(value):,.0f}" if value == value.to_integral_value() else f"{abs(value):,.2f}"
+    places = 0 if value == value.to_integral_value() else 2
+    written = f"{abs(value):,.{places}f}"
     return f"({written})" if value < 0 else written
+
+
+def _filled(body: str, figures: Mapping[str, str]) -> tuple[str, tuple[str, ...]]:
+    missing: list[str] = []
+
+    def figure(found: re.Match[str]) -> str:
+        known = figures.get(line_key(found[1]))
+        if known is None:
+            missing.append(found[1])
+        return known or found[0]
+
+    return _PLACEHOLDER.sub(figure, body), tuple(sorted(set(missing)))
 
 
 def render_notes(
     notes: Sequence[NoteInput], lines: Sequence[DraftLine], year: int
 ) -> tuple[DraftNote, ...]:
     """Each note with `{{line.key}}` filled from the year's value on the version's own lines. A key
-    with no line stays as written and is named, for a person to see; code never guesses a figure."""
+    with no line stays as written and is named, for a person to see; code never guesses a figure.
+    """
     figures = {
         line.line_key: _figure(value.value)
         for line in lines
         for value in line.values
         if value.year == year
     }
-    drafted: list[DraftNote] = []
-    for note in notes:
-        missing: list[str] = []
-
-        def filled(found: re.Match[str]) -> str:
-            figure = figures.get(line_key(found[1]))
-            if figure is None:
-                missing.append(found[1])
-                return found[0]
-            return figure
-
-        body = _PLACEHOLDER.sub(filled, note.body)
-        drafted.append(DraftNote(note.number, note.title, body, tuple(sorted(set(missing)))))
-    return tuple(drafted)
+    return tuple(
+        DraftNote(note.number, note.title, *_filled(note.body, figures)) for note in notes
+    )
 
 
 def content_hash(lines: Sequence[DraftLine], notes: Sequence[DraftNote] = ()) -> str:

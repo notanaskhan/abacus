@@ -18,7 +18,9 @@ keeps checklist text (ADR-056), and is never licensed text.
 
 Not here, or not as designed (DEC-2373): findings raised by a person, so no agent run; Ana's change
 and response are a person's, not "via Agent"; RJE-1 is in v1 from its
-approval, so v1's 14,850 difference isn't shown; no checklist answers; Granite Peak's AJE-3. Opt-in
+approval, so v1's 14,850 difference isn't shown; the checklist's answers are Ana's, reviewed by
+Hannah, not the agent's adopted (nothing writes a suggested answer yet); Granite Peak's AJE-3.
+Opt-in
 (`--slice completion`).
 """
 
@@ -41,6 +43,8 @@ FLAGS: Final = ("reporting.fs_disclosure",)
 NAME: Final = "ASC 962 · Defined contribution"
 FRAMEWORK: Final = "asc_962_dc"
 ITEMS: Final = 142
+ANSWERED_YES: Final = 97  # AUD-20: Yes 97 · N/A 45 · No 0
+NA_REASON: Final = "Not applicable to this plan"
 IMPORTER: Final = "GH"
 PUBLISHER: Final = "DR"
 _SECTIONS: Final = (
@@ -431,6 +435,9 @@ def _northwind_events() -> list[Event]:
         _event("conclude", _at(10, 2, 16, 30), "completion.sum_concluded", "MO"),
         _event("fs:3", _at(10, 6, 9), "completion.statement_drafted", "HL", version=3),
         _event("fs:tie", _at(10, 6, 9, 30), "completion.statement_tied", "HL"),
+        _event("checklist:picked", _at(10, 6, 9, 40), "completion.checklist_picked", "HL"),
+        _event("checklist:answered", _at(10, 6, 9, 50), "completion.checklist_answered", "AC"),
+        _event("checklist:reviewed", _at(10, 6, 10, 20), "completion.checklist_reviewed", "HL"),
         _event("fs:approved", _at(10, 8, 10), "completion.statement_approved", "HL"),
     ]
     return events
