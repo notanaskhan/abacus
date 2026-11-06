@@ -130,13 +130,13 @@ def _target() -> ModeTarget:
 
 def test_ac4_7_a_response_is_one_of_the_targets_and_nothing_else() -> None:
     assert is_choice(DraftedCell(cell="risk!F9", text=" ebp-03 ", citations=[]), _target())
-    for text in ("EBP-99", "EBP-03 and EBP-04", "Eligibility testing", ""):
+    for text in ("EBP-99", "EBP-03 and EBP-04", "Eligibility testing", " "):
         assert not is_choice(DraftedCell(cell="risk!F9", text=text, citations=[]), _target())
     assert not is_choice(DraftedCell(cell="risk!F9", fact="F1", citations=[]), _target())
 
 
 def test_adr_050_the_list_of_targets_supports_no_number() -> None:
-    """Without this, "3 of 29 exceptions" passes because the codes EBP-03 and AUD-29 hold digits."""
+    """Without this, "3 of 29 exceptions" passes as the codes EBP-03 and AUD-29 hold digits."""
     cell = DraftedCell(cell="risk!B9", text="3 of 29 exceptions", citations=[])
     names = {"t": "text", "v": "EBP-03, AUD-29"}
     assert provenance_ok(cell, [], {"F5": Fact("F5", "as_a_figure", names)})
