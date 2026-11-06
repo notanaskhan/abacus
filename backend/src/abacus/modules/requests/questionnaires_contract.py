@@ -54,6 +54,17 @@ def _frozen() -> ConfigDict:
     return ConfigDict(frozen=True, extra="forbid")
 
 
+class TemplatePublishIn(BaseModel):
+    """T-03-T05: T-02's publish route gains this optional body (DEC-2201)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    applies_to_tax_year: Annotated[int | None, Field(ge=2000, le=2100), classified("internal")] = (
+        None
+    )
+    change_summary: Annotated[str | None, Field(max_length=500), classified("internal")] = None
+
+
 class QuestionnaireTemplateOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -279,11 +290,24 @@ async def questionnaire_list_templates_route(ctx: Ctx) -> list[QuestionnaireTemp
     errors=(409,),
 )
 async def publish_template_route(
-    template_id: Annotated[UUID, Path()], version: Annotated[int, Path(ge=1)], ctx: Ctx
+    template_id: Annotated[UUID, Path()],
+    version: Annotated[int, Path(ge=1)],
+    ctx: Ctx,
+    body: TemplatePublishIn | None = None,
 ) -> QuestionnaireTemplateOut:
-    """A person publishes the version (fresh MFA). 409 `version_published`."""
+    """A person publishes the version (fresh MFA). 409 `version_published`; an owned template or
+    an editor draft is the owner's alone (403), and a draft names its tax year (422
+    `tax_year_required`)."""
     await _gate(ctx, "questionnaire_template.publish")
-    return _template_out(await svc.publish_version(ctx, template_id, version))
+    return _template_out(
+        await svc.publish_version(
+            ctx,
+            template_id,
+            version,
+            applies_to_tax_year=body.applies_to_tax_year if body else None,
+            change_summary=body.change_summary if body else None,
+        )
+    )
 
 
 @questionnaires_router.post(

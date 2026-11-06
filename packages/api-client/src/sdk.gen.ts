@@ -12473,12 +12473,18 @@ export const templateDiff = <ThrowOnError extends boolean = false>(options: Opti
 /**
  * Publish Template Route
  *
- * A person publishes the version (fresh MFA). 409 `version_published`.
+ * A person publishes the version (fresh MFA). 409 `version_published`; an owned template or
+ * an editor draft is the owner's alone (403), and a draft names its tax year (422
+ * `tax_year_required`).
  */
 export const publishTemplate = <ThrowOnError extends boolean = false>(options: Options<PublishTemplateData, ThrowOnError>): RequestResult<PublishTemplateResponses, PublishTemplateErrors, ThrowOnError> => (options.client ?? client).post<PublishTemplateResponses, PublishTemplateErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/questionnaire-templates/{template_id}/versions/{version}:publish',
-    ...options
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**

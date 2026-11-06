@@ -3,7 +3,6 @@
 from uuid import UUID
 
 from abacus.kernel.audit_owners import register_engagement_owners
-from abacus.kernel.errors import NotImplementedYet
 from abacus.modules.engagements.api import (
     register_draft_request_copy,
     register_open_requests,
@@ -221,8 +220,13 @@ async def questionnaire_from_template(
     ctx: AuthContext, template_key: str, tax_year: int, binder_id: UUID
 ) -> UUID:
     """A binder's organizer from the template version published for `tax_year` (T-03 §4.4;
-    T-02 now, T-08's roll-forward later). Stub until T-03-T05."""
-    raise NotImplementedYet
+    T-02 now, T-08's roll-forward later). It records `source_template_version_id`; a binder
+    already started keeps the version it started from."""
+    from abacus.modules.requests.organizer_lifecycle import version_for
+    from abacus.modules.requests.questionnaires import attach_organizer
+
+    version_id = await version_for(ctx, template_key, tax_year)
+    return (await attach_organizer(ctx, binder_id, version_id, None)).id
 
 
 ROUTERS: tuple[AbacusRouter, ...] = (

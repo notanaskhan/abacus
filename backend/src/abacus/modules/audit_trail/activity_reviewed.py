@@ -591,6 +591,9 @@ REVIEWED_FALLBACK: Final = frozenset(
         "questionnaire.created",  # reviewed 2026-10-31 (S17-S19)
         "questionnaire_template.imported",  # reviewed 2026-10-31 (S17-S19)
         "questionnaire_template.published",  # reviewed 2026-10-31 (S17-S19)
+        "questionnaire_template.drafted",  # reviewed 2026-11-06 (T-03-T05)
+        "questionnaire_template.discarded",  # reviewed 2026-11-06 (T-03-T05)
+        "questionnaire_template.owner_assigned",  # reviewed 2026-11-06 (T-03-T05)
         "recipient_details_change.accepted",  # S19 batch 4
         "recipient_details_change.rejected",  # S19 batch 4
         "report_template.deprecated",  # reviewed 2026-10-31 (S17-S19)

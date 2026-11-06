@@ -30004,7 +30004,7 @@ export type OrganizerTemplateVersionOut = {
     /**
      * Questionnaire Id
      */
-    questionnaire_id: string;
+    questionnaire_id?: string | null;
     /**
      * Status
      */
@@ -45710,7 +45710,7 @@ export type TemplateDetailOut = {
     /**
      * Form Family
      */
-    form_family: '1040' | '1041' | '1065' | '1120s' | '1120' | '990' | '706';
+    form_family?: '1040' | '1041' | '1065' | '1120s' | '1120' | '990' | '706' | null;
     /**
      * Id
      */
@@ -45718,7 +45718,7 @@ export type TemplateDetailOut = {
     /**
      * Key
      */
-    key: string;
+    key?: string | null;
     /**
      * Name
      */
@@ -46007,6 +46007,22 @@ export type TemplatePreviewOut = {
      * Pages
      */
     pages: Array<PreviewPageOut>;
+};
+
+/**
+ * TemplatePublishIn
+ *
+ * T-03-T05: T-02's publish route gains this optional body (DEC-2201).
+ */
+export type TemplatePublishIn = {
+    /**
+     * Applies To Tax Year
+     */
+    applies_to_tax_year?: number | null;
+    /**
+     * Change Summary
+     */
+    change_summary?: string | null;
 };
 
 /**
@@ -106516,7 +106532,10 @@ export type TemplateDiffResponses = {
 export type TemplateDiffResponse = TemplateDiffResponses[keyof TemplateDiffResponses];
 
 export type PublishTemplateData = {
-    body?: never;
+    /**
+     * Body
+     */
+    body?: TemplatePublishIn | null;
     headers?: {
         /**
          * Authorization
