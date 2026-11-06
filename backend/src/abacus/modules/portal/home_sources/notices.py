@@ -8,7 +8,7 @@ row is all they get of a notice.
 
 from __future__ import annotations
 
-from typing import cast
+from typing import Final
 
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.notices.api import portal_notice_rows
@@ -20,12 +20,14 @@ from abacus.modules.portal.home_sources import (
     register_home_source,
 )
 
+IN_REVIEW: Final[NoticeCode] = "agency_notice_in_review"
+
 
 async def notices_source(ctx: AuthContext, scope: HomeScope) -> HomePart:
     part = HomePart()
     ids = [w.id for w in scope.work_items if w.kind == "notice"]
     for row in await portal_notice_rows(ctx.tenant, ids):
-        part.notices.append(NoticeInfo(row.notice_id, cast(NoticeCode, row.code), row.subject))
+        part.notices.append(NoticeInfo(row.notice_id, IN_REVIEW, row.subject, row.waiting))
     return part
 
 

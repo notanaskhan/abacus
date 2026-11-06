@@ -1,6 +1,6 @@
 ---
 id: TASK-5100
-title: S29 kickoff: scan, order and rows not built
+title: "S29 kickoff: scan, order and rows not built"
 spec: SPEC-000  # row (S29)
 acceptance_criteria: [AC-1]
 risk_zone: green

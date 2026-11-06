@@ -1,6 +1,7 @@
 // AUD-18 · EQR workspace (A-07-T17): every word verbatim from the handoff.
 
 export const COPY = {
+  openStatements: "Open statements",
   rail: "EQR checklist",
   overview: {
     subtitle: (name: string | null | undefined) => `PY2025 · EQR ${name ?? ""}`,

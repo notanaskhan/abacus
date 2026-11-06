@@ -569,7 +569,7 @@ class AccountRollforwardOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     groups: Annotated[list[AccountGroupOut], Field(max_length=20), classified("confidential")]
-    total: AccountGroupOut
+    total: Annotated[AccountGroupOut, classified("confidential")]
     transfers_net_zero: Annotated[bool, classified("internal")]
     ties: Annotated[list[AccountTieOut], Field(max_length=20), classified("confidential")]
     forfeiture_account: Money
@@ -583,7 +583,7 @@ class AccountRowOut(BaseModel):
 
     participant_key: Annotated[str, classified("internal")]
     name: Annotated[str, classified("confidential")]
-    ssn_mask: Annotated[str | None, classified("confidential")]
+    identifier_mask: Annotated[str | None, classified("confidential")]
     beginning: Money
     contributions: Money
     earnings: Money
@@ -619,7 +619,7 @@ class VestingRowOut(BaseModel):
 
     participant_key: Annotated[str, classified("internal")]
     name: Annotated[str, classified("confidential")]
-    ssn_mask: Annotated[str | None, classified("confidential")]
+    identifier_mask: Annotated[str | None, classified("confidential")]
     termination_on: Annotated[date, classified("internal")]
     years_of_service: Annotated[Decimal | None, classified("confidential")]
     vested_pct: Annotated[Decimal | None, classified("confidential")]
@@ -1971,7 +1971,7 @@ async def ebp_account_group_route(
             AccountRowOut(
                 participant_key=r.participant_key,
                 name=r.name,
-                ssn_mask=r.ssn_mask,
+                identifier_mask=r.ssn_mask,
                 beginning=r.account.beginning,
                 contributions=r.account.contributions,
                 earnings=r.account.earnings,
@@ -2013,7 +2013,7 @@ async def ebp_vesting_route(work_item_id: UUID, ctx: Ctx) -> VestingOut:
             VestingRowOut(
                 participant_key=r.participant_key,
                 name=r.name,
-                ssn_mask=r.ssn_mask,
+                identifier_mask=r.ssn_mask,
                 termination_on=r.termination_on,
                 years_of_service=r.years_of_service,
                 vested_pct=r.vested_pct,

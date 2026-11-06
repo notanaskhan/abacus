@@ -99,7 +99,8 @@ MFA_PAIRS = [(a, r) for a, r in ALLOWED if YAML_ACTIONS[a].get("mfa_recent") == 
 MFA_IDS = [f"{a}-{r}" for a, r in MFA_PAIRS]
 REASON_PAIRS = [(a, r) for a, r in ALLOWED if YAML_ACTIONS[a].get("requires") == "reason"]
 REASON_IDS = [f"{a}-{r}" for a, r in REASON_PAIRS]
-WRITE_PAIRS = [(a, r) for a, r in ALLOWED if not _is_read(a)]
+# A-07-T14: `archived_exempt` actions act on a locked file on purpose; see test_a07t14.
+WRITE_PAIRS = [(a, r) for a, r in ALLOWED if not _is_read(a) and not RULES[a].archived_exempt]
 WRITE_IDS = [f"{a}-{r}" for a, r in WRITE_PAIRS]
 READ_PAIRS = [(a, r) for a, r in ALLOWED if _is_read(a)]
 READ_IDS = [f"{a}-{r}" for a, r in READ_PAIRS]

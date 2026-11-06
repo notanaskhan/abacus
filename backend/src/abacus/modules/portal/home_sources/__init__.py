@@ -116,6 +116,7 @@ class NoticeInfo:
     notice_id: UUID
     code: NoticeCode
     subject: str
+    waiting_for_signature: bool = False
 
 
 @dataclass

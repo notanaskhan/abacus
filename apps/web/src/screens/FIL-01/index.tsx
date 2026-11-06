@@ -570,6 +570,22 @@ export function FilesPage({
                   ? ""
                   : date(drawer.data.retention.hold_placed_on, { now: NOW, withYear: true })
               } · destruction suspended`}
+              {drawer.data.retention.hold_notice_id != null && (
+                <span className="ml-auto flex gap-[8px]">
+                  <a
+                    href={hrefOf(to.NOT02({ noticeId: drawer.data.retention.hold_notice_id }))}
+                    className="underline"
+                  >
+                    {COPY.holdNotice}
+                  </a>
+                  <a
+                    href={hrefOf(to.NOT03({ noticeId: drawer.data.retention.hold_notice_id }))}
+                    className="underline"
+                  >
+                    {COPY.holdResponse}
+                  </a>
+                </span>
+              )}
             </div>
           )}
           {current?.locked === true && (

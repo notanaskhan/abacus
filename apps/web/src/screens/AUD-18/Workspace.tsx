@@ -24,6 +24,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { AuditBar, isNotFound, useAuditCockpit } from "../../domain/audits";
+import { hrefOf, to } from "../../routes/to";
 import { COPY } from "./copy";
 
 // AUD-18 · EQR workspace (A-07-T17; A-07 F1; the handoff spec) in fixture mode on T2: rail checklist
@@ -94,6 +95,14 @@ function Card({
       <header className="flex h-[40px] items-center gap-[8px] px-[14px] text-[13.5px] font-medium">
         <StatusDisc state={reviewed ? "done" : "todo"} size={15} />
         {card.title}
+        {/^AUD-20\b/.test(card.source_ref) && (
+          <a
+            href={hrefOf(to.AUD20({ auditId }))}
+            className="ml-auto text-[12px] font-normal text-ink-2 hover:underline"
+          >
+            {COPY.openStatements}
+          </a>
+        )}
       </header>
       <div className="px-[14px] pb-[12px]">
         {card.rows.map((row) => (

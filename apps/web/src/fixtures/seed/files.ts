@@ -448,6 +448,7 @@ export function collinsDrawer(): DrawerOut {
       policy_label: "Client tax records · 7 years after filing",
       eligible_on: null,
       hold_label: "On hold · IRS CP2000 TY2023 disagreed (N3)",
+      hold_notice_id: stableId("notice:N3"),
       hold_placed_by: "Victor Hammond",
       hold_placed_on: "2026-08-12",
     },

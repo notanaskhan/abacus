@@ -1,6 +1,6 @@
 ---
 id: TASK-5105
-title: P-10-T58 runtime ADR drafts: P-15, P-22, P-46, P-23
+title: "P-10-T58 runtime ADR drafts: P-15, P-22, P-46, P-23"
 spec: SPEC-000  # row (P-10-T58)
 acceptance_criteria: [AC-1]
 risk_zone: red

@@ -1,6 +1,6 @@
 ---
 id: TASK-5120
-title: A-05-T46 EBP-08 service: rollforward, SDBA, vesting and the Begin run
+title: "A-05-T46 EBP-08 service: rollforward, SDBA, vesting and the Begin run"
 spec: SPEC-000  # row (A-05-T46)
 acceptance_criteria: [AC-1]
 risk_zone: amber

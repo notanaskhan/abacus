@@ -40,7 +40,7 @@ def _world(
     monkeypatch.setattr(ocr_gate, "control_active", control)
     monkeypatch.setattr(ocr_gate, "flag_enabled", enabled)
     monkeypatch.setattr(ocr_gate, "today", today)
-    monkeypatch.setattr(ocr_gate, "covering", lambda *_a: entry)
+    monkeypatch.setattr(ocr_gate, "covering", lambda *_a: entry)  # pyright: ignore[reportUnknownLambdaType, reportUnknownArgumentType] -- a stand-in
 
 
 async def _refusal(facts: ocr_gate.GateFacts = OPEN) -> object:

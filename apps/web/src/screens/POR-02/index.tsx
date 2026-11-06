@@ -518,7 +518,11 @@ function Notices({ home, firm }: { home: PortalHomeOut; firm: string }): JSX.Ele
           className="flex items-start gap-[8px] rounded-pane bg-card px-[16px] py-[12px] text-cell text-ink-2 shadow-e1"
         >
           <Icon name="info" size={14} className="mt-[1px] flex-none text-ink-2" />
-          <span>{COPY.notice[n.code](n.subject, firm)}</span>
+          <span>
+            {n.waiting_for_signature === true
+              ? COPY.noticeWaiting(n.subject, firm)
+              : COPY.notice[n.code](n.subject, firm)}
+          </span>
         </section>
       ))}
     </>

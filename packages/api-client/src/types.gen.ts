@@ -603,6 +603,10 @@ export type AccountRowOut = {
      */
     fees: string;
     /**
+     * Identifier Mask
+     */
+    identifier_mask: string | null;
+    /**
      * Name
      */
     name: string;
@@ -610,10 +614,6 @@ export type AccountRowOut = {
      * Participant Key
      */
     participant_key: string;
-    /**
-     * Ssn Mask
-     */
-    ssn_mask: string | null;
     /**
      * Transfers
      */
@@ -33090,7 +33090,7 @@ export type PortalHomeNoticeOut = {
     /**
      * Code
      */
-    code: 'agency_notice_in_review' | 'agency_notice_waiting_for_signature';
+    code: 'agency_notice_in_review';
     /**
      * Notice Id
      */
@@ -33099,6 +33099,10 @@ export type PortalHomeNoticeOut = {
      * Subject
      */
     subject: string;
+    /**
+     * Waiting For Signature
+     */
+    waiting_for_signature?: boolean;
 };
 
 /**
@@ -38073,6 +38077,10 @@ export type RetentionOut = {
      * Hold Label
      */
     hold_label: string | null;
+    /**
+     * Hold Notice Id
+     */
+    hold_notice_id?: string | null;
     /**
      * Hold Placed By
      */
@@ -50142,6 +50150,10 @@ export type VestingRowOut = {
      */
     agrees: boolean | null;
     /**
+     * Identifier Mask
+     */
+    identifier_mask: string | null;
+    /**
      * Name
      */
     name: string;
@@ -50149,10 +50161,6 @@ export type VestingRowOut = {
      * Participant Key
      */
     participant_key: string;
-    /**
-     * Ssn Mask
-     */
-    ssn_mask: string | null;
     /**
      * Termination On
      */

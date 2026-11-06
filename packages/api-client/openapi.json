@@ -1184,7 +1184,8 @@
             "type": "array"
           },
           "total": {
-            "$ref": "#/components/schemas/AccountGroupOut"
+            "$ref": "#/components/schemas/AccountGroupOut",
+            "cls": "confidential"
           },
           "transfers_net_zero": {
             "cls": "internal",
@@ -1243,17 +1244,7 @@
             "title": "Fees",
             "type": "string"
           },
-          "name": {
-            "cls": "confidential",
-            "title": "Name",
-            "type": "string"
-          },
-          "participant_key": {
-            "cls": "internal",
-            "title": "Participant Key",
-            "type": "string"
-          },
-          "ssn_mask": {
+          "identifier_mask": {
             "anyOf": [
               {
                 "type": "string"
@@ -1263,7 +1254,17 @@
               }
             ],
             "cls": "confidential",
-            "title": "Ssn Mask"
+            "title": "Identifier Mask"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "participant_key": {
+            "cls": "internal",
+            "title": "Participant Key",
+            "type": "string"
           },
           "transfers": {
             "cls": "confidential",
@@ -1275,7 +1276,7 @@
         "required": [
           "participant_key",
           "name",
-          "ssn_mask",
+          "identifier_mask",
           "beginning",
           "contributions",
           "earnings",
@@ -70273,10 +70274,7 @@
         "properties": {
           "code": {
             "cls": "internal",
-            "enum": [
-              "agency_notice_in_review",
-              "agency_notice_waiting_for_signature"
-            ],
+            "const": "agency_notice_in_review",
             "title": "Code",
             "type": "string"
           },
@@ -70290,6 +70288,12 @@
             "cls": "confidential",
             "title": "Subject",
             "type": "string"
+          },
+          "waiting_for_signature": {
+            "cls": "internal",
+            "default": false,
+            "title": "Waiting For Signature",
+            "type": "boolean"
           }
         },
         "required": [
@@ -80969,6 +80973,19 @@
             ],
             "cls": "internal",
             "title": "Hold Label"
+          },
+          "hold_notice_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Hold Notice Id"
           },
           "hold_placed_by": {
             "anyOf": [
@@ -106765,17 +106782,7 @@
             "cls": "internal",
             "title": "Agrees"
           },
-          "name": {
-            "cls": "confidential",
-            "title": "Name",
-            "type": "string"
-          },
-          "participant_key": {
-            "cls": "internal",
-            "title": "Participant Key",
-            "type": "string"
-          },
-          "ssn_mask": {
+          "identifier_mask": {
             "anyOf": [
               {
                 "type": "string"
@@ -106785,7 +106792,17 @@
               }
             ],
             "cls": "confidential",
-            "title": "Ssn Mask"
+            "title": "Identifier Mask"
+          },
+          "name": {
+            "cls": "confidential",
+            "title": "Name",
+            "type": "string"
+          },
+          "participant_key": {
+            "cls": "internal",
+            "title": "Participant Key",
+            "type": "string"
           },
           "termination_on": {
             "cls": "internal",
@@ -106823,7 +106840,7 @@
         "required": [
           "participant_key",
           "name",
-          "ssn_mask",
+          "identifier_mask",
           "termination_on",
           "years_of_service",
           "vested_pct",
