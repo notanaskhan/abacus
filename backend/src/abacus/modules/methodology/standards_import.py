@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import csv
 import io
+import re
 import zipfile
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -241,6 +242,9 @@ def _flatten(prefix: str, value: object, out: list[tuple[str, object]]) -> None:
         out.append((prefix, value))
 
 
+_MODIFIED: Final = re.compile(rb"(<dcterms:modified\b[^>]*>)[^<]*")
+
+
 def _rebuild(raw: bytes) -> bytes:
     out = io.BytesIO()
     with (
@@ -252,7 +256,14 @@ def _rebuild(raw: bytes) -> bytes:
             entry.compress_type = zipfile.ZIP_DEFLATED
             entry.external_attr = 0o644 << 16
             entry.create_system = 3
-            target.writestr(entry, source.read(name))
+            body = source.read(name)
+            if name == "docProps/core.xml":
+                # openpyxl stamps `modified` with the clock as it saves: two exports either side
+                # of a second differed, so the file wasn't byte-stable as ADR-042 asks.
+                body = _MODIFIED.sub(
+                    rb"\g<1>" + _EPOCH.strftime("%Y-%m-%dT%H:%M:%SZ").encode(), body
+                )
+            target.writestr(entry, body)
     return out.getvalue()
 
 

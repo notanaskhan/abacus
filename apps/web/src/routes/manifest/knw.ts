@@ -9,7 +9,7 @@ export const knwScreens = {
     status: "fixture",
     path: "/knowledge",
     navArea: "Knowledge",
-  }, // legacy Knowledge
+  }, // legacy Knowledge; its designed links are named in docs/screens/KNW-01.md
   // K-01-T07: the workbook slice (e, f) on fixtures at /knowledge/methodology/$versionId behind
   // `methodology.lifecycle`; planned until walked on staging (DEC-195), and the importer's states
   // (a–d) arrive with K-01-T18 to T25.

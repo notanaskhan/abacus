@@ -129,4 +129,4 @@ Never lower a tolerance, delete a manifest entry or re-crop to make a board pass
 
 ## When the visual run starts
 
-On a push to `main`, CI's path filter (`abacus_tools.ci.paths`) reads only that push's own diff. In a batch merge that is the last pull request's diff, so the last one has to touch a gallery path, or the visual run on the batch's final tree doesn't start.
+On a push to `main`, CI's path filter (`abacus_tools.ci.paths`) reads only that push's own diff. In a batch merge that is the last pull request's diff, so the last one has to touch a gallery path, or the visual run on the batch's final tree doesn't start. The filter also starts no frontend job for `docs/screens/**`, although `link-contract.test.ts` reads those files, so a screen contract's Links table is checked only when an SPA path changes too.
