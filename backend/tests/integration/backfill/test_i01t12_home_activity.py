@@ -91,6 +91,29 @@ async def test_ac_replaying_events_leaves_the_projection_unchanged_and_rows_hold
             "upload_review.recorded",
             {"engagement_id": str(site.engagement_id), "evidence_version_id": str(uuid.uuid4())},
         ),
+        # I-01-T23: an envelope sent and completed, and mail that names its engagement.
+        OutboxEvent(
+            uuid.uuid4(),
+            tenant,
+            "envelope.send_approved",
+            {
+                "engagement_id": str(site.engagement_id),
+                "envelope_id": str(uuid.uuid4()),
+                "sent_by": str(hannah.user_id),
+            },
+        ),
+        OutboxEvent(
+            uuid.uuid4(),
+            tenant,
+            "envelope.completed",
+            {"engagement_id": str(site.engagement_id), "envelope_id": str(uuid.uuid4())},
+        ),
+        OutboxEvent(
+            uuid.uuid4(),
+            tenant,
+            "inbound_message.recorded",
+            {"engagement_id": str(site.engagement_id), "message_id": str(uuid.uuid4())},
+        ),
         # G1 is not client activity: no row.
         OutboxEvent(
             uuid.uuid4(),
@@ -125,7 +148,7 @@ async def test_ac_replaying_events_leaves_the_projection_unchanged_and_rows_hold
     response = await net.call("GET", HOME, hannah)
     assert response.status_code == 200, response.text
     activity = cast(list[Json], cast(Json, response.json())["client_activity"])
-    assert len(activity) == 4
+    assert len(activity) == 7
     assert {a["client_id"] for a in activity} == {str(site.client_id)}
     assert all(a["client_label"] for a in activity)
 

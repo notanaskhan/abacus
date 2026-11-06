@@ -202,6 +202,29 @@ def upgrade() -> None:
     )
     op.execute(_SYNC)
     op.execute("REVOKE ALL ON FUNCTION agent_runs_state_sync() FROM PUBLIC")
+    # Review outcomes move after a run finished (the sync trigger below decides which): a state
+    # write alone gets past the forward-only guard. Anything else on a finished run still stops.
+    op.execute(
+        """
+        CREATE OR REPLACE FUNCTION agent_runs_forward_only() RETURNS trigger
+        LANGUAGE plpgsql AS $$
+        BEGIN
+            IF OLD.status <> 'running'
+               AND (OLD.state IS NULL OR NEW.state IS NOT DISTINCT FROM OLD.state) THEN
+                RAISE EXCEPTION 'agent run % is finished', OLD.id
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
+            IF (OLD.context_hash IS NOT NULL
+                AND NEW.context_hash IS DISTINCT FROM OLD.context_hash)
+               OR (OLD.output IS NOT NULL AND NEW.output IS DISTINCT FROM OLD.output) THEN
+                RAISE EXCEPTION 'agent run % results are write-once', OLD.id
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
+            RETURN NEW;
+        END;
+        $$
+        """
+    )
     op.execute(
         "CREATE TRIGGER agent_runs_state_sync BEFORE INSERT OR UPDATE ON agent_runs "
         "FOR EACH ROW EXECUTE FUNCTION agent_runs_state_sync()"
@@ -227,6 +250,26 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.execute("DROP TABLE tenant_counters")
+    op.execute(
+        """
+        CREATE OR REPLACE FUNCTION agent_runs_forward_only() RETURNS trigger
+        LANGUAGE plpgsql AS $$
+        BEGIN
+            IF OLD.status <> 'running' THEN
+                RAISE EXCEPTION 'agent run % is finished', OLD.id
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
+            IF (OLD.context_hash IS NOT NULL
+                AND NEW.context_hash IS DISTINCT FROM OLD.context_hash)
+               OR (OLD.output IS NOT NULL AND NEW.output IS DISTINCT FROM OLD.output) THEN
+                RAISE EXCEPTION 'agent run % results are write-once', OLD.id
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
+            RETURN NEW;
+        END;
+        $$
+        """
+    )
     op.execute("DROP TRIGGER agent_runs_state_sync ON agent_runs")
     op.execute("DROP FUNCTION agent_runs_state_sync()")
     op.execute(f"REVOKE UPDATE ({', '.join(_UPDATES)}) ON agent_runs FROM abacus_app")
