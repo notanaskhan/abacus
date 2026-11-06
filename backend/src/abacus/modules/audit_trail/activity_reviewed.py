@@ -594,6 +594,8 @@ REVIEWED_FALLBACK: Final = frozenset(
         "questionnaire_template.imported",  # reviewed 2026-10-31 (S17-S19)
         "questionnaire_template.published",  # reviewed 2026-10-31 (S17-S19)
         "disclosure_checklist_template.imported",  # reviewed 2026-11-06 (A-06-T28)
+        "audit_misstatement.carried_from_py",  # reviewed 2026-11-06 (A-06-T28)
+        "statement.management_approval_recorded",  # reviewed 2026-11-06 (A-06-T28)
         "disclosure_checklist_template.published",  # reviewed 2026-11-06 (A-06-T28)
         "notice.respond_by_alerted",  # reviewed 2026-11-06 (N-04-T16)
         "notice.follow_up_alerted",  # reviewed 2026-11-06 (N-04-T16)

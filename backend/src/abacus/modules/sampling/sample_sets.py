@@ -38,7 +38,7 @@ import zipfile
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from datetime import date, datetime
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Annotated, Any, ClassVar, Final, cast
 from uuid import UUID, uuid4
 
@@ -74,6 +74,7 @@ from abacus.modules.review.api import (
 )
 from abacus.modules.sampling import sample_set_repository as repo
 from abacus.modules.sampling.compute import CURRENT, attribute_size
+from abacus.modules.sampling.compute.stats import projected_misstatement
 from abacus.modules.sampling.contract import (
     ApproveIn,
     CitationOut,
@@ -694,6 +695,43 @@ async def _preparers(tenant: TenantContext, version: Row) -> frozenset[UUID]:
         states = await sign_off_states(tenant, TARGET, [vid], {vid: str(version["content_hash"])})
         people |= {s.signed_by for s in states.get(vid, []) if s.level == 1 and s.signed_by}
     return frozenset(people)
+
+
+@dataclass(frozen=True)
+class Projection:
+    """A sample error projected over the population by count (A-06 F3, ADR-050): code's figures,
+    rounded to the hundred the SUM carries (2,140 in 25 of 412 is 35,267.20, carried as 35,300)."""
+
+    sample_error: Decimal
+    sample_count: int
+    population_count: int
+    projected: Decimal
+    rounded: Decimal
+
+
+async def projection_of(
+    ctx: AuthContext, sample_set_id: UUID, sample_error: Decimal
+) -> Projection | None:
+    """The set's current version's counts, or None when it has no drawn sample to project from."""
+    from abacus.modules.sampling.populations import population_view
+
+    await _set(ctx, sample_set_id, "sample_set.read")
+    async with tenant_session(ctx.tenant) as session:
+        chosen = _current(await repo.versions(session, [sample_set_id]))
+        if chosen is None:
+            return None
+        items = await repo.items(session, cast(UUID, chosen["id"]))
+    if not items:
+        return None
+    population = await population_view(ctx, cast(UUID, chosen["population_id"]))
+    projected = projected_misstatement(sample_error, len(items), population.record_count)
+    return Projection(
+        sample_error,
+        len(items),
+        population.record_count,
+        projected,
+        (projected / 100).quantize(Decimal(1), rounding=ROUND_HALF_UP) * 100,
+    )
 
 
 async def sample_set_view(

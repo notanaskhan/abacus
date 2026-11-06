@@ -9858,9 +9858,23 @@ export type ConvertToMisstatementIn = {
      */
     column_set?: 'ebp_net_assets' | 'commercial';
     /**
+     * Effect
+     */
+    effect?: {
+        [key: string]: string;
+    } | null;
+    /**
+     * Nature
+     */
+    nature?: 'misstatement' | 'reclassification';
+    /**
      * Projection Ref
      */
     projection_ref?: string | null;
+    /**
+     * Sample Error
+     */
+    sample_error?: number | string | null;
     /**
      * Seen Version
      */

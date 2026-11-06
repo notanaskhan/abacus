@@ -16,7 +16,7 @@ import json
 from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Final, cast
 from uuid import UUID
@@ -679,7 +679,6 @@ async def answer_item(
         tx.record(
             "disclosure_checklist.answered",
             target=Target(_ANSWER_TARGET, answer_id),
-            after=Ref(item=item_key),
             scope=Scope(
                 engagement_id=document["engagement_id"], work_item_id=document["work_item_id"]
             ),
@@ -719,7 +718,6 @@ async def adopt_item(ctx: AuthContext, document_id: UUID, item_key: str, if_matc
         tx.record(
             "disclosure_checklist.adopted",
             target=Target(_ANSWER_TARGET, existing["id"]),
-            after=Ref(item=item_key),
             scope=Scope(
                 engagement_id=document["engagement_id"], work_item_id=document["work_item_id"]
             ),
@@ -746,7 +744,6 @@ async def review_items(ctx: AuthContext, document_id: UUID, item_keys: Sequence[
             tx.record(
                 "disclosure_checklist.reviewed",
                 target=Target(_ANSWER_TARGET, existing["id"]),
-                after=Ref(item=key),
                 scope=Scope(
                     engagement_id=document["engagement_id"],
                     work_item_id=document["work_item_id"],
@@ -771,6 +768,55 @@ _OWNERS: Final = {
         "SELECT id, engagement_id FROM disclosure_checklist_answers WHERE id = ANY(:ids)"
     ),
 }
+
+
+async def record_management_approval(
+    ctx: AuthContext, version_id: UUID, evidence_version_id: UUID
+) -> tuple[str, datetime]:
+    """Record mode (A-06 F6): a person records management's signed approval of this version, the
+    signed copy as evidence. Portal approval and `fs.approved_by_management` are A-06-T29's."""
+    await authorise_version(ctx, "statement.record_management_approval", version_id)
+    async with uow(ctx.tenant) as tx:
+        version = (
+            (
+                await tx.session.execute(
+                    text(
+                        "SELECT statement_document_id AS document_id, engagement_id, "
+                        "work_item_id FROM statement_versions WHERE id = :v"
+                    ),
+                    {"v": version_id},
+                )
+            )
+            .mappings()
+            .one()
+        )
+        at = (
+            await tx.session.execute(
+                text(
+                    "INSERT INTO statement_approvals (tenant_id, statement_version_id, event, "
+                    "actor_principal, channel, evidence_version_id) VALUES "
+                    "(:t, :v, 'approved_by_management', 'firm_user', 'record', :ev) "
+                    "RETURNING created_at"
+                ),
+                {"t": ctx.tenant_id, "v": version_id, "ev": evidence_version_id},
+            )
+        ).scalar_one()
+        await tx.session.execute(
+            text(
+                "UPDATE statement_documents SET management_approval = 'approved_by_management', "
+                "row_version = row_version + 1 WHERE id = :d"
+            ),
+            {"d": version["document_id"]},
+        )
+        tx.record(
+            "statement.management_approval_recorded",
+            target=Target("statement_version", version_id),
+            after=Ref(evidence=evidence_version_id),
+            scope=Scope(
+                engagement_id=version["engagement_id"], work_item_id=version["work_item_id"]
+            ),
+        )
+    return "approved_by_management", at
 
 
 async def audit_owners(tenant: TenantContext, kind: str, ids: Sequence[UUID]) -> dict[UUID, UUID]:

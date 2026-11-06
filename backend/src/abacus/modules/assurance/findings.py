@@ -21,9 +21,10 @@ Severity and the SUM conclusion stay the engagement partner's C3 cards (INV-1).
 
 from __future__ import annotations
 
+import json
 import re
 import unicodedata
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
@@ -352,8 +353,15 @@ async def move(
     return await finding(ctx, finding_id)
 
 
-async def to_deficiency(ctx: AuthContext, finding_id: UUID) -> Finding:
-    """A control finding becomes a Proposed deficiency; the severity is the partner's card."""
+async def to_deficiency(
+    ctx: AuthContext,
+    finding_id: UUID,
+    *,
+    severity_proposed: str | None = None,
+    for_resolution: bool = False,
+) -> Finding:
+    """A control finding becomes a Proposed deficiency, or an exception for resolution with no
+    severity (AUD-15 f); a proposed severity is a person's, the conclusion the partner's card."""
     work_item = await work_item_of(ctx.tenant, finding_id)
     engagement_id = await _engagement(ctx.tenant, work_item)
     async with uow(ctx.tenant) as tx:
@@ -373,9 +381,18 @@ async def to_deficiency(ctx: AuthContext, finding_id: UUID) -> Finding:
         await tx.session.execute(
             text(
                 "INSERT INTO deficiencies (tenant_id, engagement_id, work_item_id, finding_id, "
-                "status) VALUES (:t, :e, :w, :f, 'proposed')"
+                "status, severity_proposed, severity_proposed_by_kind) VALUES (:t, :e, :w, :f, "
+                ":st, :sev, :by)"
             ),
-            {"t": ctx.tenant_id, "e": engagement_id, "w": work_item, "f": finding_id},
+            {
+                "t": ctx.tenant_id,
+                "e": engagement_id,
+                "w": work_item,
+                "f": finding_id,
+                "st": "exception_for_resolution" if for_resolution else "proposed",
+                "sev": severity_proposed,
+                "by": None if severity_proposed is None else "human",
+            },
         )
         tx.record(
             "audit_finding.converted",
@@ -393,17 +410,50 @@ async def to_misstatement(
     type_: Literal["factual", "judgmental", "projected"],
     amount: Decimal | None,
     column_set: Literal["ebp_net_assets", "commercial"],
+    projection_ref: UUID | None = None,
+    sample_error: Decimal | None = None,
+    effect: Mapping[str, str] | None = None,
+    nature: Literal["misstatement", "reclassification"] = "misstatement",
 ) -> UUID:
     """A misstatement from the finding: factual or judgmental with its amount; projected only from
-    sampling's projection (422 `projection_unavailable` until it is exposed)."""
-    if type_ == "projected" or amount is None or amount == 0:
-        raise (
-            ProjectionUnavailable
-            if type_ == "projected"
-            else DomainInvalid(facts={"field": "amount"})
-        )
+    the sample set's own counts, never typed (422 `projection_unavailable`). Below the in-force CT
+    code logs it, not accumulated (BCT-n)."""
     work_item = await work_item_of(ctx.tenant, finding_id)
     engagement_id = await _engagement(ctx.tenant, work_item)
+    projection: str | None = None
+    if type_ == "projected":
+        from abacus.modules.sampling.api import projection_of
+
+        found = (
+            None
+            if projection_ref is None or sample_error is None
+            else await projection_of(ctx, projection_ref, sample_error)
+        )
+        if found is None:
+            raise ProjectionUnavailable
+        amount = found.rounded
+        projection = json.dumps(
+            {
+                "sample_set_id": str(projection_ref),
+                "sample_error": str(found.sample_error),
+                "sample_count": found.sample_count,
+                "population_count": found.population_count,
+                "projected": str(found.projected),
+                "rounded": str(found.rounded),
+            }
+        )
+    if amount is None or amount == 0:
+        raise DomainInvalid(facts={"field": "amount"})
+    from abacus.modules.assurance.materiality import in_force, versions_of
+
+    decided = in_force(await versions_of(ctx.tenant, work_item))
+    below = (
+        type_ != "projected"
+        and nature == "misstatement"
+        and decided is not None
+        and abs(amount) < Decimal(decided.ct)
+    )
+    prefix = "BCT" if below else "M"
     async with uow(ctx.tenant) as tx:
         await lock_ref(tx, engagement_id)
         moved = (
@@ -420,26 +470,34 @@ async def to_misstatement(
             raise FindingMoved
         number = (
             await tx.session.execute(
-                text("SELECT count(*) + 1 FROM audit_misstatements WHERE work_item_id = :w"),
-                {"w": work_item},
+                text(
+                    "SELECT count(*) + 1 FROM audit_misstatements "
+                    "WHERE work_item_id = :w AND ref LIKE :p"
+                ),
+                {"w": work_item, "p": f"{prefix}-%"},
             )
         ).scalar_one()
         misstatement_id = (
             await tx.session.execute(
                 text(
                     "INSERT INTO audit_misstatements (tenant_id, engagement_id, work_item_id, "
-                    "finding_id, ref, type, status, amount, column_set) VALUES (:t, :e, :w, :f, "
-                    ":ref, :ty, 'confirmed', :a, :cs) RETURNING id"
+                    "finding_id, ref, type, nature, status, amount, column_set, fs_effect, "
+                    "projection) VALUES (:t, :e, :w, :f, :ref, :ty, :n, :st, :a, :cs, "
+                    "CAST(:fx AS jsonb), CAST(:pr AS jsonb)) RETURNING id"
                 ),
                 {
                     "t": ctx.tenant_id,
                     "e": engagement_id,
                     "w": work_item,
                     "f": finding_id,
-                    "ref": f"M-{number}",
+                    "ref": f"{prefix}-{number}",
                     "ty": type_,
+                    "n": nature,
+                    "st": "below_ct" if below else "confirmed",
                     "a": amount,
                     "cs": column_set,
+                    "fx": json.dumps(dict(effect or {})),
+                    "pr": projection,
                 },
             )
         ).scalar_one()
@@ -450,6 +508,28 @@ async def to_misstatement(
             scope=Scope(engagement_id=engagement_id, work_item_id=work_item),
         )
     return misstatement_id
+
+
+@dataclass(frozen=True)
+class MisstatementFacts:
+    ref: str
+    status: str
+    amount: Decimal
+
+
+async def misstatement_facts(tenant: TenantContext, misstatement_id: UUID) -> MisstatementFacts:
+    async with tenant_session(tenant) as session:
+        row = (
+            (
+                await session.execute(
+                    text("SELECT ref, status, amount FROM audit_misstatements WHERE id = :id"),
+                    {"id": misstatement_id},
+                )
+            )
+            .mappings()
+            .one()
+        )
+    return MisstatementFacts(row["ref"], row["status"], Decimal(str(row["amount"])))
 
 
 def _route_scope(request: RouteRequest) -> Scope:
@@ -474,6 +554,7 @@ async def route_to_finding(tx: UnitOfWork, request: RouteRequest) -> UUID:
         priority="medium",
         title=request.matter,
         source_ref=f"control_exception:{request.control_exception_id.hex}",
+        tx=tx,
     )
     number = (
         await tx.session.execute(

@@ -595,3 +595,15 @@ async def latest_document_version(
             )
         ).first()
     return None if row is None else (row.id, row.content_hash)
+
+
+# A-06-T28: the completion slice's path.
+from abacus.modules.reporting.statements import (  # noqa: E402
+    draft as draft_statements,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- for the loader
+)
+from abacus.modules.reporting.statements import (  # noqa: E402
+    record_management_approval as record_management_approval,
+)
+from abacus.modules.reporting.statements import (  # noqa: E402
+    run_tie_out as run_statement_tie_out,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- for the loader
+)

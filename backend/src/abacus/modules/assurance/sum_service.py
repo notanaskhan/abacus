@@ -206,6 +206,8 @@ async def sum_view(tenant: TenantContext, work_item_id: UUID, view: str | None) 
             ref=r.ref, rollover=effects(r)[0], iron_curtain=effects(r)[1], prior_year=True
         )
         for r in prior
+        # A prior year's row a current row already nets (PAJE-2: 13,050 - 11,900) is context.
+        if not r.fs_effect.get("context_only")
     ]
     result = sum_engine.evaluate(
         items,
@@ -271,6 +273,53 @@ async def pass_on_sum(ctx: AuthContext, misstatement_id: UUID, reason: str) -> U
             scope=Scope(engagement_id=row["engagement_id"], work_item_id=row["work_item_id"]),
         )
     return UUID(str(row["work_item_id"]))
+
+
+async def record_prior_year(
+    ctx: AuthContext,
+    engagement_id: UUID,
+    work_item_id: UUID,
+    amount: Decimal,
+    effect: Mapping[str, str],
+    column_set: str,
+) -> UUID:
+    """A prior year's uncorrected misstatement carried as the SUM's context (PY-n): shown beside
+    the current row that already nets its reversal, and never counted a second time."""
+    async with uow(ctx.tenant) as tx:
+        number = (
+            await tx.session.execute(
+                text(
+                    "SELECT count(*) + 1 FROM audit_misstatements "
+                    "WHERE work_item_id = :w AND carried_from_py"
+                ),
+                {"w": work_item_id},
+            )
+        ).scalar_one()
+        made = (
+            await tx.session.execute(
+                text(
+                    "INSERT INTO audit_misstatements (tenant_id, engagement_id, work_item_id, "
+                    "ref, py_ref, type, status, amount, column_set, fs_effect, carried_from_py) "
+                    "VALUES (:t, :e, :w, :ref, :ref, 'judgmental', 'confirmed', :a, :cs, "
+                    "CAST(:fx AS jsonb), true) RETURNING id"
+                ),
+                {
+                    "t": ctx.tenant_id,
+                    "e": engagement_id,
+                    "w": work_item_id,
+                    "ref": f"PY-{number}",
+                    "a": amount,
+                    "cs": column_set,
+                    "fx": json.dumps({**effect, "context_only": "true"}),
+                },
+            )
+        ).scalar_one()
+        tx.record(
+            "audit_misstatement.carried_from_py",
+            target=Target(TARGET, made),
+            scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
+        )
+    return made
 
 
 async def record_factor(

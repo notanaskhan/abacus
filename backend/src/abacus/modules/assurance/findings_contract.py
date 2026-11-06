@@ -126,8 +126,29 @@ class ConvertToMisstatementIn(BaseModel):
     # Null for projected: the projection is code's.
     amount: Annotated[Money | None, classified("confidential")] = None
     projection_ref: Annotated[UUID | None, classified("internal")] = None
+    # The sample's own error: code projects it over the population (A-06 F3).
+    sample_error: Annotated[Money | None, classified("confidential")] = None
     seen_version: Annotated[int, Field(ge=1), classified("internal")]
     column_set: Annotated[ColumnSet, classified("internal")] = "commercial"
+    nature: Annotated[Literal["misstatement", "reclassification"], classified("internal")] = (
+        "misstatement"
+    )
+    # The record's own signed effects on the SUM's columns, as decimal strings.
+    effect: Annotated[
+        dict[
+            Literal[
+                "description",
+                "workpaper_ref",
+                "assets",
+                "liabilities",
+                "net_assets",
+                "change_in_net_assets",
+            ],
+            Annotated[str, Field(max_length=500)],
+        ]
+        | None,
+        classified("confidential"),
+    ] = None
 
 
 class ReasonIn(BaseModel):
@@ -556,23 +577,32 @@ async def finding_to_misstatement_route(
     finding_id: UUID, body: ConvertToMisstatementIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> MisstatementOut:
     """A projected misstatement takes its figure from sampling (422 `projection_unavailable`
-    until A-03 exposes its projection facts; T11)."""
+    without a sample set and its error; T11)."""
     from abacus.modules.assurance import findings
 
     work_item = await findings.work_item_of(ctx.tenant, finding_id)
     await _gate(ctx, work_item, "finding.convert")
     misstatement_id = await findings.to_misstatement(
-        ctx, finding_id, type_=body.type, amount=body.amount, column_set=body.column_set
+        ctx,
+        finding_id,
+        type_=body.type,
+        amount=body.amount,
+        column_set=body.column_set,
+        projection_ref=body.projection_ref,
+        sample_error=body.sample_error,
+        effect=None if body.effect is None else {str(k): v for k, v in body.effect.items()},
+        nature=body.nature,
     )
     found = await findings.finding(ctx, finding_id)
+    made = await findings.misstatement_facts(ctx.tenant, misstatement_id)
     return MisstatementOut(
         id=misstatement_id,
-        ref=f"M-{found.ref.removeprefix('F-')}",
+        ref=made.ref,
         origin_ref=None,
         type=body.type,
-        nature="misstatement",
-        status="confirmed",
-        amount=body.amount or Decimal(0),
+        nature=body.nature,
+        status=cast(Any, made.status),
+        amount=made.amount,
         finding_ref=found.ref,
         proposed_entry_ref=None,
         allowed_actions=[],

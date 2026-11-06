@@ -12800,7 +12800,7 @@ export const findingToDeficiencyMutation = (options?: Partial<Options<FindingToD
  * Finding To Misstatement Route
  *
  * A projected misstatement takes its figure from sampling (422 `projection_unavailable`
- * until A-03 exposes its projection facts; T11).
+ * without a sample set and its error; T11).
  */
 export const findingToMisstatementMutation = (options?: Partial<Options<FindingToMisstatementData>>): UseMutationOptions<FindingToMisstatementResponse, FindingToMisstatementError, Options<FindingToMisstatementData>> => {
     const mutationOptions: UseMutationOptions<FindingToMisstatementResponse, FindingToMisstatementError, Options<FindingToMisstatementData>> = {
