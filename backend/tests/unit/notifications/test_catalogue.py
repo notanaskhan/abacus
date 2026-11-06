@@ -26,6 +26,9 @@ def test_ac1_every_catalogued_event_is_subscribed() -> None:
 
 def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
     assert set(CATALOGUE) == {
+        "extension_payment.approval_requested",  # T-03-T07 (DEC-2350)
+        "extension.ack_rejected",  # T-03-T07 (DEC-2350)
+        "estimate.due_soon",  # T-03-T07 (DEC-2350)
         "support_session.requested",
         "support_session.emergency_approved",
         "budget.soft_crossed",
@@ -97,6 +100,8 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "envelope.declined",  # N-02-T24 (C16 `envelope_declined`, to the sender)
         "envelope.expired",  # N-02-T24 (C16 `envelope_expired`, to the sender)
         "envelope.signer_verification_failed",  # N-02-T27 (DF-11, to the sender)
+        "notice_intake.ready",  # N-04-T07 (DEC-2326, to the intake's owner)
+        "notice.created",  # N-04-T07 (DEC-2326, the assignee and whoever was chosen)
         "fraud_minutes.awaiting_approval",  # A-04-T19 (`fraud_minutes_awaiting_approval`, the EPs)
     }
 
@@ -182,3 +187,23 @@ async def test_q02t33_an_incident_tells_the_qi_and_partners_and_an_accrued_one_t
     assert await accrued.recipients(uuid.uuid4(), {"incident_id": str(uuid.uuid4())}) == sorted(
         [qi, admin]
     )
+
+
+async def test_n04t07_a_new_notice_reaches_the_assignee_and_who_was_chosen() -> None:
+    assignee, partner = uuid.UUID(int=1), uuid.UUID(int=2)
+    payload: dict[str, object] = {
+        "assignee_id": str(assignee),
+        "notify_user_ids": [str(partner), str(assignee)],
+    }
+    assert await CATALOGUE["notice.created"].recipients(uuid.UUID(int=9), payload) == [
+        assignee,
+        partner,
+    ]
+
+
+async def test_n04t07_a_ready_intake_reaches_its_owner() -> None:
+    owner = uuid.UUID(int=3)
+    found = await CATALOGUE["notice_intake.ready"].recipients(
+        uuid.UUID(int=9), {"owner_id": str(owner)}
+    )
+    assert found == [owner]

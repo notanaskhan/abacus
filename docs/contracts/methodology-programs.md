@@ -4,7 +4,7 @@
 |---|---|
 | Register row | proposed for the register (K-01 §8.2) |
 | Version | v1 |
-| Status | stub (K-01-T01, 2026-10-26); SPEC-008 template routes live, re-owned by `methodology` (K-01-T02) |
+| Status | live behind its flags (K-01-T26, SPEC-645); stubbed K-01-T01; SPEC-008 template routes re-owned by `methodology` (K-01-T02) |
 | Provider epic | K-01 |
 | Consumers | KNW-02, KNW-03; A-04, A-05, P-07 (pinning), P-10 (`methodology.read_step`, C17), K-03, K-04 (C14), K-05; C4's `methodology_step` verifier |
 | Freeze sprint | S16 Contract Monday (Mon May 31, 2027) |
@@ -69,7 +69,7 @@ Matrix (`permission-matrix/methodology.yaml`, moved from `engagements.yaml`): `m
 `methodology.approve` (approve a version, change a mandatory lock): the matrix denies agent and system and needs a fresh second factor; the lifecycle row's `approved_actor_kind` CHECK allows only `human`. The agent proposes draft rows for its own import (`methodology.parse`) and never approves.
 
 ## 6. Errors
-404 (client principal, flag off), 501 until each route lands; the import's 422 workbook problems as above. Live since K-01-T06: 409 `stale_version`, `version_frozen`, `checklist_changed`, `checklist_unmet` (new); 422 `effective_from_too_early` (new). Live since K-01-T14 (drafts, discard, step edits, mandatory lock): 409 `version_not_published`, `draft_exists`, `mandatory_locked`, `step_has_requests` (new); a stale `If-Match` is 409 `stale_version` (the platform's code, not 412; DEC-1361). Live since K-01-T18: approve 409 `flags_open` (a parse flag open) and `unverified_sources` (a source quote not verified on a step no person has confirmed or edited); imports 409 `import_frozen`, `file_exists`, `files_missing`, `importer_not_enabled`, `flag_not_open`; 422 `file_too_large`, `file_role_mismatch` (the extension is not the role's: `.docx`, `.pdf`, `.xlsx`; DEC-1759), `standards_set_invalid`, `against_other_template`, `text_required`, plus the evidence upload refusals (`file_refused`, …).
+404 (client principal, flag off); the import's 422 workbook problems as above. Live since K-01-T06: 409 `stale_version`, `version_frozen`, `checklist_changed`, `checklist_unmet` (new); 422 `effective_from_too_early` (new). Live since K-01-T14 (drafts, discard, step edits, mandatory lock): 409 `version_not_published`, `draft_exists`, `mandatory_locked`, `step_has_requests` (new); a stale `If-Match` is 409 `stale_version` (the platform's code, not 412; DEC-1361). Live since K-01-T18: approve 409 `flags_open` (a parse flag open) and `unverified_sources` (a source quote not verified on a step no person has confirmed or edited); imports 409 `import_frozen`, `file_exists`, `files_missing`, `importer_not_enabled`, `flag_not_open`; 422 `file_too_large`, `file_role_mismatch` (the extension is not the role's: `.docx`, `.pdf`, `.xlsx`; DEC-1759), `standards_set_invalid`, `against_other_template`, `text_required`, plus the evidence upload refusals (`file_refused`, …).
 
 ## 7. Audit and outbox events
 Audit (K-01 §4.5): `methodology_import.created`, `.needs_review`, `.parsing`, `.failed`, `.cancelled`; `methodology_source_file.stored`, `.downloaded`, `.page_read`, `.words_read`; `methodology_step.flag_resolved`; `methodology_version.standards_mapped`; `methodology_version.imported`, `.draft_created`, `.submitted`, `.approved`, `.superseded`, `.discarded`, `.exported`; `methodology_step.added`, `.edited`, `.removed`, `.mandatory_changed`. Outbox: `methodology_version.submitted`, `.approved`, `.superseded {version_id, superseded_by}`. Today's SPEC-008 import keeps `methodology.imported` and writes an `imported` version event.
@@ -91,7 +91,7 @@ Audit (K-01 §4.5): `methodology_import.created`, `.needs_review`, `.parsing`, `
 ## 10. Versioning
 | Version | Frozen on | Overlap ends | Notes |
 |---|---|---|---|
-| v1 | (S16, 2027-05-31) | — | stubbed 2026-10-26 (K-01-T01) |
+| v1 | (S16, 2027-05-31) | — | stubbed 2026-10-26 (K-01-T01); every route live by K-01-T25 |
 
 ## 11. Open points
 DEC-406 (matrix, flags, stubs) and DEC-407 (the re-own as built).

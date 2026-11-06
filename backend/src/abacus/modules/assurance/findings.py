@@ -34,13 +34,19 @@ from sqlalchemy import text
 from sqlalchemy.engine import RowMapping
 
 from abacus.kernel.crypto import open_sealed, seal
-from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.db import TenantContext, tenant_session, transaction_context
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
-from abacus.kernel.uow import Ref, Scope, Target, uow
-from abacus.modules.engagements.api import get_ref, lock_ref, work_item_engagement
+from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork, uow
+from abacus.modules.assurance.internal_control import (
+    RouteNotAvailable,
+    RouteRequest,
+    register_exception_route,
+)
+from abacus.modules.engagements.api import assurance_item, get_ref, lock_ref, work_item_engagement
 from abacus.modules.evidence.api import verified_citation_ids
 from abacus.modules.identity.api import AuthContext, allowed_actions
-from abacus.modules.review.api import create_issue, issue_row, move_issue
+from abacus.modules.review.api import create_issue, issue_row, move_issue, record_rule_issue
+from abacus.modules.workpapers.api import paper_id_of_kind
 
 TARGET: Final = "audit_finding"
 _FINGERPRINT: Final = "assurance.why_surfaced"
@@ -446,14 +452,116 @@ async def to_misstatement(
     return misstatement_id
 
 
-AUDIT_KINDS: Final = frozenset({TARGET})
+def _route_scope(request: RouteRequest) -> Scope:
+    return Scope(engagement_id=request.engagement_id, work_item_id=request.work_item_id)
+
+
+async def route_to_finding(tx: UnitOfWork, request: RouteRequest) -> UUID:
+    """AUD-09's Send to Findings and AUD-10 e's link, in the row's unit of work: a finding under
+    evaluation, its issue raised by the system on the work item with the exception's words. The
+    finding never concludes a severity (the partner's card does)."""
+    tenant = await transaction_context(tx.session)
+    paper = await paper_id_of_kind(tenant, request.engagement_id, "internal_control")
+    if paper is None:
+        raise RouteNotAvailable
+    issue_id = await record_rule_issue(
+        tenant,
+        engagement_id=request.engagement_id,
+        work_item_id=request.work_item_id,
+        record_type="workpaper",
+        record_id=paper,
+        kind="exception",
+        priority="medium",
+        title=request.matter,
+        source_ref=f"control_exception:{request.control_exception_id.hex}",
+    )
+    number = (
+        await tx.session.execute(
+            text("SELECT count(*) + 1 FROM audit_findings WHERE work_item_id = :w"),
+            {"w": request.work_item_id},
+        )
+    ).scalar_one()
+    finding_id = (
+        await tx.session.execute(
+            text(
+                "INSERT INTO audit_findings (tenant_id, engagement_id, work_item_id, issue_id, "
+                "ref, kind, title, coso_component, created_by_kind) VALUES (:t, :e, :w, :i, :ref, "
+                "'control_deficiency', :title, :coso, 'human') RETURNING id"
+            ),
+            {
+                "t": tenant.tenant_id,
+                "e": request.engagement_id,
+                "w": request.work_item_id,
+                "i": issue_id,
+                "ref": f"F-{number:02d}",
+                "title": request.matter[:300],
+                "coso": request.coso_component,
+            },
+        )
+    ).scalar_one()
+    tx.record(
+        "audit_finding.raised_from_exception",
+        target=Target(TARGET, finding_id),
+        after=Ref(exception=request.control_exception_id),
+        scope=_route_scope(request),
+    )
+    return UUID(str(finding_id))
+
+
+async def route_to_misstatement(tx: UnitOfWork, request: RouteRequest) -> UUID:
+    """AUD-09's Convert to misstatement: a candidate with the row's amount (`NoAmount` refused
+    the row without one before this)."""
+    tenant = await transaction_context(tx.session)
+    item = await assurance_item(tenant, request.work_item_id)
+    ebp = item.ebp_plan_kind is not None or item.assurance_type.startswith("ebp")
+    number = (
+        await tx.session.execute(
+            text("SELECT count(*) + 1 FROM audit_misstatements WHERE work_item_id = :w"),
+            {"w": request.work_item_id},
+        )
+    ).scalar_one()
+    misstatement_id = (
+        await tx.session.execute(
+            text(
+                "INSERT INTO audit_misstatements (tenant_id, engagement_id, work_item_id, ref, "
+                "origin_ref, type, status, amount, column_set) VALUES (:t, :e, :w, :ref, :origin, "
+                "'factual', 'candidate', :a, :cs) RETURNING id"
+            ),
+            {
+                "t": tenant.tenant_id,
+                "e": request.engagement_id,
+                "w": request.work_item_id,
+                "ref": f"M-{number}",
+                "origin": request.address[:20],
+                "a": request.amount,
+                "cs": "ebp_net_assets" if ebp else "commercial",
+            },
+        )
+    ).scalar_one()
+    tx.record(
+        "audit_misstatement.raised_from_exception",
+        target=Target("audit_misstatement", misstatement_id),
+        after=Ref(exception=request.control_exception_id),
+        scope=_route_scope(request),
+    )
+    return UUID(str(misstatement_id))
+
+
+def register_exception_routes() -> None:
+    register_exception_route("finding", route_to_finding)
+    register_exception_route("misstatement", route_to_misstatement)
+
+
+_AUDIT_OWNERS: Final = {
+    TARGET: text("SELECT id, engagement_id FROM audit_findings WHERE id = ANY(:ids)"),
+    "audit_misstatement": text(
+        "SELECT id, engagement_id FROM audit_misstatements WHERE id = ANY(:ids)"
+    ),
+}
+AUDIT_KINDS: Final = frozenset(_AUDIT_OWNERS)
 
 
 async def audit_owners(tenant: TenantContext, kind: str, ids: Sequence[UUID]) -> dict[UUID, UUID]:
-    del kind
     async with tenant_session(tenant) as session:
-        rows = await session.execute(
-            text("SELECT id, engagement_id FROM audit_findings WHERE id = ANY(:ids)"),
-            {"ids": list(ids)},
-        )
+        rows = await session.execute(_AUDIT_OWNERS[kind], {"ids": list(ids)})
         return {found: owned for found, owned in rows}
