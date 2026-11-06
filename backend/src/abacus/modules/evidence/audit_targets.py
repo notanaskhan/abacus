@@ -8,7 +8,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, select
+from sqlalchemy import ColumnElement, select, text
 from sqlalchemy.orm import QueryableAttribute
 
 from abacus.kernel.db import TenantContext, tenant_session
@@ -31,7 +31,13 @@ _OWNERS: dict[str, tuple[QueryableAttribute[UUID], QueryableAttribute[UUID | Non
     "citation": (Citation.id, Citation.engagement_id),  # P-03-T06: a recorded citation
     "engagement_export": (EngagementExport.id, EngagementExport.engagement_id),  # A-01-T18
 }
-AUDIT_KINDS = frozenset(_OWNERS)
+OCR_RUN = "ocr_run"  # P-11-T22: a run reads a version or an inbox file, whose engagement owns it
+_OCR_OWNERS = text(
+    "SELECT r.id, coalesce(v.engagement_id, f.engagement_id) FROM ocr_runs r "
+    "LEFT JOIN evidence_versions v ON v.id = r.evidence_version_id "
+    "LEFT JOIN inbox_files f ON f.id = r.inbox_file_id WHERE r.id = ANY(:ids)"
+)
+AUDIT_KINDS = frozenset(_OWNERS) | {OCR_RUN}
 # SPEC-036 AC-5 (TASK-1210): a shadow run's citation is never shown, so neither are its events.
 _SHOWN: dict[str, ColumnElement[bool]] = {"citation": Citation.shadow.is_(False)}
 
@@ -39,6 +45,10 @@ _SHOWN: dict[str, ColumnElement[bool]] = {"citation": Citation.shadow.is_(False)
 async def audit_owners(tenant: TenantContext, kind: str, ids: Sequence[UUID]) -> dict[UUID, UUID]:
     """For `kind` rows named by an audit event (the caller has authorised the read of the trail):
     their id -> the owning engagement. Unknown ids are left out."""
+    if kind == OCR_RUN:
+        async with tenant_session(tenant) as session:
+            found = await session.execute(_OCR_OWNERS, {"ids": list(ids)})
+            return {row[0]: row[1] for row in found if row[1] is not None}
     key, owner = _OWNERS[kind]
     stmt = select(key, owner).where(key.in_(list(ids)))
     if kind in _SHOWN:
