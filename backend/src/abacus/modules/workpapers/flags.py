@@ -5,7 +5,7 @@ prefilled, and the request goes to the client only when a person sends it throug
 open review note on the workpaper (C3). The flag reads Converted with what it became, and its
 insert-only history records the act (`attention_flag_events`, actor kind from the session).
 
-Remind (DEC-2381) drafts a follow-up to the client contacts over the engagement's open requests
+Remind (DEC-2388) drafts a follow-up to the client contacts over the engagement's open requests
 through C5's own follow-up drafts: nothing is sent (`follow_up.send` is a person's). A reminder
 doesn't close the gap, so the flag stays open and its history records `reminded`.
 """

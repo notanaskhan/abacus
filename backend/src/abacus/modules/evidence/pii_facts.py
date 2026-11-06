@@ -18,6 +18,7 @@ from sqlalchemy import func, select
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.evidence.models import PiiRegion, PiiScanRun
 from abacus.modules.evidence.pii import DETECTOR_VERSION
+from abacus.modules.evidence.repository import rescan_version
 
 Exposure = Literal["clear", "tin_found", "unchecked"]
 _PERSONAL_TINS: Final = ("ssn", "itin")
@@ -29,27 +30,38 @@ async def tin_exposure(tenant: TenantContext, version_ids: Sequence[UUID]) -> di
     if not ids:
         return {}
     async with tenant_session(tenant) as session:
+        # A re-scan after OCR (P-11 AC7.4) is the scan: ascending, so it's written last.
         runs = {
             r.evidence_version_id: r
             for r in await session.scalars(
-                select(PiiScanRun).where(
+                select(PiiScanRun)
+                .where(
                     PiiScanRun.evidence_version_id.in_(ids),
                     PiiScanRun.derivation_id.is_(None),
-                    PiiScanRun.detector_version == DETECTOR_VERSION,
+                    PiiScanRun.detector_version.in_(
+                        (DETECTOR_VERSION, rescan_version(DETECTOR_VERSION))
+                    ),
                 )
+                .order_by(PiiScanRun.detector_version)
             )
         }
         counted = await session.execute(
-            select(PiiRegion.evidence_version_id, func.count())
+            select(PiiRegion.evidence_version_id, PiiRegion.detector_version, func.count())
             .where(
                 PiiRegion.evidence_version_id.in_(ids),
                 PiiRegion.derivation_id.is_(None),
-                PiiRegion.detector_version == DETECTOR_VERSION,
+                PiiRegion.detector_version.in_(
+                    (DETECTOR_VERSION, rescan_version(DETECTOR_VERSION))
+                ),
                 PiiRegion.kind.in_(_PERSONAL_TINS),
             )
-            .group_by(PiiRegion.evidence_version_id)
+            .group_by(PiiRegion.evidence_version_id, PiiRegion.detector_version)
         )
-        found: dict[UUID | None, int] = {v: int(n) for v, n in counted.all()}
+        found: dict[UUID | None, int] = {
+            v: int(n)
+            for v, version, n in counted.all()
+            if v in runs and runs[v].detector_version == version
+        }
     out: dict[UUID, Exposure] = {}
     for version in ids:
         run = runs.get(version)

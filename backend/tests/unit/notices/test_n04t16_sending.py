@@ -8,6 +8,7 @@ database half lands at the integration pass; the staging clause waits for a stag
 from __future__ import annotations
 
 import ast
+import json
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import date
@@ -166,6 +167,10 @@ async def test_ac_staff_accepting_the_confirmation_moves_the_band_once(
     async def publish(_tenant: object, _row: object, *, signed: bool) -> None:
         published.append(signed)
 
+    async def on_day(_tenant: object) -> date:
+        return date(2026, 9, 16)
+
+    monkeypatch.setattr(sending, "today", on_day)
     monkeypatch.setattr(sending, "items_of_version", items)
     monkeypatch.setattr(sending, "tenant_session", session)
     monkeypatch.setattr(sending, "uow", unit)
@@ -178,3 +183,5 @@ async def test_ac_staff_accepting_the_confirmation_moves_the_band_once(
     await sending.on_review_decision(event)
     assert published == ([True] if publishes else [])
     assert len(written) == (1 if publishes else 0)
+    if publishes:
+        assert json.loads(str(written[0]["p"]))["paid_on"] == "2026-09-16"

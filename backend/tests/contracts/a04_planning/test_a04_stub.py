@@ -62,7 +62,7 @@ SERVED: dict[tuple[str, str], str] = {
     ("patch", f"{E}/risks/{{risk_id}}"): "risk.edit",
     ("post", f"{E}/risks/{{risk_id}}/responses"): "risk.link",
     ("delete", f"{E}/risks/{{risk_id}}/responses"): "risk.link",
-    # A-04-T19 (DEC-2381): Remind drafts through C5; it needs convert as well as follow_up.draft.
+    # A-04-T19 (DEC-2388): Remind drafts through C5; it needs convert as well as follow_up.draft.
     ("post", f"{WP}/flags/{{flag_id}}/remind"): "follow_up.draft",
 }
 ROUTES: dict[tuple[str, str], str] = {

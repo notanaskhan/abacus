@@ -20,7 +20,7 @@ Approving, sending and recording the client's decision are A-06-T10.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Final, Literal, cast
@@ -32,7 +32,7 @@ from sqlalchemy.engine import RowMapping
 from abacus.kernel.clock import today
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainInvalid, NotFound
-from abacus.kernel.uow import Ref, Scope, Target, uow
+from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import attest_of, get_ref, lock_ref, work_item_engagement
 from abacus.modules.identity.api import AuthContext, allowed_actions
 from abacus.modules.ledger.api import (
@@ -46,6 +46,9 @@ from abacus.modules.methodology.api import aje_classification_for
 
 EntryKind = Literal["aje", "rje", "paje", "tje", "elimination"]
 TARGET: Final = "proposed_entry"
+# (unit of work, entry id, the misstatement it's for, the entry's ref)
+ProposedHook = Callable[[UnitOfWork, UUID, UUID, str], Awaitable[None]]
+_PROPOSED_HOOKS: list[ProposedHook] = []
 _PREFIX: Final = {"aje": "AJE", "rje": "RJE", "paje": "PAJE", "tje": "TJE", "elimination": "ELIM"}
 # What the ledger's layers take: a person approved it, or the client approved it.
 RECORDED: Final = frozenset({"approved", "client_approved"})
@@ -119,6 +122,11 @@ def balance(lines: Sequence[NewLine]) -> Decimal:
     if debits != credits:
         raise UnbalancedEntry(facts={"debits": str(debits), "credits": str(credits)})
     return debits
+
+
+def register_entry_proposed_hook(hook: ProposedHook) -> None:
+    if hook not in _PROPOSED_HOOKS:
+        _PROPOSED_HOOKS.append(hook)
 
 
 async def engagement_of(tenant: TenantContext, work_item_id: UUID) -> UUID:
@@ -237,10 +245,13 @@ async def propose(ctx: AuthContext, work_item_id: UUID, new: NewEntry) -> Entry:
                     "cr": ln.credit,
                 },
             )
+        if new.misstatement_id is not None:
+            for hook in _PROPOSED_HOOKS:
+                await hook(tx, entry_id, new.misstatement_id, f"{_PREFIX[new.kind]}-{number}")
         tx.record(
             "proposed_entry.proposed",
             target=Target(TARGET, entry_id),
-            after=Ref(threshold=result, attest=attest),
+            after=Ref(review_required=int(result == "review_required"), attest=int(attest)),
             scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
         )
     return await entry(ctx, entry_id)

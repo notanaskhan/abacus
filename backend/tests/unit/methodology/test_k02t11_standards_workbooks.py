@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import inspect
 import io
+import zipfile
 from decimal import Decimal
 
 import pytest
@@ -81,6 +82,14 @@ def test_ac45_the_export_is_byte_stable() -> None:
     one = standards_import.export_workbook("review_checklist", "v4", stored)
     two = standards_import.export_workbook("review_checklist", "v4", stored)
     assert one == two
+
+
+def test_ac45_the_modified_stamp_is_pinned() -> None:
+    """openpyxl stamps `modified` from the clock as it saves; CI's run crossed a second."""
+    stored = validate_payload("review_checklist", CHECKLIST)
+    one = standards_import.export_workbook("review_checklist", "v4", stored)
+    stamps = zipfile.ZipFile(io.BytesIO(one)).read("docProps/core.xml")
+    assert stamps.count(b"2026-01-01T00:00:00Z") == 2
 
 
 def test_ac46_formulas_are_cached_values_and_problems_name_cells() -> None:

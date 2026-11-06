@@ -401,6 +401,7 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
             "deferral_election_pct",
             "years_of_service",
             "vested_pct",
+            "match_ytd",  # 0673 (A-05-T32, DEC-2361)
         }
     ),
     "ebp_population_queries": frozenset(

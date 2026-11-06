@@ -1,4 +1,4 @@
-"""A-04-T19's Remind (TASK-5019; A-04 §3.2 AC2.3; DEC-2381): "Remind… creates a follow-up draft to
+"""A-04-T19's Remind (TASK-5019; A-04 §3.2 AC2.3; DEC-2388): "Remind… creates a follow-up draft to
 Dana; the flag's history records each conversion." Nothing is sent, only a person drafts, and the
 flag stays open. C5's drafting is P-06-T14's and has its own tests; here: what Remind asks it for.
 """

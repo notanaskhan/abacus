@@ -5,7 +5,10 @@ The audit line's read models and actions: the AUD-06 trial balance first (SPEC-3
 
 # A-03-T08: the C9 v2 routes call this lazily; imported here so its error codes are catalogued.
 from abacus.kernel.audit_owners import register_engagement_owners
-from abacus.modules.adjustments.api import register_entry_decision_hook
+from abacus.modules.adjustments.api import (
+    register_entry_decision_hook,
+    register_entry_proposed_hook,
+)
 from abacus.modules.agents.api import (
     register_mode_mapping,
     register_mode_preparer,
@@ -25,7 +28,12 @@ from abacus.modules.assurance import (
 from abacus.modules.assurance import mapping_live as mapping_live
 from abacus.modules.assurance.archive_gate import g9
 from abacus.modules.assurance.audits_contract import audits_router
-from abacus.modules.assurance.completion import g6, g7, on_entry_client_decision
+from abacus.modules.assurance.completion import (
+    g6,
+    g7,
+    on_entry_client_decision,
+    on_entry_proposed,
+)
 from abacus.modules.assurance.completion_contract import router as audit_completion_router
 from abacus.modules.assurance.completion_decisions import AUDIT_KINDS as DECISION_KINDS
 from abacus.modules.assurance.completion_decisions import audit_owners as decision_owners
@@ -175,6 +183,7 @@ register_gate_provider("G9", g9)
 register_gates()  # A-04-T43 (DEC-2057): G4 from assurance/gates.py
 # A-06-T10 (DEC-2062): a client's decision on an entry moves its misstatement.
 register_entry_decision_hook(on_entry_client_decision)
+register_entry_proposed_hook(on_entry_proposed)
 # A-04-T22 (DEC-2058): the planning modes' mappings for the section drafter.
 register_mode_mapping("gap", gap_inputs)
 register_mode_mapping("risk_narrative", risk_narrative_inputs)
@@ -247,6 +256,35 @@ register_suggestion_applier("risk", apply_risk_suggestion, engagement_of=risk_en
 # A-04-T15 (DEC-1953): the recommender's suggestion names the work item's materiality.
 register_suggestion_target("materiality", engagement_of=work_item_engagement)
 
+# A-06-T25: reporting may not import agents; the statements' run record arrives through here.
+from abacus.modules.agents.api import (  # noqa: E402
+    close_deterministic_run,
+    deterministic_run_facts,
+    open_deterministic_run,
+)
+from abacus.modules.assurance.completion_decisions import (  # noqa: E402 -- A-06-T28
+    request_severity_decision,
+    request_sum_conclusion,
+)
+from abacus.modules.assurance.findings import NewFinding, record_finding  # noqa: E402
+from abacus.modules.assurance.findings import to_deficiency as finding_to_deficiency  # noqa: E402
+from abacus.modules.assurance.findings import (  # noqa: E402
+    to_misstatement as finding_to_misstatement,
+)
+from abacus.modules.assurance.internal_control import route_exception  # noqa: E402
+from abacus.modules.assurance.mapping import start as start_mapping  # noqa: E402
+from abacus.modules.assurance.sum_service import pass_on_sum, record_prior_year  # noqa: E402
+from abacus.modules.assurance.sum_service import record_factor as record_sum_factor  # noqa: E402
+from abacus.modules.assurance.sum_service import (  # noqa: E402
+    set_effect as set_misstatement_effect,
+)
+from abacus.modules.assurance.sum_service import snapshot as sum_snapshot  # noqa: E402
+from abacus.modules.reporting.api import RunRecordPort, register_run_record  # noqa: E402
+
+register_run_record(
+    RunRecordPort(open_deterministic_run, close_deterministic_run, deterministic_run_facts)
+)
+
 __all__ = [
     "ACTIVITIES",
     "PHASE_GATES",
@@ -259,6 +297,7 @@ __all__ = [
     "IndexTag",
     "MappingConfirmIn",
     "MappingRunIn",
+    "NewFinding",
     "NewRisk",  # A-04-T28: the planning slice records the register through the service
     "RiskEdit",
     "RouteRequest",
@@ -270,17 +309,23 @@ __all__ = [
     "create_risk",
     "edit_risk",
     "exception_route_available",
+    "finding_to_deficiency",
+    "finding_to_misstatement",
     "follows_gate",
     "g4_facts",
     "import_grouping_csv",
     "late_remittances",  # A-05-T30: AUD-27 and EBP-07 read the one late remittance
     "mapping_live",
     "materiality_engine",
+    "pass_on_sum",
     "propose_materiality",  # P-04-T36: the scenario loader proposes as the person named
     "publish_grouping_version",
     "reassess_materiality",
     "record_exceptions",
+    "record_finding",
     "record_phase",
+    "record_prior_year",
+    "record_sum_factor",
     "register_audit_section",
     "register_audit_segment",
     "register_exception_route",
@@ -288,7 +333,13 @@ __all__ = [
     "register_materiality_dependents",
     "register_run_summary",
     "request_risk_approval",
+    "request_severity_decision",
+    "request_sum_conclusion",
+    "route_exception",
     "router",
+    "set_misstatement_effect",
+    "start_mapping",
+    "sum_snapshot",
     "update_profile",
 ]
 

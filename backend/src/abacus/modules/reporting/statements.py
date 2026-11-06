@@ -14,9 +14,9 @@ from __future__ import annotations
 
 import json
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Final, cast
 from uuid import UUID
@@ -41,11 +41,17 @@ from abacus.modules.ledger.api import (
 )
 from abacus.modules.methodology.api import disclosure_template_items
 from abacus.modules.reporting.compute import fs_draft, tie_out
+from abacus.modules.reporting.events import (
+    StatementDraftRequested,
+    StatementTieOutRequested,
+    TieOutCompleted,
+)
 from abacus.modules.review.api import FieldOwner, record_value, register_field_owner
 
 JsonRow = dict[str, Any]  # Any: rows and JSON columns from the database
 FRAMEWORK: Final = "us_gaap"
 _ANSWER_TARGET: Final = "disclosure_checklist_answer"
+FS_DRAFT_AGENT: Final = "reporting.fs_draft"
 _ZERO: Final = Decimal(0)
 
 
@@ -174,21 +180,129 @@ async def authorise_document(ctx: AuthContext, action: str, document_id: UUID) -
 # --- draft ------------------------------------------------------------------------------------
 
 
+@dataclass(frozen=True)
+class RunRecordPort:
+    """The deterministic run's record. `agents` owns it and reporting may not import agents
+    (ADR-008), so `assurance.api`, which may reach both, registers it here."""
+
+    open: Callable[..., Awaitable[UUID]]
+    close: Callable[..., Awaitable[bool]]
+    facts: Callable[[TenantContext, UUID], Awaitable[Any]]  # Any: agents' RunFacts
+
+
+_RUN_PORT: list[RunRecordPort] = []
+
+
+def register_run_record(port: RunRecordPort) -> None:
+    _RUN_PORT[:] = [port]
+
+
+def _runs() -> RunRecordPort:
+    if not _RUN_PORT:
+        raise RuntimeError("no run record registered: assurance.api registers it")
+    return _RUN_PORT[0]
+
+
+async def start_draft(ctx: AuthContext, engagement_id: UUID, work_item_id: UUID) -> UUID:
+    """The person's request: the deterministic run's record, and the event that starts
+    `FsDraftWorkflow`. A trial balance that can't be drafted refuses now (409), not in the run."""
+    await _source(ctx.tenant, engagement_id)
+    async with uow(ctx.tenant) as tx:
+        run_id = await _runs().open(
+            tx,
+            tenant_id=ctx.tenant_id,
+            agent_id=FS_DRAFT_AGENT,
+            engagement_id=engagement_id,
+            initiator=ctx.user_id,
+            task_scope=("statement.draft",),
+        )
+        tx.emit(
+            StatementDraftRequested(
+                run_id=run_id, engagement_id=engagement_id, work_item_id=work_item_id
+            )
+        )
+        tx.record(
+            "statement.draft_requested",
+            target=Target("agent_run", run_id),
+            scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
+        )
+    return run_id
+
+
 async def draft(ctx: AuthContext, engagement_id: UUID, work_item_id: UUID) -> tuple[UUID, int]:
-    """A new version from the final layer. Deterministic: the same TB and entries hash the same."""
-    source = await _source(ctx.tenant, engagement_id)
+    """The draft with no worker: the run opened and closed here (a loader's path)."""
+    async with uow(ctx.tenant) as tx:
+        run_id = await _runs().open(
+            tx,
+            tenant_id=ctx.tenant_id,
+            agent_id=FS_DRAFT_AGENT,
+            engagement_id=engagement_id,
+            initiator=ctx.user_id,
+            task_scope=("statement.draft",),
+        )
+        tx.record(
+            "statement.draft_requested",
+            target=Target("agent_run", run_id),
+            scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
+        )
+    return await _draft(ctx.tenant, engagement_id, work_item_id, ctx.user_id, run_id)
+
+
+async def draft_in_run(tenant: TenantContext, run_id: UUID) -> tuple[UUID, int]:
+    """`FsDraftWorkflow`'s activity: its engagement, work item and person from the run's row. A
+    retried activity finds its version by the run."""
+    from abacus.modules.engagements.api import assurance_item_id
+
+    facts = await _runs().facts(tenant, run_id)
+    async with tenant_session(tenant) as session:
+        done = (
+            await session.execute(
+                text("SELECT id, version_no FROM statement_versions WHERE run_id = :r"),
+                {"r": run_id},
+            )
+        ).first()
+    if done is not None:
+        return UUID(str(done.id)), int(done.version_no)
+    item = await assurance_item_id(tenant, facts.engagement_id)
+    if item is None:
+        raise NoFinalTrialBalance
+    return await _draft(tenant, facts.engagement_id, item, facts.initiator, run_id)
+
+
+async def fail_draft_run(tenant: TenantContext, run_id: UUID) -> None:
+    """The person sees a failed run, not a skeleton forever. A retried call changes nothing."""
+    facts = await _runs().facts(tenant, run_id)
+    async with uow(tenant) as tx:
+        await _runs().close(tx, run_id, failure_code="draft_failed")
+        tx.record(
+            "statement.draft_failed",
+            target=Target("agent_run", run_id),
+            scope=Scope(engagement_id=facts.engagement_id),
+        )
+
+
+async def _draft(
+    tenant: TenantContext,
+    engagement_id: UUID,
+    work_item_id: UUID,
+    initiator: UUID,
+    run_id: UUID,
+) -> tuple[UUID, int]:
+    """A new version from the final layer. Deterministic: the same TB and entries hash the same.
+    The version is the system's, naming its run and the person: that person via Agent."""
+    source = await _source(tenant, engagement_id)
     refs = tuple(sorted(e.ref for e in source.entries.recorded))
     lines = fs_draft.draft(
         source.statements.groups, source.period_end.year, source.accounts_of, refs, {}
     )
-    async with uow(ctx.tenant) as tx:
+    async with uow(tenant) as tx:
         await tx.session.execute(
             text(
                 "INSERT INTO statement_documents (tenant_id, engagement_id, work_item_id, "
                 "framework_key) VALUES (:t, :e, :w, :f) "
                 "ON CONFLICT (tenant_id, work_item_id, kind, framework_key) DO NOTHING"
             ),
-            {"t": ctx.tenant_id, "e": engagement_id, "w": work_item_id, "f": FRAMEWORK},
+            {"t": tenant.tenant_id, "e": engagement_id, "w": work_item_id, "f": FRAMEWORK},
         )
         document = (
             (
@@ -211,19 +325,21 @@ async def draft(ctx: AuthContext, engagement_id: UUID, work_item_id: UUID) -> tu
                     text(
                         "INSERT INTO statement_versions (tenant_id, engagement_id, work_item_id, "
                         "statement_document_id, version_no, source_snapshot_id, adjustments_hash, "
-                        "drafted_by_kind, initiator_user_id, engine_version, content_hash) "
-                        "VALUES (:t, :e, :w, :d, :n, :s, :a, 'human', :u, :engine, :c) "
+                        "drafted_by_kind, run_id, initiator_user_id, engine_version, "
+                        "content_hash) "
+                        "VALUES (:t, :e, :w, :d, :n, :s, :a, 'system', :run, :u, :engine, :c) "
                         "RETURNING id"
                     ),
                     {
-                        "t": ctx.tenant_id,
+                        "t": tenant.tenant_id,
+                        "run": run_id,
                         "e": engagement_id,
                         "w": work_item_id,
                         "d": document["id"],
                         "n": version_no,
                         "s": source.version_id,
                         "a": fs_draft.adjustments_hash(refs),
-                        "u": ctx.user_id,
+                        "u": initiator,
                         "engine": fs_draft.ENGINE_VERSION,
                         "c": fs_draft.content_hash(lines),
                     },
@@ -239,7 +355,7 @@ async def draft(ctx: AuthContext, engagement_id: UUID, work_item_id: UUID) -> tu
                         "(:t, :v, :st, :se, :l, :label, :p, :n) RETURNING id"
                     ),
                     {
-                        "t": ctx.tenant_id,
+                        "t": tenant.tenant_id,
                         "v": version_id,
                         "st": line.statement_key,
                         "se": line.section_key,
@@ -257,7 +373,7 @@ async def draft(ctx: AuthContext, engagement_id: UUID, work_item_id: UUID) -> tu
                         "source_ref) VALUES (:t, :l, :y, :v, :s, CAST(:r AS jsonb))"
                     ),
                     {
-                        "t": ctx.tenant_id,
+                        "t": tenant.tenant_id,
                         "l": line_id,
                         "y": value.year,
                         "v": value.value,
@@ -275,9 +391,10 @@ async def draft(ctx: AuthContext, engagement_id: UUID, work_item_id: UUID) -> tu
         tx.record(
             "statement.drafted",
             target=Target("statement_version", version_id),
-            after=Ref(version=version_no),
+            after=Ref(version=version_no, run=run_id),
             scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
         )
+        await _runs().close(tx, run_id, output={"version_id": str(version_id)})
     return version_id, version_no
 
 
@@ -423,10 +540,24 @@ def _expected(statements: Statements, year: int) -> dict[tuple[str, int], Decima
     return expected
 
 
-async def run_tie_out(ctx: AuthContext, version_id: UUID) -> JsonRow:
-    """Code foots, cross-foots and ties the version, and records an insert-only run."""
+async def start_tie_out(ctx: AuthContext, version_id: UUID) -> None:
+    """The person's request: the event that starts `TieOutWorkflow` (background work)."""
     version = await _version_row(ctx.tenant, version_id)
-    source = await _source(ctx.tenant, version["engagement_id"])
+    async with uow(ctx.tenant) as tx:
+        tx.emit(StatementTieOutRequested(statement_version_id=version_id))
+        tx.record(
+            "statement.tie_out_requested",
+            target=Target("statement_version", version_id),
+            scope=Scope(
+                engagement_id=version["engagement_id"], work_item_id=version["work_item_id"]
+            ),
+        )
+
+
+async def run_tie_out(tenant: TenantContext, version_id: UUID) -> JsonRow:
+    """Code foots, cross-foots and ties the version, and records an insert-only run."""
+    version = await _version_row(tenant, version_id)
+    source = await _source(tenant, version["engagement_id"])
     values = [
         tie_out.Value(
             r["line_key"],
@@ -438,7 +569,7 @@ async def run_tie_out(ctx: AuthContext, version_id: UUID) -> JsonRow:
             tuple(r["source_ref"].get("accounts", ())),
             tuple(r["source_ref"].get("entries", ())),
         )
-        for r in await _lines(ctx.tenant, version_id)
+        for r in await _lines(tenant, version_id)
     ]
     result = tie_out.tie_out(
         values,
@@ -457,7 +588,7 @@ async def run_tie_out(ctx: AuthContext, version_id: UUID) -> JsonRow:
         }
         for o in result.off
     ]
-    async with uow(ctx.tenant) as tx:
+    async with uow(tenant) as tx:
         row = (
             (
                 await tx.session.execute(
@@ -468,7 +599,7 @@ async def run_tie_out(ctx: AuthContext, version_id: UUID) -> JsonRow:
                         "RETURNING id, total, tied, off, engine_version, inputs_hash, created_at"
                     ),
                     {
-                        "t": ctx.tenant_id,
+                        "t": tenant.tenant_id,
                         "v": version_id,
                         "e": tie_out.ENGINE_VERSION,
                         "h": result.inputs_hash,
@@ -481,6 +612,7 @@ async def run_tie_out(ctx: AuthContext, version_id: UUID) -> JsonRow:
             .mappings()
             .one()
         )
+        tx.emit(TieOutCompleted(statement_version_id=version_id, tie_out_run_id=row["id"]))
         tx.record(
             "statement.tie_out_run",
             target=Target("statement_version", version_id),
@@ -679,7 +811,6 @@ async def answer_item(
         tx.record(
             "disclosure_checklist.answered",
             target=Target(_ANSWER_TARGET, answer_id),
-            after=Ref(item=item_key),
             scope=Scope(
                 engagement_id=document["engagement_id"], work_item_id=document["work_item_id"]
             ),
@@ -719,7 +850,6 @@ async def adopt_item(ctx: AuthContext, document_id: UUID, item_key: str, if_matc
         tx.record(
             "disclosure_checklist.adopted",
             target=Target(_ANSWER_TARGET, existing["id"]),
-            after=Ref(item=item_key),
             scope=Scope(
                 engagement_id=document["engagement_id"], work_item_id=document["work_item_id"]
             ),
@@ -746,7 +876,6 @@ async def review_items(ctx: AuthContext, document_id: UUID, item_keys: Sequence[
             tx.record(
                 "disclosure_checklist.reviewed",
                 target=Target(_ANSWER_TARGET, existing["id"]),
-                after=Ref(item=key),
                 scope=Scope(
                     engagement_id=document["engagement_id"],
                     work_item_id=document["work_item_id"],
@@ -771,6 +900,55 @@ _OWNERS: Final = {
         "SELECT id, engagement_id FROM disclosure_checklist_answers WHERE id = ANY(:ids)"
     ),
 }
+
+
+async def record_management_approval(
+    ctx: AuthContext, version_id: UUID, evidence_version_id: UUID
+) -> tuple[str, datetime]:
+    """Record mode (A-06 F6): a person records management's signed approval of this version, the
+    signed copy as evidence. Portal approval and `fs.approved_by_management` are A-06-T29's."""
+    await authorise_version(ctx, "statement.record_management_approval", version_id)
+    async with uow(ctx.tenant) as tx:
+        version = (
+            (
+                await tx.session.execute(
+                    text(
+                        "SELECT statement_document_id AS document_id, engagement_id, "
+                        "work_item_id FROM statement_versions WHERE id = :v"
+                    ),
+                    {"v": version_id},
+                )
+            )
+            .mappings()
+            .one()
+        )
+        at = (
+            await tx.session.execute(
+                text(
+                    "INSERT INTO statement_approvals (tenant_id, statement_version_id, event, "
+                    "actor_principal, channel, evidence_version_id) VALUES "
+                    "(:t, :v, 'approved_by_management', 'firm_user', 'record', :ev) "
+                    "RETURNING created_at"
+                ),
+                {"t": ctx.tenant_id, "v": version_id, "ev": evidence_version_id},
+            )
+        ).scalar_one()
+        await tx.session.execute(
+            text(
+                "UPDATE statement_documents SET management_approval = 'approved_by_management', "
+                "row_version = row_version + 1 WHERE id = :d"
+            ),
+            {"d": version["document_id"]},
+        )
+        tx.record(
+            "statement.management_approval_recorded",
+            target=Target("statement_version", version_id),
+            after=Ref(evidence=evidence_version_id),
+            scope=Scope(
+                engagement_id=version["engagement_id"], work_item_id=version["work_item_id"]
+            ),
+        )
+    return "approved_by_management", at
 
 
 async def audit_owners(tenant: TenantContext, kind: str, ids: Sequence[UUID]) -> dict[UUID, UUID]:

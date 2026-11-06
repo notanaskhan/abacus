@@ -441,11 +441,12 @@ async def record_rule_issue(
     title: str,
     source_ref: str,
     blocks: Sequence[str] = (),
+    tx: UnitOfWork | None = None,
 ) -> UUID:
     """T-03-T06 (DEC-2352): the system raises an issue for a published rule, once per
     `(work item, source_ref)`. The rule is a person's (the template's publisher), so no caller is
     authorised here; only the owning module's effect handler reaches this, and a person resolves
-    the issue (P-04's human-only resolve)."""
+    the issue (P-04's human-only resolve). Inside a caller's unit of work, pass it as `tx`."""
     async with tenant_session(tenant) as session:
         existing = await session.scalar(
             text(
@@ -458,8 +459,9 @@ async def record_rule_issue(
         return existing
     issue_id = uuid4()
     sealed_title = await seal_text(tenant, title, SUBJECT, issue_id, "title")
-    async with uow(tenant) as tx:
-        await tx.session.execute(
+
+    async def write(unit: UnitOfWork) -> None:
+        await unit.session.execute(
             text(
                 "INSERT INTO issues (id, tenant_id, engagement_id, work_item_id, record_ref, "
                 "kind, priority, title_sealed, assignee_agent, blocks, source_ref) VALUES "
@@ -479,18 +481,24 @@ async def record_rule_issue(
                 "src": source_ref,
             },
         )
-        await tx.session.execute(
+        await unit.session.execute(
             text(
                 "INSERT INTO issue_events (tenant_id, issue_id, event) VALUES (:t, :i, 'created')"
             ),
             {"t": tenant.tenant_id, "i": issue_id},
         )
-        tx.record(
+        unit.record(
             "issue.created",
             target=Target(SUBJECT, issue_id),
             after=Ref(record=record_id),
             scope=Scope(engagement_id=engagement_id),
         )
+
+    if tx is not None:
+        await write(tx)
+    else:
+        async with uow(tenant) as own:
+            await write(own)
     return issue_id
 
 

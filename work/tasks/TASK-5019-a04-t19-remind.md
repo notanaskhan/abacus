@@ -37,7 +37,7 @@ AC2.3: "Remind… creates a follow-up **draft** to Dana; the flag's history reco
 | The screen | `AUD-05.test.tsx` c |
 
 ## Decisions made during this task
-DEC-2381.
+DEC-2388.
 
 ## Progress log
 - 2026-11-06: built. Security self-review finding fixed: Remind also needs `attention_flag.convert`, because `client_service` holds only `follow_up.draft` and the route returns the flag's text. After that fix, targeted tests (1,282 backend, 8 web), tsc, eslint and check-fast all passed.

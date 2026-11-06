@@ -349,7 +349,13 @@ async def workpapers_for(ctx: AuthContext, engagement_id: UUID) -> list[Workpape
 
 
 async def create_workpaper(
-    ctx: AuthContext, engagement_id: UUID, code: str, title: str, audit_area: str | None
+    ctx: AuthContext,
+    engagement_id: UUID,
+    code: str,
+    title: str,
+    audit_area: str | None,
+    *,
+    kind: str | None = None,
 ) -> UUID:
     """AC-2: a new paper on the engagement's assurance work item; codes unique per engagement."""
     code, title = code.strip().upper(), title.strip()
@@ -375,6 +381,7 @@ async def create_workpaper(
             title=title,
             audit_area=area,
             created_by=ctx.user_id,
+            kind=kind,
         )
         tx.record("workpaper.created", target=Target(TARGET, workpaper_id))
     return workpaper_id

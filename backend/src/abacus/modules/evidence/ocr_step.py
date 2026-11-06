@@ -16,7 +16,10 @@ from decimal import Decimal
 from typing import Final
 from uuid import UUID
 
+from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
+
 from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.dispatch import dispatch, signal_workflow
 from abacus.kernel.logging import get_logger
 from abacus.kernel.ocr import OcrPage, OcrProvider, TextractOcr
 from abacus.kernel.uow import Ref, Target, uow
@@ -34,22 +37,36 @@ from abacus.modules.evidence.ocr_gate import (
     record_run,
 )
 from abacus.modules.evidence.ocr_normalise import IMAGES, PDF, PageImage, rasterise_isolated
+from abacus.modules.evidence.pii import names_a_tin
 from abacus.modules.evidence.processing import record_ocr_extraction
 from abacus.modules.evidence.repository import (
     OCR_VERSION,
     insert_pages,
     pages_of,
+    sources_without_ocr,
 )
-from abacus.modules.evidence.words import WORDS_VERSION, PageWords, Word, layer_document
+from abacus.modules.evidence.words import (
+    WORDS_VERSION,
+    KeyHint,
+    PageWords,
+    Word,
+    layer_document,
+)
 from abacus.modules.evidence.workflow_types import (
     INBOX,
     INTAKE,
     VERSION,
+    BackfillInput,
     UploadInput,
 )
+from abacus.modules.evidence.workflows import BACKFILL_BATCH, LongOcr, OcrBackfill
 from abacus.modules.identity.api import is_synthetic_firm
 
 API: Final = "detect_text"
+FORMS_API: Final = "analyze_forms"
+BACKGROUND_ABOVE_PAGES: Final = 20  # P-11 §4: a long scan never delays a person's upload
+LONG: Final = "long"
+SHORT: Final = "short"
 TAX_LINE: Final = "tax"
 _log = get_logger(__name__)
 # The gate's refusal in the event's words (`evidence.events.OcrRefusal`).
@@ -79,7 +96,14 @@ def _system(tenant_id: UUID) -> TenantContext:
     return TenantContext(tenant_id, "system", "evidence.upload_processing")
 
 
-def _page_words(page: int, width: float, height: float, rotation: int, read: OcrPage) -> PageWords:
+def _page_words(
+    page: int,
+    width: float,
+    height: float,
+    rotation: int,
+    read: OcrPage,
+    forms: OcrPage | None = None,
+) -> PageWords:
     return PageWords(
         page,
         width,
@@ -89,6 +113,11 @@ def _page_words(page: int, width: float, height: float, rotation: int, read: Ocr
             Word(w.text, float(w.bbox[0]), float(w.bbox[1]), float(w.bbox[2]), float(w.bbox[3]),
                  float(w.confidence))
             for w in read.words
+        ),
+        hints=tuple(
+            KeyHint(k.key, float(k.value_bbox[0]), float(k.value_bbox[1]),
+                    float(k.value_bbox[2]), float(k.value_bbox[3]))
+            for k in (forms.key_values if forms else ())
         ),
     )  # fmt: skip
 
@@ -177,29 +206,36 @@ async def _read(
     )
     content = await storage.get(tenant_id, stored)
     images = await asyncio.to_thread(rasterise_isolated, content, found.media_type, due)
-    results: list[tuple[PageImage, OcrPage]] = []
+    results: list[tuple[PageImage, OcrPage, OcrPage | None]] = []
     for image in images:
-        results.append(
-            (
-                image,
-                await engine.read(
-                    image.png,
-                    width_pt=Decimal(str(image.width_pt)),
-                    height_pt=Decimal(str(image.height_pt)),
-                    api=API,
-                ),
-            )
+        width, height = Decimal(str(image.width_pt)), Decimal(str(image.height_pt))
+        page_read = await engine.read(image.png, width_pt=width, height_pt=height, api=API)
+        forms = (
+            await engine.read(image.png, width_pt=width, height_pt=height, api=FORMS_API)
+            if names_a_tin(w.text for w in page_read.words)
+            else None
         )
+        results.append((image, page_read, forms))
     run_id = await record_run(
         tenant, evidence_version_id=version_id, inbox_file_id=inbox_id, provider=engine.name,
         api=API, pages=[i.page for i in images], refused=None,
         synthetic_firm=facts.synthetic_firm,
-        request_ids=[r.request_id for _, r in results if r.request_id],
+        request_ids=[r.request_id for _, r, _f in results if r.request_id],
     )  # fmt: skip
+    with_forms = [(i, f) for i, _r, f in results if f is not None]
+    if with_forms:
+        await record_run(
+            tenant, evidence_version_id=version_id, inbox_file_id=inbox_id, provider=engine.name,
+            api=FORMS_API, pages=[i.page for i, _f in with_forms], refused=None,
+            synthetic_firm=facts.synthetic_firm,
+            request_ids=[f.request_id for _i, f in with_forms if f.request_id],
+        )  # fmt: skip
     under = under_key(found)
     rows: list[dict[str, object]] = []
-    for image, page_read in results:
-        layer = _page_words(image.page, image.width_pt, image.height_pt, image.rotation, page_read)
+    for image, page_read, forms in results:
+        layer = _page_words(
+            image.page, image.width_pt, image.height_pt, image.rotation, page_read, forms
+        )
         put = (
             await storage.put(tenant_id, layer_document(layer), under=under)
             if layer.words
@@ -242,7 +278,7 @@ async def _read(
         given,
         source=found,
         page_count=len(results),
-        pages=[" ".join(w.text for w in page_read.words) for _, page_read in results],
+        pages=[" ".join(w.text for w in page_read.words) for _, page_read, _f in results],
     )
     _log.info("upload.ocr_read", kind=given.kind, pages=len(rows))
     return len(rows)
@@ -275,3 +311,79 @@ async def _publish_text_ready(
             target=Target("evidence_version", version_id),
             after=Ref(pages=len(worded)),
         )
+
+
+# --- The backfill and long scans (AC7.4; P-11 §4) -------------------------------------------
+
+
+async def pending_ocr(given: BackfillInput) -> list[UploadInput]:
+    """The `upload.pending_ocr` activity's body: the next uploads with a page no reader has words
+    for and no OCR row yet, by id after the cursors. An attachment's intake isn't included: an
+    intake file is read when it's filed."""
+    tenant_id = UUID(given.tenant_id)
+    async with tenant_session(_system(tenant_id)) as session:
+        found = await sources_without_ocr(
+            session,
+            OCR_VERSION,
+            after_version=UUID(given.after_version) if given.after_version else None,
+            after_inbox=UUID(given.after_inbox) if given.after_inbox else None,
+            limit=BACKFILL_BATCH,
+        )
+    return [
+        UploadInput(given.tenant_id, VERSION if kind == "version" else INBOX, str(source))
+        for kind, source in found
+    ]
+
+
+def ocr_backfill_id(tenant_id: UUID) -> str:
+    return f"ocr_backfill:{tenant_id}"
+
+
+async def start_ocr_backfill(tenant_id: UUID) -> str:
+    """Start (or join) the firm's backfill; an operator command runs this (never a request)."""
+    workflow_id = ocr_backfill_id(tenant_id)
+    await dispatch(
+        OcrBackfill,
+        BackfillInput(str(tenant_id)),
+        id=workflow_id,
+        id_reuse_policy=WorkflowIDReusePolicy.ALLOW_DUPLICATE,
+        id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
+    )
+    return workflow_id
+
+
+def long_ocr_id(given: UploadInput) -> str:
+    return f"upload_ocr:{given.tenant_id}:{given.kind}:{given.source_id}"
+
+
+async def route_ocr(given: UploadInput) -> str:
+    """`upload.ocr_route`: more than 20 due pages run as `LongOcr` on the background queue, and
+    the upload waits for it (ADR-071 allows no queue on an activity); the rest run inline. Pages
+    come from the word layer: an image or a file with no layer yet counts as short."""
+    tenant = _system(UUID(given.tenant_id))
+    source_id = UUID(given.source_id)
+    async with tenant_session(tenant) as session:
+        pages = await pages_of(
+            session,
+            evidence_version_id=source_id if given.kind == VERSION else None,
+            inbox_file_id=source_id if given.kind == INBOX else None,
+            inbox_attachment_id=source_id if given.kind == INTAKE else None,
+            extractor_version=WORDS_VERSION,
+        )
+    if sum(1 for p in pages if not p.has_text_layer) <= BACKGROUND_ABOVE_PAGES:
+        return SHORT
+    await dispatch(
+        LongOcr,
+        given,
+        id=long_ocr_id(given),
+        id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE,
+        id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
+    )
+    return LONG
+
+
+async def ocr_finished(given: UploadInput) -> None:
+    """`upload.ocr_finished`: `LongOcr` tells the upload it can go on."""
+    await signal_workflow(
+        f"upload:{given.tenant_id}:{given.kind}:{given.source_id}", "long_ocr_done"
+    )
