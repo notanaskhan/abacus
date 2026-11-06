@@ -432,6 +432,8 @@ class RegisterOut(BaseModel):
     register_hash: Hash
     approved_card_id: Annotated[UUID | None, classified("internal")]
     allowed_actions: Actions
+    # AUD-08 e (A-04-T29): the re-draft after Internal Control is running; the page polls.
+    revising: Annotated[bool, classified("internal")] = False
 
 
 class RiskVersionOut(BaseModel):
@@ -1396,11 +1398,12 @@ async def _linkage_out(ctx: AuthContext, engagement_id: UUID) -> LinkageOut:
 async def risk_register_route(engagement_id: UUID, ctx: Ctx) -> RegisterOut:
     """The register with its code tally; no "$" anywhere (AC4.1; T13)."""
     await _gate(ctx, engagement_id, "risk.read", _RR)
-    from abacus.modules.assurance import risks
+    from abacus.modules.assurance import ic_redraft, risks
 
     found = await risks.register(ctx, engagement_id)
     t = found.tally
     return RegisterOut(
+        revising=await ic_redraft.revising(ctx, engagement_id),
         tally=TallyOut(
             risks=t.risks,
             significant=t.significant,

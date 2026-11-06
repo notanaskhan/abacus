@@ -49,7 +49,12 @@ from abacus.modules.tax.overview import on_binder_published, on_sign_off_recorde
 from abacus.modules.tax.returns_routes import returns_router
 from abacus.modules.tax.schedules_contract import schedules_router
 from abacus.modules.tax.status import TRANSITIONS, StaleReturn, TransitionRefused, next_status
+from abacus.modules.tax.tax_profile import (
+    authorization_on_file as authorization_on_file,
+)
 from abacus.modules.tax.tax_profile import register as register_tax_profile
+from abacus.modules.tax.tax_profile import return_for_entity as return_for_entity
+from abacus.modules.tax.tax_profile import return_label as return_label
 from abacus.modules.tax.transitions import apply_transition, record_sync_state
 
 # T-01-T10: §7216 consent capture behind C19's routes, and the `consent_set` envelope source.
