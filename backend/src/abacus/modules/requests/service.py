@@ -32,6 +32,7 @@ from abacus.modules.identity.api import (
     drafted_guidance_to_clients,
     engagement_role_of,
     my_engagements,
+    names_of,
 )
 from abacus.modules.requests.availability import available_datasets
 from abacus.modules.requests.classification import (
@@ -71,6 +72,7 @@ from abacus.modules.requests.repository import (
     insert_request_item,
     item_keys,
     items_fulfilled_by,
+    last_fulfilment_at,
     list_comment_counts,
     list_fulfilled_versions,
     list_request_items,
@@ -1037,6 +1039,7 @@ class BulkItem:
     description: str
     audit_area: str
     linked_ref: dict[str, object]
+    client_assignee_user_id: UUID | None = None
 
 
 async def create_items_bulk(
@@ -1048,6 +1051,7 @@ async def create_items_bulk(
     wave: str,
     due_on: date | None,
     batch_id: UUID,
+    request_list_id: UUID | None = None,
 ) -> list[UUID]:
     """Every item in the caller's unit of work, each audited `request_item.created` and announced
     like a single add; `batch_id` rides in each `linked_ref` so P-06's request emails group one
@@ -1055,13 +1059,15 @@ async def create_items_bulk(
     `request_item.create` on the engagement too."""
     ref = await lock_ref(tx, engagement_id)
     await authorise(ctx, "request_item.create", ref.resource())
-    list_id, created = await request_list_for(tx.session, ctx.tenant_id, engagement_id)
-    if created:
-        tx.record(
-            "request_list.created",
-            target=Target("request_list", list_id),
-            after=Ref(engagement_id=engagement_id),
-        )
+    list_id = request_list_id
+    if list_id is None:
+        list_id, created = await request_list_for(tx.session, ctx.tenant_id, engagement_id)
+        if created:
+            tx.record(
+                "request_list.created",
+                target=Target("request_list", list_id),
+                after=Ref(engagement_id=engagement_id),
+            )
     ids: list[UUID] = []
     for new in items:
         item_id = uuid4()
@@ -1077,6 +1083,11 @@ async def create_items_bulk(
             binder_fields={
                 "wave": wave,
                 "linked_ref": {**new.linked_ref, "batch_id": str(batch_id)},
+                **(
+                    {"client_assignee_user_id": new.client_assignee_user_id}
+                    if new.client_assignee_user_id
+                    else {}
+                ),
             },
         )
         tx.record(
@@ -1114,15 +1125,21 @@ _CONFIRMED: Final = frozenset({"fulfilled", "accepted", "complete"})
 
 
 async def request_item_state(tenant: TenantContext, item_id: UUID) -> RequestItemState | None:
+    """`confirmed_on` is the newest live fulfilment's day (the client's upload); `contact_name` the
+    client person the request is assigned to, when it is assigned."""
     async with tenant_session(tenant) as session:
         item = await get_request_item(session, item_id)
-    if item is None:
-        return None
+        if item is None:
+            return None
+        confirmed = item.status in _CONFIRMED
+        at = await last_fulfilment_at(session, item_id) if confirmed else None
+    assignee = item.client_assignee_user_id
+    names = await names_of([assignee]) if assignee else {}
     return RequestItemState(
-        confirmed=item.status in _CONFIRMED,
-        confirmed_on=None,
+        confirmed=confirmed,
+        confirmed_on=at.date() if at else None,
         requested_on=item.sent_at.date() if item.sent_at else None,
-        contact_name=None,
+        contact_name=names.get(assignee) if assignee else None,
     )
 
 

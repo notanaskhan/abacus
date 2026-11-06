@@ -26,6 +26,7 @@ from abacus.modules.requests.binders import (
     DropBinder,
     drop_binder,
     drop_binder_open,
+    part_for_send,
     register_binder_close_rule,
 )
 from abacus.modules.requests.classification import classify, document_kind
@@ -366,6 +367,7 @@ __all__ = [
     "methodology_router",
     "move_after_review",
     "overdue_for",
+    "part_for_send",
     "pbc_binders",
     "pbc_counts",
     "pbc_counts_of",

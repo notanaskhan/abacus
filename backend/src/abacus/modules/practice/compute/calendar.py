@@ -126,6 +126,16 @@ def pick_rule(rules: Iterable[Rule], form: str, period_end: date) -> Rule | None
     return fitting[0] if fitting else None
 
 
+def pick_extension_rule(
+    rules: Iterable[Rule], extension_form: str, period_end: date
+) -> Rule | None:
+    """The rule that extends with this form (IT-370 names the state's own form and dates)."""
+    every = list(rules)
+    forms = {r.form for r in every if r.extension_form == extension_form}
+    picked = (pick_rule(every, form, period_end) for form in sorted(forms))
+    return next((r for r in picked if r and r.extension_form == extension_form), None)
+
+
 def covers(postponement: Postponement, day: date, place: Place) -> bool:
     if not postponement.start <= day <= postponement.end:
         return False

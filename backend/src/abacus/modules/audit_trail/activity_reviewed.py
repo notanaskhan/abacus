@@ -727,6 +727,9 @@ REVIEWED_FALLBACK: Final = frozenset(
         "notice_response.sent",
         "notice.agency_reply_recorded",
         # reviewed 2026-11-06 (S27 gaps, TASK-3350 to TASK-3357)
+        "audit_misstatement.effect_stated",
+        "notice.analysis_started",
+        "notice.analysis_failed",
         "audit_finding.raised_from_exception",
         "audit_misstatement.passed_on_sum",
         "audit_misstatement.raised_from_exception",

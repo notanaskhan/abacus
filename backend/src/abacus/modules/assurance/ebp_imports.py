@@ -98,9 +98,10 @@ SPECS: Final[Mapping[str, KindSpec]] = {
                 "deferral_election_pct",
                 "years_of_service",
                 "vested_pct",
+                "match_ytd",
             }
         ),
-        amounts=("compensation",),
+        amounts=("compensation", "match_ytd"),
         dates=frozenset({"dob", "hire_on", "termination_on"}),
         percents=frozenset({"deferral_election_pct", "vested_pct"}),
         foots=False,
@@ -133,7 +134,8 @@ SPECS: Final[Mapping[str, KindSpec]] = {
     "trust_receipts": KindSpec(
         key="reference",
         required=frozenset({"reference", "received_on", "amount"}),
-        amounts=("amount",),
+        optional=frozenset({"rollover"}),  # A-05-T31: the waterfall's rollovers received
+        amounts=("amount", "rollover"),
         dates=frozenset({"received_on"}),
     ),
 }
@@ -368,10 +370,11 @@ _INSERT_IMPORT = text(
 _INSERT_PARTICIPANT = text(
     "INSERT INTO ebp_participants (tenant_id, engagement_id, work_item_id, import_id, "
     "participant_key, name, ssn_sealed, ssn_fp, ssn_last4, dob_sealed, dob_fp, hire_on, "
-    "termination_on, status, compensation, deferral_election_pct, years_of_service, vested_pct) "
+    "termination_on, status, compensation, deferral_election_pct, years_of_service, vested_pct, "
+    "match_ytd) "
     "VALUES (:tenant, :engagement, :work_item, :import_id, :key, :name, :ssn_sealed, :ssn_fp, "
     ":ssn_last4, :dob_sealed, :dob_fp, :hire_on, :termination_on, :status, :compensation, "
-    ":election, :years, :vested)"
+    ":election, :years, :vested, :match_ytd)"
 )
 _LATEST_REGISTER = text(
     "SELECT totals FROM ebp_source_imports WHERE work_item_id = :w AND kind = 'payroll_register' "
@@ -515,6 +518,7 @@ async def _participant(
         "election": r.get("deferral_election_pct"),
         "years": r.get("years_of_service"),
         "vested": r.get("vested_pct"),
+        "match_ytd": r.get("match_ytd"),
     }
 
 
