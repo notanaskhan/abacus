@@ -103,5 +103,24 @@ export function ebp03Sample(variant: Ebp03Variant): EligibilitySampleOut {
     reviewed_by: variant === "e" ? "HL" : null,
     allowed_actions: ["test.mark", "pii.reveal", "field.sign_off", "finding.create"],
     workpaper_id: stableId("workpaper:northwind:ebp_eligibility"),
+    entry_rule: { state: "verified", minimum_age: 21, service_months: 3 },
+  };
+}
+
+/** f: EBP-02's entry rule is not verified yet, so code computed nothing (DEC-2380). */
+export function ebp03Unverified(): EligibilitySampleOut {
+  const sample = ebp03Sample("a");
+  return {
+    ...sample,
+    entry_rule: { state: "unverified", minimum_age: null, service_months: null },
+    rows: sample.rows.map((r) => ({
+      ...r,
+      eligible_on: null,
+      entry_on: null,
+      rate_label: r.rate_label.endsWith("default") ? "" : r.rate_label,
+      note: null,
+      missed_deferral: null,
+      missed_match: null,
+    })),
   };
 }

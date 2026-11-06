@@ -12268,6 +12268,7 @@ export type EligibilitySampleOut = {
      * Allowed Actions
      */
     allowed_actions: Array<string>;
+    entry_rule: EntryRuleOut;
     /**
      * Exceptions
      */
@@ -14373,6 +14374,27 @@ export type EntryOut = {
      * Version
      */
     version: number;
+};
+
+/**
+ * EntryRuleOut
+ *
+ * The entry rule EBP-03 computed from: the verified provisions' (A-05-T16; DEC-2380). While it
+ * is `unverified` or `unreadable` the ages and months are null and no row has an entry date.
+ */
+export type EntryRuleOut = {
+    /**
+     * Minimum Age
+     */
+    minimum_age?: number | null;
+    /**
+     * Service Months
+     */
+    service_months?: number | null;
+    /**
+     * State
+     */
+    state: 'verified' | 'unverified' | 'unreadable';
 };
 
 /**

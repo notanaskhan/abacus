@@ -26176,6 +26176,10 @@
             "title": "Allowed Actions",
             "type": "array"
           },
+          "entry_rule": {
+            "$ref": "#/components/schemas/EntryRuleOut",
+            "cls": "internal"
+          },
           "exceptions": {
             "cls": "internal",
             "minimum": 0.0,
@@ -26261,7 +26265,8 @@
           "rows",
           "exceptions",
           "needs_human",
-          "allowed_actions"
+          "allowed_actions",
+          "entry_rule"
         ],
         "title": "EligibilitySampleOut",
         "type": "object"
@@ -30952,6 +30957,54 @@
           "allowed_actions"
         ],
         "title": "EntryOut",
+        "type": "object"
+      },
+      "EntryRuleOut": {
+        "description": "The entry rule EBP-03 computed from: the verified provisions' (A-05-T16; DEC-2380). While it\nis `unverified` or `unreadable` the ages and months are null and no row has an entry date.",
+        "properties": {
+          "minimum_age": {
+            "anyOf": [
+              {
+                "maximum": 99.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Minimum Age"
+          },
+          "service_months": {
+            "anyOf": [
+              {
+                "maximum": 99.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Service Months"
+          },
+          "state": {
+            "cls": "internal",
+            "enum": [
+              "verified",
+              "unverified",
+              "unreadable"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "title": "EntryRuleOut",
         "type": "object"
       },
       "EnvelopeDocumentOut": {
