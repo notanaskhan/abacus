@@ -79827,18 +79827,16 @@
             "cls": "confidential",
             "title": "Rationale"
           },
-          "rationale_suggestion_id": {
+          "rationale_suggestion": {
             "anyOf": [
               {
-                "format": "uuid",
-                "type": "string"
+                "$ref": "#/components/schemas/SuggestedRationaleOut"
               },
               {
                 "type": "null"
               }
             ],
-            "cls": "internal",
-            "title": "Rationale Suggestion Id"
+            "cls": "confidential"
           },
           "response_suggestion": {
             "anyOf": [
@@ -79892,7 +79890,6 @@
         "required": [
           "risk",
           "rationale",
-          "rationale_suggestion_id",
           "citation_ids",
           "versions",
           "routed_to_name",
@@ -93009,6 +93006,43 @@
           "treatment"
         ],
         "title": "SubserviceOrgOut",
+        "type": "object"
+      },
+      "SuggestedRationaleOut": {
+        "description": "A drafted rationale waiting for a person (AUD-08 f; DEC-2383): the row holds none of it.",
+        "properties": {
+          "citations": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Citations",
+            "type": "integer"
+          },
+          "suggestion_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Suggestion Id",
+            "type": "string"
+          },
+          "text": {
+            "cls": "confidential",
+            "maxLength": 20000,
+            "title": "Text",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "suggestion_id",
+          "text",
+          "citations",
+          "version"
+        ],
+        "title": "SuggestedRationaleOut",
         "type": "object"
       },
       "SuggestedResponseOut": {

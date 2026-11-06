@@ -22,12 +22,17 @@ pytestmark = pytest.mark.asyncio
 assert app_package is not None
 
 
-def _adopted(risk_id: uuid.UUID, value: str, suggestion: uuid.UUID | None) -> AdoptedValue:
+def _adopted(
+    risk_id: uuid.UUID,
+    value: str,
+    suggestion: uuid.UUID | None,
+    field_key: str = risks.RESPONSE_FIELD,
+) -> AdoptedValue:
     return AdoptedValue(
         engagement_id=None,
         target_type=risks.TARGET,
         target_id=risk_id,
-        field_key=risks.RESPONSE_FIELD,
+        field_key=field_key,
         value={"t": "text", "v": value},
         value_source="agent_suggested",
         cause="suggestion_adopted",
@@ -182,37 +187,95 @@ async def test_linking_by_hand_still_answers_already_linked(world: SimpleNamespa
         await risks.link_response(person, world.firm.engagement_id, world.risk, **link)
 
 
+async def _run(world: SimpleNamespace, *, shadow: bool = False) -> uuid.UUID:
+    return await world.seed.id(
+        "INSERT INTO agent_runs (tenant_id, agent_id, spec_version, engagement_id, "
+        "initiator_user_id, task_scope, status, shadow) VALUES ($1, "
+        "'workpapers.section_drafter', 1, $2, $3, ARRAY['suggestion.create'], 'running', "
+        "$4) "
+        "RETURNING id",
+        world.firm.tenant_id,
+        world.firm.engagement_id,
+        world.firm.user_id,
+        shadow,
+    )
+
+
+async def _suggestion(
+    world: SimpleNamespace, run_id: uuid.UUID, value: str, field_key: str = risks.RESPONSE_FIELD
+) -> uuid.UUID:
+    return await world.seed.id(
+        "INSERT INTO suggestions (tenant_id, engagement_id, target_type, target_id, "
+        "field_key, proposed_value, agent_run_id) VALUES ($1, $2, 'risk', $3, $6, "
+        "jsonb_build_object('t', 'text', 'v', $4::text), $5) RETURNING id",
+        world.firm.tenant_id,
+        world.firm.engagement_id,
+        world.risk,
+        value,
+        run_id,
+        field_key,
+    )
+
+
 async def test_ac4_7_a_pending_response_reads_from_the_store_and_a_shadow_run_never_shows(
     world: SimpleNamespace,
 ) -> None:
-    async def run(shadow: bool) -> uuid.UUID:
-        return await world.seed.id(
-            "INSERT INTO agent_runs (tenant_id, agent_id, spec_version, engagement_id, "
-            "initiator_user_id, task_scope, status, shadow) VALUES ($1, "
-            "'workpapers.section_drafter', 1, $2, $3, ARRAY['suggestion.create'], 'running', "
-            "$4) "
-            "RETURNING id",
-            world.firm.tenant_id,
-            world.firm.engagement_id,
-            world.firm.user_id,
-            shadow,
-        )
-
-    async def suggestion(run_id: uuid.UUID, value: str) -> uuid.UUID:
-        return await world.seed.id(
-            "INSERT INTO suggestions (tenant_id, engagement_id, target_type, target_id, "
-            "field_key, proposed_value, agent_run_id) VALUES ($1, $2, 'risk', $3, 'response', "
-            "jsonb_build_object('t', 'text', 'v', $4::text), $5) RETURNING id",
-            world.firm.tenant_id,
-            world.firm.engagement_id,
-            world.risk,
-            value,
-            run_id,
-        )
-
-    shown = await suggestion(await run(False), "EBP-03")
-    await suggestion(await run(True), "EBP-04")
+    shown = await _suggestion(world, await _run(world), "EBP-03")
+    await _suggestion(world, await _run(world, shadow=True), "EBP-04")
     found = await pending_suggestions(
         world.firm.person().tenant, world.firm.engagement_id, risks.TARGET, risks.RESPONSE_FIELD
     )
     assert [(p.id, p.target_id, p.value) for p in found] == [(shown, world.risk, "EBP-03")]
+
+
+async def test_a_pending_rationale_is_drawn_with_its_own_text_and_version(
+    world: SimpleNamespace,
+) -> None:
+    """DEC-2383: the drawer's Adopt names the waiting suggestion and shows what it proposes."""
+    shown = await _suggestion(
+        world, await _run(world), "Census data may be incomplete", "rationale"
+    )
+    await _suggestion(world, await _run(world, shadow=True), "A shadow's wording", "rationale")
+    found = await risks.drawer(world.firm.person(), world.firm.engagement_id, world.risk)
+    assert found.rationale_suggestion == risks.SuggestedRationale(
+        shown, "Census data may be incomplete", 0, 1
+    )
+    assert found.risk.rationale is None  # nothing lands on the row until a person adopts it
+    assert found.response_suggestion is None  # another field's suggestions stay out of this card
+
+
+async def test_the_newest_pending_rationale_is_the_one_drawn(world: SimpleNamespace) -> None:
+    await _suggestion(world, await _run(world), "The first draft", "rationale")
+    newer = await _suggestion(world, await _run(world), "The re-draft", "rationale")
+    found = await risks.drawer(world.firm.person(), world.firm.engagement_id, world.risk)
+    assert found.rationale_suggestion is not None
+    assert found.rationale_suggestion.suggestion_id == newer
+
+
+async def test_an_adopted_rationale_offers_no_adopt(world: SimpleNamespace) -> None:
+    """The bug DEC-2383 fixes: this read the adopted value's suggestion as if it were still waiting."""
+    person = world.firm.person()
+    suggestion = await _suggestion(world, await _run(world), "Adopted wording", "rationale")
+    async with uow(person.tenant) as tx:
+        await risks.apply_risk_suggestion(
+            tx, person, _adopted(world.risk, "Adopted wording", suggestion, "rationale")
+        )
+    await world.seed.value(
+        "UPDATE suggestions SET status = 'adopted' WHERE id = $1 RETURNING id", suggestion
+    )
+    found = await risks.drawer(person, world.firm.engagement_id, world.risk)
+    assert found.risk.rationale == "Adopted wording"
+    assert found.rationale_suggestion is None
+
+
+async def test_without_proposal_read_no_pending_rationale_is_read(
+    world: SimpleNamespace, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    await _suggestion(world, await _run(world), "Census data may be incomplete", "rationale")
+
+    async def only_risk_read(*_a: object) -> list[str]:
+        return []
+
+    monkeypatch.setattr(risks, "allowed_actions", only_risk_read)
+    found = await risks.drawer(world.firm.person(), world.firm.engagement_id, world.risk)
+    assert found.rationale_suggestion is None

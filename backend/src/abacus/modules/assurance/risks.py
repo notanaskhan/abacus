@@ -221,14 +221,22 @@ class SuggestedResponse:
 
 
 @dataclass(frozen=True)
+class SuggestedRationale:
+    suggestion_id: UUID
+    text: str
+    citations: int
+    version: int
+
+
+@dataclass(frozen=True)
 class Drawer:
     risk: RiskRow
     linked: bool
-    citation_ids: tuple[UUID, ...]
-    rationale_suggestion_id: UUID | None
+    citation_ids: tuple[UUID, ...]  # the adopted rationale's
     versions: list[VersionFact]
     actions: list[str]
     response_suggestion: SuggestedResponse | None = None
+    rationale_suggestion: SuggestedRationale | None = None
 
 
 @dataclass(frozen=True)
@@ -463,7 +471,7 @@ async def drawer(ctx: AuthContext, engagement_id: UUID, risk_id: UUID) -> Drawer
         else:
             name = f"{people.get(behalf, '') if behalf else ''} via Agent".strip()
         versions.append(VersionFact(len(versions) + 1, at, name))
-    pending = await _pending_responses(ctx, engagement_id)
+    pending = await _pending_of(ctx, engagement_id, RESPONSE_FIELD)
     live = {link.target_ref.upper() for link in links if link.risk_id == row.id}
     response = next(
         (
@@ -475,12 +483,24 @@ async def drawer(ctx: AuthContext, engagement_id: UUID, risk_id: UUID) -> Drawer
         ),
         None,
     )
+    # Pending, not the field's history: an adopted value is the person's and waits on nobody. The
+    # store reads oldest first; a re-draft is the one to decide (DEC-2383).
+    rationales = [
+        p for p in await _pending_of(ctx, engagement_id, "rationale") if p.target_id == row.id
+    ]
     return Drawer(
         risk=row,
         response_suggestion=response,
+        rationale_suggestion=SuggestedRationale(
+            rationales[-1].id,
+            rationales[-1].value,
+            len(rationales[-1].citation_ids),
+            rationales[-1].version,
+        )
+        if rationales
+        else None,
         linked=any(link.risk_id == row.id and link.state == "linked" for link in links),
         citation_ids=latest.citation_ids if latest is not None else (),
-        rationale_suggestion_id=latest.suggestion_id if latest is not None else None,
         versions=versions,
         actions=await _actions(ctx, engagement_id),
     )
@@ -804,12 +824,14 @@ def response_target(value: str) -> str | None:
     return next((r for r in response_targets() if r.upper() == wanted), None)
 
 
-async def _pending_responses(ctx: AuthContext, engagement_id: UUID) -> list[PendingSuggestion]:
+async def _pending_of(
+    ctx: AuthContext, engagement_id: UUID, field_key: str
+) -> list[PendingSuggestion]:
     """A suggestion is a proposal: `proposal.read` is its read (`risk.read` alone sees none)."""
     ref = await get_ref(ctx, engagement_id)
     if "proposal.read" not in await allowed_actions(ctx, ref.resource(), ("proposal.read",)):
         return []
-    return await pending_suggestions(ctx.tenant, engagement_id, TARGET, RESPONSE_FIELD)
+    return await pending_suggestions(ctx.tenant, engagement_id, TARGET, field_key)
 
 
 async def linkage(ctx: AuthContext, engagement_id: UUID) -> LinkageMatrix:
@@ -821,7 +843,7 @@ async def linkage(ctx: AuthContext, engagement_id: UUID) -> LinkageMatrix:
     live = {(link.risk_id, link.target_ref.upper()) for link in links}
     suggestions: dict[tuple[str, str], UUID] = {}
     suggested: list[tuple[str, str]] = []
-    for pending in await _pending_responses(ctx, engagement_id):
+    for pending in await _pending_of(ctx, engagement_id, RESPONSE_FIELD):
         ref = response_target(pending.value)
         if (
             ref is None
