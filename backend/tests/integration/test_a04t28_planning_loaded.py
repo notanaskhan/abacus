@@ -35,9 +35,12 @@ def own_db(migrated_db: MigratedDatabase) -> Iterator[Database]:
 
 
 async def test_ac_the_planning_day_loads_and_g4_is_met_at_4_40(
-    own_db: Database, migrated_db: MigratedDatabase, monkeypatch: pytest.MonkeyPatch
+    own_db: Database,
+    migrated_db: MigratedDatabase,
+    object_store: str,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    del migrated_db
+    del migrated_db, object_store
     monkeypatch.setenv("ABACUS_IDENTITY_DATABASE_URL", own_db.identity_url)
     settings.cache_clear()
     forget_flags()
