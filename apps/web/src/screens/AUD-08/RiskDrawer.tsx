@@ -76,6 +76,7 @@ export function RiskDrawer({
         </Button>
       </div>
     ) : undefined;
+  const hasRationale = (data?.rationale ?? "") !== "";
   return (
     <Drawer
       open
@@ -101,7 +102,7 @@ export function RiskDrawer({
             {COPY.drawer.rationaleCard}
             {suggested != null && <DraftedMarker citations={suggested.citations} />}
           </h3>
-          {(data?.rationale ?? "") !== "" && (
+          {hasRationale && (
             <AgentText
               text={data?.rationale ?? ""}
               className="text-[12.5px] leading-[1.55] text-ink"
@@ -116,7 +117,7 @@ export function RiskDrawer({
             <>
               <div
                 data-aud08="proposed-rationale"
-                className={(data?.rationale ?? "") !== "" ? "mt-[8px]" : undefined}
+                className={hasRationale ? "mt-[8px]" : undefined}
               >
                 <AgentText
                   text={suggested.text}

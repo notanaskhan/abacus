@@ -253,7 +253,7 @@ async def test_the_newest_pending_rationale_is_the_one_drawn(world: SimpleNamesp
 
 
 async def test_an_adopted_rationale_offers_no_adopt(world: SimpleNamespace) -> None:
-    """The bug DEC-2386 fixes: this read the adopted value's suggestion as if it were still waiting."""
+    """The bug DEC-2386 fixes: this read the adopted value's suggestion as if still waiting."""
     person = world.firm.person()
     suggestion = await _suggestion(world, await _run(world), "Adopted wording", "rationale")
     async with uow(person.tenant) as tx:

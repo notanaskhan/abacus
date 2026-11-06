@@ -6,7 +6,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { type JSX, useState } from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { installFixtureMode } from "../../app-core/fixture-mode";
+import { installFixtureMode, json } from "../../app-core/fixture-mode";
 import { NORTHWIND_AUDIT } from "../../fixtures/scenarios/AUD-06";
 import { aud08Drawer, aud08Register } from "../../fixtures/seed/aud08";
 import { newQueryClient } from "../../testing/support";
@@ -228,7 +228,7 @@ describe("AUD-08 c, e, f, g (A-04-T26)", () => {
 
   it("b: an adopted rationale is the person's: no marker and no Adopt", async () => {
     restore = installFixtureMode(scenarios.b);
-    const r3 = aud08Register("b").risks[2];
+    const r3 = aud08Register("a").risks[2];
     if (r3 === undefined) throw new Error("R3");
     render(
       <QueryClientProvider client={newQueryClient()}>
@@ -261,7 +261,7 @@ describe("AUD-08 c, e, f, g (A-04-T26)", () => {
         "GET /v1/engagements/{engagement_id}/risks/{risk_id}": () =>
           new Response(
             JSON.stringify({
-              ...aud08Drawer("b"),
+              ...aud08Drawer("a"),
               rationale_suggestion: {
                 suggestion_id: "11111111-1111-4111-8111-111111111111",
                 text: "A re-drafted rationale",
@@ -271,16 +271,13 @@ describe("AUD-08 c, e, f, g (A-04-T26)", () => {
             }),
             { status: 200, headers: { "content-type": "application/json" } },
           ),
-        "POST /v1/suggestions/{suggestion_id}/adopt": async (request) => {
-          seen.push(await request.json());
-          return new Response("{}", {
-            status: 200,
-            headers: { "content-type": "application/json" },
-          });
+        "POST /v1/suggestions/{suggestion_id}/adopt": (request) => {
+          seen.push(request.body);
+          return json({});
         },
       },
     });
-    const r3 = aud08Register("b").risks[2];
+    const r3 = aud08Register("a").risks[2];
     if (r3 === undefined) throw new Error("R3");
     render(
       <QueryClientProvider client={newQueryClient()}>
