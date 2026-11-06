@@ -16,6 +16,7 @@ from abacus.modules.engagements.api import register_work_item_kind
 from abacus.modules.identity.api import AbacusRouter, register_scope_resolver
 from abacus.modules.organisations.api import register_office_facts
 from abacus.modules.platform.api import register_search_projection
+from abacus.modules.tax import answer_effects as _answer_effects
 from abacus.modules.tax import consent_capture, filed_delivery, filing, k1_release
 from abacus.modules.tax import extensions as _extensions
 from abacus.modules.tax import schedule_workflows as _schedule_workflows
@@ -114,6 +115,7 @@ async def _filing_acknowledged(event: OutboxEvent) -> None:
     await _extensions.on_filing_acknowledged(event)
 
 
+_answer_effects.register()  # T-03-T06 (DEC-2352): review points from organizer answers
 _extensions.register_approval_kind()  # T-03-T07 (DEC-2350): submit-for-approval's card
 
 SUBSCRIPTIONS = {

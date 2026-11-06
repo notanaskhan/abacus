@@ -525,6 +525,10 @@ async def questionnaire_save_route(
         questions=[q.model_dump(mode="json") for q in body.questions],
         dry_run=dry_run,
     )
+    if saved and fired:
+        from abacus.modules.requests.answer_effects import fire_staff_edit
+
+        await fire_staff_edit(ctx, questionnaire_id, fired)
     return QuestionnaireSaveOut(
         saved=saved,
         client_visible_changes=[ClientVisibleChangeOut.model_validate(c) for c in listed],
