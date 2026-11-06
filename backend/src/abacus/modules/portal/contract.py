@@ -189,6 +189,8 @@ class PortalHomeNoticeOut(BaseModel):
     notice_id: Annotated[UUID, classified("internal")]
     code: Annotated[NoticeCode, classified("internal")]
     subject: Annotated[str, classified("confidential")]
+    # N-04-T22, additive to C5 v1.1: the response is out for the client's signature.
+    waiting_for_signature: Annotated[bool, classified("internal")] = False
 
 
 class PortalHomeOut(BaseModel):

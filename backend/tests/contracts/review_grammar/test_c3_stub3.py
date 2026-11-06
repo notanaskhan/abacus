@@ -64,7 +64,6 @@ RESOLUTIONS = {
 }
 # A person's acts too: every other part 3 write (§5).
 PERSONS_ACTS = {
-    "issue.create",
     "issue.update",
     "issue.send_to_client",
     "issue.explain",
@@ -224,7 +223,11 @@ def test_c3_part3_the_agent_only_proposes_a_checkpoint() -> None:
         if a.split(".", 1)[0] in {"issue", "fix_instruction", "checkpoint", "field"}
         and r.decisions.get("agent") not in (None, "deny")
     }
-    assert agent_cells == {"checkpoint.propose"}
+    # P-10-T08 (DEC-2407): the runtime raises issues inside its task's scope; only a person
+    # updates, sends or resolves one.
+    assert agent_cells == {"checkpoint.propose", "issue.create"}
+    assert RULES["issue.create"].decisions["agent"] == "task_scope"
+    assert RULES["issue.create"].decisions["system"] == "deny"
 
 
 QC_REVIEWER_WRITES = {"issue.create", "issue.explain", "field.sign_off"}

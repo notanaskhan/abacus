@@ -1,6 +1,6 @@
 ---
 id: TASK-5122
-title: A-07-T16 template content part 2: reports, reason codes, paragraph blocks, signature placeholder
+title: "A-07-T16 template content part 2: reports, reason codes, paragraph blocks, signature placeholder"
 spec: SPEC-000  # row (A-07-T16)
 acceptance_criteria: [AC-1]
 risk_zone: amber

@@ -102,7 +102,7 @@ def test_no_client_dto_carries_a_banned_field() -> None:
             re.findall(r"#/components/schemas/(\w+)", json.dumps(_operation(method, path)))
         )
     for name in used:
-        schema = schemas[name]
+        schema = cast(dict[str, object], schemas[name])
         for field in cast(dict[str, object], schema.get("properties", {})):
             assert not BANNED.search(field), f"{name}.{field}"
 

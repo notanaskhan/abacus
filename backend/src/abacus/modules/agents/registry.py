@@ -9,6 +9,7 @@ from __future__ import annotations
 # The tables this module owns; no other module reads or writes them (ADR-008).
 TABLES: frozenset[str] = frozenset(
     {
+        "agent_feedback",
         "autonomy_policy_drafts",  # G-02-T23 (0272): the AI policy's draft and versions
         "autonomy_policy_versions",
         "engagement_agents",  # SPEC-027 (TASK-050)

@@ -1,6 +1,6 @@
 ---
 id: TASK-5117
-title: A-07-T13 archived_guard: DB immutability after lock, with ARCHIVE-001
+title: "A-07-T13 archived_guard: DB immutability after lock, with ARCHIVE-001"
 spec: SPEC-000  # row (A-07-T13)
 acceptance_criteria: [AC-1]
 risk_zone: red

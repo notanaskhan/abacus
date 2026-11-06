@@ -18,7 +18,7 @@ import pytest
 from abacus.api.export_openapi import document
 from abacus.kernel.classification import unclassified_fields
 from abacus.kernel.db import TenantContext
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.modules.evidence import ocr_contract as contract
 from abacus.modules.evidence import trust_contract
 from abacus.modules.evidence.events import (
@@ -57,7 +57,7 @@ def test_ac11_2_each_route_declares_its_action_and_documents_404_and_501(
 ) -> None:
     operation = PATHS[path][method]
     assert operation["x-abacus-action"] == ROUTES[(method, path)]
-    assert {"404", "501"} <= set(cast(Json, operation["responses"]))
+    assert "404" in set(cast(Json, operation["responses"]))  # live since P-11-T27: no 501
 
 
 def test_ac11_2_the_viewer_page_is_additive_only() -> None:
@@ -94,7 +94,7 @@ def test_ac10_3_retry_is_a_persons_act() -> None:
         assert rule.decisions.get(role, "deny") == "deny"
 
 
-async def test_ac11_2_client_404_then_authorise_then_the_flag_then_501(
+async def test_ac11_2_client_404_then_authorise_then_the_flag_then_the_read(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     with pytest.raises(NotFound):
@@ -117,8 +117,16 @@ async def test_ac11_2_client_404_then_authorise_then_the_flag_then_501(
     with pytest.raises(NotFound):
         await contract.extracted_fields_route(uuid.uuid4(), _ctx())
     variant["value"] = "notices"
-    with pytest.raises(NotImplementedYet):
+    # Live since P-11-T27: past the gate, the read and the retry are the service's.
+    from abacus.modules.evidence import ocr_reads
+
+    async def reached(*_args: object) -> None:
+        raise LookupError
+
+    monkeypatch.setattr(ocr_reads, "extracted_fields", reached)
+    monkeypatch.setattr(ocr_reads, "retry_text", reached)
+    with pytest.raises(LookupError):
         await contract.extracted_fields_route(uuid.uuid4(), _ctx())
-    with pytest.raises(NotImplementedYet):
+    with pytest.raises(LookupError):
         await contract.text_retry_route(uuid.uuid4(), _ctx())
     assert calls == ["evidence.read", "evidence.read", "evidence.ocr_retry"]

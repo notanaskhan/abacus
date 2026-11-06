@@ -88,4 +88,4 @@ TeamRoleCode = Literal[
 EarlierKind = Literal[
     "return_filed", "extension_filed", "engagement_letter_signed", "deliverable_released"
 ]
-NoticeCode = Literal["agency_notice_in_review", "agency_notice_waiting_for_signature"]
+NoticeCode = Literal["agency_notice_in_review"]
