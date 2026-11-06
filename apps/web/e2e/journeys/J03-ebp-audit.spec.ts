@@ -381,7 +381,7 @@ test.describe("J03 planning (A-04-T34)", () => {
   test("j03 7, 7b, 12, 13: the plan's TB, profile, testing and contributions", async ({
     journey,
   }) => {
-    await journey.as("marcus-delaney", "/audits/_auditId_?screen=EBP-04&st=a&section=ebp_06", {
+    await journey.as("marcus-delaney", "/audits/_auditId_?screen=EBP-06&st=a&section=ebp_06", {
       clock: DEMO_INSTANT,
     });
     await journey.step("J03 step 7: EBP-06 agrees the trust report", async (page) => {

@@ -208,9 +208,9 @@ function PayrollTable({
   const C = COPY.columns;
   const head = "px-[8px] text-[11.5px] font-medium text-ink-3";
   return (
-    <div role="table" data-ebp04="payrolls" className="flex flex-col">
+    <div data-ebp04="payrolls" className="flex flex-col">
       <div
-        role="row"
+        role="group"
         className="grid h-[28px] grid-cols-[100px_1fr_1fr_90px_80px_80px] items-center bg-nested"
       >
         <span className={head}>{C.payDate}</span>
@@ -224,7 +224,6 @@ function PayrollTable({
         <button
           key={p.id}
           type="button"
-          role="row"
           data-payroll={p.pay_date}
           data-late={p.late ? "true" : "false"}
           className={cn(
@@ -258,7 +257,7 @@ function PayrollTable({
       ))}
       {totals != null && (
         <div
-          role="row"
+          role="group"
           data-ebp04="payrolls-total"
           className="grid h-[32px] grid-cols-[100px_1fr_1fr_90px_80px_80px] items-center border-t-[0.5px] border-stroke text-cell font-medium"
         >
@@ -325,11 +324,11 @@ function CardC({
         </div>
       </dl>
       {schedule !== undefined && (
-        <div role="table" data-ebp04="4a" className="flex flex-col px-[14px] pb-[8px]">
+        <div data-ebp04="4a" className="flex flex-col px-[14px] pb-[8px]">
           {schedule.rows.map((r) => (
             <div
               key={r.key}
-              role="row"
+              role="group"
               data-line={r.key}
               className="flex h-[28px] items-center justify-between text-cell hairline-b"
             >
