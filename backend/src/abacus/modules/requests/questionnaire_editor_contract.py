@@ -19,7 +19,7 @@ T-03-T05. Answers are tax return information (`tri`); wording is the firm's (int
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn, cast
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query
@@ -27,8 +27,9 @@ from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
 from abacus.kernel._flags import QUESTIONNAIRES_EDITOR
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
+from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
@@ -36,6 +37,7 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
 )
+from abacus.modules.requests.template_lifecycle import VersionView
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IfMatch = Annotated[int, Header(alias="If-Match", ge=1)]
@@ -345,7 +347,8 @@ class OrganizerTemplateVersionOut(BaseModel):
     version: Annotated[int, Field(ge=1), Internal]
     status: Annotated[VersionStatus, Internal]
     applies_to_tax_year: Annotated[int | None, Internal] = None
-    questionnaire_id: Annotated[UUID, Internal]
+    # T-03-T05: a T-02 imported version has no questionnaire, only its stored content.
+    questionnaire_id: Annotated[UUID | None, Internal] = None
     drafted_by_name: Name
     published_by_name: OptName = None
     published_at: Annotated[datetime | None, Internal] = None
@@ -407,8 +410,13 @@ async def _gate(ctx: AuthContext, action: str) -> None:
         raise NotFound(QUESTIONNAIRES_EDITOR.name)
 
 
-def _not_yet() -> NoReturn:
-    raise NotImplementedYet
+async def _gate_engagement(ctx: AuthContext) -> None:
+    """A read or edit held by an engagement role: the firm can't answer it, so the service
+    authorises on the questionnaire's own engagement. Here only the client and the flag."""
+    if ctx.client:
+        raise NotFound("questionnaire")
+    if not await flag_enabled(ctx.tenant, QUESTIONNAIRES_EDITOR):
+        raise NotFound(QUESTIONNAIRES_EDITOR.name)
 
 
 def _editor_out(found: object, actions: list[EditorAction]) -> QuestionnaireEditorOut:
@@ -481,8 +489,30 @@ _T = "/questionnaire-templates/{template_id}"
     errors=(501,),
 )
 async def binder_questionnaire_route(binder_id: UUID, ctx: Ctx) -> BinderQuestionnaireOut:
-    await _gate(ctx, "questionnaire.read")
-    _not_yet()
+    await _gate_engagement(ctx)
+    from abacus.modules.requests import questionnaire_editor, template_lifecycle
+
+    found = await template_lifecycle.binder_questionnaire(ctx, binder_id)
+    if found.questionnaire_id is not None:
+        await questionnaire_editor.authorise_questionnaire(
+            ctx, found.questionnaire_id, "questionnaire.read"
+        )
+    return BinderQuestionnaireOut(
+        binder_id=binder_id,
+        questionnaire_id=found.questionnaire_id,
+        questions=found.questions,
+        answered=found.answered,
+        template=(
+            OrganizerTemplateRefOut(
+                template_id=found.template_id,
+                name=found.template_name or "",
+                version=found.version or 1,
+                version_id=found.version_id,
+            )
+            if found.template_id and found.version_id
+            else None
+        ),
+    )
 
 
 @questionnaire_editor_router.get(
@@ -494,7 +524,7 @@ async def binder_questionnaire_route(binder_id: UUID, ctx: Ctx) -> BinderQuestio
 async def questionnaire_editor_route(questionnaire_id: UUID, ctx: Ctx) -> QuestionnaireEditorOut:
     """Sections, questions, follow-ups, logic, effect rules, answers, the effect log and counts.
     T-02's `GET /v1/questionnaires/{id}` keeps its v1 shape for POR-05's consumers (DEC-2201)."""
-    await _gate(ctx, "questionnaire.read")
+    await _gate_engagement(ctx)
     from abacus.modules.requests import questionnaire_editor
 
     return _editor_out(
@@ -514,7 +544,7 @@ async def questionnaire_save_route(
 ) -> QuestionnaireSaveOut:
     """`questionnaire.edit` on a binder's organizer; a template draft's questionnaire needs
     `questionnaire_template.draft` (the service checks the owner kind)."""
-    await _gate(ctx, "questionnaire.edit")
+    await _gate_engagement(ctx)
     from abacus.modules.requests import questionnaire_editor
 
     saved, listed, fired = await questionnaire_editor.save(
@@ -550,7 +580,7 @@ async def questionnaire_preview_route(
     contact: Annotated[UUID | None, Query()] = None,
 ) -> ClientPreviewOut:
     """The portal serializer's DTO for one question or the whole organizer."""
-    await _gate(ctx, "questionnaire.read")
+    await _gate_engagement(ctx)
     from abacus.modules.requests import questionnaire_editor
 
     e = await questionnaire_editor.editor(ctx, questionnaire_id)
@@ -579,7 +609,7 @@ async def questionnaire_preview_route(
 )
 async def template_detail_route(template_id: UUID, ctx: Ctx) -> TemplateDetailOut:
     await _gate(ctx, "questionnaire_template.read")
-    _not_yet()
+    return await _detail_out(ctx, template_id)
 
 
 @questionnaire_editor_router.put(
@@ -593,7 +623,10 @@ async def template_owner_route(
 ) -> TemplateDetailOut:
     """409 `owner_not_partner` unless the owner is a partner member."""
     await _gate(ctx, "questionnaire_template.assign_owner")
-    _not_yet()
+    from abacus.modules.requests import template_lifecycle
+
+    await template_lifecycle.assign_owner(ctx, template_id, body.owner_id)
+    return await _detail_out(ctx, template_id)
 
 
 @questionnaire_editor_router.post(
@@ -608,7 +641,22 @@ async def template_draft_route(
 ) -> OrganizerTemplateVersionOut:
     """A draft from the current published version; 409 `draft_exists`."""
     await _gate(ctx, "questionnaire_template.draft")
-    _not_yet()
+    from abacus.modules.requests import template_lifecycle
+
+    async def run() -> tuple[int, dict[str, object]]:
+        version_id = await template_lifecycle.draft_from_current(
+            ctx, template_id, body.change_summary
+        )
+        return 201, (await _version_out(ctx, template_id, version_id)).model_dump(mode="json")
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="questionnaire_template.draft",
+        key=idempotency_key,
+        body={"id": str(template_id), **body.model_dump(mode="json")},
+        run=run,
+    )
+    return OrganizerTemplateVersionOut.model_validate(stored.body)
 
 
 @questionnaire_editor_router.delete(
@@ -622,7 +670,14 @@ async def template_discard_route(
 ) -> OrganizerTemplateVersionOut:
     """Discards a draft (hidden from lists); 409 `version_published` for a published one."""
     await _gate(ctx, "questionnaire_template.draft")
-    _not_yet()
+    from abacus.modules.requests import template_lifecycle
+
+    before = await template_lifecycle.detail(ctx, template_id)
+    shown = next((v for v in before.versions if v.version == version), None)
+    await template_lifecycle.discard(ctx, template_id, version)
+    if shown is None:
+        raise NotFound("questionnaire_template_version")
+    return _version_from(shown, status="discarded")
 
 
 @questionnaire_editor_router.get(
@@ -638,4 +693,58 @@ async def template_diff_route(
     against: Annotated[int | None, Query(ge=1)] = None,
 ) -> TemplateDiffOut:
     await _gate(ctx, "questionnaire_template.read")
-    _not_yet()
+    from abacus.modules.requests import template_lifecycle
+
+    base, changes = await template_lifecycle.diff(ctx, template_id, version, against)
+    return TemplateDiffOut(
+        version=version,
+        against=base,
+        changes=[
+            QuestionDiffOut(
+                question_key=c.question_key,
+                kind=cast(Literal["added", "removed", "changed"], c.kind),
+                before=c.before,
+                after=c.after,
+            )
+            for c in changes
+        ],
+    )
+
+
+def _version_from(v: VersionView, *, status: str | None = None) -> OrganizerTemplateVersionOut:
+    return OrganizerTemplateVersionOut(
+        id=v.id,
+        version=v.version,
+        status=cast(VersionStatus, status or v.status),
+        applies_to_tax_year=v.applies_to_tax_year,
+        questionnaire_id=v.questionnaire_id,
+        drafted_by_name=v.drafted_by_name,
+        published_by_name=v.published_by_name,
+        published_at=v.published_at,
+        change_summary=v.change_summary,
+    )
+
+
+async def _detail_out(ctx: AuthContext, template_id: UUID) -> TemplateDetailOut:
+    from abacus.modules.requests import template_lifecycle
+
+    d = await template_lifecycle.detail(ctx, template_id)
+    return TemplateDetailOut(
+        id=d.id,
+        key=d.key,
+        name=d.name,
+        form_family=cast(FormFamily, d.form_family or "1040"),
+        owner_id=d.owner_id,
+        owner_name=d.owner_name,
+        versions=[_version_from(v) for v in d.versions],
+        allowed_actions=cast(list[EditorAction], list(d.allowed_actions)),
+    )
+
+
+async def _version_out(
+    ctx: AuthContext, template_id: UUID, version_id: UUID
+) -> OrganizerTemplateVersionOut:
+    from abacus.modules.requests import template_lifecycle
+
+    d = await template_lifecycle.detail(ctx, template_id)
+    return _version_from(next(v for v in d.versions if v.id == version_id))

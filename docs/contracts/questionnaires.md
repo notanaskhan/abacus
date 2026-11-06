@@ -44,7 +44,7 @@ are unchanged. Module: `requests/questionnaire_editor_contract.py`; slot:
 | Client preview (the portal DTO) | `GET /v1/questionnaires/{id}/client-preview?question=&contact=` | `questionnaire.read` |
 | Template detail · owner | `GET /v1/questionnaire-templates/{id}` · `PUT …/{id}/owner` | `questionnaire_template.read` · `.assign_owner` |
 | Draft from current · discard a draft · diff | `POST …/{id}/versions` · `DELETE …/versions/{v}` · `GET …/versions/{v}/diff?against=` | `questionnaire_template.draft` · `.draft` · `.read` |
-| Publish (owner, fresh MFA, `applies_to_tax_year`) | T-02's `POST …/versions/{v}:publish`, gaining an optional body in T-03-T05 | `questionnaire_template.publish` |
+| Publish (owner, fresh MFA, `applies_to_tax_year`) | T-02's `POST …/versions/{v}:publish`, with an optional body since T-03-T05 (DEC-2351) | `questionnaire_template.publish` |
 
 - **Errors.** `PUT`: 412 `stale_version`; 409 `question_answered` (type change on an answered question), `version_published`; 422 `client_wording_required`, `logic_invalid` (equality on a top-level yes_no or choice parent; depth 1; no cycles). Drafts: 409 `draft_exists`. Owner: 409 `owner_not_partner`.
 - **Dry run.** `saved: false`, `client_visible_changes[]` (key, kind, before, after) and `effects_to_fire[]` (key, rule, kind, title); the confirm then saves.

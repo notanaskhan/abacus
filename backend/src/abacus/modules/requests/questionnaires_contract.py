@@ -157,6 +157,16 @@ questionnaires_router = AbacusRouter(prefix="/v1", tags=["questionnaires"])
 portal_questionnaires_router = AbacusRouter(prefix="/v1/portal", tags=["portal"])
 
 
+class PublishIn(BaseModel):
+    """T-03-T05: optional for T-02's imports, required by an editor version."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    applies_to_tax_year: Annotated[int | None, Field(ge=2000, le=2100), classified("internal")] = (
+        None
+    )
+
+
 async def _gate(ctx: AuthContext, action: str) -> None:
     """Client 404, the action at the firm (403), then the flag (404); the service checks the
     engagement."""
@@ -279,11 +289,16 @@ async def questionnaire_list_templates_route(ctx: Ctx) -> list[QuestionnaireTemp
     errors=(409,),
 )
 async def publish_template_route(
-    template_id: Annotated[UUID, Path()], version: Annotated[int, Path(ge=1)], ctx: Ctx
+    template_id: Annotated[UUID, Path()],
+    version: Annotated[int, Path(ge=1)],
+    ctx: Ctx,
+    body: PublishIn | None = None,
 ) -> QuestionnaireTemplateOut:
-    """A person publishes the version (fresh MFA). 409 `version_published`."""
+    """A person publishes the version (fresh MFA). 409 `version_published`. An editor version
+    names `applies_to_tax_year` and is its owner's to publish (T-03-T05)."""
     await _gate(ctx, "questionnaire_template.publish")
-    return _template_out(await svc.publish_version(ctx, template_id, version))
+    year = body.applies_to_tax_year if body else None
+    return _template_out(await svc.publish_version(ctx, template_id, version, year))
 
 
 @questionnaires_router.post(

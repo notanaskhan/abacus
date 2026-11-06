@@ -252,15 +252,20 @@ async def import_template(
     return ImportResult(template_id, int(version), False, (), changes)
 
 
-async def publish_version(ctx: AuthContext, template_id: UUID, version: int) -> TemplateView:
-    """A person publishes (fresh MFA through the matrix); the newest published is current."""
+async def publish_version(
+    ctx: AuthContext, template_id: UUID, version: int, applies_to_tax_year: int | None = None
+) -> TemplateView:
+    """A person publishes (fresh MFA through the matrix); the newest published is current. An
+    editor version is its owner's to publish and names its tax year (T-03-T05, DEC-2351)."""
+    from abacus.modules.requests.template_lifecycle import publish_guard
+
     _person(ctx, PUBLISH)
     await authorise(ctx, PUBLISH, Resource.firm(ctx.tenant_id))
     async with uow(ctx.tenant) as tx:
         found = (
             await tx.session.execute(
                 text(
-                    "SELECT id, published_at FROM questionnaire_template_versions "
+                    "SELECT id, published_at, status FROM questionnaire_template_versions "
                     "WHERE template_id = :t AND version = :v FOR UPDATE"
                 ),
                 {"t": template_id, "v": version},
@@ -270,13 +275,15 @@ async def publish_version(ctx: AuthContext, template_id: UUID, version: int) -> 
             raise NotFound("questionnaire_template_version")
         if found.published_at is not None:
             raise AlreadyPublished(facts={"version": version})
-        await tx.session.execute(
-            text(
-                "UPDATE questionnaire_template_versions SET published_by = :by, "
-                "published_at = abacus_now() WHERE id = :id"
-            ),
-            {"by": ctx.user_id, "id": found.id},
-        )
+        await publish_guard(tx, ctx, template_id, applies_to_tax_year, found)
+        if found.status is None:
+            await tx.session.execute(
+                text(
+                    "UPDATE questionnaire_template_versions SET published_by = :by, "
+                    "published_at = abacus_now() WHERE id = :id"
+                ),
+                {"by": ctx.user_id, "id": found.id},
+            )
         tx.record(
             "questionnaire_template.published",
             target=Target("questionnaire_template", template_id),

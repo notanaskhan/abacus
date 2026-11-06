@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date
 from typing import Any, Final
 from uuid import UUID
@@ -28,7 +28,12 @@ from sqlalchemy import text
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, uow
-from abacus.modules.identity.api import AuthContext
+from abacus.modules.identity.api import (
+    AuthContext,
+    Resource,
+    authorise,
+    engagement_resource,
+)
 
 TO_STORED: Final = {"amount": "amount_group", "text": "long_text"}
 TO_EDITOR: Final = {v: k for k, v in TO_STORED.items()}
@@ -107,7 +112,39 @@ class Editor:
         }
 
 
+async def authorise_questionnaire(ctx: AuthContext, questionnaire_id: UUID, action: str) -> None:
+    """On its engagement with the work item, so walls and the caller's role apply (TRI answers);
+    a template-owned draft holds no client data and answers to the template's action."""
+    async with tenant_session(ctx.tenant) as session:
+        head = (
+            (
+                await session.execute(
+                    text(
+                        "SELECT owner_kind, engagement_id, work_item_id FROM questionnaires "
+                        "WHERE id = :q"
+                    ),
+                    {"q": questionnaire_id},
+                )
+            )
+            .mappings()
+            .first()
+        )
+    if head is None:
+        raise NotFound("questionnaire")
+    if head["owner_kind"] == "template_version":
+        template_action = (
+            "questionnaire_template.read"
+            if action == "questionnaire.read"
+            else "questionnaire_template.draft"
+        )
+        await authorise(ctx, template_action, Resource.firm(ctx.tenant_id))
+        return
+    base = await engagement_resource(ctx.tenant, head["engagement_id"])
+    await authorise(ctx, action, replace(base, work_item_id=head["work_item_id"]))
+
+
 async def editor(ctx: AuthContext, questionnaire_id: UUID) -> Editor:
+    await authorise_questionnaire(ctx, questionnaire_id, "questionnaire.read")
     async with tenant_session(ctx.tenant) as session:
         head = (
             (
@@ -290,6 +327,7 @@ async def save(
     bool, list[dict[str, Any]], list[dict[str, Any]]  # Any: JSON from the database
 ]:  # Any: JSON from the database or the document
     """One atomic save, or a dry run that writes nothing."""
+    await authorise_questionnaire(ctx, questionnaire_id, "questionnaire.edit")
     current = await editor(ctx, questionnaire_id)
     if current.row_version != if_match:
         raise StaleVersion(facts={"current": current.row_version})
