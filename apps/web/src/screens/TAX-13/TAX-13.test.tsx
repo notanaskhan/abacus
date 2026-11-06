@@ -239,9 +239,10 @@ describe("T-03-T16: TAX-13 d and e", () => {
       { timeout: 6000 },
     );
     expect(button("Mark filed")?.hasAttribute("disabled")).toBe(true);
-    const chooser = await screen.findByRole("combobox", { name: "Filed form" });
-    fireEvent.click(chooser);
-    fireEvent.click(await screen.findByRole("option", { name: /Form 4868 confirmation/ }));
+    const chooser = await screen.findByRole("button", { name: /^Filed form/ });
+    chooser.focus();
+    fireEvent.keyDown(chooser, { key: "ArrowDown" });
+    fireEvent.click(await screen.findByRole("menuitemradio", { name: /Form 4868 confirmation/ }));
     (await sheetFooter("Mark filed")).click();
     await waitFor(
       () => {

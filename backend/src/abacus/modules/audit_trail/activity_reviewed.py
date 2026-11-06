@@ -492,6 +492,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "upload.pii_scanned",
         "upload.preview_exists",
         "upload.previewed",
+        "evidence_version.ocr_retry_requested",
         "upload.refused",
         "upload.words_exist",
         "upload.words_extracted",

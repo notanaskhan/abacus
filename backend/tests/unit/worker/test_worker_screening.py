@@ -174,6 +174,18 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "checkpoint.approved",  # T-01-T36: an approved checkpoint moves the filing on
         "return.delivered",  # T-01-T41: a filed return's delivery
         "generated_document.render_requested",  # P-11-T11: the render job
+        # A-07-T15, I-01-T23: C13's new events, and inbound mail for the activity projector.
+        "archive.locked",
+        "archive_addition.decided",
+        "envelope.drafted",
+        "envelope.signer_signed",
+        "envelope.superseded",
+        "eqr.concurred",
+        "governance_communication.sent",
+        "inbound_message.recorded",
+        "notice.response_sent",
+        "rep_letter.approved",
+        "report.released",
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert (

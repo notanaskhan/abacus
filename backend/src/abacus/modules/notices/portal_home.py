@@ -22,8 +22,6 @@ from abacus.modules.notices import service
 from abacus.modules.organisations.api import OpenNoticeRowOut
 from abacus.modules.signatures.api import envelope_status
 
-IN_REVIEW: Final = "agency_notice_in_review"
-WAITING: Final = "agency_notice_waiting_for_signature"
 _OUT_FOR_SIGNATURE: Final = ("sent", "viewed", "partially_signed")
 
 _ROWS = text(
@@ -38,7 +36,7 @@ _ROWS = text(
 @dataclass(frozen=True)
 class PortalNoticeRow:
     notice_id: UUID
-    code: str
+    waiting: bool
     subject: str
 
 
@@ -61,7 +59,7 @@ async def portal_notice_rows(
         out.append(
             PortalNoticeRow(
                 r["work_item_id"],
-                WAITING if status in _OUT_FOR_SIGNATURE else IN_REVIEW,
+                status in _OUT_FOR_SIGNATURE,
                 _subject(r["agency_name"], r["tax_year"]),
             )
         )

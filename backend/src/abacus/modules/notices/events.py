@@ -59,7 +59,6 @@ class NoticeFollowUpDue(DomainEvent):
 
     work_item_id: Annotated[UUID, classified("internal")]
     follow_up_on: Annotated[date, classified("internal")]
-    engagement_id: Annotated[UUID | None, classified("internal")] = None  # I-01-T23: C13's key
     assignee_user_id: Annotated[UUID | None, classified("internal")] = None  # C16's recipient
 
 
@@ -78,6 +77,7 @@ class NoticeResponseSent(DomainEvent):
     work_item_id: Annotated[UUID, classified("internal")]
     sent_on: Annotated[date, classified("internal")]
     follow_up_on: Annotated[date, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")] = None  # I-01-T23: C13's key
     assignee_user_id: Annotated[UUID | None, classified("internal")] = None  # C16's recipient
 
 

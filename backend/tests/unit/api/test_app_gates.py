@@ -88,6 +88,19 @@ def test_ac20_each_new_route_declares_exactly_one_action_and_a_response_model() 
 # TASK-019: taking, releasing and assigning a review return the assignment, so 200.
 REVIEW_QUEUE = "/v1/engagements/{engagement_id}/review-queue/{version_id}"
 NOT_CREATING = {
+    # S29: acts on an existing record, so 200.
+    "/v1/agent-runs/{run_id}/plan/approve",
+    "/v1/agent-runs/{run_id}/plan/cancel",
+    "/v1/agent-runs/{run_id}/plan/edit",
+    "/v1/agent-runs/{run_id}/questions/{question_id}/answer",
+    "/v1/agent-runs/{run_id}/questions/{question_id}/skip",
+    "/v1/agent-runs/{run_id}/sign-off",
+    "/v1/events/{stream_id}/topics",
+    "/v1/portal/approvals/packages/{package_id}/decide",
+    "/v1/portal/approvals/proposed-entries/{entry_id}/decide",
+    "/v1/portal/approvals/uncorrected-misstatements/{item_id}/acknowledge",
+    "/v1/portal/deliverables/{deliverable_id}/versions/{version_no}/approve",
+    "/v1/portal/governance/communications/{communication_id}/acknowledge",
     # A-05-T43: SHL-14's prefill for an expense's provider; a person sends it from the sheet.
     "/v1/audits/{work_item_id}/ebp/plan-expenses/{expense_id}/request-support",
     # S26, S27: acts on an existing record or returns a batch's outcomes, so 200.
@@ -481,6 +494,13 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/audits/{work_item_id}/representation-letter/compose",
         "/v1/engagements/{engagement_id}/financial-statements/draft",
         "/v1/statement-versions/{version_id}/tie-out",
+        # S29 stubs: a run or session accepts work and answers later.
+        "/v1/agent-runs/{run_id}/messages",
+        "/v1/agent-runs/{run_id}/steps/{step_id}/retry",
+        "/v1/agent-runs/{run_id}/stop",
+        "/v1/audits/{work_item_id}/ebp/participant-accounts/run",
+        "/v1/engagements/{engagement_id}/runs",
+        "/v1/workbench/sessions/{session_id}/messages",
     }
     created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)
@@ -803,6 +823,11 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/tax/extensions/{extension_id}/confirmation-requests",
         "/v1/tax/estimates/{schedule_id}/installments/{quarter}/confirmation-requests",
         "/v1/tax/estimates/{schedule_id}/installments/{quarter}/follow-ups",
+        # S29: C6 v2, C10, C18 and P-11's rows that create a record.
+        "/v1/agent-feedback",
+        "/v1/portal/approvals/{kind}/{item_id}/questions",
+        "/v1/portal/deliverables/{deliverable_id}/versions/{version_no}/comments",
+        "/v1/portal/governance/communications/{communication_id}/questions",
     }
     assert all(r.status_code == 201 for r in posts if r.path in created)
     assert {r.path for r in posts if r.path in NOT_CREATING} == NOT_CREATING

@@ -1,6 +1,6 @@
 ---
 id: TASK-5128
-title: P-11-T31 SHL-08 OCR additions: page text source, low-confidence notes, refusal and retry
+title: "P-11-T31 SHL-08 OCR additions: page text source, low-confidence notes, refusal and retry"
 spec: SPEC-000  # row (P-11-T31)
 acceptance_criteria: [AC-1]
 risk_zone: amber

@@ -49,7 +49,7 @@ from abacus.modules.portal.home_sources import signatures as _signatures
 from abacus.modules.portal.home_sources import tax_filings as _tax_filings
 
 LOADED = (
-    _notices,
+    _notices.notices_source,  # N-04-T22: the info row
     _requests.requests_source,
     _engagements.engagements_source,
     _connections.connections_source,  # A-02-T23: the reconnect to-do

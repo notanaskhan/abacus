@@ -4,6 +4,8 @@
 // (`file_document`).
 
 export const COPY = {
+  holdNotice: "Open notice",
+  holdResponse: "Response",
   title: "Files",
   allClients: "‹ All clients",
   searchFiles: "Search files",

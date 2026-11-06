@@ -3,9 +3,15 @@
 from __future__ import annotations
 
 from decimal import Decimal
+from pathlib import Path
 from types import SimpleNamespace
 
-from abacus.modules.evidence.viewer import ViewerPageOcr, _page_ocr, _text_source
+from abacus.modules.evidence import viewer
+from abacus.modules.evidence.viewer import (
+    ViewerPageOcr,
+    _page_ocr,  # pyright: ignore[reportPrivateUsage] -- the rule under test
+    _text_source,  # pyright: ignore[reportPrivateUsage] -- the rule under test
+)
 
 
 def _page(**kw: object) -> SimpleNamespace:
@@ -35,3 +41,9 @@ def test_a_refusal_shows_only_on_a_page_left_without_words() -> None:
     assert _page_ocr(_page(), "consent_7216") == ViewerPageOcr(refused_reason="consent_7216")  # type: ignore[arg-type]  # a stand-in row
     assert _page_ocr(_page(has_text_layer=True, text_source="text_layer"), "consent_7216") is None  # type: ignore[arg-type]  # a stand-in row
     assert _page_ocr(_page(), None) is None  # type: ignore[arg-type]  # a stand-in row
+
+
+def test_a_client_gets_neither_how_a_page_was_read_nor_the_refusal() -> None:
+    source = Path(viewer.__file__).read_text()
+    assert "refusal = None if client else" in source
+    assert "ocr=None if client else _page_ocr(page, refusal)" in source

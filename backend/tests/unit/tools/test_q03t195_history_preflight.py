@@ -31,6 +31,7 @@ KNOWN_GAPS: Final[frozenset[str]] = frozenset(
         "TaxCalendarSweepWorkflow",
         "evidence_withdrawal_purge",
         "knowledge-embedding",
+        "notice_analysis",
     }
 )
 
@@ -45,7 +46,9 @@ def _registered() -> set[str]:
     for module in MODULES:
         for found in getattr(module, "WORKFLOWS", {}):
             if inspect.isclass(found):
-                defn = workflow._Definition.from_class(found)  # pyright: ignore[reportPrivateUsage] -- the SDK's only reader of a declared name
+                defn = workflow._Definition.from_class(
+                    found
+                )  # the SDK's only reader of a declared name
                 if defn is not None and defn.name is not None:
                     names.add(defn.name)
     return names

@@ -1,6 +1,6 @@
 ---
 id: TASK-5104
-title: R-02-T04 protected bundle 1: status words, glossary, module edge, CLIENT-DECISION-001
+title: "R-02-T04 protected bundle 1: status words, glossary, module edge, CLIENT-DECISION-001"
 spec: SPEC-000  # row (R-02-T04)
 acceptance_criteria: [AC-1]
 risk_zone: red

@@ -56,13 +56,13 @@ describe("/audits/$auditId/misstatements", () => {
 });
 
 describe("/audits/$auditId/fs-disclosure", () => {
-  it("renders the audit bar and the planned body, Not built yet", async () => {
+  it("renders the audit bar over AUD-20, not the planned body", async () => {
     show("fs-disclosure");
     await waitFor(() => {
       expect(
         document.querySelector("[data-screen='evaluation'][data-tab='fs-disclosure']"),
       ).not.toBeNull();
-      expect(document.body.textContent).toContain("Not built yet");
+      expect(document.querySelector("[data-screen='AUD-20']")).not.toBeNull();
     });
   });
 });

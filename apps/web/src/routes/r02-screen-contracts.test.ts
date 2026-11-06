@@ -16,7 +16,20 @@ const ARTBOARDS: Record<string, string[]> = {
   "POR-09": ["a", "a2", "b", "c", "d", "e", "f", "g", "h", "i"],
   "POR-15": ["a", "b", "c", "d", "e", "f"],
 };
-const DEVIATIONS = ["DV-01", "DV-02", "DV-03", "DV-04", "DV-05", "DV-06", "DV-07", "DV-08", "DV-09", "DV-10", "DV-11", "DV-12"];
+const DEVIATIONS = [
+  "DV-01",
+  "DV-02",
+  "DV-03",
+  "DV-04",
+  "DV-05",
+  "DV-06",
+  "DV-07",
+  "DV-08",
+  "DV-09",
+  "DV-10",
+  "DV-11",
+  "DV-12",
+];
 
 function section(doc: string, heading: string): string[] {
   const start = doc.indexOf(`## ${heading}`);
@@ -26,7 +39,10 @@ function section(doc: string, heading: string): string[] {
 }
 
 const docs = Object.fromEntries(
-  Object.keys(ARTBOARDS).map((id) => [id, readFileSync(join(REPO, "docs", "screens", `${id}.md`), "utf8")]),
+  Object.keys(ARTBOARDS).map((id) => [
+    id,
+    readFileSync(join(REPO, "docs", "screens", `${id}.md`), "utf8"),
+  ]),
 );
 
 describe("R-02 screen contracts", () => {

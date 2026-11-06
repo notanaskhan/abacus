@@ -42,7 +42,7 @@ const GRID = "h-[28px] border-[0.5px] border-hair px-[6px] text-[11.5px]";
 const NUM = "w-[34px] border-[0.5px] border-hair bg-faint text-center text-[11px] text-ink-3";
 
 const money = (v: string | null | undefined): string =>
-  v === null || v === undefined ? "" : amount(v, "cents", { zero: "explicit" }).text;
+  v === null || v === undefined ? "" : amount(v, "money", { zero: "explicit" }).text;
 
 export interface ExpensesOptions {
   active?: boolean;
