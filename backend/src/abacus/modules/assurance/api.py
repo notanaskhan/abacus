@@ -26,6 +26,8 @@ from abacus.modules.assurance.archive_gate import g9
 from abacus.modules.assurance.audits_contract import audits_router
 from abacus.modules.assurance.completion import g6, g7, on_entry_client_decision
 from abacus.modules.assurance.completion_contract import router as audit_completion_router
+from abacus.modules.assurance.completion_decisions import AUDIT_KINDS as DECISION_KINDS
+from abacus.modules.assurance.completion_decisions import audit_owners as decision_owners
 from abacus.modules.assurance.completion_decisions import register_completion_decision_kinds
 from abacus.modules.assurance.completion_routes import dashboard_router
 from abacus.modules.assurance.completion_routes import router as completion_router
@@ -51,6 +53,7 @@ from abacus.modules.assurance.fraud_brainstorm import apply_minutes_suggestion, 
 from abacus.modules.assurance.fraud_brainstorm import audit_owners as fraud_owners
 from abacus.modules.assurance.gates import register as register_gates
 from abacus.modules.assurance.home_counts import register_home_counts
+from abacus.modules.assurance.internal_control import AUDIT_KINDS as CONTROL_KINDS
 from abacus.modules.assurance.internal_control import (
     ExceptionRouter,
     ExceptionRow,
@@ -59,6 +62,7 @@ from abacus.modules.assurance.internal_control import (
     record_exceptions,
     register_exception_route,
 )
+from abacus.modules.assurance.internal_control import audit_owners as control_owners
 from abacus.modules.assurance.mapping import SUBSCRIPTIONS as MAPPING_SUBSCRIPTIONS
 from abacus.modules.assurance.mapping import import_csv as import_grouping_csv
 from abacus.modules.assurance.mapping import mapping_facts, mapping_reviewables
@@ -209,6 +213,8 @@ register_ebp_modes()
 # A-04-T07: the trail places a service organization on its engagement (SPEC-304; DEC-121).
 register_engagement_owners(SERVICE_ORG_KINDS, service_org_owners)
 register_engagement_owners(SOC_REPORT_KINDS, soc_report_owners)  # A-04-T31
+register_engagement_owners(CONTROL_KINDS, control_owners)  # A-04-T25 (DEC-2264)
+register_engagement_owners(DECISION_KINDS, decision_owners)  # A-06-T13 (DEC-2264)
 register_engagement_owners(LATE_REMITTANCE_KINDS, late_remittance_owners)  # A-05-T30
 # A-04-T12 (DEC-1950): the materiality cards' kinds and appliers; versions placed for the trail.
 register_materiality_kinds()

@@ -150,7 +150,13 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "adjustment.record_response",
         "agent_run.read",  # SPEC-318 (TASK-461)
         "approval_batch.create",  # A-06-T03
+        "archive.build_index",  # S26 or S27 matrix mark
         "archive.lock",  # SPEC-314 (TASK-332)
+        "archive.read",  # S26 or S27 matrix mark
+        "archive.request_lock",  # S26 or S27 matrix mark
+        "archive.verify",  # S26 or S27 matrix mark
+        "archive_addition.approve",  # S26 or S27 matrix mark
+        "archive_addition.create",  # S26 or S27 matrix mark
         "assurance.record_archive",  # A-01-T02 (TASK-1101)
         "assurance.record_phase",
         "assurance.record_release",
@@ -166,6 +172,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "completion.decide",  # SPEC-314 (TASK-332)
         "completion.read",  # SPEC-314 (TASK-332)
         "completion.record",  # SPEC-314 (TASK-332)
+        "completion.update",  # S26 or S27 matrix mark
         "connection.disconnect",  # A-02-T06 security review (DEC-379): POR-16 f
         "connection.read",  # A-02 §4.4 (TASK-1185)
         "connection.read_log",
@@ -183,6 +190,10 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "decision.request_analysis",  # P-04-T08 (TASK-414)
         "decision_card.raise",  # A-04-T12 (DEC-1950)
         "deficiency.propose_severity",
+        "disclosure_checklist.answer",  # S26 or S27 matrix mark
+        "disclosure_checklist.export",  # S26 or S27 matrix mark
+        "disclosure_checklist.read",  # S26 or S27 matrix mark
+        "disclosure_checklist.review",  # S26 or S27 matrix mark
         "ebp.read",  # A-05-T04 (DEC-1859)
         "ebp_certification.evaluate",
         "ebp_correction.record",
@@ -204,11 +215,17 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "envelope.import_record",  # N-02-T02
         "envelope.record_wet_signature",  # N-02-T02
         "envelope.send",  # N-02-T02
+        "eqr.build_digest",  # S26 or S27 matrix mark
+        "eqr.checklist_update",  # S26 or S27 matrix mark
         "eqr.concur",  # SPEC-314 (TASK-332)
+        "eqr.mark_reviewed",  # S26 or S27 matrix mark
+        "eqr.read",  # S26 or S27 matrix mark
+        "eqr.request",  # S26 or S27 matrix mark
         "estimate.evaluate",
         "estimate.read",
         "estimate.request_conclusion",
         "evidence.accept",
+        "evidence.ocr_retry",  # S26 or S27 matrix mark
         "evidence.read",
         "evidence.reject",
         "evidence.unlock",  # P-03-T02 (C4 v1)
@@ -217,6 +234,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "export.create",  # A-01-T17 (TASK-1261): an engagement export is client data
         "export.download",
         "export.read",
+        "filing.update",  # S26 or S27 matrix mark
         "finding.communicate",  # SPEC-301 (TASK-302)
         "finding.conclude_severity",
         "finding.convert",  # A-06-T04
@@ -236,6 +254,12 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "fraud_session.read",
         "generated_document.read",  # P-11 (C11)
         "generated_document.regenerate",  # P-11 (C11)
+        "going_concern.request_decision",  # S26 or S27 matrix mark
+        "governance_comm.approve_send",  # S26 or S27 matrix mark
+        "governance_comm.draft",  # S26 or S27 matrix mark
+        "governance_comm.manage_recipients",  # S26 or S27 matrix mark
+        "governance_comm.read",  # S26 or S27 matrix mark
+        "governance_comm.request_approval",  # S26 or S27 matrix mark
         "guidance_draft.decide",  # SPEC-035 (TASK-073)
         "guidance_draft.read",
         "guidance_draft.request",
@@ -249,6 +273,8 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "ledger.pull",  # A-02 §4.4 (TASK-1185)
         "ledger_import.upload",  # SPEC-028 (TASK-052)
         "ledger_snapshot.create_from_document",
+        "legal_letter.request",  # S26 or S27 matrix mark
+        "legal_letter.update",  # S26 or S27 matrix mark
         "letter.approve",  # N-02-T02
         "mapping_set.confirm",  # A-03-T01 (DEC-1550)
         "mapping_set.edit",  # SPEC-316 (TASK-345)
@@ -289,8 +315,17 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "related_party.manage",
         "related_party.read",
         "related_party.screen_out",
+        "rep_letter.approve",  # S26 or S27 matrix mark
+        "rep_letter.draft",  # S26 or S27 matrix mark
+        "rep_letter.read",  # S26 or S27 matrix mark
+        "rep_letter.request_approval",  # S26 or S27 matrix mark
+        "rep_letter.send",  # S26 or S27 matrix mark
         "report.approve",  # SPEC-314 (TASK-332)
+        "report.draft",  # S26 or S27 matrix mark
+        "report.generate",  # S26 or S27 matrix mark
+        "report.read",  # S26 or S27 matrix mark
         "report.release",  # SPEC-314 (TASK-332)
+        "report.request_decision",  # S26 or S27 matrix mark
         "representation.edit",  # SPEC-301 (TASK-302)
         "request_item.send",  # P-06-T01 (TASK-415)
         "review.assign",
@@ -326,9 +361,17 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "sign_off.partner",
         "sign_off.prepare",
         "sign_off.read",  # P-04-T07 (TASK-413)
+        "sign_off.request_re_review",  # S26 or S27 matrix mark
         "sign_off.review",
         "soc_report.evaluate",
         "statement.approve",  # SPEC-312 (TASK-324)
+        "statement.draft",  # S26 or S27 matrix mark
+        "statement.read",  # S26 or S27 matrix mark
+        "statement.record_management_approval",  # S26 or S27 matrix mark
+        "statement.send_draft",  # S26 or S27 matrix mark
+        "statement.tie_out",  # S26 or S27 matrix mark
+        "subsequent_event.create",  # S26 or S27 matrix mark
+        "subsequent_event.update",  # S26 or S27 matrix mark
         "suggestion.resolve",  # P-04-T08 (TASK-414)
         "sum.export",  # A-06-T07 (SUM)
         "sum.read",
