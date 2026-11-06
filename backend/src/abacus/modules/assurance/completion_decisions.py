@@ -16,6 +16,7 @@ work (A-04 AC3.4):
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Final, cast
 from uuid import UUID
 
@@ -229,3 +230,17 @@ def register_completion_decision_kinds() -> None:
             apply=_apply_sum,
         )
     )
+
+
+_AUDIT_OWNERS: Final = {
+    "deficiency": text("SELECT id, engagement_id FROM deficiencies WHERE id = ANY(:ids)"),
+    "sum_snapshot": text("SELECT id, engagement_id FROM sum_snapshots WHERE id = ANY(:ids)"),
+}
+AUDIT_KINDS: Final = frozenset(_AUDIT_OWNERS)
+
+
+async def audit_owners(tenant: TenantContext, kind: str, ids: Sequence[UUID]) -> dict[UUID, UUID]:
+    """The trail places these rows on their engagement (SPEC-304; DEC-121)."""
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(_AUDIT_OWNERS[kind], {"ids": list(ids)})
+        return {found: owned for found, owned in rows}

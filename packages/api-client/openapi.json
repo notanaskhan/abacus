@@ -98452,6 +98452,14 @@
           },
           "state": {
             "cls": "internal",
+            "enum": [
+              "not_started",
+              "agent_tested",
+              "needs_human",
+              "pass",
+              "exception",
+              "no_effect"
+            ],
             "title": "State",
             "type": "string"
           }
@@ -211551,7 +211559,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -230516,7 +230524,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -245033,7 +245041,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -245182,7 +245190,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -245928,7 +245936,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {

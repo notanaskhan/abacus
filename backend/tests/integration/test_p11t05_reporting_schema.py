@@ -199,6 +199,15 @@ def test_ac33_every_table_is_tenant_scoped_with_forced_rls(db: sc.Database) -> N
     assert sc.check(db.owner_url, db.app_url) == []
 
 
+_STATEMENT_TABLES = {
+    "statement_versions",
+    "line_items",
+    "linked_values",
+    "tie_out_runs",
+    "statement_approvals",
+}
+
+
 @pytest.mark.parametrize("table", sorted(registry.INSERT_ONLY))
 def test_ac27_insert_only_tables_refuse_update_delete_and_truncate(
     db: sc.Database, table: str
@@ -212,8 +221,12 @@ def test_ac27_insert_only_tables_refuse_update_delete_and_truncate(
         _sql(
             db,
             "SELECT count(*) FROM pg_trigger t JOIN pg_proc p ON p.oid = t.tgfoid "
-            "WHERE t.tgrelid = $1::regclass AND p.proname = 'reporting_rows_immutable'",
+            "WHERE t.tgrelid = $1::regclass AND p.proname = $2",
             table,
+            # A-06-T19 (0660): statements v1's tables carry their own function.
+            "statement_rows_immutable"
+            if table in _STATEMENT_TABLES
+            else "reporting_rows_immutable",
         )
     )
     assert triggers == 2  # row UPDATE or DELETE, and statement TRUNCATE

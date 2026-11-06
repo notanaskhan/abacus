@@ -598,6 +598,7 @@ async def template_owner_route(
 
 @questionnaire_editor_router.post(
     f"{_T}/versions",
+    status_code=201,
     action="questionnaire_template.draft",
     response_model=OrganizerTemplateVersionOut,
     errors=(409, 501),
