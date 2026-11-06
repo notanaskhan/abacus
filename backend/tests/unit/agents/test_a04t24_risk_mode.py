@@ -138,7 +138,7 @@ def test_ac4_7_a_response_is_one_of_the_targets_and_nothing_else() -> None:
 def test_adr_050_the_list_of_targets_supports_no_number() -> None:
     """Without this, "3 of 29 exceptions" passes as the codes EBP-03 and AUD-29 hold digits."""
     cell = DraftedCell(cell="risk!B9", text="3 of 29 exceptions", citations=[])
-    names = {"t": "text", "v": "EBP-03, AUD-29"}
+    names: dict[str, object] = {"t": "text", "v": "EBP-03, AUD-29"}
     assert provenance_ok(cell, [], {"F5": Fact("F5", "as_a_figure", names)})
     assert not provenance_ok(
         cell, [], {"F5": Fact("F5", "response_targets", names, identifier=True)}
