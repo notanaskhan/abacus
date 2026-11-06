@@ -39,6 +39,9 @@ ROUTES = [r for router in c11_api.ROUTERS for r in router.routes if isinstance(r
 # P-11-T06 made the template routes live (`reporting/templates.py`; SPEC-520 AC-1 to AC-5) and
 # P-11-T11 the rest (`reporting/reads.py`): no C11 route answers 501.
 LIVE = {r.name for r in ROUTES}
+# A-06-T19: `c11_api.ROUTERS` also mounts the statements stub, whose actions and 501s its own
+# suite holds (`tests/contracts/statements`). C11's own routes hold C11's list.
+C11_ROUTES = [r for r in ROUTES if r.endpoint.__module__ == c11.__name__]
 MODELS = [
     v
     for v in vars(c11).values()
@@ -87,7 +90,7 @@ def test_ac31_the_generated_api_carries_every_c11_route() -> None:
     assert present == CONTRACT_ROUTES
 
 
-@pytest.mark.parametrize("route", ROUTES, ids=lambda r: r.name)
+@pytest.mark.parametrize("route", C11_ROUTES, ids=lambda r: r.name)
 def test_ac31_each_route_declares_one_matrix_action_and_stubs_answer_501(
     route: APIRoute,
 ) -> None:
