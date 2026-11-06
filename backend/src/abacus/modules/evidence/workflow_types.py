@@ -121,3 +121,11 @@ class FirmExportFacts:
     bytes: int
     segment_count: int
     object_prefix: str
+
+
+@dataclass(frozen=True)
+class FormExtractionInput:
+    """P-11-T26: identifiers only (AC7.7)."""
+
+    tenant_id: str
+    evidence_version_id: str
