@@ -26,14 +26,8 @@ from abacus.modules.assurance import (
     soc1_mode,
 )
 from abacus.modules.assurance import mapping_live as mapping_live
-from abacus.modules.assurance.archive_gate import g9
 from abacus.modules.assurance.audits_contract import audits_router
-from abacus.modules.assurance.completion import (
-    g6,
-    g7,
-    on_entry_client_decision,
-    on_entry_proposed,
-)
+from abacus.modules.assurance.completion import on_entry_client_decision, on_entry_proposed
 from abacus.modules.assurance.completion_contract import router as audit_completion_router
 from abacus.modules.assurance.completion_decisions import AUDIT_KINDS as DECISION_KINDS
 from abacus.modules.assurance.completion_decisions import audit_owners as decision_owners
@@ -98,7 +92,7 @@ from abacus.modules.assurance.phase import SUBSCRIPTIONS as PHASE_SUBSCRIPTIONS
 from abacus.modules.assurance.planning_contract import router as planning_router
 from abacus.modules.assurance.planning_gate import g4_facts
 from abacus.modules.assurance.providers import register as register_a01_providers
-from abacus.modules.assurance.release import RELEASE_MODE_SETTING, g8
+from abacus.modules.assurance.release import RELEASE_MODE_SETTING
 from abacus.modules.assurance.release_contract import router as audit_release_router
 from abacus.modules.assurance.review_gates import register_review_gates
 from abacus.modules.assurance.risks import AUDIT_KINDS as RISK_KINDS
@@ -139,7 +133,7 @@ from abacus.modules.assurance.tb_mapping_contract import router as tb_mapping_ro
 from abacus.modules.assurance.tb_read_model import tb_router
 from abacus.modules.assurance.trial_balance import adopt as adopt_trial_balance
 from abacus.modules.assurance.trial_balance import tb_facts, tb_reviewables
-from abacus.modules.engagements.api import register_gate_provider, work_item_engagement
+from abacus.modules.engagements.api import work_item_engagement
 from abacus.modules.identity.api import AbacusRouter, register_firm_setting
 from abacus.modules.review.api import (
     register_gate_kind,
@@ -176,11 +170,7 @@ register_reviewable_facts("mapping_set", mapping_facts)
 # SPEC-314 (TASK-332): EQR concurrence, the representation letter, release and the archive.
 # A-01-T23 (DEC-590): G8 and G9 are met by SPEC-314's in-app act or by the record-mode
 # external release and archive, whichever the firm's `assurance_release_mode` allowed.
-register_gate_provider("G6", g6)
-register_gate_provider("G7", g7)
-register_gate_provider("G8", g8)
-register_gate_provider("G9", g9)
-register_gates()  # A-04-T43 (DEC-2057): G4 from assurance/gates.py
+register_gates()  # A-04-T43, A-07-T15: G4 to G9 from assurance/gates.py
 # A-06-T10 (DEC-2062): a client's decision on an entry moves its misstatement.
 register_entry_decision_hook(on_entry_client_decision)
 register_entry_proposed_hook(on_entry_proposed)
