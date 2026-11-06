@@ -1,4 +1,4 @@
-"""A-04-T19's Remind against Postgres (TASK-5019; DEC-2388): the `reminded` event is stored in the
+"""A-04-T19's Remind against Postgres (TASK-5019; DEC-2483): the `reminded` event is stored in the
 flag's insert-only history under the session's actor kind, the flag's own row is untouched, a flag
 converted already answers 409, and a flag of another paper is 404. C5's drafting is stubbed: it has
 its own tests (P-06-T14)."""
