@@ -285,7 +285,7 @@ export function RiskRegisterPage({
                 onFilter(f ? "unaddressed" : null);
               }}
             />
-            {(revising || data?.revising === true) && <RevisingHeader />}
+            {(revising || data.revising === true) && <RevisingHeader />}
             {tab === "Linkage" && linkage.data !== undefined && (
               <LinkageMatrix linkage={linkage.data} />
             )}
