@@ -2,7 +2,7 @@
   "events": [
     {
       "eventId": "1",
-      "eventTime": "2026-11-06T10:42:26.068982502Z",
+      "eventTime": "2026-11-06T11:23:07.192806923Z",
       "eventType": "EVENT_TYPE_WORKFLOW_EXECUTION_STARTED",
       "taskId": "1048587",
       "workflowExecutionStartedEventAttributes": {
@@ -24,9 +24,9 @@
           ]
         },
         "workflowTaskTimeout": "10s",
-        "originalExecutionRunId": "01a1b073-de94-7ef9-b1b0-f5fdd18cfb23",
+        "originalExecutionRunId": "01a1b099-1e38-7c4c-8408-fd66fbf58375",
         "identity": "worker@recorder",
-        "firstExecutionRunId": "01a1b073-de94-7ef9-b1b0-f5fdd18cfb23",
+        "firstExecutionRunId": "01a1b099-1e38-7c4c-8408-fd66fbf58375",
         "attempt": 1,
         "firstWorkflowTaskBackoff": "0s",
         "workflowId": "recorder-notice-intake-already",
@@ -35,7 +35,7 @@
     },
     {
       "eventId": "2",
-      "eventTime": "2026-11-06T10:42:26.069155043Z",
+      "eventTime": "2026-11-06T11:23:07.194324590Z",
       "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
       "taskId": "1048588",
       "workflowTaskScheduledEventAttributes": {
@@ -49,13 +49,13 @@
     },
     {
       "eventId": "3",
-      "eventTime": "2026-11-06T10:42:26.080043752Z",
+      "eventTime": "2026-11-06T11:23:07.217816382Z",
       "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
       "taskId": "1048593",
       "workflowTaskStartedEventAttributes": {
         "scheduledEventId": "2",
         "identity": "worker@recorder",
-        "requestId": "a0452d6f-f4e0-46f1-82c4-39f3265b774b",
+        "requestId": "7304bc39-acf8-4a61-a005-e5b5ea53bd8f",
         "historySizeBytes": "492",
         "workerVersion": {
           "buildId": "recorder"
@@ -64,7 +64,7 @@
     },
     {
       "eventId": "4",
-      "eventTime": "2026-11-06T10:42:26.088935710Z",
+      "eventTime": "2026-11-06T11:23:07.237132090Z",
       "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
       "taskId": "1048598",
       "workflowTaskCompletedEventAttributes": {
@@ -76,9 +76,9 @@
         },
         "sdkMetadata": {
           "coreUsedFlags": [
-            1,
-            4,
             3,
+            4,
+            1,
             2
           ],
           "sdkName": "temporal-python",
@@ -89,7 +89,7 @@
     },
     {
       "eventId": "5",
-      "eventTime": "2026-11-06T10:42:26.089043502Z",
+      "eventTime": "2026-11-06T11:23:07.237303507Z",
       "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
       "taskId": "1048599",
       "activityTaskScheduledEventAttributes": {
@@ -129,13 +129,13 @@
     },
     {
       "eventId": "6",
-      "eventTime": "2026-11-06T10:42:26.089236627Z",
+      "eventTime": "2026-11-06T11:23:07.237613382Z",
       "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
       "taskId": "1048603",
       "activityTaskStartedEventAttributes": {
         "scheduledEventId": "5",
         "identity": "worker@recorder",
-        "requestId": "1520f9b0-fdc0-489c-bcf6-bc0857891147",
+        "requestId": "2f9618c0-6612-4d82-863d-945971f67e78",
         "attempt": 1,
         "workerVersion": {
           "buildId": "recorder"
@@ -144,7 +144,7 @@
     },
     {
       "eventId": "7",
-      "eventTime": "2026-11-06T10:42:26.091790668Z",
+      "eventTime": "2026-11-06T11:23:07.247511257Z",
       "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
       "taskId": "1048604",
       "activityTaskCompletedEventAttributes": {
@@ -165,7 +165,7 @@
     },
     {
       "eventId": "8",
-      "eventTime": "2026-11-06T10:42:26.091822668Z",
+      "eventTime": "2026-11-06T11:23:07.247637298Z",
       "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
       "taskId": "1048605",
       "workflowTaskScheduledEventAttributes": {
@@ -180,13 +180,13 @@
     },
     {
       "eventId": "9",
-      "eventTime": "2026-11-06T10:42:26.092584335Z",
+      "eventTime": "2026-11-06T11:23:07.249972215Z",
       "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
       "taskId": "1048609",
       "workflowTaskStartedEventAttributes": {
         "scheduledEventId": "8",
         "identity": "worker@recorder",
-        "requestId": "750861aa-f7de-4959-a1d2-3a4a0a2409b4",
+        "requestId": "5c3d4a93-8f9c-43f9-b252-4355f819e231",
         "historySizeBytes": "1505",
         "workerVersion": {
           "buildId": "recorder"
@@ -195,7 +195,7 @@
     },
     {
       "eventId": "10",
-      "eventTime": "2026-11-06T10:42:26.095119668Z",
+      "eventTime": "2026-11-06T11:23:07.267490673Z",
       "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
       "taskId": "1048613",
       "workflowTaskCompletedEventAttributes": {
@@ -211,7 +211,7 @@
     },
     {
       "eventId": "11",
-      "eventTime": "2026-11-06T10:42:26.095164085Z",
+      "eventTime": "2026-11-06T11:23:07.267552715Z",
       "eventType": "EVENT_TYPE_WORKFLOW_EXECUTION_COMPLETED",
       "taskId": "1048614",
       "workflowExecutionCompletedEventAttributes": {
