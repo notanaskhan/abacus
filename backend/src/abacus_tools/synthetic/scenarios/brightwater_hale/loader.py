@@ -4512,7 +4512,27 @@ async def _notice_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) ->
     stored = await stage_content(TENANT, f"{data['code']} {data['notice_code']}".encode())
     engagement = await notice_engagement_for(ctx, entity)
     if engagement is None:
-        raise LookupError(f"no notice engagement for {event.client}")
+        # QN-1: the notice's own engagement, opened as the firm opens one (DEC-2335).
+        engagement = UUID(stable_id(f"engagement:notice:{data['code']}"))
+        year = cast(int, data["tax_year"])
+        await _engagement_row(
+            conn,
+            engagement,
+            str(event.client),
+            str(event.client),
+            name=f"Notice response TY{year}",
+            type_="notice_response",
+            period=(date(year, 1, 1), date(year, 12, 31)),
+            creator=ctx.user_id,
+            created=None,
+        )
+        await conn.execute(
+            "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
+            "VALUES ($1, $2, $3, 'manager') ON CONFLICT DO NOTHING",
+            TENANT,
+            engagement,
+            ctx.user_id,
+        )
     async with uow(TenantContext(TENANT, "human", str(ctx.user_id))) as tx:
         version = await add_version(
             tx,
@@ -4524,17 +4544,22 @@ async def _notice_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) ->
             requested_by=ctx.user_id,
         )
     made = await create_notice_intake(
-        ctx, source="manual", evidence_version_id=version.id, inbox_item_id=None
+        ctx, source="upload", evidence_version_id=version.id, inbox_item_id=None
     )
     revised = await revise_notice_intake(
         ctx,
         made.id,
         made.row_version,
         fields=[
-            ("notice_code", str(data["notice_code"]), False),
-            ("tax_year", str(data["tax_year"]), False),
-            ("respond_by", str(data["respond_by"]), False),
-            ("amount_due", str(data["amount"]), False),
+            ("notice.code", str(data["notice_code"]), False),
+            ("notice.tax_year", str(data["tax_year"]), False),
+            ("notice.date", str(data["received"]), False),
+            *(
+                (("notice.respond_by", str(data["respond_by"]), False),)
+                if data["respond_by"]
+                else ()
+            ),
+            ("notice.amount_total", str(data["amount"]), False),
         ],
     )
     assignee = user_id_of(_SEATS[str(data["assignee"])])

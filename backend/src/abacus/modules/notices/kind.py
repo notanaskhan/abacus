@@ -4,6 +4,7 @@ unit of work."""
 
 from __future__ import annotations
 
+from datetime import date
 from uuid import UUID
 
 from abacus.kernel.db import TenantContext
@@ -20,6 +21,7 @@ class NoticeKind:
         return await status_of(tenant, work_item_id)
 
     async def create(self, tx: UnitOfWork, item: NewWorkItem) -> None:
+        received = item.details.get("received_on")
         await insert_notices(
             tx.session,
             {
@@ -27,6 +29,9 @@ class NoticeKind:
                 "work_item_id": item.work_item_id,
                 "engagement_id": item.engagement_id,
                 "notice_code": item.details.get("notice_code"),
-                "received_on": item.details.get("received_on"),
+                # The route's JSON gives a date; Create notice's details give ISO text.
+                "received_on": date.fromisoformat(received)
+                if isinstance(received, str)
+                else received,
             },
         )

@@ -36,31 +36,35 @@ class SeedNotice(NamedTuple):
     agency: str
     tax_year: int
     received: date
-    respond_by: date
+    respond_by: date | None  # a sent notice has no clock left
     amount: str
     status: str  # the row's status at the demo clock
     assignee: str
 
 
+# The nine rows of `apps/web/src/fixtures/seed/notices.ts`, the handoff's. N5 and N9 are unassigned
+# there; Create notice needs an assignee, so they sit with the filer here (DEC-2335).
 NOTICES: Final[tuple[SeedNotice, ...]] = (
-    SeedNotice("N1", "Marcus & Dana Whitley", "CP2000", "irs", 2024, date(2026, 8, 26),
-               date(2026, 9, 23), "753.01", "response_drafted", "KO"),
-    SeedNotice("N2", "Aurelio Santos", "CP14", "irs", 2024, date(2026, 7, 6),
-               date(2026, 7, 27), "1982.40", "received", "KO"),
-    SeedNotice("N3", "Claire Feld", "CP2000", "irs", 2023, date(2026, 8, 30),
-               date(2026, 9, 28), "1204.00", "analyzing", "SI"),
-    SeedNotice("N4", "Priya Iyer", "CP2000", "irs", 2024, date(2026, 9, 2),
-               date(2026, 10, 2), "420.55", "classified", "KO"),
-    SeedNotice("N5", "Tomas Varga", "CP14", "irs", 2024, date(2026, 9, 8),
-               date(2026, 10, 1), "310.40", "received", "PS"),
-    SeedNotice("N6", "Collins Family Trust", "CP501", "irs", 2023, date(2026, 8, 12),
-               date(2026, 9, 11), "96.20", "analyzing", "SI"),
-    SeedNotice("N7", "Ridgeline Holdings LP", "CO DR 3904", "state", 2024, date(2026, 8, 18),
-               date(2026, 9, 18), "2150.00", "response_drafted", "KO"),
-    SeedNotice("N8", "Halvard Group", "IL-1040", "state", 2023, date(2026, 7, 28),
-               date(2026, 8, 28), "640.00", "awaiting_irs", "SI"),
-    SeedNotice("N9", "Mercer Hill Health", "CA FTB 4600", "state", 2023, date(2026, 7, 2),
-               date(2026, 8, 2), "1810.00", "awaiting_irs", "PS"),
+    SeedNotice("N1", "Marcus & Dana Whitley", "CP2000", "irs", 2024, date(2026, 8, 24),
+               date(2026, 9, 23), "753.01", "analyzing", "KO"),
+    SeedNotice("N2", "Harold Stein", "CP2000", "irs", 2024, date(2026, 9, 2),
+               date(2026, 9, 30), "4210.00", "analyzing", "GT"),
+    SeedNotice("N3", "Wren & Avery Collins", "CP2000", "irs", 2023, date(2026, 7, 18),
+               None, "1980.00", "awaiting_irs", "JL"),
+    SeedNotice("N4", "Thomas & Irene Kowal", "CP14", "irs", 2024, date(2026, 8, 31),
+               date(2026, 9, 21), "3412.18", "response_drafted", "MA"),
+    SeedNotice("N5", "Aurelio Santos", "CP14", "irs", 2024, date(2026, 9, 10),
+               date(2026, 10, 1), "1106.00", "received", FILER),
+    SeedNotice("N6", "Rafael Quintero", "CP501", "irs", 2024, date(2026, 8, 28),
+               date(2026, 9, 28), "2240.00", "response_drafted", "LW"),
+    SeedNotice("N7", "Copperleaf Coffee Roasters, Inc.", "Notice of deficiency", "state", 2025,
+               date(2026, 9, 3),
+               date(2026, 10, 3), "640.00", "analyzing", "RM"),
+    SeedNotice("N8", "Meridian Tool & Die, Inc.", "Notice of tax due", "state", 2024,
+               date(2026, 8, 12),
+               None, "5880.00", "awaiting_irs", "YK"),
+    SeedNotice("N9", "Priyanka & Sam Iyer", "DTF-160", "state", 2024, date(2026, 9, 11),
+               date(2026, 10, 11), "918.00", "received", FILER),
 )  # fmt: skip
 
 
@@ -81,8 +85,9 @@ def counts() -> dict[str, int]:
     return found
 
 
-def _at(on: date) -> datetime:
-    return datetime(on.year, on.month, on.day, 9, 30, tzinfo=CT)
+# After the clients exist (a client's onboarding can post-date its notice's date) and before the
+# demo clock, Mon Sep 14, 2026. A notice's `received` is a field; this is only when it loads.
+LOADED_AT: Final = datetime(2026, 9, 14, 8, 0, tzinfo=CT)
 
 
 @register_slice(SLICE)
@@ -95,7 +100,7 @@ def notice_events() -> list[Event]:
         events.append(
             Event(
                 f"notice:{row.code}",
-                _at(row.received),
+                LOADED_AT,
                 "notices.seed_notice",
                 FILER,
                 SLICE,
@@ -105,7 +110,7 @@ def notice_events() -> list[Event]:
                     "agency": row.agency,
                     "tax_year": row.tax_year,
                     "received": row.received.isoformat(),
-                    "respond_by": row.respond_by.isoformat(),
+                    "respond_by": row.respond_by.isoformat() if row.respond_by else None,
                     "amount": row.amount,
                     "status": row.status,
                     "assignee": row.assignee,
