@@ -60,19 +60,20 @@ async def _read_fields(firm: Firm, version: uuid.UUID) -> None:
         )
 
 
-async def _entity_with_last4(firm: Firm, last4: str = LAST4) -> uuid.UUID:
+async def _entity_with_last4(firm: Firm, name: str = "Maria Santos") -> uuid.UUID:
     client = await firm.seed.value(
         "SELECT client_id FROM client_entities WHERE tenant_id = $1 LIMIT 1", firm.tenant_id
     )
     return await firm.seed.id(
         "INSERT INTO client_entities (tenant_id, client_id, name, tin_last4, tin_sealed, "
-        "tin_kind, tin_fingerprint, tin_status) VALUES ($1, $2, 'Maria Santos', $3, $4, 'ssn', "
-        "$5, 'on_file') RETURNING id",
+        "tin_kind, tin_fingerprint, tin_status) VALUES ($1, $2, $3, $4, $5, 'ssn', "
+        "$6, 'on_file') RETURNING id",
         firm.tenant_id,
         client,
-        last4,
+        name,
+        LAST4,
         b"sealed",
-        uuid.uuid4().bytes,
+        uuid.uuid4().bytes * 2,
     )
 
 
@@ -118,7 +119,7 @@ async def test_ac_several_entities_with_the_last_four_are_the_persons_pick(seed:
     version = await firm.version(b"%PDF-1.4 two candidates")
     await _read_fields(firm, version)
     first = await _entity_with_last4(firm)
-    second = await _entity_with_last4(firm)
+    second = await _entity_with_last4(firm, "Santos Family Trust")
     intake = await _intake(firm, version)
 
     await read_intake(firm.tenant_id, intake, None)
