@@ -287,3 +287,19 @@ describe("CLI-05 a · transcripts · 2 differences (T-01-T50)", () => {
     });
   });
 });
+
+describe("N-04-T22: CLI-05's links to the notice", () => {
+  it("lists the open notice and opens NOT-02", async () => {
+    show("a");
+    const row = await waitFor(
+      () => {
+        const found = document.querySelector("[data-open-notice]");
+        expect(found).not.toBeNull();
+        return found as HTMLAnchorElement;
+      },
+      { timeout: 6000 },
+    );
+    expect(row.textContent).toContain("CP2000 · TY2024");
+    expect(row.getAttribute("href")).toContain("/notices/");
+  });
+});

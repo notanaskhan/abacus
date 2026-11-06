@@ -9,6 +9,8 @@ import type { ConsentOut, TaxProfileOut } from "@abacus/api-client";
 import { REGISTRY_CONSENTS } from "./consents";
 import { stableId } from "./prng";
 
+const WHITLEY_NOTICE = stableId("notice:N1");
+
 function consentsOf(client: string): ConsentOut[] {
   return REGISTRY_CONSENTS.filter((c) => c.client_name === client);
 }
@@ -88,6 +90,15 @@ export const TAX_PROFILES: Readonly<Record<string, TaxProfileOut>> = {
     authorizations: [AUTHORIZATION_8821],
     elections: [],
     open_notices: 1,
+    // The N1 notice's id, as handlers/notices.ts derives it.
+    open_notice_rows: [
+      {
+        notice_id: WHITLEY_NOTICE,
+        notice_code: "CP2000",
+        tax_year: 2024,
+        respond_by: "2026-09-23",
+      },
+    ],
     allowed_actions: ["tax_profile.read", "consent.read", "consent.request", "tin.reveal"],
     client_name: "Marcus & Dana Whitley",
     client_kind: "Household",

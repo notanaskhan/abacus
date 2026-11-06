@@ -15,9 +15,11 @@ import { noticeId, noticeRow } from "../handlers/notices";
 import { NOTICES } from "./notices";
 import { stableId } from "./prng";
 
-export type Not02Variant = "a" | "b" | "c";
+export type Not02Variant = "a" | "b" | "c" | "e" | "f";
 
 const N1 = NOTICES.find((n) => n.key === "N1");
+const N3 = NOTICES.find((n) => n.key === "N3"); // e: Collins, Disagree, Awaiting IRS
+const N5 = NOTICES.find((n) => n.key === "N5"); // f: Santos, no authorization
 export const NOT02_NOTICE = noticeId("N1");
 export const NOT02_CARD = stableId("decision-card:notice:N1:position");
 const DANIEL = stableId("user:daniel-reyes");
@@ -27,8 +29,9 @@ const DOCS = [
 ];
 
 export function not02Notice(variant: Not02Variant = "a", persona = "kevin-osei"): NoticeOut {
-  if (N1 === undefined) throw new Error("N1");
-  const row = noticeRow(N1);
+  const shown = variant === "e" ? N3 : variant === "f" ? N5 : N1;
+  if (shown === undefined) throw new Error("notice");
+  const row = noticeRow(shown);
   return {
     row,
     notice_date: "2026-08-24",
@@ -56,7 +59,53 @@ export function not02Notice(variant: Not02Variant = "a", persona = "kevin-osei")
 const WHY =
   "The notice agrees with the return except for interest on two 1099-INTs issued after filing. 3,120.00 at the 22% bracket = 686.40; the taxable income stays inside the 22% bracket (94,300–201,050, MFJ 2024). No penalty is proposed. The IRS figured interest of 66.61 to the notice date (Aug 24, 2026); it keeps accruing until paid.";
 
+// N-04-T22, verbatim from the handoff's artboard e.
+const COLLINS_WHY =
+  "The IRS taxed 13,200.00 of 1099-B proceeds as gain (15% = 1,980.00) because the broker reported no basis (noncovered shares); the sale is on an aggregated Form 8949 line as filed, with a basis of 13,200.00, so the gain is zero";
+
 export function not02Analysis(variant: Not02Variant = "a"): AnalysisOut {
+  const base = analysisOfN1(variant);
+  if (variant === "e") {
+    return {
+      ...base,
+      rows: [
+        row("capital_gain", "Capital gain", "0.00", "13200.00", "13200.00"),
+        row("tax", "Tax", null, "1980.00", "1980.00"),
+        row("total_due", "Total due", null, null, "1980.00"),
+      ],
+      information_returns: [info("Form 1099-B", "", "13200.00", false, false, null)],
+      checks: null,
+      sources: [],
+      agent: {
+        ...base.agent,
+        explanation: COLLINS_WHY,
+        recommended_position: "disagree",
+        run_id: stableId("agent-run:N3:analysis"),
+      },
+      decision_card_id: null,
+    };
+  }
+  if (variant === "f") {
+    return {
+      ...base,
+      analysis_kind: "balance_due",
+      rows: [row("total_due", "Total due", null, null, "1106.00")],
+      information_returns: [],
+      checks: null,
+      sources: [],
+      agent: {
+        ...base.agent,
+        explanation: null,
+        recommended_position: null,
+        run_id: stableId("agent-run:N5:analysis"),
+      },
+      decision_card_id: null,
+    };
+  }
+  return base;
+}
+
+function analysisOfN1(variant: Not02Variant): AnalysisOut {
   const running = variant === "b";
   return {
     analysis_kind: "underreporter_comparison",

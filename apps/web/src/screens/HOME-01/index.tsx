@@ -282,6 +282,14 @@ function Deadlines({ home, now }: { home: HomeOut; now: Date }): JSX.Element {
             dateTone={row.risk === "due_soon" || row.risk === "overdue" ? "red" : "plain"}
             client={row.client}
             form={row.filing_label}
+            {...(row.kind === "notice"
+              ? {
+                  link: {
+                    label: COPY.openNotice,
+                    href: linkOf(to.NOT02({ noticeId: row.work_item_id })),
+                  },
+                }
+              : {})}
           />
         ))}
       </ul>

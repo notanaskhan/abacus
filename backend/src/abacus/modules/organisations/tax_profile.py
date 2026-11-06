@@ -36,6 +36,7 @@ from abacus.modules.organisations.consents_contract import (
     ConsentOut,
     ConsentRecipientOut,
     ConsentSignerOut,
+    OpenNoticeRowOut,
     TaxAuthorizationIn,
     TaxAuthorizationOut,
     TaxElectionIn,
@@ -85,6 +86,15 @@ class TaxProfileBackend:
 
 
 _BACKEND: list[TaxProfileBackend] = []
+
+
+OpenNoticesReader = Callable[[AuthContext, UUID], Awaitable[list[OpenNoticeRowOut]]]
+_OPEN_NOTICES: list[OpenNoticesReader] = []
+
+
+def register_open_notices(reader: OpenNoticesReader) -> None:
+    """N-04-T22: notices registers once, at import; before it does the count stays unknown."""
+    _OPEN_NOTICES[:] = [reader]
 
 
 def register_tax_profile_backend(backend: TaxProfileBackend) -> None:
@@ -228,13 +238,15 @@ async def profile(ctx: AuthContext, entity_id: UUID) -> TaxProfileOut:
         for n, row in enumerate(household[:2])
     ]
     tax = backend()
+    notices = await _OPEN_NOTICES[0](ctx, entity_id) if _OPEN_NOTICES else None
     return TaxProfileOut(
         client_entity_id=entity_id,
         taxpayer_tin=_masked(entity["tin_kind"], entity["tin_last4"], entity["tin_status"]),
         consents=await _consents(ctx, entity_id, str(entity["client_name"])),
         authorizations=await tax.authorizations(ctx, entity_id),
         elections=await tax.elections(ctx, entity_id),
-        open_notices=None,
+        open_notices=None if notices is None else len(notices),
+        open_notice_rows=notices or [],
         allowed_actions=held,
         client_name=str(entity["client_name"]),
         client_kind="Household" if entity["client_kind"] == "household" else None,
@@ -401,5 +413,6 @@ __all__ = [
     "live_entity",
     "live_transcript",
     "profile",
+    "register_open_notices",
     "register_tax_profile_backend",
 ]
