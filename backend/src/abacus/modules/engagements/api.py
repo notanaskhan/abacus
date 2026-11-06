@@ -81,6 +81,7 @@ from abacus.modules.engagements.contract import (
 )
 from abacus.modules.engagements.drafts import create_draft, draft_visible, start_acceptance
 from abacus.modules.engagements.events import EngagementCreated, IndependenceRequested
+from abacus.modules.engagements.gate_policy import required_gates as required_gates
 from abacus.modules.engagements.gates import recorded_letter, register_gates
 from abacus.modules.engagements.hold_scope import (
     EngagementHoldFacts,
@@ -266,6 +267,7 @@ from abacus.modules.engagements.work_items import (
     set_assurance_profile,
     wall_assignment_count,
 )
+from abacus.modules.engagements.work_items import engagement_type_of as engagement_type_of
 from abacus.modules.identity.api import (
     AbacusRouter,
     register_active_engagements,

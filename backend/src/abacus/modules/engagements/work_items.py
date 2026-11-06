@@ -140,6 +140,12 @@ async def portal_work_items(
     ]
 
 
+async def engagement_type_of(tenant: TenantContext, engagement_id: UUID) -> str | None:
+    """The engagement's type (A-07-T15: per-type gate policy), or None outside the tenant."""
+    async with tenant_session(tenant) as session:
+        return await session.scalar(select(Engagement.type).where(Engagement.id == engagement_id))
+
+
 async def assurance_item_id(tenant: TenantContext, engagement_id: UUID) -> UUID | None:
     """The engagement's assurance work item (one per attest engagement, migration 0068). For a
     caller that has authorised on the engagement."""
