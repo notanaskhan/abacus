@@ -900,7 +900,7 @@ class EligibilitySampleRowOut(BaseModel):
 
 
 class EntryRuleOut(BaseModel):
-    """The entry rule EBP-03 computed from: the verified provisions' (A-05-T16; DEC-2380). While it
+    """The entry rule EBP-03 computed from: the verified provisions' (A-05-T16; DEC-2387). While it
     is `unverified` or `unreadable` the ages and months are null and no row has an entry date."""
 
     model_config = ConfigDict(frozen=True)
@@ -1410,25 +1410,49 @@ async def ebp_eligibility_sample_route(work_item_id: UUID, ctx: Ctx) -> Eligibil
 # EBP-04
 @router.get("/ebp/contributions/reconciliation", action="ebp.read", response_model=FiguresOut)
 async def ebp_contributions_route(work_item_id: UUID, ctx: Ctx) -> FiguresOut:
-    """Contributions receivable at year end by code from the payroll register (A-05-T30)."""
+    """EBP-04 a's waterfall by code, register to statements (A-05-T30, T31; DEC-2361). Keys are
+    the screen's; `tie.*` rows appear only when the tie holds. W-3's waits on its figure."""
     await _gate(ctx, work_item_id, "ebp.read", _E)
-    from abacus.modules.assurance import ebp_remittances
+    from abacus.modules.assurance import ebp_investments, ebp_remittances
     from abacus.modules.engagements.api import engagement_metadata
 
     item = await assurance_item(ctx.tenant, work_item_id)
     year_end = (await engagement_metadata(ctx, item.engagement_id)).engagement.fiscal_period_end
-    found = await ebp_remittances.reconciliation(ctx.tenant, work_item_id, year_end)
-    return _figures(
-        "Contributions receivable",
-        [
-            ("tie.payroll", "Payroll deferrals", str(found.deferrals)),
-            ("tie.match", "Employer match", str(found.match)),
-            ("tie.less_late", "Less deposited after year end", str(-found.total)),
-            ("tie.trust_receipts", "Trust receipts", str(found.trust_receipts)),
-            ("receivable_regular", "Regular payroll", str(found.regular)),
-            ("receivable_late", "Late deposit", str(found.late)),
+    per_statements = await ebp_investments.contributions_per_statements(
+        ctx.tenant, item.engagement_id
+    )
+    found = await ebp_remittances.reconciliation(
+        ctx.tenant, work_item_id, year_end, per_statements
+    )
+
+    def tie(key: str, label: str, holds: bool | None) -> list[FigureRowOut]:
+        return [FigureRowOut(key=key, label=label, amount=None, status="tie")] if holds else []
+
+    def row(key: str, label: str, amount: Decimal) -> FigureRowOut:
+        return FigureRowOut(key=key, label=label, amount=amount)
+
+    payroll = found.deferrals + found.match
+    return FiguresOut(
+        title="Contributions per financial statements",
+        rows=[
+            *tie("tie.payroll_trust", "Payroll → trust", found.trust_ties),
+            *tie("tie.trust_fs", "Trust → FS", found.ties),
+            row("deferrals", "Participant deferrals per payroll register", found.deferrals),
+            row("match", "Employer match per payroll calculation", found.match),
+            row("total_payroll", "Total per payroll", payroll),
+            row("less_late", "Less deposited after year end", -found.total),
+            row("trust_receipts", "Payroll-sourced receipts per trust", found.trust_receipts),
+            row("rollovers", "Rollover contributions", found.rollovers),
+            row(
+                "total_trust",
+                "Contributions per trust report",
+                found.trust_receipts + found.rollovers,
+            ),
+            row("receivable_regular", "Contributions receivable: regular payroll", found.regular),
+            row("receivable_late", "Contributions receivable: late deposit", found.late),
         ],
-        str(found.total),
+        total=found.reconciled,
+        allowed_actions=[],
     )
 
 

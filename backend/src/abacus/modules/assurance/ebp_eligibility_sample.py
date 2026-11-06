@@ -8,7 +8,7 @@ back to a birthday. Nothing here is logged or written.
 
 The entry rule is the verified provision's (`ebp_provisions.entry_rule_read`, A-05-T16). Until it
 is verified and readable code computes nothing from it: no date of birth is opened, and the rows
-show no entry date, default rate, no-effect note or missed amount (DEC-2380).
+show no entry date, default rate, no-effect note or missed amount (DEC-2387).
 """
 
 from __future__ import annotations

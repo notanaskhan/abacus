@@ -107,7 +107,7 @@ export function ebp03Sample(variant: Ebp03Variant): EligibilitySampleOut {
   };
 }
 
-/** f: EBP-02's entry rule is not verified yet, so code computed nothing (DEC-2380). */
+/** f: EBP-02's entry rule is not verified yet, so code computed nothing (DEC-2387). */
 export function ebp03Unverified(): EligibilitySampleOut {
   const sample = ebp03Sample("a");
   return {

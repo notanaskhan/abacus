@@ -594,6 +594,11 @@ REVIEWED_FALLBACK: Final = frozenset(
         "questionnaire_template.imported",  # reviewed 2026-10-31 (S17-S19)
         "questionnaire_template.published",  # reviewed 2026-10-31 (S17-S19)
         "disclosure_checklist_template.imported",  # reviewed 2026-11-06 (A-06-T28)
+        "audit_misstatement.carried_from_py",  # reviewed 2026-11-06 (A-06-T28)
+        "statement.management_approval_recorded",  # reviewed 2026-11-06 (A-06-T28)
+        "statement.draft_requested",  # reviewed 2026-11-06 (A-06-T25)
+        "statement.draft_failed",  # reviewed 2026-11-06 (A-06-T25)
+        "statement.tie_out_requested",  # reviewed 2026-11-06 (A-06-T25)
         "disclosure_checklist_template.published",  # reviewed 2026-11-06 (A-06-T28)
         "notice.respond_by_alerted",  # reviewed 2026-11-06 (N-04-T16)
         "notice.follow_up_alerted",  # reviewed 2026-11-06 (N-04-T16)
@@ -725,6 +730,9 @@ REVIEWED_FALLBACK: Final = frozenset(
         "notice_response.sent",
         "notice.agency_reply_recorded",
         # reviewed 2026-11-06 (S27 gaps, TASK-3350 to TASK-3357)
+        "audit_misstatement.effect_stated",
+        "notice.analysis_started",
+        "notice.analysis_failed",
         "audit_finding.raised_from_exception",
         "audit_misstatement.passed_on_sum",
         "audit_misstatement.raised_from_exception",

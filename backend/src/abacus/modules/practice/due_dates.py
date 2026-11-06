@@ -113,6 +113,39 @@ async def due_dates_for(
     """The original and extended due dates for a form and period end, from the rules in effect
     on the period end (C21 `as_of` rule). Unknown form: `LookupError`."""
     rule, rules = await _rule_for(form, tax_year, period_end)
+    return await _dates_under(
+        rule, rules, form, tax_year, period_end, jurisdiction, location, event_date
+    )
+
+
+async def due_dates_for_extension(
+    extension_form: str, tax_year: int, period_end: date, jurisdiction: str
+) -> DueDates:
+    """The dates of the rule that extends with this form (T-03 §4.2: a state line's form must be
+    one the published rules name, and those rules give its dates). None names it: `LookupError`."""
+    sets = await references_in_effect("due_date_rules", period_end)
+    sets.sort(key=lambda r: r.tax_year != tax_year)
+    for found in sets:
+        rule = calendar.pick_extension_rule(
+            _rules(cast(DueDateRulesPayload, found.payload)), extension_form, period_end
+        )
+        if rule is not None:
+            return await _dates_under(
+                rule, found, rule.form, tax_year, period_end, jurisdiction, None, None
+            )
+    raise LookupError(f"due_date_rules:{extension_form}")
+
+
+async def _dates_under(
+    rule: calendar.Rule,
+    rules: ResolvedReference,
+    form: str,
+    tax_year: int,
+    period_end: date,
+    jurisdiction: str,
+    location: Location | None,
+    event_date: date | None,
+) -> DueDates:
     unrolled = calendar.due_dates(rule, period_end, frozenset())
     as_of = await _roll_as_of(unrolled.extended_due_on or unrolled.original_due_on)
     holidays, holiday_ids = await _holidays(as_of)

@@ -649,12 +649,26 @@ async def lock_archive(ctx: AuthContext, engagement_id: UUID, attest: bool) -> N
         )
 
 
+async def on_entry_proposed(
+    tx: UnitOfWork, entry_id: UUID, misstatement_id: UUID, entry_ref: str
+) -> None:
+    """An entry proposed for a misstatement names it: the register's row reads AJE-1, PAJE-1."""
+    await tx.session.execute(
+        text(
+            "UPDATE audit_misstatements SET ref = :r, proposed_entry_id = :e, "
+            "version = version + 1 WHERE id = :id"
+        ),
+        {"r": entry_ref, "e": entry_id, "id": misstatement_id},
+    )
+
+
 async def on_entry_client_decision(
     tx: UnitOfWork, entry_id: UUID, misstatement_id: UUID | None, decision: str
 ) -> None:
     """A-06-T10 (DEC-2062): a client's recorded decision on a proposed entry moves the
     misstatement it came from: approved, it reads Booked; declined, it stays Uncorrected
-    (Confirmed, on the SUM). A question leaves it as it is."""
+    (Confirmed, on the SUM). A question leaves it as it is. It also moves from Confirmed: nothing
+    sets Proposed to client yet, so an approved entry's misstatement would never read Booked."""
     del entry_id
     if misstatement_id is None or decision == "client_question":
         return
@@ -662,7 +676,7 @@ async def on_entry_client_decision(
     await tx.session.execute(
         text(
             "UPDATE audit_misstatements SET status = :s, version = version + 1 "
-            "WHERE id = :id AND status = 'proposed_to_client'"
+            "WHERE id = :id AND status IN ('confirmed', 'proposed_to_client')"
         ),
         {"s": status, "id": misstatement_id},
     )

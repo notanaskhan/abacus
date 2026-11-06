@@ -23,6 +23,19 @@ the providers through `visible()`; the agent proposes nothing on this screen.
 | e | ana-cruz | 9:24 AM | Audit Staff: drafts left out by the API and no + menu |
 | f | margaret-okonkwo | 9:24 AM | search "materiality" |
 
+## Links
+| From | To (manifest builder) | Planned or live |
+|---|---|---|
+| Methodology row, Used by | ENG-01, filtered by this methodology | planned |
+| Program row | KNW-03, the program editor | planned |
+| Checklist row | TAX-14, with this checklist | planned |
+| Firm standards and thresholds | KNW-04 | planned |
+| Templates and research | KNW-05 | planned |
+| My Agents | WB-06 | planned |
+| Edit Agent sheet (read-only unless you own it) | WB-07 | planned |
+| Versions and rollout | KNW-07 | planned |
+| Engagement template builder | KNW-06 | planned |
+
 ## Journeys
 `apps/web/e2e/journeys/knw-01-catalog.spec.ts`, and J01 step 5w (K-01-T11), fixture-first.
 
