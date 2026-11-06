@@ -1406,6 +1406,10 @@ async def ebp_contributions_route(work_item_id: UUID, ctx: Ctx) -> FiguresOut:
     return _figures(
         "Contributions receivable",
         [
+            ("tie.payroll", "Payroll deferrals", str(found.deferrals)),
+            ("tie.match", "Employer match", str(found.match)),
+            ("tie.less_late", "Less deposited after year end", str(-found.total)),
+            ("tie.trust_receipts", "Trust receipts", str(found.trust_receipts)),
             ("receivable_regular", "Regular payroll", str(found.regular)),
             ("receivable_late", "Late deposit", str(found.late)),
         ],
@@ -1442,9 +1446,11 @@ async def ebp_payrolls_route(work_item_id: UUID, ctx: Ctx) -> list[PayrollOut]:
 )
 async def ebp_contributions_test_route(work_item_id: UUID, ctx: Ctx) -> TestGridOut:
     """EBP-04 c: the 25-participant deferral and match recalculation on the shared grid (A-05-T32
-    contract first, DEC-2258): 501 until the recalculation service lands."""
+    contract first, DEC-2258; live with DEC-2356)."""
     await _gate(ctx, work_item_id, "ebp.read", _E)
-    _not_yet()
+    from abacus.modules.assurance import ebp_tests
+
+    return await ebp_tests.contribution_recalc(ctx, work_item_id)
 
 
 @router.get("/ebp/late-remittances", action="ebp.read", response_model=list[LateRemittanceOut])
