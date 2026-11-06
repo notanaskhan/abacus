@@ -469,6 +469,7 @@ async def management_approval_route(
     version_id: UUID, body: ManagementApprovalIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ApprovalRecordedOut:
     """Record mode: a person records management's signed approval."""
+    await _version_gate(ctx, version_id, "statement.record_management_approval")
     from abacus.modules.reporting import statements
 
     state, at = await statements.record_management_approval(

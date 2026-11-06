@@ -657,3 +657,91 @@ def test_ac_an_answer_effects_rule_key_is_a_ref_the_audit_accepts() -> None:
     from abacus.modules.requests.answer_effect_slots import rule_fingerprint
 
     assert Ref(rule=rule_fingerprint("q2_residency"), pending=0).fields["pending"] == 0
+
+
+async def test_ac_a_state_line_takes_its_forms_rule_and_an_unnamed_form_is_refused(
+    board: Board, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """T-03 §4.2: the form validates against published rules, whose row gives the state's dates."""
+    feld = _feld(board)
+    samuel = await board.person("Samuel Ito", None)
+    await _member(board, feld, samuel.user_id, "manager")
+
+    async def state_rule(form: str, *_args: object) -> _Dates | None:
+        return _Dates() if form == "IL-1065-V" else None
+
+    monkeypatch.setattr(extensions, "dates_for_extension_form", state_rule)
+    call = _as(samuel)
+    payment = {"return_id": str(feld), "jurisdiction": "IL", "amount": "28044.00"}
+    with frozen(DEMO):
+        refused = await call(
+            "POST",
+            "/v1/tax/extensions:prepare",
+            json={
+                "return_ids": [str(feld)],
+                "payments": [{**payment, "form": "NOT-A-FORM"}],
+            },
+            headers={"Idempotency-Key": uuid.uuid4().hex},
+        )
+        taken = await call(
+            "POST",
+            "/v1/tax/extensions:prepare",
+            json={
+                "return_ids": [str(feld)],
+                "payments": [{**payment, "form": "IL-1065-V"}],
+            },
+            headers={"Idempotency-Key": uuid.uuid4().hex},
+        )
+    assert refused.status_code == 409, refused.text
+    assert taken.status_code == 200, taken.text
+    form = await board.seed.value(
+        "SELECT form FROM filing_extensions WHERE tax_return_id = $1 AND jurisdiction = 'IL'",
+        feld,
+    )
+    assert form == "IL-1065-V"
+
+
+async def test_ac_an_estimate_confirmation_goes_in_the_years_part_and_names_its_contact(
+    board: Board,
+) -> None:
+    """DEC-31: a "{year} estimated payments" part on the basis return; a second send reuses it."""
+    feld = _feld(board)
+    samuel = await board.person("Samuel Ito", None)
+    await _member(board, feld, samuel.user_id, "manager")
+    entity = cast(
+        uuid.UUID,
+        await board.seed.value(
+            "SELECT client_entity_id FROM tax_returns WHERE work_item_id = $1", feld
+        ),
+    )
+    dates = [(q, date(2028, q * 3, 15), None) for q in (1, 2, 3, 4)]
+    with frozen(DEMO):
+        schedule = await estimates.create_estimate_schedule(
+            samuel,
+            client_entity_id=entity,
+            basis_tax_return_id=feld,
+            tax_year=2027,
+            jurisdiction="US",
+            form="1040-ES",
+            method="prior_year_110",
+            due_dates=dates,
+        )
+        first = await estimates.request_confirmation(samuel, schedule, 1, None)
+        second = await estimates.request_confirmation(samuel, schedule, 2, None)
+    assert first.request_list_id == second.request_list_id
+    parts = await board.seed.rows(
+        "SELECT name, status, work_item_id FROM request_lists WHERE id = $1",
+        first.request_list_id,
+    )
+    assert parts[0]["name"] == "2027 estimated payments"
+    assert parts[0]["status"] == "published"
+    assert parts[0]["work_item_id"] == feld
+
+
+async def test_ac_a_list_cursor_is_sealed_to_its_query(board: Board) -> None:
+    samuel = await board.person("Samuel Ito", None)
+    call = _as(samuel)
+    with frozen(DEMO):
+        refused = await call("GET", "/v1/tax/extensions?tax_year=2026&cursor=50")
+    assert refused.status_code == 422, refused.text
+    assert "cursor_invalid" in refused.text

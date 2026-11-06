@@ -37,6 +37,7 @@ from abacus.modules.tax.due_dates import (
     on_reference_set_published,
     recompute_unfiled,
     register_due_dates_source,
+    register_extension_dates_source,
     rule_texts,
     set_extended,
 )
@@ -220,6 +221,7 @@ __all__ = [
     "recompute_unfiled",
     "record_sync_state",
     "register_due_dates_source",
+    "register_extension_dates_source",
     "register_final_approval_blocker",
     "rule_texts",
     "set_extended",

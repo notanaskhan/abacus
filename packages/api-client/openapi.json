@@ -21089,6 +21089,19 @@
             "title": "Citation Ids",
             "type": "array"
           },
+          "concluded_by_initials": {
+            "anyOf": [
+              {
+                "maxLength": 8,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Concluded By Initials"
+          },
           "concluded_severity": {
             "anyOf": [
               {
@@ -21265,41 +21278,16 @@
             "title": "Column Set",
             "type": "string"
           },
-          "effect": {
+          "fs_effect": {
             "anyOf": [
               {
-                "additionalProperties": {
-                  "maxLength": 500,
-                  "type": "string"
-                },
-                "propertyNames": {
-                  "enum": [
-                    "description",
-                    "workpaper_ref",
-                    "assets",
-                    "liabilities",
-                    "net_assets",
-                    "change_in_net_assets"
-                  ]
-                },
-                "type": "object"
+                "$ref": "#/components/schemas/MisstatementEffectIn"
               },
               {
                 "type": "null"
               }
             ],
-            "cls": "confidential",
-            "title": "Effect"
-          },
-          "nature": {
-            "cls": "internal",
-            "default": "misstatement",
-            "enum": [
-              "misstatement",
-              "reclassification"
-            ],
-            "title": "Nature",
-            "type": "string"
+            "cls": "confidential"
           },
           "projection_ref": {
             "anyOf": [
@@ -21313,27 +21301,6 @@
             ],
             "cls": "internal",
             "title": "Projection Ref"
-          },
-          "sample_error": {
-            "anyOf": [
-              {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-                    "type": "string"
-                  }
-                ],
-                "cls": "confidential"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "cls": "confidential",
-            "title": "Sample Error"
           },
           "seen_version": {
             "cls": "internal",
@@ -61589,6 +61556,158 @@
           "expected_version"
         ],
         "title": "MinutesIn",
+        "type": "object"
+      },
+      "MisstatementEffectIn": {
+        "additionalProperties": false,
+        "description": "What the SUM statement shows for a misstatement (AUD-16 a; DEC-2360): its words and signed\neffect per column. A column left out is nil; both views left out state the amount.",
+        "properties": {
+          "assets": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                    "type": "string"
+                  }
+                ],
+                "cls": "confidential"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Assets"
+          },
+          "change_in_net_assets": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                    "type": "string"
+                  }
+                ],
+                "cls": "confidential"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Change In Net Assets"
+          },
+          "client_note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Client Note"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Description"
+          },
+          "liabilities": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                    "type": "string"
+                  }
+                ],
+                "cls": "confidential"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Liabilities"
+          },
+          "net_assets": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                    "type": "string"
+                  }
+                ],
+                "cls": "confidential"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Net Assets"
+          },
+          "workpaper_ref": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Workpaper Ref"
+          }
+        },
+        "title": "MisstatementEffectIn",
+        "type": "object"
+      },
+      "MisstatementEffectPatchIn": {
+        "additionalProperties": false,
+        "properties": {
+          "fs_effect": {
+            "$ref": "#/components/schemas/MisstatementEffectIn",
+            "cls": "confidential"
+          },
+          "seen_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Seen Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "fs_effect",
+          "seen_version"
+        ],
+        "title": "MisstatementEffectPatchIn",
         "type": "object"
       },
       "MisstatementIn": {
@@ -111675,7 +111794,7 @@
     },
     "/v1/audits/{work_item_id}/ebp/contributions/reconciliation": {
       "get": {
-        "description": "Contributions receivable at year end by code from the payroll register (A-05-T30).",
+        "description": "EBP-04 a's waterfall by code, register to statements (A-05-T30, T31; DEC-2361). Keys are\nthe screen's; `tie.*` rows appear only when the tie holds. W-3's waits on its figure.",
         "operationId": "ebp_contributions",
         "parameters": [
           {
@@ -186746,7 +186865,7 @@
     },
     "/v1/findings/{finding_id}/convert-to-misstatement": {
       "post": {
-        "description": "A projected misstatement takes its figure from sampling (422 `projection_unavailable`\nwithout a sample set and its error; T11).",
+        "description": "A projected misstatement takes its figure from sampling (422 `projection_unavailable`\nuntil A-03 exposes its projection facts; T11).",
         "operationId": "finding_to_misstatement",
         "parameters": [
           {
@@ -216696,6 +216815,154 @@
         "x-abacus-action": "methodology.read"
       }
     },
+    "/v1/misstatements/{misstatement_id}/effect": {
+      "patch": {
+        "description": "AUD-16's Edit: a person states the row's words and effect (DEC-2360; 409 when it moved).",
+        "operationId": "misstatement_effect",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "misstatement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Misstatement Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MisstatementEffectPatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/abacus__modules__assurance__findings_contract__MisstatementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Misstatement Effect Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "misstatement.update"
+      }
+    },
     "/v1/misstatements/{misstatement_id}/pass-to-sum": {
       "post": {
         "description": "DF-28: the EP passes a declined misstatement on SUM with a reason (T09).",
@@ -218738,7 +219005,7 @@
     },
     "/v1/notices/{notice_id}/analysis/run": {
       "post": {
-        "description": "Idempotent on `inputs_hash`.",
+        "description": "Starts `NoticeAnalysisWorkflow`; NOT-02 polls the analysis. Idempotent on `inputs_hash`.",
         "operationId": "analysis_run",
         "parameters": [
           {

@@ -4229,7 +4229,7 @@ async def _completion_finding_recorded(
         column_set="ebp_net_assets",
         projection_ref=cast(UUID | None, sample),
         sample_error=None if seed.sample_error is None else Decimal(seed.sample_error),
-        effect=seed.effect,
+        fs_effect=seed.effect,
         nature=cast(Literal["misstatement", "reclassification"], seed.nature),
     )
 
@@ -4283,6 +4283,21 @@ async def _completion_client_decision(conn: asyncpg.Connection, _: Scenario, eve
         reason=seed.reason,
         evidence_version_id=await _stored_evidence(conn, ctx, item, f"Dana {seed.finding}"),
     )
+    if seed.note is not None:
+        # AUD-16's client note, on what the misstatement already states (DEC-2360's writer).
+        misstatement = await _completion_misstatement(conn, seed.finding)
+        row = await tenant_row(
+            conn,
+            TENANT,
+            "SELECT version, fs_effect FROM audit_misstatements WHERE id = $1",
+            misstatement,
+        )
+        await set_misstatement_effect(
+            ctx,
+            misstatement,
+            int(cast(int, cast(Any, row)["version"])),
+            {**json.loads(cast(str, cast(Any, row)["fs_effect"])), "client_note": seed.note},
+        )
 
 
 async def _completion_severity_requested(
