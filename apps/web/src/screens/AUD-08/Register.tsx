@@ -192,6 +192,8 @@ function RiskRow({
   );
 }
 
+const REVISING_POLL_MS = 5000;
+
 export function RiskRegisterPage({
   auditId,
   filter,
@@ -217,6 +219,8 @@ export function RiskRegisterPage({
   const register = useQuery({
     ...riskRegisterOptions(path),
     enabled: on && engagementId !== undefined,
+    // A-04-T29: poll while the re-draft after Internal Control runs (AC4.8).
+    refetchInterval: (query) => (query.state.data?.revising === true ? REVISING_POLL_MS : false),
   });
   const linkage = useQuery({
     ...riskLinkageOptions(path),
@@ -281,7 +285,7 @@ export function RiskRegisterPage({
                 onFilter(f ? "unaddressed" : null);
               }}
             />
-            {revising && <RevisingHeader />}
+            {(revising || data?.revising === true) && <RevisingHeader />}
             {tab === "Linkage" && linkage.data !== undefined && (
               <LinkageMatrix linkage={linkage.data} />
             )}
