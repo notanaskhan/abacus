@@ -149,6 +149,25 @@ def counts() -> dict[str, int]:
     }
 
 
+# A return's federal extension form (the Code's, not the firm's; the board's labels, DEC-76).
+_FEDERAL_FORM: Final[dict[str, str]] = {
+    "1040": "4868",
+    "1040-X": "4868",
+    "1041": "7004",
+    "1065": "7004",
+    "1120": "7004",
+    "1120-S": "7004",
+    "990": "8868",
+    "990-PF": "8868",
+    "706": "4768",
+    "709": "8892",
+}
+
+
+def federal_form(return_form: str) -> str:
+    return _FEDERAL_FORM.get(return_form, "7004")
+
+
 def money(value: str | None) -> Decimal | None:
     return None if value is None else Decimal(value)
 

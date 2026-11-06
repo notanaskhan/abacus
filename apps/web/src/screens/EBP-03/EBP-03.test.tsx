@@ -53,6 +53,21 @@ describe.each(STATES)("EBP-03 %s", (state) => {
   });
 });
 
+describe("EBP-03 exceptions", () => {
+  it("a: Raise exception… records one draft finding, then stays disabled", async () => {
+    show("a");
+    await matrix();
+    const raise = [...document.querySelectorAll("button")].find((b) =>
+      b.textContent.includes("Raise exception"),
+    ) as HTMLButtonElement;
+    expect(raise.disabled).toBe(false);
+    fireEvent.click(raise);
+    await waitFor(() => {
+      expect(raise.disabled).toBe(true);
+    });
+  });
+});
+
 describe("EBP-03 results", () => {
   it("a: two exceptions use the Flag and the Exception pill only", async () => {
     show("a");

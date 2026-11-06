@@ -61,11 +61,13 @@ from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, UnitOfWork, uow
 from abacus.modules.agents.draft_start import DraftingUnavailable
+from abacus.modules.agents.events import SectionDraftFinished
 from abacus.modules.agents.handoff import DraftCitation, DraftedCell, DraftedFlag, SectionDraft
 from abacus.modules.agents.proposals import ProposalInvalid, create_suggestion
 from abacus.modules.agents.repository import (
     finish_run,
     insert_run,
+    latest_completed_run,
     lock_run,
     run_for_event,
     runs_since,
@@ -237,10 +239,7 @@ async def start(
     preparer = mode_preparer(mode)
     if preparer is not None:
         await preparer(ctx, engagement_id, paper)
-    event = uuid5(
-        NAMESPACE_URL,
-        f"abacus:section_draft:{ctx.tenant_id}:{workpaper_id}:{section_key}:{idempotency_key}",
-    )
+    event = _source_event(ctx.tenant_id, workpaper_id, section_key, idempotency_key)
     reader = _reader(ctx.tenant_id, f"agents:{drafter.id}")
     async with tenant_session(reader) as session:
         existing = await run_for_event(session, drafter.id, event)
@@ -630,7 +629,40 @@ async def _draft(
                 target=Target("agent_run", run.id),
                 after=Ref(suggestions=len(suggestions), unsupported=len(unsupported)),
             )
+            tx.emit(
+                SectionDraftFinished(
+                    run_id=run.id,
+                    engagement_id=cast(UUID, run.engagement_id),
+                    workpaper_id=workpaper_id,
+                    mode=mode,
+                    initiator_user_id=run.initiator_user_id,
+                )
+            )
     return DraftOutcome(run.id, "completed", tuple(suggestions), tuple(unsupported))
+
+
+async def followed_up_running(
+    tenant_id: UUID, engagement_id: UUID, after_mode: str, workpaper_id: UUID, key_prefix: str
+) -> bool:
+    """Is the run started after this engagement's latest `after_mode` run still running? A-04-T29:
+    AUD-08's "Revising after Internal Control…" for as long as the re-draft runs (AC4.8)."""
+    reader = _reader(tenant_id, f"agents:{DRAFTER}")
+    async with tenant_session(reader) as session:
+        latest = await latest_completed_run(session, DRAFTER, engagement_id, after_mode)
+        if latest is None:
+            return False
+        event = _source_event(tenant_id, workpaper_id, None, f"{key_prefix}:{latest}")
+        found = await run_for_event(session, DRAFTER, event)
+    return found is not None and found.status == "running"
+
+
+def _source_event(
+    tenant_id: UUID, workpaper_id: UUID, section_key: str | None, idempotency_key: str
+) -> UUID:
+    return uuid5(
+        NAMESPACE_URL,
+        f"abacus:section_draft:{tenant_id}:{workpaper_id}:{section_key}:{idempotency_key}",
+    )
 
 
 async def _raise_flags(
