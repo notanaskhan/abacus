@@ -64,9 +64,8 @@ def tax(taxable_income: Decimal, table: Schedule) -> Decimal:
             top = income if upper is None else min(income, upper)
             if top > lower:
                 owed += (top - lower) * rate
-            if upper is None or income <= upper:
-                break
-            lower = upper
+            if upper is not None:
+                lower = upper
         return quantize_half_up(owed, 2)
 
 

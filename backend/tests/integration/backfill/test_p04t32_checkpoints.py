@@ -501,7 +501,7 @@ async def test_agent_and_system_never_decide_and_staff_cannot_approve(world: Wor
     assert await _counts(world, target) == (1, 1, 0)
 
 
-async def test_the_flag_off_answers_404_and_another_firm_sees_nothing(
+async def test_the_retired_flag_changes_nothing_and_another_firm_sees_nothing(
     world: World, net: Net
 ) -> None:
     target, ids, _ = await _six(world)
@@ -514,7 +514,8 @@ async def test_the_flag_off_answers_404_and_another_firm_sees_nothing(
         world.tenant_id,
     )
     forget_flags()
+    # P-04-T62 (DEC-2221): a leftover row for the retired flag no longer turns the read off.
     off = await world.call(
         "GET", f"{CHECKPOINTS}?target_type={PROBE}&target_id={target}", "samuel"
     )
-    assert off.status_code == 404
+    assert off.status_code == 200
