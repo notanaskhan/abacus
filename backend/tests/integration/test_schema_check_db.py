@@ -1597,7 +1597,19 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "integration_mappings": frozenset(
             {"direction", "target_value", "updated_at", "updated_by", "version"}
         ),  # 0466
-        "questionnaire_template_versions": frozenset({"published_at", "published_by"}),  # 0467
+        # T-03-T03 (0655): the editor edits drafts in place (DEC-2202).
+        "questionnaire_template_versions": frozenset(
+            {
+                "applies_to_tax_year",
+                "change_summary",
+                "published_actor_kind",
+                "published_at",
+                "published_by",
+                "questionnaire_id",
+                "row_version",
+                "status",
+            }
+        ),
         "questionnaires": frozenset(
             {
                 "completed_at",
@@ -1608,7 +1620,27 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "submitted_by",
             }
         ),  # 0467
-        "questions": frozenset({"sent_at", "sent_by"}),  # 0467
+        # T-03-T03 (0655): the editor edits drafts in place (DEC-2202).
+        "questions": frozenset(
+            {
+                "amount_parts",
+                "choices",
+                "client_wording",
+                "conditional_on_question_id",
+                "conditional_value",
+                "effect_rules",
+                "help_text",
+                "internal_helper",
+                "position",
+                "required",
+                "retired_at",
+                "section_id",
+                "sent_at",
+                "sent_by",
+                "show_when",
+                "type",
+            }
+        ),
         "tax_authorizations": frozenset(
             {"envelope_id", "evidence_version_id", "row_version", "status"}
         ),  # 0550
@@ -1890,6 +1922,264 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "template_version_id",
             }
         ),
+        # S26, S27: each table's declared UPDATE grant (schema check holds it to the database).
+        "completion_items": frozenset(
+            {
+                "depends_on_client",
+                "derived",
+                "due_on",
+                "evidence_text",
+                "gate_tag",
+                "last_event_id",
+                "link_target",
+                "na_basis_sealed",
+                "na_by",
+                "status",
+                "updated_at",
+                "version",
+            }
+        ),
+        "control_activities": frozenset(
+            {
+                "design",
+                "implementation",
+                "reliance",
+                "row_version",
+                "service_organization_id",
+                "updated_at",
+            }
+        ),
+        "control_exceptions": frozenset(
+            {
+                "citation_ids",
+                "coso_component",
+                "description",
+                "disposition",
+                "matter",
+                "misstatement_candidate_amount",
+                "proposed_by_kind",
+                "proposed_by_user_id",
+                "proposed_severity",
+                "routed_kind",
+                "routed_ref",
+                "row_version",
+                "suggestion_id",
+                "updated_at",
+            }
+        ),
+        "cuecs": frozenset(
+            {"control_activity_id", "evidence_refs", "page_citation_id", "status", "updated_at"}
+        ),
+        "disclosure_checklist_answers": frozenset(
+            {
+                "adopted_by",
+                "answer",
+                "answered_by",
+                "note_ref",
+                "reason",
+                "reviewed_by",
+                "state",
+                "suggestion_id",
+                "updated_at",
+                "version",
+            }
+        ),
+        "disclosure_checklist_template_versions": frozenset(
+            {"published_at", "published_by", "status"}
+        ),
+        "ebp_certification_points": frozenset(
+            {"citation_id", "proposed_answer", "updated_at", "version"}
+        ),
+        "ebp_form5500_drafts": frozenset({"status", "updated_at", "version"}),
+        "ebp_form5500_lines": frozenset(
+            {
+                "classification",
+                "classified_by_kind",
+                "difference",
+                "engine_version",
+                "f5500_amount",
+                "fs_amount",
+                "fs_ref",
+                "inputs_hash",
+                "note_ref",
+                "updated_at",
+                "version",
+            }
+        ),
+        "ebp_late_remittances": frozenset(
+            {
+                "correction_status",
+                "engine_name",
+                "engine_version",
+                "excise_exposure",
+                "finding_id",
+                "form_5330_status",
+                "inputs_hash",
+                "interest_days",
+                "lost_earnings",
+                "lost_earnings_deposited_on",
+                "rate",
+                "rate_ref",
+                "scc_notice_on",
+                "schedule_h_4a",
+                "updated_at",
+                "version",
+            }
+        ),
+        "ebp_part_iv_answers": frozenset(
+            {
+                "amount",
+                "draft_answer",
+                "evidence_ref",
+                "issue_id",
+                "result",
+                "updated_at",
+                "version",
+            }
+        ),
+        "ebp_supplemental_schedules": frozenset(
+            {
+                "engine_version",
+                "generated_document_id",
+                "inputs_hash",
+                "rows",
+                "total",
+                "updated_at",
+                "version",
+            }
+        ),
+        "ebp_trust_report_lines": frozenset({"superseded_by", "updated_at", "version"}),
+        "eqr_checklist_items": frozenset(
+            {"status", "sub_line", "updated_at", "updated_by", "version"}
+        ),
+        "eqr_digest_cards": frozenset(
+            {"reviewed_actor_kind", "reviewed_at", "reviewed_by", "superseded_by"}
+        ),
+        "eqr_reviews": frozenset({"eligibility_snapshot", "status", "updated_at", "version"}),
+        "estimate_installments": frozenset(
+            {
+                "amount",
+                "confirmation_request_item_id",
+                "confirmed_at",
+                "confirmed_by_contact_id",
+                "due_on",
+                "due_rules_version_id",
+                "paid_on",
+                "row_version",
+                "scheduled_for",
+                "status",
+            }
+        ),
+        "estimate_schedules": frozenset(
+            {
+                "annual_required",
+                "engine_version",
+                "inputs_hash",
+                "method",
+                "payment_method_label",
+                "prior_agi_over_threshold",
+                "prior_year_tax",
+                "prior_year_tax_ref",
+                "projected_withholding",
+                "row_version",
+            }
+        ),
+        "extension_payments": frozenset(
+            {
+                "approved_actor_kind",
+                "approved_at",
+                "approved_by",
+                "confirmation_evidence_version_id",
+                "paid_on",
+            }
+        ),
+        "filing_extensions": frozenset(
+            {
+                "ack_received_at",
+                "due_rules_version_id",
+                "engine_version",
+                "extended_due_on",
+                "filed_form_evidence_version_id",
+                "filed_on",
+                "filed_recorded_by",
+                "form",
+                "inputs_hash",
+                "likely_note",
+                "likely_reasons",
+                "likely_to_extend",
+                "original_due_on",
+                "projected_liability",
+                "projected_liability_ref",
+                "projected_liability_source",
+                "reject_code",
+                "row_version",
+                "safe_harbor_pct",
+                "safe_harbor_target",
+                "status",
+                "withholding_plus_estimates",
+            }
+        ),
+        "filings": frozenset(
+            {
+                "ack_evidence_version_id",
+                "due_on",
+                "extended_due_on",
+                "filed_on",
+                "status",
+                "updated_at",
+                "version",
+            }
+        ),
+        "going_concern_evaluations": frozenset(
+            {
+                "decision_card_id",
+                "engine_version",
+                "inputs",
+                "inputs_hash",
+                "updated_at",
+                "version",
+            }
+        ),
+        "legal_letters": frozenset(
+            {
+                "basis_sealed",
+                "not_applicable",
+                "request_item_id",
+                "status",
+                "updated_at",
+                "version",
+            }
+        ),
+        "questionnaire_sections": frozenset({"key", "name", "position", "retired_at"}),
+        "questionnaire_templates": frozenset({"form_family", "key", "owner_id"}),
+        "soc_exceptions": frozenset({"impact", "impact_rationale", "routed_ref", "updated_at"}),
+        "soc_report_evaluations": frozenset(
+            {
+                "bridge_letter_evidence_version_id",
+                "bridge_letter_request_item_id",
+                "engine_version",
+                "gap_days",
+                "inputs_hash",
+                "objectives_relevant",
+                "objectives_total",
+                "opinion",
+                "period_end",
+                "period_start",
+                "reliance_card_id",
+                "reliance_state",
+                "report_date",
+                "report_type",
+                "row_version",
+                "service_auditor_name",
+                "updated_at",
+            }
+        ),
+        "statement_documents": frozenset(
+            {"current_version_no", "management_approval", "row_version", "status", "updated_at"}
+        ),
+        "subsequent_event_procedures": frozenset(
+            {"performed_by", "performed_through", "run_id", "status", "updated_at", "version"}
+        ),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
@@ -1911,6 +2201,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         {"id", "tenant_id", "client_entity_id", "period_start", "period_end", "pulled_at"}
         | {"source", "raw_fingerprint", "line_count", "total_debit", "total_credit"}
         | {"label"}  # A-02-T04 (0149); `source_kind` is generated
+        | {"source_evidence_version_id", "extraction_run_id"}  # A-05-T28 (0659, DEC-2208)
     )
     assert sc.APP_INSERT_COLUMNS["trial_balance_lines"] == frozenset(
         {"id", "tenant_id", "snapshot_id", "account_code", "account_name", "debit", "credit"}
@@ -2107,6 +2398,21 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "notice_response_versions": "notice_rows_immutable",  # 0650 (N-04-T03)
         "notice_sent_records": "notice_rows_immutable",  # 0650 (N-04-T03)
         "notice_agency_replies": "notice_rows_immutable",  # 0650 (N-04-T03)
+        # S26, S27: insert-only tables (A-04-T25, A-05, A-06-T19, A-07, P-11-T22, T-03-T03).
+        "answer_effects": "t03_frozen_row",
+        "ebp_certification_evaluations": "ebp_certification_evaluations_immutable",
+        "ebp_late_remittance_events": "ebp_late_remittance_events_immutable",
+        "extracted_fields": "trust_kit_immutable",
+        "extracted_table_cells": "trust_kit_immutable",
+        "extracted_tables": "trust_kit_immutable",
+        "line_items": "statement_rows_immutable",
+        "linked_values": "statement_rows_immutable",
+        "ocr_runs": "trust_kit_immutable",
+        "statement_approvals": "statement_rows_immutable",
+        "statement_versions": "statement_rows_immutable",
+        "subsequent_events": "a07_rows_immutable",
+        "tie_out_runs": "statement_rows_immutable",
+        "walkthroughs": "walkthroughs_immutable",
     }
     assert _evidence_problems(evidence) == []
 
