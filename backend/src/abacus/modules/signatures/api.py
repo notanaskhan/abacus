@@ -56,6 +56,7 @@ from abacus.modules.signatures.events import (
     EnvelopeSignerVerificationFailed,
     EnvelopeSuperseded,
 )
+from abacus.modules.signatures.gate_sources import register_envelope_gates
 from abacus.modules.signatures.hub import seal_ip
 from abacus.modules.signatures.imports import UnconsumedFile, staged_files
 from abacus.modules.signatures.integrity import ACTIVITIES as INTEGRITY_ACTIVITIES
@@ -179,6 +180,7 @@ register_letter_source()
 # live in audit_trail's catalogue: an engine never imports an edge module, T08).
 register_gate_kind(countersign.SEND_GATE, countersign.send_gate)
 register_gate_kind(countersign.COUNTERSIGN_GATE, countersign.countersign_gate)
+register_envelope_gates()  # I-01-T23: the rows HOME-01 and HOME-02 list
 register_home_count("signatures_out", countersign.signatures_out)
 # The trail places an envelope, and a consumed import file, on its client (SPEC-304; DEC-121).
 register_client_owners(CLIENT_KINDS, audit_clients)

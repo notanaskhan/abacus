@@ -36,7 +36,7 @@ from .support import Json, Net, Person, Site
 
 pytestmark = pytest.mark.asyncio
 HOME: Final = "/v1/home"
-FLAGS: Final = ("home.dashboard", "review.grammar_api")
+FLAGS: Final = ("review.grammar_api",)
 
 
 async def _firm(net: Net) -> tuple[uuid.UUID, Person, Person, Site, Site]:

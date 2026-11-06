@@ -32,6 +32,7 @@ import {
   useGateCounts,
   useHome,
   visibleBands,
+  fallbackTitle,
 } from "../../domain/home";
 import { COPY } from "./copy";
 import { type DecisionDraft, GateDetailBody, GateDetailFooter } from "./Detail";
@@ -54,7 +55,7 @@ import { MY_WORK, openHref, openOverlayOf } from "./hosts";
 // bar ("4 selected · Sign off 4 as Partner") opens SHL-12 f over the chosen targets, which signs
 // and shows each item's result. Enter and the generic "Open" go to the gate's own host
 // (`hosts.ts`), and the segmented's "My work" to HOME-01. A row is a link to where the gate is
-// decided, never a decision control (INV-1). Behind `home.approvals` (created here).
+// decided, never a decision control (INV-1). `home.approvals` retired by I-01-T23.
 
 const GLYPH_OF: Readonly<Record<HumanGateOut["kind"], NonNullable<IssueItem["glyph"]>>> = {
   decision: { icon: "circle-help", label: COPY.glyph.decision },
@@ -76,7 +77,7 @@ interface Picking {
 
 function checkOf(gate: HumanGateOut, picking: Picking | undefined): IssueItem["check"] {
   if (picking?.on !== true || gate.kind !== "sign_off_request") return undefined;
-  const title = gate.title ?? gate.subkind;
+  const title = gate.title ?? fallbackTitle(gate.subkind);
   const blocked = gate.blocked || !gate.bulk_eligible;
   return {
     label: COPY.bulk.check(title),
@@ -119,7 +120,7 @@ function itemOf(gate: HumanGateOut, today: string, now: Date, picking?: Picking)
   const rest = [due.plain, words].filter((p) => p != null && p !== "").join(" · ");
   return {
     id: gate.id,
-    title: gate.title ?? gate.subkind,
+    title: gate.title ?? fallbackTitle(gate.subkind),
     sub: rest,
     ...(due.lead === undefined ? {} : { subLead: due.lead }),
     ...(gate.blocked || due.overdue ? { subTone: "amber" as const } : {}),

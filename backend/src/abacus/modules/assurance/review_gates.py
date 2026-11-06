@@ -58,7 +58,7 @@ SOURCE: Final = GateSource(SUBJECT, "evidence_review", "review.read", EVENTS, op
 
 
 def subject_route(list_kind: str, list_id: UUID, work_item_id: UUID, item_id: UUID) -> str:
-    """The host a row opens while `home.approvals` is off (I-01-T13; I-01 AC2.4), as a screen code
+    """The host a row opens (I-01-T13; I-01 AC2.4), as a screen code
     the SPA resolves through its manifest (`docs/contracts/home-and-gates.md` §6): an assurance
     PBC list is the audit's Source documents (AUD-03, the audit is the list's work item); every
     other list is a binder (BND-02, the list is the binder). Opaque ids only (ADR-031)."""

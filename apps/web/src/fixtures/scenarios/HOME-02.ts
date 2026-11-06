@@ -80,10 +80,9 @@ function at(state: string, persona: string, options: At = {}): Scenario {
       // I-01-T18: the transfer agreement's page for the viewer; the detail's C3/C4 reads after.
       ...trustHandlers({ citations: [], documents: { [TRANSFER]: TRANSFER_DOCUMENT } }),
       ...approvalsDetailHandlers({ decided: options.decided === true }),
-      // I-01-T16 creates `home.approvals`; every artboard runs with it on.
       "GET /v1/me/capabilities": ({ persona: who }) => {
         const base = capabilitiesFor(seed, who ?? persona);
-        return json({ ...base, flags: { ...base.flags, "home.approvals": true } });
+        return json(base);
       },
     },
   };

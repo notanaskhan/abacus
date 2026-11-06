@@ -624,8 +624,6 @@ FLAGS_ON: Final = (
     "agents.client_data_optin",
     "audits.cockpit",  # A-01: "the local seed turns it on for Brightwater Hale"
     # I-01-T13: HOME-01 lite on synthetic firms (GET /v1/home and the C13 gate list and counts).
-    "home.dashboard",
-    "home.approvals",  # I-01-T21: HOME-02 live on synthetic firms; rows open ?gate=
     "review.approve_agent_output",  # P-04-T46 (DEC-1385): SHL-10 approval on synthetic firms
     "engagements.roll_forward_v2",  # P-07-T55: ENG-13 v2 on synthetic firms
     # N-02-T17: record mode (SIG-01, the import, the portal reads) on synthetic firms from S15.

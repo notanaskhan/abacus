@@ -132,3 +132,8 @@ from abacus.modules.organisations.api import register_open_notices  # noqa: E402
 
 portal_notice_rows = _portal_home.portal_notice_rows
 register_open_notices(_portal_home.open_notice_rows)
+
+# I-01-T23: the response's send on HOME-02.
+from abacus.modules.notices.gate_sources import register_notice_gates  # noqa: E402
+
+register_notice_gates()

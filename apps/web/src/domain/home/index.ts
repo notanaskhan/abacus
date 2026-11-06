@@ -30,4 +30,4 @@ export {
   useHome,
   useWaitingOnYou,
 } from "./queries";
-export { WaitingOnYou, type WaitingOnYouProps } from "./WaitingOnYou";
+export { WaitingOnYou, type WaitingOnYouProps, fallbackTitle } from "./WaitingOnYou";
