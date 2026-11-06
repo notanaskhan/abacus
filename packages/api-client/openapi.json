@@ -79801,6 +79801,19 @@
             "title": "Citation Ids",
             "type": "array"
           },
+          "pending_card_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Pending Card Id"
+          },
           "rationale": {
             "anyOf": [
               {

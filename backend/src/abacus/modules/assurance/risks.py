@@ -53,6 +53,7 @@ from abacus.modules.review.api import (
     ComputedCard,
     DecisionKind,
     Json,
+    awaiting_cards,
     content_hash,
     field_timeline,
     raise_decision_card,
@@ -210,6 +211,10 @@ class Drawer:
     rationale_suggestion_id: UUID | None
     versions: list[VersionFact]
     actions: list[str]
+    # The awaiting `significant_risk` card over this row, and who it waits for (AC4.3).
+    pending_card_id: UUID | None = None
+    routed_to_name: str | None = None
+    routed_at: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -433,13 +438,35 @@ async def drawer(ctx: AuthContext, engagement_id: UUID, risk_id: UUID) -> Drawer
         else:
             name = f"{people.get(behalf, '') if behalf else ''} via Agent".strip()
         versions.append(VersionFact(len(versions) + 1, at, name))
+    actions = await _actions(ctx, engagement_id)
+    # AC4.3's footers: only a row the awaiting card covers is routed. The reserved person decides
+    # (C3 checks the role and the second factor); anyone else the matrix allows may remind them.
+    waiting = (
+        await awaiting_cards(ctx.tenant, row.work_item_id, (APPROVAL_KIND,))
+        if _pending([row])
+        else []
+    )
+    card = waiting[-1] if waiting else None
+    routed_to: str | None = None
+    if card is not None:
+        reserved = card.reserved_user_id
+        if reserved is not None:
+            routed_to = (await names_of([reserved])).get(reserved)
+        if reserved == ctx.user_id:
+            actions.append("decision.decide")
+        else:
+            ref = await get_ref(ctx, engagement_id)
+            actions += await allowed_actions(ctx, ref.resource(), ("decision.notify",))
     return Drawer(
         risk=row,
         linked=any(link.risk_id == row.id and link.state == "linked" for link in links),
         citation_ids=latest.citation_ids if latest is not None else (),
         rationale_suggestion_id=latest.suggestion_id if latest is not None else None,
         versions=versions,
-        actions=await _actions(ctx, engagement_id),
+        actions=actions,
+        pending_card_id=card.card_id if card is not None else None,
+        routed_to_name=routed_to,
+        routed_at=card.created_at if card is not None else None,
     )
 
 
