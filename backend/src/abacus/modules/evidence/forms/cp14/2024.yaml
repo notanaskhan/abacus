@@ -4,7 +4,7 @@ form: CP14
 form_type: cp14
 tax_year: 2024
 family: notices
-version: "cp14-2024-v1"
+version: "cp14-2024-v2"
 anchors: ["CP14"]
 fields:
   - {key: notice.number, label: "Notice number", anchor: "Notice number", value_type: code}
@@ -15,3 +15,6 @@ fields:
   - {key: notice.taxpayer_last4, label: "Taxpayer ID", anchor: "Social Security number", value_type: code}
   - {key: notice.tax_due, label: "Tax due", anchor: "Tax you owed", value_type: money}
   - {key: notice.penalties, label: "Penalties", anchor: "Penalties", value_type: money}
+# N-04-T17: the amounts block. Cells are read, never summed.
+tables:
+  - {key: notice.charges, label: "Amounts", header: "Amount you owed", stop: "Amount due", columns: [amount]}

@@ -4,7 +4,7 @@ form: CP2000
 form_type: cp2000
 tax_year: 2024
 family: notices
-version: "cp2000-2024-v1"
+version: "cp2000-2024-v2"
 anchors: ["CP2000"]
 fields:
   - {key: notice.number, label: "Notice number", anchor: "Notice number", value_type: code}
@@ -15,3 +15,7 @@ fields:
   - {key: notice.taxpayer_last4, label: "Taxpayer ID", anchor: "Social Security number", value_type: code}
   - {key: notice.proposed_tax, label: "Proposed tax", anchor: "Increase in tax", value_type: money}
   - {key: notice.interest, label: "Interest", anchor: "Interest", value_type: money}
+# N-04-T17: the proposed-changes table and the payer list. Cells are read, never summed.
+tables:
+  - {key: notice.changes, label: "Proposed changes", header: "Shown on return", stop: "Payers reported", columns: [shown, reported, difference]}
+  - {key: notice.payers, label: "Payers", header: "Payers reported", stop: "Total", columns: [amount]}
