@@ -457,7 +457,7 @@ async def run_tie_out(ctx: AuthContext, version_id: UUID) -> JsonRow:
         for o in result.off
     ]
     async with uow(ctx.tenant, ctx.actor) as tx:
-            row = (
+        row = (
             (
                 await tx.session.execute(
                     text(
