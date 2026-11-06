@@ -40,7 +40,7 @@ actions:
   # arrive with review.api.create_issue (P-04-T30) and their own task_scope row. The reviewer
   # function conditions arrive with P-04-T15 (DEC-145); independence is not marked (DEC-145).
   issue.read:               {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow}   # SHL-15, TAX-06: firm roles only; sealed texts read as access events
-  issue.create:             {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, agent: deny, system: deny}   # SHL-15 b, c: the composer and the field flag
+  issue.create:             {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, agent: task_scope, system: deny}   # SHL-15 b, c: the composer and the field flag
   issue.update:             {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny}   # title, class, priority, assignee
   issue.resolve:            {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny}   # resolve and mark not applicable; team members (P-04 4.3)
   issue.verify:             {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny, function_in: 'first_level_reviewer, detail_reviewer, manager_reviewer, signer'}   # reviewer functions (P-04 4.3; P-04-T15, DEC-145); the QC reviewer role stays read-only here (DEC-21)
