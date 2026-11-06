@@ -15,7 +15,7 @@ so the live specialists keep writing `status` until the contract phase after the
 `tenant_counters` gives `run_number`: `UPDATE … RETURNING` in the unit of work.
 
 Revision ID: 0680
-Revises: 0672
+Revises: 0673
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, tenant_table
 
 revision = "0680"
-down_revision = "0672"
+down_revision = "0673"
 branch_labels = None
 depends_on = None
 
