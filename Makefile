@@ -73,6 +73,8 @@ check-fast:
 	cd backend && uv run python -m abacus_tools.quality.error_codes
 	cd backend && uv run python -m abacus_tools.quality.validate_docs
 	cd backend && uv run python -m abacus_tools.quality.scope_guards
+	# P-10-T10: the agent tool registry against the matrix (C17).
+	cd backend && uv run python -m abacus_tools.quality.tool_registry
 	cd backend && uv run python -m abacus_tools.quality.seed_contamination
 	cd backend && uv run python -m abacus_tools.quality.fresh_mfa
 	# Q-03-T095 (ADR-080): every table and matrix kind the code uses has its generated tests.
