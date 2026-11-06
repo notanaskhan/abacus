@@ -10,7 +10,8 @@
   the existing version). The agent step is a registered hook that fails closed: no hook, or a
   hook that refuses, leaves the stage `off` or `refused` and no recommendation; a recommendation
   is recorded only from a `live` stage (0650's CHECK), and only then is the card's option
-  preselected.
+  preselected. Each payer amount is located on the notice letter's word layer and recorded as a
+  verified citation; T-01's newest transcript comparison rides on the version (DEC-2353).
 - **Position.** `notice_position` is a C3 card with code options (agree, partially agree,
   disagree), reserved to the notice's **signer**; its applier records the position on the notice.
   Decision requests and their notes are insert-only (`notice_notes`, sealed text).
@@ -36,9 +37,16 @@ from abacus.kernel.crypto import seal
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
+from abacus.modules.evidence.api import (
+    CitationAnchor,
+    CitationClaim,
+    PageWords,
+    record_citations,
+    version_word_layers,
+)
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.notices.compute import bracket, underreporter
-from abacus.modules.notices.service import notice
+from abacus.modules.notices.service import Notice, notice, notice_letter_version
 from abacus.modules.review.api import (
     AppliedDecision,
     CardOption,
@@ -48,6 +56,7 @@ from abacus.modules.review.api import (
     raise_decision_card,
     register_decision_kind,
 )
+from abacus.modules.tax.api import transcript_comparison_lines
 
 POSITION_KIND: Final = "notice_position"
 POSITIONS: Final = {
@@ -309,6 +318,96 @@ def compare(
     }
 
 
+_AMOUNT_ENDS: Final = ",.;:)"
+
+
+def amount_words(amount: Decimal) -> str:
+    """As a form prints it: 1,870.00."""
+    return f"{amount:,.2f}"
+
+
+def word_box(layer: PageWords, amount: Decimal) -> list[float] | None:
+    """The first word on the page that is this amount, by code (a "$" and a closing mark don't
+    count); None when the page doesn't print it."""
+    printed = amount_words(amount)
+    for word in layer.words:
+        if word.text.lstrip("$").rstrip(_AMOUNT_ENDS) == printed:
+            return [word.x0, word.top, word.x1, word.bottom]
+    return None
+
+
+async def _locate_payer_amounts(
+    ctx: AuthContext,
+    found: Notice,
+    items: Sequence[Any],  # Any: database rows
+    infos: list[dict[str, Any]],  # Any: stored rows
+) -> None:
+    """N-04 US-4.3: each payer amount cites where it is printed. A person's cited entry keeps its
+    citation; a code-map item is looked for on the notice letter's word layer and recorded as a
+    verified `document_text` citation by P-03's verifier. One it can't find stays uncited (NOT-02
+    says so); it's never guessed at. DEC-2353 records the 1099 documents' link as open."""
+    by_key = [i for i in items if i["kind"] == "payer_item"]
+    version_id = await notice_letter_version(ctx.tenant, found.id)
+    for info, item in zip(infos, by_key, strict=False):
+        if item["citation_id"] is not None:
+            info["citation_id"] = str(item["citation_id"])
+            continue
+        if version_id is None or item["amount_irs"] is None:
+            continue
+        amount = Decimal(item["amount_irs"])
+        for layer in await version_word_layers(ctx.tenant, version_id):
+            box = word_box(layer, amount)
+            if box is None:
+                continue
+            async with uow(ctx.tenant) as tx:
+                recorded = await record_citations(
+                    tx,
+                    actor=ctx,
+                    anchor=CitationAnchor(
+                        type="notice_proposed_item",
+                        id=item["id"],
+                        engagement_id=found.engagement_id,
+                        work_item_id=found.id,
+                    ),
+                    claims=[
+                        CitationClaim(
+                            kind="document_text",
+                            locator={
+                                "evidence_version_id": str(version_id),
+                                "page": layer.page,
+                                "bbox": box,
+                            },
+                            quote=amount_words(amount),
+                        )
+                    ],
+                )
+            if recorded and recorded[0].verified:
+                info["citation_id"] = str(recorded[0].id)
+                info["document_id"] = str(version_id)
+            break
+
+
+async def _transcript_rows(
+    ctx: AuthContext, found: Notice
+) -> list[dict[str, Any]]:  # Any: stored rows
+    """T-01's newest wage-and-income comparison for the taxpayer's year, as statement rows."""
+    if found.client_entity_id is None or found.tax_year is None:
+        return []
+    return [
+        {
+            "key": f"transcript.{line.line_no}",
+            "label": f"{line.form} {line.payer_name or ''}".strip(),
+            "as_filed": None if line.return_amount is None else str(line.return_amount),
+            "irs": str(line.transcript_amount),
+            "difference": None if line.difference is None else str(line.difference),
+            "citation_ids": [],
+        }
+        for line in await transcript_comparison_lines(
+            ctx.tenant, found.client_entity_id, found.tax_year
+        )
+    ]
+
+
 async def run(ctx: AuthContext, notice_id: UUID) -> tuple[int, bool]:
     """Compute and record a version; the same inputs return the existing version (reused)."""
     found = await notice(ctx, notice_id)
@@ -316,6 +415,7 @@ async def run(ctx: AuthContext, notice_id: UUID) -> tuple[int, bool]:
     if not items:
         raise NothingToAnalyze
     computed = compare(snapshot, items, tax_year=found.tax_year)
+    computed["checks"]["transcript_rows"] = await _transcript_rows(ctx, found)
     async with tenant_session(ctx.tenant) as session:
         existing = (
             await session.execute(
@@ -328,6 +428,7 @@ async def run(ctx: AuthContext, notice_id: UUID) -> tuple[int, bool]:
         ).scalar()
     if existing is not None:
         return int(existing), True
+    await _locate_payer_amounts(ctx, found, items, computed["information_returns"])
     step = await _agent_step(
         ctx.tenant,
         found.id,

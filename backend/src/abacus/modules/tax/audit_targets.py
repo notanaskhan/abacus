@@ -24,6 +24,9 @@ _ENTITIES = {
         "SELECT id, client_entity_id FROM tax_profile_files WHERE id = ANY(:ids)"
     ),
     "transcript": text("SELECT id, client_entity_id FROM transcripts WHERE id = ANY(:ids)"),
+    "estimate_schedule": text(
+        "SELECT id, client_entity_id FROM estimate_schedules WHERE id = ANY(:ids)"
+    ),
 }
 ENTITY_KINDS = frozenset(_ENTITIES)
 

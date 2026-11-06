@@ -319,8 +319,10 @@ REVIEWED_FALLBACK: Final = frozenset(
         "notice.proposed_items_recorded",  # reviewed 2026-11-05 (S26, S27)
         "notice.return_as_filed_recorded",  # reviewed 2026-11-05 (S26, S27)
         "notice.status_changed",  # reviewed 2026-11-05 (S26, S27)
+        "notice_intake.attached",  # reviewed 2026-11-06 (N-04-T07)
         "notice_intake.created",  # reviewed 2026-11-05 (S26, S27)
         "notice_intake.discarded",  # reviewed 2026-11-05 (S26, S27)
+        "notice_intake.extracted",  # reviewed 2026-11-06 (N-04-T07)
         "notice_intake.updated",  # reviewed 2026-11-05 (S26, S27)
         "notice_response.drafted",  # reviewed 2026-11-05 (S26, S27)
         "notice_response.edited",  # reviewed 2026-11-05 (S26, S27)
@@ -715,5 +717,24 @@ REVIEWED_FALLBACK: Final = frozenset(
         "notice_response.ready_to_send",
         "notice_response.sent",
         "notice.agency_reply_recorded",
+        # reviewed 2026-11-06 (S27 gaps, TASK-3350 to TASK-3357)
+        "audit_finding.raised_from_exception",
+        "audit_misstatement.passed_on_sum",
+        "audit_misstatement.raised_from_exception",
+        "estimate_installment.confirmation_requested",
+        "estimate_installment.due_soon_notified",
+        "estimate_installment.recorded",
+        "estimate_schedule.created",
+        "estimate_schedule.inputs_updated",
+        "filing_extension.ack_rejection_notified",
+        "filing_extension.confirmation_requested",
+        "filing_extension.due_date_recomputed",
+        "filing_extension.figures_entered",
+        "filing_extension.prepared",
+        "filing_extension.submitted_for_approval",
+        "soc_exception.impact_recorded",
+        "soc_exception.routed",
+        "sum.factor_recorded",
+        "sum.snapshot_frozen",
     }
 )
