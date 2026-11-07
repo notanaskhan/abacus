@@ -79,3 +79,15 @@ actions:
   ai_policy.draft:          {quality_partner: allow, security_admin: allow, agent: deny, system: deny}   # security_admin: the client_data section only (service, ADR-186 item 4)
   ai_policy.publish:        {quality_partner: allow, agent: deny, system: deny, mfa_recent: required}   # request publication of a version; withdraw it
   ai_policy.approve:        {firm_partner: allow, agent: deny, system: deny, mfa_recent: required}   # a partner other than the requester (409 approver_must_differ, ADR-186)
+  # --- Runtime v2 (P-10-T08; P-10 §4.3, §4.6; DEC-2407). I-AGENT-NEVER: a plan decision, an answer and a run sign-off are a person's; Auto mode is
+  # standing approval a person turned on. Routes land 501 with P-10-T09; each is flag-gated from the Jan 27, 2028 train. Portal principals hold none.
+  agent_run.start:          {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny, independence: required}   # POST /v1/engagements/{id}/runs: Senior+ on the team
+  agent_run.approve_plan:   {engagement_partner: allow, manager: allow, senior: allow, agent: deny, system: deny, independence: required}   # never optimistic; a new insert-only plan version
+  agent_run.answer:         {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, agent: deny, system: deny, independence: required}   # answer or skip the run's question
+  agent_run.control:        {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny, independence: required}   # redirect, step retry, stop
+  agent_run.sign_off:       {engagement_partner: allow, manager: allow, agent: deny, system: deny, independence: required}   # open issues and decisions acknowledged
+  engagement_ai.configure:  {engagement_partner: allow, manager: allow, agent: deny, system: deny, independence: required}   # PUT .../auto-mode: refused for real firms in season 1
+  agent_feedback.create:    {engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, agent: deny, system: deny}   # thumbs and reason codes
+  file.propose:             {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: task_scope, system: deny}   # a run's artifact offered for filing
+  todo.propose:             {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: task_scope, system: deny}   # a run's follow-up offered as a to-do
+  file.save:                {engagement_partner: allow, manager: allow, senior: allow, staff: allow, agent: deny, system: deny}   # a person files an artifact (ADR P-23): the agent never does
