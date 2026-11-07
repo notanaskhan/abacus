@@ -448,7 +448,8 @@ async def on_envelope_completed(event: OutboxEvent) -> None:
             (
                 await session.execute(
                     text(
-                        "SELECT id, work_item_id, payment, enclosures FROM notice_responses "
+                        "SELECT id, engagement_id, work_item_id, payment, enclosures "
+                        "FROM notice_responses "
                         "WHERE envelope_id = :e"
                     ),
                     {"e": envelope_id},
@@ -476,6 +477,7 @@ async def _publish_when_ready(
             NoticeResponseReadyToSend(
                 work_item_id=row["work_item_id"],
                 response_id=row["id"],
+                engagement_id=row["engagement_id"],
                 assignee_user_id=await _assignee_of(tx.session, row["work_item_id"]),
             )
         )
@@ -498,7 +500,7 @@ async def on_review_decision(event: OutboxEvent) -> None:
             (
                 await session.execute(
                     text(
-                        "SELECT id, work_item_id, payment, enclosures, envelope_id "
+                        "SELECT id, engagement_id, work_item_id, payment, enclosures, envelope_id "
                         "FROM notice_responses WHERE payment ->> :key = ANY(:ids)"
                     ),
                     {"key": CONFIRMATION_ITEM, "ids": list(status)},
@@ -597,7 +599,10 @@ async def mark_sent(
         await move(tx, moved, "awaiting_irs", actor_kind="system", actor_user_id=None)
         tx.emit(
             NoticeResponseSent(
-                work_item_id=work_item_id, sent_on=sent_on, follow_up_on=due,
+                work_item_id=work_item_id,
+                engagement_id=found.engagement_id,
+                sent_on=sent_on,
+                follow_up_on=due,
             )
         )  # fmt: skip
         tx.record(

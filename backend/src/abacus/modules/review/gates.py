@@ -93,6 +93,16 @@ def band_of(kind: str) -> str:
 # subscriptions are fixed at import, before every owner has registered.
 C13_EVENTS: Final = frozenset(
     {
+        # I-01-T23: envelopes to send or countersign (signatures), a notice response to send.
+        "envelope.drafted",
+        "envelope.send_approved",
+        "envelope.signer_signed",
+        "envelope.completed",
+        "envelope.superseded",
+        "envelope.declined",
+        "envelope.expired",
+        "notice_response.ready_to_send",
+        "notice.response_sent",
         # A-07-T15: completion, letters, the report, release and the archive (in_app firms).
         "eqr.concurred",
         "rep_letter.approved",

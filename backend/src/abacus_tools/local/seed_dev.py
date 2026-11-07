@@ -168,9 +168,7 @@ async def _flags_on() -> None:
     await set_flag(FIRM, "fieldwork.procedures", "true", "seed", "local development")  # SPEC-037
     await set_flag(FIRM, "fieldwork.assessor", "true", "seed", "local development")  # TASK-085
     # I-01-T13: HOME-01 lite on the Dev firm: /v1/home and the C13 gate list and counts.
-    await set_flag(FIRM, "home.dashboard", "true", "seed", "local development")
     # I-01-T21: HOME-02 live on the Dev firm.
-    await set_flag(FIRM, "home.approvals", "true", "seed", "local development")
     # P-04-T46 (DEC-1385): SHL-10's live approval of agent output on the Dev firm.
     await set_flag(FIRM, "review.approve_agent_output", "true", "seed", "local development")
     # P-07-T55: ENG-13's roll-forward v2 routes on the Dev firm.
