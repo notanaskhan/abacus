@@ -8,7 +8,9 @@ carries the audit's facts in 0644's `audit_findings`:
   the agent's suggestion and must carry verified citations (422 `uncited_finding` otherwise,
   INV-2); a person's finding needs none.
 - **List** (`findings_of`): rows with the severity bands' counts (material weakness, significant
-  deficiency, deficiency, not a deficiency) and the badge of findings awaiting the partner.
+  deficiency, deficiency, not a deficiency) and the Evaluation tab's badge: findings still
+  awaiting a decision, a proposed severity for the partner or an exception to resolve (AUD-15 a:
+  F-01, F-03 and F-04 make 3; DEC-2612).
 - **Detail** with the code-computed evaluation (the row's `evaluation`, written by code only).
 - **Resolve / not applicable**: through the issue (`review.api.move_issue`); the matrix denies the
   agent both (`finding.resolve`, `finding.mark_not_applicable`).
@@ -118,6 +120,15 @@ class Finding:
     @property
     def band(self) -> str:
         return self.severity_concluded or self.severity_proposed or "not_a_deficiency"
+
+
+# AUD-15's tab badge (the handoff: "the tab badge 3 = F-01, F-03, F-04 still awaiting a decision").
+AWAITING_DECISION: Final = frozenset({"proposed", "exception_for_resolution"})
+
+
+def awaiting_decision(statuses: Sequence[str | None]) -> int:
+    """Findings a person still has to decide: a proposed severity, or an exception to resolve."""
+    return sum(1 for s in statuses if s in AWAITING_DECISION)
 
 
 @dataclass(frozen=True)
@@ -323,7 +334,7 @@ async def findings_of(
     counts: dict[str, int] = dict.fromkeys(BANDS, 0)
     for f in found:
         counts[f.band] += 1
-    awaiting = sum(1 for f in found if f.deficiency_status == "proposed")
+    awaiting = awaiting_decision([f.deficiency_status for f in found])
     if hide_concluded:
         found = [f for f in found if f.deficiency_status not in ("concluded", "communicated")]
     return FindingsPage(found, counts, awaiting)

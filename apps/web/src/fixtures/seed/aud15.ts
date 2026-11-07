@@ -114,9 +114,17 @@ function rows(variant: Aud15Variant): FindingRowOut[] {
   ];
 }
 
+// The tab badge: findings still awaiting a decision (a proposed severity or an exception to
+// resolve), as the backend's `findings.awaiting_decision` counts them (DEC-2612).
+const AWAITING: ReadonlySet<FindingRowOut["deficiency_status"]> = new Set([
+  "proposed",
+  "exception_for_resolution",
+]);
+
 export function aud15List(variant: Aud15Variant): ListPageFindingRowOut {
   const items = variant === "g" ? [] : rows(variant);
-  return { items, total: items.length };
+  const awaiting = items.filter((f) => AWAITING.has(f.deficiency_status)).length;
+  return { items, total: items.length, counts: { awaiting_decision: awaiting } };
 }
 
 const WHY_F01 =

@@ -17,7 +17,9 @@ import { COPY } from "./copy";
 
 // The Evaluation chrome (A-06-T12; A-06 §5, chapter 04 §2.1): the audit bar, then the Evaluation
 // tabs (Findings · Misstatements · Review notes · Sign-offs, 50 px) with counts from the server —
-// the findings and misstatements list totals and the engagement's open review notes — linking
+// the findings still awaiting a decision (the list's `awaiting_decision` count: AUD-15 a's
+// "Findings 3", DEC-2612), the misstatements list total and the engagement's open review notes —
+// linking
 // `/audits/$auditId/findings`, `/misstatements` and `/review-notes`; `/fs-disclosure` (AUD-20) has
 // the bar alone. The four screens (AUD-15, AUD-16, AUD-17, AUD-20) land with their own rows (AUD-15
 // with A-06-T18): until
@@ -40,7 +42,7 @@ function useCounts(workItemId: string, engagementId: string | undefined) {
     enabled: engagementId !== undefined,
   });
   return {
-    findings: findings.data?.total,
+    findings: findings.data?.counts?.awaiting_decision,
     misstatements: misstatements.data?.total,
     "review-notes": notes.data?.total,
   };

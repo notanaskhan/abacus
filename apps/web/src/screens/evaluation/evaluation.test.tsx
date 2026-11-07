@@ -80,11 +80,12 @@ describe("/audits/$auditId/review-notes", () => {
 });
 
 describe("Evaluation tabs", () => {
-  it("show the server's counts: Findings 9, Misstatements 2", async () => {
+  it("show the server's counts: Findings 3 (awaiting a decision), Misstatements 2", async () => {
     show("findings");
     await waitFor(() => {
       const tabs = document.querySelector("[data-evaluation-tabs]");
-      expect(tabs?.textContent).toContain("9");
+      expect(tabs?.textContent).toContain("Findings3");
+      expect(tabs?.textContent).not.toContain("9");
       expect(tabs?.textContent).toContain("2");
     });
   });
