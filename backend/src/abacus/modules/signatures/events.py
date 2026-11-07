@@ -26,6 +26,16 @@ class EnvelopeCompleted(DomainEvent):
     sent_by: Annotated[UUID | None, classified("internal")] = None
 
 
+class EnvelopeDrafted(DomainEvent):
+    """A draft exists (I-01-T23): C13's `envelope_send` row opens on it. Identifiers only."""
+
+    event_type: ClassVar[str] = "envelope.drafted"
+
+    envelope_id: Annotated[UUID, classified("internal")]
+    client_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")]
+
+
 class EnvelopeSendApproved(DomainEvent):
     """A person pressed Send (N-02-T20): held by the outbox until the Undo window ends and
     delivered only if the send's grant is consumed then (ADR-161); its subscriber starts

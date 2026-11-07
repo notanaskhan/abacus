@@ -2,19 +2,3 @@
 # file into kernel/_flags.py by `make regenerate`.
 
 flags:
-  - name: home.dashboard
-    description: 'HOME-01 live data (I-01, C13 home half): GET /v1/home. Off: the route answers 404 and the firm app keeps its current landing page. On: 501 not_implemented until I-01-T10 (tiles, your work, deadlines, running count) and I-01-T12 (client activity). On for Dev and synthetic firms in S14 (I-01-T13); renewed on the Q-04 calendar; retired in the Dec 2027 bundle (I-01-T23).'
-    owner: ayushkbhatia
-    created: 2026-10-26
-    expires: 2027-04-21
-    override: DEC-137
-    kind: boolean
-    default: false
-  - name: home.approvals
-    description: 'HOME-02 My approvals (I-01-T16): `/home/approvals`, the human-gate queue on T9 close-review. Off: the route shows the flag-off state and HOME-01 rows open their host gates (I-01 AC2.4). On for Dev and synthetic firms with I-01-T22; per-firm flips Tue Nov 2 and Nov 9, 2027; retired with the legacy Review screen (I-01-T23).'
-    owner: ayushkbhatia
-    created: 2026-10-30
-    expires: 2027-04-28
-    override: DEC-137
-    kind: boolean
-    default: false

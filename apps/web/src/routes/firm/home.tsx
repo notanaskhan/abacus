@@ -1,7 +1,5 @@
-import { FlagOffState } from "@abacus/ui";
 import { Navigate, createRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import type { JSX } from "react";
-import { FeatureGate } from "../../app-core/flags";
 import { appRoute, lazyScreen } from "../root";
 
 // Home: `/` goes to `/home` when `home.dashboard` is on (I-01-T11); off, `/` and `/home` go to the
@@ -15,12 +13,8 @@ export const homeRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/",
   component: function HomePage(): JSX.Element {
-    // I-01-T11: with `home.dashboard` on, `/` is HOME-01 at `/home`; off, the engagements index.
-    return (
-      <FeatureGate flag="home.dashboard" fallback={<Navigate to="/engagements" replace />}>
-        <Navigate to="/home" replace />
-      </FeatureGate>
-    );
+    // I-01-T23: `/` is HOME-01 at `/home` (`home.dashboard` retired).
+    return <Navigate to="/home" replace />;
   },
 });
 
@@ -30,9 +24,7 @@ export const homeDashboardRoute = createRoute({
   component: function HomeDashboardPage(): JSX.Element {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
-        <FeatureGate flag="home.dashboard" fallback={<Navigate to="/engagements" replace />}>
-          <Home01 />
-        </FeatureGate>
+        <Home01 />
       </div>
     );
   },
@@ -57,17 +49,12 @@ export const homeApprovalsRoute = createRoute({
     const search: ApprovalsSearch = useSearch({ strict: false });
     return (
       <div className="flex min-h-0 flex-1 flex-col">
-        <FeatureGate
-          flag="home.approvals"
-          fallback={<FlagOffState flag="home.approvals" label="Approvals" />}
-        >
-          <Home02
-            gate={search.gate ?? null}
-            onGate={(gate) => {
-              void navigate({ to: ".", search: gate === null ? {} : { gate }, replace: true });
-            }}
-          />
-        </FeatureGate>
+        <Home02
+          gate={search.gate ?? null}
+          onGate={(gate) => {
+            void navigate({ to: ".", search: gate === null ? {} : { gate }, replace: true });
+          }}
+        />
       </div>
     );
   },

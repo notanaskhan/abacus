@@ -24,6 +24,13 @@ const ROUTES: HostRoutes = {
     search: [],
     build: (p) => to.TAX02({ returnId: p.returnId ?? "" }),
   },
+  // I-01-T23: the gates landing S13 to S29.
+  "SIG-01": { ids: [], search: [], build: () => to.SIG01() },
+  "NOT-02": {
+    ids: ["noticeId"],
+    search: [],
+    build: (p) => to.NOT02({ noticeId: p.noticeId ?? "" }),
+  },
 };
 
 /** The gate's host as an href, or undefined while it names nothing routed. */

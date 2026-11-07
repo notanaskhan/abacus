@@ -54,7 +54,7 @@ from abacus.modules.identity.api import (
 )
 from abacus.modules.organisations.api import signer_contacts
 from abacus.modules.signatures.consumers import check_contract
-from abacus.modules.signatures.events import EnvelopeSendApproved
+from abacus.modules.signatures.events import EnvelopeDrafted, EnvelopeSendApproved
 from abacus.modules.signatures.hub import firm_and_flag, resource_of, visible_head
 from abacus.modules.signatures.sources import SourceDraft, envelope_source
 
@@ -386,6 +386,13 @@ async def create_draft(ctx: AuthContext, source_kind: str, source_id: UUID) -> U
                 ),
             )
         await _event(tx, ctx.tenant_id, envelope_id, "envelope.drafted")
+        tx.emit(
+            EnvelopeDrafted(
+                envelope_id=envelope_id,
+                client_id=draft.client_id,
+                engagement_id=draft.engagement_id,
+            )
+        )
         tx.record(
             "envelope.drafted",
             target=Target("envelope", envelope_id),
