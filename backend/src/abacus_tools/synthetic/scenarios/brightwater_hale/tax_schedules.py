@@ -18,11 +18,12 @@ carry their state at the demo clock; and DF-34's fixes, which need a loaded revi
 
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 from typing import Final, NamedTuple
 
+from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import CT
 from abacus_tools.synthetic.scenarios.brightwater_hale.scenario import SETUP_AT
 from abacus_tools.synthetic.scenarios.brightwater_hale.slices import register_slice
 from abacus_tools.synthetic.scenarios.brightwater_hale.tax_board import BOARD, EXTENDED_TOTAL
@@ -100,22 +101,48 @@ LIKELY: Final[tuple[Likely, ...]] = (
 
 
 class SeedEstimate(NamedTuple):
+    """One TAX-13 b row (Estimates, Q3 TY2026 at Sep 14), as the handoff draws it (DF-34,
+    TASK-3397). `confirmer` is the client person whose upload confirms the quarter, `confirmed`
+    the day of that upload; `requested` is when the confirmation request went out."""
+
     client: str
+    form: str
     method: str
     prior_year_tax: str | None
     withholding: str | None
+    agi_over: bool | None  # the 110% rule's AGI test (over $150,000)
+    label: str | None  # the payment method label
     status: str  # Q3's at the demo clock
+    on: date | None = None  # scheduled for, or paid on
+    confirmer: str | None = None
+    confirmed: datetime | None = None
+    requested: datetime | None = None
 
 
+def _ct(month: int, day: int, hour: int, minute: int = 0) -> datetime:
+    return datetime(2026, month, day, hour, minute, tzinfo=CT)
+
+
+# TAX-13 b: Q3 due 5 (Paid 2, Scheduled 1, Awaiting confirmation 2), Not required 2; 7 rows. The
+# prior-year figures are the handoff's inputs: Feld's 110% is 135,545 (123,222.73 x 1.1), less
+# 55,585 projected withholding. Annual and Q3 amounts need TY2026's parameter file (DEC-2371).
 ESTIMATES: Final[tuple[SeedEstimate, ...]] = (
-    SeedEstimate("Jonah & Claire Feld", "prior_year_110", "122500", "0", "paid"),
-    SeedEstimate("Meera Shah", "prior_year_110", "148000", "0", "paid"),
-    SeedEstimate("Calloway Family Trust", "prior_year_100", "50930", "0", "scheduled"),
-    SeedEstimate("Elena Varga", "prior_year_100", "4290", "0", "confirmation_requested"),
-    SeedEstimate("Marcus & Dana Whitley", "prior_year_100", "18200", "0",
-                 "confirmation_requested"),
-    SeedEstimate("Aurelio Santos", "not_required_withholding", None, None, "not_required"),
-    SeedEstimate("Estate of Walter Thornbury", "not_required_estate_first_years", None, None,
+    SeedEstimate("Jonah & Claire Feld", "1040-ES", "prior_year_110", "123222.73", "55585", True,
+                 "irs_direct_pay", "scheduled", date(2026, 9, 15), "Claire Feld",
+                 _ct(9, 11, 10), _ct(9, 8, 9)),
+    SeedEstimate("Meera Shah", "1040-ES", "prior_year_110", "148000", "0", True,
+                 "irs_direct_pay", "confirmation_requested", requested=_ct(9, 8, 9, 5)),
+    SeedEstimate("Calloway Family Trust", "1041-ES", "prior_year_110", "46300", "0", True,
+                 "eftps", "paid", date(2026, 9, 14), "Eleanor Calloway", _ct(9, 14, 8, 30),
+                 _ct(9, 8, 9, 10)),
+    SeedEstimate("Elena Varga", "1040-ES", "prior_year_100", "3900", "0", False,
+                 "irs_direct_pay", "paid", date(2026, 9, 9), "Elena Varga", _ct(9, 9, 11),
+                 _ct(9, 8, 9, 15)),
+    SeedEstimate("Gloria Mendez", "1040-ES", "prior_year_100", "6200", "0", False,
+                 "irs_direct_pay", "not_confirmed"),
+    SeedEstimate("Marcus & Dana Whitley", "1040-ES", "not_required_withholding", None, None,
+                 None, None, "not_required"),
+    SeedEstimate("Estate of Walter Thornbury", "1041-ES", "prospect", None, None, None, None,
                  "not_required"),
 )  # fmt: skip
 
@@ -201,4 +228,25 @@ def tax_schedules_events() -> list[Event]:
             Event(f"estimate:{row.client}", tail + step, "tax.estimate_seeded", REVIEWER, SLICE,
                   {"client": row.client})
         )  # fmt: skip
+    # DF-34 (TASK-3397): each confirmation goes out through the service to the client's own
+    # person, and the confirmed ones come back as that person's upload on the day TAX-13 b shows.
+    for row in ESTIMATES:
+        if row.requested is None:
+            continue
+        person = row.confirmer or row.client
+        events.append(
+            Event(f"estimate-contact:{row.client}", tail + 2 * step, "tax.estimate_contact_ready",
+                  REVIEWER, SLICE, {"client": row.client, "person": person})
+        )  # fmt: skip
+        events.append(
+            Event(f"estimate-request:{row.client}", row.requested,
+                  "tax.estimate_confirmation_requested", PREPARER, SLICE,
+                  {"client": row.client, "person": person})
+        )  # fmt: skip
+        if row.confirmed is not None:
+            events.append(
+                Event(f"estimate-confirmed:{row.client}", row.confirmed,
+                      "tax.estimate_confirmed", PREPARER, SLICE,
+                      {"client": row.client, "person": person})
+            )  # fmt: skip
     return events
