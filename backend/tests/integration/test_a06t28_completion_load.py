@@ -14,6 +14,7 @@ import pytest
 from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import forget_flags
 from abacus.modules.assurance.review_matrix import matrix
 from abacus.modules.assurance.sum_service import sum_view
@@ -238,3 +239,33 @@ async def test_ac_a25_a_draft_carries_the_firms_published_notes(loaded: Database
         TENANT,
     )
     assert {r["note_ref"] for r in refs} >= {"Note 3", "Note 5", "Note 8"}
+
+
+async def test_ac_a25_the_checklist_is_picked_and_answered_97_45_0(loaded: Database) -> None:
+    await dispose_engine()
+    configure_engine(loaded.app_url)
+    seed = Seeder(loaded.superuser_dsn)
+    answers = await seed.rows(
+        "SELECT a.answer, a.state, count(*) AS n, bool_and(a.reviewed_by IS NOT NULL) AS reviewed "
+        "FROM disclosure_checklist_answers a WHERE a.tenant_id = $1 GROUP BY 1, 2 ORDER BY 1",
+        TENANT,
+    )
+    assert [tuple(a) for a in answers] == [
+        ("na", "reviewed", 45, True),
+        ("yes", "reviewed", 97, True),
+    ]
+    document = cast(
+        UUID, await seed.value("SELECT id FROM statement_documents WHERE tenant_id = $1", TENANT)
+    )
+    hannah = user_id_of(next(x for x in SEATS if x.initials == "HL"))
+    person = AuthContext(
+        TenantContext(TENANT, "human", str(hannah)), hannah, UUID(int=0), None, system_now()
+    )
+    view = await statements.disclosure_view(person.tenant, document)
+    assert (view.answered, view.total) == (142, 142)
+    (option,) = await statements.checklist_options(person.tenant)
+    assert option["version"] == 1
+    with pytest.raises(statements.ChecklistAnswered):
+        await statements.pick_checklist(person, document, option["id"])
+    with pytest.raises(NotFound):
+        await statements.pick_checklist(person, document, UUID(int=1))

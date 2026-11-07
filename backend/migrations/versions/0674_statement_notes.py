@@ -1,8 +1,10 @@
 """A-06-T25 (DEC-2389): the statements' note templates and each version's notes, expand-only.
 
-`methodology` (firm content): `statement_note_templates` and their versions (notes as JSON, published
-by a person). No note wording is inserted here (AGENTS 16). `reporting`: `statement_notes`, the notes
-a draft rendered from a published version, insert-only like the rest of a statement version.
+`methodology` (firm content): `statement_note_templates` and their versions (notes as JSON,
+published by a person). No note wording is inserted here (AGENTS 16). `reporting`:
+`statement_notes`, the notes a draft rendered from a published version, insert-only like the rest
+of a statement version. And the app may now set a statement document's checklist version, which a
+person picks (DEC-2390).
 
 Revision ID: 0674
 Revises: 0673
@@ -114,6 +116,8 @@ def upgrade() -> None:
         op.execute(f"REVOKE UPDATE ON {table} FROM abacus_app")
         op.execute(f"GRANT UPDATE ({', '.join(columns)}) ON {table} TO abacus_app")
     op.execute("REVOKE UPDATE ON statement_note_templates FROM abacus_app")
+    # DEC-2390: a person picks a document's checklist; nothing could set this column before.
+    op.execute("GRANT UPDATE (checklist_template_version_id) ON statement_documents TO abacus_app")
     op.execute(
         "CREATE TRIGGER statement_notes_immutable BEFORE UPDATE OR DELETE ON statement_notes "
         "FOR EACH ROW EXECUTE FUNCTION statement_rows_immutable()"
@@ -125,5 +129,8 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    op.execute(
+        "REVOKE UPDATE (checklist_template_version_id) ON statement_documents FROM abacus_app"
+    )
     for table in reversed(_TABLES):
         op.execute(f"DROP TABLE {table}")

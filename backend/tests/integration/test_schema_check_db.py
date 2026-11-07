@@ -2178,7 +2178,14 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             }
         ),
         "statement_documents": frozenset(
-            {"current_version_no", "management_approval", "row_version", "status", "updated_at"}
+            {
+                "checklist_template_version_id",
+                "current_version_no",
+                "management_approval",
+                "row_version",
+                "status",
+                "updated_at",
+            }
         ),
         "subsequent_event_procedures": frozenset(
             {"performed_by", "performed_through", "run_id", "status", "updated_at", "version"}
