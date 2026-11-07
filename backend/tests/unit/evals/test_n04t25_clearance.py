@@ -14,6 +14,9 @@ from typing import cast
 import pytest
 import yaml
 
+# C19's `use` and `ai_disclosure` consent checks: the responder's spec (data class `tri`) refuses
+# to load without them, so the file failed collection when run on its own.
+import abacus.modules.organisations.api  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers the consent checks
 from abacus.modules.agents.spec import spec
 from abacus_tools.evals.notices_responder import load, run
 from abacus_tools.evals.notices_responder_real import (

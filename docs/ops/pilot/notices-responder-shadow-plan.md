@@ -14,6 +14,9 @@ responder off.
 1. **The CPA label review first.** The suite's position labels were set from the scenarios by the
    builder (`label_review: pending`, DEC-2312). A tax CPA reviews them; only then does the suite
    read `label_review: reviewed`. Until that, `analyze` cannot clear, whatever the run says.
+   The same review reads the extract labels against each case's word layer (DEC-2611): five
+   `notice.number` labels (`X`, `COMPTROLLER`, `INCOME`, `1`, `4`) were derived from the case's
+   type key, not from a real notice's numbering, and the CPA confirms or corrects each.
 2. **Direct, then Bedrock**, in the evaluation account, on synthetic data only:
 
    ```
