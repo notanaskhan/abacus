@@ -32,6 +32,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession
 from abacus.kernel import request_context
 from abacus.kernel.classification import classified, sensitive_paths
 from abacus.kernel.db import TenantContext, tenant_connection
+from abacus.kernel.db.archive_guard import ARCHIVED_WRITE_KINDS, ArchivedWriteKind
 from abacus.kernel.telemetry import current_trace_id, current_traceparent
 from abacus.kernel.uow.placement import Placeable, Placement, place
 from abacus.kernel.uow.relay import Handler, OutboxEvent, payload_sha256
@@ -190,6 +191,15 @@ class UnitOfWork:
     _held: dict[UUID, tuple[datetime | None, UUID | None]] = field(
         default_factory=dict[UUID, tuple[datetime | None, UUID | None]]
     )
+
+    async def allow_archived_write(self, kind: ArchivedWriteKind) -> None:
+        """Let this transaction past `archived_guard()` on the tables naming `kind` (A-07-T13; ADR
+        P-43). Only the four allowlisted service functions call it (ARCHIVE-001)."""
+        if kind not in ARCHIVED_WRITE_KINDS:
+            raise ValueError(f"archived_write kind {kind!r} is unknown")
+        await self.session.execute(
+            text("SELECT set_config('app.archived_write', :kind, true)"), {"kind": kind}
+        )
 
     def record(
         self,
