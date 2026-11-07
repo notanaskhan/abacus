@@ -40,3 +40,14 @@ actions:
   portal_k1.read:                 {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}
   portal_k1.download:             {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}
   portal_k1.update_details:       {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}
+  # --- C10 portal half (R-02-T02 stub; R-02 §4.4; DEC-2402). The plan's roles `owner`, `plan_administrator`, `trustee` are `client_admin`,
+  # `contributor` is `client_contributor` (identity/client_access.py). A `tcwg` grant holds one of the two names on its
+  # `governance_room` scope only; the governance service refuses any other grant (DEC-93, 404), as the K-1 and inquiry rows do.
+  # Firm roles, agents, system and support have no cell: firms act through A-06's record mode, never in the portal.
+  deliverable.read:         {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}   # POR-09, POR-15 e: audiences only
+  deliverable.download:     {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}   # POR-09 c: 60-second URL and an access event
+  deliverable.comment:      {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}   # POR-09 a: page comments on a draft that allows them
+  statement.client_approve: {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required, mfa_recent: required}   # POR-09 a2: narrowed by C18's decider rule (OQ-1)
+  tcwg.read:                {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}   # POR-15 a, c, d, e
+  tcwg.acknowledge:         {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required, mfa_recent: required}   # POR-15 b: one row per member and version
+  tcwg.ask:                 {client_admin: allow, client_contributor: allow, agent: deny, system: deny, scope_only: required}   # POR-15: the author-only thread
