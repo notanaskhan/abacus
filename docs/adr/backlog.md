@@ -25,15 +25,15 @@ This file is the only source of ADR numbers. Specs and tasks cite P-IDs until a 
 | P-12 | §7216 consents, TRI, TIN sealing, gateway condition | red | Q-02 | ADR-167 | drafted 2026-10-23 with Q-02-T25; acceptance by both founders and counsel's naming of the recipient (OQ-1) due Fri 22 Jan 2027 | DEC-52 | accepted |
 | P-13 | Independence and attest-client rules | red | P-07 | ADR-164 (plan alias ADR-142, which is the AWS production topology) | Fri 27 Nov; drafted and accepted 2026-10-23 with P-07-T66 | DEC-69 | accepted |
 | P-14 | Retention, holds, destruction | red | Q-02 | ADR-179 | drafted 2026-10-25 with Q-02-T05; acceptance by both deciders with counsel's floor input recorded (Q-02-T31) due Fri 27 Nov | DEC-71, DEC-72 | proposed |
-| P-15 | Real time via SSE, plus presence | amber | P-10 | next free | Fri 6 Nov; re-dated 2026-10-22: drafted with P-10's first task, owner ayushkbhatia | DEC-23 | to draft (re-dated) |
+| P-15 | Real time via SSE, plus presence | amber | P-10 | ADR-232 (plan alias ADR-156, which is tenant key provisioning) | Fri 6 Nov; re-dated 2026-10-22: drafted with P-10's first task, owner ayushkbhatia | DEC-23 | proposed (acceptance: ayushkbhatia) |
 | P-16 | Client-ledger writes (W1) and GRC request sync (W5) | red | C-01 | next free | Fri 27 Nov; re-dated 2026-10-22: drafted with C-01's first task, owner ayushkbhatia | DEC-69 | to draft (re-dated) |
 | P-17 | `integrations` module and the write-capability framework | red | F-02 | ADR-150 | drafted 2026-10-20 (M1 draft by Fri 30 Oct); accept by Fri 27 Nov | DEC-46 | proposed |
 | P-18 | Tax-engine integration; never transmit | red | F-09 | next free | Fri 13 Nov; re-dated 2026-10-22: drafted with F-09's first task, owner ayushkbhatia | DEC-49 | to draft (re-dated) |
 | P-19 | Deterministic document generation | amber | P-11 | ADR-320 (plan alias ADR-152, which is the unauthenticated operational routes) | drafted and accepted 2026-10-29 with P-11-T01 (TASK-2203) | DEC-44 | accepted |
 | P-20 | Office add-ins | amber | — | next free | Q2 2027 | DEC-95 | to draft |
 | P-21 | Public API, webhooks, MCP | red | — | next free | Fri 11 Dec | DEC-86 | to draft |
-| P-22 | Agent model: capabilities vs firm definitions | red | P-10 | next free | Fri 6 Nov; re-dated 2026-10-22: drafted with P-10's first task, owner ayushkbhatia | DEC-41 | to draft (re-dated) |
-| P-23 | Workbench sessions | red | P-10 | next free | Fri 13 Nov; re-dated 2026-10-22: drafted with P-10's first task, owner ayushkbhatia | DEC-40 | to draft (re-dated) |
+| P-22 | Agent model: capabilities vs firm definitions | red | P-10 | ADR-233 (plan alias ADR-157, which is platform controls) | Fri 6 Nov; re-dated 2026-10-22: drafted with P-10's first task, owner ayushkbhatia | DEC-41 | proposed (acceptance: ayushkbhatia) |
+| P-23 | Workbench sessions | red | P-10 | ADR-235 (plan alias ADR-159, which is the archive seal) | Fri 13 Nov; re-dated 2026-10-22: drafted with P-10's first task, owner ayushkbhatia | DEC-40 | proposed (acceptance: ayushkbhatia) |
 | P-24 | Structured agent output | red | F-06 | ADR-230 | drafted and accepted 2026-10-28 with F-06-T24 (TASK-1704), before F-06-T15 | DEC-41 | accepted |
 | P-25 | Model-drafted text to clients | red | Q-03 | next free | Fri 11 Dec | DEC-79 | to draft |
 | P-26 | E-signature | red | F-02 | ADR-149, then ADR-342 | ADR-149 drafted 2026-10-20 and accepted 2026-10-27 (DEC-706); ADR-342 (DocuSeal replaces DocuSign, DEC-1275) drafted with TASK-2148 and accepted 2026-10-30; ADR-149 superseded | DEC-25, DEC-1275 | ADR-342 accepted |
@@ -56,7 +56,7 @@ This file is the only source of ADR numbers. Specs and tasks cite P-IDs until a 
 | P-43 | Archive seal, DB immutability, hash chain, Object Lock modes | red | A-07 | ADR-159 | Fri 11 Dec | DEC-71 | proposed |
 | P-44 | Request status enum migration | red | F-03 | ADR-144 | Fri 30 Oct | DEC-09, DEC-74 | accepted |
 | P-45 | Unauthenticated `/healthz` and portal branding routes | red | Q-01 | ADR-152 | Fri 13 Nov (with TASK-014) | DEC-59 | proposed |
-| P-46 | Gateway conversations and tool use | red | P-10 | next free | Fri 6 Nov; re-dated 2026-10-22: drafted with P-10's first task, owner ayushkbhatia | DEC-41 | to draft (re-dated) |
+| P-46 | Gateway conversations and tool use | red | P-10 | ADR-234 (plan alias ADR-158, which is client-scoped files) | Fri 6 Nov; re-dated 2026-10-22: drafted with P-10's first task, owner ayushkbhatia | DEC-41 | proposed (acceptance: ayushkbhatia) |
 | P-47 | Runs, steps, sessions, canonical run states, run records | red | Q-02 (drafted), P-10 | ADR-169 | drafted 2026-10-24 with Q-02-T34 (states, legacy map, run records, C6 v1 shape); acceptance due Fri 19 Feb 2027 | — | accepted |
 | P-48 | Citation v2 and number provenance | red | P-03 | ADR-166 (plan alias ADR-144, which is P-44's request status migration) | Fri 13 Nov; re-dated 2026-10-22: drafted and accepted 2026-10-23 with P-03-T27 | DEC-147 | accepted |
 | P-49 | Autonomy policy versions and Auto mode | red | G-02 | ADR-186 (plan alias ADR-148, which is P-28) | drafted and accepted 2026-10-26 with G-02-T01 (TASK-1289) | DEC-50 | accepted |
