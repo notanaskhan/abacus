@@ -3,13 +3,13 @@ import {
   misstatementsOptions,
   reviewNoteListOptions,
 } from "@abacus/api-client/query";
-import { EmptyState, Segmented, type TabOption, ViewStateBody, type ViewState } from "@abacus/ui";
+import { Segmented, type TabOption, ViewStateBody, type ViewState } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import type { JSX } from "react";
 import { useOpenOverlay } from "../../app-core/open";
 import { ov } from "../../routes/to";
 import { ReviewNotesPane } from "../AUD-17";
-import { PLANNED_VISIBLE } from "../../app-core/planned";
+import { FsDisclosurePane } from "../AUD-20";
 import { AuditBar, isNotFound, useAuditCockpit } from "../../domain/audits";
 import { FindingsRegister } from "../AUD-15";
 import { MisstatementsPane } from "../AUD-16";
@@ -26,12 +26,6 @@ import { COPY } from "./copy";
 
 export type EvaluationTab = "findings" | "misstatements" | "review-notes" | "fs-disclosure";
 
-const SCREEN: Record<EvaluationTab, string> = {
-  findings: "AUD-15",
-  misstatements: "AUD-16",
-  "review-notes": "AUD-17",
-  "fs-disclosure": "AUD-20",
-};
 const LABEL: Record<Exclude<EvaluationTab, "fs-disclosure">, string> = {
   findings: COPY.findings,
   misstatements: COPY.misstatements,
@@ -132,10 +126,15 @@ export function EvaluationPage({
                 }}
               />
             )}
-            {tab === "fs-disclosure" && PLANNED_VISIBLE && (
-              <EmptyState icon="clock" title={COPY.planned}>
-                {COPY.plannedBody(SCREEN[tab])}
-              </EmptyState>
+            {/* A-06-T30: AUD-20, the Evaluation route with no tab of its own. */}
+            {tab === "fs-disclosure" && (
+              <FsDisclosurePane
+                engagementId={cockpit.data.engagement_id}
+                onMismatch={() => {
+                  onTab("misstatements");
+                }}
+                {...(onBack === undefined ? {} : { onCockpit: onBack })}
+              />
             )}
           </>
         )}
