@@ -8,9 +8,10 @@ information returns, the partner's position (P-04's `notice_position` decision; 
 notices decide route), the response letter from the firm's template and its send. Every route
 answers, in order: a client principal 404 (INV-4: the portal sees only the C7 envelope, the
 payment-confirmation request and the POR-02 row, each through its own grant); the matrix action on
-the notice's engagement (or the firm for lists and intakes); 404 with `notices.workspace` off; 501
-`not_implemented` until N-04-T06 onward. Amounts and lines are tax return information (`tri`);
-TINs and confirmation numbers are sealed and only their last four digits travel.
+the notice's engagement (or the firm for lists and intakes); 501 `not_implemented` until N-04-T06
+onward (`notices.workspace` retired at N-04-T27, DEC-2602). Amounts and lines are tax return
+information (`tri`); TINs and confirmation numbers are sealed and only their last four digits
+travel.
 """
 
 from __future__ import annotations
@@ -24,11 +25,9 @@ from uuid import UUID
 from fastapi import Depends, Header, Query
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import NOTICES_WORKSPACE
 from abacus.kernel.classification import classified
 from abacus.kernel.clock import system_now
 from abacus.kernel.errors import NotFound
-from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.modules.engagements.api import get_ref, work_item_engagement
 from abacus.modules.identity.api import (
@@ -759,8 +758,6 @@ async def _gate_firm(ctx: AuthContext, action: str) -> None:
     if ctx.client:
         raise NotFound("notices")
     await authorise(ctx, action, Resource.firm(ctx.tenant_id))
-    if not await flag_enabled(ctx.tenant, NOTICES_WORKSPACE):
-        raise NotFound(NOTICES_WORKSPACE.name)
 
 
 async def _gate(ctx: AuthContext, notice_id: UUID, action: str) -> None:
@@ -773,8 +770,6 @@ async def _gate(ctx: AuthContext, notice_id: UUID, action: str) -> None:
     # A notice is its work item: scope the check to it so `function_in` (preparer, reviewers,
     # signer) is evaluated on the person's assignment, not refused for want of one.
     await authorise(ctx, action, replace(ref.resource(), work_item_id=notice_id))
-    if not await flag_enabled(ctx.tenant, NOTICES_WORKSPACE):
-        raise NotFound(NOTICES_WORKSPACE.name)
 
 
 # A stub whose response carries a TIN (`MaskedTinOut`) already returns through the central mask

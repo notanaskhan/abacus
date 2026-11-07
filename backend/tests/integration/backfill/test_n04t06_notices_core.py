@@ -8,31 +8,18 @@ from __future__ import annotations
 
 import uuid
 from datetime import date
-from typing import Final, cast
+from typing import cast
 
 import pytest
-
-from abacus.kernel.flags import forget_flags
 
 from .tb_support import Books, Json, books
 
 pytestmark = pytest.mark.asyncio
 
-FLAGS: Final = ("notices.workspace",)
-
-
 @pytest.fixture
 async def world(net: object) -> Books:
-    found = await books(net)  # pyright: ignore[reportArgumentType] -- the backfill `net` fixture
-    for flag in FLAGS:
-        await found.seed.run(
-            "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
-            "VALUES ($1, $2, 'true', 'test-seed', 'N-04-T06') ON CONFLICT DO NOTHING",
-            found.tenant_id,
-            flag,
-        )
-    forget_flags()
-    return found
+    # `notices.workspace` retired at N-04-T27 (DEC-2602): the routes are on for every firm.
+    return await books(net)  # pyright: ignore[reportArgumentType] -- the backfill `net` fixture
 
 
 async def _notice(world: Books, code: str, respond_by: str) -> uuid.UUID:

@@ -19,7 +19,7 @@
 | e | kevin-osei | 9:24 AM | E0 | `?tile=new`: N5 and N9; Clear | fixture (T05) |
 | f | kevin-osei | 9:24 AM | empty | No visible notices: "No open notices." | fixture (T05) |
 | g | kevin-osei | 9:24 AM | — | Loading: skeleton rows | fixture (T05) |
-| composed | as a | — | — | Possible duplicate ("Looks like N2 · same notice": Attach / Create anyway); Manual entry (no confidence pills, page thumbnails); No client matched (picker); flag off and not allowed (C-20); error | composed (DEC-32) |
+| composed | as a | — | — | Possible duplicate ("Looks like N2 · same notice": Attach / Create anyway); Manual entry (no confidence pills, page thumbnails); No client matched (picker); not allowed (C-20; the flag-off state retired with `notices.workspace`, DEC-2602); error | composed (DEC-32) |
 
 ## API
 | Read or write | Endpoint | Shape | Matrix action | allowed_actions and read-only reasons per role |

@@ -29,7 +29,6 @@ import {
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
-import { useFlag } from "../../app-core/flags";
 import { useDecisionCard } from "../../domain/review";
 import { ResponseEditor } from "../NOT-03";
 import { ViewerPane } from "../SHL-08";
@@ -657,11 +656,9 @@ export function NoticeWorkspace({
   onDecide,
   initialLit = false,
 }: WorkspaceProps): JSX.Element {
-  const on = useFlag("notices.workspace") === true;
-  const notice = useQuery({ ...noticeOptions({ path: { notice_id: noticeId } }), enabled: on });
+  const notice = useQuery(noticeOptions({ path: { notice_id: noticeId } }));
   const analysis = useQuery({
     ...analysisOptions({ path: { notice_id: noticeId } }),
-    enabled: on,
     // The run is background work (DEC-2359): the spinner stops when a version lands.
     refetchInterval: (q) => (q.state.data?.status === "running" ? 3000 : false),
   });
@@ -679,8 +676,7 @@ export function NoticeWorkspace({
   const at = 0;
 
   let state: ViewState = { kind: "ready" };
-  if (!on) state = { kind: "flag-off", flag: "notices.workspace" };
-  else if (notice.isError) {
+  if (notice.isError) {
     const status = (notice.error as { status?: number } | null)?.status;
     state =
       status === 404

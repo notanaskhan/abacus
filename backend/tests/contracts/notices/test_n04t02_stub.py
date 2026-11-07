@@ -2,7 +2,7 @@
 
 Every N-04 §4.3 route exists with its one matrix action and documents 404 and 501; every create
 takes an Idempotency-Key and every edit an If-Match; the gate answers clients 404, authorises
-before reading the flag, answers 404 with `notices.workspace` off and 501 with it on; every model
+and then serves (`notices.workspace` retired at N-04-T27, DEC-2602); every model
 field is classified, amounts and letter text are tax return information, and TINs and
 confirmation numbers never come back whole.
 """
@@ -149,11 +149,10 @@ async def test_ac1_a_client_principal_gets_404_before_anything_else() -> None:
         await contract.notice_route(uuid.uuid4(), _ctx(client=True))
 
 
-async def test_ac1_the_gate_authorises_then_reads_the_flag_then_serves(
+async def test_ac1_the_gate_authorises_then_serves(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     calls: list[str] = []
-    state = {"on": False}
 
     async def engagement(_tenant: object, _wid: uuid.UUID) -> uuid.UUID:
         return uuid.uuid4()
@@ -165,15 +164,10 @@ async def test_ac1_the_gate_authorises_then_reads_the_flag_then_serves(
     async def authorise(_ctx: AuthContext, action: str, resource: object) -> None:
         calls.append(f"authorise:{action}")
 
-    async def flag(_tenant: object, f: object) -> bool:
-        calls.append(f"flag:{getattr(f, 'name', f)}")
-        return state["on"]
-
     monkeypatch.setattr(contract, "work_item_engagement", engagement)
     monkeypatch.setattr(contract, "get_ref", get_ref)
     monkeypatch.setattr(contract, "authorise", authorise)
-    monkeypatch.setattr(contract, "flag_enabled", flag)
-    # N-04-T16 serves sending for signature: the gate still comes first and hides a flag off.
+    # N-04-T16 serves sending for signature: the gate still comes first.
     envelope = uuid.uuid4()
 
     async def sent(_ctx: AuthContext, _notice_id: uuid.UUID) -> uuid.UUID:
@@ -184,12 +178,9 @@ async def test_ac1_the_gate_authorises_then_reads_the_flag_then_serves(
 
     monkeypatch.setattr(sending, "send_for_signature", sent)
     monkeypatch.setattr(sending, "confirmation_item_of", no_item)
-    with pytest.raises(NotFound):
-        await contract.send_for_signature_route(uuid.uuid4(), _ctx(), "key")
-    assert calls == ["authorise:notice_response.send_for_signature", "flag:notices.workspace"]
-    state["on"] = True
     served = await contract.send_for_signature_route(uuid.uuid4(), _ctx(), "key")
     assert served.envelope_id == envelope
+    assert calls == ["authorise:notice_response.send_for_signature"]
     # N-04-T06 serves the patch; the assignee alone is still `notice.assign`.
     assert contract._assign_only(contract.NoticePatchIn(assignee_id=uuid.uuid4()))  # pyright: ignore[reportPrivateUsage] -- the private helper under test
     assert not contract._assign_only(  # pyright: ignore[reportPrivateUsage] -- the private helper under test

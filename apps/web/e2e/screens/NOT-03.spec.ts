@@ -2,18 +2,13 @@
 import { walkBoards } from "./fixture-boards";
 
 const READY = "Response";
-walkBoards(
-  "NOT-03",
-  "/notices/_noticeId_",
-  [
-    { st: "a", ready: READY, search: "tab=response" },
-    { st: "b", ready: READY, search: "tab=response" },
-    { st: "c", ready: READY, search: "tab=response" },
-    { st: "d", ready: READY, search: "tab=response" },
-    { st: "d2", ready: READY, search: "tab=response" },
-    { st: "e", ready: READY, search: "tab=response" },
-    { st: "f", ready: READY, search: "tab=response" },
-    { st: "g", ready: READY, search: "tab=response" },
-  ],
-  ["notices.workspace"],
-);
+walkBoards("NOT-03", "/notices/_noticeId_", [
+  { st: "a", ready: READY, search: "tab=response" },
+  { st: "b", ready: READY, search: "tab=response" },
+  { st: "c", ready: READY, search: "tab=response" },
+  { st: "d", ready: READY, search: "tab=response" },
+  { st: "d2", ready: READY, search: "tab=response" },
+  { st: "e", ready: READY, search: "tab=response" },
+  { st: "f", ready: READY, search: "tab=response" },
+  { st: "g", ready: READY, search: "tab=response" },
+]);

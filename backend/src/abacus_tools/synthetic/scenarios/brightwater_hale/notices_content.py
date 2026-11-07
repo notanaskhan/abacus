@@ -19,13 +19,11 @@ from datetime import date, datetime
 from typing import Final, NamedTuple
 
 from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import CT
-from abacus_tools.synthetic.scenarios.brightwater_hale.scenario import SETUP_AT
 from abacus_tools.synthetic.scenarios.brightwater_hale.slices import register_slice
 from abacus_tools.synthetic.scenarios.brightwater_hale.timeline import Event
 
 SLICE: Final = "notices"
 NEEDS: Final = ("people", "tax_board", "report_templates")
-FLAGS: Final = ("notices.workspace",)
 FILER: Final = "GH"  # Grace Holloway logs a notice on the day it arrives
 
 
@@ -92,10 +90,8 @@ LOADED_AT: Final = datetime(2026, 9, 14, 8, 0, tzinfo=CT)
 
 @register_slice(SLICE)
 def notice_events() -> list[Event]:
-    events = [
-        Event(f"flag:{flag}", SETUP_AT, "platform.flag_set", "system", SLICE, {"flag": flag})
-        for flag in FLAGS
-    ]
+    # `notices.workspace` retired at N-04-T27 (DEC-2602): no flag event.
+    events: list[Event] = []
     for row in NOTICES:
         events.append(
             Event(

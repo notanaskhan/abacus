@@ -1,13 +1,11 @@
-import { FlagOffState } from "@abacus/ui";
 import { createRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import type { JSX } from "react";
-import { FeatureGate } from "../../app-core/flags";
 import { useOverlays } from "../../app-core/overlay-host";
 import { useParam } from "../params";
 import { appRoute, lazyScreen } from "../root";
 
-// NOT-01 (N-04-T05; docs/screens/NOT-01.md): `/notices` behind `notices.workspace`; flag off
-// renders C-20 and the nav keeps its 13 items (D4). The filters are the search params
+// NOT-01 (N-04-T05; docs/screens/NOT-01.md): `/notices`, on for every firm since N-04-T27 retired
+// `notices.workspace` (DEC-2602); the nav keeps its 13 items (D4). The filters are the search params
 // (`agency`, `type`, `assignee`, `respond_by`, `tile`, `q`), so a filtered view is a link.
 
 // The search's words, kept here because routes never reach into a domain (the screen owns the
@@ -89,15 +87,10 @@ export const noticesRoute = createRoute({
     const navigate = noticesRoute.useNavigate();
     return (
       <div className="flex min-h-0 flex-1 flex-col">
-        <FeatureGate
-          flag="notices.workspace"
-          fallback={<FlagOffState flag="notices.workspace" label="Notices" />}
-        >
-          <Index
-            filters={filtersOf(search)}
-            onFilters={(next) => void navigate({ search: searchOf(next), replace: true })}
-          />
-        </FeatureGate>
+        <Index
+          filters={filtersOf(search)}
+          onFilters={(next) => void navigate({ search: searchOf(next), replace: true })}
+        />
       </div>
     );
   },
@@ -126,42 +119,37 @@ export const noticeRoute = createRoute({
     const overlays = useOverlays();
     return (
       <div className="flex min-h-0 flex-1 flex-col">
-        <FeatureGate
-          flag="notices.workspace"
-          fallback={<FlagOffState flag="notices.workspace" label="Notices" />}
-        >
-          <Workspace
-            noticeId={noticeId}
-            tab={search.tab ?? "analysis"}
-            onTab={(tab) => {
-              void navigate({
-                to: ".",
-                search: {
-                  ...(search.segment === undefined ? {} : { segment: search.segment }),
-                  ...(tab === "analysis" ? {} : { tab }),
-                },
-                replace: true,
-              });
-            }}
-            segment={search.segment ?? "notice_vs_return"}
-            onSegment={(segment) => {
-              void navigate({
-                to: ".",
-                search: {
-                  ...(search.tab === undefined ? {} : { tab: search.tab }),
-                  ...(segment === "notice_vs_return" ? {} : { segment }),
-                },
-                replace: true,
-              });
-            }}
-            onBack={() => {
-              void navigate({ to: "/notices" });
-            }}
-            onDecide={(cardId) => {
-              overlays.open("decision", cardId);
-            }}
-          />
-        </FeatureGate>
+        <Workspace
+          noticeId={noticeId}
+          tab={search.tab ?? "analysis"}
+          onTab={(tab) => {
+            void navigate({
+              to: ".",
+              search: {
+                ...(search.segment === undefined ? {} : { segment: search.segment }),
+                ...(tab === "analysis" ? {} : { tab }),
+              },
+              replace: true,
+            });
+          }}
+          segment={search.segment ?? "notice_vs_return"}
+          onSegment={(segment) => {
+            void navigate({
+              to: ".",
+              search: {
+                ...(search.tab === undefined ? {} : { tab: search.tab }),
+                ...(segment === "notice_vs_return" ? {} : { segment }),
+              },
+              replace: true,
+            });
+          }}
+          onBack={() => {
+            void navigate({ to: "/notices" });
+          }}
+          onDecide={(cardId) => {
+            overlays.open("decision", cardId);
+          }}
+        />
       </div>
     );
   },
