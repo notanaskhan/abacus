@@ -1,4 +1,4 @@
-# Template content part 1 (A-07-T12; A-07 §5; DEC-2315). Firm-worded synthetic text, Brightwater Hale
+# Template content parts 1 and 2 (A-07-T12, T16; A-07 §5; DEC-2315, DEC-2418). Firm-worded synthetic text, Brightwater Hale
 # only, never licensed publisher wording (ADR-056). Loaded by the `a07_templates` slice.
 eqr_checklist:
   - {key: independence, text: "EQR's independence and objectivity confirmed"}
@@ -93,3 +93,57 @@ bundles:
     paragraphs:
       general:
         - "We offer these observations to help management improve its processes."
+  # --- Part 2 (A-07-T16): auditor's reports, from AUD-23's handoff words for the EBP report. ---
+  - family: audit_report
+    name: "BH Report · EBP 103(a)(3)(C) v3"
+    layout: report
+    paragraphs:
+      general:
+        - "We have performed an audit of the financial statements of the plan, an employee benefit plan subject to ERISA, as permitted by ERISA section 103(a)(3)(C). Management, having determined it is permissible in the circumstances, elected to have the audit performed under section 103(a)(3)(C). The investment information it covers was certified by a qualified institution."
+        - "In our opinion, based on our audit and on the procedures described in the Auditor's Responsibilities section: the amounts and disclosures in the accompanying financial statements, other than those agreed to or derived from the certified investment information, are presented fairly, in all material respects; and the information related to assets held by and certified to by a qualified institution agrees to, or is derived from, in all material respects, the information prepared and certified by that institution."
+        - "We conducted our audit under the standards named in this report, and we are independent of the plan."
+        - "Management is responsible for the financial statements, for the section 103(a)(3)(C) election and for maintaining a current plan instrument."
+        - "Our objectives are to obtain reasonable assurance about the amounts and disclosures in scope and to issue a report on them."
+  - family: audit_report
+    name: "BH Report · FS Nonissuer Unmodified v4"
+    layout: report
+    paragraphs:
+      general:
+        - "We have audited the financial statements, which comprise the statements named in this report and the related notes."
+        - "In our opinion, the financial statements present fairly, in all material respects, the position and results they describe, in accordance with the framework named in this report."
+        - "We conducted our audit under the standards named in this report, and we are independent of the company."
+        - "Management is responsible for the financial statements and for the internal control relevant to preparing them."
+        - "Our objectives are to obtain reasonable assurance about whether the statements are free from material misstatement and to issue a report on them."
+  - family: review_report
+    name: "BH Report · AR-C 90 Review v1"
+    layout: report
+    paragraphs:
+      general:
+        - "We have reviewed the financial statements named in this report. A review consists mainly of analytical procedures and inquiries of management, and is substantially less in scope than an audit."
+        - "Based on our review, we are not aware of any material modifications that should be made to the financial statements for them to conform with the framework named in this report."
+        - "Management is responsible for the financial statements. Our responsibility is to conduct the review under the standards named in this report."
+  - family: compilation_report
+    name: "BH Report · AR-C 80 Compilation v1"
+    layout: report
+    paragraphs:
+      general:
+        - "Management is responsible for the financial statements named in this report. We have performed a compilation engagement under the standards named in this report."
+        - "We did not audit or review the financial statements, nor were we required to verify the information management provided. We express no opinion, conclusion or other assurance on them."
+report_reason_codes:
+  - {code: ERISA-SUPP, label: "Supplemental schedules required by ERISA", applies_to: [ebp_audit]}
+  - {code: EOM-GC, label: "Emphasis of matter: going concern disclosures", applies_to: [fs_audit, ebp_audit]}
+  - {code: EOM-CHG, label: "Emphasis of matter: change in accounting principle", applies_to: [fs_audit, ebp_audit]}
+  - {code: OM-OTHER, label: "Other matter", applies_to: [fs_audit, ebp_audit]}
+# Paragraph blocks a person's decision switches on. A modification needs the partner's decision card.
+report_paragraph_blocks:
+  - {key: opinion_qualified, decision_kind: opinion_form, value: qualified, heading: "Qualified Opinion", text: "In our opinion, except for the effects of the matter described below, the amounts in scope are presented fairly, in all material respects."}
+  - {key: basis_qualified, decision_kind: opinion_form, value: qualified, heading: "Basis for Qualified Opinion", text: "The matter below is the basis for our qualified opinion."}
+  - {key: opinion_adverse, decision_kind: opinion_form, value: adverse, heading: "Adverse Opinion", text: "In our opinion, because of the significance of the matter described below, the amounts in scope are not presented fairly."}
+  - {key: opinion_disclaimer, decision_kind: opinion_form, value: disclaimer, heading: "Disclaimer of Opinion", text: "Because of the significance of the matter described below, we do not express an opinion."}
+  - {key: going_concern, decision_kind: going_concern, value: substantial_doubt, heading: "Substantial Doubt About the Plan's Ability to Continue as a Going Concern", text: "The notes describe conditions that raise substantial doubt. Our opinion is not modified on this matter."}
+  - {key: erisa_supplemental, reason_code: ERISA-SUPP, heading: "Supplemental Schedules Required by ERISA", text: "The supplemental schedules named in this report are presented for additional analysis and are not a required part of the financial statements, but are supplementary information required by the Department of Labor's Rules and Regulations for Reporting and Disclosure under ERISA."}
+firm_signature:
+  placeholder: true
+  label: "Firm signature applied at release"
+  firm_name: "Brightwater Hale LLP"
+
