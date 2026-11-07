@@ -254,17 +254,22 @@ def _owner_dsn() -> str:
     return url.get_secret_value()
 
 
-async def _current_rows(key: str, as_of: date) -> list[dict[str, object]]:
+async def current_payload(key: str, as_of: date) -> dict[str, object] | None:
+    """The payload of the version in effect for `key` on `as_of`, or None (T-03-T18 reads it)."""
     conn = await connect(_owner_dsn())
     try:
         row = await conn.fetchrow("SELECT payload FROM reference_set_resolve($1, $2)", key, as_of)
     finally:
         await conn.close()
     if row is None:
-        return []
+        return None
     payload = row["payload"]
-    loaded = json.loads(payload) if isinstance(payload, str) else payload
-    return cast(list[dict[str, object]], loaded.get("rows", []))
+    return cast(dict[str, object], json.loads(payload) if isinstance(payload, str) else payload)
+
+
+async def _current_rows(key: str, as_of: date) -> list[dict[str, object]]:
+    payload = await current_payload(key, as_of)
+    return [] if payload is None else cast(list[dict[str, object]], payload.get("rows", []))
 
 
 async def draft(args: argparse.Namespace) -> str:
