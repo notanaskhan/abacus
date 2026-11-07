@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 from pathlib import Path
+from typing import cast
 
 import pytest
 import yaml
@@ -48,7 +49,9 @@ def test_ac_a_clean_bedrock_run_clears_both_modes() -> None:
 
 def test_ac_the_direct_route_never_clears() -> None:
     found = clearance(REVIEWED, "direct", [], SEEN, BASELINES)
-    assert all(not found[m]["cleared"] and "not_bedrock" in found[m]["reasons"] for m in MODES)
+    for mode in MODES:
+        assert not found[mode]["cleared"]
+        assert "not_bedrock" in cast(list[str], found[mode]["reasons"])
 
 
 def test_ac_a_failed_threshold_blocks_only_its_mode() -> None:

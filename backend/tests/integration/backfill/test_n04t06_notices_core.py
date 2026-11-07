@@ -16,6 +16,7 @@ from .tb_support import Books, Json, books
 
 pytestmark = pytest.mark.asyncio
 
+
 @pytest.fixture
 async def world(net: object) -> Books:
     # `notices.workspace` retired at N-04-T27 (DEC-2602): the routes are on for every firm.
