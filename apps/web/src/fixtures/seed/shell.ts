@@ -178,7 +178,7 @@ export function capabilitiesFor(
     capabilities: [],
     clock_mode: "offset",
     engagement_id: null,
-    entitlements: ["tax_returns"],
+    entitlements: ["tax_returns", "ebp_audits"],
     flags: {},
     mfa_recent_until: null,
     office_id: seat === undefined ? null : officeIdOf(seat.office),

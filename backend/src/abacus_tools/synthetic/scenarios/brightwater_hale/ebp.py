@@ -310,6 +310,16 @@ FILES: Final[tuple[EbpFile, ...]] = (
 @register_slice(SLICE)
 def _ebp_slice() -> list[Event]:
     return [
+        # A-05-T49 (DEC-2603): the EBP module is an entitlement; Brightwater Hale is synthetic, so
+        # it holds without the CPA memo.
+        Event(
+            "ebp-entitlement",
+            SETUP_AT,
+            "platform.entitlement_set",
+            "system",
+            SLICE,
+            {"module": "ebp_audits"},
+        ),
         Event(
             "ebp:northwind:documents",
             SETUP_AT + timedelta(days=10),
@@ -318,5 +328,5 @@ def _ebp_slice() -> list[Event]:
             SLICE,
             {"files": len(FILES), "plan": PLAN},
             client="Northwind Robotics, Inc.",
-        )
+        ),
     ]
