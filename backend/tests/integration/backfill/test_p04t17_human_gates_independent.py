@@ -402,6 +402,7 @@ async def test_ac_f9_1_a_settled_subject_goes_done_and_a_returned_one_reopens_it
     subjects = await _daniels_eleven(firm)
     decision = subjects["decision"][0]
     gone = next(g for g in _WAITING[firm.tenant_id] if g.subject_id == decision)
+    assert gone.engagement_id is not None  # an engagement source's subject (DEC-2613)
     row_before = await firm.net.seed.rows(
         "SELECT id FROM human_gates WHERE tenant_id = $1 AND subject_ref->>'id' = $2",
         firm.tenant_id,
