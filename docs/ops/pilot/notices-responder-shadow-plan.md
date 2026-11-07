@@ -45,7 +45,7 @@ A real firm reaches shadow only when all of these hold, recorded in its go-live 
 | Clearance for both modes | `evals/notices_responder/clearance.yaml` |
 | The firm's AI opt-in, current version of `ai-optin-briefing.md` acknowledged in writing | the vault; the dossier records date and version |
 | The firm's ADM-04 AI policy allows the responder | the firm's AI policy screen |
-| `notices.responder` flag on for the firm, then stage `shadow` | `agent_stages` (platform staff route) |
+| Stage `shadow` for the firm (the `notices.responder` flag retired, DEC-2602) | `agent_stages` (platform staff route) |
 
 In shadow every analysis runs the responder and records its answer on the agent run; nothing is
 shown (`recommended_position` is stored only from a live stage, 0650's CHECK).

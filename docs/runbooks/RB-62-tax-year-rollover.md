@@ -1,6 +1,6 @@
 ---
 id: RB-62
-title: Tax-year rollover (TY2027): reference-set drafts, CPA and counsel review, two-person publish, organizers, the Dec 7 flip and rollback
+title: "Tax-year rollover (TY2027): reference-set drafts, CPA and counsel review, two-person publish, organizers, the Dec 7 entitlement flip and rollback"
 owner: builder
 alarms: []
 last_rehearsed: never
@@ -14,7 +14,7 @@ rehearse_by: 2027-11-26
 | Severity range | SEV3 (a late publish) to SEV2 (a wrong due date published) |
 | Linked from | none yet |
 | SLO affected | none |
-| Kill switches that apply | withdraw a reference-set version (`refdata withdraw`, two people); `tax.extensions_estimates` per firm until retired |
+| Kill switches that apply | withdraw a reference-set version (`refdata withdraw`, two people); the firm's `tax_returns` entitlement (the `tax.extensions_estimates` flag retired, DEC-2605) |
 | Rehearse by | Fri Nov 26, 2027 (staging, PF-X1) |
 | Last rehearsed | never |
 | Last reviewed against an incident | never |
@@ -70,9 +70,10 @@ act). The dossier records the date. There are no live pilot firms (DEC-1391); PF
 
 ## 5. The flip and its rollback (Tue Dec 7, 2027, 19:00 CT)
 
-- `tax.extensions_estimates` on per firm, both founders approving in the dossier, until the flag
-  retires in its held PR (Thu Dec 16 batch).
-- **Rollback:** the flag off for the firm (until retired); a wrong published row is withdrawn
+- The firm's `tax_returns` entitlement on, both founders approving in the dossier. The
+  `tax.extensions_estimates` flag retired into it (DEC-2605, merged 2026-11-08), so there is no
+  flag to flip.
+- **Rollback:** the firm's `tax_returns` entitlement off; a wrong published row is withdrawn
   (`refdata withdraw`, two people) and the prior version reads again; a corrected version is drafted
   and published through steps 1 to 3.
 
