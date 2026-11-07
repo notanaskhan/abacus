@@ -537,6 +537,7 @@ __all__ = [
     "ExportExpirySweepWorkflow",
     "ExportPackageFacts",
     "ExportStale",
+    "ExtractedField",
     "ExtractedTable",
     "Extraction",
     "Filed",
@@ -601,6 +602,7 @@ __all__ = [
     "UploadInput",
     "UploadProcessing",
     "WithdrawalPurgeInput",
+    "Word",
     "add_to_inbox",
     "add_version",
     "anchor_chain",
@@ -622,6 +624,7 @@ __all__ = [
     "decided_among",
     "decisions_on_screenings",
     "destroy_intake_key",
+    "detect_pii",
     "drop_batch",
     "effective_decisions",
     "effective_policies",
@@ -633,6 +636,7 @@ __all__ = [
     "export_section_csv",
     "extend_record",
     "extend_retention_for",
+    "extract_form",
     "extract_isolated",
     "extract_version",
     "extracted_fields_of",
@@ -648,6 +652,7 @@ __all__ = [
     "get_record",
     "held_intake_objects",
     "holds_covering",
+    "identify_form",
     "included_export_versions",
     "intake_masked_pages",
     "intake_masked_text",
@@ -738,3 +743,10 @@ register_evidence_readable(readable_version)
 register_wisp_document_reader(latest_document)
 # K-01-T18 (DEC-1759): methodology stores its source files through the platform's file store.
 register_file_store(screen_for_store, read_staged)
+
+# S29 leftovers (TASK-6012): what the replay recorders and the OCR suite runner read (BOUND-001).
+from abacus.modules.evidence.form_extraction import Extracted as ExtractedField  # noqa: E402
+from abacus.modules.evidence.form_extraction import extract as extract_form  # noqa: E402
+from abacus.modules.evidence.form_extraction import identify as identify_form  # noqa: E402
+from abacus.modules.evidence.pii import detect as detect_pii  # noqa: E402
+from abacus.modules.evidence.words import Word as Word  # noqa: E402

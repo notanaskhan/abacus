@@ -34,6 +34,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Final, cast
 
+from abacus.kernel.clock import today
 from abacus_tools.refdata import Refused, current_payload
 
 REPO: Final = Path(__file__).resolve().parents[3]
@@ -163,7 +164,7 @@ async def _main(args: argparse.Namespace) -> Path:
         )
     if not args.key:
         raise Refused(f"{kind} rolls from a published version: name it with --key")
-    as_of = date.fromisoformat(cast(str, args.as_of)) if args.as_of else date.today()
+    as_of = date.fromisoformat(cast(str, args.as_of)) if args.as_of else await today()
     current = await current_payload(cast(str, args.key), as_of)
     if current is None:
         raise Refused(f"no version of {args.key} is in effect on {as_of.isoformat()}")

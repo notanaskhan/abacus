@@ -351,6 +351,7 @@ __all__ = [
     "AnalyzeFacts",
     "ApprovedChangeSet",
     "ApproverMustDiffer",
+    "BatchOutcome",
     "ChangeSetApplier",
     "Citation",
     "CitationStates",
@@ -365,6 +366,7 @@ __all__ = [
     "EntryAssessInput",
     "EntryAssessRunInput",
     "EntryAssessWorkflow",
+    "FailKnowledgeInput",
     "GuidanceDraftInput",
     "GuidanceDraftRunInput",
     "GuidanceDraftWorkflow",
@@ -381,7 +383,9 @@ __all__ = [
     "ImportedStep",
     "InboxMatchWorkflow",
     "IntakeOutcome",
+    "KnowledgeEmbeddingWorkflow",
     "KnowledgeHit",
+    "KnowledgeInput",
     "MatchInput",
     "MatchOutcome",
     "MatchRunInput",
@@ -505,3 +509,13 @@ __all__ = [
     "verify_citations",
     "workflow_id",
 ]
+
+# S29 leftovers (TASK-6012): what the replay recorders and the OCR suite runner read (BOUND-001).
+from abacus.modules.agents.knowledge_workflow import (  # noqa: E402
+    KnowledgeEmbeddingWorkflow as KnowledgeEmbeddingWorkflow,
+)
+from abacus.modules.agents.workflow_types import BatchOutcome as BatchOutcome  # noqa: E402
+from abacus.modules.agents.workflow_types import (  # noqa: E402
+    FailKnowledgeInput as FailKnowledgeInput,
+)
+from abacus.modules.agents.workflow_types import KnowledgeInput as KnowledgeInput  # noqa: E402

@@ -203,6 +203,7 @@ __all__ = [
     "K1ReleaseWorkflow",
     "ProposedPayment",
     "StaleReturn",
+    "TaxCalendarSweepWorkflow",
     "TransitionRefused",
     "apply_transition",
     "create_estimate_schedule",
@@ -242,3 +243,8 @@ from abacus.modules.tax import (  # noqa: E402
 from abacus.modules.tax.gate_sources import register_tax_gates  # noqa: E402
 
 register_tax_gates()
+
+# S29 leftovers (TASK-6012): what the replay recorders and the OCR suite runner read (BOUND-001).
+from abacus.modules.tax.schedule_workflows import (  # noqa: E402
+    TaxCalendarSweepWorkflow as TaxCalendarSweepWorkflow,
+)

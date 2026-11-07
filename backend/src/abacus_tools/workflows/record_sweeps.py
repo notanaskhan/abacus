@@ -24,14 +24,14 @@ from temporalio.exceptions import ApplicationError
 from temporalio.worker import Worker
 
 from abacus.kernel.temporal import payload_codec
-from abacus.modules.connections.workflows import ConnectionHealthWorkflow
-from abacus.modules.engagements.workflows import (
+from abacus.modules.connections.api import ConnectionHealthWorkflow
+from abacus.modules.engagements.api import (
     ClientImportEraseWorkflow,
     ClientImportInput,
     ClientImportWorkflow,
 )
-from abacus.modules.platform.workflows import PilotMetricsWorkflow
-from abacus.modules.signatures.workflows import EvidenceIntegrityWorkflow
+from abacus.modules.platform.api import PilotMetricsWorkflow
+from abacus.modules.signatures.api import EvidenceIntegrityWorkflow
 from abacus_tools.stack import Stack, connect, run_with_stack
 from abacus_tools.workflows.histories import decoded_and_scrubbed
 from abacus_tools.workflows.record_retrieval import refuse_overwrite
