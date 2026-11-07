@@ -29,6 +29,12 @@ async def world(net: object) -> Books:
         "VALUES ($1, 'ebp.modules', 'true', 'test-seed', 'A-05-T10') ON CONFLICT DO NOTHING",
         found.tenant_id,
     )
+    # A-05-T49 (DEC-2603): the EBP module is an entitlement; the test firm is synthetic.
+    await found.seed.run(
+        "INSERT INTO tenant_entitlements (tenant_id, module, valid_from, set_by) "
+        "VALUES ($1, 'ebp_audits', '2000-01-01', 'test-seed') ON CONFLICT DO NOTHING",
+        found.tenant_id,
+    )
     forget_flags()
     await found.seed.run_untriggered(
         "INSERT INTO assurance_work_items (work_item_id, tenant_id, engagement_id, "

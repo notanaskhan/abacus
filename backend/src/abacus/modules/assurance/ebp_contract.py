@@ -54,6 +54,7 @@ from abacus.modules.identity.api import (
     names_of,
 )
 from abacus.modules.organisations.api import MaskedTinOut, entity_name
+from abacus.modules.platform.api import entitlement
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -1035,7 +1036,8 @@ class EligibilitySampleOut(BaseModel):
 
 async def _gate(ctx: AuthContext, work_item_id: UUID, action: str, flag: Flag) -> None:
     """A person only, never a client principal; the action on the work item's engagement; the
-    flag. Authorised before the flag, so no one learns a flag state they may not use."""
+    flag; the `ebp_audits` entitlement. Authorised first, so no one learns a flag or entitlement
+    state they may not use."""
     if ctx.client:
         raise NotFound("ebp")
     if ctx.tenant.actor_kind != "human" and not action.endswith(".read") and action != "ebp.read":
@@ -1045,6 +1047,10 @@ async def _gate(ctx: AuthContext, work_item_id: UUID, action: str, flag: Flag) -
     await authorise(ctx, action, ref.resource())
     if not await flag_enabled(ctx.tenant, flag):
         raise NotFound(flag.name)
+    # A-05-T49 (ADR P-28): the EBP module is an entitlement; for a real firm it also needs the
+    # signed CPA memo (DEC-2603).
+    if await entitlement(ctx.tenant, "ebp_audits") is None:
+        raise NotFound("ebp_audits")
 
 
 def _not_yet() -> NoReturn:

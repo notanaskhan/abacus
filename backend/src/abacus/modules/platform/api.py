@@ -50,6 +50,7 @@ from abacus.modules.platform.entitlements import (
     Module,
     check_entitlement,
     entitlement,
+    register_module_review,
     require_entitlement,
 )
 from abacus.modules.platform.events import TenantProvisioned
@@ -411,6 +412,7 @@ __all__ = [
     "register_audit_value_resolver",
     "register_file_store",
     "register_home_count",
+    "register_module_review",
     "register_pilot_metric_source",
     "register_search_projection",
     "register_wisp_document_reader",

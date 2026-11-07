@@ -351,3 +351,9 @@ from abacus.modules.review.api import (  # noqa: E402
 
 _register_reviewable(SUM_TARGET, sum_reviewables)
 _register_reviewable_facts(SUM_TARGET, sum_facts)
+
+# A-05-T49 (DEC-2603): `ebp_audits` holds for a real firm only once the EBP CPA memo is signed.
+from abacus.modules.assurance.compute.ebp.review import review_signed  # noqa: E402
+from abacus.modules.platform.api import register_module_review  # noqa: E402
+
+register_module_review("ebp_audits", review_signed)
