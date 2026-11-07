@@ -4524,6 +4524,142 @@ async def _completion_checklist_reviewed(
     )
 
 
+async def _granite_misstatement(conn: asyncpg.Connection) -> UUID:
+    return cast(
+        UUID,
+        await tenant_value(
+            conn,
+            TENANT,
+            "SELECT id FROM audit_misstatements WHERE work_item_id = $1",
+            (await _granite_engagement(conn))[1],
+        ),
+    )
+
+
+async def _granite_entry(conn: asyncpg.Connection) -> tuple[UUID, int]:
+    found = await tenant_row(
+        conn,
+        TENANT,
+        "SELECT id, version FROM proposed_entries WHERE misstatement_id = $1",
+        await _granite_misstatement(conn),
+    )
+    if found is None:
+        raise LookupError("Granite Peak's entry is missing")
+    return cast(UUID, found["id"]), cast(int, found["version"])
+
+
+async def _granite_materiality_proposed(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    engagement = (await _granite_engagement(conn))[0]
+    await propose_materiality(
+        await _staff_context(conn, event),
+        engagement,
+        tb_id=cast(
+            UUID,
+            await tenant_value(
+                conn, TENANT, "SELECT id FROM trial_balances WHERE engagement_id = $1", engagement
+            ),
+        ),
+        key="pre_tax_income",
+        rate_pct=Decimal(5),
+    )
+
+
+async def _granite_materiality_decided(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    card = await tenant_row(
+        conn,
+        TENANT,
+        "SELECT id, version_no FROM decision_cards WHERE work_item_id = $1 "
+        "AND status = 'awaiting_role' ORDER BY created_at DESC LIMIT 1",
+        (await _granite_engagement(conn))[1],
+    )
+    if card is None:
+        raise LookupError("no materiality card awaits a decision on Granite Peak")
+    await decide_card(
+        await _staff_context(conn, event),
+        cast(UUID, card["id"]),
+        option_key="rate_5_0",
+        factors=(),
+        rationale="5% of pre-tax income",
+        seen_version=int(cast(int, card["version_no"])),
+    )
+
+
+async def _granite_finding(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Hannah: the SURL's exception is a factual misstatement, and she proposes its entry."""
+    ctx = await _staff_context(conn, event)
+    engagement, item, _entity = await _granite_engagement(conn)
+    code, title = _completion.GRANITE_PAPER
+    paper = await create_workpaper(ctx, engagement, code, title, None)
+    made = await record_finding(
+        ctx,
+        item,
+        NewFinding(
+            workpaper_id=paper,
+            title=_completion.GRANITE_FINDING,
+            kind="misstatement",
+            coso_component=None,
+            citation_ids=(),
+        ),
+    )
+    await finding_to_misstatement(
+        ctx,
+        made.id,
+        type_="factual",
+        amount=Decimal(_completion.GRANITE_AMOUNT),
+        column_set="commercial",
+    )
+    await propose_entry(
+        ctx,
+        item,
+        NewEntry(
+            kind="aje",
+            description=_completion.GRANITE_ENTRY,
+            misstatement_id=await _granite_misstatement(conn),
+            lines=tuple(
+                NewLine(c, Decimal(d), Decimal(k)) for c, d, k in _completion.GRANITE_LINES
+            ),
+        ),
+    )
+
+
+async def _granite_sent(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    entry, version = await _granite_entry(conn)
+    await send_entries(
+        await _staff_context(conn, event),
+        (await _granite_engagement(conn))[1],
+        entry_ids=[entry],
+        recipient_contact_id=UUID(_PORTAL["Luis Ferrante"].id),
+        wording_template_version_id=UUID(stable_id("completion:client-wording")),
+        seen_versions={str(entry): version},
+        label="Sent to Luis Ferrante",
+    )
+
+
+async def _granite_declined(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    ctx = await _staff_context(conn, event)
+    await record_entry_decision(
+        ctx,
+        (await _granite_entry(conn))[0],
+        decision="client_declined",
+        reason=_completion.GRANITE_DECLINED,
+        evidence_version_id=await _stored_evidence(
+            conn, ctx, (await _granite_engagement(conn))[1], "Luis AJE decision"
+        ),
+    )
+
+
+async def _granite_passed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    await pass_on_sum(
+        await _staff_context(conn, event),
+        await _granite_misstatement(conn),
+        _completion.GRANITE_PASSED,
+    )
+
+
 async def _completion_groupings(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     ctx = await _staff_context(conn, event)
     await import_grouping_csv(
@@ -5435,6 +5571,12 @@ HANDLERS: Final[dict[str, Handler]] = {
     "completion.paper_changed": _completion_paper_changed,
     "completion.sum_snapshot": _completion_snapshot,
     "completion.sum_concluded": _completion_concluded,
+    "completion.granite_materiality_proposed": _granite_materiality_proposed,
+    "completion.granite_materiality_decided": _granite_materiality_decided,
+    "completion.granite_finding": _granite_finding,
+    "completion.granite_sent": _granite_sent,
+    "completion.granite_declined": _granite_declined,
+    "completion.granite_passed": _granite_passed,
     "completion.statement_drafted": _completion_drafted,
     "completion.checklist_picked": _completion_checklist_picked,
     "completion.checklist_answered": _completion_checklist_answered,

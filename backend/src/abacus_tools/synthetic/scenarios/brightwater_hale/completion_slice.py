@@ -19,8 +19,8 @@ keeps checklist text (ADR-056), and is never licensed text.
 Not here, or not as designed (DEC-2373): findings raised by a person, so no agent run; Ana's change
 and response are a person's, not "via Agent"; RJE-1 is in v1 from its
 approval, so v1's 14,850 difference isn't shown; the checklist's answers are Ana's, reviewed by
-Hannah, not the agent's adopted (nothing writes a suggested answer yet); Granite Peak's AJE-3.
-Opt-in
+Hannah, not the agent's adopted (nothing writes a suggested answer yet); Granite Peak's entry reads
+AJE-1, not AJE-3 (see below). Opt-in
 (`--slice completion`).
 """
 
@@ -342,6 +342,60 @@ def _event(key: str, at: datetime, kind: str, actor: str, **data: object) -> Eve
     return Event(f"completion:{key}", at, kind, actor, SLICE, dict(data), client=NORTHWIND)
 
 
+# Granite Peak FY2026 (J22 step 8): 5% of pre-tax income 3,100,000 decided Sep 14, 10:12 AM, then the
+# SURL's Front Range Freight invoice, 68,400, declined by Luis Ferrante on Oct 5 and passed on the
+# SUM below PM 116,250. The design calls it AJE-3 but names no AJE-1 or AJE-2, so it reads AJE-1
+# here: the number is the service's, and inventing two entries to reach 3 would be worse.
+GRANITE: Final = "Granite Peak Outdoor Supply, Inc."
+GRANITE_PAPER: Final = ("SURL", "Search for unrecorded liabilities")
+GRANITE_FINDING: Final = "Improperly excluded: Front Range Freight Co., invoice FRF-30418"
+GRANITE_AMOUNT: Final = "68400.00"
+GRANITE_ENTRY: Final = "June inbound freight recorded in July"
+GRANITE_LINES: Final = (("5010", "68400.00", "0"), ("2010", "0", "68400.00"))
+GRANITE_DECLINED: Final = "The client declines to book it"
+GRANITE_PASSED: Final = "Below PM 116,250"
+
+
+def _granite(key: str, at: datetime, kind: str, actor: str, **data: object) -> Event:
+    return Event(f"completion:granite:{key}", at, kind, actor, SLICE, dict(data), client=GRANITE)
+
+
+def _granite_events() -> list[Event]:
+    return [
+        # The design's manager on Granite Peak (J22), joining before independence is concluded.
+        _granite(
+            "team-added:HL",
+            _at(9, 10, 9, 5),
+            "engagements.member_proposed",
+            "MO",
+            audit="A2",
+            member="HL",
+            role="manager",
+            hours="40.0",
+        ),
+        Event(
+            "completion:granite:independence:HL",
+            _at(9, 10, 9, 40),
+            "engagements.member_independence_confirmed",
+            "HL",
+            SLICE,
+            {"audit": "A2"},
+            client=GRANITE,
+        ),
+        _granite("materiality", _at(9, 14, 10), "completion.granite_materiality_proposed", "HL"),
+        _granite(
+            "materiality-decided",
+            _at(9, 14, 10, 12),
+            "completion.granite_materiality_decided",
+            "MO",
+        ),
+        _granite("finding", _at(10, 5, 9), "completion.granite_finding", "HL"),
+        _granite("sent", _at(10, 5, 9, 30), "completion.granite_sent", "HL"),
+        _granite("declined", _at(10, 5, 11), "completion.granite_declined", "HL"),
+        _granite("passed", _at(10, 5, 14), "completion.granite_passed", "MO"),
+    ]
+
+
 def _northwind_events() -> list[Event]:
     events = [_event("papers", _at(9, 20, 9), "completion.papers", "HL")]
     events.append(_event("exceptions", _at(9, 24, 10, 10), "completion.exceptions", "HL"))
@@ -467,4 +521,4 @@ def completion_events() -> list[Event]:
             SLICE,
         )
     )
-    return events + _northwind_events()
+    return events + _northwind_events() + _granite_events()
