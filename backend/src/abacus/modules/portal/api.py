@@ -7,6 +7,7 @@ caller's unit of work.
 """
 
 from abacus.modules.identity.api import AbacusRouter
+from abacus.modules.portal.approvals_contract import approvals_router
 from abacus.modules.portal.branding import (
     BrandingSlots,
     activate_portal_host,
@@ -33,6 +34,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     pbc_router,
     deliverables_router,
     governance_router,
+    approvals_router,
     settings_router,  # C16 v1.1 stub (R-01-T16): portal settings and preview
     intake_router,  # C5 v1.2 intake half stub (N-01-T02): "Upload something else"
 )
