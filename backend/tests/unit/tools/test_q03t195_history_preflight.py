@@ -15,25 +15,19 @@ from abacus.worker.__main__ import MODULES
 
 HISTORIES: Final = Path(__file__).resolve().parents[2] / "workflows" / "histories"
 
-# Recording needs Docker (`abacus_tools.workflows.record_*`). Each of these still needs a recorder.
-KNOWN_GAPS: Final[frozenset[str]] = frozenset(
-    {
-        "AuditLabelIndexer",
-        "ClientImport",
-        "ClientImportErase",
-        "ConnectionHealth",
-        "DrainSesEvents",
-        "EvidenceIntegrity",
-        "IncidentClockReminders",
-        "IntakeWithdrawalPurge",
-        "PilotMetrics",
-        "ReferenceSetFanOutWorkflow",
-        "TaxCalendarSweepWorkflow",
-        "evidence_withdrawal_purge",
-        "knowledge-embedding",
-        "notice_analysis",
-    }
-)
+# Recording needs Docker (`abacus_tools.workflows.record_*`). A workflow named here needs one.
+KNOWN_GAPS: Final[frozenset[str]] = frozenset()  # S29 leftovers (TASK-6008): none left
+
+
+# A workflow whose recorded histories carry a shorter name than its declared one (S29 leftovers,
+# TASK-6008): the name, and the history stem its recorder writes.
+ALIASES: Final[dict[str, str]] = {
+    "AuditLabelIndexer": "audit-labels",
+    "DrainSesEvents": "ses-drain",
+    "IncidentClockReminders": "incident-reminders",
+    "IntakeWithdrawalPurge": "intake-purge",
+    "evidence_withdrawal_purge": "withdrawal-purge",
+}
 
 
 def _slug(name: str) -> str:
@@ -60,7 +54,7 @@ def _recorded() -> set[str]:
 
 def _has_history(name: str, recorded: set[str]) -> bool:
     """A history's stem may name the workflow shortly (`access-end-v1-swept`, AccessEndSweep)."""
-    slug = _slug(name)
+    slug = ALIASES.get(name, _slug(name))
     return any(slug == r or slug.startswith(f"{r}-") or r.startswith(f"{slug}-") for r in recorded)
 
 
@@ -72,3 +66,9 @@ def test_every_workflow_has_a_history_or_is_a_named_gap() -> None:
 def test_the_gap_list_only_shrinks() -> None:
     recorded = _recorded()
     assert {n for n in KNOWN_GAPS if _has_history(n, recorded)} == set()
+
+
+def test_every_alias_names_a_registered_workflow_and_a_recorded_history() -> None:
+    recorded, registered = _recorded(), _registered()
+    assert set(ALIASES) <= registered
+    assert set(ALIASES.values()) <= recorded
