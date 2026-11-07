@@ -595,6 +595,8 @@ HOME_OBJECTS = {
 # ---------------------------------------------------------------------------------------------
 # Fields named `state` or `status` that are not an object status.
 NOT_A_STATUS = {
+    # A-05 (EBP-08): a statement row's key, a participant status or "total", never a status.
+    "AccountGroupOut.status": "an EBP-08 statement row key (a participant status, or total)",
     "FlowStepOut.state": "position of a step in a flow (done, current, todo)",
     "CompleteIn.state": "free-text input, not a vocabulary",
     # C5 v1.1 portal half (P-08-T01): client-side card states, never a firm object's status.
