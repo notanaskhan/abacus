@@ -70,7 +70,7 @@ SHORT: Final = "short"
 TAX_LINE: Final = "tax"
 _log = get_logger(__name__)
 # The gate's refusal in the event's words (`evidence.events.OcrRefusal`).
-_REFUSAL: Final[dict[Refusal, OcrRefusal]] = {
+REFUSAL_WORDS: Final[dict[Refusal, OcrRefusal]] = {
     "kill_switch": "kill_switch",
     "flag_off": "flag_off",
     "terms_not_covering": "provider_terms",
@@ -122,7 +122,7 @@ def _page_words(
     )  # fmt: skip
 
 
-async def _facts(tenant: TenantContext, engagement_id: UUID | None) -> GateFacts:
+async def gate_facts(tenant: TenantContext, engagement_id: UUID | None) -> GateFacts:
     """§7216's scope, failing closed: a file with no engagement yet counts as TRI, and a person's
     consent is C19's to prove (the gate needs counsel's `tri_basis` until the check is wired)."""
     line = None if engagement_id is None else await service_line_of(tenant, engagement_id)
@@ -175,7 +175,7 @@ async def _read(
     due: list[int] | None,
 ) -> int:
     tenant_id = tenant.tenant_id
-    facts = await _facts(tenant, found.engagement_id)
+    facts = await gate_facts(tenant, found.engagement_id)
     refused = await first_refusal(tenant, facts)
     if refused is None and await over_daily_cap(tenant, len(due) if due else 1):
         refused = "quota_exceeded"
@@ -192,7 +192,7 @@ async def _read(
                     OcrRunRefused(
                         evidence_version_id=version_id,
                         engagement_id=found.engagement_id,
-                        reason=_REFUSAL[refused],
+                        reason=REFUSAL_WORDS[refused],
                     )
                 )
                 tx.record(
