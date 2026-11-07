@@ -160,6 +160,8 @@ CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
     "checkpoint.restored": _a("decision", "pl", "seq", "restored_seq"),
     "checkpoint.renamed": _a("change", "pl", "seq"),
     "suggestion.created": _a("run", "pl"),
+    # A-06-T16 seam (TASK-3395): the agent's suggested answer mirrored on its item, a run.
+    "disclosure_checklist.suggested": _a("run", "pl", "suggestion_id"),
     "suggestion.adopted": _a("decision", "ok", "decision", "version"),
     "suggestion.edited": _a("decision", "ok", "decision", "version"),
     "suggestion.dismissed": _a("decision", "no", "decision", "version"),

@@ -664,6 +664,11 @@ async def document_is_final(tenant: TenantContext, document_id: UUID) -> bool:
 
 
 # A-06-T25, T28: the run record's port, the workflows' inputs, and the slice's path.
+# A-06-T16 seam (TASK-3395): the agent's suggested checklist answers; assurance wires them, since
+# reporting may not import agents (BOUND-002).
+from abacus.modules.reporting.statements import (  # noqa: E402
+    SUGGESTION_TARGET as CHECKLIST_SUGGESTION_TARGET,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- for assurance's seam (A-06-T16)
+)
 from abacus.modules.reporting.statements import (  # noqa: E402
     RunRecordPort as RunRecordPort,
 )
@@ -671,7 +676,13 @@ from abacus.modules.reporting.statements import (  # noqa: E402
     answer_item as answer_statements_item,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- for the scenario loader
 )
 from abacus.modules.reporting.statements import (  # noqa: E402
+    apply_suggested_answer as apply_suggested_answer,
+)
+from abacus.modules.reporting.statements import (  # noqa: E402
     checklist_options as statements_checklist_options,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- for the scenario loader
+)
+from abacus.modules.reporting.statements import (  # noqa: E402
+    document_engagement as statement_document_engagement,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- for assurance's seam (A-06-T16)
 )
 from abacus.modules.reporting.statements import (  # noqa: E402
     draft as draft_statements,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- for the loader
@@ -683,6 +694,9 @@ from abacus.modules.reporting.statements import (  # noqa: E402
     record_management_approval as record_management_approval,
 )
 from abacus.modules.reporting.statements import (  # noqa: E402
+    record_suggested_answer as record_suggested_answer,
+)
+from abacus.modules.reporting.statements import (  # noqa: E402
     register_run_record as register_run_record,
 )
 from abacus.modules.reporting.statements import (  # noqa: E402
@@ -690,6 +704,9 @@ from abacus.modules.reporting.statements import (  # noqa: E402
 )
 from abacus.modules.reporting.statements import (  # noqa: E402
     run_tie_out as run_statement_tie_out,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- for the loader
+)
+from abacus.modules.reporting.statements import (  # noqa: E402
+    suggested_answer as suggested_answer,
 )
 from abacus.modules.reporting.statements_workflow_types import (  # noqa: E402
     FsDraftInput as FsDraftInput,

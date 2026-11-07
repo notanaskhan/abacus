@@ -1296,6 +1296,40 @@ async def _write_follow_up(person: AuthContext, proposal: Proposal, body: str) -
 # --- Suggestions (C-31 Adopt) ------------------------------------------------------------------
 
 
+@dataclass(frozen=True)
+class PendingSuggestion:
+    """A suggestion as its target's owner sees it, to mirror a pending value on its own row
+    (A-06-T16 seam): never a decision, and no rationale or citations."""
+
+    suggestion_id: UUID
+    engagement_id: UUID
+    target_type: str
+    target_id: UUID
+    field_key: str
+    proposed_value: dict[str, object]
+
+
+async def pending_suggestion(
+    tenant: TenantContext, suggestion_id: UUID
+) -> PendingSuggestion | None:
+    """`agents.api.pending_suggestion`: for an owner's `suggestion.created` subscriber. None when
+    the suggestion is gone, decided, has no engagement or its run is hidden (ED-171)."""
+    async with tenant_session(tenant) as session:
+        found = await get_suggestion(session, suggestion_id)
+    if found is None or found.engagement_id is None or found.status != "pending":
+        return None
+    if await _hidden(tenant, found.agent_run_id):
+        return None
+    return PendingSuggestion(
+        found.id,
+        found.engagement_id,
+        found.target_type,
+        found.target_id,
+        found.field_key,
+        dict(found.proposed_value),
+    )
+
+
 async def _suggestion_readable(
     ctx: AuthContext, suggestion_id: UUID
 ) -> tuple[Suggestion, Resource]:
