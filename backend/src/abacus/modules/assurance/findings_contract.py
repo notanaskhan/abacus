@@ -19,7 +19,7 @@ from decimal import Decimal
 from typing import Annotated, Any, Literal, cast
 from uuid import UUID
 
-from fastapi import Depends, Header, Query
+from fastapi import Depends, Header, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import ASSURANCE_COMPLETION
@@ -27,6 +27,7 @@ from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
+from abacus.kernel.safe_xlsx import XLSX
 from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.engagements.api import get_ref, work_item_engagement
 from abacus.modules.identity.api import AbacusRouter, AuthContext, authorise, current_context
@@ -892,6 +893,21 @@ async def sum_request_conclusion_route(
     item = await assurance_item(ctx.tenant, work_item_id)
     card = await cd.request_sum_conclusion(ctx, item.engagement_id, work_item_id)
     return DecisionRaisedOut(decision_card_id=card)
+
+
+@router.get(f"{_WI}/sum/export.xlsx", action="sum.read", response_model=bytes)
+async def sum_export_route(work_item_id: UUID, ctx: Ctx) -> Response:
+    """A-06-T29: the SUM as a deterministic workbook; every figure is code's."""
+    await _gate(ctx, work_item_id, "sum.read")
+    from abacus.modules.assurance import sum_service
+
+    return Response(
+        content=sum_service.sum_workbook(
+            await sum_service.sum_view(ctx.tenant, work_item_id, None)
+        ),
+        media_type=XLSX,
+        headers={"Content-Disposition": 'attachment; filename="summary-of-misstatements.xlsx"'},
+    )
 
 
 @router.post(

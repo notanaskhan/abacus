@@ -24,6 +24,7 @@ from sqlalchemy import text
 from abacus.kernel.crypto import seal
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
+from abacus.kernel.safe_xlsx import Cell, Sheet, workbook
 from abacus.kernel.uow import Ref, Scope, Target, uow
 from abacus.modules.assurance.compute import sum as sum_engine
 from abacus.modules.assurance.materiality import in_force, versions_of
@@ -101,6 +102,38 @@ class SumView:
     below_ct_total: Decimal
     counts: Mapping[str, int] = field(default_factory=dict[str, int])
     factors: tuple[tuple[str, str, bool], ...] = ()
+
+
+SUM_COLUMNS: Final = ("Ref", "Origin", "Type", "Nature", "Status", "Amount", "Finding")
+
+
+def sum_workbook(view: SumView) -> bytes:
+    """A-06-T29: the SUM by code. Text a person typed is kept from running as a formula."""
+
+    def rows_of(title: str, rows: Sequence[MisstatementRow]) -> list[Sequence[Cell]]:
+        return [
+            [title],
+            *[
+                [r.ref, r.origin_ref, r.type, r.nature, r.status, r.amount, r.finding_ref]
+                for r in rows
+            ],
+        ]
+
+    body: list[Sequence[Cell]] = [SUM_COLUMNS]
+    body += rows_of("Current year", view.current)
+    body += rows_of("Prior year", view.prior_year)
+    body += rows_of("Booked", view.booked)
+    body += [
+        ["Rollover", view.result.rollover],
+        ["Iron curtain", view.result.iron_curtain],
+        ["Aggregate", view.result.aggregate],
+        ["Performance materiality", view.pm],
+        ["Overall materiality", view.overall],
+        ["Clearly trivial", view.ct],
+        ["Engine version", view.result.engine_version],
+        ["Inputs hash", view.result.inputs_hash],
+    ]
+    return workbook([Sheet("Summary of misstatements", body)])
 
 
 def _dec(value: object) -> Decimal | None:

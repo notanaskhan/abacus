@@ -28,6 +28,7 @@ from abacus.kernel._flags import REPORTING_FS_DISCLOSURE
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import flag_enabled
+from abacus.kernel.safe_xlsx import XLSX
 from abacus.modules.engagements.api import assurance_item_id, get_ref
 from abacus.modules.identity.api import (
     AbacusRouter,
@@ -604,8 +605,17 @@ async def checklist_review_route(
     errors=(501,),
 )
 async def checklist_export_route(document_id: UUID, ctx: Ctx) -> Response:
+    """Deterministic: the same answers give the same bytes. Client text can't run as a formula."""
     await _gate(ctx, None, "disclosure_checklist.export")
-    _not_yet()
+    from abacus.modules.reporting import statements
+
+    await statements.authorise_document(ctx, "disclosure_checklist.export", document_id)
+    view = await statements.disclosure_view(ctx.tenant, document_id)
+    return Response(
+        content=statements.checklist_workbook(view),
+        media_type=XLSX,
+        headers={"Content-Disposition": 'attachment; filename="disclosure-checklist.xlsx"'},
+    )
 
 
 @statements_router.post(

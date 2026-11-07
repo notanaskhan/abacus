@@ -718,6 +718,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/work-items/{work_item_id}/sample-sets", "sample_set.read"),
     ("GET", "/v1/work-items/{work_item_id}/sign-off-matrix", "sign_off.read"),
     ("GET", "/v1/work-items/{work_item_id}/sum", "sum.read"),
+    ("GET", "/v1/work-items/{work_item_id}/sum/export.xlsx", "sum.read"),
     ("GET", "/v1/workbench/sessions/{session_id}", "session.read"),
     ("GET", "/v1/workbench/sessions/{session_id}/events", "session.read"),
     ("PATCH", "/v1/audits/{work_item_id}/ebp/plan", "ebp_plan.edit"),
