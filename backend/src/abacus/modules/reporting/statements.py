@@ -1041,7 +1041,8 @@ async def record_management_approval(
     ctx: AuthContext, version_id: UUID, evidence_version_id: UUID
 ) -> tuple[str, datetime]:
     """Record mode (A-06 F6): a person records management's signed approval of this version, the
-    signed copy as evidence. Portal approval and `fs.approved_by_management` are A-06-T29's."""
+    signed copy as evidence, and `fs.approved_by_management` goes out (A-06-T29). Portal
+    approval is A-06-T29's, through C18."""
     await authorise_version(ctx, "statement.record_management_approval", version_id)
     async with uow(ctx.tenant) as tx:
         version = (
@@ -1074,6 +1075,13 @@ async def record_management_approval(
                 "row_version = row_version + 1 WHERE id = :d"
             ),
             {"d": version["document_id"]},
+        )
+        tx.emit(
+            FsApprovedByManagement(
+                statement_version_id=version_id,
+                engagement_id=version["engagement_id"],
+                work_item_id=version["work_item_id"],
+            )
         )
         tx.record(
             "statement.management_approval_recorded",

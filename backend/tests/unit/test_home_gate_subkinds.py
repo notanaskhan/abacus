@@ -6,9 +6,15 @@ from __future__ import annotations
 from pathlib import Path
 
 from abacus.kernel import _flags
-from abacus.modules.notices import api as _notices  # noqa: F401
-from abacus.modules.review.gates import _SOURCES
-from abacus.modules.signatures import api as _signatures  # noqa: F401
+from abacus.modules.notices import (
+    api as _notices,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers
+)
+from abacus.modules.review.gates import (
+    _SOURCES,  # pyright: ignore[reportPrivateUsage] -- the registry itself
+)
+from abacus.modules.signatures import (
+    api as _signatures,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers
+)
 
 MESSAGES = Path(__file__).parents[3] / "apps/web/src/domain/home/messages.ts"
 

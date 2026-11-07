@@ -50,9 +50,9 @@ export function ContributionsTesting({
       <p className="flex h-[40px] items-center px-[14px] text-[13.5px] font-medium hairline-b">
         {T.title(data.rows.length)}
       </p>
-      <div role="table" className="flex flex-col">
+      <div className="flex flex-col">
         <div
-          role="row"
+          role="group"
           className={cn(COLS, "h-[28px] bg-nested text-[11.5px] font-medium text-ink-3")}
         >
           <span className="px-[8px]">#</span>
@@ -67,7 +67,7 @@ export function ContributionsTesting({
         {data.rows.map((r) => (
           <div
             key={r.item_id}
-            role="row"
+            role="group"
             data-test-row={r.position}
             data-state={r.state}
             className={cn(

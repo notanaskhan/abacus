@@ -131,6 +131,7 @@ function Certification({
           <span className="flex-1">{point.proposed_answer ?? ""}</span>
           {point.answer === "evaluated" ? (
             <span
+              role="img"
               aria-label={COPY.certification.evaluated}
               className="size-[15px] rounded-full bg-green"
             />

@@ -15,7 +15,7 @@ so the live specialists keep writing `status` until the contract phase after the
 `tenant_counters` gives `run_number`: `UPDATE … RETURNING` in the unit of work.
 
 Revision ID: 0680
-Revises: 0672
+Revises: 0674
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ from alembic import op
 from abacus.kernel.db.migration import insert_columns, tenant_table
 
 revision = "0680"
-down_revision = "0672"
+down_revision = "0674"
 branch_labels = None
 depends_on = None
 
@@ -202,6 +202,29 @@ def upgrade() -> None:
     )
     op.execute(_SYNC)
     op.execute("REVOKE ALL ON FUNCTION agent_runs_state_sync() FROM PUBLIC")
+    # Review outcomes move after a run finished (the sync trigger below decides which): a state
+    # write alone gets past the forward-only guard. Anything else on a finished run still stops.
+    op.execute(
+        """
+        CREATE OR REPLACE FUNCTION agent_runs_forward_only() RETURNS trigger
+        LANGUAGE plpgsql AS $$
+        BEGIN
+            IF OLD.status <> 'running'
+               AND (OLD.state IS NULL OR NEW.state IS NOT DISTINCT FROM OLD.state) THEN
+                RAISE EXCEPTION 'agent run % is finished', OLD.id
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
+            IF (OLD.context_hash IS NOT NULL
+                AND NEW.context_hash IS DISTINCT FROM OLD.context_hash)
+               OR (OLD.output IS NOT NULL AND NEW.output IS DISTINCT FROM OLD.output) THEN
+                RAISE EXCEPTION 'agent run % results are write-once', OLD.id
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
+            RETURN NEW;
+        END;
+        $$
+        """
+    )
     op.execute(
         "CREATE TRIGGER agent_runs_state_sync BEFORE INSERT OR UPDATE ON agent_runs "
         "FOR EACH ROW EXECUTE FUNCTION agent_runs_state_sync()"
@@ -221,12 +244,34 @@ def upgrade() -> None:
     )
     tenant_table(op, "tenant_counters")
     insert_columns(op, "tenant_counters", ("tenant_id", "name", "value"))
+    # The app role updates the counter value only (schema_check): drop the default table grant.
+    op.execute("REVOKE UPDATE ON tenant_counters FROM abacus_app")
     op.execute("GRANT UPDATE (value) ON tenant_counters TO abacus_app")
     op.execute("REVOKE DELETE ON tenant_counters FROM abacus_app")
 
 
 def downgrade() -> None:
     op.execute("DROP TABLE tenant_counters")
+    op.execute(
+        """
+        CREATE OR REPLACE FUNCTION agent_runs_forward_only() RETURNS trigger
+        LANGUAGE plpgsql AS $$
+        BEGIN
+            IF OLD.status <> 'running' THEN
+                RAISE EXCEPTION 'agent run % is finished', OLD.id
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
+            IF (OLD.context_hash IS NOT NULL
+                AND NEW.context_hash IS DISTINCT FROM OLD.context_hash)
+               OR (OLD.output IS NOT NULL AND NEW.output IS DISTINCT FROM OLD.output) THEN
+                RAISE EXCEPTION 'agent run % results are write-once', OLD.id
+                    USING ERRCODE = 'insufficient_privilege';
+            END IF;
+            RETURN NEW;
+        END;
+        $$
+        """
+    )
     op.execute("DROP TRIGGER agent_runs_state_sync ON agent_runs")
     op.execute("DROP FUNCTION agent_runs_state_sync()")
     op.execute(f"REVOKE UPDATE ({', '.join(_UPDATES)}) ON agent_runs FROM abacus_app")

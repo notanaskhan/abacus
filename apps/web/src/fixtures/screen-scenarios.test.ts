@@ -34,6 +34,9 @@ describe("screen scenarios on the firm entry", () => {
       "AUD-01",
       "AUD-03",
       "AUD-08", // A-04-T34
+      "EBP-01", // A-05-T50
+      "EBP-03",
+      "EBP-04",
       "EBP-05", // A-05-T44
       "EBP-06", // A-05-T40
       "EBP-09", // A-05-T45
@@ -57,9 +60,11 @@ describe("screen scenarios on the firm entry", () => {
       "INB-01", // N-01-T27: j16 6a and 10
       "KNW-01", // K-01-T04
       "KNW-04", // K-02-T13
+      "NOT-02", // N-04-T26
       "NOT-03", // N-04-T20
       "TAX-13", // T-03-T11
       "NOT-01", // N-04-T05: j09 1
+      "BND-03", // T-03-T17
       "SHL-03",
       "SHL-04",
       "SHL-14",

@@ -77,11 +77,12 @@ def test_plans_are_insert_only(private_db: sc.Database, sql: str) -> None:
     who, run_id = asyncio.run(_run(seeder))
     asyncio.run(
         seeder.run(
-            "INSERT INTO agent_plans (tenant_id, run_id, version, steps, state) "
-            "VALUES ($1, $2, 1, $3, 'proposed')",
+            "INSERT INTO agent_plans (tenant_id, run_id, version, steps, state, actor_kind, "
+            "actor_id) VALUES ($1, $2, 1, $3, 'proposed', 'agent', $4)",
             who.tenant_id,
             run_id,
             json.dumps([]),
+            str(run_id),
         )
     )
     with pytest.raises(asyncpg.CheckViolationError, match="insert-only"):

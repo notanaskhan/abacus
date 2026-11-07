@@ -52,7 +52,7 @@ function Row({
   return (
     // biome-ignore lint/a11y/useSemanticElements: a grid row, not a table
     <div
-      role="row"
+      role="group"
       data-provision={provision.key}
       data-verified={provision.verified ? "true" : "false"}
       data-lit={lit ? "true" : "false"}
@@ -220,7 +220,7 @@ export function useProvisionsCanvas(
             {/* biome-ignore lint/a11y/useSemanticElements: the bento rows, not a table */}
             <div role="grid" aria-label={COPY.block} className="py-[4px]">
               <div
-                role="row"
+                role="group"
                 className={cn(
                   GRID,
                   "mx-[5px] h-[26px] px-[8px] text-micro font-medium text-ink-3",

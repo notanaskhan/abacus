@@ -64,7 +64,7 @@ async def test_no_stage_but_live_keeps_a_recommendation(stage: str) -> None:
         return analysis.AgentStep(stage, uuid4(), "agree")
 
     analysis.register_agent_step(hook)
-    found = await analysis._agent_step(_TENANT, uuid4(), {})
+    found = await analysis._agent_step(_TENANT, uuid4(), {})  # pyright: ignore[reportPrivateUsage] -- the rule under test
     assert found.stage == stage
     assert found.recommended_position is None
 
@@ -74,5 +74,5 @@ async def test_a_failing_hook_fails_closed() -> None:
         raise RuntimeError("provider terms")
 
     analysis.register_agent_step(hook)
-    found = await analysis._agent_step(_TENANT, uuid4(), {})
+    found = await analysis._agent_step(_TENANT, uuid4(), {})  # pyright: ignore[reportPrivateUsage] -- the rule under test
     assert (found.stage, found.run_id, found.recommended_position) == ("refused", None, None)

@@ -1,6 +1,6 @@
 """C13 home half, the stub (I-01-T02; `docs/contracts/home-and-gates.md`): `GET /v1/home`
 declares `home.read` and answers 404 for a client principal, 403 for a principal the matrix
-refuses, 404 with `home.dashboard` off (501 with it on until I-01-T10 made it live); every field
+refuses, `home.dashboard` retired by I-01-T23; every field
 is classified; `home.read` is every firm role's and never a client's, the agent's or the
 system's; the home-count slot fails closed."""
 
@@ -15,11 +15,9 @@ import pytest
 from pydantic import BaseModel
 
 from abacus.api.export_openapi import document
-from abacus.kernel._flags import HOME_DASHBOARD
 from abacus.kernel.classification import unclassified_fields
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import NotFound
-from abacus.kernel.flags import Flag
 from abacus.modules.identity.api import AuthContext, Forbidden
 from abacus.modules.identity.authz.matrix import RULES
 from abacus.modules.platform.api import (
@@ -96,17 +94,6 @@ def test_dec43_no_shape_counts_what_walls_left_out() -> None:
             assert not any(w in name for w in ("hidden", "walled", "omitted")), name
 
 
-def _flags(monkeypatch: pytest.MonkeyPatch, value: bool) -> list[Flag]:
-    seen: list[Flag] = []
-
-    async def flag_enabled(_tenant: object, flag: Flag) -> bool:
-        seen.append(flag)
-        return value
-
-    monkeypatch.setattr(contract, "flag_enabled", flag_enabled)
-    return seen
-
-
 def _authorise(monkeypatch: pytest.MonkeyPatch, *, allow: bool) -> list[str]:
     asked: list[str] = []
 
@@ -119,13 +106,10 @@ def _authorise(monkeypatch: pytest.MonkeyPatch, *, allow: bool) -> list[str]:
     return asked
 
 
-async def test_i01t02_flag_off_is_404_and_on_answers_home(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_i01t23_the_flag_is_retired_and_home_answers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     asked = _authorise(monkeypatch, allow=True)
-    seen = _flags(monkeypatch, False)
-    with pytest.raises(NotFound):
-        await contract.home_route(_ctx(), None)
-    assert seen == [HOME_DASHBOARD] and asked == ["home.read"]
-    _flags(monkeypatch, True)
     narrowed: list[uuid.UUID | None] = []
 
     async def home_view(_ctx: object, office_id: uuid.UUID | None) -> HomeView:
@@ -140,14 +124,14 @@ async def test_i01t02_flag_off_is_404_and_on_answers_home(monkeypatch: pytest.Mo
     monkeypatch.setattr(contract, "client_activity", client_activity)  # I-01-T12
     office = uuid.uuid4()
     out = await contract.home_route(_ctx(), office)
+    assert asked == ["home.read"]
     assert narrowed == [office, office]  # DEC-30: the office reaches every read
     assert (out.greeting.first_name, out.your_work, out.running_count) == ("Daniel", None, None)
 
 
-async def test_inv4_a_client_is_404_and_inv1_a_refused_principal_403_before_the_flag(
+async def test_inv4_a_client_is_404_and_inv1_a_refused_principal_403(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    seen = _flags(monkeypatch, True)
     _authorise(monkeypatch, allow=True)
     with pytest.raises(NotFound):
         await contract.home_route(_ctx(client=True), None)
@@ -155,7 +139,6 @@ async def test_inv4_a_client_is_404_and_inv1_a_refused_principal_403_before_the_
     for kind in ("agent", "system"):
         with pytest.raises(Forbidden):
             await contract.home_route(_ctx(actor_kind=kind), None)
-    assert seen == []  # the flag is never read for a principal the matrix refuses
 
 
 async def _counts(_viewer: object, office_id: uuid.UUID | None) -> HomeCount:

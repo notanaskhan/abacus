@@ -8,17 +8,27 @@ const SERIOUS = new Set(["serious", "critical"]);
 export interface Board {
   st: string;
   ready: string;
+  /** More of the state's own search (`tab=activity`). */
+  search?: string;
 }
 
-export function walkBoards(screen: string, path: string, boards: readonly Board[]): void {
+/** `flags`: what E0 leaves off and the screen's route needs on (`?flags=`, fixture project only). */
+export function walkBoards(
+  screen: string,
+  path: string,
+  boards: readonly Board[],
+  flags: readonly string[] = [],
+): void {
   test.use({
     viewport: { width: 1440, height: 900 },
     deviceScaleFactor: 2,
     reducedMotion: "reduce",
   });
-  for (const { st, ready } of boards) {
+  const on = flags.length === 0 ? "" : `&flags=${flags.join(",")}`;
+  for (const { st, ready, search } of boards) {
     test(`${screen}${st}: renders and axe finds nothing serious`, async ({ page }) => {
-      await page.goto(`${path}?screen=${screen}&st=${st}`);
+      const more = search === undefined ? "" : `&${search}`;
+      await page.goto(`${path}?screen=${screen}&st=${st}${on}${more}`);
       await expect(page.locator(`[data-screen='${screen}']`).first()).toBeVisible();
       await expect(page.getByText(ready).first()).toBeVisible();
       const { violations } = await new AxeBuilder({ page }).analyze();

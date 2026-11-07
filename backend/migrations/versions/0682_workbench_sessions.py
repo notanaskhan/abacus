@@ -125,6 +125,7 @@ def upgrade() -> None:
     insert_columns(op, "session_items", ITEM_INSERTS)
     insert_only(op, "session_items")
     op.execute("REVOKE DELETE ON workbench_sessions FROM abacus_app")
+    op.execute("REVOKE UPDATE ON workbench_sessions FROM abacus_app")  # column grants only
     op.execute(f"GRANT UPDATE ({', '.join(SESSION_UPDATES)}) ON workbench_sessions TO abacus_app")
     op.execute(
         "ALTER TABLE agent_runs ADD CONSTRAINT agent_runs_session_fk "

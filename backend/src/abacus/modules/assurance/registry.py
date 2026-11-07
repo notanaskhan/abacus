@@ -83,6 +83,13 @@ A07_ARCHIVE_INSERT_ONLY: frozenset[str] = frozenset(
 )
 TABLES: frozenset[str] = (
     A07_ARCHIVE_INSERT_ONLY
+    | {  # A-05-T48
+        "accounting_estimates",
+        "estimate_components",
+        "parties_in_interest",
+        "related_parties",
+        "related_party_search_runs",
+    }
     | {"archives"}
     | A07_LETTER_TABLES
     | EBP_ACCOUNT_TABLES

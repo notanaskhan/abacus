@@ -20,12 +20,10 @@ from abacus.modules.evidence.words import PageWords, Word
 from abacus_tools.synthetic.scanned_corpus import FACES, generate
 
 ROOT: Final = Path(__file__).resolve().parents[4]
-SUITE = cast(
-    dict[str, Any], yaml.safe_load((ROOT / "evals/ocr_extraction/suite.yaml").read_text())
-)
-GOLDEN = cast(
-    dict[str, Any], yaml.safe_load((ROOT / "backend/tests/golden/scanned_corpus.yaml").read_text())
-)
+_SUITE_FILE: Final = ROOT / "evals/ocr_extraction/suite.yaml"
+SUITE = cast(dict[str, Any], yaml.safe_load(_SUITE_FILE.read_text()))  # Any: YAML
+_GOLDEN_FILE: Final = ROOT / "backend/tests/golden/scanned_corpus.yaml"
+GOLDEN = cast(dict[str, Any], yaml.safe_load(_GOLDEN_FILE.read_text()))  # Any: YAML
 FINISH: Final = {face.key: face.finish for face in FACES}
 OBSCURED: Final = {face.key: face.obscured for face in FACES}
 WIDTH: Final = Decimal("612")
@@ -123,9 +121,10 @@ def _flag_recall() -> float:
 
 
 @pytest.mark.parametrize(
-    "threshold", cast(list[dict[str, Any]], SUITE["thresholds"]), ids=lambda t: t["metric"]
+    "threshold",
+    cast(list[dict[str, Any]], SUITE["thresholds"]),  # Any: YAML, ids=lambda t: t["metric"]
 )
-def test_the_suite_meets_its_threshold(threshold: dict[str, Any]) -> None:
+def test_the_suite_meets_its_threshold(threshold: dict[str, Any]) -> None:  # Any: YAML
     value = _metrics()[threshold["metric"]]
     if "minimum" in threshold:
         assert value >= threshold["minimum"], threshold["metric"]
