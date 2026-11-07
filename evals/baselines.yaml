@@ -14,3 +14,9 @@ evidence.matcher:
 # budget sits under it. The gate fails a real run above $0.275 a section.
 workpapers.section_drafter:
   medium: "0.25"
+# notices.responder v1 (N-04-T25; N-04 §6): the spec's budgets, $0.25 a notice on the medium tier
+# (`analyze`) and $0.08 on the small tier (`extract`). The real run's per-mode median must stay
+# within 10 % of these (`notices_responder_real.clearance`).
+notices.responder:
+  medium: "0.25"
+  small: "0.08"

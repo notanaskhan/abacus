@@ -1,0 +1,13 @@
+# notices.responder clearance records (N-04-T25; N-04 §6). PROTECTED (ADR-079).
+#
+# A mode is recorded here by a person, from a signed Bedrock report
+# (`python -m abacus_tools.evals --agent notices.responder --route bedrock`) whose `clearance`
+# says `cleared: true` for that mode. Each record names the report's sha256 (of the file as
+# written), its signature, the date and who recorded it. `analyze` can't clear while the suite's
+# `label_review` is `pending` (the CPA label review, DEC-2312).
+#
+# The spec's `client_data` turns `cleared` only when every mode is recorded here
+# (`test_n04t25_clearance.py`); until then real firms are refused at the gateway, and no firm goes
+# past shadow without N-04's own live rule (`shadow_score.responder_criterion`).
+agent: notices.responder
+modes: {}

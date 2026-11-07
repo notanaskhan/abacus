@@ -8,6 +8,7 @@ returns a recommendation (`analysis._agent_step` enforces it).
 from __future__ import annotations
 
 from collections.abc import Sequence
+from datetime import datetime
 from typing import Any, Final, cast
 from uuid import UUID
 
@@ -15,7 +16,7 @@ from sqlalchemy import text
 
 from abacus.ai_gateway.context import DataSubject
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.modules.agents.api import AnalyzeFacts, analyze_notice
+from abacus.modules.agents.api import AnalyzeFacts, DecidedNotice, analyze_notice
 from abacus.modules.notices.analysis import AgentStep
 
 OPTIONS: Final = ("agree", "partial", "disagree")
@@ -76,3 +77,21 @@ async def step(
         subjects=subjects,
     )
     return AgentStep(result.stage, result.run_id, result.recommended)
+
+
+async def decided_shadows(tenant: TenantContext, as_of: datetime) -> list[DecidedNotice]:
+    """N-04-T25: each analysis's agent run on a notice whose signer decided a position by `as_of`,
+    for the responder's shadow score (agents keeps the runs; this hands over only the pairing)."""
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                text(
+                    "SELECT a.agent_run_id, n.position, n.decided_at FROM notice_analyses a "
+                    "JOIN notices n ON n.work_item_id = a.work_item_id "
+                    "WHERE a.agent_run_id IS NOT NULL AND n.position IS NOT NULL "
+                    "AND n.decided_at <= :as_of ORDER BY n.decided_at, a.agent_run_id"
+                ),
+                {"as_of": as_of},
+            )
+        ).all()
+    return [DecidedNotice(r.agent_run_id, r.position, r.decided_at) for r in rows]
