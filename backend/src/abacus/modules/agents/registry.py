@@ -40,6 +40,7 @@ TABLES: frozenset[str] = frozenset(
         "proposal_rows",
         "proposal_decisions",
         "agent_run_records",  # Q-02-T41 (0171, ADR-169 §3): one per ended specialist run
+        "tenant_counters",  # P-10-T02 (0680): `run_number` per tenant
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -69,6 +70,7 @@ INSERT_ONLY: frozenset[str] = frozenset(
 )
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
+    "tenant_counters": frozenset({"tenant_id", "name", "value"}),
     # G-02-T23 (0272): the draft (one per firm) and the requested versions.
     "autonomy_policy_drafts": frozenset(
         {"tenant_id", "base_version_no", "sections", "schema_version", "updated_by"}
@@ -164,6 +166,11 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"methodology_version_id"}  # SPEC-035 Q3 (TASK-074): a firm-level run's version
         | {"shadow"}  # SPEC-036 (TASK-076): started in shadow
         | {"inbox_attachment_id"}  # N-01-T22: an intake-mode run's attachment
+        # P-10-T02 (0680, ADR-169): run v2; a sync trigger keeps `status` and `state` together.
+        | {"state", "state_reason", "blocked_on", "run_number", "session_id", "definition_id"}
+        | {"definition_version", "mode", "trigger_kind", "trigger_ref", "parent_run_id"}
+        | {"work_item_ref", "subject_ref", "inputs", "auto_mode", "runs_as_user_id", "test"}
+        | {"client_scope", "region", "route", "terms_version"}
     ),
     "screening_results": frozenset(
         {"id", "tenant_id", "engagement_id", "evidence_version_id", "agent_run_id"}
@@ -211,7 +218,13 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "agent_runs": frozenset(
         {"status", "context_hash", "output", "failure_code", "finished_at"}
         | {"queued_reason", "estimated_start_at"}
+        # P-10-T02 (0680): the run v2 columns a run moves through.
+        | {"state", "state_reason", "blocked_on", "session_id", "plan_id", "client_scope"}
+        | {"records_read", "citations_count", "writes_done", "writes_waiting", "agent_ms"}
+        | {"agent_minutes", "cost_usd", "region", "route", "terms_version", "signed_off_by"}
+        | {"signed_off_at", "event_seq"}
     ),
+    "tenant_counters": frozenset({"value"}),
     # SPEC-009: document status, and each chunk's vector written once.
     "knowledge_documents": frozenset({"status", "failure_code", "withdrawn_at"}),
     "knowledge_chunks": frozenset({"embedding", "embedding_model", "embedded_at"}),
