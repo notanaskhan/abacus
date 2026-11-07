@@ -3347,6 +3347,138 @@ export const STATUS_REGISTRY = {
       "derived": true
     }
   },
+  "deliverable": {
+    "for_your_review": {
+      "label": "For your review",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "approved_by_you": {
+      "label": "Approved by you",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": true
+    },
+    "waiting_for_approval": {
+      "label": "Waiting for approval",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "in_sign": {
+      "label": "In sign",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": true,
+      "clientLabel": "In Sign"
+    },
+    "signed": {
+      "label": "Signed",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": true
+    },
+    "final": {
+      "label": "Final",
+      "variant": "green",
+      "terminal": true,
+      "derived": true
+    },
+    "released": {
+      "label": "Released",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": true
+    },
+    "not_ready_yet": {
+      "label": "Not ready yet",
+      "variant": null,
+      "terminal": false,
+      "derived": true,
+      "disc": "ring"
+    },
+    "replaced": {
+      "label": "Replaced",
+      "variant": "neutral",
+      "terminal": true,
+      "derived": true,
+      "contextLabels": {
+        "firm_named": "Replaced by {firm}"
+      }
+    }
+  },
+  "client_approval_item": {
+    "waiting": {
+      "label": "Waiting for you",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "approved": {
+      "label": "Approved",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": true
+    },
+    "declined": {
+      "label": "Declined",
+      "variant": "red-tint",
+      "terminal": true,
+      "derived": true
+    },
+    "accepted": {
+      "label": "Accepted",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": true
+    },
+    "not_recorded": {
+      "label": "Not recorded",
+      "variant": "neutral",
+      "terminal": true,
+      "derived": true
+    },
+    "acknowledged": {
+      "label": "Acknowledged",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": true
+    },
+    "question_sent": {
+      "label": "Question sent",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": true
+    }
+  },
+  "governance_room_letter": {
+    "new": {
+      "label": "New",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "not_yet": {
+      "label": "Not yet",
+      "variant": null,
+      "terminal": false,
+      "derived": true,
+      "disc": "ring"
+    },
+    "sent_acknowledged": {
+      "label": "Sent · acknowledged",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": true
+    },
+    "acknowledged": {
+      "label": "Acknowledged",
+      "variant": "green-tint",
+      "terminal": true,
+      "derived": true
+    }
+  },
   "audit_report": {
     "draft": {
       "label": "Draft",
