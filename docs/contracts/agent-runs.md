@@ -157,3 +157,47 @@ None are decided here; v0 is read-only. Only a person may export; the matrix den
 - Still to come: P-09-T07's projection by level; P-09-T08's `/trace/steps/{id}`. The single `/trace` response stays as the summary and timeline.
 - P-09-T11 adds `pdf` once the C11 renderer and its `run_trace_v1` template exist (S18). JSON keeps this canonical form.
 - Done in TASK-5000: when a run has `suggestions` or `proposals` rows (migration 0095), the trace counts those instead of the lists in `agent_runs.output`, and shows people's decisions on them in the timeline.
+
+## 9. v2 (P-10-T09 stub, 2026-11-06; DEC-2408)
+**One owner per route.** P-09 owns the run view, items feed, engagement run list, trace and trace
+export. P-10 owns the streams, run commands and sessions below. `GET /v1/agent-runs/{id}` gains
+`RunV2Out`'s fields with P-10-T29. Code: `agents/runs_v2_contract.py`,
+`workbench/sessions_contract.py`, `notifications/events_contract.py`, `platform/usage_contract.py`.
+
+Every route answers its matrix action, then 501 until the task named. Flags `agent_runtime.v2`,
+`realtime.sse` and `engagement_run.enabled` arrive on the Thu Jan 27, 2028 train; then 404 off.
+
+| Operation | Method and path | Matrix action | Task |
+|---|---|---|---|
+| Run stream | `GET /v1/agent-runs/{id}/events` (SSE) | `agent_run.read` | T26 |
+| Start engagement run | `POST /v1/engagements/{id}/runs` (202) | `agent_run.start` | T39 |
+| Plan decision | `POST /v1/agent-runs/{id}/plan/approve`, `/edit`, `/cancel` | `agent_run.approve_plan` | T33 |
+| Question | `POST …/questions/{qid}/answer`, `/skip` | `agent_run.answer` | T33 |
+| Control | `POST …/messages`, `…/steps/{sid}/retry`, `…/stop` (202) | `agent_run.control` | T33 |
+| Sign-off | `POST …/sign-off` | `agent_run.sign_off` | T33 |
+| Feedback | `POST /v1/agent-feedback` | `agent_feedback.create` | T33 |
+| Auto mode | `PUT /v1/engagements/{id}/auto-mode` | `engagement_ai.configure` | T39 |
+| Session | `GET /v1/workbench/sessions/{id}`; `POST …/messages` (202) | `session.read`, `session.create` | T43 |
+| Session stream | `GET /v1/workbench/sessions/{id}/events` (SSE) | `session.read` | T26 |
+| Badge stream | `GET /v1/me/agent-events` (SSE) | `session.read` | T26 |
+| Invalidations | `GET /v1/events?topics=` (SSE); `POST /v1/events/{stream_id}/topics` | `events.subscribe` | T27 |
+| Capabilities | `GET /v1/agents/capabilities?engagement_id=` | `session.read` | T45 |
+| Firm usage | `GET /v1/firm/usage?month=` | `usage.read` | T42 |
+| Engagement effort | `GET /v1/engagements/{id}/effort` | `engagement.read` | T42 |
+
+**Events** (`RunEventOut`): `run.state`, `step.state`, `item.appended`, `item.patched`,
+`plan.proposed`, `plan.decided`, `question.opened`, `question.answered`, `proposal.created`,
+`proposal.decided`, `decision.requested`, `decision.decided`, `artifact.ready`, `resync`, `locked`,
+and a `:hb` heartbeat. `seq` is per run or per session; `Last-Event-ID` is scoped to the stream.
+Identifiers, enums and verified items only; an item holding a Restricted field travels as
+`{id, ref_only: true}`; over 64 KB by reference. **No model token is ever streamed** (ADR-234).
+
+**Examples.**
+- **Run #4118**, Season Progress Reporter, Sep 14: `succeeded`; records read 2,625 = 224 + 214 + 241 +
+  1,946; 79 citations; 2 m 41 s.
+- **Run #4127**, Northwind engagement run: 14 workpapers = 1 + 5 + 1 + 4 + 3 over 5 levels; plan
+  approved 9:24; TB 9:26; `blocked_on_decision` on materiality at 9:27 with `blocked_on.role`
+  `engagement_partner`; IC failed 9:58 (BH-EBP-140 step 8); decided 11:12.
+
+Both validate against the schemas in `backend/tests/contracts/c06_v2/test_c06_v2_stub.py`.
+

@@ -119,6 +119,12 @@ from abacus.modules.agents.routes import (
 )
 from abacus.modules.agents.runs import run_initiators
 from abacus.modules.agents.runs_routes import engagement_runs_router, runs_router
+from abacus.modules.agents.runs_v2_contract import (
+    capabilities_router,
+    engagement_runs_v2_router,
+    feedback_router,
+    runs_v2_router,
+)
 from abacus.modules.agents.screening_contract import screening_items_router, screenings_router
 from abacus.modules.agents.screenings import (
     SUBSCRIPTIONS as SCREENING_SUBSCRIPTIONS,
@@ -256,6 +262,10 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     template_drafts_router,
     engagement_runs_router,
     runs_router,
+    engagement_runs_v2_router,
+    runs_v2_router,
+    feedback_router,
+    capabilities_router,
     # C3 (P-04-T08; ADR-161); `review.grammar_api` retired (P-04-T62).
     proposals_router,
     suggestions_router,
