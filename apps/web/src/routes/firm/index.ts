@@ -57,7 +57,7 @@ export const firmRoutes = [
   ...taxReturnRoutes,
   // N-02-T40: SIG-01 behind `signatures.envelopes`.
   ...signatureRoutes,
-  // N-04-T05: NOT-01 behind `notices.workspace`.
+  // N-04-T05: NOT-01 to NOT-03 (`notices.workspace` retired at N-04-T27, DEC-2602).
   ...noticeRoutes,
   // P-01-T02: the Engagements index and the flag-off landings of planned areas.
   ...areaRoutes,

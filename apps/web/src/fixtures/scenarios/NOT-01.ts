@@ -6,7 +6,6 @@
 //   e    the New tile pressed (`?tile=new`): N5 and N9
 //   f    no visible notices: "No open notices."
 //   g    `GET /v1/notices` never answers: skeleton rows
-//   off  `notices.workspace` off: C-20
 //
 //   b    the intake sheet over a: Aurelio Santos's CP14, read (Sep 10, 2:16 PM; N-04-T09)
 //   c    the agent still reading 2 pages: Create notice disabled
@@ -41,21 +40,15 @@ const seed = getSeed();
 export const NOT01_INSTANT = "2026-09-14T09:24:00-05:00";
 export const NOT01_PERSONA = "kevin-osei";
 
-function capabilities(persona: string | undefined, on: boolean): CapabilitiesOut {
+function capabilities(persona: string | undefined): CapabilitiesOut {
   const base = capabilitiesFor(seed, persona ?? NOT01_PERSONA);
   return {
     ...base,
     capabilities: [...base.capabilities, "notice.read", "notice_intake.create"],
-    flags: { ...base.flags, "notices.workspace": on },
   };
 }
 
-function at(
-  state: string,
-  handlers: Record<string, FixtureHandler> = {},
-  options: { on?: boolean } = {},
-): Scenario {
-  const on = options.on ?? true;
+function at(state: string, handlers: Record<string, FixtureHandler> = {}): Scenario {
   return {
     state,
     persona: NOT01_PERSONA,
@@ -63,7 +56,7 @@ function at(
     handlers: {
       ...E0.handlers,
       ...noticeHandlers(),
-      "GET /v1/me/capabilities": ({ persona }) => json(capabilities(persona, on)),
+      "GET /v1/me/capabilities": ({ persona }) => json(capabilities(persona)),
       ...handlers,
     },
   };
@@ -102,7 +95,6 @@ export const scenarios = defineScenarios({
   e: at("e"),
   f: at("f", noticeHandlers([])),
   g: at("g", { "GET /v1/notices": () => never(), "GET /v1/notices/summary": () => never() }),
-  off: at("off", {}, { on: false }),
 });
 
 export type Not01State = keyof typeof scenarios;

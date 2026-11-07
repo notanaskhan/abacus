@@ -13,7 +13,6 @@ import pytest
 
 from abacus.ai_gateway.context import DataSubject
 from abacus.kernel.db import TenantContext
-from abacus.kernel.flags import forget_flags
 from abacus.kernel.uow import uow
 from abacus.modules.agents import api as agents_api
 from abacus.modules.agents.handoff import NoticeExtractOutput, NoticeProposedField
@@ -30,15 +29,8 @@ from .tb_support import Books, books
 
 @pytest.fixture
 async def world(net: object, object_store: str) -> Books:
-    found = await books(net)  # pyright: ignore[reportArgumentType] -- the backfill `net`
-    await found.seed.run(
-        "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
-        "VALUES ($1, 'notices.workspace', 'true', 'test-seed', 'N-04-T19') "
-        "ON CONFLICT DO NOTHING",
-        found.tenant_id,
-    )
-    forget_flags()
-    return found
+    # `notices.workspace` retired at N-04-T27 (DEC-2602).
+    return await books(net)  # pyright: ignore[reportArgumentType] -- the backfill `net`
 
 
 async def _intake(world: Books, monkeypatch: pytest.MonkeyPatch) -> tuple[uuid.UUID, uuid.UUID]:

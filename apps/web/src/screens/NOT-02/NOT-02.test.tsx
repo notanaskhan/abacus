@@ -120,11 +120,12 @@ describe("NOT-02", () => {
     expect(list.textContent).toContain("Decision requested");
   });
 
-  it("off: notices.workspace off draws C-20", async () => {
-    show("off");
+  it("draws with no notices flag: notices.workspace is retired (DEC-2602)", async () => {
+    show("a");
     await waitFor(
       () => {
-        expect(document.body.textContent).toContain("not turned on");
+        expect(document.body.textContent).not.toContain("not turned on");
+        expect(document.body.textContent).toContain("Whitley");
       },
       { timeout: 6000 },
     );

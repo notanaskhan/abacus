@@ -7,8 +7,9 @@ options, and no text claims a person's act. Below 0.6 confidence the recommendat
 
 The gateway enforces the gates it owns, in order: the kill switch, provider terms, budgets and
 condition 6: `consent_7216` use and AI disclosure for every taxpayer (`data_subjects`); a subject
-the builder can't name is refused (fail closed). The flag and the firm's stage are read here first:
-`off` makes no call, `shadow` records and shows nothing.
+the builder can't name is refused (fail closed). The firm's stage is read here first (the
+`notices.responder` flag retired at N-04-T27, DEC-2602): `off` makes no call, `shadow` records and
+shows nothing.
 
 It never creates a notice, confirms a field, decides, signs, drafts a letter or sends (INV-1).
 """
@@ -33,9 +34,7 @@ from abacus.ai_gateway import (
     call,
 )
 from abacus.ai_gateway.context import DataSubject
-from abacus.kernel._flags import NOTICES_RESPONDER
 from abacus.kernel.db import TenantContext
-from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import MissingAuditEvent, Ref, Target, uow
 from abacus.modules.agents.handoff import NoticeAnalyzeOutput, NoticeExtractOutput
 from abacus.modules.agents.repository import finish_run, insert_run
@@ -183,10 +182,8 @@ async def analyze(
     facts: AnalyzeFacts,
     subjects: Sequence[DataSubject],
 ) -> AnalyzeResult:
-    """Fails closed at each step: no flag, no stage, no model, a refused answer: no recommendation,
+    """Fails closed at each step: no stage, no model, a refused answer: no recommendation,
     and the code analysis stands alone ("Analysis by code only")."""
-    if not await flag_enabled(tenant, NOTICES_RESPONDER):
-        return AnalyzeResult("off", None, None, None)
     stage = await stage_for(tenant, RESPONDER)
     if stage not in ("shadow", "live"):
         return AnalyzeResult("off", None, None, None)
@@ -263,8 +260,6 @@ async def extract_fields(
 ) -> ExtractProposal | None:
     """Field proposals for a notice with no code map; a citation outside `lines` drops its
     field."""
-    if not await flag_enabled(tenant, NOTICES_RESPONDER):
-        return None
     if await stage_for(tenant, RESPONDER) not in ("shadow", "live"):
         return None
     run_id = await _start(tenant.tenant_id, cast(UUID, engagement_id), initiator)
