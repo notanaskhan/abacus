@@ -14,12 +14,12 @@ from dataclasses import dataclass
 from typing import Annotated, ClassVar, Final, Literal
 from uuid import UUID
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import DomainEvent, Ref, Target, UnitOfWork, uow
-from abacus.modules.engagements.models import Engagement
+from abacus.modules.engagements.models import Engagement, WorkItem
 from abacus.modules.engagements.service import lock_ref
 from abacus.modules.identity.api import AuthContext, Forbidden, authorise, team_standing
 
@@ -165,6 +165,26 @@ async def transition(
             reason=reason if to == "on_hold" else None,
         )
     )
+
+
+async def archive_when_items_archived(tx: UnitOfWork, engagement_id: UUID) -> bool:
+    """A-07-T14 (P-43): `engagement.archive` as a system transition. A delivered engagement moves
+    to `archived` once every one of its work items is. Nothing to do otherwise: False."""
+    status, open_items = (
+        await tx.session.execute(
+            select(
+                Engagement.status,
+                select(func.count())
+                .select_from(WorkItem)
+                .where(WorkItem.engagement_id == engagement_id, WorkItem.status != "archived")
+                .scalar_subquery(),
+            ).where(Engagement.id == engagement_id)
+        )
+    ).one()
+    if status != "delivered" or open_items:
+        return False
+    await transition(tx, engagement_id, "archived", by="system")
+    return True
 
 
 async def hold(ctx: AuthContext, engagement_id: UUID, reason: str) -> None:

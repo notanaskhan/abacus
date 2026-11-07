@@ -18,6 +18,7 @@ ArchivedWriteKind = Literal[
     "archive_addition", "post_issuance", "retention_extend", "destruction_tombstone"
 ]
 ARCHIVED_WRITE_KINDS: Final = frozenset(get_args(ArchivedWriteKind))
+ARCHIVED_SQLSTATE: Final = "AB409"
 
 EXEMPT: Final[Mapping[str, str]] = {
     "access_events": "logs who read the file, which must go on after lock",

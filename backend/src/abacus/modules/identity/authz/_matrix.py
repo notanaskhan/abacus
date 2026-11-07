@@ -294,6 +294,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "system": "deny",
         "independence": "required",
+        "archived_exempt": "verify",
     },
     "archive_addition.approve": {
         "engagement_partner": "allow",
@@ -305,6 +306,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "deny",
         "independence": "required",
         "mfa_recent": "required",
+        "archived_exempt": "archive_addition",
     },
     "archive_addition.create": {
         "manager": "allow",
@@ -316,6 +318,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "system": "deny",
         "independence": "required",
+        "archived_exempt": "archive_addition",
     },
     "assurance.record_archive": {
         "engagement_partner": "allow",
@@ -1924,6 +1927,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "independence": "required",
         "mfa_recent": "required",
         "not_offshore": "required",
+        "archived_exempt": "export",
     },
     "export.download": {
         "engagement_partner": "allow",
@@ -3010,6 +3014,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "system": "deny",
         "mfa_recent": "required",
+        "archived_exempt": "legal_hold",
     },
     "legal_hold.place": {
         "firm_admin": "allow",
@@ -3018,6 +3023,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "system": "deny",
         "mfa_recent": "required",
+        "archived_exempt": "legal_hold",
     },
     "legal_hold.read": {
         "firm_admin": "allow",
