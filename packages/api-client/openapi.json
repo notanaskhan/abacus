@@ -14303,6 +14303,7 @@
         "type": "object"
       },
       "ChecklistPickIn": {
+        "additionalProperties": false,
         "properties": {
           "template_version_id": {
             "cls": "internal",

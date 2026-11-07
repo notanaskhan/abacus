@@ -198,7 +198,8 @@ def upgrade() -> None:
     for table, columns in INSERTS.items():
         tenant_table(op, table)
         insert_columns(op, table, columns)
-    for table, columns in UPDATES.items():
+    for table, columns in UPDATES.items():  # column grants only: drop the default table grant
+        op.execute(f"REVOKE UPDATE ON {table} FROM abacus_app")
         op.execute(f"GRANT UPDATE ({', '.join(columns)}) ON {table} TO abacus_app")
     op.execute("REVOKE UPDATE, DELETE ON related_party_search_runs FROM abacus_app")
     op.execute(

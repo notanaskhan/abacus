@@ -116,6 +116,8 @@ def upgrade() -> None:
         tenant_table(op, table)
         insert_columns(op, table, columns)
     insert_only(op, "agent_minute_ledger")
+    for table in ("engagement_agent_budgets", "usage_month_rollups"):  # column grants only
+        op.execute(f"REVOKE UPDATE ON {table} FROM abacus_app")
     op.execute(
         "GRANT UPDATE (minutes_per_usage_month, alert_pct) ON engagement_agent_budgets "
         "TO abacus_app"

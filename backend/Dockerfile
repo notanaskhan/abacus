@@ -52,8 +52,10 @@ CMD ["pytest", "tests/unit", "-q"]
 
 FROM ${PYTHON_IMAGE} AS runtime
 ARG RENDER_LIBS
+# zlib1g: Debian's security fix (CVE-2026-76844, CVE-2026-85091) until the base digest carries it.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ${RENDER_LIBS} \
+    && apt-get install -y --only-upgrade --no-install-recommends zlib1g \
     && rm -rf /var/lib/apt/lists/*
 # A fixed non-root identity with no login shell and no home directory.
 RUN groupadd --system --gid 10001 abacus \

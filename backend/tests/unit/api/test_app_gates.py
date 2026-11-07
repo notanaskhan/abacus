@@ -88,6 +88,8 @@ def test_ac20_each_new_route_declares_exactly_one_action_and_a_response_model() 
 # TASK-019: taking, releasing and assigning a review return the assignment, so 200.
 REVIEW_QUEUE = "/v1/engagements/{engagement_id}/review-queue/{version_id}"
 NOT_CREATING = {
+    # A-06-T25 (#1375): publishing a note template's version acts on it, so 200.
+    "/v1/methodology/statement-note-templates/{template_id}/versions/{version}/publish",
     # S29: acts on an existing record, so 200.
     "/v1/agent-runs/{run_id}/plan/approve",
     "/v1/agent-runs/{run_id}/plan/cancel",
@@ -506,6 +508,8 @@ def test_ac20_creating_routes_answer_201() -> None:
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)
     decisions = "/v1/engagements/{engagement_id}/evidence-versions/{version_id}/decision/"
     assert created == {
+        # A-06-T25 (#1375): a firm's note templates come in as rows.
+        "/v1/methodology/statement-note-templates:import",
         "/v1/engagements",
         "/v1/engagements/{engagement_id}/request-items",
         # N-04-T02: a notice from its intake, a decision request, a note, the response, its
