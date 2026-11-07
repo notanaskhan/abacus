@@ -4,7 +4,7 @@
 |---|---|
 | Register row | Screen-family contracts in `docs/contracts/README.md` |
 | Owner | notices (N-04) |
-| Status | stub (N-04-T02, 2026-11-02; DEC-2051); **v1 frozen Fri Oct 29, 2027**; live from N-04-T06 onward |
+| Status | **v1 frozen** (N-04-T27, 2026-11-07): snapshot `backend/tests/contracts/notices/v1.json`, checked by `python -m abacus_tools.contracts --check`; additions pass, a removed or retyped field needs v2 with overlap. Stub N-04-T02 (2026-11-02; DEC-2051); live from N-04-T06 onward |
 | Code | `backend/src/abacus/modules/notices/contract.py` |
 | Tests | `backend/tests/contracts/notices/` (N-04-T10's consumer suite) and `apps/web/src/screens/NOT-0*/` fixture tests |
 | Flags | `notices.workspace` (routes, screens, destinations) and `notices.responder` (every model call); both default off (DEC-2050) |
