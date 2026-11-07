@@ -75,19 +75,22 @@ const DIGEST: EqrDigestCardOut[] = [
 ];
 
 export function aud18(state: "a" | "b" | "b2" | "c" | "d" | "e"): EqrReviewOut {
-  const done = state === "c" || state === "d" ? 10 : 6;
-  const concurred = state === "d";
+  // The screen contract's letters (A-07-T17): a 6 of 10 · b, b2 ready · c concurred · d the Agent
+  // tab over a · e not the EQR over a.
+  const ready = state === "b" || state === "b2";
+  const concurred = state === "c";
+  const done = ready || concurred ? 10 : 6;
   return {
     work_item_id: COMPLETION_WORK_ITEM,
     required: true,
     eqr_name: "Thomas Whitcombe",
-    status: concurred ? "concurred" : "in_progress",
+    status: concurred ? "concurred" : ready ? "ready_to_concur" : "in_progress",
     checklist: checklist(done),
     checklist_done: done,
     checklist_total: 10,
     digest_cards: DIGEST,
     notes:
-      state === "c" || state === "d"
+      ready || concurred
         ? []
         : [
             {
@@ -103,14 +106,22 @@ export function aud18(state: "a" | "b" | "b2" | "c" | "d" | "e"): EqrReviewOut {
               assignee_name: "Hannah Leclerc",
             },
           ],
-    concurrence: null,
-    blockers:
-      state === "a" || state === "b" || state === "b2"
-        ? ["checklist_open:4", "eqr_notes_open:2"]
-        : [],
+    concurrence: concurred
+      ? {
+          concurred_by_name: "Thomas Whitcombe",
+          concurred_at: "2026-10-05T16:40:00-05:00",
+          concurrence_date: "2026-10-05",
+          not_involved_attested: true,
+        }
+      : null,
+    blockers: ready || concurred ? [] : ["checklist_open:4", "eqr_notes_open:2"],
     viewer_is_eqr: state !== "e",
     allowed_actions:
-      state === "e" || concurred ? [] : ["eqr.mark_reviewed", "eqr.checklist_update"],
+      state === "e" || concurred
+        ? []
+        : ready
+          ? ["eqr.mark_reviewed", "eqr.checklist_update", "eqr.concur"]
+          : ["eqr.mark_reviewed", "eqr.checklist_update"],
     version: 1,
   };
 }
