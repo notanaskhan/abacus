@@ -2,7 +2,7 @@
 // fixtures. The figure book is backend/tests/golden/scenario/brightwater_hale/completion_figures
 // .json, transcribed from the epic; backend/tests/golden/scenario/test_a06t32_completion_figures.py
 // checks the Brightwater Hale scenario against the same book, so a figure that drifts on either
-// side fails. AUD-15's tab badge (3) has no fixture field yet, so it isn't asserted here; the
+// side fails. AUD-15's tab badge (3) is the list's `awaiting_decision` count (DEC-2612); the
 // 26-row sign-off matrix isn't drawn (13 named rows, DEC-2391), so its check is expected to fail.
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -15,7 +15,7 @@ import { aud17Matrix, aud17Notes } from "../seed/aud17";
 import { checklistView, statementsView } from "../seed/aud20";
 
 interface Book {
-  findings: { bands: number[]; total: number };
+  findings: { bands: number[]; total: number; badge: number };
   sum: { rollover: string; iron_curtain: string; pm: string; pct_of_pm: string };
   tie_out: { total: number };
   checklist: { total: number; yes: number; na: number; no: number };
@@ -43,6 +43,10 @@ describe("A-06-T32: the completion figures drawn by the screens' fixtures", () =
     );
     expect(bands).toEqual(BOOK.findings.bands);
     expect(rows.length).toBe(BOOK.findings.total);
+  });
+
+  it("AUD-15 a: the Findings tab badge reads 3 (F-01, F-03, F-04 awaiting a decision)", () => {
+    expect(aud15List("a").counts?.awaiting_decision).toBe(BOOK.findings.badge);
   });
 
   it("AUD-16 a: rollover 34,150, iron curtain 22,250, 18.1% of PM", () => {

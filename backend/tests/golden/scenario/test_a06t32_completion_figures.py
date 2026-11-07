@@ -18,6 +18,7 @@ from typing import Final, cast
 import pytest
 import yaml
 
+from abacus.modules.assurance.findings import awaiting_decision
 from abacus_tools.synthetic.scenarios.brightwater_hale import completion_slice as seed
 
 HERE: Final = Path(__file__).resolve().parent
@@ -45,6 +46,19 @@ def test_ac_nine_findings_in_four_bands() -> None:
     ]
     assert bands == book["bands"]
     assert sum(bands) == book["total"] == len(seed.EXCEPTIONS) + len(seed.FINDINGS)
+
+
+def test_ac_the_findings_tab_badge_is_three_awaiting_a_decision() -> None:
+    """AUD-15 a: "the tab badge 3 = F-01, F-03, F-04 still awaiting a decision" (DEC-2612)."""
+    statuses = {
+        "F-01": "proposed",  # the partner concludes the proposed significant deficiency
+        "F-02": "concluded",  # the partner's, on its card
+        "F-03": "proposed",
+        "F-04": "exception_for_resolution",  # the SOC 1 CUEC evidence still to resolve
+        **{f.ref: None for f in seed.FINDINGS},  # the five misstatements carry no status
+    }
+    assert len(statuses) == BOOK["findings"]["total"]
+    assert awaiting_decision(list(statuses.values())) == BOOK["findings"]["badge"]
 
 
 def _passed(ref: str) -> dict[str, str]:
