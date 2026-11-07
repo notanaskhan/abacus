@@ -12,23 +12,49 @@ Every assurance gate an engagement's lifecycle reads is registered here through
   `stale:<type>:<id>:L<n>`, `review_note:<id>`. A provider that fails leaves G5 unmet
   (`review_unavailable`), never met. It replaces the review module's SPEC-313 provider.
 
-A-07-T15 (G6 to G9) moves its providers here. A change to this file is a red diff: it is named
-in `docs/architecture/protected-paths.md` and needs the security review.
+- **G6 to G9** (A-07-T15, DEC-2415; F9): on a firm with `assurance_release_mode = external`, the
+  SPEC-314 and record-mode providers stay in force, unchanged. On `in_app`, G6 reads `not_required`
+  when no EQR is assigned or a concurrence; G7 a signed letter dated as of the report; G8 a release
+  row; G9 a locked archive, each with live blockers. Compilation and preparation skip G6 and G7
+  (gate_policy.PLATFORM). A failing provider is unmet.
+
+A change to this file is a red diff: it is named in `docs/architecture/protected-paths.md` and
+needs the security review.
 """
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable, Mapping
+from typing import Final, cast
 from uuid import UUID
 
-from abacus.kernel.db import TenantContext
+from sqlalchemy import TextClause, text
+
+from abacus.kernel.db import TenantContext, tenant_session
+from abacus.modules.assurance.archive_gate import g9
+from abacus.modules.assurance.completion import g6, g7
 from abacus.modules.assurance.planning_gate import g4_facts
-from abacus.modules.engagements.api import GateFact, register_gate_provider, replace_gate_provider
+from abacus.modules.assurance.release import g8, release_mode
+from abacus.modules.engagements.api import (
+    GateFact,
+    assurance_item_id,
+    engagement_type_of,
+    register_gate_provider,
+    replace_gate_provider,
+    required_gates,
+)
 from abacus.modules.review.api import (
+    GateSource,
+    OpenGate,
     open_notes,
+    register_gate_source,
     reviewable_facts,
     reviewables_of,
     sign_off_states,
 )
+
+GateProvider = Callable[[TenantContext, UUID], Awaitable[GateFact]]
+OpenFor = Callable[[TenantContext, UUID | None], Awaitable[list[OpenGate]]]
 
 
 async def g5_blockers(tenant: TenantContext, engagement_id: UUID) -> list[str]:
@@ -62,6 +88,193 @@ async def g5_facts(tenant: TenantContext, engagement_id: UUID) -> GateFact:
     return GateFact(met=not blockers, blockers=tuple(blockers))
 
 
+def _not_required(engagement_type: str | None, gate: str) -> bool:
+    """Per-type policy (F9): a gate the platform doesn't require of this family is met."""
+    return engagement_type is not None and gate not in required_gates(engagement_type)
+
+
+async def _in_app_facts(tenant: TenantContext, engagement_id: UUID) -> Mapping[str, object] | None:
+    """Each in-app gate's facts in one read of this module's tables, or None with no work item."""
+    item = await assurance_item_id(tenant, engagement_id)
+    if item is None:
+        return None
+    engagement_type = await engagement_type_of(tenant, engagement_id)
+    async with tenant_session(tenant) as session:
+        row = (
+            (
+                await session.execute(
+                    text(
+                        """
+                    SELECT q.status AS eqr_status,
+                           q.eqr_user_id,
+                           l.status AS letter_status,
+                           (SELECT count(*) > 0 FROM report_releases r
+                             WHERE r.work_item_id = :item AND r.kind = 'original') AS released,
+                           a.status AS archive_status
+                      FROM (SELECT 1) one
+                      LEFT JOIN eqr_reviews q ON q.work_item_id = :item
+                      LEFT JOIN representation_letters l ON l.work_item_id = :item
+                      LEFT JOIN archives a ON a.work_item_id = :item
+                    """
+                    ),
+                    {"item": item},
+                )
+            )
+            .mappings()
+            .one()
+        )
+    return {"engagement_type": engagement_type, **dict(row)}
+
+
+async def in_app_g6(tenant: TenantContext, engagement_id: UUID) -> GateFact:
+    facts = await _in_app_facts(tenant, engagement_id)
+    if facts is None:
+        return GateFact(met=False, blockers=("no_work_item",))
+    if _not_required(cast(str | None, facts["engagement_type"]), "G6"):
+        return GateFact(met=True)
+    # EQR-required comes from the ENG-05 assignment: no review row, none required.
+    if facts["eqr_user_id"] is None or facts["eqr_status"] == "concurred":
+        return GateFact(met=True)
+    return GateFact(met=False, blockers=("eqr_not_concurred",))
+
+
+async def in_app_g7(tenant: TenantContext, engagement_id: UUID) -> GateFact:
+    facts = await _in_app_facts(tenant, engagement_id)
+    if facts is None:
+        return GateFact(met=False, blockers=("no_work_item",))
+    if _not_required(cast(str | None, facts["engagement_type"]), "G7"):
+        return GateFact(met=True)
+    status = facts["letter_status"]
+    if status is None:
+        return GateFact(met=False, blockers=("no_rep_letter",))
+    if status == "date_mismatch":
+        return GateFact(met=False, blockers=("rep_letter_date_mismatch",))
+    if status != "signed":
+        return GateFact(met=False, blockers=("rep_letter_not_signed",))
+    return GateFact(met=True)
+
+
+async def in_app_g8(tenant: TenantContext, engagement_id: UUID) -> GateFact:
+    facts = await _in_app_facts(tenant, engagement_id)
+    if facts is None:
+        return GateFact(met=False, blockers=("no_work_item",))
+    return (
+        GateFact(met=True)
+        if facts["released"]
+        else GateFact(met=False, blockers=("not_released",))
+    )
+
+
+async def in_app_g9(tenant: TenantContext, engagement_id: UUID) -> GateFact:
+    facts = await _in_app_facts(tenant, engagement_id)
+    if facts is None:
+        return GateFact(met=False, blockers=("no_work_item",))
+    if facts["archive_status"] == "locked":
+        return GateFact(met=True)
+    return GateFact(met=False, blockers=("not_locked",))
+
+
+def _by_mode(in_app: GateProvider, external: GateProvider) -> GateProvider:
+    """External firms keep what they had, exactly (F9). A provider that fails is unmet, not met."""
+
+    async def provider(tenant: TenantContext, engagement_id: UUID) -> GateFact:
+        chosen = in_app if await release_mode(tenant) == "in_app" else external
+        try:
+            return await chosen(tenant, engagement_id)
+        except Exception:
+            return GateFact(met=False, blockers=("gate_unavailable",))
+
+    return provider
+
+
 def register() -> None:
     register_gate_provider("G4", g4_facts)
     replace_gate_provider("G5", g5_facts)
+    register_gate_provider("G6", _by_mode(in_app_g6, g6))
+    register_gate_provider("G7", _by_mode(in_app_g7, g7))
+    register_gate_provider("G8", _by_mode(in_app_g8, g8))
+    register_gate_provider("G9", _by_mode(in_app_g9, g9))
+    register_completion_gates()
+
+
+# --- C13: what waits on a person, in_app firms only (F9). Each row has its reserved person or
+# role, and `visible()` walls it on the projection's read. ---------------------------------------
+
+_EVENTS: Final = frozenset(
+    {"eqr.concurred", "rep_letter.approved", "governance_communication.sent"}
+    | {"report.released", "archive.locked", "archive_addition.decided"}
+)
+_OPEN: Final[dict[str, TextClause]] = {
+    "eqr_concurrence_due": text(
+        "SELECT id, engagement_id, work_item_id, eqr_user_id AS assignee, NULL AS role "
+        "FROM eqr_reviews WHERE status = 'in_progress' "
+        "AND (CAST(:engagement_id AS uuid) IS NULL OR engagement_id = :engagement_id)"
+    ),
+    "rep_letter_approval": text(
+        "SELECT id, engagement_id, work_item_id, NULL::uuid AS assignee, "
+        "'engagement_partner' AS role FROM representation_letters "
+        "WHERE status = 'awaiting_partner_approval' "
+        "AND (CAST(:engagement_id AS uuid) IS NULL OR engagement_id = :engagement_id)"
+    ),
+    "governance_comm_approval": text(
+        "SELECT id, engagement_id, work_item_id, NULL::uuid AS assignee, "
+        "'engagement_partner' AS role FROM governance_communications "
+        "WHERE status = 'awaiting_ep_approval' "
+        "AND (CAST(:engagement_id AS uuid) IS NULL OR engagement_id = :engagement_id)"
+    ),
+    "report_release_due": text(
+        "SELECT id, engagement_id, work_item_id, NULL::uuid AS assignee, "
+        "'engagement_partner' AS role FROM audit_reports WHERE status = 'approved' "
+        "AND (CAST(:engagement_id AS uuid) IS NULL OR engagement_id = :engagement_id)"
+    ),
+    "archive_lock_due": text(
+        "SELECT id, engagement_id, work_item_id, NULL::uuid AS assignee, 'manager' AS role "
+        "FROM archives WHERE status = 'assembling' "
+        "AND (CAST(:engagement_id AS uuid) IS NULL OR engagement_id = :engagement_id)"
+    ),
+    "archive_addition_approval": text(
+        "SELECT a.id, a.engagement_id, a.work_item_id, NULL::uuid AS assignee, "
+        "'engagement_partner' AS role FROM archive_additions a "
+        "WHERE NOT EXISTS (SELECT 1 FROM archive_addition_decisions d "
+        "WHERE d.addition_id = a.id) "
+        "AND (CAST(:engagement_id AS uuid) IS NULL OR a.engagement_id = :engagement_id)"
+    ),
+}
+
+
+def _open_for(subject: str) -> OpenFor:
+    query = _OPEN[subject]
+
+    async def open_for(tenant: TenantContext, engagement_id: UUID | None) -> list[OpenGate]:
+        if await release_mode(tenant) != "in_app":
+            return []
+        async with tenant_session(tenant) as session:
+            rows = (await session.execute(query, {"engagement_id": engagement_id})).all()
+        return [
+            OpenGate(
+                r.id,
+                r.engagement_id,
+                assignee_user_id=r.assignee,
+                role=r.role,
+                work_item_id=r.work_item_id,
+            )
+            for r in rows
+        ]
+
+    open_for.__qualname__ = f"open_for_{subject}"
+    return open_for
+
+
+_KINDS: Final[dict[str, str]] = {
+    "eqr_concurrence_due": "final_approval",
+    "rep_letter_approval": "final_approval",
+    "governance_comm_approval": "send",
+    "report_release_due": "release",
+    "archive_lock_due": "final_approval",
+    "archive_addition_approval": "final_approval",
+}
+
+
+def register_completion_gates() -> None:
+    for subject, kind in _KINDS.items():
+        register_gate_source(GateSource(subject, kind, "review.read", _EVENTS, _open_for(subject)))
