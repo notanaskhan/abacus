@@ -33,13 +33,12 @@ def _file() -> bytes:
 
 
 async def _flags(b: Board) -> None:
-    for flag in ("questionnaires.editor",):
-        await b.seed.run(
-            "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
-            "VALUES ($1, $2, 'true', 't03-t05', 'T-03-T05')",
-            b.tenant,
-            flag,
-        )
+    # T-03-T18 (DEC-2605): the `tax_returns` entitlement replaces `questionnaires.editor`.
+    await b.seed.run(
+        "INSERT INTO tenant_entitlements (tenant_id, module, valid_from, set_by) "
+        "VALUES ($1, 'tax_returns', '2000-01-01', 'test-seed') ON CONFLICT DO NOTHING",
+        b.tenant,
+    )
 
 
 async def _published_template(b: Board, owner: uuid.UUID) -> tuple[str, Json]:

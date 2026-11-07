@@ -30,7 +30,6 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.timeline import Event
 
 SLICE: Final = "tax_schedules"
 NEEDS: Final = ("people", "tax_board", "portal")
-FLAGS: Final = ("questionnaires.editor", "tax.extensions_estimates")
 TEMPLATE_NAME: Final = "1040 organizer"
 TEMPLATE_CODE: Final = "organizer_1040"
 OWNER: Final = "DR"
@@ -176,10 +175,8 @@ def money(value: str | None) -> Decimal | None:
 def tax_schedules_events() -> list[Event]:
     at = SETUP_AT
     step = timedelta(seconds=1)
-    events = [
-        Event(f"flag:{flag}", at, "platform.flag_set", "system", SLICE, {"flag": flag})
-        for flag in FLAGS
-    ]
+    # T-03-T18 (DEC-2605): both flags retired; `tax_board` grants the `tax_returns` entitlement.
+    events: list[Event] = []
     events.append(Event("organizer-loaded", at + step, "tax.organizer_v6_loaded", IMPORTER, SLICE))
     events.append(Event("organizer-feld", at + 2 * step, "tax.organizer_feld", PREPARER, SLICE))
     for index, label in enumerate(extended_rows()):

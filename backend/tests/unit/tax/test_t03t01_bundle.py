@@ -94,15 +94,12 @@ def test_ac1_assure_estimate_actions_stay_assurances() -> None:
     assert "extension.read" not in RULES
 
 
-def test_ac1_the_two_flags_exist_and_default_off() -> None:
-    for flag, name in (
-        (_flags.QUESTIONNAIRES_EDITOR, "questionnaires.editor"),
-        (_flags.TAX_EXTENSIONS_ESTIMATES, "tax.extensions_estimates"),
-    ):
-        assert flag.name == name
-        assert flag.default == "false"
+def test_ac1_the_two_flags_are_retired() -> None:
+    # T-03-T18 (DEC-2605): the `tax_returns` entitlement gates both route families instead.
+    assert not hasattr(_flags, "QUESTIONNAIRES_EDITOR")
+    assert not hasattr(_flags, "TAX_EXTENSIONS_ESTIMATES")
     names = {entry.name for entry in feature_flags.parse(feature_flags.source())}
-    assert {"questionnaires.editor", "tax.extensions_estimates"} <= names
+    assert not {"questionnaires.editor", "tax.extensions_estimates"} & names
 
 
 @pytest.mark.parametrize("kind", KINDS)
