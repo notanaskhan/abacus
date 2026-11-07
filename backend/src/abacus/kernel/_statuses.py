@@ -647,6 +647,33 @@ class ProposalStatus(StrEnum):
     SUPERSEDED = "superseded"
 
 
+class AgentRunStepStatus(StrEnum):
+    QUEUED = "queued"
+    DISPATCHED = "dispatched"
+    RUNNING = "running"
+    WAITING_ON_INPUTS = "waiting_on_inputs"
+    BLOCKED = "blocked"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+    SKIPPED = "skipped"
+
+
+class AgentPlanStatus(StrEnum):
+    PROPOSED = "proposed"
+    APPROVED = "approved"
+    EDITED = "edited"
+    CANCELLED = "cancelled"
+    STANDING = "standing"
+
+
+class AgentQuestionStatus(StrEnum):
+    OPEN = "open"
+    ANSWERED = "answered"
+    SKIPPED = "skipped"
+    EXPIRED = "expired"
+
+
 class WorkbenchSessionStatus(StrEnum):
     LIVE = "live"
     RUNNING = "running"
@@ -1770,6 +1797,30 @@ STORED: dict[str, tuple[str, ...]] = {
         "approved_with_edits",
         "rejected",
         "superseded",
+    ),
+    "agent_run_step": (
+        "queued",
+        "dispatched",
+        "running",
+        "waiting_on_inputs",
+        "blocked",
+        "succeeded",
+        "failed",
+        "cancelled",
+        "skipped",
+    ),
+    "agent_plan": (
+        "proposed",
+        "approved",
+        "edited",
+        "cancelled",
+        "standing",
+    ),
+    "agent_question": (
+        "open",
+        "answered",
+        "skipped",
+        "expired",
     ),
     "workbench_session": (
         "live",
