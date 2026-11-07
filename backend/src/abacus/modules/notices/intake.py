@@ -34,9 +34,13 @@ from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.flags import flag_variant
 from abacus.kernel.uow import Ref, Target, uow
-from abacus.modules.engagements.api import create_work_item
-from abacus.modules.identity.api import AuthContext
-from abacus.modules.notices.events import NoticeCreated, NoticeIntakeStarted
+from abacus.modules.engagements.api import assign_work_item, create_work_item, holders_of
+from abacus.modules.identity.api import AuthContext, team_of
+from abacus.modules.notices.events import (
+    NoticeCreated,
+    NoticeIntakeStarted,
+    NoticeIntakeTaxpayerNamed,
+)
 
 LOW_CONFIDENCE: Final = Decimal("0.90")
 _READY: Final = frozenset({"ready", "manual_entry", "failed"})
@@ -76,6 +80,9 @@ class NoNoticeEngagement(DomainConflict):
     """The client has no `notice_response` engagement yet (QN-1: created through ENG-01)."""
 
     code = "no_notice_engagement"
+
+
+_CREATE: Final = "notice_intake.confirm"
 
 
 class IntakeMoved(DomainConflict):
@@ -223,6 +230,7 @@ async def revise(
         raise NotReady(facts={"status": current.status})
     by_key = {f.key: f for f in current.fields}
     picked = await _picked(ctx, current, by_key, client_entity_id, related_return_id)
+    named = _taxpayer_named(current, by_key, fields, client_entity_id)
     async with uow(ctx.tenant) as tx:
         for key, value, confirm in fields:
             if key not in FIELD_KINDS or FIELD_KINDS[key] == "tin":
@@ -270,12 +278,37 @@ async def revise(
         )
         if moved is None:
             raise IntakeMoved
+        if named is not None:
+            tx.emit(NoticeIntakeTaxpayerNamed(intake_id=intake_id, client_entity_id=named))
         tx.record(
             "notice_intake.updated",
             target=Target("notice_intake", intake_id),
             after=Ref(version=expected_version + 1),
         )
     return await intake(ctx, intake_id)
+
+
+def _taxpayer_named(
+    current: Intake,
+    by_key: Mapping[str, FieldValue],
+    fields: Sequence[tuple[str, str | None, bool]],
+    client_entity_id: UUID | None,
+) -> UUID | None:
+    """The entity, when this revise leaves a notice no form map read with both a taxpayer and a
+    year: what the §7216 gate needs to answer for the responder (N-04-T19; DEC-2387)."""
+    from abacus.modules.notices.intake_read import NO_MAP, year_of
+
+    if current.status != "manual_entry" or current.match.get("manual_reason_code") != NO_MAP:
+        return None
+    typed = {key: value for key, value, _confirm in fields if value is not None}
+    if client_entity_id is None and "notice.tax_year" not in typed:
+        return None
+    was = by_key.get("notice.tax_year")
+    year = typed.get("notice.tax_year", was.value_text if was else None)
+    entity = client_entity_id or current.match.get("client_entity_id")
+    if year_of(year) is None or entity is None:
+        return None
+    return UUID(str(entity))
 
 
 @dataclass(frozen=True)
@@ -472,7 +505,36 @@ async def create_notice(
             target=Target("notice", work_item),
             after=Ref(intake=intake_id, past_duplicate=int(current.duplicate_of is not None)),
         )
+    await _assign_functions(
+        ctx,
+        work_item,
+        engagement,
+        assignee_id,
+        related_return_id or _uuid(current.match.get("return_id")),
+    )
     return work_item, engagement
+
+
+async def _assign_functions(
+    ctx: AuthContext,
+    work_item: UUID,
+    engagement: UUID,
+    assignee: UUID,
+    related_return: UUID | None,
+) -> None:
+    """N-04 F2: the assignee prepares; the manager reviewer and signer are the related return's, or
+    the one person holding that role on the client's team. Without these no one on a notice holds
+    a function, and every action the matrix gates on one is refused (DEC-2392)."""
+    from abacus.modules.notices.service import assignee_on_team
+
+    await assign_work_item(ctx, work_item, assignee, "preparer", authorised_under=_CREATE)
+    team = await team_of(ctx.tenant_id, engagement)
+    for function, role in (("manager_reviewer", "manager"), ("signer", "engagement_partner")):
+        people = await holders_of(ctx.tenant, related_return, function) if related_return else []
+        people = people or sorted({u for u, held in team if held == role}, key=str)
+        if len(people) == 1:
+            await assignee_on_team(ctx, engagement, people[0])
+            await assign_work_item(ctx, work_item, people[0], function, authorised_under=_CREATE)
 
 
 def _uuid(value: object) -> UUID | None:

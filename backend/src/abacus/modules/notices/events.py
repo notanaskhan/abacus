@@ -79,3 +79,13 @@ class NoticeResponseSent(DomainEvent):
     follow_up_on: Annotated[date, classified("internal")]
     engagement_id: Annotated[UUID | None, classified("internal")] = None  # I-01-T23: C13's key
     assignee_user_id: Annotated[UUID | None, classified("internal")] = None  # C16's recipient
+
+
+class NoticeIntakeTaxpayerNamed(DomainEvent):
+    """A person named the taxpayer and the year of a notice no form map read: the responder may try
+    again, now the §7216 gate can answer for them (N-04-T19; DEC-2387)."""
+
+    event_type: ClassVar[str] = "notice_intake.taxpayer_named"
+
+    intake_id: Annotated[UUID, classified("internal")]
+    client_entity_id: Annotated[UUID, classified("internal")]

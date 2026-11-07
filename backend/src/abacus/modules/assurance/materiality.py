@@ -58,7 +58,7 @@ from abacus.modules.engagements.api import (
     prior_engagement_of,
 )
 from abacus.modules.identity.api import AgentContext, AuthContext, allowed_actions, names_of
-from abacus.modules.ledger.api import mapped_trial_balance, trial_balance_view
+from abacus.modules.ledger.api import mapped_trial_balance, mapping_view, trial_balance_view
 from abacus.modules.methodology.api import (
     MaterialityRangesPayload,
     PolicyRef,
@@ -142,6 +142,11 @@ class PolicyMissing(DomainConflict):
     """The firm has no materiality policy in effect for this kind of audit."""
 
     code = "materiality_policy_missing"
+
+
+_PRE_TAX_INCOME: Final = "pre_tax_income"
+_INCOME_CLASSES: Final = frozenset({"revenue", "expenses"})
+_INCOME_TAX: Final = "income_tax"
 
 
 class BenchmarkNotFound(DomainInvalid):
@@ -277,7 +282,38 @@ async def read_benchmark(
         if rows:
             total = sum((m.net for m in rows), Decimal(0))
             return BenchmarkRead(abs(total), view.summary.period_end, tb_id, layer)
+    if benchmark_key(label) == _PRE_TAX_INCOME:
+        total = await _pre_tax_income(tenant, engagement_id, tb_id, layer)
+        if total is not None:
+            return BenchmarkRead(abs(total), view.summary.period_end, tb_id, layer)
     raise BenchmarkNotFound(facts={"field": "benchmark_key"})
+
+
+async def _pre_tax_income(
+    tenant: TenantContext, engagement_id: UUID, tb_id: UUID, layer: str
+) -> Decimal | None:
+    """No trial balance has a line called pre-tax income: it is every account mapped to a revenue
+    or expense grouping, less any line naming income tax (DEC-2391). None until they're mapped."""
+    mapping = await mapping_view(tenant, engagement_id, tb_id)
+    if mapping is None:
+        return None
+    wanted = {
+        line.id
+        for group in mapping.groupings
+        if group.class_ in _INCOME_CLASSES
+        for line in group.lines
+        if _INCOME_TAX not in line.key.casefold()
+    }
+    accounts = [a for a in mapping.accounts if a.fs_line_id in wanted]
+    if not accounts:
+        return None
+    return sum(
+        (
+            (a.final if a.final is not None else a.eoy) if layer == "final" else a.eoy
+            for a in accounts
+        ),
+        Decimal(0),
+    )
 
 
 # --- reads ----------------------------------------------------------------------------------

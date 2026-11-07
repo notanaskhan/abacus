@@ -415,6 +415,8 @@ NOTICE_RESPONSE: Final[Json] = {
         _p("Internal Revenue Service · address as printed on page 1 of the notice"),
         _p("Re: Notice ", _v("notice.reference")),
         _clause("agree"),
+        _clause("partially_agree"),
+        _clause("disagree"),
         _p("Please contact us at the address above with any questions."),
         _sign(("Taxpayer", "taxpayer.names")),
         _p("Prepared with the assistance of Brightwater Hale LLP"),
@@ -424,6 +426,15 @@ NOTICE_RESPONSE: Final[Json] = {
             "agree",
             "We agree",
             _p("We have reviewed the proposed changes and agree with them."),
+        ),
+        _def(
+            "partially_agree",
+            "We agree in part",
+            _p(
+                "We have reviewed the proposed changes and agree with part of them, "
+                "as explained below."
+            ),
+            on=False,
         ),
         _def(
             "disagree",

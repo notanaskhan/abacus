@@ -315,6 +315,11 @@ codes:
     raised_by:
     - abacus.modules.review.gate_actions.CandidateNotEligible
     summary: The person can't take this gate (not a holder of its role, or walled off).
+  checklist_answered:
+    status: 409
+    raised_by:
+    - abacus.modules.reporting.statements.ChecklistAnswered
+    summary: An answered checklist can't change version; its answers name the one they were given on.
   checklist_changed:
     status: 409
     raised_by:
@@ -1923,6 +1928,10 @@ codes:
     raised_by:
     - abacus.modules.workpapers.attribute_grid.NoteRequired
     summary: An exception or a no-effect mark carries the person's note.
+  note_template_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.methodology.note_templates.NoteTemplateRefused
   notes_open:
     status: 409
     raised_by:

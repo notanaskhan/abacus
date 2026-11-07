@@ -201,9 +201,11 @@ from abacus.modules.methodology.api import (
     EngagementType,
     create_standard,
     import_checklist,
+    import_notes,
     import_standard_workbook,
     import_template,
     publish_checklist,
+    publish_notes,
     publish_standard,
     standard_by_key,
     standard_workbook,
@@ -250,11 +252,15 @@ from abacus.modules.portal.api import (
 )
 from abacus.modules.reporting.api import (
     TemplateImportIn,
+    answer_statements_item,
     draft_statements,
     import_template_bundle,
+    pick_statements_checklist,
     publish_template,
     record_management_approval,
+    review_statements_items,
     run_statement_tie_out,
+    statements_checklist_options,
 )
 from abacus.modules.requests.api import (
     ItemPatch,
@@ -4100,6 +4106,24 @@ async def _checklist_loaded(conn: asyncpg.Connection, _: Scenario, event: Event)
     )
 
 
+async def _statement_notes_loaded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """A-06-T25: Grace imports the firm's note wording; Daniel publishes v1."""
+    made = await import_notes(
+        await _staff_context(conn, event),
+        _completion.NOTES_NAME,
+        _completion.NOTES_FRAMEWORK,
+        _completion.notes_csv(),
+        dry_run=False,
+    )
+    if made.template_id is None or made.version is None:
+        raise LookupError(f"notes refused: {made.problems}")
+    await publish_notes(
+        await _staff_context(conn, _as_actor(event, _completion.PUBLISHER)),
+        made.template_id,
+        made.version,
+    )
+
+
 # --- A-06-T28 (`--slice completion`): Northwind's completion, through the services.
 
 
@@ -4446,6 +4470,192 @@ async def _completion_concluded(conn: asyncpg.Connection, _: Scenario, event: Ev
 async def _completion_drafted(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     engagement, item = await _northwind_work_item(conn)
     await draft_statements(await _staff_context(conn, event), engagement, item)
+
+
+async def _completion_document(conn: asyncpg.Connection) -> UUID:
+    return cast(
+        UUID,
+        await tenant_value(
+            conn,
+            TENANT,
+            "SELECT id FROM statement_documents WHERE work_item_id = $1",
+            (await _northwind_work_item(conn))[1],
+        ),
+    )
+
+
+async def _completion_checklist_picked(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    ctx = await _staff_context(conn, event)
+    options = await statements_checklist_options(ctx.tenant)
+    chosen = next(o for o in options if o["name"] == _completion.NAME)
+    await pick_statements_checklist(ctx, await _completion_document(conn), chosen["id"])
+
+
+async def _completion_checklist_answered(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    """Ana answers the 142 (97 Yes, 45 N/A with their reason); Hannah reviews next (AUD-20)."""
+    ctx = await _staff_context(conn, event)
+    document = await _completion_document(conn)
+    for n in range(1, _completion.ITEMS + 1):
+        yes = n <= _completion.ANSWERED_YES
+        await answer_statements_item(
+            ctx,
+            document,
+            f"dc_{n:03d}",
+            "yes" if yes else "na",
+            None if yes else _completion.NA_REASON,
+            None,
+            1,
+        )
+
+
+async def _completion_checklist_reviewed(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    await review_statements_items(
+        await _staff_context(conn, event),
+        await _completion_document(conn),
+        [f"dc_{n:03d}" for n in range(1, _completion.ITEMS + 1)],
+    )
+
+
+async def _granite_misstatement(conn: asyncpg.Connection) -> UUID:
+    return cast(
+        UUID,
+        await tenant_value(
+            conn,
+            TENANT,
+            "SELECT id FROM audit_misstatements WHERE work_item_id = $1",
+            (await _granite_engagement(conn))[1],
+        ),
+    )
+
+
+async def _granite_entry(conn: asyncpg.Connection) -> tuple[UUID, int]:
+    found = await tenant_row(
+        conn,
+        TENANT,
+        "SELECT id, version FROM proposed_entries WHERE misstatement_id = $1",
+        await _granite_misstatement(conn),
+    )
+    if found is None:
+        raise LookupError("Granite Peak's entry is missing")
+    return cast(UUID, found["id"]), cast(int, found["version"])
+
+
+async def _granite_materiality_proposed(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    engagement = (await _granite_engagement(conn))[0]
+    await propose_materiality(
+        await _staff_context(conn, event),
+        engagement,
+        tb_id=cast(
+            UUID,
+            await tenant_value(
+                conn, TENANT, "SELECT id FROM trial_balances WHERE engagement_id = $1", engagement
+            ),
+        ),
+        key="pre_tax_income",
+        rate_pct=Decimal(5),
+    )
+
+
+async def _granite_materiality_decided(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    card = await tenant_row(
+        conn,
+        TENANT,
+        "SELECT id, version_no FROM decision_cards WHERE work_item_id = $1 "
+        "AND status = 'awaiting_role' ORDER BY created_at DESC LIMIT 1",
+        (await _granite_engagement(conn))[1],
+    )
+    if card is None:
+        raise LookupError("no materiality card awaits a decision on Granite Peak")
+    await decide_card(
+        await _staff_context(conn, event),
+        cast(UUID, card["id"]),
+        option_key=_completion.GRANITE_RATE_OPTION,
+        factors=(),
+        rationale="5% of pre-tax income",
+        seen_version=int(cast(int, card["version_no"])),
+    )
+
+
+async def _granite_finding(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """Hannah: the SURL's exception is a factual misstatement, and she proposes its entry."""
+    ctx = await _staff_context(conn, event)
+    engagement, item, _entity = await _granite_engagement(conn)
+    code, title = _completion.GRANITE_PAPER
+    paper = await create_workpaper(ctx, engagement, code, title, None)
+    made = await record_finding(
+        ctx,
+        item,
+        NewFinding(
+            workpaper_id=paper,
+            title=_completion.GRANITE_FINDING,
+            kind="misstatement",
+            coso_component=None,
+            citation_ids=(),
+        ),
+    )
+    await finding_to_misstatement(
+        ctx,
+        made.id,
+        type_="factual",
+        amount=Decimal(_completion.GRANITE_AMOUNT),
+        column_set="commercial",
+    )
+    await propose_entry(
+        ctx,
+        item,
+        NewEntry(
+            kind="aje",
+            description=_completion.GRANITE_ENTRY,
+            misstatement_id=await _granite_misstatement(conn),
+            lines=tuple(
+                NewLine(c, Decimal(d), Decimal(k)) for c, d, k in _completion.GRANITE_LINES
+            ),
+        ),
+    )
+
+
+async def _granite_sent(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    entry, version = await _granite_entry(conn)
+    await send_entries(
+        await _staff_context(conn, event),
+        (await _granite_engagement(conn))[1],
+        entry_ids=[entry],
+        recipient_contact_id=UUID(_PORTAL["Luis Ferrante"].id),
+        wording_template_version_id=UUID(stable_id("completion:client-wording")),
+        seen_versions={str(entry): version},
+        label="Sent to Luis Ferrante",
+    )
+
+
+async def _granite_declined(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    ctx = await _staff_context(conn, event)
+    await record_entry_decision(
+        ctx,
+        (await _granite_entry(conn))[0],
+        decision="client_declined",
+        reason=_completion.GRANITE_DECLINED,
+        evidence_version_id=await _stored_evidence(
+            conn, ctx, (await _granite_engagement(conn))[1], "Luis AJE decision"
+        ),
+    )
+
+
+async def _granite_passed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    await pass_on_sum(
+        await _staff_context(conn, event),
+        await _granite_misstatement(conn),
+        _completion.GRANITE_PASSED,
+    )
 
 
 async def _completion_groupings(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
@@ -4970,6 +5180,14 @@ async def _notice_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) ->
             engagement,
             ctx.user_id,
         )
+        # The client's tax team (N-04 F2): Daniel Reyes signs.
+        await conn.execute(
+            "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
+            "VALUES ($1, $2, $3, 'engagement_partner') ON CONFLICT DO NOTHING",
+            TENANT,
+            engagement,
+            user_id_of(_SEATS["DR"]),
+        )
     async with uow(TenantContext(TENANT, "human", str(ctx.user_id))) as tx:
         version = await add_version(
             tx,
@@ -5341,6 +5559,7 @@ HANDLERS: Final[dict[str, Handler]] = {
     "standards.version_published": _standard_published,
     "notices.seed_notice": _notice_seeded,  # N-04-T21
     "methodology.checklist_loaded": _checklist_loaded,  # A-06-T28
+    "methodology.statement_notes_loaded": _statement_notes_loaded,  # A-06-T25
     "completion.papers": _completion_papers,
     "completion.exceptions": _completion_exceptions,
     "completion.finding": _completion_finding_recorded,
@@ -5358,7 +5577,16 @@ HANDLERS: Final[dict[str, Handler]] = {
     "completion.paper_changed": _completion_paper_changed,
     "completion.sum_snapshot": _completion_snapshot,
     "completion.sum_concluded": _completion_concluded,
+    "completion.granite_materiality_proposed": _granite_materiality_proposed,
+    "completion.granite_materiality_decided": _granite_materiality_decided,
+    "completion.granite_finding": _granite_finding,
+    "completion.granite_sent": _granite_sent,
+    "completion.granite_declined": _granite_declined,
+    "completion.granite_passed": _granite_passed,
     "completion.statement_drafted": _completion_drafted,
+    "completion.checklist_picked": _completion_checklist_picked,
+    "completion.checklist_answered": _completion_checklist_answered,
+    "completion.checklist_reviewed": _completion_checklist_reviewed,
     "completion.statement_approved": _completion_approved,
     "completion.statement_tied": _completion_tied,
     "completion.ebp_groupings": _completion_groupings,

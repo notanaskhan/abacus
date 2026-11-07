@@ -223,10 +223,19 @@ from abacus.modules.methodology.disclosure_checklists import (  # noqa: E402 -- 
     import_checklist,
     publish_checklist,
 )
+from abacus.modules.methodology.note_templates import (  # noqa: E402 -- A-06-T25
+    MAX_BYTES as NOTES_MAX_BYTES,
+)
+from abacus.modules.methodology.note_templates import (  # noqa: E402 -- A-06-T25
+    import_notes,
+    publish_notes,
+    published_notes,
+)
 
 __all__ = [
     "CHECKLIST_MAX_BYTES",
     "METHODOLOGY_USAGE_TYPE",
+    "NOTES_MAX_BYTES",
     "ROUTERS",
     "AccountRule",
     "ApprovedGuidance",
@@ -306,6 +315,7 @@ __all__ = [
     "fail_document_import",
     "finish_document_import",
     "import_checklist",
+    "import_notes",
     "import_report_template",
     "import_source",
     "import_standard_workbook",
@@ -322,9 +332,12 @@ __all__ = [
     "policy_payload",
     "publish_checklist",
     "publish_drafted_version",
+    "publish_notes",
     "publish_report_template",
     "publish_standard",
+    "published_checklists",
     "published_consent_template",
+    "published_notes",
     "record_progress",
     "register_catalog_provider",
     "register_document_importer",
@@ -356,6 +369,20 @@ __all__ = [
     "version_state",
     "version_steps",
 ]
+
+
+async def published_checklists(tenant: TenantContext) -> list[dict[str, Any]]:  # Any: row values
+    """A-06-T25 (DEC-2390): the firm's published checklist versions, newest first in each name."""
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(
+            text(
+                "SELECT v.id, t.name, t.framework_key, v.version "
+                "FROM disclosure_checklist_template_versions v "
+                "JOIN disclosure_checklist_templates t ON t.id = v.template_id "
+                "WHERE v.status = 'published' ORDER BY t.name, v.version DESC"
+            )
+        )
+        return [dict(r) for r in rows.mappings()]
 
 
 async def disclosure_template_items(

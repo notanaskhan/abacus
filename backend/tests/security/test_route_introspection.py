@@ -680,6 +680,11 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "/v1/statement-documents/{document_id}/disclosure-checklist/export.xlsx",
         "disclosure_checklist.export",
     ),
+    (
+        "GET",
+        "/v1/statement-documents/{document_id}/disclosure-checklist/templates",
+        "disclosure_checklist.read",
+    ),
     ("GET", "/v1/statement-versions/{version_id}/line-items/{line_id}/lineage", "statement.read"),
     ("GET", "/v1/statement-versions/{version_id}/tie-out", "statement.read"),
     ("GET", "/v1/support-sessions", "support_session.read"),
@@ -1622,6 +1627,12 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/methodology/imports", "methodology.manage"),
     ("POST", "/v1/methodology/imports/{import_id}/cancel", "methodology.manage"),
     ("POST", "/v1/methodology/imports/{import_id}/start", "methodology.manage"),
+    (
+        "POST",
+        "/v1/methodology/statement-note-templates/{template_id}/versions/{version}/publish",
+        "statement_note_template.publish",
+    ),
+    ("POST", "/v1/methodology/statement-note-templates:import", "statement_note_template.import"),
     ("POST", "/v1/methodology/templates/{name}/versions", "methodology.manage"),
     ("POST", "/v1/methodology/versions/{version_id}/approve", "methodology.approve"),
     ("POST", "/v1/methodology/versions/{version_id}/discard", "methodology.manage"),
@@ -2085,6 +2096,11 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     (
         "PUT",
         "/v1/statement-documents/{document_id}/disclosure-checklist/items/{item_key}",
+        "disclosure_checklist.answer",
+    ),
+    (
+        "PUT",
+        "/v1/statement-documents/{document_id}/disclosure-checklist/template",
         "disclosure_checklist.answer",
     ),
     (

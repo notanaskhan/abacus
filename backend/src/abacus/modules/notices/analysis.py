@@ -39,6 +39,7 @@ from abacus.kernel.crypto import seal
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
+from abacus.modules.engagements.api import holders_of
 from abacus.modules.evidence.api import (
     CitationAnchor,
     CitationClaim,
@@ -660,6 +661,8 @@ async def request_decision(ctx: AuthContext, notice_id: UUID, note: str | None) 
         kind=POSITION_KIND,
         question_key=f"notice.{found.id.hex}",
         work_item_id=found.id,
+        raised_under="notice.request_decision",  # US-5.1: the preparer asks
+        reserved_user_id=next(iter(await holders_of(ctx.tenant, found.id, "signer")), None),
     )
     if note:
         await add_note(ctx, notice_id, note, card_id)

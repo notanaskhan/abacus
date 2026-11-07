@@ -222,6 +222,7 @@ IMMUTABLE_TABLES: dict[str, str] = {
     "linked_values": "statement_rows_immutable",  # 0660 (A-06-T19)
     "tie_out_runs": "statement_rows_immutable",  # 0660 (A-06-T19)
     "statement_approvals": "statement_rows_immutable",  # 0660 (A-06-T19)
+    "statement_notes": "statement_rows_immutable",  # 0674 (A-06-T25)
 }
 # Update columns for tables outside the modules (TASK-008); modules declare theirs.
 _PLATFORM_UPDATE_COLUMNS: dict[str, frozenset[str]] = {

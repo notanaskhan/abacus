@@ -14,6 +14,7 @@ import pytest
 from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import forget_flags
 from abacus.modules.assurance.review_matrix import matrix
 from abacus.modules.assurance.sum_service import sum_view
@@ -63,16 +64,20 @@ def loaded(own_db: Database, object_store: str) -> Iterator[Database]:
     forget_flags()
 
 
-async def _rows(loaded: Database, sql: str) -> list[tuple[object, ...]]:
+async def _rows(loaded: Database, sql: str, *more: object) -> list[tuple[object, ...]]:
     seed = Seeder(loaded.superuser_dsn)
-    return [tuple(r) for r in await seed.rows(sql, TENANT)]
+    return [tuple(r) for r in await seed.rows(sql, TENANT, *more)]
 
 
 async def test_ac_nine_findings_in_the_designed_bands(loaded: Database) -> None:
     found = await _rows(
         loaded,
         "SELECT f.ref, f.route, d.status, d.severity_concluded FROM audit_findings f "
-        "LEFT JOIN deficiencies d ON d.finding_id = f.id WHERE f.tenant_id = $1 ORDER BY f.ref",
+        "LEFT JOIN deficiencies d ON d.finding_id = f.id WHERE f.tenant_id = $1 "
+        "AND f.work_item_id IN (SELECT id FROM work_items WHERE kind = 'assurance' "
+        "AND engagement_id = $2) "
+        "ORDER BY f.ref",
+        engagement_id_of(BY_LABEL["A1"]),
     )
     assert [r[0] for r in found] == [f"F-0{n}" for n in range(1, 10)]
     by = {r[0]: r for r in found}
@@ -88,7 +93,11 @@ async def test_ac_the_misstatements_read_as_the_design_and_code_projects_f07(
     found = await _rows(
         loaded,
         "SELECT ref, type, nature, status, amount, projection->>'projected' "
-        "FROM audit_misstatements WHERE tenant_id = $1 ORDER BY ref",
+        "FROM audit_misstatements WHERE tenant_id = $1 "
+        "AND work_item_id IN (SELECT id FROM work_items WHERE kind = 'assurance' "
+        "AND engagement_id = $2) "
+        "ORDER BY ref",
+        engagement_id_of(BY_LABEL["A1"]),
     )
     assert [(r[0], r[3]) for r in found] == [
         ("AJE-1", "booked"),
@@ -212,3 +221,87 @@ async def test_ac_a25_the_workflows_activities_write_a_version_and_a_retry_write
     )
     assert cast(int, completed) >= 1
     await dispose_engine()
+
+
+async def test_ac_a25_a_draft_carries_the_firms_published_notes(loaded: Database) -> None:
+    seed = Seeder(loaded.superuser_dsn)
+    rows = await seed.rows(
+        "SELECT n.number, n.title, n.body, n.unresolved, v.status FROM statement_notes n "
+        "JOIN statement_versions s ON s.id = n.statement_version_id "
+        "JOIN statement_note_template_versions v ON v.id = n.template_version_id "
+        "WHERE n.tenant_id = $1 AND s.version_no = 3 ORDER BY n.number",
+        TENANT,
+    )
+    assert [r["number"] for r in rows] == list(range(1, 12))
+    assert {r["status"] for r in rows} == {"published"}
+    assert rows[7]["title"] == "Reconciliation to Form 5500"
+    assert "{{" not in rows[7]["body"] and rows[7]["body"].startswith(
+        "Net assets per the financial statements "
+    )
+    assert rows[8]["body"].startswith("Participant contributions of $33,540")
+    assert all(r["unresolved"] == [] for r in rows)
+    refs = await seed.rows(
+        "SELECT l.line_key, l.note_ref FROM line_items l "
+        "JOIN statement_versions s ON s.id = l.statement_version_id "
+        "WHERE l.tenant_id = $1 AND s.version_no = 3 AND l.note_ref IS NOT NULL",
+        TENANT,
+    )
+    assert {r["note_ref"] for r in refs} >= {"Note 3", "Note 5", "Note 8"}
+
+
+async def test_ac_a25_the_checklist_is_picked_and_answered_97_45_0(loaded: Database) -> None:
+    await dispose_engine()
+    configure_engine(loaded.app_url)
+    seed = Seeder(loaded.superuser_dsn)
+    answers = await seed.rows(
+        "SELECT a.answer, a.state, count(*) AS n, bool_and(a.reviewed_by IS NOT NULL) AS reviewed "
+        "FROM disclosure_checklist_answers a WHERE a.tenant_id = $1 GROUP BY 1, 2 ORDER BY 1",
+        TENANT,
+    )
+    assert [tuple(a) for a in answers] == [
+        ("na", "reviewed", 45, True),
+        ("yes", "reviewed", 97, True),
+    ]
+    document = cast(
+        UUID, await seed.value("SELECT id FROM statement_documents WHERE tenant_id = $1", TENANT)
+    )
+    hannah = user_id_of(next(x for x in SEATS if x.initials == "HL"))
+    person = AuthContext(
+        TenantContext(TENANT, "human", str(hannah)), hannah, UUID(int=0), None, system_now()
+    )
+    view = await statements.disclosure_view(person.tenant, document)
+    assert (view.answered, view.total) == (142, 142)
+    (option,) = await statements.checklist_options(person.tenant)
+    assert option["version"] == 1
+    with pytest.raises(statements.ChecklistAnswered):
+        await statements.pick_checklist(person, document, option["id"])
+    with pytest.raises(NotFound):
+        await statements.pick_checklist(person, document, UUID(int=1))
+
+
+async def test_ac_granite_peaks_entry_declined_oct_5_is_passed_below_pm(loaded: Database) -> None:
+    await dispose_engine()
+    configure_engine(loaded.app_url)
+    seed = Seeder(loaded.superuser_dsn)
+    item = cast(
+        UUID,
+        await seed.value(
+            "SELECT id FROM work_items WHERE engagement_id = $1 AND kind = 'assurance'",
+            engagement_id_of(BY_LABEL["A2"]),
+        ),
+    )
+    (entry,) = await _rows(
+        loaded,
+        "SELECT e.ref, e.kind, e.amount, e.status, m.column_set, m.status "
+        "FROM proposed_entries e JOIN audit_misstatements m ON m.id = e.misstatement_id "
+        "WHERE e.tenant_id = $1 AND e.work_item_id = $2",
+        item,
+    )
+    assert entry[:5] == ("AJE-1", "aje", Decimal("68400.00"), "client_declined", "commercial")
+    view = await sum_view(TenantContext(TENANT, "system", "test"), item, None)
+    assert view.column_set == "commercial"
+    assert (view.overall, view.pm, view.ct) == (
+        Decimal("155000.00"),
+        Decimal("116250.00"),
+        Decimal("7750.00"),
+    )

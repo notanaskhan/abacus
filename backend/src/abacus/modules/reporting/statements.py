@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 from collections import defaultdict
 from collections.abc import Awaitable, Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated, Any, Final, cast
@@ -41,7 +41,11 @@ from abacus.modules.ledger.api import (
     statements_for,
     trial_balance_view,
 )
-from abacus.modules.methodology.api import disclosure_template_items
+from abacus.modules.methodology.api import (
+    disclosure_template_items,
+    published_checklists,
+    published_notes,
+)
 from abacus.modules.reporting.compute import fs_draft, tie_out
 from abacus.modules.reporting.events import (
     StatementDraftRequested,
@@ -73,6 +77,12 @@ class StaleAnswer(DomainConflict):
     """The answer changed since it was read (`If-Match`)."""
 
     code = "version_conflict"
+
+
+class ChecklistAnswered(DomainConflict):
+    """An answered checklist can't change version; its answers name the one they were given on."""
+
+    code = "checklist_answered"
 
 
 class NoSuggestion(DomainConflict):
@@ -294,9 +304,25 @@ async def _draft(
     The version is the system's, naming its run and the person: that person via Agent."""
     source = await _source(tenant, engagement_id)
     refs = tuple(sorted(e.ref for e in source.entries.recorded))
-    lines = fs_draft.draft(
-        source.statements.groups, source.period_end.year, source.accounts_of, refs, {}
+    year = source.period_end.year
+    published = await published_notes(tenant, FRAMEWORK)
+    template_notes = tuple(
+        fs_draft.NoteInput(
+            int(str(n["number"])),
+            str(n["title"]),
+            str(n["body"]),
+            tuple(cast("list[str]", n["line_keys"])),
+        )
+        for n in (published.notes if published else ())
     )
+    lines = fs_draft.draft(
+        source.statements.groups,
+        year,
+        source.accounts_of,
+        refs,
+        fs_draft.references_of(template_notes),
+    )
+    notes = fs_draft.render_notes(template_notes, lines, year)
     async with uow(tenant) as tx:
         await tx.session.execute(
             text(
@@ -343,11 +369,28 @@ async def _draft(
                         "a": fs_draft.adjustments_hash(refs),
                         "u": initiator,
                         "engine": fs_draft.ENGINE_VERSION,
-                        "c": fs_draft.content_hash(lines),
+                        "c": fs_draft.content_hash(lines, notes),
                     },
                 )
             ).scalar_one(),
         )
+        for note in notes:
+            await tx.session.execute(
+                text(
+                    "INSERT INTO statement_notes (tenant_id, statement_version_id, "
+                    "template_version_id, number, title, body, unresolved) VALUES "
+                    "(:t, :v, :tv, :n, :title, :body, :missing)"
+                ),
+                {
+                    "t": tenant.tenant_id,
+                    "v": version_id,
+                    "tv": published.version_id if published else None,
+                    "n": note.number,
+                    "title": note.title,
+                    "body": note.body,
+                    "missing": list(note.unresolved),
+                },
+            )
         for line in lines:
             line_id = (
                 await tx.session.execute(
@@ -433,6 +476,24 @@ async def _lines(tenant: TenantContext, version_id: UUID) -> list[JsonRow]:
     return [dict(r) for r in rows]
 
 
+async def _notes(tenant: TenantContext, version_id: UUID) -> list[JsonRow]:
+    async with tenant_session(tenant) as session:
+        rows = (
+            (
+                await session.execute(
+                    text(
+                        "SELECT number, title, body, unresolved FROM statement_notes "
+                        "WHERE statement_version_id = :v ORDER BY number"
+                    ),
+                    {"v": version_id},
+                )
+            )
+            .mappings()
+            .all()
+        )
+    return [dict(r) for r in rows]
+
+
 async def is_out_of_date(tenant: TenantContext, version: JsonRow) -> bool:
     """A new TB version or a newly recorded entry makes the version out of date."""
     try:
@@ -452,6 +513,7 @@ class VersionView:
     lines: list[JsonRow]
     out_of_date: bool
     tie_out: JsonRow | None
+    notes: list[JsonRow] = field(default_factory=list[JsonRow])
 
 
 @dataclass(frozen=True)
@@ -516,6 +578,7 @@ async def current_of(tenant: TenantContext, work_item_id: UUID) -> DocumentView:
             await _lines(tenant, version_id),
             await is_out_of_date(tenant, row),
             await _last_tie_out(tenant, version_id),
+            await _notes(tenant, version_id),
         ),
     )
 
@@ -778,6 +841,44 @@ async def _existing(tx_session: AsyncSession, document_id: UUID, item_key: str) 
         .one_or_none()
     )
     return dict(row) if row else None
+
+
+async def checklist_options(tenant: TenantContext) -> list[JsonRow]:
+    """The firm's published checklists a person may pick for a document (AUD-20's picker)."""
+    return await published_checklists(tenant)
+
+
+async def pick_checklist(ctx: AuthContext, document_id: UUID, template_version_id: UUID) -> None:
+    """A person picks the document's checklist from the firm's published ones. Answers belong to
+    the version they were given against, so an answered checklist stays (DEC-2390)."""
+    document = await _resource_of_document(ctx.tenant, document_id)
+    if not any(o["id"] == template_version_id for o in await published_checklists(ctx.tenant)):
+        raise NotFound("disclosure_checklist_template_version")
+    async with uow(ctx.tenant) as tx:
+        answered = await tx.session.scalar(
+            text(
+                "SELECT count(*) FROM disclosure_checklist_answers "
+                "WHERE statement_document_id = :d"
+            ),
+            {"d": document_id},
+        )
+        if answered:
+            raise ChecklistAnswered(facts={"answered": int(answered)})
+        await tx.session.execute(
+            text(
+                "UPDATE statement_documents SET checklist_template_version_id = :tv, "
+                "row_version = row_version + 1, updated_at = clock_timestamp() WHERE id = :d"
+            ),
+            {"tv": template_version_id, "d": document_id},
+        )
+        tx.record(
+            "disclosure_checklist.template_picked",
+            target=Target("statement_document", document_id),
+            after=Ref(template_version_id=template_version_id),
+            scope=Scope(
+                engagement_id=document["engagement_id"], work_item_id=document["work_item_id"]
+            ),
+        )
 
 
 async def answer_item(

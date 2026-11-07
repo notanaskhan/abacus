@@ -14,10 +14,13 @@ keeps checklist text (ADR-056), and is never licensed text.
 - **Notes and sign-offs** (AUD-17 a): 14 notes (11 cleared, 2 open, 1 responded) and the named
   workpapers' sign-offs, Marcus Delaney's L2 on EBP-04 going stale when Ana Cruz changes the paper.
 - **Statements** (AUD-20): v1 before RJE-1 is recorded, then v2, v3, and Dana's Oct 8 approval.
+  The firm's 11 note headings and wording import and publish as firm content (DEC-2389).
 
 Not here, or not as designed (DEC-2373): findings raised by a person, so no agent run; Ana's change
 and response are a person's, not "via Agent"; RJE-1 is in v1 from its
-approval, so v1's 14,850 difference isn't shown; no checklist answers; Granite Peak's AJE-3. Opt-in
+approval, so v1's 14,850 difference isn't shown; the checklist's answers are Ana's, reviewed by
+Hannah, not the agent's adopted (nothing writes a suggested answer yet); Granite Peak's entry reads
+AJE-1, not AJE-3 (see below). Opt-in
 (`--slice completion`).
 """
 
@@ -40,6 +43,8 @@ FLAGS: Final = ("reporting.fs_disclosure",)
 NAME: Final = "ASC 962 · Defined contribution"
 FRAMEWORK: Final = "asc_962_dc"
 ITEMS: Final = 142
+ANSWERED_YES: Final = 97  # AUD-20: Yes 97 · N/A 45 · No 0
+NA_REASON: Final = "Not applicable to this plan"
 IMPORTER: Final = "GH"
 PUBLISHER: Final = "DR"
 _SECTIONS: Final = (
@@ -50,6 +55,42 @@ _SECTIONS: Final = (
     "Parties in interest",
     "Supplemental schedules",
 )
+
+
+# The firm's notes for the plan set (AUD-20 f): the titles and Note 9's words are the design's; a
+# figure is `{{fs_line_key}}`, filled at draft from the version's own line. The design's other note
+# bodies aren't in the handoff, so those notes are headings (DEC-2389).
+NOTES_NAME: Final = "BH plan notes"
+NOTES_FRAMEWORK: Final = "us_gaap"
+_NOTES: Final = (
+    (1, "Description of the Plan", "", ""),
+    (2, "Significant Accounting Policies", "", ""),
+    (3, "Fair Value Measurements", "Total investments at fair value {{investments}}",
+     "investments"),
+    (4, "Information Certified by Harborline", "", ""),
+    (5, "Notes Receivable from Participants", "", "notes_receivable"),
+    (6, "Party-in-Interest Transactions", "", ""),
+    (7, "Tax Status", "", ""),
+    (8, "Reconciliation to Form 5500",
+     "Net assets per the financial statements {{net_assets}}. "
+     "Less contributions receivable ({{contributions_receivable}}).",
+     "net_assets;contributions_receivable"),
+    (9, "Delinquent Participant Contributions",
+     "Participant contributions of $33,540 withheld from the December 26, 2025 payroll were "
+     "remitted on January 9, 2026. The plan sponsor deposited lost earnings of $64.38 on "
+     "September 30, 2026 under the Department of Labor's Voluntary Fiduciary Correction Program "
+     "Self-Correction Component.", ""),
+    (10, "Plan Termination", "", ""),
+    (11, "Subsequent Events", "", ""),
+)  # fmt: skip
+
+
+def notes_csv() -> bytes:
+    out = io.StringIO()
+    writer = csv.writer(out)
+    writer.writerow(("number", "title", "body", "line_keys"))
+    writer.writerows(_NOTES)
+    return out.getvalue().encode()
 
 
 def checklist_csv() -> bytes:
@@ -301,6 +342,61 @@ def _event(key: str, at: datetime, kind: str, actor: str, **data: object) -> Eve
     return Event(f"completion:{key}", at, kind, actor, SLICE, dict(data), client=NORTHWIND)
 
 
+# Granite Peak FY2026 (J22 step 8): 5% of pre-tax income 3,100,000 decided Sep 14, 10:12 AM, then
+# the SURL's Front Range Freight invoice, 68,400, declined by Luis Ferrante on Oct 5 and passed on
+# SUM below PM 116,250. The design calls it AJE-3 but names no AJE-1 or AJE-2, so it reads AJE-1
+# here: the number is the service's, and inventing two entries to reach 3 would be worse.
+GRANITE: Final = "Granite Peak Outdoor Supply, Inc."
+GRANITE_PAPER: Final = ("SURL", "Search for unrecorded liabilities")
+GRANITE_FINDING: Final = "Improperly excluded: Front Range Freight Co., invoice FRF-30418"
+GRANITE_AMOUNT: Final = "68400.00"
+GRANITE_RATE_OPTION: Final = "rate_5_0"  # 5% of pre-tax income, code's option
+GRANITE_ENTRY: Final = "June inbound freight recorded in July"
+GRANITE_LINES: Final = (("5010", "68400.00", "0"), ("2010", "0", "68400.00"))
+GRANITE_DECLINED: Final = "The client declines to book it"
+GRANITE_PASSED: Final = "Below PM 116,250"
+
+
+def _granite(key: str, at: datetime, kind: str, actor: str, **data: object) -> Event:
+    return Event(f"completion:granite:{key}", at, kind, actor, SLICE, dict(data), client=GRANITE)
+
+
+def _granite_events() -> list[Event]:
+    return [
+        # The design's manager on Granite Peak (J22), joining before independence is concluded.
+        _granite(
+            "team-added:HL",
+            _at(9, 10, 9, 5),
+            "engagements.member_proposed",
+            "MO",
+            audit="A2",
+            member="HL",
+            role="manager",
+            hours="40.0",
+        ),
+        Event(
+            "completion:granite:independence:HL",
+            _at(9, 10, 9, 40),
+            "engagements.member_independence_confirmed",
+            "HL",
+            SLICE,
+            {"audit": "A2"},
+            client=GRANITE,
+        ),
+        _granite("materiality", _at(9, 14, 10), "completion.granite_materiality_proposed", "HL"),
+        _granite(
+            "materiality-decided",
+            _at(9, 14, 10, 12),
+            "completion.granite_materiality_decided",
+            "MO",
+        ),
+        _granite("finding", _at(10, 5, 9), "completion.granite_finding", "HL"),
+        _granite("sent", _at(10, 5, 9, 30), "completion.granite_sent", "HL"),
+        _granite("declined", _at(10, 5, 11), "completion.granite_declined", "HL"),
+        _granite("passed", _at(10, 5, 14), "completion.granite_passed", "MO"),
+    ]
+
+
 def _northwind_events() -> list[Event]:
     events = [_event("papers", _at(9, 20, 9), "completion.papers", "HL")]
     events.append(_event("exceptions", _at(9, 24, 10, 10), "completion.exceptions", "HL"))
@@ -394,6 +490,9 @@ def _northwind_events() -> list[Event]:
         _event("conclude", _at(10, 2, 16, 30), "completion.sum_concluded", "MO"),
         _event("fs:3", _at(10, 6, 9), "completion.statement_drafted", "HL", version=3),
         _event("fs:tie", _at(10, 6, 9, 30), "completion.statement_tied", "HL"),
+        _event("checklist:picked", _at(10, 6, 9, 40), "completion.checklist_picked", "HL"),
+        _event("checklist:answered", _at(10, 6, 9, 50), "completion.checklist_answered", "AC"),
+        _event("checklist:reviewed", _at(10, 6, 10, 20), "completion.checklist_reviewed", "HL"),
         _event("fs:approved", _at(10, 8, 10), "completion.statement_approved", "HL"),
     ]
     return events
@@ -414,4 +513,13 @@ def completion_events() -> list[Event]:
             SLICE,
         )
     )
-    return events + _northwind_events()
+    events.append(
+        Event(
+            "completion-notes",
+            SETUP_AT + timedelta(seconds=2),
+            "methodology.statement_notes_loaded",
+            IMPORTER,
+            SLICE,
+        )
+    )
+    return events + _northwind_events() + _granite_events()

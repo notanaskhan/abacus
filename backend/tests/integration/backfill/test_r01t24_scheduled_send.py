@@ -28,7 +28,9 @@ from abacus.modules.communications.api import (
 )
 from abacus.modules.communications.lint import LintFinding
 from abacus.modules.communications.render import Block, TemplateContent
+from abacus.modules.communications.scope import check_scope
 from abacus.modules.communications.transport import configure_transport
+from abacus.modules.engagements.api import get_ref
 from abacus.modules.identity.api import AuthContext
 
 from .follow_up_template import import_reminder_template
@@ -85,6 +87,7 @@ class Firm:
     tenant: uuid.UUID
     site: Site
     contact: Person
+    admin: Person
 
     @property
     def system(self) -> TenantContext:
@@ -116,7 +119,7 @@ async def _firm(seed: Seeder) -> Firm:
     await template_service.publish(ctx, "reminder")
     await save_follow_up_policy(ctx, FollowUpPolicy(mode="send_on_schedule"), 0)
     await _binder(seed, site, "published")
-    return Firm(tenant, site, contact)
+    return Firm(tenant, site, contact, admin)
 
 
 async def _binder(seed: Seeder, site: Site, status: str) -> None:
@@ -280,3 +283,31 @@ async def test_ma_a_replayed_or_inflated_sequence_is_refused(
             is None
         )
     assert len(mailbox.sent) == 1
+
+
+async def test_a_number_in_the_clients_own_name_is_not_an_amount(
+    seed: Seeder, mailbox: Mailbox
+) -> None:
+    """A client called Studio 2200 had every reminder blocked `out_of_scope`: the scope checker
+    read the name's number as an amount. Random names in this file's seeds hit it now and then, so
+    this test failed on some CI runs. A real amount beside the name is still refused."""
+    firm = await _firm(seed)
+    await seed.run(
+        "UPDATE clients SET name = 'Studio 2200' WHERE id = (SELECT client_id FROM engagements "
+        "WHERE id = $1)",
+        firm.site.engagement_id,
+    )
+    await seed.run(
+        "UPDATE engagements SET name = 'Studio 2200 audit' WHERE id = $1", firm.site.engagement_id
+    )
+    await seed.item(firm.site, "Bank statement", due_on=_due())
+    outcome = await chase_overdue(
+        firm.system, firm.site.engagement_id, ZONE, uuid.uuid4(), policy_v1=True
+    )
+    assert outcome.sent == 1 and len(mailbox.sent) == 1
+    admin = _ctx(firm.admin)
+    ref = await get_ref(admin, firm.site.engagement_id)
+    named = await check_scope(admin, ref, "Studio 2200 audit: please confirm")
+    assert [v.kind for v in named] == []
+    amount = await check_scope(admin, ref, "Studio 2200 audit: please pay $2,200.00")
+    assert [v.kind for v in amount] == ["amount"]
