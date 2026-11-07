@@ -22,12 +22,19 @@ held it. Anything else is an override. A DE-1 miss is a false clearance: the age
 (reserved action) are shadow runs on a returned or refused item that ended with the gateway's
 `scope_breach` or `reserved_action` failure. An agent with no scored decisions cannot meet
 QD-10, so it cannot go live (fail closed).
+
+`notices.responder` (N-04-T25; N-04 §6): each shadow analysis on a notice whose signer has decided
+a position, the run's recommended option against that position. Its live stage also needs N-04's
+own rule: four weeks of shadow, at least 10 compared notices, and no disagreement on amounts (a
+shadow answer code refused for a number without provenance). Notices hands the pairs in through
+`register_notice_shadows` (notices imports agents, never the reverse); unregistered reads none.
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from decimal import ROUND_HALF_UP, Decimal
@@ -43,6 +50,7 @@ from abacus.modules.agents.models import (
     InboxMatchRun,
     ScreeningResult,
 )
+from abacus.modules.agents.notice_responder import NO_PROVENANCE, RESPONDER
 from abacus.modules.communications.api import TriageOutcome, triage_outcomes
 from abacus.modules.evidence.api import decisions_on_screenings
 
@@ -61,7 +69,16 @@ AGREES: Final = {
     "needs_revision": ("reject", "send_back"),
     "propose": ("followed",),
     "none_fit": ("followed",),
+    # The responder's recommended option agrees when the signer decided that position (N-04-T25;
+    # its option `partial` is the position `partially_agree`).
+    "agree": ("agree",),
+    "partial": ("partially_agree",),
+    "disagree": ("disagree",),
 }
+RESPONDER_MIN_DAYS: Final = 28
+RESPONDER_MIN_COMPARED: Final = 10
+# The responder's refusal for a number with no code fact behind it (`notice_responder.check`).
+AMOUNT_REFUSAL: Final = NO_PROVENANCE
 RETURNED: Final = frozenset({"reject", "send_back", "overridden"})
 DE4_FAILURES: Final = frozenset({"scope_breach"})
 DE5_FAILURES: Final = frozenset({"reserved_action"})
@@ -259,6 +276,100 @@ def score(
     )
 
 
+@dataclass(frozen=True)
+class DecidedNotice:
+    """A notice analysis's agent run and the position its signer decided, with when."""
+
+    agent_run_id: UUID
+    position: str
+    decided_at: datetime
+
+
+NoticeShadowReader = Callable[[TenantContext, datetime], Awaitable[Sequence[DecidedNotice]]]
+_notice_shadows: NoticeShadowReader | None = None
+
+
+def register_notice_shadows(reader: NoticeShadowReader) -> None:
+    """Notices registers the reader of its decided analyses (N-04-T25)."""
+    global _notice_shadows
+    _notice_shadows = reader
+
+
+@dataclass(frozen=True)
+class ResponderShadow:
+    """One shadow run on a decided notice: what it recommended (None when code refused the
+    answer, with `refused` the run's reason) and the signer's position."""
+
+    recommended: str | None
+    refused: str | None
+    decided: str
+
+
+async def responder_shadows(tenant: TenantContext, as_of: datetime) -> list[ResponderShadow]:
+    """The responder's shadow runs started by `as_of` on notices decided by then, oldest first."""
+    if _notice_shadows is None:
+        return []
+    decided = [d for d in await _notice_shadows(tenant, as_of) if d.decided_at <= as_of]
+    if not decided:
+        return []
+    position = {d.agent_run_id: d.position for d in decided}
+    async with tenant_session(tenant) as session:
+        runs = (
+            await session.execute(
+                select(AgentRun.id, AgentRun.status, AgentRun.output)
+                .where(
+                    AgentRun.id.in_(list(position)),
+                    AgentRun.agent_id == RESPONDER,
+                    AgentRun.shadow.is_(True),
+                    AgentRun.started_at <= as_of,
+                )
+                .order_by(AgentRun.started_at, AgentRun.id)
+            )
+        ).all()
+    found: list[ResponderShadow] = []
+    for run_id, status, output in runs:
+        body: dict[str, object] = output or {}
+        recommended = body.get("recommended_option") if status == "completed" else None
+        refused = body.get("refused") if status == "escalated" else None
+        found.append(
+            ResponderShadow(
+                recommended if isinstance(recommended, str) else None,
+                refused if isinstance(refused, str) else None,
+                position[run_id],
+            )
+        )
+    return found
+
+
+def responder_criterion(
+    first_run_at: datetime | None, as_of: datetime, shadows: Sequence[ResponderShadow]
+) -> str | None:
+    """N-04 §6's live rule, the first criterion it fails (None: met)."""
+    days = (as_of - first_run_at).days if first_run_at is not None else 0
+    if days < RESPONDER_MIN_DAYS:
+        return "n04_shadow_weeks"
+    if sum(1 for s in shadows if s.recommended is not None) < RESPONDER_MIN_COMPARED:
+        return "n04_compared_notices"
+    if any(s.refused == AMOUNT_REFUSAL for s in shadows):
+        return "n04_amounts"
+    return None
+
+
+async def responder_live(tenant: TenantContext, as_of: datetime) -> str | None:
+    """The N-04 criterion the firm's responder shadow fails as of `as_of`, or None."""
+    async with tenant_session(tenant) as session:
+        first = (
+            await session.execute(
+                select(func.min(AgentRun.started_at)).where(
+                    AgentRun.agent_id == RESPONDER,
+                    AgentRun.shadow.is_(True),
+                    AgentRun.started_at <= as_of,
+                )
+            )
+        ).scalar()
+    return responder_criterion(first, as_of, await responder_shadows(tenant, as_of))
+
+
 async def shadow_score(tenant: TenantContext, agent_id: str, as_of: datetime) -> ShadowScore:
     """The firm's shadow score for `agent_id` as of `as_of`: shadow runs started and people's
     decisions made by then (read as the platform or staff in the firm's tenant; the caller
@@ -306,6 +417,12 @@ async def shadow_score(tenant: TenantContext, agent_id: str, as_of: datetime) ->
     ]
     if agent_id == MATCHER:
         pairs = await _matcher_pairs(tenant, shadow=True, start=None, until=as_of, end=as_of)
+    if agent_id == RESPONDER:
+        pairs = [
+            Pair(r.recommended, r.decided, None)
+            for r in await responder_shadows(tenant, as_of)
+            if r.recommended is not None
+        ]
     runs = cast(int | None, counted[0])
     first = cast(datetime | None, counted[1])
     return score(

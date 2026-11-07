@@ -27,7 +27,7 @@ from abacus.kernel.clock import system_now
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Target, uow
-from abacus.modules.agents.shadow_score import shadow_score
+from abacus.modules.agents.shadow_score import RESPONDER, responder_live, shadow_score
 from abacus.modules.agents.spec import AGENTS
 
 Stage = Literal["shadow", "live", "off"]
@@ -90,6 +90,10 @@ async def check_live(firm_id: UUID, agent_id: str, report: NamedReport | None) -
         raise StageNotReady(facts={"agent_id": agent_id, "criterion": "spec036_q1"})
     if not found.qd10:
         raise StageNotReady(facts={"agent_id": agent_id, "criterion": "qd10"})
+    # N-04-T25 (N-04 §6): the responder also needs four weeks of shadow, 10 compared notices and
+    # no disagreement on amounts. The Tuesday window and both founders stay with the people.
+    if agent_id == RESPONDER and (criterion := await responder_live(tenant, report.as_of)):
+        raise StageNotReady(facts={"agent_id": agent_id, "criterion": criterion})
 
 
 class UnknownAgent(DomainInvalid):

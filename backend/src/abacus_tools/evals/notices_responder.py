@@ -13,7 +13,8 @@ clean and degraded scans, a confident wrong value (0.95 or above and wrong) coun
 valid (both spouses on a joint return).
 
 `--route fake` grades each case's `fake_answer`, so a run checks the graders and the gate, not a
-model. No container, no model call. Real runs belong to N-04-T25.
+model. No container, no model call. Real runs (`--route direct|bedrock`) are
+`notices_responder_real`'s (N-04-T25).
 """
 
 from __future__ import annotations
@@ -116,6 +117,8 @@ class ExtractCase(_Frozen):
     scenario: str
     scan: Literal["clean", "degraded"]
     expected_fields: list[ExpectedField]
+    # The notice's word layer a real run reads (N-04-T25); a case without it can't run for real.
+    document_lines: list[Line] = Field(default_factory=list[Line])
     low_confidence_fields: list[str] = Field(default_factory=list[str])
     fake_answer: ExtractAnswer
     fast: bool = False
@@ -275,6 +278,10 @@ def _ratio(numerator: int, denominator: int) -> float:
     return 1.0 if denominator == 0 else numerator / denominator
 
 
+# One graded attempt: a case and the answer it got (its fake answer, or a model's).
+Attempt = tuple["AnalyzeCase | ExtractCase", "AnalyzeAnswer | ExtractAnswer"]
+
+
 @dataclass(frozen=True)
 class Summary:
     agent: str
@@ -294,19 +301,27 @@ def run(
     analyze_answers: dict[str, AnalyzeAnswer] | None = None,
     extract_answers: dict[str, ExtractAnswer] | None = None,
     route: str = "fake",
+    attempts: Sequence[Attempt] | None = None,
 ) -> Summary:
     """Grade every case (fast: the marked ones) and gate. `*_answers` replace fake answers by
-    id."""
+    id; `attempts` (a real run, N-04-T25) grades each repeat of each case instead."""
     chosen = [c for c in suite.cases if subset == "full" or c.fast]
+    if attempts is None:
+        attempts = [
+            (c, (analyze_answers or {}).get(c.id, c.fake_answer))
+            if isinstance(c, AnalyzeCase)
+            else (c, (extract_answers or {}).get(c.id, c.fake_answer))
+            for c in chosen
+        ]
     analyze = [
-        grade_analyze(c, (analyze_answers or {}).get(c.id, c.fake_answer))
-        for c in chosen
-        if isinstance(c, AnalyzeCase)
+        grade_analyze(c, a)
+        for c, a in attempts
+        if isinstance(c, AnalyzeCase) and isinstance(a, AnalyzeAnswer)
     ]
     extract = [
-        grade_extract(c, (extract_answers or {}).get(c.id, c.fake_answer))
-        for c in chosen
-        if isinstance(c, ExtractCase)
+        grade_extract(c, a)
+        for c, a in attempts
+        if isinstance(c, ExtractCase) and isinstance(a, ExtractAnswer)
     ]
     clean = [g for g in extract if g.scan == "clean"]
     degraded = [g for g in extract if g.scan == "degraded"]
@@ -343,9 +358,10 @@ def run(
 
 
 def responder_main(route: str, out: Path, subset: Subset = "full") -> int:
-    if route != "fake":
-        print("notices.responder's real runs are N-04-T25's: use --route fake")
-        return 2
+    if route != "fake":  # N-04-T25: on a throwaway stack, through the gateway
+        from abacus_tools.evals.notices_responder_real import real_main
+
+        return real_main(route, out, subset)
     summary = run(load(), subset=subset, route=route)
     out.mkdir(parents=True, exist_ok=True)
     (out / "notices_responder.json").write_text(

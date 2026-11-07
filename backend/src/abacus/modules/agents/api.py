@@ -66,6 +66,8 @@ from abacus.modules.agents.handoff import (
     SectionDraft,
     VerifiedCitation,
 )
+from abacus.modules.agents.handoff import NoticeAnalyzeOutput as NoticeAnalyzeOutput
+from abacus.modules.agents.handoff import NoticeExtractOutput as NoticeExtractOutput
 from abacus.modules.agents.home_counts import register_home_counts
 from abacus.modules.agents.inbox_match import MATCHER, MatchOutcome, create_match_run, match
 from abacus.modules.agents.intake_candidates import intake_candidates
@@ -74,8 +76,11 @@ from abacus.modules.agents.issue_client_requests import send_issue_to_client
 from abacus.modules.agents.knowledge import KnowledgeHit, knowledge_context, search_knowledge
 from abacus.modules.agents.methodology_citations import register_methodology_step
 from abacus.modules.agents.methodology_import_workflow import MethodologyImportWorkflow
+from abacus.modules.agents.notice_responder import RESPONDER as RESPONDER
 from abacus.modules.agents.notice_responder import AnalyzeFacts as AnalyzeFacts
 from abacus.modules.agents.notice_responder import analyze as analyze_notice
+from abacus.modules.agents.notice_responder import build_context as notice_context
+from abacus.modules.agents.notice_responder import check as check_notice_answer
 from abacus.modules.agents.notice_responder import extract_fields as extract_notice_fields
 from abacus.modules.agents.pilot_w7 import w7_override_rate
 from abacus.modules.agents.proposal_slots import (
@@ -175,10 +180,12 @@ from abacus.modules.agents.service import (
     screening_results_for,
 )
 from abacus.modules.agents.shadow_score import (
+    DecidedNotice,
     OverrideRate,
     ShadowScore,
     live_override,
     override_rate,
+    register_notice_shadows,
     shadow_score,
 )
 from abacus.modules.agents.spec import AGENTS, AgentSpec, cleared_for_client_data, spec
@@ -347,6 +354,7 @@ __all__ = [
     "ChangeSetApplier",
     "Citation",
     "CitationStates",
+    "DecidedNotice",
     "DraftCitation",
     "DraftOutcome",
     "DraftedCell",
@@ -433,6 +441,7 @@ __all__ = [
     "ask",
     "check",
     "check_live",
+    "check_notice_answer",
     "check_suggestion_target",
     "close_deterministic_run",
     "create_draft_run",
@@ -458,6 +467,7 @@ __all__ = [
     "load_agent_context",
     "match",
     "match_intake",
+    "notice_context",
     "open_deterministic_run",
     "override_rate",
     "recommend",
@@ -466,6 +476,7 @@ __all__ = [
     "register_mode_mapping",
     "register_mode_plan",
     "register_mode_preparer",
+    "register_notice_shadows",
     "register_proposal_adapter",
     "register_section_source",
     "register_suggestion_applier",

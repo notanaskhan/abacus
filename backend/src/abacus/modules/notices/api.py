@@ -119,6 +119,12 @@ from abacus.modules.notices.analysis import register_agent_step  # noqa: E402
 
 register_agent_step(_agent_step)
 
+# N-04-T25: the responder's shadow score pairs its runs with the signer's decided positions.
+from abacus.modules.agents.api import register_notice_shadows  # noqa: E402
+from abacus.modules.notices.agent_step import decided_shadows as _decided_shadows  # noqa: E402
+
+register_notice_shadows(_decided_shadows)
+
 # N-04-T21: the scenario loader reaches the intake path through this interface.
 from abacus.modules.notices import intake as _intake  # noqa: E402
 from abacus.modules.notices import service as _service  # noqa: E402
