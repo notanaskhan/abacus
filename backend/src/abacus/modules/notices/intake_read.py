@@ -3,9 +3,9 @@
 Code reads a mapped notice's fields from P-11's form extraction; nothing is guessed, and a value
 below 0.90 stays `low_confidence` for a person. With no map the responder proposes over masked text
 (N-04-T19), each value naming its run for a person to confirm; with the responder off, refused or
-empty, and on a refusal by the OCR gate, manual entry opens with the reason in words. The §7216 gate
-refuses a reading with no taxpayer, so the responder tries again once a person has named the client
-and the year, without touching a value the person typed (DEC-2387). The client is
+empty, and on a refusal by the OCR gate, manual entry opens with the reason in words. The §7216
+gate refuses a reading with no taxpayer, so the responder tries again once a person has named the
+client and the year, without touching a value the person typed (DEC-2387). The client is
 matched by the taxpayer's last four and, where the map reads a name, the name (`name_tin`, else
 `tin`): one candidate is matched, several are the person's pick, none is the client picker. The
 return is matched on entity, year and (when read) form; the authorization comes from CLI-05's
@@ -579,7 +579,7 @@ async def on_ocr_refused(event: OutboxEvent) -> None:
 
 
 async def on_taxpayer_named(event: OutboxEvent) -> None:
-    # A later pick may read what an earlier one's consent refused; a read running is left to finish.
+    # A later pick may read what an earlier one's consent refused; a running read may finish.
     intake_id = UUID(str(event.payload["intake_id"]))
     await dispatch(
         NoticeIntakeRereadWorkflow,

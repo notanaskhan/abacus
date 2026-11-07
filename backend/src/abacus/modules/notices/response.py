@@ -134,7 +134,7 @@ async def letter_values(tenant: TenantContext, found: Notice) -> dict[str, str]:
         "taxpayer.names": (
             ""
             if found.client_entity_id is None
-            else await entity_display_name(tenant, found.client_entity_id)
+            else (await entity_display_name(tenant, found.client_entity_id) or "")
         ),
         "letter.date": f"{on:%B} {on.day}, {on.year}",
         "notice.reference": (
@@ -160,7 +160,7 @@ def _for_position(clauses: Sequence[object], position: str | None) -> list[objec
     states = clause_states_for(position)
     return [
         {**c, "default_enabled": states[str(c.get("clause_id"))]}
-        if isinstance(c, Mapping) and str(c.get("clause_id")) in states
+        if str(c.get("clause_id")) in states
         else c
         for c in cast("Sequence[Mapping[str, object]]", clauses)
     ]

@@ -1,6 +1,6 @@
 ---
 id: TASK-3393
-title: N-04-T16 the response chain, run whole: decision, draft, letter, envelope
+title: N-04-T16 the response chain run whole, decision through envelope
 spec: SPEC-000  # row (N-04-T16)
 acceptance_criteria: [AC-1]
 risk_zone: red

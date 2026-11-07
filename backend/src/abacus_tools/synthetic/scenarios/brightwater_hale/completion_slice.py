@@ -342,14 +342,15 @@ def _event(key: str, at: datetime, kind: str, actor: str, **data: object) -> Eve
     return Event(f"completion:{key}", at, kind, actor, SLICE, dict(data), client=NORTHWIND)
 
 
-# Granite Peak FY2026 (J22 step 8): 5% of pre-tax income 3,100,000 decided Sep 14, 10:12 AM, then the
-# SURL's Front Range Freight invoice, 68,400, declined by Luis Ferrante on Oct 5 and passed on the
+# Granite Peak FY2026 (J22 step 8): 5% of pre-tax income 3,100,000 decided Sep 14, 10:12 AM, then
+# the SURL's Front Range Freight invoice, 68,400, declined by Luis Ferrante on Oct 5 and passed on
 # SUM below PM 116,250. The design calls it AJE-3 but names no AJE-1 or AJE-2, so it reads AJE-1
 # here: the number is the service's, and inventing two entries to reach 3 would be worse.
 GRANITE: Final = "Granite Peak Outdoor Supply, Inc."
 GRANITE_PAPER: Final = ("SURL", "Search for unrecorded liabilities")
 GRANITE_FINDING: Final = "Improperly excluded: Front Range Freight Co., invoice FRF-30418"
 GRANITE_AMOUNT: Final = "68400.00"
+GRANITE_RATE_OPTION: Final = "rate_5_0"  # 5% of pre-tax income, code's option
 GRANITE_ENTRY: Final = "June inbound freight recorded in July"
 GRANITE_LINES: Final = (("5010", "68400.00", "0"), ("2010", "0", "68400.00"))
 GRANITE_DECLINED: Final = "The client declines to book it"

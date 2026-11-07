@@ -68,8 +68,8 @@ def _block_key(n: int, block: Mapping[str, object]) -> str:
 def _with_overrides(
     blocks: Sequence[object], overrides: Mapping[str, list[str]], *, top: bool = True
 ) -> list[object]:
-    """A section by its id; at the top level, any block by `_block_key` (DEC-2392), so what a person
-    wrote over a paragraph or a clause is what the document says."""
+    """A section by its id; at the top level, any block by `_block_key` (DEC-2392), so what a
+    person wrote over a paragraph or a clause is what the document says."""
     placed: list[object] = []
     for n, block in enumerate(blocks):
         if not isinstance(block, Mapping):

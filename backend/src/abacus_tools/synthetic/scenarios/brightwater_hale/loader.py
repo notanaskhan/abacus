@@ -4581,7 +4581,7 @@ async def _granite_materiality_decided(
     await decide_card(
         await _staff_context(conn, event),
         cast(UUID, card["id"]),
-        option_key="rate_5_0",
+        option_key=_completion.GRANITE_RATE_OPTION,
         factors=(),
         rationale="5% of pre-tax income",
         seen_version=int(cast(int, card["version_no"])),

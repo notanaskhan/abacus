@@ -398,6 +398,7 @@ async def test_raising_is_the_agents_through_its_task_scope_and_fails_closed(
                 kind=KIND,
                 question_key=QUESTION,
                 recommended_option_key="pct_1_5",
+                raised_under="decision_card.raise",
                 **extra,
             )
         assert cast(str, getattr(foreign.value, "code", "")) == "decision_invalid", extra
