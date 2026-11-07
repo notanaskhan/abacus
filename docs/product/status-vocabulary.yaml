@@ -973,7 +973,7 @@ objects:
       for_your_review:      {label: "For your review", variant: amber, terminal: false, derived: true}
       approved_by_you:      {label: "Approved by you", variant: green-tint, terminal: false, derived: true}
       waiting_for_approval: {label: "Waiting for approval", variant: amber, terminal: false, derived: true}
-      in_sign:              {label: "In sign", client_label: "In Sign", variant: neutral, terminal: false, derived: true}
+      in_sign:              {label: "In sign", client_label: "In sign", variant: neutral, terminal: false, derived: true}
       signed:               {label: "Signed", variant: green-tint, terminal: false, derived: true}
       final:                {label: "Final", variant: green, terminal: true, derived: true}
       released:             {label: "Released", variant: green-tint, terminal: true, derived: true}

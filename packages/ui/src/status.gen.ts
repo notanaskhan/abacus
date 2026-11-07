@@ -3497,7 +3497,7 @@ export const STATUS_REGISTRY = {
       "variant": "neutral",
       "terminal": false,
       "derived": true,
-      "clientLabel": "In Sign"
+      "clientLabel": "In sign"
     },
     "signed": {
       "label": "Signed",
