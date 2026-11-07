@@ -157,6 +157,14 @@ async def import_template(
                 needs_review=1 if for_review else 0,
             ),
         )
+        if for_review:
+            # K-01 AC3.7: an import into Needs review is asked for review as a submit is (the
+            # quality partners' notification, and HOME-02's approval gate; DEC-2613).
+            tx.emit(
+                MethodologyReviewRequested(
+                    version_id=version_id, template_id=template_id, by_user=ctx.user_id
+                )
+            )
     found = await version_detail(ctx.tenant, version_id)
     return found.summary
 

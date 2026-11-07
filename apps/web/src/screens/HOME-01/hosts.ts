@@ -24,6 +24,8 @@ export type HostRoutes = Readonly<
       ids: readonly string[];
       search: readonly string[];
       build: (p: Record<string, string>) => Target;
+      /** Search the host always takes from the ids (ADM-03's wall drawer: `ov=wall:<id>`). */
+      fixed?: (p: Record<string, string>) => Record<string, string>;
     }
   >
 >;
@@ -63,7 +65,7 @@ export function resolveRoute(code: string, routes: HostRoutes): string | undefin
     const value = given.get(name);
     if (value !== null && UUID.test(value)) search[name] = value;
   }
-  return hrefOf(route.build(ids), search);
+  return hrefOf(route.build(ids), { ...search, ...(route.fixed?.(ids) ?? {}) });
 }
 
 const CLI08_SUBKINDS: ReadonlySet<string> = new Set([

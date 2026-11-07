@@ -38,6 +38,7 @@ from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.identity.api import AuthContext, Forbidden, Resource, authorise, names_of
 from abacus.modules.methodology.events import (
     MethodologyReviewRequested,
+    MethodologyVersionApproved,
     MethodologyVersionSuperseded,
 )
 from abacus.modules.methodology.models import (
@@ -425,6 +426,11 @@ async def approve_version(
             "methodology_version.approved",
             target=Target(SUBJECT, version_id),
             after=Ref(effective_from=_day(effective_from), superseded=len(prior)),
+        )
+        tx.emit(
+            MethodologyVersionApproved(
+                version_id=version_id, template_id=state.template_id, approved_by=ctx.user_id
+            )
         )
         return await _view(tx.session, version_id)
 

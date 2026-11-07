@@ -31,6 +31,18 @@ const ROUTES: HostRoutes = {
     search: [],
     build: (p) => to.NOT02({ noticeId: p.noticeId ?? "" }),
   },
+  // I-01-T23 (DEC-2613): the firm-level gates, a methodology version's and a wall's approval.
+  "KNW-02": {
+    ids: ["versionId"],
+    search: [],
+    build: (p) => to.KNW02({ versionId: p.versionId ?? "" }),
+  },
+  "ADM-03": {
+    ids: ["wallId"],
+    search: [],
+    build: () => to.ADM03(),
+    fixed: (p) => ({ ov: `wall:${p.wallId ?? ""}` }),
+  },
 };
 
 /** The gate's host as an href, or undefined while it names nothing routed. */

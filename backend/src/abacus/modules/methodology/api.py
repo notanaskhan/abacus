@@ -61,6 +61,11 @@ from abacus.modules.methodology.extraction import (
     extract_source,
     pii_hold,
 )
+from abacus.modules.methodology.gate_reads import (  # I-01-T23: HOME-02's approval gate
+    VersionInReview,
+    versions_in_review,
+    versions_named,
+)
 from abacus.modules.methodology.import_routes import methodology_import_router
 from abacus.modules.methodology.lifecycle import (
     approve_version,
@@ -294,6 +299,7 @@ __all__ = [
     "Tier",
     "UsageCounter",
     "VarianceResult",
+    "VersionInReview",
     "VersionNotLatest",
     "VersionStep",
     "VersionSteps",
@@ -368,6 +374,8 @@ __all__ = [
     "version_in",
     "version_state",
     "version_steps",
+    "versions_in_review",
+    "versions_named",
 ]
 
 

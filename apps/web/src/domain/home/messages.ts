@@ -17,6 +17,9 @@ export const GATE_SUBKIND_TITLE: Readonly<Record<string, string>> = {
   notice_response_send: "Send the notice response",
   // I-01-T23 (S29 leftovers): no handoff source (undesigned, I-01 §5.5).
   tax_return_export: "Export to the tax engine",
+  // I-01-T23 (DEC-2613): no handoff source (undesigned, I-01 §5.5).
+  methodology_version_approval: "Methodology version approval",
+  wall_approval: "Wall approval",
   acceptance_decision_due: "Acceptance decision",
   independence_conclusion_due: "Independence conclusion",
   independence_confirmation_due: "Independence confirmation",
