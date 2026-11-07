@@ -15,13 +15,21 @@ from abacus.modules.review.gates import (
 from abacus.modules.signatures import (
     api as _signatures,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers
 )
+from abacus.modules.tax import (
+    api as _tax,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers
+)
 
 MESSAGES = Path(__file__).parents[3] / "apps/web/src/domain/home/messages.ts"
 
 
 def test_the_gates_landing_s13_to_s29_have_words() -> None:
     words = MESSAGES.read_text()
-    for name in ("envelope_send", "envelope_countersign", "notice_response_send"):
+    for name in (
+        "envelope_send",
+        "envelope_countersign",
+        "notice_response_send",
+        "tax_return_export",
+    ):
         assert name in _SOURCES
         assert name in words
 

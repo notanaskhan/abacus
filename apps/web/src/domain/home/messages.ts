@@ -15,6 +15,8 @@ export const GATE_SUBKIND_TITLE: Readonly<Record<string, string>> = {
   envelope_countersign: "Countersign",
   letter_partner_approval: "Engagement letter approval",
   notice_response_send: "Send the notice response",
+  // I-01-T23 (S29 leftovers): no handoff source (undesigned, I-01 §5.5).
+  tax_return_export: "Export to the tax engine",
   acceptance_decision_due: "Acceptance decision",
   independence_conclusion_due: "Independence conclusion",
   independence_confirmation_due: "Independence confirmation",
