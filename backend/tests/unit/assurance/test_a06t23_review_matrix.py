@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from abacus.modules.assurance.review_matrix import Cell, Row, footer_of, initials
+from abacus.modules.assurance.review_matrix import Cell, Row, footer_of, initials, reviewed
 
 AT = datetime(2026, 10, 2, 13, 58, tzinfo=UTC)
 
@@ -46,7 +46,8 @@ def test_footer_counts_signed_levels_and_required_partner_and_eqr_columns() -> N
         _row("pending", "pending", "not_required", "not_required", "not_required"),
     )
     f = footer_of(rows)
-    assert (f.prepared, f.reviewed) == (2, 2)
+    # DEC-2397: the first row's L2 is stale and its L3 pending, so it isn't reviewed.
+    assert (f.prepared, f.reviewed) == (2, 1)
     assert (f.partner_signed, f.partner_required) == (1, 2)
     assert (f.eqr_signed, f.eqr_required) == (0, 1)
     assert f.changed_after_sign_off == 1
@@ -55,6 +56,24 @@ def test_footer_counts_signed_levels_and_required_partner_and_eqr_columns() -> N
 def test_a_stale_cell_still_counts_as_signed_and_flags_its_row() -> None:
     f = footer_of((_row("stale", "not_required", "not_required", "not_required", "not_required"),))
     assert (f.prepared, f.changed_after_sign_off) == (1, 1)
+
+
+def test_reviewed_is_every_required_review_level_current_as_the_handoff_counts() -> None:
+    """AUD-17's drawn rows (TASK-3398, DEC-2397): the manager's review in L3 with L2 "—" counts,
+    a row needing no L2 or L3 counts once prepared, a stale L2 doesn't, nor an unprepared row."""
+    rows = {
+        "Trial Balance": _row("signed", "not_required", "signed", "not_required", "not_required"),
+        "Eligibility": _row("signed", "signed", "signed", "signed", "not_required"),
+        "Findings": _row("signed", "not_required", "not_required", "signed", "pending"),
+        "Contributions": _row("signed", "stale", "pending", "pending", "not_required"),
+        "Checklist": _row("pending", "not_required", "not_required", "pending", "not_required"),
+    }
+    assert [k for k, r in rows.items() if reviewed(r)] == [
+        "Trial Balance",
+        "Eligibility",
+        "Findings",
+    ]
+    assert footer_of(tuple(rows.values())).reviewed == 3
 
 
 def test_initials_are_first_and_last_name() -> None:
