@@ -12,12 +12,16 @@ TABLES: frozenset[str] = frozenset(
         "notifications",  # SPEC-013
         "notification_preferences",  # P-01-T03 (C16)
         "notification_deliveries",  # P-01-T03 (C16)
+        "realtime_events",  # P-10-T05 (0683): 24 hours of invalidations, for reconnects
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
-INSERT_ONLY: frozenset[str] = frozenset()
+INSERT_ONLY: frozenset[str] = frozenset({"realtime_events"})
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
+    "realtime_events": frozenset(
+        {"tenant_id", "topic", "type", "ref_type", "ref_id", "version", "at"}
+    ),
     # Notifications (SPEC-013): identifiers only; one per recipient per event.
     "notifications": frozenset(
         {"id", "tenant_id", "recipient_user_id", "kind", "event_id", "engagement_id"}
