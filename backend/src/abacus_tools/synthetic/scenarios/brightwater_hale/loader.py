@@ -201,9 +201,11 @@ from abacus.modules.methodology.api import (
     EngagementType,
     create_standard,
     import_checklist,
+    import_notes,
     import_standard_workbook,
     import_template,
     publish_checklist,
+    publish_notes,
     publish_standard,
     standard_by_key,
     standard_workbook,
@@ -4102,6 +4104,24 @@ async def _checklist_loaded(conn: asyncpg.Connection, _: Scenario, event: Event)
     )
 
 
+async def _statement_notes_loaded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """A-06-T25: Grace imports the firm's note wording; Daniel publishes v1."""
+    made = await import_notes(
+        await _staff_context(conn, event),
+        _completion.NOTES_NAME,
+        _completion.NOTES_FRAMEWORK,
+        _completion.notes_csv(),
+        dry_run=False,
+    )
+    if made.template_id is None or made.version is None:
+        raise LookupError(f"notes refused: {made.problems}")
+    await publish_notes(
+        await _staff_context(conn, _as_actor(event, _completion.PUBLISHER)),
+        made.template_id,
+        made.version,
+    )
+
+
 # --- A-06-T28 (`--slice completion`): Northwind's completion, through the services.
 
 
@@ -5343,6 +5363,7 @@ HANDLERS: Final[dict[str, Handler]] = {
     "standards.version_published": _standard_published,
     "notices.seed_notice": _notice_seeded,  # N-04-T21
     "methodology.checklist_loaded": _checklist_loaded,  # A-06-T28
+    "methodology.statement_notes_loaded": _statement_notes_loaded,  # A-06-T25
     "completion.papers": _completion_papers,
     "completion.exceptions": _completion_exceptions,
     "completion.finding": _completion_finding_recorded,

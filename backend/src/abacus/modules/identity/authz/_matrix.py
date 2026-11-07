@@ -4705,6 +4705,23 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "deny",
         "independence": "required",
     },
+    "statement_note_template.import": {
+        "firm_admin": "allow",
+        "client_admin": "deny",
+        "client_contributor": "deny",
+        "third_party": "deny",
+        "agent": "deny",
+        "system": "deny",
+    },
+    "statement_note_template.publish": {
+        "quality_partner": "allow",
+        "client_admin": "deny",
+        "client_contributor": "deny",
+        "third_party": "deny",
+        "agent": "deny",
+        "system": "deny",
+        "mfa_recent": "required",
+    },
     "subsequent_event.create": {
         "manager": "allow",
         "senior": "allow",

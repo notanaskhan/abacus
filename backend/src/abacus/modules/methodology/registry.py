@@ -37,6 +37,8 @@ TABLES: frozenset[str] = frozenset(
         "program_step_sources",
         "disclosure_checklist_templates",
         "disclosure_checklist_template_versions",
+        "statement_note_templates",  # A-06-T25 (0674, DEC-2389)
+        "statement_note_template_versions",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -171,5 +173,15 @@ INSERT_COLUMNS["disclosure_checklist_template_versions"] = frozenset(
     {"imported_by", "items", "source_file_sha256", "template_id", "tenant_id", "version"}
 )
 UPDATE_COLUMNS["disclosure_checklist_template_versions"] = frozenset(
+    {"published_at", "published_by", "status"}
+)
+# A-06-T25 (0674, DEC-2389): the statements' note templates
+INSERT_COLUMNS["statement_note_templates"] = frozenset(
+    {"created_by", "framework_key", "name", "tenant_id"}
+)
+INSERT_COLUMNS["statement_note_template_versions"] = frozenset(
+    {"imported_by", "notes", "source_file_sha256", "template_id", "tenant_id", "version"}
+)
+UPDATE_COLUMNS["statement_note_template_versions"] = frozenset(
     {"published_at", "published_by", "status"}
 )

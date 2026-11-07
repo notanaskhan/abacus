@@ -27,6 +27,7 @@ _STATEMENT_OF: Final = {
     "expenses": ACTIVITIES,
 }
 _KEY: Final = re.compile(r"[^a-z0-9_.]+")
+_PLACEHOLDER: Final = re.compile(r"\{\{\s*([A-Za-z0-9][A-Za-z0-9_.:-]{0,79})\s*\}\}")
 _ZERO: Final = Decimal(0)
 
 
@@ -75,6 +76,22 @@ class DraftLine:
     position: int
     note_ref: str | None
     values: tuple[DraftValue, ...]
+
+
+@dataclass(frozen=True)
+class NoteInput:
+    number: int
+    title: str
+    body: str
+    line_keys: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class DraftNote:
+    number: int
+    title: str
+    body: str
+    unresolved: tuple[str, ...]  # figures the body names that this draft has no line for
 
 
 def line_key(raw: str) -> str:
@@ -129,7 +146,7 @@ def draft(
                     key,
                     line.label,
                     position,
-                    note_refs.get(line.key),
+                    note_refs.get(key),
                     _values(
                         year,
                         line.cy,
@@ -183,8 +200,56 @@ def _plain(line: DraftLine) -> dict[str, object]:
     return body
 
 
-def content_hash(lines: Sequence[DraftLine]) -> str:
-    canonical = json.dumps([_plain(line) for line in lines], sort_keys=True, separators=(",", ":"))
+def references_of(notes: Sequence[NoteInput]) -> dict[str, str]:
+    """Each FS line's reference, from the notes that name it: "Note 3", or "Notes 3, 4"."""
+    numbers: dict[str, list[int]] = {}
+    for note in notes:
+        for key in note.line_keys:
+            numbers.setdefault(line_key(key), []).append(note.number)
+    return {
+        key: f"Note {found[0]}" if len(found) == 1 else f"Notes {', '.join(map(str, found))}"
+        for key, found in ((k, sorted(set(v))) for k, v in numbers.items())
+    }
+
+
+def _figure(value: Decimal) -> str:
+    written = f"{abs(value):,.0f}" if value == value.to_integral_value() else f"{abs(value):,.2f}"
+    return f"({written})" if value < 0 else written
+
+
+def render_notes(
+    notes: Sequence[NoteInput], lines: Sequence[DraftLine], year: int
+) -> tuple[DraftNote, ...]:
+    """Each note with `{{line.key}}` filled from the year's value on the version's own lines. A key
+    with no line stays as written and is named, for a person to see; code never guesses a figure."""
+    figures = {
+        line.line_key: _figure(value.value)
+        for line in lines
+        for value in line.values
+        if value.year == year
+    }
+    drafted: list[DraftNote] = []
+    for note in notes:
+        missing: list[str] = []
+
+        def filled(found: re.Match[str]) -> str:
+            figure = figures.get(line_key(found[1]))
+            if figure is None:
+                missing.append(found[1])
+                return found[0]
+            return figure
+
+        body = _PLACEHOLDER.sub(filled, note.body)
+        drafted.append(DraftNote(note.number, note.title, body, tuple(sorted(set(missing)))))
+    return tuple(drafted)
+
+
+def content_hash(lines: Sequence[DraftLine], notes: Sequence[DraftNote] = ()) -> str:
+    plain = [_plain(line) for line in lines]
+    written: object = plain
+    if notes:
+        written = {"lines": plain, "notes": [[n.number, n.title, n.body] for n in notes]}
+    canonical = json.dumps(written, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode()).hexdigest()
 
 

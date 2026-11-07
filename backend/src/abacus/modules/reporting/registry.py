@@ -23,6 +23,7 @@ TABLES: frozenset[str] = frozenset(
         "tie_out_runs",
         "disclosure_checklist_answers",
         "statement_approvals",
+        "statement_notes",  # A-06-T25 (0674, DEC-2389)
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004); each also carries a
@@ -39,6 +40,7 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "linked_values",
         "tie_out_runs",
         "statement_approvals",
+        "statement_notes",
     }
 )
 # Columns the app may supply on insert; everything else is server-set.
@@ -104,6 +106,17 @@ INSERT_COLUMNS["statement_versions"] = frozenset(
         "tenant_id",
         "version_no",
         "work_item_id",
+    }
+)
+INSERT_COLUMNS["statement_notes"] = frozenset(
+    {
+        "body",
+        "number",
+        "statement_version_id",
+        "template_version_id",
+        "tenant_id",
+        "title",
+        "unresolved",
     }
 )
 INSERT_COLUMNS["line_items"] = frozenset(

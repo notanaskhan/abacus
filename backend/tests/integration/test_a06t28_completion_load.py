@@ -212,3 +212,29 @@ async def test_ac_a25_the_workflows_activities_write_a_version_and_a_retry_write
     )
     assert cast(int, completed) >= 1
     await dispose_engine()
+
+
+async def test_ac_a25_a_draft_carries_the_firms_published_notes(loaded: Database) -> None:
+    seed = Seeder(loaded.superuser_dsn)
+    rows = await seed.rows(
+        "SELECT n.number, n.title, n.body, n.unresolved, v.status FROM statement_notes n "
+        "JOIN statement_versions s ON s.id = n.statement_version_id "
+        "JOIN statement_note_template_versions v ON v.id = n.template_version_id "
+        "WHERE n.tenant_id = $1 AND s.version_no = 3 ORDER BY n.number",
+        TENANT,
+    )
+    assert [r["number"] for r in rows] == list(range(1, 12))
+    assert {r["status"] for r in rows} == {"published"}
+    assert rows[7]["title"] == "Reconciliation to Form 5500"
+    assert "{{" not in rows[7]["body"] and rows[7]["body"].startswith(
+        "Net assets per the financial statements "
+    )
+    assert rows[8]["body"].startswith("Participant contributions of $33,540")
+    assert all(r["unresolved"] == [] for r in rows)
+    refs = await seed.rows(
+        "SELECT l.line_key, l.note_ref FROM line_items l "
+        "JOIN statement_versions s ON s.id = l.statement_version_id "
+        "WHERE l.tenant_id = $1 AND s.version_no = 3 AND l.note_ref IS NOT NULL",
+        TENANT,
+    )
+    assert {r["note_ref"] for r in refs} >= {"Note 3", "Note 5", "Note 8"}

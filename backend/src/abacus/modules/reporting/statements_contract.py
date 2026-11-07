@@ -111,6 +111,17 @@ class TieOutOut(BaseModel):
     ran_at: Annotated[datetime, Internal]
 
 
+class StatementNoteOut(BaseModel):
+    """A note as this draft rendered it; `unresolved` names figures it has no line for (DEC-2389)."""
+
+    model_config = _frozen()
+
+    number: Annotated[int, Internal]
+    title: Annotated[str, classified("confidential")]
+    body: Annotated[str, classified("confidential")]
+    unresolved: Annotated[list[str], Internal]
+
+
 class StatementVersionOut(BaseModel):
     model_config = _frozen()
 
@@ -123,6 +134,7 @@ class StatementVersionOut(BaseModel):
     created_at: Annotated[datetime, Internal]
     lines: Annotated[list[LineItemOut], classified("confidential")]
     tie_out: Annotated[TieOutOut | None, classified("internal")] = None
+    notes: Annotated[list[StatementNoteOut], classified("confidential")] = []
 
 
 class StatementsOut(BaseModel):
@@ -350,6 +362,12 @@ def _version_out(view: VersionView) -> StatementVersionOut:
             for line_id, rows in lines.items()
         ],
         tie_out=_tie_out_out(view.tie_out) if view.tie_out else None,
+        notes=[
+            StatementNoteOut(
+                number=n["number"], title=n["title"], body=n["body"], unresolved=n["unresolved"]
+            )
+            for n in view.notes
+        ],
     )
 
 
@@ -593,6 +611,60 @@ async def checklist_publish_route(
     from abacus.modules.methodology.api import publish_checklist
 
     found = await publish_checklist(ctx, template_id, version)
+    return ChecklistTemplateVersionOut(
+        template_id=found.template_id,
+        version=found.version,
+        status="published",
+        published_at=cast(datetime, found.published_at),
+    )
+
+
+@statements_router.post(
+    "/methodology/statement-note-templates:import",
+    action="statement_note_template.import",
+    status_code=201,
+    response_model=ChecklistImportOut,
+    errors=(409,),
+)
+async def note_template_import_route(
+    request: Request,
+    ctx: Ctx,
+    name: Annotated[str, Query(min_length=1, max_length=200)],
+    framework_key: Annotated[str, Query(pattern=r"^[a-z][a-z0-9_]{1,39}$")],
+    dry_run: Annotated[bool, Query()] = True,
+) -> ChecklistImportOut:
+    """The firm's notes as the raw body, CSV (DEC-2389); dry run first."""
+    await _gate(ctx, None, "statement_note_template.import")
+    from abacus.modules.methodology.api import NOTES_MAX_BYTES, import_notes
+
+    content = bytearray()
+    async for chunk in request.stream():
+        content += chunk
+        if len(content) > NOTES_MAX_BYTES:
+            break  # the parser refuses it as too large, without holding the rest
+    found = await import_notes(ctx, name, framework_key, bytes(content), dry_run=dry_run)
+    return ChecklistImportOut(
+        template_id=found.template_id,
+        version=found.version,
+        dry_run=found.dry_run,
+        problems=list(found.problems),
+    )
+
+
+@statements_router.post(
+    "/methodology/statement-note-templates/{template_id}/versions/{version}/publish",
+    action="statement_note_template.publish",
+    response_model=ChecklistTemplateVersionOut,
+    errors=(409,),
+)
+async def note_template_publish_route(
+    template_id: UUID, version: int, ctx: Ctx
+) -> ChecklistTemplateVersionOut:
+    """A person publishes with fresh MFA; a published version never changes."""
+    await _gate(ctx, None, "statement_note_template.publish")
+    from abacus.modules.methodology.api import publish_notes
+
+    found = await publish_notes(ctx, template_id, version)
     return ChecklistTemplateVersionOut(
         template_id=found.template_id,
         version=found.version,

@@ -1987,6 +1987,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "disclosure_checklist_template_versions": frozenset(
             {"published_at", "published_by", "status"}
         ),
+        "statement_note_template_versions": frozenset({"published_at", "published_by", "status"}),
         "ebp_certification_points": frozenset(
             {"citation_id", "proposed_answer", "updated_at", "version"}
         ),
@@ -2532,6 +2533,7 @@ def test_ac20_the_migrated_evidence_triggers_pass_schema_check(evidence: sc.Data
         "linked_values": "statement_rows_immutable",
         "ocr_runs": "trust_kit_immutable",
         "statement_approvals": "statement_rows_immutable",
+        "statement_notes": "statement_rows_immutable",
         "statement_versions": "statement_rows_immutable",
         "subsequent_events": "a07_rows_immutable",
         "tie_out_runs": "statement_rows_immutable",

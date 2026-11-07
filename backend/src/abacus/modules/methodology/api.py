@@ -224,8 +224,18 @@ from abacus.modules.methodology.disclosure_checklists import (  # noqa: E402 -- 
     publish_checklist,
 )
 
+from abacus.modules.methodology.note_templates import (  # noqa: E402 -- A-06-T25
+    MAX_BYTES as NOTES_MAX_BYTES,
+)
+from abacus.modules.methodology.note_templates import (  # noqa: E402 -- A-06-T25
+    import_notes,
+    publish_notes,
+    published_notes,
+)
+
 __all__ = [
     "CHECKLIST_MAX_BYTES",
+    "NOTES_MAX_BYTES",
     "METHODOLOGY_USAGE_TYPE",
     "ROUTERS",
     "AccountRule",
@@ -301,6 +311,9 @@ __all__ = [
     "current_report_template_version",
     "current_version",
     "current_version_of_kind",
+    "import_notes",
+    "publish_notes",
+    "published_notes",
     "deprecate_report_template",
     "extract_source",
     "fail_document_import",
