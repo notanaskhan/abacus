@@ -1,9 +1,12 @@
 """A-06-T39 (ADR-078): independent tests of the statements schema and service (T19, T25), from the
 row: an override or N/A reason refused when missing, tie-out 63 of 63 and 62 of 63 with RJE-1 as
-the cause, out of date on a new snapshot or approved entry, no client-side arithmetic on AUD-20."""
+the cause, out of date on a new snapshot or approved entry, no client-side arithmetic on AUD-20;
+and (S29 leftovers) lineage through C4 and an agent's answer staying a suggestion until adopted."""
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from decimal import Decimal
 from pathlib import Path
 from types import SimpleNamespace
@@ -109,3 +112,105 @@ def test_aud20_does_no_arithmetic_on_a_figure() -> None:
     screen = (REPO / "apps/web/src/screens/AUD-20/Statements.tsx").read_text()
     assert ".reduce(" not in screen
     assert "parseFloat" not in screen
+
+
+# --- S29 leftovers (TASK-6007): lineage through C4, and agent answers that stay suggestions ----
+
+
+async def test_lineage_returns_only_c4_verified_citations(monkeypatch: pytest.MonkeyPatch) -> None:
+    line, kept, dropped = uuid4(), uuid4(), uuid4()
+    value = uuid4()
+
+    async def lines(_tenant: object, _version: object) -> list[dict[str, object]]:
+        return [
+            {
+                "line_id": line,
+                "value_id": value,
+                "year": YEAR,
+                "source_ref": {"accounts": ["1250"], "entries": ["AJE-1"], "terms": []},
+                "citation_ids": [kept, dropped],
+            }
+        ]
+
+    async def verified(
+        _tenant: object, kind: str, ids: list[object]
+    ) -> dict[object, list[object]]:
+        assert kind == "linked_value" and ids == [value]
+        return {value: [kept]}  # C4 verified one of the two the value names
+
+    monkeypatch.setattr(statements, "_lines", lines)
+    monkeypatch.setattr(statements, "verified_citation_ids", verified)
+    sources, citations = await statements.lineage(cast(object, None), uuid4(), line)  # pyright: ignore[reportArgumentType] -- no session is opened
+    assert citations == [kept]
+    assert {"kind": "tb_account", "year": str(YEAR), "ref": "1250"} in sources
+    assert {"kind": "entry", "year": str(YEAR), "ref": "AJE-1"} in sources
+
+
+def _no_document(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def document(_tenant: object, _id: object) -> dict[str, object]:
+        return {"engagement_id": uuid4(), "checklist_template_version_id": uuid4()}
+
+    monkeypatch.setattr(statements, "_resource_of_document", document)
+
+
+def _answers(monkeypatch: pytest.MonkeyPatch, rows: list[dict[str, object]]) -> None:
+    class _Result:
+        def mappings(self) -> _Result:
+            return self
+
+        def all(self) -> list[dict[str, object]]:
+            return rows
+
+    class _Session:
+        async def execute(self, *_: object, **__: object) -> _Result:
+            return _Result()
+
+    @asynccontextmanager
+    async def session(_tenant: object) -> AsyncGenerator[_Session]:
+        yield _Session()
+
+    async def items(_tenant: object, _template: object) -> list[dict[str, str]]:
+        return [{"key": k, "section": "s", "text": "t"} for k in ("a", "b", "c")]
+
+    monkeypatch.setattr(statements, "tenant_session", session)
+    monkeypatch.setattr(statements, "disclosure_template_items", items)
+
+
+async def test_an_agents_suggestion_is_not_counted_as_answered(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _no_document(monkeypatch)
+    _answers(
+        monkeypatch,
+        [
+            {"item_key": "a", "answer": "yes", "reason": None, "note_ref": "Note 1",
+             "state": "answered", "suggestion_id": None, "version": 1},
+            {"item_key": "b", "answer": "yes", "reason": None, "note_ref": None,
+             "state": "suggested", "suggestion_id": uuid4(), "version": 1},
+        ],
+    )  # fmt: skip
+    view = await statements.disclosure_view(cast(object, None), uuid4())  # pyright: ignore[reportArgumentType] -- the session is patched
+    assert (view.answered, view.total) == (1, 3)
+    assert [i["state"] for i in view.items] == ["answered", "suggested", "empty"]
+
+
+async def test_only_a_suggestion_can_be_adopted_and_only_at_its_version(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _no_document(monkeypatch)
+    found: dict[str, object] = {"state": "answered", "answer": "yes", "version": 2}
+
+    @asynccontextmanager
+    async def unit(_tenant: object) -> AsyncGenerator[SimpleNamespace]:
+        yield SimpleNamespace(session=None)
+
+    async def existing(_session: object, _document: object, _key: str) -> dict[str, object]:
+        return found
+
+    monkeypatch.setattr(statements, "uow", unit)
+    monkeypatch.setattr(statements, "_existing", existing)
+    with pytest.raises(statements.NoSuggestion):
+        await statements.adopt_item(_CTX, uuid4(), "a", 2)
+    found["state"] = "suggested"
+    with pytest.raises(statements.StaleAnswer):
+        await statements.adopt_item(_CTX, uuid4(), "a", 1)
