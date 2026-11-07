@@ -502,6 +502,8 @@ class ReviewNoteDetailOut(BaseModel):
     note: Annotated[ReviewNoteItemOut, classified("confidential")]
     body: Annotated[str, classified("restricted")]
     events: Annotated[list[ReviewNoteEventOut], classified("restricted")]
+    # AUD-17's amber notice in the thread: the paper changed after a sign-off (A-06-T24).
+    paper_changed_after_signoff: Annotated[bool, classified("internal")] = False
 
 
 class RaiseReviewNoteIn(BaseModel):
@@ -558,6 +560,7 @@ def _note_detail_out(d: NoteDetail) -> ReviewNoteDetailOut:
             for e in d.events
             if e.by_user is not None
         ],
+        paper_changed_after_signoff=d.paper_changed_after_signoff,
     )
 
 
@@ -703,6 +706,20 @@ async def review_note_clear_route(
 ) -> ReviewNoteDetailOut:
     """Clearing is a person's act (the event's CHECK requires a human)."""
     return _note_detail_out(await note_event(ctx, note_id, "cleared", body.body))
+
+
+@review_notes_router.post(
+    "/{note_id}/reopen",
+    action="review_note.clear",
+    response_model=ReviewNoteDetailOut,
+    errors=(409, 501),
+)
+async def review_note_reopen_route(
+    note_id: UUID, body: ReviewNoteEventIn, ctx: Ctx
+) -> ReviewNoteDetailOut:
+    """SPEC-313 AC-3: the raiser (or the partner) reopens a cleared note, with why (A-06-T24).
+    The service requires the body; a note that isn't cleared answers 409."""
+    return _note_detail_out(await note_event(ctx, note_id, "reopened", body.body))
 
 
 @review_notes_router.post(
