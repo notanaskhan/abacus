@@ -322,7 +322,7 @@ def test_the_portal_edge_plans_to_nothing_until_its_settings_exist() -> None:
 
 def test_the_deploy_path_is_the_portal_builds_layout() -> None:
     vite = text(REPO / "apps" / "web" / "vite.config.ts")
-    assert 'outDir: "dist/portal", rollupOptions: { input: "portal.html" }' in vite
+    assert 'outDir: "dist/portal", rolldownOptions: { input: "portal.html" }' in vite
     deploy = enclosing(text(PORTAL / "main.tf"), '"PutPortalBundle"')
     objects = re.findall(r'\$\{aws_s3_bucket\.portal\.arn\}/([^"]+)"', deploy)
     assert set(objects) == {"assets/*", "portal.html", "runtime-config.json"}

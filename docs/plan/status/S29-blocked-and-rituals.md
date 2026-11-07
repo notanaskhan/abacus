@@ -59,3 +59,17 @@ each PR touched (Ayush: no comprehensive runs this round).
 | N-04-T22 | unchanged in code | The staging run of j09 (the `staging` Playwright project already reads it) |
 | N-04-T26, T-03-T17, A-05-T50, A-05-T51 | unchanged | Staging and Tier C parity locks |
 | EBP-01 to EBP-04 | by design | AUD-02 cockpit canvases with no path of their own (the links rule), not a gap |
+
+## S29 open items round (2026-11-08, TASK-6014 to TASK-6019, DEC-2611 to DEC-2614)
+
+Built after the leftovers batch merged (main a312e4fb7), one PR per item, held for one batch merge.
+#1396 off main; #1397 to #1401 stacked.
+
+| Row | Now | Still open, and why |
+|---|---|---|
+| N-04-T27, T-03-T18 | RB-61, RB-62 and the responder shadow plan read the retired flags as retired (#1396) | none |
+| N-04-T25 | Every extract case has a synthetic word layer; `extract_cases_without_lines` is empty (#1397, DEC-2611) | Real runs; the CPA label review, which now also reads five `notice.number` labels derived from the type key |
+| A-06-T32 | AUD-15's tab badge asserted from both sides; a real bug fixed: the tab drew 9 and the backend counted 2 where the handoff says 3 (#1398, DEC-2612) | The 26-row matrix (strict xfail, DEC-2391) |
+| I-01-T23 | Firm-level C13 gates: methodology version approval and wall approval on HOME-02 (#1399, DEC-2613; security-reviewed, one medium fixed in the PR) | Inbound-mail activity rows: inbox threads name a client, never an engagement, and HOME-01's activity reads by engagement |
+| P-11-T29 | The OCR nightly role in Terraform, not applied (#1400, DEC-2614) | Apply staging with `textract_enabled`, create the `ocr-nightly` GitHub environment, set `vars.OCR_NIGHTLY_ROLE_ARN`; two passing nights, then blocking |
+| A-06-T29 | unchanged | The FS render needs a data table in C11 (an additive block whose rows code fills from the statement version), the `fs_package` kind and the AR-C 70 legend rule, then a Brightwater Hale template; send-draft needs R-02's services (S31) |
