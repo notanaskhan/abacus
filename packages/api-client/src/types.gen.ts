@@ -43153,7 +43153,7 @@ export type StatementLineOut = {
 /**
  * StatementNoteOut
  *
- * A note as this draft rendered it; `unresolved` names figures it has no line for (DEC-2389).
+ * A note as this draft rendered it; `unresolved` names figures with no line (DEC-2389).
  */
 export type StatementNoteOut = {
     /**

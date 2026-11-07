@@ -91876,7 +91876,7 @@
         "type": "object"
       },
       "StatementNoteOut": {
-        "description": "A note as this draft rendered it; `unresolved` names figures it has no line for (DEC-2389).",
+        "description": "A note as this draft rendered it; `unresolved` names figures with no line (DEC-2389).",
         "properties": {
           "body": {
             "cls": "confidential",

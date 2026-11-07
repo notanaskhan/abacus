@@ -39,6 +39,7 @@ from abacus.kernel.crypto import seal
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
+from abacus.modules.engagements.api import holders_of
 from abacus.modules.evidence.api import (
     CitationAnchor,
     CitationClaim,
@@ -46,7 +47,6 @@ from abacus.modules.evidence.api import (
     record_citations,
     version_word_layers,
 )
-from abacus.modules.engagements.api import holders_of
 from abacus.modules.identity.api import Actor, AuthContext, system_context_for_run
 from abacus.modules.notices.compute import bracket, underreporter
 from abacus.modules.notices.events import NoticeAnalysisRequested

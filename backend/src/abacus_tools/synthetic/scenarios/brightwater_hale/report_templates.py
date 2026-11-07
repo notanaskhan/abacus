@@ -431,7 +431,8 @@ NOTICE_RESPONSE: Final[Json] = {
             "partially_agree",
             "We agree in part",
             _p(
-                "We have reviewed the proposed changes and agree with part of them, as explained below."
+                "We have reviewed the proposed changes and agree with part of them, "
+                "as explained below."
             ),
             on=False,
         ),
