@@ -168,7 +168,7 @@ function StatementRow({
   const total = row.key === "total_due";
   return (
     <div
-      role="row"
+      role="group"
       data-row={row.key}
       data-lit={lit ? "true" : undefined}
       className={cn(
@@ -221,7 +221,7 @@ function InfoReturns({
       {missing.map((i) => (
         <div
           key={`${i.form}:${i.payer_name}`}
-          role="row"
+          role="group"
           tabIndex={0}
           data-payer={i.payer_name}
           data-lit={lit === i.payer_name ? "true" : undefined}
@@ -336,9 +336,9 @@ function AnalysisPane({
         {segment === "information_returns" ? (
           <InfoReturns items={analysis.information_returns} lit={lit} onLight={onLight} />
         ) : (
-          <div role="table" data-not02="statement" className="flex flex-col">
+          <div data-not02="statement" className="flex flex-col">
             <div
-              role="row"
+              role="group"
               className="grid h-[30px] grid-cols-[170px_90px_90px_80px] items-center bg-nested text-[11.5px] font-medium text-ink-3"
             >
               <span className="px-[10px]">{C.line}</span>
@@ -521,7 +521,7 @@ function ActionPane({
           )}
           {source !== undefined && (
             <div
-              role="row"
+              role="group"
               tabIndex={0}
               data-not02="source-row"
               data-lit={lit !== null ? "true" : undefined}

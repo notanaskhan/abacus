@@ -595,6 +595,15 @@ export function TAX01({
               })),
             ]}
           />
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              onExtend([...chosen]);
+            }}
+          >
+            {COPY.bulk.extend}
+          </Button>
           {planned.map((item) => (
             <Button key={item.label} size="sm" variant="secondary" disabled>
               {item.label}

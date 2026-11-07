@@ -112,6 +112,7 @@ _PLATFORM_INSERT_COLUMNS: dict[str, frozenset[str]] = {
         | {"prompt_version", "model", "tier", "input_tokens", "output_tokens", "cost_usd"}
         | {"outcome", "inputs_hash", "route"}
         | {"boundary_basis", "terms_version"}  # SPEC-036 (TASK-075)
+        | {"step_id", "session_id", "definition_id", "service_line"}  # 0681 (P-10-T03)
     ),
     "budgets": frozenset({"tenant_id", "monthly_soft_usd", "monthly_hard_usd", "updated_by"}),
     # Feature flags (SPEC-011): set per firm by operators.
@@ -405,6 +406,13 @@ DEFINER_FUNCTIONS = frozenset(
     # code, label and family by id for KNW-02 d. `standards_sets` is global reference data with no
     # tenant rows; search path pinned, revoked from PUBLIC, executable by the app role.
     | {"standards_set_named"}
+    # 0681 (P-10-T03), 0683 (P-10-T05): the 30-day run event and 24-hour realtime prunes. Each
+    # deletes the session tenant's rows only, refuses any actor but its own system job, search
+    # path pinned, revoked from PUBLIC, executable by the app role.
+    | {"prune_run_events", "prune_realtime_events"}
+    # 0686 (A-07-T13, P-43): the locked-work write guard, a trigger function only. It reads
+    # the work item and engagement under the caller's tenant; search path pinned.
+    | {"archived_guard"}
 )
 # Definer functions for operator tooling only (TASK-027 D4): the application role must NOT be able
 # to execute them (they read across firms).
@@ -413,6 +421,7 @@ OWNER_ONLY_FUNCTIONS = frozenset(
     # 0400 (K-02-T03, ADR-300): the operator CLI and the publication fan-out (K-02-T06, T12).
     | {"reference_set_draft", "reference_set_publish", "reference_set_withdraw"}
     | {"active_tenant_ids", "standards_sets_apply"}
+    | {"archived_guard"}  # 0686: fires as a trigger; nobody calls it
 )
 # Definer functions for the operator role only (Q-01-T19): `abacus_ops` executes them, the
 # application role must not.

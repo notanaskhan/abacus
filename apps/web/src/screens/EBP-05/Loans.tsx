@@ -39,7 +39,7 @@ type Tab = keyof typeof COPY.tabs;
 type Mark = "agent" | "adopted" | "signed";
 
 const money = (v: string | null | undefined): string =>
-  v === null || v === undefined ? "—" : amount(v, "cents", { zero: "explicit" }).text;
+  v === null || v === undefined ? "—" : amount(v, "money", { zero: "explicit" }).text;
 
 export interface LoansOptions {
   active?: boolean;

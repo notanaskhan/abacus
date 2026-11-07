@@ -364,10 +364,14 @@ def upgrade() -> None:
     for table, columns in INSERTS.items():
         tenant_table(op, table)
         insert_columns(op, table, columns)
+    # Updates are column grants only (schema_check): drop the default table-wide UPDATE first.
+    for table in INSERTS:
+        op.execute(f"REVOKE UPDATE ON {table} FROM abacus_app")
     for table, columns in UPDATES.items():
         op.execute(f"GRANT UPDATE ({', '.join(columns)}) ON {table} TO abacus_app")
     for table in _IMMUTABLE:
         insert_only(op, table)
+    insert_only(op, "agent_feedback")  # registry INSERT_ONLY: feedback is never rewritten
     _immutable()
     op.execute(
         "ALTER TABLE agent_runs ADD CONSTRAINT agent_runs_plan FOREIGN KEY (tenant_id, plan_id) "

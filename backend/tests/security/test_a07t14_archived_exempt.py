@@ -37,7 +37,7 @@ def _mutating_actions() -> set[str]:
             action = operation.get("x-abacus-action")
             if method in MUTATING and isinstance(action, str):
                 found.add(action)
-    return found
+    return found & set(RULES)  # `own` and the like are the route's own rule, not a matrix action
 
 
 def test_only_the_declared_actions_are_exempt() -> None:
@@ -71,7 +71,7 @@ async def test_the_sqlstate_answers_409_archived() -> None:
 
     response = await _db_error(_request(), Raised())
     assert response.status_code == 409
-    assert json.loads(bytes(response.body))["code"] == "archived"
+    assert json.loads(bytes(response.body))["detail"] == "archived"
 
 
 async def test_any_other_database_error_stays_a_500() -> None:

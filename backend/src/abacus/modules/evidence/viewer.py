@@ -332,7 +332,9 @@ async def viewer_manifest(ctx: AuthContext, version_id: UUID) -> ViewerManifest:
         masked=masked is not None,
         media_type=version.media_type,
     )
-    refusal = await ocr_refusal_of(ctx.tenant, version.id)
+    # How a page was read and why the gate refused are the firm's: a client gets neither.
+    client = bool(ctx.client)
+    refusal = None if client else await ocr_refusal_of(ctx.tenant, version.id)
     pages: list[ViewerPage] = []
     for page in layer:
         width, height = float(page.width_pt), float(page.height_pt)
@@ -347,8 +349,8 @@ async def viewer_manifest(ctx: AuthContext, version_id: UUID) -> ViewerManifest:
                 image_h=image.height if image else round(height * PAGE_WIDTH / width),
                 text_layer=page.has_text_layer,
                 pii_scan=projection.scan_state(page.page_no),
-                text_source=_text_source(page),
-                ocr=_page_ocr(page, refusal),
+                text_source=None if client else _text_source(page),
+                ocr=None if client else _page_ocr(page, refusal),
             )
         )
     if not layer and source.kind == "image":
@@ -364,7 +366,7 @@ async def viewer_manifest(ctx: AuthContext, version_id: UUID) -> ViewerManifest:
                     image.height,
                     False,
                     projection.scan_state(1),
-                    "none",
+                    None if client else "none",
                     None if refusal is None else ViewerPageOcr(refused_reason=refusal),
                 )
             )

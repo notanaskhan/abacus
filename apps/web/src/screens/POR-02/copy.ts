@@ -172,11 +172,11 @@ export const COPY = {
       (facts: Readonly<Record<string, string | number | boolean>>) => string
     >,
   },
+  noticeWaiting: (subject: string, firm: string) =>
+    `${subject} — ${firm}'s response is waiting for your signature.`,
   notice: {
     agency_notice_in_review: (subject: string, firm: string) =>
       `${subject} — ${firm} is reviewing it. Nothing needed from you.`,
-    agency_notice_waiting_for_signature: (subject: string, firm: string) =>
-      `${subject} — ${firm}'s response is waiting for your signature.`,
   },
   myK1s: {
     title: "My K-1s",

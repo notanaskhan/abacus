@@ -16,6 +16,7 @@ import {
   defineScenarios,
   json,
 } from "../../app-core/fixture-mode";
+import { auditHandlers } from "../handlers/audits";
 import { seedScenario } from "../scenario";
 import { getSeed } from "../seed";
 import { type Ebp06Variant, ebp06View } from "../seed/ebp06";
@@ -42,6 +43,7 @@ function frame(
     get handlers(): Record<string, FixtureHandler> {
       return {
         ...E0.handlers,
+        ...auditHandlers(seed, "run"),
         "GET /v1/me/capabilities": ({ persona }) =>
           json(capabilities(persona, options.on ?? true)),
         [`GET ${E}/investments`]: ({ query }) =>

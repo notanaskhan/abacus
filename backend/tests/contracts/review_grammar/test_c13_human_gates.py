@@ -43,6 +43,23 @@ DF25: Final = [
 # DEC-320's fixed set, plus `fulfilment.voided` (R-01 Story 2.2: a voided rule link's version
 # leaves nothing waiting, as a withdrawal does).
 EVENTS: Final = {
+    # A-07-T15: completion, letters, the report, release and the archive.
+    "eqr.concurred",
+    "rep_letter.approved",
+    "governance_communication.sent",
+    "report.released",
+    "archive.locked",
+    "archive_addition.decided",
+    # I-01-T23: envelopes to send or countersign, a notice response to send.
+    "envelope.drafted",
+    "envelope.send_approved",
+    "envelope.signer_signed",
+    "envelope.completed",
+    "envelope.superseded",
+    "envelope.declined",
+    "envelope.expired",
+    "notice_response.ready_to_send",
+    "notice.response_sent",
     "proposal.recorded",
     "guidance_draft.decided",
     "review_decision.recorded",

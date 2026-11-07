@@ -137,6 +137,8 @@ class RetentionOut(BaseModel):
     policy_label: Annotated[str | None, classified("internal")]
     eligible_on: Annotated[date | None, classified("internal")]
     hold_label: Annotated[str | None, classified("internal")]
+    # N-04-T22: the notice a hold is for, once a hold names one (none does yet); FIL-01 opens it.
+    hold_notice_id: Annotated[UUID | None, classified("internal")] = None
     hold_placed_by: Annotated[str | None, classified("internal")]
     hold_placed_on: Annotated[date | None, classified("internal")]
 

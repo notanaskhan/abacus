@@ -1,6 +1,6 @@
 ---
 id: TASK-5109
-title: P-10-T09 C6 v2 contract stub: runs, sessions, streams, usage
+title: "P-10-T09 C6 v2 contract stub: runs, sessions, streams, usage"
 spec: SPEC-000  # row (P-10-T09)
 acceptance_criteria: [AC-1]
 risk_zone: amber

@@ -18,7 +18,7 @@ import {
   json,
 } from "../../app-core/fixture-mode";
 import { seedScenario } from "../scenario";
-import { not02Notice } from "../seed/not02";
+import { not02Activity, not02Analysis, not02Notice } from "../seed/not02";
 import { type Not03Variant, not03Response } from "../seed/not03";
 
 const E0 = seedScenario();
@@ -36,6 +36,8 @@ function frame(
       return {
         ...E0.handlers,
         "GET /v1/notices/{notice_id}": () => json(not02Notice("c", persona)),
+        "GET /v1/notices/{notice_id}/analysis": () => json(not02Analysis("c")),
+        "GET /v1/notices/{notice_id}/activity": () => json(not02Activity()),
         "GET /v1/notices/{notice_id}/response": () => json(not03Response(state)),
         "POST /v1/notices/{notice_id}/response/send-for-signature": () =>
           json({

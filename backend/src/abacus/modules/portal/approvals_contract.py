@@ -58,8 +58,8 @@ class ApprovalLineOut(BaseModel):
     model_config = _frozen()
 
     account: Annotated[str, Confidential]
-    debit: Money | None = None
-    credit: Money | None = None
+    debit: Annotated[Money | None, Confidential] = None
+    credit: Annotated[Money | None, Confidential] = None
 
 
 class ApprovalSupportOut(BaseModel):
@@ -87,7 +87,7 @@ class ApprovalItemOut(BaseModel):
     id: Annotated[UUID, Internal]
     title: Annotated[str, Confidential]
     state: Annotated[ClientApprovalState, Internal]
-    amount: Money | None = None
+    amount: Annotated[Money | None, Confidential] = None
     decided_by: Annotated[str | None, Confidential] = None
     decided_at: Annotated[datetime | None, Internal] = None
     reason_code: Annotated[DeclineReason | None, Internal] = None
@@ -144,7 +144,7 @@ class ProposedEntryDecideIn(BaseModel):
 
     decision: Annotated[Literal["accept", "decline"], Internal]
     seen_hash: SeenHash
-    reason: Reason | None = None
+    reason: Annotated[Reason | None, Restricted] = None
 
     @model_validator(mode="after")
     def _a_decline_says_why(self) -> Self:
@@ -167,7 +167,7 @@ class PackageDecideIn(BaseModel):
     decision: Annotated[Literal["approve", "decline"], Internal]
     seen_hash: SeenHash
     reason_code: Annotated[DeclineReason | None, Internal] = None
-    note: Reason | None = None
+    note: Annotated[Reason | None, Restricted] = None
 
     @model_validator(mode="after")
     def _a_decline_says_why(self) -> Self:

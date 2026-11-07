@@ -148,7 +148,12 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "adjustment.approve",  # SPEC-301 (TASK-302)
         "adjustment.propose",
         "adjustment.record_response",
+        "agent_run.answer",  # S29
+        "agent_run.approve_plan",  # S29
+        "agent_run.control",  # S29
         "agent_run.read",  # SPEC-318 (TASK-461)
+        "agent_run.sign_off",  # S29
+        "agent_run.start",  # S29
         "approval_batch.create",  # A-06-T03
         "archive.build_index",  # S26 or S27 matrix mark
         "archive.lock",  # SPEC-314 (TASK-332)
@@ -164,7 +169,6 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "citation.create",  # P-03-T02 (C4 v1)
         "citation.read",
         "citation.relink",
-        # ADR-164 item 2 (P-07-T24): client-facing, G2 for the acting member on attest clients.
         "client_access.grant",
         "comment.create",  # SPEC-032 (TASK-062)
         "comment.read",
@@ -209,6 +213,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "ebp_provider.request",
         "ebp_schedule.draft",
         "ebp_schedule.render",
+        "engagement_ai.configure",  # S29
         "entry_assessment.adopt",  # SPEC-044 (TASK-109)
         "entry_assessment.request",  # SPEC-037 Q4 (TASK-085)
         "envelope.evidence_download",  # N-02-T02 (SPEC-381)
@@ -246,7 +251,6 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "finding.request_decision",
         "finding.resolve",
         "finding.update",
-        # P-06-T14: the send is client data, per person; a draft is not (SPEC-027 AC-8, DEC-220).
         "follow_up.send",
         "fraud_inquiry.request",
         "fraud_minutes.approve",

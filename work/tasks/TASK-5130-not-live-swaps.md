@@ -1,6 +1,6 @@
 ---
 id: TASK-5130
-title: N-04-T22 Live swaps and consumers: NOT manifest, NOT-02 e and f, CLI-05 band and link, POR-02 info row, HOME-01 deadlines
+title: "N-04-T22 Live swaps and consumers: NOT manifest, NOT-02 e and f, CLI-05 band and link, POR-02 info row, HOME-01 deadlines"
 spec: SPEC-000  # row (N-04-T22)
 acceptance_criteria: [AC-1]
 risk_zone: green
