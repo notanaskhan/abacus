@@ -49,7 +49,7 @@ from abacus.modules.notices.response_workflow_types import (
 from abacus.modules.notices.service import Notice, move, notice
 from abacus.modules.organisations.api import client_of_entity
 from abacus.modules.reporting import api as c11
-from abacus.modules.requests.api import NewRequestItem, add_request_item, items_of_version
+from abacus.modules.requests.api import items_of_version
 from abacus.modules.signatures.api import (
     EnvelopeSource,
     SourceDocument,
@@ -65,6 +65,7 @@ SOURCE: Final = "notice_response"
 APPROVAL_KIND: Final = "notice_response_sign_off"
 CONFIRMATION_ITEM: Final = "confirmation_request_item_id"
 CONFIRMATION_REQUEST: Final = "Upload your IRS payment confirmation"  # NOT-03c, verbatim
+CONFIRMATION_DAYS: Final = 14
 RECORD_TYPE: Final = "notice_response"
 JsonRow = dict[str, Any]  # Any: rows and JSON columns as stored
 
@@ -293,18 +294,29 @@ async def _draft_source(ctx: AuthContext, work_item_id: UUID) -> SourceDraft:
 
 
 async def _with_confirmation_request(
-    ctx: AuthContext, engagement_id: UUID, payment: dict[str, object] | None
+    ctx: AuthContext,
+    found: Notice,
+    payment: dict[str, object] | None,
+    signers: Sequence[UUID],
 ) -> dict[str, object] | None:
-    """US-7.1: a payment by the taxpayers gets one request for its confirmation. Accrued never
-    takes a payment or holds an instrument (ADR P-27); the client uploads a confirmation."""
+    """US-7.1: a payment by the taxpayers gets one request for its confirmation, created in the
+    engagement's binder and sent on the sender's click, due when the notice is. Accrued never
+    takes a payment or holds an instrument (ADR P-27): the client pays the IRS and uploads a
+    confirmation. It goes to the first signer, else the engagement's first client admin."""
     if not payment or not payment.get("required") or payment.get(CONFIRMATION_ITEM):
         return payment
-    item = await add_request_item(
+    from abacus.modules.tax.api import send_confirmation
+
+    sent = await send_confirmation(
         ctx,
-        engagement_id,
-        NewRequestItem(description=CONFIRMATION_REQUEST, audit_area="tax_payments"),
+        found.engagement_id,
+        description=f"{CONFIRMATION_REQUEST}. Pay with IRS Direct Pay, then upload it here.",
+        due_on=found.respond_by or await today(ctx.tenant) + timedelta(days=CONFIRMATION_DAYS),
+        contact_id=signers[0] if signers else None,
+        wave="year_end",
+        linked_ref={"type": "notice", "id": str(found.id)},
     )
-    return {**payment, CONFIRMATION_ITEM: str(item.id)}
+    return {**payment, CONFIRMATION_ITEM: str(sent.request_item_id)}
 
 
 async def _final_letter(ctx: AuthContext, row: JsonRow) -> None:
@@ -358,7 +370,10 @@ async def send_for_signature(ctx: AuthContext, work_item_id: UUID) -> UUID:
     await _final_letter(ctx, row)
     envelope_id = await create_draft(ctx, SOURCE, work_item_id)
     payment = await _with_confirmation_request(
-        ctx, found.engagement_id, cast("dict[str, object] | None", row["payment"])
+        ctx,
+        found,
+        cast("dict[str, object] | None", row["payment"]),
+        cast("Sequence[UUID]", row["signer_contact_ids"] or ()),
     )
     async with uow(ctx.tenant) as tx:
         await tx.session.execute(

@@ -49,7 +49,7 @@ from abacus.modules.tax.estimates import (
     patch_installment,
     patch_schedule,
 )
-from abacus.modules.tax.extensions import ProposedPayment, flag_new_likely
+from abacus.modules.tax.extensions import ProposedPayment, flag_new_likely, send_confirmation
 from abacus.modules.tax.extensions import patch as patch_extension
 from abacus.modules.tax.extensions import prepare as prepare_extensions
 from abacus.modules.tax.filed_delivery import FiledReturn, filed_returns
@@ -224,6 +224,7 @@ __all__ = [
     "register_extension_dates_source",
     "register_final_approval_blocker",
     "rule_texts",
+    "send_confirmation",
     "set_extended",
     "share_k1_internal",
     "transcript_comparison_lines",

@@ -21,6 +21,7 @@ from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
 from abacus.kernel.flags import forget_flags
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.notices import sending
+from abacus.modules.notices.service import notice
 from abacus_tools.quality.schema_check import Database, provisioned_database
 from abacus_tools.synthetic.scenarios.brightwater_hale import loader
 from abacus_tools.synthetic.scenarios.brightwater_hale import notices_content as nc
@@ -131,4 +132,43 @@ async def test_ac_mark_sent_and_the_agency_reply_write_their_rows(
     assert await seed.value(
         "SELECT closed_on FROM notices WHERE work_item_id = $1", work_item
     ) == (date(2026, 12, 2))
+    await dispose_engine()
+
+
+async def test_ac_the_confirmation_request_reaches_the_client_on_the_senders_click(
+    loaded: Database,
+) -> None:
+    """US-7.1: created in the notice's binder and sent, due when the notice is. It was only ever
+    created, so no client saw it and readiness could never turn."""
+    await dispose_engine()
+    configure_engine(loaded.app_url)
+    seed = Seeder(loaded.superuser_dsn)
+    row = (
+        await seed.rows(
+            "SELECT n.work_item_id, m.user_id AS sender, n.respond_by FROM notices n "
+            "JOIN engagement_members m ON m.engagement_id = n.engagement_id "
+            "AND m.role = 'manager' "
+            "WHERE n.tenant_id = $1 AND n.status = 'analyzing' AND n.respond_by IS NOT NULL "
+            "ORDER BY n.work_item_id LIMIT 1",
+            loader.TENANT,
+        )
+    )[0]
+    person = cast(UUID, row["sender"])
+    ctx = AuthContext(
+        TenantContext(loader.TENANT, "human", str(person)), person, UUID(int=0), None, system_now()
+    )
+    found = await notice(ctx, cast(UUID, row["work_item_id"]))
+    helper = sending._with_confirmation_request  # pyright: ignore[reportPrivateUsage] -- under test
+    payment = await helper(ctx, found, {"required": True}, ())
+    assert payment is not None
+    (item,) = await seed.rows(
+        "SELECT sent_at IS NOT NULL AS sent, client_visible, due_on FROM request_items "
+        "WHERE id = $1",
+        UUID(str(payment[sending.CONFIRMATION_ITEM])),
+    )
+    assert (item["sent"], item["client_visible"], item["due_on"]) == (
+        True,
+        True,
+        row["respond_by"],
+    )
     await dispose_engine()

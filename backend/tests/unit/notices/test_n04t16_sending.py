@@ -25,6 +25,7 @@ from abacus.modules.identity.api import AuthContext
 from abacus.modules.notices import sending
 from abacus.modules.notices.response_workflow import ALERTS, CP3219A_ALERTS, alert_days
 from abacus.modules.notices.sending import follow_up_on, readiness_of
+from abacus.modules.tax import api as tax_api
 
 _WHITLEY_PAYMENT = {"required": True, "confirmation_accepted": False}
 
@@ -109,18 +110,22 @@ async def test_ac_a_payment_gets_one_confirmation_request_and_none_without_a_pay
     item_id = uuid4()
     made: list[object] = []
 
-    async def add(_ctx: object, _engagement: object, new: object) -> SimpleNamespace:
+    async def add(_ctx: object, _engagement: object, **new: object) -> SimpleNamespace:
         made.append(new)
-        return SimpleNamespace(id=item_id)
+        return SimpleNamespace(request_item_id=item_id)
 
-    monkeypatch.setattr(sending, "add_request_item", add)
+    monkeypatch.setattr(tax_api, "send_confirmation", add)
     ctx = cast(AuthContext, SimpleNamespace())
     helper = sending._with_confirmation_request  # pyright: ignore[reportPrivateUsage] -- own helper
-    assert await helper(ctx, uuid4(), None) is None
-    assert await helper(ctx, uuid4(), {"required": False}) == {"required": False}
-    once = await helper(ctx, uuid4(), {"required": True})
+    found = cast(
+        "sending.Notice",
+        SimpleNamespace(id=uuid4(), engagement_id=uuid4(), respond_by=date(2026, 9, 23)),
+    )
+    assert await helper(ctx, found, None, ()) is None
+    assert await helper(ctx, found, {"required": False}, ()) == {"required": False}
+    once = await helper(ctx, found, {"required": True}, ())
     assert once == {"required": True, sending.CONFIRMATION_ITEM: str(item_id)}
-    assert await helper(ctx, uuid4(), once) == once
+    assert await helper(ctx, found, once, ()) == once
     assert len(made) == 1
 
 
