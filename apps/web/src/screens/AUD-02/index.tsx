@@ -42,6 +42,7 @@ import { useProvisionsCanvas } from "../EBP-02/Provisions";
 import { useEligibilityCanvas } from "../EBP-03/Eligibility";
 import { type ContributionsOptions, useContributionsCanvas } from "../EBP-04";
 import { DISTRIBUTIONS_LOANS, type LoansOptions, useLoansCanvas } from "../EBP-05";
+import { ADMIN_EXPENSES, type ExpensesOptions, useExpensesCanvas } from "../EBP-09";
 import {
   type ControlsOptions,
   FailedStepCard,
@@ -118,6 +119,8 @@ export interface AUD02Props {
   contributions?: Omit<ContributionsOptions, "active" | "running">;
   /** EBP-05 (A-05-T44): Distributions & Loans. */
   loans?: Omit<LoansOptions, "active">;
+  /** EBP-09 (A-05-T45): Admin Expenses & Compliance. */
+  expenses?: Omit<ExpensesOptions, "active">;
 }
 
 /** The rail row whose canvas is AUD-06 (A-02-T09). */
@@ -226,6 +229,7 @@ function Cockpit({
   investments,
   contributions,
   loans,
+  expenses,
 }: Omit<AUD02Props, "auditId"> & { cockpit: AuditCockpitOut }): JSX.Element {
   // A-01-T24: "Export binder…" and the record-mode entries (DV-9, DV-4).
   const audit = useAuditActions(cockpit, overlay ?? null, onOverlay);
@@ -323,6 +327,12 @@ function Cockpit({
   // EBP-05 (A-05-T44): Testing › Distributions & Loans, behind `ebp.modules`.
   const loansOpen = selected === DISTRIBUTIONS_LOANS;
   const loansCanvas = useLoansCanvas(cockpit.work_item_id, { ...loans, active: loansOpen });
+  // EBP-09 (A-05-T45): Testing › Admin Expenses & Compliance, behind `ebp.modules`.
+  const expensesOpen = selected === ADMIN_EXPENSES;
+  const expensesCanvas = useExpensesCanvas(cockpit.work_item_id, {
+    ...expenses,
+    active: expensesOpen,
+  });
   const openDoc = (r: SourceDocumentRowOut): void => {
     const version = r.latest_upload?.evidence_version_id ?? null;
     if (version !== null) onDock?.("viewer", version);
@@ -351,6 +361,8 @@ function Cockpit({
     canvas = contributionsCanvas;
   } else if (loansOpen) {
     canvas = loansCanvas;
+  } else if (expensesOpen) {
+    canvas = expensesCanvas;
   } else if (row?.section_state === "blocked_on_decision" && row.blocked_on_name != null) {
     canvas = {
       title: row.title,
@@ -555,6 +567,7 @@ export function AuditCockpitPage({
     investments?: InvestmentsOptions;
     contributions?: Omit<ContributionsOptions, "active" | "running">;
     loans?: Omit<LoansOptions, "active">;
+    expenses?: Omit<ExpensesOptions, "active">;
   };
   onBack?: () => void;
 }): JSX.Element {
@@ -588,6 +601,7 @@ export function AuditCockpitPage({
       {...(initial.investments === undefined ? {} : { investments: initial.investments })}
       {...(initial.contributions === undefined ? {} : { contributions: initial.contributions })}
       {...(initial.loans === undefined ? {} : { loans: initial.loans })}
+      {...(initial.expenses === undefined ? {} : { expenses: initial.expenses })}
     />
   );
 }

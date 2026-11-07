@@ -36,6 +36,7 @@ describe("screen scenarios on the firm entry", () => {
       "AUD-08", // A-04-T34
       "EBP-05", // A-05-T44
       "EBP-06", // A-05-T40
+      "EBP-09", // A-05-T45
       "AUD-10", // A-04-T37
       "AUD-17", // A-06-T24
       "AUD-09", // A-04-T34
