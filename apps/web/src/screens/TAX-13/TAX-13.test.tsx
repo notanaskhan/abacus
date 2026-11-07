@@ -3,9 +3,11 @@
 // to clear."
 import { client } from "@abacus/api-client/client";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { installFixtureMode } from "../../app-core/fixture-mode";
+import { type FixtureRequest, installFixtureMode, json } from "../../app-core/fixture-mode";
+import { tax13SheetOverlay } from "../../fixtures/scenarios/TAX-13";
+import { tax13FiledForm, tax13SeasonE } from "../../fixtures/seed/tax13";
 import { newQueryClient } from "../../testing/support";
 import { Extensions, type ExtensionsProps } from "./Extensions";
 import { type Tax13State, scenarios } from "./scenarios";
@@ -87,6 +89,170 @@ describe("TAX-13", () => {
       b.textContent.includes("Prepare 8868"),
     );
     expect(prepare?.hasAttribute("disabled")).toBe(false);
+  });
+});
+
+const button = (name: string): HTMLButtonElement | undefined =>
+  [...document.querySelectorAll("button")].find((b) => b.textContent === name);
+
+const sheetFooter = (name: string): Promise<HTMLButtonElement> =>
+  waitFor(
+    () => {
+      const found = button(name);
+      expect(found).toBeDefined();
+      expect(found?.hasAttribute("disabled")).toBe(false);
+      return found as HTMLButtonElement;
+    },
+    { timeout: 6000 },
+  );
+
+describe("T-03-T16: TAX-13 d and e", () => {
+  it("d: one click labelled Send confirmation requests makes one call for three clients", async () => {
+    const asked = vi.fn((r: { body: unknown }) => {
+      const ids = (r.body as { return_ids: string[] }).return_ids;
+      return json({
+        extensions: [],
+        checks: [],
+        approved_payment_ids: ids,
+        confirmation_request_item_ids: ids,
+      });
+    });
+    const scenario = {
+      ...scenarios.d,
+      handlers: {
+        ...scenarios.d.handlers,
+        "POST /v1/tax/extensions:approve-and-request": asked,
+      },
+    };
+    restore = installFixtureMode(scenario);
+    render(
+      <QueryClientProvider client={newQueryClient()}>
+        <Extensions taxYear={2025} ov={tax13SheetOverlay} />
+      </QueryClientProvider>,
+    );
+    await drawn("[data-extend-row]");
+    expect(document.querySelectorAll("[data-extend-row]")).toHaveLength(3);
+    const send = await sheetFooter("Send confirmation requests");
+    send.click();
+    await waitFor(
+      () => {
+        expect(asked).toHaveBeenCalledOnce();
+      },
+      { timeout: 6000 },
+    );
+    const body = asked.mock.calls[0]?.[0].body as {
+      return_ids: string[];
+      payments: { jurisdiction: string; amount: string; form?: string | null }[];
+      send_confirmations: boolean;
+    };
+    expect(body.return_ids).toHaveLength(3);
+    expect(body.send_confirmations).toBe(true);
+    // Feld's federal payment as typed, and NY as proposed.
+    expect(body.payments.map((p) => [p.jurisdiction, p.amount])).toContainEqual(["NY", "6000"]);
+    expect(body.payments.filter((p) => p.jurisdiction === "federal")).toHaveLength(3);
+  });
+
+  it("d: each row shows its figures, and an edit below the target says so in words", async () => {
+    restore = installFixtureMode(scenarios.d);
+    render(
+      <QueryClientProvider client={newQueryClient()}>
+        <Extensions taxYear={2025} ov={tax13SheetOverlay} />
+      </QueryClientProvider>,
+    );
+    const input = await waitFor(
+      () => {
+        const found = document.querySelector<HTMLInputElement>(
+          "input[aria-label='Payment with extension for Elena Varga']",
+        );
+        expect(found).not.toBeNull();
+        return found as HTMLInputElement;
+      },
+      { timeout: 6000 },
+    );
+    const card = input.closest("[data-extend-row]");
+    expect(card?.querySelector("[data-field='projected']")?.textContent).toBe("3,900");
+    expect(card?.querySelector("[data-field='target']")?.textContent).toContain("3,510");
+    expect(card?.querySelector("[data-check]")?.textContent).toContain(
+      "3,400 + 500 = 3,900 · meets the 90% target",
+    );
+    fireEvent.change(input, { target: { value: "100" } });
+    await waitFor(() => {
+      expect(card?.querySelector("[data-check='below']")?.textContent).toContain(
+        "below the 90% target",
+      );
+    });
+  });
+
+  it("d: no reviewer function offers Submit for approval, never the send", async () => {
+    restore = installFixtureMode(scenarios["not-allowed"]);
+    render(
+      <QueryClientProvider client={newQueryClient()}>
+        <Extensions taxYear={2025} ov={tax13SheetOverlay} />
+      </QueryClientProvider>,
+    );
+    await drawn("[data-extend-row]");
+    await sheetFooter("Submit for approval");
+    expect(button("Send confirmation requests")).toBeUndefined();
+  });
+
+  it("e: Varga reads Rejected with IND-031-04 in text; Feld reads Filed", async () => {
+    show("e");
+    await drawn("[data-client='Elena Varga']");
+    const varga = document.querySelector("[data-client='Elena Varga'] [data-col='ack']");
+    expect(varga?.textContent).toContain("Rejected");
+    expect(varga?.querySelector("[data-reject-code]")?.textContent).toBe("IND-031-04");
+    expect(
+      document.querySelector("[data-client='Jonah & Claire Feld'] [data-col='ack']")?.textContent,
+    ).toBe("Filed");
+    expect(count("acks_pending")).toBe(1);
+    expect(count("extended")).toBe(149);
+  });
+
+  it("e: Mark filed needs the filed form, and sends the line's version in If-Match", async () => {
+    const patched = vi.fn((r: FixtureRequest) => {
+      expect(r.body).toBeTruthy();
+      return json(tax13SeasonE().items[0]);
+    });
+    const scenario = {
+      ...scenarios.e,
+      handlers: { ...scenarios.e.handlers, "PATCH /v1/tax/extensions/{extension_id}": patched },
+    };
+    restore = installFixtureMode(scenario);
+    render(
+      <QueryClientProvider client={newQueryClient()}>
+        <Extensions taxYear={2025} />
+      </QueryClientProvider>,
+    );
+    await drawn("[data-client^='Estate of Walter Thornbury']");
+    const open = (await waitFor(() => {
+      const found = document.querySelector(
+        "[data-client^='Estate of Walter Thornbury'] [data-col='filed'] button",
+      );
+      expect(found).not.toBeNull();
+      return found;
+    })) as HTMLButtonElement;
+    open.click();
+    await waitFor(
+      () => {
+        expect(document.querySelector("[data-mark-filed]")).not.toBeNull();
+      },
+      { timeout: 6000 },
+    );
+    expect(button("Mark filed")?.hasAttribute("disabled")).toBe(true);
+    const chooser = await screen.findByRole("combobox", { name: "Filed form" });
+    fireEvent.click(chooser);
+    fireEvent.click(await screen.findByRole("option", { name: /Form 4868 confirmation/ }));
+    (await sheetFooter("Mark filed")).click();
+    await waitFor(
+      () => {
+        expect(patched).toHaveBeenCalledOnce();
+      },
+      { timeout: 6000 },
+    );
+    const call = patched.mock.calls[0]?.[0];
+    expect(
+      (call?.body as { filed_form_evidence_version_id: string }).filed_form_evidence_version_id,
+    ).toBe(tax13FiledForm.id);
   });
 });
 
