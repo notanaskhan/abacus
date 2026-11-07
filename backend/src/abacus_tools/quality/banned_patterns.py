@@ -17,6 +17,7 @@ import tokenize
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, replace
 from fnmatch import fnmatch
+from itertools import pairwise
 from pathlib import Path
 from typing import Final
 
@@ -1908,6 +1909,42 @@ def _agent_denied_actions() -> frozenset[str]:
 _NON_AGENT_CONTEXTS = frozenset({"AuthContext", "SystemContext"})
 
 
+_NEVER_TOOL_WORDS = frozenset(
+    {"approve", "sign_off", "signoff", "release", "send", "post", "export", "transmit", "decide"}
+    | {"publish", "adopt", "resolve", "accept", "reject"}
+)
+
+
+def _holds_never_verb(text: str) -> bool:
+    words = re.split(r"[._]", text)
+    pairs = {f"{a}_{b}" for a, b in pairwise(words)}
+    return bool((set(words) | pairs) & _NEVER_TOOL_WORDS)
+
+
+def _check_never_tool(src: SourceFile) -> Iterator[Finding]:
+    """AC-R1 (INV-1): a tool whose name or action holds a final verb can only be
+    `approved_write`. Reads `@agent_tool(...)` and `AgentTool(...)` with constant arguments."""
+    for call in ast.walk(src.tree):
+        if not (
+            isinstance(call, ast.Call) and _terminal_name(call.func) in {"agent_tool", "AgentTool"}
+        ):
+            continue
+        values = {
+            k.arg: k.value.value
+            for k in call.keywords
+            if k.arg in {"name", "kind", "action"}
+            and isinstance(k.value, ast.Constant)
+            and isinstance(k.value.value, str)
+        }
+        if values.get("kind") == "approved_write":
+            continue
+        for key in ("name", "action"):
+            if _holds_never_verb(values.get(key, "")):
+                yield Finding(
+                    call.lineno, f"tool {key} {values[key]!r} is a final verb: approved_write only"
+                )
+
+
 def _check_client_decision(src: SourceFile) -> Iterator[Finding]:
     """R-02 AC-5: only `portal/approvals.py` and a provider's own record-mode service
     (`client_decisions.py`) may call a C18 provider's `decide()`, so no other path decides for a
@@ -3016,6 +3053,14 @@ RULES: list[Rule | TreeRule] = [
         adr="ADR-005, ADR-025",
         check=_check_human_decision,
         include=("src/abacus/modules/*",),
+    ),
+    Rule(
+        id="TOOL-001",
+        description="A tool holding a final verb can only be approved_write",
+        adr="ADR-005, ADR-233",
+        check=_check_never_tool,
+        include=("src/abacus/modules/*",),
+        exclude=("src/abacus/modules/agents/tools/registry.py",),
     ),
     Rule(
         id="CLIENT-DECISION-001",
