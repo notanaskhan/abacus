@@ -52,6 +52,8 @@ EVENTS: Final = {
     "archive_addition.decided",
     # I-01-T23: envelopes to send or countersign, a notice response to send.
     "envelope.drafted",
+    "tax_return.approved",  # I-01-T23 (S29 leftovers): a return waiting for its engine export
+    "engine_sync.exported",
     "envelope.send_approved",
     "envelope.signer_signed",
     "envelope.completed",

@@ -94,6 +94,9 @@ def band_of(kind: str) -> str:
 C13_EVENTS: Final = frozenset(
     {
         # I-01-T23: envelopes to send or countersign (signatures), a notice response to send.
+        # I-01-T23 (S29 leftovers): a return's final approval and its engine export (tax).
+        "tax_return.approved",
+        "engine_sync.exported",
         "envelope.drafted",
         "envelope.send_approved",
         "envelope.signer_signed",

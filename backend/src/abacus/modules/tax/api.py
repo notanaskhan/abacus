@@ -237,3 +237,8 @@ from abacus.modules.tax import (  # noqa: E402
 from abacus.modules.tax import (  # noqa: E402
     extensions as _extensions_codes,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- imported to register and catalogue it
 )
+
+# I-01-T23 (S29 leftovers, DEC-2609): a return at final approval waiting for its engine export.
+from abacus.modules.tax.gate_sources import register_tax_gates  # noqa: E402
+
+register_tax_gates()
