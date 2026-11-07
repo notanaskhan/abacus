@@ -52,6 +52,7 @@ from abacus.modules.notices.compute import bracket, underreporter
 from abacus.modules.notices.events import NoticeAnalysisRequested
 from abacus.modules.notices.service import (
     Notice,
+    move,
     notice,
     notice_document_versions,
     notice_for_run,
@@ -529,6 +530,9 @@ async def start(ctx: AuthContext, notice_id: UUID) -> tuple[int, str, bool]:
             checks={"initiator": str(ctx.user_id)},
             with_rows=False,
         )
+        # S28 partials (TASK-3396): a person's Run is what makes a classified notice Analyzing.
+        if found.status == "classified":
+            await move(tx, found, "analyzing", actor_kind="human", actor_user_id=ctx.user_id)
         tx.record(
             "notice.analysis_started",
             target=Target("notice", found.id),

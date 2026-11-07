@@ -40,11 +40,15 @@ from abacus.modules.notices.events import (
     NoticeResponseSent,
 )
 from abacus.modules.notices.response import (
+    PARTNER_LEVEL,
+    approve_when_signed,
     clause_states_for,
     letter_values,
+    partner_approved,
     response,
     signoff_ready,
 )
+from abacus.modules.notices.response import TARGET as RESPONSE_TARGET
 from abacus.modules.notices.response_workflow import NoticeResponseWorkflow
 from abacus.modules.notices.response_workflow_types import (
     AlertInput,
@@ -330,7 +334,11 @@ async def _written_blocks(ctx: AuthContext, work_item_id: UUID) -> tuple[c11.Sec
 async def send_for_signature(ctx: AuthContext, work_item_id: UUID) -> UUID:
     """The partner's sign-off holds; the letter is rendered once; a C7 draft for SIG-02 d."""
     found = await notice(ctx, work_item_id)
-    if not await signoff_ready(ctx.tenant, work_item_id):
+    # S28 partials (TASK-3396): the partner's sign-off must exist, not only be allowed; before,
+    # a response nobody signed could go out for signature.
+    if not await signoff_ready(ctx.tenant, work_item_id) or not await partner_approved(
+        ctx.tenant, work_item_id
+    ):
         raise NotReady(facts={"blocking": "signoff"})
     row = await _response_row(ctx.tenant, work_item_id)
     if row["generated_document_id"] is None:
@@ -448,9 +456,12 @@ async def on_envelope_completed(event: OutboxEvent) -> None:
             (
                 await session.execute(
                     text(
-                        "SELECT id, engagement_id, work_item_id, payment, enclosures "
-                        "FROM notice_responses "
-                        "WHERE envelope_id = :e"
+                        # S28 partials (TASK-3396): the engagement is the notice's; the response
+                        # has no such column, so this read failed on every completed envelope.
+                        "SELECT r.id, n.engagement_id, r.work_item_id, r.payment, r.enclosures "
+                        "FROM notice_responses r "
+                        "JOIN notices n ON n.work_item_id = r.work_item_id "
+                        "WHERE r.envelope_id = :e"
                     ),
                     {"e": envelope_id},
                 )
@@ -500,8 +511,10 @@ async def on_review_decision(event: OutboxEvent) -> None:
             (
                 await session.execute(
                     text(
-                        "SELECT id, engagement_id, work_item_id, payment, enclosures, envelope_id "
-                        "FROM notice_responses WHERE payment ->> :key = ANY(:ids)"
+                        "SELECT r.id, n.engagement_id, r.work_item_id, r.payment, r.enclosures, "
+                        "r.envelope_id FROM notice_responses r "
+                        "JOIN notices n ON n.work_item_id = r.work_item_id "
+                        "WHERE r.payment ->> :key = ANY(:ids)"
                     ),
                     {"key": CONFIRMATION_ITEM, "ids": list(status)},
                 )
@@ -537,7 +550,17 @@ async def on_review_decision(event: OutboxEvent) -> None:
             )
 
 
+async def on_sign_off_recorded(event: OutboxEvent) -> None:
+    """The partner signed a notice response: its drafted notice moves to Approved."""
+    p = event.payload
+    if p.get("target_type") != RESPONSE_TARGET or p.get("level") != PARTNER_LEVEL:
+        return
+    tenant = TenantContext(event.tenant_id, "system", "notices:approved")
+    await approve_when_signed(tenant, UUID(str(p["target_id"])))
+
+
 SUBSCRIPTIONS: Final = {
+    "sign_off.recorded": on_sign_off_recorded,
     "envelope.completed": on_envelope_completed,
     "review_decision.recorded": on_review_decision,
     NoticeCreated.event_type: on_notice_created,

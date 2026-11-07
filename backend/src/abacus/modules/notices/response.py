@@ -39,10 +39,10 @@ from abacus.modules.methodology.api import (
     report_template_version,
     report_templates_in_firm,
 )
-from abacus.modules.notices.service import Notice, notice
+from abacus.modules.notices.service import Notice, move, notice, notice_for_run
 from abacus.modules.organisations.api import entity_display_name
 from abacus.modules.reporting.api import template_blocks
-from abacus.modules.review.api import Reviewable, ReviewableFacts
+from abacus.modules.review.api import Reviewable, ReviewableFacts, sign_off_states
 
 JsonRow = dict[str, Any]  # Any: JSON columns as stored
 
@@ -279,6 +279,12 @@ async def draft(ctx: AuthContext, notice_id: UUID) -> Response:
             )
         ).scalar_one()
         await _insert_version(tx, ctx, UUID(str(response_id)), blocks, None)
+        # S28 partials (TASK-3396): drafting is what makes the notice "Response drafted"; nothing
+        # moved it before, so outside the seed no notice could reach Approved or be sent.
+        if found.status in _DRAFTABLE:
+            await move(
+                tx, found, "response_drafted", actor_kind="human", actor_user_id=ctx.user_id
+            )
         tx.record(
             "notice_response.drafted",
             target=Target("notice", found.id),
@@ -376,6 +382,7 @@ async def edit(
             await _insert_version(
                 tx, ctx, current.id, merged, "\n".join(b.text for b in current.blocks)
             )
+            await _unapprove(tx, ctx, notice_id)
         sets = {k: v for k, v in settings.items() if v is not None and k in _SETTABLE}
         if sets:
             # One fixed statement, bound parameters (SQL-001); an absent setting keeps its value.
@@ -420,6 +427,7 @@ async def regenerate(ctx: AuthContext, notice_id: UUID, if_match: int) -> Respon
         await _insert_version(
             tx, ctx, current.id, merged, "\n".join(b.text for b in current.blocks)
         )
+        await _unapprove(tx, ctx, notice_id)
         if (await notice(ctx, notice_id)).position is not None:
             await tx.session.execute(
                 text("UPDATE notice_responses SET position_source = 'decided' WHERE id = :r"),
@@ -534,6 +542,58 @@ async def signoff_ready(tenant: TenantContext, work_item_id: UUID) -> bool:
         return False
     found = await facts(tenant, row["response_id"])
     return found is not None and found.blocked_code is None
+
+
+_DRAFTABLE: Final = frozenset({"classified", "analyzing"})
+PARTNER_LEVEL: Final = 4  # the ladder's Approved: the partner's sign-off (L4)
+
+
+async def _unapprove(tx: UnitOfWork, ctx: AuthContext, notice_id: UUID) -> None:
+    """A new version leaves the partner's sign-off stale: an Approved notice is drafted again."""
+    found = await notice(ctx, notice_id)
+    if found.status == "approved":
+        await move(tx, found, "response_drafted", actor_kind="human", actor_user_id=ctx.user_id)
+
+
+async def partner_approved(tenant: TenantContext, work_item_id: UUID) -> bool:
+    """The partner signed the response's current version (L4, not stale)."""
+    row = await _gate_row(tenant, work_item_id)
+    if row is None or row["response_id"] is None:
+        return False
+    found = await facts(tenant, row["response_id"])
+    if found is None:
+        return False
+    states = await sign_off_states(
+        tenant, TARGET, [found.target_id], {found.target_id: found.content_hash}
+    )
+    return any(
+        s.level == PARTNER_LEVEL and s.signed_by is not None and not s.stale
+        for s in states[found.target_id]
+    )
+
+
+async def approve_when_signed(tenant: TenantContext, response_id: UUID) -> None:
+    """After a partner's sign-off on the response: a drafted notice moves to Approved, once."""
+    async with tenant_session(tenant) as session:
+        work_item_id = (
+            await session.execute(
+                text("SELECT work_item_id FROM notice_responses WHERE id = :r"), {"r": response_id}
+            )
+        ).scalar_one_or_none()
+    if work_item_id is None:
+        return
+    found = await notice_for_run(tenant, work_item_id)
+    if found is None or found.status != "response_drafted":
+        return
+    if not await partner_approved(tenant, work_item_id):
+        return
+    async with uow(tenant) as tx:
+        await move(tx, found, "approved", actor_kind="system", actor_user_id=None)
+        tx.record(
+            "notice.approved",
+            target=Target("notice", found.id),
+            after=Ref(response=response_id),
+        )
 
 
 async def send_ready(tenant: TenantContext, work_item_id: UUID) -> bool:
