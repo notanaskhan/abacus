@@ -7,7 +7,7 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/NOT-02 Notice workspace - CP2000 - TY2024 - Marcus and Dana Whitley/` |
 | Epic and tasks | N-04 · stubs T02 · screen T14 · analysis T11 · agent T19 · live swap T22 (e, f) · E2E T26 |
-| Manifest status | planned until N-04-T14 |
+| Manifest status | live (N-04-T22); contract final at N-04-T27 (2026-11-07): changes go through a new contract version |
 
 ## States
 | Artboard | Viewer (persona) | Clock | Snapshot | Data condition that produces it | Status |

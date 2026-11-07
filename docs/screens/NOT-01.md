@@ -7,7 +7,7 @@
 | Surface | firm (never a client surface, INV-4) |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/NOT-01 Notices index - intake sheet/` (README.md, spec.md; no revision.md) |
 | Epic and tasks | N-04 · stubs T02 (`docs/contracts/notices.md`) · a, e, f, g T05 · b, c, d intake sheet T09 · core T06 · intake T07 · live swap T22 · E2E and parity T26 |
-| Manifest status | planned until N-04-T05 (fixture) |
+| Manifest status | live (N-04-T22); contract final at N-04-T27 (2026-11-07): changes go through a new contract version |
 
 ## States
 | Artboard | Viewer (persona) | Clock | Snapshot | Data condition that produces it | Status |

@@ -86,6 +86,7 @@ done when its evidence is in the R4 dossier, not when it is believed done.
 | R4-11 | The window notice (partner section, below) sent to every live firm's champion and admin, and acknowledged | AY | acknowledgement dates (vault) | R4 |
 | R4-12 | Support desk ready: office-hours calendar for the window, deadline-week extended hours, the shared-inbox labels and first-response targets confirmed against the founding-partner agreement | AY | the calendar; `docs/ops/pilot/README.md` check rows | R4 − 7 days |
 | R4-13 | The deadline-week plan: each deadline week's watch rows assigned (Q-04-T071, T078, T085 for 2027), non-urgent work moved out of those weeks (RK-51) | N, AY | the sprint plan rows | R4 |
+| R4-15 | Notices (N-04-T27): RB-61 rehearsed on staging this quarter; each live firm's open notices onboarded (count and date in the dossier); `notices.responder` stage per firm read and none above `shadow` without N-04's live rule; the `notices_desk` load profile run with the December peak test | N, AY | RB-61's rehearsal log row; the dossier rows; the load-test result file | R4 − 7 days |
 | R4-14 | Both founders sign the R4 dossier for each live firm | N, AY | the dossier's Sign-off table | R4 |
 
 A step that cannot be green by the R4 date is not waived: its feature goes dark for the window

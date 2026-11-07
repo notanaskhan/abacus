@@ -7,7 +7,7 @@
 | Surface | firm |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/NOT-03 Response letter editor and approval - CP2000 - TY2024 - Whitley/` |
 | Epic and tasks | N-04 · stubs T02 · screen T20 · response T12, T16 · C7 additive T08 · E2E T26 |
-| Manifest status | planned until N-04-T20 |
+| Manifest status | live (N-04-T22); contract final at N-04-T27 (2026-11-07): changes go through a new contract version |
 
 ## States
 | Artboard | Viewer (persona) | Clock | Snapshot | Data condition that produces it | Status |
