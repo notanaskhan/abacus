@@ -22,6 +22,9 @@ const RiskRegister = lazyScreen(
 );
 const Narrative = lazyScreen(async () => (await import("../../screens/AUD-05")).NarrativePage);
 const Program = lazyScreen(async () => (await import("../../screens/AUD-04")).ProgramPage);
+const EqrWorkspace = lazyScreen(
+  async () => (await import("../../screens/AUD-18")).EqrWorkspacePage,
+);
 const Evaluation = lazyScreen(
   async () => (await import("../../screens/evaluation")).EvaluationPage,
 );
@@ -222,6 +225,24 @@ function evaluationRoute(tab: EvaluationTab) {
   });
 }
 
+// A-07-T17: AUD-18 `/audits/$auditId/eqr`, the EQR's own workspace.
+export const eqrRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/audits/$auditId/eqr",
+  component: function EqrPage(): JSX.Element {
+    const auditId = useParam("auditId");
+    const navigate = useNavigate();
+    return gated(
+      <EqrWorkspace
+        auditId={auditId}
+        onBack={() => {
+          void navigate({ to: "/audits/$auditId", params: { auditId } });
+        }}
+      />,
+    );
+  },
+});
+
 // A-04-T20: AUD-08 `/audits/$auditId/risks?filter=unaddressed`, its drawer `?ov=risk:<code>`.
 export const risksRoute = createRoute({
   getParentRoute: () => appRoute,
@@ -401,6 +422,7 @@ export const reviewNotesRoute = evaluationRoute("review-notes");
 export const fsDisclosureRoute = evaluationRoute("fs-disclosure");
 
 export const auditRoutes = [
+  eqrRoute,
   auditsRoute,
   auditRoute,
   sourceDocumentsRoute,

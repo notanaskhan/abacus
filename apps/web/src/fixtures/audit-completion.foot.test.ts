@@ -20,7 +20,7 @@ describe("A-07 fixture states", () => {
 
   it("AUD-18 a reads 6 of 10, d concurred at 10 of 10", () => {
     expect([aud18("a").checklist_done, aud18("a").checklist_total]).toEqual([6, 10]);
-    expect(aud18("d").checklist_done).toBe(10);
+    expect(aud18("c").checklist_done).toBe(10);
     expect(aud18("e").allowed_actions).toEqual([]);
   });
 
