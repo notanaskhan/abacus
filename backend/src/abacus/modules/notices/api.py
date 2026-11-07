@@ -89,7 +89,10 @@ from abacus.modules.notices.analysis_workflow_types import (  # noqa: E402
 from abacus.modules.notices.intake_activities import (  # noqa: E402
     ACTIVITIES as _INTAKE_ACTIVITIES,
 )
-from abacus.modules.notices.intake_workflow import NoticeIntakeWorkflow  # noqa: E402
+from abacus.modules.notices.intake_workflow import (  # noqa: E402
+    NoticeIntakeRereadWorkflow,
+    NoticeIntakeWorkflow,
+)
 from abacus.modules.notices.intake_workflow_types import (  # noqa: E402
     IntakeReadStep as IntakeReadStep,
 )
@@ -106,6 +109,7 @@ SUBSCRIPTIONS = {
 WORKFLOWS: dict[type, str] = {
     NoticeResponseWorkflow: "time_sensitive",
     NoticeIntakeWorkflow: "interactive",
+    NoticeIntakeRereadWorkflow: "interactive",
     NoticeAnalysisWorkflow: "background",
 }
 

@@ -7,6 +7,9 @@ client and the return, looks up the authorization, detects duplicates and marks 
 or manual entry when no form map covered the file. Started through `kernel.dispatch` from the
 outbox, so Temporal being down delays the read and never fails the person's upload; a change lands
 behind `workflow.patched(...)`.
+
+`NoticeIntakeRereadWorkflow` (N-04-T19; DEC-2387): one activity, the responder's second try once a
+person has named the taxpayer and the year of a notice no form map read.
 """
 
 from __future__ import annotations
@@ -59,6 +62,19 @@ class NoticeIntakeWorkflow:
         return await workflow.execute_activity(
             activity,
             step,
+            result_type=str,
+            start_to_close_timeout=_ACTIVITY_TIMEOUT,
+            retry_policy=_RETRY,
+        )
+
+
+@workflow.defn(name="notice_intake_reread")
+class NoticeIntakeRereadWorkflow:
+    @workflow.run
+    async def run(self, given: NoticeIntakeInput) -> str:
+        return await workflow.execute_activity(
+            "notice_intake.reread",
+            IntakeReadStep(given.tenant_id, given.intake_id),
             result_type=str,
             start_to_close_timeout=_ACTIVITY_TIMEOUT,
             retry_policy=_RETRY,

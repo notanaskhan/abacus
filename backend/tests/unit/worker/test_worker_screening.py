@@ -92,6 +92,7 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "inbox_file.added",  # SPEC-027 (TASK-050): the engagement agent
         "filing.acknowledged",  # T-03-T07: estimates and the extension answer the ack
         "notice_intake.started",  # N-04-T07 (DEC-2326)
+        "notice_intake.taxpayer_named",  # N-04-T19 (DEC-2387)
         "notice_analysis.requested",  # N-04-T11 (DEC-2359)
         "section_draft.finished",  # A-04-T29 (DEC-2327)
         "ocr_run.refused",  # P-11: a refused OCR run
