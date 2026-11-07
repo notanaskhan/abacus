@@ -256,7 +256,7 @@ class ChecklistOptionOut(BaseModel):
 
 
 class ChecklistPickIn(BaseModel):
-    model_config = _frozen()
+    model_config = _strict()
 
     template_version_id: Annotated[UUID, Internal]
 
