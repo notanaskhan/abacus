@@ -377,4 +377,33 @@ test.describe("J03 planning (A-04-T34)", () => {
       await journey.as("hannah-leclerc", "/audits", { clock: DEMO_INSTANT });
     },
   );
+
+  test("j03 7, 7b, 12, 13: the plan's TB, profile, testing and contributions", async ({
+    journey,
+  }) => {
+    await journey.as("marcus-delaney", "/audits/_auditId_?screen=EBP-06&st=a&section=ebp_06", {
+      clock: DEMO_INSTANT,
+    });
+    await journey.step("J03 step 7: EBP-06 agrees the trust report", async (page) => {
+      await expect(page.locator("[data-screen='EBP-06']").first()).toBeVisible();
+    });
+    await journey.as("marcus-delaney", "/audits/_auditId_?screen=EBP-01&st=a&section=ebp_01", {
+      clock: DEMO_INSTANT,
+    });
+    await journey.step("J03 step 7b: the plan profile", async (page) => {
+      await expect(page.locator("[data-screen='EBP-01']").first()).toBeVisible();
+    });
+    await journey.as("marcus-delaney", "/audits/_auditId_?screen=EBP-03&st=a&section=ebp_03", {
+      clock: DEMO_INSTANT,
+    });
+    await journey.step("J03 step 12: eligibility testing", async (page) => {
+      await expect(page.locator("[data-screen='EBP-03']").first()).toBeVisible();
+    });
+    await journey.as("marcus-delaney", "/audits/_auditId_?screen=EBP-04&st=a&section=ebp_04", {
+      clock: DEMO_INSTANT,
+    });
+    await journey.step("J03 step 13: contributions and remittance", async (page) => {
+      await expect(page.locator("[data-screen='EBP-04']").first()).toBeVisible();
+    });
+  });
 });
