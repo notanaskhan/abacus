@@ -606,6 +606,7 @@ async def workpaper_facts(tenant: TenantContext, workpaper_id: UUID) -> Reviewab
         ),
         blocked_code=None if blocked is None else blocked[0],
         blocked_count=0 if blocked is None else blocked[1],
+        requirement_key=f"workpaper:{paper.kind}" if paper.kind else None,
     )
 
 

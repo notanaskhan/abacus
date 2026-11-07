@@ -948,6 +948,33 @@ async def current_version_of_kind(
     return None
 
 
+_LEVEL: Final = {"L1": 1, "L2": 2, "L3": 3, "L4": 4, "L5": 5}
+
+
+async def assigned_review_levels(tenant_id: UUID, key: str, as_of: date) -> tuple[int, ...] | None:
+    """S28 (TASK-3399, DEC-2398): the levels the firm's `review_levels` standard in effect on
+    `as_of` assigns to a requirement key, else None (the owner's own default stands). The first
+    standard by key that names the key wins, as `current_version_of_kind` reads one."""
+    tenant = TenantContext(tenant_id, "system", "standards:assigned_review_levels")
+    async with tenant_session(tenant) as session:
+        parents = (
+            await session.execute(
+                select(_FIRM.parent)
+                .where(_FIRM.parent.kind == "review_levels")
+                .order_by(_FIRM.parent.key)
+            )
+        ).scalars()
+        for parent in parents:
+            found = in_effect(await _versions(session, _FIRM, parent.id), as_of)
+            if found is None:
+                continue
+            for entry in cast("list[dict[str, object]]", found.payload.get("assignments") or []):
+                if entry.get("key") == key:
+                    levels = cast("list[str]", entry.get("required_levels") or [])
+                    return tuple(sorted(_LEVEL[x] for x in levels if x in _LEVEL))
+    return None
+
+
 # --- KNW-01 and C15 registrations ----------------------------------------------------------------
 
 

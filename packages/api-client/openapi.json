@@ -56412,6 +56412,41 @@
         "title": "LetterheadOut",
         "type": "object"
       },
+      "LevelAssignment": {
+        "additionalProperties": false,
+        "description": "S28 (TASK-3399, DEC-2398): the levels one kind of reviewable needs, by its requirement key\n(`trial_balance`, `workpaper:ebp_contributions`, `materiality`). AUD-17's matrix, the G5 gate\nand the sign-off rules read them through `review.reviewable_facts`.",
+        "properties": {
+          "key": {
+            "cls": "internal",
+            "pattern": "^[a-z][a-z0-9_]{0,39}(:[a-z][a-z0-9_]{0,39})?$",
+            "title": "Key",
+            "type": "string"
+          },
+          "required_levels": {
+            "cls": "internal",
+            "items": {
+              "enum": [
+                "L1",
+                "L2",
+                "L3",
+                "L4",
+                "L5"
+              ],
+              "type": "string"
+            },
+            "maxItems": 5,
+            "minItems": 1,
+            "title": "Required Levels",
+            "type": "array"
+          }
+        },
+        "required": [
+          "key",
+          "required_levels"
+        ],
+        "title": "LevelAssignment",
+        "type": "object"
+      },
       "LineBody": {
         "additionalProperties": false,
         "properties": {
@@ -81814,6 +81849,16 @@
       "ReviewLevelsPayload": {
         "additionalProperties": false,
         "properties": {
+          "assignments": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/LevelAssignment"
+            },
+            "maxItems": 200,
+            "title": "Assignments",
+            "type": "array"
+          },
           "kind": {
             "cls": "internal",
             "const": "review_levels",
