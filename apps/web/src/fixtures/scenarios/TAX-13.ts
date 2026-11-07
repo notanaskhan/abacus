@@ -96,6 +96,12 @@ function season(state: string, persona: string, clock: string, reviewer: boolean
 const APR_10 = "2026-04-10T09:20:00-05:00";
 export const tax13SheetOverlay = `extend:${TAX13_SHEET_IDS.join(",")}`;
 
+/** T-03-T17: d opens with the sheet up on Feld, Shah and Varga. */
+export const TAX13_OPENS: Readonly<Record<string, string>> = {
+  d: `?ov=${tax13SheetOverlay}`,
+  "not-allowed": `?ov=${tax13SheetOverlay}`,
+};
+
 export const scenarios = defineScenarios({
   a: frame("a"),
   b: frame("b"),
