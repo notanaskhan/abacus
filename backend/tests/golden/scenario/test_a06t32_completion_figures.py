@@ -108,7 +108,7 @@ def test_the_tie_out_parts_add_up() -> None:
 
 @pytest.mark.xfail(
     strict=True,
-    reason="DEC-2391: the design's 26-row sign-off matrix isn't seeded; the seed signs 12 cells",
+    reason="TASK-6006, DEC-2391: the design's 26-row sign-off matrix isn't seeded",
 )
 def test_ac_the_sign_off_matrix_is_26() -> None:
     book = BOOK["matrix"]

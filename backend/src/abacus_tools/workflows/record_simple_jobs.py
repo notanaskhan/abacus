@@ -24,11 +24,15 @@ from temporalio.exceptions import ApplicationError
 from temporalio.worker import Worker
 
 from abacus.kernel.temporal import payload_codec
-from abacus.modules.agents.knowledge_workflow import KnowledgeEmbeddingWorkflow
-from abacus.modules.agents.workflow_types import BatchOutcome, FailKnowledgeInput, KnowledgeInput
+from abacus.modules.agents.api import (
+    BatchOutcome,
+    FailKnowledgeInput,
+    KnowledgeEmbeddingWorkflow,
+    KnowledgeInput,
+)
 from abacus.modules.notices.api import NoticeAnalysisInput, NoticeAnalysisWorkflow
 from abacus.modules.platform.api import FanOutInput, ReferenceSetFanOutWorkflow
-from abacus.modules.tax.schedule_workflows import TaxCalendarSweepWorkflow
+from abacus.modules.tax.api import TaxCalendarSweepWorkflow
 from abacus_tools.stack import Stack, connect, run_with_stack
 from abacus_tools.workflows.histories import decoded_and_scrubbed
 from abacus_tools.workflows.record_retrieval import refuse_overwrite

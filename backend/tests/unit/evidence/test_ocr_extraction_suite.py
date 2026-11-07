@@ -134,3 +134,33 @@ def test_the_suite_meets_its_threshold(threshold: dict[str, Any]) -> None:  # An
 
 def test_a_changed_golden_fails_the_exact_match() -> None:
     assert _fields("santos_cp14")["notice.amount_due"].value_text != "1982.41"
+
+
+# --- S29 leftovers (TASK-6012): the runner the nightly real-Textract job uses ------------------
+
+
+async def test_the_runner_scores_the_fake_run_as_this_suite_does() -> None:
+    from abacus.kernel.ocr import FakeOcr
+    from abacus_tools.evals import ocr_extraction
+    from abacus_tools.synthetic.scanned_corpus import recordings
+
+    layers = await ocr_extraction.read_layers(FakeOcr(recordings(generate())))
+    assert ocr_extraction.metrics(layers) == _metrics()
+    assert ocr_extraction.verdict(_metrics(), SUITE["thresholds"]).passed
+
+
+def test_a_report_only_run_exits_0_and_a_blocking_one_fails(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from abacus_tools.evals import ocr_extraction
+
+    low = {**_metrics(), "tin_region_recall": 0.0}
+
+    async def scored(_provider: str) -> dict[str, float]:
+        return low
+
+    monkeypatch.setattr(ocr_extraction, "_run", scored)
+    assert ocr_extraction.main(["--provider", "fake"]) == 0
+    assert ocr_extraction.main(["--provider", "fake", "--blocking"]) == 1
+    report = json.loads(capsys.readouterr().out.split("\n}\n")[-2] + "\n}")
+    assert report["failed_thresholds"] == ["tin_region_recall"] and report["blocking"] is True

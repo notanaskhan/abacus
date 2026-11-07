@@ -463,6 +463,9 @@ __all__ = [
     "ClientApprovalState",
     "ClientDecision",
     "ClientDecisionContext",
+    "ClientImportEraseWorkflow",
+    "ClientImportInput",
+    "ClientImportWorkflow",
     "DeciderRule",
     "DeclineReason",
     "Designation",
@@ -621,3 +624,14 @@ __all__ = [
     "work_item_offices",
     "work_item_provider",
 ]
+
+# S29 leftovers (TASK-6012): what the replay recorders and the OCR suite runner read (BOUND-001).
+from abacus.modules.engagements.workflows import (  # noqa: E402
+    ClientImportEraseWorkflow as ClientImportEraseWorkflow,
+)
+from abacus.modules.engagements.workflows import (  # noqa: E402
+    ClientImportInput as ClientImportInput,
+)
+from abacus.modules.engagements.workflows import (  # noqa: E402
+    ClientImportWorkflow as ClientImportWorkflow,
+)
