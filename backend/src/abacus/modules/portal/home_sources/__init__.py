@@ -19,6 +19,7 @@ from abacus.modules.portal.codes import (
     EarlierKind,
     Facts,
     NoteCode,
+    NoticeCode,
     PillCode,
     PillVariant,
     PortalScreen,
@@ -108,6 +109,15 @@ class Earlier:
     target: Target | None = None
 
 
+@dataclass(frozen=True)
+class NoticeInfo:
+    """N-04-T22: POR-02's info row: an id, a client code and a subject, never a figure."""
+
+    notice_id: UUID
+    code: NoticeCode
+    subject: str
+
+
 @dataclass
 class HomePart:
     todos: list[Todo] = field(default_factory=list[Todo])
@@ -115,6 +125,7 @@ class HomePart:
     binders: list[Binder] = field(default_factory=list[Binder])
     team: list[HomeTeamMember] = field(default_factory=list[HomeTeamMember])
     earlier: list[Earlier] = field(default_factory=list[Earlier])
+    notices: list[NoticeInfo] = field(default_factory=list[NoticeInfo])
 
 
 HomeSource = Callable[[AuthContext, HomeScope], Awaitable[HomePart]]

@@ -35,6 +35,9 @@ export const COPY = {
     band: "Open notices",
     count: (n: number): string => (n === 1 ? "1 open notice" : `${String(n)} open notices`),
     tip: "Opens NOT-02 · Notice workspace",
+    row: (code: string, year: number | null | undefined): string =>
+      year == null ? code : `${code} · TY${String(year)}`,
+    respondBy: (on: string): string => `Respond by ${on}`,
   },
   identity: {
     band: "Identity",

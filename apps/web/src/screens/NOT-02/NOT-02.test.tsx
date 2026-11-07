@@ -130,3 +130,23 @@ describe("NOT-02", () => {
     );
   });
 });
+
+describe("N-04-T22: NOT-02 e and f", () => {
+  it("e: Collins reads Disagree with the zero-gain reason, Awaiting IRS", async () => {
+    show("e");
+    const why = await drawn("[data-not02='why']");
+    expect(why.textContent).toContain("13,200.00");
+    expect(why.textContent).toContain("so the gain is zero");
+    expect(document.querySelector("[data-not02='subbar']")?.textContent).toContain("Awaiting IRS");
+    expect(document.querySelector("[data-not02='proposed']")?.textContent).toContain("Disagree");
+  });
+
+  it("f: Santos reads None on file with Form 2848 to send", async () => {
+    show("f");
+    const card = await drawn("[data-not02='authorization']");
+    expect(card.textContent).toContain("None on file");
+    expect(card.querySelector("[data-not02='authorization-banner']")?.textContent).toBe(
+      "Form 2848 to send",
+    );
+  });
+});

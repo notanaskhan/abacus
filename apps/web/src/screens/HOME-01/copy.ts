@@ -3,6 +3,7 @@
 // are marked "undesigned" (I-01 §5.5).
 
 export const COPY = {
+  openNotice: "Open notice →",
   greeting: {
     morning: (name: string) => `Good morning, ${name}`,
     afternoon: (name: string) => `Good afternoon, ${name}`,
