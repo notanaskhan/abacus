@@ -9,6 +9,9 @@ from abacus.kernel import _flags
 from abacus.modules.notices import (
     api as _notices,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers
 )
+from abacus.modules.review import (
+    api as _review,  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers the firm gates
+)
 from abacus.modules.review.gates import (
     _SOURCES,  # pyright: ignore[reportPrivateUsage] -- the registry itself
 )
@@ -29,6 +32,8 @@ def test_the_gates_landing_s13_to_s29_have_words() -> None:
         "envelope_countersign",
         "notice_response_send",
         "tax_return_export",
+        "methodology_version_approval",  # I-01-T23 (DEC-2613): the firm-level gates
+        "wall_approval",
     ):
         assert name in _SOURCES
         assert name in words

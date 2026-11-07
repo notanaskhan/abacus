@@ -174,7 +174,7 @@ flowchart BT
   engagements --> organisations & methodology
   requests --> engagements
   evidence --> requests & ledger
-  review --> engagements
+  review --> engagements & methodology
   collaboration --> engagements
   signatures --> evidence & organisations
   sampling --> evidence & ledger

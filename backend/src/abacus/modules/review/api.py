@@ -55,6 +55,7 @@ from abacus.modules.review.field_values import (
     record_value,
     typed_value,
 )
+from abacus.modules.review.firm_gates import register_firm_gates
 from abacus.modules.review.gates import (
     C13_EVENTS,
     GateSource,
@@ -169,6 +170,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 # SPEC-313 (TASK-331): G5, review complete, is the review module's.
 register_gate_provider("G5", review_gate)
 register_engagement_gates()  # P-07-T47 (C13): acceptance, independence and EQR gates
+register_firm_gates()  # I-01-T23 (C13, DEC-2613): methodology version and wall approvals
 register_card_reassign()  # I-01-T07: a decision card awaiting its role moves to another holder
 register_engagement_owners(AUDIT_KINDS, audit_owners)  # ED-112: `sign_off.went_stale`
 # P-04-T26 (C16): what a card, note or sign-off says now, for the drawer's facts and Approvals.

@@ -1615,7 +1615,9 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     # (SPEC-004 Q4, TASK-019); requests never imports evidence. SPEC-029 (TASK-055 D2): upload
     # cross-checks read the year end's trial balance snapshot (ledger imports nothing).
     "evidence": _BASE | {"engagements", "requests", "ledger"},
-    "review": _BASE | {"engagements"},
+    # I-01-T23 (DEC-2613): + methodology, whose versions in Needs review are a firm-level C13
+    # gate registered here (`review/firm_gates.py`); methodology never imports review.
+    "review": _BASE | {"engagements", "methodology"},
     "collaboration": _BASE | {"engagements"},
     # N-02-T38 (DEC-1567): + reporting, whose renderer draws the evidence package's legible page;
     # reporting never imports signatures.

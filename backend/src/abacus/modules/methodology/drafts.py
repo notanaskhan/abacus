@@ -37,6 +37,7 @@ from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
 from abacus.modules.identity.api import AuthContext, Forbidden, Resource, authorise
+from abacus.modules.methodology.events import MethodologyVersionDiscarded
 from abacus.modules.methodology.lifecycle import (
     APPROVE,
     MANAGE,
@@ -409,6 +410,11 @@ async def discard_draft(ctx: AuthContext, version_id: UUID, row_version: int) ->
         )
         await _record(tx, ctx, version_id, "discarded", {"from_status": state.status})
         tx.record("methodology_version.discarded", target=Target(SUBJECT, version_id))
+        if state.status == "needs_review":
+            # I-01-T23 (DEC-2613): the approval gate on HOME-02 closes.
+            tx.emit(
+                MethodologyVersionDiscarded(version_id=version_id, template_id=state.template_id)
+            )
         return await view_in(tx.session, version_id)
 
 

@@ -1020,6 +1020,25 @@ def _not_walled_client(ctx: Actor, client_id: EngagementColumn) -> ColumnElement
     return ~walls.correlate_except(ethical_walls).exists()
 
 
+def firm_role_allows(ctx: Actor, action: str) -> bool:
+    """Whether the person's firm role allows `action` outright, at no engagement (I-01-T23;
+    DEC-2613): who a firm-level gate (a methodology version in Needs review) waits on. The firm
+    role only, never an engagement role or the derived partner cell, and never an agent or the
+    system. The action's conditions (fresh MFA, a reason) stay the decision's: `authorise()`
+    checks them when the person acts. Records the check."""
+    rule = _rule(action)
+    _record(action)
+    if not isinstance(ctx, AuthContext) or ctx.firm_role is None or ctx.is_support:
+        return False
+    return rule.decisions.get(ctx.firm_role) == "allow"
+
+
+def not_walled_client(ctx: Actor, client_id: EngagementColumn) -> ColumnElement[bool]:
+    """Rows whose client the acting person isn't walled off from, for a firm-level row that names
+    a client (I-01-T23: a wall's approval gate). A row with no client passes."""
+    return or_(client_id.is_(None), _not_walled_client(ctx, client_id))
+
+
 def visible_scope(
     ctx: Actor,
     action: str,
