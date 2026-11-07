@@ -46,6 +46,7 @@ from abacus.modules.evidence.api import (
     record_citations,
     version_word_layers,
 )
+from abacus.modules.engagements.api import holders_of
 from abacus.modules.identity.api import Actor, AuthContext, system_context_for_run
 from abacus.modules.notices.compute import bracket, underreporter
 from abacus.modules.notices.events import NoticeAnalysisRequested
@@ -660,6 +661,8 @@ async def request_decision(ctx: AuthContext, notice_id: UUID, note: str | None) 
         kind=POSITION_KIND,
         question_key=f"notice.{found.id.hex}",
         work_item_id=found.id,
+        raised_under="notice.request_decision",  # US-5.1: the preparer asks
+        reserved_user_id=next(iter(await holders_of(ctx.tenant, found.id, "signer")), None),
     )
     if note:
         await add_note(ctx, notice_id, note, card_id)

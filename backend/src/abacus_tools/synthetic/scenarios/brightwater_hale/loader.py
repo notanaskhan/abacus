@@ -5182,6 +5182,14 @@ async def _notice_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) ->
             engagement,
             ctx.user_id,
         )
+        # The client's tax team (N-04 F2): Daniel Reyes signs.
+        await conn.execute(
+            "INSERT INTO engagement_members (tenant_id, engagement_id, user_id, role) "
+            "VALUES ($1, $2, $3, 'engagement_partner') ON CONFLICT DO NOTHING",
+            TENANT,
+            engagement,
+            user_id_of(_SEATS["DR"]),
+        )
     async with uow(TenantContext(TENANT, "human", str(ctx.user_id))) as tx:
         version = await add_version(
             tx,

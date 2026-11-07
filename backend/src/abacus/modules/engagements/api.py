@@ -229,6 +229,7 @@ from abacus.modules.engagements.work_items import (
     WorkItemExists,
     archive_work_item,
     assign_work_item,
+    holders_of,
     assurance_item,
     assurance_item_id,
     client_tax_years,
