@@ -59,6 +59,7 @@ export const COPY = {
   authorization: {
     title: "Authorization",
     none: "None on file",
+    toSend: "Form 2848 to send",
     note: "An 8821 lets us receive the notice, not represent. The taxpayers sign the response.",
     draft2848: "Draft Form 2848…",
   },

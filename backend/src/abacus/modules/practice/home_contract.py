@@ -119,6 +119,8 @@ class DeadlineRowOut(BaseModel):
     filing_label: Annotated[str, classified("confidential")]
     status: Annotated[str, classified("internal")]
     risk: Annotated[DueRisk, classified("internal")]
+    # N-04-T22: which screen the row opens; HOME-01 links a notice to NOT-02.
+    kind: Annotated[str | None, classified("internal")] = None
 
 
 class DeadlinesOut(BaseModel):
@@ -231,6 +233,7 @@ def _deadline(d: DeadlineRow) -> DeadlineRowOut:
         filing_label=d.work.name,
         status=d.work.status,
         risk=d.risk,
+        kind=d.work.kind,
     )
 
 

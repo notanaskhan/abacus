@@ -5,6 +5,8 @@
 //   c            daniel-reyes   9:51 AM              decided: Agree · decided by Daniel Reyes
 //   d            kevin-osei     9:24 AM              1099 corrections lit: two sources "1 / 2"
 //   a2           kevin-osei     9:24 AM              Activity timeline
+//   e            kevin-osei     9:24 AM              Collins CP2000 (N3): Disagree, Awaiting IRS
+//   f            kevin-osei     9:24 AM              Santos CP14 (N5): None on file, Form 2848 to send
 //   off          kevin-osei     9:24 AM              `notices.workspace` off: C-20
 //
 // Dev and test only.
@@ -70,6 +72,8 @@ export const scenarios = defineScenarios({
   c: frame("c", { persona: "daniel-reyes", variant: "c", clock: AT_C }),
   d: frame("d"),
   a2: frame("a2"),
+  e: frame("e", { variant: "e" }),
+  f: frame("f", { variant: "f" }),
   off: frame("off", { on: false }),
 });
 

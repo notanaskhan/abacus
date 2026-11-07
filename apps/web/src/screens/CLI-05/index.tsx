@@ -4,6 +4,7 @@ import type {
   TaxElectionOut,
   TaxProfileIdentityOut,
   TaxProfileOut,
+  OpenNoticeRowOut,
   TranscriptComparisonOut,
   TranscriptOut,
 } from "@abacus/api-client";
@@ -37,6 +38,7 @@ import { type JSX, type ReactNode, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { MaskedTin, useClientRecord } from "../../domain/clients";
+import { hrefOf, to } from "../../routes/to";
 import { COPY } from "./copy";
 
 // CLI-05 · Tax profile, authorizations & consents (T-01-T14, part 1; docs/screens/CLI-05.md):
@@ -269,11 +271,25 @@ function Rail({
       </nav>
       {(profile.open_notices ?? 0) > 0 && (
         <Band title={COPY.notices.band}>
-          <Tooltip content={COPY.notices.tip}>
-            <p className="flex h-[40px] items-center px-[12px] text-dense text-ink-2">
-              {COPY.notices.count(profile.open_notices ?? 0)}
-            </p>
-          </Tooltip>
+          <p className="flex h-[40px] items-center px-[12px] text-dense text-ink-2">
+            {COPY.notices.count(profile.open_notices ?? 0)}
+          </p>
+          {(profile.open_notice_rows ?? []).map((n) => (
+            <Tooltip key={n.notice_id} content={COPY.notices.tip}>
+              <a
+                data-open-notice={n.notice_id}
+                href={hrefOf(to.NOT02({ noticeId: n.notice_id }))}
+                className="flex h-[32px] items-center justify-between px-[12px] text-dense text-ink hover:underline"
+              >
+                {COPY.notices.row(n.notice_code, n.tax_year)}
+                {n.respond_by != null && (
+                  <span className="text-ink-3">
+                    {COPY.notices.respondBy(date(n.respond_by, { now }))}
+                  </span>
+                )}
+              </a>
+            </Tooltip>
+          ))}
         </Band>
       )}
       <Band title={COPY.identity.band}>
@@ -650,11 +666,14 @@ function Comparison({
   t,
   comparison,
   note,
+  notices,
 }: {
   t: TranscriptOut;
   comparison: TranscriptComparisonOut;
   note: AgentNote | undefined;
+  notices: readonly OpenNoticeRowOut[];
 }): JSX.Element {
+  const notice = notices.find((n) => n.tax_year === t.tax_year);
   const T = COPY.transcripts;
   const differing = comparison.lines.filter((l) => l.status !== "agrees");
   const total = comparison.difference_total ?? "0";
@@ -780,11 +799,17 @@ function Comparison({
         </>
       )}
       <div className="flex h-[48px] items-center gap-[8px] border-t-[0.5px] border-hair px-[12px]">
+        {notice !== undefined && (
+          <Tooltip content={T.openNoticeTip}>
+            <a data-open-notice-analysis href={hrefOf(to.NOT02({ noticeId: notice.notice_id }))}>
+              <Button variant="primary" size="sm">
+                {T.openNotice}
+              </Button>
+            </a>
+          </Tooltip>
+        )}
         {PLANNED_VISIBLE && (
           <>
-            <Planned tip={T.openNoticeTip} variant="primary">
-              {T.openNotice}
-            </Planned>
             <Planned tip={T.flagTip}>{T.flag}</Planned>
           </>
         )}
@@ -799,12 +824,14 @@ function Transcripts({
   onSelect,
   comparing,
   note,
+  notices,
 }: {
   rows: readonly TranscriptOut[];
   selected: TranscriptOut | undefined;
   onSelect: (id: string) => void;
   comparing: boolean;
   note: AgentNote | undefined;
+  notices: readonly OpenNoticeRowOut[];
 }): JSX.Element {
   const T = COPY.transcripts;
   const now = useNow();
@@ -883,7 +910,7 @@ function Transcripts({
         </tbody>
       </table>
       {selected !== undefined && comparison.data !== undefined && (
-        <Comparison t={selected} comparison={comparison.data} note={note} />
+        <Comparison t={selected} comparison={comparison.data} note={note} notices={notices} />
       )}
       {selected !== undefined && selected.kind === "wage_income" && selected.result == null && (
         <p className="m-[12px] text-dense text-ink-3">{T.notCompared}</p>
@@ -1052,6 +1079,7 @@ export function CLI05({
               onSelect={setPicked}
               comparing={compare.isPending}
               note={agentNote}
+              notices={profile.data?.open_notice_rows ?? []}
             />
           ) : (
             <Consents profile={data} />
