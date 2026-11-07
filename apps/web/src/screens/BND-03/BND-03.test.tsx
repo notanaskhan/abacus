@@ -92,7 +92,7 @@ describe("BND-03", () => {
     expect(canvas.querySelectorAll("[data-question]").length).toBe(0);
   });
 
-  it("off: questionnaires.editor off draws C-20", async () => {
+  it("off: without the tax_returns entitlement draws C-20", async () => {
     show("off");
     await waitFor(
       () => {

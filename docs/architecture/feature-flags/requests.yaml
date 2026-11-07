@@ -10,11 +10,3 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
-  - name: questionnaires.editor
-    description: 'Organizer editing (T-03): BND-03 a-e, PUT /v1/questionnaires/{id}, template drafts, publish and owners, the client preview and the answer-effects engine. Off: 404 and BND-03 stays read-only. On: 501 until T-03-T05 onward. T-03-T01, DEC-2200.'
-    owner: ayushkbhatia
-    created: 2026-11-03
-    expires: 2027-05-01
-    override: DEC-137
-    kind: boolean
-    default: false

@@ -171,12 +171,9 @@ async def _past_the_gate(*_a: object, **_k: object) -> None:
     raise _PastTheGate
 
 
-@pytest.mark.parametrize(
-    ("module", "flag"),
-    [(editor, "questionnaires.editor"), (schedules, "tax.extensions_estimates")],
-)
-async def test_ac2_the_gate_authorises_then_reads_the_flag_then_lets_the_route_run(
-    monkeypatch: pytest.MonkeyPatch, module: object, flag: str
+@pytest.mark.parametrize("module", [editor, schedules])
+async def test_ac2_the_gate_authorises_then_reads_the_entitlement_then_lets_the_route_run(
+    monkeypatch: pytest.MonkeyPatch, module: object
 ) -> None:
     # T-03-T05 made the editor read live, T-03-T07 the extension read (DEC-2350).
     calls: list[str] = []
@@ -185,16 +182,17 @@ async def test_ac2_the_gate_authorises_then_reads_the_flag_then_lets_the_route_r
     async def authorise(_ctx: AuthContext, action: str, resource: object) -> None:
         calls.append(f"authorise:{action}")
 
-    async def flag_enabled(_tenant: object, f: object) -> bool:
-        calls.append(f"flag:{getattr(f, 'name', f)}")
-        return state["on"]
+    # T-03-T18 (DEC-2605): the `tax_returns` entitlement replaces both retired flags.
+    async def entitlement(_tenant: object, module_name: str) -> object:
+        calls.append(f"entitlement:{module_name}")
+        return object() if state["on"] else None
 
     monkeypatch.setattr(module, "authorise", authorise)
-    monkeypatch.setattr(module, "flag_enabled", flag_enabled)
+    monkeypatch.setattr(module, "entitlement", entitlement)
     route = editor.questionnaire_editor_route if module is editor else schedules.extension_route
     with pytest.raises(NotFound):
         await route(uuid.uuid4(), _ctx())
-    assert calls[1] == f"flag:{flag}"
+    assert calls[1] == "entitlement:tax_returns"
     state["on"] = True
     if module is editor:
         from abacus.modules.requests import questionnaire_editor
@@ -218,15 +216,15 @@ async def test_ac2_flag_likely_alone_is_its_own_action(monkeypatch: pytest.Monke
     async def authorise(_ctx: AuthContext, action: str, resource: object) -> None:
         firm.append(action)
 
-    async def flag_enabled(_tenant: object, f: object) -> bool:
-        return True
+    async def entitled(_tenant: object, _module: str) -> object:
+        return object()
 
     async def patch(_ctx: object, _id: object, *, action: str, **_kw: object) -> None:
         named.append(action)
         raise _PastTheGate
 
     monkeypatch.setattr(schedules, "authorise", authorise)
-    monkeypatch.setattr(schedules, "flag_enabled", flag_enabled)
+    monkeypatch.setattr(schedules, "entitlement", entitled)
     from abacus.modules.tax import extensions
 
     monkeypatch.setattr(extensions, "patch", patch)

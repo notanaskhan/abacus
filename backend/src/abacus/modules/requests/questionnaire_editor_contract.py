@@ -12,8 +12,9 @@ DTO, so no firm-internal field (`internal_helper`, effect rules, tags) can reach
 
 Every route answers, in order: a client principal 404 (the client answers in POR-05 through T-02's
 portal routes); the matrix action at the firm (the service narrows to the binder's engagement or
-the template's owner); 404 with `questionnaires.editor` off. Answers are tax return information
-(`tri`); wording is the firm's (internal).
+the template's owner); 404 without the `tax_returns` entitlement (`questionnaires.editor`
+retired at T-03-T18, DEC-2605). Answers are tax return information (`tri`); wording is the
+firm's (internal).
 """
 
 from __future__ import annotations
@@ -25,10 +26,8 @@ from uuid import UUID
 from fastapi import Depends, Header, Query
 from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
-from abacus.kernel._flags import QUESTIONNAIRES_EDITOR
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound
-from abacus.kernel.flags import flag_enabled
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
@@ -38,6 +37,7 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
 )
+from abacus.modules.platform.api import entitlement
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IfMatch = Annotated[int, Header(alias="If-Match", ge=1)]
@@ -405,8 +405,9 @@ async def _gate(ctx: AuthContext, action: str) -> None:
     if ctx.client:
         raise NotFound("questionnaire")
     await authorise(ctx, action, Resource.firm(ctx.tenant_id))
-    if not await flag_enabled(ctx.tenant, QUESTIONNAIRES_EDITOR):
-        raise NotFound(QUESTIONNAIRES_EDITOR.name)
+    # T-03-T18 (DEC-2605): the `tax_returns` entitlement replaces the retired flag.
+    if await entitlement(ctx.tenant, "tax_returns") is None:
+        raise NotFound("tax_returns")
 
 
 async def _gate_either(ctx: AuthContext, binder_action: str, template_action: str) -> None:
@@ -419,8 +420,9 @@ async def _gate_either(ctx: AuthContext, binder_action: str, template_action: st
         await authorise(ctx, binder_action, Resource.firm(ctx.tenant_id))
     except Forbidden:
         await authorise(ctx, template_action, Resource.firm(ctx.tenant_id))
-    if not await flag_enabled(ctx.tenant, QUESTIONNAIRES_EDITOR):
-        raise NotFound(QUESTIONNAIRES_EDITOR.name)
+    # T-03-T18 (DEC-2605): the `tax_returns` entitlement replaces the retired flag.
+    if await entitlement(ctx.tenant, "tax_returns") is None:
+        raise NotFound("tax_returns")
 
 
 def _template_ref_out(found: object) -> OrganizerTemplateRefOut | None:

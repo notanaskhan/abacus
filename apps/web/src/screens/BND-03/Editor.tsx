@@ -24,7 +24,7 @@ import {
 } from "@abacus/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useMemo, useState } from "react";
-import { useFlag } from "../../app-core/flags";
+import { useEntitlement } from "../../app-core/flags";
 import { COPY } from "./copy";
 
 // BND-03 · Questionnaire editor, read states a and e and the client preview dock (T-03-T09; T-03 §3
@@ -466,7 +466,8 @@ export function QuestionnaireEditor({
   onSection,
   onTab,
 }: EditorProps): JSX.Element {
-  const on = useFlag("questionnaires.editor") === true;
+  // T-03-T18 (DEC-2605): the `tax_returns` entitlement replaces `questionnaires.editor`.
+  const on = useEntitlement("tax_returns");
   const editor = useQuery({
     ...questionnaireEditorOptions({ path: { questionnaire_id: questionnaireId } }),
     enabled: on,
@@ -475,7 +476,7 @@ export function QuestionnaireEditor({
   const [own, setOwn] = useState<string | null>(section ?? null);
   const selected = section ?? own ?? data?.sections[0]?.key ?? "";
   let state: ViewState = { kind: "ready" };
-  if (!on) state = { kind: "flag-off", flag: "questionnaires.editor" };
+  if (!on) state = { kind: "flag-off", flag: "tax_returns" };
   else if (editor.isError) {
     const status = (editor.error as { status?: number } | null)?.status;
     state =

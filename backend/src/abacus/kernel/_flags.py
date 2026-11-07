@@ -330,11 +330,6 @@ PROMPT_EVIDENCE_SCREENER = Flag(
         "evidence.screen@v0",
     ),
 )
-QUESTIONNAIRES_EDITOR = Flag(
-    name="questionnaires.editor",
-    kind="boolean",
-    default="false",
-)
 REPORTING_FS_DISCLOSURE = Flag(
     name="reporting.fs_disclosure",
     kind="boolean",
@@ -397,11 +392,6 @@ TAX_DELIVERY_EFILE = Flag(
 )
 TAX_ENGINE_BRIDGE = Flag(
     name="tax.engine_bridge",
-    kind="boolean",
-    default="false",
-)
-TAX_EXTENSIONS_ESTIMATES = Flag(
-    name="tax.extensions_estimates",
     kind="boolean",
     default="false",
 )
@@ -490,7 +480,6 @@ FLAGS: dict[str, Flag] = {
     "portal.sign_in_v2": PORTAL_SIGN_IN_V2,
     "portal.third_party_room": PORTAL_THIRD_PARTY_ROOM,
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
-    "questionnaires.editor": QUESTIONNAIRES_EDITOR,
     "reporting.fs_disclosure": REPORTING_FS_DISCLOSURE,
     "reporting.generated_documents": REPORTING_GENERATED_DOCUMENTS,
     "retrieval.auto": RETRIEVAL_AUTO,
@@ -504,7 +493,6 @@ FLAGS: dict[str, Flag] = {
     "signatures.esign_provider": SIGNATURES_ESIGN_PROVIDER,
     "tax.delivery_efile": TAX_DELIVERY_EFILE,
     "tax.engine_bridge": TAX_ENGINE_BRIDGE,
-    "tax.extensions_estimates": TAX_EXTENSIONS_ESTIMATES,
     "upload_review.enabled": UPLOAD_REVIEW_ENABLED,
     "uploads.processing": UPLOADS_PROCESSING,
     "workpapers.core": WORKPAPERS_CORE,

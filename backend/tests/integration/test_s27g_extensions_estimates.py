@@ -43,9 +43,10 @@ class _Dates:
 
 @pytest.fixture
 async def flag_on(board: Board) -> None:
+    # T-03-T18 (DEC-2605): the `tax_returns` entitlement replaces `tax.extensions_estimates`.
     await board.seed.run(
-        "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
-        "VALUES ($1, 'tax.extensions_estimates', 'true', 's27g', 'S27 gap')",
+        "INSERT INTO tenant_entitlements (tenant_id, module, valid_from, set_by) "
+        "VALUES ($1, 'tax_returns', '2000-01-01', 'test-seed') ON CONFLICT DO NOTHING",
         board.tenant,
     )
 

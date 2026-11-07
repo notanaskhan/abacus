@@ -11,8 +11,9 @@ what a person filed in the engine. Payment methods are labels, never instruments
 Every route answers, in order: a client principal 404 (POR-10 reads confirmation requests through
 its own request grant, never these routes); the matrix action at the firm (the service narrows to
 the return's engagement and function, and for a write holding `function_in` the firm check is the
-service's alone, on the return); 404 with `tax.extensions_estimates` off. Amounts and reject
-codes are tax return information (`tri`); client and contact names are confidential.
+service's alone, on the return); 404 without the `tax_returns` entitlement
+(`tax.extensions_estimates` retired at T-03-T18, DEC-2605). Amounts and reject codes are tax
+return information (`tri`); client and contact names are confidential.
 """
 
 from __future__ import annotations
@@ -25,10 +26,8 @@ from uuid import UUID
 from fastapi import Depends, Header, Path, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import TAX_EXTENSIONS_ESTIMATES
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound
-from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage, Position, decode_cursor, encode_cursor, query_hash
 from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.identity.api import (
@@ -39,6 +38,7 @@ from abacus.modules.identity.api import (
     authorise,
     current_context,
 )
+from abacus.modules.platform.api import entitlement
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -419,18 +419,20 @@ async def _gate(ctx: AuthContext, action: str) -> None:
     if ctx.client:
         raise NotFound("filing_extension")
     await authorise(ctx, action, Resource.firm(ctx.tenant_id))
-    if not await flag_enabled(ctx.tenant, TAX_EXTENSIONS_ESTIMATES):
-        raise NotFound(TAX_EXTENSIONS_ESTIMATES.name)
+    # T-03-T18 (DEC-2605): the `tax_returns` entitlement replaces the retired flag.
+    if await entitlement(ctx.tenant, "tax_returns") is None:
+        raise NotFound("tax_returns")
 
 
 async def _gate_on_return(ctx: AuthContext) -> None:
     """A write holding `function_in`: the firm can't answer it (the condition reads the caller's
     function on the work item, and at the firm it fails closed), so the service authorises on each
-    return. Here only the client principal and the flag."""
+    return. Here only the client principal and the entitlement."""
     if ctx.client:
         raise NotFound("filing_extension")
-    if not await flag_enabled(ctx.tenant, TAX_EXTENSIONS_ESTIMATES):
-        raise NotFound(TAX_EXTENSIONS_ESTIMATES.name)
+    # T-03-T18 (DEC-2605): the `tax_returns` entitlement replaces the retired flag.
+    if await entitlement(ctx.tenant, "tax_returns") is None:
+        raise NotFound("tax_returns")
 
 
 def _xlsx(data: bytes, name: str) -> Response:
