@@ -1428,6 +1428,13 @@ cases:
     value: '2026-10-10'
   - field_key: notice.tax_year
     value: '2024'
+  document_lines:
+  - ref: D1:p1
+    text: 'California Franchise Tax Board. Notice number: 4600. Tax year 2024.'
+  - ref: D1:p2
+    text: 'Amount due: $137.50.'
+  - ref: D1:p3
+    text: Respond by October 10, 2026 to avoid further action.
   low_confidence_fields: []
   fake_answer:
     fields:
@@ -1462,6 +1469,13 @@ cases:
     value: '2026-10-11'
   - field_key: notice.tax_year
     value: '2024'
+  document_lines:
+  - ref: D1:p1
+    text: 'New York State Department of Taxation and Finance. Notice number: 160. Tax year 2024.'
+  - ref: D1:p2
+    text: 'Amount due: $274.50.'
+  - ref: D1:p3
+    text: Respond by October 11, 2026 to avoid further action.
   low_confidence_fields: []
   fake_answer:
     fields:
@@ -1496,6 +1510,13 @@ cases:
     value: '2026-10-12'
   - field_key: notice.tax_year
     value: '2024'
+  document_lines:
+  - ref: D1:p1
+    text: 'Illinois Department of Revenue. Notice number: X. Tax year 2024.'
+  - ref: D1:p2
+    text: 'Amount due: $411.50.'
+  - ref: D1:p3
+    text: Respond by 0ct0b3r l2, 2O26 to avoid further action.
   low_confidence_fields:
   - notice.respond_by
   fake_answer:
@@ -1531,6 +1552,13 @@ cases:
     value: '2026-10-13'
   - field_key: notice.tax_year
     value: '2024'
+  document_lines:
+  - ref: D1:p1
+    text: 'Texas Comptroller of Public Accounts. Notice number: COMPTROLLER. Tax year 2024.'
+  - ref: D1:p2
+    text: 'Amount due: $548.50.'
+  - ref: D1:p3
+    text: Respond by October 13, 2026 to avoid further action.
   low_confidence_fields: []
   fake_answer:
     fields:
@@ -1565,6 +1593,13 @@ cases:
     value: '2026-10-14'
   - field_key: notice.tax_year
     value: '2024'
+  document_lines:
+  - ref: D1:p1
+    text: 'Colorado Department of Revenue. Notice number: 3904. Tax year 2024.'
+  - ref: D1:p2
+    text: 'Amount due: $685.50.'
+  - ref: D1:p3
+    text: Respond by October 14, 2026 to avoid further action.
   low_confidence_fields: []
   fake_answer:
     fields:
@@ -1599,6 +1634,13 @@ cases:
     value: '2026-10-15'
   - field_key: notice.tax_year
     value: '2024'
+  document_lines:
+  - ref: D1:p1
+    text: 'New Jersey Division of Taxation. Notice number: INCOME. Tax year 2024.'
+  - ref: D1:p2
+    text: 'Amount due: $822.50.'
+  - ref: D1:p3
+    text: Respond by 0ct0b3r lS, 2O26 to avoid further action.
   low_confidence_fields:
   - notice.respond_by
   fake_answer:
@@ -1634,6 +1676,13 @@ cases:
     value: '2026-10-16'
   - field_key: notice.tax_year
     value: '2024'
+  document_lines:
+  - ref: D1:p1
+    text: 'Massachusetts Department of Revenue. Notice number: 4. Tax year 2024.'
+  - ref: D1:p2
+    text: 'Amount due: $959.50.'
+  - ref: D1:p3
+    text: Respond by October 16, 2026 to avoid further action.
   low_confidence_fields: []
   fake_answer:
     fields:
@@ -1668,6 +1717,13 @@ cases:
     value: '2026-10-17'
   - field_key: notice.tax_year
     value: '2024'
+  document_lines:
+  - ref: D1:p1
+    text: 'Pennsylvania Department of Revenue. Notice number: 1. Tax year 2024.'
+  - ref: D1:p2
+    text: 'Amount due: $1096.50.'
+  - ref: D1:p3
+    text: Respond by October 17, 2026 to avoid further action.
   low_confidence_fields: []
   fake_answer:
     fields:
@@ -1702,6 +1758,13 @@ cases:
     value: '2026-10-18'
   - field_key: notice.tax_year
     value: '2024'
+  document_lines:
+  - ref: D1:p1
+    text: 'Internal Revenue Service. Notice number: 12C. Tax year 2024.'
+  - ref: D1:p2
+    text: 'Amount due: $1233.50.'
+  - ref: D1:p3
+    text: Respond by 0ct0b3r l8, 2O26 to avoid further action.
   low_confidence_fields:
   - notice.respond_by
   fake_answer:
@@ -1737,6 +1800,13 @@ cases:
     value: '2026-10-19'
   - field_key: notice.tax_year
     value: '2024'
+  document_lines:
+  - ref: D1:p1
+    text: 'Internal Revenue Service. Notice number: CP90. Tax year 2024.'
+  - ref: D1:p2
+    text: 'Amount due: $1370.50.'
+  - ref: D1:p3
+    text: Respond by October 19, 2026 to avoid further action.
   low_confidence_fields: []
   fake_answer:
     fields:
@@ -1771,6 +1841,13 @@ cases:
     value: '2026-10-20'
   - field_key: notice.tax_year
     value: '2024'
+  document_lines:
+  - ref: D1:p1
+    text: 'Internal Revenue Service. Notice number: CP71C. Tax year 2024.'
+  - ref: D1:p2
+    text: 'Amount due: $1507.50.'
+  - ref: D1:p3
+    text: Respond by October 20, 2026 to avoid further action.
   low_confidence_fields: []
   fake_answer:
     fields:
@@ -1805,6 +1882,13 @@ cases:
     value: '2026-10-21'
   - field_key: notice.tax_year
     value: '2024'
+  document_lines:
+  - ref: D1:p1
+    text: 'Florida Department of Revenue. Notice number: 1. Tax year 2024.'
+  - ref: D1:p2
+    text: 'Amount due: $1644.50.'
+  - ref: D1:p3
+    text: Respond by 0ct0b3r 2l, 2O26 to avoid further action.
   low_confidence_fields:
   - notice.respond_by
   fake_answer:
