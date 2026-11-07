@@ -1,6 +1,6 @@
 ---
 id: RB-61
-title: Notices (N-04): the hand-off to a person at the IRS, a missed follow-up, escalation, OCR or the agent off, a re-sent envelope; the Dec 7 flip and its rollback
+title: "Notices (N-04): the hand-off to a person at the IRS, a missed follow-up, escalation, OCR or the agent off, a re-sent envelope; the Dec 7 flip and its rollback"
 owner: builder
 alarms: []
 last_rehearsed: never
@@ -14,7 +14,7 @@ rehearse_by: 2027-12-03
 | Severity range | SEV3 to SEV2 (SEV1 if a response or a taxpayer ID reached the wrong person: go to RB-08) |
 | Linked from | none yet (no notices alarm is wired; the respond-by watch reads the HOME-01 deadline tile) |
 | SLO affected | none |
-| Kill switches that apply | `notices.responder` per firm (every model call), the agent's stage per firm (`off`), the platform AI pause (ADR-140), OCR's route block and firm flag (RB-47); `notices.workspace` per firm until retired |
+| Kill switches that apply | the responder's stage per firm (`off`; every model call), the platform AI pause (ADR-140), OCR's route block and firm flag (RB-47); both notices flags retired (DEC-2602), so the workspace has no per-firm switch |
 | Rehearse by | Fri Dec 3, 2027 (staging, PF-X1) |
 | Last rehearsed | never |
 | Last reviewed against an incident | never |
@@ -31,7 +31,7 @@ to a sent response with `notices.responder` off. Every scenario below keeps that
 | **Missed follow-up** | A notice past its respond-by on NOT-01 (`?respond_by=7` empty but the HOME-01 deadline row red), or an agency second notice arrives for an open one | `GET /v1/notices?status=` shows it open with `respond_by` in the past; NOT-01's duplicate check names the first notice |
 | **Escalation** | A position of `disagree` on a balance over the firm's threshold, or an agency reply rejecting the response | NOT-02's position card decided `disagree`; the agency reply recorded with `escalated_reason` |
 | **OCR off or failing** | NOT-01's intake sheet shows the fields empty with "Enter the details from the notice" and no "Agent" origin | RB-47's alarms, or the firm's OCR flag off; manual entry still saves |
-| **The agent off or refused** | NOT-02 shows "Agent analysis is off for this firm" or the refusal in words | The firm's `notices.responder` flag, its stage (`agent_stages`), or the gateway's refusal reason in the audit (consent, terms, clearance) |
+| **The agent off or refused** | NOT-02 shows "Agent analysis is off for this firm" or the refusal in words | The firm's responder stage (`agent_stages`), or the gateway's refusal reason in the audit (consent, terms, clearance) |
 | **Re-sent envelope** | The response's signature envelope voided, declined or expired; a second envelope wanted | SIG-01 for the envelope; the response stays `in_signature` or returns to `approved` |
 
 ## 2. Contain
@@ -39,8 +39,8 @@ to a sent response with `notices.responder` off. Every scenario below keeps that
 - **A response or a taxpayer ID went to the wrong person:** stop, go to RB-08. Void the envelope
   (SIG-01, Void) before anything else.
 - **The agent says something wrong:** set the firm's stage to `off` (platform staff route,
-  `PUT /v1/platform/agent-stages/{firm_id}/notices.responder` with stage `off` and a note), or the flag
-  `notices.responder` off for the firm. Recorded answers stay on their runs; nothing already shown
+  `PUT /v1/platform/agent-stages/{firm_id}/notices.responder` with stage `off` and a note); the
+  `notices.responder` flag is retired (DEC-2602), so the stage is the switch. Recorded answers stay on their runs; nothing already shown
   changes, and the code analysis stands.
 - **OCR misreads:** RB-47 §2 (route block or the firm's OCR flag). Intakes fall back to manual
   entry; fields already confirmed by a person stay.
@@ -93,13 +93,10 @@ was a wrong answer.
 expired), then Send for signature again on NOT-03: a new envelope on the same approved response
 version. A changed response needs a new approval first. The client sees only the live envelope.
 
-**Rollback of the flip (Tue Dec 7, 2027, 19:00 CT).** Rollback is the flag off: `notices.workspace`
-off for the firm hides the routes (404) and the screens (the C-20 "not turned on" state). Notices,
-analyses, responses and envelopes persist; turning it back on shows them as they were. Until the
-flags retire (held for the Thu Dec 16 batch), the flip is per firm, in the window, with both
-founders' approval recorded in the firm's go-live dossier. After retirement the rollback is the
-agent stage and the firm's AI policy for the responder, and a revert of the retirement PR for the
-workspace.
+**Rollback of the flip (Tue Dec 7, 2027, 19:00 CT).** Both notices flags retired on 2026-11-08
+(DEC-2602), so there is no flag to turn off. Rollback is the responder's stage `off` and the firm's
+AI policy for the agent; for the workspace itself, a revert of the retirement PR (#1384), which
+restores both flags default off. Notices, analyses, responses and envelopes persist either way.
 
 ## 7. Verify
 
