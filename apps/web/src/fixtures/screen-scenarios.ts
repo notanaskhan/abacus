@@ -24,6 +24,9 @@ import { OPENS as ADM10_OPENS, scenarios as adm10 } from "./scenarios/ADM-10";
 import { OPENS as ADM07_OPENS, scenarios as adm07 } from "./scenarios/ADM-07";
 import { scenarios as adm08 } from "./scenarios/ADM-08";
 import { scenarios as aud01 } from "./scenarios/AUD-01";
+import { scenarios as ebp01 } from "./scenarios/EBP-01";
+import { scenarios as ebp03 } from "./scenarios/EBP-03";
+import { scenarios as ebp04 } from "./scenarios/EBP-04";
 import { scenarios as ebp05 } from "./scenarios/EBP-05";
 import { scenarios as ebp06 } from "./scenarios/EBP-06";
 import { scenarios as ebp09 } from "./scenarios/EBP-09";
@@ -166,9 +169,13 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
   "AUD-03": { scenarios: aud03, opens: {}, ids: AUD03_IDS }, // A-01-T26: j03 4e, 5, 5c
   // A-04-T34: j03 9 and 10a on Northwind's audit (AUD-08 register, AUD-09 IC pack failure).
   "AUD-08": { scenarios: aud08, opens: {}, ids: northwind(aud08) },
-  "EBP-05": { scenarios: ebp05, opens: {} }, // A-05-T44
-  "EBP-06": { scenarios: ebp06, opens: {} }, // A-05-T40
-  "EBP-09": { scenarios: ebp09, opens: {} }, // A-05-T45
+  // A-05-T50: the EBP canvases are sections of AUD-02, on Northwind's audit.
+  "EBP-01": { scenarios: ebp01, opens: {}, ids: northwind(ebp01) },
+  "EBP-03": { scenarios: ebp03, opens: {}, ids: northwind(ebp03) },
+  "EBP-04": { scenarios: ebp04, opens: {}, ids: northwind(ebp04) },
+  "EBP-05": { scenarios: ebp05, opens: {}, ids: northwind(ebp05) }, // A-05-T44
+  "EBP-06": { scenarios: ebp06, opens: {}, ids: northwind(ebp06) }, // A-05-T40
+  "EBP-09": { scenarios: ebp09, opens: {}, ids: northwind(ebp09) }, // A-05-T45
   "AUD-10": { scenarios: aud10, opens: {} }, // A-04-T37
   "AUD-17": { scenarios: aud17, opens: {} }, // A-06-T24
   "AUD-18": { scenarios: aud18, opens: {} }, // A-07-T17
