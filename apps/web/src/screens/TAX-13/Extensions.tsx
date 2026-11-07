@@ -3,13 +3,15 @@ import { estimatesExport, extensionsExport } from "@abacus/api-client";
 import { extensionsOptions, taxEstimatesOptions } from "@abacus/api-client/query";
 import {
   Button,
+  Checkbox,
   EmptyState,
+  Icon,
   Pill,
   SearchField,
   Segmented,
   Skeleton,
+  StatusDisc,
   Tooltip,
-  amount,
   cn,
   date,
 } from "@abacus/ui";
@@ -18,12 +20,16 @@ import { type JSX, useState } from "react";
 import { useNow } from "../../app-core/clock";
 import { hrefOf, to } from "../../routes/to";
 import { COPY } from "./copy";
+import { ExtendSheet } from "./ExtendSheet";
+import { figure } from "./figure";
+import { MarkFiledDialog } from "./MarkFiledDialog";
 
 // TAX-13 · Extensions, estimates & payments (T-03-T11; T-03 §3 F5; the handoff spec): the T6 workbook
 // grammar at `/tax-returns/extensions`. Tallies and rows are the server's (T-03-T07); a tile filters
 // the rows. Cells carry no dollar sign. Likely-to-extend rows offer Prepare…, disabled with the
 // server's blocked reason in the tooltip (Thornbury's 706 waits on G1 and G3). Nothing here files or
-// pays: the firm files and the client pays.
+// pays: the firm files and the client pays. T-03-T16 adds the selection, the Extend sheet
+// (`?ov=extend:<returnIds>`), the Mark filed dialog (`?ov=mark-filed:<extensionId>`) and the ack pills.
 
 type Tab = keyof typeof COPY.tabs;
 type Segment = keyof typeof COPY.segments;
@@ -39,8 +45,54 @@ const ESTIMATE_TILES = [
 type Tile = (typeof EXTENSION_TILES)[number] | (typeof ESTIMATE_TILES)[number];
 const URGENT_DAYS = 7;
 
-const figure = (v: string | null | undefined): string =>
-  v === null || v === undefined ? "—" : amount(v, "whole").text.replace("$", "");
+/** The line a row's Filed and Ack cells speak for: a rejection never hides behind an acceptance. */
+const ATTENTION = ["rejected", "not_filed", "prepared", "filed", "accepted"] as const;
+function lineInView(row: ExtensionRowOut): ExtensionRowOut["lines"][number] | undefined {
+  for (const status of ATTENTION) {
+    const found = row.lines.find((l) => l.status === status);
+    if (found !== undefined) return found;
+  }
+  return row.lines[0];
+}
+
+const FILEABLE: readonly string[] = ["not_filed", "prepared", "rejected"];
+
+/** A return can go on the sheet while it has a line not yet filed and no gate holds it. */
+const extendable = (row: ExtensionRowOut): boolean =>
+  row.prepare_blocked_reason == null &&
+  row.lines.some((l) => l.status !== "filed" && l.status !== "accepted");
+
+function AckCell({ line }: { line: ExtensionRowOut["lines"][number] | undefined }): JSX.Element {
+  if (line === undefined || line.filed_on == null) return <>{COPY.ack.not_filed}</>;
+  if (line.status === "accepted") {
+    return (
+      <Pill size="chip" variant="green">
+        <Icon name="check" size={12} />
+        {COPY.ack.accepted}
+      </Pill>
+    );
+  }
+  if (line.status === "rejected") {
+    // The word and the code carry it, not the colour (T-03-T16's row).
+    return (
+      <span className="inline-flex flex-col items-start gap-[2px]">
+        <Pill size="chip" variant="red-tint">
+          {COPY.ack.rejected}
+        </Pill>
+        {line.reject_code != null && (
+          <span data-reject-code className="text-meta text-ink-3">
+            {line.reject_code}
+          </span>
+        )}
+      </span>
+    );
+  }
+  return (
+    <Pill size="chip" variant={line.status === "filed" ? "green-tint" : "neutral"}>
+      {COPY.ack[line.status]}
+    </Pill>
+  );
+}
 
 function Tiles({
   tiles,
@@ -72,7 +124,9 @@ function Tiles({
           <span className="text-micro font-medium tracking-[.07em] text-ink-3 uppercase">
             {COPY.tiles[tile]}
           </span>
-          <span className="text-[13px] font-medium tabular-nums">{counts?.[tile] ?? 0}</span>
+          <span className="text-[13px] font-medium tabular-nums">
+            {(counts?.[tile] ?? 0) === 0 ? "—" : counts?.[tile]}
+          </span>
         </button>
       ))}
     </div>
@@ -81,21 +135,38 @@ function Tiles({
 
 function ExtensionRow({
   row,
+  picked,
+  onPick,
+  showPrepare,
   onPrepare,
+  onMarkFiled,
 }: {
   row: ExtensionRowOut;
-  onPrepare?: (row: ExtensionRowOut) => void;
+  picked: boolean;
+  onPick: (picked: boolean) => void;
+  showPrepare: boolean;
+  onPrepare: (row: ExtensionRowOut) => void;
+  onMarkFiled: (extensionId: string) => void;
 }): JSX.Element {
   const now = useNow();
   const urgent = row.days_to_extended_due != null && row.days_to_extended_due <= URGENT_DAYS;
-  const line = row.lines[0];
+  const line = lineInView(row);
   const blocked = row.prepare_blocked_reason ?? null;
   return (
     <tr
       data-row={row.work_item_id}
       data-client={row.client_name}
-      className="h-[40px] text-[12.5px] hairline-t"
+      data-selected={picked || undefined}
+      className={cn("h-[40px] text-[12.5px] hairline-t", picked && "bg-sel-bg")}
     >
+      <td className="pl-[12px]">
+        <Checkbox
+          label={COPY.selectRow(row.client_name)}
+          checked={picked}
+          disabled={!extendable(row)}
+          onChange={onPick}
+        />
+      </td>
       <td className="px-[12px]">
         <a
           href={hrefOf(to.TAX02({ returnId: row.tax_return_id }))}
@@ -106,24 +177,25 @@ function ExtensionRow({
       </td>
       <td>{row.return_form}</td>
       <td>{row.lines.map((l) => l.form).join(" + ")}</td>
-      <td>{line?.filed_on == null ? COPY.notFiled : date(line.filed_on, { now })}</td>
-      <td>
-        {line === undefined || line.status === "not_filed" ? (
-          COPY.ack.not_filed
-        ) : (
-          <Pill
-            size="chip"
-            variant={
-              line.status === "accepted"
-                ? "green-tint"
-                : line.status === "rejected"
-                  ? "red-tint"
-                  : "neutral"
-            }
-          >
-            {COPY.ack[line.status]}
-          </Pill>
-        )}
+      <td data-col="filed">
+        {line?.filed_on == null ? COPY.notFiled : date(line.filed_on, { now })}
+        {line !== undefined &&
+          FILEABLE.includes(line.status) &&
+          row.allowed_actions.includes("filing_extension.mark_filed") && (
+            <Button
+              size="xs"
+              variant="link"
+              className="ml-[6px]"
+              onClick={() => {
+                onMarkFiled(line.extension_id);
+              }}
+            >
+              {COPY.markFiled.open}
+            </Button>
+          )}
+      </td>
+      <td data-col="ack">
+        <AckCell line={line} />
       </td>
       <td className="text-right tabular-nums">{figure(row.projected_liability)}</td>
       <td className="text-right tabular-nums">{figure(row.withholding_plus_estimates)}</td>
@@ -136,17 +208,45 @@ function ExtensionRow({
       <td data-col="paid" className="tabular-nums">
         {row.payments.length === 0
           ? "—"
-          : row.payments.map((p) => `${p.jurisdiction} ${figure(p.amount)}`).join(" · ")}
+          : row.payments
+              .map((p) =>
+                p.jurisdiction === "federal"
+                  ? figure(p.amount)
+                  : `${p.jurisdiction} ${figure(p.amount)}`,
+              )
+              .join(" · ")}
       </td>
-      <td>
-        {row.confirmation?.confirmed === true ? `✓ ${row.confirmation.contact_name ?? ""}` : "—"}
+      <td data-col="confirmation">
+        {row.confirmation?.confirmed === true ? (
+          <>
+            {`✓ ${row.confirmation.contact_name ?? ""}`}
+            {row.confirmation.confirmed_on != null && (
+              <span className="ml-[4px] text-ink-3">
+                {date(row.confirmation.confirmed_on, { now })}
+              </span>
+            )}
+          </>
+        ) : row.likely_to_extend || row.confirmation != null ? (
+          <span title={COPY.notConfirmed}>
+            <StatusDisc state="todo" />
+          </span>
+        ) : (
+          "—"
+        )}
       </td>
       <td>
         <span
           className={cn(urgent && "font-medium text-red-ink")}
           data-due={urgent ? "urgent" : "ok"}
         >
-          {date(row.extended_due_on, { now, withYear: true })}
+          {row.likely_to_extend ? (
+            <span className="block text-ink-3">
+              {COPY.dueFrom(date(row.original_due_on, { now, withYear: true }))}
+            </span>
+          ) : null}
+          {row.likely_to_extend
+            ? COPY.dueTo(date(row.extended_due_on, { now, withYear: true }))
+            : date(row.extended_due_on, { now, withYear: true })}
           {urgent &&
             row.days_to_extended_due != null &&
             ` · ${COPY.day(row.days_to_extended_due)}`}
@@ -156,8 +256,14 @@ function ExtensionRow({
             <Pill size="chip" variant="amber">
               {COPY.likelyTag}
             </Pill>
-            {blocked === null ? (
-              <Button size="xs" variant="secondary" onClick={() => onPrepare?.(row)}>
+            {!showPrepare ? null : blocked === null ? (
+              <Button
+                size="xs"
+                variant="secondary"
+                onClick={() => {
+                  onPrepare(row);
+                }}
+              >
                 {COPY.prepare(row.lines[0]?.form ?? "")}
               </Button>
             ) : (
@@ -232,7 +338,10 @@ export interface ExtensionsProps {
   quarter?: number;
   tab?: Tab;
   segment?: Segment;
-  onPrepare?: (row: ExtensionRowOut) => void;
+  /** The overlay in the URL: `extend:<returnIds>` or `mark-filed:<extensionId>`. */
+  ov?: string;
+  /** Takes the overlay into the URL; without it the screen keeps it locally. */
+  onOverlay?: (ov: string | null) => void;
   onResend?: (row: EstimateRowOut) => void;
   /** DF-08: Payments is a composed union, hidden until its read exists. */
   showPayments?: boolean;
@@ -270,7 +379,8 @@ export function Extensions({
   quarter = 3,
   tab: initialTab = "extensions",
   segment: initialSegment = "open",
-  onPrepare,
+  ov,
+  onOverlay,
   onResend,
   showPayments = false,
 }: ExtensionsProps): JSX.Element {
@@ -278,6 +388,15 @@ export function Extensions({
   const [segment, setSegment] = useState<Segment>(initialSegment);
   const [tile, setTile] = useState<Tile | null>(null);
   const [q, setQ] = useState("");
+  const [localOverlay, setLocalOverlay] = useState<string | null>(ov ?? null);
+  const overlay = onOverlay === undefined ? localOverlay : (ov ?? null);
+  const showOverlay = (next: string | null): void => {
+    setLocalOverlay(next);
+    onOverlay?.(next);
+  };
+  const extendIds = overlay?.startsWith("extend:") === true ? overlay.slice(7).split(",") : [];
+  const filedId = overlay?.startsWith("mark-filed:") === true ? overlay.slice(11) : null;
+  const [chosen, setChosen] = useState<ReadonlySet<string>>(() => new Set(extendIds));
   const extensions = useQuery({
     ...extensionsOptions({
       query: {
@@ -303,6 +422,11 @@ export function Extensions({
   const page = tab === "estimates" ? estimates.data : extensions.data;
   const shown = page?.items.length ?? 0;
   const total = page?.total ?? 0;
+  const pickable = (extensions.data?.items ?? []).filter(extendable);
+  const allPicked = pickable.length > 0 && pickable.every((r) => chosen.has(r.tax_return_id));
+  const pickAll = (on: boolean): void => {
+    setChosen(on ? new Set(pickable.map((r) => r.tax_return_id)) : new Set());
+  };
   const tabs: Tab[] = showPayments
     ? ["extensions", "estimates", "payments"]
     : ["extensions", "estimates"];
@@ -359,6 +483,18 @@ export function Extensions({
         >
           {COPY.openInExcel}
         </Button>
+        {tab === "extensions" && (
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={chosen.size === 0}
+            onClick={() => {
+              showOverlay(`extend:${[...chosen].join(",")}`);
+            }}
+          >
+            {COPY.extendSelected}
+          </Button>
+        )}
       </div>
       <Tiles
         tiles={tab === "extensions" ? EXTENSION_TILES : ESTIMATE_TILES}
@@ -406,6 +542,14 @@ export function Extensions({
             <table className="w-full" data-tax13="extensions">
               <thead>
                 <tr className="h-[30px] text-[11.5px] font-medium text-ink-2">
+                  <th className="w-[30px] pl-[12px] text-left font-medium">
+                    <Checkbox
+                      label={COPY.selectAll}
+                      checked={allPicked ? true : chosen.size > 0 ? "mixed" : false}
+                      disabled={pickable.length === 0}
+                      onChange={pickAll}
+                    />
+                  </th>
                   <th className="px-[12px] text-left font-medium">{COPY.columns.client}</th>
                   <th className="text-left font-medium">{COPY.columns.return}</th>
                   <th className="text-left font-medium">{COPY.columns.form}</th>
@@ -424,7 +568,22 @@ export function Extensions({
                   <ExtensionRow
                     key={row.work_item_id}
                     row={row}
-                    {...(onPrepare === undefined ? {} : { onPrepare })}
+                    picked={chosen.has(row.tax_return_id)}
+                    onPick={(on) => {
+                      setChosen((was) => {
+                        const next = new Set(was);
+                        if (on) next.add(row.tax_return_id);
+                        else next.delete(row.tax_return_id);
+                        return next;
+                      });
+                    }}
+                    showPrepare={segment === "likely"}
+                    onPrepare={(r) => {
+                      showOverlay(`extend:${r.tax_return_id}`);
+                    }}
+                    onMarkFiled={(id) => {
+                      showOverlay(`mark-filed:${id}`);
+                    }}
                   />
                 ))}
               </tbody>
@@ -432,6 +591,25 @@ export function Extensions({
           )}
         </div>
       </section>
+      {extendIds.length > 0 && (
+        <ExtendSheet
+          taxYear={taxYear}
+          returnIds={extendIds}
+          onClose={(sent) => {
+            showOverlay(null);
+            if (sent) setChosen(new Set());
+          }}
+        />
+      )}
+      {filedId !== null && (
+        <MarkFiledDialog
+          taxYear={taxYear}
+          extensionId={filedId}
+          onClose={() => {
+            showOverlay(null);
+          }}
+        />
+      )}
     </div>
   );
 }

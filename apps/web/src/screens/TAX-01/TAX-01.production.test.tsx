@@ -24,7 +24,7 @@ afterEach(() => {
 });
 
 describe("TAX-01 production build", () => {
-  it("draws no Board toggle, Extend… or Run firm standards…", async () => {
+  it("draws no Board toggle or Run firm standards…; Extend… is live (T-03-T16)", async () => {
     restore = installFixtureMode(scenarios.d);
     render(
       <QueryClientProvider client={newQueryClient()}>
@@ -36,12 +36,11 @@ describe("TAX-01 production build", () => {
     });
     const bar = screen.getByRole("region", { name: "3 selected" });
     expect(within(bar).getByRole("button", { name: COPY.bulk.assign })).toBeTruthy();
-    expect(screen.queryByText(COPY.bulk.extend)).toBeNull();
     expect(screen.queryByText(COPY.bulk.standards)).toBeNull();
     const bulk = screen.getByRole("button", { name: COPY.bulkActions });
     bulk.focus();
     fireEvent.keyDown(bulk, { key: "ArrowDown" });
-    expect(screen.queryByRole("menuitem", { name: COPY.bulk.extend })).toBeNull();
+    expect(screen.queryByRole("menuitem", { name: COPY.bulk.extend })).not.toBeNull();
     expect(screen.queryByRole("menuitem", { name: COPY.bulk.standards })).toBeNull();
     expect(screen.queryByRole("button", { name: /Board/ })).toBeNull();
   });

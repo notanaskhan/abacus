@@ -39,8 +39,20 @@ const Extensions = lazyScreen(async () => (await import("../../screens/TAX-13"))
 export const taxExtensionsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/tax-returns/extensions",
+  validateSearch: (search: Record<string, unknown>): { ov?: string } =>
+    typeof search.ov === "string" && search.ov !== "" ? { ov: search.ov } : {},
   component: function TaxExtensionsPage(): JSX.Element {
-    return gated(<Extensions taxYear={2025} />);
+    const navigate = useNavigate();
+    const search: { ov?: string } = useSearch({ strict: false });
+    return gated(
+      <Extensions
+        taxYear={2025}
+        {...search}
+        onOverlay={(ov) => {
+          void navigate({ to: ".", search: ov === null ? {} : { ov } });
+        }}
+      />,
+    );
   },
 });
 

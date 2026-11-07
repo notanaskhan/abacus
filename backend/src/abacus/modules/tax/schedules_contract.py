@@ -155,6 +155,9 @@ class JurisdictionLineOut(BaseModel):
     ack_received_at: Annotated[datetime | None, Internal] = None
     reject_code: Annotated[str | None, Tri] = None
     paid_with_extension: OptMoney = None
+    # T-03-T16: a line's own version; the row's `row_version` is their max, so a second line's
+    # If-Match would otherwise fail once the first has moved.
+    row_version: Annotated[int, Internal] = 1
 
 
 # --- extensions ---------------------------------------------------------------------------------
@@ -541,6 +544,7 @@ async def _row_out(ctx: AuthContext, found: object) -> ExtensionRowOut:
                 filed_on=x["filed_on"],
                 ack_received_at=x["ack_received_at"],
                 reject_code=x["reject_code"],
+                row_version=x["row_version"],
             )
             for x in r.lines
         ],
@@ -759,9 +763,11 @@ async def extensions_route(
     tile: Annotated[ExtensionTile | None, Query()] = None,
     q: Annotated[str | None, Query(max_length=120)] = None,
     cursor: Annotated[str | None, Query(max_length=200)] = None,
+    return_id: Annotated[list[UUID] | None, Query(max_length=200)] = None,
 ) -> ListPage[ExtensionRowOut]:
     """Rows grouped per return; `counts` {extended, open, filed, likely, acks_pending} from the
-    viewer's visible rows only (DEC-43)."""
+    viewer's visible rows only (DEC-43). `return_id` narrows to the returns the Extend sheet
+    opened on (T-03-T16; TAX-01's bulk Extend…)."""
     await _gate(ctx, "filing_extension.read")
     from abacus.modules.tax import extensions
 
@@ -772,6 +778,7 @@ async def extensions_route(
         if extensions.in_segment(r, segment)
         and extensions.on_tile(r, tile)
         and (not q or q.lower() in r.client_name.lower())
+        and (not return_id or r.tax_return_id in return_id)
     ]
     query = query_hash(tax_year=tax_year, segment=segment, tile=tile, q=q)
     at = _offset(ctx, cursor, "tax.extensions", query)
