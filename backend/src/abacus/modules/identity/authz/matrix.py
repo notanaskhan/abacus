@@ -112,6 +112,8 @@ _FLAG_CONDITIONS = (
     *("not_offshore", "scope_only", "not_preparer_of_target", "reserved_role"),
     "owner_of_target",  # K-02-T01
 )
+# A-07-T14 (ADR P-43): what an action may still do after a lock. The trigger names its tables.
+ARCHIVED_EXEMPT_KINDS: tuple[str, ...] = ("archive_addition", "verify", "legal_hold", "export")
 # T-02-T03 (DEC-1162): digits after the first letter (`k1_package.read`).
 _ACTION = re.compile(r"[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*")
 # Verbs that only read: archived engagements still allow them (`archived_write: deny`).
@@ -148,6 +150,8 @@ class Rule:
     consent: frozenset[str] = frozenset()
     # The firm setting each `firm_setting(<name>)` role decision names.
     firm_settings: tuple[tuple[str, str], ...] = ()
+    # A-07-T14 (ADR P-43): this action still acts on an archived engagement or locked work item.
+    archived_exempt: str | None = None
 
     @property
     def reads(self) -> bool:
@@ -181,6 +185,7 @@ def _rule(action: str, entries: dict[str, str]) -> Rule:
     gates_met: tuple[str, ...] = ()
     consent: frozenset[str] = frozenset()
     attest_client: Literal["deny", "only"] | None = None
+    archived_exempt: str | None = None
     flags: set[str] = set()
     settings: list[tuple[str, str]] = []
     for key, value in entries.items():
@@ -196,6 +201,10 @@ def _rule(action: str, entries: dict[str, str]) -> Rule:
             if value not in ("deny", "only"):
                 raise ValueError(f"permission matrix: {action}.{key}: unknown value {value!r}")
             attest_client = value
+        elif key == "archived_exempt":
+            if value not in ARCHIVED_EXEMPT_KINDS:
+                raise ValueError(f"permission matrix: {action}.{key}: unknown value {value!r}")
+            archived_exempt = value
         elif key in _FLAG_CONDITIONS:
             if value != "required":
                 raise ValueError(f"permission matrix: {action}.{key}: unknown value {value!r}")
@@ -235,6 +244,7 @@ def _rule(action: str, entries: dict[str, str]) -> Rule:
         owner_of_target="owner_of_target" in flags,
         consent=consent,
         firm_settings=tuple(settings),
+        archived_exempt=archived_exempt,
     )
 
 
