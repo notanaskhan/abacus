@@ -1684,7 +1684,9 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     "portal": _BASE
     | {"organisations", "engagements", "requests", "evidence", "signatures", "communications"}
     | {"collaboration", "review", "assurance", "attest", "tax", "closes", "notices"}
-    | {"connections"},
+    | {"connections"}
+    # R-02-T04: C10's registry and the management decision live in reporting.
+    | {"reporting"},
 }
 
 
@@ -1904,6 +1906,31 @@ def _agent_denied_actions() -> frozenset[str]:
 
 
 _NON_AGENT_CONTEXTS = frozenset({"AuthContext", "SystemContext"})
+
+
+def _check_client_decision(src: SourceFile) -> Iterator[Finding]:
+    """R-02 AC-5: only `portal/approvals.py` and a provider's own record-mode service
+    (`client_decisions.py`) may call a C18 provider's `decide()`, so no other path decides for a
+    client. Reads a call on the slot's result, or on a name the slot's result was bound to."""
+    bound: set[str] = set()
+    for node in ast.walk(src.tree):
+        if (
+            isinstance(node, ast.Assign)
+            and isinstance(node.value, ast.Call)
+            and _terminal_name(node.value.func) == "client_approval_provider"
+        ):
+            bound |= {t.id for t in node.targets if isinstance(t, ast.Name)}
+    for call in ast.walk(src.tree):
+        if not (isinstance(call, ast.Call) and isinstance(call.func, ast.Attribute)):
+            continue
+        if call.func.attr != "decide":
+            continue
+        target = call.func.value
+        from_slot = isinstance(target, ast.Call) and (
+            _terminal_name(target.func) == "client_approval_provider"
+        )
+        if from_slot or (isinstance(target, ast.Name) and target.id in bound):
+            yield Finding(call.lineno, "a C18 provider's decide() outside its allowed files")
 
 
 def _check_human_decision(src: SourceFile) -> Iterator[Finding]:
@@ -2989,6 +3016,17 @@ RULES: list[Rule | TreeRule] = [
         adr="ADR-005, ADR-025",
         check=_check_human_decision,
         include=("src/abacus/modules/*",),
+    ),
+    Rule(
+        id="CLIENT-DECISION-001",
+        description="Only the portal's approvals service and record-mode services decide",
+        adr="ADR-005, SPEC-646",
+        check=_check_client_decision,
+        include=("src/abacus/modules/*",),
+        exclude=(
+            "src/abacus/modules/portal/approvals.py",
+            "src/abacus/modules/*/client_decisions.py",
+        ),
     ),
     Rule(
         id="FLAG-001",

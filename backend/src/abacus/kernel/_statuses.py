@@ -786,6 +786,23 @@ class GovernanceCommunicationStatus(StrEnum):
     # derived, never stored: overdue
 
 
+class DeliverableStatus(StrEnum):
+    pass
+    # derived, never stored: for_your_review, approved_by_you, waiting_for_approval, in_sign,
+    # signed, final, released, not_ready_yet, replaced
+
+
+class ClientApprovalItemStatus(StrEnum):
+    pass
+    # derived, never stored: waiting, approved, declined, accepted, not_recorded, acknowledged,
+    # question_sent
+
+
+class GovernanceRoomLetterStatus(StrEnum):
+    pass
+    # derived, never stored: new, not_yet, sent_acknowledged, acknowledged
+
+
 class AuditReportStatus(StrEnum):
     DRAFT = "draft"
     APPROVED = "approved"
@@ -1869,6 +1886,12 @@ STORED: dict[str, tuple[str, ...]] = {
         "awaiting_ep_approval",
         "sent",
         "acknowledged",
+    ),
+    "deliverable": (
+    ),
+    "client_approval_item": (
+    ),
+    "governance_room_letter": (
     ),
     "audit_report": (
         "draft",
