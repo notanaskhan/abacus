@@ -31,6 +31,8 @@ jobs:
     name: OCR conformance on real Textract (report-only until two passes)
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    # P-11-T29 (DEC-2614): the role trusts this GitHub environment only (infra/envs/staging/ocr_nightly.tf).
+    environment: ocr-nightly
     permissions:
       contents: read
       id-token: write
