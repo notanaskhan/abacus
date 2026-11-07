@@ -41,11 +41,25 @@ TABLES: frozenset[str] = frozenset(
         "proposal_decisions",
         "agent_run_records",  # Q-02-T41 (0171, ADR-169 §3): one per ended specialist run
         "tenant_counters",  # P-10-T02 (0680): `run_number` per tenant
+        # P-10-T03 (0681): the runtime; the durable trace, kept 7 years or engagement retention.
+        "agent_plans",
+        "agent_run_steps",
+        "agent_questions",
+        "run_events",
+        "run_artifacts",
+        "run_sign_offs",
+        "engagement_ai_settings",
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
 INSERT_ONLY: frozenset[str] = frozenset(
     {
+        # P-10-T03 (0681): a plan decision is a new version; `run_events` prunes through its
+        # definer function only.
+        "agent_plans",
+        "run_events",
+        "run_sign_offs",
+        "agent_feedback",
         "agent_activity",  # SPEC-027 (TASK-050): the feed is never rewritten
         "upload_reviews",  # SPEC-030 (TASK-058): proposals, as made
         "upload_review_flags",  # SPEC-030 (TASK-058): proposals, as made
@@ -70,6 +84,33 @@ INSERT_ONLY: frozenset[str] = frozenset(
 )
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
+    "agent_plans": frozenset(
+        {"id", "tenant_id", "run_id", "version", "steps", "sources", "state", "decided_by"}
+        | {"decided_at", "standing_schedule_id"}
+    ),
+    "agent_run_steps": frozenset(
+        {"id", "tenant_id", "run_id", "seq", "plan_step_key", "level", "kind", "tool_name"}
+        | {"args_summary", "args_hash", "state", "needs", "retry_of_step_id"}
+        | {"auto_started_by_trigger_id"}
+    ),
+    "agent_questions": frozenset(
+        {"id", "tenant_id", "run_id", "step_id", "steps", "recommended", "other_allowed"}
+    ),
+    "run_events": frozenset(
+        {"tenant_id", "run_id", "session_id", "run_seq", "session_seq", "type", "payload"}
+    ),
+    "run_artifacts": frozenset(
+        {"id", "tenant_id", "run_id", "kind", "name", "size_bytes", "storage_key", "cites"}
+    ),
+    "run_sign_offs": frozenset(
+        {"id", "tenant_id", "run_id", "signed_by", "open_issues_ack", "decisions_ack"}
+    ),
+    "agent_feedback": frozenset(
+        {"id", "tenant_id", "target_kind", "target_id", "rating", "reason_code", "created_by"}
+    ),
+    "engagement_ai_settings": frozenset(
+        {"tenant_id", "engagement_id", "auto_mode", "auto_mode_set_by", "auto_mode_set_at"}
+    ),
     "tenant_counters": frozenset({"tenant_id", "name", "value"}),
     # G-02-T23 (0272): the draft (one per firm) and the requested versions.
     "autonomy_policy_drafts": frozenset(
@@ -225,6 +266,16 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         | {"signed_off_at", "event_seq"}
     ),
     "tenant_counters": frozenset({"value"}),
+    # P-10-T03 (0681).
+    "agent_run_steps": frozenset(
+        {"state", "needs", "started_at", "ended_at", "active_ms", "records_read"}
+        | {"outputs_summary", "error_code", "error_detail_safe", "usage_record_ids"}
+    ),
+    "agent_questions": frozenset(
+        {"state", "answer", "answered_by", "answered_at", "skip_default_applied"}
+    ),
+    "run_artifacts": frozenset({"version", "state", "saved_to"}),
+    "engagement_ai_settings": frozenset({"auto_mode", "auto_mode_set_by", "auto_mode_set_at"}),
     # SPEC-009: document status, and each chunk's vector written once.
     "knowledge_documents": frozenset({"status", "failure_code", "withdrawn_at"}),
     "knowledge_chunks": frozenset({"embedding", "embedding_model", "embedded_at"}),
