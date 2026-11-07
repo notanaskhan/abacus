@@ -95,9 +95,10 @@ export const audScreens = {
     status: "planned",
     path: "/engagements/$engagementId/completion", // legacy CompletionRelease (SPEC-314)
   },
+  // A-06-T30: a to f on fixtures, under the Evaluation routes.
   "AUD-20": {
     name: "Financial statements & disclosure checklist",
-    status: "planned",
+    status: "fixture",
     path: "/audits/$auditId/fs-disclosure",
   },
   "AUD-21": { name: "Representation letter builder", status: "planned", path: null },
