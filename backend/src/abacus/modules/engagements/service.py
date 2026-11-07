@@ -603,6 +603,10 @@ class EngagementLabel:
     name: str
     client_name: str
     fiscal_year: int
+    # A-06-T29 (DEC-2615): what a financial statement's heading names (additive).
+    client_entity_name: str = ""
+    fiscal_period_end: date | None = None
+    type: str = ""
 
 
 async def engagement_label(tenant: TenantContext, engagement_id: UUID) -> EngagementLabel | None:
@@ -617,6 +621,9 @@ async def engagement_label(tenant: TenantContext, engagement_id: UUID) -> Engage
         engagement.name,
         found.client_name if found is not None else "your company",
         engagement.fiscal_period_end.year,
+        found.client_entity_name if found is not None else "",
+        engagement.fiscal_period_end,
+        engagement.type,
     )
 
 

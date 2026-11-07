@@ -15,9 +15,10 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Literal, cast, get_args
+from typing import Final, Literal, cast, get_args
 from uuid import UUID
 
+from pydantic import TypeAdapter, ValidationError
 from sqlalchemy import text
 
 from abacus.kernel.db import TenantContext, tenant_session, transaction_context
@@ -91,7 +92,8 @@ register_engagement_owners(_statements.AUDIT_KINDS, _statements.audit_owners)
 ROUTERS = (templates_router, documents_router, statements_router)  # A-06-T19: statements stub
 
 KINDS: frozenset[str] = frozenset(get_args(GeneratedDocumentKind))
-LAYOUTS: frozenset[str] = frozenset(get_args(LayoutKey))
+# The layouts a kind may register: a template's six and the composed `financial_statements`.
+LAYOUTS: frozenset[str] = frozenset(get_args(LayoutKey)) | {"financial_statements"}
 
 
 class RenderRefused(ValueError):
@@ -184,18 +186,27 @@ ApprovalProvider = Callable[[ApprovalRef], Awaitable[tuple[UUID, str] | None]]
 TenantVariablesProvider = Callable[
     [TenantContext, OwnerRef, RenderScope], Awaitable[Mapping[str, str]]
 ]
+# A-06-T29 (DEC-2615): a kind whose whole body code composes from its owner's sealed record (the
+# financial statements): DocBlocks as plain data, sealed in the snapshot; it takes no template.
+BodyProvider = Callable[[TenantContext, OwnerRef, RenderScope], Awaitable[Sequence[object]]]
+
+
+# A kind's layout: a template's six, or `financial_statements`, which only a composed kind uses
+# (DEC-2615; C11's template contract and its OpenAPI are unchanged).
+KindLayout = LayoutKey | Literal["financial_statements"]
 
 
 @dataclass(frozen=True)
 class DocumentKind:
     kind: GeneratedDocumentKind
-    layout: LayoutKey
+    layout: KindLayout
     variables_provider: VariablesProvider
     approval_provider: ApprovalProvider
     source_events: tuple[str, ...] = ()
     retention_record_type: str = ""
     formats: tuple[RenderFormat, ...] = field(default=("pdf",))
     tenant_variables_provider: TenantVariablesProvider | None = None
+    body_provider: BodyProvider | None = None
 
 
 class UnknownDocumentKind(LookupError):
@@ -224,6 +235,31 @@ def document_kind(kind: str) -> DocumentKind:
     return found
 
 
+def _body_kind(kind: str) -> bool:
+    """A registered kind whose body code composes (DEC-2615)."""
+    registered = _REGISTRY.get(kind)
+    return registered is not None and registered.body_provider is not None
+
+
+_BLOCKS: Final = TypeAdapter(list[DocBlock])
+
+
+async def _composed_body(
+    tx: UnitOfWork, kind: DocumentKind, request_owner: OwnerRef, scope: RenderScope
+) -> list[object] | None:
+    """A composed kind's body, checked against C11's closed block union before it is sealed."""
+    if kind.body_provider is None:
+        return None
+    body = list(
+        await kind.body_provider(await transaction_context(tx.session), request_owner, scope)
+    )
+    try:
+        _BLOCKS.validate_python(body)
+    except ValidationError as invalid:
+        raise RenderRefused("unknown_layout", "the composed body is not C11 blocks") from invalid
+    return body
+
+
 def check_render_request(request: RenderRequest) -> None:
     """The rules every render request meets before any work (AC-15, AC-16; INV-1):
 
@@ -243,8 +279,11 @@ def check_render_request(request: RenderRequest) -> None:
             raise RenderRefused("final_requires_approval", "a final render is a person's")
         if request.approval_ref is None:
             raise RenderRefused("final_requires_approval")
-    if request.template_version_id is None and request.kind != "run_trace_export":
+    composed = _body_kind(request.kind)
+    if request.template_version_id is None and request.kind != "run_trace_export" and not composed:
         raise RenderRefused("unknown_layout", "no template version")
+    if composed and request.template_version_id is not None:
+        raise RenderRefused("unknown_layout", "a composed kind takes no template version")
     if not request.formats:
         raise RenderRefused("unknown_layout", "no format")
 
@@ -278,6 +317,7 @@ async def render(tx: UnitOfWork, request: RenderRequest) -> RenderTicket:
         variables=variables,
         clause_states={c.clause_id: c.enabled for c in request.clause_states},
         overrides={o.section_id: o.paragraphs for o in request.section_overrides},
+        body=await _composed_body(tx, kind, request.owner_ref, request.scope),
     )
     snapshot_sha = docs.sha256_hex(docs.canonical(snapshot))
     content_hash = docs.sha256_hex(f"{kind.layout}:{snapshot_sha}".encode())
@@ -443,6 +483,9 @@ async def regenerate(tx: UnitOfWork, document_id: UUID, requester: Requester) ->
             str(k): tuple(str(p) for p in cast(list[object], v))
             for k, v in cast(Mapping[object, object], overrides or {}).items()
         },
+        body=await _composed_body(
+            tx, kind, OwnerRef(str(doc["owner_type"]), cast(UUID, doc["owner_id"])), scope
+        ),
     )
     snapshot_sha = docs.sha256_hex(docs.canonical(snapshot))
     content_hash = docs.sha256_hex(f"{kind.layout}:{snapshot_sha}".encode())
@@ -664,6 +707,12 @@ async def document_is_final(tenant: TenantContext, document_id: UUID) -> bool:
 
 
 # A-06-T25, T28: the run record's port, the workflows' inputs, and the slice's path.
+# A-06-T29 (DEC-2615): the financial statements as a composed C11 kind, registered at import so
+# the render job (the worker) knows its layout and record type; send-draft calls the render.
+from abacus.modules.reporting.fs_render import ensure_kind as _ensure_fs_kind  # noqa: E402
+from abacus.modules.reporting.fs_render import (  # noqa: E402
+    render_statement_draft as render_statement_draft,
+)
 from abacus.modules.reporting.statements import (  # noqa: E402
     RunRecordPort as RunRecordPort,
 )
@@ -697,3 +746,5 @@ from abacus.modules.reporting.statements_workflow_types import (  # noqa: E402
 from abacus.modules.reporting.statements_workflow_types import (  # noqa: E402
     TieOutInput as TieOutInput,
 )
+
+_ensure_fs_kind()
