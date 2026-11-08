@@ -43,6 +43,7 @@ import { useEligibilityCanvas } from "../EBP-03/Eligibility";
 import { type ContributionsOptions, useContributionsCanvas } from "../EBP-04";
 import { DISTRIBUTIONS_LOANS, type LoansOptions, useLoansCanvas } from "../EBP-05";
 import { type AccountsOptions, PARTICIPANT_ACCOUNTS, useAccountsCanvas } from "../EBP-08";
+import { ESTIMATES_RP, type EstimatesOptions, useEstimatesCanvas } from "../AUD-27";
 import { ADMIN_EXPENSES, type ExpensesOptions, useExpensesCanvas } from "../EBP-09";
 import {
   type ControlsOptions,
@@ -126,6 +127,8 @@ export interface AUD02Props {
   accounts?: Omit<AccountsOptions, "active">;
   /** EBP-09 (A-05-T45): Admin Expenses & Compliance. */
   expenses?: Omit<ExpensesOptions, "active">;
+  /** AUD-27 (A-05-T57): Estimates & Related Parties (FS) or Parties in interest (EBP). */
+  estimatesRp?: Omit<EstimatesOptions, "active">;
 }
 
 /** The rail row whose canvas is AUD-06 (A-02-T09). */
@@ -237,6 +240,7 @@ function Cockpit({
   loans,
   expenses,
   accounts,
+  estimatesRp,
 }: Omit<AUD02Props, "auditId"> & { cockpit: AuditCockpitOut }): JSX.Element {
   // A-01-T24: "Export binder…" and the record-mode entries (DV-9, DV-4).
   const audit = useAuditActions(cockpit, overlay ?? null, onOverlay);
@@ -358,6 +362,12 @@ function Cockpit({
     ...expenses,
     active: expensesOpen,
   });
+  // AUD-27 (A-05-T57): Fieldwork › Estimates & Related Parties, behind `assurance.estimates_rp`.
+  const estimatesOpen = selected === ESTIMATES_RP;
+  const estimatesCanvas = useEstimatesCanvas(cockpit.work_item_id, {
+    ...estimatesRp,
+    active: estimatesOpen,
+  });
   const openDoc = (r: SourceDocumentRowOut): void => {
     const version = r.latest_upload?.evidence_version_id ?? null;
     if (version !== null) onDock?.("viewer", version);
@@ -388,6 +398,8 @@ function Cockpit({
     canvas = loansCanvas;
   } else if (expensesOpen) {
     canvas = expensesCanvas;
+  } else if (estimatesOpen) {
+    canvas = estimatesCanvas;
   } else if (accountsOpen) {
     canvas = accountsCanvas;
   } else if (row?.section_state === "blocked_on_decision" && row.blocked_on_name != null) {

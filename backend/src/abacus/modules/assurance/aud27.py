@@ -89,6 +89,11 @@ class EstimateView:
     range: engine.RangeCheck | None
     bias: engine.BiasIndicator
     version: int
+    # A-05-T57 (DEC-2813): what AUD-27 a's row and cards show beside the figures.
+    significant_risk: bool = False
+    method_text: str | None = None
+    disclosure_ref: str | None = None
+    components: tuple[tuple[str, Decimal], ...] = ()
 
 
 async def _engagement(ctx: AuthContext, work_item_id: UUID, action: str) -> UUID:
@@ -143,9 +148,12 @@ def compute(
 _ESTIMATES = text(
     """
     SELECT e.id, e.name, e.account_ref, e.balance, e.status, e.decision_card_id, e.rollforward,
-           e.retrospective, e.range_low, e.range_high, e.version,
+           e.retrospective, e.range_low, e.range_high, e.version, e.significant_risk,
+           e.method ->> 'text' AS method_text, e.disclosure_ref,
            COALESCE(array_agg(c.amount ORDER BY c.position) FILTER (WHERE c.id IS NOT NULL),
-                    '{}') AS components
+                    '{}') AS components,
+           COALESCE(array_agg(c.label ORDER BY c.position) FILTER (WHERE c.id IS NOT NULL),
+                    '{}') AS component_labels
       FROM accounting_estimates e
       LEFT JOIN estimate_components c ON c.estimate_id = e.id
      WHERE e.work_item_id = :w
@@ -183,6 +191,15 @@ async def estimates(ctx: AuthContext, work_item_id: UUID) -> list[EstimateView]:
                 range=checked,
                 bias=indicator,
                 version=row["version"],
+                significant_risk=bool(row["significant_risk"]),
+                method_text=row["method_text"],
+                disclosure_ref=row["disclosure_ref"],
+                components=tuple(
+                    (str(label), Decimal(amount))
+                    for label, amount in zip(
+                        row["component_labels"], row["components"], strict=True
+                    )
+                ),
             )
         )
     return out
