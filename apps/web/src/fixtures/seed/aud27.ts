@@ -189,8 +189,8 @@ export const PARTIES_IN_INTEREST: Aud27ListOut = {
       deposited_on: "2026-01-09",
       business_days_late: 10,
       lost_earnings: "64.38",
-      correction_status: "Pending — VFCP Self-Correction Component",
-      form_5330_status: "Excise tax 15% × $64.38 = $9.66 unless PTE 2002-51 relief applies",
+      correction_status: "pending_vfcp_scc",
+      form_5330_status: "exposure",
     },
   ],
 };

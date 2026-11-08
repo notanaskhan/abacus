@@ -57,10 +57,10 @@ def refusals(
 ) -> list[str]:
     """Every reason this spec may not be rendered; empty means it renders."""
     # Imported here: the runtime module validates its own generated file at import.
-    from abacus.modules.agents.api import registered_tools
-    from abacus.modules.agents.spec_v2 import (
+    from abacus.modules.agents.api import (
         AgentSpecV2,
         ToolFacts,
+        registered_tools,
         registry_problems,
         spec_problems,
     )

@@ -1,8 +1,8 @@
 ---
 id: TASK-6209
 title: P-11-T34 tax form maps part 1
-spec: SPEC-000  # P-11 F8 (docs/plan/epics/P-11.md AC8.4, AC8.7)
-acceptance_criteria: [AC8.4, AC8.7]
+spec: SPEC-520  # P-11 F8 (docs/plan/epics/P-11.md AC8.4, AC8.7); SPEC-520's part 2 holds extraction
+acceptance_criteria: [AC-34]  # box extraction; the row's F8 AC8.4 and AC8.7 live in the epic
 risk_zone: red
 status: in-review
 epic: P-11

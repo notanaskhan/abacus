@@ -45,7 +45,7 @@ const money = (v: string | null | undefined): string =>
 function Status({ item }: { item: Aud27ItemOut }): JSX.Element {
   const word = status("aud27_item", item.status, item.pending_ep ? { context: "pending_ep" } : {});
   return (
-    <StatusPill variant={word.variant ?? "neutral"} size="state">
+    <StatusPill variant={word.variant ?? "neutral"} size="state" data-status-pill="">
       {word.label}
     </StatusPill>
   );
@@ -214,9 +214,16 @@ function MethodCard({ e }: { e: Aud27ItemOut }): JSX.Element {
   );
 }
 
-function BiasCard({ e }: { e: Aud27ItemOut }): JSX.Element | null {
+function BiasCard({
+  e,
+  all,
+}: {
+  e: Aud27ItemOut;
+  all: readonly Aud27ItemOut[];
+}): JSX.Element | null {
   if (e.bias == null) return null;
-  const retros = e.retrospectives ?? [];
+  // The handoff's line reads across the prior-year estimates ("Both prior-year estimates …").
+  const retros = all.flatMap((x) => x.retrospectives ?? []);
   const ceiling = String(Math.ceil(Math.max(0, ...retros.map((r) => Number(r.percent)))));
   return (
     <section data-aud27="bias" data-bias={e.bias} className={CARD}>
@@ -367,9 +374,17 @@ function PartiesTable({
             <dt className="text-ink-3">{COPY.pii.lostEarnings}</dt>
             <dd className="tabular-nums">{money(t.lost_earnings)}</dd>
             <dt className="text-ink-3">{COPY.pii.correction}</dt>
-            <dd>{t.correction_status ?? COPY.estimates.none}</dd>
+            <dd>
+              {t.correction_status == null
+                ? COPY.estimates.none
+                : status("ebp_late_remittance", t.correction_status).label}
+            </dd>
             <dt className="text-ink-3">{COPY.pii.form5330}</dt>
-            <dd>{t.form_5330_status ?? COPY.estimates.none}</dd>
+            <dd>
+              {t.form_5330_status == null
+                ? COPY.estimates.none
+                : status("ebp_form5330", t.form_5330_status).label}
+            </dd>
             <dt className="text-ink-3">{COPY.pii.scheduleG}</dt>
             <dd>{COPY.pii.scheduleGNote}</dd>
           </dl>
@@ -481,7 +496,7 @@ export function useEstimatesCanvas(
             {current !== undefined && current.status !== "unevaluated" && (
               <>
                 <MethodCard e={current} />
-                <BiasCard e={current} />
+                <BiasCard e={current} all={items} />
                 <DisclosureCard e={current} onReference={options.onReference} />
               </>
             )}

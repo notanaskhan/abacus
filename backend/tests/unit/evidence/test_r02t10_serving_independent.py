@@ -15,7 +15,6 @@ from __future__ import annotations
 import re
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
@@ -34,7 +33,7 @@ CLIENT, ENGAGEMENT, WORK_ITEM, ROOM = uuid4(), uuid4(), uuid4(), uuid4()
 def _ctx(*, kind: str = "human", client: bool = True) -> AuthContext:
     user = uuid4()
     return AuthContext(
-        TenantContext(uuid4(), kind, str(user)),  # type: ignore[arg-type]
+        TenantContext(uuid4(), kind, str(user)),  # type: ignore[arg-type]  # a test double or a private name the test pins
         user,
         uuid4(),
         None,
@@ -67,14 +66,14 @@ def test_the_link_lives_60_seconds_set_by_the_database() -> None:
     )
     assert "CHECK (expires_at <= issued_at + interval '60 seconds')" in source
     # The service never supplies either time: the database's clock decides.
-    issue = serving._ISSUE.text  # pyright: ignore[reportPrivateUsage]
+    issue = serving._ISSUE.text  # pyright: ignore[reportPrivateUsage]  # a test double or a private name the test pins
     insert = re.search(r"INSERT INTO deliverable_download_links\s*\((.*?)\)", issue, re.S)
     assert insert is not None
     assert "issued_at" not in insert.group(1) and "expires_at" not in insert.group(1)
 
 
 def test_a_link_is_used_once_by_its_own_person_inside_its_life() -> None:
-    use = serving._USE.text  # pyright: ignore[reportPrivateUsage]
+    use = serving._USE.text  # pyright: ignore[reportPrivateUsage]  # a test double or a private name the test pins
     for clause in ("user_id = :user", "used_at IS NULL", "expires_at > clock_timestamp()"):
         assert clause in use
 
@@ -82,7 +81,7 @@ def test_a_link_is_used_once_by_its_own_person_inside_its_life() -> None:
 def test_the_link_is_bound_to_its_tenant() -> None:
     source = _links_migration()
     assert "tenant_table(op" in source or "FORCE ROW LEVEL SECURITY" in source
-    assert "tenant_id" in serving._ISSUE.text  # pyright: ignore[reportPrivateUsage]
+    assert "tenant_id" in serving._ISSUE.text  # pyright: ignore[reportPrivateUsage]  # a test double or a private name the test pins
 
 
 def test_the_url_is_the_api_s_route_never_an_object_key() -> None:
@@ -95,7 +94,7 @@ def test_the_url_is_the_api_s_route_never_an_object_key() -> None:
 # --- the audience --------------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("role", sorted(reads._NEVER))  # pyright: ignore[reportPrivateUsage]
+@pytest.mark.parametrize("role", sorted(reads._NEVER))  # pyright: ignore[reportPrivateUsage]  # a test double or a private name the test pins
 def test_roles_that_never_read_a_deliverable_are_refused(role: str) -> None:
     audience = reads.Audience("client", CLIENT)
     assert not reads.covers(role, "client", CLIENT, CLIENT, None, None, audience, ENGAGEMENT)
@@ -171,9 +170,7 @@ async def test_a_page_view_writes_one_access_row(monkeypatch: pytest.MonkeyPatch
     def render(_content: bytes, page: int) -> PagePng:
         return PagePng(page, 3, png=b"png")
 
-    async def record(
-        _tenant: object, kind: str, subjects: list[Any], **_: object
-    ) -> None:  # Any: test double
+    async def record(_tenant: object, kind: str, subjects: list[object], **_: object) -> None:
         rows.append((kind, len(subjects)))
 
     monkeypatch.setattr(serving, "_bytes", stored)

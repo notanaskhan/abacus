@@ -7529,7 +7529,11 @@
           "correction_status": {
             "anyOf": [
               {
-                "maxLength": 60,
+                "enum": [
+                  "found",
+                  "pending_vfcp_scc",
+                  "corrected"
+                ],
                 "type": "string"
               },
               {
@@ -7555,7 +7559,11 @@
           "form_5330_status": {
             "anyOf": [
               {
-                "maxLength": 60,
+                "enum": [
+                  "exposure",
+                  "not_required",
+                  "filed"
+                ],
                 "type": "string"
               },
               {

@@ -33,11 +33,13 @@ from typing import Final, Literal
 from uuid import UUID
 
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 
 from abacus.kernel.crypto import seal
-from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.db import TenantContext, tenant_session, transaction_context
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork
+from abacus.modules.engagements.api import work_item_titles
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.reporting.deliverable_reads import Audience, first_covering_grant
 from abacus.modules.reporting.events import (
@@ -144,7 +146,6 @@ class ExpectedDeliverable:
 
 # --- publish -------------------------------------------------------------------------------
 
-_TENANT = text("SELECT current_setting('app.tenant_id')::uuid")
 _DRAFT_RENDER = text(
     """
     SELECT EXISTS (
@@ -161,7 +162,7 @@ _UPSERT = text(
     INSERT INTO deliverables (tenant_id, client_id, client_entity_id, engagement_id, work_item_id,
                               kind, title, source_module, source_ref, restricted_use, legend_kind,
                               created_by)
-    VALUES (current_setting('app.tenant_id')::uuid, :client, :entity, :engagement, :work_item,
+    VALUES (CAST(:tenant AS uuid), :client, :entity, :engagement, :work_item,
             :kind, :title, :source_module, :source_ref, :restricted, :legend, :by)
     ON CONFLICT (tenant_id, source_module, source_ref) DO NOTHING
     RETURNING id
@@ -194,20 +195,20 @@ _INSERT_VERSION = text(
         generated_document_id, render_hash, page_count, is_draft, page_comments, approval_kind,
         approval_item_id, published_by_user_id, actor_kind, on_behalf_of_user_id,
         supersedes_version_id)
-    VALUES (current_setting('app.tenant_id')::uuid, :d, :no, :ev, :doc, :hash, :pages, :draft,
+    VALUES (CAST(:tenant AS uuid), :d, :no, :ev, :doc, :hash, :pages, :draft,
             :comments, :approval_kind, :approval_item, :by, :actor_kind, :behalf, :supersedes)
     RETURNING id
     """
 )
 _AUDIENCE = text(
     "INSERT INTO deliverable_audiences (tenant_id, deliverable_id, scope_kind, scope_id) "
-    "VALUES (current_setting('app.tenant_id')::uuid, :d, :kind, :scope) ON CONFLICT DO NOTHING"
+    "VALUES (CAST(:tenant AS uuid), :d, :kind, :scope) ON CONFLICT DO NOTHING"
 )
 _EVENT = text(
     """
     INSERT INTO deliverable_events (tenant_id, deliverable_version_id, kind, reason_code,
                                     note_sealed, actor_kind, actor_user_id, on_behalf_of_user_id)
-    VALUES (current_setting('app.tenant_id')::uuid, :v, :kind, :reason, :note, :actor_kind,
+    VALUES (CAST(:tenant AS uuid), :v, :kind, :reason, :note, :actor_kind,
             :actor, :behalf)
     """
 )
@@ -247,6 +248,7 @@ async def publish_deliverable(tx: UnitOfWork, spec: DeliverableSpec) -> Publishe
     """AC-17 to AC-19, inside the provider's own unit of work."""
     _validated(spec)
     session = tx.session
+    tenant = (await transaction_context(session)).tenant_id
     if spec.is_draft:
         drawn = spec.generated_document_id is not None and bool(
             await session.scalar(
@@ -259,6 +261,7 @@ async def publish_deliverable(tx: UnitOfWork, spec: DeliverableSpec) -> Publishe
     created = await session.scalar(
         _UPSERT,
         {
+            "tenant": tenant,
             "client": spec.client_id,
             "entity": spec.client_entity_id,
             "engagement": spec.engagement_id,
@@ -284,12 +287,20 @@ async def publish_deliverable(tx: UnitOfWork, spec: DeliverableSpec) -> Publishe
         await session.execute(_SAME_VERSION, {"d": deliverable_id, "ev": spec.evidence_version_id})
     ).first()
     if same is not None:  # the same source version again: a no-op with the same ids
+        # A provider's retry may carry nothing else to record; the repeat is audited so its unit
+        # of work can commit (S31 end pass).
+        tx.record(
+            "deliverable.publish_repeated",
+            target=Target("deliverable_version", same.id),
+            scope=Scope(engagement_id=spec.engagement_id, work_item_id=spec.work_item_id),
+        )
         return PublishedDeliverable(deliverable_id, same.id, same.version_no, False)
     live = (await session.execute(_LIVE, {"d": deliverable_id})).first()
     version_no = int(await session.scalar(_NEXT_NO, {"d": deliverable_id}) or 1)
     version_id: UUID = await session.scalar(
         _INSERT_VERSION,
         {
+            "tenant": tenant,
             "d": deliverable_id,
             "no": version_no,
             "ev": spec.evidence_version_id,
@@ -309,16 +320,25 @@ async def publish_deliverable(tx: UnitOfWork, spec: DeliverableSpec) -> Publishe
     for audience in spec.audiences:
         await session.execute(
             _AUDIENCE,
-            {"d": deliverable_id, "kind": audience.scope_kind, "scope": audience.scope_id},
+            {
+                "tenant": tenant,
+                "d": deliverable_id,
+                "kind": audience.scope_kind,
+                "scope": audience.scope_id,
+            },
         )
     actor = _actor(spec)
     await session.execute(
-        _EVENT, {"v": version_id, "kind": "published", "reason": None, "note": None, **actor}
+        _EVENT,
+        {"tenant": tenant, "v": version_id, "kind": "published", "reason": None, "note": None}
+        | actor,
     )
     scope = Scope(engagement_id=spec.engagement_id, work_item_id=spec.work_item_id)
     if live is not None:
         await session.execute(
-            _EVENT, {"v": live.id, "kind": "superseded", "reason": None, "note": None, **actor}
+            _EVENT,
+            {"tenant": tenant, "v": live.id, "kind": "superseded", "reason": None, "note": None}
+            | actor,
         )
         tx.record(
             "deliverable.superseded",
@@ -368,7 +388,6 @@ _ENDED = text(
                      AND e.kind IN ('superseded', 'withdrawn')) AS ended
       FROM deliverable_versions v JOIN deliverables d ON d.id = v.deliverable_id
      WHERE v.id = :v
-     FOR UPDATE OF v
     """
 )
 
@@ -387,26 +406,31 @@ async def withdraw_deliverable(
         raise NotFound("deliverable")
     if found.ended:
         raise DeliverableWithdrawnAlready
+    tenant_id = (await transaction_context(tx.session)).tenant_id
     sealed = None
     if note is not None and note.strip():
-        tenant_id = await tx.session.scalar(_TENANT)
         sealed = await seal(tenant_id, note.strip().encode(), f"deliverable_event:{version_id}")
-    await tx.session.execute(
-        _EVENT,
-        {
-            "v": version_id,
-            "kind": "withdrawn",
-            "reason": reason,
-            "note": sealed,
-            "actor_kind": "human",
-            "actor": actor_user_id,
-            "behalf": None,
-        },
-    )
+    try:
+        await tx.session.execute(
+            _EVENT,
+            {
+                "tenant": tenant_id,
+                "v": version_id,
+                "kind": "withdrawn",
+                "reason": reason,
+                "note": sealed,
+                "actor_kind": "human",
+                "actor": actor_user_id,
+                "behalf": None,
+            },
+        )
+    except IntegrityError as exc:
+        # `deliverable_events_one_terminal`: a concurrent supersede or withdrawal won the race.
+        raise DeliverableWithdrawnAlready from exc
     tx.record(
         "deliverable.withdrawn",
         target=Target("deliverable_version", version_id),
-        after=Ref(reason=reason),
+        # The reason code is on the event row; a reference never carries text (S31 end pass).
         scope=Scope(engagement_id=found.engagement_id, work_item_id=found.work_item_id),
     )
     tx.emit(DeliverableWithdrawn(deliverable_id=found.deliverable_id, version_id=version_id))
@@ -567,12 +591,11 @@ def register_envelope_rows(provider: EnvelopeRows) -> None:
 _PORTAL = text(
     """
     SELECT d.id, d.kind, d.title, d.client_id, d.client_entity_id, d.engagement_id,
-           d.work_item_id, d.restricted_use, wi.title AS band_label,
+           d.work_item_id, d.restricted_use,
            v.version_no, v.page_count, v.is_draft, v.published_at,
            (SELECT max(e.created_at) FROM deliverable_events e
              WHERE e.deliverable_version_id = v.id AND e.kind = 'withdrawn') AS withdrawn_at
       FROM deliverables d
-      LEFT JOIN work_items wi ON wi.id = d.work_item_id
       JOIN LATERAL (
           SELECT * FROM deliverable_versions x
            WHERE x.deliverable_id = d.id
@@ -624,7 +647,7 @@ async def portal_deliverables(ctx: AuthContext, client_ids: Sequence[UUID]) -> P
         if grant is None:
             continue
         key = f"work_item:{r.work_item_id}" if r.work_item_id else f"client:{r.client_id}"
-        labels.setdefault(key, (r.band_label or r.title, r.work_item_id))
+        labels.setdefault(key, (r.title, r.work_item_id))
         if r.work_item_id is not None and r.work_item_id not in work_items:
             work_items.append(r.work_item_id)
         bands.setdefault(key, []).append(
@@ -639,6 +662,12 @@ async def portal_deliverables(ctx: AuthContext, client_ids: Sequence[UUID]) -> P
                 restricted_use=r.restricted_use,
             )
         )
+    # A work item's band reads its name (engagements owns it; S31 end pass).
+    names = await work_item_titles(ctx.tenant, work_items)
+    for work_item, name in names.items():
+        key = f"work_item:{work_item}"
+        if key in labels:
+            labels[key] = (name, work_item)
     for work_item in work_items:
         key = f"work_item:{work_item}"
         for provider in _ENVELOPE_ROWS:

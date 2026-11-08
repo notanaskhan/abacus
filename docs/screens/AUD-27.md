@@ -98,6 +98,7 @@ Verbatim from the handoff (copy keys in `screens/AUD-27/copy.ts` when built). Ke
 | DV-AUD-27-3 | The rollforward line reads "Opening … − write-offs … + provision … = closing …"; the handoff's "Jul 1, 2025" and "Jun 30, 2026" wait for period dates on the rollforward | The dates are not on the read | DEC-2813 |
 | DV-AUD-27-4 | The footer carries "Request partner conclusion…" only; "Citations (6)" and "Procedures (2)" wait for counts on the read. The Agent dock is the AUD-02 cockpit's (TASK-5003's dock, then P-09-T09 on the E6 store); the canvas does not draw it | Counts not on the read; the dock is the host's | DEC-2813 |
 | DV-AUD-27-5 | The PT card's Form 5330 line shows the server's status text; the excise figure is never computed in the browser | ADR-050 | DEC-2813 |
+| DV-AUD-27-6 | The prohibited transaction's correction and Form 5330 read the registry's words ("Pending — VFCP Self-Correction Component", "Exposure"); the excise figure ("15% × $64.38 = $9.66") stays on EBP-04 | The read carries status words, not composed sentences (S31 end pass) | DEC-2813 |
 
 ## Parity
 | Artboard | Tier | Diff % | Notes |

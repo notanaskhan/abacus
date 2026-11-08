@@ -73,7 +73,7 @@ def _rows(projected: list[cp.ProjectedRow]) -> list[CompletionRow]:
 
 
 async def test_ac_northwind_on_oct_6_reads_12_complete_1_na_and_5_open(facts: None) -> None:
-    tenant: Any = SimpleNamespace()
+    tenant: Any = SimpleNamespace()  # Any: a test double
     projected = await derive(tenant, uuid.uuid4(), _items(), REPORT_DATE)
     checklist = summarise(_rows(projected))
     assert (checklist.done, checklist.not_applicable, checklist.open) == (12, 1, 5)
@@ -86,7 +86,7 @@ async def test_ac_northwind_on_oct_6_reads_12_complete_1_na_and_5_open(facts: No
 
 
 async def test_ac_a_rebuild_from_the_facts_yields_identical_rows(facts: None) -> None:
-    tenant: Any = SimpleNamespace()
+    tenant: Any = SimpleNamespace()  # Any: a test double
     wi = uuid.uuid4()
     first = await derive(tenant, wi, _items(), REPORT_DATE)
     again = await derive(tenant, wi, _items(), REPORT_DATE)
@@ -97,19 +97,19 @@ async def test_an_item_without_a_provider_reads_not_yet_derived(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(cp, "_FACTS", {})
-    rows = await derive(SimpleNamespace(), uuid.uuid4(), _items()[:1], REPORT_DATE)  # type: ignore[arg-type]
+    rows = await derive(SimpleNamespace(), uuid.uuid4(), _items()[:1], REPORT_DATE)  # type: ignore[arg-type]  # a test double or a private name the test pins
     assert (rows[0].status, rows[0].evidence_text) == ("open", cp.NOT_DERIVED)
 
 
 async def test_the_subscriber_is_inert_until_m16(monkeypatch: pytest.MonkeyPatch) -> None:
     called: list[object] = []
 
-    async def project(*a: object, **_k: object) -> int:
+    async def store_items(*a: object, **_k: object) -> int:
         called.append(a)
         return 0
 
-    monkeypatch.setattr(cp, "project", project)
-    event: Any = SimpleNamespace(
+    monkeypatch.setattr(cp, "store_items", store_items)
+    event: Any = SimpleNamespace(  # Any: a test double
         tenant_id=uuid.uuid4(), event_id=uuid.uuid4(), payload={"work_item_id": str(uuid.uuid4())}
     )
     assert cp.completion_dark.COMPLETION_LIVE is False

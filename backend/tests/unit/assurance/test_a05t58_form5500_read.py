@@ -57,7 +57,7 @@ def wired(monkeypatch: pytest.MonkeyPatch) -> dict[str, Form5500View]:
 
 async def test_no_draft_reads_not_received(wired: dict[str, Form5500View]) -> None:
     wired["view"] = Form5500View(None, None, (), ())
-    out = await ebp_contract.ebp_form5500_route(WI, None)  # type: ignore[arg-type]
+    out = await ebp_contract.ebp_form5500_route(WI, None)  # type: ignore[arg-type]  # a test double or a private name the test pins
     assert out.draft_received is False
     assert out.rows == [] and out.part_iv == [] and out.evidence_version_id is None
 
@@ -75,7 +75,7 @@ async def test_rows_carry_both_sides_and_the_citations_match_id(
         ),
         (PartIvView("4a", "yes", D("33540"), "EBP-04 finding", "consistent", None),),
     )
-    out = await ebp_contract.ebp_form5500_route(WI, None)  # type: ignore[arg-type]
+    out = await ebp_contract.ebp_form5500_route(WI, None)  # type: ignore[arg-type]  # a test double or a private name the test pins
     assert out.draft_received is True and out.evidence_version_id == VERSION
     rows = {r.line_code: r for r in out.rows}
     assert rows["1l"].difference == D("48600") and rows["1l"].match_id == MATCH
@@ -101,7 +101,7 @@ async def test_an_inconsistent_4a_and_a_na_answer(wired: dict[str, Form5500View]
             PartIvView("4e", "yes", D("500000"), None, None, None),
         ),
     )
-    out = await ebp_contract.ebp_form5500_route(WI, None)  # type: ignore[arg-type]
+    out = await ebp_contract.ebp_form5500_route(WI, None)  # type: ignore[arg-type]  # a test double or a private name the test pins
     by_line = {a.line: a for a in out.part_iv}
     assert by_line["4a"].consistency == "inconsistent" and by_line["4a"].basis == ""
     assert by_line["4j"].draft_answer is None

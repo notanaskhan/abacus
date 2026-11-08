@@ -40,7 +40,7 @@ function row(
   fields: Omit<TraceRowOut, "seq" | "at" | "actor" | "detail"> &
     Partial<Pick<TraceRowOut, "actor" | "detail">>,
 ): TraceRowOut {
-  return { seq, at, actor: null, detail: null, ...fields };
+  return { seq, at, actor: null, detail: null, duration_ms: null, ...fields };
 }
 
 function sumRead(rows: RecordsReadOut[]): number {

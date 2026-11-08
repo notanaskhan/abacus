@@ -3558,7 +3558,7 @@ export type Aud27ProhibitedOut = {
     /**
      * Correction Status
      */
-    correction_status?: string | null;
+    correction_status?: 'found' | 'pending_vfcp_scc' | 'corrected' | null;
     /**
      * Deposited On
      */
@@ -3566,7 +3566,7 @@ export type Aud27ProhibitedOut = {
     /**
      * Form 5330 Status
      */
-    form_5330_status?: string | null;
+    form_5330_status?: 'exposure' | 'not_required' | 'filed' | null;
     /**
      * Late Remittance Id
      */

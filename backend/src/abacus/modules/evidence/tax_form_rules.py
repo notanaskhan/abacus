@@ -92,7 +92,7 @@ def flag(fields: Sequence[object], broken: set[str]) -> list[object]:
     out: list[object] = []
     for f in fields:
         key = getattr(f, "field_key", None)
-        out.append(replace(f, low_confidence=True) if key in broken else f)  # type: ignore[type-var]
+        out.append(replace(f, low_confidence=True) if key in broken else f)  # type: ignore[type-var]  # the extractor's field dataclass, typed object here
     return out
 
 

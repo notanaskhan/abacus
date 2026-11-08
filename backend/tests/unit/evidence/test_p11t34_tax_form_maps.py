@@ -21,8 +21,9 @@ from abacus.modules.evidence.words import PageWords, Word
 from abacus_tools.synthetic.scanned_corpus import generate
 
 ROOT: Final = Path(__file__).resolve().parents[4]
+Corpus = dict[str, Any]  # Any: the golden corpus as YAML
 GOLDEN = cast(
-    dict[str, Any], yaml.safe_load((ROOT / "backend/tests/golden/scanned_corpus.yaml").read_text())
+    Corpus, yaml.safe_load((ROOT / "backend/tests/golden/scanned_corpus.yaml").read_text())
 )
 FORMS: Final = (
     "w2",

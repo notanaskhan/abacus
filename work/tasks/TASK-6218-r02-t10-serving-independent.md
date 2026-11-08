@@ -1,7 +1,7 @@
 ---
 id: TASK-6218
 title: R-02-T10 independent AC tests for R-02-T07's serving
-spec: SPEC-R02
+spec: SPEC-646
 acceptance_criteria: [AC-38, AC-39, AC-40, AC-41]
 risk_zone: red
 status: in-review

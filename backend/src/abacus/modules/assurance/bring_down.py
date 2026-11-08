@@ -85,8 +85,11 @@ class BringDownWorkflow:
 
     @workflow.run
     async def run(self, params: BringDownInput) -> BringDownResult:
-        self._report_date = params.report_date
-        self._fire_at = params.fire_at
+        # A signal delivered with the start (signal-with-start, or one queued before the first
+        # task) runs before `run`: its date is newer than the start's, so it stands (S31 end pass).
+        if not self._moved:
+            self._report_date = params.report_date
+            self._fire_at = params.fire_at
         while True:
             self._moved = False
             wait = datetime.fromisoformat(self._fire_at) - workflow.now()

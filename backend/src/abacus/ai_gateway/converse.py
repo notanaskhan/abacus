@@ -52,10 +52,10 @@ from abacus.ai_gateway import (
     GatewayCall,
     GatewayRefused,
     _admitted,  # pyright: ignore[reportPrivateUsage] -- the gateway's own admission, one package
-    _candidate_routes,  # pyright: ignore[reportPrivateUsage]
-    _next_route_exists,  # pyright: ignore[reportPrivateUsage]
-    _route_failed,  # pyright: ignore[reportPrivateUsage]
-    _spent_by_run,  # pyright: ignore[reportPrivateUsage]
+    _candidate_routes,  # pyright: ignore[reportPrivateUsage]  # the gateway's own admission, shared in-package
+    _next_route_exists,  # pyright: ignore[reportPrivateUsage]  # the gateway's own admission, shared in-package
+    _route_failed,  # pyright: ignore[reportPrivateUsage]  # the gateway's own admission, shared in-package
+    _spent_by_run,  # pyright: ignore[reportPrivateUsage]  # the gateway's own admission, shared in-package
     barred_routes,
     cost,
     unfenced,

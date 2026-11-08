@@ -1094,6 +1094,10 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"answers_sealed", "state", "version", "updated_by", "updated_at"}
         ),
         "acceptance_manual_checks": frozenset({"completed_by", "note_sealed"}),
+        # A-07-T22 (0741, DEC-2806): a checklist version is published once; its items never change.
+        "assurance_checklist_template_versions": frozenset(
+            {"published_at", "published_by", "status"}
+        ),
         # R-01 Story 2.2 (0159): a person's void of a wrong rule link, the one change it takes.
         "fulfilments": frozenset({"voided_at", "voided_by", "void_reason"}),
         "ethical_walls": frozenset(

@@ -157,11 +157,17 @@ def test_the_agent_never_concludes_an_estimate() -> None:
 # --- one late-remittance record ------------------------------------------------------------------
 
 
-def test_late_remittances_live_in_one_table() -> None:
+def test_late_remittances_live_in_one_object() -> None:
+    """One object (0658): the remittance row, and its event log (corrections, status moves).
+    Only the object holds the late principal; nothing else names a late-remittance table."""
     created: set[str] = set()
     for path in MIGRATIONS.glob("*.py"):
         created |= set(re.findall(r"CREATE TABLE (\w*late_remit\w*)", path.read_text()))
-    assert created == {"ebp_late_remittances"}
+    assert created == {"ebp_late_remittances", "ebp_late_remittance_events"}
+    source = next(MIGRATIONS.glob("0658_*.py")).read_text()
+    events = source[source.index("CREATE TABLE ebp_late_remittance_events") :]
+    events = events[: events.index(")\n")]
+    assert "principal" not in events
 
 
 def test_4a_aud27_and_ebp04_read_the_same_record() -> None:

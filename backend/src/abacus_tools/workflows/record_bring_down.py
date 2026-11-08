@@ -16,7 +16,7 @@ from temporalio import activity
 from temporalio.worker import Worker
 
 from abacus.kernel.temporal import payload_codec
-from abacus.modules.assurance.bring_down import (
+from abacus.modules.assurance.api import (
     BRING_DOWN_ID_PREFIX,
     BringDownInput,
     BringDownResult,

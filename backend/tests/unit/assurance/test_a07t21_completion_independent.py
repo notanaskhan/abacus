@@ -178,7 +178,7 @@ def test_the_eqr_is_denied_every_mutating_workpaper_act() -> None:
 
 def _ctx(user: uuid.UUID, *, kind: str = "human") -> AuthContext:
     return AuthContext(
-        TenantContext(uuid.uuid4(), kind, str(user)),  # type: ignore[arg-type]
+        TenantContext(uuid.uuid4(), kind, str(user)),  # type: ignore[arg-type]  # a test double or a private name the test pins
         user,
         uuid.uuid4(),
         None,
@@ -252,7 +252,7 @@ def test_the_digest_is_built_from_decided_cards_only() -> None:
     assert "decided_cards(" in source
     for other in ("open_cards", "pending", "proposals", "suggestions"):
         assert other not in source
-    assert "'decision'" in eqr_service._CARD.text  # pyright: ignore[reportPrivateUsage]
+    assert "'decision'" in eqr_service._CARD.text  # pyright: ignore[reportPrivateUsage]  # a test double or a private name the test pins
 
 
 # --- T19 inert, T23 guarded ----------------------------------------------------------------------
@@ -264,7 +264,7 @@ def test_every_a07_flag_is_off() -> None:
 
 @pytest.mark.parametrize("key", [key for key, *_ in a07_registrations.SECTIONS])
 async def test_no_a07_rail_row_shows_with_its_flag_off(key: str) -> None:
-    provider = a07_registrations._section_provider(key)  # pyright: ignore[reportPrivateUsage]
+    provider = a07_registrations._section_provider(key)  # pyright: ignore[reportPrivateUsage]  # a test double or a private name the test pins
     assert await provider(TENANT, uuid.uuid4()) is None
 
 

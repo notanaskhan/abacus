@@ -548,13 +548,16 @@ def _a07_bundle(raw: Mapping[str, Any]) -> Json:  # Any: YAML
         for item in specific
     ]
     body += [
-        {
-            "type": "clause",
-            "clause_id": str(item["trigger"]),
-            "enabled": False,
-            "non_standard": False,
-            "blocks": [_p(str(item["text"]))],
-        }
+        cast(
+            Json,
+            {
+                "type": "clause",
+                "clause_id": str(item["trigger"]),
+                "enabled": False,
+                "non_standard": False,
+                "blocks": [_p(str(item["text"]))],
+            },
+        )
         for item in specific
     ]
     return {

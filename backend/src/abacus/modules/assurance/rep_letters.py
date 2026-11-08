@@ -40,7 +40,7 @@ from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork, uow
 from abacus.modules.engagements.api import assurance_item, get_ref
 from abacus.modules.identity.api import AuthContext, Forbidden, authorise
-from abacus.modules.reporting.api import published_clauses
+from abacus.modules.methodology.api import published_clauses
 from abacus.modules.review.api import decided_cards
 
 FAMILY: Final = "representation_letter"
@@ -431,8 +431,8 @@ async def approve(ctx: AuthContext, work_item_id: UUID, seen_hash: str) -> UUID:
             text(
                 "INSERT INTO representation_letter_approvals (tenant_id, engagement_id, "
                 "work_item_id, version_id, approved_by, seen_hash, mfa_verified_at, actor_kind, "
-                "actor_id) VALUES (:t, :e, :wi, :v, :by, :seen, clock_timestamp(), "
-                "current_setting('app.actor_kind', true), current_setting('app.actor_id', true))"
+                "actor_id) VALUES (:t, :e, :wi, :v, :by, :seen, :mfa, "
+                ":actor_kind, :actor_id)"
             ),
             {
                 "t": ctx.tenant_id,
@@ -441,6 +441,10 @@ async def approve(ctx: AuthContext, work_item_id: UUID, seen_hash: str) -> UUID:
                 "v": v.id,
                 "by": ctx.user_id,
                 "seen": seen_hash,
+                # The partner's actual second factor (the matrix's `mfa_recent` held it fresh).
+                "mfa": ctx.mfa_at,
+                "actor_kind": ctx.tenant.actor_kind,
+                "actor_id": ctx.tenant.actor_id,
             },
         )
         await tx.session.execute(

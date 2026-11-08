@@ -7,6 +7,7 @@ from __future__ import annotations
 import inspect
 import json
 import re
+from dataclasses import replace
 from pathlib import Path
 from typing import cast
 from uuid import uuid4
@@ -15,10 +16,10 @@ import pytest
 import yaml
 
 from abacus.api.export_openapi import document
-from abacus.kernel.errors import NotImplementedYet
 from abacus.kernel.uow import UnitOfWork
 from abacus.modules.reporting.api import (
     DeliverableAudience,
+    DeliverableInvalid,
     DeliverableSpec,
     deliverables_for_work_item,
     publish_deliverable,
@@ -127,5 +128,7 @@ async def test_consumers_bind_to_the_publish_signature() -> None:
         is_draft=True,
         page_comments=True,
     )
-    with pytest.raises(NotImplementedYet):
-        await publish_deliverable(cast("UnitOfWork", None), spec)
+    # R-02-T09 made the service live (S31 end pass): a spec C10 can't publish is refused before
+    # the provider's transaction is touched.
+    with pytest.raises(DeliverableInvalid):
+        await publish_deliverable(cast("UnitOfWork", None), replace(spec, page_count=0))

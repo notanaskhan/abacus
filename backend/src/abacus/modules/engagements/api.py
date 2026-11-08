@@ -91,6 +91,7 @@ from abacus.modules.engagements.hold_scope import (
     engagement_hold_facts,
     engagements_in_hold_scope,
     work_item_engagement,
+    work_item_titles,
 )
 from abacus.modules.engagements.home_work import AssignedWork, assigned_work
 from abacus.modules.engagements.human_gates import (
@@ -633,6 +634,7 @@ __all__ = [
     "work_item_index",
     "work_item_offices",
     "work_item_provider",
+    "work_item_titles",
 ]
 
 # S29 leftovers (TASK-6012): what the replay recorders and the OCR suite runner read (BOUND-001).
