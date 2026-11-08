@@ -288,6 +288,7 @@ from abacus.modules.requests.api import (
 )
 from abacus.modules.review.api import STATEMENTS as SIGN_OFF_STATEMENTS
 from abacus.modules.review.api import (
+    AlreadySigned,
     create_issue,
     decide_card,
     raise_review_note,
@@ -475,6 +476,9 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.planning_slice import (
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.planning_slice import (
     NEEDS as PLANNING_NEEDS,
+)
+from abacus_tools.synthetic.scenarios.brightwater_hale.planning_slice import (
+    RA_PAPER as PLANNING_RA_PAPER,
 )
 from abacus_tools.synthetic.scenarios.brightwater_hale.planning_slice import (
     RISKS as PLANNING_RISKS,
@@ -4165,11 +4169,18 @@ async def _completion_levels_assigned(conn: asyncpg.Connection, _: Scenario, eve
 
 
 async def _completion_paper_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """A matrix paper, unless the planning slice already made it (RA-100 on Sep 14)."""
     code = str(event.data["paper"])
+    engagement = (await _northwind_work_item(conn))[0]
+    if await tenant_value(
+        conn, TENANT, "SELECT id FROM workpapers WHERE engagement_id = $1 AND code = $2",
+        engagement, code,
+    ):  # fmt: skip
+        return
     _code, title, kind, area, _who = next(p for p in _completion.MATRIX_PAPERS if p[0] == code)
     await create_workpaper(
         await _staff_context(conn, event),
-        (await _northwind_work_item(conn))[0],
+        engagement,
         code,
         title,
         area,
@@ -4210,14 +4221,17 @@ async def _completion_matrix_signed(conn: asyncpg.Connection, _: Scenario, event
         target = found[0].target_id
     facts = await reviewable_facts(ctx.tenant, kind, target)
     level = int(cast(int, event.data["level"]))
-    await sign_target(
-        ctx,
-        kind,
-        target,
-        level,
-        f"sha256:{facts.content_hash.removeprefix('sha256:')}",
-        SIGN_OFF_STATEMENTS[level].version,
-    )
+    # The planning slice signs RA-100's L1 and L3 on Sep 14 (AUD-05 d): the same person on the
+    # same content is that sign-off, kept, not a second row.
+    with suppress(AlreadySigned):
+        await sign_target(
+            ctx,
+            kind,
+            target,
+            level,
+            f"sha256:{facts.content_hash.removeprefix('sha256:')}",
+            SIGN_OFF_STATEMENTS[level].version,
+        )
 
 
 async def _completion_paper(conn: asyncpg.Connection, code: str) -> UUID:
@@ -5585,7 +5599,9 @@ async def _northwind_ic(conn: asyncpg.Connection, _: Scenario, event: Event) -> 
     ctx = await _staff_context(conn, event)
     engagement = (await _northwind_work_item(conn))[0]
     code, title = PLANNING_IC_PAPER
-    paper = await create_workpaper(ctx, engagement, code, title, "Internal control")
+    paper = await create_workpaper(
+        ctx, engagement, code, title, "Internal control", kind="internal_control"
+    )
     await record_exceptions(
         ctx,
         engagement,
@@ -5634,6 +5650,53 @@ async def _northwind_risks_approved(conn: asyncpg.Connection, _: Scenario, event
         rationale=str(event.data["rationale"]),
         seen_version=int(cast(int, card["version_no"])),
     )
+
+
+async def _northwind_ra_paper(conn: asyncpg.Connection, s: Scenario, event: Event) -> None:
+    """AUD-05 (TASK-6407): Marcus's Risk Assessment paper, the completion slice's RA-100 row."""
+    await _completion_paper_created(
+        conn, s, replace(event, data={**event.data, "paper": PLANNING_RA_PAPER})
+    )
+
+
+async def _northwind_ra_signed(conn: asyncpg.Connection, s: Scenario, event: Event) -> None:
+    """AUD-05 d (TASK-6407, DEC-2957): Marcus's L1, then Hannah's review at 4:52 PM."""
+    data = {**event.data, "target": "workpaper", "ref": str(event.data["paper"])}
+    await _completion_matrix_signed(conn, s, replace(event, data=data))
+
+
+async def _northwind_materiality_reassessed(
+    conn: asyncpg.Connection, s: Scenario, event: Event
+) -> None:
+    """AUD-07 d (TASK-6407): Hannah raises the reassessment at final, unless the review slice
+    already did (any reassessment card on Northwind)."""
+    item = (await _northwind_work_item(conn))[1]
+    if await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM decision_cards WHERE work_item_id = $1 "
+        "AND kind = 'materiality_reassessment'",
+        item,
+    ):
+        return
+    await _materiality_reassessed(conn, s, event)
+
+
+async def _northwind_materiality_no_change(
+    conn: asyncpg.Connection, s: Scenario, event: Event
+) -> None:
+    """AUD-07 d (TASK-6407): Margaret records "No change" (v3), unless it is already decided."""
+    item = (await _northwind_work_item(conn))[1]
+    if not await tenant_value(
+        conn,
+        TENANT,
+        "SELECT id FROM decision_cards WHERE work_item_id = $1 "
+        "AND kind = 'materiality_reassessment' AND status = 'awaiting_role'",
+        item,
+    ):
+        return
+    data = {**event.data, "option_key": "no_change"}
+    await _materiality_decided(conn, s, replace(event, data=data))
 
 
 async def _ridgeline_issue_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
@@ -5853,13 +5916,18 @@ HANDLERS: Final[dict[str, Handler]] = {
     "assurance.materiality_proposed": _materiality_proposed,
     "assurance.northwind_tb_basis": _northwind_tb_basis,  # A-04-T28
     "assurance.northwind_materiality_basis": _northwind_materiality_basis,
-    "review.northwind_materiality_basis_decided": _northwind_materiality_basis_decided,
     "assurance.northwind_risks": _northwind_risks,
     "assurance.northwind_ic": _northwind_ic,
     "assurance.northwind_risks_routed": _northwind_risks_routed,
     "review.northwind_risks_approved": _northwind_risks_approved,
     "assurance.materiality_reassessed": _materiality_reassessed,
     "review.materiality_decided": _materiality_decided,
+    # TASK-6407: after the review slice's own kinds, so at one instant its writes come first.
+    "review.northwind_materiality_basis_decided": _northwind_materiality_basis_decided,
+    "assurance.northwind_ra_paper": _northwind_ra_paper,
+    "review.northwind_ra_signed": _northwind_ra_signed,
+    "assurance.northwind_materiality_reassessed": _northwind_materiality_reassessed,
+    "review.northwind_materiality_no_change": _northwind_materiality_no_change,
     "review.ridgeline_issue_created": _ridgeline_issue_created,
     "review.feld_checkpoint_saved": _feld_checkpoint_saved,
 }
