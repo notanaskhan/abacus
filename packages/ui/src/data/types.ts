@@ -32,8 +32,9 @@ export interface TableColumn {
 
 export type RowKind = "item" | "group" | "total" | "grand";
 
-/** A tickmark (C-01): `MS` and `Received` are green pills with a check, `check` a bare check. */
-export type Tickmark = "MS" | "Received" | "PY" | "TB" | "F" | "check";
+/** A tickmark (C-01): `MS` and `Received` are green pills with a check, `check` a bare check,
+ * `drafted` an outlined ring (◌) on a value the agent drafted and no person has adopted yet. */
+export type Tickmark = "MS" | "Received" | "PY" | "TB" | "F" | "check" | "drafted";
 
 export interface TableCell {
   /** A decimal string ("1234.56"), a text value, or null for blank. */
