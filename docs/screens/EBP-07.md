@@ -95,9 +95,9 @@ Verbatim from the handoff (copy keys in `screens/EBP-07/copy.ts` when built). Ke
 ## Deviations
 | ID | What differs from the handoff | Why | Decision recorded |
 |---|---|---|---|
-| DV-EBP-07-2 | Part IV lists the five lines the code checks (4a, 4b, 4d, 4i, 4j), not the draft's thirteen; 4c, 4e–4h and 4k–4m wait for their checks | `PartIvLineOut.line` is the contract's five; widening it is a contract change | DEC-2814 |
-| DV-EBP-07-3 | The 4i schedule shows identity and current value from EBP-06's investments read, totalled by the draft's line 1f; the (a) party-in-interest asterisk, (c) description and (d) cost columns wait for a 4i render read (`ebp.schedule.render`, C11) | No schedule read carries those fields yet | DEC-2814 |
-| DV-EBP-07-4 | "Send note to AUD-20" calls the stub route (501 until A-06's receiving endpoint); "Remind Summit" hands off to POR-14 (no `/ebp/form-5500/remind` route yet); keyed values stay T38's stub | Those writes are other tasks' | DEC-2814 |
+| DV-EBP-07-2 | Part IV lists all 13 lines; code checks 4a only, so the others show "—" where the handoff shows ✓ (`not_checked`) | No code check covers 4b–4m yet; a tick would claim one | DEC-2820 (was DEC-2814's five lines) |
+| DV-EBP-07-3 | The 4i schedule reads code's schedule (marks, `**` cost omission, total tied to line 1c); column (c) description is blank, since the trust report's lines carry no description, and the C11 render (`ebp.schedule.render`) is not built | No stored description; the render is its own task | DEC-2820 |
+| DV-EBP-07-4 | "Send note to AUD-20" calls the stub route (501 until A-06's receiving endpoint); "Remind Summit" hands off to POR-14 (no `/ebp/form-5500/remind` route yet); keyed values are live by API (no artboard draws an entry form) | Those writes are other tasks' | DEC-2820 |
 | DV-EBP-07-1 | Agent-off path: every agent-filled value has a keyed or imported equivalent with a required citation note; the agent states read "not cleared" until A-04's `workpapers.drafting` and the firm's opt-in hold | A-05 F13; ADR-112 | DEC-1857 |
 
 ## Parity

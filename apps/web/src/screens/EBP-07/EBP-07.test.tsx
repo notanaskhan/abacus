@@ -122,7 +122,17 @@ describe("EBP-07", () => {
   it("c: the 4i schedule totals 16,812,400 and the 4a schedule follows", async () => {
     show("c", "schedules");
     expect((await drawn("[data-held='total']")).textContent).toContain("16,812,400");
-    expect((await drawn("[data-held='krs_500']")).textContent).toContain("6,120,450");
+    const krs = await drawn("[data-held='KRS 500 Index Fund']");
+    expect(krs.textContent).toContain("6,120,450");
+    expect(krs.dataset.mark).toBe("*");
+    expect(krs.textContent).toContain("**"); // cost omitted, participant-directed
+    expect(
+      document
+        .querySelector("[data-held='Self-directed brokerage accounts (BrokerWindow)']")
+        ?.getAttribute("data-mark"),
+    ).toBe("");
+    expect((await drawn("[data-held='total']")).hasAttribute("data-ties")).toBe(true);
+    expect(document.body.textContent).toContain("* Party in interest");
     expect((await drawn("[data-ebp07='schedule-4a']")).textContent).toContain("line 4a");
   });
 
@@ -132,6 +142,16 @@ describe("EBP-07", () => {
       expect(document.querySelector("[data-test='state']")?.textContent).toBe("empty");
     });
     expect(document.querySelector("[data-ebp07='schedule-h']")).toBeNull();
+  });
+
+  it("b: every line 4a to 4m; code checks 4a, the others read not checked", async () => {
+    show("b", "part_iv");
+    await drawn("[data-part-iv='4m']");
+    expect(document.querySelectorAll("[data-part-iv]")).toHaveLength(13);
+    expect((await drawn("[data-part-iv='4e']")).textContent).toContain("500,000");
+    expect(
+      (await drawn("[data-part-iv='4e']")).querySelector("[data-ebp07='not-checked']"),
+    ).not.toBeNull();
   });
 
   it("e: 4a answered No is flagged inconsistent, with Raise exception…", async () => {

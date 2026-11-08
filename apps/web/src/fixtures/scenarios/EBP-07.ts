@@ -20,8 +20,7 @@ import { auditHandlers } from "../handlers/audits";
 import { seedScenario } from "../scenario";
 import { getSeed } from "../seed";
 import { ebp04Schedule } from "../seed/ebp04";
-import { ebp06View } from "../seed/ebp06";
-import { type Ebp07Variant, ebp07View } from "../seed/ebp07";
+import { type Ebp07Variant, ebp07Schedule4i, ebp07View } from "../seed/ebp07";
 import { capabilitiesFor } from "../seed/shell";
 
 const seed = getSeed();
@@ -46,7 +45,7 @@ function frame(state: string, options: { variant?: Ebp07Variant; on?: boolean } 
         "GET /v1/me/capabilities": ({ persona }) =>
           json(capabilities(persona, options.on ?? true)),
         [`GET ${E}/form-5500`]: () => json(ebp07View(variant)),
-        [`GET ${E}/investments`]: () => json(ebp06View("a")),
+        [`GET ${E}/form-5500/schedules/4i`]: () => json(ebp07Schedule4i()),
         [`GET ${E}/schedule-h-4a`]: () => json(ebp04Schedule("a")),
         [`POST ${E}/form-5500/reconciliation-note`]: () => json({ id: crypto.randomUUID() }, 201),
       };

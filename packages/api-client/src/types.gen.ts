@@ -32171,7 +32171,7 @@ export type PartIvLineOut = {
     /**
      * Consistency
      */
-    consistency: 'consistent' | 'inconsistent';
+    consistency: 'consistent' | 'inconsistent' | 'not_checked';
     /**
      * Draft Amount
      */
@@ -32183,7 +32183,7 @@ export type PartIvLineOut = {
     /**
      * Line
      */
-    line: '4a' | '4b' | '4d' | '4i' | '4j';
+    line: '4a' | '4b' | '4c' | '4d' | '4e' | '4f' | '4g' | '4h' | '4i' | '4j' | '4k' | '4l' | '4m';
 };
 
 /**
@@ -41579,6 +41579,68 @@ export type SampleSetVersionOut = {
  * SampleSetVersionStatus
  */
 export type SampleSetVersionStatus = 'drawing' | 'draft' | 'approved' | 'superseded' | 'failed';
+
+/**
+ * Schedule4iOut
+ *
+ * A-05-T58 close (DEC-2820): the 4i schedule by code (`compute.ebp.form5500.schedule_4i`)
+ * and the draft's line 1c total it must equal.
+ */
+export type Schedule4iOut = {
+    /**
+     * Draft Total
+     */
+    draft_total: string | null;
+    /**
+     * Inputs Hash
+     */
+    inputs_hash: string;
+    /**
+     * Rows
+     */
+    rows: Array<Schedule4iRowOut>;
+    /**
+     * Ties
+     */
+    ties: boolean;
+    /**
+     * Total
+     */
+    total: string;
+};
+
+/**
+ * Schedule4iRowOut
+ *
+ * One line of Schedule H line 4i: "*" marks a party in interest; a participant-directed
+ * holding's cost is omitted ("**").
+ */
+export type Schedule4iRowOut = {
+    /**
+     * Cost
+     */
+    cost: string | null;
+    /**
+     * Cost Omitted
+     */
+    cost_omitted: boolean;
+    /**
+     * Current Value
+     */
+    current_value: string;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Identity
+     */
+    identity: string;
+    /**
+     * Mark
+     */
+    mark: '*' | '';
+};
 
 /**
  * ScheduleApprovalOut
@@ -56463,6 +56525,58 @@ export type EbpForm5500NoteResponses = {
 };
 
 export type EbpForm5500NoteResponse = EbpForm5500NoteResponses[keyof EbpForm5500NoteResponses];
+
+export type EbpSchedule4iData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/ebp/form-5500/schedules/4i';
+};
+
+export type EbpSchedule4iErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EbpSchedule4iError = EbpSchedule4iErrors[keyof EbpSchedule4iErrors];
+
+export type EbpSchedule4iResponses = {
+    /**
+     * Successful Response
+     */
+    200: Schedule4iOut;
+};
+
+export type EbpSchedule4iResponse = EbpSchedule4iResponses[keyof EbpSchedule4iResponses];
 
 export type EbpImportData = {
     body: ImportIn;
