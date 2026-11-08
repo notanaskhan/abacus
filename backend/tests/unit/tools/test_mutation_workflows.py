@@ -65,9 +65,9 @@ def test_t026_weekly_runs_every_scope_on_sunday_in_shards_under_4_hours() -> Non
     jobs = _jobs("mutation-weekly.yml")
     shard = jobs["shard"]
     matrix = cast(dict[str, object], cast(dict[str, object], shard["strategy"])["matrix"])
-    assert matrix["shard"] == [1, 2, 3, 4]
+    assert matrix["shard"] == [1, 2, 3, 4, 5, 6]  # Q-03-T205
     runs = _runs(shard)
-    assert "mutation plan weekly" in runs and "--shards 4" in runs
+    assert "mutation plan weekly" in runs and "--shards 6" in runs
     assert f"timeout --signal=INT 230m {MUTMUT}" in runs
     assert cast(int, shard["timeout-minutes"]) <= 250
     floors = jobs["floors"]
