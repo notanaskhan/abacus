@@ -37,6 +37,7 @@ const TICK_WORD: Record<Tickmark, string> = {
   TB: "Agreed to trial balance",
   F: "Footed",
   check: "Agreed",
+  drafted: "Drafted by the agent, not yet adopted",
 };
 
 /**
@@ -45,6 +46,19 @@ const TICK_WORD: Record<Tickmark, string> = {
  */
 export function TickCell({ tick }: { tick: Tickmark }): JSX.Element {
   const label = TICK_WORD[tick];
+  if (tick === "drafted") {
+    // A-04-T27 (C-02): an outlined ring, the drafted twin of the bare check; never a green pill.
+    return (
+      <span
+        role="img"
+        aria-label={label}
+        data-tick={tick}
+        className="absolute top-1/2 right-[10px] flex h-[18px] w-[31px] -translate-y-1/2 items-center pl-[5px] text-ink-3"
+      >
+        <span className="size-[11px] rounded-full border-[1.5px] border-dashed border-ink-3" />
+      </span>
+    );
+  }
   if (tick === "check") {
     return (
       <span

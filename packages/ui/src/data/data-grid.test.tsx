@@ -228,6 +228,24 @@ describe("tickmarks", () => {
     expect(screen.getByRole("img", { name: "Agreed to prior year" }).textContent).toBe("PY");
     expect(screen.getAllByRole("columnheader")[1]?.style.paddingRight).toBe("62px");
   });
+
+  it("draws a drafted value's tick as an outlined ring, never a green pill (A-04-T27)", () => {
+    render(
+      <DataGrid
+        label="Evidence"
+        columns={[
+          { key: "item", header: "Fund", type: "label" },
+          { key: "eoy", header: "End of year", tick: true },
+        ]}
+        rows={[
+          { id: "a", label: "Vanguard 500", cells: { eoy: { value: "1200", tick: "drafted" } } },
+        ]}
+      />,
+    );
+    const drafted = screen.getByRole("img", { name: "Drafted by the agent, not yet adopted" });
+    expect(drafted.className).not.toContain("bg-green");
+    expect(drafted.querySelector(".border-dashed")).not.toBeNull();
+  });
 });
 
 describe("server totals only (ADR-050)", () => {
