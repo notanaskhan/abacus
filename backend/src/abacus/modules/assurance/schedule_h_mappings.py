@@ -80,6 +80,9 @@ def problems_of(body: MappingPublishIn) -> list[str]:
     return found
 
 
+# Two publishes at once would take the same version: one firm-wide lock per tenant serialises them
+# (S31 close end pass security review).
+_LOCK = text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))")
 _NEXT = text("SELECT COALESCE(max(version), 0) + 1 FROM ebp_schedule_h_mappings")
 _ROW = text(
     """
@@ -110,6 +113,7 @@ async def publish_mapping(
             status="refused" if found else "validated",
         )
     async with uow(ctx.tenant) as tx:
+        await tx.session.execute(_LOCK, {"key": f"ebp_schedule_h_mappings:{ctx.tenant_id}"})
         version = int(await tx.session.scalar(_NEXT) or 1)
         for row in body.rows:
             await tx.session.execute(

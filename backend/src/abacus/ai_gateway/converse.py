@@ -38,7 +38,7 @@ import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from decimal import Decimal
-from typing import Literal, cast
+from typing import Annotated, Literal, cast
 from uuid import UUID, uuid4
 
 from opentelemetry import trace
@@ -83,6 +83,7 @@ from abacus.ai_gateway.providers import (
 )
 from abacus.ai_gateway.routes import route_converser
 from abacus.kernel.access import AccessSubject, record_reads
+from abacus.kernel.classification import classified
 from abacus.kernel.config import Route, settings
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import Target, uow
@@ -115,8 +116,8 @@ class ConverseTool(BaseModel):
 
     model_config = {"frozen": True, "arbitrary_types_allowed": True}
 
-    spec: ToolSpec
-    input_model: type[BaseModel]
+    spec: Annotated[ToolSpec, classified("internal")]  # a registered tool's name and schema
+    input_model: Annotated[type[BaseModel], classified("internal")]  # the arguments' model
 
 
 @dataclass(frozen=True)

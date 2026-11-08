@@ -82,7 +82,9 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
     # SPEC-009 adds knowledge embedding beside screening.
     # Q-01-T26: the worker no longer imports notifications (its purge is a Schedule).
     catalogue = importlib.import_module("abacus.modules.notifications.api").CATALOGUE
-    assert set(built.handlers) == set(catalogue) | {
+    # A-07-T22 (DEC-2806): the completion projector follows the facts its checklist reads.
+    projector = importlib.import_module("abacus.modules.assurance.completion_projector").SUBSCRIBED
+    assert set(built.handlers) == set(catalogue) | set(projector) | {
         EVIDENCE_VERSION_CREATED,
         "knowledge_document.added",
         "client_invitation.issued",  # SPEC-015

@@ -79,14 +79,13 @@ describe("EBP-07", () => {
     ]); // prettier-ignore
   });
 
-  it("a: no $ in the statement table, and the form's values are the typed ink", async () => {
+  // DEC-2826: #6A98E8 is the form page's typed ink (spec line 49); in the statement table it fails
+  // 4.5:1 contrast on white (axe, FE-02), so both amount columns read in the table's own ink.
+  it("a: no $ in the statement table, and its amounts are in the table's ink", async () => {
     show("a");
     const table = await drawn("[data-ebp07='schedule-h']");
     expect(table.textContent).not.toContain("$");
-    const form = (await drawn("[data-line='1c(9)']")).querySelector("[data-col='form']");
-    expect(form?.className).toContain("text-doc-typed");
-    const fs = (await drawn("[data-line='1c(9)']")).querySelector("[data-col='fs']");
-    expect(fs?.className).not.toContain("text-doc-typed");
+    expect(table.querySelectorAll(".text-doc-typed")).toHaveLength(0);
   });
 
   it("a: one match id lights the row and the draft's field together", async () => {

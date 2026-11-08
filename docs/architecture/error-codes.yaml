@@ -1122,6 +1122,11 @@ codes:
     raised_by:
     - abacus.modules.agents.follow_up_drafts.FollowUpV2Only
     summary: 'This follow-up was drafted from a binder: send it from the binder''s follow-up sheet.'
+  form5500_key_refused:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.ebp_form5500.KeyedValueRefused
+    summary: Only a person keys a Form 5500 value, and only on a draft that is not superseded.
   form5500_not_tied:
     status: 409
     raised_by:
