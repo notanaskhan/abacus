@@ -36494,6 +36494,10 @@ export type RecordRefOut = {
  */
 export type RecordsReadOut = {
     /**
+     * Connection Id
+     */
+    connection_id?: string | null;
+    /**
      * Count
      */
     count: number;
@@ -36501,6 +36505,10 @@ export type RecordsReadOut = {
      * Source
      */
     source: string;
+    /**
+     * Through
+     */
+    through?: string | null;
 };
 
 /**
@@ -40075,6 +40083,33 @@ export type RunCountersOut = {
 };
 
 /**
+ * RunHeaderOut
+ *
+ * C6 v1.1: the dock's header: the run number, what it is blocked on, code's counters, who it
+ * runs as and what started it. Null fields wait for P-10-T29's v2 columns.
+ */
+export type RunHeaderOut = {
+    blocked_on?: BlockedOnOut | null;
+    counters?: RunCountersOut | null;
+    /**
+     * Run Number
+     */
+    run_number?: number | null;
+    /**
+     * Runs As Name
+     */
+    runs_as_name?: string | null;
+    /**
+     * Trigger Kind
+     */
+    trigger_kind?: 'manual' | 'schedule' | 'agent_trigger' | 'engagement_trigger' | 'retry' | 'test' | 'engagement_plan' | 'agent_column' | 'event_policy' | null;
+    /**
+     * Work Item Ref
+     */
+    work_item_ref?: string | null;
+};
+
+/**
  * RunItemOut
  *
  * A thread item: code words and references only (P-09 Story 8.1); the client words it.
@@ -40117,6 +40152,10 @@ export type RunItemOut = {
      * Seq
      */
     seq: number;
+    /**
+     * Session Kind
+     */
+    session_kind?: 'user' | 'line' | 'block' | 'tool' | 'progress' | 'question' | 'answer' | 'error' | 'plan' | 'approval' | 'decision_ref' | 'artifact' | 'run_card' | 'notice' | null;
 };
 
 /**
@@ -40133,6 +40172,10 @@ export type RunItemsOut = {
      * Last Seq
      */
     last_seq: number;
+    /**
+     * Next Seq
+     */
+    next_seq?: number | null;
     /**
      * Resync
      */
@@ -40226,6 +40269,47 @@ export type RunPlanStepOut = {
      * Writes
      */
     writes?: boolean;
+};
+
+/**
+ * RunProjectionLevelOut
+ *
+ * C6 v1.1: one level of the run's plan, counted by code from its steps and never stored
+ * ("Run projection", glossary). `total` is the sum of the six states.
+ */
+export type RunProjectionLevelOut = {
+    /**
+     * Blocked
+     */
+    blocked?: number;
+    /**
+     * Done
+     */
+    done?: number;
+    /**
+     * Failed
+     */
+    failed?: number;
+    /**
+     * Level
+     */
+    level: number;
+    /**
+     * Queued
+     */
+    queued?: number;
+    /**
+     * Running
+     */
+    running?: number;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Waiting
+     */
+    waiting?: number;
 };
 
 /**
@@ -40405,6 +40489,10 @@ export type RunStartedOut = {
  */
 export type RunTraceOut = {
     /**
+     * Access
+     */
+    access?: 'content' | 'metadata' | null;
+    /**
      * Attempts
      */
     attempts: number;
@@ -40437,6 +40525,7 @@ export type RunTraceOut = {
      * Runtime
      */
     runtime: string;
+    summary?: TraceSummaryOut | null;
     /**
      * Tokens In
      */
@@ -40553,9 +40642,18 @@ export type RunV2Out = {
  */
 export type RunViewOut = {
     /**
+     * Access
+     */
+    access?: 'content' | 'metadata' | null;
+    /**
      * Allowed Actions
      */
     allowed_actions: Array<string>;
+    header?: RunHeaderOut | null;
+    /**
+     * Levels
+     */
+    levels?: Array<RunProjectionLevelOut>;
     /**
      * Projection
      */
@@ -40573,6 +40671,10 @@ export type RunViewOut = {
  * What the run proposed to write and what a person decided. Codes and references only.
  */
 export type RunWriteOut = {
+    /**
+     * Approver Name
+     */
+    approver_name?: string | null;
     /**
      * At
      */
@@ -40605,6 +40707,14 @@ export type RunWriteOut = {
      * Outcome
      */
     outcome: string;
+    /**
+     * Proposal Id
+     */
+    proposal_id?: string | null;
+    /**
+     * State
+     */
+    state?: 'waiting' | 'approved' | 'declined' | 'superseded' | null;
     /**
      * Target Id
      */
@@ -49234,9 +49344,21 @@ export type TraceRowOut = {
      */
     detail: string | null;
     /**
+     * Duration Ms
+     */
+    duration_ms?: number | null;
+    /**
      * Kind
      */
     kind: 'start' | 'queued' | 'attempt' | 'output' | 'decision' | 'finish';
+    /**
+     * Mark
+     */
+    mark?: 'start' | 'plan' | 'done' | 'running' | 'waiting' | 'blocked' | 'failed' | 'muted' | null;
+    /**
+     * Phase
+     */
+    phase?: 'plan' | 'execute' | 'compute' | 'proposed_write' | 'decision' | 'policy' | 'steer' | 'notice' | null;
     /**
      * Seq
      */
@@ -49249,6 +49371,108 @@ export type TraceRowOut = {
      * Title
      */
     title: string;
+};
+
+/**
+ * TraceSampleOut
+ *
+ * One of up to five records a tool step read, visible to the caller, with its open route.
+ */
+export type TraceSampleOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Open Route
+     */
+    open_route: string;
+    /**
+     * Record Type
+     */
+    record_type: string;
+};
+
+/**
+ * TraceStepOut
+ *
+ * C6 v1.1: a tool row expanded (WB-09a2): its argument summary and up to five sample records
+ * it read, filtered by `visible()`. Content only (DEC-87).
+ */
+export type TraceStepOut = {
+    /**
+     * Args Summary
+     */
+    args_summary: string | null;
+    /**
+     * Records Read
+     */
+    records_read: number;
+    /**
+     * Samples
+     */
+    samples: Array<TraceSampleOut>;
+    /**
+     * Step Id
+     */
+    step_id: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * TraceSummaryOut
+ *
+ * C6 v1.1: WB-09's summary card. Every figure is code's: #4118 reads 2,625 records, 79
+ * citations, 0 writes done and 1 waiting, over 2 m 41 s.
+ */
+export type TraceSummaryOut = {
+    /**
+     * Agent Label
+     */
+    agent_label: string;
+    /**
+     * Citations
+     */
+    citations?: number;
+    /**
+     * Duration Ms
+     */
+    duration_ms?: number | null;
+    /**
+     * Records Read
+     */
+    records_read?: number;
+    /**
+     * Run Number
+     */
+    run_number?: number | null;
+    /**
+     * Runs As Name
+     */
+    runs_as_name?: string | null;
+    /**
+     * Started At
+     */
+    started_at: string;
+    /**
+     * Trigger Kind
+     */
+    trigger_kind?: 'manual' | 'schedule' | 'agent_trigger' | 'engagement_trigger' | 'retry' | 'test' | 'engagement_plan' | 'agent_column' | 'event_policy' | null;
+    /**
+     * Writes Done
+     */
+    writes_done?: number;
+    /**
+     * Writes Waiting
+     */
+    writes_waiting?: number;
 };
 
 /**
@@ -53479,6 +53703,67 @@ export type AgentRunRecordsReadResponses = {
 };
 
 export type AgentRunRecordsReadResponse = AgentRunRecordsReadResponses[keyof AgentRunRecordsReadResponses];
+
+export type AgentRunTraceStepData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Run Id
+         */
+        run_id: string;
+        /**
+         * Step Id
+         */
+        step_id: string;
+    };
+    query?: {
+        /**
+         * Records
+         */
+        records?: number;
+    };
+    url: '/v1/agent-runs/{run_id}/trace/steps/{step_id}';
+};
+
+export type AgentRunTraceStepErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AgentRunTraceStepError = AgentRunTraceStepErrors[keyof AgentRunTraceStepErrors];
+
+export type AgentRunTraceStepResponses = {
+    /**
+     * Successful Response
+     */
+    200: TraceStepOut;
+};
+
+export type AgentRunTraceStepResponse = AgentRunTraceStepResponses[keyof AgentRunTraceStepResponses];
 
 export type AgentRunWritesData = {
     body?: never;

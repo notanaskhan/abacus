@@ -1,4 +1,4 @@
-# C6 · Agent runs (v1 frozen; v2 frozen)
+# C6 · Agent runs (v1 frozen; v1.1 additive; v2 frozen)
 
 | Field | Value |
 |---|---|
@@ -32,7 +32,8 @@ Firm-level runs (no engagement) answer 404 in v0.
 | Records read | `GET /v1/agent-runs/{run_id}/trace/records-read` | `agent_run.read` | as above | denied |
 | Writes | `GET /v1/agent-runs/{run_id}/trace/writes` | `agent_run.read` | as above | denied |
 | Run record | `GET /v1/agent-runs/{run_id}/record` | `agent_run.read` | as above | denied |
-| Trace export | `POST /v1/agent-runs/{run_id}/trace-exports` (201) | `run_trace.export` | engagement_partner, manager, senior; independence and fresh MFA required | agent: deny |
+| Trace step (v1.1) | `GET /v1/agent-runs/{run_id}/trace/steps/{step_id}?records=5` | `agent_run.read` (content only from P-09-T08) | as above; 404 while `run_trace.enabled` is off, 501 until P-09-T08 | denied |
+| Trace export | `POST /v1/agent-runs/{run_id}/trace-exports` (201) | `run_trace.export` | the `agent_run.read` principals (v1.1, DEC-2801); independence and fresh MFA required; the projection is inherited, so firm and security admins export the metadata trace | agent: deny |
 
 The list filters through `visible()`. The trace and export check the run's engagement with `authorise`.
 
@@ -154,7 +155,7 @@ None are decided here; v0 is read-only. Only a person may export; the matrix den
 - Done in TASK-5001: the `items?after_seq=` feed, with the read-time legacy adapter (P-09 Story 8.1).
 - Done in TASK-5002: the content and metadata projections (DEC-87).
 - Done in TASK-1287 (Q-02-T41): `GET /v1/agent-runs/{id}/record`. Done in TASK-1423 (Q-02-T45): `state_reason`, `outcome`, `stage`, `record_sha256` and `record_persisted_at` on the run summary (ADR-169 §4); v1 frozen 2026-10-27.
-- Still to come: P-09-T07's projection by level; P-09-T08's `/trace/steps/{id}`. The single `/trace` response stays as the summary and timeline.
+- v1.1 (P-09-T01, §10): the shapes for P-09-T07's projection by level and P-09-T08's `/trace/steps/{id}` are in; the handlers fill them in S32. The single `/trace` response stays as the summary and timeline.
 - P-09-T11 adds `pdf` once the C11 renderer and its `run_trace_v1` template exist (S18). JSON keeps this canonical form.
 - Done in TASK-5000: when a run has `suggestions` or `proposals` rows (migration 0095), the trace counts those instead of the lists in `agent_runs.output`, and shows people's decisions on them in the timeline.
 
@@ -238,4 +239,60 @@ are a person's commands; the agent never answers its own question.
 `agent_run.stopped`, `agent_run.signed_off`, `agent_feedback.created`, `engagement_ai.auto_mode_set`,
 `session.message_posted`, one `model.called` per attempt (`converse()` included, ADR-234) and
 `agent_runs.backfilled` per backfill batch (P-10-T14). Outbox events carry identifiers only.
+
+## 10. v1.1 (P-09-T01, 2026-11-08; TASK-6201; DEC-2801)
+Additive to v1: no field is removed or retyped, so v1's snapshot still passes and no new version
+is cut (handshake rule 5). Every new field is optional, null or empty until its handler task fills
+it. Code: `backend/src/abacus/modules/agents/runs_routes.py`.
+
+**New shapes.**
+- `RunViewOut`: `header` (`RunHeaderOut`: `run_number`, `blocked_on`, code's `counters`,
+  `runs_as_name`, `trigger_kind`, `work_item_ref`), `levels` (`RunProjectionLevelOut`: `level`,
+  `total`, `done`, `running`, `blocked`, `waiting`, `queued`, `failed`; computed, never stored) and
+  `access` (`content` or `metadata`, the same value as `projection`).
+- `RunItemsOut`: `next_seq` (the `after_seq` cursor). `RunItemOut.session_kind`: the v2 wire set
+  (`user`, `line`, `block`, `tool`, `progress`, `question`, `answer`, `error`, `plan`, `approval`,
+  `decision_ref`, `artifact`, `run_card`, `notice`); a legacy item maps `tool_card` → `tool`,
+  `narration` → `line`, `decision` → `decision_ref`, `failure` → `error`.
+- `RunTraceOut`: `summary` (`TraceSummaryOut`, WB-09's card: run number, agent, start, trigger,
+  runs as, duration, records read, citations, writes done and waiting) and `access`.
+  `TraceRowOut`: `phase` (`plan`, `execute`, `compute`, `proposed_write`, `decision`, `policy`,
+  `steer`, `notice`), `mark` (`start`, `plan`, `done`, `running`, `waiting`, `blocked`, `failed`,
+  `muted`) and `duration_ms`.
+- `RecordsReadOut`: `connection_id` and `through` (WB-09's "Through": the firm connection, or null
+  for Accrued's own records). `RunWriteOut`: `state` (`waiting`, `approved`, `declined`,
+  `superseded`), `approver_name`, `proposal_id`.
+- `TraceStepOut` on the new step route: `step_id`, `title`, `args_summary`, `records_read` and up
+  to five `samples` (`record_type`, `id`, `label`, `open_route`), filtered by `visible()`.
+
+**Flags.** `agent_dock.enabled` (SHL-13) and `run_trace.enabled` (WB-09 v1.1 and the step route),
+boolean, default off, owner notanaskhan, expiring 2027-05-07 (DEC-137's 180 days; the plan's
+2028 dates are calendar dates).
+
+**Route ownership** (one owner per route; P-10 adds fields to P-09's handlers, never a route):
+
+| Route | Created | Owner from S31 | Extended by |
+|---|---|---|---|
+| `GET /v1/engagements/{id}/agent-runs` | Q-02-T45 (S12) | P-09 | — |
+| `GET /v1/agent-runs/{id}` | Q-02-T45 / TASK-5000 | P-09 (T07) | P-10-T29 (v2 fields) |
+| `GET /v1/agent-runs/{id}/items?after_seq=` | TASK-5001 | P-09 (T07) | P-10-T29 |
+| `GET /v1/agent-runs/{id}/trace` | TASK-461 | P-09 (T08) | P-10-T44 (durable v2 records) |
+| `GET /v1/agent-runs/{id}/trace/steps/{step_id}` | P-09-T01 (v1.1) | P-09 (T08) | P-10-T44 |
+| `GET /v1/agent-runs/{id}/trace/records-read` | TASK-5000 | P-09 (T08) | — |
+| `GET /v1/agent-runs/{id}/trace/writes` | TASK-5000 | P-09 (T08) | — |
+| `GET /v1/agent-runs/{id}/record` | Q-02-T41 | Q-02 | — |
+| `POST /v1/agent-runs/{id}/trace-exports` | TASK-461 | P-09 (T11; the only trace export) | P-10-T44 |
+
+P-10 builds no second run list, no `GET …/trace.json` and no `GET …/trace.pdf`.
+
+**C6 v2 field request (to P-10).** `RunStepV2Out` (and `agent_run_steps`) gains `sample_refs` (at
+most five `{record_type, id}`) and `source_ref` (the connection id, or `accrued`), both nullable.
+They feed `TraceStepOut.samples` and `RecordsReadOut.through`. Additive to the frozen v2 snapshot,
+so they ride an expand-only migration (P-09 §4.2's fallback) if P-10's Dec 24 schema lacks them;
+until then the step detail shows the argument summary without samples.
+
+**Fixtures.** E0 runs in the web fixtures (`apps/web/src/fixtures/seed/agent-runs.ts`): #4118
+Season Progress Reporter (Sep 14, 9:00 AM, 2,625 records, 79 citations, 1 write waiting), #4127
+the Northwind PY2025 planning run (Sep 14, 9:24 AM, running, materiality blocked on a partner
+decision), the Aug 17 failed run (CCH Axcess Tax 401) and Copperleaf Run 2.
 

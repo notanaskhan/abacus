@@ -77329,6 +77329,19 @@
       },
       "RecordsReadOut": {
         "properties": {
+          "connection_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Connection Id"
+          },
           "count": {
             "cls": "internal",
             "title": "Count",
@@ -77338,6 +77351,18 @@
             "cls": "internal",
             "title": "Source",
             "type": "string"
+          },
+          "through": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Through"
           }
         },
         "required": [
@@ -85165,6 +85190,94 @@
         "title": "RunCountersOut",
         "type": "object"
       },
+      "RunHeaderOut": {
+        "description": "C6 v1.1: the dock's header: the run number, what it is blocked on, code's counters, who it\nruns as and what started it. Null fields wait for P-10-T29's v2 columns.",
+        "properties": {
+          "blocked_on": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BlockedOnOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "counters": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunCountersOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "run_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Run Number"
+          },
+          "runs_as_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Runs As Name"
+          },
+          "trigger_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "manual",
+                  "schedule",
+                  "agent_trigger",
+                  "engagement_trigger",
+                  "retry",
+                  "test",
+                  "engagement_plan",
+                  "agent_column",
+                  "event_policy"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Trigger Kind"
+          },
+          "work_item_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Work Item Ref"
+          }
+        },
+        "title": "RunHeaderOut",
+        "type": "object"
+      },
       "RunItemOut": {
         "description": "A thread item: code words and references only (P-09 Story 8.1); the client words it.",
         "properties": {
@@ -85266,6 +85379,34 @@
             "cls": "internal",
             "title": "Seq",
             "type": "integer"
+          },
+          "session_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "user",
+                  "line",
+                  "block",
+                  "tool",
+                  "progress",
+                  "question",
+                  "answer",
+                  "error",
+                  "plan",
+                  "approval",
+                  "decision_ref",
+                  "artifact",
+                  "run_card",
+                  "notice"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Session Kind"
           }
         },
         "required": [
@@ -85297,6 +85438,19 @@
             "cls": "internal",
             "title": "Last Seq",
             "type": "integer"
+          },
+          "next_seq": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Seq"
           },
           "resync": {
             "cls": "internal",
@@ -85475,6 +85629,71 @@
           "label"
         ],
         "title": "RunPlanStepOut",
+        "type": "object"
+      },
+      "RunProjectionLevelOut": {
+        "description": "C6 v1.1: one level of the run's plan, counted by code from its steps and never stored\n(\"Run projection\", glossary). `total` is the sum of the six states.",
+        "properties": {
+          "blocked": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Blocked",
+            "type": "integer"
+          },
+          "done": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Done",
+            "type": "integer"
+          },
+          "failed": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Failed",
+            "type": "integer"
+          },
+          "level": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Level",
+            "type": "integer"
+          },
+          "queued": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Queued",
+            "type": "integer"
+          },
+          "running": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Running",
+            "type": "integer"
+          },
+          "total": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          },
+          "waiting": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Waiting",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "level",
+          "total"
+        ],
+        "title": "RunProjectionLevelOut",
         "type": "object"
       },
       "RunQuestionOut": {
@@ -85841,6 +86060,22 @@
       },
       "RunTraceOut": {
         "properties": {
+          "access": {
+            "anyOf": [
+              {
+                "enum": [
+                  "content",
+                  "metadata"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Access"
+          },
           "attempts": {
             "cls": "internal",
             "title": "Attempts",
@@ -85904,6 +86139,17 @@
             "cls": "internal",
             "title": "Runtime",
             "type": "string"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TraceSummaryOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
           },
           "tokens_in": {
             "cls": "internal",
@@ -86211,12 +86457,47 @@
       "RunViewOut": {
         "description": "C6 v1 (TASK-5000): one run, its record fingerprint and what the caller may do.",
         "properties": {
+          "access": {
+            "anyOf": [
+              {
+                "enum": [
+                  "content",
+                  "metadata"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Access"
+          },
           "allowed_actions": {
             "cls": "internal",
             "items": {
               "type": "string"
             },
             "title": "Allowed Actions",
+            "type": "array"
+          },
+          "header": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunHeaderOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "levels": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/RunProjectionLevelOut"
+            },
+            "title": "Levels",
             "type": "array"
           },
           "projection": {
@@ -86250,6 +86531,18 @@
       "RunWriteOut": {
         "description": "What the run proposed to write and what a person decided. Codes and references only.",
         "properties": {
+          "approver_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Approver Name"
+          },
           "at": {
             "cls": "internal",
             "format": "date-time",
@@ -86318,6 +86611,37 @@
             "cls": "internal",
             "title": "Outcome",
             "type": "string"
+          },
+          "proposal_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Proposal Id"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "enum": [
+                  "waiting",
+                  "approved",
+                  "declined",
+                  "superseded"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "State"
           },
           "target_id": {
             "anyOf": [
@@ -104821,6 +105145,19 @@
             "cls": "internal",
             "title": "Detail"
           },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Duration Ms"
+          },
           "kind": {
             "cls": "internal",
             "enum": [
@@ -104833,6 +105170,50 @@
             ],
             "title": "Kind",
             "type": "string"
+          },
+          "mark": {
+            "anyOf": [
+              {
+                "enum": [
+                  "start",
+                  "plan",
+                  "done",
+                  "running",
+                  "waiting",
+                  "blocked",
+                  "failed",
+                  "muted"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Mark"
+          },
+          "phase": {
+            "anyOf": [
+              {
+                "enum": [
+                  "plan",
+                  "execute",
+                  "compute",
+                  "proposed_write",
+                  "decision",
+                  "policy",
+                  "steer",
+                  "notice"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Phase"
           },
           "seq": {
             "cls": "internal",
@@ -104866,6 +105247,202 @@
           "actor"
         ],
         "title": "TraceRowOut",
+        "type": "object"
+      },
+      "TraceSampleOut": {
+        "description": "One of up to five records a tool step read, visible to the caller, with its open route.",
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "open_route": {
+            "cls": "internal",
+            "title": "Open Route",
+            "type": "string"
+          },
+          "record_type": {
+            "cls": "internal",
+            "title": "Record Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "record_type",
+          "id",
+          "label",
+          "open_route"
+        ],
+        "title": "TraceSampleOut",
+        "type": "object"
+      },
+      "TraceStepOut": {
+        "description": "C6 v1.1: a tool row expanded (WB-09a2): its argument summary and up to five sample records\nit read, filtered by `visible()`. Content only (DEC-87).",
+        "properties": {
+          "args_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Args Summary"
+          },
+          "records_read": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Records Read",
+            "type": "integer"
+          },
+          "samples": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/TraceSampleOut"
+            },
+            "maxItems": 5,
+            "title": "Samples",
+            "type": "array"
+          },
+          "step_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Step Id",
+            "type": "string"
+          },
+          "title": {
+            "cls": "internal",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "step_id",
+          "title",
+          "args_summary",
+          "records_read",
+          "samples"
+        ],
+        "title": "TraceStepOut",
+        "type": "object"
+      },
+      "TraceSummaryOut": {
+        "description": "C6 v1.1: WB-09's summary card. Every figure is code's: #4118 reads 2,625 records, 79\ncitations, 0 writes done and 1 waiting, over 2 m 41 s.",
+        "properties": {
+          "agent_label": {
+            "cls": "internal",
+            "title": "Agent Label",
+            "type": "string"
+          },
+          "citations": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Citations",
+            "type": "integer"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Duration Ms"
+          },
+          "records_read": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Records Read",
+            "type": "integer"
+          },
+          "run_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Run Number"
+          },
+          "runs_as_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Runs As Name"
+          },
+          "started_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "trigger_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "manual",
+                  "schedule",
+                  "agent_trigger",
+                  "engagement_trigger",
+                  "retry",
+                  "test",
+                  "engagement_plan",
+                  "agent_column",
+                  "event_policy"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Trigger Kind"
+          },
+          "writes_done": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Writes Done",
+            "type": "integer"
+          },
+          "writes_waiting": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Writes Waiting",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "agent_label",
+          "started_at"
+        ],
+        "title": "TraceSummaryOut",
         "type": "object"
       },
       "TranscriptComparisonIn": {
@@ -113867,6 +114444,135 @@
           }
         },
         "summary": "Agent Run Records Read Route",
+        "tags": [
+          "agents"
+        ],
+        "x-abacus-action": "agent_run.read"
+      }
+    },
+    "/v1/agent-runs/{run_id}/trace/steps/{step_id}": {
+      "get": {
+        "description": "C6 v1.1 stub (P-09-T01): 404 while `run_trace.enabled` is off, 501 until P-09-T08. The\nrun is authorised first, so no one learns the flag's state for a run they may not read.",
+        "operationId": "agent_run_trace_step",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "step_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Step Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "records",
+            "required": false,
+            "schema": {
+              "default": 5,
+              "maximum": 5,
+              "minimum": 0,
+              "title": "Records",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TraceStepOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Agent Run Trace Step Route",
         "tags": [
           "agents"
         ],

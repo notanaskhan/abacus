@@ -48,6 +48,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("GET", "/v1/agent-runs/{run_id}/record", "agent_run.read"),
     ("GET", "/v1/agent-runs/{run_id}/trace", "agent_run.read"),
     ("GET", "/v1/agent-runs/{run_id}/trace/records-read", "agent_run.read"),
+    ("GET", "/v1/agent-runs/{run_id}/trace/steps/{step_id}", "agent_run.read"),
     ("GET", "/v1/agent-runs/{run_id}/trace/writes", "agent_run.read"),
     ("GET", "/v1/agents/capabilities", "session.read"),
     ("GET", "/v1/audit-events", "audit_event.read"),

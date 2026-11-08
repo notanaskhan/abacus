@@ -68,3 +68,20 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  # --- P-09 agent transparency (P-09-T01; TASK-6201; DEC-2801) ---
+  - name: agent_dock.enabled
+    description: 'P-09 SHL-13 agent dock: the dock pane, its run picker and the "Agents on this engagement" strip in the T2 dock Agent tab. Off: the Agent tab keeps the activity feed and the dock is absent. P-09-T01, DEC-2801.'
+    owner: notanaskhan
+    created: 2026-11-08
+    expires: 2027-05-07
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: run_trace.enabled
+    description: 'P-09 WB-09 run trace drawer v1.1: the step detail route /v1/agent-runs/{run_id}/trace/steps/{step_id} and the drawer''s v1.1 summary, phases and approvers. Off: 404 on the step route and the drawer keeps its v1 trace. P-09-T01, DEC-2801.'
+    owner: notanaskhan
+    created: 2026-11-08
+    expires: 2027-05-07
+    override: DEC-137
+    kind: boolean
+    default: false
