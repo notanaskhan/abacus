@@ -119,6 +119,9 @@ what today: `docs/architecture/reference/review-slot-consumers.md`. Incidents:
 6. **Tests:** a stale sign-off after the change event; a replayed event announces nothing new; an
    agent context refused on the decision; the gate rebuilt from scratch equals the live rows.
 
+## An engine with reference data (A-05-T62)
+A pure engine under `compute/<area>/` stamps `ENGINE_VERSION` and `inputs_hash` on every figure. Reference data it reads (rates, limits) lives beside it in `reference/*.yaml`, PROTECTED and CPA-reviewed: a missing year or quarter is a refusal, never a guess. A version bump recomputes through a checkpoint a person approves; it never rewrites stored figures (`docs/runbooks/ebp-modules.md` §5). Firm-shaped mappings (Schedule H lines) are database content, not YAML.
+
 ## Checklist before done
 - [ ] Cross-tenant test for every repository method (and the regenerated `tests/security/` cases)
 - [ ] Permission tests regenerate cleanly from the matrix
