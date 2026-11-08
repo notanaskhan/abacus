@@ -18,12 +18,16 @@ from abacus.modules.adjustments.entries import (
     recorded_entries,
     register_entry_proposed_hook,
 )
+from abacus.modules.engagements.api import deliver_proposed_entries
 from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.ledger.api import register_adjustment_source
 
 # A-06-T09 (DEC-2061): the ledger's layers read the approved entries; the trail places them.
 register_adjustment_source(recorded_entries)
 register_engagement_owners(AUDIT_KINDS, audit_owners)
+# R-02-T07: A-06's C18 port, wired to C18. After the 10-second Undo window the batch's entries are
+# before the client on their work item (`client_approval.requested`, one per entry).
+register_client_delivery(deliver_proposed_entries)
 
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (router,)

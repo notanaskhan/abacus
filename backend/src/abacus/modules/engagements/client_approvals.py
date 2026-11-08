@@ -16,12 +16,22 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
-from typing import Final, Literal, Protocol, get_args
+from typing import Annotated, ClassVar, Final, Literal, Protocol, cast, get_args
 from uuid import UUID
 
+from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import DomainConflict, DomainForbidden
-from abacus.kernel.uow import UnitOfWork
+from abacus.kernel.uow import (
+    DomainEvent,
+    Ref,
+    Scope,
+    Target,
+    UnitOfWork,
+    audit_of_targets,
+    uow,
+)
+from abacus.kernel.uow.relay import OutboxEvent
 
 ClientApprovalKind = Literal[
     "proposed_entry", "uncorrected_misstatements", "fs_draft", "fs_package"
@@ -175,3 +185,61 @@ def client_approval_provider(kind: str) -> ClientApprovalProvider:
     if provider is None:
         raise ApprovalKindNotRegistered(kind)
     return provider
+
+
+# --- R-02-T07: the C18 events and A-06's delivery adapter ------------------------------------
+
+
+class ClientApprovalRequested(DomainEvent):
+    """C18's `client_approval.requested` (R-02 §4.6): an item is now before the client. Every
+    provider emits it when an item is sent; identifiers only."""
+
+    event_type: ClassVar[str] = "client_approval.requested"
+
+    kind: Annotated[ClientApprovalKind, classified("internal")]
+    item_id: Annotated[UUID, classified("internal")]
+    scope_kind: Annotated[str, classified("internal")]
+    scope_id: Annotated[UUID, classified("internal")]
+
+
+class ClientApprovalDecided(DomainEvent):
+    """C18's `client_approval.decided` (R-02 §4.6), after a provider's `decide()`."""
+
+    event_type: ClassVar[str] = "client_approval.decided"
+
+    kind: Annotated[ClientApprovalKind, classified("internal")]
+    item_id: Annotated[UUID, classified("internal")]
+    decision: Annotated[ClientDecisionWord, classified("internal")]
+
+
+_DELIVERED: Final = "client_approval.requested"
+_BATCH: Final = "approval_batch"
+
+
+async def deliver_proposed_entries(tenant: TenantContext, event: OutboxEvent) -> None:
+    """A-06's C18 port (`adjustments.register_client_delivery`): the send's grant was consumed
+    after its 10-second Undo window, so each entry is now before the client on its work item.
+    At-least-once safe: a batch already delivered (its audit event exists) emits nothing again."""
+    batch_id = UUID(str(event.payload["approval_batch_id"]))
+    work_item_id = UUID(str(event.payload["work_item_id"]))
+    engagement_id = UUID(str(event.payload["engagement_id"]))
+    entry_ids = [UUID(str(e)) for e in cast(list[object], event.payload["entry_ids"])]
+    async with uow(tenant) as tx:
+        seen = await audit_of_targets(tx.session, [(_BATCH, batch_id)], None, 1, action=_DELIVERED)
+        if seen:
+            return
+        for entry_id in entry_ids:
+            tx.emit(
+                ClientApprovalRequested(
+                    kind="proposed_entry",
+                    item_id=entry_id,
+                    scope_kind="work_item",
+                    scope_id=work_item_id,
+                )
+            )
+        tx.record(
+            _DELIVERED,
+            target=Target(_BATCH, batch_id),
+            after=Ref(entries=len(entry_ids)),
+            scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
+        )

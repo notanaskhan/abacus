@@ -43,6 +43,8 @@ from abacus.modules.reporting.contract import (
     templates_router,
 )
 from abacus.modules.reporting.contract import TemplateImportIn as TemplateImportIn
+from abacus.modules.reporting.deliverable_reads import ReaderVersion as ReaderVersion
+from abacus.modules.reporting.deliverable_reads import reader_version as reader_version
 from abacus.modules.reporting.deliverables import AudienceReceipt as AudienceReceipt
 from abacus.modules.reporting.deliverables import DeliverableAudience as DeliverableAudience
 from abacus.modules.reporting.deliverables import DeliverableSpec as DeliverableSpec

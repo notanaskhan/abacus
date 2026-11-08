@@ -49,6 +49,20 @@ from abacus.modules.evidence.classification import (
 )
 from abacus.modules.evidence.classifier import rules as classifier_rules
 from abacus.modules.evidence.contract import withdrawal_router
+from abacus.modules.evidence.deliverable_serving import (
+    IssuedDownload as IssuedDownload,
+)
+from abacus.modules.evidence.deliverable_serving import PageImage as PageImage
+from abacus.modules.evidence.deliverable_serving import ServableVersion as ServableVersion
+from abacus.modules.evidence.deliverable_serving import (
+    deliverable_page as deliverable_page,
+)
+from abacus.modules.evidence.deliverable_serving import (
+    issue_deliverable_download as issue_deliverable_download,
+)
+from abacus.modules.evidence.deliverable_serving import (
+    open_deliverable_download as open_deliverable_download,
+)
 from abacus.modules.evidence.drops import drop_batch
 from abacus.modules.evidence.drops_contract import drops_router, void_router
 from abacus.modules.evidence.duplicates import PendingDuplicate, pending_duplicates
@@ -560,6 +574,7 @@ __all__ = [
     "IntakeObject",
     "IntakeSource",
     "IntegrityError",
+    "IssuedDownload",
     "LayerExport",
     "LayerLine",
     "LegalHoldApply",
@@ -570,6 +585,7 @@ __all__ = [
     "NewItem",
     "OcrBackfill",
     "OcrRunRefused",
+    "PageImage",
     "PageWords",
     "PendingDuplicate",
     "PolicyChange",
@@ -590,6 +606,7 @@ __all__ = [
     "SectionProvider",
     "SectionRequest",
     "SentBack",
+    "ServableVersion",
     "StoredObject",
     "StoredRecord",
     "SupersedeMismatch",
@@ -623,6 +640,7 @@ __all__ = [
     "decide",
     "decided_among",
     "decisions_on_screenings",
+    "deliverable_page",
     "destroy_intake_key",
     "detect_pii",
     "drop_batch",
@@ -657,6 +675,7 @@ __all__ = [
     "intake_masked_pages",
     "intake_masked_text",
     "is_version_withdrawn",
+    "issue_deliverable_download",
     "latest_document",
     "legal_hold_activate",
     "legal_hold_apply_batch",
@@ -669,6 +688,7 @@ __all__ = [
     "match_material",
     "normalised_text",
     "ocr_refusal_of",
+    "open_deliverable_download",
     "page_quote_reason",
     "pdf_text",
     "pending_duplicates",
