@@ -872,9 +872,9 @@ async def _notice_out(ctx: AuthContext, n: Notice) -> NoticeOut:
         respond_by_source=cast(
             Literal["extracted", "entered", "corrected"] | None, n.respond_by_source
         ),
-        taxpayer_tin=None,  # the sealed TIN and its mask arrive with the intake (N-04-T07)
+        taxpayer_tin=await _taxpayer_tin(ctx, n),
         related_return_id=n.related_return_id,
-        related_return_label=None,
+        related_return_label=await _return_label(ctx, n.related_return_id),
         partner_owned=n.partner_owned,
         signer=None,
         decision_id=n.decision_id,
@@ -933,6 +933,30 @@ async def _match_out(ctx: AuthContext, found: Intake) -> MatchOut:
         return_id=return_id,
         return_label=None if return_id is None else await return_label(ctx.tenant, return_id),
         office=None,
+    )
+
+
+async def _return_label(ctx: AuthContext, return_id: UUID | None) -> str | None:
+    if return_id is None:
+        return None
+    from abacus.modules.tax.api import return_label
+
+    return await return_label(ctx.tenant, return_id)
+
+
+async def _taxpayer_tin(ctx: AuthContext, n: Notice) -> MaskedTinOut | None:
+    """N-04-T06: the last four the intake adopted, with the entity's TIN kind; masked again for
+    an offshore principal by `mask_tins_for`."""
+    if n.taxpayer_tin_last4 is None:
+        return None
+    from abacus.modules.organisations.api import entity_tin_kind
+
+    entity = n.client_entity_id
+    kind = (None if entity is None else await entity_tin_kind(ctx.tenant, entity)) or "ssn"
+    return MaskedTinOut(
+        kind=cast(Literal["ssn", "ein", "itin"], kind),
+        presence="on_file",
+        last4=n.taxpayer_tin_last4,
     )
 
 
