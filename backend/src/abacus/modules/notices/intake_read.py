@@ -39,6 +39,7 @@ from abacus.modules.evidence.api import (
     extracted_fields_of,
     masked_pages,
     ocr_refusal_of,
+    text_ready,
     versions_with_same_bytes,
 )
 from abacus.modules.notices.events import (
@@ -513,7 +514,8 @@ async def read_if_ready(tenant_id: UUID, intake_id: UUID) -> str:
     refusal = await ocr_refusal_of(tenant, state[1])
     if refusal is not None:
         return await _manual(tenant, intake_id, refusal)
-    if await extract_version(tenant_id, state[1]) > 0:
+    if await extract_version(tenant_id, state[1]) > 0 or await text_ready(tenant, state[1]):
+        # Read before the intake existed: no event will come, so read it now (DEC-2953).
         return await read_intake(tenant_id, intake_id, None)
     return "extracting"
 
