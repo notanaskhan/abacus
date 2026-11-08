@@ -54,8 +54,13 @@ def test_ac_a_changed_materiality_figure_changes_its_hash() -> None:
 
 
 def test_ac_a_finding_moving_or_a_checklist_item_closing_changes_the_hash() -> None:
-    finding: dict[str, object] = {"ref": "F-01", "kind": "control_deficiency", "route": "under_evaluation",
-               "evaluation": {}, "version": 1}  # fmt: skip
+    finding: dict[str, object] = {
+        "ref": "F-01",
+        "kind": "control_deficiency",
+        "route": "under_evaluation",
+        "evaluation": {},
+        "version": 1,
+    }
     before = rows._findings_hash([finding])  # pyright: ignore[reportPrivateUsage] -- the unit under test
     after = rows._findings_hash([{**finding, "route": "deficiency"}])  # pyright: ignore[reportPrivateUsage] -- the unit under test
     assert before != after
