@@ -194,6 +194,7 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "methodology_version.approved",
         "methodology_version.discarded",
         "wall.removed",
+        "suggestion.created",  # A-06-T16 seam: a suggested checklist answer lands on its item
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
     assert (
