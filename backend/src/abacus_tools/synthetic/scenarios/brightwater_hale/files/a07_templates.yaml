@@ -1,4 +1,5 @@
-# Template content parts 1 and 2 (A-07-T12, T16; A-07 §5; DEC-2315, DEC-2418). Firm-worded synthetic text, Brightwater Hale
+# Template content parts 1 and 2 (A-07-T12, T16; A-07 §5; DEC-2315, DEC-2418). The checklists load
+# through methodology's assurance-checklist import since A-07-T22 (DEC-2806). Firm-worded synthetic text, Brightwater Hale
 # only, never licensed publisher wording (ADR-056). Loaded by the `a07_templates` slice.
 eqr_checklist:
   - {key: independence, text: "EQR's independence and objectivity confirmed"}
@@ -12,9 +13,9 @@ eqr_checklist:
   - {key: review_notes, text: "EQR review notes cleared"}
   - {key: documentation, text: "Documentation of the review complete"}
 completion_ebp:
-  - {key: subsequent_events, text: "Subsequent-events procedures through the report date"}
-  - {key: rep_letter, text: "Representation letter signed and dated as of the report"}
-  - {key: legal_letter, text: "Legal letter received or not applicable with its basis"}
+  - {key: subsequent_events, text: "Subsequent-events procedures through the report date", due_on_report_date: true}
+  - {key: rep_letter, text: "Representation letter signed and dated as of the report", gate_tag: G7, depends_on_client: true, due_on_report_date: true}
+  - {key: legal_letter, text: "Legal letter received or not applicable with its basis", derived: false}
   - {key: going_concern, text: "Going concern evaluated"}
   - {key: sum, text: "Summary of misstatements concluded"}
   - {key: findings, text: "Findings dispositioned"}
@@ -22,7 +23,7 @@ completion_ebp:
   - {key: sign_offs, text: "Workpapers signed off"}
   - {key: fs_final, text: "Financial statements final and tied"}
   - {key: disclosure_checklist, text: "Disclosure checklist complete"}
-  - {key: mgmt_approval, text: "Management approval of the statements recorded"}
+  - {key: mgmt_approval, text: "Management approval of the statements recorded", depends_on_client: true}
   - {key: tcwg_260, text: "Governance communications sent"}
   - {key: sd_mw_265, text: "Significant deficiencies communicated"}
   - {key: form5500_tie, text: "Form 5500 tied to the statements"}
@@ -31,9 +32,9 @@ completion_ebp:
   - {key: filing, text: "Filing plan confirmed with the plan administrator"}
   - {key: eqr, text: "EQR concurred"}
 completion_fs:
-  - {key: subsequent_events, text: "Subsequent-events procedures through the report date"}
-  - {key: rep_letter, text: "Representation letter signed and dated as of the report"}
-  - {key: legal_letter, text: "Legal letter received or not applicable with its basis"}
+  - {key: subsequent_events, text: "Subsequent-events procedures through the report date", due_on_report_date: true}
+  - {key: rep_letter, text: "Representation letter signed and dated as of the report", gate_tag: G7, depends_on_client: true, due_on_report_date: true}
+  - {key: legal_letter, text: "Legal letter received or not applicable with its basis", derived: false}
   - {key: going_concern, text: "Going concern evaluated"}
   - {key: sum, text: "Summary of misstatements concluded"}
   - {key: fs_final, text: "Financial statements final and tied"}
