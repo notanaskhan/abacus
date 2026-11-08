@@ -126,6 +126,19 @@ def footer_of(rows: tuple[Row, ...]) -> Footer:
     )
 
 
+# S28 (TASK-3400, DEC-2399): AUD-17's groups as the handoff draws them. Trial Balance and
+# Materiality sit in Planning, the sample and the mapping in Fieldwork & Testing, the financial
+# statements in Reporting; the rest of the engagement-level rows stay in Completion.
+_SECTION_OF: Final[dict[str, Section]] = {
+    "trial_balance": "planning",
+    "materiality": "planning",
+    "mapping_set": "fieldwork",
+    "sample_set_version": "fieldwork",
+    "attribute_test": "fieldwork",
+    "fs_package": "reporting",
+}
+
+
 async def matrix(
     tenant: TenantContext, engagement_id: UUID, *, section: Section | None = None
 ) -> Matrix:
@@ -170,7 +183,7 @@ async def matrix(
         row_section: Section = (
             sections.get(r.target_id, "fieldwork")
             if r.target_type == "workpaper"
-            else "completion"
+            else _SECTION_OF.get(r.target_type, "completion")
         )  # type: ignore[assignment] -- boto3 ships no stubs
         rows.append(Row(r.target_type, r.target_id, r.code, r.title, row_section, tuple(cells)))
     ordered = tuple(sorted(rows, key=lambda row: (SECTIONS.index(row.section), row.code)))

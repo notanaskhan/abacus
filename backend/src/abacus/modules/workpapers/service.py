@@ -644,16 +644,29 @@ async def workpaper_reviewables(tenant: TenantContext, engagement_id: UUID) -> l
 _PLANNING_KINDS = frozenset(
     {"general_audit_planning", "risk_assessment", "internal_control", "service_organizations"}
 )
-_REPORTING_KINDS = frozenset({"ebp_form5500"})
+# AUD-17 draws Form 5500 Tie-Out under Fieldwork & Testing (TASK-3400, DEC-2399, superseding
+# DEC-2238's Reporting); a paper with no kind sits where its audit area says, if it names one.
+_REPORTING_KINDS: frozenset[str] = frozenset()
+_AREA_SECTIONS: Final = {
+    "planning": "planning",
+    "completion": "completion",
+    "reporting": "reporting",
+}
 
 
 async def matrix_sections(tenant: TenantContext, engagement_id: UUID) -> dict[UUID, str]:
     """Each paper's AUD-17 section: `planning`, `fieldwork` or `reporting` (by kind)."""
     async with tenant_session(tenant) as session:
         papers = await engagement_papers(session, engagement_id)
-    return {
-        p.id: "planning"
-        if p.kind in _PLANNING_KINDS
-        else ("reporting" if p.kind in _REPORTING_KINDS else "fieldwork")
-        for p in papers
-    }
+    return {p.id: section_of(p.kind, p.audit_area) for p in papers}
+
+
+def section_of(kind: str | None, audit_area: str | None) -> str:
+    """A paper's AUD-17 group: by its kind, else by its audit area when that names a group."""
+    if kind in _PLANNING_KINDS:
+        return "planning"
+    if kind in _REPORTING_KINDS:
+        return "reporting"
+    if kind is None:
+        return _AREA_SECTIONS.get((audit_area or "").strip().lower(), "fieldwork")
+    return "fieldwork"

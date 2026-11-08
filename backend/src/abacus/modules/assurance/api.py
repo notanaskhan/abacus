@@ -370,6 +370,17 @@ from abacus.modules.review.api import (  # noqa: E402
 _register_reviewable(SUM_TARGET, sum_reviewables)
 _register_reviewable_facts(SUM_TARGET, sum_facts)
 
+# S28 (TASK-3400, DEC-2399): AUD-17's Materiality, Findings and Completion Checklist rows.
+from abacus.modules.assurance import completion_reviewables as _rows  # noqa: E402
+
+for _kind, _listed, _facts in (
+    (_rows.MATERIALITY, _rows.materiality_reviewables, _rows.materiality_facts),
+    (_rows.FINDINGS, _rows.findings_reviewables, _rows.findings_facts),
+    (_rows.CHECKLIST, _rows.checklist_reviewables, _rows.checklist_facts),
+):
+    _register_reviewable(_kind, _listed)
+    _register_reviewable_facts(_kind, _facts)
+
 # A-05-T49 (DEC-2603): `ebp_audits` holds for a real firm only once the EBP CPA memo is signed.
 from abacus.modules.assurance.compute.ebp.review import review_signed  # noqa: E402
 from abacus.modules.platform.api import register_module_review  # noqa: E402
