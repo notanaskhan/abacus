@@ -26,6 +26,7 @@ import { auditHandlers } from "../handlers/audits";
 import { seedScenario } from "../scenario";
 import { getSeed } from "../seed";
 import { type Aud08Variant, aud08Drawer, aud08Linkage, aud08Register } from "../seed/aud08";
+import { stableId } from "../seed/prng";
 import { capabilitiesFor } from "../seed/shell";
 
 const seed = getSeed();
@@ -84,6 +85,12 @@ function frame(
         [`GET ${P}/register`]: () => json(aud08Register(variant)),
         [`GET ${P}/linkage`]: () => json(aud08Linkage()),
         [`GET ${P}/{risk_id}`]: () => json(aud08Drawer(variant)),
+        "POST /v1/decision-cards/{card_id}/notify": ({ params }) =>
+          json({
+            card_id: params.card_id,
+            notified_user_id: stableId("user:margaret-okonkwo"),
+            notified_at: "2026-09-14T14:30:00-05:00",
+          }),
       };
     },
   };

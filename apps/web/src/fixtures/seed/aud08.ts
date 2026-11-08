@@ -223,6 +223,7 @@ export function aud08Drawer(variant: Aud08Variant): RiskDrawerOut {
         version: 1,
       },
       versions: [],
+      pending_card_id: null,
       routed_to_name: null,
       routed_at: null,
       response_suggestion: {
@@ -235,7 +236,12 @@ export function aud08Drawer(variant: Aud08Variant): RiskDrawerOut {
   }
   const r3 = risk(ROWS[2] as (typeof ROWS)[number], variant);
   return {
-    risk: r3,
+    // The drawer's read adds what this person may do about the card (DEC-2420).
+    risk: {
+      ...r3,
+      allowed_actions:
+        variant === "b2" ? r3.allowed_actions : [...r3.allowed_actions, "decision.notify"],
+    },
     rationale:
       "PayGrid withholds deferrals each biweekly pay date and Northwind uploads the deposit file to Keystone by hand. Internal Control row 2: the Dec 26, 2025 payroll ($48,600) was deposited on Jan 9, 2026, 9 business days later against Northwind's usual 2.",
     citation_ids: [1, 2, 3, 4].map((n) => stableId(`citation:northwind:R3:${String(n)}`)),
@@ -243,6 +249,7 @@ export function aud08Drawer(variant: Aud08Variant): RiskDrawerOut {
       { version_no: 1, at: "2026-09-14T10:15:00-05:00", by_name: "Hannah Leclerc" },
       { version_no: 2, at: "2026-09-14T12:31:00-05:00", by_name: "Hannah Leclerc" },
     ],
+    pending_card_id: R3_CARD,
     routed_to_name: "Margaret Okonkwo",
     routed_at: "2026-09-14T12:31:00-05:00",
   };
