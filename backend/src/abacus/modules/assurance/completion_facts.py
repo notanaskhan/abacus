@@ -18,7 +18,7 @@ from sqlalchemy import text
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.assurance.completion_projector import ItemFact, register_completion_fact
 from abacus.modules.engagements.api import work_item_engagement
-from abacus.modules.reporting.api import statement_state
+from abacus.modules.reporting.api import checklist_counts, statement_state
 from abacus.modules.review.api import decided_cards, open_note_counts
 
 _ROUTES: Final = "/firm/audits/{wi}?tab="
@@ -200,6 +200,88 @@ async def fs_final(tenant: TenantContext, work_item_id: UUID) -> ItemFact:
     return ItemFact("open", None, link)
 
 
+# --- S31 close (A-07-T22): the facts the projector still lacked -------------------------------
+
+
+async def sign_offs(tenant: TenantContext, work_item_id: UUID) -> ItemFact:
+    """Current when no workpaper changed after its sign-off (the AUD-17 matrix's footer)."""
+    from abacus.modules.assurance.review_matrix import matrix
+
+    engagement_id = await _engagement(tenant, work_item_id)
+    link = _link(work_item_id, "sign-offs")
+    if engagement_id is None:
+        return ItemFact("open", None, link)
+    changed = (await matrix(tenant, engagement_id)).footer.changed_after_sign_off
+    if changed == 0:
+        return ItemFact("done", "No workpaper changed after sign-off", link)
+    return ItemFact("open", f"{changed} changed after sign-off", link)
+
+
+async def sum_evaluated(tenant: TenantContext, work_item_id: UUID) -> ItemFact:
+    """Done once the EP's SUM conclusion card is decided (the decision is the EP's, never ours)."""
+    from abacus.modules.assurance.completion_decisions import SUM_KIND
+
+    engagement_id = await _engagement(tenant, work_item_id)
+    link = _link(work_item_id, "misstatements")
+    if engagement_id is not None and any(
+        c.kind == SUM_KIND for c in await decided_cards(tenant, engagement_id)
+    ):
+        return ItemFact("done", "Concluded by the engagement partner", link)
+    return ItemFact("open", "Reserved to the engagement partner", link)
+
+
+async def disclosure_checklist(tenant: TenantContext, work_item_id: UUID) -> ItemFact:
+    found = await checklist_counts(tenant, work_item_id)
+    link = _link(work_item_id, "statements")
+    if found is None:
+        return ItemFact("open", None, link)
+    answered, total = found
+    if total > 0 and answered == total:
+        return ItemFact("done", f"{answered} of {total} answered", link)
+    return ItemFact("open", f"{answered} of {total} answered", link)
+
+
+_TIE = text(
+    """
+    SELECT d.status,
+           (SELECT count(*) FROM ebp_form5500_lines l
+             WHERE l.draft_id = d.id AND l.classification = 'inconsistent') AS lines_off,
+           (SELECT count(*) FROM ebp_part_iv_answers a
+             WHERE a.draft_id = d.id AND a.result = 'inconsistent') AS answers_off
+      FROM ebp_form5500_drafts d
+     WHERE d.work_item_id = :wi AND d.status <> 'superseded'
+     ORDER BY d.created_at DESC LIMIT 1
+    """
+)
+
+
+async def form5500_tie(tenant: TenantContext, work_item_id: UUID) -> ItemFact:
+    """EBP-07: the draft is tied by code, nothing inconsistent (reconciling items documented)."""
+    async with tenant_session(tenant) as session:
+        row = (await session.execute(_TIE, {"wi": work_item_id})).first()
+    link = f"/firm/audits/{work_item_id}?section=ebp_07"
+    if row is None:
+        return ItemFact("open", "Draft Form 5500 not received", link)
+    off = int(row.lines_off) + int(row.answers_off)
+    if row.status == "tied" and off == 0:
+        return ItemFact("done", "Ties, or differs only by documented reconciling items", link)
+    return ItemFact("open", f"{off} inconsistent" if off else None, link)
+
+
+async def certification(tenant: TenantContext, work_item_id: UUID) -> ItemFact:
+    """EBP-06: every point of the limited-scope certification evaluated by a person."""
+    from abacus.modules.assurance.ebp_investments import points
+
+    found = await points(tenant, work_item_id)
+    link = f"/firm/audits/{work_item_id}?section=ebp_06"
+    if not found:
+        return ItemFact("open", None, link)
+    left = sum(1 for p in found if p.answer != "evaluated")
+    if left == 0:
+        return ItemFact("done", f"{len(found)} of {len(found)} points evaluated", link)
+    return ItemFact("open", f"{len(found) - left} of {len(found)} points evaluated", link)
+
+
 def register_completion_facts() -> None:
     """Once, from `assurance.api`."""
     for key, provider in (
@@ -214,6 +296,12 @@ def register_completion_facts() -> None:
         ("review_notes", review_notes),
         ("mgmt_approval", mgmt_approval),
         ("fs_final", fs_final),
+        # S31 close: the rest the template names (`filing` stays a person's: no in-app fact).
+        ("sign_offs", sign_offs),
+        ("sum", sum_evaluated),
+        ("disclosure_checklist", disclosure_checklist),
+        ("form5500_tie", form5500_tie),
+        ("certification", certification),
     ):
         register_completion_fact(key, provider)
 
