@@ -514,6 +514,11 @@ UI labels (N-04-T01): **Response sent** (status `sent`), **Awaiting agency** (st
 | Run step | One step of an agent run. Never "task". | `agent_run_steps` | `task` |
 | Plan / question / artifact / event | P-47. | `agent_plans`, `agent_questions`, `run_artifacts`, `run_events` | — |
 | Run sign-off | A person's sign-off of a run, its open issues and decisions acknowledged. Human only. | `run_sign_offs` | — |
+| Run trace | WB-09's complete, replayable record of one run: summary, timeline, records read, writes and approvals. A read model over stored rows, never a table (P-09-T01, DEC-2801). | `trace` (read model; `RunTraceOut`) | `log` |
+| Run projection | A run's plan steps counted by level and state (`total`, `done`, `running`, `blocked`, `waiting`, `queued`, `failed`). Computed by code on read, never stored, and never called a plan (P-09 §4.3). | `RunProjectionLevelOut` | — |
+| Tool card | UI only: the dock's card for one run step ("Execute ›"). In code the step is `agent_run_step`. | `agent_run_step` | — |
+| AgentBlocks | The closed schema every model output a person sees is validated into: prose segments, tables, key-value rows, metrics, files, badges, citation lists, options and record references; numbers by fact reference, no model markup (ADR-230). | `AgentBlocks` (`agents/blocks.py`) | — |
+| Session item | One entry in a run's thread, in the C6 v2 wire set (`user`, `line`, `block`, `tool`, `progress`, `question`, `answer`, `error`, `plan`, `approval`, `decision_ref`, `artifact`, `run_card`, `notice`). | `session_kind` (C6 v1.1), `session_items` (v2) | — |
 | Agent feedback | A person's thumbs and reason codes on a step or item. | `agent_feedback` | — |
 | Proposal (agent change set) | Groups suggestions (X-14). | `proposals`, `proposal_rows` | — |
 | Learned context | UI label; no "memory", "trained" or "learned" in copy. | `memory_items`, `corrections`, `agent_feedback` | — |

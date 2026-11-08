@@ -485,7 +485,9 @@ async def export_trace(ctx: AuthContext, run_id: UUID) -> TraceExport:
             "rows": len(trace.rows),
             "sha256": digest,
             "renderer_version": RENDERER_VERSION,
-            "projection": "content",
+            # P-09-T01 (DEC-2801): the export inherits the caller's projection, so an admin's
+            # export is the metadata trace and says so.
+            "projection": trace.projection,
         },
     )
 
