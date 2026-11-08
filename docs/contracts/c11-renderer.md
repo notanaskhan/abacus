@@ -84,3 +84,12 @@ flag `docs/architecture/feature-flags/reporting.yaml`; fixtures
 ## 9. Versioning
 Additive changes in place (DOCX if descoped, T-06's diagnostic field). A breaking change is C11 v2
 with one sprint of overlap.
+
+- **Composed kinds (A-06-T29, DEC-2615, additive, 2026-11-08).** A `DocumentKind` may register a
+  `body_provider`: code composes the whole body (DocBlocks, checked against the closed union)
+  from the owner's record, the request names no `template_version_id` (one is refused
+  `unknown_layout`), and the snapshot seals it as `body`; the render job, `regenerate` (which
+  asks the provider again) and a final render read the sealed body. Template snapshots carry no
+  `body` key, so their shape and hashes are unchanged. The one composed kind is `fs_package` in
+  the code-only layout `financial_statements` (migration 0701 widens the version CHECK); the
+  template contract's six layouts, its import validation and its OpenAPI are unchanged.

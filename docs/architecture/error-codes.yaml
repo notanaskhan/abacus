@@ -3154,6 +3154,11 @@ codes:
     raised_by:
     - abacus.modules.identity.settings_registry.UnknownSetting
     summary: A key no module registered, or one that isn't editable.
+  unknown_statement:
+    status: 422
+    raised_by:
+    - abacus.modules.reporting.fs_render.UnknownStatement
+    summary: 'A statement key with no caption: refused, never guessed (DEC-2615).'
   unknown_template_variable:
     status: 422
     raised_by:
