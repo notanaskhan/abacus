@@ -28,7 +28,7 @@ from abacus.kernel.classification import classified
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.safe_xlsx import Cell, Sheet, workbook
-from abacus.kernel.uow import DomainEvent, Ref, Scope, Target, uow
+from abacus.kernel.uow import DomainEvent, Ref, Scope, Target, UnitOfWork, uow
 from abacus.modules.adjustments.api import recorded_entries
 from abacus.modules.engagements.api import get_ref
 from abacus.modules.evidence.api import verified_citation_ids
@@ -1010,6 +1010,157 @@ async def adopt_item(ctx: AuthContext, document_id: UUID, item_key: str, if_matc
             ),
         )
     return await _one_item(ctx.tenant, document_id, item_key)
+
+
+# --- A-06-T16 seam (TASK-3395): the agent's suggested answers -----------------------------------
+# A suggestion's target is the statement document and its field the item key. N/A isn't
+# suggested: its reason is a person's (the row's CHECK needs one), so only yes and no mirror.
+SUGGESTION_TARGET: Final = "disclosure_checklist"
+_SUGGESTABLE: Final = ("yes", "no")
+_ADOPTED: Final = (
+    "UPDATE disclosure_checklist_answers SET answer = :ans, state = 'adopted', adopted_by = :u, "
+    "version = version + 1, updated_at = clock_timestamp() "
+    "WHERE statement_document_id = :d AND item_key = :k"
+)
+_EDITED: Final = (
+    "UPDATE disclosure_checklist_answers SET answer = :ans, state = 'answered', answered_by = :u, "
+    "version = version + 1, updated_at = clock_timestamp() "
+    "WHERE statement_document_id = :d AND item_key = :k"
+)
+
+
+def suggested_answer(value: dict[str, object]) -> str | None:
+    """The answer a typed suggestion value (`{t, v}`) carries, if it may be suggested."""
+    answer = value.get("v") if value.get("t") == "text" else None
+    return answer if isinstance(answer, str) and answer in _SUGGESTABLE else None
+
+
+async def document_engagement(tenant: TenantContext, document_id: UUID) -> UUID | None:
+    """Which engagement a statement document belongs to (the suggestion target's owner)."""
+    try:
+        return cast(UUID, (await _resource_of_document(tenant, document_id))["engagement_id"])
+    except NotFound:
+        return None
+
+
+async def record_suggested_answer(
+    tenant: TenantContext, document_id: UUID, item_key: str, answer: str, suggestion_id: UUID
+) -> bool:
+    """Mirror an agent's pending answer on the item's row as `suggested` (never answered: the
+    count leaves it out). Only an item of the picked template that is empty or still suggested
+    takes it; a person's answer is never touched. Whether the row took it."""
+    if answer not in _SUGGESTABLE:
+        return False
+    document = await _resource_of_document(tenant, document_id)
+    template = document["checklist_template_version_id"]
+    if template is None:
+        return False
+    if item_key not in {i["key"] for i in await disclosure_template_items(tenant, template)}:
+        return False
+    async with tenant_session(tenant) as session:
+        state = (
+            await session.execute(
+                text(
+                    "SELECT state FROM disclosure_checklist_answers "
+                    "WHERE statement_document_id = :d AND item_key = :k"
+                ),
+                {"d": document_id, "k": item_key},
+            )
+        ).scalar_one_or_none()
+    if state is not None and state not in ("empty", "suggested"):
+        return False
+    async with uow(tenant) as tx:
+        existing = await _existing(tx.session, document_id, item_key)
+        if existing is not None and existing["state"] not in ("empty", "suggested"):
+            raise StaleAnswer  # a person answered it in between; their answer stands
+        scope = {"d": document_id, "k": item_key, "ans": answer, "s": suggestion_id}
+        if existing is None:
+            answer_id = (
+                await tx.session.execute(
+                    text(
+                        "INSERT INTO disclosure_checklist_answers (tenant_id, engagement_id, "
+                        "work_item_id, statement_document_id, template_version_id, item_key, "
+                        "answer, state, suggestion_id) VALUES (:t, :e, :w, :d, :tv, :k, :ans, "
+                        "'suggested', :s) RETURNING id"
+                    ),
+                    {
+                        **scope,
+                        "t": tenant.tenant_id,
+                        "e": document["engagement_id"],
+                        "w": document["work_item_id"],
+                        "tv": template,
+                    },
+                )
+            ).scalar_one()
+        else:
+            answer_id = existing["id"]
+            await tx.session.execute(
+                text(
+                    "UPDATE disclosure_checklist_answers SET answer = :ans, state = 'suggested', "
+                    "suggestion_id = :s, version = version + 1, updated_at = clock_timestamp() "
+                    "WHERE statement_document_id = :d AND item_key = :k"
+                ),
+                scope,
+            )
+        tx.record(
+            "disclosure_checklist.suggested",
+            target=Target(_ANSWER_TARGET, answer_id),
+            after=Ref(suggestion_id=suggestion_id),
+            scope=Scope(
+                engagement_id=document["engagement_id"], work_item_id=document["work_item_id"]
+            ),
+        )
+    return True
+
+
+async def apply_suggested_answer(
+    tx: UnitOfWork,
+    ctx: AuthContext,
+    document_id: UUID,
+    item_key: str,
+    answer: str,
+    *,
+    suggestion_id: UUID | None,
+    edited: bool,
+    citation_note: str | None,
+) -> None:
+    """The applier's write, in the adopting unit of work: a person adopted the agent's answer
+    (`adopted`) or edited it (`answered`, theirs). The item must still hold that suggestion."""
+    if answer not in ("yes", "no"):
+        raise NoSuggestion
+    document = await _resource_of_document(ctx.tenant, document_id)
+    ref = await get_ref(ctx, document["engagement_id"])
+    await authorise(ctx, "disclosure_checklist.answer", ref.resource())
+    existing = await _existing(tx.session, document_id, item_key)
+    if (
+        existing is None
+        or existing["state"] != "suggested"
+        or (suggestion_id is not None and existing["suggestion_id"] != suggestion_id)
+    ):
+        raise NoSuggestion
+    await tx.session.execute(
+        text(_EDITED if edited else _ADOPTED),
+        {"ans": answer, "u": ctx.user_id, "d": document_id, "k": item_key},
+    )
+    await record_value(
+        tx,
+        engagement_id=document["engagement_id"],
+        target_type=_ANSWER_TARGET,
+        target_id=existing["id"],
+        field_key="answer",
+        value={"t": "text", "v": answer},
+        value_source="human",
+        cause="edit" if edited else "suggestion_adopted",
+        suggestion_id=suggestion_id,
+        citation_note=citation_note or ("edited" if edited else "adopted"),
+    )
+    tx.record(
+        "disclosure_checklist.answered" if edited else "disclosure_checklist.adopted",
+        target=Target(_ANSWER_TARGET, existing["id"]),
+        scope=Scope(
+            engagement_id=document["engagement_id"], work_item_id=document["work_item_id"]
+        ),
+    )
 
 
 async def review_items(ctx: AuthContext, document_id: UUID, item_keys: Sequence[str]) -> None:

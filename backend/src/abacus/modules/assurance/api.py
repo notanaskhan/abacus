@@ -27,6 +27,14 @@ from abacus.modules.assurance import (
 )
 from abacus.modules.assurance import mapping_live as mapping_live
 from abacus.modules.assurance.audits_contract import audits_router
+from abacus.modules.assurance.checklist_suggestions import (
+    CHECKLIST_SUGGESTION_TARGET,
+    apply_checklist_suggestion,
+    statement_document_engagement,
+)
+from abacus.modules.assurance.checklist_suggestions import (
+    SUBSCRIPTIONS as CHECKLIST_SUGGESTION_SUBSCRIPTIONS,
+)
 from abacus.modules.assurance.completion import on_entry_client_decision, on_entry_proposed
 from abacus.modules.assurance.completion_contract import router as audit_completion_router
 from abacus.modules.assurance.completion_decisions import AUDIT_KINDS as DECISION_KINDS
@@ -193,8 +201,12 @@ register_firm_setting(RELEASE_MODE_SETTING)
 # A-01-T05 (SPEC-330 AC-13): C1's `gate.met` derives the phase a computed gate opens. The worker
 # collects these with every module's; assurance has no workflows of its own yet.
 # A-03-T14: a new trial balance version leaves a signed mapping stale (`mapping_set.went_stale`).
+# A-06-T16 seam (TASK-3395): an agent's suggested checklist answer is mirrored on its item.
 SUBSCRIPTIONS = (
-    dict(PHASE_SUBSCRIPTIONS) | dict(MAPPING_SUBSCRIPTIONS) | dict(IC_REDRAFT_SUBSCRIPTIONS)
+    dict(PHASE_SUBSCRIPTIONS)
+    | dict(MAPPING_SUBSCRIPTIONS)
+    | dict(IC_REDRAFT_SUBSCRIPTIONS)
+    | dict(CHECKLIST_SUGGESTION_SUBSCRIPTIONS)
 )
 WORKFLOWS: dict[type, str] = {}
 ACTIVITIES: tuple[object, ...] = ()
@@ -245,6 +257,12 @@ register_gate_kind(FRAUD_GATE, minutes_gate)
 register_suggestion_applier("risk", apply_risk_suggestion, engagement_of=risk_engagement)
 # A-04-T15 (DEC-1953): the recommender's suggestion names the work item's materiality.
 register_suggestion_target("materiality", engagement_of=work_item_engagement)
+# A-06-T16 seam (TASK-3395): the agent suggests a disclosure answer; a person adopts it.
+register_suggestion_applier(
+    CHECKLIST_SUGGESTION_TARGET,
+    apply_checklist_suggestion,
+    engagement_of=statement_document_engagement,
+)
 
 # A-06-T25: reporting may not import agents; the statements' run record arrives through here.
 from abacus.modules.agents.api import (  # noqa: E402
