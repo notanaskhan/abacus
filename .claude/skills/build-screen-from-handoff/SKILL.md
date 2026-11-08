@@ -106,3 +106,12 @@ workaround for a missing field: it is an additive contract change.
 - T16 SigningCeremony and TPL-01: `docs/design/kits/signing.md` (POR-06, SIG-01, TAX-01).
 - T7-M portal mobile: `docs/design/kits/portal-mobile.md` (POR-19 and every POR screen at 390;
   TPL-19 frames 3, 4, 8 and permission-off are deferred, DEC-97).
+
+## Review-grammar deviations to carry (P-04-T60)
+
+SHL-09 to SHL-16 settled four deviations. A screen hosting them inherits these; list each under its contract's Deviations rather than deciding again.
+
+- **Fixture dates.** Each artboard renders at its README clock, not the demo day (`docs/screens/SHL-11.md`: d stays Oct 6). A checkpoint opened from a record names the record's own clock (`docs/screens/SHL-16.md`).
+- **DF-13.** No "Propose changes for my approval" checkbox: every fix ends in a proposal a person accepts (`docs/plan/09-decisions-adrs.md`, DEC-53; `docs/screens/SHL-15.md`).
+- **Field ticks are sign-offs.** An L1 tick on a field records through the sign-off service at the field's target, so the ladder and the stale rule are one (`docs/screens/SHL-12.md`). Tick over the hash the server sent, never one the browser computed; EBP-02's value cells are the example (`DV-EBP-02-4`).
+- **Import-author variant.** An import's approval is the checkpoint's author's ladder, never the modal's preparer rule, and the modal reads the checkpoint's own facts (`docs/screens/SHL-12.md`, `docs/screens/SHL-16.md`; DEC-1970). This variant has no artboard, so its parity is report-only.
