@@ -61,3 +61,6 @@ Stub behind `reporting.fs_disclosure` (404 off, 501 on until A-06-T25). Module:
   - A record-mode management approval needs its evidence.
 - **Sends and approvals.** Sending a draft and recording management's approval are a person's
   acts (agent deny). Client approval is R-02's C18, never these routes.
+
+## Screen contracts and consumer notes (A-06-T38)
+AUD-15, AUD-16, AUD-17 and AUD-20: `docs/screens/AUD-15.md`, `AUD-16.md`, `AUD-17.md`, `AUD-20.md`, each with its artboards, deviations and consumer notes for A-05, A-07, R-02, C-02, T-05, A-09, A-10 and P-10.
