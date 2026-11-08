@@ -356,7 +356,9 @@ class IntakeCreateIn(BaseModel):
     create_anyway: Annotated[bool, classified("internal")] = False  # past a possible duplicate
     # DEC-2953 (US-2.3): why, when past a duplicate: different_notice, different_tax_year,
     # reissued_by_agency or other; 422 `create_anyway_reason_required` without one.
-    create_anyway_reason_code: Code | None = None
+    create_anyway_reason_code: Annotated[
+        str | None, Field(pattern=r"^[a-z][a-z0-9_]{0,59}$"), classified("internal")
+    ] = None
 
 
 class IntakeAttachIn(BaseModel):

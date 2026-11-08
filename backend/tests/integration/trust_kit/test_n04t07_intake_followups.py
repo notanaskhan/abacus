@@ -94,7 +94,7 @@ async def test_ac_a_file_with_text_already_is_read_at_once(seed: Seeder) -> None
     version = await firm.version(b"%PDF-1.4 a state letter with a text layer")
     await seed.run(
         "INSERT INTO evidence_pages (tenant_id, evidence_version_id, page_no, width_pt, "
-        "height_pt, has_text_layer) VALUES ($1, $2, 1, 612, 792, true)",
+        "height_pt, has_text_layer, extractor_version) VALUES ($1, $2, 1, 612, 792, true, 'w2')",
         firm.tenant_id,
         version,
     )

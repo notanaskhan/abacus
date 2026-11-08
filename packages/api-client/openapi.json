@@ -49521,7 +49521,6 @@
           "create_anyway_reason_code": {
             "anyOf": [
               {
-                "cls": "internal",
                 "pattern": "^[a-z][a-z0-9_]{0,59}$",
                 "type": "string"
               },
@@ -49529,6 +49528,7 @@
                 "type": "null"
               }
             ],
+            "cls": "internal",
             "title": "Create Anyway Reason Code"
           },
           "engagement_id": {
