@@ -217,11 +217,32 @@ class ReviewTier(BaseModel):
     criteria: Annotated[str, Field(max_length=500), classified("internal")] = ""
 
 
+class LevelAssignment(BaseModel):
+    """S28 (TASK-3399, DEC-2398): the levels one kind of reviewable needs, by its requirement key
+    (`trial_balance`, `workpaper:ebp_contributions`, `materiality`). AUD-17's matrix, the G5 gate
+    and the sign-off rules read them through `review.reviewable_facts`."""
+
+    model_config = _frozen()
+
+    key: Annotated[
+        str,
+        Field(pattern=r"^[a-z][a-z0-9_]{0,39}(:[a-z][a-z0-9_]{0,39})?$"),
+        classified("internal"),
+    ]
+    required_levels: Annotated[
+        list[ReviewLevel], Field(min_length=1, max_length=5), classified("internal")
+    ]
+
+
 class ReviewLevelsPayload(BaseModel):
     model_config = _frozen()
 
     kind: Annotated[Literal["review_levels"], classified("internal")]
     tiers: Annotated[list[ReviewTier], Field(min_length=1, max_length=5), classified("internal")]
+    # Optional, so every review_levels version published before reads as it did.
+    assignments: Annotated[
+        list[LevelAssignment], Field(max_length=200), classified("internal")
+    ] = []
 
 
 class ReturnApprovalAssignment(BaseModel):

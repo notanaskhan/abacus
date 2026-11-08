@@ -292,7 +292,9 @@ def export_workbook(kind: str, title: str, payload: Mapping[str, object]) -> byt
     settings_ws.append(["field", "value"])
     rest: list[tuple[str, object]] = []
     for key in sorted(payload):
-        if key in ("kind", list_field):
+        # An empty optional list is its default (review_levels' `assignments`, TASK-3399): the
+        # import reads its absence back as that, so the round trip stays an empty diff.
+        if key in ("kind", list_field) or payload[key] == []:
             continue
         _flatten(key, payload[key], rest)
     for key, value in rest:

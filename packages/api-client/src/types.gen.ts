@@ -26395,6 +26395,24 @@ export type LetterheadOut = {
 };
 
 /**
+ * LevelAssignment
+ *
+ * S28 (TASK-3399, DEC-2398): the levels one kind of reviewable needs, by its requirement key
+ * (`trial_balance`, `workpaper:ebp_contributions`, `materiality`). AUD-17's matrix, the G5 gate
+ * and the sign-off rules read them through `review.reviewable_facts`.
+ */
+export type LevelAssignment = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Required Levels
+     */
+    required_levels: Array<'L1' | 'L2' | 'L3' | 'L4' | 'L5'>;
+};
+
+/**
  * LineBody
  */
 export type LineBody = {
@@ -38462,6 +38480,10 @@ export type ReviewFlagOut = {
  * ReviewLevelsPayload
  */
 export type ReviewLevelsPayload = {
+    /**
+     * Assignments
+     */
+    assignments?: Array<LevelAssignment>;
     /**
      * Kind
      */
