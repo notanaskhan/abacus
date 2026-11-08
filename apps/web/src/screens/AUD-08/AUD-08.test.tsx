@@ -194,6 +194,52 @@ describe("AUD-08 c, e, f, g (A-04-T26)", () => {
     expect(matrix.querySelectorAll('[data-dot="linked"]').length).toBeGreaterThan(0);
   });
 
+  it("c: Link EBP-03… picks a response and links the risk to it", async () => {
+    const posted: unknown[] = [];
+    const scenario = scenarios.c;
+    restore = installFixtureMode({
+      ...scenario,
+      handlers: {
+        ...scenario.handlers,
+        "POST /v1/engagements/{engagement_id}/risks/{risk_id}/responses": (request) => {
+          posted.push(request.body);
+          return json({}, 201);
+        },
+      },
+    });
+    render(
+      <QueryClientProvider client={newQueryClient()}>
+        <Page />
+      </QueryClientProvider>,
+    );
+    const tab = await waitFor(() => {
+      const el = Array.from(document.querySelectorAll<HTMLElement>('[role="tab"]')).find(
+        (t) => t.textContent === "Linkage",
+      );
+      expect(el).toBeTruthy();
+      return el as HTMLElement;
+    });
+    fireEvent.click(tab);
+    const row = await drawn('[data-aud08="linkage"] [data-risk="R8"]');
+    // Radix opens a menu on pointer down.
+    fireEvent.pointerDown(within(row).getByRole("button", { name: "Link EBP-03…" }), {
+      button: 0,
+      pointerType: "mouse",
+    });
+    const option = await waitFor(() => {
+      const found = document.querySelector<HTMLElement>('[role="menuitem"]');
+      expect(found).toBeTruthy();
+      return found as HTMLElement;
+    });
+    fireEvent.click(option);
+    await waitFor(() => {
+      expect(posted).toHaveLength(1);
+    });
+    const body = posted[0] as { target_kind?: unknown; target_ref?: unknown };
+    expect(typeof body.target_kind).toBe("string");
+    expect(typeof body.target_ref).toBe("string");
+  });
+
   it("g: Identify risks with agent shows code's coverage and Open R8", async () => {
     show("g");
     const button = await waitFor(() => {
