@@ -875,6 +875,7 @@ INSERT_COLUMNS.update(
         "ebp_trust_report_lines": frozenset(
             {"tenant_id", "engagement_id", "work_item_id", "evidence_version_id", "line_key"}
             | {"fund_name", "boy", "eoy", "fair_value_level", "citation_id", "origin"}
+            | {"description"}  # A-05-T58 remainder (0744)
         ),
         "ebp_certification_points": frozenset(
             {"tenant_id", "engagement_id", "work_item_id", "evidence_version_id", "point_key"}
@@ -955,7 +956,8 @@ INSERT_COLUMNS.update(
         | _EBP_EVIDENCE
         | {"participant_key", "loan_ref", "status", "originated_on", "term_months", "is_residence"}
         | {"vested_balance", "beginning_balance", "new_loans", "repayments", "offsets"}
-        | {"ending_balance", "limit_amount", "limit_result", "engine_version", "inputs_hash"},
+        | {"ending_balance", "limit_amount", "limit_result", "engine_version", "inputs_hash"}
+        | {"interest_rate"},  # A-05-T58 remainder (0744)
         "ebp_loan_offsets": _EBP_SCOPE
         | _EBP_EVIDENCE
         | {"loan_id", "offset_on", "amount", "form_1099r_code", "reported_line"},

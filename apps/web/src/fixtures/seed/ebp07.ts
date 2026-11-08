@@ -107,12 +107,14 @@ function partIv(variant: Ebp07Variant): PartIvLineOut[] {
 }
 
 // The 4i schedule by code (EBP-07 c): seven holdings issued by parties in interest, cost omitted
-// for the participant-directed ones; total 16,812,400 ties to the draft's line 1c.
-function held(identity: string, value: string, mark: "*" | "", directed = true) {
+// for the participant-directed ones; total 16,812,400 ties to the draft's line 1c. Column (c) is
+// the trust report's words, or code's from the loans' terms (DEC-2828); blank where the handoff
+// gives none.
+function held(identity: string, value: string, mark: "*" | "", directed = true, description = "") {
   return {
     mark,
     identity,
-    description: "",
+    description,
     cost: directed ? null : "0.00",
     cost_omitted: directed,
     current_value: value,
@@ -122,14 +124,20 @@ function held(identity: string, value: string, mark: "*" | "", directed = true) 
 export function ebp07Schedule4i(): Schedule4iOut {
   return {
     rows: [
-      held("KRS 500 Index Fund", "6120450.00", "*"),
+      held("KRS 500 Index Fund", "6120450.00", "*", true, "registered investment company"),
       held("KRS Target 2035 Fund", "2384910.00", "*"),
       held("KRS Target 2045 Fund", "2915330.00", "*"),
       held("KRS Bond Index Fund", "1408220.00", "*"),
       held("KRS International Index Fund", "902610.00", "*"),
-      held("Harborline Stable Value Fund", "1163480.00", "*"),
-      held("Self-directed brokerage accounts (BrokerWindow)", "1605000.00", ""),
-      held("Participant loans", "312400.00", "*", false),
+      held("Harborline Stable Value Fund", "1163480.00", "*", true, "common/collective trust"),
+      held("Self-directed brokerage accounts (BrokerWindow)", "1605000.00", "", true, "various"),
+      held(
+        "Participant loans",
+        "312400.00",
+        "*",
+        false,
+        "interest rates 5.25%–9.50%, maturities through 2040",
+      ),
     ],
     total: "16812400.00",
     draft_total: "16812400.00",

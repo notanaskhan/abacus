@@ -566,6 +566,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/audits/{work_item_id}/ebp/participants/{participant_id}/reveals",
         "/v1/audits/{work_item_id}/ebp/trust-tb/adopt",
         "/v1/audits/{work_item_id}/ebp/form-5500/reconciliation-note",
+        # A-05-T58 remainder (DEC-2828): a 4i render creates a generated document version.
+        "/v1/audits/{work_item_id}/ebp/form-5500/schedules/4i/render",
         "/v1/audits/{work_item_id}/estimates/{estimate_id}/request-conclusion",
         "/v1/audits/{work_item_id}/related-parties",
         "/v1/audits/{work_item_id}/parties-in-interest",

@@ -40,6 +40,7 @@ from abacus.kernel.flags import Flag, flag_enabled
 from abacus.modules.assurance import (
     aud27,  # A-05-T53: the AUD-27 service
     ebp_provisions,
+    ebp_schedule_render,  # A-05-T58 remainder: the 4i schedule through C11
 )
 from abacus.modules.assurance.compute.ebp.accounts import Group as AccountGroup
 from abacus.modules.assurance.ebp_form5500 import (
@@ -2493,7 +2494,12 @@ async def ebp_form5500_route(work_item_id: UUID, ctx: Ctx) -> Form5500Out:
             )
             for answer in view.part_iv
         ],
-        allowed_actions=["ebp_form5500.key", "ebp_form5500.send_note", "ebp_form5500.remind"],
+        allowed_actions=[
+            "ebp_form5500.key",
+            "ebp_form5500.send_note",
+            "ebp_form5500.remind",
+            "ebp_schedule.render",
+        ],
     )
 
 
@@ -2564,6 +2570,22 @@ async def ebp_schedule_4i_route(work_item_id: UUID, ctx: Ctx) -> Schedule4iOut:
         ties=schedule.ties,
         inputs_hash=schedule.inputs_hash,
     )
+
+
+@router.post(
+    "/ebp/form-5500/schedules/4i/render",
+    action="ebp_schedule.render",
+    response_model=AcceptedOut,
+    status_code=201,
+)
+async def ebp_schedule_4i_render_route(
+    work_item_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> AcceptedOut:
+    """A person's DRAFT render of the 4i schedule through C11 (A-05-T58 remainder, DEC-2828);
+    answers the generated document. 404 until a Form 5500 draft arrives."""
+    await _gate(ctx, work_item_id, "ebp_schedule.render", _F)
+    del idempotency_key
+    return AcceptedOut(id=await ebp_schedule_render.render_4i(ctx, work_item_id))
 
 
 @router.post(

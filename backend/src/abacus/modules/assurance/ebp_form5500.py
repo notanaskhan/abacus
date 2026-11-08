@@ -86,6 +86,12 @@ async def _engagement(ctx: AuthContext, work_item_id: UUID, action: str) -> UUID
     return engagement_id
 
 
+async def authorise_on(ctx: AuthContext, work_item_id: UUID, action: str) -> UUID:
+    """`action` on the work item's engagement (404 for an unknown work item); answers the
+    engagement's id. For the module's other EBP-07 writes (the 4i render)."""
+    return await _engagement(ctx, work_item_id, action)
+
+
 _SUPERSEDE = text(
     "UPDATE ebp_form5500_drafts SET status = 'superseded', version = version + 1, "
     "updated_at = clock_timestamp() WHERE work_item_id = :w AND plan_year = :y "
@@ -382,11 +388,14 @@ ACTIVITIES: Final = (tie_out_activity,)
 # --- A-05-T58 close (S31; DEC-2820): the 4i schedule and a keyed value ------------------------
 
 _HOLDINGS = text(
-    "SELECT fund_name, eoy FROM ebp_trust_report_lines "
+    "SELECT fund_name, eoy, description FROM ebp_trust_report_lines "
     "WHERE work_item_id = :w AND superseded_by IS NULL ORDER BY line_key"
 )
 _LOANS = text(
-    "SELECT COALESCE(sum(ending_balance), 0) AS total, count(*) AS n "
+    "SELECT COALESCE(sum(ending_balance), 0) AS total, count(*) AS n, "
+    "array_remove(array_agg(DISTINCT interest_rate), NULL) AS rates, "
+    "max(date_part('year', originated_on + make_interval(months => term_months)))::int "
+    "AS last_maturity "
     "FROM ebp_participant_loans WHERE work_item_id = :w"
 )
 _PARTIES = text("SELECT name FROM parties_in_interest WHERE work_item_id = :w")
@@ -438,14 +447,23 @@ async def schedule_4i_facts(tenant: TenantContext, work_item_id: UUID) -> engine
         invested = await session.scalar(_INVESTED, {"w": work_item_id})
     assets = [
         engine.HeldAsset(
-            str(h.fund_name), "", Decimal(h.eoy or 0), None,
+            str(h.fund_name), h.description or "", Decimal(h.eoy or 0), None,
             _party_in_interest(str(h.fund_name), parties), True,
         )
         for h in holdings
     ]  # fmt: skip
     if int(loans.n) > 0:
         assets.append(
-            engine.HeldAsset(LOANS_IDENTITY, "", Decimal(loans.total), Decimal(0), True, False)
+            engine.HeldAsset(
+                LOANS_IDENTITY,
+                engine.loans_description(
+                    [Decimal(r) for r in loans.rates or ()], loans.last_maturity
+                ),
+                Decimal(loans.total),
+                Decimal(0),
+                True,
+                False,
+            )
         )
     return engine.schedule_4i(assets, None if invested is None else Decimal(invested))
 

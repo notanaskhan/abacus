@@ -70,6 +70,7 @@ _TITLES: Final = {
     "k1_cover_letter": "Schedule K-1 cover letter",
     "fs_package": "Financial statements",
     "run_trace_export": "Run trace export",
+    "ebp_supplemental_schedule": "Supplemental schedule",
 }
 
 

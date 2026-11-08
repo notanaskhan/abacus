@@ -93,3 +93,9 @@ with one sprint of overlap.
   `body` key, so their shape and hashes are unchanged. The one composed kind is `fs_package` in
   the code-only layout `financial_statements` (migration 0701 widens the version CHECK); the
   template contract's six layouts, its import validation and its OpenAPI are unchanged.
+- **`ebp_supplemental_schedule` (A-05-T58 remainder, DEC-2828, additive, 2026-11-09).** A second
+  composed kind, in the same `financial_statements` layout: a plan's supplemental schedule (Schedule
+  H line 4i first), owned by the current Form 5500 draft (`ebp_form5500_draft`) and composed from
+  `compute.ebp.form5500.schedule_4i`. Migration 0745 widens `generated_documents.kind` and
+  `report_templates.family` by the one key, so the kind list stays one list. Draft renders only;
+  the kind answers no approval.

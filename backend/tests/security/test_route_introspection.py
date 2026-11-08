@@ -845,6 +845,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "/v1/audits/{work_item_id}/ebp/form-5500/reconciliation-note",
         "ebp_form5500.send_note",
     ),
+    ("POST", "/v1/audits/{work_item_id}/ebp/form-5500/schedules/4i/render", "ebp_schedule.render"),
     ("POST", "/v1/audits/{work_item_id}/ebp/imports", "ebp_import.create"),
     (
         "POST",

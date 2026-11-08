@@ -119,6 +119,26 @@ class Schedule4i:
     inputs_hash: str
 
 
+def _percent(rate: Decimal) -> str:
+    return f"{rate.quantize(Decimal('0.01'))}%"
+
+
+def loans_description(rates: Sequence[Decimal], last_maturity_year: int | None) -> str:
+    """Column (c) for participant loans, by code from the loans' own terms: "interest rates
+    5.25%\N{EN DASH}9.50%, maturities through 2040". A part with no stored facts is left out."""
+    parts: list[str] = []
+    if rates:
+        low, high = min(rates), max(rates)
+        parts.append(
+            f"interest rate {_percent(low)}"
+            if low == high
+            else f"interest rates {_percent(low)}\N{EN DASH}{_percent(high)}"
+        )
+    if last_maturity_year is not None:
+        parts.append(f"maturities through {last_maturity_year}")
+    return ", ".join(parts)
+
+
 def schedule_4i(assets: Sequence[HeldAsset], draft_total: Decimal | None) -> Schedule4i:
     """The 4i rows and their total; `ties` when the total equals the draft's own figure."""
     rows = tuple(
