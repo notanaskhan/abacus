@@ -801,6 +801,24 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
     # Day 12 of a 14-day client invitation, to the firm admins; produced by the hourly identity
     # pass (`identity.invitation_expiry`, DEC-1000).
     NotificationKind("invitation_expiring", "deadline", "Clock"),
+    # A-07-T19 (A-07 §4.8): the completion, letters, release and archive kinds, registered on the
+    # live path before the window; their events and email sentences land with the A-07 services
+    # (T24 to T32), so none fires while the A-07 flags are off.
+    NotificationKind("eqr_requested", "approval", "Scale", email_default=True),
+    NotificationKind("eqr_concurred", "system", "BadgeCheck"),
+    NotificationKind("rep_letter_approval_requested", "approval", "FilePenLine"),
+    NotificationKind("rep_letter_viewed", "client_activity", "Eye"),
+    NotificationKind("rep_letter_signed", "client_activity", "FileCheck"),
+    NotificationKind("rep_letter_date_mismatch", "deadline", "CalendarX"),
+    NotificationKind("governance_comm_approval_requested", "approval", "Send"),
+    NotificationKind("governance_comm_acknowledged", "client_activity", "CheckCheck"),
+    NotificationKind("governance_comm_overdue", "deadline", "Clock", email_default=True),
+    NotificationKind("report_released", "system", "FileCheck", email_default=True),
+    NotificationKind("archive_lock_requested", "approval", "Lock"),
+    NotificationKind("archive_deadline_risk", "deadline", "TriangleAlert", email_default=True),
+    NotificationKind("archive_locked", "system", "Lock"),
+    NotificationKind("archive_addition_approval_requested", "approval", "FilePlus"),
+    NotificationKind("filing_due", "deadline", "CalendarClock"),
     # A-01-T22 (A-01 §4.7): in-app; an email, when a person turns it on, deep-links to the
     # export sheet (`notification.export_ready`, imported content), never to a download.
     NotificationKind("export_ready", "system", "Download"),
