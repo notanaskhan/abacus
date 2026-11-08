@@ -264,7 +264,7 @@ SPECS: dict[str, dict[str, object]] = {   'decisions.recommender': {   'autonomy
                                                    'risk': {   'input_schema': 'SectionDraftInput',
                                                                'max_cost_usd': '0.15',
                                                                'output_schema': 'SectionDraft',
-                                                               'prompt': 'workpapers.section_draft.risk@v1'},
+                                                               'prompt': 'workpapers.section_draft.risk@v2'},
                                                    'risk_narrative': {   'input_schema': 'SectionDraftInput',
                                                                          'max_cost_usd': '0.15',
                                                                          'output_schema': 'SectionDraft',
@@ -291,6 +291,6 @@ SPECS: dict[str, dict[str, object]] = {   'decisions.recommender': {   'autonomy
                                       'tier': 'medium',
                                       'tools': [],
                                       'untrusted_inputs': ['cells', 'documents'],
-                                      'version': 13,
+                                      'version': 14,
                                       'work_class': 'background'}}
 # fmt: on

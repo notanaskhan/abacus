@@ -42,6 +42,7 @@ export function RiskDrawer({
   // A-04-T26 (f): a drafted rationale waits for a person (C-31); nothing adopts by itself.
   const suggestionId = data?.rationale_suggestion_id ?? null;
   const drafted = suggestionId !== null;
+  const response = data?.response_suggestion;
   const refresh = (): void => {
     void drawer.refetch();
   };
@@ -131,6 +132,32 @@ export function RiskDrawer({
             />
           )}
         </section>
+        {response != null && (
+          <section data-aud08="response" className="rounded-pane bg-card p-[12px] shadow-e1">
+            <h3 className="mb-[8px] flex items-center text-section font-medium">
+              {COPY.drawer.responseCard}
+              <DraftedMarker citations={response.citations} />
+            </h3>
+            <p className="text-[12.5px] leading-[1.55] text-ink-2">{response.target_ref}</p>
+            <DraftedFooter
+              onAdopt={() => {
+                adopt.mutate({
+                  path: { suggestion_id: response.suggestion_id },
+                  body: { seen_version: response.version },
+                });
+              }}
+              onEdit={() => {
+                onEdit?.();
+              }}
+              onDiscard={() => {
+                dismiss.mutate({
+                  path: { suggestion_id: response.suggestion_id },
+                  body: { seen_version: response.version },
+                });
+              }}
+            />
+          </section>
+        )}
         <section className="rounded-pane bg-card p-[12px] shadow-e1">
           <h3 className="mb-[8px] text-section font-medium">{COPY.drawer.assertions}</h3>
           <div className="flex flex-wrap gap-[6px]">

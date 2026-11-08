@@ -109,6 +109,7 @@ from abacus.modules.agents.proposals import (
     create_proposal,
     create_suggestion,
     pending_suggestion,
+    pending_suggestions,
     register_checkpoint_hooks,
     register_proposal_state,
 )
@@ -489,6 +490,7 @@ __all__ = [
     "open_deterministic_run",
     "override_rate",
     "pending_suggestion",
+    "pending_suggestions",
     "recommend",
     "register_change_set_applier",
     "register_engagement_run_agent",
