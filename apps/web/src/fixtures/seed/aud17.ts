@@ -218,7 +218,12 @@ export function aud17Matrix(): SignOffMatrixOut {
       row("fieldwork", "MAP", "Account mapping", "MD — MO — —"),
       row("fieldwork", "EBP-01", "Plan profile & service providers", "AC MD HL — —"),
       row("fieldwork", "EBP-08", "Participant accounts summary", "AC MD HL — —"),
-      row("fieldwork", "EBP-09", "Administrative expenses & operational compliance", "AC MD HL — —"),
+      row(
+        "fieldwork",
+        "EBP-09",
+        "Administrative expenses & operational compliance",
+        "AC MD HL — —",
+      ),
       row("fieldwork", "T-100", "Parties in interest", "AC MD HL — —"),
       row("completion", "C-110", "Representation letter", "HL — — MO —"),
       row("completion", "C-120", "Subsequent events", "HL — — o —"),
