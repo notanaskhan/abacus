@@ -36,6 +36,11 @@ def _with(monkeypatch: pytest.MonkeyPatch, facts: dict[str, object] | None) -> N
 
     monkeypatch.setattr(gates, "_in_app_facts", read)
 
+    async def no_eqr(_tenant: object, _engagement: object) -> bool:
+        return False  # A-07-T21: no EQR on the ENG-05 team unless a case says so
+
+    monkeypatch.setattr(gates, "_eqr_on_team", no_eqr)
+
 
 async def test_g6_not_required_without_an_assignment(monkeypatch: pytest.MonkeyPatch) -> None:
     _with(monkeypatch, _facts())

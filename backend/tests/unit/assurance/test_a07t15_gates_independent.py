@@ -54,6 +54,11 @@ def _facts(monkeypatch: pytest.MonkeyPatch, facts: dict[str, object] | None) -> 
 
     monkeypatch.setattr(gates, "_in_app_facts", read)
 
+    async def no_eqr(_tenant: object, _engagement: object) -> bool:
+        return False  # A-07-T21: no EQR on the ENG-05 team unless a case says so
+
+    monkeypatch.setattr(gates, "_eqr_on_team", no_eqr)
+
 
 BLANK: dict[str, object] = {
     "engagement_type": "fs_audit",
