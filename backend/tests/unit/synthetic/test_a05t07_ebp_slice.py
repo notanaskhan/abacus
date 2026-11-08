@@ -78,6 +78,9 @@ def test_the_documents_are_deterministic_and_readable() -> None:
 
 
 def test_the_slice_uploads_once_on_northwind() -> None:
-    [event] = slice_events("ebp")
+    # A-05-T49 (DEC-2603): the slice grants `ebp_audits` first, then uploads once.
+    entitlement, event = slice_events("ebp")
+    assert entitlement.kind == "platform.entitlement_set"
+    assert entitlement.data["module"] == "ebp_audits"
     assert event.kind == "evidence.ebp_documents_uploaded"
     assert event.data["files"] == len(ebp.FILES) == 8

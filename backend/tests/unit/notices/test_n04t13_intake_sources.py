@@ -12,6 +12,7 @@ from uuid import uuid4
 
 import pytest
 
+from abacus.kernel import _flags
 from abacus.modules.notices import intake_sources
 from abacus.modules.requests.api import EffectRequest, HandlerUnavailable, answer_effect_handler
 
@@ -27,23 +28,14 @@ def test_notices_owns_route_upload_to_notices_and_two_destinations() -> None:
     assert {"notice", "notice_intake"} <= set(triage_apply._DESTINATIONS)  # pyright: ignore[reportPrivateUsage] -- the private helper under test
 
 
-def test_an_upload_without_a_file_is_unavailable_so_the_engine_records_pending(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    async def on(*_: object) -> bool:
-        return True
-
-    monkeypatch.setattr(intake_sources, "flag_enabled", on)
+def test_an_upload_without_a_file_is_unavailable_so_the_engine_records_pending() -> None:
     request = EffectRequest(uuid4(), uuid4(), uuid4(), uuid4(), "r_irs_letter", None, None)
     with pytest.raises(HandlerUnavailable):
         asyncio.run(intake_sources.route_upload_to_notices(request))
 
 
-def test_with_notices_off_the_handler_is_unavailable(monkeypatch: pytest.MonkeyPatch) -> None:
-    async def off(*_: object) -> bool:
-        return False
-
-    monkeypatch.setattr(intake_sources, "flag_enabled", off)
-    request = EffectRequest(uuid4(), uuid4(), uuid4(), uuid4(), "r_irs_letter", None, uuid4())
-    with pytest.raises(HandlerUnavailable):
-        asyncio.run(intake_sources.route_upload_to_notices(request))
+def test_no_retired_flag_gates_the_effect() -> None:
+    """`notices.workspace` retired (DEC-2602): "notices off" is no longer a state, so the effect
+    reads no flag; the only unavailable case is an upload with no evidence version (above)."""
+    assert not hasattr(intake_sources, "flag_enabled")
+    assert not hasattr(_flags, "NOTICES_WORKSPACE")

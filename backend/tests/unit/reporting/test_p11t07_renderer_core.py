@@ -154,6 +154,7 @@ def test_the_six_code_owned_layouts_exist_and_an_unknown_one_refuses() -> None:
         "notice_response",
         "package",
         "run_export",
+        "financial_statements",  # A-06-T29 (DEC-2615): code-composed, never a template's
     }
     with pytest.raises(RenderRefused) as refused:
         build_html(_input(layout_key="brochure"))
