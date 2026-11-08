@@ -10,7 +10,13 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import Final
 
-from abacus.ai_gateway.providers import ModelProvider, Tier, provider
+from abacus.ai_gateway.providers import (
+    ConversingProvider,
+    ModelProvider,
+    Tier,
+    conversing,
+    provider,
+)
 from abacus.kernel.clock import system_now
 from abacus.kernel.config import SYNTHETIC_ENVIRONMENTS, Route, settings
 
@@ -38,6 +44,12 @@ def route_provider(route: Route) -> ModelProvider:
             found = AnthropicOnBedrock()
         _providers[route] = found
     return found
+
+
+def route_converser(route: Route) -> ConversingProvider:
+    """P-10-T12: the route's `converse()`. Eligibility for a loop spec is parity's question
+    (`routes/parity.py`); this only refuses a provider without seam v2."""
+    return conversing(route_provider(route))
 
 
 def configure_route(route: Route, provider_: ModelProvider | None) -> None:
