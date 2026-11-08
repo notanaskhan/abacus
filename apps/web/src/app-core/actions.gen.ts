@@ -37,6 +37,8 @@ export const ACTIONS = [
   "assurance.record_archive",
   "assurance.record_phase",
   "assurance.record_release",
+  "assurance_checklist_template.import",
+  "assurance_checklist_template.publish",
   "attention_flag.convert",
   "audit.read",
   "audit_event.export",

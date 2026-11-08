@@ -1619,6 +1619,12 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/me/independence/annual", "independence.annual_confirm"),
     (
         "POST",
+        "/v1/methodology/assurance-checklists/{template_id}/versions/{version}/publish",
+        "assurance_checklist_template.publish",
+    ),
+    ("POST", "/v1/methodology/assurance-checklists:import", "assurance_checklist_template.import"),
+    (
+        "POST",
         "/v1/methodology/disclosure-checklists/{template_id}/versions/{version}/publish",
         "disclosure_checklist_template.publish",
     ),

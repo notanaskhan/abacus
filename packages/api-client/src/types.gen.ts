@@ -6605,6 +6605,28 @@ export type ChecklistAppliesTo = {
 };
 
 /**
+ * ChecklistImportIn
+ */
+export type ChecklistImportIn = {
+    /**
+     * Engagement Type
+     */
+    engagement_type: string;
+    /**
+     * Items
+     */
+    items: Array<ChecklistItemIn>;
+    /**
+     * Kind
+     */
+    kind: 'completion' | 'eqr' | 'archive';
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
  * ChecklistImportOut
  */
 export type ChecklistImportOut = {
@@ -6627,6 +6649,28 @@ export type ChecklistImportOut = {
 };
 
 /**
+ * ChecklistImportedOut
+ */
+export type ChecklistImportedOut = {
+    /**
+     * Dry Run
+     */
+    dry_run: boolean;
+    /**
+     * Problems
+     */
+    problems: Array<string>;
+    /**
+     * Template Id
+     */
+    template_id: string | null;
+    /**
+     * Version
+     */
+    version: number | null;
+};
+
+/**
  * ChecklistItem
  *
  * Firm-authored text only (ADR-056).
@@ -6644,6 +6688,40 @@ export type ChecklistItem = {
      * Text
      */
     text: string;
+};
+
+/**
+ * ChecklistItemIn
+ */
+export type ChecklistItemIn = {
+    /**
+     * Depends On Client
+     */
+    depends_on_client?: boolean;
+    /**
+     * Derived
+     */
+    derived?: boolean;
+    /**
+     * Due On Report Date
+     */
+    due_on_report_date?: boolean;
+    /**
+     * Gate Tag
+     */
+    gate_tag?: string | null;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Text
+     */
+    text: string;
+    /**
+     * Type Specific
+     */
+    type_specific?: boolean;
 };
 
 /**
@@ -6702,6 +6780,28 @@ export type ChecklistPickIn = {
      * Template Version Id
      */
     template_version_id: string;
+};
+
+/**
+ * ChecklistPublishedOut
+ */
+export type ChecklistPublishedOut = {
+    /**
+     * Published At
+     */
+    published_at: string;
+    /**
+     * Status
+     */
+    status: 'published';
+    /**
+     * Template Id
+     */
+    template_id: string;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**
@@ -101922,6 +102022,118 @@ export type MeteringResponses = {
 };
 
 export type MeteringResponse = MeteringResponses[keyof MeteringResponses];
+
+export type AssuranceChecklistPublishData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Template Id
+         */
+        template_id: string;
+        /**
+         * Version
+         */
+        version: number;
+    };
+    query?: never;
+    url: '/v1/methodology/assurance-checklists/{template_id}/versions/{version}/publish';
+};
+
+export type AssuranceChecklistPublishErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AssuranceChecklistPublishError = AssuranceChecklistPublishErrors[keyof AssuranceChecklistPublishErrors];
+
+export type AssuranceChecklistPublishResponses = {
+    /**
+     * Successful Response
+     */
+    200: ChecklistPublishedOut;
+};
+
+export type AssuranceChecklistPublishResponse = AssuranceChecklistPublishResponses[keyof AssuranceChecklistPublishResponses];
+
+export type AssuranceChecklistImportData = {
+    body: ChecklistImportIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Dry Run
+         */
+        dry_run?: boolean;
+    };
+    url: '/v1/methodology/assurance-checklists:import';
+};
+
+export type AssuranceChecklistImportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AssuranceChecklistImportError = AssuranceChecklistImportErrors[keyof AssuranceChecklistImportErrors];
+
+export type AssuranceChecklistImportResponses = {
+    /**
+     * Successful Response
+     */
+    201: ChecklistImportedOut;
+};
+
+export type AssuranceChecklistImportResponse = AssuranceChecklistImportResponses[keyof AssuranceChecklistImportResponses];
 
 export type ChecklistPublishData = {
     body?: never;

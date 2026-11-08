@@ -6,7 +6,7 @@ The audit line's read models and actions: the AUD-06 trial balance first (SPEC-3
 # A-03-T08: the C9 v2 routes call this lazily; imported here so its error codes are catalogued.
 from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.kernel.dispatch import register_work_classes
-from abacus.kernel.uow.relay import OutboxEvent
+from abacus.kernel.uow.relay import Handler, OutboxEvent
 from abacus.modules.adjustments.api import (
     register_entry_decision_hook,
     register_entry_proposed_hook,
@@ -51,6 +51,9 @@ from abacus.modules.assurance.completion_contract import router as audit_complet
 from abacus.modules.assurance.completion_decisions import AUDIT_KINDS as DECISION_KINDS
 from abacus.modules.assurance.completion_decisions import audit_owners as decision_owners
 from abacus.modules.assurance.completion_decisions import register_completion_decision_kinds
+from abacus.modules.assurance.completion_facts import register_completion_facts
+from abacus.modules.assurance.completion_projector import SUBSCRIBED as COMPLETION_SUBSCRIBED
+from abacus.modules.assurance.completion_projector import on_completion_event
 from abacus.modules.assurance.completion_routes import dashboard_router
 from abacus.modules.assurance.completion_routes import router as completion_router
 
@@ -246,7 +249,7 @@ async def _on_suggestion_created(event: OutboxEvent) -> None:
 
 # A-03-T14: a new trial balance version leaves a signed mapping stale (`mapping_set.went_stale`).
 # A-06-T16 seam (TASK-3395): an agent's suggested checklist answer is mirrored on its item.
-SUBSCRIPTIONS = (
+_BASE_SUBSCRIPTIONS = (
     dict(PHASE_SUBSCRIPTIONS)
     | dict(MAPPING_SUBSCRIPTIONS)
     | dict(IC_REDRAFT_SUBSCRIPTIONS)
@@ -256,6 +259,27 @@ SUBSCRIPTIONS = (
     | dict(CHECKLIST_SUGGESTION_SUBSCRIPTIONS)
     | {"suggestion.created": _on_suggestion_created}
 )
+
+
+def _then_project(first: Handler) -> Handler:
+    """A-07-T22: an event another handler already consumes also reaches the projector after it."""
+
+    async def run(event: OutboxEvent) -> None:
+        await first(event)
+        await on_completion_event(event)
+
+    return run
+
+
+# A-07-T22 (DEC-2806): the completion projector, inert until M16 (`completion_dark`).
+SUBSCRIPTIONS = _BASE_SUBSCRIPTIONS | {
+    kind: (
+        _then_project(_BASE_SUBSCRIPTIONS[kind])
+        if kind in _BASE_SUBSCRIPTIONS
+        else on_completion_event
+    )
+    for kind in COMPLETION_SUBSCRIBED
+}
 # A-05-T54: Form5500TieOut, code only, on the background class.
 WORKFLOWS: dict[type, str] = dict(FORM5500_WORKFLOWS)
 ACTIVITIES: tuple[object, ...] = tuple(FORM5500_ACTIVITIES)
@@ -268,6 +292,8 @@ register_audit_segment("ebp", None)
 register_audit_segment("review", None)
 # A-01-T09 (DEC-312): A-01's Overview rows and index tags, through the same slots as A-02's.
 register_a01_providers()
+# A-07-T22 (DEC-2806): the completion items assurance derives itself.
+register_completion_facts()
 # A-07-T19: the live-path registrations, inert until the A-07 flags (T33).
 register_a07_live_path()
 # A-05-T53: the estimate conclusion, the EP's card (AU-C 540).

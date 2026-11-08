@@ -14139,6 +14139,52 @@
         "title": "ChecklistAppliesTo",
         "type": "object"
       },
+      "ChecklistImportIn": {
+        "additionalProperties": false,
+        "properties": {
+          "engagement_type": {
+            "cls": "internal",
+            "pattern": "^[a-z][a-z0-9_]{1,39}$",
+            "title": "Engagement Type",
+            "type": "string"
+          },
+          "items": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/ChecklistItemIn"
+            },
+            "maxItems": 60,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "completion",
+              "eqr",
+              "archive"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "engagement_type",
+          "name",
+          "items"
+        ],
+        "title": "ChecklistImportIn",
+        "type": "object"
+      },
       "ChecklistImportOut": {
         "properties": {
           "dry_run": {
@@ -14187,6 +14233,56 @@
         "title": "ChecklistImportOut",
         "type": "object"
       },
+      "ChecklistImportedOut": {
+        "properties": {
+          "dry_run": {
+            "cls": "internal",
+            "title": "Dry Run",
+            "type": "boolean"
+          },
+          "problems": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Problems",
+            "type": "array"
+          },
+          "template_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Template Id"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Version"
+          }
+        },
+        "required": [
+          "template_id",
+          "version",
+          "dry_run",
+          "problems"
+        ],
+        "title": "ChecklistImportedOut",
+        "type": "object"
+      },
       "ChecklistItem": {
         "additionalProperties": false,
         "description": "Firm-authored text only (ADR-056).",
@@ -14218,6 +14314,67 @@
           "text"
         ],
         "title": "ChecklistItem",
+        "type": "object"
+      },
+      "ChecklistItemIn": {
+        "additionalProperties": false,
+        "properties": {
+          "depends_on_client": {
+            "cls": "internal",
+            "default": false,
+            "title": "Depends On Client",
+            "type": "boolean"
+          },
+          "derived": {
+            "cls": "internal",
+            "default": true,
+            "title": "Derived",
+            "type": "boolean"
+          },
+          "due_on_report_date": {
+            "cls": "internal",
+            "default": false,
+            "title": "Due On Report Date",
+            "type": "boolean"
+          },
+          "gate_tag": {
+            "anyOf": [
+              {
+                "pattern": "^G[1-9]$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Gate Tag"
+          },
+          "key": {
+            "cls": "internal",
+            "pattern": "^[a-z0-9_]{1,60}$",
+            "title": "Key",
+            "type": "string"
+          },
+          "text": {
+            "cls": "confidential",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          },
+          "type_specific": {
+            "cls": "internal",
+            "default": false,
+            "title": "Type Specific",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "text"
+        ],
+        "title": "ChecklistItemIn",
         "type": "object"
       },
       "ChecklistOptionOut": {
@@ -14316,6 +14473,41 @@
           "template_version_id"
         ],
         "title": "ChecklistPickIn",
+        "type": "object"
+      },
+      "ChecklistPublishedOut": {
+        "properties": {
+          "published_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Published At",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "const": "published",
+            "title": "Status",
+            "type": "string"
+          },
+          "template_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Template Id",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "template_id",
+          "version",
+          "status",
+          "published_at"
+        ],
+        "title": "ChecklistPublishedOut",
         "type": "object"
       },
       "ChecklistReviewIn": {
@@ -220690,6 +220882,249 @@
           "budget"
         ],
         "x-abacus-action": "budget.read"
+      }
+    },
+    "/v1/methodology/assurance-checklists/{template_id}/versions/{version}/publish": {
+      "post": {
+        "description": "A person publishes with fresh MFA; a published version never changes.",
+        "operationId": "assurance_checklist_publish",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "template_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Template Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version",
+            "required": true,
+            "schema": {
+              "title": "Version",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChecklistPublishedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Assurance Checklist Publish Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "assurance_checklist_template.publish"
+      }
+    },
+    "/v1/methodology/assurance-checklists:import": {
+      "post": {
+        "description": "The firm's completion, EQR or archive checklist; dry run first.",
+        "operationId": "assurance_checklist_import",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "dry_run",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Dry Run",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChecklistImportIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChecklistImportedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Assurance Checklist Import Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "assurance_checklist_template.import"
       }
     },
     "/v1/methodology/disclosure-checklists/{template_id}/versions/{version}/publish": {

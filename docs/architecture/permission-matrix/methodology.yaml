@@ -23,6 +23,8 @@ actions:
   # by a person (licensed text only under ADR-056).
   disclosure_checklist_template.import:  {firm_admin: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # POST /v1/methodology/disclosure-checklists:import
   disclosure_checklist_template.publish: {quality_partner: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny, mfa_recent: required}   # POST …/{id}/versions/{v}/publish
+  assurance_checklist_template.import:  {firm_admin: allow, practice_leader: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # A-07-T22 (DEC-2806): POST /v1/methodology/assurance-checklists:import
+  assurance_checklist_template.publish: {quality_partner: allow, practice_leader: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny, mfa_recent: required}   # POST …/assurance-checklists/{id}/versions/{v}/publish
   # --- Statement note templates (A-06-T25, DEC-2389): firm content, the same way.
   statement_note_template.import:  {firm_admin: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny}   # POST /v1/methodology/statement-note-templates:import
   statement_note_template.publish: {quality_partner: allow, client_admin: deny, client_contributor: deny, third_party: deny, agent: deny, system: deny, mfa_recent: required}   # POST …/{id}/versions/{v}/publish

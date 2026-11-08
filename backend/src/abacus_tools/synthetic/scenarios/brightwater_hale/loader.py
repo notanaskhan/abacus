@@ -198,6 +198,7 @@ from abacus.modules.ledger.api import (
     record_subsequent_snapshot,
 )
 from abacus.modules.methodology.api import (
+    AssuranceChecklistImportIn,
     EngagementType,
     LevelAssignment,
     ReviewLevelsPayload,
@@ -205,10 +206,12 @@ from abacus.modules.methodology.api import (
     create_standard,
     draft_standard_version,
     edit_standard_draft,
+    import_assurance_checklist,
     import_checklist,
     import_notes,
     import_standard_workbook,
     import_template,
+    publish_assurance_checklist,
     publish_checklist,
     publish_notes,
     publish_standard,
@@ -524,6 +527,7 @@ from abacus_tools.synthetic.scenarios.brightwater_hale.report_templates import (
 from abacus_tools.synthetic.scenarios.brightwater_hale.report_templates import (
     SLICE as REPORT_TEMPLATES_SLICE,
 )
+from abacus_tools.synthetic.scenarios.brightwater_hale.report_templates import a07_content
 from abacus_tools.synthetic.scenarios.brightwater_hale.report_templates import (
     bundle as report_template_bundle,
 )
@@ -3226,6 +3230,50 @@ async def _report_template_imported(conn: asyncpg.Connection, _: Scenario, event
         raise RuntimeError(f"template {body.name} refused: {report.errors}")
 
 
+async def _assurance_checklist_imported(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    """A-07-T22 (DEC-2806): a checklist section of the A-07 content file, imported as Grace
+    imports it (a draft version)."""
+    data = event.data
+    items = a07_content()[str(data["section"])]
+    body = AssuranceChecklistImportIn.model_validate(
+        {
+            "kind": data["kind"],
+            "engagement_type": data["engagement_type"],
+            "name": data["name"],
+            "items": items,
+        }
+    )
+    found = await import_assurance_checklist(
+        await _staff_context(conn, event), body, dry_run=False
+    )
+    if found.problems:
+        raise RuntimeError(f"checklist {body.name} refused: {found.problems}")
+
+
+async def _assurance_checklist_published(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    data = event.data
+    row = await tenant_row(
+        conn,
+        TENANT,
+        "SELECT t.id, v.version FROM assurance_checklist_templates t "
+        "JOIN assurance_checklist_template_versions v ON v.template_id = t.id "
+        "WHERE t.kind = $1 AND t.engagement_type = $2 AND t.name = $3 "
+        "ORDER BY v.version DESC LIMIT 1",
+        str(data["kind"]),
+        str(data["engagement_type"]),
+        str(data["name"]),
+    )
+    if row is None:
+        raise RuntimeError(f"checklist {data['name']} was not imported")
+    await publish_assurance_checklist(
+        await _staff_context(conn, event), cast(UUID, row["id"]), int(row["version"])
+    )
+
+
 async def _report_template_published(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     """P-11-T13: the partner publishes the version Grace imported (fresh MFA, four eyes)."""
     row = await tenant_row(
@@ -5897,6 +5945,8 @@ HANDLERS: Final[dict[str, Handler]] = {
     "tax.estimate_confirmed": _estimate_confirmed,
     "reporting.template_imported": _report_template_imported,
     "reporting.template_published": _report_template_published,
+    "methodology.assurance_checklist_imported": _assurance_checklist_imported,
+    "methodology.assurance_checklist_published": _assurance_checklist_published,
     # T-02-T23 (`--slice tax_content`): contacts and portal people, the engine's PDFs, then each
     # K-1 set and the shares; the organizer imported, published, attached and answered; asks.
     "tax.k1_contact_created": _k1_contact_created,
