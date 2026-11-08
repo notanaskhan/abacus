@@ -360,3 +360,6 @@ async def listing(ctx: AuthContext, family: str | None) -> ListPage[ReportTempla
         for t in await report_templates_in_firm(ctx, family)
     ]
     return ListPage[ReportTemplateOut](items=items, total=len(items))
+
+
+# --- A-07-T24 (DEC-2808): a family's published clauses, for a composer --------------------------

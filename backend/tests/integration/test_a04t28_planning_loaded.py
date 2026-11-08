@@ -1,8 +1,9 @@
 """A-04-T28 (TASK-3233; DEC-2224) on the loaded Brightwater Hale tenant: "make seed-demo loads
 both engagements with real audit events and via-Agent attribution, Northwind's G4 is met at
-4:40 PM". The `planning` slice (with its own trial-balance and materiality basis) loads at the
-Sep 24 snapshot into its own database; the register, the internal-control exceptions, the approval
-card and G4 are read back. Figures typed from AUD-08 and AUD-09."""
+4:40 PM". The `planning` slice (with its own trial-balance and materiality basis) loads to AUD-07
+d's Oct 6 11:20 AM snapshot into its own database; the register, the internal-control exceptions,
+the approval card, G4, the RA paper's 4:52 PM review (AUD-05 d) and materiality v3 (AUD-07 d) are
+read back (TASK-6407). Figures typed from AUD-08 and AUD-09."""
 
 from __future__ import annotations
 
@@ -46,7 +47,7 @@ async def test_ac_the_planning_day_loads_and_g4_is_met_at_4_40(
     forget_flags()
     await dispose_engine()
     configure_engine(own_db.app_url)
-    await loader.load(own_db.superuser_dsn, "2026-09-24", slices=("planning",), wait=False)
+    await loader.load(own_db.superuser_dsn, "2026-10-06T11:20", slices=("planning",), wait=False)
     seed = Seeder(own_db.superuser_dsn)
     engagement = cast(
         uuid.UUID | None,
@@ -85,6 +86,25 @@ async def test_ac_the_planning_day_loads_and_g4_is_met_at_4_40(
         )
         == "decided"
     )
+    # A-04-T30 (US-4.3, AC4.4; DEC-2956): one card covers every pending proposal, R3's
+    # significance and R5's rebuttal, never one card per risk.
+    assert (
+        await seed.value(
+            "SELECT count(*) FROM decision_cards WHERE kind = 'significant_risk' "
+            "AND tenant_id = $1",
+            TENANT,
+        )
+        == 1
+    )
+    covered = cast(
+        str,
+        await seed.value(
+            "SELECT options::text FROM decision_cards WHERE kind = 'significant_risk' "
+            "AND tenant_id = $1",
+            TENANT,
+        ),
+    )
+    assert "R3" in covered and "R5" in covered
     found = await g4_facts(TenantContext(TENANT, "system", "a04t28"), engagement)
     assert found.met, found.blockers
     # Real audit events, one per service write (the register, the exceptions and the decision).
@@ -97,3 +117,27 @@ async def test_ac_the_planning_day_loads_and_g4_is_met_at_4_40(
         ),
     )
     assert set(actions or []) >= {"control_exception.recorded", "decision.decided"}
+    # AUD-05 d (DEC-2957): RA-100 prepared by Marcus, reviewed by Hannah, one row each.
+    signs = await seed.value(
+        "SELECT array_agg(s.level || ':' || s.initials ORDER BY s.level) FROM sign_offs s "
+        "JOIN workpapers p ON p.id = s.target_id WHERE s.target_type = 'workpaper' "
+        "AND p.engagement_id = $1 AND p.code = 'RA-100'",
+        engagement,
+    )
+    assert signs == ["1:MD", "3:HL"]
+    # AUD-07 d (AC3.6): Oct 6, Hannah raises the reassessment and Margaret records No change.
+    assert (
+        await seed.value(
+            "SELECT status FROM decision_cards WHERE kind = 'materiality_reassessment' "
+            "AND tenant_id = $1",
+            TENANT,
+        )
+        == "decided"
+    )
+    assert (
+        await seed.value(
+            "SELECT max(version_no) FROM materiality_versions WHERE engagement_id = $1",
+            engagement,
+        )
+        == 3
+    )

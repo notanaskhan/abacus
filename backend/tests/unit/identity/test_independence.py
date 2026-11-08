@@ -182,6 +182,7 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "connection.read_log",
         "connection.reconnect_request",  # A-02 §4.4 (TASK-1185)
         "connection.retry",  # A-02 security review (DEC-316): firm side, attest client data
+        "consultation.conclude",  # S25 (DEC-2484): the consultations log
         "consultation.create",  # A-06-T04
         "consultation.read",
         "control.edit",

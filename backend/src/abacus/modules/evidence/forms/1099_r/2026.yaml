@@ -1,0 +1,8 @@
+# Form 1099-R TY2026 (P-11-T34; DEC-2809): unchanged from TY2025, so it inherits that map under
+# its own year and version.
+form: "1099-R"
+form_type: "1099_r"
+tax_year: 2026
+family: tax_forms
+version: "1099_r-2026-v1"
+inherits: 2025

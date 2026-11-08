@@ -14,6 +14,21 @@ from sqlalchemy import text
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.identity.api import AbacusRouter
+from abacus.modules.methodology.assurance_checklists import (
+    ChecklistImportIn as AssuranceChecklistImportIn,
+)
+from abacus.modules.methodology.assurance_checklists import (
+    ChecklistItemIn as AssuranceChecklistItem,
+)
+from abacus.modules.methodology.assurance_checklists import (
+    PublishedChecklist as PublishedAssuranceChecklist,
+)
+from abacus.modules.methodology.assurance_checklists import (
+    assurance_checklists_router,
+    import_assurance_checklist,
+    publish_assurance_checklist,
+    published_checklist,
+)
 from abacus.modules.methodology.catalog import (
     CatalogItem,
     CatalogProvider,
@@ -90,8 +105,10 @@ from abacus.modules.methodology.report_templates import (
     Publication as ReportTemplatePublicationView,
 )
 from abacus.modules.methodology.report_templates import (
+    PublishedClauses,
     PublishedConsentTemplate,
     consent_expiry_months,
+    published_clauses,
     published_consent_template,
 )
 from abacus.modules.methodology.report_templates import TemplateBundle as ReportTemplateBundle
@@ -229,6 +246,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     knowledge_router,
     standards_router,  # C21 part B (K-02-T08; import and export K-02-T11)
     methodology_import_router,  # K-01-T18: import review (KNW-02 c, d)
+    assurance_checklists_router,  # A-07-T22 (DEC-2806): completion, EQR, archive checklists
 )
 
 from abacus.modules.methodology.disclosure_checklists import (  # noqa: E402 -- A-06-T28
@@ -255,6 +273,8 @@ __all__ = [
     "AccountRule",
     "ApprovedGuidance",
     "Area",
+    "AssuranceChecklistImportIn",
+    "AssuranceChecklistItem",
     "AttributeSampleSizesPayload",
     "AttributeSize",
     "CatalogItem",
@@ -284,6 +304,8 @@ __all__ = [
     "PiiHold",
     "PolicyRef",
     "Problem",
+    "PublishedAssuranceChecklist",
+    "PublishedClauses",
     "PublishedConsentTemplate",
     "ReportTemplateBundle",
     "ReportTemplateConsentTerms",
@@ -336,6 +358,7 @@ __all__ = [
     "extract_source",
     "fail_document_import",
     "finish_document_import",
+    "import_assurance_checklist",
     "import_checklist",
     "import_notes",
     "import_report_template",
@@ -352,12 +375,15 @@ __all__ = [
     "parse_workbook",
     "pii_hold",
     "policy_payload",
+    "publish_assurance_checklist",
     "publish_checklist",
     "publish_drafted_version",
     "publish_notes",
     "publish_report_template",
     "publish_standard",
+    "published_checklist",
     "published_checklists",
+    "published_clauses",
     "published_consent_template",
     "published_notes",
     "record_progress",

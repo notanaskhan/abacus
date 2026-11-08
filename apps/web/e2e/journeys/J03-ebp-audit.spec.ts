@@ -457,3 +457,46 @@ test.describe("J03 completion (A-06-T35)", () => {
     );
   });
 });
+
+// A-05-T61 (TASK-6221): J03 12a (participant accounts, EBP-08) and 12b (the Form 5500 tie-out,
+// EBP-07) in fixture mode on Northwind's cockpit, each with axeStep and INV-1 to INV-5 (the journey
+// harness). The staging walk waits for the EBP batch's deploy and `ebp.modules` on PF-X1: fixme off
+// fixture.
+test.describe("J03 EBP-08 and EBP-07 (A-05-T61)", () => {
+  const STAGING = "the staging walk waits for the S31 batch on staging (A-05-T61; DEC-1389 gates)";
+
+  test("j03 12a: Hannah reads the participant accounts summary (EBP-08 a)", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", STAGING);
+    await journey.as("hannah-leclerc", "/audits/_auditId_?screen=EBP-08&st=a&section=ebp_08", {
+      clock: DEMO_INSTANT,
+    });
+    await journey.step("J03 step 12a: the participant accounts summary", async (page) => {
+      await expect(page.locator("[data-screen='EBP-08']").first()).toBeVisible();
+    });
+  });
+
+  test("j03 12b: the Form 5500 ties except the 48,600 receivable, and Note 8 explains it (EBP-07 a)", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", STAGING);
+    await journey.as("hannah-leclerc", "/audits/_auditId_?screen=EBP-07&st=a&section=ebp_07", {
+      clock: DEMO_INSTANT,
+    });
+    await journey.step("J03 step 12b: Schedule H against the statements", async (page) => {
+      const net = page.locator("[data-line='1l']");
+      await expect(net).toContainText("16,812,400");
+      await expect(net).toContainText("48,600");
+      await expect(page.locator("[data-ebp07='note']")).toContainText("Send note to AUD-20");
+      // No "$" in the statement table (EBP-07 AVOID).
+      await expect(page.locator("[data-ebp07='schedule-h']")).not.toContainText("$");
+    });
+    await journey.as("hannah-leclerc", "/audits/_auditId_?screen=EBP-07&st=d&section=ebp_07", {
+      clock: DEMO_INSTANT,
+    });
+    await journey.step("J03 step 12b: before Summit's draft arrives (EBP-07 d)", async (page) => {
+      await expect(page.getByText("Draft Form 5500 not received").first()).toBeVisible();
+    });
+  });
+});

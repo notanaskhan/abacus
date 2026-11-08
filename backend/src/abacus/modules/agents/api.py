@@ -330,10 +330,18 @@ register_intake_candidates(intake_candidates)
 register_pilot_metric_source("w7", w7_override_rate)  # Q-04-T008 (DEC-825)
 register_client_request_sender(send_issue_to_client)  # P-04-T31 (DEC-828)
 
+# The C6 v1.1 blocks schema and the spec v2 checks, for their generators (S31 end pass; BOUND-001).
+from abacus.modules.agents.blocks import AgentBlocks  # noqa: E402
 from abacus.modules.agents.det_runs import (  # noqa: E402 -- A-06-T25
     close_deterministic_run,
     deterministic_run_facts,
     open_deterministic_run,
+)
+from abacus.modules.agents.spec_v2 import (  # noqa: E402
+    AgentSpecV2,
+    ToolFacts,
+    registry_problems,
+    spec_problems,
 )
 
 __all__ = [
@@ -354,12 +362,14 @@ __all__ = [
     "WORKFLOWS",
     "ActiveRun",
     "AdoptedValue",
+    "AgentBlocks",
     "AgentEvent",
     "AgentInput",
     "AgentRunBackfillWorkflow",
     "AgentRunBusy",
     "AgentRunNotRunning",
     "AgentSpec",
+    "AgentSpecV2",
     "AiPolicyLoosened",
     "AnalyzeFacts",
     "ApprovedChangeSet",
@@ -453,6 +463,7 @@ __all__ = [
     "SuggestionChanged",
     "ThresholdEvaluation",
     "ThresholdPolicy",
+    "ToolFacts",
     "UnregisteredTarget",
     "UploadReviewWorkflow",
     "VerifiedCitation",
@@ -506,6 +517,7 @@ __all__ = [
     "register_suggestion_applier",
     "register_suggestion_target",
     "register_threshold_policy",
+    "registry_problems",
     "request_review",
     "review",
     "review_citation_states",
@@ -519,6 +531,7 @@ __all__ = [
     "search_knowledge",
     "shadow_score",
     "spec",
+    "spec_problems",
     "stage_for",
     "start_agents",
     "start_screening",

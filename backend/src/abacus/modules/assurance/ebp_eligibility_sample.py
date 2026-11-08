@@ -34,6 +34,7 @@ from abacus.modules.assurance.ebp_contract import (
 from abacus.modules.assurance.ebp_participants import binding
 from abacus.modules.assurance.ebp_provisions import EntryRuleRead, entry_rule_read
 from abacus.modules.engagements.api import assurance_item, engagement_metadata, get_ref
+from abacus.modules.evidence.api import citation_sources
 from abacus.modules.identity.api import AuthContext, allowed_actions, names_of
 from abacus.modules.review.api import sign_off_states
 from abacus.modules.workpapers.api import ATTRIBUTE_TEST, grid, latest_test_of_variant
@@ -137,6 +138,7 @@ async def _row(
     hr: _Person | None,
     year: int,
     rule: eligibility.EntryRule | None,
+    hr_version: UUID | None = None,
 ) -> EligibilitySampleRowOut:
     hire = census.hire_on if census else None
     # Opened only to compute: no rule or no hire date computes nothing.
@@ -168,7 +170,7 @@ async def _row(
         and census.compensation
         else None
     )
-    version = _cell_value(cells, "hire_date", "hr_record_version_id")
+    version = _cell_value(cells, "hire_date", "hr_record_version_id") or hr_version
     return EligibilitySampleRowOut(
         position=position,
         item_id=item_id,
@@ -194,6 +196,10 @@ async def _row(
         missed_deferral=None if missed is None else missed.deferral,
         missed_match=None if missed is None else missed.match,
     )
+
+
+def _source_of(sources: Mapping[UUID, UUID], citation: UUID | None) -> UUID | None:
+    return None if citation is None else sources.get(citation)
 
 
 async def _can(ctx: AuthContext, engagement_id: UUID) -> list[str]:
@@ -222,6 +228,19 @@ async def sample(ctx: AuthContext, work_item_id: UUID) -> EligibilitySampleOut:
     year = meta.engagement.fiscal_period_end.year
     census = await _people(ctx.tenant, work_item_id, "census")
     roster = await _people(ctx.tenant, work_item_id, "hr_roster")
+    # DEC-2955: the HR record a row cites (the hire date's first citation) opens in the viewer.
+    cited = {
+        row.item_id: next(
+            (
+                c.citation_ids[0]
+                for c in row.cells
+                if c.attribute_key == "hire_date" and c.citation_ids
+            ),
+            None,
+        )
+        for row in table.rows
+    }
+    sources = await citation_sources(ctx.tenant, [c for c in cited.values() if c is not None])
     rows = [
         await _row(
             ctx.tenant,
@@ -234,6 +253,7 @@ async def sample(ctx: AuthContext, work_item_id: UUID) -> EligibilitySampleOut:
             roster.get(row.record_key),
             year,
             rule.rule,
+            hr_version=_source_of(sources, cited[row.item_id]),
         )
         for row in table.rows
     ]

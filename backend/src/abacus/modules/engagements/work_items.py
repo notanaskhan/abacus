@@ -273,6 +273,19 @@ async def archive_work_item(tx: UnitOfWork, work_item_id: UUID, at: datetime) ->
     return True
 
 
+async def set_work_item_due(tx: UnitOfWork, work_item_id: UUID, due_on: date | None) -> None:
+    """N-04-T06: a kind's owner moves its work item's due date (a notice's corrected respond-by),
+    in the owner's unit of work, so the due date and the record it follows never disagree."""
+    moved = await tx.session.scalar(
+        update(WorkItem)
+        .where(WorkItem.id == work_item_id)
+        .values(due_on=due_on)
+        .returning(WorkItem.id)
+    )
+    if moved is None:
+        raise NotFound("work_item")
+
+
 # --- F-03-T22: creating work items of every kind ------------------------------------------------
 
 _UNIQUE_VIOLATION: Final = "23505"

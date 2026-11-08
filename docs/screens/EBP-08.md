@@ -94,7 +94,7 @@ Verbatim from the handoff (copy keys in `screens/EBP-08/copy.ts` when built). Ke
 ## Parity
 | Artboard | Tier | Diff % | Notes |
 |---|---|---|---|
-| all | C | — | reported once the screen is built |
+| a–e | C | — | gallery artboard and handoff baseline in place (A-05-T61 close, DEC-2825); report-only at Tier C |
 
 ## Open gaps
 None.

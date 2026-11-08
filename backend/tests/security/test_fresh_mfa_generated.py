@@ -26,7 +26,7 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("firm_agents.pause", "ai_policy", "firm_admin"),
     ("export.create", "export", "engagement_partner"),
     ("export.download", "export", "engagement_partner"),
-    ("run_trace.export", "export", "engagement_partner"),
+    ("run_trace.export", "export", "firm_admin"),
     ("trial_balance.export", "export", "engagement_partner"),
     ("firm_export.request", "export", "security_admin"),
     ("firm_export.approve", "export", "security_admin"),

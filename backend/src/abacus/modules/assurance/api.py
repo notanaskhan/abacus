@@ -6,9 +6,11 @@ The audit line's read models and actions: the AUD-06 trial balance first (SPEC-3
 # A-03-T08: the C9 v2 routes call this lazily; imported here so its error codes are catalogued.
 from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.kernel.dispatch import register_work_classes
+from abacus.kernel.uow.relay import Handler, OutboxEvent
 from abacus.modules.adjustments.api import (
     register_entry_decision_hook,
     register_entry_proposed_hook,
+    register_evidence_engagement,
 )
 from abacus.modules.agents.api import (
     register_mode_mapping,
@@ -33,6 +35,13 @@ from abacus.modules.assurance.a07_registrations import SUBSCRIPTIONS as A07_SUBS
 from abacus.modules.assurance.a07_registrations import register as register_a07_live_path
 from abacus.modules.assurance.aud27 import register_estimate_conclusion_kind
 from abacus.modules.assurance.audits_contract import audits_router
+from abacus.modules.assurance.bring_down import (
+    BRING_DOWN_ID_PREFIX,
+    BringDownInput,
+    BringDownResult,
+    BringDownWorkflow,
+    bring_down,
+)
 from abacus.modules.assurance.checklist_suggestions import (
     CHECKLIST_SUGGESTION_TARGET,
     apply_checklist_suggestion,
@@ -41,13 +50,23 @@ from abacus.modules.assurance.checklist_suggestions import (
 from abacus.modules.assurance.checklist_suggestions import (
     SUBSCRIPTIONS as CHECKLIST_SUGGESTION_SUBSCRIPTIONS,
 )
+from abacus.modules.assurance.checklist_suggestions import (
+    on_suggestion_created as on_checklist_suggestion,
+)
 from abacus.modules.assurance.completion import on_entry_client_decision, on_entry_proposed
 from abacus.modules.assurance.completion_contract import router as audit_completion_router
 from abacus.modules.assurance.completion_decisions import AUDIT_KINDS as DECISION_KINDS
 from abacus.modules.assurance.completion_decisions import audit_owners as decision_owners
 from abacus.modules.assurance.completion_decisions import register_completion_decision_kinds
+from abacus.modules.assurance.completion_facts import register_completion_facts
+from abacus.modules.assurance.completion_projector import SUBSCRIBED as COMPLETION_SUBSCRIBED
+from abacus.modules.assurance.completion_projector import on_completion_event
 from abacus.modules.assurance.completion_routes import dashboard_router
 from abacus.modules.assurance.completion_routes import router as completion_router
+from abacus.modules.assurance.completion_targets import AUDIT_KINDS as COMPLETION_TARGET_KINDS
+from abacus.modules.assurance.completion_targets import (
+    audit_owners as completion_target_owners,
+)
 
 # A-04-T08/T09: the pure materiality engine, for the recommender's evaluation (BOUND-001).
 from abacus.modules.assurance.compute import materiality as materiality_engine
@@ -119,6 +138,7 @@ from abacus.modules.assurance.planning_gate import g4_facts
 from abacus.modules.assurance.providers import register as register_a01_providers
 from abacus.modules.assurance.release import RELEASE_MODE_SETTING
 from abacus.modules.assurance.release_contract import router as audit_release_router
+from abacus.modules.assurance.rep_letters import register_rep_triggers
 from abacus.modules.assurance.review_gates import register_review_gates
 from abacus.modules.assurance.risks import AUDIT_KINDS as RISK_KINDS
 from abacus.modules.assurance.risks import Edit as RiskEdit
@@ -135,6 +155,7 @@ from abacus.modules.assurance.risks import edit as edit_risk
 from abacus.modules.assurance.risks import request_approval as request_risk_approval
 from abacus.modules.assurance.routes import router
 from abacus.modules.assurance.run_badges import run_badges
+from abacus.modules.assurance.schedule_h_mappings import schedule_h_mappings_router
 from abacus.modules.assurance.sections import (
     AuditSection,
     IndexTag,
@@ -147,6 +168,14 @@ from abacus.modules.assurance.sections import (
 )
 from abacus.modules.assurance.service_orgs import AUDIT_KINDS as SERVICE_ORG_KINDS
 from abacus.modules.assurance.service_orgs import audit_owners as service_org_owners
+from abacus.modules.assurance.severity_suggestions import (
+    SEVERITY_SUGGESTION_TARGET,
+    apply_severity_suggestion,
+    deficiency_engagement,
+)
+from abacus.modules.assurance.severity_suggestions import (
+    on_suggestion_created as on_severity_suggestion,
+)
 from abacus.modules.assurance.soc_reports import AUDIT_KINDS as SOC_REPORT_KINDS
 from abacus.modules.assurance.soc_reports import audit_owners as soc_report_owners
 from abacus.modules.assurance.soc_reports import register_reliance_kind
@@ -161,6 +190,7 @@ from abacus.modules.assurance.trail_owners import audit_owners as trail_owners
 from abacus.modules.assurance.trial_balance import adopt as adopt_trial_balance
 from abacus.modules.assurance.trial_balance import tb_facts, tb_reviewables
 from abacus.modules.engagements.api import work_item_engagement
+from abacus.modules.evidence.api import engagement_of_version
 from abacus.modules.identity.api import AbacusRouter, register_firm_setting
 from abacus.modules.review.api import (
     register_gate_kind,
@@ -184,6 +214,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     findings_router,  # A-06-T05 completion family stub (docs/contracts/completion.md)
     audit_completion_router,  # A-07-T04 AUD-18/AUD-19 stub (docs/contracts/audit-completion.md)
     audit_release_router,  # A-07-T05 AUD-21 to AUD-25 stub (docs/contracts/audit-completion.md)
+    schedule_h_mappings_router,  # A-05-T62 close: the firm's Schedule H line mapping (DEC-2823)
 )
 
 # SPEC-313 (TASK-331): trial balances appear in the sign-off matrix and count toward G5.
@@ -200,6 +231,8 @@ register_reviewable_facts("mapping_set", mapping_facts)
 register_gates()  # A-04-T43, A-07-T15: G4 to G9 from assurance/gates.py
 # A-06-T10 (DEC-2062): a client's decision on an entry moves its misstatement.
 register_entry_decision_hook(on_entry_client_decision)
+# A-06-T17 (DEC-2956): record mode's evidence must be an email on the entry's own engagement.
+register_evidence_engagement(engagement_of_version)
 register_entry_proposed_hook(on_entry_proposed)
 # A-04-T22 (DEC-2058): the planning modes' mappings for the section drafter.
 register_mode_mapping("gap", gap_inputs)
@@ -219,11 +252,18 @@ register_sign_off_guard(ebp_investments.KIND, ebp_investments.sign_off_guard)  #
 register_mode_preparer("risk_narrative", presumed_preparer)
 register_firm_setting(RELEASE_MODE_SETTING)
 
+
 # A-01-T05 (SPEC-330 AC-13): C1's `gate.met` derives the phase a computed gate opens. The worker
 # collects these with every module's; assurance has no workflows of its own yet.
+async def _on_suggestion_created(event: OutboxEvent) -> None:
+    """`suggestion.created` for both seams: each ignores another target's suggestion."""
+    await on_checklist_suggestion(event)
+    await on_severity_suggestion(event)
+
+
 # A-03-T14: a new trial balance version leaves a signed mapping stale (`mapping_set.went_stale`).
 # A-06-T16 seam (TASK-3395): an agent's suggested checklist answer is mirrored on its item.
-SUBSCRIPTIONS = (
+_BASE_SUBSCRIPTIONS = (
     dict(PHASE_SUBSCRIPTIONS)
     | dict(MAPPING_SUBSCRIPTIONS)
     | dict(IC_REDRAFT_SUBSCRIPTIONS)
@@ -231,10 +271,32 @@ SUBSCRIPTIONS = (
     | dict(EQR_SUBSCRIPTIONS)
     | dict(FORM5500_SUBSCRIPTIONS)
     | dict(CHECKLIST_SUGGESTION_SUBSCRIPTIONS)
+    | {"suggestion.created": _on_suggestion_created}
 )
+
+
+def _then_project(first: Handler) -> Handler:
+    """A-07-T22: an event another handler already consumes also reaches the projector after it."""
+
+    async def run(event: OutboxEvent) -> None:
+        await first(event)
+        await on_completion_event(event)
+
+    return run
+
+
+# A-07-T22 (DEC-2806): the completion projector, inert until M16 (`completion_dark`).
+SUBSCRIPTIONS = _BASE_SUBSCRIPTIONS | {
+    kind: (
+        _then_project(_BASE_SUBSCRIPTIONS[kind])
+        if kind in _BASE_SUBSCRIPTIONS
+        else on_completion_event
+    )
+    for kind in COMPLETION_SUBSCRIBED
+}
 # A-05-T54: Form5500TieOut, code only, on the background class.
-WORKFLOWS: dict[type, str] = dict(FORM5500_WORKFLOWS)
-ACTIVITIES: tuple[object, ...] = tuple(FORM5500_ACTIVITIES)
+WORKFLOWS: dict[type, str] = dict(FORM5500_WORKFLOWS) | {BringDownWorkflow: "background"}
+ACTIVITIES: tuple[object, ...] = (*FORM5500_ACTIVITIES, bring_down)
 register_work_classes(WORKFLOWS)  # type: ignore[arg-type]  # registry kind literal
 
 # A-01-T02 (A-01 §5.1): the AUD-01 segments every firm has; X-01 (SOC & IT) and X-03 (Internal
@@ -244,6 +306,10 @@ register_audit_segment("ebp", None)
 register_audit_segment("review", None)
 # A-01-T09 (DEC-312): A-01's Overview rows and index tags, through the same slots as A-02's.
 register_a01_providers()
+# A-07-T22 (DEC-2806): the completion items assurance derives itself.
+register_completion_facts()
+# A-07-T24 (DEC-2808): the specific representations' triggers assurance reads itself.
+register_rep_triggers()
 # A-07-T19: the live-path registrations, inert until the A-07 flags (T33).
 register_a07_live_path()
 # A-05-T53: the estimate conclusion, the EP's card (AU-C 540).
@@ -262,6 +328,8 @@ register_engagement_owners(EBP_PLAN_KINDS, ebp_plan_owners)
 register_ebp_modes()
 # A-04-T07: the trail places a service organization on its engagement (SPEC-304; DEC-121).
 register_engagement_owners(SERVICE_ORG_KINDS, service_org_owners)
+# S31 end pass: A-07's completion rows (projector, subsequent events, letters).
+register_engagement_owners(COMPLETION_TARGET_KINDS, completion_target_owners)
 register_engagement_owners(SOC_REPORT_KINDS, soc_report_owners)  # A-04-T31
 register_engagement_owners(CONTROL_KINDS, control_owners)  # A-04-T25 (DEC-2264)
 register_engagement_owners(DECISION_KINDS, decision_owners)  # A-06-T13 (DEC-2264)
@@ -295,6 +363,13 @@ register_suggestion_applier(
     engagement_of=statement_document_engagement,
 )
 
+# A-06-T16 seam (DEC-2952): the agent proposes a deficiency severity; a person adopts it.
+register_suggestion_applier(
+    SEVERITY_SUGGESTION_TARGET,
+    apply_severity_suggestion,
+    engagement_of=deficiency_engagement,
+)
+
 # A-06-T25: reporting may not import agents; the statements' run record arrives through here.
 from abacus.modules.agents.api import (  # noqa: E402
     close_deterministic_run,
@@ -326,12 +401,16 @@ register_run_record(
 
 __all__ = [
     "ACTIVITIES",
+    "BRING_DOWN_ID_PREFIX",
     "PHASE_GATES",
     "ROUTERS",
     "SUBSCRIPTIONS",
     "TIEOUT_ID_PREFIX",
     "WORKFLOWS",
     "AuditSection",
+    "BringDownInput",
+    "BringDownResult",
+    "BringDownWorkflow",
     "ExceptionRouter",
     "ExceptionRow",
     "Form5500TieOutWorkflow",

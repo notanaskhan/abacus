@@ -1,6 +1,6 @@
-import type { CoverageOut, LinkageOut } from "@abacus/api-client";
+import type { CoverageOut, LinkTargetOut, LinkageOut } from "@abacus/api-client";
 import { riskCoverageMutation } from "@abacus/api-client/query";
-import { PaneAction, Pill, cn } from "@abacus/ui";
+import { Button, Menu, PaneAction, Pill, cn } from "@abacus/ui";
 import { useMutation } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { COPY } from "./copy";
@@ -15,12 +15,25 @@ import { COPY } from "./copy";
 //      "Open R8 →". With workpapers.drafting off every agent control is absent and the control
 //      reads "Check coverage", showing the same code result without agent voice.
 
+/** The link picker's targets for one risk: its suggested ones first, then every other response. */
+export function linkTargets(linkage: LinkageOut, riskCode: string): LinkTargetOut[] {
+  const suggested = new Set(
+    linkage.cells
+      .filter((c) => c.risk_code === riskCode && c.state === "suggested")
+      .map((c) => c.target_ref),
+  );
+  return [...linkage.targets].sort(
+    (a, b) => Number(suggested.has(b.ref)) - Number(suggested.has(a.ref)),
+  );
+}
+
 export function LinkageMatrix({
   linkage,
   onLink,
 }: {
   linkage: LinkageOut;
-  onLink?: (riskCode: string) => void;
+  /** A-04-T26: a person links the risk to a response; a suggested link is accepted into it. */
+  onLink?: (riskCode: string, target: LinkTargetOut) => void;
 }): JSX.Element {
   const state = new Map(linkage.cells.map((c) => [`${c.risk_code}|${c.target_ref}`, c.state]));
   const linkedAny = new Set(
@@ -81,12 +94,30 @@ export function LinkageMatrix({
                 {COPY.linkage.suggested}
               </Pill>
               {onLink !== undefined && (
-                <PaneAction
-                  kind="pill"
+                <Menu
                   label={COPY.linkage.link}
-                  onClick={() => {
-                    onLink(code);
-                  }}
+                  align="end"
+                  trigger={
+                    <Button variant="secondary" size="sm">
+                      {COPY.linkage.link}
+                    </Button>
+                  }
+                  sections={[
+                    linkTargets(linkage, code).map((t) => ({
+                      label: t.label,
+                      ...(linkage.cells.some(
+                        (c) =>
+                          c.risk_code === code &&
+                          c.target_ref === t.ref &&
+                          c.state === "suggested",
+                      )
+                        ? { hint: COPY.linkage.suggested }
+                        : {}),
+                      onSelect: () => {
+                        onLink(code, t);
+                      },
+                    })),
+                  ]}
                 />
               )}
             </span>

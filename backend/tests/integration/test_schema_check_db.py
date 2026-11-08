@@ -1094,6 +1094,10 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
             {"answers_sealed", "state", "version", "updated_by", "updated_at"}
         ),
         "acceptance_manual_checks": frozenset({"completed_by", "note_sealed"}),
+        # A-07-T22 (0741, DEC-2806): a checklist version is published once; its items never change.
+        "assurance_checklist_template_versions": frozenset(
+            {"published_at", "published_by", "status"}
+        ),
         # R-01 Story 2.2 (0159): a person's void of a wrong rule link, the one change it takes.
         "fulfilments": frozenset({"voided_at", "voided_by", "void_reason"}),
         "ethical_walls": frozenset(
@@ -1899,6 +1903,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "assignee_user_id",
                 "authorization_facts",
                 "client_id",
+                "create_anyway_reason_code",  # 0740 (N-04-T07, DEC-2953)
                 "created_work_item_id",
                 "discarded_reason_code",
                 "duplicate_of_work_item_id",
@@ -2011,6 +2016,8 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "updated_at",
                 "version",
             }
+            # A-05-T58 close (0742, DEC-2820): who keyed a value and the sealed note of where.
+            | {"keyed_by", "keyed_note_sealed"}
         ),
         "ebp_late_remittances": frozenset(
             {

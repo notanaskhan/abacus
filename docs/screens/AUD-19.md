@@ -45,6 +45,14 @@ Every endpoint is in `docs/contracts/audit-completion.md` (A-07-T04, T05); 501 u
 
 ## Deviations
 - DV-8: the AUD-28 link renders as a reference chip until Q-05
+- DV-AUD-19-2 (closed, S31 close, DEC-2822): blocker rows read the template item's own blocker sentence (`blocker_text`, the firm's words in its checklist template), falling back to its title.
+- DV-AUD-19-3: the summary's "Checked by Accrued Agent · run #4231 · 9:12 AM" line is not drawn;
+  run #4231 and the queued #4240 show as the cockpit dock's SHL-13 tool cards (narration arrives
+  with A-07-T32's agent).
+- DV-AUD-19-4 (closed, S31 close, DEC-2822): the going-concern question reads the plan's or the entity's continuance by `GoingConcernOut.subject` (Granite Peak's FS audit asks about the entity).
+- DV-AUD-19-5: copy lives in `screens/AUD-19/copy.ts`, as every built screen's does, not
+  `copy/aud-19.ts`. The reads stay 501 on the live server until A-07-T47 wires them (fixture mode
+  per the row).
 
 ## Links
 | From | To (manifest builder) | Planned or live |

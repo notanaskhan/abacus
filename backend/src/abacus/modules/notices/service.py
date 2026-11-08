@@ -32,9 +32,10 @@ from sqlalchemy import column, select, table, text
 
 from abacus.kernel.clock import today
 from abacus.kernel.db import TenantContext, tenant_session
+from abacus.kernel.dispatch import signal_workflow
 from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
-from abacus.modules.engagements.api import add_to_team, get_ref
+from abacus.modules.engagements.api import add_to_team, get_ref, set_work_item_due
 from abacus.modules.identity.api import AuthContext, could, names_of, visible
 
 OPEN: Final = frozenset(
@@ -338,9 +339,20 @@ async def edit(
         )
         if moved is None:
             raise VersionConflict
+        if respond_by is not None:
+            # N-04-T06: the work item's due date follows the corrected respond-by.
+            await set_work_item_due(tx, notice_id, respond_by)
         action = "notice.assigned" if assignee_id is not None else "notice.updated"
         tx.record(
             action, target=Target("notice", notice_id), after=Ref(version=expected_version + 1)
+        )
+    if respond_by is not None:
+        # The alerts follow it too: the response workflow resets its timers (N-04 §4.5). Best
+        # effort, after the write; a workflow not yet running reads the row when it starts.
+        from abacus.modules.notices.sending import workflow_id
+
+        await signal_workflow(
+            workflow_id(ctx.tenant_id, notice_id), "respond_by_changed", respond_by.isoformat()
         )
     return await notice(ctx, notice_id)
 

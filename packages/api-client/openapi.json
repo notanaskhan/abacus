@@ -7145,15 +7145,85 @@
         "title": "AttributeSizeRow",
         "type": "object"
       },
+      "Aud27ComponentOut": {
+        "properties": {
+          "amount": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Amount",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "maxLength": 300,
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "amount"
+        ],
+        "title": "Aud27ComponentOut",
+        "type": "object"
+      },
       "Aud27ItemIn": {
         "additionalProperties": false,
         "properties": {
+          "exemption": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Exemption"
+          },
           "name": {
             "cls": "confidential",
             "maxLength": 300,
             "minLength": 1,
             "title": "Name",
             "type": "string"
+          },
+          "relationship": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Relationship"
+          },
+          "reporting": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Reporting"
+          },
+          "transactions": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/Aud27TransactionIn"
+            },
+            "maxItems": 50,
+            "title": "Transactions",
+            "type": "array"
           }
         },
         "required": [
@@ -7173,6 +7243,19 @@
           }
         ],
         "properties": {
+          "account_ref": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Account Ref"
+          },
           "amount": {
             "anyOf": [
               {
@@ -7186,11 +7269,99 @@
             "cls": "confidential",
             "title": "Amount"
           },
+          "bias": {
+            "anyOf": [
+              {
+                "enum": [
+                  "none",
+                  "possible"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Bias"
+          },
+          "components": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/Aud27ComponentOut"
+            },
+            "maxItems": 50,
+            "title": "Components",
+            "type": "array"
+          },
+          "disclosure_ref": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Disclosure Ref"
+          },
+          "exemption": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Exemption"
+          },
+          "finding_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Finding Id"
+          },
           "id": {
             "cls": "internal",
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "method": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Aud27MethodOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
+          },
+          "method_text": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Method Text"
           },
           "name": {
             "cls": "confidential",
@@ -7203,6 +7374,82 @@
             "title": "Pending Ep",
             "type": "boolean"
           },
+          "range": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Aud27RangeOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
+          },
+          "relationship": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Relationship"
+          },
+          "reporting": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Reporting"
+          },
+          "retrospectives": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/Aud27RetrospectiveOut"
+            },
+            "maxItems": 10,
+            "title": "Retrospectives",
+            "type": "array"
+          },
+          "rollforward": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Aud27RollforwardOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
+          },
+          "significant_risk": {
+            "cls": "internal",
+            "default": false,
+            "title": "Significant Risk",
+            "type": "boolean"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Source"
+          },
           "status": {
             "cls": "internal",
             "enum": [
@@ -7213,6 +7460,15 @@
             ],
             "title": "Status",
             "type": "string"
+          },
+          "transactions": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/Aud27TransactionOut"
+            },
+            "maxItems": 50,
+            "title": "Transactions",
+            "type": "array"
           }
         },
         "required": [
@@ -7266,6 +7522,14 @@
             "maxItems": 200,
             "title": "Items",
             "type": "array"
+          },
+          "prohibited": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/Aud27ProhibitedOut"
+            },
+            "title": "Prohibited",
+            "type": "array"
           }
         },
         "required": [
@@ -7273,6 +7537,365 @@
           "allowed_actions"
         ],
         "title": "Aud27ListOut",
+        "type": "object"
+      },
+      "Aud27MethodOut": {
+        "description": "The method card's tie: components against the balance, code's (A-05-T53).",
+        "properties": {
+          "components_total": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Components Total",
+            "type": "string"
+          },
+          "difference": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Difference",
+            "type": "string"
+          },
+          "ties": {
+            "cls": "internal",
+            "title": "Ties",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "components_total",
+          "difference",
+          "ties"
+        ],
+        "title": "Aud27MethodOut",
+        "type": "object"
+      },
+      "Aud27ProhibitedOut": {
+        "description": "AUD-27 c's card: the late remittance as a prohibited transaction, read from EBP-04.",
+        "properties": {
+          "business_days_late": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Business Days Late"
+          },
+          "correction_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "found",
+                  "pending_vfcp_scc",
+                  "corrected"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Correction Status"
+          },
+          "deposited_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Deposited On"
+          },
+          "excise_exposure": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Excise Exposure"
+          },
+          "form_5330_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "exposure",
+                  "not_required",
+                  "filed"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Form 5330 Status"
+          },
+          "late_remittance_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Late Remittance Id",
+            "type": "string"
+          },
+          "lost_earnings": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Lost Earnings"
+          },
+          "principal": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Principal"
+          }
+        },
+        "required": [
+          "late_remittance_id",
+          "principal",
+          "lost_earnings"
+        ],
+        "title": "Aud27ProhibitedOut",
+        "type": "object"
+      },
+      "Aud27RangeOut": {
+        "properties": {
+          "high": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "High",
+            "type": "string"
+          },
+          "inside": {
+            "cls": "internal",
+            "title": "Inside",
+            "type": "boolean"
+          },
+          "low": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Low",
+            "type": "string"
+          }
+        },
+        "required": [
+          "low",
+          "high",
+          "inside"
+        ],
+        "title": "Aud27RangeOut",
+        "type": "object"
+      },
+      "Aud27RetrospectiveOut": {
+        "description": "A prior-year estimate against its outcome (\"over by $14,000.00, 3.4%\").",
+        "properties": {
+          "difference": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Difference",
+            "type": "string"
+          },
+          "direction": {
+            "cls": "internal",
+            "enum": [
+              "over",
+              "under",
+              "exact"
+            ],
+            "title": "Direction",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "maxLength": 120,
+            "title": "Label",
+            "type": "string"
+          },
+          "outcome": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Outcome",
+            "type": "string"
+          },
+          "percent": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Percent",
+            "type": "string"
+          },
+          "prior_estimate": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Prior Estimate",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "prior_estimate",
+          "outcome",
+          "difference",
+          "percent",
+          "direction"
+        ],
+        "title": "Aud27RetrospectiveOut",
+        "type": "object"
+      },
+      "Aud27RollforwardOut": {
+        "properties": {
+          "additions": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Additions",
+            "type": "string"
+          },
+          "closing_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Closing On"
+          },
+          "computed_closing": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Computed Closing",
+            "type": "string"
+          },
+          "opening": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Opening",
+            "type": "string"
+          },
+          "opening_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Opening On"
+          },
+          "ties": {
+            "cls": "internal",
+            "title": "Ties",
+            "type": "boolean"
+          },
+          "usage": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Usage",
+            "type": "string"
+          }
+        },
+        "required": [
+          "opening",
+          "usage",
+          "additions",
+          "computed_closing",
+          "ties"
+        ],
+        "title": "Aud27RollforwardOut",
+        "type": "object"
+      },
+      "Aud27TransactionIn": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Amount"
+          },
+          "description": {
+            "cls": "confidential",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          }
+        },
+        "required": [
+          "description"
+        ],
+        "title": "Aud27TransactionIn",
+        "type": "object"
+      },
+      "Aud27TransactionOut": {
+        "description": "S31 close (DV-AUD-27-2): one thing the plan did with a party in interest in the year, as a\nperson recorded it.",
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Amount"
+          },
+          "description": {
+            "cls": "confidential",
+            "maxLength": 300,
+            "title": "Description",
+            "type": "string"
+          }
+        },
+        "required": [
+          "description",
+          "amount"
+        ],
+        "title": "Aud27TransactionOut",
         "type": "object"
       },
       "AuditActorOut": {
@@ -7799,6 +8422,18 @@
       },
       "AuditCompletionItemOut": {
         "properties": {
+          "blocker_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Blocker Text"
+          },
           "depends_on_client": {
             "cls": "internal",
             "title": "Depends On Client",
@@ -14139,6 +14774,52 @@
         "title": "ChecklistAppliesTo",
         "type": "object"
       },
+      "ChecklistImportIn": {
+        "additionalProperties": false,
+        "properties": {
+          "engagement_type": {
+            "cls": "internal",
+            "pattern": "^[a-z][a-z0-9_]{1,39}$",
+            "title": "Engagement Type",
+            "type": "string"
+          },
+          "items": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/ChecklistItemIn"
+            },
+            "maxItems": 60,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          },
+          "kind": {
+            "cls": "internal",
+            "enum": [
+              "completion",
+              "eqr",
+              "archive"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "cls": "confidential",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "engagement_type",
+          "name",
+          "items"
+        ],
+        "title": "ChecklistImportIn",
+        "type": "object"
+      },
       "ChecklistImportOut": {
         "properties": {
           "dry_run": {
@@ -14187,6 +14868,56 @@
         "title": "ChecklistImportOut",
         "type": "object"
       },
+      "ChecklistImportedOut": {
+        "properties": {
+          "dry_run": {
+            "cls": "internal",
+            "title": "Dry Run",
+            "type": "boolean"
+          },
+          "problems": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Problems",
+            "type": "array"
+          },
+          "template_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Template Id"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Version"
+          }
+        },
+        "required": [
+          "template_id",
+          "version",
+          "dry_run",
+          "problems"
+        ],
+        "title": "ChecklistImportedOut",
+        "type": "object"
+      },
       "ChecklistItem": {
         "additionalProperties": false,
         "description": "Firm-authored text only (ADR-056).",
@@ -14218,6 +14949,80 @@
           "text"
         ],
         "title": "ChecklistItem",
+        "type": "object"
+      },
+      "ChecklistItemIn": {
+        "additionalProperties": false,
+        "properties": {
+          "blocker": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Blocker"
+          },
+          "depends_on_client": {
+            "cls": "internal",
+            "default": false,
+            "title": "Depends On Client",
+            "type": "boolean"
+          },
+          "derived": {
+            "cls": "internal",
+            "default": true,
+            "title": "Derived",
+            "type": "boolean"
+          },
+          "due_on_report_date": {
+            "cls": "internal",
+            "default": false,
+            "title": "Due On Report Date",
+            "type": "boolean"
+          },
+          "gate_tag": {
+            "anyOf": [
+              {
+                "pattern": "^G[1-9]$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Gate Tag"
+          },
+          "key": {
+            "cls": "internal",
+            "pattern": "^[a-z0-9_]{1,60}$",
+            "title": "Key",
+            "type": "string"
+          },
+          "text": {
+            "cls": "confidential",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          },
+          "type_specific": {
+            "cls": "internal",
+            "default": false,
+            "title": "Type Specific",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "text"
+        ],
+        "title": "ChecklistItemIn",
         "type": "object"
       },
       "ChecklistOptionOut": {
@@ -14316,6 +15121,41 @@
           "template_version_id"
         ],
         "title": "ChecklistPickIn",
+        "type": "object"
+      },
+      "ChecklistPublishedOut": {
+        "properties": {
+          "published_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Published At",
+            "type": "string"
+          },
+          "status": {
+            "cls": "internal",
+            "const": "published",
+            "title": "Status",
+            "type": "string"
+          },
+          "template_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Template Id",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "template_id",
+          "version",
+          "status",
+          "published_at"
+        ],
+        "title": "ChecklistPublishedOut",
         "type": "object"
       },
       "ChecklistReviewIn": {
@@ -41913,10 +42753,36 @@
             "title": "Allowed Actions",
             "type": "array"
           },
+          "draft_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Draft Id"
+          },
           "draft_received": {
             "cls": "internal",
             "title": "Draft Received",
             "type": "boolean"
+          },
+          "evidence_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Evidence Version Id"
           },
           "lines": {
             "cls": "confidential",
@@ -41935,6 +42801,15 @@
             "maxItems": 20,
             "title": "Part Iv",
             "type": "array"
+          },
+          "rows": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/Form5500RowOut"
+            },
+            "maxItems": 200,
+            "title": "Rows",
+            "type": "array"
           }
         },
         "required": [
@@ -41944,6 +42819,121 @@
           "allowed_actions"
         ],
         "title": "Form5500Out",
+        "type": "object"
+      },
+      "Form5500RowOut": {
+        "description": "A-05-T58 (DEC-2814): one Schedule H line with both sides, the code's difference and its\nclassification; `match_id` lights the row and the draft's form field together.",
+        "properties": {
+          "caption": {
+            "cls": "internal",
+            "maxLength": 300,
+            "title": "Caption",
+            "type": "string"
+          },
+          "classification": {
+            "anyOf": [
+              {
+                "enum": [
+                  "tie",
+                  "reconciling_item",
+                  "inconsistent"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Classification"
+          },
+          "difference": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Difference"
+          },
+          "f5500_amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "F5500 Amount"
+          },
+          "fs_amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Fs Amount"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "line_code": {
+            "cls": "internal",
+            "maxLength": 20,
+            "title": "Line Code",
+            "type": "string"
+          },
+          "match_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Match Id"
+          },
+          "note_ref": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Note Ref"
+          }
+        },
+        "required": [
+          "id",
+          "line_code",
+          "caption",
+          "fs_amount",
+          "f5500_amount",
+          "difference",
+          "classification"
+        ],
+        "title": "Form5500RowOut",
         "type": "object"
       },
       "Form8879Row": {
@@ -43887,6 +44877,22 @@
             ],
             "title": "State",
             "type": "string"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "enum": [
+                  "plan",
+                  "entity"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Subject"
           }
         },
         "required": [
@@ -49517,6 +50523,19 @@
             "default": false,
             "title": "Create Anyway",
             "type": "boolean"
+          },
+          "create_anyway_reason_code": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z][a-z0-9_]{0,59}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Create Anyway Reason Code"
           },
           "engagement_id": {
             "anyOf": [
@@ -61504,6 +62523,111 @@
         "title": "MappingOut",
         "type": "object"
       },
+      "MappingPublishIn": {
+        "additionalProperties": false,
+        "description": "A whole mapping version: every caption the firm's statements map, with its line.",
+        "properties": {
+          "effective_plan_year": {
+            "cls": "internal",
+            "maximum": 2100.0,
+            "minimum": 2000.0,
+            "title": "Effective Plan Year",
+            "type": "integer"
+          },
+          "rows": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/MappingRowIn"
+            },
+            "maxItems": 400,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "effective_plan_year",
+          "rows"
+        ],
+        "title": "MappingPublishIn",
+        "type": "object"
+      },
+      "MappingPublishedOut": {
+        "properties": {
+          "dry_run": {
+            "cls": "internal",
+            "title": "Dry Run",
+            "type": "boolean"
+          },
+          "problems": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Problems",
+            "type": "array"
+          },
+          "rows": {
+            "cls": "internal",
+            "title": "Rows",
+            "type": "integer"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "validated",
+              "published",
+              "refused"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Version"
+          }
+        },
+        "required": [
+          "version",
+          "rows",
+          "dry_run",
+          "problems",
+          "status"
+        ],
+        "title": "MappingPublishedOut",
+        "type": "object"
+      },
+      "MappingRowIn": {
+        "additionalProperties": false,
+        "properties": {
+          "fs_caption_key": {
+            "cls": "internal",
+            "maxLength": 80,
+            "title": "Fs Caption Key",
+            "type": "string"
+          },
+          "schedule_h_line": {
+            "cls": "internal",
+            "maxLength": 20,
+            "title": "Schedule H Line",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fs_caption_key",
+          "schedule_h_line"
+        ],
+        "title": "MappingRowIn",
+        "type": "object"
+      },
       "MappingRowOut": {
         "properties": {
           "direction": {
@@ -67483,7 +68607,8 @@
             "cls": "internal",
             "enum": [
               "consistent",
-              "inconsistent"
+              "inconsistent",
+              "not_checked"
             ],
             "title": "Consistency",
             "type": "string"
@@ -67522,9 +68647,17 @@
             "enum": [
               "4a",
               "4b",
+              "4c",
               "4d",
+              "4e",
+              "4f",
+              "4g",
+              "4h",
               "4i",
-              "4j"
+              "4j",
+              "4k",
+              "4l",
+              "4m"
             ],
             "title": "Line",
             "type": "string"
@@ -77316,6 +78449,19 @@
       },
       "RecordsReadOut": {
         "properties": {
+          "connection_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Connection Id"
+          },
           "count": {
             "cls": "internal",
             "title": "Count",
@@ -77325,6 +78471,18 @@
             "cls": "internal",
             "title": "Source",
             "type": "string"
+          },
+          "through": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Through"
           }
         },
         "required": [
@@ -85152,6 +86310,94 @@
         "title": "RunCountersOut",
         "type": "object"
       },
+      "RunHeaderOut": {
+        "description": "C6 v1.1: the dock's header: the run number, what it is blocked on, code's counters, who it\nruns as and what started it. Null fields wait for P-10-T29's v2 columns.",
+        "properties": {
+          "blocked_on": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BlockedOnOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "counters": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunCountersOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "run_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Run Number"
+          },
+          "runs_as_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Runs As Name"
+          },
+          "trigger_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "manual",
+                  "schedule",
+                  "agent_trigger",
+                  "engagement_trigger",
+                  "retry",
+                  "test",
+                  "engagement_plan",
+                  "agent_column",
+                  "event_policy"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Trigger Kind"
+          },
+          "work_item_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Work Item Ref"
+          }
+        },
+        "title": "RunHeaderOut",
+        "type": "object"
+      },
       "RunItemOut": {
         "description": "A thread item: code words and references only (P-09 Story 8.1); the client words it.",
         "properties": {
@@ -85253,6 +86499,34 @@
             "cls": "internal",
             "title": "Seq",
             "type": "integer"
+          },
+          "session_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "user",
+                  "line",
+                  "block",
+                  "tool",
+                  "progress",
+                  "question",
+                  "answer",
+                  "error",
+                  "plan",
+                  "approval",
+                  "decision_ref",
+                  "artifact",
+                  "run_card",
+                  "notice"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Session Kind"
           }
         },
         "required": [
@@ -85284,6 +86558,19 @@
             "cls": "internal",
             "title": "Last Seq",
             "type": "integer"
+          },
+          "next_seq": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Next Seq"
           },
           "resync": {
             "cls": "internal",
@@ -85462,6 +86749,71 @@
           "label"
         ],
         "title": "RunPlanStepOut",
+        "type": "object"
+      },
+      "RunProjectionLevelOut": {
+        "description": "C6 v1.1: one level of the run's plan, counted by code from its steps and never stored\n(\"Run projection\", glossary). `total` is the sum of the six states.",
+        "properties": {
+          "blocked": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Blocked",
+            "type": "integer"
+          },
+          "done": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Done",
+            "type": "integer"
+          },
+          "failed": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Failed",
+            "type": "integer"
+          },
+          "level": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Level",
+            "type": "integer"
+          },
+          "queued": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Queued",
+            "type": "integer"
+          },
+          "running": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Running",
+            "type": "integer"
+          },
+          "total": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          },
+          "waiting": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Waiting",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "level",
+          "total"
+        ],
+        "title": "RunProjectionLevelOut",
         "type": "object"
       },
       "RunQuestionOut": {
@@ -85828,6 +87180,22 @@
       },
       "RunTraceOut": {
         "properties": {
+          "access": {
+            "anyOf": [
+              {
+                "enum": [
+                  "content",
+                  "metadata"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Access"
+          },
           "attempts": {
             "cls": "internal",
             "title": "Attempts",
@@ -85891,6 +87259,17 @@
             "cls": "internal",
             "title": "Runtime",
             "type": "string"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TraceSummaryOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
           },
           "tokens_in": {
             "cls": "internal",
@@ -86198,12 +87577,47 @@
       "RunViewOut": {
         "description": "C6 v1 (TASK-5000): one run, its record fingerprint and what the caller may do.",
         "properties": {
+          "access": {
+            "anyOf": [
+              {
+                "enum": [
+                  "content",
+                  "metadata"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Access"
+          },
           "allowed_actions": {
             "cls": "internal",
             "items": {
               "type": "string"
             },
             "title": "Allowed Actions",
+            "type": "array"
+          },
+          "header": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunHeaderOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "levels": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/RunProjectionLevelOut"
+            },
+            "title": "Levels",
             "type": "array"
           },
           "projection": {
@@ -86237,6 +87651,18 @@
       "RunWriteOut": {
         "description": "What the run proposed to write and what a person decided. Codes and references only.",
         "properties": {
+          "approver_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Approver Name"
+          },
           "at": {
             "cls": "internal",
             "format": "date-time",
@@ -86305,6 +87731,37 @@
             "cls": "internal",
             "title": "Outcome",
             "type": "string"
+          },
+          "proposal_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Proposal Id"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "enum": [
+                  "waiting",
+                  "approved",
+                  "declined",
+                  "superseded"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "State"
           },
           "target_id": {
             "anyOf": [
@@ -87555,6 +89012,119 @@
         ],
         "title": "SampleSetVersionStatus",
         "type": "string"
+      },
+      "Schedule4iOut": {
+        "description": "A-05-T58 close (DEC-2820): the 4i schedule by code (`compute.ebp.form5500.schedule_4i`)\nand the draft's line 1c total it must equal.",
+        "properties": {
+          "draft_total": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Draft Total"
+          },
+          "inputs_hash": {
+            "cls": "internal",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Inputs Hash",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/Schedule4iRowOut"
+            },
+            "maxItems": 500,
+            "title": "Rows",
+            "type": "array"
+          },
+          "ties": {
+            "cls": "internal",
+            "title": "Ties",
+            "type": "boolean"
+          },
+          "total": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rows",
+          "total",
+          "draft_total",
+          "ties",
+          "inputs_hash"
+        ],
+        "title": "Schedule4iOut",
+        "type": "object"
+      },
+      "Schedule4iRowOut": {
+        "description": "One line of Schedule H line 4i: \"*\" marks a party in interest; a participant-directed\nholding's cost is omitted (\"**\").",
+        "properties": {
+          "cost": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Cost"
+          },
+          "cost_omitted": {
+            "cls": "internal",
+            "title": "Cost Omitted",
+            "type": "boolean"
+          },
+          "current_value": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Current Value",
+            "type": "string"
+          },
+          "description": {
+            "cls": "internal",
+            "maxLength": 200,
+            "title": "Description",
+            "type": "string"
+          },
+          "identity": {
+            "cls": "internal",
+            "maxLength": 300,
+            "title": "Identity",
+            "type": "string"
+          },
+          "mark": {
+            "cls": "internal",
+            "enum": [
+              "*",
+              ""
+            ],
+            "title": "Mark",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mark",
+          "identity",
+          "description",
+          "cost",
+          "cost_omitted",
+          "current_value"
+        ],
+        "title": "Schedule4iRowOut",
+        "type": "object"
       },
       "ScheduleApprovalOut": {
         "description": "One seat's approval; when it was given is the audit log's\n(`firm_export_schedule.approved`).",
@@ -104808,6 +106378,19 @@
             "cls": "internal",
             "title": "Detail"
           },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Duration Ms"
+          },
           "kind": {
             "cls": "internal",
             "enum": [
@@ -104820,6 +106403,50 @@
             ],
             "title": "Kind",
             "type": "string"
+          },
+          "mark": {
+            "anyOf": [
+              {
+                "enum": [
+                  "start",
+                  "plan",
+                  "done",
+                  "running",
+                  "waiting",
+                  "blocked",
+                  "failed",
+                  "muted"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Mark"
+          },
+          "phase": {
+            "anyOf": [
+              {
+                "enum": [
+                  "plan",
+                  "execute",
+                  "compute",
+                  "proposed_write",
+                  "decision",
+                  "policy",
+                  "steer",
+                  "notice"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Phase"
           },
           "seq": {
             "cls": "internal",
@@ -104853,6 +106480,202 @@
           "actor"
         ],
         "title": "TraceRowOut",
+        "type": "object"
+      },
+      "TraceSampleOut": {
+        "description": "One of up to five records a tool step read, visible to the caller, with its open route.",
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "open_route": {
+            "cls": "internal",
+            "title": "Open Route",
+            "type": "string"
+          },
+          "record_type": {
+            "cls": "internal",
+            "title": "Record Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "record_type",
+          "id",
+          "label",
+          "open_route"
+        ],
+        "title": "TraceSampleOut",
+        "type": "object"
+      },
+      "TraceStepOut": {
+        "description": "C6 v1.1: a tool row expanded (WB-09a2): its argument summary and up to five sample records\nit read, filtered by `visible()`. Content only (DEC-87).",
+        "properties": {
+          "args_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Args Summary"
+          },
+          "records_read": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Records Read",
+            "type": "integer"
+          },
+          "samples": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/TraceSampleOut"
+            },
+            "maxItems": 5,
+            "title": "Samples",
+            "type": "array"
+          },
+          "step_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Step Id",
+            "type": "string"
+          },
+          "title": {
+            "cls": "internal",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "step_id",
+          "title",
+          "args_summary",
+          "records_read",
+          "samples"
+        ],
+        "title": "TraceStepOut",
+        "type": "object"
+      },
+      "TraceSummaryOut": {
+        "description": "C6 v1.1: WB-09's summary card. Every figure is code's: #4118 reads 2,625 records, 79\ncitations, 0 writes done and 1 waiting, over 2 m 41 s.",
+        "properties": {
+          "agent_label": {
+            "cls": "internal",
+            "title": "Agent Label",
+            "type": "string"
+          },
+          "citations": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Citations",
+            "type": "integer"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Duration Ms"
+          },
+          "records_read": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Records Read",
+            "type": "integer"
+          },
+          "run_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Run Number"
+          },
+          "runs_as_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Runs As Name"
+          },
+          "started_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "trigger_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "manual",
+                  "schedule",
+                  "agent_trigger",
+                  "engagement_trigger",
+                  "retry",
+                  "test",
+                  "engagement_plan",
+                  "agent_column",
+                  "event_policy"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Trigger Kind"
+          },
+          "writes_done": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Writes Done",
+            "type": "integer"
+          },
+          "writes_waiting": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Writes Waiting",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "agent_label",
+          "started_at"
+        ],
+        "title": "TraceSummaryOut",
         "type": "object"
       },
       "TranscriptComparisonIn": {
@@ -113860,6 +115683,135 @@
         "x-abacus-action": "agent_run.read"
       }
     },
+    "/v1/agent-runs/{run_id}/trace/steps/{step_id}": {
+      "get": {
+        "description": "C6 v1.1 stub (P-09-T01): 404 while `run_trace.enabled` is off, 501 until P-09-T08. The\nrun is authorised first, so no one learns the flag's state for a run they may not read.",
+        "operationId": "agent_run_trace_step",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "step_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Step Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "records",
+            "required": false,
+            "schema": {
+              "default": 5,
+              "maximum": 5,
+              "minimum": 0,
+              "title": "Records",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TraceStepOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Agent Run Trace Step Route",
+        "tags": [
+          "agents"
+        ],
+        "x-abacus-action": "agent_run.read"
+      }
+    },
     "/v1/agent-runs/{run_id}/trace/writes": {
       "get": {
         "operationId": "agent_run_writes",
@@ -118707,7 +120659,7 @@
     },
     "/v1/audits/{work_item_id}/ebp/form-5500": {
       "get": {
-        "description": "Draft status, Schedule H lines with tallies and Part IV (EBP-07; T36).",
+        "description": "Draft status, Schedule H lines with tallies and Part IV (EBP-07; T36; A-05-T58).",
         "operationId": "ebp_form5500",
         "parameters": [
           {
@@ -118814,6 +120766,7 @@
     },
     "/v1/audits/{work_item_id}/ebp/form-5500/lines/{line_id}/value": {
       "post": {
+        "description": "DV-EBP-07-1: a person keys the draft's value with where they read it; code re-ties.",
         "operationId": "ebp_form5500_key",
         "parameters": [
           {
@@ -119085,6 +121038,113 @@
           "assurance"
         ],
         "x-abacus-action": "ebp_form5500.send_note"
+      }
+    },
+    "/v1/audits/{work_item_id}/ebp/form-5500/schedules/4i": {
+      "get": {
+        "description": "EBP-07 c: the schedule of assets held at year end.",
+        "operationId": "ebp_schedule_4i",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Schedule4iOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Ebp Schedule 4I Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "ebp_form5500.read"
       }
     },
     "/v1/audits/{work_item_id}/ebp/imports": {
@@ -126001,6 +128061,7 @@
         "x-abacus-action": "ebp.read"
       },
       "post": {
+        "description": "AUD-27 c: a person records a party in interest (S31 close).",
         "operationId": "party_in_interest_create",
         "parameters": [
           {
@@ -126117,16 +128178,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Party In Interest Create Route",
@@ -143722,6 +145773,123 @@
           "due-dates"
         ],
         "x-abacus-action": "due_date.read"
+      }
+    },
+    "/v1/ebp/schedule-h-mappings:publish": {
+      "post": {
+        "description": "The firm's Schedule H line mapping, a whole version; dry run first.",
+        "operationId": "schedule_h_mapping_publish",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "dry_run",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Dry Run",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MappingPublishIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MappingPublishedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Schedule H Mapping Publish Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "ebp_schedule_h_mapping.publish"
       }
     },
     "/v1/engagement-drafts": {
@@ -219973,6 +222141,249 @@
         "x-abacus-action": "budget.read"
       }
     },
+    "/v1/methodology/assurance-checklists/{template_id}/versions/{version}/publish": {
+      "post": {
+        "description": "A person publishes with fresh MFA; a published version never changes.",
+        "operationId": "assurance_checklist_publish",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "template_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Template Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version",
+            "required": true,
+            "schema": {
+              "title": "Version",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChecklistPublishedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Assurance Checklist Publish Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "assurance_checklist_template.publish"
+      }
+    },
+    "/v1/methodology/assurance-checklists:import": {
+      "post": {
+        "description": "The firm's completion, EQR or archive checklist; dry run first.",
+        "operationId": "assurance_checklist_import",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "dry_run",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Dry Run",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChecklistImportIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChecklistImportedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Assurance Checklist Import Route",
+        "tags": [
+          "methodology"
+        ],
+        "x-abacus-action": "assurance_checklist_template.import"
+      }
+    },
     "/v1/methodology/disclosure-checklists/{template_id}/versions/{version}/publish": {
       "post": {
         "description": "A person publishes with fresh MFA; a published version never changes.",
@@ -225777,7 +228188,7 @@
     },
     "/v1/notice-intakes/{intake_id}/create": {
       "post": {
-        "description": "409 `low_confidence_unconfirmed`, `duplicate_unresolved`, `no_notice_engagement`.",
+        "description": "409 `low_confidence_unconfirmed`, `duplicate_unresolved`, `no_notice_engagement`; 422\n`create_anyway_reason_required`.",
         "operationId": "intake_confirm",
         "parameters": [
           {

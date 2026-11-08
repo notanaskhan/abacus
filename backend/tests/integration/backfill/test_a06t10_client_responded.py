@@ -45,7 +45,9 @@ async def _approved_entry(world: Books) -> uuid.UUID:
     return entry
 
 
-async def _record(world: Books, entry: uuid.UUID, decision: str) -> None:
+async def _record(
+    world: Books, entry: uuid.UUID, decision: str, evidence: uuid.UUID | None = None
+) -> int:
     done = await world.call(
         "POST",
         f"/v1/proposed-entries/{entry}/client-decision:record",
@@ -54,17 +56,18 @@ async def _record(world: Books, entry: uuid.UUID, decision: str) -> None:
             "decision": decision,
             "by_contact_id": str(uuid.uuid4()),
             "decided_on": "2027-10-04",
-            "evidence_version_id": str(uuid.uuid4()),
+            # The client's email, on the entry's engagement (A-06-T17; DEC-2956).
+            "evidence_version_id": str(evidence or world.site.version_id),
         },
         headers={"Idempotency-Key": str(uuid.uuid4())},
     )
-    assert done.status_code == 200, done.text
+    return done.status_code
 
 
 @pytest.mark.parametrize("decision", ["client_accepted", "client_declined", "client_question"])
 async def test_a_recorded_client_decision_writes_one_event(world: Books, decision: str) -> None:
     entry = await _approved_entry(world)
-    await _record(world, entry, decision)
+    assert await _record(world, entry, decision) == 200
     rows = await world.seed.value(
         "SELECT json_agg(payload) FROM outbox WHERE tenant_id = $1 "
         "AND event_type = 'proposed_entry.client_decided'",
@@ -76,3 +79,18 @@ async def test_a_recorded_client_decision_writes_one_event(world: Books, decisio
     assert payload["entry_id"] == str(entry)
     assert payload["engagement_id"] == str(world.site.engagement_id)
     assert payload["decision"] == decision
+
+
+async def test_record_mode_refuses_evidence_from_off_the_engagement(world: Books) -> None:
+    """A-06-T17 (DEC-2956): an id that is not an email on the entry's engagement records
+    nothing."""
+    entry = await _approved_entry(world)
+    assert await _record(world, entry, "client_accepted", uuid.uuid4()) == 422
+    assert (
+        await world.seed.value(
+            "SELECT count(*) FROM proposed_entry_decisions WHERE tenant_id = $1 AND entry_id = $2",
+            world.tenant_id,
+            entry,
+        )
+        == 0
+    )

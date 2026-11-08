@@ -17,6 +17,7 @@ and conclude are a person's acts; no agent or system principal holds them (INV-1
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 from datetime import date, datetime
 from decimal import Decimal
@@ -41,11 +42,17 @@ from abacus.modules.assurance import (
     ebp_provisions,
 )
 from abacus.modules.assurance.compute.ebp.accounts import Group as AccountGroup
+from abacus.modules.assurance.ebp_form5500 import (
+    form5500_view,
+    key_line_value,
+    schedule_4i_view,
+)
 from abacus.modules.assurance.ebp_imports import ImportView, Ties, import_of, import_source
 from abacus.modules.assurance.ebp_participants import DOB_MASK, participants_of
 from abacus.modules.assurance.ebp_participants import reveal as reveal_participant_field
 from abacus.modules.assurance.tb_mapping_contract import SignOffChipOut
-from abacus.modules.engagements.api import assurance_item, get_ref
+from abacus.modules.engagements.api import assurance_item, get_ref, work_item_period
+from abacus.modules.evidence.api import citation_display
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
@@ -505,11 +512,37 @@ _PART_IV: JsonDict = {
 class PartIvLineOut(BaseModel):
     model_config = _ex(_PART_IV)
 
-    line: Annotated[Literal["4a", "4b", "4d", "4i", "4j"], classified("internal")]
+    # A-05-T58 close (DEC-2820): every Part IV line 4a to 4m, additively; code checks 4a against
+    # the late remittances, and a line no check covers reads `not_checked`.
+    line: Annotated[
+        Literal["4a", "4b", "4c", "4d", "4e", "4f", "4g", "4h", "4i", "4j", "4k", "4l", "4m"],
+        classified("internal"),
+    ]
     draft_answer: Annotated[Literal["yes", "no"] | None, classified("internal")]
     draft_amount: MaybeMoney
-    consistency: Annotated[Literal["consistent", "inconsistent"], classified("internal")]
+    consistency: Annotated[
+        Literal["consistent", "inconsistent", "not_checked"], classified("internal")
+    ]
     basis: Label
+
+
+class Form5500RowOut(BaseModel):
+    """A-05-T58 (DEC-2814): one Schedule H line with both sides, the code's difference and its
+    classification; `match_id` lights the row and the draft's form field together."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    line_code: Annotated[str, Field(max_length=20), classified("internal")]
+    caption: Label
+    fs_amount: MaybeMoney
+    f5500_amount: MaybeMoney
+    difference: MaybeMoney
+    classification: Annotated[
+        Literal["tie", "reconciling_item", "inconsistent"] | None, classified("internal")
+    ]
+    note_ref: Annotated[str | None, Field(max_length=40), classified("internal")] = None
+    match_id: Annotated[str | None, classified("internal")] = None
 
 
 class Form5500Out(BaseModel):
@@ -519,6 +552,12 @@ class Form5500Out(BaseModel):
     lines: Annotated[list[FigureRowOut], Field(max_length=200), classified("confidential")]
     part_iv: Annotated[list[PartIvLineOut], Field(max_length=20), classified("confidential")]
     allowed_actions: Actions
+    # A-05-T58 (DEC-2814), additive: the tie-out rows with both sides, and the draft's id.
+    rows: Annotated[list[Form5500RowOut], Field(max_length=200), classified("confidential")] = (
+        Field(default_factory=list[Form5500RowOut])
+    )
+    draft_id: Annotated[UUID | None, classified("internal")] = None
+    evidence_version_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class LineValueIn(BaseModel):
@@ -912,6 +951,67 @@ _ESTIMATE: JsonDict = {
 }
 
 
+class Aud27MethodOut(BaseModel):
+    """The method card's tie: components against the balance, code's (A-05-T53)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    components_total: Money
+    difference: Money
+    ties: Annotated[bool, classified("internal")]
+
+
+class Aud27ComponentOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    label: Annotated[str, Field(max_length=300), classified("confidential")]
+    amount: Money
+
+
+class Aud27RollforwardOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    opening: Money
+    usage: Money
+    additions: Money
+    computed_closing: Money
+    ties: Annotated[bool, classified("internal")]
+    # S31 close (DV-AUD-27-3): the rollforward's period, the work item's start and end.
+    opening_on: Annotated[date | None, classified("internal")] = None
+    closing_on: Annotated[date | None, classified("internal")] = None
+
+
+class Aud27TransactionOut(BaseModel):
+    """S31 close (DV-AUD-27-2): one thing the plan did with a party in interest in the year, as a
+    person recorded it."""
+
+    model_config = ConfigDict(frozen=True)
+
+    description: Annotated[str, Field(max_length=300), classified("confidential")]
+    amount: MaybeMoney
+
+
+class Aud27RetrospectiveOut(BaseModel):
+    """A prior-year estimate against its outcome ("over by $14,000.00, 3.4%")."""
+
+    model_config = ConfigDict(frozen=True)
+
+    label: Annotated[str, Field(max_length=120), classified("confidential")]
+    prior_estimate: Money
+    outcome: Money
+    difference: Money
+    percent: Annotated[Decimal, classified("internal")]
+    direction: Annotated[Literal["over", "under", "exact"], classified("internal")]
+
+
+class Aud27RangeOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    low: Money
+    high: Money
+    inside: Annotated[bool, classified("internal")]
+
+
 class Aud27ItemOut(BaseModel):
     model_config = _ex(_ESTIMATE)
 
@@ -921,6 +1021,53 @@ class Aud27ItemOut(BaseModel):
     status: Annotated[AudItemStatus, classified("internal")]
     # "Evaluated · pending EP" is a display variant of evaluated.
     pending_ep: Annotated[bool, classified("internal")]
+    # A-05-T57 (DEC-2813), additive: what AUD-27's rows and cards show, from A-05-T53's views.
+    account_ref: Annotated[str | None, Field(max_length=40), classified("internal")] = None
+    significant_risk: Annotated[bool, classified("internal")] = False
+    method_text: Annotated[str | None, Field(max_length=500), classified("confidential")] = None
+    disclosure_ref: Annotated[str | None, Field(max_length=200), classified("confidential")] = None
+    components: Annotated[
+        list[Aud27ComponentOut], Field(max_length=50), classified("confidential")
+    ] = Field(default_factory=list[Aud27ComponentOut])
+    method: Annotated[Aud27MethodOut | None, classified("confidential")] = None
+    rollforward: Annotated[Aud27RollforwardOut | None, classified("confidential")] = None
+    retrospectives: Annotated[
+        list[Aud27RetrospectiveOut], Field(max_length=10), classified("confidential")
+    ] = Field(default_factory=list[Aud27RetrospectiveOut])
+    range: Annotated[Aud27RangeOut | None, classified("confidential")] = None
+    # A possible bias: every retrospective difference points the same way (AU-C 540.A133).
+    bias: Annotated[Literal["none", "possible"] | None, classified("internal")] = None
+    # Related parties: where the candidate came from, the relationship, the finding it raised.
+    source: Annotated[str | None, Field(max_length=40), classified("internal")] = None
+    relationship: Annotated[str | None, Field(max_length=300), classified("confidential")] = None
+    finding_id: Annotated[UUID | None, classified("internal")] = None
+    # Parties in interest (EBP): the ERISA relationship, exemption and reporting line.
+    exemption: Annotated[str | None, Field(max_length=200), classified("confidential")] = None
+    reporting: Annotated[str | None, Field(max_length=200), classified("confidential")] = None
+    transactions: Annotated[
+        list[Aud27TransactionOut], Field(max_length=50), classified("confidential")
+    ] = Field(default_factory=list[Aud27TransactionOut])
+
+
+class Aud27ProhibitedOut(BaseModel):
+    """AUD-27 c's card: the late remittance as a prohibited transaction, read from EBP-04."""
+
+    model_config = ConfigDict(frozen=True)
+
+    late_remittance_id: Annotated[UUID, classified("internal")]
+    principal: MaybeMoney
+    deposited_on: Annotated[date | None, classified("internal")] = None
+    business_days_late: Annotated[int | None, classified("internal")] = None
+    lost_earnings: MaybeMoney
+    # The late remittance's own words (EBP-04's `LateRemittanceOut`; S31 end pass: enums).
+    correction_status: Annotated[
+        Literal["found", "pending_vfcp_scc", "corrected"] | None, classified("internal")
+    ] = None
+    form_5330_status: Annotated[
+        Literal["exposure", "not_required", "filed"] | None, classified("internal")
+    ] = None
+    # S31 close (DV-AUD-27-6): EBP-04's code-computed excise exposure on the lost earnings.
+    excise_exposure: MaybeMoney = None
 
 
 class Aud27ListOut(BaseModel):
@@ -928,12 +1075,31 @@ class Aud27ListOut(BaseModel):
 
     items: Annotated[list[Aud27ItemOut], Field(max_length=200), classified("confidential")]
     allowed_actions: Actions
+    # A-05-T57 (DEC-2813): the parties-in-interest read carries the prohibited transactions.
+    prohibited: Annotated[list[Aud27ProhibitedOut], classified("confidential")] = Field(
+        default_factory=list[Aud27ProhibitedOut]
+    )
+
+
+class Aud27TransactionIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    description: Annotated[str, Field(min_length=1, max_length=300), classified("confidential")]
+    amount: MaybeMoney = None
 
 
 class Aud27ItemIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     name: Annotated[str, Field(min_length=1, max_length=300), classified("confidential")]
+    # S31 close, additive: a party in interest's ERISA relationship (required for one), its
+    # exemption, its Form 5500 reporting line and the year's transactions.
+    relationship: Annotated[str | None, Field(max_length=200), classified("confidential")] = None
+    exemption: Annotated[str | None, Field(max_length=200), classified("confidential")] = None
+    reporting: Annotated[str | None, Field(max_length=200), classified("confidential")] = None
+    transactions: Annotated[
+        list[Aud27TransactionIn], Field(max_length=50), classified("confidential")
+    ] = Field(default_factory=list[Aud27TransactionIn])
 
 
 class ScreenOutIn(BaseModel):
@@ -1070,6 +1236,21 @@ class EligibilitySampleOut(BaseModel):
     entry_rule: Annotated[EntryRuleOut, classified("internal")]
 
 
+CorrectionWord = Literal["found", "pending_vfcp_scc", "corrected"]
+Form5330Word = Literal["exposure", "not_required", "filed"]
+
+
+def _correction_word(stored: str | None) -> CorrectionWord | None:
+    """0658's CHECK holds exactly these words."""
+    return cast("CorrectionWord | None", stored)
+
+
+def _form_5330_word(stored: str | None) -> Form5330Word | None:
+    """0658's words, mapped to the API's (PTE 2002-51 reads "not_required")."""
+    found = "not_required" if stored == "not_required_pte_2002_51" else stored
+    return cast("Form5330Word | None", found)
+
+
 async def _gate(ctx: AuthContext, work_item_id: UUID, action: str, flag: Flag) -> None:
     """A person only, never a client principal; the action on the work item's engagement; the
     flag; the `ebp_audits` entitlement. Authorised first, so no one learns a flag or entitlement
@@ -1091,10 +1272,6 @@ async def _gate(ctx: AuthContext, work_item_id: UUID, action: str, flag: Flag) -
 
 def _not_yet() -> NoReturn:
     raise NotImplementedYet
-
-
-def _example[M: BaseModel](model: type[M], body: JsonDict) -> M:
-    return model.model_validate(body)
 
 
 def _account_group(group: AccountGroup) -> AccountGroupOut:
@@ -2228,22 +2405,72 @@ async def ebp_expense_support_route(
 
 
 # EBP-07
+async def _line_matches(ctx: AuthContext, ids: Sequence[UUID | None]) -> dict[UUID, str]:
+    """Each cited line's region id (C4 §3.1), read from its citation; one that the reader can't
+    see, or that has no region, lights nothing."""
+    found: dict[UUID, str] = {}
+    for citation_id in {i for i in ids if i is not None}:
+        try:
+            view = await citation_display(ctx, citation_id)
+        except NotFound:
+            continue
+        if view.match_id is not None:
+            found[citation_id] = view.match_id
+    return found
+
+
 @router.get("/ebp/form-5500", action="ebp_form5500.read", response_model=Form5500Out)
 async def ebp_form5500_route(work_item_id: UUID, ctx: Ctx) -> Form5500Out:
-    """Draft status, Schedule H lines with tallies and Part IV (EBP-07; T36)."""
+    """Draft status, Schedule H lines with tallies and Part IV (EBP-07; T36; A-05-T58)."""
     await _gate(ctx, work_item_id, "ebp_form5500.read", _F)
+    view = await form5500_view(ctx, work_item_id)
+    matches = await _line_matches(ctx, [line.f5500_citation_id for line in view.lines])
     return Form5500Out(
-        draft_received=True,
+        draft_received=view.draft_id is not None,
+        draft_id=view.draft_id,
+        evidence_version_id=view.evidence_version_id,
         lines=[
             FigureRowOut(
-                key="h.1c",
-                label="Receivables",
-                amount=Decimal("48600.00"),
-                status="reconciling_item",
+                # The v1 key's pattern is `[a-z0-9_.]`: "1b(2)" reads "h.1b_2_" (S31 end pass).
+                key="h." + re.sub(r"[^a-z0-9_.]", "_", line.line_code.lower())[:62],
+                label=line.caption,
+                amount=line.f5500_amount,
+                status=line.classification,  # type: ignore[arg-type]  # registry kind literal
+                note=line.note_ref,
             )
+            for line in view.lines
         ],
-        part_iv=[_example(PartIvLineOut, _PART_IV)],
-        allowed_actions=["ebp_form5500.key", "ebp_form5500.send_note"],
+        rows=[
+            Form5500RowOut(
+                id=line.id,
+                line_code=line.line_code,
+                caption=line.caption,
+                fs_amount=line.fs_amount,
+                f5500_amount=line.f5500_amount,
+                difference=line.difference,
+                classification=line.classification,  # type: ignore[arg-type]  # CHECK literal
+                note_ref=line.note_ref,
+                match_id=None
+                if line.f5500_citation_id is None
+                else matches.get(line.f5500_citation_id),
+            )
+            for line in view.lines
+        ],
+        part_iv=[
+            PartIvLineOut(
+                line=answer.question,  # type: ignore[arg-type]  # 0665's CHECK `^4[a-m]$`
+                draft_answer="yes"
+                if answer.draft_answer == "yes"
+                else ("no" if answer.draft_answer == "no" else None),
+                draft_amount=answer.amount,
+                consistency="inconsistent"
+                if answer.result == "inconsistent"
+                else ("consistent" if answer.result == "consistent" else "not_checked"),
+                basis=answer.evidence_ref or "",
+            )
+            for answer in view.part_iv
+        ],
+        allowed_actions=["ebp_form5500.key", "ebp_form5500.send_note", "ebp_form5500.remind"],
     )
 
 
@@ -2256,8 +2483,64 @@ async def ebp_form5500_route(work_item_id: UUID, ctx: Ctx) -> Form5500Out:
 async def ebp_form5500_key_route(
     work_item_id: UUID, line_id: UUID, body: LineValueIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> AcceptedOut:
+    """DV-EBP-07-1: a person keys the draft's value with where they read it; code re-ties."""
     await _gate(ctx, work_item_id, "ebp_form5500.key", _F)
-    _not_yet()
+    del idempotency_key  # the write is a set: keying the same value again changes nothing more
+    draft_id = await key_line_value(ctx, work_item_id, line_id, body.value, body.citation_note)
+    return AcceptedOut(id=draft_id)
+
+
+class Schedule4iRowOut(BaseModel):
+    """One line of Schedule H line 4i: "*" marks a party in interest; a participant-directed
+    holding's cost is omitted ("**")."""
+
+    model_config = ConfigDict(frozen=True)
+
+    mark: Annotated[Literal["*", ""], classified("internal")]
+    identity: Label
+    description: Annotated[str, Field(max_length=200), classified("internal")]
+    cost: MaybeMoney
+    cost_omitted: Annotated[bool, classified("internal")]
+    current_value: Money
+
+
+class Schedule4iOut(BaseModel):
+    """A-05-T58 close (DEC-2820): the 4i schedule by code (`compute.ebp.form5500.schedule_4i`)
+    and the draft's line 1c total it must equal."""
+
+    model_config = ConfigDict(frozen=True)
+
+    rows: Annotated[list[Schedule4iRowOut], Field(max_length=500), classified("confidential")]
+    total: Money
+    draft_total: MaybeMoney
+    ties: Annotated[bool, classified("internal")]
+    inputs_hash: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$"), classified("internal")]
+
+
+@router.get(
+    "/ebp/form-5500/schedules/4i", action="ebp_form5500.read", response_model=Schedule4iOut
+)
+async def ebp_schedule_4i_route(work_item_id: UUID, ctx: Ctx) -> Schedule4iOut:
+    """EBP-07 c: the schedule of assets held at year end."""
+    await _gate(ctx, work_item_id, "ebp_form5500.read", _F)
+    schedule, draft_total = await schedule_4i_view(ctx, work_item_id)
+    return Schedule4iOut(
+        rows=[
+            Schedule4iRowOut(
+                mark=r.mark,
+                identity=r.identity,
+                description=r.description,
+                cost=r.cost,
+                cost_omitted=r.cost_omitted,
+                current_value=r.current_value,
+            )
+            for r in schedule.rows
+        ],
+        total=schedule.total,
+        draft_total=draft_total,
+        ties=schedule.ties,
+        inputs_hash=schedule.inputs_hash,
+    )
 
 
 @router.post(
@@ -2280,6 +2563,7 @@ async def ebp_form5500_note_route(
 async def estimates_route(work_item_id: UUID, ctx: Ctx) -> Aud27ListOut:
     await _gate(ctx, work_item_id, "estimate.read", _A)
     found = await aud27.estimates(ctx, work_item_id)
+    opening_on, closing_on = await work_item_period(ctx.tenant, work_item_id)
     return Aud27ListOut(
         items=[
             Aud27ItemOut(
@@ -2288,10 +2572,50 @@ async def estimates_route(work_item_id: UUID, ctx: Ctx) -> Aud27ListOut:
                 amount=e.balance,
                 status=e.status,  # type: ignore[arg-type]  # registry kind literal
                 pending_ep=e.pending_ep,
+                account_ref=e.account_ref,
+                significant_risk=e.significant_risk,
+                method_text=e.method_text,
+                disclosure_ref=e.disclosure_ref,
+                components=[Aud27ComponentOut(label=lbl, amount=amt) for lbl, amt in e.components],
+                method=None
+                if e.footing is None
+                else Aud27MethodOut(
+                    components_total=e.footing.components_total,
+                    difference=e.footing.difference,
+                    ties=e.footing.difference == 0,
+                ),
+                rollforward=None
+                if e.rollforward is None
+                else Aud27RollforwardOut(
+                    opening=e.rollforward.opening,
+                    usage=e.rollforward.usage,
+                    additions=e.rollforward.additions,
+                    computed_closing=e.rollforward.computed_closing,
+                    ties=e.rollforward.computed_closing == e.rollforward.balance,
+                    opening_on=opening_on,
+                    closing_on=closing_on,
+                ),
+                retrospectives=[
+                    Aud27RetrospectiveOut(
+                        label=r.label,
+                        prior_estimate=r.prior_estimate,
+                        outcome=r.outcome,
+                        difference=r.difference,
+                        percent=r.percent,
+                        direction=r.direction,
+                    )
+                    for r in e.retrospectives
+                ],
+                range=None
+                if e.range is None
+                else Aud27RangeOut(low=e.range.low, high=e.range.high, inside=e.range.inside),
+                bias=None
+                if not e.retrospectives
+                else ("possible" if e.bias.direction is not None else "none"),
             )
             for e in found
         ],
-        allowed_actions=["estimate.evaluate"],
+        allowed_actions=["estimate.evaluate", "estimate.request_conclusion"],
     )
 
 
@@ -2340,10 +2664,13 @@ async def related_parties_route(work_item_id: UUID, ctx: Ctx) -> Aud27ListOut:
                 amount=None,
                 status=p.status,  # type: ignore[arg-type]  # registry kind literal
                 pending_ep=False,
+                source=p.source,
+                relationship=p.relationship,
+                finding_id=p.finding_id,
             )
             for p in parties
         ],
-        allowed_actions=["related_party.manage"],
+        allowed_actions=["related_party.manage", "related_party.screen_out"],
     )
 
 
@@ -2383,7 +2710,43 @@ async def related_party_screen_out_route(
 async def parties_in_interest_route(work_item_id: UUID, ctx: Ctx) -> Aud27ListOut:
     """AUD-27 c (Northwind); the prohibited transaction reads the late remittance (T52)."""
     await _gate(ctx, work_item_id, "ebp.read", _A)
-    return Aud27ListOut(items=[], allowed_actions=["party_in_interest.manage"])
+    parties, prohibited = await aud27.parties_in_interest(ctx, work_item_id)
+    return Aud27ListOut(
+        items=[
+            Aud27ItemOut(
+                id=p.id,
+                name=p.name,
+                amount=None,
+                # A late remittance is the sponsor's use of plan assets (ERISA §406), so the
+                # sponsor's row carries the exception while one exists; the rest are unevaluated.
+                status="exception"
+                if prohibited and "sponsor" in p.relationship.lower()
+                else "unevaluated",
+                pending_ep=False,
+                relationship=p.relationship,
+                exemption=p.exemption,
+                reporting=p.reporting,
+                transactions=[
+                    Aud27TransactionOut(description=d, amount=a) for d, a in p.transactions
+                ],
+            )
+            for p in parties
+        ],
+        allowed_actions=["party_in_interest.manage"],
+        prohibited=[
+            Aud27ProhibitedOut(
+                late_remittance_id=t.late_remittance_id,
+                principal=t.principal,
+                deposited_on=t.deposited_on if isinstance(t.deposited_on, date) else None,
+                business_days_late=t.business_days_late,
+                lost_earnings=t.lost_earnings,
+                correction_status=_correction_word(t.correction_status),
+                form_5330_status=_form_5330_word(t.form_5330_status),
+                excise_exposure=t.excise_exposure,
+            )
+            for t in prohibited
+        ],
+    )
 
 
 @router.post(
@@ -2391,10 +2754,20 @@ async def parties_in_interest_route(work_item_id: UUID, ctx: Ctx) -> Aud27ListOu
     action="party_in_interest.manage",
     response_model=AcceptedOut,
     status_code=201,
-    errors=(501,),
 )
 async def party_in_interest_create_route(
     work_item_id: UUID, body: Aud27ItemIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> AcceptedOut:
+    """AUD-27 c: a person records a party in interest (S31 close)."""
     await _gate(ctx, work_item_id, "party_in_interest.manage", _A)
-    _not_yet()
+    del idempotency_key
+    party_id = await aud27.add_party_in_interest(
+        ctx,
+        work_item_id,
+        body.name,
+        relationship=body.relationship or "",
+        exemption=body.exemption,
+        reporting=body.reporting,
+        transactions=[(t.description, t.amount) for t in body.transactions],
+    )
+    return AcceptedOut(id=party_id)

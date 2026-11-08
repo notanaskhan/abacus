@@ -1,0 +1,16 @@
+# Form 1098 box map (P-11-T34; P-11 F8; DEC-76, DEC-2809). PROTECTED: golden tested and reviewed
+# yearly against the IRS form for the year. Dark until the firm's `evidence.form_extraction`
+# variant covers `tax_forms`. TINs (SSN, EIN) are never fields: P-03 masks them on the page.
+form: "1098"
+form_type: "1098"
+tax_year: 2025
+family: tax_forms
+version: "1098-2025-v1"
+anchors: ["1098", "Mortgage Interest Statement"]
+year_after: "Mortgage Interest Statement"
+corrected_anchor: "CORRECTED"
+fields:
+  - {key: mort.box1, label: "Mortgage interest received from payer(s)/borrower(s)", anchor: "Mortgage interest received", value_type: money}
+  - {key: mort.box2, label: "Outstanding mortgage principal", anchor: "Outstanding mortgage principal", value_type: money}
+  - {key: mort.box5, label: "Mortgage insurance premiums", anchor: "Mortgage insurance premiums", value_type: money}
+  - {key: mort.box6, label: "Points paid on purchase of principal residence", anchor: "Points paid on purchase", value_type: money}

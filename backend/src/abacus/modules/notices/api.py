@@ -28,6 +28,13 @@ from abacus.modules.notices.home_counts import register_home_counts  # noqa: E40
 
 register_home_counts()
 
+# N-04-T06 (DEC-2950): the notice's search document (C15).
+from abacus.modules.notices.search import KIND as _SEARCH_KIND  # noqa: E402
+from abacus.modules.notices.search import notice_search_document  # noqa: E402
+from abacus.modules.platform.api import register_search_projection  # noqa: E402
+
+register_search_projection(_SEARCH_KIND, notice_search_document)
+
 # The routers the API mounts, in order (P-39; F-03-T07).
 ROUTERS: tuple[AbacusRouter, ...] = (router,)
 

@@ -37,3 +37,40 @@ async def statement_caption_amounts(
     async with tenant_session(tenant) as session:
         rows = (await session.execute(_AMOUNTS, {"w": work_item_id})).all()
     return {str(r.caption): Decimal(r.value) for r in rows if r.value is not None}
+
+
+_STATE = text(
+    "SELECT status, management_approval FROM statement_documents WHERE work_item_id = :w "
+    "ORDER BY updated_at DESC LIMIT 1"
+)
+
+
+async def statement_state(
+    tenant: TenantContext, work_item_id: UUID
+) -> tuple[str | None, str | None] | None:
+    """A-07-T22: the newest statement document's status and management approval on the work
+    item, for the completion checklist's `fs_final` and `mgmt_approval` facts; None before AUD-20
+    has one. The caller has authorised on the work item (or is the system projector)."""
+    async with tenant_session(tenant) as session:
+        row = (await session.execute(_STATE, {"w": work_item_id})).first()
+    if row is None:
+        return None
+    return (
+        None if row.status is None else str(row.status),
+        None if row.management_approval is None else str(row.management_approval),
+    )
+
+
+async def checklist_counts(tenant: TenantContext, work_item_id: UUID) -> tuple[int, int] | None:
+    """S31 close (A-07-T22): the disclosure checklist's answered and total items on the work
+    item's statement document, for the completion checklist's `disclosure_checklist` fact; None
+    before AUD-20 has a document or a picked checklist."""
+    from abacus.modules.reporting.statements import current_of, disclosure_view
+
+    found = await current_of(tenant, work_item_id)
+    if found.document is None:
+        return None
+    view = await disclosure_view(tenant, found.document["id"])
+    if view.template_version_id is None:
+        return None
+    return view.answered, view.total

@@ -82,3 +82,59 @@ def part_iv_4a(
 
 def sums_to(total: Decimal, parts: Sequence[Decimal]) -> bool:
     return sum(parts, _ZERO) == total
+
+
+# --- Schedule H line 4i (A-05-T59; DEC-2816) -----------------------------------------------------
+# The schedule of assets held at end of year, from the trust's holdings: column (a) marks a party
+# in interest ("*"), column (d) cost is omitted ("**") for participant-directed investments (29 CFR
+# 2520.103-11 permits it), and the total must equal the draft's investments plus loans. Ordering
+# is the caller's (the trust report's). Code adds the column; no model reads a figure.
+
+
+@dataclass(frozen=True)
+class HeldAsset:
+    identity: str
+    description: str
+    current_value: Decimal
+    cost: Decimal | None
+    party_in_interest: bool
+    participant_directed: bool
+
+
+@dataclass(frozen=True)
+class Schedule4iRow:
+    mark: Literal["*", ""]
+    identity: str
+    description: str
+    cost: Decimal | None
+    cost_omitted: bool
+    current_value: Decimal
+
+
+@dataclass(frozen=True)
+class Schedule4i:
+    rows: tuple[Schedule4iRow, ...]
+    total: Decimal
+    ties: bool
+    inputs_hash: str
+
+
+def schedule_4i(assets: Sequence[HeldAsset], draft_total: Decimal | None) -> Schedule4i:
+    """The 4i rows and their total; `ties` when the total equals the draft's own figure."""
+    rows = tuple(
+        Schedule4iRow(
+            mark="*" if a.party_in_interest else "",
+            identity=a.identity,
+            description=a.description,
+            cost=None if a.participant_directed else a.cost,
+            cost_omitted=a.participant_directed,
+            current_value=a.current_value,
+        )
+        for a in assets
+    )
+    total = sum((r.current_value for r in rows), _ZERO)
+    payload = [[r.identity, str(r.current_value), r.mark, r.cost_omitted] for r in rows] + [
+        str(draft_total)
+    ]
+    return Schedule4i(rows, total, draft_total is not None and total == draft_total,
+                      inputs_hash(payload))  # fmt: skip

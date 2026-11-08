@@ -79,3 +79,58 @@ async def sign_todo(ctx: AuthContext, engagement_ids: Sequence[UUID]) -> SignTod
             )
         ).one()
     return SignTodo(int(row.waiting), row.due)
+
+
+# --- R-02-T09 close (S31; DEC-2824): POR-09's "In Sign" rows -------------------------------------
+
+_SIGNED: Final = ("signed",)
+_PORTAL_ENVELOPES = text(
+    """
+    SELECT e.id, e.title, e.source_kind, e.status AS envelope_status, s.status AS signer_status
+      FROM envelopes e JOIN envelope_signers s ON s.envelope_id = e.id
+     WHERE e.work_item_id = :w AND s.party_kind = 'contact' AND s.contact_id = ANY(:contacts)
+       AND (e.status = ANY(:open) OR s.status = ANY(:signed))
+     ORDER BY e.title, e.id
+    """
+)
+
+
+@dataclass(frozen=True)
+class PortalEnvelope:
+    envelope_id: UUID
+    title: str
+    kind: str  # C10's deliverable kind: a governance letter, or `other`
+    status: str  # the client's word: `in_sign`, or `signed` once theirs is done
+
+
+async def portal_envelopes(ctx: AuthContext, work_item_id: UUID) -> list[PortalEnvelope]:
+    """The person's own envelopes on a work item their grant already reaches: out for signature
+    is "In Sign" (theirs to sign or someone else's turn), signed by them is "Signed". Never
+    another contact's envelope; a firm user has none."""
+    if not ctx.client:
+        return []
+    contacts = sorted(await contact_ids_of_user(ctx.tenant, ctx.user_id))
+    if not contacts:
+        return []
+    async with tenant_session(ctx.tenant) as session:
+        rows = (
+            await session.execute(
+                _PORTAL_ENVELOPES,
+                {
+                    "w": work_item_id,
+                    "contacts": contacts,
+                    "open": list(OUT_FOR_SIGNATURE),
+                    "signed": list(_SIGNED),
+                },
+            )
+        ).all()
+    found: dict[UUID, PortalEnvelope] = {}
+    for r in rows:
+        signed = r.signer_status in _SIGNED
+        found[r.id] = PortalEnvelope(
+            r.id,
+            str(r.title),
+            "governance_letter" if r.source_kind == "governance_letter" else "other",
+            "signed" if signed else "in_sign",
+        )
+    return list(found.values())

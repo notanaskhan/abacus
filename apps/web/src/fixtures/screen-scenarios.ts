@@ -29,6 +29,9 @@ import { scenarios as ebp03 } from "./scenarios/EBP-03";
 import { scenarios as ebp04 } from "./scenarios/EBP-04";
 import { scenarios as ebp05 } from "./scenarios/EBP-05";
 import { scenarios as ebp06 } from "./scenarios/EBP-06";
+import { scenarios as ebp07 } from "./scenarios/EBP-07";
+import { scenarios as ebp08 } from "./scenarios/EBP-08";
+import { scenarios as aud27 } from "./scenarios/AUD-27";
 import { scenarios as ebp09 } from "./scenarios/EBP-09";
 import { scenarios as aud10 } from "./scenarios/AUD-10";
 import { scenarios as aud15 } from "./scenarios/AUD-15";
@@ -178,6 +181,10 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
   "EBP-05": { scenarios: ebp05, opens: {}, ids: northwind(ebp05) }, // A-05-T44
   "EBP-06": { scenarios: ebp06, opens: {}, ids: northwind(ebp06) }, // A-05-T40
   "EBP-09": { scenarios: ebp09, opens: {}, ids: northwind(ebp09) }, // A-05-T45
+  // A-05-T61: j03 12a (EBP-08), 12b (EBP-07) and j04 11 (AUD-27), cockpit sections too.
+  "EBP-07": { scenarios: ebp07, opens: {}, ids: northwind(ebp07) },
+  "EBP-08": { scenarios: ebp08, opens: {}, ids: northwind(ebp08) },
+  "AUD-27": { scenarios: aud27, opens: {}, ids: northwind(aud27) },
   "AUD-10": { scenarios: aud10, opens: {} }, // A-04-T37
   // A-06-T35: j03 13, 14 and 16 on Northwind's audit (AUD-15, AUD-16, AUD-17, AUD-20).
   "AUD-15": { scenarios: aud15, opens: {}, ids: northwind(aud15) },

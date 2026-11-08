@@ -329,6 +329,13 @@ def agent_may_hold(action: str) -> bool:
     return _rule(action).decisions.get("agent") == "task_scope"
 
 
+def agent_denied(action: str) -> bool:
+    """Whether the matrix denies the agent this action outright (P-10-T20: an `approved_write`
+    tool's action, which only a person's approval grant unlocks). An action with no agent cell is
+    denied (fail closed)."""
+    return _rule(action).decisions.get("agent", "deny") == "deny"
+
+
 def policy_agent_may_hold(action: str) -> bool:
     """SPEC-027 (TASK-051): a deterministic agent (no model call) may also declare routine
     actions the firm's autonomy policy allows (`agent: firm_setting(autonomy_policy)`)."""
@@ -1394,6 +1401,7 @@ __all__ = [
     "ItemFacts",
     "Resource",
     "UnknownAction",
+    "agent_denied",
     "authorise",
     "authorise_items",
     "authorise_on_condition",

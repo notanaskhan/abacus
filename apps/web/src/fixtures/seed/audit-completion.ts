@@ -5,8 +5,13 @@
 // names are fictional. Dev and test only.
 
 import type {
+  AgentRunOut,
   AuditArchiveStateOut,
+  AuditCompletionItemOut,
   AuditCompletionOut,
+  GoingConcernOut,
+  LegalLetterOut,
+  SubsequentEventsOut,
   AuditReleaseOut,
   AuditReportOut,
   EqrChecklistItemOut,
@@ -126,24 +131,204 @@ export function aud18(state: "a" | "b" | "b2" | "c" | "d" | "e"): EqrReviewOut {
   };
 }
 
-export function aud19(state: "a" | "a2" | "b" | "c" | "d" | "e" | "f"): AuditCompletionOut {
-  const clear = state === "f";
+// AUD-19 (A-07-T25): the 18 items of the Northwind completion checklist, verbatim from the handoff.
+// Titles and evidence are the firm template's and the projector's words (database content); the
+// fixture carries them as the read would.
+type Aud19State = "a" | "a2" | "b" | "c" | "d" | "e" | "f";
+type ItemStatus = AuditCompletionItemOut["status"];
+const AUD19_ITEMS: readonly [string, string, string, ItemStatus, string | null][] = [
+  ["procedures", "Planned procedures complete or explained", "25 of 26 workpapers prepared (only the Completion Checklist, in progress)", "done", "AUD-17"],
+  ["review_notes", "Review notes closed", "14 of 14 cleared · Oct 5", "done", "AUD-17"],
+  ["sign_offs", "Sign-offs current", "No workpaper changed after sign-off", "done", "AUD-17"],
+  ["sum", "Misstatements evaluated", "SUM immaterial · MO Oct 2", "done", "AUD-16"],
+  ["materiality", "Final materiality reassessed", "v3 · 16,861,000 × 1.5% = 252,900 · no change", "done", "AUD-07"],
+  ["risk_standback", "Risk assessment stand-back", "No new risks · Oct 2", "done", "AUD-08"],
+  ["consultations", "Consultations concluded", "C-03 · Sep 28", "done", "AUD-28"],
+  ["independence", "Independence reconfirmed through report date", "Due Oct 9 · MO · TW · HL · MD · AC", "open", null],
+  ["subsequent_events", "Subsequent events through report date", "Procedures to Oct 6 · bring-down Oct 9", "open", null],
+  ["legal_letter", "Legal letters", "Not applicable · no plan litigation or claims (inquiry + committee minutes)", "not_applicable", null],
+  ["going_concern", "Going concern", "No substantial doubt · MO Sep 30", "done", null],
+  ["fs_tieout", "FS tie-out", "63 of 63 figures tie", "done", "AUD-20"],
+  ["disclosure_checklist", "Disclosure checklist (ASC 962)", "142 of 142 answered", "done", "AUD-20"],
+  ["form5500_tie", "Form 5500 read for consistency", "EBP-07 · differs only by the 48,600 receivable · Note 8", "done", "EBP-07"],
+  ["mgmt_approval", "Management approval of the final FS", "Sent to Dana Kowalski Oct 6 (POR-09)", "open", "AUD-20"],
+  ["rep_letter", "Representation letter signed, dated as of report date", "Out for signature · G7", "open", "AUD-21"],
+  ["tcwg_260", "Governance communications", "AU-C 260 completion draft · AU-C 265/703 draft (due Dec 8)", "partial", "AUD-22"],
+  ["eqr", "EQR concurrence", "Thomas Whitcombe · Oct 5 · G6", "done", "AUD-18"],
+]; // prettier-ignore
+const CLIENT = new Set(["mgmt_approval", "rep_letter"]);
+const REPORT_DATE = new Set(["independence", "subsequent_events"]);
+const GATES: Record<string, AuditCompletionItemOut["gate_tag"]> = { rep_letter: "G7", eqr: "G6" };
+// The firm template's blocker sentences (S31 close, DV-AUD-19-2), verbatim from the handoff.
+const BLOCKERS: Record<string, string> = {
+  independence: "Independence reconfirmation through the report date (5 people)",
+  subsequent_events: "Subsequent events: bring-down due on the report date",
+  mgmt_approval: "Management has not approved the final financial statements",
+  rep_letter: "Representation letter not yet signed",
+  tcwg_260: "AU-C 260 completion communication not yet sent",
+};
+
+function aud19Items(state: Aud19State): AuditCompletionItemOut[] {
   const granite = state === "e";
+  return AUD19_ITEMS.map(([key, title, evidence, base, link], i) => {
+    let itemStatus: ItemStatus = base;
+    if (state === "f" && base !== "not_applicable") itemStatus = "done";
+    if (granite && (key === "independence" || key === "mgmt_approval")) itemStatus = "done";
+    return {
+      item_key: key,
+      position: i + 1,
+      title,
+      status: itemStatus,
+      derived: key !== "legal_letter",
+      evidence_text: evidence,
+      link_target: link,
+      gate_tag: GATES[key] ?? null,
+      depends_on_client: CLIENT.has(key),
+      due_on: REPORT_DATE.has(key) ? "2026-10-09" : null,
+      na_basis: base === "not_applicable" ? evidence : null,
+      na_by_name: base === "not_applicable" ? "Hannah Leclerc" : null,
+      blocker_text: BLOCKERS[key] ?? null,
+    };
+  });
+}
+
+export function aud19(state: Aud19State): AuditCompletionOut {
+  const items = aud19Items(state);
+  const counted = items.filter((i) => i.status !== "not_applicable");
   return {
     work_item_id: COMPLETION_WORK_ITEM,
-    items: [],
-    complete: clear ? 17 : granite ? 14 : 12,
-    not_applicable: 1,
-    open: clear ? 0 : granite ? 3 : 5,
-    total: 17,
-    blockers: clear
-      ? []
-      : granite
-        ? ["rep_letter", "bring_down", "governance_260"]
-        : ["rep_letter", "fs_approval", "bring_down", "independence", "governance_260"],
+    items,
+    complete: counted.filter((i) => i.status === "done").length,
+    not_applicable: items.length - counted.length,
+    open: counted.filter((i) => i.status !== "done").length,
+    total: counted.length,
+    blockers: counted.filter((i) => i.status !== "done").map((i) => i.item_key),
     allowed_actions: ["completion.update"],
     version: 3,
   };
+}
+
+export function aud19SubsequentEvents(): SubsequentEventsOut {
+  const procedure = (
+    key: string,
+    title: string,
+    through: string | null,
+  ): SubsequentEventsOut["procedures"][number] => ({
+    id: stableId(`se-procedure:${key}`),
+    procedure_key: key,
+    title,
+    performed_through: through,
+    performed_by_name: through === null ? null : "Hannah Leclerc",
+    status: through === null ? "open" : "performed",
+    run_id: null,
+  });
+  return {
+    report_date: "2026-10-09",
+    procedures: [
+      procedure("inquiry", "Inquiry of the plan administrator — Dana Kowalski", "2026-10-06"),
+      procedure("minutes", "Read benefits committee minutes through Sep 30, 2026", "2026-10-06"),
+      procedure("trust_statements", "Read 2026 trust statements Jan–Aug for unusual activity", "2026-10-06"),
+      procedure("amendments", "Plan amendments since Dec 31, 2025", "2026-10-06"),
+      procedure("bring_down", "Bring-down inquiry on the report date", null),
+    ], // prettier-ignore
+    events: [
+      {
+        id: stableId("se-event:secure2"),
+        description:
+          "Plan amended Jul 15, 2026 for the SECURE 2.0 Roth catch-up requirement, effective Jan 1, 2026",
+        recognition: "nonrecognized",
+        fs_effect: "None",
+        note_ref: "Note 11",
+        citation_ids: [],
+        recorded_by_name: "Hannah Leclerc",
+        recorded_at: "2026-10-06T09:10:00-05:00",
+      },
+      {
+        id: stableId("se-event:vfcp"),
+        description:
+          "Lost earnings of $64.38 on the late December 26, 2025 deferrals deposited Sep 30, 2026; VFCP Self-Correction Component notice filed Oct 1, 2026",
+        recognition: "nonrecognized",
+        fs_effect: "None",
+        note_ref: "Note 9",
+        citation_ids: [],
+        recorded_by_name: "Hannah Leclerc",
+        recorded_at: "2026-10-06T09:12:00-05:00",
+      },
+    ],
+    bring_down: {
+      scheduled_for: "2026-10-09T09:00:00-05:00",
+      run_id: stableId("agent-run:4240"),
+      status: "queued",
+    },
+    allowed_actions: ["subsequent_event.create", "subsequent_event.update"],
+  };
+}
+
+export function aud19LegalLetters(): LegalLetterOut {
+  return {
+    status: "not_applicable",
+    not_applicable: true,
+    basis:
+      "No litigation, claims or assessments against the plan. Basis: inquiry of Dana Kowalski (Oct 6) and benefits committee minutes through Sep 30. The rep letter carries the litigation representation.",
+    request_item_id: null,
+    allowed_actions: ["legal_letter.update", "legal_letter.request"],
+    version: 2,
+  };
+}
+
+export function aud19GoingConcern(state: Aud19State): GoingConcernOut {
+  const granite = state === "e";
+  return {
+    state: "decided",
+    decision_card_id: stableId(granite ? "card:granite:going-concern" : "card:going-concern"),
+    conclusion: "no_substantial_doubt",
+    decided_by_name: "Margaret Okonkwo",
+    decided_at: granite ? "2026-10-26T09:40:00-05:00" : "2026-09-30T15:10:00-05:00",
+    inputs: granite
+      ? [
+          { label: "DSCR covenant minimum", value: "1.25×, actual 1.32×." },
+          { label: "Revolver", value: "$6,500,000 with Front Range Bank matures Mar 2028; term loan $3,200,000." },
+        ]
+      : [
+          { label: "", value: "Northwind Robotics, Inc. does not intend to terminate or freeze the plan (committee minutes, Aug 2026)." },
+          { label: "", value: "The match was funded every 2026 payroll." },
+        ], // prettier-ignore
+    reserved_to: "engagement_partner",
+    subject: granite ? "entity" : "plan",
+    allowed_actions: [],
+  };
+}
+
+// AUD-19's dock (A-07-T25): run #4231 checked the 18 items at 9:12 AM; #4240, the bring-down, is
+// queued for the report date at 9:00 AM (BringDownWorkflow).
+export const RUN_4231_ID = stableId("agent-run:completion-readiness-4231");
+export const RUN_4240_ID = stableId("agent-run:4240");
+
+export function aud19Runs(): AgentRunOut[] {
+  return [
+    {
+      id: RUN_4231_ID,
+      agent: "completion_readiness",
+      agent_label: "Completion readiness checker · run #4231",
+      state: "succeeded",
+      started_at: "2026-10-06T09:11:00-05:00",
+      finished_at: "2026-10-06T09:12:00-05:00",
+      duration_ms: 60000,
+      initiator_name: "Hannah Leclerc",
+      subject: null,
+    },
+    {
+      id: RUN_4240_ID,
+      agent: "subsequent_events_bring_down",
+      agent_label: "Run subsequent-events bring-down · run #4240",
+      state: "queued",
+      started_at: "2026-10-09T09:00:00-05:00",
+      finished_at: null,
+      duration_ms: null,
+      initiator_name: "Hannah Leclerc",
+      subject: null,
+    },
+  ];
 }
 
 export function aud21(state: "a" | "a2" | "b" | "c" | "d" | "e" | "f"): RepresentationLetterOut {

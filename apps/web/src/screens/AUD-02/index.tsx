@@ -43,6 +43,7 @@ import { useEligibilityCanvas } from "../EBP-03/Eligibility";
 import { type ContributionsOptions, useContributionsCanvas } from "../EBP-04";
 import { DISTRIBUTIONS_LOANS, type LoansOptions, useLoansCanvas } from "../EBP-05";
 import { type AccountsOptions, PARTICIPANT_ACCOUNTS, useAccountsCanvas } from "../EBP-08";
+import { ESTIMATES_RP, type EstimatesOptions, useEstimatesCanvas } from "../AUD-27";
 import { ADMIN_EXPENSES, type ExpensesOptions, useExpensesCanvas } from "../EBP-09";
 import {
   type ControlsOptions,
@@ -52,6 +53,8 @@ import {
 } from "../AUD-09";
 import { SERVICE_ORGS, type ServiceOrgsOptions, useServiceOrgsCanvas } from "../AUD-10";
 import { INVESTMENTS, type InvestmentsOptions, useInvestmentsCanvas } from "../EBP-06";
+import { FORM_5500, type Form5500Options, useForm5500Canvas } from "../EBP-07";
+import { COMPLETION_CHECKLIST, type CompletionOptions, useCompletionCanvas } from "../AUD-19";
 import { type SampleSelectionOptions, useSampleSelectionCanvas } from "../AUD-11/SampleSelection";
 import { ViewerPane } from "../SHL-08";
 import { useOpenOverlay } from "../../app-core/open";
@@ -126,6 +129,12 @@ export interface AUD02Props {
   accounts?: Omit<AccountsOptions, "active">;
   /** EBP-09 (A-05-T45): Admin Expenses & Compliance. */
   expenses?: Omit<ExpensesOptions, "active">;
+  /** AUD-27 (A-05-T57): Estimates & Related Parties (FS) or Parties in interest (EBP). */
+  estimatesRp?: Omit<EstimatesOptions, "active">;
+  /** EBP-07 (A-05-T58): Testing › Form 5500 Tie-Out. */
+  form5500?: Omit<Form5500Options, "active">;
+  /** AUD-19 (A-07-T25): Completion › Completion Checklist. */
+  completion?: Omit<CompletionOptions, "active">;
 }
 
 /** The rail row whose canvas is AUD-06 (A-02-T09). */
@@ -237,6 +246,9 @@ function Cockpit({
   loans,
   expenses,
   accounts,
+  estimatesRp,
+  form5500,
+  completion,
 }: Omit<AUD02Props, "auditId"> & { cockpit: AuditCockpitOut }): JSX.Element {
   // A-01-T24: "Export binder…" and the record-mode entries (DV-9, DV-4).
   const audit = useAuditActions(cockpit, overlay ?? null, onOverlay);
@@ -304,6 +316,10 @@ function Cockpit({
     onSignOff: (testId, level) => {
       openOverlay(ov.SHL12("attribute_test", testId, level));
     },
+    // "Raise exception…": SHL-15 on a new issue about the eligibility test.
+    onRaise: (testId) => {
+      openOverlay(ov.SHL15New("attribute_test", testId, cockpit.engagement_id));
+    },
     // "Request opt-out forms": the SHL-14 composer over the work item's PBC binder.
     ...(pbcBinderId === undefined
       ? {}
@@ -354,6 +370,26 @@ function Cockpit({
     ...expenses,
     active: expensesOpen,
   });
+  // AUD-27 (A-05-T57): Fieldwork › Estimates & Related Parties, behind `assurance.estimates_rp`.
+  const estimatesOpen = selected === ESTIMATES_RP;
+  const estimatesCanvas = useEstimatesCanvas(cockpit.work_item_id, {
+    ...estimatesRp,
+    active: estimatesOpen,
+  });
+  // EBP-07 (A-05-T58): Testing › Form 5500 Tie-Out, behind `ebp.modules`; the draft's PDF opens in
+  // the viewer dock.
+  const form5500Open = selected === FORM_5500;
+  const form5500Canvas = useForm5500Canvas(cockpit.work_item_id, {
+    onOpenDraft: (version) => onDock?.("viewer", version),
+    ...form5500,
+    active: form5500Open,
+  });
+  // AUD-19 (A-07-T25): Completion › Completion Checklist; the dock's Agent tab shows its runs.
+  const completionOpen = selected === COMPLETION_CHECKLIST;
+  const completionCanvas = useCompletionCanvas(cockpit.work_item_id, {
+    ...completion,
+    active: completionOpen,
+  });
   const openDoc = (r: SourceDocumentRowOut): void => {
     const version = r.latest_upload?.evidence_version_id ?? null;
     if (version !== null) onDock?.("viewer", version);
@@ -384,8 +420,14 @@ function Cockpit({
     canvas = loansCanvas;
   } else if (expensesOpen) {
     canvas = expensesCanvas;
+  } else if (estimatesOpen) {
+    canvas = estimatesCanvas;
   } else if (accountsOpen) {
     canvas = accountsCanvas;
+  } else if (form5500Open) {
+    canvas = form5500Canvas;
+  } else if (completionOpen) {
+    canvas = completionCanvas;
   } else if (row?.section_state === "blocked_on_decision" && row.blocked_on_name != null) {
     canvas = {
       title: row.title,
@@ -591,6 +633,11 @@ export function AuditCockpitPage({
     contributions?: Omit<ContributionsOptions, "active" | "running">;
     loans?: Omit<LoansOptions, "active">;
     expenses?: Omit<ExpensesOptions, "active">;
+    // S31 close (A-05-T61): the gallery opens these canvases on a state's tab.
+    accounts?: Omit<AccountsOptions, "active">;
+    estimatesRp?: Omit<EstimatesOptions, "active">;
+    form5500?: Omit<Form5500Options, "active">;
+    completion?: Omit<CompletionOptions, "active">;
   };
   onBack?: () => void;
 }): JSX.Element {
@@ -627,6 +674,10 @@ export function AuditCockpitPage({
       {...(initial.contributions === undefined ? {} : { contributions: initial.contributions })}
       {...(initial.loans === undefined ? {} : { loans: initial.loans })}
       {...(initial.expenses === undefined ? {} : { expenses: initial.expenses })}
+      {...(initial.accounts === undefined ? {} : { accounts: initial.accounts })}
+      {...(initial.estimatesRp === undefined ? {} : { estimatesRp: initial.estimatesRp })}
+      {...(initial.form5500 === undefined ? {} : { form5500: initial.form5500 })}
+      {...(initial.completion === undefined ? {} : { completion: initial.completion })}
     />
   );
 }

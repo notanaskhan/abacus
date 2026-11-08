@@ -89,6 +89,11 @@ class EstimateView:
     range: engine.RangeCheck | None
     bias: engine.BiasIndicator
     version: int
+    # A-05-T57 (DEC-2813): what AUD-27 a's row and cards show beside the figures.
+    significant_risk: bool = False
+    method_text: str | None = None
+    disclosure_ref: str | None = None
+    components: tuple[tuple[str, Decimal], ...] = ()
 
 
 async def _engagement(ctx: AuthContext, work_item_id: UUID, action: str) -> UUID:
@@ -143,9 +148,12 @@ def compute(
 _ESTIMATES = text(
     """
     SELECT e.id, e.name, e.account_ref, e.balance, e.status, e.decision_card_id, e.rollforward,
-           e.retrospective, e.range_low, e.range_high, e.version,
+           e.retrospective, e.range_low, e.range_high, e.version, e.significant_risk,
+           e.method ->> 'text' AS method_text, e.disclosure_ref,
            COALESCE(array_agg(c.amount ORDER BY c.position) FILTER (WHERE c.id IS NOT NULL),
-                    '{}') AS components
+                    '{}') AS components,
+           COALESCE(array_agg(c.label ORDER BY c.position) FILTER (WHERE c.id IS NOT NULL),
+                    '{}') AS component_labels
       FROM accounting_estimates e
       LEFT JOIN estimate_components c ON c.estimate_id = e.id
      WHERE e.work_item_id = :w
@@ -183,6 +191,15 @@ async def estimates(ctx: AuthContext, work_item_id: UUID) -> list[EstimateView]:
                 range=checked,
                 bias=indicator,
                 version=row["version"],
+                significant_risk=bool(row["significant_risk"]),
+                method_text=row["method_text"],
+                disclosure_ref=row["disclosure_ref"],
+                components=tuple(
+                    (str(label), Decimal(amount))
+                    for label, amount in zip(
+                        row["component_labels"], row["components"], strict=True
+                    )
+                ),
             )
         )
     return out
@@ -432,14 +449,24 @@ async def screen_out(ctx: AuthContext, work_item_id: UUID, party_id: UUID, reaso
 # --- parties in interest -------------------------------------------------------------------------
 
 _PII = text(
-    "SELECT id, name, erisa_relationship, exemption, reporting FROM parties_in_interest "
-    "WHERE work_item_id = :w ORDER BY name"
+    "SELECT id, name, erisa_relationship, exemption, reporting, transactions "
+    "FROM parties_in_interest WHERE work_item_id = :w ORDER BY name"
+)
+_ADD_PII = text(
+    """
+    INSERT INTO parties_in_interest (tenant_id, engagement_id, work_item_id, name,
+        erisa_relationship, transactions, exemption, reporting, created_by_kind)
+    VALUES (:t, :e, :w, :name, :relationship, CAST(:transactions AS jsonb), :exemption,
+            :reporting, 'human')
+    RETURNING id
+    """
 )
 # The same projection as 0685's `v_prohibited_transactions`, read from the owned table itself
 # (the module reads its own tables, ADR-103): a corrected figure there is the figure here.
 _PROHIBITED = text(
     "SELECT id AS late_remittance_id, principal, deposited_on, business_days_late, "
-    "lost_earnings, correction_status, form_5330_status FROM ebp_late_remittances "
+    "lost_earnings, correction_status, form_5330_status, excise_exposure "
+    "FROM ebp_late_remittances "
     "WHERE work_item_id = :w ORDER BY due_on"
 )
 
@@ -455,16 +482,87 @@ class ProhibitedTransaction:
     lost_earnings: Decimal | None
     correction_status: str | None
     form_5330_status: str | None
+    excise_exposure: Decimal | None = None  # EBP-04's code-computed figure (S31 close)
+
+
+@dataclass(frozen=True)
+class PartyInInterest:
+    id: UUID
+    name: str
+    relationship: str
+    exemption: str | None
+    reporting: str | None
+    # S31 close: what the plan did with the party in the year, as a person recorded it.
+    transactions: tuple[tuple[str, Decimal | None], ...] = ()
+
+
+def _transactions(raw: object) -> tuple[tuple[str, Decimal | None], ...]:
+    rows = cast(list[dict[str, object]], raw or [])
+    return tuple(
+        (str(t.get("description", "")), None if t.get("amount") is None else _d(t["amount"]))
+        for t in rows
+    )
 
 
 async def parties_in_interest(
     ctx: AuthContext, work_item_id: UUID
-) -> tuple[list[tuple[UUID, str, str, str | None, str | None]], list[ProhibitedTransaction]]:
+) -> tuple[list[PartyInInterest], list[ProhibitedTransaction]]:
     await _engagement(ctx, work_item_id, "ebp.read")
     async with tenant_session(ctx.tenant) as session:
-        parties = [tuple(r) for r in (await session.execute(_PII, {"w": work_item_id})).all()]
+        parties = [
+            PartyInInterest(
+                r.id, str(r.name), str(r.erisa_relationship), r.exemption, r.reporting,
+                _transactions(r.transactions),
+            )
+            for r in (await session.execute(_PII, {"w": work_item_id})).all()
+        ]  # fmt: skip
         prohibited = [
             ProhibitedTransaction(*r)
             for r in (await session.execute(_PROHIBITED, {"w": work_item_id})).all()
         ]
-    return cast(list[tuple[UUID, str, str, str | None, str | None]], parties), prohibited
+    return parties, prohibited
+
+
+async def add_party_in_interest(
+    ctx: AuthContext,
+    work_item_id: UUID,
+    name: str,
+    *,
+    relationship: str,
+    exemption: str | None = None,
+    reporting: str | None = None,
+    transactions: Sequence[tuple[str, Decimal | None]] = (),
+) -> UUID:
+    """AUD-27 c: a person records a party in interest (ERISA §3(14)) with what the plan did with
+    it in the year; the agent never adds one."""
+    if ctx.tenant.actor_kind != "human" or not relationship.strip():
+        raise DomainInvalid
+    engagement_id = await _engagement(ctx, work_item_id, "party_in_interest.manage")
+    payload = json.dumps(
+        [
+            {"description": d[:300], "amount": None if a is None else str(a)}
+            for d, a in transactions
+        ]
+    )
+    async with uow(ctx.tenant) as tx:
+        party_id = (
+            await tx.session.execute(
+                _ADD_PII,
+                {
+                    "t": ctx.tenant_id,
+                    "e": engagement_id,
+                    "w": work_item_id,
+                    "name": name[:300],
+                    "relationship": relationship[:200],
+                    "transactions": payload,
+                    "exemption": None if exemption is None else exemption[:200],
+                    "reporting": None if reporting is None else reporting[:200],
+                },
+            )
+        ).scalar_one()
+        tx.record(
+            "party_in_interest.added",
+            target=Target("party_in_interest", party_id),
+            scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
+        )
+    return cast(UUID, party_id)

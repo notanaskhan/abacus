@@ -1,4 +1,5 @@
 import type { CitationV2Out, WorkpaperCellOut, WorkpaperRecordOut } from "@abacus/api-client";
+import { workpaperExport } from "@abacus/api-client";
 import { listCitationsOptions, workpaperRecordOptions } from "@abacus/api-client/query";
 import {
   type CitationView,
@@ -14,6 +15,7 @@ import {
   type WorkpaperSectionData,
   type WorkpaperTab,
   WorkpaperPane,
+  toast,
   workpaperCell,
 } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
@@ -129,7 +131,12 @@ export function tabOf(
               {
                 value: textOf(c),
                 ...(c.value_source === "agent" ? { agent: true } : {}),
-                ...(adopted ? { tick: "check" as const } : {}),
+                // A-04-T27: ✓ once adopted; an outlined ring while the agent's value waits.
+                ...(adopted
+                  ? { tick: "check" as const }
+                  : c.value_source === "agent"
+                    ? { tick: "drafted" as const }
+                    : {}),
               },
             ]),
         ),
@@ -154,6 +161,31 @@ export function tabOf(
     citations: views,
     procedures: record.program_step_keys.map((ref) => ({ ref, title: ref })),
   };
+}
+
+/** A-04-T27: the paper's XLSX (the export route, audited `workpaper.exported`); Excel opens it. */
+async function exportWorkpaper(
+  engagementId: string | undefined,
+  workpaperId: string,
+): Promise<void> {
+  if (engagementId === undefined) return;
+  try {
+    const { data, response } = await workpaperExport({
+      path: { engagement_id: engagementId, workpaper_id: workpaperId },
+      parseAs: "blob",
+      throwOnError: true,
+    });
+    const header = response.headers.get("Content-Disposition") ?? "";
+    const name = /filename="([^"]+)"/u.exec(header)?.[1] ?? "workpaper.xlsx";
+    const url = URL.createObjectURL(data);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = name;
+    link.click();
+    URL.revokeObjectURL(url);
+  } catch {
+    toast.show({ kind: "error", text: COPY.exportFailed });
+  }
 }
 
 export function ProgramPage({
@@ -256,7 +288,14 @@ export function ProgramPage({
                 >
                   {COPY.signOff}
                 </Button>
-                <PaneAction kind="icon" icon="download" label={COPY.download} />
+                <PaneAction
+                  kind="icon"
+                  icon="download"
+                  label={COPY.download}
+                  onClick={() => {
+                    void exportWorkpaper(engagementId, workpaperId);
+                  }}
+                />
               </span>
             </header>
             <div className="flex h-[42px] items-center gap-[8px] px-[12px]">
@@ -273,7 +312,14 @@ export function ProgramPage({
                 }}
               />
               <span className="flex-1" />
-              <PaneAction kind="icon" icon="download" label={COPY.openInExcel} />
+              <PaneAction
+                kind="icon"
+                icon="download"
+                label={COPY.openInExcel}
+                onClick={() => {
+                  void exportWorkpaper(engagementId, workpaperId);
+                }}
+              />
             </div>
             <WorkpaperPane
               chrome={false}

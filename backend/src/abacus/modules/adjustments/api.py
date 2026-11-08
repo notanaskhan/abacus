@@ -10,6 +10,7 @@ from abacus.modules.adjustments.decisions import (
     SUBSCRIPTIONS,
     register_client_delivery,
     register_entry_decision_hook,
+    register_evidence_engagement,
 )
 from abacus.modules.adjustments.entries import (
     AUDIT_KINDS,
@@ -56,6 +57,7 @@ __all__ = [
     "register_client_delivery",
     "register_entry_decision_hook",
     "register_entry_proposed_hook",
+    "register_evidence_engagement",
     "router",
     "send_entries",
 ]

@@ -59,7 +59,8 @@ ALARM_RESOURCE = re.compile(
     r'^resource\s+"(aws_cloudwatch_metric_alarm|aws_cloudwatch_composite_alarm)"\s+"([^"]+)"\s*\{',
     re.MULTILINE,
 )
-AC_ID = re.compile(r"\bAC-\d+\b")
+# S31 end pass: SPEC-647 numbers its criteria by area (AC-G1, AC-R8), so a capital letter may lead.
+AC_ID = re.compile(r"\bAC-[A-Z]?\d+\b")
 INDEX_ROW = re.compile(r"^\|\s*\[(ADR-\d{3})\]\(([^)]+)\)\s*\|[^|]*\|[^|]*\|\s*([^|]+?)\s*\|\s*$")
 
 

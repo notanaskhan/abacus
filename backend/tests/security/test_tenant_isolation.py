@@ -47,6 +47,8 @@ TABLES: tuple[str, ...] = (
     "archive_lock_decisions",
     "archive_manifests",
     "archives",
+    "assurance_checklist_template_versions",
+    "assurance_checklist_templates",
     "assurance_external_archives",
     "assurance_external_releases",
     "assurance_phase_events",

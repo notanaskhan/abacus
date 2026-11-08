@@ -27,6 +27,7 @@ from abacus.kernel.dispatch import WorkClass, dispatch, register_work_classes
 from abacus.kernel.uow import Handler, OutboxEvent
 from abacus.modules.identity.api import AbacusRouter, AuthContext, register_mfa_requirement
 from abacus.modules.platform.api import register_home_count
+from abacus.modules.reporting.api import PortalRow, register_envelope_rows
 from abacus.modules.review.api import register_gate_kind
 from abacus.modules.signatures import countersign
 from abacus.modules.signatures.activities import ACTIVITIES as ENVELOPE_ACTIVITIES
@@ -73,7 +74,12 @@ from abacus.modules.signatures.provider import (
     register_firm_provider,
 )
 from abacus.modules.signatures.reminders import ReminderSender, register_reminder_sender
-from abacus.modules.signatures.signer_facts import SignTodo, envelope_signer_mfa, sign_todo
+from abacus.modules.signatures.signer_facts import (
+    SignTodo,
+    envelope_signer_mfa,
+    portal_envelopes,
+    sign_todo,
+)
 from abacus.modules.signatures.sources import (
     LETTER,
     LETTER_GATE,
@@ -229,7 +235,30 @@ SUBSCRIPTIONS: dict[str, Handler] = {EnvelopeSendApproved.event_type: on_send_ap
 # before `/{envelope_id}` inside `router`.
 ROUTERS: tuple[AbacusRouter, ...] = (router, policies_router, portal_router, webhook_router)
 
-from abacus.modules.signatures.sources import envelope_status  # noqa: E402 -- N-04-T16
+from abacus.modules.signatures.sources import (  # noqa: E402 -- N-04-T16, A-07-T24
+    envelope_signing,
+    envelope_status,
+)
+
+
+# R-02-T09 close (S31; DEC-2824): POR-09's "In Sign" rows come from C7's envelopes.
+async def _portal_envelope_rows(ctx: AuthContext, work_item_id: UUID) -> list[PortalRow]:
+    return [
+        PortalRow(
+            deliverable_id=e.envelope_id,
+            kind=e.kind,
+            title=e.title,
+            status=e.status,
+            latest_version=None,
+            page_count=None,
+            released_on=None,
+            restricted_use=False,
+        )
+        for e in await portal_envelopes(ctx, work_item_id)
+    ]
+
+
+register_envelope_rows(_portal_envelope_rows)
 
 __all__ = [
     "ACTIVITIES",
@@ -275,6 +304,7 @@ __all__ = [
     "configure_provider",
     "create_draft",
     "envelope_gate_facts",
+    "envelope_signing",
     "envelope_source",
     "envelope_status",
     "envelope_summaries_for",

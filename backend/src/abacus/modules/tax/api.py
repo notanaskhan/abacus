@@ -16,6 +16,7 @@ from abacus.modules.engagements.api import register_work_item_kind
 from abacus.modules.identity.api import AbacusRouter, register_scope_resolver
 from abacus.modules.organisations.api import register_office_facts
 from abacus.modules.platform.api import register_search_projection
+from abacus.modules.reporting.api import register_k1_rows
 from abacus.modules.tax import answer_effects as _answer_effects
 from abacus.modules.tax import consent_capture, filed_delivery, filing, k1_release
 from abacus.modules.tax import extensions as _extensions
@@ -59,6 +60,7 @@ from abacus.modules.tax.filed_delivery import FiledReturn, filed_returns
 from abacus.modules.tax.k1_contract import k1_router, portal_k1_router
 from abacus.modules.tax.k1_packages import draft_k1_blockers, package_scope
 from abacus.modules.tax.k1_packages import share_internal as share_k1_internal
+from abacus.modules.tax.k1_portal import deliverable_k1_rows
 from abacus.modules.tax.k1_release_workflow import (
     K1DeliveryInput,
     K1ReleaseFailure,
@@ -98,6 +100,8 @@ register_approval()
 register_final_approval_blocker("draft_k1", draft_k1_blockers)
 # T-02-T21 (DEC-34): a `k1_recipient` grant's `k1_package` scope (own-only in the portal reads).
 register_scope_resolver("k1_package", package_scope)
+# R-02-T09 (DEC-2805): T-02's released K-1s on POR-09's rail, through C10's slot.
+register_k1_rows(deliverable_k1_rows)
 # T-01-T43: CLI-05's authorizations, elections, transcripts and comparisons (DEC-1651).
 register_tax_profile()
 # T-01-T27: the engine-sync gate kinds (C13) and notification kinds (C16) (DEC-1463).

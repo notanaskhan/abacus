@@ -3407,13 +3407,43 @@ export type AttributeSizeRowOutput = {
 };
 
 /**
+ * Aud27ComponentOut
+ */
+export type Aud27ComponentOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Label
+     */
+    label: string;
+};
+
+/**
  * Aud27ItemIn
  */
 export type Aud27ItemIn = {
     /**
+     * Exemption
+     */
+    exemption?: string | null;
+    /**
      * Name
      */
     name: string;
+    /**
+     * Relationship
+     */
+    relationship?: string | null;
+    /**
+     * Reporting
+     */
+    reporting?: string | null;
+    /**
+     * Transactions
+     */
+    transactions?: Array<Aud27TransactionIn>;
 };
 
 /**
@@ -3421,13 +3451,42 @@ export type Aud27ItemIn = {
  */
 export type Aud27ItemOut = {
     /**
+     * Account Ref
+     */
+    account_ref?: string | null;
+    /**
      * Amount
      */
     amount: string | null;
     /**
+     * Bias
+     */
+    bias?: 'none' | 'possible' | null;
+    /**
+     * Components
+     */
+    components?: Array<Aud27ComponentOut>;
+    /**
+     * Disclosure Ref
+     */
+    disclosure_ref?: string | null;
+    /**
+     * Exemption
+     */
+    exemption?: string | null;
+    /**
+     * Finding Id
+     */
+    finding_id?: string | null;
+    /**
      * Id
      */
     id: string;
+    method?: Aud27MethodOut | null;
+    /**
+     * Method Text
+     */
+    method_text?: string | null;
     /**
      * Name
      */
@@ -3436,10 +3495,36 @@ export type Aud27ItemOut = {
      * Pending Ep
      */
     pending_ep: boolean;
+    range?: Aud27RangeOut | null;
+    /**
+     * Relationship
+     */
+    relationship?: string | null;
+    /**
+     * Reporting
+     */
+    reporting?: string | null;
+    /**
+     * Retrospectives
+     */
+    retrospectives?: Array<Aud27RetrospectiveOut>;
+    rollforward?: Aud27RollforwardOut | null;
+    /**
+     * Significant Risk
+     */
+    significant_risk?: boolean;
+    /**
+     * Source
+     */
+    source?: string | null;
     /**
      * Status
      */
     status: 'unevaluated' | 'evaluated' | 'exception' | 'screened_out';
+    /**
+     * Transactions
+     */
+    transactions?: Array<Aud27TransactionOut>;
 };
 
 /**
@@ -3454,6 +3539,185 @@ export type Aud27ListOut = {
      * Items
      */
     items: Array<Aud27ItemOut>;
+    /**
+     * Prohibited
+     */
+    prohibited?: Array<Aud27ProhibitedOut>;
+};
+
+/**
+ * Aud27MethodOut
+ *
+ * The method card's tie: components against the balance, code's (A-05-T53).
+ */
+export type Aud27MethodOut = {
+    /**
+     * Components Total
+     */
+    components_total: string;
+    /**
+     * Difference
+     */
+    difference: string;
+    /**
+     * Ties
+     */
+    ties: boolean;
+};
+
+/**
+ * Aud27ProhibitedOut
+ *
+ * AUD-27 c's card: the late remittance as a prohibited transaction, read from EBP-04.
+ */
+export type Aud27ProhibitedOut = {
+    /**
+     * Business Days Late
+     */
+    business_days_late?: number | null;
+    /**
+     * Correction Status
+     */
+    correction_status?: 'found' | 'pending_vfcp_scc' | 'corrected' | null;
+    /**
+     * Deposited On
+     */
+    deposited_on?: string | null;
+    /**
+     * Excise Exposure
+     */
+    excise_exposure?: string | null;
+    /**
+     * Form 5330 Status
+     */
+    form_5330_status?: 'exposure' | 'not_required' | 'filed' | null;
+    /**
+     * Late Remittance Id
+     */
+    late_remittance_id: string;
+    /**
+     * Lost Earnings
+     */
+    lost_earnings: string | null;
+    /**
+     * Principal
+     */
+    principal: string | null;
+};
+
+/**
+ * Aud27RangeOut
+ */
+export type Aud27RangeOut = {
+    /**
+     * High
+     */
+    high: string;
+    /**
+     * Inside
+     */
+    inside: boolean;
+    /**
+     * Low
+     */
+    low: string;
+};
+
+/**
+ * Aud27RetrospectiveOut
+ *
+ * A prior-year estimate against its outcome ("over by $14,000.00, 3.4%").
+ */
+export type Aud27RetrospectiveOut = {
+    /**
+     * Difference
+     */
+    difference: string;
+    /**
+     * Direction
+     */
+    direction: 'over' | 'under' | 'exact';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Outcome
+     */
+    outcome: string;
+    /**
+     * Percent
+     */
+    percent: string;
+    /**
+     * Prior Estimate
+     */
+    prior_estimate: string;
+};
+
+/**
+ * Aud27RollforwardOut
+ */
+export type Aud27RollforwardOut = {
+    /**
+     * Additions
+     */
+    additions: string;
+    /**
+     * Closing On
+     */
+    closing_on?: string | null;
+    /**
+     * Computed Closing
+     */
+    computed_closing: string;
+    /**
+     * Opening
+     */
+    opening: string;
+    /**
+     * Opening On
+     */
+    opening_on?: string | null;
+    /**
+     * Ties
+     */
+    ties: boolean;
+    /**
+     * Usage
+     */
+    usage: string;
+};
+
+/**
+ * Aud27TransactionIn
+ */
+export type Aud27TransactionIn = {
+    /**
+     * Amount
+     */
+    amount?: number | string | null;
+    /**
+     * Description
+     */
+    description: string;
+};
+
+/**
+ * Aud27TransactionOut
+ *
+ * S31 close (DV-AUD-27-2): one thing the plan did with a party in interest in the year, as a
+ * person recorded it.
+ */
+export type Aud27TransactionOut = {
+    /**
+     * Amount
+     */
+    amount: string | null;
+    /**
+     * Description
+     */
+    description: string;
 };
 
 /**
@@ -3680,6 +3944,10 @@ export type AuditCockpitOut = {
  * AuditCompletionItemOut
  */
 export type AuditCompletionItemOut = {
+    /**
+     * Blocker Text
+     */
+    blocker_text?: string | null;
     /**
      * Depends On Client
      */
@@ -6605,6 +6873,28 @@ export type ChecklistAppliesTo = {
 };
 
 /**
+ * ChecklistImportIn
+ */
+export type ChecklistImportIn = {
+    /**
+     * Engagement Type
+     */
+    engagement_type: string;
+    /**
+     * Items
+     */
+    items: Array<ChecklistItemIn>;
+    /**
+     * Kind
+     */
+    kind: 'completion' | 'eqr' | 'archive';
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
  * ChecklistImportOut
  */
 export type ChecklistImportOut = {
@@ -6627,6 +6917,28 @@ export type ChecklistImportOut = {
 };
 
 /**
+ * ChecklistImportedOut
+ */
+export type ChecklistImportedOut = {
+    /**
+     * Dry Run
+     */
+    dry_run: boolean;
+    /**
+     * Problems
+     */
+    problems: Array<string>;
+    /**
+     * Template Id
+     */
+    template_id: string | null;
+    /**
+     * Version
+     */
+    version: number | null;
+};
+
+/**
  * ChecklistItem
  *
  * Firm-authored text only (ADR-056).
@@ -6644,6 +6956,44 @@ export type ChecklistItem = {
      * Text
      */
     text: string;
+};
+
+/**
+ * ChecklistItemIn
+ */
+export type ChecklistItemIn = {
+    /**
+     * Blocker
+     */
+    blocker?: string | null;
+    /**
+     * Depends On Client
+     */
+    depends_on_client?: boolean;
+    /**
+     * Derived
+     */
+    derived?: boolean;
+    /**
+     * Due On Report Date
+     */
+    due_on_report_date?: boolean;
+    /**
+     * Gate Tag
+     */
+    gate_tag?: string | null;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Text
+     */
+    text: string;
+    /**
+     * Type Specific
+     */
+    type_specific?: boolean;
 };
 
 /**
@@ -6702,6 +7052,28 @@ export type ChecklistPickIn = {
      * Template Version Id
      */
     template_version_id: string;
+};
+
+/**
+ * ChecklistPublishedOut
+ */
+export type ChecklistPublishedOut = {
+    /**
+     * Published At
+     */
+    published_at: string;
+    /**
+     * Status
+     */
+    status: 'published';
+    /**
+     * Template Id
+     */
+    template_id: string;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**
@@ -19480,9 +19852,17 @@ export type Form5500Out = {
      */
     allowed_actions: Array<'ebp_plan.edit' | 'ebp_provider.manage' | 'ebp_provider.invite' | 'ebp_provider.request' | 'ebp_import.create' | 'ebp_correction.record' | 'ebp_schedule.draft' | 'ebp_certification.evaluate' | 'ebp_form5500.key' | 'ebp_schedule.render' | 'ebp_form5500.send_note' | 'ebp_form5500.remind' | 'test.create' | 'test.mark' | 'field.sign_off' | 'estimate.evaluate' | 'estimate.request_conclusion' | 'related_party.manage' | 'related_party.screen_out' | 'party_in_interest.manage' | 'pii.reveal'>;
     /**
+     * Draft Id
+     */
+    draft_id?: string | null;
+    /**
      * Draft Received
      */
     draft_received: boolean;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id?: string | null;
     /**
      * Lines
      */
@@ -19491,6 +19871,55 @@ export type Form5500Out = {
      * Part Iv
      */
     part_iv: Array<PartIvLineOut>;
+    /**
+     * Rows
+     */
+    rows?: Array<Form5500RowOut>;
+};
+
+/**
+ * Form5500RowOut
+ *
+ * A-05-T58 (DEC-2814): one Schedule H line with both sides, the code's difference and its
+ * classification; `match_id` lights the row and the draft's form field together.
+ */
+export type Form5500RowOut = {
+    /**
+     * Caption
+     */
+    caption: string;
+    /**
+     * Classification
+     */
+    classification: 'tie' | 'reconciling_item' | 'inconsistent' | null;
+    /**
+     * Difference
+     */
+    difference: string | null;
+    /**
+     * F5500 Amount
+     */
+    f5500_amount: string | null;
+    /**
+     * Fs Amount
+     */
+    fs_amount: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Line Code
+     */
+    line_code: string;
+    /**
+     * Match Id
+     */
+    match_id?: string | null;
+    /**
+     * Note Ref
+     */
+    note_ref?: string | null;
 };
 
 /**
@@ -20441,6 +20870,10 @@ export type GoingConcernOut = {
      * State
      */
     state: 'not_requested' | 'awaiting_decision' | 'decided';
+    /**
+     * Subject
+     */
+    subject?: 'plan' | 'entity' | null;
 };
 
 /**
@@ -23183,6 +23616,10 @@ export type IntakeCreateIn = {
      * Create Anyway
      */
     create_anyway?: boolean;
+    /**
+     * Create Anyway Reason Code
+     */
+    create_anyway_reason_code?: string | null;
     /**
      * Engagement Id
      */
@@ -29082,6 +29519,62 @@ export type MappingOut = {
 };
 
 /**
+ * MappingPublishIn
+ *
+ * A whole mapping version: every caption the firm's statements map, with its line.
+ */
+export type MappingPublishIn = {
+    /**
+     * Effective Plan Year
+     */
+    effective_plan_year: number;
+    /**
+     * Rows
+     */
+    rows: Array<MappingRowIn>;
+};
+
+/**
+ * MappingPublishedOut
+ */
+export type MappingPublishedOut = {
+    /**
+     * Dry Run
+     */
+    dry_run: boolean;
+    /**
+     * Problems
+     */
+    problems: Array<string>;
+    /**
+     * Rows
+     */
+    rows: number;
+    /**
+     * Status
+     */
+    status: 'validated' | 'published' | 'refused';
+    /**
+     * Version
+     */
+    version: number | null;
+};
+
+/**
+ * MappingRowIn
+ */
+export type MappingRowIn = {
+    /**
+     * Fs Caption Key
+     */
+    fs_caption_key: string;
+    /**
+     * Schedule H Line
+     */
+    schedule_h_line: string;
+};
+
+/**
  * MappingRowOut
  */
 export type MappingRowOut = {
@@ -31809,7 +32302,7 @@ export type PartIvLineOut = {
     /**
      * Consistency
      */
-    consistency: 'consistent' | 'inconsistent';
+    consistency: 'consistent' | 'inconsistent' | 'not_checked';
     /**
      * Draft Amount
      */
@@ -31821,7 +32314,7 @@ export type PartIvLineOut = {
     /**
      * Line
      */
-    line: '4a' | '4b' | '4d' | '4i' | '4j';
+    line: '4a' | '4b' | '4c' | '4d' | '4e' | '4f' | '4g' | '4h' | '4i' | '4j' | '4k' | '4l' | '4m';
 };
 
 /**
@@ -36490,6 +36983,10 @@ export type RecordRefOut = {
  */
 export type RecordsReadOut = {
     /**
+     * Connection Id
+     */
+    connection_id?: string | null;
+    /**
      * Count
      */
     count: number;
@@ -36497,6 +36994,10 @@ export type RecordsReadOut = {
      * Source
      */
     source: string;
+    /**
+     * Through
+     */
+    through?: string | null;
 };
 
 /**
@@ -40071,6 +40572,33 @@ export type RunCountersOut = {
 };
 
 /**
+ * RunHeaderOut
+ *
+ * C6 v1.1: the dock's header: the run number, what it is blocked on, code's counters, who it
+ * runs as and what started it. Null fields wait for P-10-T29's v2 columns.
+ */
+export type RunHeaderOut = {
+    blocked_on?: BlockedOnOut | null;
+    counters?: RunCountersOut | null;
+    /**
+     * Run Number
+     */
+    run_number?: number | null;
+    /**
+     * Runs As Name
+     */
+    runs_as_name?: string | null;
+    /**
+     * Trigger Kind
+     */
+    trigger_kind?: 'manual' | 'schedule' | 'agent_trigger' | 'engagement_trigger' | 'retry' | 'test' | 'engagement_plan' | 'agent_column' | 'event_policy' | null;
+    /**
+     * Work Item Ref
+     */
+    work_item_ref?: string | null;
+};
+
+/**
  * RunItemOut
  *
  * A thread item: code words and references only (P-09 Story 8.1); the client words it.
@@ -40113,6 +40641,10 @@ export type RunItemOut = {
      * Seq
      */
     seq: number;
+    /**
+     * Session Kind
+     */
+    session_kind?: 'user' | 'line' | 'block' | 'tool' | 'progress' | 'question' | 'answer' | 'error' | 'plan' | 'approval' | 'decision_ref' | 'artifact' | 'run_card' | 'notice' | null;
 };
 
 /**
@@ -40129,6 +40661,10 @@ export type RunItemsOut = {
      * Last Seq
      */
     last_seq: number;
+    /**
+     * Next Seq
+     */
+    next_seq?: number | null;
     /**
      * Resync
      */
@@ -40222,6 +40758,47 @@ export type RunPlanStepOut = {
      * Writes
      */
     writes?: boolean;
+};
+
+/**
+ * RunProjectionLevelOut
+ *
+ * C6 v1.1: one level of the run's plan, counted by code from its steps and never stored
+ * ("Run projection", glossary). `total` is the sum of the six states.
+ */
+export type RunProjectionLevelOut = {
+    /**
+     * Blocked
+     */
+    blocked?: number;
+    /**
+     * Done
+     */
+    done?: number;
+    /**
+     * Failed
+     */
+    failed?: number;
+    /**
+     * Level
+     */
+    level: number;
+    /**
+     * Queued
+     */
+    queued?: number;
+    /**
+     * Running
+     */
+    running?: number;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Waiting
+     */
+    waiting?: number;
 };
 
 /**
@@ -40401,6 +40978,10 @@ export type RunStartedOut = {
  */
 export type RunTraceOut = {
     /**
+     * Access
+     */
+    access?: 'content' | 'metadata' | null;
+    /**
      * Attempts
      */
     attempts: number;
@@ -40433,6 +41014,7 @@ export type RunTraceOut = {
      * Runtime
      */
     runtime: string;
+    summary?: TraceSummaryOut | null;
     /**
      * Tokens In
      */
@@ -40549,9 +41131,18 @@ export type RunV2Out = {
  */
 export type RunViewOut = {
     /**
+     * Access
+     */
+    access?: 'content' | 'metadata' | null;
+    /**
      * Allowed Actions
      */
     allowed_actions: Array<string>;
+    header?: RunHeaderOut | null;
+    /**
+     * Levels
+     */
+    levels?: Array<RunProjectionLevelOut>;
     /**
      * Projection
      */
@@ -40569,6 +41160,10 @@ export type RunViewOut = {
  * What the run proposed to write and what a person decided. Codes and references only.
  */
 export type RunWriteOut = {
+    /**
+     * Approver Name
+     */
+    approver_name?: string | null;
     /**
      * At
      */
@@ -40601,6 +41196,14 @@ export type RunWriteOut = {
      * Outcome
      */
     outcome: string;
+    /**
+     * Proposal Id
+     */
+    proposal_id?: string | null;
+    /**
+     * State
+     */
+    state?: 'waiting' | 'approved' | 'declined' | 'superseded' | null;
     /**
      * Target Id
      */
@@ -41107,6 +41710,68 @@ export type SampleSetVersionOut = {
  * SampleSetVersionStatus
  */
 export type SampleSetVersionStatus = 'drawing' | 'draft' | 'approved' | 'superseded' | 'failed';
+
+/**
+ * Schedule4iOut
+ *
+ * A-05-T58 close (DEC-2820): the 4i schedule by code (`compute.ebp.form5500.schedule_4i`)
+ * and the draft's line 1c total it must equal.
+ */
+export type Schedule4iOut = {
+    /**
+     * Draft Total
+     */
+    draft_total: string | null;
+    /**
+     * Inputs Hash
+     */
+    inputs_hash: string;
+    /**
+     * Rows
+     */
+    rows: Array<Schedule4iRowOut>;
+    /**
+     * Ties
+     */
+    ties: boolean;
+    /**
+     * Total
+     */
+    total: string;
+};
+
+/**
+ * Schedule4iRowOut
+ *
+ * One line of Schedule H line 4i: "*" marks a party in interest; a participant-directed
+ * holding's cost is omitted ("**").
+ */
+export type Schedule4iRowOut = {
+    /**
+     * Cost
+     */
+    cost: string | null;
+    /**
+     * Cost Omitted
+     */
+    cost_omitted: boolean;
+    /**
+     * Current Value
+     */
+    current_value: string;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Identity
+     */
+    identity: string;
+    /**
+     * Mark
+     */
+    mark: '*' | '';
+};
 
 /**
  * ScheduleApprovalOut
@@ -49230,9 +49895,21 @@ export type TraceRowOut = {
      */
     detail: string | null;
     /**
+     * Duration Ms
+     */
+    duration_ms?: number | null;
+    /**
      * Kind
      */
     kind: 'start' | 'queued' | 'attempt' | 'output' | 'decision' | 'finish';
+    /**
+     * Mark
+     */
+    mark?: 'start' | 'plan' | 'done' | 'running' | 'waiting' | 'blocked' | 'failed' | 'muted' | null;
+    /**
+     * Phase
+     */
+    phase?: 'plan' | 'execute' | 'compute' | 'proposed_write' | 'decision' | 'policy' | 'steer' | 'notice' | null;
     /**
      * Seq
      */
@@ -49245,6 +49922,108 @@ export type TraceRowOut = {
      * Title
      */
     title: string;
+};
+
+/**
+ * TraceSampleOut
+ *
+ * One of up to five records a tool step read, visible to the caller, with its open route.
+ */
+export type TraceSampleOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Open Route
+     */
+    open_route: string;
+    /**
+     * Record Type
+     */
+    record_type: string;
+};
+
+/**
+ * TraceStepOut
+ *
+ * C6 v1.1: a tool row expanded (WB-09a2): its argument summary and up to five sample records
+ * it read, filtered by `visible()`. Content only (DEC-87).
+ */
+export type TraceStepOut = {
+    /**
+     * Args Summary
+     */
+    args_summary: string | null;
+    /**
+     * Records Read
+     */
+    records_read: number;
+    /**
+     * Samples
+     */
+    samples: Array<TraceSampleOut>;
+    /**
+     * Step Id
+     */
+    step_id: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * TraceSummaryOut
+ *
+ * C6 v1.1: WB-09's summary card. Every figure is code's: #4118 reads 2,625 records, 79
+ * citations, 0 writes done and 1 waiting, over 2 m 41 s.
+ */
+export type TraceSummaryOut = {
+    /**
+     * Agent Label
+     */
+    agent_label: string;
+    /**
+     * Citations
+     */
+    citations?: number;
+    /**
+     * Duration Ms
+     */
+    duration_ms?: number | null;
+    /**
+     * Records Read
+     */
+    records_read?: number;
+    /**
+     * Run Number
+     */
+    run_number?: number | null;
+    /**
+     * Runs As Name
+     */
+    runs_as_name?: string | null;
+    /**
+     * Started At
+     */
+    started_at: string;
+    /**
+     * Trigger Kind
+     */
+    trigger_kind?: 'manual' | 'schedule' | 'agent_trigger' | 'engagement_trigger' | 'retry' | 'test' | 'engagement_plan' | 'agent_column' | 'event_policy' | null;
+    /**
+     * Writes Done
+     */
+    writes_done?: number;
+    /**
+     * Writes Waiting
+     */
+    writes_waiting?: number;
 };
 
 /**
@@ -53476,6 +54255,67 @@ export type AgentRunRecordsReadResponses = {
 
 export type AgentRunRecordsReadResponse = AgentRunRecordsReadResponses[keyof AgentRunRecordsReadResponses];
 
+export type AgentRunTraceStepData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Run Id
+         */
+        run_id: string;
+        /**
+         * Step Id
+         */
+        step_id: string;
+    };
+    query?: {
+        /**
+         * Records
+         */
+        records?: number;
+    };
+    url: '/v1/agent-runs/{run_id}/trace/steps/{step_id}';
+};
+
+export type AgentRunTraceStepErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AgentRunTraceStepError = AgentRunTraceStepErrors[keyof AgentRunTraceStepErrors];
+
+export type AgentRunTraceStepResponses = {
+    /**
+     * Successful Response
+     */
+    200: TraceStepOut;
+};
+
+export type AgentRunTraceStepResponse = AgentRunTraceStepResponses[keyof AgentRunTraceStepResponses];
+
 export type AgentRunWritesData = {
     body?: never;
     headers?: {
@@ -55816,6 +56656,58 @@ export type EbpForm5500NoteResponses = {
 };
 
 export type EbpForm5500NoteResponse = EbpForm5500NoteResponses[keyof EbpForm5500NoteResponses];
+
+export type EbpSchedule4iData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/ebp/form-5500/schedules/4i';
+};
+
+export type EbpSchedule4iErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EbpSchedule4iError = EbpSchedule4iErrors[keyof EbpSchedule4iErrors];
+
+export type EbpSchedule4iResponses = {
+    /**
+     * Successful Response
+     */
+    200: Schedule4iOut;
+};
+
+export type EbpSchedule4iResponse = EbpSchedule4iResponses[keyof EbpSchedule4iResponses];
 
 export type EbpImportData = {
     body: ImportIn;
@@ -59039,10 +59931,6 @@ export type PartyInInterestCreateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PartyInInterestCreateError = PartyInInterestCreateErrors[keyof PartyInInterestCreateErrors];
@@ -66868,6 +67756,58 @@ export type PracticeInstallmentsResponses = {
 };
 
 export type PracticeInstallmentsResponse = PracticeInstallmentsResponses[keyof PracticeInstallmentsResponses];
+
+export type ScheduleHMappingPublishData = {
+    body: MappingPublishIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Dry Run
+         */
+        dry_run?: boolean;
+    };
+    url: '/v1/ebp/schedule-h-mappings:publish';
+};
+
+export type ScheduleHMappingPublishErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ScheduleHMappingPublishError = ScheduleHMappingPublishErrors[keyof ScheduleHMappingPublishErrors];
+
+export type ScheduleHMappingPublishResponses = {
+    /**
+     * Successful Response
+     */
+    201: MappingPublishedOut;
+};
+
+export type ScheduleHMappingPublishResponse = ScheduleHMappingPublishResponses[keyof ScheduleHMappingPublishResponses];
 
 export type CreateEngagementDraftData = {
     body: EngagementDraftIn;
@@ -101633,6 +102573,118 @@ export type MeteringResponses = {
 };
 
 export type MeteringResponse = MeteringResponses[keyof MeteringResponses];
+
+export type AssuranceChecklistPublishData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Template Id
+         */
+        template_id: string;
+        /**
+         * Version
+         */
+        version: number;
+    };
+    query?: never;
+    url: '/v1/methodology/assurance-checklists/{template_id}/versions/{version}/publish';
+};
+
+export type AssuranceChecklistPublishErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AssuranceChecklistPublishError = AssuranceChecklistPublishErrors[keyof AssuranceChecklistPublishErrors];
+
+export type AssuranceChecklistPublishResponses = {
+    /**
+     * Successful Response
+     */
+    200: ChecklistPublishedOut;
+};
+
+export type AssuranceChecklistPublishResponse = AssuranceChecklistPublishResponses[keyof AssuranceChecklistPublishResponses];
+
+export type AssuranceChecklistImportData = {
+    body: ChecklistImportIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Dry Run
+         */
+        dry_run?: boolean;
+    };
+    url: '/v1/methodology/assurance-checklists:import';
+};
+
+export type AssuranceChecklistImportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type AssuranceChecklistImportError = AssuranceChecklistImportErrors[keyof AssuranceChecklistImportErrors];
+
+export type AssuranceChecklistImportResponses = {
+    /**
+     * Successful Response
+     */
+    201: ChecklistImportedOut;
+};
+
+export type AssuranceChecklistImportResponse = AssuranceChecklistImportResponses[keyof AssuranceChecklistImportResponses];
 
 export type ChecklistPublishData = {
     body?: never;

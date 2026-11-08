@@ -6,6 +6,11 @@ Regenerate: python -m abacus_tools.codegen.feature_flags
 from abacus.kernel.flags import Flag
 
 # fmt: off
+AGENT_DOCK_ENABLED = Flag(
+    name="agent_dock.enabled",
+    kind="boolean",
+    default="false",
+)
 AGENTS_CLIENT_DATA_OPTIN = Flag(
     name="agents.client_data_optin",
     kind="boolean",
@@ -350,6 +355,11 @@ RULES_REFERENCE_SETS = Flag(
     kind="boolean",
     default="false",
 )
+RUN_TRACE_ENABLED = Flag(
+    name="run_trace.enabled",
+    kind="boolean",
+    default="false",
+)
 SAMPLING_SAMPLE_SETS = Flag(
     name="sampling.sample_sets",
     kind="boolean",
@@ -407,6 +417,7 @@ WORKPAPERS_DRAFTING = Flag(
 )
 
 FLAGS: dict[str, Flag] = {
+    "agent_dock.enabled": AGENT_DOCK_ENABLED,
     "agents.client_data_optin": AGENTS_CLIENT_DATA_OPTIN,
     "ai_policy.v1": AI_POLICY_V1,
     "assurance.estimates_rp": ASSURANCE_ESTIMATES_RP,
@@ -474,6 +485,7 @@ FLAGS: dict[str, Flag] = {
     "review.approve_agent_output": REVIEW_APPROVE_AGENT_OUTPUT,
     "review.checkpoints": REVIEW_CHECKPOINTS,
     "rules.reference_sets": RULES_REFERENCE_SETS,
+    "run_trace.enabled": RUN_TRACE_ENABLED,
     "sampling.sample_sets": SAMPLING_SAMPLE_SETS,
     "screening.card": SCREENING_CARD,
     "security_center.v1": SECURITY_CENTER_V1,

@@ -34,3 +34,35 @@ class TieOutCompleted(DomainEvent):
 
     statement_version_id: Annotated[UUID, classified("internal")]
     tie_out_run_id: Annotated[UUID, classified("internal")]
+
+
+# --- C10 (R-02-T09; R-02 §4.6): identifiers only ---------------------------------------------
+
+
+class DeliverablePublished(DomainEvent):
+    """A deliverable version is published to its audiences. Notifications read it: "Deliverable
+    ready" for a non-draft version with no approval item (R-02 AC-36)."""
+
+    event_type: ClassVar[str] = "deliverable.published"
+
+    deliverable_id: Annotated[UUID, classified("internal")]
+    version_id: Annotated[UUID, classified("internal")]
+    version_no: Annotated[int, classified("internal")]
+    is_draft: Annotated[bool, classified("internal")]
+    has_approval: Annotated[bool, classified("internal")]
+    engagement_id: Annotated[UUID | None, classified("internal")] = None
+    work_item_id: Annotated[UUID | None, classified("internal")] = None
+
+
+class DeliverableSuperseded(DomainEvent):
+    event_type: ClassVar[str] = "deliverable.superseded"
+
+    deliverable_id: Annotated[UUID, classified("internal")]
+    version_id: Annotated[UUID, classified("internal")]
+
+
+class DeliverableWithdrawn(DomainEvent):
+    event_type: ClassVar[str] = "deliverable.withdrawn"
+
+    deliverable_id: Annotated[UUID, classified("internal")]
+    version_id: Annotated[UUID, classified("internal")]

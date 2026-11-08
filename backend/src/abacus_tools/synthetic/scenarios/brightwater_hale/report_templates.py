@@ -514,6 +514,15 @@ def bundle(name: str) -> Json:
 
 A07_CONTENT: Final = Path(__file__).parent / "files" / "a07_templates.yaml"
 A07_SLICE: Final = "a07_templates"
+# A-07-T22 (DEC-2806): each checklist section of the content file: (kind, engagement type, name).
+A07_CHECKLISTS: Final = (
+    ("completion_ebp", "completion", "ebp_audit", "BH Completion · EBP plan audit v1"),
+    ("completion_fs", "completion", "fs_audit", "BH Completion · Financial statement audit v1"),
+    ("eqr_checklist", "eqr", "ebp_audit", "BH EQR checklist v1"),
+    ("eqr_checklist", "eqr", "fs_audit", "BH EQR checklist v1"),
+    ("archive_checklist", "archive", "ebp_audit", "BH Archive checklist v1"),
+    ("archive_checklist", "archive", "fs_audit", "BH Archive checklist v1"),
+)
 A07_NEEDS: Final = ("people", "report_templates")
 
 
@@ -526,13 +535,37 @@ def _a07_bundle(raw: Mapping[str, Any]) -> Json:  # Any: YAML
     """A-07-T12: a template bundle from the content file; no wording in this module (AGENTS 16)."""
     paragraphs = raw["paragraphs"]
     body: list[Json] = [_p(text) for text in paragraphs.get("general", ())]
-    body += [_p(str(item["text"])) for item in paragraphs.get("specific", ())]
+    # A-07-T24 (DEC-2808): a specific representation is a C11 clause keyed by its trigger, off by
+    # default; the letter service turns it on when the trigger's facts hold.
+    specific = list(paragraphs.get("specific", ()))
+    clauses: list[Json] = [
+        {
+            "clause_id": str(item["trigger"]),
+            "title": f"Representation {item['n']}",
+            "standard": [_p(str(item["text"]))],
+            "default_enabled": False,
+        }
+        for item in specific
+    ]
+    body += [
+        cast(
+            Json,
+            {
+                "type": "clause",
+                "clause_id": str(item["trigger"]),
+                "enabled": False,
+                "non_standard": False,
+                "blocks": [_p(str(item["text"]))],
+            },
+        )
+        for item in specific
+    ]
     return {
         "family": raw["family"],
         "name": raw["name"],
         "layout_key": raw["layout"],
         "body": body,
-        "clauses": [],
+        "clauses": clauses,
         "variables": [],
         "sample_data": {},
     }
@@ -540,9 +573,32 @@ def _a07_bundle(raw: Mapping[str, Any]) -> Json:  # Any: YAML
 
 @register_slice(A07_SLICE)
 def a07_template_events() -> list[Event]:
-    """A-07-T12 (DEC-2315): part 1's letters through C11's import. The checklists have no import
-    route until the A-07 services (A-07-T22), so they stay in the content file for now."""
+    """A-07-T12 (DEC-2315): part 1's letters through C11's import; A-07-T22 (DEC-2806): the
+    completion, EQR and archive checklists through methodology's assurance-checklist import, then
+    published by the quality partner."""
     events: list[Event] = []
+    for n, (section, kind, engagement_type, name) in enumerate(A07_CHECKLISTS):
+        events.append(
+            Event(
+                f"assurance-checklist-import:{section}",
+                SETUP_AT + timedelta(minutes=45, seconds=n),
+                "methodology.assurance_checklist_imported",
+                IMPORTER,
+                A07_SLICE,
+                {"section": section, "kind": kind, "engagement_type": engagement_type,
+                 "name": name},
+            )
+        )  # fmt: skip
+        events.append(
+            Event(
+                f"assurance-checklist-publish:{section}",
+                SETUP_AT + timedelta(minutes=47, seconds=n),
+                "methodology.assurance_checklist_published",
+                PUBLISHER,
+                A07_SLICE,
+                {"kind": kind, "engagement_type": engagement_type, "name": name},
+            )
+        )
     for n, raw in enumerate(a07_content()["bundles"]):
         name = str(raw["name"])
         events.append(
