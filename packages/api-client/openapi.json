@@ -8422,6 +8422,18 @@
       },
       "AuditCompletionItemOut": {
         "properties": {
+          "blocker_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Blocker Text"
+          },
           "depends_on_client": {
             "cls": "internal",
             "title": "Depends On Client",
@@ -14942,6 +14954,19 @@
       "ChecklistItemIn": {
         "additionalProperties": false,
         "properties": {
+          "blocker": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Blocker"
+          },
           "depends_on_client": {
             "cls": "internal",
             "default": false,
@@ -44852,6 +44877,22 @@
             ],
             "title": "State",
             "type": "string"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "enum": [
+                  "plan",
+                  "entity"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Subject"
           }
         },
         "required": [

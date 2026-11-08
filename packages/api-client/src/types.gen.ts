@@ -3945,6 +3945,10 @@ export type AuditCockpitOut = {
  */
 export type AuditCompletionItemOut = {
     /**
+     * Blocker Text
+     */
+    blocker_text?: string | null;
+    /**
      * Depends On Client
      */
     depends_on_client: boolean;
@@ -6958,6 +6962,10 @@ export type ChecklistItem = {
  * ChecklistItemIn
  */
 export type ChecklistItemIn = {
+    /**
+     * Blocker
+     */
+    blocker?: string | null;
     /**
      * Depends On Client
      */
@@ -20862,6 +20870,10 @@ export type GoingConcernOut = {
      * State
      */
     state: 'not_requested' | 'awaiting_decision' | 'decided';
+    /**
+     * Subject
+     */
+    subject?: 'plan' | 'entity' | null;
 };
 
 /**

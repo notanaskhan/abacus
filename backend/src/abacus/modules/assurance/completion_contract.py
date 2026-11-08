@@ -191,6 +191,9 @@ class AuditCompletionItemOut(BaseModel):
     due_on: Annotated[date | None, classified("internal")]
     na_basis: Annotated[str | None, classified("confidential")]
     na_by_name: Annotated[str | None, classified("internal")]
+    # S31 close (DV-AUD-19-2), additive: the template item's blocker sentence, shown in "What
+    # blocks the report" while the item is open.
+    blocker_text: Annotated[str | None, classified("confidential")] = None
 
 
 class AuditCompletionOut(BaseModel):
@@ -340,6 +343,9 @@ class GoingConcernOut(BaseModel):
     decided_at: Annotated[datetime | None, classified("internal")]
     inputs: Annotated[list[CompletionKvOut], classified("confidential")]
     reserved_to: Annotated[Literal["engagement_partner"], classified("internal")]
+    # S31 close (DV-AUD-19-4), additive: whose continuance the question asks about, the plan's
+    # (an EBP audit) or the entity's (an FS audit); the question's words are AUD-19's copy.
+    subject: Annotated[Literal["plan", "entity"] | None, classified("internal")] = None
     allowed_actions: Annotated[list[CompletionAction], classified("internal")]
 
 

@@ -35,6 +35,9 @@ export const COPY = {
   goingConcern: {
     question:
       "Is there substantial doubt about the plan's ability to continue as a going concern within one year after the financial statements are available to be issued?",
+    // S31 close (DV-AUD-19-4): the same question for an FS audit's entity (Granite Peak).
+    questionEntity:
+      "Is there substantial doubt about the entity's ability to continue as a going concern within one year after the financial statements are available to be issued?",
     options: {
       no_substantial_doubt: "No substantial doubt",
       doubt_alleviated: "Substantial doubt alleviated by management's plans",

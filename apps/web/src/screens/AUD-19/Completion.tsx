@@ -123,7 +123,7 @@ function Blockers({
             className="flex h-[34px] items-center justify-between gap-[8px] px-[12px] text-[12.5px] hairline-b last:shadow-none"
           >
             <span className="flex min-w-0 items-center gap-[6px]">
-              <span className="truncate">{item.title}</span>
+              <span className="truncate">{item.blocker_text ?? item.title}</span>
               {item.gate_tag != null && (
                 <Pill size="chip" variant="tag">
                   {item.gate_tag}
@@ -335,7 +335,7 @@ function GoingConcern({
         <span aria-hidden className="text-ink-3">
           ?
         </span>
-        {COPY.goingConcern.question}
+        {view.subject === "entity" ? COPY.goingConcern.questionEntity : COPY.goingConcern.question}
       </p>
       <ol className="mt-[10px] flex flex-col gap-[6px]">
         {options.map((key) => {

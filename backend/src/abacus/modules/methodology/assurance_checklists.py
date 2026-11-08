@@ -54,6 +54,9 @@ class ChecklistItemIn(BaseModel):
     due_on_report_date: Annotated[bool, Internal] = False
     derived: Annotated[bool, Internal] = True
     type_specific: Annotated[bool, Internal] = False
+    # S31 close (DV-AUD-19-2): what AUD-19's "What blocks the report" says while the item is open;
+    # the firm's words, in its template. None shows the item's own text.
+    blocker: Annotated[str | None, Field(max_length=300), Confidential] = None
 
 
 class ChecklistImportIn(BaseModel):

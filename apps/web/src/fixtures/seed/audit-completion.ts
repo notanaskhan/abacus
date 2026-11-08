@@ -159,6 +159,14 @@ const AUD19_ITEMS: readonly [string, string, string, ItemStatus, string | null][
 const CLIENT = new Set(["mgmt_approval", "rep_letter"]);
 const REPORT_DATE = new Set(["independence", "subsequent_events"]);
 const GATES: Record<string, AuditCompletionItemOut["gate_tag"]> = { rep_letter: "G7", eqr: "G6" };
+// The firm template's blocker sentences (S31 close, DV-AUD-19-2), verbatim from the handoff.
+const BLOCKERS: Record<string, string> = {
+  independence: "Independence reconfirmation through the report date (5 people)",
+  subsequent_events: "Subsequent events: bring-down due on the report date",
+  mgmt_approval: "Management has not approved the final financial statements",
+  rep_letter: "Representation letter not yet signed",
+  tcwg_260: "AU-C 260 completion communication not yet sent",
+};
 
 function aud19Items(state: Aud19State): AuditCompletionItemOut[] {
   const granite = state === "e";
@@ -179,6 +187,7 @@ function aud19Items(state: Aud19State): AuditCompletionItemOut[] {
       due_on: REPORT_DATE.has(key) ? "2026-10-09" : null,
       na_basis: base === "not_applicable" ? evidence : null,
       na_by_name: base === "not_applicable" ? "Hannah Leclerc" : null,
+      blocker_text: BLOCKERS[key] ?? null,
     };
   });
 }
@@ -285,6 +294,7 @@ export function aud19GoingConcern(state: Aud19State): GoingConcernOut {
           { label: "", value: "The match was funded every 2026 payroll." },
         ], // prettier-ignore
     reserved_to: "engagement_partner",
+    subject: granite ? "entity" : "plan",
     allowed_actions: [],
   };
 }
