@@ -160,7 +160,7 @@ def covers(
     return False
 
 
-async def _first_covering_grant(
+async def first_covering_grant(
     ctx: AuthContext,
     audiences: Sequence[Audience],
     client_id: UUID,
@@ -209,7 +209,7 @@ async def reader_version(ctx: AuthContext, deliverable_id: UUID, version_no: int
             for a in (await session.execute(_AUDIENCES, {"id": deliverable_id})).all()
         ]
         contacts = await grant_contact_ids(session, ctx.user_id)
-    grant = await _first_covering_grant(
+    grant = await first_covering_grant(
         ctx, audiences, row["client_id"], row["engagement_id"], row["client_entity_id"]
     )
     if grant is None or not contacts:

@@ -29,6 +29,8 @@ from abacus.modules.engagements.api import (
     register_letter_locker,
     register_letter_renderer,
 )
+from abacus.modules.evidence.api import register_folder_provider as _register_folder_provider
+from abacus.modules.reporting import deliverables as _deliverables
 from abacus.modules.reporting.consent import Recipients as Recipients
 from abacus.modules.reporting.consent import RecipientsUnavailable as RecipientsUnavailable
 from abacus.modules.reporting.consent import recipients as _consent_recipients
@@ -47,16 +49,31 @@ from abacus.modules.reporting.deliverable_reads import ReaderVersion as ReaderVe
 from abacus.modules.reporting.deliverable_reads import reader_version as reader_version
 from abacus.modules.reporting.deliverables import AudienceReceipt as AudienceReceipt
 from abacus.modules.reporting.deliverables import DeliverableAudience as DeliverableAudience
+from abacus.modules.reporting.deliverables import (
+    DeliverableInvalid as DeliverableInvalid,
+)
 from abacus.modules.reporting.deliverables import DeliverableSpec as DeliverableSpec
 from abacus.modules.reporting.deliverables import DraftWithoutWatermark as DraftWithoutWatermark
 from abacus.modules.reporting.deliverables import ExpectedDeliverable as ExpectedDeliverable
+from abacus.modules.reporting.deliverables import PortalBand as PortalBand
+from abacus.modules.reporting.deliverables import PortalDeliverables as PortalDeliverables
+from abacus.modules.reporting.deliverables import PortalK1 as PortalK1
+from abacus.modules.reporting.deliverables import PortalRow as PortalRow
 from abacus.modules.reporting.deliverables import PublishedDeliverable as PublishedDeliverable
 from abacus.modules.reporting.deliverables import WorkItemDeliverable as WorkItemDeliverable
 from abacus.modules.reporting.deliverables import (
     deliverables_for_work_item as deliverables_for_work_item,
 )
 from abacus.modules.reporting.deliverables import expected_deliverables as expected_deliverables
+from abacus.modules.reporting.deliverables import portal_deliverables as portal_deliverables
 from abacus.modules.reporting.deliverables import publish_deliverable as publish_deliverable
+from abacus.modules.reporting.deliverables import (
+    register_envelope_rows as register_envelope_rows,
+)
+from abacus.modules.reporting.deliverables import (
+    register_expected_deliverables as register_expected_deliverables,
+)
+from abacus.modules.reporting.deliverables import register_k1_rows as register_k1_rows
 from abacus.modules.reporting.deliverables import supersede_deliverable as supersede_deliverable
 from abacus.modules.reporting.deliverables import withdraw_deliverable as withdraw_deliverable
 from abacus.modules.reporting.engagement_letters import (
@@ -650,6 +667,8 @@ ACTIVITIES: tuple[object, ...] = (draft_activity, draft_failed_activity, tie_out
 register_letter_renderer(render_engagement_letter)
 register_letter_finaliser(finalise_engagement_letter)  # N-02-T33: the approval renders final
 register_letter_locker(lock_engagement_letter)  # N-02-T33: a completed envelope locks it
+# R-02-T09 (DEC-2805): FIL-01's Deliverables folder lists a work item's C10 deliverables.
+_register_folder_provider("deliverables", _deliverables.deliverable_versions_for_work_item)
 
 # A-06-T15 (DEC-2215): a reviewable on C3's matrix and G5.
 from abacus.modules.reporting.review_targets import (  # noqa: E402

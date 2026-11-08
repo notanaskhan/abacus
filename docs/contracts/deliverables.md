@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C10 in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | stub (R-02-T02, 2026-11-06). Every route answers 501; every service call raises `NotImplementedYet` until R-02-T09, T12 |
+| Status | service live (R-02-T09, 2026-11-08; DEC-2805): `publish_deliverable`, `supersede_deliverable`, `withdraw_deliverable`, `deliverables_for_work_item`, `expected_deliverables`, `portal_deliverables` and FIL-01's `deliverables` folder provider. Every portal route still answers 501 until R-02-T14 turns on `portal.deliverables` |
 | Provider epic | R-02 (SPEC-646) |
 | Consumers | A-06 (FS drafts), A-07 (release pack at G8, governance letter PDFs), C-02 (packages), T-02, T-04, T-06, T-08 (client copy, filing letter), T-09 (memo), X-01 (SOC reports) |
 | Freeze sprint | S29 (frozen once R-02-T08's suites are green) |
@@ -84,3 +84,19 @@ have no cell on any route. Every read is `scope_only`; out of scope or outside a
 | Version | Date | Change |
 |---|---|---|
 | v1 | 2026-11-06 | Stub (R-02-T02, DEC-2402) |
+
+## 9. Read-through slots (R-02-T09)
+POR-09's rail shows rows other modules own. Those modules import `reporting`, so they register:
+- `register_k1_rows(provider)`: T-02's released K-1s for the person (`tax.k1_portal.deliverable_k1_rows`,
+  registered by `tax.api`). Only the person's own released packages; never a draft, another
+  partner's K-1 or the partnership return (INV-4).
+- `register_envelope_rows(provider)`: C7 envelopes on a work item ("Representation letter · In
+  Sign"). Registered by A-07-T24's representation letter service once its sends go through C7.
+- `register_expected_deliverables(provider)`: C1's client-visible milestones for Coming next. C1
+  has no client-visible milestone yet, so Coming next is empty until one registers.
+
+FIL-01's Deliverables folder (`folder:<work item>:deliverables`) lists the evidence versions of
+the work item's live (published, not withdrawn) deliverable versions through
+`evidence.api.register_folder_provider("deliverables", ...)`. Files keeps its own `visible()`
+filter, so a walled viewer sees nothing.
+
