@@ -6,11 +6,6 @@ Regenerate: python -m abacus_tools.codegen.feature_flags
 from abacus.kernel.flags import Flag
 
 # fmt: off
-ADJUSTMENTS_ENTRIES = Flag(
-    name="adjustments.entries",
-    kind="boolean",
-    default="false",
-)
 AGENTS_CLIENT_DATA_OPTIN = Flag(
     name="agents.client_data_optin",
     kind="boolean",
@@ -18,11 +13,6 @@ AGENTS_CLIENT_DATA_OPTIN = Flag(
 )
 AI_POLICY_V1 = Flag(
     name="ai_policy.v1",
-    kind="boolean",
-    default="false",
-)
-ASSURANCE_COMPLETION = Flag(
-    name="assurance.completion",
     kind="boolean",
     default="false",
 )
@@ -417,10 +407,8 @@ WORKPAPERS_DRAFTING = Flag(
 )
 
 FLAGS: dict[str, Flag] = {
-    "adjustments.entries": ADJUSTMENTS_ENTRIES,
     "agents.client_data_optin": AGENTS_CLIENT_DATA_OPTIN,
     "ai_policy.v1": AI_POLICY_V1,
-    "assurance.completion": ASSURANCE_COMPLETION,
     "assurance.estimates_rp": ASSURANCE_ESTIMATES_RP,
     "assurance.internal_control": ASSURANCE_INTERNAL_CONTROL,
     "assurance.materiality": ASSURANCE_MATERIALITY,

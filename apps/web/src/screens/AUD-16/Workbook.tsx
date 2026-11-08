@@ -25,7 +25,7 @@ import {
 } from "@abacus/ui";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
-import { useFlag } from "../../app-core/flags";
+import { useEntitlement } from "../../app-core/flags";
 import { COPY } from "./copy";
 
 // AUD-16 · Misstatements & adjustments (A-06-T22; A-06 §3 F3, F4; the handoff spec): the T6 workbook
@@ -602,7 +602,8 @@ export function MisstatementsWorkbook({
   onDecision,
   onSignOff,
 }: WorkbookProps): JSX.Element {
-  const on = useFlag("adjustments.entries") === true;
+  // A-06-T37 (DEC-2714): the `assurance_completion` entitlement replaces `adjustments.entries`.
+  const on = useEntitlement("assurance_completion");
   const sum = useQuery({ ...sumOptions({ path: { work_item_id: auditId } }), enabled: on });
   const kind = view === "reclass" ? "rje" : "aje";
   const entries = useQuery({
@@ -621,7 +622,7 @@ export function MisstatementsWorkbook({
   const pending = (entries.data?.items ?? []).filter((e) => e.status === "review_required");
 
   let state: ViewState = { kind: "ready" };
-  if (!on) state = { kind: "flag-off", flag: "adjustments.entries" };
+  if (!on) state = { kind: "flag-off", flag: "assurance_completion" };
   else if (sum.isError) {
     const status = (sum.error as { status?: number } | null)?.status;
     state =
