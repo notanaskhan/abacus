@@ -434,6 +434,9 @@ function Evaluation({
   return (
     <section
       data-aud16="evaluation"
+      // a scrolling pane with nothing focusable in some states: keyboard users reach it here
+      tabIndex={0}
+      aria-label={COPY.evaluation.title}
       className="flex w-[410px] shrink-0 flex-col overflow-y-auto rounded-pane bg-card shadow-e1"
     >
       <header className="flex h-[46px] shrink-0 items-center justify-center text-[14.5px] font-medium hairline-b">
