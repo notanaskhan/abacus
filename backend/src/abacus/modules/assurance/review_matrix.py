@@ -97,6 +97,17 @@ def initials(name: str) -> str:
     return (parts[0][0] + parts[-1][0]).upper()
 
 
+def reviewed(row: Row) -> bool:
+    """AUD-17's Reviewed (TASK-3398, DEC-2397, the handoff's "Reviewed 24"): prepared, and every
+    review level the row requires (L2, L3) signed on its current content. A stale review isn't
+    one; a row that needs neither level (the manager's review sits in L3 when the senior
+    prepares; Findings and SUM need no L2 or L3) counts once prepared."""
+    preparer, *reviews = row.cells[:3]
+    return preparer.state == "signed" and all(
+        c.state in ("signed", "not_required") for c in reviews
+    )
+
+
 def footer_of(rows: tuple[Row, ...]) -> Footer:
     def signed(level: int) -> int:
         return sum(1 for r in rows if r.cells[level - 1].state in ("signed", "stale"))
@@ -106,7 +117,7 @@ def footer_of(rows: tuple[Row, ...]) -> Footer:
 
     return Footer(
         prepared=signed(1),
-        reviewed=signed(2),
+        reviewed=sum(1 for r in rows if reviewed(r)),
         partner_signed=signed(4),
         partner_required=required(4),
         eqr_signed=signed(5),
