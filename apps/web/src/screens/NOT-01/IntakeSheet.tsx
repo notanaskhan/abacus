@@ -15,6 +15,7 @@ import {
   Button,
   ConfidencePill,
   Icon,
+  Menu,
   Picker,
   SheetModal,
   Skeleton,
@@ -201,6 +202,14 @@ export function canCreate(intake: IntakeOut | undefined): boolean {
   );
 }
 
+const ANYWAY_REASONS = [
+  "different_notice",
+  "different_tax_year",
+  "reissued_by_agency",
+  "other",
+] as const;
+type AnywayReason = (typeof ANYWAY_REASONS)[number];
+
 function DuplicateBanner({
   noticeId,
   disabled,
@@ -210,7 +219,7 @@ function DuplicateBanner({
   noticeId: string;
   disabled: boolean;
   onAttach: () => void;
-  onCreateAnyway: () => void;
+  onCreateAnyway: (reason: AnywayReason) => void;
 }): JSX.Element {
   const code = useQuery(noticeOptions({ path: { notice_id: noticeId } })).data?.row.notice_code;
   return (
@@ -224,9 +233,23 @@ function DuplicateBanner({
       <Button variant="secondary" size="sm" disabled={disabled} onClick={onAttach}>
         {code === undefined ? COPY.intake.attachFallback : COPY.intake.attach(code)}
       </Button>
-      <Button variant="secondary" size="sm" disabled={disabled} onClick={onCreateAnyway}>
-        {COPY.intake.createAnyway}
-      </Button>
+      <Menu
+        label={COPY.intake.createAnyway}
+        disabled={disabled}
+        trigger={
+          <Button variant="secondary" size="sm" disabled={disabled}>
+            {COPY.intake.createAnyway}
+          </Button>
+        }
+        sections={[
+          ANYWAY_REASONS.map((reason) => ({
+            label: COPY.intake.anywayReasons[reason],
+            onSelect: () => {
+              onCreateAnyway(reason);
+            },
+          })),
+        ]}
+      />
     </div>
   );
 }
@@ -343,7 +366,7 @@ export function IntakeSheet({
   const ready = canCreate(intake);
   const assigneeId = assignee ?? intake?.assignee_user_id ?? me?.user_id ?? "";
   /** A person's corrections are saved first, so Create notice adopts what they typed. */
-  const createNotice = async (createAnyway: boolean): Promise<void> => {
+  const createNotice = async (anyway: AnywayReason | null): Promise<void> => {
     if (intake === undefined || intake.match.client_entity_id === null) return;
     const typed = Object.entries(edits);
     try {
@@ -371,7 +394,8 @@ export function IntakeSheet({
         client_entity_id: intake.match.client_entity_id,
         assignee_id: assigneeId,
         notify_user_ids: notify ? (intake.notify_user_ids ?? []) : [],
-        create_anyway: createAnyway,
+        create_anyway: anyway !== null,
+        ...(anyway === null ? {} : { create_anyway_reason_code: anyway }),
       },
     });
   };
@@ -381,7 +405,7 @@ export function IntakeSheet({
       size="sm"
       disabled={!ready || confirm.isPending || update.isPending}
       onClick={() => {
-        void createNotice(false);
+        void createNotice(null);
       }}
     >
       {COPY.intake.create}
@@ -442,8 +466,8 @@ export function IntakeSheet({
                     body: { notice_id: intake.duplicate_of },
                   });
                 }}
-                onCreateAnyway={() => {
-                  void createNotice(true);
+                onCreateAnyway={(reason) => {
+                  void createNotice(reason);
                 }}
               />
             )}

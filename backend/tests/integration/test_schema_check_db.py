@@ -1899,6 +1899,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "assignee_user_id",
                 "authorization_facts",
                 "client_id",
+                "create_anyway_reason_code",  # 0740 (N-04-T07, DEC-2953)
                 "created_work_item_id",
                 "discarded_reason_code",
                 "duplicate_of_work_item_id",

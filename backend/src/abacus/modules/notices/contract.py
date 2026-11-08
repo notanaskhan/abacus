@@ -354,6 +354,11 @@ class IntakeCreateIn(BaseModel):
     notify_user_ids: Annotated[list[UUID], Field(max_length=20), classified("internal")] = []
     engagement_id: Annotated[UUID | None, classified("internal")] = None
     create_anyway: Annotated[bool, classified("internal")] = False  # past a possible duplicate
+    # DEC-2953 (US-2.3): why, when past a duplicate: different_notice, different_tax_year,
+    # reissued_by_agency or other; 422 `create_anyway_reason_required` without one.
+    create_anyway_reason_code: Annotated[
+        str | None, Field(pattern=r"^[a-z][a-z0-9_]{0,59}$"), classified("internal")
+    ] = None
 
 
 class IntakeAttachIn(BaseModel):
@@ -1163,7 +1168,8 @@ async def intake_update_route(
 async def intake_confirm_route(
     intake_id: UUID, body: IntakeCreateIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> CreatedNoticeOut:
-    """409 `low_confidence_unconfirmed`, `duplicate_unresolved`, `no_notice_engagement`."""
+    """409 `low_confidence_unconfirmed`, `duplicate_unresolved`, `no_notice_engagement`; 422
+    `create_anyway_reason_required`."""
     await _gate_firm(ctx, "notice_intake.confirm")
     from abacus.modules.notices import intake
 
@@ -1176,6 +1182,7 @@ async def intake_confirm_route(
         related_return_id=body.related_return_id,
         create_anyway=body.create_anyway,
         notify_user_ids=body.notify_user_ids,
+        create_anyway_reason=body.create_anyway_reason_code,
     )
     return CreatedNoticeOut(notice_id=notice_id, engagement_id=engagement_id)
 

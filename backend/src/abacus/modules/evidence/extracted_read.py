@@ -49,6 +49,21 @@ async def ocr_refusal_of(tenant: TenantContext, version_id: UUID) -> str | None:
         return await session.scalar(_REFUSAL, {"v": version_id})
 
 
+async def text_ready(tenant: TenantContext, version_id: UUID) -> bool:
+    """N-04-T07: the version's words can be read now: a text layer, or a completed OCR run. A file
+    read before its intake existed publishes `evidence_text.ready` no more, so its reader asks."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text(
+                "SELECT EXISTS (SELECT 1 FROM evidence_pages WHERE evidence_version_id = :v "
+                "AND has_text_layer) OR EXISTS (SELECT 1 FROM ocr_runs "
+                "WHERE evidence_version_id = :v AND status = 'completed')"
+            ),
+            {"v": version_id},
+        )
+    return bool(found)
+
+
 async def versions_with_same_bytes(tenant: TenantContext, version_id: UUID) -> frozenset[UUID]:
     """Every version in the firm holding this version's exact bytes, itself included."""
     async with tenant_session(tenant) as session:

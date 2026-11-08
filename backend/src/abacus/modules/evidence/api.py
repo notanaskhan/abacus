@@ -123,10 +123,12 @@ from abacus.modules.evidence.extracted_read import (
     ReadField,
     extracted_fields_of,
     ocr_refusal_of,
+    text_ready,
     versions_with_same_bytes,
 )
 from abacus.modules.evidence.extraction import Extraction, extract_isolated
 from abacus.modules.evidence.extraction import Table as ExtractedTable
+from abacus.modules.evidence.filed_copies import file_copy_onto_work_item
 from abacus.modules.evidence.files_contract import files_router
 from abacus.modules.evidence.firm_export_activities import ACTIVITIES as FIRM_EXPORT_ACTIVITIES
 from abacus.modules.evidence.firm_export_activities import (
@@ -665,6 +667,7 @@ __all__ = [
     "extract_isolated",
     "extract_version",
     "extracted_fields_of",
+    "file_copy_onto_work_item",
     "file_engine_copy",
     "file_handoff_copy",
     "file_intake_object",
@@ -743,6 +746,7 @@ __all__ = [
     "store_generated",
     "suggest_by_name",
     "supported_citations",
+    "text_ready",
     "tin_exposure",
     "undo_returned_files",
     "undo_review_decision",
