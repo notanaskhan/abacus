@@ -285,6 +285,9 @@ RECORD_TYPES: Final = frozenset(
     # P-04-T59 (DEC-2065): the review grammar's records (sign-offs, notes, decisions, checkpoints,
     # issues, gates), retained with the engagement's file; years are content like every other's.
     | {"review_record"}
+    # N-04-T06 (DEC-2950; ADR P-14, QN-7): the notice and its response letter. `notice_response`
+    # was already the letter's kind (N-04-T16) without being listed here. Years are content.
+    | {"notice", "notice_response"}
 )
 _DAYS_PER_YEAR: Final = Decimal("365.25")
 _EFFECTIVE_YEARS = text(
