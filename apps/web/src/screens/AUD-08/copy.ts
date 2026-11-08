@@ -7,6 +7,7 @@ export const COPY = {
     linked: "Linked",
     suggested: "Suggested",
     link: "Link EBP-03…",
+    failed: "That link didn't go through. Try again.",
   },
   revising: "Revising after Internal Control…",
   drafted: {

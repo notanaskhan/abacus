@@ -31,7 +31,7 @@ from sqlalchemy import text
 from abacus.kernel import clock
 from abacus.kernel._flags import EVIDENCE_FORM_EXTRACTION
 from abacus.kernel.db import tenant_session
-from abacus.kernel.errors import DomainConflict, NotFound
+from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.flags import flag_variant
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.engagements.api import assign_work_item, create_work_item, holders_of
@@ -74,6 +74,17 @@ class LowConfidenceUnconfirmed(DomainConflict):
 
 class DuplicateUnresolved(DomainConflict):
     code = "duplicate_unresolved"
+
+
+class CreateAnywayReasonRequired(DomainInvalid):
+    """US-2.3: "Create anyway" past a possible duplicate names its reason."""
+
+    code = "create_anyway_reason_required"
+
+
+CREATE_ANYWAY_REASONS: Final = frozenset(
+    {"different_notice", "different_tax_year", "reissued_by_agency", "other"}
+)
 
 
 class NoNoticeEngagement(DomainConflict):
@@ -402,9 +413,13 @@ async def create_notice(
     related_return_id: UUID | None,
     create_anyway: bool,
     notify_user_ids: Sequence[UUID] = (),
+    create_anyway_reason: str | None = None,
 ) -> tuple[UUID, UUID]:
     """Create notice: the work item, the notice's columns, Received, and the intake created."""
     current = await intake(ctx, intake_id)
+    past_duplicate = current.duplicate_of is not None and create_anyway
+    if past_duplicate and create_anyway_reason not in CREATE_ANYWAY_REASONS:
+        raise CreateAnywayReasonRequired
     if current.status not in _READY:
         raise NotReady(facts={"status": current.status})
     if current.unconfirmed:
@@ -487,9 +502,15 @@ async def create_notice(
         moved = await tx.session.scalar(
             text(
                 "UPDATE notice_intakes SET status = 'created', created_work_item_id = :w, "
+                "create_anyway_reason_code = :reason, "
                 "row_version = row_version + 1 WHERE id = :id AND status = :was RETURNING id"
             ),
-            {"w": work_item, "id": intake_id, "was": current.status},
+            {
+                "w": work_item,
+                "reason": create_anyway_reason if past_duplicate else None,
+                "id": intake_id,
+                "was": current.status,
+            },
         )
         if moved is None:
             raise IntakeMoved
@@ -546,11 +567,24 @@ async def attach(ctx: AuthContext, intake_id: UUID, notice_id: UUID) -> Intake:
     intake closes on that notice; the person's record of which file went where."""
     from abacus.modules.notices.service import notice as read_notice
 
-    await read_notice(ctx, notice_id)  # 404 for a notice this person may not see
+    target = await read_notice(ctx, notice_id)  # 404 for a notice this person may not see
     current = await intake(ctx, intake_id)
     if current.status in ("created", "discarded"):
         raise NotReady(facts={"status": current.status})
+    from abacus.modules.evidence.api import file_copy_onto_work_item
+
     async with uow(ctx.tenant) as tx:
+        if current.evidence_version_id is not None:
+            # DEC-2953: the document is filed on N2 as a supporting document (the same bytes).
+            await file_copy_onto_work_item(
+                tx,
+                tenant_id=ctx.tenant_id,
+                version_id=current.evidence_version_id,
+                engagement_id=target.engagement_id,
+                work_item_id=notice_id,
+                title=f"{target.notice_code} supporting document",
+                actor_id=str(ctx.user_id),
+            )
         moved = await tx.session.scalar(
             text(
                 "UPDATE notice_intakes SET status = 'created', created_work_item_id = :w, "

@@ -354,6 +354,11 @@ class IntakeCreateIn(BaseModel):
     notify_user_ids: Annotated[list[UUID], Field(max_length=20), classified("internal")] = []
     engagement_id: Annotated[UUID | None, classified("internal")] = None
     create_anyway: Annotated[bool, classified("internal")] = False  # past a possible duplicate
+    # DEC-2953 (US-2.3): why, when past a duplicate: different_notice, different_tax_year,
+    # reissued_by_agency or other; 422 `create_anyway_reason_required` without one.
+    create_anyway_reason_code: Annotated[
+        str | None, Field(pattern=r"^[a-z][a-z0-9_]{0,59}$"), classified("internal")
+    ] = None
 
 
 class IntakeAttachIn(BaseModel):
@@ -872,9 +877,9 @@ async def _notice_out(ctx: AuthContext, n: Notice) -> NoticeOut:
         respond_by_source=cast(
             Literal["extracted", "entered", "corrected"] | None, n.respond_by_source
         ),
-        taxpayer_tin=None,  # the sealed TIN and its mask arrive with the intake (N-04-T07)
+        taxpayer_tin=await _taxpayer_tin(ctx, n),
         related_return_id=n.related_return_id,
-        related_return_label=None,
+        related_return_label=await _return_label(ctx, n.related_return_id),
         partner_owned=n.partner_owned,
         signer=None,
         decision_id=n.decision_id,
@@ -933,6 +938,30 @@ async def _match_out(ctx: AuthContext, found: Intake) -> MatchOut:
         return_id=return_id,
         return_label=None if return_id is None else await return_label(ctx.tenant, return_id),
         office=None,
+    )
+
+
+async def _return_label(ctx: AuthContext, return_id: UUID | None) -> str | None:
+    if return_id is None:
+        return None
+    from abacus.modules.tax.api import return_label
+
+    return await return_label(ctx.tenant, return_id)
+
+
+async def _taxpayer_tin(ctx: AuthContext, n: Notice) -> MaskedTinOut | None:
+    """N-04-T06: the last four the intake adopted, with the entity's TIN kind; masked again for
+    an offshore principal by `mask_tins_for`."""
+    if n.taxpayer_tin_last4 is None:
+        return None
+    from abacus.modules.organisations.api import entity_tin_kind
+
+    entity = n.client_entity_id
+    kind = (None if entity is None else await entity_tin_kind(ctx.tenant, entity)) or "ssn"
+    return MaskedTinOut(
+        kind=cast(Literal["ssn", "ein", "itin"], kind),
+        presence="on_file",
+        last4=n.taxpayer_tin_last4,
     )
 
 
@@ -1139,7 +1168,8 @@ async def intake_update_route(
 async def intake_confirm_route(
     intake_id: UUID, body: IntakeCreateIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> CreatedNoticeOut:
-    """409 `low_confidence_unconfirmed`, `duplicate_unresolved`, `no_notice_engagement`."""
+    """409 `low_confidence_unconfirmed`, `duplicate_unresolved`, `no_notice_engagement`; 422
+    `create_anyway_reason_required`."""
     await _gate_firm(ctx, "notice_intake.confirm")
     from abacus.modules.notices import intake
 
@@ -1152,6 +1182,7 @@ async def intake_confirm_route(
         related_return_id=body.related_return_id,
         create_anyway=body.create_anyway,
         notify_user_ids=body.notify_user_ids,
+        create_anyway_reason=body.create_anyway_reason_code,
     )
     return CreatedNoticeOut(notice_id=notice_id, engagement_id=engagement_id)
 
