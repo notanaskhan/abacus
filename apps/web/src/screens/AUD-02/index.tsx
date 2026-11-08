@@ -42,6 +42,7 @@ import { useProvisionsCanvas } from "../EBP-02/Provisions";
 import { useEligibilityCanvas } from "../EBP-03/Eligibility";
 import { type ContributionsOptions, useContributionsCanvas } from "../EBP-04";
 import { DISTRIBUTIONS_LOANS, type LoansOptions, useLoansCanvas } from "../EBP-05";
+import { type AccountsOptions, PARTICIPANT_ACCOUNTS, useAccountsCanvas } from "../EBP-08";
 import { ADMIN_EXPENSES, type ExpensesOptions, useExpensesCanvas } from "../EBP-09";
 import {
   type ControlsOptions,
@@ -119,6 +120,8 @@ export interface AUD02Props {
   contributions?: Omit<ContributionsOptions, "active" | "running">;
   /** EBP-05 (A-05-T44): Distributions & Loans. */
   loans?: Omit<LoansOptions, "active">;
+  /** EBP-08 (A-05-T52): Participant Accounts. */
+  accounts?: Omit<AccountsOptions, "active">;
   /** EBP-09 (A-05-T45): Admin Expenses & Compliance. */
   expenses?: Omit<ExpensesOptions, "active">;
 }
@@ -230,6 +233,7 @@ function Cockpit({
   contributions,
   loans,
   expenses,
+  accounts,
 }: Omit<AUD02Props, "auditId"> & { cockpit: AuditCockpitOut }): JSX.Element {
   // A-01-T24: "Export binder…" and the record-mode entries (DV-9, DV-4).
   const audit = useAuditActions(cockpit, overlay ?? null, onOverlay);
@@ -327,6 +331,12 @@ function Cockpit({
   // EBP-05 (A-05-T44): Testing › Distributions & Loans, behind `ebp.modules`.
   const loansOpen = selected === DISTRIBUTIONS_LOANS;
   const loansCanvas = useLoansCanvas(cockpit.work_item_id, { ...loans, active: loansOpen });
+  // EBP-08 (A-05-T52): Testing › Participant Accounts, behind `ebp.modules`.
+  const accountsOpen = selected === PARTICIPANT_ACCOUNTS;
+  const accountsCanvas = useAccountsCanvas(cockpit.work_item_id, {
+    ...accounts,
+    active: accountsOpen,
+  });
   // EBP-09 (A-05-T45): Testing › Admin Expenses & Compliance, behind `ebp.modules`.
   const expensesOpen = selected === ADMIN_EXPENSES;
   const expensesCanvas = useExpensesCanvas(cockpit.work_item_id, {
@@ -363,6 +373,8 @@ function Cockpit({
     canvas = loansCanvas;
   } else if (expensesOpen) {
     canvas = expensesCanvas;
+  } else if (accountsOpen) {
+    canvas = accountsCanvas;
   } else if (row?.section_state === "blocked_on_decision" && row.blocked_on_name != null) {
     canvas = {
       title: row.title,
