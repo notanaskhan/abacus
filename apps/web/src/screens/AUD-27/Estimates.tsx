@@ -269,6 +269,21 @@ function DisclosureCard({
   );
 }
 
+/** A party's year transactions as a person recorded them; amounts are the server's. */
+function Transactions({ item }: { item: Aud27ItemOut }): JSX.Element {
+  const rows = item.transactions ?? [];
+  if (rows.length === 0) return <>{COPY.estimates.none}</>;
+  return (
+    <>
+      {rows.map((t, i) => (
+        <span key={i} className="block">
+          {t.amount == null ? t.description : `${t.description} ${money(t.amount)}`}
+        </span>
+      ))}
+    </>
+  );
+}
+
 function RelatedTable({
   items,
   options,
@@ -295,6 +310,25 @@ function RelatedTable({
               <td className={cn(TD, "text-ink-2")}>{p.relationship ?? COPY.estimates.none}</td>
               <td className={cn(TD, "text-ink-2")}>
                 {COPY.related.source[p.source ?? ""] ?? COPY.estimates.none}
+              </td>
+              <td data-aud27="transactions" className={cn(TD, "text-ink-2 tabular-nums")}>
+                <Transactions item={p} />
+              </td>
+              <td data-aud27="party_disclosure" className={cn(TD, "text-ink-2")}>
+                {p.disclosure == null ? (
+                  // A screened-out candidate's column reads the person's reason (AU-C 550).
+                  (p.screened_out_reason ?? COPY.estimates.none)
+                ) : p.disclosure_note === true ? (
+                  <button
+                    type="button"
+                    data-action="disclosure"
+                    onClick={() => options.onReference?.("AUD-20")}
+                  >
+                    {p.disclosure} ✓
+                  </button>
+                ) : (
+                  p.disclosure
+                )}
               </td>
               <td className={TD}>
                 <span className="flex items-center gap-[8px]">
@@ -365,15 +399,7 @@ function PartiesTable({
                 <td className={TD}>{p.name}</td>
                 <td className={cn(TD, "text-ink-2")}>{p.relationship}</td>
                 <td data-aud27="transactions" className={cn(TD, "text-ink-2 tabular-nums")}>
-                  {(p.transactions ?? []).length === 0
-                    ? COPY.estimates.none
-                    : (p.transactions ?? []).map((t, i) => (
-                        <span key={i} className="block">
-                          {t.amount == null
-                            ? t.description
-                            : `${t.description} ${money(t.amount)}`}
-                        </span>
-                      ))}
+                  <Transactions item={p} />
                 </td>
                 <td className={cn(TD, "text-ink-2")}>{p.exemption ?? COPY.estimates.none}</td>
                 <td className={TD}>

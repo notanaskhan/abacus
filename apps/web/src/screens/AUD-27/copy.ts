@@ -53,7 +53,7 @@ export const COPY = {
   citations: (n: number) => `Citations (${String(n)})`,
   procedures: (n: number) => `Procedures (${String(n)})`,
   related: {
-    columns: ["Party", "Relationship", "Source", "Status"],
+    columns: ["Party", "Relationship", "Source", "FY2026 transactions", "Disclosure", "Status"],
     source: {
       client_list: "Client list",
       agent_search: "Agent search",

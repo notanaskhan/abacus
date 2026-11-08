@@ -1047,6 +1047,14 @@ class Aud27ItemOut(BaseModel):
     transactions: Annotated[
         list[Aud27TransactionOut], Field(max_length=50), classified("confidential")
     ] = Field(default_factory=list[Aud27TransactionOut])
+    # S31 close (A-05-T57, DV-AUD-27-2): a related party's disclosure as a person recorded it;
+    # `disclosure_note` says it names a note in the statements (a link to AUD-20).
+    disclosure: Annotated[str | None, Field(max_length=300), classified("confidential")] = None
+    disclosure_note: Annotated[bool, classified("internal")] = False
+    # A screened-out candidate's reason, as the person gave it (the Disclosure column reads it).
+    screened_out_reason: Annotated[
+        str | None, Field(max_length=1000), classified("confidential")
+    ] = None
 
 
 class Aud27ProhibitedOut(BaseModel):
@@ -1100,6 +1108,21 @@ class Aud27ItemIn(BaseModel):
     transactions: Annotated[
         list[Aud27TransactionIn], Field(max_length=50), classified("confidential")
     ] = Field(default_factory=list[Aud27TransactionIn])
+
+
+class RelatedPartyActivityIn(BaseModel):
+    """S31 close (A-05-T57): a related party's year transactions and its disclosure, recorded by a
+    person; recording again replaces them."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    transactions: Annotated[
+        list[Aud27TransactionIn], Field(max_length=50), classified("confidential")
+    ] = Field(default_factory=list[Aud27TransactionIn])
+    disclosure: Annotated[
+        str | None, Field(min_length=1, max_length=300), classified("confidential")
+    ] = None
+    disclosure_note: Annotated[bool, classified("internal")] = False
 
 
 class ScreenOutIn(BaseModel):
@@ -2667,6 +2690,12 @@ async def related_parties_route(work_item_id: UUID, ctx: Ctx) -> Aud27ListOut:
                 source=p.source,
                 relationship=p.relationship,
                 finding_id=p.finding_id,
+                transactions=[
+                    Aud27TransactionOut(description=d, amount=a) for d, a in p.transactions
+                ],
+                disclosure=p.disclosure,
+                disclosure_note=p.disclosure_note,
+                screened_out_reason=p.screened_out_reason,
             )
             for p in parties
         ],
@@ -2685,7 +2714,45 @@ async def related_party_create_route(
     work_item_id: UUID, body: Aud27ItemIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> AcceptedOut:
     await _gate(ctx, work_item_id, "related_party.manage", _A)
-    return AcceptedOut(id=await aud27.add_related_party(ctx, work_item_id, body.name))
+    return AcceptedOut(
+        id=await aud27.add_related_party(
+            ctx,
+            work_item_id,
+            body.name,
+            relationship=body.relationship,
+            activity=aud27.PartyRecord(
+                transactions=[(t.description, t.amount) for t in body.transactions]
+            ),
+        )
+    )
+
+
+@router.put(
+    "/related-parties/{party_id}/activity",
+    action="related_party.manage",
+    response_model=AcceptedOut,
+)
+async def related_party_activity_route(
+    work_item_id: UUID,
+    party_id: UUID,
+    body: RelatedPartyActivityIn,
+    ctx: Ctx,
+    idempotency_key: IdempotencyKey,
+) -> AcceptedOut:
+    """AUD-27 b: a person records the party's year transactions and disclosure (S31 close)."""
+    await _gate(ctx, work_item_id, "related_party.manage", _A)
+    del idempotency_key
+    await aud27.record_activity(
+        ctx,
+        work_item_id,
+        party_id,
+        aud27.PartyRecord(
+            transactions=[(t.description, t.amount) for t in body.transactions],
+            disclosure=body.disclosure,
+            disclosure_note=body.disclosure_note,
+        ),
+    )
+    return AcceptedOut(id=party_id)
 
 
 @router.post(

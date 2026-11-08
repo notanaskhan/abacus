@@ -88,6 +88,20 @@ describe("AUD-27", () => {
     expect(line.textContent).toContain("Jun 30, 2026");
   });
 
+  it("b: each related party's FY2026 transactions and disclosure (DV-AUD-27-2 closed)", async () => {
+    show("b", "related_parties");
+    const table = await drawn('[data-aud27="related_parties"]');
+    expect(table.textContent).toContain("Employer contributions $612,000.00");
+    expect(table.textContent).toContain("Compensation only");
+    expect(table.textContent).toContain("Freight $318,400.00");
+    expect(table.textContent).toContain("Interest $520,000.00");
+    expect(table.querySelector('[data-action="disclosure"]')?.textContent).toBe(
+      "Note 9 Retirement plan ✓",
+    );
+    expect(table.textContent).toContain("Not required (compensation arrangement, ASC 850)");
+    expect(table.textContent).toContain("Not a related party (no common ownership or control)");
+  });
+
   it("c: the parties' 2025 transactions and the PT card's excise line", async () => {
     show("c", "parties_in_interest", "ebp");
     await drawn('[data-aud27="transactions"]');

@@ -351,14 +351,29 @@ def register_estimate_conclusion_kind() -> None:
 # --- related parties -----------------------------------------------------------------------------
 
 _PARTIES = text(
-    "SELECT id, display_ref, source, relationship, status, screened_out_reason, finding_id "
+    "SELECT id, display_ref, source, relationship, status, screened_out_reason, finding_id, "
+    "transactions, disclosure, disclosure_note "
     "FROM related_parties WHERE work_item_id = :w ORDER BY display_ref NULLS LAST, id"
 )
 _ADD_PARTY = text(
     """
     INSERT INTO related_parties (tenant_id, engagement_id, work_item_id, display_ref, source,
-                                 relationship, created_by_kind)
-    VALUES (:t, :e, :w, :name, :source, :relationship, 'human')
+                                 relationship, transactions, disclosure, disclosure_note,
+                                 created_by_kind)
+    VALUES (:t, :e, :w, :name, :source, :relationship, CAST(:transactions AS jsonb), :disclosure,
+            :disclosure_note, 'human')
+    RETURNING id
+    """
+)
+# S31 close (DV-AUD-27-2): a person records what the entity did with the party in the year and
+# where it is disclosed; the read shows the person's words, never a figure the browser adds up.
+_RECORD_ACTIVITY = text(
+    """
+    UPDATE related_parties
+       SET transactions = CAST(:transactions AS jsonb), disclosure = :disclosure,
+           disclosure_note = :disclosure_note, version = version + 1,
+           updated_at = clock_timestamp()
+     WHERE id = :id AND work_item_id = :w
     RETURNING id
     """
 )
@@ -383,13 +398,53 @@ class PartyView:
     status: str
     screened_out_reason: str | None
     finding_id: UUID | None
+    # S31 close: the year's transactions and the disclosure, as a person recorded them.
+    transactions: tuple[tuple[str, Decimal | None], ...] = ()
+    disclosure: str | None = None
+    disclosure_note: bool = False
+
+
+@dataclass(frozen=True)
+class PartyRecord:
+    """What a person records for a related party: the year's transactions and the disclosure.
+    `disclosure_note` says the disclosure names a note in the statements (AUD-20)."""
+
+    transactions: Sequence[tuple[str, Decimal | None]] = ()
+    disclosure: str | None = None
+    disclosure_note: bool = False
+
+    def params(self) -> dict[str, object]:
+        disclosure = None if self.disclosure is None else self.disclosure.strip()[:300] or None
+        if self.disclosure_note and disclosure is None:
+            raise DomainInvalid  # a note link needs the note's words
+        return {
+            "transactions": _transactions_json(self.transactions),
+            "disclosure": disclosure,
+            "disclosure_note": self.disclosure_note,
+        }
+
+
+def _transactions_json(transactions: Sequence[tuple[str, Decimal | None]]) -> str:
+    return json.dumps(
+        [
+            {"description": d[:300], "amount": None if a is None else str(a)}
+            for d, a in transactions
+        ]
+    )
 
 
 async def related_parties(ctx: AuthContext, work_item_id: UUID) -> list[PartyView]:
     await _engagement(ctx, work_item_id, "related_party.read")
     async with tenant_session(ctx.tenant) as session:
         rows = (await session.execute(_PARTIES, {"w": work_item_id})).all()
-    return [PartyView(*row) for row in rows]
+    return [
+        PartyView(
+            r.id, r.display_ref, str(r.source), r.relationship, str(r.status),
+            r.screened_out_reason, r.finding_id, _transactions(r.transactions), r.disclosure,
+            bool(r.disclosure_note),
+        )
+        for r in rows
+    ]  # fmt: skip
 
 
 async def add_related_party(
@@ -399,9 +454,11 @@ async def add_related_party(
     *,
     source: str = "manual",
     relationship: str | None = None,
+    activity: PartyRecord | None = None,
 ) -> UUID:
     if source not in ("client_list", "manual"):
         raise DomainInvalid  # agent candidates arrive through the mode (A-05-T56)
+    recorded = (activity or PartyRecord()).params()
     engagement_id = await _engagement(ctx, work_item_id, "related_party.manage")
     async with uow(ctx.tenant) as tx:
         party_id = (
@@ -413,7 +470,8 @@ async def add_related_party(
                     "w": work_item_id,
                     "name": name[:300],
                     "source": source,
-                    "relationship": relationship,
+                    "relationship": None if relationship is None else relationship[:300],
+                    **recorded,
                 },
             )
         ).scalar_one()
@@ -441,6 +499,30 @@ async def screen_out(ctx: AuthContext, work_item_id: UUID, party_id: UUID, reaso
             raise NotFound("related_party")
         tx.record(
             "related_party.screened_out",
+            target=Target("related_party", party_id),
+            scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
+        )
+
+
+async def record_activity(
+    ctx: AuthContext, work_item_id: UUID, party_id: UUID, activity: PartyRecord
+) -> None:
+    """AUD-27 b: a person records a related party's year transactions and its disclosure (AU-C
+    550); the agent never does. Recording again replaces what was recorded, with a new version."""
+    if ctx.tenant.actor_kind != "human":
+        raise DomainInvalid
+    recorded = activity.params()
+    engagement_id = await _engagement(ctx, work_item_id, "related_party.manage")
+    async with uow(ctx.tenant) as tx:
+        found = (
+            await tx.session.execute(
+                _RECORD_ACTIVITY, {"id": party_id, "w": work_item_id, **recorded}
+            )
+        ).first()
+        if found is None:
+            raise NotFound("related_party")
+        tx.record(
+            "related_party.activity_recorded",
             target=Target("related_party", party_id),
             scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
         )
@@ -538,12 +620,7 @@ async def add_party_in_interest(
     if ctx.tenant.actor_kind != "human" or not relationship.strip():
         raise DomainInvalid
     engagement_id = await _engagement(ctx, work_item_id, "party_in_interest.manage")
-    payload = json.dumps(
-        [
-            {"description": d[:300], "amount": None if a is None else str(a)}
-            for d, a in transactions
-        ]
-    )
+    payload = _transactions_json(transactions)
     async with uow(ctx.tenant) as tx:
         party_id = (
             await tx.session.execute(

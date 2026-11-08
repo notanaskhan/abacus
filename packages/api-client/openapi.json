@@ -7294,6 +7294,25 @@
             "title": "Components",
             "type": "array"
           },
+          "disclosure": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Disclosure"
+          },
+          "disclosure_note": {
+            "cls": "internal",
+            "default": false,
+            "title": "Disclosure Note",
+            "type": "boolean"
+          },
           "disclosure_ref": {
             "anyOf": [
               {
@@ -7430,6 +7449,19 @@
               }
             ],
             "cls": "confidential"
+          },
+          "screened_out_reason": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Screened Out Reason"
           },
           "significant_risk": {
             "cls": "internal",
@@ -79198,6 +79230,43 @@
         "title": "RejectionIssueOut",
         "type": "object"
       },
+      "RelatedPartyActivityIn": {
+        "additionalProperties": false,
+        "description": "S31 close (A-05-T57): a related party's year transactions and its disclosure, recorded by a\nperson; recording again replaces them.",
+        "properties": {
+          "disclosure": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Disclosure"
+          },
+          "disclosure_note": {
+            "cls": "internal",
+            "default": false,
+            "title": "Disclosure Note",
+            "type": "boolean"
+          },
+          "transactions": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/Aud27TransactionIn"
+            },
+            "maxItems": 50,
+            "title": "Transactions",
+            "type": "array"
+          }
+        },
+        "title": "RelatedPartyActivityIn",
+        "type": "object"
+      },
       "ReleaseIn": {
         "additionalProperties": false,
         "description": "G8: \"I am the engagement partner and I authorize release of this report\".",
@@ -128707,6 +128776,144 @@
           }
         },
         "summary": "Related Party Create Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "related_party.manage"
+      }
+    },
+    "/v1/audits/{work_item_id}/related-parties/{party_id}/activity": {
+      "put": {
+        "description": "AUD-27 b: a person records the party's year transactions and disclosure (S31 close).",
+        "operationId": "related_party_activity",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "party_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Party Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RelatedPartyActivityIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Related Party Activity Route",
         "tags": [
           "assurance"
         ],
