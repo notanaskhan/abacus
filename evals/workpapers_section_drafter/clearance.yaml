@@ -1,0 +1,14 @@
+# workpapers.section_drafter clearance records for the EBP modes (A-05-T63; DEC-2818). PROTECTED
+# (ADR-079).
+#
+# A mode is recorded here by a person, from a signed Bedrock report of the full suite
+# (`python -m abacus_tools.evals --agent workpapers.section_drafter --route bedrock`, HMAC-SHA256
+# with CI's `ABACUS_EVAL_SIGNING_KEY`) that passes every threshold for that mode. Each record
+# names the report's path and sha256, its signature, the date and who recorded it. A record needs
+# an approved Bedrock entry in `docs/operations/provider-terms.yaml` covering the run's date.
+#
+# The spec's `client_data` turns `cleared` only when every EBP mode (and every other mode of the
+# spec) is recorded here (`test_a05t63_ebp_clearance.py`); until then real firms get 409
+# `drafting_not_enabled` and the EBP modes run on synthetic firms only.
+agent: workpapers.section_drafter
+modes: {}
