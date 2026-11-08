@@ -28,6 +28,7 @@ from abacus.modules.assurance import (
 from abacus.modules.assurance import mapping_live as mapping_live
 from abacus.modules.assurance.a07_registrations import SUBSCRIPTIONS as A07_SUBSCRIPTIONS
 from abacus.modules.assurance.a07_registrations import register as register_a07_live_path
+from abacus.modules.assurance.aud27 import register_estimate_conclusion_kind
 from abacus.modules.assurance.audits_contract import audits_router
 from abacus.modules.assurance.checklist_suggestions import (
     CHECKLIST_SUGGESTION_TARGET,
@@ -226,6 +227,8 @@ register_audit_segment("review", None)
 register_a01_providers()
 # A-07-T19: the live-path registrations, inert until the A-07 flags (T33).
 register_a07_live_path()
+# A-05-T53: the estimate conclusion, the EP's card (AU-C 540).
+register_estimate_conclusion_kind()
 # I-01-T08: this module's HOME-01 tile or pill (platform.register_home_count).
 register_home_counts()
 register_exception_routes()  # DEC-2354: AUD-09 and AUD-10's routes into Findings and the SUM
