@@ -276,6 +276,15 @@ export function useEligibilityCanvas(
           </section>
           <section data-ebp03="matrix" aria-label={COPY.matrix} className={CARD}>
             <h3 className={HEAD}>{COPY.matrix}</h3>
+            {data.entry_rule.state !== "verified" && (
+              <p
+                data-ebp03="entry-rule"
+                role="status"
+                className="bg-amber-tint px-[12px] py-[8px] text-[12px] text-amber-ink hairline-t"
+              >
+                {COPY.entryRule[data.entry_rule.state]}
+              </p>
+            )}
             <table className="w-full table-fixed">
               <thead>
                 <tr>
@@ -346,6 +355,9 @@ export function useEligibilityCanvas(
                   selected.recordkeeper_entry_on === null
                     ? null
                     : us(selected.recordkeeper_entry_on),
+                  data.entry_rule.minimum_age == null || data.entry_rule.service_months == null
+                    ? null
+                    : { age: data.entry_rule.minimum_age, months: data.entry_rule.service_months },
                 )}
               </p>
             )}
