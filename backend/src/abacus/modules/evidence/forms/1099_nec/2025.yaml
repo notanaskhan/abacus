@@ -1,0 +1,17 @@
+# Form 1099-NEC box map (P-11-T34; P-11 F8; DEC-76, DEC-2809). PROTECTED: golden tested and reviewed
+# yearly against the IRS form for the year. Dark until the firm's `evidence.form_extraction`
+# variant covers `tax_forms`. TINs (SSN, EIN) are never fields: P-03 masks them on the page.
+form: "1099-NEC"
+form_type: "1099_nec"
+tax_year: 2025
+family: tax_forms
+version: "1099_nec-2025-v1"
+anchors: ["1099-NEC"]
+year_after: "1099-NEC"
+corrected_anchor: "CORRECTED"
+fields:
+  - {key: nec.box1, label: "Nonemployee compensation", anchor: "Nonemployee compensation", value_type: money}
+  - {key: nec.box4, label: "Federal income tax withheld", anchor: "Federal income tax withheld", value_type: money}
+# Code tie-outs: format and ordering only; a break flags both fields, nothing is changed.
+tie_outs:
+  - {smaller: nec.box4, larger: nec.box1}

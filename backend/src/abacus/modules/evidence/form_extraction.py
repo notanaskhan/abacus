@@ -31,6 +31,13 @@ from abacus.kernel.flags import flag_variant
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.evidence.events import ExtractedFieldsRecorded
 from abacus.modules.evidence.repository import pages_of
+from abacus.modules.evidence.tax_form_rules import (
+    TieOut,
+    broken_tie_outs,
+    corrected,
+    flag,
+    title_year,
+)
 from abacus.modules.evidence.words import WORDS_VERSION, PageWords, Word, read_page_layer
 
 FORMS: Final = Path(__file__).parent / "forms"
@@ -80,6 +87,10 @@ class FormMap:
     anchors: tuple[str, ...]
     fields: tuple[FieldMap, ...]
     tables: tuple[TableMap, ...] = ()
+    # P-11-T34 (DEC-2809): information returns only; a notice map declares none of these.
+    year_after: str | None = None
+    corrected_anchor: str | None = None
+    tie_outs: tuple[TieOut, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -94,25 +105,39 @@ class Extracted:
     low_confidence: bool
 
 
+def _form_map(raw: JsonMap, year: int | None = None) -> FormMap:
+    return FormMap(
+        raw["form"], raw["form_type"], int(year if year is not None else raw["tax_year"]),
+        raw["family"], raw["version"], tuple(raw["anchors"]),
+        tuple(FieldMap(f["key"], f["label"], f["anchor"], f["value_type"]) for f in raw["fields"]),
+        tuple(
+            TableMap(t["key"], t["label"], t["header"], t["stop"], tuple(t["columns"]))
+            for t in raw.get("tables", ())
+        ),
+        raw.get("year_after"),
+        raw.get("corrected_anchor"),
+        tuple(TieOut(t["smaller"], t["larger"]) for t in raw.get("tie_outs", ())),
+    )  # fmt: skip
+
+
 @cache
 def load_maps() -> tuple[FormMap, ...]:
+    """Every map file. P-11-T34: a year file reading `inherits: <year>` reuses that year's map
+    under its own year and version (TY2026 inherits TY2025 where the form is unchanged)."""
+    raws: dict[Path, JsonMap] = {
+        path: cast(JsonMap, yaml.safe_load(path.read_text()))
+        for path in sorted(FORMS.glob("*/*.yaml"))
+    }
     maps: list[FormMap] = []
-    for path in sorted(FORMS.glob("*/*.yaml")):
-        raw = cast(JsonMap, yaml.safe_load(path.read_text()))
-        maps.append(
-            FormMap(
-                raw["form"], raw["form_type"], int(raw["tax_year"]), raw["family"], raw["version"],
-                tuple(raw["anchors"]),
-                tuple(
-                    FieldMap(f["key"], f["label"], f["anchor"], f["value_type"])
-                    for f in raw["fields"]
-                ),
-                tuple(
-                    TableMap(t["key"], t["label"], t["header"], t["stop"], tuple(t["columns"]))
-                    for t in raw.get("tables", ())
-                ),
-            )
-        )  # fmt: skip
+    for path, raw in raws.items():
+        parent = raw.get("inherits")
+        if parent is None:
+            maps.append(_form_map(raw))
+            continue
+        base = raws.get(path.with_name(f"{parent}.yaml"))
+        if base is None:
+            raise ValueError(f"{path}: inherits {parent}, which has no map")
+        maps.append(_form_map({**base, "version": raw["version"]}, year=int(raw["tax_year"])))
     return tuple(maps)
 
 
@@ -194,7 +219,13 @@ def identify(pages: Sequence[PageWords]) -> FormMap | None:
     year = int(match.group(1)) if match else None
     for form_map in load_maps():
         known = all(re.search(rf"\b{re.escape(a)}\b", joined) for a in form_map.anchors)
-        if known and year == form_map.tax_year:
+        # P-11-T34: an information return prints its year on the title line.
+        found_year = (
+            title_year(joined, form_map.year_after)
+            if year is None and form_map.year_after is not None
+            else year
+        )
+        if known and found_year == form_map.tax_year:
             return form_map
     return None
 
@@ -233,7 +264,36 @@ def extract(form_map: FormMap, pages: Sequence[PageWords]) -> tuple[Extracted, .
             if cells:
                 out.extend(cells)
                 break
-    return tuple(out)
+    return tuple(_tax_form_checks(form_map, pages, out))
+
+
+def _tax_form_checks(
+    form_map: FormMap, pages: Sequence[PageWords], found: list[Extracted]
+) -> list[Extracted]:
+    """P-11-T34 (DEC-2809): CORRECTED and the code tie-outs, for maps that declare them."""
+    out = found
+    if form_map.tie_outs:
+        values = {f.field_key: f.value_text for f in out if f.value_type == "money"}
+        broken = broken_tie_outs(values, form_map.tie_outs)
+        out = cast(list[Extracted], flag(out, broken))
+    if form_map.corrected_anchor is not None:
+        for page in pages:
+            words = [w.text for w in sorted(page.words, key=lambda w: (round(w.top), w.x0))]
+            if corrected(words, form_map.corrected_anchor):
+                anchor = _find_anchor(page, form_map.corrected_anchor)
+                box = (
+                    (anchor[0].x0, anchor[0].top, anchor[-1].x1, anchor[-1].bottom)
+                    if anchor
+                    else (0.0, 0.0, 0.0, 0.0)
+                )
+                out.append(
+                    Extracted(
+                        f"{form_map.form_type}.corrected", "Corrected", "boolean", "true",
+                        page.page, box, Decimal("1.000"), False,
+                    )
+                )  # fmt: skip
+                break
+    return out
 
 
 def _slug(words: Sequence[str]) -> str:

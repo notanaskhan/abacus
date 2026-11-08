@@ -1,0 +1,22 @@
+# Form 1099-DIV box map (P-11-T34; P-11 F8; DEC-76, DEC-2809). PROTECTED: golden tested and reviewed
+# yearly against the IRS form for the year. Dark until the firm's `evidence.form_extraction`
+# variant covers `tax_forms`. TINs (SSN, EIN) are never fields: P-03 masks them on the page.
+form: "1099-DIV"
+form_type: "1099_div"
+tax_year: 2027
+family: tax_forms
+version: "1099_div-2027-v1"
+anchors: ["1099-DIV"]
+year_after: "1099-DIV"
+corrected_anchor: "CORRECTED"
+fields:
+  - {key: div.box1a, label: "Total ordinary dividends", anchor: "Total ordinary dividends", value_type: money}
+  - {key: div.box1b, label: "Qualified dividends", anchor: "Qualified dividends", value_type: money}
+  - {key: div.box2a, label: "Total capital gain distributions", anchor: "Total capital gain", value_type: money}
+  - {key: div.box3, label: "Nondividend distributions", anchor: "Nondividend distributions", value_type: money}
+  - {key: div.box4, label: "Federal income tax withheld", anchor: "Federal income tax withheld", value_type: money}
+  - {key: div.box5, label: "Section 199A dividends", anchor: "Section 199A dividends", value_type: money}
+  - {key: div.box12, label: "Exempt-interest dividends", anchor: "Exempt-interest dividends", value_type: money}
+# Code tie-outs: format and ordering only; a break flags both fields, nothing is changed.
+tie_outs:
+  - {smaller: div.box1b, larger: div.box1a}
