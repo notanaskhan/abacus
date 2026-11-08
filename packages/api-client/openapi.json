@@ -49518,6 +49518,19 @@
             "title": "Create Anyway",
             "type": "boolean"
           },
+          "create_anyway_reason_code": {
+            "anyOf": [
+              {
+                "cls": "internal",
+                "pattern": "^[a-z][a-z0-9_]{0,59}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Anyway Reason Code"
+          },
           "engagement_id": {
             "anyOf": [
               {
@@ -225777,7 +225790,7 @@
     },
     "/v1/notice-intakes/{intake_id}/create": {
       "post": {
-        "description": "409 `low_confidence_unconfirmed`, `duplicate_unresolved`, `no_notice_engagement`.",
+        "description": "409 `low_confidence_unconfirmed`, `duplicate_unresolved`, `no_notice_engagement`; 422\n`create_anyway_reason_required`.",
         "operationId": "intake_confirm",
         "parameters": [
           {
