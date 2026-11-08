@@ -100,3 +100,10 @@ the work item's live (published, not withdrawn) deliverable versions through
 `evidence.api.register_folder_provider("deliverables", ...)`. Files keeps its own `visible()`
 filter, so a walled viewer sees nothing.
 
+## 10. POR-09's "In Sign" rows (R-02-T09 close; DEC-2824)
+C7 registers `register_envelope_rows` from `signatures.api`. For each work item a client person's grant reaches, the rail lists that person's own envelopes:
+- out for signature (`sent`, `viewed`, `partially_signed`) reads `in_sign`;
+- one they have signed reads `signed`.
+
+The row's `deliverable_id` is the envelope's id. Its kind is `governance_letter` for a governance-letter envelope, otherwise `other`. It has no version or page count. A firm user, and a person who is no contact, see none.
+
