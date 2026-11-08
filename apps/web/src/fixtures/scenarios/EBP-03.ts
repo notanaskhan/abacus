@@ -22,6 +22,7 @@ import { auditHandlers } from "../handlers/audits";
 import { seedScenario } from "../scenario";
 import { getSeed } from "../seed";
 import { type Ebp03Variant, ebp03Sample, ebp03Unverified } from "../seed/ebp03";
+import { ebp02Review } from "../seed/ebp02";
 import { capabilitiesFor } from "../seed/shell";
 
 const seed = getSeed();
@@ -81,6 +82,8 @@ function frame(state: Ebp03Variant | "f"): Scenario {
         ...(cockpit === undefined ? {} : { [COCKPIT]: withEligibility(cockpit) }),
         "GET /v1/me/capabilities": ({ persona }) => json(capabilities(persona)),
         [`GET ${P}/eligibility/sample`]: () => json(sample),
+        // The provision cards read EBP-02's verified provisions (DEC-2955).
+        [`GET ${P}/plan-reviews/current`]: () => json(ebp02Review("a")),
         "POST /v1/work-items/{work_item_id}/findings": () => json({ id: "fixture-finding" }, 201),
         "PUT /v1/audits/{work_item_id}/tests/{test_id}/items/{item_id}/results/{attribute}": ({
           params,

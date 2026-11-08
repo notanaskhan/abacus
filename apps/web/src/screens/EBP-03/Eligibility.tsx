@@ -2,6 +2,7 @@ import type { EligibilitySampleRowOut } from "@abacus/api-client";
 import {
   auditFindingCreateMutation,
   ebpEligibilitySampleOptions,
+  ebpPlanReviewOptions,
   ebpEligibilitySampleQueryKey,
   ebpTestMarkMutation,
 } from "@abacus/api-client/query";
@@ -41,6 +42,51 @@ const CARD = "mx-[12px] mt-[12px] overflow-hidden rounded-card bg-card shadow-e1
 const HEAD = "flex h-[32px] items-center px-[12px] text-body font-medium hairline-b";
 const TH = "h-[28px] bg-band-hd px-[8px] text-left text-th font-normal text-ink-2";
 const TD = "h-[29px] truncate px-[8px] text-[12px]";
+// The handoff's two provision cards: EBP-02's provisions, read-only here (A-05-T23; DEC-2955).
+const ENROLLMENT_KEYS = ["auto_enrollment", "default_deferral_rate", "qdia"] as const;
+const ESCALATION_KEYS = ["auto_escalation"] as const;
+
+function ProvisionCard({
+  title,
+  keys,
+  provisions,
+}: {
+  title: string;
+  keys: readonly string[];
+  provisions: readonly { key: string; label: string; value: string; reference?: string | null }[];
+}): JSX.Element | null {
+  const shown = keys
+    .map((k) => provisions.find((p) => p.key === k))
+    .filter((p) => p !== undefined);
+  if (shown.length === 0) return null;
+  return (
+    <section data-ebp03="provisions" aria-label={title} className={CARD}>
+      <h3 className={HEAD}>{title}</h3>
+      <table className="w-full table-fixed">
+        <thead>
+          <tr>
+            {COPY.provisionColumns.map((c) => (
+              <th key={c} className={TH}>
+                {c}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {shown.map((p) => (
+            <tr key={p.key} className="hairline-t">
+              <td className={TD}>{p.label}</td>
+              <td className={TD}>
+                <Chip>{p.value}</Chip>
+              </td>
+              <td className={TD}>{p.reference ?? ""}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  );
+}
 
 /** "2025-06-01" → "06/01/2025": the handoff's date grammar (no arithmetic). */
 export function us(iso: string | null | undefined): string {
@@ -61,16 +107,30 @@ function ResultCell({
   row,
   canMark,
   onMark,
+  onFlag,
 }: {
   row: EligibilitySampleRowOut;
   canMark: boolean;
   onMark: () => void;
+  /** Flag → an AUD-15 draft finding; absent once raised or when the person may not. */
+  onFlag?: (() => void) | undefined;
 }): JSX.Element {
   switch (row.result) {
     case "exception":
       return (
         <span data-ebp03="exception" className="flex items-center gap-[4px]">
-          <Icon name="flag" size={12} className="text-red" />
+          {onFlag === undefined ? (
+            <Icon name="flag" size={12} className="text-red" />
+          ) : (
+            <button
+              type="button"
+              aria-label={COPY.flag}
+              onClick={onFlag}
+              className="inline-flex size-[18px] items-center justify-center rounded-[5px] hover:bg-nested"
+            >
+              <Icon name="flag" size={12} className="text-red" />
+            </button>
+          )}
           <Pill variant="red-tint" size="micro">
             {COPY.exception}
           </Pill>
@@ -116,7 +176,8 @@ export function useEligibilityCanvas(
     active: boolean;
     /** The viewer dock on a row's HR record version. */
     onDock?: (versionId: string) => void;
-    onRaise?: () => void;
+    /** "Raise exception…": SHL-15 on a new issue about the test (the host opens it). */
+    onRaise?: (testId: string) => void;
     onRequestOptOut?: () => void;
     /** SHL-12 on the attribute test, at L1 (Adopt) or L2 (Sign off). */
     onSignOff?: (testId: string, level: "L1" | "L2") => void;
@@ -131,6 +192,10 @@ export function useEligibilityCanvas(
     refetchInterval: (q) =>
       (q.state.data?.rows ?? []).some((r) => r.result === "not_started") ? POLL_MS : false,
   });
+  const provisions = useQuery({
+    ...ebpPlanReviewOptions(path),
+    enabled: active && on,
+  }).data?.provisions;
   const mark = useMutation({
     ...ebpTestMarkMutation(),
     onSuccess: () => {
@@ -167,6 +232,26 @@ export function useEligibilityCanvas(
   const pending = rows.some((r) => r.result === "needs_human" || r.result === "not_started");
   const adopted = data?.prepared_by != null;
   const exceptions = rows.filter((r) => r.result === "exception");
+  // Flag → AUD-15: one draft finding for the sample's exceptions, the handoff's title.
+  const canFlag =
+    data?.workpaper_id != null &&
+    data.allowed_actions.includes("finding.create") &&
+    !raise.isPending &&
+    !raise.isSuccess;
+  const flag = canFlag
+    ? (): void => {
+        if (data.workpaper_id == null) return;
+        raise.mutate({
+          path: { work_item_id: workItemId },
+          body: {
+            title: COPY.findingTitle(exceptions.length),
+            kind: "compliance",
+            workpaper_id: data.workpaper_id,
+          },
+          headers: { "Idempotency-Key": crypto.randomUUID() },
+        });
+      }
+    : undefined;
   const pick = (row: EligibilitySampleRowOut): void => {
     setChosen(row.position);
     if (row.hr_record_version_id != null) onDock?.(row.hr_record_version_id);
@@ -229,6 +314,16 @@ export function useEligibilityCanvas(
     children:
       data === undefined ? null : (
         <div data-screen="EBP-03" className="pb-[12px]">
+          <ProvisionCard
+            title={COPY.enrollmentCard}
+            keys={ENROLLMENT_KEYS}
+            provisions={provisions ?? []}
+          />
+          <ProvisionCard
+            title={COPY.escalationCard}
+            keys={ESCALATION_KEYS}
+            provisions={provisions ?? []}
+          />
           <section data-ebp03="dual" aria-label={COPY.dual} className={CARD}>
             <h3 className={HEAD}>{COPY.dual}</h3>
             <table className="w-full table-fixed">
@@ -325,6 +420,7 @@ export function useEligibilityCanvas(
                       <ResultCell
                         row={r}
                         canMark={canMark}
+                        onFlag={flag}
                         onMark={() => {
                           if (data.test_id == null) return;
                           mark.mutate({
@@ -381,24 +477,9 @@ export function useEligibilityCanvas(
                 <Button
                   variant="tonal"
                   size="sm"
-                  disabled={
-                    raise.isPending ||
-                    raise.isSuccess ||
-                    data.workpaper_id == null ||
-                    !data.allowed_actions.includes("finding.create")
-                  }
+                  disabled={onRaise === undefined || data.test_id == null}
                   onClick={() => {
-                    if (data.workpaper_id == null) return;
-                    raise.mutate({
-                      path: { work_item_id: workItemId },
-                      body: {
-                        title: COPY.findingTitle(exceptions.length),
-                        kind: "compliance",
-                        workpaper_id: data.workpaper_id,
-                      },
-                      headers: { "Idempotency-Key": crypto.randomUUID() },
-                    });
-                    onRaise?.();
+                    if (data.test_id != null) onRaise?.(data.test_id);
                   }}
                 >
                   {COPY.raise}

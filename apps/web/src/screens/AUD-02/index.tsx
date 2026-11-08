@@ -304,6 +304,10 @@ function Cockpit({
     onSignOff: (testId, level) => {
       openOverlay(ov.SHL12("attribute_test", testId, level));
     },
+    // "Raise exception…": SHL-15 on a new issue about the eligibility test.
+    onRaise: (testId) => {
+      openOverlay(ov.SHL15New("attribute_test", testId, cockpit.engagement_id));
+    },
     // "Request opt-out forms": the SHL-14 composer over the work item's PBC binder.
     ...(pbcBinderId === undefined
       ? {}
