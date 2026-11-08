@@ -4,8 +4,7 @@ Acceptance (the task row): "The seed tests fail on any figure drift between the 
 fixtures and screens." The figure book (`brightwater_hale/completion_figures.json`) is transcribed
 from the epic; this side checks the Brightwater Hale scenario that `make seed` loads, and
 `apps/web/src/fixtures/contracts/completion-figures.test.ts` checks the screens' fixtures against
-the same book. The 26-row sign-off matrix is not seeded (DEC-2391): its check fails strictly until
-it is, so the gap can't be forgotten.
+the same book. The 26-row sign-off matrix is seeded since TASK-3401 (DEC-2428).
 """
 
 from __future__ import annotations
@@ -15,7 +14,6 @@ from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 from typing import Final, cast
 
-import pytest
 import yaml
 
 from abacus.modules.assurance.findings import awaiting_decision
@@ -120,11 +118,18 @@ def test_the_tie_out_parts_add_up() -> None:
     assert sum(cast(list[int], book["parts"])) == book["total"]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="TASK-6006, DEC-2391: the design's 26-row sign-off matrix isn't seeded",
-)
 def test_ac_the_sign_off_matrix_is_26() -> None:
+    """TASK-3401 (DEC-2428): the seed's 26 rows, Planning 6 + Fieldwork 3 + Testing 7 (one group,
+    Fieldwork & Testing) + Completion 6 + Reporting 4; the live matrix is read on Postgres in
+    `test_a06t28_completion_load.py`."""
     book = BOOK["matrix"]
+    planning, fieldwork, testing, completion, reporting = cast(list[int], book["parts"])
+    rows = seed.MATRIX_ROWS
     assert sum(cast(list[int], book["parts"])) == book["total"]
-    assert sum(len(levels) for _paper, levels in seed.SIGN_OFFS) == book["total"]
+    assert [len(rows[g]) for g in ("planning", "fieldwork", "completion", "reporting")] == [
+        planning,
+        fieldwork + testing,
+        completion,
+        reporting,
+    ]
+    assert len({ref for refs in rows.values() for ref in refs}) == book["total"]

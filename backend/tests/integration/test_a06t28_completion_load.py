@@ -305,3 +305,25 @@ async def test_ac_granite_peaks_entry_declined_oct_5_is_passed_below_pm(loaded: 
         Decimal("116250.00"),
         Decimal("7750.00"),
     )
+
+
+async def test_ac_the_matrix_reads_26_rows_and_the_designed_footer(loaded: Database) -> None:
+    """TASK-3401 (DEC-2428): AUD-17's 26 rows in their groups and the footer the handoff counts,
+    from the firm's assigned levels and the seeded sign-offs (Prepared 25, Reviewed 24, Partner 8
+    of 13, EQR 0 of 6, one changed after sign-off)."""
+    await dispose_engine()
+    configure_engine(loaded.app_url)
+    found = await matrix(TenantContext(TENANT, "system", "test"), engagement_id_of(BY_LABEL["A1"]))
+    await dispose_engine()
+    by_group: dict[str, int] = {}
+    for row in found.rows:
+        by_group[row.section] = by_group.get(row.section, 0) + 1
+    assert by_group == {"planning": 6, "fieldwork": 10, "completion": 6, "reporting": 4}
+    f = found.footer
+    assert (f.prepared, f.reviewed, f.partner_signed, f.partner_required) == (25, 24, 8, 13)
+    assert (f.eqr_signed, f.eqr_required, f.changed_after_sign_off) == (0, 6, 1)
+    cells = {r.code: [c.state for c in r.cells] for r in found.rows}
+    # Drawn rows (AUD-17 a): the dash where a level isn't required, the ring where it waits.
+    assert cells["EBP-04"] == ["signed", "stale", "pending", "pending", "not_required"]
+    assert cells["MAT"] == ["signed", "not_required", "signed", "signed", "pending"]
+    assert cells["C-100"] == ["pending", "not_required", "not_required", "pending", "not_required"]
