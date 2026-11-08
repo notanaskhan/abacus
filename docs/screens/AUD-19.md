@@ -45,15 +45,11 @@ Every endpoint is in `docs/contracts/audit-completion.md` (A-07-T04, T05); 501 u
 
 ## Deviations
 - DV-8: the AUD-28 link renders as a reference chip until Q-05
-- DV-AUD-19-2 (A-07-T25, DEC-2815): blocker rows read each open item's title, gate tag and link
-  or due date from the read; the handoff's separate blocker sentences are not on
-  `AuditCompletionOut`, and the titles are the firm template's words.
+- DV-AUD-19-2 (closed, S31 close, DEC-2822): blocker rows read the template item's own blocker sentence (`blocker_text`, the firm's words in its checklist template), falling back to its title.
 - DV-AUD-19-3: the summary's "Checked by Accrued Agent · run #4231 · 9:12 AM" line is not drawn;
   run #4231 and the queued #4240 show as the cockpit dock's SHL-13 tool cards (narration arrives
   with A-07-T32's agent).
-- DV-AUD-19-4: the going-concern card shows the question and options as product copy and the
-  chosen option's detail from `GoingConcernOut.inputs`; Granite Peak's FS-audit wording of the
-  question waits for a card question on the read.
+- DV-AUD-19-4 (closed, S31 close, DEC-2822): the going-concern question reads the plan's or the entity's continuance by `GoingConcernOut.subject` (Granite Peak's FS audit asks about the entity).
 - DV-AUD-19-5: copy lives in `screens/AUD-19/copy.ts`, as every built screen's does, not
   `copy/aud-19.ts`. The reads stay 501 on the live server until A-07-T47 wires them (fixture mode
   per the row).

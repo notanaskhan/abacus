@@ -13,8 +13,8 @@ eqr_checklist:
   - {key: review_notes, text: "EQR review notes cleared"}
   - {key: documentation, text: "Documentation of the review complete"}
 completion_ebp:
-  - {key: subsequent_events, text: "Subsequent-events procedures through the report date", due_on_report_date: true}
-  - {key: rep_letter, text: "Representation letter signed and dated as of the report", gate_tag: G7, depends_on_client: true, due_on_report_date: true}
+  - {key: subsequent_events, text: "Subsequent-events procedures through the report date", due_on_report_date: true, blocker: "Subsequent events: bring-down due on the report date"}
+  - {key: rep_letter, text: "Representation letter signed and dated as of the report", gate_tag: G7, depends_on_client: true, due_on_report_date: true, blocker: "Representation letter not yet signed"}
   - {key: legal_letter, text: "Legal letter received or not applicable with its basis", derived: false}
   - {key: going_concern, text: "Going concern evaluated"}
   - {key: sum, text: "Summary of misstatements concluded"}
@@ -23,8 +23,8 @@ completion_ebp:
   - {key: sign_offs, text: "Workpapers signed off"}
   - {key: fs_final, text: "Financial statements final and tied"}
   - {key: disclosure_checklist, text: "Disclosure checklist complete"}
-  - {key: mgmt_approval, text: "Management approval of the statements recorded", depends_on_client: true}
-  - {key: tcwg_260, text: "Governance communications sent"}
+  - {key: mgmt_approval, text: "Management approval of the statements recorded", depends_on_client: true, blocker: "Management has not approved the final financial statements"}
+  - {key: tcwg_260, text: "Governance communications sent", blocker: "AU-C 260 completion communication not yet sent"}
   - {key: sd_mw_265, text: "Significant deficiencies communicated"}
   - {key: form5500_tie, text: "Form 5500 tied to the statements"}
   - {key: schedules, text: "Supplemental schedules 4i and 4a final"}
@@ -32,14 +32,14 @@ completion_ebp:
   - {key: filing, text: "Filing plan confirmed with the plan administrator"}
   - {key: eqr, text: "EQR concurred"}
 completion_fs:
-  - {key: subsequent_events, text: "Subsequent-events procedures through the report date", due_on_report_date: true}
-  - {key: rep_letter, text: "Representation letter signed and dated as of the report", gate_tag: G7, depends_on_client: true, due_on_report_date: true}
+  - {key: subsequent_events, text: "Subsequent-events procedures through the report date", due_on_report_date: true, blocker: "Subsequent events: bring-down due on the report date"}
+  - {key: rep_letter, text: "Representation letter signed and dated as of the report", gate_tag: G7, depends_on_client: true, due_on_report_date: true, blocker: "Representation letter not yet signed"}
   - {key: legal_letter, text: "Legal letter received or not applicable with its basis", derived: false}
   - {key: going_concern, text: "Going concern evaluated"}
   - {key: sum, text: "Summary of misstatements concluded"}
   - {key: fs_final, text: "Financial statements final and tied"}
   - {key: disclosure_checklist, text: "Disclosure checklist complete"}
-  - {key: tcwg_260, text: "Governance communications sent"}
+  - {key: tcwg_260, text: "Governance communications sent", blocker: "AU-C 260 completion communication not yet sent"}
   - {key: eqr, text: "EQR concurred"}
 archive_checklist:
   - {key: binder_index, text: "Binder index built"}

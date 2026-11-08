@@ -80,6 +80,11 @@ describe("AUD-19", () => {
     const tagged = rows.filter((r) => r.textContent.includes("G7"));
     expect(tagged.map((r) => r.dataset.blocker)).toEqual(["rep_letter"]);
     expect(rows[0]?.textContent).toContain("Oct 9");
+    // The template's blocker sentences (DV-AUD-19-2 closed).
+    expect(rows[0]?.textContent).toContain(
+      "Independence reconfirmation through the report date (5 people)",
+    );
+    expect(rows[3]?.textContent).toContain("Representation letter not yet signed");
     rows[3]?.querySelector<HTMLElement>("[data-link='AUD-21']")?.click();
     expect(calls).toEqual(["AUD-21"]);
   });
@@ -135,6 +140,7 @@ describe("AUD-19", () => {
     show("e", "going_concern");
     const card = await drawn("[data-aud19='going-concern']");
     expect(card.textContent).toContain("1.32×");
+    expect(card.textContent).toContain("the entity's ability to continue"); // an FS audit
     expect(card.textContent).toContain("Front Range Bank matures Mar 2028");
   });
 
