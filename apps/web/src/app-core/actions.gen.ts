@@ -153,6 +153,7 @@ export const ACTIONS = [
   "ebp_provider.request",
   "ebp_schedule.draft",
   "ebp_schedule.render",
+  "ebp_schedule_h_mapping.publish",
   "efile_ack.record",
   "email_template.edit",
   "email_template.import",
