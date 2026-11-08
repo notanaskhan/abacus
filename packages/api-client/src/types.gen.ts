@@ -9374,6 +9374,22 @@ export type ConflictResultOut = {
 };
 
 /**
+ * ConflictSourceOut
+ *
+ * EBP-02 c: the document that disagrees (A-05-T17; DEC-2487): the viewer opens on it.
+ */
+export type ConflictSourceOut = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Note
+     */
+    note: string;
+};
+
+/**
  * ConnectionActivityOut
  *
  * One line of the connection's activity in the ADM-07 grammar (A-02-T16; INV-5):
@@ -10053,6 +10069,82 @@ export type ConsentTermsOut = {
      */
     statement_version: string;
 };
+
+/**
+ * ConsultationConcludeIn
+ */
+export type ConsultationConcludeIn = {
+    /**
+     * Conclusion
+     */
+    conclusion: string;
+};
+
+/**
+ * ConsultationIn
+ */
+export type ConsultationIn = {
+    /**
+     * Consulted With User Id
+     */
+    consulted_with_user_id: string;
+    /**
+     * Question
+     */
+    question: string;
+};
+
+/**
+ * ConsultationOut
+ */
+export type ConsultationOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'finding.update' | 'finding.convert' | 'finding.resolve' | 'finding.mark_not_applicable' | 'finding.request_decision' | 'misstatement.update' | 'misstatement.pass_to_sum' | 'sum.update_factors' | 'sum.request_conclusion' | 'consultation.conclude' | 'sum.snapshot' | 'sum.export'>;
+    /**
+     * Concluded At
+     */
+    concluded_at: string | null;
+    /**
+     * Conclusion
+     */
+    conclusion: string | null;
+    /**
+     * Consulted With Name
+     */
+    consulted_with_name: string;
+    /**
+     * Consulted With User Id
+     */
+    consulted_with_user_id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Question
+     */
+    question: string;
+    /**
+     * Raised By Name
+     */
+    raised_by_name: string;
+    /**
+     * Ref
+     */
+    ref: string;
+    status: ConsultationStatus;
+};
+
+/**
+ * ConsultationStatus
+ */
+export type ConsultationStatus = 'open' | 'concluded';
 
 /**
  * ContactAccessIn
@@ -13116,6 +13208,7 @@ export type EligibilitySampleOut = {
      * Allowed Actions
      */
     allowed_actions: Array<string>;
+    entry_rule: EntryRuleOut;
     /**
      * Exceptions
      */
@@ -15271,6 +15364,27 @@ export type EntryOut = {
      * Version
      */
     version: number;
+};
+
+/**
+ * EntryRuleOut
+ *
+ * The entry rule EBP-03 computed from: the verified provisions' (A-05-T16; DEC-2482). While it
+ * is `unverified` or `unreadable` the ages and months are null and no row has an entry date.
+ */
+export type EntryRuleOut = {
+    /**
+     * Minimum Age
+     */
+    minimum_age?: number | null;
+    /**
+     * Service Months
+     */
+    service_months?: number | null;
+    /**
+     * State
+     */
+    state: 'verified' | 'unverified' | 'unreadable';
 };
 
 /**
@@ -18141,7 +18255,7 @@ export type FindingDetailOut = {
     /**
      * Allowed Actions
      */
-    allowed_actions: Array<'finding.update' | 'finding.convert' | 'finding.resolve' | 'finding.mark_not_applicable' | 'finding.request_decision' | 'misstatement.update' | 'misstatement.pass_to_sum' | 'sum.update_factors' | 'sum.request_conclusion' | 'sum.snapshot' | 'sum.export'>;
+    allowed_actions: Array<'finding.update' | 'finding.convert' | 'finding.resolve' | 'finding.mark_not_applicable' | 'finding.request_decision' | 'misstatement.update' | 'misstatement.pass_to_sum' | 'sum.update_factors' | 'sum.request_conclusion' | 'consultation.conclude' | 'sum.snapshot' | 'sum.export'>;
     /**
      * Citation Ids
      */
@@ -26532,6 +26646,10 @@ export type LinkCellOut = {
     risk_code: string;
     state: RiskLinkageStatus;
     /**
+     * Suggestion Id
+     */
+    suggestion_id?: string | null;
+    /**
      * Target Ref
      */
     target_ref: string;
@@ -27119,6 +27237,40 @@ export type ListPageConsentOut = {
      * Items
      */
     items: Array<ConsentOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
+ * ListPage[ConsultationOut]
+ */
+export type ListPageConsultationOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<ConsultationOut>;
     /**
      * Next Cursor
      */
@@ -32257,6 +32409,22 @@ export type PlanOut = {
 };
 
 /**
+ * PlanReviewDiffOut
+ *
+ * EBP-02 b2's ribbon: what the current version adds to this earlier one, from code.
+ */
+export type PlanReviewDiffOut = {
+    /**
+     * Added Labels
+     */
+    added_labels: Array<string>;
+    /**
+     * Current Version No
+     */
+    current_version_no: number;
+};
+
+/**
  * PlanReviewIn
  */
 export type PlanReviewIn = {
@@ -32292,6 +32460,7 @@ export type PlanReviewOut = {
      * Verified
      */
     verified: number;
+    version_diff?: PlanReviewDiffOut | null;
     /**
      * Version No
      */
@@ -35330,6 +35499,7 @@ export type ProvisionOut = {
      * Conflict
      */
     conflict: string | null;
+    conflict_source?: ConflictSourceOut | null;
     /**
      * Key
      */
@@ -38901,13 +39071,15 @@ export type RiskDrawerOut = {
      */
     citation_ids: Array<string>;
     /**
+     * Pending Card Id
+     */
+    pending_card_id?: string | null;
+    /**
      * Rationale
      */
     rationale: string | null;
-    /**
-     * Rationale Suggestion Id
-     */
-    rationale_suggestion_id: string | null;
+    rationale_suggestion?: SuggestedRationaleOut | null;
+    response_suggestion?: SuggestedResponseOut | null;
     risk: RegisterRiskOut;
     /**
      * Routed At
@@ -45642,6 +45814,54 @@ export type SubserviceOrgOut = {
 };
 
 /**
+ * SuggestedRationaleOut
+ *
+ * A drafted rationale waiting for a person (AUD-08 f; DEC-2481): the row holds none of it.
+ */
+export type SuggestedRationaleOut = {
+    /**
+     * Citations
+     */
+    citations: number;
+    /**
+     * Suggestion Id
+     */
+    suggestion_id: string;
+    /**
+     * Text
+     */
+    text: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * SuggestedResponseOut
+ *
+ * A drafted response waiting for a person (AUD-08 f; DEC-2480): nothing is linked yet.
+ */
+export type SuggestedResponseOut = {
+    /**
+     * Citations
+     */
+    citations: number;
+    /**
+     * Suggestion Id
+     */
+    suggestion_id: string;
+    /**
+     * Target Ref
+     */
+    target_ref: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * SuggestionOut
  */
 export type SuggestionOut = {
@@ -45797,7 +46017,7 @@ export type SumOut = {
     /**
      * Allowed Actions
      */
-    allowed_actions?: Array<'finding.update' | 'finding.convert' | 'finding.resolve' | 'finding.mark_not_applicable' | 'finding.request_decision' | 'misstatement.update' | 'misstatement.pass_to_sum' | 'sum.update_factors' | 'sum.request_conclusion' | 'sum.snapshot' | 'sum.export'>;
+    allowed_actions?: Array<'finding.update' | 'finding.convert' | 'finding.resolve' | 'finding.mark_not_applicable' | 'finding.request_decision' | 'misstatement.update' | 'misstatement.pass_to_sum' | 'sum.update_factors' | 'sum.request_conclusion' | 'consultation.conclude' | 'sum.snapshot' | 'sum.export'>;
     /**
      * Approaching Pm
      */
@@ -51653,7 +51873,7 @@ export type AbacusModulesAssuranceFindingsContractMisstatementOut = {
     /**
      * Allowed Actions
      */
-    allowed_actions: Array<'finding.update' | 'finding.convert' | 'finding.resolve' | 'finding.mark_not_applicable' | 'finding.request_decision' | 'misstatement.update' | 'misstatement.pass_to_sum' | 'sum.update_factors' | 'sum.request_conclusion' | 'sum.snapshot' | 'sum.export'>;
+    allowed_actions: Array<'finding.update' | 'finding.convert' | 'finding.resolve' | 'finding.mark_not_applicable' | 'finding.request_decision' | 'misstatement.update' | 'misstatement.pass_to_sum' | 'sum.update_factors' | 'sum.request_conclusion' | 'consultation.conclude' | 'sum.snapshot' | 'sum.export'>;
     /**
      * Amount
      */
@@ -65586,6 +65806,70 @@ export type RevokeConsentResponses = {
 };
 
 export type RevokeConsentResponse = RevokeConsentResponses[keyof RevokeConsentResponses];
+
+export type ConsultationConcludeData = {
+    body: ConsultationConcludeIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Consultation Id
+         */
+        consultation_id: string;
+    };
+    query?: never;
+    url: '/v1/consultations/{consultation_id}/conclude';
+};
+
+export type ConsultationConcludeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsultationConcludeError = ConsultationConcludeErrors[keyof ConsultationConcludeErrors];
+
+export type ConsultationConcludeResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConsultationOut;
+};
+
+export type ConsultationConcludeResponse = ConsultationConcludeResponses[keyof ConsultationConcludeResponses];
 
 export type GetContactData = {
     body?: never;
@@ -86258,10 +86542,6 @@ export type AttentionFlagRemindErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AttentionFlagRemindError = AttentionFlagRemindErrors[keyof AttentionFlagRemindErrors];
@@ -119838,6 +120118,122 @@ export type AdjustedTbResponses = {
 };
 
 export type AdjustedTbResponse = AdjustedTbResponses[keyof AdjustedTbResponses];
+
+export type ConsultationsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/work-items/{work_item_id}/consultations';
+};
+
+export type ConsultationsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsultationsError = ConsultationsErrors[keyof ConsultationsErrors];
+
+export type ConsultationsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ListPageConsultationOut;
+};
+
+export type ConsultationsResponse = ConsultationsResponses[keyof ConsultationsResponses];
+
+export type ConsultationCreateData = {
+    body: ConsultationIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/work-items/{work_item_id}/consultations';
+};
+
+export type ConsultationCreateErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConsultationCreateError = ConsultationCreateErrors[keyof ConsultationCreateErrors];
+
+export type ConsultationCreateResponses = {
+    /**
+     * Successful Response
+     */
+    201: ConsultationOut;
+};
+
+export type ConsultationCreateResponse = ConsultationCreateResponses[keyof ConsultationCreateResponses];
 
 export type EpInvolvementData = {
     body?: never;

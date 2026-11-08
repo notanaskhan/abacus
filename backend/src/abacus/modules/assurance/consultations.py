@@ -1,4 +1,4 @@
-"""A-06-T11: the minimal consultation record (A-06 §4.2; DEC-83; DEC-2421).
+"""A-06-T11: the minimal consultation record (A-06 §4.2; DEC-83; DEC-2485).
 
 A person with `consultation.create` raises a question to a named firm member on the work item; only
 that member concludes it (the service answers 403, and 0644's guard refuses anyone else). The

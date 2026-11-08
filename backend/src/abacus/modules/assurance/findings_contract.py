@@ -1047,7 +1047,7 @@ def _consultation_out(found: object) -> ConsultationOut:
     errors=(501,),
 )
 async def consultations_route(work_item_id: UUID, ctx: Ctx) -> ListPage[ConsultationOut]:
-    """The work item's consultations; someone consulted reads those naming them (T11; DEC-2421)."""
+    """The work item's consultations; someone consulted reads those naming them (T11; DEC-2485)."""
     await _gate(ctx, work_item_id, "consultation.read")
     from abacus.modules.assurance import consultations
 

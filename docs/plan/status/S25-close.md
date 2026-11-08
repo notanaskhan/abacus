@@ -21,7 +21,7 @@ Planned 50 rows, 49.5 task-equivalents.
 | Partial | 18: 8 product, 2 quality lanes, 8 run on the synthetic firm |
 | Todo | 7 |
 
-This corrects an earlier count. S25.md recorded 22 done, and a later check against `main` found five of those rows short of their full text: A-04-T18, A-04-T20, A-06-T10, N-04-T05 and P-04-T60. The held batch closes those five and A-06-T11, which is why the count reads 23 rather than 17.
+This corrects an earlier count. S25.md recorded 22 done, and a later check against `main` found five of those rows short of their full text: A-04-T18, A-04-T20, A-06-T10, N-04-T05 and P-04-T60. The held batch closes those five and A-06-T11, which is why the count reads 23 rather than 17; A-04-T19 and A-04-T24, from the other held stack, make it 25.
 
 ## Carry-overs
 | Rows | Reason |

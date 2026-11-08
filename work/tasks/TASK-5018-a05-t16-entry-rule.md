@@ -4,7 +4,7 @@ title: A-05-T16 remainder - EBP-03 reads the entry rule from the verified provis
 spec: SPEC-640
 acceptance_criteria: [AC-14]
 risk_zone: amber
-status: in-review
+status: done
 epic: A-05
 plan_key: A-05-T16
 branch: s25c-a05-t16

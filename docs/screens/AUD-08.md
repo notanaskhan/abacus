@@ -26,7 +26,7 @@
 | Read or write | Endpoint | Shape | Matrix action | allowed_actions and read-only reasons per role |
 |---|---|---|---|---|
 | read | `GET …/risks/register` | `RegisterOut` with `TallyOut` | `risk.read` | the approve controls only for the reserved EP |
-| read | `GET …/risks/{rid}` | `RiskDrawerOut`: the awaiting `significant_risk` card over a proposed row (`pending_card_id`, `routed_to_name`, `routed_at`), and on `risk.allowed_actions` `decision.decide` for the reserved person or `decision.notify` for anyone else the matrix allows | `risk.read` | DEC-2420 |
+| read | `GET …/risks/{rid}` | `RiskDrawerOut`: the awaiting `significant_risk` card over a proposed row (`pending_card_id`, `routed_to_name`, `routed_at`), and on `risk.allowed_actions` `decision.decide` for the reserved person or `decision.notify` for anyone else the matrix allows | `risk.read` | DEC-2484 |
 | write | `POST /v1/decision-cards/{card_id}/notify` (C3) | Remind: a mention notification to the reserved person | `decision.notify` | the routed footer |
 | read | `GET …/risks/linkage` | `LinkageOut` | `risk.read` | — |
 | write | `PATCH …/risks/{rid}` | `RiskEditIn` (RMM by code; 422 `presumption_not_rebuttable` on R1) | `risk.edit` | EP, manager, senior |

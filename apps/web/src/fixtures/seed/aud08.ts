@@ -236,7 +236,7 @@ export function aud08Drawer(variant: Aud08Variant): RiskDrawerOut {
   }
   const r3 = risk(ROWS[2] as (typeof ROWS)[number], variant);
   return {
-    // The drawer's read adds what this person may do about the card (DEC-2420).
+    // The drawer's read adds what this person may do about the card (DEC-2484).
     risk: {
       ...r3,
       allowed_actions:

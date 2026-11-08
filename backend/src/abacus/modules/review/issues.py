@@ -222,7 +222,7 @@ async def create_issue_in(
     title: str,
     work_item_id: UUID,
 ) -> UUID:
-    """A-06-T11 (DEC-2421): an issue written in the caller's unit of work, so the record it roots
+    """A-06-T11 (DEC-2485): an issue written in the caller's unit of work, so the record it roots
     (a finding) and the issue commit or fail as one. Authorised as `create_issue` is."""
     engagement_id, resource, _ = await _record(ctx, record_type, record_id)
     await authorise(ctx, "issue.create", resource)

@@ -4,7 +4,7 @@ title: A-06-T10 notification on a recorded client decision
 spec: SPEC-000  # row
 acceptance_criteria: [AC-1]  # the row's notifications clause
 risk_zone: amber
-status: in-review
+status: done
 epic: A-06
 plan_key: A-06-T10
 branch: s25-a06-t10-notify
@@ -27,4 +27,4 @@ A-06-T10's notifications: a recorded client decision tells the partner and manag
 - 2026-11-06: built. The client's own decision through the portal is R-02's; only record mode exists.
 
 ## Decisions made during this task
-DEC-2422.
+DEC-2486.

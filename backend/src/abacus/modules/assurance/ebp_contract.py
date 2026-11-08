@@ -252,7 +252,7 @@ _PROVISION: JsonDict = {
 
 
 class ConflictSourceOut(BaseModel):
-    """EBP-02 c: the document that disagrees (A-05-T17; DEC-2423): the viewer opens on it."""
+    """EBP-02 c: the document that disagrees (A-05-T17; DEC-2487): the viewer opens on it."""
 
     model_config = ConfigDict(frozen=True)
 

@@ -45,7 +45,7 @@ export function RiskDrawer({
   const adopt = useMutation({ ...suggestionAdoptMutation(), onSuccess: refresh });
   const dismiss = useMutation({ ...suggestionDismissMutation(), onSuccess: refresh });
   // The drawer's read says who the awaiting card waits for and what this person may do about it;
-  // the register's rows do not carry either (DEC-2420).
+  // the register's rows do not carry either (DEC-2484).
   const cardId = data?.pending_card_id ?? null;
   const actions = data?.risk.allowed_actions ?? risk.allowed_actions;
   const decides = actions.includes("decision.decide");

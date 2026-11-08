@@ -13,7 +13,7 @@ from asyncpg import Record
 
 import abacus.api as app_package  # loading it loads every module
 from abacus.kernel.uow import Target, uow
-from abacus.modules.agents.api import AdoptedValue, PendingSuggestion, pending_suggestions
+from abacus.modules.agents.api import AdoptedValue, PendingFieldSuggestion, pending_suggestions
 from abacus.modules.assurance import risks
 
 from .support import Seeder, make_firm
@@ -83,8 +83,8 @@ async def world(seed: Seeder, monkeypatch: pytest.MonkeyPatch) -> SimpleNamespac
 
 
 def _pending(world: SimpleNamespace, value: str, suggestion: uuid.UUID) -> object:
-    async def pending(*_a: object) -> list[PendingSuggestion]:
-        return [PendingSuggestion(suggestion, world.risk, value, (uuid.uuid4(),), 1)]
+    async def pending(*_a: object) -> list[PendingFieldSuggestion]:
+        return [PendingFieldSuggestion(suggestion, world.risk, value, (uuid.uuid4(),), 1)]
 
     return pending
 
