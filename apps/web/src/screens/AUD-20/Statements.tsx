@@ -271,6 +271,8 @@ function ChecklistRow({
 }): JSX.Element {
   const client = useQueryClient();
   const [typed, setTyped] = useState(item.reason ?? "");
+  // A-06-T34: N/A needs its reason (422 `reason_required` server side); ask for it first.
+  const [asking, setAsking] = useState(false);
   const answer = useMutation({
     ...checklistAnswerMutation(),
     onSuccess: () => {
@@ -295,6 +297,11 @@ function ChecklistRow({
             options={[words.yes, words.no, words.na]}
             onChange={(label) => {
               const next = label === words.yes ? "yes" : label === words.no ? "no" : "na";
+              if (next === "na" && typed.trim() === "") {
+                setAsking(true);
+                return;
+              }
+              setAsking(false);
               answer.mutate({
                 path: { document_id: documentId, item_key: item.item_key },
                 body: {
@@ -313,8 +320,9 @@ function ChecklistRow({
           )}
         </span>
       </div>
-      {item.reason != null && (
+      {(item.reason != null || asking) && (
         <input
+          data-reason={item.item_key}
           aria-label={item.text}
           value={typed}
           onChange={(e) => {
