@@ -104,6 +104,9 @@ export function relatedPartiesView(variant: "b" | "e" = "b"): Aud27ListOut {
         pending_ep: false,
         source: "client_list",
         relationship: "Employee benefit plan sponsored by the company",
+        transactions: [{ description: "Employer contributions", amount: "612000.00" }],
+        disclosure: "Note 9 Retirement plan",
+        disclosure_note: true,
       },
       {
         id: stableId("related-party:granite:cfo"),
@@ -113,6 +116,8 @@ export function relatedPartiesView(variant: "b" | "e" = "b"): Aud27ListOut {
         pending_ep: false,
         source: "client_list",
         relationship: "Chief financial officer (key management)",
+        transactions: [{ description: "Compensation only", amount: null }],
+        disclosure: "Not required (compensation arrangement, ASC 850)",
       },
       {
         id: PEAKLINE,
@@ -124,6 +129,7 @@ export function relatedPartiesView(variant: "b" | "e" = "b"): Aud27ListOut {
         relationship:
           "Candidate — remittance address matches the home address of a director in the Feb 12, 2026 board minutes",
         finding_id: variant === "e" ? FINDING_F3 : null,
+        transactions: [{ description: "Freight", amount: "318400.00" }],
       },
       {
         id: stableId("related-party:granite:front-range"),
@@ -133,6 +139,8 @@ export function relatedPartiesView(variant: "b" | "e" = "b"): Aud27ListOut {
         pending_ep: false,
         source: "agent_search",
         relationship: "Lender",
+        transactions: [{ description: "Interest", amount: "520000.00" }],
+        screened_out_reason: "Not a related party (no common ownership or control)",
       },
     ],
     allowed_actions: ["related_party.manage", "related_party.screen_out"],

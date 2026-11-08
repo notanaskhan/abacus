@@ -2363,6 +2363,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "screened_out_reason",
             }
             | {"status", "updated_at", "version"}
+            | {"disclosure", "disclosure_note", "transactions"}  # A-05-T57 close (0743)
         ),
         "parties_in_interest": frozenset(
             {"erisa_relationship", "exemption", "reporting", "transactions", "updated_at"}

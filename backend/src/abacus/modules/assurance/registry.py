@@ -1112,7 +1112,8 @@ INSERT_COLUMNS.update(
         "estimate_components": _AUD27_SCOPE | {"estimate_id", "label", "amount", "position"},
         "related_parties": _AUD27_SCOPE
         | {"name_sealed", "display_ref", "source", "relationship", "inquiry_ref"}
-        | {"created_by_kind"},
+        | {"created_by_kind"}
+        | {"transactions", "disclosure", "disclosure_note"},  # A-05-T57 close (0743)
         "related_party_search_runs": _AUD27_SCOPE
         | {"run_id", "inputs", "candidates", "vendors_searched", "customers_searched"},
         "parties_in_interest": _AUD27_SCOPE
@@ -1131,6 +1132,7 @@ UPDATE_COLUMNS.update(
         "related_parties": frozenset(
             {"status", "screened_out_reason", "screened_out_by", "screened_out_at", "finding_id"}
             | {"inquiry_ref", "version", "updated_at"}
+            | {"transactions", "disclosure", "disclosure_note"}  # A-05-T57 close (0743)
         ),
         "parties_in_interest": frozenset(
             {"erisa_relationship", "transactions", "exemption", "reporting", "version"}

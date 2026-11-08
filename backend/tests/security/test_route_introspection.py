@@ -1955,6 +1955,11 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("PUT", "/v1/audits/{work_item_id}/legal-letters", "legal_letter.update"),
     (
         "PUT",
+        "/v1/audits/{work_item_id}/related-parties/{party_id}/activity",
+        "related_party.manage",
+    ),
+    (
+        "PUT",
         "/v1/audits/{work_item_id}/representation-letter/paragraphs/{key}",
         "rep_letter.draft",
     ),

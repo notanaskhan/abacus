@@ -61,6 +61,7 @@ ROUTES: dict[tuple[str, str], str] = {
     ("get", f"{A}/related-parties"): "related_party.read",
     ("post", f"{A}/related-parties"): "related_party.manage",
     ("post", f"{A}/related-parties/{{party_id}}/screen-out"): "related_party.screen_out",
+    ("put", f"{A}/related-parties/{{party_id}}/activity"): "related_party.manage",
     ("get", f"{A}/parties-in-interest"): "ebp.read",
     ("post", f"{A}/parties-in-interest"): "party_in_interest.manage",
 }
@@ -76,6 +77,8 @@ SERVED = {
     ("post", f"{A}/ebp/imports"),
     # S31 close: party-in-interest create is served (A-05-T57, DEC-2821).
     ("post", f"{A}/parties-in-interest"),
+    # S31 close: a related party's activity and disclosure (A-05-T57, DEC-2827).
+    ("put", f"{A}/related-parties/{{party_id}}/activity"),
 }
 READS = {"ebp.read", "ebp_form5500.read", "test.read", "estimate.read", "related_party.read"}
 NEW_ACTIONS = sorted(

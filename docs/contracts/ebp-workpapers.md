@@ -88,4 +88,4 @@ Every write records its act through the unit of work once live: `ebp_plan.edited
 `ebp_provider.added`, `ebp_provider.invited`, `ebp_import.created`, `pii.revealed` (never the
 value), `test_result.marked`, `ebp_late_remittance.corrected`, `ebp_certification_point.evaluated`,
 `ledger_snapshot.created_from_document`, `ebp_form5500_line.keyed`, `estimate.evaluated`,
-`related_party.added`, `related_party.screened_out`.
+`related_party.added`, `related_party.screened_out`, `related_party.activity_recorded` (S31 close).

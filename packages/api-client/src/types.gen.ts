@@ -3467,6 +3467,14 @@ export type Aud27ItemOut = {
      */
     components?: Array<Aud27ComponentOut>;
     /**
+     * Disclosure
+     */
+    disclosure?: string | null;
+    /**
+     * Disclosure Note
+     */
+    disclosure_note?: boolean;
+    /**
      * Disclosure Ref
      */
     disclosure_ref?: string | null;
@@ -3509,6 +3517,10 @@ export type Aud27ItemOut = {
      */
     retrospectives?: Array<Aud27RetrospectiveOut>;
     rollforward?: Aud27RollforwardOut | null;
+    /**
+     * Screened Out Reason
+     */
+    screened_out_reason?: string | null;
     /**
      * Significant Risk
      */
@@ -37328,6 +37340,27 @@ export type RejectionIssueOut = {
 };
 
 /**
+ * RelatedPartyActivityIn
+ *
+ * S31 close (A-05-T57): a related party's year transactions and its disclosure, recorded by a
+ * person; recording again replaces them.
+ */
+export type RelatedPartyActivityIn = {
+    /**
+     * Disclosure
+     */
+    disclosure?: string | null;
+    /**
+     * Disclosure Note
+     */
+    disclosure_note?: boolean;
+    /**
+     * Transactions
+     */
+    transactions?: Array<Aud27TransactionIn>;
+};
+
+/**
  * ReleaseIn
  *
  * G8: "I am the engagement partner and I authorize release of this report".
@@ -60179,6 +60212,66 @@ export type RelatedPartyCreateResponses = {
 };
 
 export type RelatedPartyCreateResponse = RelatedPartyCreateResponses[keyof RelatedPartyCreateResponses];
+
+export type RelatedPartyActivityData = {
+    body: RelatedPartyActivityIn;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+        /**
+         * Party Id
+         */
+        party_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/related-parties/{party_id}/activity';
+};
+
+export type RelatedPartyActivityErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type RelatedPartyActivityError = RelatedPartyActivityErrors[keyof RelatedPartyActivityErrors];
+
+export type RelatedPartyActivityResponses = {
+    /**
+     * Successful Response
+     */
+    200: AcceptedOut;
+};
+
+export type RelatedPartyActivityResponse = RelatedPartyActivityResponses[keyof RelatedPartyActivityResponses];
 
 export type RelatedPartyScreenOutData = {
     body: ScreenOutIn;
