@@ -64,6 +64,9 @@ from abacus.modules.reporting.engagement_letters import (
     lock_engagement_letter,
     render_engagement_letter,
 )
+from abacus.modules.reporting.fs_captions import (
+    statement_caption_amounts as statement_caption_amounts,
+)
 from abacus.modules.reporting.render.core import DocxRenderOutput as DocxRenderOutput
 
 # T-01-T10's consumer API (re-exported).
