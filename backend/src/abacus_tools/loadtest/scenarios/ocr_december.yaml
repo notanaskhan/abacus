@@ -1,0 +1,47 @@
+# OCR at December x100 (P-11-T33; P-11 §cost and R9; ADR-075 December load test; RB-68): staff
+# working the inbox and the notices desk while scanned uploads are read at a hundred times the
+# rehearsal volume. Must show: the inbox and notices reads hold their p95 while OCR runs, and the
+# OCR workflows' visibility reads stay quick. The page drive itself is not this file's: an upload
+# needs a multipart body and the scanner and Textract fakes on the perf stack, so the pages per
+# minute and Textract TPS the drive must reach come from `python -m abacus_tools.loadtest.ocr_capacity`
+# and the "p95 3 minutes for 20 pages" figure is read from OTel (`upload.ocr_read` spans) there.
+# Read-only.
+name: ocr_december
+description: Inbox and notices reads beside December x100 OCR, with OCR workflow visibility.
+duration_seconds: 1800
+users: 40
+think_ms: 1000
+ramp_seconds: 120
+max_error_rate: 0.001
+personas:
+  - {subject: scenario-ana-cruz, weight: 3, groups: [inbox_list, notices_list, staff_home]}
+  - {subject: scenario-marcus-delaney, weight: 2, groups: [inbox_list, staff_home]}
+  - {subject: scenario-hannah-leclerc, weight: 1, groups: [inbox_list, notices_list]}
+groups:
+  - name: inbox_list
+    weight: 4
+    p95_ms: 500
+    steps:
+      - {path: "/v1/engagements/{engagement_id}/inbox"}
+  - name: notices_list
+    weight: 2
+    p95_ms: 500
+    steps:
+      - {path: /v1/notices}
+      - {path: /v1/notices/summary}
+  - name: staff_home
+    weight: 1
+    p95_ms: 500
+    steps:
+      - {path: /v1/home}
+temporal:
+  - name: long_ocr_visibility
+    kind: count_workflows
+    rate_per_second: 1
+    query: "WorkflowType = 'long_ocr' AND ExecutionStatus = 'Running'"
+    p95_ms: 500
+  - name: ocr_backfill_visibility
+    kind: count_workflows
+    rate_per_second: 0.2
+    query: "WorkflowType = 'ocr_backfill' AND ExecutionStatus = 'Running'"
+    p95_ms: 500

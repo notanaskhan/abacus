@@ -53,3 +53,13 @@ variable "quota_requests" {
   type        = map(number)
   default     = {}
 }
+variable "request_rate_alarm_per_minute" {
+  description = "Successful Textract calls in one minute before the TPS alarm: 80% of the DetectDocumentText quota x 60 (P-11-T33; RB-68)."
+  type        = number
+  default     = 480
+}
+variable "worker_log_group_names" {
+  description = "The worker log groups whose ocr.daily_cap_warning lines the 80%-of-cap alarm counts (P-11-T33)."
+  type        = list(string)
+  default     = []
+}

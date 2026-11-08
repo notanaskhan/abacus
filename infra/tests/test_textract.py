@@ -54,3 +54,13 @@ def test_alarms_and_the_budget_exist() -> None:
         "aws_budgets_budget",
     ):
         assert name in MODULE
+
+
+def test_p11t33_the_tps_and_cap_alarms_exist() -> None:
+    """P-11-T33 (DEC-2715; RB-68): Textract calls near 80% of quota, and a firm across 80% of its
+    daily page cap (the worker's `ocr.daily_cap_warning` line), both page the alarm topic."""
+    assert '"SuccessfulRequestCount"' in MODULE
+    assert "aws_cloudwatch_log_metric_filter" in MODULE
+    assert "ocr.daily_cap_warning" in MODULE
+    assert MODULE.count("alarm_actions       = var.alarm_topic_arns") >= 4
+    assert "worker_log_group_names" in STAGING

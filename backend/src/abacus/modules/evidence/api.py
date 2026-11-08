@@ -492,6 +492,11 @@ register_audit_value_resolver("pii_reveal", pii_reveal_values)
 # A-01-T10 (C5 v1.1, DEC-313): a request row's latest upload and the matcher's confidence.
 register_upload_facts(upload_facts)
 
+from abacus.modules.evidence.ocr_gate import (  # noqa: E402 -- P-11-T33
+    DAILY_PAGE_CAP,
+    daily_page_cap,
+    set_daily_page_cap,
+)
 from abacus.modules.evidence.ocr_step import start_ocr_backfill  # noqa: E402 -- P-11-T25
 from abacus.modules.evidence.workflows import LongOcr, OcrBackfill  # noqa: E402
 
@@ -501,6 +506,7 @@ __all__ = [
     "CODE_COLUMN",
     "CONTENT_READ_KIND",
     "CREDIT_COLUMN",
+    "DAILY_PAGE_CAP",
     "DEBIT_COLUMN",
     "EXPORT_EXPIRY_ID",
     "EXPORT_FORMAT_VERSION",
@@ -637,6 +643,7 @@ __all__ = [
     "column_families",
     "column_letters",
     "configure_storage",
+    "daily_page_cap",
     "decide",
     "decided_among",
     "decisions_on_screenings",
@@ -726,6 +733,7 @@ __all__ = [
     "screen_and_stage",
     "screen_and_stage_detached",
     "screening_facts",
+    "set_daily_page_cap",
     "set_policy",
     "signer_page",
     "stage_content",

@@ -118,9 +118,14 @@ async def test_ac_a_run_records_without_any_text_in_its_audit_reference(
 async def test_ac_the_daily_cap_counts_what_the_firm_already_read(
     monkeypatch: pytest.MonkeyPatch, used: int, pages: int, over: bool
 ) -> None:
+    # P-11-T33: the cap is a second read (the firm's `ocr_daily_caps` row); none here, so the
+    # default applies and the assertions are the P-11-T25 ones.
+    async def scalar(sql: object, *_args: object) -> int | None:
+        return None if "ocr_daily_caps" in str(sql) else used
+
     @asynccontextmanager
     async def session(_tenant: object) -> AsyncGenerator[object]:
-        yield SimpleNamespace(scalar=AsyncMock(return_value=used))
+        yield SimpleNamespace(scalar=scalar)
 
     monkeypatch.setattr(ocr_gate, "tenant_session", session)
     tenant = TenantContext(uuid.uuid4(), "system", "test")
