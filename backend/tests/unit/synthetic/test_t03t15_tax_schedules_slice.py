@@ -8,8 +8,10 @@ from __future__ import annotations
 
 import csv
 import io
+from datetime import datetime
 
 from abacus_tools.synthetic.scenarios.brightwater_hale import tax_schedules as ts
+from abacus_tools.synthetic.scenarios.brightwater_hale.epochs import CT
 from abacus_tools.synthetic.scenarios.brightwater_hale.slices import slice_events
 from abacus_tools.synthetic.scenarios.brightwater_hale.tax_board import BOARD_BY_LABEL
 
@@ -40,12 +42,29 @@ def test_ac_the_named_rows_sit_in_open_with_their_figures() -> None:
 
 
 def test_ac_the_estimate_tiles_foot() -> None:
+    """TAX-13 b (DF-34, TASK-3397): Q3 due 5 = Paid 2 + Scheduled 1 + Awaiting confirmation 2
+    (Meera Shah's request out, Gloria Mendez's not confirmed); Not required 2; 7 rows."""
     statuses = [e.status for e in ts.ESTIMATES]
     assert len(statuses) == 7
     assert statuses.count("paid") == 2
     assert statuses.count("scheduled") == 1
-    assert statuses.count("confirmation_requested") == 2
+    assert statuses.count("confirmation_requested") + statuses.count("not_confirmed") == 2
     assert statuses.count("not_required") == 2
+    by = {e.client: e for e in ts.ESTIMATES}
+    assert [c for c, e in by.items() if e.status == "confirmation_requested"] == ["Meera Shah"]
+    assert {c: e.confirmer for c, e in by.items() if e.confirmer} == {
+        "Jonah & Claire Feld": "Claire Feld",
+        "Calloway Family Trust": "Eleanor Calloway",
+        "Elena Varga": "Elena Varga",
+    }
+    assert "Aurelio Santos" not in by and "Gloria Mendez" in by
+
+
+def test_ac_every_confirmation_comes_back_before_e0() -> None:
+    e0 = datetime(2026, 9, 14, 9, 24, tzinfo=CT)
+    for e in ts.ESTIMATES:
+        if e.confirmed is not None:
+            assert e.requested is not None and e.requested < e.confirmed < e0
 
 
 def test_ac_the_slice_names_every_event_once() -> None:

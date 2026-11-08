@@ -5,7 +5,6 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
-from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
@@ -32,8 +31,8 @@ def _event(target_type: str, suggestion: UUID) -> OutboxEvent:
 
 
 @pytest.fixture
-def recorded(monkeypatch: pytest.MonkeyPatch) -> list[tuple[Any, ...]]:
-    calls: list[tuple[Any, ...]] = []
+def recorded(monkeypatch: pytest.MonkeyPatch) -> list[tuple[object, ...]]:
+    calls: list[tuple[object, ...]] = []
 
     async def record(_tenant: TenantContext, *args: object) -> bool:
         calls.append(args)
@@ -53,7 +52,7 @@ def _pending(
 
 
 async def test_ac_a_pending_yes_lands_on_its_item(
-    monkeypatch: pytest.MonkeyPatch, recorded: list[tuple[Any, ...]]
+    monkeypatch: pytest.MonkeyPatch, recorded: list[tuple[object, ...]]
 ) -> None:
     sid = uuid4()
     monkeypatch.setattr(seam, "pending_suggestion", _pending({"t": "text", "v": "yes"}))
@@ -65,7 +64,7 @@ async def test_ac_a_pending_yes_lands_on_its_item(
     "value", [{"t": "text", "v": "na"}, {"t": "number", "v": "1"}, {"t": "text", "v": "maybe"}]
 )
 async def test_ac_na_and_anything_but_yes_or_no_are_not_mirrored(
-    monkeypatch: pytest.MonkeyPatch, recorded: list[tuple[Any, ...]], value: dict[str, object]
+    monkeypatch: pytest.MonkeyPatch, recorded: list[tuple[object, ...]], value: dict[str, object]
 ) -> None:
     monkeypatch.setattr(seam, "pending_suggestion", _pending(value))
     await seam.on_suggestion_created(_event("disclosure_checklist", uuid4()))
@@ -73,7 +72,7 @@ async def test_ac_na_and_anything_but_yes_or_no_are_not_mirrored(
 
 
 async def test_ac_another_targets_suggestion_and_a_decided_one_are_left_alone(
-    monkeypatch: pytest.MonkeyPatch, recorded: list[tuple[Any, ...]]
+    monkeypatch: pytest.MonkeyPatch, recorded: list[tuple[object, ...]]
 ) -> None:
     async def never(*_a: object) -> None:
         raise AssertionError("read for a target that isn't the checklist")

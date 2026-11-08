@@ -6,7 +6,7 @@ import hashlib
 from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from datetime import date, datetime
-from typing import Final
+from typing import Final, Literal
 from uuid import UUID, uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -1052,13 +1052,16 @@ async def create_items_bulk(
     due_on: date | None,
     batch_id: UUID,
     request_list_id: UUID | None = None,
+    authorised_under: Literal["request_item.create", "request_item.send"] = "request_item.create",
 ) -> list[UUID]:
     """Every item in the caller's unit of work, each audited `request_item.created` and announced
     like a single add; `batch_id` rides in each `linked_ref` so P-06's request emails group one
     per recipient per batch (A-03 R14). The caller authorised its own action; this authorises
-    `request_item.create` on the engagement too."""
+    `request_item.create` on the engagement too, or `request_item.send` for a caller whose item
+    is created and sent in one act, as a tax confirmation is (TASK-3397: a staff preparer may
+    send one, and `request_item.create` is senior and up)."""
     ref = await lock_ref(tx, engagement_id)
-    await authorise(ctx, "request_item.create", ref.resource())
+    await authorise(ctx, authorised_under, ref.resource())
     list_id = request_list_id
     if list_id is None:
         list_id, created = await request_list_for(tx.session, ctx.tenant_id, engagement_id)
@@ -1083,13 +1086,14 @@ async def create_items_bulk(
             binder_fields={
                 "wave": wave,
                 "linked_ref": {**new.linked_ref, "batch_id": str(batch_id)},
-                **(
-                    {"client_assignee_user_id": new.client_assignee_user_id}
-                    if new.client_assignee_user_id
-                    else {}
-                ),
             },
         )
+        if new.client_assignee_user_id:
+            # The app holds UPDATE on the assignee, never INSERT (0028): set it once the row
+            # exists. Inserting it failed every bulk item that names a client (TASK-3397).
+            await set_client_fields(
+                tx.session, item_id, client_assignee=new.client_assignee_user_id
+            )
         tx.record(
             "request_item.created",
             target=Target("request_item", item_id),
@@ -1121,7 +1125,9 @@ class RequestItemState:
     contact_name: str | None
 
 
-_CONFIRMED: Final = frozenset({"fulfilled", "accepted", "complete"})
+# The v2 statuses (0071): accepting the client's upload moves it `uploaded` to `received`.
+# It named three v1 words no item can hold: no confirmation ever read as confirmed (TASK-3397).
+_CONFIRMED: Final = frozenset({"received"})
 
 
 async def request_item_state(tenant: TenantContext, item_id: UUID) -> RequestItemState | None:

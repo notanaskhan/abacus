@@ -846,6 +846,7 @@ async def send_confirmation(
             due_on=due_on,
             batch_id=uuid4(),
             request_list_id=filed_in,
+            authorised_under="request_item.send",  # created and sent on the one click
         )
         await send_created(tx, ctx, engagement_id, ids[0])
         if link is not None:

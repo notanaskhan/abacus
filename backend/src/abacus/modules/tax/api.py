@@ -49,6 +49,9 @@ from abacus.modules.tax.estimates import (
     patch_installment,
     patch_schedule,
 )
+from abacus.modules.tax.estimates import (
+    request_confirmation as request_estimate_confirmation,  # T-03-T15: the scenario loader's
+)
 from abacus.modules.tax.extensions import ProposedPayment, flag_new_likely, send_confirmation
 from abacus.modules.tax.extensions import patch as patch_extension
 from abacus.modules.tax.extensions import prepare as prepare_extensions
@@ -224,6 +227,7 @@ __all__ = [
     "register_due_dates_source",
     "register_extension_dates_source",
     "register_final_approval_blocker",
+    "request_estimate_confirmation",
     "rule_texts",
     "send_confirmation",
     "set_extended",
