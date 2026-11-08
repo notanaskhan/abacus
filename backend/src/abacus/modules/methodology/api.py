@@ -143,6 +143,7 @@ from abacus.modules.methodology.service import (
 )
 from abacus.modules.methodology.standards import (
     aje_classification_for,
+    assigned_review_levels,
     attribute_sample_size,
     current_version,
     current_version_of_kind,
@@ -308,6 +309,7 @@ __all__ = [
     "approve_version",
     "area_for",
     "assign_flags",
+    "assigned_review_levels",
     "attribute_sample_size",
     "classify_entry",
     "confidence_hold",

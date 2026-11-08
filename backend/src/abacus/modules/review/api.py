@@ -143,6 +143,7 @@ from abacus.modules.review.slots import (
     register_field_owner,
     register_fix_runner,
     register_gate_kind,
+    register_level_assignments,
     register_reviewable,
     register_reviewable_facts,
     register_suggestion_owner,
@@ -305,6 +306,7 @@ __all__ = [
     "register_gate_kind",
     "register_gate_presenter",
     "register_gate_source",
+    "register_level_assignments",
     "register_reassign_hook",
     "register_reviewable",
     "register_reviewable_facts",
@@ -323,3 +325,18 @@ __all__ = [
     "states_of",
     "typed_value",
 ]
+
+
+from abacus.kernel.db import TenantContext as _Tenant  # noqa: E402
+
+
+# S28 (TASK-3399, DEC-2398): every reviewable's required levels as the firm's review_levels
+# standard in effect today assigns them (review already reads methodology, `firm_gates`).
+async def _assigned_levels(tenant: _Tenant, key: str) -> tuple[int, ...] | None:
+    from abacus.kernel.clock import today
+    from abacus.modules.methodology.api import assigned_review_levels
+
+    return await assigned_review_levels(tenant.tenant_id, key, await today(tenant))
+
+
+register_level_assignments(_assigned_levels)

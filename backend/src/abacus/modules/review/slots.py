@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Awaitable, Callable, Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import TYPE_CHECKING, Final
 from uuid import UUID
 
@@ -94,6 +94,9 @@ class ReviewableFacts:
     # `provisions_unverified`, with how many are left), a code, never text.
     blocked_code: str | None = None
     blocked_count: int = 0
+    # S28 (TASK-3399, DEC-2398): the key the firm's review_levels standard assigns levels by;
+    # None reads as the target type. A workpaper names its kind (`workpaper:ebp_contributions`).
+    requirement_key: str | None = None
 
 
 ReviewableFactsProvider = Callable[[TenantContext, UUID], Awaitable[ReviewableFacts | None]]
@@ -122,7 +125,23 @@ async def reviewable_facts(
     found = await provider(tenant, target_id)
     if found is None or (found.target_type, found.target_id) != (target_type, target_id):
         raise NotFound(target_type)
+    port = _LEVELS.get("port")
+    if port is not None:
+        assigned = await port(tenant, found.requirement_key or target_type)
+        if assigned:
+            # One place for the matrix, the G5 gate and the sign-off rules (TASK-3399).
+            return replace(found, required_levels=assigned)
     return found
+
+
+# S28 (TASK-3399, DEC-2398): the firm's assigned levels by requirement key (methodology's
+# `review_levels` standard), registered by its owner; none registered reads as the owners'.
+LevelAssignments = Callable[[TenantContext, str], Awaitable[tuple[int, ...] | None]]
+_LEVELS: dict[str, LevelAssignments] = {}
+
+
+def register_level_assignments(port: LevelAssignments) -> None:
+    _LEVELS["port"] = port
 
 
 # --- P-04-T06 (ADR-160): the other review slots. Each fails closed: an unregistered kind is
