@@ -44325,7 +44325,8 @@
               "delivery_cover_letter",
               "k1_cover_letter",
               "fs_package",
-              "run_trace_export"
+              "run_trace_export",
+              "ebp_supplemental_schedule"
             ],
             "title": "Kind",
             "type": "string"
@@ -80120,7 +80121,8 @@
               "delivery_cover_letter",
               "k1_cover_letter",
               "fs_package",
-              "run_trace_export"
+              "run_trace_export",
+              "ebp_supplemental_schedule"
             ],
             "title": "Family",
             "type": "string"
@@ -104260,7 +104262,8 @@
               "delivery_cover_letter",
               "k1_cover_letter",
               "fs_package",
-              "run_trace_export"
+              "run_trace_export",
+              "ebp_supplemental_schedule"
             ],
             "title": "Family",
             "type": "string"
@@ -121214,6 +121217,124 @@
           "assurance"
         ],
         "x-abacus-action": "ebp_form5500.read"
+      }
+    },
+    "/v1/audits/{work_item_id}/ebp/form-5500/schedules/4i/render": {
+      "post": {
+        "description": "A person's DRAFT render of the 4i schedule through C11 (A-05-T58 remainder, DEC-2828);\nanswers the generated document. 404 until a Form 5500 draft arrives.",
+        "operationId": "ebp_schedule_4i_render",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Ebp Schedule 4I Render Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "ebp_schedule.render"
       }
     },
     "/v1/audits/{work_item_id}/ebp/imports": {
@@ -247698,7 +247819,8 @@
                     "delivery_cover_letter",
                     "k1_cover_letter",
                     "fs_package",
-                    "run_trace_export"
+                    "run_trace_export",
+                    "ebp_supplemental_schedule"
                   ],
                   "type": "string"
                 },

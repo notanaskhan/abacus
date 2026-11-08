@@ -132,6 +132,11 @@ describe("EBP-07", () => {
     ).toBe("");
     expect((await drawn("[data-held='total']")).hasAttribute("data-ties")).toBe(true);
     expect(document.body.textContent).toContain("* Party in interest");
+    // Column (c): the trust report's words, and code's from the loans' terms (DV-EBP-07-3).
+    expect(krs.textContent).toContain("registered investment company");
+    expect((await drawn("[data-held='Participant loans']")).textContent).toContain(
+      "interest rates 5.25%–9.50%, maturities through 2040",
+    );
     expect((await drawn("[data-ebp07='schedule-4a']")).textContent).toContain("line 4a");
   });
 

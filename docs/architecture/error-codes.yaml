@@ -2645,6 +2645,11 @@ codes:
     raised_by:
     - abacus.modules.evidence.firm_export_schedule.SchedulePaused
     summary: 'A paused schedule is not approved: unpause it (which waits for both again) first.'
+  schedule_period_unknown:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.ebp_schedule_render.NoScheduleTitle
+    summary: 'A plan with no period end: the schedule''s date is never guessed.'
   scope_not_in_existence:
     status: 422
     raised_by:

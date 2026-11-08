@@ -55,6 +55,7 @@ ROUTES: dict[tuple[str, str], str] = {
     ("get", f"{A}/ebp/form-5500"): "ebp_form5500.read",
     ("post", f"{A}/ebp/form-5500/lines/{{line_id}}/value"): "ebp_form5500.key",
     ("post", f"{A}/ebp/form-5500/reconciliation-note"): "ebp_form5500.send_note",
+    ("post", f"{A}/ebp/form-5500/schedules/4i/render"): "ebp_schedule.render",
     ("get", f"{A}/estimates"): "estimate.read",
     ("put", f"{A}/estimates/{{estimate_id}}/method"): "estimate.evaluate",
     ("post", f"{A}/estimates/{{estimate_id}}/request-conclusion"): "estimate.request_conclusion",
@@ -79,6 +80,8 @@ SERVED = {
     ("post", f"{A}/parties-in-interest"),
     # S31 close: a related party's activity and disclosure (A-05-T57, DEC-2827).
     ("put", f"{A}/related-parties/{{party_id}}/activity"),
+    # S31 close: the 4i schedule's C11 render (A-05-T58, DEC-2828).
+    ("post", f"{A}/ebp/form-5500/schedules/4i/render"),
 }
 READS = {"ebp.read", "ebp_form5500.read", "test.read", "estimate.read", "related_party.read"}
 NEW_ACTIONS = sorted(

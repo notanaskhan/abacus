@@ -63,11 +63,19 @@ class _Session:
 def _db(monkeypatch: pytest.MonkeyPatch, invested: D | None, parties: list[str]) -> None:
     answers = {
         "ebp_trust_report_lines": [
-            SimpleNamespace(fund_name="KRS 500 Index Fund", eoy=D("6120450")),
-            SimpleNamespace(fund_name="Harborline Stable Value Fund", eoy=D("1163480")),
-            SimpleNamespace(fund_name="Self-directed brokerage (BrokerWindow)", eoy=D("1605000")),
+            SimpleNamespace(fund_name="KRS 500 Index Fund", eoy=D("6120450"), description=None),
+            SimpleNamespace(
+                fund_name="Harborline Stable Value Fund", eoy=D("1163480"), description=None
+            ),
+            SimpleNamespace(
+                fund_name="Self-directed brokerage (BrokerWindow)",
+                eoy=D("1605000"),
+                description=None,
+            ),
         ],
-        "ebp_participant_loans": [SimpleNamespace(total=D("312400"), n=12)],
+        "ebp_participant_loans": [
+            SimpleNamespace(total=D("312400"), n=12, rates=None, last_maturity=None)
+        ],
         "parties_in_interest": [SimpleNamespace(name=p) for p in parties],
     }
 

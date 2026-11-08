@@ -20610,7 +20610,7 @@ export type GeneratedDocumentOut = {
     /**
      * Kind
      */
-    kind: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export';
+    kind: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule';
     /**
      * Out Of Date
      */
@@ -37813,7 +37813,7 @@ export type ReportTemplateOut = {
     /**
      * Family
      */
-    family: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export';
+    family: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule';
     /**
      * Id
      */
@@ -48834,7 +48834,7 @@ export type TemplateImportIn = {
     /**
      * Family
      */
-    family: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export';
+    family: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule';
     /**
      * Layout Key
      */
@@ -56741,6 +56741,62 @@ export type EbpSchedule4iResponses = {
 };
 
 export type EbpSchedule4iResponse = EbpSchedule4iResponses[keyof EbpSchedule4iResponses];
+
+export type EbpSchedule4iRenderData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/ebp/form-5500/schedules/4i/render';
+};
+
+export type EbpSchedule4iRenderErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type EbpSchedule4iRenderError = EbpSchedule4iRenderErrors[keyof EbpSchedule4iRenderErrors];
+
+export type EbpSchedule4iRenderResponses = {
+    /**
+     * Successful Response
+     */
+    201: AcceptedOut;
+};
+
+export type EbpSchedule4iRenderResponse = EbpSchedule4iRenderResponses[keyof EbpSchedule4iRenderResponses];
 
 export type EbpImportData = {
     body: ImportIn;
@@ -114207,7 +114263,7 @@ export type ListReportTemplatesData = {
         /**
          * Family
          */
-        family?: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | null;
+        family?: 'engagement_letter' | 'consent_7216' | 'representation_letter' | 'governance_letter' | 'audit_report' | 'review_report' | 'compilation_report' | 'notice_response' | 'delivery_cover_letter' | 'k1_cover_letter' | 'fs_package' | 'run_trace_export' | 'ebp_supplemental_schedule' | null;
     };
     url: '/v1/report-templates';
 };
