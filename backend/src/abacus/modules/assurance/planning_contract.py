@@ -475,6 +475,9 @@ class RiskDrawerOut(BaseModel):
     rationale: Annotated[str | None, Field(max_length=20_000), classified("confidential")]
     citation_ids: Annotated[list[UUID], Field(max_length=50), classified("internal")]
     versions: Annotated[list[RiskVersionOut], classified("internal")]
+    # The awaiting `significant_risk` card over this row: Remind is C3's notify on it, and the
+    # reserved person's Approve opens it (AC4.3; DEC-2420).
+    pending_card_id: Annotated[UUID | None, classified("internal")] = None
     routed_to_name: Annotated[str | None, classified("internal")]
     routed_at: Annotated[datetime | None, classified("internal")]
     response_suggestion: Annotated[SuggestedResponseOut | None, classified("internal")] = None
@@ -1407,8 +1410,9 @@ async def _drawer_out(ctx: AuthContext, engagement_id: UUID, risk_id: UUID) -> R
             RiskVersionOut(version_no=v.version_no, at=v.at, by_name=v.by_name)
             for v in found.versions
         ],
-        routed_to_name=None,  # the significant_risk card (A-04-T18)
-        routed_at=None,
+        pending_card_id=found.pending_card_id,
+        routed_to_name=found.routed_to_name,
+        routed_at=found.routed_at,
         response_suggestion=None
         if found.response_suggestion is None
         else SuggestedResponseOut(
