@@ -128,6 +128,7 @@ from abacus.modules.assurance.planning_gate import g4_facts
 from abacus.modules.assurance.providers import register as register_a01_providers
 from abacus.modules.assurance.release import RELEASE_MODE_SETTING
 from abacus.modules.assurance.release_contract import router as audit_release_router
+from abacus.modules.assurance.rep_letters import register_rep_triggers
 from abacus.modules.assurance.review_gates import register_review_gates
 from abacus.modules.assurance.risks import AUDIT_KINDS as RISK_KINDS
 from abacus.modules.assurance.risks import Edit as RiskEdit
@@ -295,6 +296,8 @@ register_audit_segment("review", None)
 register_a01_providers()
 # A-07-T22 (DEC-2806): the completion items assurance derives itself.
 register_completion_facts()
+# A-07-T24 (DEC-2808): the specific representations' triggers assurance reads itself.
+register_rep_triggers()
 # A-07-T19: the live-path registrations, inert until the A-07 flags (T33).
 register_a07_live_path()
 # A-05-T53: the estimate conclusion, the EP's card (AU-C 540).

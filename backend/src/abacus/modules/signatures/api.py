@@ -229,7 +229,10 @@ SUBSCRIPTIONS: dict[str, Handler] = {EnvelopeSendApproved.event_type: on_send_ap
 # before `/{envelope_id}` inside `router`.
 ROUTERS: tuple[AbacusRouter, ...] = (router, policies_router, portal_router, webhook_router)
 
-from abacus.modules.signatures.sources import envelope_status  # noqa: E402 -- N-04-T16
+from abacus.modules.signatures.sources import (  # noqa: E402 -- N-04-T16, A-07-T24
+    envelope_signing,
+    envelope_status,
+)
 
 __all__ = [
     "ACTIVITIES",
@@ -275,6 +278,7 @@ __all__ = [
     "configure_provider",
     "create_draft",
     "envelope_gate_facts",
+    "envelope_signing",
     "envelope_source",
     "envelope_status",
     "envelope_summaries_for",
