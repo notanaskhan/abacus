@@ -21,7 +21,7 @@ import {
 import { auditHandlers } from "../handlers/audits";
 import { seedScenario } from "../scenario";
 import { getSeed } from "../seed";
-import { type Aud05Variant, aud05Fraud, aud05Record } from "../seed/aud05";
+import { type Aud05Variant, PBC_FLAG, aud05Fraud, aud05Record } from "../seed/aud05";
 import { capabilitiesFor } from "../seed/shell";
 
 const seed = getSeed();
@@ -54,6 +54,11 @@ function frame(
         "GET /v1/me/capabilities": ({ persona: who }) => json(capabilities(who, on)),
         [`GET ${E}/workpapers/{workpaper_id}/record`]: () =>
           json(aud05Record(options.variant ?? "a")),
+        [`POST ${E}/workpapers/{workpaper_id}/flags/{flag_id}/remind`]: () =>
+          json({
+            flag: aud05Record(options.variant ?? "a").flags.find((f) => f.id === PBC_FLAG),
+            draft_id: "fixture-follow-up",
+          }),
         [`GET ${E}/fraud-brainstorm`]: () => json(aud05Fraud(persona === "margaret-okonkwo")),
         [`POST ${E}/fraud-brainstorm/minutes/approve`]: () =>
           json({

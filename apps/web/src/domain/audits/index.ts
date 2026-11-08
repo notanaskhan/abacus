@@ -17,6 +17,7 @@ export { ExportSheet, type ExportSheetProps } from "./ExportSheet";
 export {
   EXPORT_POLL_MS,
   downloadBundle,
+  errorCode,
   expiryLabel,
   isMoving,
   useExportActions,

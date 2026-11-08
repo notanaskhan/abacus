@@ -333,9 +333,6 @@ export const narrativeRoute = createRoute({
         onRegister={() => {
           void navigate({ to: "/audits/$auditId/risks", params: { auditId } });
         }}
-        onRemind={() => {
-          overlays.open("request", "new");
-        }}
         onEscalate={(flag) => {
           void navigate({
             to: ".",
