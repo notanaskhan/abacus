@@ -159,6 +159,7 @@ class ModeTarget:
     target_type: str
     target_id: UUID
     field_key: str
+    choices: tuple[str, ...] = ()  # when set, the cell's text must be one of these (DEC-2480)
 
 
 @dataclass(frozen=True)
@@ -171,6 +172,8 @@ class ModeInputs:
     cells: tuple[SourceCell, ...] = ()
     targets: Mapping[str, ModeTarget] = field(default_factory=dict[str, ModeTarget])
     facts: tuple[tuple[str, dict[str, object]], ...] = ()
+    # Names to pick from ("EBP-03, EBP-04"): shown as facts, but support no number (DEC-2480).
+    identifiers: tuple[tuple[str, dict[str, object]], ...] = ()
 
 
 # (the run's agent, as the actor the reads are authorised for; the paper as the source read it)

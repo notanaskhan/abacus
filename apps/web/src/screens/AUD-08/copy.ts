@@ -98,6 +98,7 @@ export const COPY = {
   drawer: {
     factors: "Inherent risk factors (SAS 145)",
     rationaleCard: "Rationale",
+    responseCard: "Response",
     assertions: "Relevant assertions",
     versions: "Versions",
     factor: {

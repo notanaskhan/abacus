@@ -223,6 +223,31 @@ describe("AUD-08 c, e, f, g (A-04-T26)", () => {
     expect(document.querySelector("[data-drafted]")).toBeTruthy();
   });
 
+  it("f: the drafted response stays pending: EBP-03 with Adopt · Edit · Discard, nothing linked", async () => {
+    restore = installFixtureMode(scenarios.f);
+    const r8 = aud08Register("a").risks[7];
+    if (r8 === undefined) throw new Error("R8");
+    render(
+      <QueryClientProvider client={newQueryClient()}>
+        <RiskDrawer
+          engagementId={NORTHWIND_AUDIT}
+          risk={r8}
+          cardId={null}
+          onClose={() => undefined}
+          onDecide={vi.fn()}
+        />
+      </QueryClientProvider>,
+    );
+    const card = await waitFor(() => {
+      const el = document.querySelector('[data-aud08="response"]');
+      expect(el).toBeTruthy();
+      return el as HTMLElement;
+    });
+    expect(card.textContent).toContain("EBP-03");
+    expect(card.querySelector('[data-aud08="drafted-footer"]')?.textContent).toContain("Adopt");
+    expect(card.querySelector("[data-drafted]")).toBeTruthy();
+  });
+
   // ED-323 (Q-03-T173): Edit once adopted the suggestion with the model's own rationale as the
   // person's edit (ADR-065). It now hands off to the host's editor and adopts nothing.
   it("f: Edit opens the host's editor and never adopts the model's text", async () => {
