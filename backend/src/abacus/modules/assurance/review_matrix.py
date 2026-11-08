@@ -144,22 +144,27 @@ async def matrix(
 ) -> Matrix:
     reviewables = await reviewables_of(tenant, engagement_id)
     sections = await matrix_sections(tenant, engagement_id)
+    # By type and id (TASK-3401): Materiality, Findings and SUM each use the audit work item's
+    # id, so keyed by id alone they overwrote each other's facts and sign-offs.
     facts = {
-        r.target_id: await reviewable_facts(tenant, r.target_type, r.target_id)
+        (r.target_type, r.target_id): await reviewable_facts(tenant, r.target_type, r.target_id)
         for r in reviewables
     }
-    states: dict[UUID, list[LevelState]] = {}
+    states: dict[tuple[str, UUID], list[LevelState]] = {}
     for r in reviewables:
         found = await sign_off_states(
-            tenant, r.target_type, [r.target_id], {r.target_id: facts[r.target_id].content_hash}
+            tenant,
+            r.target_type,
+            [r.target_id],
+            {r.target_id: facts[(r.target_type, r.target_id)].content_hash},
         )
-        states[r.target_id] = list(found[r.target_id])
+        states[(r.target_type, r.target_id)] = list(found[r.target_id])
     signers = {s.signed_by for listed in states.values() for s in listed if s.signed_by}
     names = await names_of(sorted(signers, key=str)) if signers else {}
     rows: list[Row] = []
     for r in reviewables:
-        f = facts[r.target_id]
-        by_level = {s.level: s for s in states[r.target_id]}
+        f = facts[(r.target_type, r.target_id)]
+        by_level = {s.level: s for s in states[(r.target_type, r.target_id)]}
         cells: list[Cell] = []
         for level in LEVELS:
             s = by_level.get(level)

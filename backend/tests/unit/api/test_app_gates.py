@@ -265,6 +265,7 @@ NOT_CREATING = {
     "/v1/sign-offs:bulk",
     "/v1/review-notes/{note_id}/respond",
     "/v1/review-notes/{note_id}/clear",
+    "/v1/review-notes/{note_id}/reopen",  # TASK-3394: an event on the note, as clear is
     "/v1/review-notes/{note_id}/withdraw",
     # P-04-T08 (C3 stub 2): decisions, proposal and suggestion resolutions return the record.
     "/v1/decision-cards/{card_id}/decide",

@@ -151,6 +151,12 @@ from abacus.modules.methodology.standards import (
     register_standard_examples,
     rmm_matrix_for,
 )
+from abacus.modules.methodology.standards import (
+    draft_version as draft_standard_version,  # TASK-3401: the scenario loader's assignments
+)
+from abacus.modules.methodology.standards import (
+    edit_draft as edit_standard_draft,  # TASK-3401: the scenario loader's assignments
+)
 from abacus.modules.methodology.standards_catalog import register_standards_providers
 from abacus.modules.methodology.standards_contract import (
     AttributeSampleSizesPayload,
@@ -159,6 +165,7 @@ from abacus.modules.methodology.standards_contract import (
     EntryClassification,
     ExampleRow,
     ExamplesProvider,
+    LevelAssignment,
     MaterialityCheck,
     MaterialityRangeFor,
     MaterialityRangesPayload,
@@ -166,9 +173,11 @@ from abacus.modules.methodology.standards_contract import (
     RequiredLevels,
     ReturnApproval,
     ReturnApprovalPolicyPayload,
+    ReviewLevelsPayload,
     RmmFor,
     RmmMatrixPayload,
     SsarsFramework,
+    StandardDraftPatchIn,
     StandardKind,
     VarianceResult,
     classify_entry,
@@ -264,6 +273,7 @@ __all__ = [
     "ImportSource",
     "ImportedReportTemplateVersion",
     "ImportedVersion",
+    "LevelAssignment",
     "MaterialityCheck",
     "MaterialityRangeFor",
     "MaterialityRangesPayload",
@@ -285,12 +295,14 @@ __all__ = [
     "ReturnApproval",
     "ReturnApprovalPolicyPayload",
     "ReviewItem",
+    "ReviewLevelsPayload",
     "RmmFor",
     "RmmMatrixPayload",
     "SourceEncrypted",
     "SourceMalformed",
     "SourceTooLong",
     "SsarsFramework",
+    "StandardDraftPatchIn",
     "StandardKind",
     "TemplateInvalid",
     "TemplateItem",
@@ -319,6 +331,8 @@ __all__ = [
     "current_version",
     "current_version_of_kind",
     "deprecate_report_template",
+    "draft_standard_version",
+    "edit_standard_draft",
     "extract_source",
     "fail_document_import",
     "finish_document_import",
