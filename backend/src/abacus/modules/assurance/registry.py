@@ -81,8 +81,14 @@ A07_ARCHIVE_INSERT_ONLY: frozenset[str] = frozenset(
     {"archive_binder_indexes", "archive_lock_decisions", "archive_manifests"}
     | {"archive_additions", "archive_addition_decisions"}
 )
+# R-02-T05 (0710; R-02 §4.2): governance bodies (DEC-93) and the client's acknowledgement of
+# uncorrected misstatements, insert-only and human-only.
+R02_GOVERNANCE_TABLES: frozenset[str] = frozenset(
+    {"governance_bodies", "governance_body_members", "uncorrected_misstatement_acknowledgements"}
+)
 TABLES: frozenset[str] = (
     A07_ARCHIVE_INSERT_ONLY
+    | R02_GOVERNANCE_TABLES
     | {  # A-05-T48
         "accounting_estimates",
         "estimate_components",
@@ -117,6 +123,7 @@ INSERT_ONLY: frozenset[str] = (
     | {"ebp_certification_evaluations", "ebp_schedule_h_mappings"}  # A-05-T35 (0665)
     | A07_LETTER_INSERT_ONLY  # A-07-T08 (0668)
     | A07_ARCHIVE_INSERT_ONLY  # A-07-T09 (0669)
+    | {"uncorrected_misstatement_acknowledgements"}  # R-02-T05 (0710)
 )
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
     "eqr_concurrences": frozenset(
@@ -1128,5 +1135,30 @@ UPDATE_COLUMNS.update(
             {"erisa_relationship", "transactions", "exemption", "reporting", "version"}
             | {"updated_at"}
         ),
+    }
+)
+
+# R-02-T05 (0710): a body's members change by ending a row and adding one; an acknowledgement is
+# the client's own act (its actor is the session's, I-AGENT-NEVER).
+INSERT_COLUMNS.update(
+    {
+        "governance_bodies": frozenset(
+            {"id", "tenant_id", "client_id", "client_entity_id", "name", "kind"}
+        ),
+        "governance_body_members": frozenset(
+            {"id", "tenant_id", "body_id", "contact_id", "member_role", "started_on"}
+        ),
+        "uncorrected_misstatement_acknowledgements": frozenset(
+            {"id", "tenant_id", "engagement_id", "work_item_id", "sum_snapshot_id"}
+            | {"approval_item_id", "net_effect", "engine_version", "inputs_hash", "entry_ids"}
+            | {"contact_id", "actor_user_id", "actor_kind", "actor_id", "principal_kind"}
+            | {"grant_id", "mfa_verified_at", "seen_hash"}
+        ),
+    }
+)
+UPDATE_COLUMNS.update(
+    {
+        "governance_bodies": frozenset({"name", "kind", "status", "version", "updated_at"}),
+        "governance_body_members": frozenset({"member_role", "ended_on"}),
     }
 )

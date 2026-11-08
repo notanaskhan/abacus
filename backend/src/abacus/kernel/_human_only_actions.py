@@ -63,6 +63,7 @@ HUMAN_ONLY_ACTIONS: Final[frozenset[str]] = frozenset(
         "proposal.approved_with_edits",
         "proposal.rejected",
         "proposal.routed",
+        "proposed_entry.client_decided",
         "rep_letter.approved",
         "report.approved",
         "report.reissued",
@@ -80,11 +81,13 @@ HUMAN_ONLY_ACTIONS: Final[frozenset[str]] = frozenset(
         "service_line_policy.updated",
         "sign_off.recorded",
         "statement.approved",
+        "statement.approved_by_management",
         "suggestion.adopted",
         "suggestion.dismissed",
         "suggestion.edited",
         "sum.concluded",
         "team.approved",
         "transmission.recorded",
+        "uncorrected_misstatements.acknowledged",
     }
 )

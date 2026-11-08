@@ -65,6 +65,8 @@ ALLOWED_KINDS: Final[Mapping[str, tuple[ArchivedWriteKind, ...]]] = {
     "archives": ("retention_extend",),
     "evidence_versions": ("retention_extend", "destruction_tombstone"),
     "evidence_items": ("destruction_tombstone",),
+    # R-02-T05 (0710): a reissued report after lock is a new deliverable (AU-C 560 post-issuance).
+    "deliverables": ("post_issuance",),
 }
 
 
