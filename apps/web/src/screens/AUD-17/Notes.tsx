@@ -9,6 +9,7 @@ import {
   reviewNoteClearMutation,
   reviewNoteListOptions,
   reviewNoteOptions,
+  reviewNoteReopenMutation,
   reviewNoteRespondMutation,
   signOffMatrixOptions,
 } from "@abacus/api-client/query";
@@ -275,9 +276,19 @@ function Thread({ noteId, onCleared }: { noteId: string; onCleared: () => void }
     },
   });
   const respond = useMutation({ ...reviewNoteRespondMutation(), onSuccess: refresh });
+  // Reopen needs why (SPEC-313 AC-3): the button opens the composer, and Send reopens with it.
+  const [reopening, setReopening] = useState(false);
+  const reopen = useMutation({
+    ...reviewNoteReopenMutation(),
+    onSuccess: () => {
+      setReopening(false);
+      refresh();
+    },
+  });
   if (found.data === undefined) return <Skeleton className="m-[12px] h-[160px]" />;
   const { note, body } = found.data;
   const can = (action: string): boolean => note.allowed_actions.includes(action);
+  const canReopen = can("review_note.reopen");
   return (
     <div data-aud17="thread" className="flex min-h-0 flex-1 flex-col">
       <h3 className="bg-shell px-[14px] py-[12px] text-[15px] leading-[1.3] font-medium">
@@ -294,18 +305,33 @@ function Thread({ noteId, onCleared }: { noteId: string; onCleared: () => void }
           <span>{v}</span>
         </div>
       ))}
+      {found.data.paper_changed_after_signoff === true && (
+        <p
+          data-aud17="stale-notice"
+          role="status"
+          className="mx-[14px] mt-[10px] rounded-[6px] bg-amber-tint px-[10px] py-[8px] text-[12.5px] text-amber-ink"
+        >
+          {COPY.staleNotice}
+        </p>
+      )}
       <ReviewNoteThread
         messages={messagesOf(found.data, now)}
         replyLabel={COPY.reply}
         sendLabel={COPY.send}
-        busy={respond.isPending}
-        {...(can("review_note.respond")
+        busy={respond.isPending || reopen.isPending}
+        {...(canReopen && reopening
           ? {
               onReply: (text: string) => {
-                respond.mutate({ path: { note_id: noteId }, body: { body: text } });
+                reopen.mutate({ path: { note_id: noteId }, body: { body: text } });
               },
             }
-          : {})}
+          : can("review_note.respond")
+            ? {
+                onReply: (text: string) => {
+                  respond.mutate({ path: { note_id: noteId }, body: { body: text } });
+                },
+              }
+            : {})}
       />
       <div className="flex flex-col gap-[6px] p-[10px] hairline-t">
         <Button
@@ -316,6 +342,16 @@ function Thread({ noteId, onCleared }: { noteId: string; onCleared: () => void }
           }}
         >
           {COPY.clear}
+        </Button>
+        <Button
+          variant="secondary"
+          data-aud17="reopen"
+          disabled={!canReopen || reopening || reopen.isPending}
+          onClick={() => {
+            setReopening(true);
+          }}
+        >
+          {COPY.reopen}
         </Button>
       </div>
     </div>

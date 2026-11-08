@@ -1818,6 +1818,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ("POST", "/v1/request-lists/{request_list_id}/questionnaires", "questionnaire.create"),
     ("POST", "/v1/review-notes", "review_note.raise"),
     ("POST", "/v1/review-notes/{note_id}/clear", "review_note.clear"),
+    ("POST", "/v1/review-notes/{note_id}/reopen", "review_note.clear"),
     ("POST", "/v1/review-notes/{note_id}/respond", "review_note.respond"),
     ("POST", "/v1/review-notes/{note_id}/withdraw", "review_note.withdraw"),
     ("POST", "/v1/sample-sets/{sample_set_id}/versions", "sample_set.create"),
