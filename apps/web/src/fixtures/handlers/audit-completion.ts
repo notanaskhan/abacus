@@ -2,7 +2,18 @@
 // time, on the stub's paths. Writes stay out until each screen's task adds them.
 
 import { type FixtureHandler, json } from "../../app-core/fixture-mode";
-import { aud18, aud19, aud21, aud22, aud23, aud24, aud25 } from "../seed/audit-completion";
+import {
+  aud18,
+  aud19,
+  aud19GoingConcern,
+  aud19LegalLetters,
+  aud19SubsequentEvents,
+  aud21,
+  aud22,
+  aud23,
+  aud24,
+  aud25,
+} from "../seed/audit-completion";
 
 const P = "/v1/audits/{work_item_id}";
 
@@ -20,6 +31,10 @@ export function completionHandlers(state: CompletionState = {}): Record<string, 
   return {
     [`GET ${P}/eqr`]: () => json(aud18(state.aud18 ?? "a")),
     [`GET ${P}/completion`]: () => json(aud19(state.aud19 ?? "a")),
+    // A-07-T25: AUD-19's tabs.
+    [`GET ${P}/subsequent-events`]: () => json(aud19SubsequentEvents()),
+    [`GET ${P}/legal-letters`]: () => json(aud19LegalLetters()),
+    [`GET ${P}/going-concern`]: () => json(aud19GoingConcern(state.aud19 ?? "a")),
     [`GET ${P}/rep-letter`]: () => json(aud21(state.aud21 ?? "a")),
     [`GET ${P}/governance-communications`]: () => json(aud22(state.aud22 ?? "a")),
     [`GET ${P}/report`]: () => json(aud23(state.aud23 ?? "a")),

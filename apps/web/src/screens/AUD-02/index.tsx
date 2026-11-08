@@ -54,6 +54,7 @@ import {
 import { SERVICE_ORGS, type ServiceOrgsOptions, useServiceOrgsCanvas } from "../AUD-10";
 import { INVESTMENTS, type InvestmentsOptions, useInvestmentsCanvas } from "../EBP-06";
 import { FORM_5500, type Form5500Options, useForm5500Canvas } from "../EBP-07";
+import { COMPLETION_CHECKLIST, type CompletionOptions, useCompletionCanvas } from "../AUD-19";
 import { type SampleSelectionOptions, useSampleSelectionCanvas } from "../AUD-11/SampleSelection";
 import { ViewerPane } from "../SHL-08";
 import { useOpenOverlay } from "../../app-core/open";
@@ -132,6 +133,8 @@ export interface AUD02Props {
   estimatesRp?: Omit<EstimatesOptions, "active">;
   /** EBP-07 (A-05-T58): Testing › Form 5500 Tie-Out. */
   form5500?: Omit<Form5500Options, "active">;
+  /** AUD-19 (A-07-T25): Completion › Completion Checklist. */
+  completion?: Omit<CompletionOptions, "active">;
 }
 
 /** The rail row whose canvas is AUD-06 (A-02-T09). */
@@ -245,6 +248,7 @@ function Cockpit({
   accounts,
   estimatesRp,
   form5500,
+  completion,
 }: Omit<AUD02Props, "auditId"> & { cockpit: AuditCockpitOut }): JSX.Element {
   // A-01-T24: "Export binder…" and the record-mode entries (DV-9, DV-4).
   const audit = useAuditActions(cockpit, overlay ?? null, onOverlay);
@@ -380,6 +384,12 @@ function Cockpit({
     ...form5500,
     active: form5500Open,
   });
+  // AUD-19 (A-07-T25): Completion › Completion Checklist; the dock's Agent tab shows its runs.
+  const completionOpen = selected === COMPLETION_CHECKLIST;
+  const completionCanvas = useCompletionCanvas(cockpit.work_item_id, {
+    ...completion,
+    active: completionOpen,
+  });
   const openDoc = (r: SourceDocumentRowOut): void => {
     const version = r.latest_upload?.evidence_version_id ?? null;
     if (version !== null) onDock?.("viewer", version);
@@ -416,6 +426,8 @@ function Cockpit({
     canvas = accountsCanvas;
   } else if (form5500Open) {
     canvas = form5500Canvas;
+  } else if (completionOpen) {
+    canvas = completionCanvas;
   } else if (row?.section_state === "blocked_on_decision" && row.blocked_on_name != null) {
     canvas = {
       title: row.title,
