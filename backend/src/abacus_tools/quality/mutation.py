@@ -63,7 +63,7 @@ GENERATED: Final = (
 )
 NIGHTLY_BUDGET_MINUTES: Final = 60
 WEEKLY_BUDGET_MINUTES: Final = 240
-WEEKLY_SHARDS: Final = 4
+WEEKLY_SHARDS: Final = 6  # Q-03-T205: 277 red files, ~75,700 lines (Dec 2027)
 
 KILLED: Final = frozenset({1, 3})
 TIMEOUT: Final = frozenset({36, -24, 24, 152, 255})
