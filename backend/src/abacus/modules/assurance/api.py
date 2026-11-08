@@ -35,6 +35,7 @@ from abacus.modules.assurance.a07_registrations import SUBSCRIPTIONS as A07_SUBS
 from abacus.modules.assurance.a07_registrations import register as register_a07_live_path
 from abacus.modules.assurance.aud27 import register_estimate_conclusion_kind
 from abacus.modules.assurance.audits_contract import audits_router
+from abacus.modules.assurance.bring_down import BringDownWorkflow, bring_down
 from abacus.modules.assurance.checklist_suggestions import (
     CHECKLIST_SUGGESTION_TARGET,
     apply_checklist_suggestion,
@@ -281,8 +282,8 @@ SUBSCRIPTIONS = _BASE_SUBSCRIPTIONS | {
     for kind in COMPLETION_SUBSCRIBED
 }
 # A-05-T54: Form5500TieOut, code only, on the background class.
-WORKFLOWS: dict[type, str] = dict(FORM5500_WORKFLOWS)
-ACTIVITIES: tuple[object, ...] = tuple(FORM5500_ACTIVITIES)
+WORKFLOWS: dict[type, str] = dict(FORM5500_WORKFLOWS) | {BringDownWorkflow: "background"}
+ACTIVITIES: tuple[object, ...] = (*FORM5500_ACTIVITIES, bring_down)
 register_work_classes(WORKFLOWS)  # type: ignore[arg-type]  # registry kind literal
 
 # A-01-T02 (A-01 §5.1): the AUD-01 segments every firm has; X-01 (SOC & IT) and X-03 (Internal
