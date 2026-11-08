@@ -265,6 +265,8 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
         | {"records_read", "citations_count", "writes_done", "writes_waiting", "agent_ms"}
         | {"agent_minutes", "cost_usd", "region", "route", "terms_version", "signed_off_by"}
         | {"signed_off_at", "event_seq"}
+        # P-10-T14 (0711): the legacy backfill numbers pre-v2 runs; set once (trigger).
+        | {"run_number"}
     ),
     "tenant_counters": frozenset({"value"}),
     # P-10-T03 (0681).
