@@ -24,13 +24,13 @@ sums (ADR-050). A cell written by the agent is a suggestion until a person adopt
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Annotated, Literal, NoReturn, cast
+from typing import TYPE_CHECKING, Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import WORKPAPERS_CORE, WORKPAPERS_DRAFTING
+from abacus.kernel._flags import BINDERS_ENGINE, WORKPAPERS_CORE, WORKPAPERS_DRAFTING
 from abacus.kernel._statuses import (
     AttentionFlagStatus,
     AuditProcedureStatus,
@@ -38,7 +38,7 @@ from abacus.kernel._statuses import (
     WorkpaperValueStateStatus,
 )
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag, flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.modules.engagements.api import get_ref
@@ -330,10 +330,6 @@ async def gate(ctx: AuthContext, engagement_id: UUID, action: str, *flags: Flag)
             raise NotFound(flag.name)
 
 
-def _not_yet() -> NoReturn:
-    raise NotImplementedYet
-
-
 router = AbacusRouter(prefix="/v1/engagements/{engagement_id}", tags=["workpapers"])
 _wp = "/workpapers/{workpaper_id}"
 
@@ -484,7 +480,7 @@ async def attention_flag_convert_route(
     f"{_wp}/flags/{{flag_id}}/remind",
     action="follow_up.draft",
     response_model=FlagConvertedOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def attention_flag_remind_route(
     engagement_id: UUID,
@@ -493,9 +489,16 @@ async def attention_flag_remind_route(
     ctx: Ctx,
     idempotency_key: IdempotencyKey,
 ) -> FlagConvertedOut:
-    """A follow-up **draft** to the contact; a person sends it (T19)."""
-    await gate(ctx, engagement_id, "follow_up.draft", WORKPAPERS_CORE)
-    _not_yet()
+    """A follow-up **draft** to the contacts; a person sends it, and the flag stays open (T19;
+    behind `binders.engine`, as the follow-up routes that send it are). It writes the flag's
+    history and answers with its text, so it needs `attention_flag.convert` as Convert does, and
+    the independence check that action carries. 409 `nothing_to_remind`."""
+    await gate(ctx, engagement_id, "attention_flag.convert", WORKPAPERS_CORE)
+    await gate(ctx, engagement_id, "follow_up.draft", WORKPAPERS_CORE, BINDERS_ENGINE)
+    from abacus.modules.workpapers import core, flags
+
+    found = await flags.remind(ctx, engagement_id, workpaper_id, flag_id)
+    return FlagConvertedOut(flag=core.flag_out(found.flag), draft_id=found.draft_id)
 
 
 @router.get(

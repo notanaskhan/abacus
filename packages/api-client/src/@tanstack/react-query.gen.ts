@@ -11875,7 +11875,10 @@ export const attentionFlagConvertMutation = (options?: Partial<Options<Attention
 /**
  * Attention Flag Remind Route
  *
- * A follow-up **draft** to the contact; a person sends it (T19).
+ * A follow-up **draft** to the contacts; a person sends it, and the flag stays open (T19;
+ * behind `binders.engine`, as the follow-up routes that send it are). It writes the flag's
+ * history and answers with its text, so it needs `attention_flag.convert` as Convert does, and
+ * the independence check that action carries. 409 `nothing_to_remind`.
  */
 export const attentionFlagRemindMutation = (options?: Partial<Options<AttentionFlagRemindData>>): UseMutationOptions<AttentionFlagRemindResponse, AttentionFlagRemindError, Options<AttentionFlagRemindData>> => {
     const mutationOptions: UseMutationOptions<AttentionFlagRemindResponse, AttentionFlagRemindError, Options<AttentionFlagRemindData>> = {
