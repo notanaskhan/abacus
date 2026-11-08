@@ -26,6 +26,8 @@ from abacus.modules.assurance import (
     soc1_mode,
 )
 from abacus.modules.assurance import mapping_live as mapping_live
+from abacus.modules.assurance.a07_registrations import SUBSCRIPTIONS as A07_SUBSCRIPTIONS
+from abacus.modules.assurance.a07_registrations import register as register_a07_live_path
 from abacus.modules.assurance.audits_contract import audits_router
 from abacus.modules.assurance.checklist_suggestions import (
     CHECKLIST_SUGGESTION_TARGET,
@@ -207,6 +209,7 @@ SUBSCRIPTIONS = (
     | dict(MAPPING_SUBSCRIPTIONS)
     | dict(IC_REDRAFT_SUBSCRIPTIONS)
     | dict(CHECKLIST_SUGGESTION_SUBSCRIPTIONS)
+    | dict(A07_SUBSCRIPTIONS)
 )
 WORKFLOWS: dict[type, str] = {}
 ACTIVITIES: tuple[object, ...] = ()
@@ -218,6 +221,8 @@ register_audit_segment("ebp", None)
 register_audit_segment("review", None)
 # A-01-T09 (DEC-312): A-01's Overview rows and index tags, through the same slots as A-02's.
 register_a01_providers()
+# A-07-T19: the live-path registrations, inert until the A-07 flags (T33).
+register_a07_live_path()
 # I-01-T08: this module's HOME-01 tile or pill (platform.register_home_count).
 register_home_counts()
 register_exception_routes()  # DEC-2354: AUD-09 and AUD-10's routes into Findings and the SUM
