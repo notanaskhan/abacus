@@ -100,6 +100,9 @@ resource "aws_cloudfront_distribution" "firm" {
 
     vpc_origin_config {
       vpc_origin_id = aws_cloudfront_vpc_origin.api.id
+      # P-10-T15: streams send a heartbeat every 15 s (SPEC-647 AC-T5), well inside 60 s.
+      origin_read_timeout      = 60
+      origin_keepalive_timeout = 60
     }
   }
 
@@ -116,6 +119,21 @@ resource "aws_cloudfront_distribution" "firm" {
       event_type   = "viewer-request"
       function_arn = aws_cloudfront_function.edge_block.arn
     }
+  }
+
+  # P-10-T15: server-sent event streams (`/v1/events`, `/v1/me/agent-events`, `…/events` on runs
+  # and sessions). Never cached or compressed, so each event leaves the edge as it arrives; every
+  # viewer header reaches the API, `Last-Event-ID` and `Authorization` included (SPEC-647 AC-T1).
+  ordered_cache_behavior {
+    path_pattern               = "/v1/*events"
+    target_origin_id           = "api"
+    viewer_protocol_policy     = "https-only"
+    allowed_methods            = ["GET", "HEAD", "OPTIONS"]
+    cached_methods             = ["GET", "HEAD"]
+    cache_policy_id            = data.aws_cloudfront_cache_policy.disabled.id
+    origin_request_policy_id   = data.aws_cloudfront_origin_request_policy.all_viewer_except_host.id
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.firm.id
+    compress                   = false
   }
 
   ordered_cache_behavior {

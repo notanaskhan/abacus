@@ -45,5 +45,6 @@ def test_v1_goes_to_the_vpc_origin_with_the_security_headers() -> None:
     main = (FIRM / "main.tf").read_text(encoding="utf-8")
     assert "vpc_origin_config" in main
     assert 'path_pattern               = "/v1/*"' in main
-    assert main.count("response_headers_policy_id = aws_cloudfront_response_headers_policy.firm.id") == 2
+    # P-10-T15: the SSE stream behavior carries the headers policy too.
+    assert main.count("response_headers_policy_id = aws_cloudfront_response_headers_policy.firm.id") == 3
     assert "content_security_policy" in main

@@ -269,6 +269,8 @@ resource "aws_lb" "api" {
   subnets                    = module.network.app_subnet_ids
   security_groups            = [aws_security_group.alb.id]
   drop_invalid_header_fields = true
+  # P-10-T15: above the streams' 15 s heartbeat and CloudFront's 60 s origin read timeout.
+  idle_timeout = 120
 }
 
 resource "aws_lb_target_group" "api" {
