@@ -62523,6 +62523,111 @@
         "title": "MappingOut",
         "type": "object"
       },
+      "MappingPublishIn": {
+        "additionalProperties": false,
+        "description": "A whole mapping version: every caption the firm's statements map, with its line.",
+        "properties": {
+          "effective_plan_year": {
+            "cls": "internal",
+            "maximum": 2100.0,
+            "minimum": 2000.0,
+            "title": "Effective Plan Year",
+            "type": "integer"
+          },
+          "rows": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/MappingRowIn"
+            },
+            "maxItems": 400,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "effective_plan_year",
+          "rows"
+        ],
+        "title": "MappingPublishIn",
+        "type": "object"
+      },
+      "MappingPublishedOut": {
+        "properties": {
+          "dry_run": {
+            "cls": "internal",
+            "title": "Dry Run",
+            "type": "boolean"
+          },
+          "problems": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Problems",
+            "type": "array"
+          },
+          "rows": {
+            "cls": "internal",
+            "title": "Rows",
+            "type": "integer"
+          },
+          "status": {
+            "cls": "internal",
+            "enum": [
+              "validated",
+              "published",
+              "refused"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Version"
+          }
+        },
+        "required": [
+          "version",
+          "rows",
+          "dry_run",
+          "problems",
+          "status"
+        ],
+        "title": "MappingPublishedOut",
+        "type": "object"
+      },
+      "MappingRowIn": {
+        "additionalProperties": false,
+        "properties": {
+          "fs_caption_key": {
+            "cls": "internal",
+            "maxLength": 80,
+            "title": "Fs Caption Key",
+            "type": "string"
+          },
+          "schedule_h_line": {
+            "cls": "internal",
+            "maxLength": 20,
+            "title": "Schedule H Line",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fs_caption_key",
+          "schedule_h_line"
+        ],
+        "title": "MappingRowIn",
+        "type": "object"
+      },
       "MappingRowOut": {
         "properties": {
           "direction": {
@@ -145668,6 +145773,123 @@
           "due-dates"
         ],
         "x-abacus-action": "due_date.read"
+      }
+    },
+    "/v1/ebp/schedule-h-mappings:publish": {
+      "post": {
+        "description": "The firm's Schedule H line mapping, a whole version; dry run first.",
+        "operationId": "schedule_h_mapping_publish",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "dry_run",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Dry Run",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MappingPublishIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MappingPublishedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Schedule H Mapping Publish Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "ebp_schedule_h_mapping.publish"
       }
     },
     "/v1/engagement-drafts": {

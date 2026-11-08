@@ -29519,6 +29519,62 @@ export type MappingOut = {
 };
 
 /**
+ * MappingPublishIn
+ *
+ * A whole mapping version: every caption the firm's statements map, with its line.
+ */
+export type MappingPublishIn = {
+    /**
+     * Effective Plan Year
+     */
+    effective_plan_year: number;
+    /**
+     * Rows
+     */
+    rows: Array<MappingRowIn>;
+};
+
+/**
+ * MappingPublishedOut
+ */
+export type MappingPublishedOut = {
+    /**
+     * Dry Run
+     */
+    dry_run: boolean;
+    /**
+     * Problems
+     */
+    problems: Array<string>;
+    /**
+     * Rows
+     */
+    rows: number;
+    /**
+     * Status
+     */
+    status: 'validated' | 'published' | 'refused';
+    /**
+     * Version
+     */
+    version: number | null;
+};
+
+/**
+ * MappingRowIn
+ */
+export type MappingRowIn = {
+    /**
+     * Fs Caption Key
+     */
+    fs_caption_key: string;
+    /**
+     * Schedule H Line
+     */
+    schedule_h_line: string;
+};
+
+/**
  * MappingRowOut
  */
 export type MappingRowOut = {
@@ -67700,6 +67756,58 @@ export type PracticeInstallmentsResponses = {
 };
 
 export type PracticeInstallmentsResponse = PracticeInstallmentsResponses[keyof PracticeInstallmentsResponses];
+
+export type ScheduleHMappingPublishData = {
+    body: MappingPublishIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Dry Run
+         */
+        dry_run?: boolean;
+    };
+    url: '/v1/ebp/schedule-h-mappings:publish';
+};
+
+export type ScheduleHMappingPublishErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+};
+
+export type ScheduleHMappingPublishError = ScheduleHMappingPublishErrors[keyof ScheduleHMappingPublishErrors];
+
+export type ScheduleHMappingPublishResponses = {
+    /**
+     * Successful Response
+     */
+    201: MappingPublishedOut;
+};
+
+export type ScheduleHMappingPublishResponse = ScheduleHMappingPublishResponses[keyof ScheduleHMappingPublishResponses];
 
 export type CreateEngagementDraftData = {
     body: EngagementDraftIn;

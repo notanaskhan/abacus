@@ -74,7 +74,7 @@ missing year or quarter is a refusal, never a guess:
 |---|---|---|---|
 | IRC §6621(a)(2) underpayment rates (VFCP lost earnings) | `backend/src/abacus/modules/assurance/compute/ebp/reference/irc_6621_rates.yaml` | Each quarter, when the IRS announces the rate | Add `"YYYY-Qn": "r.rr"`; add a golden for a deposit spanning the new quarter; the CPA signs `reviewed_by` |
 | IRS plan limits (402(g), catch-up, 415(c), 401(a)(17)) | `…/compute/ebp/reference/irs_plan_limits.yaml` | Each November, from the IRS cost-of-living notice | Add the plan year's block; keep `requires_review: true` until the CPA signs |
-| Schedule H line mapping (FS caption to line) | `ebp_schedule_h_mappings` (database content, versioned by `effective_plan_year`, read when published) | When the Form 5500 instructions change a line | Content belongs in the database: publish a new mapping version. **Gap:** there is no import endpoint for this table yet, so the mapping can only be loaded by the seed (PF-X1 only). Until one exists (follow-up), EBP-07's FS side reads no lines for a real firm |
+| Schedule H line mapping (FS caption to line) | `ebp_schedule_h_mappings` (database content, versioned by `effective_plan_year`; insert-only) | When the Form 5500 instructions change a line | `POST /v1/ebp/schedule-h-mappings:publish` with the whole version (every caption and its line, and the plan year it starts): run it with `dry_run=true` first and fix every `problem` (codes with row places). A quality partner or practice leader then publishes with a fresh second factor (`dry_run=false`). The next tie-out reads the newest published version for the plan year (S31 close, DEC-2823) |
 
 After any update: run the EBP goldens (`tests/golden/ebp`) and record the change in the decision
 log.

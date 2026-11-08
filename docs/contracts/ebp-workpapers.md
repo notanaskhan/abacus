@@ -54,6 +54,8 @@ code checks (4a, 4b, 4d, 4i, 4j); `basis` is `evidence_ref.basis` on the stored 
 - `GET /ebp/form-5500/schedules/4i` (`ebp_form5500.read`) answers `Schedule4iOut`. It is the schedule built by code from the trust report's current lines, the participant loans and the plan's parties in interest. Each row has its `*` mark, a cost omitted (`**`) for participant-directed holdings, and the current value. The read also returns the total, the draft's line 1c total and `ties`.
 - `POST /ebp/form-5500/lines/{id}/value` is live. A person keys the draft's value with a citation note (sealed, migration 0742), the event audits `ebp_form5500_line.keyed`, and code re-runs the tie-out. The response's `id` is the draft's.
 
+**The Schedule H mapping as content (A-05-T62 close; DEC-2823).** `POST /v1/ebp/schedule-h-mappings:publish` (`ebp_schedule_h_mapping.publish`; quality partner or practice leader; fresh MFA) takes `MappingPublishIn` (`effective_plan_year` and `rows` of `fs_caption_key` with `schedule_h_line`). It defaults to a dry run, which reports `problems` as codes with row places. A clean, non-dry run inserts the next firm-wide version, published, into `ebp_schedule_h_mappings`. No version ever changes.
+
 A-05 §4.3's other routes (provider drawers, population queries, payroll drawer, Schedule H 4a,
 loan details, SDBA and vesting, compliance and qualification, render and remind) join additively
 with their tasks.

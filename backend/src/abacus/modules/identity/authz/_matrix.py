@@ -1403,6 +1403,17 @@ ACTIONS: dict[str, dict[str, str]] = {
         "system": "deny",
         "independence": "required",
     },
+    "ebp_schedule_h_mapping.publish": {
+        "quality_partner": "allow",
+        "practice_leader": "allow",
+        "client_admin": "deny",
+        "client_contributor": "deny",
+        "third_party": "deny",
+        "client_service": "deny",
+        "agent": "deny",
+        "system": "deny",
+        "mfa_recent": "required",
+    },
     "efile_ack.record": {
         "engagement_partner": "allow",
         "manager": "allow",

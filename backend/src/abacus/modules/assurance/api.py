@@ -155,6 +155,7 @@ from abacus.modules.assurance.risks import edit as edit_risk
 from abacus.modules.assurance.risks import request_approval as request_risk_approval
 from abacus.modules.assurance.routes import router
 from abacus.modules.assurance.run_badges import run_badges
+from abacus.modules.assurance.schedule_h_mappings import schedule_h_mappings_router
 from abacus.modules.assurance.sections import (
     AuditSection,
     IndexTag,
@@ -213,6 +214,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     findings_router,  # A-06-T05 completion family stub (docs/contracts/completion.md)
     audit_completion_router,  # A-07-T04 AUD-18/AUD-19 stub (docs/contracts/audit-completion.md)
     audit_release_router,  # A-07-T05 AUD-21 to AUD-25 stub (docs/contracts/audit-completion.md)
+    schedule_h_mappings_router,  # A-05-T62 close: the firm's Schedule H line mapping (DEC-2823)
 )
 
 # SPEC-313 (TASK-331): trial balances appear in the sign-off matrix and count toward G5.
