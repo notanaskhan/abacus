@@ -78,6 +78,7 @@ Owner is the builder for every row. `Last rehearsed` stays `never` until a rehea
 | RB-62 | Tax-year rollover (TY2027): reference-set drafts outside the repo, CPA and counsel review, two-person publish staging then production, organizers, the Dec 7 flip and rollback | T-03-T18 | Fri Nov 26, 2027 (staging, PF-X1) | never | none | drafted |
 | — `review-grammar.md` | Review grammar: stale storms, human-gate projector rebuild, undo-window incidents, grant voids | P-04-T61 | at the next staging deploy (S26 batch close) | never | sign_offs.went_stale volume | drafted |
 | — `audit-planning-flip.md` | Audit planning flip: per-firm order (Oct 26 materiality, Nov 9 workpapers and risk register, Nov 23 internal control), rollback is flag off, decisions and versions persist | A-04-T40 | before the first real-firm flip | never | none | drafted |
+| — `ebp-modules.md` | EBP modules: per-firm flip (ebp.modules, assurance.estimates_rp, then ebp.form5500_tieout), rollback is flag off, recording a correction, recompute through a checkpoint, annual IRC 6621 / IRS limits / Schedule H updates with the CPA, flag calendar | A-05-T62 | before the first real-firm EBP flip | never | none | drafted |
 
 Q-02-T51's agent-stage and provider-terms runbooks are RB-39 and RB-40. Give the next runbook the next free number (RB-63 onward; RB-61 and RB-62 are N-04-T27's and T-03-T18's; RB-43 is P-11-T17's; RB-31 is P-01-T17's, RB-32 P-06-T27's, RB-33 A-01-T30's).
 
