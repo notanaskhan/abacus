@@ -31,6 +31,8 @@ export const porScreens = {
   // POR-03 gives (DEC-347).
   "POR-06": { name: "Sign · Ridgeline engagement letter", status: "planned", path: null },
   "POR-07": { name: "Messages · Feld household", status: "planned", path: null },
+  // R-02-T06: a lazy route stub at /approvals in the portal entry (fixture builds reach it from the
+  // nav); planned with a null path for the reason POR-03 gives (DEC-347).
   "POR-08": { name: "Approvals · Copperleaf August 2026 Close", status: "planned", path: null },
   "POR-09": {
     name: "Deliverables · Northwind Robotics 401(k) Plan",
