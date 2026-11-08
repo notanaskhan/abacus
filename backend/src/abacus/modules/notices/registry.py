@@ -287,6 +287,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
             "assignee_user_id",
             "authorization_facts",
             "client_id",
+            "create_anyway_reason_code",
             "created_work_item_id",
             "discarded_reason_code",
             "duplicate_of_work_item_id",

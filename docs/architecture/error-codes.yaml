@@ -536,6 +536,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.requests.comments.CorrectionNotAllowed
+  create_anyway_reason_required:
+    status: 422
+    raised_by:
+    - abacus.modules.notices.intake.CreateAnywayReasonRequired
+    summary: 'US-2.3: "Create anyway" past a possible duplicate names its reason.'
   cuec_evidence_missing:
     status: 409
     raised_by:

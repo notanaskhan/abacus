@@ -11420,7 +11420,8 @@ export const intakeAttach = <ThrowOnError extends boolean = false>(options: Opti
 /**
  * Intake Confirm Route
  *
- * 409 `low_confidence_unconfirmed`, `duplicate_unresolved`, `no_notice_engagement`.
+ * 409 `low_confidence_unconfirmed`, `duplicate_unresolved`, `no_notice_engagement`; 422
+ * `create_anyway_reason_required`.
  */
 export const intakeConfirm = <ThrowOnError extends boolean = false>(options: Options<IntakeConfirmData, ThrowOnError>): RequestResult<IntakeConfirmResponses, IntakeConfirmErrors, ThrowOnError> => (options.client ?? client).post<IntakeConfirmResponses, IntakeConfirmErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
