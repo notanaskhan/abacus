@@ -19781,9 +19781,17 @@ export type Form5500Out = {
      */
     allowed_actions: Array<'ebp_plan.edit' | 'ebp_provider.manage' | 'ebp_provider.invite' | 'ebp_provider.request' | 'ebp_import.create' | 'ebp_correction.record' | 'ebp_schedule.draft' | 'ebp_certification.evaluate' | 'ebp_form5500.key' | 'ebp_schedule.render' | 'ebp_form5500.send_note' | 'ebp_form5500.remind' | 'test.create' | 'test.mark' | 'field.sign_off' | 'estimate.evaluate' | 'estimate.request_conclusion' | 'related_party.manage' | 'related_party.screen_out' | 'party_in_interest.manage' | 'pii.reveal'>;
     /**
+     * Draft Id
+     */
+    draft_id?: string | null;
+    /**
      * Draft Received
      */
     draft_received: boolean;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id?: string | null;
     /**
      * Lines
      */
@@ -19792,6 +19800,55 @@ export type Form5500Out = {
      * Part Iv
      */
     part_iv: Array<PartIvLineOut>;
+    /**
+     * Rows
+     */
+    rows?: Array<Form5500RowOut>;
+};
+
+/**
+ * Form5500RowOut
+ *
+ * A-05-T58 (DEC-2814): one Schedule H line with both sides, the code's difference and its
+ * classification; `match_id` lights the row and the draft's form field together.
+ */
+export type Form5500RowOut = {
+    /**
+     * Caption
+     */
+    caption: string;
+    /**
+     * Classification
+     */
+    classification: 'tie' | 'reconciling_item' | 'inconsistent' | null;
+    /**
+     * Difference
+     */
+    difference: string | null;
+    /**
+     * F5500 Amount
+     */
+    f5500_amount: string | null;
+    /**
+     * Fs Amount
+     */
+    fs_amount: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Line Code
+     */
+    line_code: string;
+    /**
+     * Match Id
+     */
+    match_id?: string | null;
+    /**
+     * Note Ref
+     */
+    note_ref?: string | null;
 };
 
 /**

@@ -1176,7 +1176,7 @@ export const ebpForm5500QueryKey = (options: Options<EbpForm5500Data>) => create
 /**
  * Ebp Form5500 Route
  *
- * Draft status, Schedule H lines with tallies and Part IV (EBP-07; T36).
+ * Draft status, Schedule H lines with tallies and Part IV (EBP-07; T36; A-05-T58).
  */
 export const ebpForm5500Options = (options: Options<EbpForm5500Data>) => queryOptions<EbpForm5500Response, EbpForm5500Error, EbpForm5500Response, ReturnType<typeof ebpForm5500QueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

@@ -41,11 +41,13 @@ from abacus.modules.assurance import (
     ebp_provisions,
 )
 from abacus.modules.assurance.compute.ebp.accounts import Group as AccountGroup
+from abacus.modules.assurance.ebp_form5500 import form5500_view
 from abacus.modules.assurance.ebp_imports import ImportView, Ties, import_of, import_source
 from abacus.modules.assurance.ebp_participants import DOB_MASK, participants_of
 from abacus.modules.assurance.ebp_participants import reveal as reveal_participant_field
 from abacus.modules.assurance.tb_mapping_contract import SignOffChipOut
 from abacus.modules.engagements.api import assurance_item, get_ref
+from abacus.modules.evidence.api import citation_display
 from abacus.modules.identity.api import (
     AbacusRouter,
     AuthContext,
@@ -512,6 +514,25 @@ class PartIvLineOut(BaseModel):
     basis: Label
 
 
+class Form5500RowOut(BaseModel):
+    """A-05-T58 (DEC-2814): one Schedule H line with both sides, the code's difference and its
+    classification; `match_id` lights the row and the draft's form field together."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: Annotated[UUID, classified("internal")]
+    line_code: Annotated[str, Field(max_length=20), classified("internal")]
+    caption: Label
+    fs_amount: MaybeMoney
+    f5500_amount: MaybeMoney
+    difference: MaybeMoney
+    classification: Annotated[
+        Literal["tie", "reconciling_item", "inconsistent"] | None, classified("internal")
+    ]
+    note_ref: Annotated[str | None, Field(max_length=40), classified("internal")] = None
+    match_id: Annotated[str | None, classified("internal")] = None
+
+
 class Form5500Out(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -519,6 +540,12 @@ class Form5500Out(BaseModel):
     lines: Annotated[list[FigureRowOut], Field(max_length=200), classified("confidential")]
     part_iv: Annotated[list[PartIvLineOut], Field(max_length=20), classified("confidential")]
     allowed_actions: Actions
+    # A-05-T58 (DEC-2814), additive: the tie-out rows with both sides, and the draft's id.
+    rows: Annotated[list[Form5500RowOut], Field(max_length=200), classified("confidential")] = (
+        Field(default_factory=list[Form5500RowOut])
+    )
+    draft_id: Annotated[UUID | None, classified("internal")] = None
+    evidence_version_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class LineValueIn(BaseModel):
@@ -1180,10 +1207,6 @@ async def _gate(ctx: AuthContext, work_item_id: UUID, action: str, flag: Flag) -
 
 def _not_yet() -> NoReturn:
     raise NotImplementedYet
-
-
-def _example[M: BaseModel](model: type[M], body: JsonDict) -> M:
-    return model.model_validate(body)
 
 
 def _account_group(group: AccountGroup) -> AccountGroupOut:
@@ -2317,22 +2340,71 @@ async def ebp_expense_support_route(
 
 
 # EBP-07
+async def _line_matches(ctx: AuthContext, ids: Sequence[UUID | None]) -> dict[UUID, str]:
+    """Each cited line's region id (C4 §3.1), read from its citation; one that the reader can't
+    see, or that has no region, lights nothing."""
+    found: dict[UUID, str] = {}
+    for citation_id in {i for i in ids if i is not None}:
+        try:
+            view = await citation_display(ctx, citation_id)
+        except NotFound:
+            continue
+        if view.match_id is not None:
+            found[citation_id] = view.match_id
+    return found
+
+
 @router.get("/ebp/form-5500", action="ebp_form5500.read", response_model=Form5500Out)
 async def ebp_form5500_route(work_item_id: UUID, ctx: Ctx) -> Form5500Out:
-    """Draft status, Schedule H lines with tallies and Part IV (EBP-07; T36)."""
+    """Draft status, Schedule H lines with tallies and Part IV (EBP-07; T36; A-05-T58)."""
     await _gate(ctx, work_item_id, "ebp_form5500.read", _F)
+    view = await form5500_view(ctx, work_item_id)
+    matches = await _line_matches(ctx, [line.f5500_citation_id for line in view.lines])
+    part_iv_lines = {"4a", "4b", "4d", "4i", "4j"}
     return Form5500Out(
-        draft_received=True,
+        draft_received=view.draft_id is not None,
+        draft_id=view.draft_id,
+        evidence_version_id=view.evidence_version_id,
         lines=[
             FigureRowOut(
-                key="h.1c",
-                label="Receivables",
-                amount=Decimal("48600.00"),
-                status="reconciling_item",
+                key=f"h.{line.line_code}",
+                label=line.caption,
+                amount=line.f5500_amount,
+                status=line.classification,  # type: ignore[arg-type]  # registry kind literal
+                note=line.note_ref,
             )
+            for line in view.lines
         ],
-        part_iv=[_example(PartIvLineOut, _PART_IV)],
-        allowed_actions=["ebp_form5500.key", "ebp_form5500.send_note"],
+        rows=[
+            Form5500RowOut(
+                id=line.id,
+                line_code=line.line_code,
+                caption=line.caption,
+                fs_amount=line.fs_amount,
+                f5500_amount=line.f5500_amount,
+                difference=line.difference,
+                classification=line.classification,  # type: ignore[arg-type]  # CHECK literal
+                note_ref=line.note_ref,
+                match_id=None
+                if line.f5500_citation_id is None
+                else matches.get(line.f5500_citation_id),
+            )
+            for line in view.lines
+        ],
+        part_iv=[
+            PartIvLineOut(
+                line=answer.question,  # type: ignore[arg-type]  # CHECK `^4[a-m]$`, read as listed
+                draft_answer="yes"
+                if answer.draft_answer == "yes"
+                else ("no" if answer.draft_answer == "no" else None),
+                draft_amount=answer.amount,
+                consistency="inconsistent" if answer.result == "inconsistent" else "consistent",
+                basis=answer.evidence_ref or "",
+            )
+            for answer in view.part_iv
+            if answer.question in part_iv_lines
+        ],
+        allowed_actions=["ebp_form5500.key", "ebp_form5500.send_note", "ebp_form5500.remind"],
     )
 
 

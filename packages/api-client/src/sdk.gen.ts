@@ -665,7 +665,7 @@ export const ebpBudgetAccount = <ThrowOnError extends boolean = false>(options: 
 /**
  * Ebp Form5500 Route
  *
- * Draft status, Schedule H lines with tallies and Part IV (EBP-07; T36).
+ * Draft status, Schedule H lines with tallies and Part IV (EBP-07; T36; A-05-T58).
  */
 export const ebpForm5500 = <ThrowOnError extends boolean = false>(options: Options<EbpForm5500Data, ThrowOnError>): RequestResult<EbpForm5500Responses, EbpForm5500Errors, ThrowOnError> => (options.client ?? client).get<EbpForm5500Responses, EbpForm5500Errors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

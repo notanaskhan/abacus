@@ -264,6 +264,73 @@ async def tie_out(tenant: TenantContext, draft_id: UUID) -> TieOutResult:
     return result
 
 
+# --- EBP-07's read (A-05-T58; DEC-2814) ------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class LineView:
+    id: UUID
+    line_code: str
+    caption: str
+    fs_amount: Decimal | None
+    f5500_amount: Decimal | None
+    difference: Decimal | None
+    classification: str | None
+    note_ref: str | None
+    f5500_citation_id: UUID | None
+
+
+@dataclass(frozen=True)
+class PartIvView:
+    question: str
+    draft_answer: str | None
+    amount: Decimal | None
+    evidence_ref: str | None
+    result: str | None
+    issue_id: UUID | None
+
+
+@dataclass(frozen=True)
+class Form5500View:
+    draft_id: UUID | None
+    evidence_version_id: UUID | None
+    lines: tuple[LineView, ...]
+    part_iv: tuple[PartIvView, ...]
+
+
+_CURRENT = text(
+    "SELECT id, evidence_version_id FROM ebp_form5500_drafts "
+    "WHERE work_item_id = :w AND status <> 'superseded' ORDER BY created_at DESC LIMIT 1"
+)
+_VIEW_LINES = text(
+    "SELECT id, line_code, caption, fs_amount, f5500_amount, difference, classification, "
+    "note_ref, f5500_citation_id FROM ebp_form5500_lines WHERE draft_id = :d ORDER BY line_code"
+)
+_VIEW_PART_IV = text(
+    # `evidence_ref` is a JSON object; its `basis` is the words EBP-07's "Our evidence" shows.
+    "SELECT question, draft_answer, amount, evidence_ref->>'basis', result, issue_id "
+    "FROM ebp_part_iv_answers WHERE draft_id = :d ORDER BY question"
+)
+
+
+async def form5500_view(ctx: AuthContext, work_item_id: UUID) -> Form5500View:
+    """The current draft's tied lines and Part IV answers; no draft yet reads empty (EBP-07 d:
+    "Draft not received")."""
+    await _engagement(ctx, work_item_id, "ebp_form5500.read")
+    async with tenant_session(ctx.tenant) as session:
+        current = (await session.execute(_CURRENT, {"w": work_item_id})).first()
+        if current is None:
+            return Form5500View(None, None, (), ())
+        draft_id, version_id = current
+        lines = tuple(
+            LineView(*r) for r in (await session.execute(_VIEW_LINES, {"d": draft_id})).all()
+        )
+        part_iv = tuple(
+            PartIvView(*r) for r in (await session.execute(_VIEW_PART_IV, {"d": draft_id})).all()
+        )
+    return Form5500View(cast(UUID, draft_id), cast(UUID, version_id), lines, part_iv)
+
+
 @activity.defn(name="ebp.form5500_tieout")
 async def tie_out_activity(tenant_id: str, draft_id: str) -> TieOutCounts:
     tenant = TenantContext(UUID(tenant_id), "system", _ACTOR)

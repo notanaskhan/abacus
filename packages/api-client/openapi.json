@@ -42561,10 +42561,36 @@
             "title": "Allowed Actions",
             "type": "array"
           },
+          "draft_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Draft Id"
+          },
           "draft_received": {
             "cls": "internal",
             "title": "Draft Received",
             "type": "boolean"
+          },
+          "evidence_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Evidence Version Id"
           },
           "lines": {
             "cls": "confidential",
@@ -42583,6 +42609,15 @@
             "maxItems": 20,
             "title": "Part Iv",
             "type": "array"
+          },
+          "rows": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/Form5500RowOut"
+            },
+            "maxItems": 200,
+            "title": "Rows",
+            "type": "array"
           }
         },
         "required": [
@@ -42592,6 +42627,121 @@
           "allowed_actions"
         ],
         "title": "Form5500Out",
+        "type": "object"
+      },
+      "Form5500RowOut": {
+        "description": "A-05-T58 (DEC-2814): one Schedule H line with both sides, the code's difference and its\nclassification; `match_id` lights the row and the draft's form field together.",
+        "properties": {
+          "caption": {
+            "cls": "internal",
+            "maxLength": 300,
+            "title": "Caption",
+            "type": "string"
+          },
+          "classification": {
+            "anyOf": [
+              {
+                "enum": [
+                  "tie",
+                  "reconciling_item",
+                  "inconsistent"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Classification"
+          },
+          "difference": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Difference"
+          },
+          "f5500_amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "F5500 Amount"
+          },
+          "fs_amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Fs Amount"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "line_code": {
+            "cls": "internal",
+            "maxLength": 20,
+            "title": "Line Code",
+            "type": "string"
+          },
+          "match_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Match Id"
+          },
+          "note_ref": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Note Ref"
+          }
+        },
+        "required": [
+          "id",
+          "line_code",
+          "caption",
+          "fs_amount",
+          "f5500_amount",
+          "difference",
+          "classification"
+        ],
+        "title": "Form5500RowOut",
         "type": "object"
       },
       "Form8879Row": {
@@ -120074,7 +120224,7 @@
     },
     "/v1/audits/{work_item_id}/ebp/form-5500": {
       "get": {
-        "description": "Draft status, Schedule H lines with tallies and Part IV (EBP-07; T36).",
+        "description": "Draft status, Schedule H lines with tallies and Part IV (EBP-07; T36; A-05-T58).",
         "operationId": "ebp_form5500",
         "parameters": [
           {

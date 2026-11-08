@@ -39,6 +39,16 @@ task. Writes take `Idempotency-Key`.
 | GET `/ebp/form-5500` · POST `/ebp/form-5500/lines/{id}/value` · POST `/ebp/form-5500/reconciliation-note` | `Form5500Out` · `LineValueIn` | `ebp_form5500.read` · `ebp_form5500.key` · `ebp_form5500.send_note` | T36, T38 |
 | GET/PUT/POST `/estimates*` · `/related-parties*` · `/parties-in-interest` | `Aud27ListOut` · `MethodIn` · `Aud27ItemIn` · `ScreenOutIn` | `estimate.*` · `related_party.*` · `party_in_interest.manage` | T50, T52 |
 
+**Form 5500 read (A-05-T58; DEC-2814), additive.** `Form5500Out` gains `rows` (one
+`Form5500RowOut` per Schedule H line: `line_code`, `caption`, `fs_amount`, `f5500_amount`,
+`difference`, `classification` tie / reconciling_item / inconsistent, `note_ref`, `match_id`),
+`draft_id` and `evidence_version_id` (the draft's PDF, which the cockpit opens in its viewer dock).
+`lines` stays for v1 readers. `match_id` is the cited region's own C4 §3.1 id, read from the line's
+`f5500_citation_id` through `citation_display`; a citation the reader can't see, or one with no
+region, lights nothing (INV-2: the screen never composes one). With no current draft the read
+answers `draft_received = false` and empty lists (EBP-07 d). `part_iv` lists the five lines the
+code checks (4a, 4b, 4d, 4i, 4j); `basis` is `evidence_ref.basis` on the stored answer.
+
 A-05 §4.3's other routes (provider drawers, population queries, payroll drawer, Schedule H 4a,
 loan details, SDBA and vesting, compliance and qualification, render and remind) join additively
 with their tasks.

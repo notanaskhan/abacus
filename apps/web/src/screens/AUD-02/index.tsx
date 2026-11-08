@@ -53,6 +53,7 @@ import {
 } from "../AUD-09";
 import { SERVICE_ORGS, type ServiceOrgsOptions, useServiceOrgsCanvas } from "../AUD-10";
 import { INVESTMENTS, type InvestmentsOptions, useInvestmentsCanvas } from "../EBP-06";
+import { FORM_5500, type Form5500Options, useForm5500Canvas } from "../EBP-07";
 import { type SampleSelectionOptions, useSampleSelectionCanvas } from "../AUD-11/SampleSelection";
 import { ViewerPane } from "../SHL-08";
 import { useOpenOverlay } from "../../app-core/open";
@@ -129,6 +130,8 @@ export interface AUD02Props {
   expenses?: Omit<ExpensesOptions, "active">;
   /** AUD-27 (A-05-T57): Estimates & Related Parties (FS) or Parties in interest (EBP). */
   estimatesRp?: Omit<EstimatesOptions, "active">;
+  /** EBP-07 (A-05-T58): Testing › Form 5500 Tie-Out. */
+  form5500?: Omit<Form5500Options, "active">;
 }
 
 /** The rail row whose canvas is AUD-06 (A-02-T09). */
@@ -241,6 +244,7 @@ function Cockpit({
   expenses,
   accounts,
   estimatesRp,
+  form5500,
 }: Omit<AUD02Props, "auditId"> & { cockpit: AuditCockpitOut }): JSX.Element {
   // A-01-T24: "Export binder…" and the record-mode entries (DV-9, DV-4).
   const audit = useAuditActions(cockpit, overlay ?? null, onOverlay);
@@ -368,6 +372,14 @@ function Cockpit({
     ...estimatesRp,
     active: estimatesOpen,
   });
+  // EBP-07 (A-05-T58): Testing › Form 5500 Tie-Out, behind `ebp.modules`; the draft's PDF opens in
+  // the viewer dock.
+  const form5500Open = selected === FORM_5500;
+  const form5500Canvas = useForm5500Canvas(cockpit.work_item_id, {
+    onOpenDraft: (version) => onDock?.("viewer", version),
+    ...form5500,
+    active: form5500Open,
+  });
   const openDoc = (r: SourceDocumentRowOut): void => {
     const version = r.latest_upload?.evidence_version_id ?? null;
     if (version !== null) onDock?.("viewer", version);
@@ -402,6 +414,8 @@ function Cockpit({
     canvas = estimatesCanvas;
   } else if (accountsOpen) {
     canvas = accountsCanvas;
+  } else if (form5500Open) {
+    canvas = form5500Canvas;
   } else if (row?.section_state === "blocked_on_decision" && row.blocked_on_name != null) {
     canvas = {
       title: row.title,
