@@ -50,8 +50,14 @@ export const COPY = {
   raise: "Raise exception…",
   raised: "Draft finding recorded on the Findings register.",
   raiseFailed: "Couldn't record the finding. Try again.",
+  // The handoff's AUD-15 draft finding (Flag → AUD-15).
   findingTitle: (n: number) =>
-    `Opt-out elections missing for ${String(n)} auto-enrolled participants with no deferrals`,
+    `Missed deferral opportunities — auto-enrollment not applied (${String(n)} participants)`,
+  flag: "Flag to a draft finding",
+  // The handoff's provision cards (EBP-02's provisions, read here).
+  enrollmentCard: "Auto-Enrollment Provisions",
+  escalationCard: "Auto-Escalation Provisions",
+  provisionColumns: ["Provision", "Plan Election", "Plan Doc Reference"],
   requestOptOut: "Request opt-out forms",
   citations: (n: number) => `Citations (${String(n)})`,
   procedures: "Procedures (1)",
