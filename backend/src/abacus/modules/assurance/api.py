@@ -6,6 +6,7 @@ The audit line's read models and actions: the AUD-06 trial balance first (SPEC-3
 # A-03-T08: the C9 v2 routes call this lazily; imported here so its error codes are catalogued.
 from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.kernel.dispatch import register_work_classes
+from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.adjustments.api import (
     register_entry_decision_hook,
     register_entry_proposed_hook,
@@ -41,6 +42,9 @@ from abacus.modules.assurance.checklist_suggestions import (
 )
 from abacus.modules.assurance.checklist_suggestions import (
     SUBSCRIPTIONS as CHECKLIST_SUGGESTION_SUBSCRIPTIONS,
+)
+from abacus.modules.assurance.checklist_suggestions import (
+    on_suggestion_created as on_checklist_suggestion,
 )
 from abacus.modules.assurance.completion import on_entry_client_decision, on_entry_proposed
 from abacus.modules.assurance.completion_contract import router as audit_completion_router
@@ -148,6 +152,14 @@ from abacus.modules.assurance.sections import (
 )
 from abacus.modules.assurance.service_orgs import AUDIT_KINDS as SERVICE_ORG_KINDS
 from abacus.modules.assurance.service_orgs import audit_owners as service_org_owners
+from abacus.modules.assurance.severity_suggestions import (
+    SEVERITY_SUGGESTION_TARGET,
+    apply_severity_suggestion,
+    deficiency_engagement,
+)
+from abacus.modules.assurance.severity_suggestions import (
+    on_suggestion_created as on_severity_suggestion,
+)
 from abacus.modules.assurance.soc_reports import AUDIT_KINDS as SOC_REPORT_KINDS
 from abacus.modules.assurance.soc_reports import audit_owners as soc_report_owners
 from abacus.modules.assurance.soc_reports import register_reliance_kind
@@ -223,8 +235,15 @@ register_sign_off_guard(ebp_investments.KIND, ebp_investments.sign_off_guard)  #
 register_mode_preparer("risk_narrative", presumed_preparer)
 register_firm_setting(RELEASE_MODE_SETTING)
 
+
 # A-01-T05 (SPEC-330 AC-13): C1's `gate.met` derives the phase a computed gate opens. The worker
 # collects these with every module's; assurance has no workflows of its own yet.
+async def _on_suggestion_created(event: OutboxEvent) -> None:
+    """`suggestion.created` for both seams: each ignores another target's suggestion."""
+    await on_checklist_suggestion(event)
+    await on_severity_suggestion(event)
+
+
 # A-03-T14: a new trial balance version leaves a signed mapping stale (`mapping_set.went_stale`).
 # A-06-T16 seam (TASK-3395): an agent's suggested checklist answer is mirrored on its item.
 SUBSCRIPTIONS = (
@@ -235,6 +254,7 @@ SUBSCRIPTIONS = (
     | dict(EQR_SUBSCRIPTIONS)
     | dict(FORM5500_SUBSCRIPTIONS)
     | dict(CHECKLIST_SUGGESTION_SUBSCRIPTIONS)
+    | {"suggestion.created": _on_suggestion_created}
 )
 # A-05-T54: Form5500TieOut, code only, on the background class.
 WORKFLOWS: dict[type, str] = dict(FORM5500_WORKFLOWS)
@@ -297,6 +317,13 @@ register_suggestion_applier(
     CHECKLIST_SUGGESTION_TARGET,
     apply_checklist_suggestion,
     engagement_of=statement_document_engagement,
+)
+
+# A-06-T16 seam (DEC-2952): the agent proposes a deficiency severity; a person adopts it.
+register_suggestion_applier(
+    SEVERITY_SUGGESTION_TARGET,
+    apply_severity_suggestion,
+    engagement_of=deficiency_engagement,
 )
 
 # A-06-T25: reporting may not import agents; the statements' run record arrives through here.

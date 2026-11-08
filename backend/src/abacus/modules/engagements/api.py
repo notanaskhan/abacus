@@ -270,6 +270,7 @@ from abacus.modules.engagements.work_items import (
     mfa_tri_scope,
     portal_work_items,
     set_assurance_profile,
+    set_work_item_due,
     wall_assignment_count,
 )
 from abacus.modules.engagements.work_items import engagement_type_of as engagement_type_of
@@ -620,6 +621,7 @@ __all__ = [
     "service_line_of",
     "set_ai_exclusion_of",
     "set_assurance_profile",
+    "set_work_item_due",
     "start_acceptance",
     "stored_file",
     "team_approval",

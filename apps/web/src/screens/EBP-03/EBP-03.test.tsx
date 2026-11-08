@@ -3,7 +3,7 @@
 // and pill only, and the viewer never shows a Form I-9." Words and figures are the handoff's.
 import { client } from "@abacus/api-client/client";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { installFixtureMode } from "../../app-core/fixture-mode";
 import { newQueryClient } from "../../testing/support";
@@ -54,17 +54,29 @@ describe.each(STATES)("EBP-03 %s", (state) => {
 });
 
 describe("EBP-03 exceptions", () => {
-  it("a: Raise exception… records one draft finding, then stays disabled", async () => {
+  it("a: the Flag records one AUD-15 draft finding under the handoff's title", async () => {
+    show("a");
+    const grid = await matrix();
+    const flags = within(grid).getAllByRole("button", { name: "Flag to a draft finding" });
+    expect(flags).toHaveLength(2);
+    fireEvent.click(flags[0] as HTMLElement);
+    await waitFor(() => {
+      expect(
+        within(grid).queryAllByRole("button", { name: "Flag to a draft finding" }),
+      ).toHaveLength(0);
+    });
+  });
+
+  it("a: shows the plan's auto-enrollment and auto-escalation provisions", async () => {
     show("a");
     await matrix();
-    const raise = [...document.querySelectorAll("button")].find((b) =>
-      b.textContent.includes("Raise exception"),
-    ) as HTMLButtonElement;
-    expect(raise.disabled).toBe(false);
-    fireEvent.click(raise);
-    await waitFor(() => {
-      expect(raise.disabled).toBe(true);
+    const cards = await waitFor(() => {
+      const found = document.querySelectorAll("[data-ebp03='provisions']");
+      expect(found.length).toBe(2);
+      return found;
     });
+    expect(cards[0]?.textContent).toContain("Auto-Enrollment Provisions");
+    expect(cards[1]?.textContent).toContain("Auto-Escalation Provisions");
   });
 });
 

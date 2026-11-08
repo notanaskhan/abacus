@@ -245,3 +245,27 @@ async def test_ac_the_verified_rule_moves_the_entry_date(
     assert (out.entry_rule.minimum_age, out.entry_rule.service_months) == (21, 6)
     first = out.rows[0]
     assert (first.eligible_on, first.entry_on) == (date(2025, 8, 10), date(2025, 9, 1))
+
+
+@pytest.mark.asyncio
+async def test_ac_a_row_opens_the_hr_record_its_hire_date_cites(
+    sample: SimpleNamespace, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """DEC-2955: the hire date's first citation names the HR record version the viewer opens."""
+    citation, version = uuid.uuid4(), uuid.uuid4()
+    cell = SimpleNamespace(attribute_key="hire_date", value=None, citation_ids=(citation,))
+    row = SimpleNamespace(
+        position=1, item_id=uuid.uuid4(), record_key="NW-1", state="pass", cells=(cell,)
+    )
+    table = SimpleNamespace(version_no=1, workpaper_id=uuid.uuid4(), rows=(row,))
+
+    async def grid(*_a: object) -> object:
+        return table
+
+    async def sources(_tenant: object, ids: list[uuid.UUID]) -> dict[uuid.UUID, uuid.UUID]:
+        return {citation: version} if citation in ids else {}
+
+    monkeypatch.setattr(sample_module, "grid", grid)
+    monkeypatch.setattr(sample_module, "citation_sources", sources)
+    out = await sample_module.sample(sample.firm.person(), sample.work_item)
+    assert out.rows[0].hr_record_version_id == version

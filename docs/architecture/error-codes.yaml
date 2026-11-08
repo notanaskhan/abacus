@@ -536,6 +536,11 @@ codes:
     status: 422
     raised_by:
     - abacus.modules.requests.comments.CorrectionNotAllowed
+  create_anyway_reason_required:
+    status: 422
+    raised_by:
+    - abacus.modules.notices.intake.CreateAnywayReasonRequired
+    summary: 'US-2.3: "Create anyway" past a possible duplicate names its reason.'
   cuec_evidence_missing:
     status: 409
     raised_by:
@@ -2685,6 +2690,11 @@ codes:
     raised_by:
     - abacus.modules.integrations.engine_settings.SettingLocked
     summary: A stricter-only rule stays on (`facts.key`).
+  severity_concluded:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.severity_suggestions.SeverityConcluded
+    summary: 'The deficiency is concluded or past proposal: a suggestion no longer changes it.'
   shadow_report_changed:
     status: 409
     raised_by:
