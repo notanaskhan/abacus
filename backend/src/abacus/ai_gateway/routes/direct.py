@@ -7,8 +7,19 @@ from typing import cast
 import anthropic
 from anthropic.types import Message
 
-from abacus.ai_gateway.providers import ModelRequest, ModelResponse
-from abacus.ai_gateway.routes._anthropic import message_args, to_error, to_response
+from abacus.ai_gateway.providers import (
+    ConverseRequest,
+    ConverseResponse,
+    ModelRequest,
+    ModelResponse,
+)
+from abacus.ai_gateway.routes._anthropic import (
+    converse_args,
+    message_args,
+    to_converse_response,
+    to_error,
+    to_response,
+)
 from abacus.kernel.config import settings
 
 
@@ -28,3 +39,11 @@ class AnthropicDirect:
         except Exception as exc:
             raise to_error(exc) from None
         return to_response(message, request.model)
+
+    async def converse(self, request: ConverseRequest) -> ConverseResponse:
+        """Seam v2 (P-10-T12): one non-streaming turn with tools; never retried by the SDK."""
+        try:
+            message = cast(Message, await self._client.messages.create(**converse_args(request)))
+        except Exception as exc:
+            raise to_error(exc) from None
+        return to_converse_response(message, request.model)
