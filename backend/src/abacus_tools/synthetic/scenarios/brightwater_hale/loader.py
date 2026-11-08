@@ -318,6 +318,7 @@ from abacus.modules.tax.api import (
     patch_installment,
     patch_schedule,
     prepare_extensions,
+    request_estimate_confirmation,
     share_k1_internal,
 )
 from abacus.modules.workpapers.api import CellEdit, create_workpaper, set_cells
@@ -4926,20 +4927,60 @@ _ESTIMATE_QUARTERS: Final[dict[int, date]] = {
 }
 
 
+def _estimate_seed(client: str) -> _tax_schedules.SeedEstimate:
+    return next(x for x in _tax_schedules.ESTIMATES if x.client == client)
+
+
+async def _estimate_actor(conn: asyncpg.Connection, event: Event, client: str) -> AuthContext:
+    """The return's own preparer: a schedule's writes authorise on its basis return."""
+    basis = next((r for r in BOARD if r.client == client), None)
+    return await _staff_context(conn, _as_actor(event, basis.preparer) if basis else event)
+
+
+async def _estimate_schedule_of(conn: asyncpg.Connection, client: str) -> UUID:
+    entity = await _entity_id(conn, await _client_id(conn, client), client)
+    return cast(
+        UUID,
+        await tenant_value(
+            conn,
+            TENANT,
+            "SELECT id FROM estimate_schedules WHERE client_entity_id = $1 AND tax_year = $2",
+            entity,
+            _tax_schedules.ESTIMATE_YEAR,
+        ),
+    )
+
+
+async def _third_quarter(conn: asyncpg.Connection, schedule: UUID) -> tuple[int, UUID | None]:
+    """Q3's version and its confirmation request item; patching the schedule recomputes its
+    open installments, which moves their versions."""
+    row = await tenant_row(
+        conn,
+        TENANT,
+        "SELECT row_version, confirmation_request_item_id FROM estimate_installments "
+        "WHERE schedule_id = $1 AND quarter = 3",
+        schedule,
+    )
+    if row is None:
+        raise LookupError(f"no third quarter on schedule {schedule}")
+    return int(row["row_version"]), cast("UUID | None", row["confirmation_request_item_id"])
+
+
 async def _estimate_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
-    seed = next(x for x in _tax_schedules.ESTIMATES if x.client == event.data["client"])
+    """TAX-13 b's row: the schedule and its inputs through the service (DF-34, TASK-3397). A
+    quarter's paid or scheduled state follows the client's confirmation (`_estimate_confirmed`)."""
+    seed = _estimate_seed(str(event.data["client"]))
     client = await _client_id(conn, seed.client)
     entity = await _entity_id(conn, client, seed.client)
     basis = next((r for r in BOARD if r.client == seed.client), None)
-    # The return's own preparer: a schedule's writes authorise on its basis return.
-    ctx = await _staff_context(conn, _as_actor(event, basis.preparer) if basis else event)
+    ctx = await _estimate_actor(conn, event, seed.client)
     made = await create_estimate_schedule(
         ctx,
         client_entity_id=entity,
         basis_tax_return_id=UUID(basis.work_item_id) if basis else None,
         tax_year=_tax_schedules.ESTIMATE_YEAR,
         jurisdiction="US",
-        form="1040-ES",
+        form=seed.form,
         method=seed.method,
         due_dates=[(q, due, None) for q, due in _ESTIMATE_QUARTERS.items()],
     )
@@ -4951,48 +4992,143 @@ async def _estimate_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) 
             values={
                 "prior_year_tax": _tax_schedules.money(seed.prior_year_tax),
                 "prior_year_tax_source": "preparer_entry",
+                "prior_agi_over_threshold": seed.agi_over,
                 "projected_withholding": _tax_schedules.money(seed.withholding),
-                "payment_method_label": "irs_direct_pay",
+                "payment_method_label": seed.label,
             },
         )
 
-    async def third_quarter_version() -> int:
-        # Patching the schedule recomputes its open installments, which moves their versions.
-        return cast(
-            int,
-            await tenant_value(
-                conn,
-                TENANT,
-                "SELECT row_version FROM estimate_installments "
-                "WHERE schedule_id = $1 AND quarter = 3",
-                made,
-            ),
-        )
 
-    if seed.status == "scheduled":
-        await patch_installment(
-            ctx,
-            made,
-            3,
-            expected_version=await third_quarter_version(),
-            scheduled_for=date(2026, 9, 15),
-            paid_on=None,
-            evidence_version_id=None,
+def _client_person_id(name: str) -> UUID:
+    """A client person another slice made: the portal's (Claire Feld, Meera Shah) or the one a
+    binder names as marking it done (Eleanor Calloway, Elena Varga)."""
+    found = PERSON_BY_NAME.get(name)
+    return UUID(found.id if found is not None else person_id(name))
+
+
+async def _estimate_contact_ready(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """The client's person as an active contact of the client, as an accepted invitation leaves
+    it, so a confirmation request names them (TAX-13 b's Client confirmation)."""
+    client, person = str(event.data["client"]), str(event.data["person"])
+    try:
+        contact = await _contact_of(conn, client, person)
+    except LookupError:
+        made = await create_contact(  # Grace, the firm admin (`contact.manage`)
+            await _staff_context(conn, _as_actor(event, _tax_schedules.IMPORTER)),
+            await _client_id(conn, client),
+            name=person,
+            party_kind="person",
+            email=None,
+            phone=None,
+            roles=[],
         )
-    elif seed.status == "paid" and basis:
-        await patch_installment(
-            ctx,
-            made,
-            3,
-            expected_version=await third_quarter_version(),
-            scheduled_for=None,
-            paid_on=date(2026, 9, 10),
-            evidence_version_id=await _stored_evidence(
-                conn, ctx, UUID(basis.work_item_id), "Payment confirmation"
+        contact = made.contact.id
+    user = _client_person_id(person)
+    async with uow(TenantContext(TENANT, "system", LOADER)) as tx:
+        await activate_contact(tx, contact, user)
+    # A request's client assignee holds a grant on its engagement (0084's trigger): the person
+    # contributes on the return's engagement, as an accepted invitation for it leaves them.
+    basis = next(r for r in BOARD if r.client == client)
+    engagement = cast(
+        UUID,
+        await tenant_value(
+            conn, TENANT, "SELECT engagement_id FROM work_items WHERE id = $1",
+            UUID(basis.work_item_id),
+        ),
+    )  # fmt: skip
+    granter = await _estimate_actor(conn, event, client)
+
+    async def write() -> tuple[str, str, str]:
+        await conn.execute(
+            "INSERT INTO client_access_grants (id, tenant_id, user_id, role, scope_kind, "
+            "scope_id, granted_by, status) VALUES ($1, $2, $3, 'contributor', 'engagement', $4, "
+            "$5, 'active') ON CONFLICT DO NOTHING",
+            UUID(stable_id(f"grant:estimate:{slug_of(person)}:{engagement}")),
+            TENANT,
+            user,
+            engagement,
+            granter.user_id,
+        )
+        return "client_access.granted", "engagement", str(engagement)
+
+    await _bootstrap(conn, event, write)
+
+
+async def _estimate_confirmation_requested(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    """The preparer sends Q3's confirmation request to the client's person (POR-10)."""
+    client, person = str(event.data["client"]), str(event.data["person"])
+    await request_estimate_confirmation(
+        await _estimate_actor(conn, event, client),
+        await _estimate_schedule_of(conn, client),
+        3,
+        await _contact_of(conn, client, person),
+    )
+
+
+async def _estimate_confirmed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """The client's person uploads the payment confirmation to the request (their upload is the
+    confirmation's day), then the preparer records Q3 scheduled or paid on that evidence."""
+    client, person = str(event.data["client"]), str(event.data["person"])
+    seed = _estimate_seed(client)
+    schedule = await _estimate_schedule_of(conn, client)
+    _version, item = await _third_quarter(conn, schedule)
+    if item is None:
+        raise LookupError(f"no confirmation request for {client!r}")
+    engagement = cast(
+        UUID,
+        await tenant_value(conn, TENANT, "SELECT engagement_id FROM request_items WHERE id = $1",
+                           item),
+    )  # fmt: skip
+    sender = _client_person_id(person)
+    stored = await stage_content(TENANT, f"Payment confirmation {client} Q3".encode())
+    async with uow(TenantContext(TENANT, "human", str(sender))) as tx:
+        version = await add_version(
+            tx,
+            engagement_id=engagement,
+            item=NewItem(title="Payment confirmation.pdf"),
+            stored=stored,
+            media_type="application/pdf",
+            provenance=Provenance(source="client_upload", method="uploaded"),
+            requested_by=sender,
+        )
+        await fulfil_by_upload(tx, request_item_id=item, evidence_version_id=version.id)
+    # The preparer accepts the upload: the decision row as `evidence.decide` writes it (only an
+    # API request may call `decide`; precedent `_file_returned`), so the request reads confirmed.
+    preparer = await _estimate_actor(conn, event, client)
+    decision = UUID(stable_id(f"review-decision:estimate:{client}"))
+    async with uow(TenantContext(TENANT, "human", str(preparer.user_id))) as tx:
+        await tx.session.execute(
+            text(
+                "INSERT INTO review_decisions (id, tenant_id, engagement_id, "
+                "evidence_version_id, request_item_id, decision, reason_code, note, "
+                "corrects_proposal, actor_kind, actor_id, decision_seq, prior_item_statuses) "
+                "VALUES (:id, :tenant, :engagement, :version, :item, 'accept', NULL, NULL, "
+                "false, 'human', :actor, 1, CAST(:prior AS jsonb))"
             ),
+            {
+                "id": decision,
+                "tenant": TENANT,
+                "engagement": engagement,
+                "version": version.id,
+                "item": item,
+                "actor": str(preparer.user_id),
+                "prior": json.dumps({str(item): "uploaded"}),
+            },
         )
-    # `confirmation_requested` stays `not_confirmed`: the tile counts both as Awaiting, and asking
-    # needs an engagement lead, whom this firm's tax engagements don't have (DEC-2371).
+        await move_after_review(tx, item, "received")
+        tx.record("review_decision.created", target=Target("review_decision", decision))
+    current, _item = await _third_quarter(conn, schedule)
+    await patch_installment(
+        preparer,
+        schedule,
+        3,
+        expected_version=current,
+        scheduled_for=seed.on if seed.status == "scheduled" else None,
+        paid_on=seed.on if seed.status == "paid" else None,
+        evidence_version_id=version.id if seed.status == "paid" else None,
+    )
 
 
 async def _audit_item(conn: asyncpg.Connection, client: str) -> UUID:
@@ -5597,6 +5733,9 @@ HANDLERS: Final[dict[str, Handler]] = {
     "tax.extension_seeded": _extension_seeded,
     "tax.likely_seeded": _likely_seeded,
     "tax.estimate_seeded": _estimate_seeded,
+    "tax.estimate_contact_ready": _estimate_contact_ready,
+    "tax.estimate_confirmation_requested": _estimate_confirmation_requested,
+    "tax.estimate_confirmed": _estimate_confirmed,
     "reporting.template_imported": _report_template_imported,
     "reporting.template_published": _report_template_published,
     # T-02-T23 (`--slice tax_content`): contacts and portal people, the engine's PDFs, then each
