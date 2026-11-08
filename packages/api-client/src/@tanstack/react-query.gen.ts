@@ -18677,7 +18677,8 @@ export const intakeAttachMutation = (options?: Partial<Options<IntakeAttachData>
 /**
  * Intake Confirm Route
  *
- * 409 `low_confidence_unconfirmed`, `duplicate_unresolved`, `no_notice_engagement`.
+ * 409 `low_confidence_unconfirmed`, `duplicate_unresolved`, `no_notice_engagement`; 422
+ * `create_anyway_reason_required`.
  */
 export const intakeConfirmMutation = (options?: Partial<Options<IntakeConfirmData>>): UseMutationOptions<IntakeConfirmResponse, IntakeConfirmError, Options<IntakeConfirmData>> => {
     const mutationOptions: UseMutationOptions<IntakeConfirmResponse, IntakeConfirmError, Options<IntakeConfirmData>> = {

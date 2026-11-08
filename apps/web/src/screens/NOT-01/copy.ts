@@ -78,7 +78,14 @@ export const COPY = {
     attach: (code: string): string => `Attach to ${code}`,
     attachFallback: "Attach to that notice",
     attached: "Attached to the notice",
-    createAnyway: "Create anyway",
+    createAnyway: "Create anyway…",
+    // DEC-2953 (US-2.3): Create anyway names its reason.
+    anywayReasons: {
+      different_notice: "A different notice",
+      different_tax_year: "A different tax year",
+      reissued_by_agency: "Reissued by the agency",
+      other: "Something else",
+    },
     assignee: "Assignee",
     assign: "Assign",
     notify: "Notify Daniel Reyes (signing partner)",
