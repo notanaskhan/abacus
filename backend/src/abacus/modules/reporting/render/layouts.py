@@ -96,6 +96,8 @@ LAYOUTS: Final[dict[str, Layout]] = {
     "notice_response": Layout("notice_response", "flow", True, _BASE),
     "package": Layout("package", "fixed", False, _BASE + _FIXED),
     "run_export": Layout("run_export", "fixed", False, _BASE + _FIXED + _EXPORT),
+    # A-06-T29 (DEC-2615): the financial statements, composed by code from a statement version.
+    "financial_statements": Layout("financial_statements", "flow", False, _BASE),
 }
 
 
