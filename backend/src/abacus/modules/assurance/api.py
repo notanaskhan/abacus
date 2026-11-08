@@ -35,7 +35,13 @@ from abacus.modules.assurance.a07_registrations import SUBSCRIPTIONS as A07_SUBS
 from abacus.modules.assurance.a07_registrations import register as register_a07_live_path
 from abacus.modules.assurance.aud27 import register_estimate_conclusion_kind
 from abacus.modules.assurance.audits_contract import audits_router
-from abacus.modules.assurance.bring_down import BringDownWorkflow, bring_down
+from abacus.modules.assurance.bring_down import (
+    BRING_DOWN_ID_PREFIX,
+    BringDownInput,
+    BringDownResult,
+    BringDownWorkflow,
+    bring_down,
+)
 from abacus.modules.assurance.checklist_suggestions import (
     CHECKLIST_SUGGESTION_TARGET,
     apply_checklist_suggestion,
@@ -57,6 +63,10 @@ from abacus.modules.assurance.completion_projector import SUBSCRIBED as COMPLETI
 from abacus.modules.assurance.completion_projector import on_completion_event
 from abacus.modules.assurance.completion_routes import dashboard_router
 from abacus.modules.assurance.completion_routes import router as completion_router
+from abacus.modules.assurance.completion_targets import AUDIT_KINDS as COMPLETION_TARGET_KINDS
+from abacus.modules.assurance.completion_targets import (
+    audit_owners as completion_target_owners,
+)
 
 # A-04-T08/T09: the pure materiality engine, for the recommender's evaluation (BOUND-001).
 from abacus.modules.assurance.compute import materiality as materiality_engine
@@ -316,6 +326,8 @@ register_engagement_owners(EBP_PLAN_KINDS, ebp_plan_owners)
 register_ebp_modes()
 # A-04-T07: the trail places a service organization on its engagement (SPEC-304; DEC-121).
 register_engagement_owners(SERVICE_ORG_KINDS, service_org_owners)
+# S31 end pass: A-07's completion rows (projector, subsequent events, letters).
+register_engagement_owners(COMPLETION_TARGET_KINDS, completion_target_owners)
 register_engagement_owners(SOC_REPORT_KINDS, soc_report_owners)  # A-04-T31
 register_engagement_owners(CONTROL_KINDS, control_owners)  # A-04-T25 (DEC-2264)
 register_engagement_owners(DECISION_KINDS, decision_owners)  # A-06-T13 (DEC-2264)
@@ -387,12 +399,16 @@ register_run_record(
 
 __all__ = [
     "ACTIVITIES",
+    "BRING_DOWN_ID_PREFIX",
     "PHASE_GATES",
     "ROUTERS",
     "SUBSCRIPTIONS",
     "TIEOUT_ID_PREFIX",
     "WORKFLOWS",
     "AuditSection",
+    "BringDownInput",
+    "BringDownResult",
+    "BringDownWorkflow",
     "ExceptionRouter",
     "ExceptionRow",
     "Form5500TieOutWorkflow",

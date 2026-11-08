@@ -462,7 +462,7 @@ export function useForm5500Canvas(
         </span>
       ) : undefined,
     children:
-      view === undefined ? null : (
+      view === undefined || !view.draft_received ? null : (
         <div data-screen="EBP-07" data-tab={tab} className="min-h-0 flex-1 overflow-y-auto">
           {tab === "schedule_h" && <ScheduleH view={view} workItemId={workItemId} />}
           {tab === "part_iv" && (

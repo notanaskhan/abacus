@@ -1,13 +1,14 @@
 """P-10-T19 (TASK-6203; ADR-234; SPEC-647 AC-G1 to AC-G5; DEC-2803): `ai_gateway.converse()`.
 
-Row acceptance: "Each refusal reason returns without a provider call, every attempt writes one usage
-row and one model.called event, and an invalid tool argument never reaches a tool." Against the
-migrated test database, on `FakeModel` trajectories (P-10-T12). Expectations come from the row and
-ADR-234, not the implementation.
+Row acceptance: "Each refusal reason returns without a provider call, every attempt writes one
+usage row and one model.called event, and an invalid tool argument never reaches a tool." Against
+the migrated test database, on `FakeModel` trajectories (P-10-T12). Expectations come from the row
+and ADR-234, not the implementation.
 """
 
 from __future__ import annotations
 
+import dataclasses
 import uuid
 from collections.abc import Iterator
 from decimal import Decimal
@@ -86,6 +87,25 @@ def _install(*turns: p.ToolCallTurn | p.FinalTurn) -> Counting:
     return fake
 
 
+# The run the turns are attributed to: usage rows reference it (S31 end pass).
+_RUN: list[uuid.UUID] = []
+
+
+@pytest.fixture(autouse=True)
+async def _agent_run(seed: Seeder, world: World) -> None:
+    run = uuid.uuid4()
+    await seed.run(
+        "INSERT INTO agent_runs (id, tenant_id, agent_id, spec_version, engagement_id, "
+        "initiator_user_id, task_scope) VALUES ($1, $2, 'evidence.screener', 1, $3, $4, "
+        "ARRAY['evidence.read'])",
+        run,
+        world.tenant_id,
+        world.engagement_id,
+        world.requester.user_id,
+    )
+    _RUN[:] = [run]
+
+
 def _call(
     world: World,
     *,
@@ -94,7 +114,7 @@ def _call(
     subjects: tuple[DataSubject, ...] = (),
     step: uuid.UUID | None = None,
 ) -> ConverseCall[BaseModel]:
-    run = uuid.uuid4()
+    run = _RUN[0]
     return ConverseCall(
         purpose="P-10-T19 conformance turn",
         prompt=REF,
@@ -119,7 +139,7 @@ def _call(
 
 
 async def _rows(seed: Seeder, run: uuid.UUID | None) -> list[tuple[str, uuid.UUID | None]]:
-    found = await seed.fetch(
+    found = await seed.rows(
         "SELECT outcome, step_id FROM usage_records WHERE agent_run_id = $1 ORDER BY created_at",
         run,
     )
@@ -128,7 +148,7 @@ async def _rows(seed: Seeder, run: uuid.UUID | None) -> list[tuple[str, uuid.UUI
 
 async def _model_called(seed: Seeder, run: uuid.UUID | None) -> int:
     return int(
-        await seed.value(
+        await seed.value(  # type: ignore[arg-type]  # count(*) is an int
             "SELECT count(*) FROM audit_events WHERE action = 'model.called' AND target_id IN "
             "(SELECT id::text FROM usage_records WHERE agent_run_id = $1)",
             run,
@@ -139,7 +159,8 @@ async def _model_called(seed: Seeder, run: uuid.UUID | None) -> int:
 async def test_ac_a_valid_tool_call_is_returned_validated_and_recorded_once(
     world: World, seed: Seeder
 ) -> None:
-    fake = _install(p.ToolCallTurn((("requests.list_items", {"engagement_id": "nw-py2025"}),)))
+    good = p.ToolCallTurn((("requests.list_items", {"engagement_id": "nw-py2025"}),))
+    fake = _install(good, good, good)  # turns 0 and 1 are the intercepted one's; turn 2 answers
     step = uuid.uuid4()
     c = _call(world, step=step)
     result = await converse(c)
@@ -171,10 +192,22 @@ async def test_ac_g4_an_invalid_tool_argument_never_reaches_a_tool(
 async def test_an_unknown_tool_is_repaired_once_and_a_good_second_turn_passes(
     world: World, seed: Seeder
 ) -> None:
-    _install(
-        p.ToolCallTurn((("evidence.delete_everything", {}),)),
-        p.ToolCallTurn((("requests.list_items", {"engagement_id": "nw-py2025"}),)),
-    )
+    # FakeModel's scripts can't name a tool that wasn't offered; a real model can, so the first
+    # turn is answered here as a provider would (S31 end pass).
+    good = p.ToolCallTurn((("requests.list_items", {"engagement_id": "nw-py2025"}),))
+    fake = _install(good, good)  # turn 1 is the intercepted one's; turn 2 answers the repair
+    real = fake.converse
+
+    async def hallucinating(request: p.ConverseRequest) -> p.ConverseResponse:
+        if fake.conversations == 0:
+            fake.conversations += 1
+            return p.ConverseResponse(
+                (p.ToolUseBlock("toolu_x", "evidence.delete_everything", {}),),
+                "tool_use", 10, 5, 0, 0, request.model,
+            )  # fmt: skip
+        return await real(request)
+
+    fake.converse = hallucinating  # a provider's hallucinated tool
     c = _call(world)
     result = await converse(c)
     assert result.status == "tool_use"
@@ -237,8 +270,6 @@ async def test_a_turn_must_end_on_the_users_message(world: World) -> None:
     from abacus.ai_gateway import GatewayRefused
 
     c = _call(world)
-    bad = ConverseCall(
-        **{**c.__dict__, "messages": (p.ConverseMessage("assistant", (p.TextBlock("hi"),)),)}
-    )
+    bad = dataclasses.replace(c, messages=(p.ConverseMessage("assistant", (p.TextBlock("hi"),)),))
     with pytest.raises(GatewayRefused):
         await converse(bad)

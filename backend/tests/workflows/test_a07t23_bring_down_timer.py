@@ -60,36 +60,44 @@ def test_nine_am_central_on_oct_9_2026_is_14_utc() -> None:
     assert fire_at(date(2026, 11, 9), "America/Chicago") == datetime(2026, 11, 9, 15, tzinfo=UTC)
 
 
+# The time-skipping server's clock starts at wall time, so the timed tests use Oct 9 and 16, 2030:
+# the same 9:00 AM CDT (UTC-5) as the demo's Oct 9, 2026, still in the future (S31 end pass).
+REPORT = date(2030, 10, 9)
+MOVED = date(2030, 10, 16)
+
+
 @pytest.mark.asyncio
 async def test_ac_it_fires_at_9_am_cdt_on_the_report_date(env: WorkflowEnvironment) -> None:
-    when = fire_at(date(2026, 10, 9), "America/Chicago")
+    when = fire_at(REPORT, "America/Chicago")
+    assert when == datetime(2030, 10, 9, 14, tzinfo=UTC)
     handle = await env.client.start_workflow(
         BringDownWorkflow.run,
-        BringDownInput(TENANT, WORK_ITEM, ENGAGEMENT, "2026-10-09", when.isoformat()),
+        BringDownInput(TENANT, WORK_ITEM, ENGAGEMENT, REPORT.isoformat(), when.isoformat()),
         id=f"bring_down:{WORK_ITEM}",
         task_queue=QUEUE,
     )
     result = await handle.result()
     assert result.reconfirmations_requested == 5
-    assert [d for d, _ in fired] == ["2026-10-09"]
+    assert [d for d, _ in fired] == ["2030-10-09"]
     assert fired[0][1] >= when
 
 
 @pytest.mark.asyncio
 async def test_ac_it_re_arms_when_the_report_date_moves(env: WorkflowEnvironment) -> None:
-    first = fire_at(date(2026, 10, 9), "America/Chicago")
-    moved = fire_at(date(2026, 10, 16), "America/Chicago")
+    first = fire_at(REPORT, "America/Chicago")
+    moved = fire_at(MOVED, "America/Chicago")
     handle = await env.client.start_workflow(
         BringDownWorkflow.run,
-        BringDownInput(TENANT, WORK_ITEM, ENGAGEMENT, "2026-10-09", first.isoformat()),
+        BringDownInput(TENANT, WORK_ITEM, ENGAGEMENT, REPORT.isoformat(), first.isoformat()),
         id=f"bring_down:{WORK_ITEM}:moved",
         task_queue=QUEUE,
     )
     await handle.signal(
-        BringDownWorkflow.report_date_changed, ReportDateMoved("2026-10-16", moved.isoformat())
+        BringDownWorkflow.report_date_changed,
+        ReportDateMoved(MOVED.isoformat(), moved.isoformat()),
     )
     await handle.result()
-    assert [d for d, _ in fired] == ["2026-10-16"]
+    assert [d for d, _ in fired] == ["2030-10-16"]
     assert fired[0][1] >= moved
 
 

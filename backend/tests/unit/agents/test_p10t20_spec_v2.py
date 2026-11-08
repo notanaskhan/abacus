@@ -12,6 +12,8 @@ from typing import Any
 
 import pytest
 
+# C19's consent checks: the v1 specs it loads beside v2 refuse to load without them.
+import abacus.modules.organisations.api  # noqa: F401  # pyright: ignore[reportUnusedImport] -- registers the consent checks
 from abacus.modules.agents import spec as v1
 from abacus.modules.agents import spec_v2
 from abacus.modules.agents.spec_v2 import AgentSpecV2, ToolFacts, registry_problems, spec_problems
@@ -25,8 +27,8 @@ MATRIX: Mapping[str, Mapping[str, object]] = {
 }
 
 
-def _doc(**over: Any) -> dict[str, Any]:
-    doc: dict[str, Any] = {
+def _doc(**over: object) -> dict[str, Any]:  # Any: a test double
+    doc: dict[str, Any] = {  # Any: a test double
         "id": "runtime.conformance",
         "version": 1,
         "purpose": "Prove the runtime end to end on synthetic data.",
@@ -67,7 +69,10 @@ TOOLS = {
 }
 
 
-def _registry(doc: dict[str, Any], tools: Mapping[str, ToolFacts] = TOOLS) -> list[str]:
+Doc = dict[str, Any]  # Any: a spec document as JSON
+
+
+def _registry(doc: Doc, tools: Mapping[str, ToolFacts] = TOOLS) -> list[str]:
     def cell(a: str) -> object:
         return MATRIX.get(a, {}).get("agent")
 
@@ -87,7 +92,7 @@ def test_a_valid_loop_spec_has_no_problems() -> None:
 
 def test_ac_r8_a_tool_outside_task_scope_is_refused() -> None:
     found = _registry(_doc(task_scope=["file.propose", "file.save"]))
-    assert any("evidence.search" in f and "outside scope" in f for f in found)
+    assert any("evidence.search" in f and "outside task_scope" in f for f in found)
 
 
 def test_ac_r1_an_approved_write_tool_whose_action_is_not_agent_deny_is_refused() -> None:

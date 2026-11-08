@@ -9,7 +9,7 @@ slot, which lists her own released packages only.
 from __future__ import annotations
 
 import uuid
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from datetime import UTC, date, datetime
 from types import SimpleNamespace
 from typing import Any
@@ -29,9 +29,16 @@ RIDGELINE_K1 = PortalK1(
 )
 
 
+def _sessions(rows: Sequence[Any]) -> Callable[[object], _Session]:  # Any: row doubles
+    def open_session(_tenant: object) -> _Session:
+        return _Session(rows)
+
+    return open_session
+
+
 class _Session:
-    def __init__(self, rows: Sequence[Any]) -> None:
-        self.rows = rows
+    def __init__(self, rows: Sequence[Any]) -> None:  # Any: row doubles
+        self.rows: list[Any] = list(rows)  # Any: a test double
 
     async def __aenter__(self) -> _Session:
         return self
@@ -40,9 +47,13 @@ class _Session:
         return None
 
     async def execute(self, *_a: object, **_k: object) -> SimpleNamespace:
-        rows = self.rows
+        rows: list[Any] = self.rows  # Any: row doubles
         self.rows = []  # the audiences query answers none
-        return SimpleNamespace(all=lambda: rows)
+
+        def everything() -> list[Any]:  # Any: row doubles
+            return rows
+
+        return SimpleNamespace(all=everything)
 
 
 def _ctx(client: bool = True) -> Any:  # noqa: ANN401 -- a stand-in AuthContext
@@ -82,7 +93,7 @@ async def test_ac26_meera_sees_only_her_ridgeline_k1(
     monkeypatch: pytest.MonkeyPatch, k1_slot: None
 ) -> None:
     rows = [_row("Ridgeline Property Partners 2025 Form 1065"), _row("Another partner's K-1")]
-    monkeypatch.setattr(c10, "tenant_session", lambda _t: _Session(rows))
+    monkeypatch.setattr(c10, "tenant_session", _sessions(rows))
 
     async def no_grant(*_a: object, **_k: object) -> None:
         return None  # her k1_recipient and taxpayer grants cover none of these audiences
@@ -97,14 +108,20 @@ async def test_a_covered_deliverable_is_banded_by_its_work_item(
     monkeypatch: pytest.MonkeyPatch, k1_slot: None
 ) -> None:
     row = _row("Independent auditor's report")
-    monkeypatch.setattr(c10, "tenant_session", lambda _t: _Session([row]))
+    monkeypatch.setattr(c10, "tenant_session", _sessions([row]))
 
     async def grant(*_a: object, **_k: object) -> uuid.UUID:
         return uuid.uuid4()
 
     monkeypatch.setattr(c10, "first_covering_grant", grant)
+
+    async def names(_t: object, ids: list[uuid.UUID]) -> dict[uuid.UUID, str]:
+        return {i: "2025 Financial Statement Audit" for i in ids}
+
+    monkeypatch.setattr(c10, "work_item_titles", names)
     rail = await c10.portal_deliverables(_ctx(), [CLIENT])
     assert [b.key for b in rail.bands] == [f"work_item:{row.work_item_id}"]
+    assert rail.bands[0].label == "2025 Financial Statement Audit"  # the work item's name
     assert rail.bands[0].rows[0].status == "final"
     assert rail.bands[0].rows[0].released_on == date(2026, 9, 15)
 
@@ -115,6 +132,6 @@ async def test_a_firm_user_never_reads_the_rail() -> None:
 
 
 def test_the_statuses_are_the_clients_words() -> None:
-    assert c10._status(is_draft=True, withdrawn=False) == "for_your_review"  # pyright: ignore[reportPrivateUsage]
-    assert c10._status(is_draft=False, withdrawn=False) == "final"  # pyright: ignore[reportPrivateUsage]
-    assert c10._status(is_draft=False, withdrawn=True) == "replaced"  # pyright: ignore[reportPrivateUsage]
+    assert c10._status(is_draft=True, withdrawn=False) == "for_your_review"  # pyright: ignore[reportPrivateUsage]  # a test double or a private name the test pins
+    assert c10._status(is_draft=False, withdrawn=False) == "final"  # pyright: ignore[reportPrivateUsage]  # a test double or a private name the test pins
+    assert c10._status(is_draft=False, withdrawn=True) == "replaced"  # pyright: ignore[reportPrivateUsage]  # a test double or a private name the test pins

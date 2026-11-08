@@ -12,6 +12,7 @@ carry no names as facts.
 
 from __future__ import annotations
 
+import ast
 import re
 from pathlib import Path
 
@@ -49,14 +50,43 @@ def test_the_drafter_has_no_tools_so_a_mode_only_suggests() -> None:
     assert spec.get("tools", []) == []
     modes = spec["modes"]
     assert isinstance(modes, dict)
-    names: set[str] = {str(k) for k in modes}  # pyright: ignore[reportUnknownVariableType, reportUnknownArgumentType]
+    names: set[str] = {str(k) for k in modes}  # pyright: ignore[reportUnknownVariableType, reportUnknownArgumentType]  # a test double or a private name the test pins
     assert {"ebp_form5500", "related_parties"} <= names
+
+
+def _code_names(source: str) -> set[str]:
+    """Every name and attribute the module's code uses (its docstrings may name a write)."""
+    tree = ast.parse(source)
+    names = {n.id for n in ast.walk(tree) if isinstance(n, ast.Name)}
+    names |= {n.attr for n in ast.walk(tree) if isinstance(n, ast.Attribute)}
+    names |= {
+        alias.name.rsplit(".", 1)[-1]
+        for n in ast.walk(tree)
+        if isinstance(n, ast.ImportFrom | ast.Import)
+        for alias in n.names
+    }
+    return names
+
+
+def _sql(source: str) -> str:
+    tree = ast.parse(source)
+    calls = [
+        n for n in ast.walk(tree)
+        if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == "text"
+    ]  # fmt: skip
+    return " ".join(
+        a.value
+        for c in calls
+        for a in c.args
+        if isinstance(a, ast.Constant) and isinstance(a.value, str)
+    )
 
 
 @pytest.mark.parametrize("name", MODES)
 def test_a_mode_module_only_reads(name: str) -> None:
     source = (ASSURANCE / name).read_text()
-    assert not re.search(r"\b(INSERT|UPDATE|DELETE|TRUNCATE)\b", source), name
+    assert not re.search(r"\b(INSERT|UPDATE|DELETE|TRUNCATE)\b", _sql(source)), name
+    used = _code_names(source)
     for write in (
         "document_reconciling_item",
         "screen_out",
@@ -64,8 +94,9 @@ def test_a_mode_module_only_reads(name: str) -> None:
         "add_related_party",
         "record_finding",
         "unit_of_work",
+        "uow",
     ):
-        assert write not in source, (name, write)
+        assert write not in used, (name, write)
 
 
 def test_no_read_selects_a_related_party_s_sealed_name() -> None:

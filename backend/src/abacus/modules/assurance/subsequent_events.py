@@ -166,8 +166,8 @@ async def record_subsequent_event(
                 "INSERT INTO subsequent_events (id, tenant_id, engagement_id, work_item_id, "
                 "description_sealed, recognition, fs_effect_sealed, note_ref, citation_ids, "
                 "recorded_by, actor_kind, actor_id) VALUES (:id, :t, :e, :wi, :d, :r, :fx, :n, "
-                ":c, :by, current_setting('app.actor_kind', true), "
-                "current_setting('app.actor_id', true))"
+                ":c, :by, :actor_kind, "
+                ":actor_id)"
             ),
             {
                 "id": event_id,
@@ -180,6 +180,8 @@ async def record_subsequent_event(
                 "n": new.note_ref,
                 "c": list(new.citation_ids),
                 "by": ctx.user_id,
+                "actor_kind": ctx.tenant.actor_kind,
+                "actor_id": ctx.tenant.actor_id,
             },
         )
         tx.record(

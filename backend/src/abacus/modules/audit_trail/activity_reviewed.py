@@ -607,6 +607,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "statement_note_template.imported",  # reviewed 2026-11-07 (A-06-T25)
         "statement_note_template.published",  # reviewed 2026-11-07 (A-06-T25)
         "deliverable.published",  # reviewed 2026-11-08 (R-02-T09)
+        "deliverable.publish_repeated",  # reviewed 2026-11-08 (S31 end pass: idempotent retry)
         "deliverable.superseded",  # reviewed 2026-11-08 (R-02-T09)
         "deliverable.withdrawn",  # reviewed 2026-11-08 (R-02-T09)
         "assurance_checklist_template.imported",  # reviewed 2026-11-08 (A-07-T22)

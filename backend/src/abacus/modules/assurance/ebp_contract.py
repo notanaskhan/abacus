@@ -17,6 +17,7 @@ and conclude are a person's acts; no agent or system principal holds them (INV-1
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 from datetime import date, datetime
 from decimal import Decimal
@@ -1031,8 +1032,13 @@ class Aud27ProhibitedOut(BaseModel):
     deposited_on: Annotated[date | None, classified("internal")] = None
     business_days_late: Annotated[int | None, classified("internal")] = None
     lost_earnings: MaybeMoney
-    correction_status: Annotated[str | None, Field(max_length=60), classified("internal")] = None
-    form_5330_status: Annotated[str | None, Field(max_length=60), classified("internal")] = None
+    # The late remittance's own words (EBP-04's `LateRemittanceOut`; S31 end pass: enums).
+    correction_status: Annotated[
+        Literal["found", "pending_vfcp_scc", "corrected"] | None, classified("internal")
+    ] = None
+    form_5330_status: Annotated[
+        Literal["exposure", "not_required", "filed"] | None, classified("internal")
+    ] = None
 
 
 class Aud27ListOut(BaseModel):
@@ -1184,6 +1190,21 @@ class EligibilitySampleOut(BaseModel):
     # DEC-2328: the paper an exception's AUD-15 draft finding sits on.
     workpaper_id: Annotated[UUID | None, classified("internal")] = None
     entry_rule: Annotated[EntryRuleOut, classified("internal")]
+
+
+CorrectionWord = Literal["found", "pending_vfcp_scc", "corrected"]
+Form5330Word = Literal["exposure", "not_required", "filed"]
+
+
+def _correction_word(stored: str | None) -> CorrectionWord | None:
+    """0658's CHECK holds exactly these words."""
+    return cast("CorrectionWord | None", stored)
+
+
+def _form_5330_word(stored: str | None) -> Form5330Word | None:
+    """0658's words, mapped to the API's (PTE 2002-51 reads "not_required")."""
+    found = "not_required" if stored == "not_required_pte_2002_51" else stored
+    return cast("Form5330Word | None", found)
 
 
 async def _gate(ctx: AuthContext, work_item_id: UUID, action: str, flag: Flag) -> None:
@@ -2367,7 +2388,8 @@ async def ebp_form5500_route(work_item_id: UUID, ctx: Ctx) -> Form5500Out:
         evidence_version_id=view.evidence_version_id,
         lines=[
             FigureRowOut(
-                key=f"h.{line.line_code}",
+                # The v1 key's pattern is `[a-z0-9_.]`: "1b(2)" reads "h.1b_2_" (S31 end pass).
+                key="h." + re.sub(r"[^a-z0-9_.]", "_", line.line_code.lower())[:62],
                 label=line.caption,
                 amount=line.f5500_amount,
                 status=line.classification,  # type: ignore[arg-type]  # registry kind literal
@@ -2612,8 +2634,8 @@ async def parties_in_interest_route(work_item_id: UUID, ctx: Ctx) -> Aud27ListOu
                 deposited_on=t.deposited_on if isinstance(t.deposited_on, date) else None,
                 business_days_late=t.business_days_late,
                 lost_earnings=t.lost_earnings,
-                correction_status=t.correction_status,
-                form_5330_status=t.form_5330_status,
+                correction_status=_correction_word(t.correction_status),
+                form_5330_status=_form_5330_word(t.form_5330_status),
             )
             for t in prohibited
         ],

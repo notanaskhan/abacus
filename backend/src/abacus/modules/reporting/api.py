@@ -84,6 +84,9 @@ from abacus.modules.reporting.engagement_letters import (
 from abacus.modules.reporting.fs_captions import (
     statement_caption_amounts as statement_caption_amounts,
 )
+from abacus.modules.reporting.fs_captions import (
+    statement_state as statement_state,
+)
 from abacus.modules.reporting.render.core import DocxRenderOutput as DocxRenderOutput
 
 # T-01-T10's consumer API (re-exported).
@@ -92,13 +95,11 @@ from abacus.modules.reporting.render.core import RenderOutput as RenderOutput
 from abacus.modules.reporting.render.core import render_docx as render_docx
 from abacus.modules.reporting.render.core import render_isolated as render_isolated
 from abacus.modules.reporting.render.head import RenderRefused as _RenderingRefused
-from abacus.modules.reporting.templates import PublishedClauses as PublishedClauses
 
 # P-11-T13: the template import and publication services the routes call, for the scenario loader
 # (a firm's content goes in through these, never a migration or constant; AGENTS 16).
 from abacus.modules.reporting.templates import import_bundle as _import_bundle
 from abacus.modules.reporting.templates import publish as _publish_template
-from abacus.modules.reporting.templates import published_clauses as published_clauses
 
 consent_recipients = _consent_recipients
 import_template_bundle = _import_bundle

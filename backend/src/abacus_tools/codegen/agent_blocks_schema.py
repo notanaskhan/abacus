@@ -16,7 +16,7 @@ import json
 import sys
 from pathlib import Path
 
-from abacus.modules.agents.blocks import AgentBlocks
+from abacus.modules.agents.api import AgentBlocks
 
 ROOT = Path(__file__).resolve().parents[4]
 TARGET = ROOT / "packages" / "api-client" / "schemas" / "agent-blocks.v1.json"

@@ -105,8 +105,10 @@ from abacus.modules.methodology.report_templates import (
     Publication as ReportTemplatePublicationView,
 )
 from abacus.modules.methodology.report_templates import (
+    PublishedClauses,
     PublishedConsentTemplate,
     consent_expiry_months,
+    published_clauses,
     published_consent_template,
 )
 from abacus.modules.methodology.report_templates import TemplateBundle as ReportTemplateBundle
@@ -303,6 +305,7 @@ __all__ = [
     "PolicyRef",
     "Problem",
     "PublishedAssuranceChecklist",
+    "PublishedClauses",
     "PublishedConsentTemplate",
     "ReportTemplateBundle",
     "ReportTemplateConsentTerms",
@@ -380,6 +383,7 @@ __all__ = [
     "publish_standard",
     "published_checklist",
     "published_checklists",
+    "published_clauses",
     "published_consent_template",
     "published_notes",
     "record_progress",

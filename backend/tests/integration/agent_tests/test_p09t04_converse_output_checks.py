@@ -43,7 +43,7 @@ def _check(output: object) -> CheckFailure | None:
 
 @pytest.fixture(autouse=True)
 def _kind(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
-    monkeypatch.setitem(oc._CHECKS, KIND, _check)  # pyright: ignore[reportPrivateUsage]
+    monkeypatch.setitem(oc._CHECKS, KIND, _check)  # pyright: ignore[reportPrivateUsage]  # a test double or a private name the test pins
     yield
     configure_provider(None)
 
@@ -53,8 +53,27 @@ async def _unblocked(seed: Seeder) -> None:
     await seed.run("DELETE FROM provider_capacity")
 
 
-def _call(world: World, kind: str = KIND) -> ConverseCall[Turn]:
+# The run the turns are attributed to: usage rows reference it (S31 end pass).
+_RUN: list[uuid.UUID] = []
+
+
+@pytest.fixture(autouse=True)
+async def _agent_run(seed: Seeder, world: World) -> None:
     run = uuid.uuid4()
+    await seed.run(
+        "INSERT INTO agent_runs (id, tenant_id, agent_id, spec_version, engagement_id, "
+        "initiator_user_id, task_scope) VALUES ($1, $2, 'evidence.screener', 1, $3, $4, "
+        "ARRAY['evidence.read'])",
+        run,
+        world.tenant_id,
+        world.engagement_id,
+        world.requester.user_id,
+    )
+    _RUN[:] = [run]
+
+
+def _call(world: World, kind: str = KIND) -> ConverseCall[Turn]:
+    run = _RUN[0]
     return ConverseCall(
         purpose="P-09-T04 output check",
         prompt=REF,
@@ -121,7 +140,7 @@ async def test_without_a_kind_the_registry_is_not_consulted(world: World) -> Non
 
 
 def test_call_and_the_live_specialists_never_consult_the_registry() -> None:
-    source = inspect.getsource(gateway._call)  # pyright: ignore[reportPrivateUsage]
+    source = inspect.getsource(gateway._call)  # pyright: ignore[reportPrivateUsage]  # a test double or a private name the test pins
     assert "settle" not in source
     assert "run_output_check" not in source
     assert "agent_blocks" in oc.registered_kinds()

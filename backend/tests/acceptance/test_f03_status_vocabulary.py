@@ -598,6 +598,9 @@ NOT_A_STATUS = {
     # A-05 (EBP-08): a statement row's key, a participant status or "total", never a status.
     "AccountGroupOut.status": "an EBP-08 statement row key (a participant status, or total)",
     "FlowStepOut.state": "position of a step in a flow (done, current, todo)",
+    # A-05-T16 (S25, DEC-2482): whether EBP-03's entry rule could be read from verified
+    # provisions (verified, unverified, unreadable); an input's state, never a status word.
+    "EntryRuleOut.state": "an input's readiness for the entry-rule computation",
     "CompleteIn.state": "free-text input, not a vocabulary",
     # C5 v1.1 portal half (P-08-T01): client-side card states, never a firm object's status.
     "PortalHomeTodoOut.state": "a to-do card's state on POR-02 (open, none, overdue)",

@@ -36,11 +36,18 @@ pytestmark = pytest.mark.asyncio
 
 
 async def _work_item(net: Net, site: Site, by: Person) -> uuid.UUID:
+    """The engagement's one assurance work item (an attest engagement has exactly one)."""
+    found = await net.seed.value(
+        "SELECT id FROM work_items WHERE engagement_id = $1 AND kind = 'assurance'",
+        site.engagement_id,
+    )
+    if found is not None:
+        return cast(uuid.UUID, found)
     return cast(
         uuid.UUID,
         await net.seed.value(
             "INSERT INTO work_items (tenant_id, engagement_id, client_id, kind, name, created_by) "
-            "VALUES ($1, $2, $3, 'audit', 'PY2025 plan audit', $4) RETURNING id",
+            "VALUES ($1, $2, $3, 'assurance', 'PY2025 plan audit', $4) RETURNING id",
             site.tenant_id,
             site.engagement_id,
             site.client_id,
@@ -78,9 +85,9 @@ async def _version(net: Net, site: Site, work_item: uuid.UUID, name: str) -> uui
 
 
 def _spec(
-    site: Site, work_item: uuid.UUID, version: uuid.UUID, by: Person, **over: Any
+    site: Site, work_item: uuid.UUID, version: uuid.UUID, by: Person, **over: object
 ) -> DeliverableSpec:
-    fields: dict[str, Any] = {
+    fields: dict[str, Any] = {  # Any: a test double
         "client_id": site.client_id,
         "kind": "auditor_report",
         "title": "Independent auditor's report",
@@ -164,7 +171,12 @@ async def test_ac18_a_draft_without_a_watermarked_render_is_refused(net: Net) ->
     with pytest.raises(DraftWithoutWatermark):
         async with uow(_as(margaret)) as tx:
             await publish_deliverable(tx, draft)
-    assert await net.seed.value("SELECT count(*) FROM deliverables") == 0
+    assert (
+        await net.seed.value(
+            "SELECT count(*) FROM deliverables WHERE source_ref = $1", draft.source_ref
+        )
+        == 0
+    )
 
 
 async def test_ac19_a_newer_version_supersedes_and_a_withdrawal_needs_a_reason(net: Net) -> None:
@@ -176,14 +188,14 @@ async def test_ac19_a_newer_version_supersedes_and_a_withdrawal_needs_a_reason(n
     async with uow(_as(margaret)) as tx:
         second = await publish_deliverable(tx, _spec(site, work_item, v2, margaret))
     assert second.version_no == 2 and second.deliverable_id == first.deliverable_id
-    kinds = await net.seed.fetch(
+    kinds = await net.seed.rows(
         "SELECT kind FROM deliverable_events WHERE deliverable_version_id = $1 ORDER BY kind",
         first.version_id,
     )
     assert [r["kind"] for r in kinds] == ["published", "superseded"]
     async with uow(_as(margaret)) as tx:
         await withdraw_deliverable(tx, second.version_id, "wrong_file", margaret.user_id, "x")
-    withdrawn = await net.seed.fetch(
+    withdrawn = await net.seed.rows(
         "SELECT reason_code, note_sealed IS NOT NULL AS sealed FROM deliverable_events "
         "WHERE deliverable_version_id = $1 AND kind = 'withdrawn'",
         second.version_id,

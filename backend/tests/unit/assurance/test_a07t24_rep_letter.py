@@ -7,6 +7,7 @@ mismatch with Start re-date, and Send is refused before Margaret Okonkwo approve
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable
 from datetime import UTC, date, datetime
 from types import SimpleNamespace
 from typing import Any
@@ -47,15 +48,22 @@ class _Session:
         return self.approved
 
 
+def _sessions(*, approved: bool) -> Callable[[object], _Session]:
+    def open_session(_tenant: object) -> _Session:
+        return _Session(approved=approved)
+
+    return open_session
+
+
 @pytest.mark.asyncio
 async def test_ac_send_is_refused_before_the_partner_approves(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    tenant: Any = SimpleNamespace()
-    monkeypatch.setattr(rl, "tenant_session", lambda _t: _Session(approved=False))
+    tenant: Any = SimpleNamespace()  # Any: a test double
+    monkeypatch.setattr(rl, "tenant_session", _sessions(approved=False))
     with pytest.raises(rl.LetterNotApproved):
         await rl.ensure_approved(tenant, uuid.uuid4())
-    monkeypatch.setattr(rl, "tenant_session", lambda _t: _Session(approved=True))
+    monkeypatch.setattr(rl, "tenant_session", _sessions(approved=True))
     await rl.ensure_approved(tenant, uuid.uuid4())
 
 
@@ -68,11 +76,11 @@ async def test_ac_send_is_refused_before_the_partner_approves(
     ],
 )
 def test_no_amount_in_letter_text(wording: str) -> None:
-    assert rl._AMOUNT.search(wording)  # pyright: ignore[reportPrivateUsage]
+    assert rl._AMOUNT.search(wording)  # pyright: ignore[reportPrivateUsage]  # a test double or a private name the test pins
 
 
 def test_plain_wording_passes_the_amount_rule() -> None:
-    assert not rl._AMOUNT.search("The late deposit was corrected and reported in 2025.")  # pyright: ignore[reportPrivateUsage]
+    assert not rl._AMOUNT.search("The late deposit was corrected and reported in 2025.")  # pyright: ignore[reportPrivateUsage]  # a test double or a private name the test pins
 
 
 @pytest.mark.asyncio
@@ -96,5 +104,5 @@ async def test_specific_representations_follow_their_triggers(
         ("going_concern_doubt", False),
         ("firm_own_clause", True),  # no trigger: the template's default stands
     ]
-    reps = await rl.compose(SimpleNamespace(), uuid.uuid4(), clauses)  # type: ignore[arg-type]
+    reps = await rl.compose(SimpleNamespace(), uuid.uuid4(), clauses)  # type: ignore[arg-type]  # a test double or a private name the test pins
     assert [(r.n, r.included) for r in reps] == [(12, True), (13, True), (14, False), (15, True)]

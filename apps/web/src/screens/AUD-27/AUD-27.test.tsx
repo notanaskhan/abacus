@@ -52,10 +52,9 @@ function show(state: Aud27State, tab: Aud27Tab, kind: EngagementKind = "fs"): vo
   );
 }
 
+// Every status pill on the canvas (Status marks each with `data-status-pill`; S31 end pass).
 function pills(): string[] {
-  return [...document.querySelectorAll("td span")]
-    .map((n) => n.textContent)
-    .filter((t) => ALLOWED.has(t) || /Unevaluated|Evaluated|Exception|Screened out/.test(t));
+  return [...document.querySelectorAll("[data-status-pill]")].map((n) => n.textContent);
 }
 
 describe("AUD-27", () => {
@@ -77,6 +76,9 @@ describe("AUD-27", () => {
     await waitFor(() => {
       expect(document.querySelector('[data-aud27="estimates"]')).not.toBeNull();
     });
+    await waitFor(() => {
+      expect(pills().length).toBeGreaterThan(0);
+    });
     expect(document.querySelector('[data-aud27="method"]')).toBeNull();
     expect(new Set(pills())).toEqual(new Set(["Unevaluated"]));
   });
@@ -91,6 +93,7 @@ describe("AUD-27", () => {
       show(state, tab, kind);
       await waitFor(() => {
         expect(document.querySelector(`[data-aud27="${tab}"]`)).not.toBeNull();
+        expect(pills().length).toBeGreaterThan(0);
       });
       for (const word of pills()) expect(ALLOWED.has(word)).toBe(true);
       expect(document.body.textContent).not.toMatch(CONCLUSIONS);

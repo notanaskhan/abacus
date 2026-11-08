@@ -149,7 +149,7 @@ _UPSERT = text(
     INSERT INTO completion_items (tenant_id, engagement_id, work_item_id, item_key,
         template_version_id, position, status, derived, evidence_text, link_target, gate_tag,
         depends_on_client, due_on, last_event_id)
-    VALUES (current_setting('app.tenant_id')::uuid, :engagement, :wi, :key, :template, :position,
+    VALUES (:tenant, :engagement, :wi, :key, :template, :position,
         :status, :derived, :evidence, :link, :gate, :client, :due, :event)
     ON CONFLICT (tenant_id, work_item_id, item_key) DO UPDATE SET
         status = CASE WHEN completion_items.status = 'not_applicable'
@@ -169,7 +169,7 @@ _UPSERT = text(
 )
 
 
-async def project(
+async def store_items(
     tenant: TenantContext, work_item_id: UUID, event_id: UUID, *, live_check: bool = True
 ) -> int:
     """Project one work item for one event: the rows that changed. Idempotent on `event_id`."""
@@ -190,6 +190,7 @@ async def project(
             found = await tx.session.scalar(
                 _UPSERT,
                 {
+                    "tenant": tenant.tenant_id,
                     "engagement": item.engagement_id,
                     "wi": work_item_id,
                     "key": row.item_key,
@@ -219,7 +220,7 @@ async def project(
 async def rebuild(tenant: TenantContext, work_item_id: UUID) -> int:
     """Recompute every derived row from the facts (an operator's rebuild, or after a template
     change). Manual N/A rows keep their status and basis."""
-    return await project(tenant, work_item_id, uuid4(), live_check=False)
+    return await store_items(tenant, work_item_id, uuid4(), live_check=False)
 
 
 # The events that can move a derived item (A-07 F2): findings and the SUM (decision cards), notes,
@@ -259,7 +260,7 @@ async def on_completion_event(event: OutboxEvent) -> None:
         )
     if work_item_id is None:
         return
-    await project(tenant, work_item_id, event.event_id)
+    await store_items(tenant, work_item_id, event.event_id)
 
 
 # --- the read and the manual N/A -----------------------------------------------------------------
@@ -381,11 +382,11 @@ __all__ = [
     "engagement_type_of",
     "mark_not_applicable",
     "on_completion_event",
-    "project",
     "projector_live",
     "rebuild",
     "register_completion_fact",
     "registered_facts",
     "rows_of",
+    "store_items",
     "summarise",
 ]

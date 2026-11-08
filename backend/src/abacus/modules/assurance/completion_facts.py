@@ -17,6 +17,8 @@ from sqlalchemy import text
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.modules.assurance.completion_projector import ItemFact, register_completion_fact
+from abacus.modules.engagements.api import work_item_engagement
+from abacus.modules.reporting.api import statement_state
 from abacus.modules.review.api import decided_cards, open_note_counts
 
 _ROUTES: Final = "/firm/audits/{wi}?tab="
@@ -32,10 +34,7 @@ async def _scalar(tenant: TenantContext, sql: str, work_item_id: UUID) -> object
 
 
 async def _engagement(tenant: TenantContext, work_item_id: UUID) -> UUID | None:
-    found = await _scalar(
-        tenant, "SELECT engagement_id FROM work_items WHERE id = :wi", work_item_id
-    )
-    return found if isinstance(found, UUID) else None
+    return await work_item_engagement(tenant, work_item_id)
 
 
 async def subsequent_events(tenant: TenantContext, work_item_id: UUID) -> ItemFact:
@@ -184,12 +183,8 @@ async def review_notes(tenant: TenantContext, work_item_id: UUID) -> ItemFact:
 
 
 async def mgmt_approval(tenant: TenantContext, work_item_id: UUID) -> ItemFact:
-    state = await _scalar(
-        tenant,
-        "SELECT management_approval FROM statement_documents WHERE work_item_id = :wi "
-        "ORDER BY updated_at DESC LIMIT 1",
-        work_item_id,
-    )
+    found = await statement_state(tenant, work_item_id)
+    state = None if found is None else found[1]
     link = _link(work_item_id, "statements")
     if state == "approved_by_management":
         return ItemFact("done", "Approved by management", link)
@@ -197,12 +192,8 @@ async def mgmt_approval(tenant: TenantContext, work_item_id: UUID) -> ItemFact:
 
 
 async def fs_final(tenant: TenantContext, work_item_id: UUID) -> ItemFact:
-    status = await _scalar(
-        tenant,
-        "SELECT status FROM statement_documents WHERE work_item_id = :wi "
-        "ORDER BY updated_at DESC LIMIT 1",
-        work_item_id,
-    )
+    found = await statement_state(tenant, work_item_id)
+    status = None if found is None else found[0]
     link = _link(work_item_id, "statements")
     if status in ("final", "signed_off"):
         return ItemFact("done", "Final", link)
