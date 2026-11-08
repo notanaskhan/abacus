@@ -36,7 +36,10 @@ from abacus.kernel._flags import (
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.kernel.flags import Flag, flag_enabled
-from abacus.modules.assurance import ebp_provisions
+from abacus.modules.assurance import (
+    aud27,  # A-05-T53: the AUD-27 service
+    ebp_provisions,
+)
 from abacus.modules.assurance.compute.ebp.accounts import Group as AccountGroup
 from abacus.modules.assurance.ebp_imports import ImportView, Ties, import_of, import_source
 from abacus.modules.assurance.ebp_participants import DOB_MASK, participants_of
@@ -2235,8 +2238,19 @@ async def ebp_form5500_note_route(
 @router.get("/estimates", action="estimate.read", response_model=Aud27ListOut)
 async def estimates_route(work_item_id: UUID, ctx: Ctx) -> Aud27ListOut:
     await _gate(ctx, work_item_id, "estimate.read", _A)
+    found = await aud27.estimates(ctx, work_item_id)
     return Aud27ListOut(
-        items=[_example(Aud27ItemOut, _ESTIMATE)], allowed_actions=["estimate.evaluate"]
+        items=[
+            Aud27ItemOut(
+                id=e.id,
+                name=e.name,
+                amount=e.balance,
+                status=e.status,  # type: ignore[arg-type]
+                pending_ep=e.pending_ep,
+            )
+            for e in found
+        ],
+        allowed_actions=["estimate.evaluate"],
     )
 
 
@@ -2254,7 +2268,8 @@ async def estimate_method_route(
     idempotency_key: IdempotencyKey,
 ) -> AcceptedOut:
     await _gate(ctx, work_item_id, "estimate.evaluate", _A)
-    _not_yet()
+    await aud27.set_method(ctx, work_item_id, estimate_id, body.method, body.seen_version)
+    return AcceptedOut(id=estimate_id)
 
 
 @router.post(
@@ -2269,13 +2284,26 @@ async def estimate_conclusion_route(
 ) -> AcceptedOut:
     """Raise the EP's decision card; deciding is `decision.decide` (INV-1; T52)."""
     await _gate(ctx, work_item_id, "estimate.request_conclusion", _A)
-    _not_yet()
+    return AcceptedOut(id=await aud27.request_conclusion(ctx, work_item_id, estimate_id))
 
 
 @router.get("/related-parties", action="related_party.read", response_model=Aud27ListOut)
 async def related_parties_route(work_item_id: UUID, ctx: Ctx) -> Aud27ListOut:
     await _gate(ctx, work_item_id, "related_party.read", _A)
-    return Aud27ListOut(items=[], allowed_actions=["related_party.manage"])
+    parties = await aud27.related_parties(ctx, work_item_id)
+    return Aud27ListOut(
+        items=[
+            Aud27ItemOut(
+                id=p.id,
+                name=p.name or "Related party",
+                amount=None,
+                status=p.status,  # type: ignore[arg-type]
+                pending_ep=False,
+            )
+            for p in parties
+        ],
+        allowed_actions=["related_party.manage"],
+    )
 
 
 @router.post(
@@ -2289,7 +2317,7 @@ async def related_party_create_route(
     work_item_id: UUID, body: Aud27ItemIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> AcceptedOut:
     await _gate(ctx, work_item_id, "related_party.manage", _A)
-    _not_yet()
+    return AcceptedOut(id=await aud27.add_related_party(ctx, work_item_id, body.name))
 
 
 @router.post(
@@ -2306,7 +2334,8 @@ async def related_party_screen_out_route(
     idempotency_key: IdempotencyKey,
 ) -> AcceptedOut:
     await _gate(ctx, work_item_id, "related_party.screen_out", _A)
-    _not_yet()
+    await aud27.screen_out(ctx, work_item_id, party_id, body.reason)
+    return AcceptedOut(id=party_id)
 
 
 @router.get("/parties-in-interest", action="ebp.read", response_model=Aud27ListOut)
