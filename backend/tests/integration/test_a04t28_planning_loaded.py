@@ -85,6 +85,25 @@ async def test_ac_the_planning_day_loads_and_g4_is_met_at_4_40(
         )
         == "decided"
     )
+    # A-04-T30 (US-4.3, AC4.4; DEC-2956): one card covers every pending proposal, R3's
+    # significance and R5's rebuttal, never one card per risk.
+    assert (
+        await seed.value(
+            "SELECT count(*) FROM decision_cards WHERE kind = 'significant_risk' "
+            "AND tenant_id = $1",
+            TENANT,
+        )
+        == 1
+    )
+    covered = cast(
+        str,
+        await seed.value(
+            "SELECT options::text FROM decision_cards WHERE kind = 'significant_risk' "
+            "AND tenant_id = $1",
+            TENANT,
+        ),
+    )
+    assert "R3" in covered and "R5" in covered
     found = await g4_facts(TenantContext(TENANT, "system", "a04t28"), engagement)
     assert found.met, found.blockers
     # Real audit events, one per service write (the register, the exceptions and the decision).

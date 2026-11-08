@@ -72,6 +72,13 @@ class UndoWindowClosed(DomainConflict):
     code = "undo_window_closed"
 
 
+class RecordEvidenceNotOnEngagement(DomainInvalid):
+    """Record mode's evidence (the client's email) must be on the entry's own engagement
+    (A-06-T17; DEC-2956): an id from elsewhere, or none at all, records nothing."""
+
+    code = "record_evidence_not_on_engagement"
+
+
 class EntryNotSendable(DomainInvalid):
     code = "entry_not_sendable"
 
@@ -121,6 +128,23 @@ def register_client_delivery(delivery: ClientDelivery) -> None:
     if _DELIVERY and _DELIVERY[0] is not delivery:
         raise ValueError("a client delivery is already registered")
     _DELIVERY[:] = [delivery]
+
+
+# A-06-T17 (DEC-2956): which engagement an evidence version sits on. Adjustments may not import
+# evidence (BOUND-002), so its owner's module registers the read; with none, record mode refuses
+# every evidence id (fail closed).
+EvidenceEngagement = Callable[[TenantContext, UUID], Awaitable[UUID | None]]
+_EVIDENCE_ENGAGEMENT: list[EvidenceEngagement] = []
+
+
+def register_evidence_engagement(read: EvidenceEngagement) -> None:
+    _EVIDENCE_ENGAGEMENT[:] = [read]
+
+
+async def _evidence_on(tenant: TenantContext, version_id: UUID, engagement_id: UUID) -> bool:
+    if not _EVIDENCE_ENGAGEMENT:
+        return False
+    return await _EVIDENCE_ENGAGEMENT[0](tenant, version_id) == engagement_id
 
 
 def register_entry_decision_hook(hook: DecisionHook) -> None:
@@ -457,6 +481,10 @@ async def _one(
             raise NotFound(TARGET)
         if row["status"] not in allowed:
             raise EntriesMoved(facts={"status": str(row["status"])})
+        if evidence_version_id is not None and not await _evidence_on(
+            ctx.tenant, evidence_version_id, row["engagement_id"]
+        ):
+            raise RecordEvidenceNotOnEngagement
         await lock_ref(tx, row["engagement_id"])
         await _decide(
             tx, ctx, row["engagement_id"], row["work_item_id"], entry_id, decision=decision,

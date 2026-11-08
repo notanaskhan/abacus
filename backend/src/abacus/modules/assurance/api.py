@@ -10,6 +10,7 @@ from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.adjustments.api import (
     register_entry_decision_hook,
     register_entry_proposed_hook,
+    register_evidence_engagement,
 )
 from abacus.modules.agents.api import (
     register_mode_mapping,
@@ -173,6 +174,7 @@ from abacus.modules.assurance.trail_owners import audit_owners as trail_owners
 from abacus.modules.assurance.trial_balance import adopt as adopt_trial_balance
 from abacus.modules.assurance.trial_balance import tb_facts, tb_reviewables
 from abacus.modules.engagements.api import work_item_engagement
+from abacus.modules.evidence.api import engagement_of_version
 from abacus.modules.identity.api import AbacusRouter, register_firm_setting
 from abacus.modules.review.api import (
     register_gate_kind,
@@ -212,6 +214,8 @@ register_reviewable_facts("mapping_set", mapping_facts)
 register_gates()  # A-04-T43, A-07-T15: G4 to G9 from assurance/gates.py
 # A-06-T10 (DEC-2062): a client's decision on an entry moves its misstatement.
 register_entry_decision_hook(on_entry_client_decision)
+# A-06-T17 (DEC-2956): record mode's evidence must be an email on the entry's own engagement.
+register_evidence_engagement(engagement_of_version)
 register_entry_proposed_hook(on_entry_proposed)
 # A-04-T22 (DEC-2058): the planning modes' mappings for the section drafter.
 register_mode_mapping("gap", gap_inputs)

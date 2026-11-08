@@ -2378,6 +2378,12 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.ebp_form5500.ReconcilingItemsDoNotFoot
+  record_evidence_not_on_engagement:
+    status: 422
+    raised_by:
+    - abacus.modules.adjustments.decisions.RecordEvidenceNotOnEngagement
+    summary: 'Record mode''s evidence (the client''s email) must be on the entry''s own engagement (A-06-T17;
+      DEC-2956): an id from elsewhere, or none at all, records nothing.'
   record_out_of_phase:
     status: 409
     raised_by:
