@@ -6,7 +6,7 @@
 // step whose screen or backend is still planned is `test.fixme` naming its owning epic, task and
 // chapter 01 date (journey-e2e skill), never skipped or left out. Walkable on staging by M6 (Fri
 // Mar 5, 2027). The portal is white-labelled: no portal step may show the product's name (INV-4).
-import { expect, test } from "../harness";
+import { DEMO_INSTANT, expect, test } from "../harness";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -292,6 +292,30 @@ test.describe("J04 completion (A-06-T35)", () => {
     });
     await journey.step("J04 step 13: the client preview", async (page) => {
       await expect(page.locator('[data-pane="checklist"]')).toHaveCount(0);
+    });
+  });
+});
+
+// A-05-T61 (TASK-6221): J04 11, Granite Peak's estimates and related parties (AUD-27) in fixture
+// mode, with axeStep and INV-1 to INV-5. The agent proposes Peakline Freight LLC; only a person
+// screens a candidate out or concludes (INV-1). Staging waits for the S31 batch: fixme off fixture.
+test.describe("J04 estimates and related parties (A-05-T61)", () => {
+  test("j04 11: the estimates canvas and the related-party candidates (AUD-27)", async ({
+    journey,
+  }) => {
+    test.fixme(
+      journey.project !== "fixture",
+      "the staging walk waits for the S31 batch on staging (A-05-T61; DEC-1389 gates)",
+    );
+    await journey.as(
+      "simone-baptiste",
+      "/audits/_auditId_?screen=AUD-27&st=a&section=estimates_rp",
+      { clock: DEMO_INSTANT },
+    );
+    await journey.step("J04 step 11: AUD-27 estimates", async (page) => {
+      await expect(page.locator("[data-aud27='estimates']").first()).toBeVisible();
+      // INV-1: no agent-owned control concludes.
+      await expect(page.getByRole("button", { name: /^Conclude$/ })).toHaveCount(0);
     });
   });
 });
