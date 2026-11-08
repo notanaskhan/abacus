@@ -103,8 +103,8 @@ Verbatim from the handoff (copy keys in `screens/EBP-07/copy.ts` when built). Ke
 ## Parity
 | Artboard | Tier | Diff % | Notes |
 |---|---|---|---|
-| a | C (locked) | — | the Tier C lock (A-05-T61); measured once the EBP gallery artboard and its baseline exist |
-| b–e, off | C | — | Tier C (A-05-T61): measured once the EBP gallery artboards and their parity-manifest baselines exist (A-05-T61 partial); axe runs in the journey steps |
+| a | C (locked) | — | the Tier C lock; gallery artboard and handoff baseline in place (A-05-T61 close, DEC-2825) |
+| b–e | C | — | gallery artboard and handoff baseline in place (A-05-T61 close, DEC-2825); report-only at Tier C |
 
 ## Open gaps
 None.
