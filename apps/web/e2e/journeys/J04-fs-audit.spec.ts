@@ -288,6 +288,7 @@ test.describe("J04 completion (A-06-T35)", () => {
     test.fixme(journey.project !== "fixture", "the full-stack run waits for A-08's AUD-26 (S35)");
     await journey.as("hannah-leclerc", "/audits/_auditId_/fs-disclosure", {
       scenario: "AUD-20:d",
+      flags: ["audits.cockpit"], // E0 leaves the cockpit off; its fixtures turn it on
     });
     await journey.step("J04 step 13: the client preview", async (page) => {
       await expect(page.locator('[data-pane="checklist"]')).toHaveCount(0);

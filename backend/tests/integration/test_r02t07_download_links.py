@@ -76,8 +76,8 @@ async def _issue(dsn: str, *, actor: str, user: uuid.UUID) -> None:
         async with conn.transaction():
             await conn.execute("SELECT set_config('app.actor_id', $1, true)", actor)
             await conn.execute(
-                f"INSERT INTO {TABLE} (tenant_id, deliverable_version_id, evidence_version_id, "  # noqa: S608
-                "contact_id, user_id) VALUES ($1, $2, $3, $4, $5)",
+                "INSERT INTO deliverable_download_links (tenant_id, deliverable_version_id, "
+                "evidence_version_id, contact_id, user_id) VALUES ($1, $2, $3, $4, $5)",
                 uuid.uuid4(),
                 uuid.uuid4(),
                 uuid.uuid4(),

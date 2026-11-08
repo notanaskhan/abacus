@@ -1349,6 +1349,11 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "agent_runs": frozenset(
             {"status", "context_hash", "output", "failure_code", "finished_at"}
             | {"queued_reason", "estimated_start_at"}  # TASK-018b
+            # P-10-T02 (0680, 0681): the runtime's run record and its counters
+            | {"agent_minutes", "agent_ms", "blocked_on", "citations_count", "client_scope"}
+            | {"cost_usd", "event_seq", "plan_id", "records_read", "region", "route", "run_number"}
+            | {"session_id", "signed_off_at", "signed_off_by", "state", "state_reason"}
+            | {"terms_version", "writes_done", "writes_waiting"}
         ),
         "sync_runs": frozenset(
             {"status", "raw_storage_key", "raw_version_id", "raw_fingerprint", "raw_size_bytes"}
@@ -2311,6 +2316,61 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "version",
             }
         ),
+        # P-10-T02 to T06 (0680 to 0684): the agent runtime's tables, sessions and minute ledger
+        "tenant_counters": frozenset({"value"}),
+        "agent_questions": frozenset(
+            {"answer", "answered_at", "answered_by", "skip_default_applied", "state"}
+        ),
+        "agent_run_steps": frozenset(
+            {
+                "active_ms",
+                "ended_at",
+                "error_code",
+                "error_detail_safe",
+                "needs",
+                "outputs_summary",
+            }
+            | {"records_read", "started_at", "state", "usage_record_ids"}
+        ),
+        "engagement_ai_settings": frozenset({"auto_mode", "auto_mode_set_at", "auto_mode_set_by"}),
+        "run_artifacts": frozenset({"saved_to", "state", "version"}),
+        "workbench_sessions": frozenset(
+            {"client_scope", "context_refs", "deleted_at", "item_seq", "last_item_at"}
+            | {"state", "title"}
+        ),
+        "engagement_agent_budgets": frozenset({"alert_pct", "minutes_per_usage_month"}),
+        "usage_month_rollups": frozenset({"cost_usd", "minutes"}),
+        # A-05-T48 (0685): estimates, related parties, parties in interest (against a version)
+        "accounting_estimates": frozenset(
+            {"account_ref", "balance", "bias", "decision_card_id", "disclosure_ref", "finding_id"}
+            | {"je_ref", "method", "range_high", "range_low", "retrospective", "rollforward"}
+            | {"significant_risk", "status", "updated_at", "version"}
+        ),
+        "estimate_components": frozenset({"amount", "label", "position"}),
+        "related_parties": frozenset(
+            {
+                "finding_id",
+                "inquiry_ref",
+                "screened_out_at",
+                "screened_out_by",
+                "screened_out_reason",
+            }
+            | {"status", "updated_at", "version"}
+        ),
+        "parties_in_interest": frozenset(
+            {"erisa_relationship", "exemption", "reporting", "transactions", "updated_at"}
+            | {"version"}
+        ),
+        # R-02-T05, R-02-T07 (0710, 0712): deliverables, receipts, governance, download links
+        "deliverables": frozenset(
+            {"legend_kind", "restricted_use", "title", "updated_at", "version"}
+        ),
+        "deliverable_receipts": frozenset(
+            {"download_count", "first_downloaded_at", "first_viewed_at", "last_viewed_at"}
+        ),
+        "governance_bodies": frozenset({"kind", "name", "status", "updated_at", "version"}),
+        "governance_body_members": frozenset({"ended_on", "member_role"}),
+        "deliverable_download_links": frozenset({"used_at"}),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
@@ -2349,6 +2409,11 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         | {"methodology_version_id"}  # SPEC-035 Q3 (TASK-074): a firm-level run's version
         | {"shadow"}  # SPEC-036 (TASK-076): started in shadow
         | {"inbox_attachment_id"}  # N-01-T22 (0431): an intake-mode run's attachment
+        # P-10-T02 (0680): the runtime's run record
+        | {"auto_mode", "blocked_on", "client_scope", "definition_id", "definition_version"}
+        | {"inputs", "mode", "parent_run_id", "region", "route", "run_number", "runs_as_user_id"}
+        | {"session_id", "state", "state_reason", "subject_ref", "terms_version", "test"}
+        | {"trigger_kind", "trigger_ref", "work_item_ref"}
     )
     assert sc.APP_INSERT_COLUMNS["screening_results"] == frozenset(
         {"id", "tenant_id", "engagement_id", "evidence_version_id", "agent_run_id", "action"}
@@ -2377,6 +2442,7 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         | {"outcome", "inputs_hash"}
         | {"route"}  # SPEC-010 (TASK-025, migration 0021): the model route used
         | {"terms_version", "boundary_basis"}  # SPEC-036 (TASK-075, migration 0055)
+        | {"definition_id", "service_line", "session_id", "step_id"}  # P-10-T06 (0684)
     )
     assert {"ledger_snapshots", "trial_balance_lines", "fulfilments"} <= sc.INSERT_ONLY_TABLES
     assert {"screening_results", "usage_records"} <= sc.INSERT_ONLY_TABLES
@@ -2984,6 +3050,10 @@ def test_ac20_the_migrated_database_has_exactly_the_reviewed_definer_functions(
         | {"reference_set_draft", "reference_set_publish", "reference_set_withdraw"}
         | {"active_tenant_ids", "standards_sets_apply"}
         | {"standards_set_named"}  # 0580 (K-01-T18, DEC-1759): one global standards set by id
+        # 0681, 0683 (P-10-T03, P-10-T05): the run events and realtime prunes, each tenant-scoped
+        # and refused to anyone but its own system actor.
+        | {"prune_run_events", "prune_realtime_events"}
+        | {"archived_guard"}  # 0686 (A-07-T13): an archived engagement's rows refuse a change
     ) == (sc.DEFINER_FUNCTIONS)
     assert sc.check(migrated_db.owner_url, migrated_db.app_url) == []
 

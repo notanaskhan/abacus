@@ -20,8 +20,12 @@ from temporalio.client import Client, WorkflowHistory
 from temporalio.worker import Worker
 
 from abacus.kernel.temporal import payload_codec
-from abacus.modules.agents.api import BACKFILL_ID_PREFIX, AgentRunBackfillWorkflow, BackfillInput
-from abacus.modules.agents.run_backfill_workflow import BackfillBatch
+from abacus.modules.agents.api import (
+    BACKFILL_ID_PREFIX,
+    AgentRunBackfillWorkflow,
+    BackfillBatch,
+    BackfillInput,
+)
 from abacus_tools.stack import Stack, connect, run_with_stack
 from abacus_tools.workflows.histories import decoded_and_scrubbed
 

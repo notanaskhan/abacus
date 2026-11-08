@@ -21,6 +21,9 @@ from abacus.ai_gateway.routes import _anthropic as a
 from abacus.ai_gateway.routes import parity
 from abacus.kernel.config import ParityRecord
 
+_TOOLS = parity._tools  # pyright: ignore[reportPrivateUsage]  # the probe under test
+_DOCUMENTS = parity._documents  # pyright: ignore[reportPrivateUsage]  # the probe under test
+
 pytestmark = pytest.mark.asyncio
 REPO = Path(__file__).resolve().parents[4]
 TODAY = date(2027, 12, 14)
@@ -115,7 +118,7 @@ def test_the_document_check_reads_the_code_back() -> None:
 
 
 def test_the_probe_pdf_is_synthetic_and_carries_the_code() -> None:
-    raw = parity._PDF  # pyright: ignore[reportPrivateUsage]
+    raw = parity._PDF  # pyright: ignore[reportPrivateUsage]  # the probe PDF
     assert raw.startswith(b"%PDF-1.4") and raw.rstrip().endswith(b"%%EOF")
     assert b"(PARITY-4217)" in raw
     assert base64.b64decode(base64.b64encode(raw)) == raw
@@ -153,20 +156,20 @@ async def test_the_tools_probe_runs_a_tool_turn_and_a_result_turn() -> None:
     )
     done = a.TextBlock.model_construct(type="text", text="Recorded.")
     client = _Client(_message("tool_use", use), _message("end_turn", done))
-    assert await parity._tools(cast(Any, client), "m")  # pyright: ignore[reportPrivateUsage]
+    assert await _TOOLS(cast(Any, client), "m")  # a fake SDK client
     first, second = client.calls
     assert first["tool_choice"] == {"type": "any"}
     assert second["tool_choice"] == {"type": "none"}
-    messages = cast(list[dict[str, Any]], second["messages"])
+    messages = cast(list[dict[str, Any]], second["messages"])  # SDK object or JSON
     assert messages[-1]["content"][0]["type"] == "tool_result"
 
 
 async def test_the_documents_probe_sends_a_document_block() -> None:
     answer = a.TextBlock.model_construct(type="text", text='{"code": "PARITY-4217"}')
     client = _Client(_message("end_turn", answer))
-    assert await parity._documents(cast(Any, client), "m")  # pyright: ignore[reportPrivateUsage]
+    assert await _DOCUMENTS(cast(Any, client), "m")  # a fake SDK client
     (call,) = client.calls
-    content = cast(list[dict[str, Any]], call["messages"])[0]["content"]
+    content = cast(list[dict[str, Any]], call["messages"])[0]["content"]  # SDK object or JSON
     assert content[0]["type"] == "document"
     assert content[0]["source"]["media_type"] == "application/pdf"
 
@@ -175,5 +178,5 @@ async def test_a_probe_that_errors_is_a_failed_check() -> None:
     class Broken:
         messages = SimpleNamespace(create=None)
 
-    assert not await parity._tools(cast(Any, Broken()), "m")  # pyright: ignore[reportPrivateUsage]
-    assert not await parity._documents(cast(Any, Broken()), "m")  # pyright: ignore[reportPrivateUsage]
+    assert not await _TOOLS(cast(Any, Broken()), "m")  # a broken SDK client
+    assert not await _DOCUMENTS(cast(Any, Broken()), "m")  # a broken SDK client

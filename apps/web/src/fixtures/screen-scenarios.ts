@@ -31,6 +31,8 @@ import { scenarios as ebp05 } from "./scenarios/EBP-05";
 import { scenarios as ebp06 } from "./scenarios/EBP-06";
 import { scenarios as ebp09 } from "./scenarios/EBP-09";
 import { scenarios as aud10 } from "./scenarios/AUD-10";
+import { scenarios as aud15 } from "./scenarios/AUD-15";
+import { scenarios as aud16 } from "./scenarios/AUD-16";
 import { scenarios as aud17 } from "./scenarios/AUD-17";
 import { scenarios as aud18 } from "./scenarios/AUD-18";
 import { scenarios as aud20 } from "./scenarios/AUD-20";
@@ -177,9 +179,12 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
   "EBP-06": { scenarios: ebp06, opens: {}, ids: northwind(ebp06) }, // A-05-T40
   "EBP-09": { scenarios: ebp09, opens: {}, ids: northwind(ebp09) }, // A-05-T45
   "AUD-10": { scenarios: aud10, opens: {} }, // A-04-T37
-  "AUD-17": { scenarios: aud17, opens: {} }, // A-06-T24
+  // A-06-T35: j03 13, 14 and 16 on Northwind's audit (AUD-15, AUD-16, AUD-17, AUD-20).
+  "AUD-15": { scenarios: aud15, opens: {}, ids: northwind(aud15) },
+  "AUD-16": { scenarios: aud16, opens: {}, ids: northwind(aud16) },
+  "AUD-17": { scenarios: aud17, opens: {}, ids: northwind(aud17) }, // A-06-T24
   "AUD-18": { scenarios: aud18, opens: {} }, // A-07-T17
-  "AUD-20": { scenarios: aud20, opens: {} }, // A-06-T30
+  "AUD-20": { scenarios: aud20, opens: {}, ids: northwind(aud20) }, // A-06-T30
   "AUD-09": {
     scenarios: aud09,
     opens: { b: "?cell=D2", e: "?sheet=internal-control" },

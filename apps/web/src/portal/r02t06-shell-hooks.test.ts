@@ -11,7 +11,10 @@ import {
 import { AREA_PATHS, PLANNED_AREA_PATHS, portalTree } from "../routes/portal/index";
 
 function paths(): string[] {
-  return (portalTree.children as unknown as { path: string }[]).map((route) => route.path);
+  // A route's declared path is on its options until the router initialises the tree.
+  return (portalTree.children as unknown as { options: { path: string } }[]).map(
+    (route) => route.options.path,
+  );
 }
 
 describe("R-02's portal shell hooks", () => {

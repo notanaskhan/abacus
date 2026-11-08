@@ -35,6 +35,17 @@
 ## Copy
 "Send draft to client…", "Send draft", "Sending starts when client delivery is switched on.", "DRAFT". Every word comes from the screen's `copy.ts`, verbatim from the handoff.
 
+## Links
+| From | To (manifest builder) | Planned or live |
+|---|---|---|
+| Opens AUD-01 · all audits | AUD-01 | per manifest |
+| Opens AUD-02 · audit cockpit | AUD-02 | per manifest |
+| Opens FSP-05 · tie-out review | FSP-05 | per manifest |
+| Opens AUD-16 · RJE-1 | AUD-16 | per manifest |
+| Opens FSP-01 · statements studio · draft v1 · benefits paid | FSP-01 | per manifest |
+
+The designed links of AUD-20 in `handoff-links.json`, as `link-contract.test.ts` reads them.
+
 ## Parity, accessibility and keyboard
 Tier C report (fixture build); axe and keyboard in `apps/web/e2e/screens/AUD-completion-a11y.spec.ts` (A-06-T36); journey steps in J03, J04, J05 and J22 (A-06-T35). Tier C locks wait for measured baselines.
 

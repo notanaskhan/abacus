@@ -39,8 +39,10 @@ def upgrade() -> None:
             contact_id uuid NOT NULL,
             user_id uuid NOT NULL,
             request_id uuid NULL,
-            issued_at timestamptz NOT NULL DEFAULT clock_timestamp(),
-            expires_at timestamptz NOT NULL DEFAULT clock_timestamp() + interval '60 seconds',
+            -- one statement_timestamp() for both: two clock_timestamp() reads differ by a
+            -- microsecond and the second would break the sixty-second CHECK below
+            issued_at timestamptz NOT NULL DEFAULT statement_timestamp(),
+            expires_at timestamptz NOT NULL DEFAULT statement_timestamp() + interval '60 seconds',
             used_at timestamptz NULL,
             UNIQUE (tenant_id, id),
             FOREIGN KEY (tenant_id, deliverable_version_id)

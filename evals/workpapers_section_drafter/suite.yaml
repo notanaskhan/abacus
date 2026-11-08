@@ -822,7 +822,7 @@ cases:
       - step: S1
         quote: Compare the vendor and customer masters with the minutes and
     - cell: C2
-      text: remittance address matches the home address of a director (Feb 12, 2026 board minutes, page 1); management should confirm
+      text: remittance address matches the home address of a director in the board minutes; management should confirm
       citations:
       - document: D2
         page: 1

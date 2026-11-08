@@ -2418,6 +2418,15 @@ RULES: list[Rule | TreeRule] = [
             "tests/integration/agent_tests/support.py",
             "tests/integration/agent_tests/test_work_slots_db.py",  # the ledger, as the app
             "tests/integration/backfill/support.py",  # Q-03 acceptance tests seed as the superuser
+            # S30 schema tests (0710 to 0714, and the ADR-078 independent suites): they seed as
+            # the superuser and act as a session's actor to prove CHECKs, triggers and grants.
+            "tests/integration/test_r02t05_deliverables_governance_migration.py",
+            "tests/integration/test_r02t07_download_links.py",
+            "tests/integration/test_p10t14_agent_run_backfill.py",
+            "tests/integration/test_p10t17_runtime_migrations_independent.py",
+            "tests/integration/test_p10t18_runtime_tables_independent.py",
+            "tests/integration/test_p11t33_ocr_daily_caps_migration.py",
+            "tests/integration/test_a07t20_immutable_independent.py",
             # N-02-T12: the app role's refusals on the signatures tables, after a real import.
             "tests/integration/backfill/test_n02t12_signatures_independent.py",
             "tests/integration/trust_kit/support.py",  # P-03-T05, T06: seeds as the superuser
@@ -2490,6 +2499,10 @@ RULES: list[Rule | TreeRule] = [
         exclude=(
             "src/abacus/kernel/db/migration.py",
             "tests/integration/test_q03t028_plan_tests.py",
+            # S30: a TRUNCATE probe over a fixed table tuple, and a uuid-named probe table that
+            # tenant_table must guard (A-07-T20).
+            "tests/integration/test_r02t05_deliverables_governance_migration.py",
+            "tests/integration/test_a07t20_immutable_independent.py",
         ),
     ),
     Rule(
@@ -2597,6 +2610,13 @@ RULES: list[Rule | TreeRule] = [
             # A-03-T05/T06: the schema tests of 0520 and 0521 act as the app.
             "tests/integration/backfill/test_a03t05_sampling_tables.py",
             "tests/integration/backfill/test_a03t06_taxonomy_db.py",
+            # S30 schema tests: act as a session's actor for actor-bound CHECKs (0710 to 0714).
+            "tests/integration/test_r02t05_deliverables_governance_migration.py",
+            "tests/integration/test_r02t07_download_links.py",
+            "tests/integration/test_p10t17_runtime_migrations_independent.py",
+            "tests/integration/test_p10t18_runtime_tables_independent.py",
+            "tests/integration/test_p11t33_ocr_daily_caps_migration.py",
+            "tests/integration/test_a07t20_immutable_independent.py",
             "tests/integration/test_tenancy.py",
             # P-04-T05: `Seeder.as_actor` drives the database's own actor and clock checks.
             "tests/integration/agent_tests/support.py",

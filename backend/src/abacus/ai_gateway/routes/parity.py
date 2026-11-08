@@ -95,7 +95,7 @@ class ParityReport:
 
 def read_report(body: str) -> ParityReport:
     """A committed report, old or new (reports before P-10-T13 carry no tools or documents)."""
-    raw = cast(dict[str, Any], json.loads(body))
+    raw = cast(dict[str, Any], json.loads(body))  # SDK JSON payload
     models = tuple(
         ModelParity(
             tier=str(m["tier"]),
@@ -106,7 +106,7 @@ def read_report(body: str) -> ParityReport:
             tools=bool(m.get("tools", False)),
             documents=bool(m.get("documents", False)),
         )
-        for m in cast(list[dict[str, Any]], raw["models"])
+        for m in cast(list[dict[str, Any]], raw["models"])  # SDK JSON payload
     )
     return ParityReport(str(raw["route"]), str(raw["checked_on"]), models)
 

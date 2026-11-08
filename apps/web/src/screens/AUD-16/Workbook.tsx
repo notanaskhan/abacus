@@ -207,7 +207,7 @@ function SumTable({
         <PaneAction icon="file" label={COPY.sum.sourceDocs} />
       </header>
       <div className="min-h-0 flex-1 overflow-auto">
-        <div role="row" className={cn(COLS, "h-[30px] bg-nested hairline-b")}>
+        <div className={cn(COLS, "h-[30px] bg-nested hairline-b")}>
           <span className={head}>{C.ref}</span>
           <span className={head}>{C.description}</span>
           <span className={head}>{C.type}</span>

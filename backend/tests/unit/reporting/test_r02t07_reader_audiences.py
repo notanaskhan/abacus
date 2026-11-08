@@ -102,7 +102,7 @@ def test_an_engagement_grant_on_another_engagement_reaches_nothing() -> None:
 
 def _ctx(*, client: bool, actor: str = "human") -> AuthContext:
     return AuthContext(
-        TenantContext(uuid4(), actor, str(uuid4())),  # type: ignore[arg-type]
+        TenantContext(uuid4(), actor, str(uuid4())),  # type: ignore[arg-type]  # test double or SDK shape
         uuid4(),
         uuid4(),
         None,

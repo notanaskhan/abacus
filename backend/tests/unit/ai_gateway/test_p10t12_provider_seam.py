@@ -303,7 +303,7 @@ class _Messages:
 @pytest.mark.parametrize("route", [AnthropicDirect, AnthropicOnBedrock])
 async def test_both_routes_converse_through_one_mapping(route: type) -> None:
     messages = _Messages(_message("end_turn", TextBlock.model_construct(type="text", text="ok")))
-    provider = route(cast(Any, SimpleNamespace(messages=messages)))
+    provider = route(cast(Any, SimpleNamespace(messages=messages)))  # SDK object or JSON
     reply = await provider.converse(_request(_user("hi")))
     assert reply.text == "ok"
     assert messages.calls == [a.converse_args(_request(_user("hi")))]
@@ -313,7 +313,7 @@ async def test_both_routes_converse_through_one_mapping(route: type) -> None:
 @pytest.mark.parametrize("route", [AnthropicDirect, AnthropicOnBedrock])
 async def test_route_errors_carry_no_provider_message(route: type) -> None:
     messages = _Messages(RuntimeError("the prompt text echoed back"))
-    provider = route(cast(Any, SimpleNamespace(messages=messages)))
+    provider = route(cast(Any, SimpleNamespace(messages=messages)))  # SDK object or JSON
     with pytest.raises(ProviderError) as caught:
         await provider.converse(_request(_user("hi")))
     assert "prompt" not in str(caught.value)

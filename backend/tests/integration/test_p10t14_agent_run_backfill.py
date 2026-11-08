@@ -53,7 +53,7 @@ async def _legacy_firm(seed: Seeder, rows: int) -> uuid.UUID:
     tenant = await seed.firm()
     person = await seed.person(tenant)
     engagement = await seed.engagement(tenant, await seed.entity(tenant), person.user_id)
-    conn = await asyncpg.connect(seed._dsn)  # pyright: ignore[reportPrivateUsage]
+    conn = await asyncpg.connect(seed._dsn)  # pyright: ignore[reportPrivateUsage]  # seed DSN
     try:
         await conn.execute("ALTER TABLE agent_runs DISABLE TRIGGER agent_runs_state_sync")
         await conn.execute(
@@ -162,7 +162,9 @@ async def test_the_trigger_accepts_only_the_legacy_mapping(seed: Seeder) -> None
             "UPDATE agent_runs SET state = 'succeeded', output = '{}'::jsonb WHERE id = $1", run
         )
     await seed.run("UPDATE agent_runs SET state = 'succeeded', run_number = 99 WHERE id = $1", run)
-    with pytest.raises(asyncpg.CheckViolationError):  # a run number never changes
+    # A run number never changes: on a finished row the forward-only guard refuses first, on a
+    # live one the state sync's run-number check does.
+    with pytest.raises((asyncpg.CheckViolationError, asyncpg.InsufficientPrivilegeError)):
         await seed.run("UPDATE agent_runs SET run_number = 100 WHERE id = $1", run)
 
 

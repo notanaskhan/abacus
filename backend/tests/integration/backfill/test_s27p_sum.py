@@ -13,7 +13,6 @@ from typing import cast
 import pytest
 
 from abacus.kernel.db import TenantContext
-from abacus.kernel.flags import forget_flags
 from abacus.modules.assurance import sum_service
 
 from .tb_support import Books, Json, books
@@ -24,13 +23,12 @@ pytestmark = pytest.mark.asyncio
 @pytest.fixture
 async def world(net: object) -> Books:
     found = await books(net)  # pyright: ignore[reportArgumentType] -- the backfill `net` fixture
+    # A-06-T37 (DEC-2714): the `assurance_completion` entitlement replaces the retired flag.
     await found.seed.run(
-        "INSERT INTO feature_flag_states (tenant_id, flag, value, set_by, reason) "
-        "VALUES ($1, 'assurance.completion', 'true', 'test-seed', 'DEC-2360') "
-        "ON CONFLICT DO NOTHING",
+        "INSERT INTO tenant_entitlements (tenant_id, module, valid_from, set_by) "
+        "VALUES ($1, 'assurance_completion', '2000-01-01', 'test-seed') ON CONFLICT DO NOTHING",
         found.tenant_id,
     )
-    forget_flags()
     return found
 
 

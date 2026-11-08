@@ -39,7 +39,7 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainForbidden, NotFound
 from abacus.kernel.uow import DomainEvent, Ref, Scope, Target, uow
 from abacus.kernel.uow.relay import OutboxEvent
-from abacus.modules.engagements.api import eqr_eligibility, get_ref
+from abacus.modules.engagements.api import assurance_item_id, eqr_eligibility, get_ref
 from abacus.modules.identity.api import AuthContext, authorise, team_of
 from abacus.modules.review.api import decided_cards, open_notes
 
@@ -160,10 +160,7 @@ def _sha(value: object) -> str:
 
 # --- open ----------------------------------------------------------------------------------------
 
-_WORK_ITEMS = text(
-    "SELECT id FROM work_items WHERE engagement_id = :e AND kind = 'assurance' "
-    "AND id NOT IN (SELECT work_item_id FROM eqr_reviews WHERE engagement_id = :e)"
-)
+_HAS_REVIEW = text("SELECT count(*) > 0 FROM eqr_reviews WHERE work_item_id = :w")
 _OPEN = text(
     """
     INSERT INTO eqr_reviews (tenant_id, engagement_id, work_item_id, eqr_user_id,
@@ -193,8 +190,11 @@ async def open_reviews(tenant: TenantContext, engagement_id: UUID, eqr_user_id: 
     if not template:
         raise EqrTemplateMissing
     opened = 0
+    # One assurance work item per attest engagement (engagements owns work_items, ADR-008).
+    item = await assurance_item_id(tenant, engagement_id)
     async with uow(tenant) as tx:
-        work_items = [r.id for r in (await tx.session.execute(_WORK_ITEMS, {"e": engagement_id}))]
+        has_review = item is not None and bool(await tx.session.scalar(_HAS_REVIEW, {"w": item}))
+        work_items = [item] if item is not None and not has_review else []
         for work_item_id in work_items:
             review_id = (
                 await tx.session.execute(

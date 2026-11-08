@@ -435,10 +435,12 @@ _PII = text(
     "SELECT id, name, erisa_relationship, exemption, reporting FROM parties_in_interest "
     "WHERE work_item_id = :w ORDER BY name"
 )
+# The same projection as 0685's `v_prohibited_transactions`, read from the owned table itself
+# (the module reads its own tables, ADR-103): a corrected figure there is the figure here.
 _PROHIBITED = text(
-    "SELECT late_remittance_id, principal, deposited_on, business_days_late, lost_earnings, "
-    "correction_status, form_5330_status FROM v_prohibited_transactions WHERE work_item_id = :w "
-    "ORDER BY due_on"
+    "SELECT id AS late_remittance_id, principal, deposited_on, business_days_late, "
+    "lost_earnings, correction_status, form_5330_status FROM ebp_late_remittances "
+    "WHERE work_item_id = :w ORDER BY due_on"
 )
 
 

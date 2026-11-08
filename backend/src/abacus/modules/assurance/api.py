@@ -71,6 +71,12 @@ from abacus.modules.assurance.findings import AUDIT_KINDS as FINDING_KINDS
 from abacus.modules.assurance.findings import audit_owners as finding_owners
 from abacus.modules.assurance.findings import register_exception_routes
 from abacus.modules.assurance.findings_contract import router as findings_router
+from abacus.modules.assurance.form5500_workflow import (  # A-05-T54: for the history recorder
+    TIEOUT_ID_PREFIX,
+    Form5500TieOutWorkflow,
+    TieOutCounts,
+    TieOutInput,
+)
 from abacus.modules.assurance.fraud_brainstorm import AUDIT_KINDS as FRAUD_KINDS
 from abacus.modules.assurance.fraud_brainstorm import GATE_KIND as FRAUD_GATE
 from abacus.modules.assurance.fraud_brainstorm import SUGGESTION_TARGET as FRAUD_MINUTES
@@ -150,6 +156,8 @@ from abacus.modules.assurance.tb_mapping_contract import router as tb_mapping_ro
 # A-02-T10: the live C9 routes are declared on `tb_router` in `tb_read_model`, so it is
 # imported from there (loading the module registers them before the API mounts the router).
 from abacus.modules.assurance.tb_read_model import tb_router
+from abacus.modules.assurance.trail_owners import AUDIT_KINDS as TRAIL_KINDS
+from abacus.modules.assurance.trail_owners import audit_owners as trail_owners
 from abacus.modules.assurance.trial_balance import adopt as adopt_trial_balance
 from abacus.modules.assurance.trial_balance import tb_facts, tb_reviewables
 from abacus.modules.engagements.api import work_item_engagement
@@ -219,15 +227,15 @@ SUBSCRIPTIONS = (
     dict(PHASE_SUBSCRIPTIONS)
     | dict(MAPPING_SUBSCRIPTIONS)
     | dict(IC_REDRAFT_SUBSCRIPTIONS)
-    | dict(CHECKLIST_SUGGESTION_SUBSCRIPTIONS)
     | dict(A07_SUBSCRIPTIONS)
     | dict(EQR_SUBSCRIPTIONS)
     | dict(FORM5500_SUBSCRIPTIONS)
+    | dict(CHECKLIST_SUGGESTION_SUBSCRIPTIONS)
 )
 # A-05-T54: Form5500TieOut, code only, on the background class.
 WORKFLOWS: dict[type, str] = dict(FORM5500_WORKFLOWS)
 ACTIVITIES: tuple[object, ...] = tuple(FORM5500_ACTIVITIES)
-register_work_classes(WORKFLOWS)  # type: ignore[arg-type]
+register_work_classes(WORKFLOWS)  # type: ignore[arg-type]  # registry kind literal
 
 # A-01-T02 (A-01 §5.1): the AUD-01 segments every firm has; X-01 (SOC & IT) and X-03 (Internal
 # audit) register theirs with an entitlement.
@@ -258,6 +266,7 @@ register_engagement_owners(SOC_REPORT_KINDS, soc_report_owners)  # A-04-T31
 register_engagement_owners(CONTROL_KINDS, control_owners)  # A-04-T25 (DEC-2264)
 register_engagement_owners(DECISION_KINDS, decision_owners)  # A-06-T13 (DEC-2264)
 register_engagement_owners(LATE_REMITTANCE_KINDS, late_remittance_owners)  # A-05-T30
+register_engagement_owners(TRAIL_KINDS, trail_owners)  # A-07-T18, A-05-T53 (S30 end pass)
 register_engagement_owners(CERTIFICATION_KINDS, certification_owners)  # A-05-T39
 # A-04-T12 (DEC-1950): the materiality cards' kinds and appliers; versions placed for the trail.
 register_materiality_kinds()
@@ -320,10 +329,12 @@ __all__ = [
     "PHASE_GATES",
     "ROUTERS",
     "SUBSCRIPTIONS",
+    "TIEOUT_ID_PREFIX",
     "WORKFLOWS",
     "AuditSection",
     "ExceptionRouter",
     "ExceptionRow",
+    "Form5500TieOutWorkflow",
     "IndexTag",
     "MappingConfirmIn",
     "MappingRunIn",
@@ -333,6 +344,8 @@ __all__ = [
     "RouteRequest",
     "RunSummary",
     "SectionState",
+    "TieOutCounts",
+    "TieOutInput",
     "adopt_trial_balance",
     "completion_errors",
     "completion_router",

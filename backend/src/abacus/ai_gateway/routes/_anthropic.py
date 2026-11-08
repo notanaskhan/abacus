@@ -73,7 +73,7 @@ def _block(block: p.ContentBlock) -> dict[str, Any]:  # SDK content block params
             "content": block.content,
             "is_error": block.is_error,
         }
-    document: dict[str, Any] = {
+    document: dict[str, Any] = {  # SDK JSON payload
         "type": "document",
         "source": {"type": "base64", "media_type": block.media_type, "data": block.data_base64},
     }
@@ -83,13 +83,13 @@ def _block(block: p.ContentBlock) -> dict[str, Any]:  # SDK content block params
 
 
 def converse_args(request: p.ConverseRequest) -> dict[str, Any]:  # SDK keyword arguments
-    system: list[dict[str, Any]] = []
+    system: list[dict[str, Any]] = []  # SDK JSON payload
     for layer in request.system_blocks:
-        item: dict[str, Any] = {"type": "text", "text": layer.text}
+        item: dict[str, Any] = {"type": "text", "text": layer.text}  # SDK JSON payload
         if layer.cache:
             item["cache_control"] = dict(_EPHEMERAL)
         system.append(item)
-    args: dict[str, Any] = {
+    args: dict[str, Any] = {  # SDK JSON payload
         "model": request.model,
         "max_tokens": request.max_output_tokens,
         "system": system,
@@ -98,7 +98,7 @@ def converse_args(request: p.ConverseRequest) -> dict[str, Any]:  # SDK keyword 
         ],
     }
     if request.tools:
-        tools: list[dict[str, Any]] = [
+        tools: list[dict[str, Any]] = [  # SDK JSON payload
             {"name": t.name, "description": t.description, "input_schema": dict(t.input_schema)}
             for t in request.tools
         ]

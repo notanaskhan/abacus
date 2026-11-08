@@ -193,4 +193,4 @@ async def test_a_letter_recorded_through_letter_record_meets_g3(firm: Firm) -> N
 
 async def test_an_unregistered_source_fails_closed() -> None:
     with pytest.raises(UnknownEnvelopeSource):
-        envelope_source("rep_letter")
+        envelope_source("not_a_source")  # `rep_letter` is A-07-T19's now

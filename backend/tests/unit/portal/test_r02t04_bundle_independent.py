@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import ast
 from pathlib import Path
+from typing import cast
 
 import pytest
 import yaml
@@ -36,8 +37,12 @@ R02_CLIENT_DECISIONS = (
 
 
 def _actions(name: str) -> dict[str, dict[str, object]]:
-    data = yaml.safe_load((MATRIX / f"{name}.yaml").read_text(encoding="utf-8"))
-    return {k: v for k, v in (data.get("actions") or {}).items() if isinstance(v, dict)}
+    data = cast(
+        dict[str, dict[str, object]],
+        yaml.safe_load((MATRIX / f"{name}.yaml").read_text(encoding="utf-8")),
+    )
+    actions = data.get("actions") or {}
+    return {k: cast(dict[str, object], v) for k, v in actions.items() if isinstance(v, dict)}
 
 
 ALL = [(f, a, row) for f in FILES for a, row in _actions(f).items()]

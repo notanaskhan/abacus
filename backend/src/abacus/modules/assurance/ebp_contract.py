@@ -2245,7 +2245,7 @@ async def estimates_route(work_item_id: UUID, ctx: Ctx) -> Aud27ListOut:
                 id=e.id,
                 name=e.name,
                 amount=e.balance,
-                status=e.status,  # type: ignore[arg-type]
+                status=e.status,  # type: ignore[arg-type]  # registry kind literal
                 pending_ep=e.pending_ep,
             )
             for e in found
@@ -2297,7 +2297,7 @@ async def related_parties_route(work_item_id: UUID, ctx: Ctx) -> Aud27ListOut:
                 id=p.id,
                 name=p.name or "Related party",
                 amount=None,
-                status=p.status,  # type: ignore[arg-type]
+                status=p.status,  # type: ignore[arg-type]  # registry kind literal
                 pending_ep=False,
             )
             for p in parties

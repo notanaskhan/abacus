@@ -289,6 +289,10 @@ resource "aws_lb_target_group" "api" {
   }
 }
 
+# Plain HTTP on purpose: the ALB is internal (no public address) and its security group admits only
+# CloudFront's origin-facing prefix list through the VPC origin, so the hop stays on AWS's private
+# network; TLS ends at CloudFront. An HTTPS listener here waits for a private certificate.
+#trivy:ignore:AVD-AWS-0054
 resource "aws_lb_listener" "api" {
   load_balancer_arn = aws_lb.api.arn
   port              = 80

@@ -72,9 +72,11 @@ def test_the_warning_fires_once_on_the_read_that_crosses_80_percent(
 async def test_the_warning_logs_counts_never_text(monkeypatch: pytest.MonkeyPatch) -> None:
     _patch(monkeypatch, used=4001, cap=None)  # after this read of 2 pages: 3,999 then 4,001
     logged: list[tuple[str, dict[str, object]]] = []
-    monkeypatch.setattr(
-        ocr_gate, "_log", SimpleNamespace(warning=lambda e, **kw: logged.append((e, kw)))
-    )
+
+    def warning(event: str, **fields: object) -> None:
+        logged.append((event, fields))
+
+    monkeypatch.setattr(ocr_gate, "_log", SimpleNamespace(warning=warning))
     assert await ocr_gate.warn_if_near_cap(TENANT, 2) is True
     assert logged == [
         ("ocr.daily_cap_warning", {"tenant_id": str(TENANT.tenant_id), "used": 4001, "cap": 5000})

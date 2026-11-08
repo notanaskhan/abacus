@@ -26,7 +26,6 @@ EXEMPT: Final[Mapping[str, str]] = {
     "audit_events": "the append-only trail outlives every lock (I-IMMUTABLE)",
     "audit_event_labels": "a trail label, not documentation",
     "notifications": "delivery",
-    "reminders": "delivery",
     "home_activity_items": "a rebuildable projection for Home",
     "human_gates": "C13's projection; archive.locked itself clears rows here",
     "messages": "delivery; a bounce or receipt arrives after lock",

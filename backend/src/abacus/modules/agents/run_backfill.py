@@ -27,7 +27,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from temporalio import activity
 
-from abacus.kernel.db import TenantContext
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.agents.run_backfill_workflow import BackfillBatch
@@ -95,6 +95,11 @@ _SET = text(
 _ANY_LEFT = text("SELECT EXISTS (SELECT 1 FROM agent_runs WHERE state IS NULL)")
 
 
+class BackfillRaced(Exception):
+    """The rows a batch saw were taken before it locked them; the activity retries (one id runs
+    per firm, so this is rare)."""
+
+
 def legacy_state(status: str) -> str:
     """0680's mapping; an unknown status is a running legacy run (its CHECK allows no other)."""
     return LEGACY_STATE.get(status, "running")
@@ -104,10 +109,15 @@ async def backfill_batch(tenant_id: UUID, limit: int) -> BackfillResult:
     if not 1 <= limit <= MAX_BATCH:
         raise ValueError(f"a backfill batch is 1 to {MAX_BATCH} rows")
     ctx = TenantContext(tenant_id, "system", _ACTOR)
+    # Nothing left: answer without a unit of work (one that changes nothing records no audit
+    # event and may not commit), so a finished firm's re-run is a no-op (end pass, DEC-2716).
+    async with tenant_session(ctx) as session:
+        if not bool((await session.execute(_ANY_LEFT)).scalar_one()):
+            return BackfillResult(0, False)
     async with uow(ctx) as tx:
         rows = (await tx.session.execute(_PICK, {"limit": limit})).all()
-        if not rows:
-            return BackfillResult(0, False)
+        if not rows:  # another worker took the last rows since the read above
+            raise BackfillRaced
         ids = [row.id for row in rows]
         await tx.session.execute(_SEED_COUNTER, {"tenant": str(tenant_id), "name": COUNTER})
         top = int(

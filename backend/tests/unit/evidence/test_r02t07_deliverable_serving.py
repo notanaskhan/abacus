@@ -79,6 +79,6 @@ def test_ac39_the_url_is_the_api_s_file_route_never_an_object_key() -> None:
 
 
 def test_ac40_page_views_and_downloads_are_access_kinds() -> None:
-    from abacus.kernel.uow.access import _KINDS  # pyright: ignore[reportPrivateUsage]
+    from abacus.kernel.uow.access import _KINDS  # pyright: ignore[reportPrivateUsage]  # registry
 
     assert {serving.PAGE_VIEW, serving.DOWNLOAD} <= set(_KINDS)

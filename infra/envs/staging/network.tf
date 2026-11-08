@@ -16,6 +16,9 @@ resource "aws_security_group" "tasks" {
   vpc_id      = module.network.vpc_id
 }
 
+# Open egress on purpose: the tasks reach AWS APIs and WorkOS through the NAT gateway, whose
+# addresses change; the tasks take no inbound traffic but the ALB's (tasks_from_alb).
+#trivy:ignore:AVD-AWS-0104
 resource "aws_vpc_security_group_egress_rule" "tasks_out" {
   security_group_id = aws_security_group.tasks.id
   ip_protocol       = "-1"
