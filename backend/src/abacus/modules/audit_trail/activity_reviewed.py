@@ -319,6 +319,8 @@ REVIEWED_FALLBACK: Final = frozenset(
         "notice.proposed_items_recorded",  # reviewed 2026-11-05 (S26, S27)
         "notice.return_as_filed_recorded",  # reviewed 2026-11-05 (S26, S27)
         "notice.status_changed",  # reviewed 2026-11-05 (S26, S27)
+        "deficiency.severity_proposed",  # reviewed 2026-11-08 (A-06-T16)
+        "deficiency.severity_suggested",  # reviewed 2026-11-08 (A-06-T16)
         "notice_intake.attached",  # reviewed 2026-11-06 (N-04-T07)
         "notice_intake.created",  # reviewed 2026-11-05 (S26, S27)
         "notice_intake.discarded",  # reviewed 2026-11-05 (S26, S27)
