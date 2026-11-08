@@ -94,11 +94,11 @@ Verbatim from the handoff (copy keys in `screens/AUD-27/copy.ts` when built). Ke
 | ID | What differs from the handoff | Why | Decision recorded |
 |---|---|---|---|
 | DV-AUD-27-1 | Agent-off path: every agent-filled value has a keyed or imported equivalent with a required citation note; the agent states read "not cleared" until A-04's `workpapers.drafting` and the firm's opt-in hold | A-05 F13; ADR-112 | DEC-1857 |
-| DV-AUD-27-2 | The related-parties table shows Party · Relationship · Source · Status, and the parties-in-interest table Party · ERISA relationship · Exemption · Reporting; the handoff's "FY2026 transactions", "Disclosure" and "2025 transactions" columns wait for those figures on the C3 read (0685 stores parties-in-interest transactions; the read does not return them yet) | No figure is shown that the server did not compute | DEC-2813 |
-| DV-AUD-27-3 | The rollforward line reads "Opening … − write-offs … + provision … = closing …"; the handoff's "Jul 1, 2025" and "Jun 30, 2026" wait for period dates on the rollforward | The dates are not on the read | DEC-2813 |
+| DV-AUD-27-2 | The parties-in-interest table shows the year's transactions as a person recorded them (S31 close); the related-parties table's "FY2026 transactions" and "Disclosure" columns still wait for vendor and customer activity, which nothing stores | No stored activity for a related party | DEC-2821 |
+| DV-AUD-27-3 | Closed (S31 close): the rollforward line reads the work item's period dates ("Jul 1, 2025 … = Jun 30, 2026 …") | — | DEC-2821 |
 | DV-AUD-27-4 | The footer carries "Request partner conclusion…" only; "Citations (6)" and "Procedures (2)" wait for counts on the read. The Agent dock is the AUD-02 cockpit's (TASK-5003's dock, then P-09-T09 on the E6 store); the canvas does not draw it | Counts not on the read; the dock is the host's | DEC-2813 |
-| DV-AUD-27-5 | The PT card's Form 5330 line shows the server's status text; the excise figure is never computed in the browser | ADR-050 | DEC-2813 |
-| DV-AUD-27-6 | The prohibited transaction's correction and Form 5330 read the registry's words ("Pending — VFCP Self-Correction Component", "Exposure"); the excise figure ("15% × $64.38 = $9.66") stays on EBP-04 | The read carries status words, not composed sentences (S31 end pass) | DEC-2813 |
+| DV-AUD-27-5 | Closed (S31 close): the PT card's Form 5330 line reads "Excise tax 15% × $64.38 = $9.66 unless PTE 2002-51 relief applies", its figures EBP-04's code-computed lost earnings and excise; other states read the registry's word | — | DEC-2821 |
+| DV-AUD-27-6 | Closed (S31 close): the PT card's Form 5330 line reads "Excise tax 15% × $64.38 = $9.66 unless PTE 2002-51 relief applies", its figures EBP-04's code-computed lost earnings and excise; other states read the registry's word | — | DEC-2821 |
 
 ## Parity
 | Artboard | Tier | Diff % | Notes |

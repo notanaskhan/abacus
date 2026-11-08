@@ -400,10 +400,30 @@ _INVESTED = text(
 LOANS_IDENTITY: Final = "Participant loans"
 
 
+def _words(text: str) -> list[str]:
+    return [w for w in "".join(c if c.isalnum() else " " for c in text.lower()).split() if w]
+
+
+_GENERIC: Final = frozenset({"the", "and", "of", "inc", "llc", "llp", "company", "co", "trust"})
+
+
 def _party_in_interest(fund: str, parties: Sequence[str]) -> bool:
-    """A holding issued by a party in interest: the party's name appears in the fund's name."""
-    name = " ".join(fund.lower().split())
-    return any(p and " ".join(p.lower().split()) in name for p in parties)
+    """A holding issued by a party in interest: the fund's name carries the party's full name, its
+    first word ("Harborline Stable Value Fund" for Harborline Trust Company) or its initials ("KRS
+    500 Index Fund" for Keystone Retirement Services)."""
+    held = _words(fund)
+    for party in parties:
+        words = _words(party)
+        if not words:
+            continue
+        initials = "".join(w[0] for w in words if w not in _GENERIC)
+        if (
+            " ".join(words) in " ".join(held)
+            or (words[0] not in _GENERIC and len(words[0]) > 2 and words[0] in held)
+            or (len(initials) >= 2 and initials in held)
+        ):
+            return True
+    return False
 
 
 async def schedule_4i_facts(tenant: TenantContext, work_item_id: UUID) -> engine.Schedule4i:

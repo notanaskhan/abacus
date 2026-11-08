@@ -29,6 +29,16 @@ export const COPY = {
     // The handoff's line with the period dates read from the rollforward's own labels.
     rollforward: (opening: string, usage: string, additions: string, closing: string) =>
       `Opening ${opening} − write-offs ${usage} + provision ${additions} = closing ${closing}`,
+    // S31 close (DV-AUD-27-3): the handoff's line, its dates the work item's period.
+    rollforwardDated: (
+      openOn: string,
+      opening: string,
+      usage: string,
+      additions: string,
+      closeOn: string,
+      closing: string,
+    ) =>
+      `${openOn} ${opening} − write-offs ${usage} + provision ${additions} = ${closeOn} ${closing}`,
   },
   bias: {
     card: "Bias indicators",
@@ -54,7 +64,10 @@ export const COPY = {
     raise: "Raise exception…",
   },
   pii: {
-    columns: ["Party", "ERISA relationship", "Exemption", "Reporting"],
+    columns: ["Party", "ERISA relationship", "2025 transactions", "Exemption", "Reporting"],
+    // S31 close (DV-AUD-27-6): the handoff's Form 5330 line, its figures the server's.
+    excise: (lostEarnings: string, excise: string) =>
+      `Excise tax 15% × ${lostEarnings} = ${excise} unless PTE 2002-51 relief applies`,
     card: "Late remittance as a prohibited transaction",
     lostEarnings: "Lost earnings",
     correction: "Correction",

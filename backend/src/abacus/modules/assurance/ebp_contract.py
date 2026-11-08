@@ -51,7 +51,7 @@ from abacus.modules.assurance.ebp_imports import ImportView, Ties, import_of, im
 from abacus.modules.assurance.ebp_participants import DOB_MASK, participants_of
 from abacus.modules.assurance.ebp_participants import reveal as reveal_participant_field
 from abacus.modules.assurance.tb_mapping_contract import SignOffChipOut
-from abacus.modules.engagements.api import assurance_item, get_ref
+from abacus.modules.engagements.api import assurance_item, get_ref, work_item_period
 from abacus.modules.evidence.api import citation_display
 from abacus.modules.identity.api import (
     AbacusRouter,
@@ -976,6 +976,19 @@ class Aud27RollforwardOut(BaseModel):
     additions: Money
     computed_closing: Money
     ties: Annotated[bool, classified("internal")]
+    # S31 close (DV-AUD-27-3): the rollforward's period, the work item's start and end.
+    opening_on: Annotated[date | None, classified("internal")] = None
+    closing_on: Annotated[date | None, classified("internal")] = None
+
+
+class Aud27TransactionOut(BaseModel):
+    """S31 close (DV-AUD-27-2): one thing the plan did with a party in interest in the year, as a
+    person recorded it."""
+
+    model_config = ConfigDict(frozen=True)
+
+    description: Annotated[str, Field(max_length=300), classified("confidential")]
+    amount: MaybeMoney
 
 
 class Aud27RetrospectiveOut(BaseModel):
@@ -1031,6 +1044,9 @@ class Aud27ItemOut(BaseModel):
     # Parties in interest (EBP): the ERISA relationship, exemption and reporting line.
     exemption: Annotated[str | None, Field(max_length=200), classified("confidential")] = None
     reporting: Annotated[str | None, Field(max_length=200), classified("confidential")] = None
+    transactions: Annotated[
+        list[Aud27TransactionOut], Field(max_length=50), classified("confidential")
+    ] = Field(default_factory=list[Aud27TransactionOut])
 
 
 class Aud27ProhibitedOut(BaseModel):
@@ -1050,6 +1066,8 @@ class Aud27ProhibitedOut(BaseModel):
     form_5330_status: Annotated[
         Literal["exposure", "not_required", "filed"] | None, classified("internal")
     ] = None
+    # S31 close (DV-AUD-27-6): EBP-04's code-computed excise exposure on the lost earnings.
+    excise_exposure: MaybeMoney = None
 
 
 class Aud27ListOut(BaseModel):
@@ -1063,10 +1081,25 @@ class Aud27ListOut(BaseModel):
     )
 
 
+class Aud27TransactionIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    description: Annotated[str, Field(min_length=1, max_length=300), classified("confidential")]
+    amount: MaybeMoney = None
+
+
 class Aud27ItemIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     name: Annotated[str, Field(min_length=1, max_length=300), classified("confidential")]
+    # S31 close, additive: a party in interest's ERISA relationship (required for one), its
+    # exemption, its Form 5500 reporting line and the year's transactions.
+    relationship: Annotated[str | None, Field(max_length=200), classified("confidential")] = None
+    exemption: Annotated[str | None, Field(max_length=200), classified("confidential")] = None
+    reporting: Annotated[str | None, Field(max_length=200), classified("confidential")] = None
+    transactions: Annotated[
+        list[Aud27TransactionIn], Field(max_length=50), classified("confidential")
+    ] = Field(default_factory=list[Aud27TransactionIn])
 
 
 class ScreenOutIn(BaseModel):
@@ -2530,6 +2563,7 @@ async def ebp_form5500_note_route(
 async def estimates_route(work_item_id: UUID, ctx: Ctx) -> Aud27ListOut:
     await _gate(ctx, work_item_id, "estimate.read", _A)
     found = await aud27.estimates(ctx, work_item_id)
+    opening_on, closing_on = await work_item_period(ctx.tenant, work_item_id)
     return Aud27ListOut(
         items=[
             Aud27ItemOut(
@@ -2558,6 +2592,8 @@ async def estimates_route(work_item_id: UUID, ctx: Ctx) -> Aud27ListOut:
                     additions=e.rollforward.additions,
                     computed_closing=e.rollforward.computed_closing,
                     ties=e.rollforward.computed_closing == e.rollforward.balance,
+                    opening_on=opening_on,
+                    closing_on=closing_on,
                 ),
                 retrospectives=[
                     Aud27RetrospectiveOut(
@@ -2678,20 +2714,23 @@ async def parties_in_interest_route(work_item_id: UUID, ctx: Ctx) -> Aud27ListOu
     return Aud27ListOut(
         items=[
             Aud27ItemOut(
-                id=pid,
-                name=name,
+                id=p.id,
+                name=p.name,
                 amount=None,
                 # A late remittance is the sponsor's use of plan assets (ERISA §406), so the
                 # sponsor's row carries the exception while one exists; the rest are unevaluated.
                 status="exception"
-                if prohibited and "sponsor" in (relationship or "").lower()
+                if prohibited and "sponsor" in p.relationship.lower()
                 else "unevaluated",
                 pending_ep=False,
-                relationship=relationship,
-                exemption=exemption,
-                reporting=reporting,
+                relationship=p.relationship,
+                exemption=p.exemption,
+                reporting=p.reporting,
+                transactions=[
+                    Aud27TransactionOut(description=d, amount=a) for d, a in p.transactions
+                ],
             )
-            for pid, name, relationship, exemption, reporting in parties
+            for p in parties
         ],
         allowed_actions=["party_in_interest.manage"],
         prohibited=[
@@ -2703,6 +2742,7 @@ async def parties_in_interest_route(work_item_id: UUID, ctx: Ctx) -> Aud27ListOu
                 lost_earnings=t.lost_earnings,
                 correction_status=_correction_word(t.correction_status),
                 form_5330_status=_form_5330_word(t.form_5330_status),
+                excise_exposure=t.excise_exposure,
             )
             for t in prohibited
         ],
@@ -2714,10 +2754,20 @@ async def parties_in_interest_route(work_item_id: UUID, ctx: Ctx) -> Aud27ListOu
     action="party_in_interest.manage",
     response_model=AcceptedOut,
     status_code=201,
-    errors=(501,),
 )
 async def party_in_interest_create_route(
     work_item_id: UUID, body: Aud27ItemIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> AcceptedOut:
+    """AUD-27 c: a person records a party in interest (S31 close)."""
     await _gate(ctx, work_item_id, "party_in_interest.manage", _A)
-    _not_yet()
+    del idempotency_key
+    party_id = await aud27.add_party_in_interest(
+        ctx,
+        work_item_id,
+        body.name,
+        relationship=body.relationship or "",
+        exemption=body.exemption,
+        reporting=body.reporting,
+        transactions=[(t.description, t.amount) for t in body.transactions],
+    )
+    return AcceptedOut(id=party_id)

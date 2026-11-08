@@ -60,6 +60,7 @@ CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
     "estimate.evaluated": _a("run"),
     "estimate.conclusion_requested": _a("change"),
     "related_party.added": _a("change"),
+    "party_in_interest.added": _a("change"),  # S31 close (AUD-27 c)
     "related_party.screened_out": _a("change"),
     # S15 (N-01, N-02): where the fallback reads the verb wrong. A sealed address revealed and a
     # message body read are access; a provider send and a reminder are communication.

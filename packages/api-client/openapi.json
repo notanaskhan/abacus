@@ -7170,12 +7170,60 @@
       "Aud27ItemIn": {
         "additionalProperties": false,
         "properties": {
+          "exemption": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Exemption"
+          },
           "name": {
             "cls": "confidential",
             "maxLength": 300,
             "minLength": 1,
             "title": "Name",
             "type": "string"
+          },
+          "relationship": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Relationship"
+          },
+          "reporting": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Reporting"
+          },
+          "transactions": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/Aud27TransactionIn"
+            },
+            "maxItems": 50,
+            "title": "Transactions",
+            "type": "array"
           }
         },
         "required": [
@@ -7412,6 +7460,15 @@
             ],
             "title": "Status",
             "type": "string"
+          },
+          "transactions": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/Aud27TransactionOut"
+            },
+            "maxItems": 50,
+            "title": "Transactions",
+            "type": "array"
           }
         },
         "required": [
@@ -7555,6 +7612,19 @@
             ],
             "cls": "internal",
             "title": "Deposited On"
+          },
+          "excise_exposure": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Excise Exposure"
           },
           "form_5330_status": {
             "anyOf": [
@@ -7705,6 +7775,19 @@
             "title": "Additions",
             "type": "string"
           },
+          "closing_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Closing On"
+          },
           "computed_closing": {
             "cls": "confidential",
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
@@ -7716,6 +7799,19 @@
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Opening",
             "type": "string"
+          },
+          "opening_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Opening On"
           },
           "ties": {
             "cls": "internal",
@@ -7737,6 +7833,69 @@
           "ties"
         ],
         "title": "Aud27RollforwardOut",
+        "type": "object"
+      },
+      "Aud27TransactionIn": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Amount"
+          },
+          "description": {
+            "cls": "confidential",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          }
+        },
+        "required": [
+          "description"
+        ],
+        "title": "Aud27TransactionIn",
+        "type": "object"
+      },
+      "Aud27TransactionOut": {
+        "description": "S31 close (DV-AUD-27-2): one thing the plan did with a party in interest in the year, as a\nperson recorded it.",
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Amount"
+          },
+          "description": {
+            "cls": "confidential",
+            "maxLength": 300,
+            "title": "Description",
+            "type": "string"
+          }
+        },
+        "required": [
+          "description",
+          "amount"
+        ],
+        "title": "Aud27TransactionOut",
         "type": "object"
       },
       "AuditActorOut": {
@@ -127756,6 +127915,7 @@
         "x-abacus-action": "ebp.read"
       },
       "post": {
+        "description": "AUD-27 c: a person records a party in interest (S31 close).",
         "operationId": "party_in_interest_create",
         "parameters": [
           {
@@ -127872,16 +128032,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Party In Interest Create Route",
