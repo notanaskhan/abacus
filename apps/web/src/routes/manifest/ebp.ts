@@ -15,6 +15,8 @@ export const ebpScreens = {
   // until its AUD-10 and AUD-11 links have a builder (no path of its own, the links rule).
   "EBP-06": { name: "Investments, certification & trust tie-out", status: "planned", path: null },
   "EBP-07": { name: "Form 5500 tie-out & supplemental schedules", status: "planned", path: null },
+  // A-05-T52: a to e on fixtures, the AUD-02 cockpit's Participant Accounts canvas; planned until
+  // its links have a builder (no path of its own, the links rule).
   "EBP-08": { name: "Participant accounts summary", status: "planned", path: null },
   "EBP-09": {
     name: "Administrative expenses & operational compliance",
