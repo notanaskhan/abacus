@@ -60,6 +60,7 @@ import {
   WizardSpecimen,
 } from "./overlays";
 import {
+  GroupedTileSpecimen,
   KpiTileSpecimen,
   ProgressBarSpecimen,
   RatioStatSpecimen,
@@ -250,6 +251,7 @@ export const SPECIMENS: readonly Specimen[] = [
   { id: "c-19-step-counter", kit: "C-19", title: "StepCounter", Component: StepCounterSpecimen },
   { id: "c-19-kpi-tile", kit: "C-19", title: "KPI tile", Component: KpiTileSpecimen },
   { id: "c-19-status-tile", kit: "C-19", title: "StatusTile", Component: StatusTileSpecimen },
+  { id: "c-19-grouped-tile", kit: "C-19", title: "GroupedTile", Component: GroupedTileSpecimen },
   // Attribution and human verbs (F-05-T30): C-31
   {
     id: "f05-attribution",
