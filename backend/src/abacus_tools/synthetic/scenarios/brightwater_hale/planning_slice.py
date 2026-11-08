@@ -14,12 +14,20 @@ event and the register's approval meets G4 at 4:40 PM.
 - **Approval** (AUD-08 b, d): at 12:31 PM Hannah routes the register (one `significant_risk` card
   for R3 and R5's rebuttal); at 4:40 PM Margaret Okonkwo approves it. With the materiality the
   review slice decides at 11:12 AM, G4 is met.
+- **RA reviewed** (AUD-05 d; TASK-6407, DEC-2957): Marcus Delaney's Risk Assessment paper
+  (RA-100, the completion slice's matrix row) exists from 10:14 AM; he signs L1 at 4:45 PM (a
+  made-up time: the handoff draws only the review) and Hannah reviews it at 4:52 PM, so the pill
+  reads "Reviewed · HL". Her level is L3, the level AUD-17 draws her on RA-100 (DEC-2428).
+- **Materiality v3** (AUD-07 d, AC3.6): on Tue Oct 6 Hannah raises the reassessment at final and
+  Margaret records "No change", each skipped when the review slice already wrote it.
 
-Not here (recorded in TASK-3233): the 9:27 AM materiality v1 (the review slice proposes at
-10:30 AM), the agent runs (9:58 AM IC pack failure, 10:40 AM GAP waiting on two inputs, the
-12:40 PM SOC draft) and the 4:52 PM RA sign-off, which need the fake-model registry's
-artefacts and the RA paper; Sep 22 bridge letter, Sep 29 reliance; and Granite Peak (DEC-1969:
-the BH FS groupings carry no pre-tax income line for its benchmark). Opt-in (`--slice planning`).
+Not here (recorded in TASK-3233, TASK-6407): the 9:27 AM materiality v1 (the review slice
+proposes at 10:30 AM; the handoff gives no proposer or figures for an earlier version), the agent
+runs (9:58 AM IC pack failure, 10:40 AM GAP waiting on two inputs, the 12:40 PM SOC draft), which
+need the fake-model registry's artefacts; Sep 22 bridge letter and Sep 29 reliance (both act on
+Keystone's SOC report, which only the 12:40 PM soc1 run creates); and Granite Peak's risks and
+RCM and ITGC processes (no handoff rows; its 10:12 AM materiality is the completion slice's).
+Opt-in (`--slice planning`).
 """
 
 from __future__ import annotations
@@ -39,6 +47,9 @@ NEEDS: Final = ("people", "standards", "acceptance", "sampling")  # sampling: BH
 FLAGS: Final = ("assurance.risk_register", "assurance.internal_control")
 NORTHWIND: Final = "Northwind Robotics, Inc."
 IC_PAPER: Final = ("EBP-140", "Internal control")
+RA_PAPER: Final = "RA-100"  # the completion slice's MATRIX_PAPERS row (title, kind, creator)
+RA_SIGNS: Final = ((1, "MD", (16, 45)), (3, "HL", (16, 52)))  # (level, signer, (hour, minute))
+REASSESS_RATIONALE: Final = "Reassessed at final: no change."  # the review slice's words
 APPROVAL_RATIONALE: Final = (
     "R3 stays significant: the late December remittance and the cutoff exception. R5's rebuttal "
     "holds: the income is certified and no fraud factors point to it."
@@ -190,7 +201,45 @@ def planning_events() -> list[Event]:
             rationale=APPROVAL_RATIONALE,
         ),
     ]
+    events.append(
+        _event("northwind:ra-paper", _at(9, 14, 10, 14), "assurance.northwind_ra_paper", "MD")
+    )
+    events += [
+        _event(
+            f"northwind:ra-signed:{level}",
+            _at(9, 14, hour, minute),
+            "review.northwind_ra_signed",
+            who,
+            paper=RA_PAPER,
+            level=level,
+        )
+        for level, who, (hour, minute) in RA_SIGNS
+    ]
+    events += [
+        _event(
+            "northwind:materiality-reassessed",
+            _at(10, 6, 9, 0),
+            "assurance.northwind_materiality_reassessed",
+            "HL",
+        ),
+        _event(
+            "northwind:materiality-no-change",
+            _at(10, 6, 9, 30),
+            "review.northwind_materiality_no_change",
+            "MO",
+            rationale=REASSESS_RATIONALE,
+        ),
+    ]
     return events
 
 
-__all__ = ["EXCEPTIONS", "FLAGS", "IC_PAPER", "NEEDS", "RISKS", "SLICE", "planning_events"]
+__all__ = [
+    "EXCEPTIONS",
+    "FLAGS",
+    "IC_PAPER",
+    "NEEDS",
+    "RA_PAPER",
+    "RISKS",
+    "SLICE",
+    "planning_events",
+]
