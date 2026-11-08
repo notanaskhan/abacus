@@ -98,6 +98,34 @@ describe("screen parity rows (F-04-T33)", () => {
     expect(rows.some((r) => r.artboard === "POR-20a")).toBe(true);
   });
 
+  it("lists A-05's 51 cockpit-section artboards, EBP-07a locked (A-05-T61 close)", () => {
+    const contract = (id: string): string | null => {
+      const path = `../../docs/screens/${id}.md`;
+      return existsSync(path) ? readFileSync(path, "utf8") : null;
+    };
+    const { rows } = screenRows(MANIFEST, contract, BUILT_PLANNED);
+    const expected: Record<string, string[]> = {
+      "EBP-01": ["a", "b", "c", "d"],
+      "EBP-02": ["a", "b", "b2", "c", "d", "e"],
+      "EBP-03": ["a", "b", "c", "d", "e"],
+      "EBP-04": ["a", "b", "c", "d", "e", "f"],
+      "EBP-05": ["a", "b", "c", "d", "e"],
+      "EBP-06": ["a", "b", "c", "d", "e"],
+      "EBP-07": ["a", "b", "c", "d", "e"],
+      "EBP-08": ["a", "b", "c", "d", "e"],
+      "EBP-09": ["a", "b", "c", "d", "e"],
+      "AUD-27": ["a", "b", "c", "d", "e"],
+    };
+    let total = 0;
+    for (const [id, states] of Object.entries(expected)) {
+      expect(rows.filter((r) => r.screen === id).map((r) => r.state)).toEqual(states);
+      total += states.length;
+    }
+    expect(total).toBe(51); // A-05's 51 artboards
+    expect(rows.find((r) => r.artboard === "EBP-07a")?.locked).toBe(true);
+    expect(rows.find((r) => r.artboard === "EBP-07b")?.locked).toBe(false);
+  });
+
   it("lists the 44 review-grammar artboards with P-04's Tier C locks (P-04-T58)", () => {
     const contract = (id: string): string | null => {
       const path = `../../docs/screens/${id}.md`;

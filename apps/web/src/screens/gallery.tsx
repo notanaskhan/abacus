@@ -225,6 +225,17 @@ import {
   scenarios as aud01Scenarios,
 } from "./AUD-01/scenarios";
 import { AuditCockpitPage } from "./AUD-02";
+import { scenarios as ebp01Scenarios } from "./EBP-01/scenarios";
+import { scenarios as ebp02Scenarios } from "./EBP-02/scenarios";
+import { scenarios as ebp03Scenarios } from "./EBP-03/scenarios";
+import { TAB_OF as EBP04_TAB_OF, scenarios as ebp04Scenarios } from "./EBP-04/scenarios";
+import { scenarios as ebp05Scenarios } from "./EBP-05/scenarios";
+import { scenarios as ebp06Scenarios } from "./EBP-06/scenarios";
+import { scenarios as ebp07Scenarios } from "./EBP-07/scenarios";
+import { scenarios as ebp08Scenarios } from "./EBP-08/scenarios";
+import { scenarios as ebp09Scenarios } from "./EBP-09/scenarios";
+import { scenarios as aud27Scenarios } from "./AUD-27/scenarios";
+import { NORTHWIND_AUDIT as SECTION_AUDIT_ID } from "../fixtures/scenarios/AUD-06";
 import {
   AUDIT_ID as AUD02_AUDIT_ID,
   OPENS as AUD02_OPENS,
@@ -1804,6 +1815,142 @@ registerScreen("AUD-07", { title: "Materiality · partner decision", Component: 
 registerScreen("AUD-02", {
   title: "Audit cockpit · Overview, Source Documents, Agent",
   Component: Aud02Artboard,
+});
+
+// A-05-T61 close (S31; DEC-2825): the EBP and AUD-27 canvases are sections of the AUD-02 cockpit,
+// so each artboard is the cockpit, inside the app shell at 1440 × 860, opened on its section and
+// the state's tab. Parity, axe and Tier D then find `[data-artboard] [data-shell='app']`.
+type CockpitInitial = Parameters<typeof AuditCockpitPage>[0]["initial"];
+type SectionScenarios = Record<string, Parameters<typeof installFixtureMode>[0]>;
+
+function SectionFrame({
+  state,
+  initial,
+}: {
+  state: string;
+  initial: CockpitInitial;
+}): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/audits" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
+        <AuditCockpitPage
+          auditId={SECTION_AUDIT_ID}
+          {...(initial === undefined ? {} : { initial })}
+          onBack={() => undefined}
+        />
+      </AppShell>
+    </div>
+  );
+}
+
+function sectionArtboard(
+  scenarios: SectionScenarios,
+  initialOf: (state: string) => CockpitInitial,
+): (props: { params: FixtureParams }) => JSX.Element | null {
+  const states = Object.keys(scenarios);
+  return function SectionArtboard({ params }) {
+    const state = states.find((s) => s === params.st) ?? "a";
+    const [ready, setReady] = useState<string | null>(null);
+    useEffect(() => {
+      const scenario = scenarios[state];
+      if (scenario === undefined) return undefined;
+      const restore = installFixtureMode(
+        scenario,
+        params.as === undefined ? {} : { persona: params.as },
+      );
+      setReady(state);
+      return () => {
+        setReady(null);
+        restore();
+      };
+    }, [state, params.as]);
+    return ready === state ? (
+      <SectionFrame key={state} state={state} initial={initialOf(state)} />
+    ) : null;
+  };
+}
+
+registerScreen("EBP-01", {
+  title: "Plan profile & service providers",
+  Component: sectionArtboard(ebp01Scenarios, (st) => ({
+    section: "ebp_01",
+    planEditing: st === "d",
+  })),
+});
+registerScreen("EBP-02", {
+  title: "Plan provisions review",
+  Component: sectionArtboard(ebp02Scenarios, (st) => ({
+    section: "ebp_02",
+    ...(st === "b2" ? { planReviewVersion: 1 } : {}),
+  })),
+});
+registerScreen("EBP-03", {
+  title: "Eligibility testing",
+  Component: sectionArtboard(ebp03Scenarios, () => ({ section: "ebp_03" })),
+});
+registerScreen("EBP-04", {
+  title: "Contributions & remittance timeliness",
+  Component: sectionArtboard(ebp04Scenarios, (st) => ({
+    section: "ebp_04",
+    contributions: { tab: EBP04_TAB_OF[st as keyof typeof EBP04_TAB_OF] },
+  })),
+});
+registerScreen("EBP-06", {
+  title: "Investments, certification & trust tie-out",
+  Component: sectionArtboard(ebp06Scenarios, (st) => ({
+    section: "ebp_06",
+    investments: { layer: st === "b" ? "unadjusted" : "final" },
+  })),
+});
+registerScreen("EBP-05", {
+  title: "Distributions & participant loans",
+  Component: sectionArtboard(ebp05Scenarios, (st) => ({
+    section: "ebp_05",
+    loans: { tab: st === "b" ? "distributions" : "loans" },
+  })),
+});
+registerScreen("EBP-07", {
+  title: "Form 5500 tie-out & supplemental schedules",
+  Component: sectionArtboard(ebp07Scenarios, (st) => ({
+    section: "ebp_07",
+    form5500: {
+      tab: st === "b" || st === "e" ? "part_iv" : st === "c" ? "schedules" : "schedule_h",
+    },
+  })),
+});
+registerScreen("EBP-08", {
+  title: "Participant accounts summary",
+  Component: sectionArtboard(ebp08Scenarios, (st) => ({
+    section: "ebp_08",
+    accounts: {
+      tab: st === "b" ? "brokerwindow" : st === "c" ? "vesting" : "rollforward",
+      running: st === "a",
+    },
+  })),
+});
+registerScreen("EBP-09", {
+  title: "Administrative expenses & operational compliance",
+  Component: sectionArtboard(ebp09Scenarios, (st) => ({
+    section: "ebp_09",
+    expenses: { tab: st === "b" ? "compliance" : st === "c" ? "qualification" : "expenses" },
+  })),
+});
+registerScreen("AUD-27", {
+  title: "Estimates, related parties & parties in interest",
+  Component: sectionArtboard(aud27Scenarios, (st) => ({
+    section: "estimates_rp",
+    estimatesRp:
+      st === "c"
+        ? { tab: "parties_in_interest", kind: "ebp" }
+        : { tab: st === "b" || st === "e" ? "related_parties" : "estimates", kind: "fs" },
+  })),
 });
 
 function Cli02Frame({ state }: { state: Cli02State }): JSX.Element {

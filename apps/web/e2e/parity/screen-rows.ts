@@ -127,6 +127,18 @@ export const BUILT_PLANNED: readonly string[] = [
   // screens open them (A-04's AUD-07, the workpaper headers); the suites measure them all the same.
   "SHL-11",
   "SHL-12",
+  // A-05-T61 close (S31; DEC-2825): the EBP and AUD-27 canvases are AUD-02 sections, `planned`
+  // until their links have builders; their gallery artboards measure them all the same.
+  "EBP-01",
+  "EBP-02",
+  "EBP-03",
+  "EBP-04",
+  "EBP-05",
+  "EBP-06",
+  "EBP-07",
+  "EBP-08",
+  "EBP-09",
+  "AUD-27",
 ];
 
 /** Every artboard of every `fixture` or `live` screen, and of `also`, in screen then state order.

@@ -633,6 +633,11 @@ export function AuditCockpitPage({
     contributions?: Omit<ContributionsOptions, "active" | "running">;
     loans?: Omit<LoansOptions, "active">;
     expenses?: Omit<ExpensesOptions, "active">;
+    // S31 close (A-05-T61): the gallery opens these canvases on a state's tab.
+    accounts?: Omit<AccountsOptions, "active">;
+    estimatesRp?: Omit<EstimatesOptions, "active">;
+    form5500?: Omit<Form5500Options, "active">;
+    completion?: Omit<CompletionOptions, "active">;
   };
   onBack?: () => void;
 }): JSX.Element {
@@ -669,6 +674,10 @@ export function AuditCockpitPage({
       {...(initial.contributions === undefined ? {} : { contributions: initial.contributions })}
       {...(initial.loans === undefined ? {} : { loans: initial.loans })}
       {...(initial.expenses === undefined ? {} : { expenses: initial.expenses })}
+      {...(initial.accounts === undefined ? {} : { accounts: initial.accounts })}
+      {...(initial.estimatesRp === undefined ? {} : { estimatesRp: initial.estimatesRp })}
+      {...(initial.form5500 === undefined ? {} : { form5500: initial.form5500 })}
+      {...(initial.completion === undefined ? {} : { completion: initial.completion })}
     />
   );
 }
