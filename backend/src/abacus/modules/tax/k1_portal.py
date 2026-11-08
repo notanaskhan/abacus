@@ -31,7 +31,7 @@ import json
 import zipfile
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
-from datetime import date
+from datetime import date, datetime
 from typing import Final, cast
 from uuid import UUID, uuid4
 
@@ -57,6 +57,7 @@ from abacus.modules.identity.api import (
     portal_scopes,
 )
 from abacus.modules.organisations.api import client_record, contacts_of_user
+from abacus.modules.reporting.api import PortalK1
 from abacus.modules.tax import k1_disclosures
 from abacus.modules.tax import k1_packages as k1
 
@@ -627,3 +628,27 @@ __all__ = [
     "submit_details_change",
     "upload_details_change",
 ]
+
+
+async def deliverable_k1_rows(ctx: AuthContext) -> list[PortalK1]:
+    """R-02-T09 (DEC-2805): POR-09's "My K-1s" band, read through C10's slot. The person's own
+    released packages only (`packages`' rules: never a draft, another partner's K-1 or the
+    partnership return, INV-4); no amounts on the row. None of theirs: an empty band."""
+    try:
+        found = await packages(ctx)
+    except NotFound:
+        return []
+    out: list[PortalK1] = []
+    for v in found:
+        released = v.released_at
+        if v.status == "superseded" or not isinstance(released, datetime):
+            continue
+        issuer = v.issuer_name or v.recipient_name
+        out.append(
+            PortalK1(
+                package_id=v.id,
+                title=f"{issuer} — {v.tax_year} Schedule K-1 (Form {v.form})",
+                released_on=released.date(),
+            )
+        )
+    return out

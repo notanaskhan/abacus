@@ -129,6 +129,7 @@ from abacus.modules.evidence.extracted_read import (
 from abacus.modules.evidence.extraction import Extraction, extract_isolated
 from abacus.modules.evidence.extraction import Table as ExtractedTable
 from abacus.modules.evidence.filed_copies import file_copy_onto_work_item
+from abacus.modules.evidence.files import FolderProvider, register_folder_provider
 from abacus.modules.evidence.files_contract import files_router
 from abacus.modules.evidence.firm_export_activities import ACTIVITIES as FIRM_EXPORT_ACTIVITIES
 from abacus.modules.evidence.firm_export_activities import (
@@ -569,6 +570,7 @@ __all__ = [
     "FirmExportInput",
     "FirmExportScheduleWorkflow",
     "FirmExportWorkflow",
+    "FolderProvider",
     "FormExtractionInput",
     "FormExtractionWorkflow",
     "GeneratedFile",
@@ -719,6 +721,7 @@ __all__ = [
     "register_export_audit_trail",
     "register_export_section",
     "register_firm_export_starter",
+    "register_folder_provider",
     "register_intake_source",
     "register_match_picks",
     "register_proposal_source",
