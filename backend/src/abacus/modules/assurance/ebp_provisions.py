@@ -58,6 +58,8 @@ from abacus.modules.identity.api import AgentContext, AuthContext, Forbidden, au
 from abacus.modules.review.api import (
     FieldState,
     field_states,
+    reviewable_facts,
+    sign_off_states,
 )
 from abacus.modules.workpapers.api import CELL_TARGET, paper_id_of_kind, paper_of_kind
 
@@ -101,11 +103,20 @@ class EntryRuleRead:
 
 
 @dataclass(frozen=True)
+class VersionDiff:
+    """What the latest review adds to an earlier one (EBP-02 b2's ribbon)."""
+
+    current_no: int
+    added_labels: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class PlanReview:
     review_no: int
     provisions: tuple[ProvisionState, ...]
     workpaper_id: UUID | None = None
     sign_offs: tuple[SignedLevel, ...] = ()
+    version_diff: VersionDiff | None = None
 
     @property
     def verified(self) -> int:
@@ -230,6 +241,17 @@ async def _review_row(
         return (await session.execute(_BY_NO, {"w": work_item_id, "n": review_no})).first()
 
 
+async def _signed(tenant: TenantContext, paper: UUID) -> tuple[SignedLevel, ...]:
+    """The paper's sign-offs: EBP-02's "✓ HL" and "Reviewed · HL Sep 17"."""
+    facts = await reviewable_facts(tenant, PAPER_TARGET, paper)
+    found = await sign_off_states(tenant, PAPER_TARGET, [paper], {paper: facts.content_hash})
+    return tuple(
+        SignedLevel(s.level, s.signed_by, s.signed_at, s.stale)
+        for s in found[paper]
+        if s.signed_by is not None and s.signed_at is not None
+    )
+
+
 async def review_of(ctx: AuthContext, work_item_id: UUID, review_no: int | None) -> PlanReview:
     """EBP-02's provisions for the latest review (or `review_no`, read-only b2): each row's
     adopted value and reference, and whether its value is verified now."""
@@ -242,6 +264,18 @@ async def review_of(ctx: AuthContext, work_item_id: UUID, review_no: int | None)
     paper = await paper_of_kind(ctx, item.engagement_id, KIND)
     rows = provisions_for(amendment_in_force=bool(found.amendment_in_force))
     states = await _states(ctx.tenant, paper, rows)
+    latest = None if review_no is None else await _review_row(ctx.tenant, work_item_id, None)
+    version_diff = None
+    if latest is not None and latest.review_no != found.review_no:
+        held = {p.key for p in rows}
+        version_diff = VersionDiff(
+            int(latest.review_no),
+            tuple(
+                p.label
+                for p in provisions_for(amendment_in_force=bool(latest.amendment_in_force))
+                if p.key not in held
+            ),
+        )
     return PlanReview(
         int(found.review_no),
         tuple(
@@ -252,9 +286,13 @@ async def review_of(ctx: AuthContext, work_item_id: UUID, review_no: int | None)
                 bool(states[p.value_cell].ticked_levels)
                 and states[p.value_cell].value is not None,
                 len(states[p.value_cell].citation_ids),
+                states[p.value_cell].content_hash or None,
             )
             for p in rows
         ),
+        workpaper_id=paper,
+        sign_offs=await _signed(ctx.tenant, paper),
+        version_diff=version_diff,
     )
 
 

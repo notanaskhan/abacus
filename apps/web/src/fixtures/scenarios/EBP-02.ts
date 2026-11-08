@@ -110,7 +110,7 @@ function frame(
 export const scenarios = defineScenarios({
   a: frame("a", { clock: AT_A }),
   b: frame("b", { variant: "b" }),
-  b2: frame("b2", { variant: "b2" }),
+  b2: frame("b2"),
   c: frame("c", { variant: "c" }),
   d: frame("d", { variant: "d" }),
   e: frame("e", { variant: "e" }),
