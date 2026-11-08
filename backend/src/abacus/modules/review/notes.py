@@ -66,7 +66,8 @@ from abacus.modules.review.repository import (
     set_note_status,
 )
 from abacus.modules.review.sealing import open_text, record_text_reads, seal_text
-from abacus.modules.review.slots import reviewable_facts, reviewables_of
+from abacus.modules.review.service import sign_off_states
+from abacus.modules.review.slots import UnregisteredKind, reviewable_facts, reviewables_of
 
 NoteStatus = Literal["open", "responded", "cleared", "closed", "withdrawn"]
 EventKind = Literal["responded", "cleared", "reopened", "withdrawn"]
@@ -142,6 +143,8 @@ class NoteDetail:
     note: NoteItem
     body: str
     events: list[NoteEventView]
+    # AUD-17's amber notice: the note's paper changed after a sign-off (a stale level).
+    paper_changed_after_signoff: bool = False
 
 
 # What each event leaves the note as (C3 adds closed and withdrawn).
@@ -377,6 +380,9 @@ def _allowed(ctx: AuthContext, note: ReviewableNote, can: _Abilities) -> list[st
         out.append("review_note.clear")
     if status in OPEN and can.withdraw and mine:
         out.append("review_note.withdraw")
+    # SPEC-313 AC-3: the raiser or the partner reopens a cleared note, with why (A-06-T24).
+    if status == "cleared" and can.clear and (mine or can.partner):
+        out.append("review_note.reopen")
     return out
 
 
@@ -495,7 +501,22 @@ async def note_detail(ctx: AuthContext, note_id: UUID) -> NoteDetail:
             )
             for e in events
         ],
+        await _paper_changed(ctx.tenant, note),
     )
+
+
+async def _paper_changed(tenant: TenantContext, note: ReviewableNote) -> bool:
+    """Whether any signed level on the note's paper is stale (signed over an older hash). The
+    caller is already authorised on the note's engagement. A paper whose owner can't say reads
+    as not changed: the notice is information, and the matrix still shows the stale cell."""
+    try:
+        facts = await reviewable_facts(tenant, note.target_type, note.target_id)
+    except (UnregisteredKind, NotFound):
+        return False
+    states = await sign_off_states(
+        tenant, note.target_type, [note.target_id], {note.target_id: facts.content_hash}
+    )
+    return any(s.signed_by is not None and s.stale for s in states[note.target_id])
 
 
 # --- Writes ------------------------------------------------------------------------------------
@@ -696,7 +717,7 @@ async def add_event(
 async def note_event(
     ctx: AuthContext, note_id: UUID, kind: EventKind, body: str | None
 ) -> NoteDetail:
-    """The C3 writes (`/v1/review-notes/{id}/respond|clear|withdraw`): the note's engagement
+    """The C3 writes (`/v1/review-notes/{id}/respond|clear|reopen|withdraw`): the note's engagement
     is read first (a note the caller may not read answers 404), then `add_event`."""
     note, _resource = await _readable(ctx, note_id)
     await add_event(ctx, note.engagement_id, note_id, kind, body)

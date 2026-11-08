@@ -38505,6 +38505,10 @@ export type ReviewNoteDetailOut = {
      */
     events: Array<ReviewNoteEventOut>;
     note: ReviewNoteItemOut;
+    /**
+     * Paper Changed After Signoff
+     */
+    paper_changed_after_signoff?: boolean;
 };
 
 /**
@@ -113581,6 +113585,66 @@ export type ReviewNoteClearResponses = {
 };
 
 export type ReviewNoteClearResponse = ReviewNoteClearResponses[keyof ReviewNoteClearResponses];
+
+export type ReviewNoteReopenData = {
+    body: ReviewNoteEventIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Note Id
+         */
+        note_id: string;
+    };
+    query?: never;
+    url: '/v1/review-notes/{note_id}/reopen';
+};
+
+export type ReviewNoteReopenErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ReviewNoteReopenError = ReviewNoteReopenErrors[keyof ReviewNoteReopenErrors];
+
+export type ReviewNoteReopenResponses = {
+    /**
+     * Successful Response
+     */
+    200: ReviewNoteDetailOut;
+};
+
+export type ReviewNoteReopenResponse = ReviewNoteReopenResponses[keyof ReviewNoteReopenResponses];
 
 export type ReviewNoteRespondData = {
     body: ReviewNoteEventIn;

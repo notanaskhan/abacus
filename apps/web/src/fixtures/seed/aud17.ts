@@ -51,7 +51,9 @@ const CLEARED_COUNT = 11;
 
 function item(n: Note, status = n.status): ReviewNoteItemOut {
   return {
-    allowed_actions: status === "cleared" ? [] : ["review_note.clear", "review_note.respond"],
+    // Margaret is the engagement partner: she clears or reopens any note (SPEC-313 AC-3).
+    allowed_actions:
+      status === "cleared" ? ["review_note.reopen"] : ["review_note.clear", "review_note.respond"],
     anchor: { kind: "cell", ref: n.anchor },
     assignee_user_id: stableId("user:ana-cruz"),
     engagement_id: AUD17_ENGAGEMENT,
@@ -133,6 +135,9 @@ export function aud17Detail(noteId: string, variant: Aud17Variant = "a"): Review
     body: found.body,
     events,
     note: variant === "b" && found.ref === "RN-13" ? item(found, "cleared") : item(found),
+    // The handoff: one stale sign-off (Contributions & Remittance L2, EBP-04), with an amber
+    // notice in the thread of a note on that paper.
+    paper_changed_after_signoff: found.anchor.startsWith("EBP-04"),
   };
 }
 

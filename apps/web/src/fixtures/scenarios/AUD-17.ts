@@ -43,6 +43,8 @@ function frame(state: string, variant: Aud17Variant = "a"): Scenario {
           json(aud17Detail(String(params.note_id), variant)),
         "POST /v1/review-notes/{note_id}/clear": ({ params }) =>
           json(aud17Detail(String(params.note_id), "b")),
+        "POST /v1/review-notes/{note_id}/reopen": ({ params }) =>
+          json(aud17Detail(String(params.note_id), "a")),
         "GET /v1/work-items/{work_item_id}/sign-off-matrix": () => json(aud17Matrix()),
         "GET /v1/work-items/{work_item_id}/ep-involvement": () => json(aud17Involvement()),
       };
