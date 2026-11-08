@@ -1,4 +1,4 @@
-# C6 · Agent runs (v1 frozen; v0 live)
+# C6 · Agent runs (v1 frozen; v2 frozen)
 
 | Field | Value |
 |---|---|
@@ -158,7 +158,7 @@ None are decided here; v0 is read-only. Only a person may export; the matrix den
 - P-09-T11 adds `pdf` once the C11 renderer and its `run_trace_v1` template exist (S18). JSON keeps this canonical form.
 - Done in TASK-5000: when a run has `suggestions` or `proposals` rows (migration 0095), the trace counts those instead of the lists in `agent_runs.output`, and shows people's decisions on them in the timeline.
 
-## 9. v2 (P-10-T09 stub, 2026-11-06; DEC-2408)
+## 9. v2 (P-10-T09 stub, 2026-11-06; DEC-2408; frozen 2026-11-08, P-10-T16, DEC-2713)
 **One owner per route.** P-09 owns the run view, items feed, engagement run list, trace and trace
 export. P-10 owns the streams, run commands and sessions below. `GET /v1/agent-runs/{id}` gains
 `RunV2Out`'s fields with P-10-T29. Code: `agents/runs_v2_contract.py`,
@@ -200,4 +200,42 @@ Identifiers, enums and verified items only; an item holding a Restricted field t
   `engagement_partner`; IC failed 9:58 (BH-EBP-140 step 8); decided 11:12.
 
 Both validate against the schemas in `backend/tests/contracts/c06_v2/test_c06_v2_stub.py`.
+
+### 9.1 Freeze (P-10-T16)
+
+**Snapshot.** `backend/tests/contracts/c06_v2/v2.json` holds the OpenAPI schemas of every v2 model a
+route exchanges (`python -m abacus_tools.contracts --freeze c06_v2 v2`; `--check` runs in the
+contract tests). Additions pass; a removed or retyped field, a field made required or a removed
+enum member fails unless it ships as v3 with a sprint of overlap, never inside the Jan 1 to Apr 20
+window. `RunEventOut`, `RunStepV2Out` and `InvalidationEventOut` travel on SSE streams outside
+OpenAPI; `c06_v2/test_c06_v2_stub.py` pins their shapes.
+
+**Callers.**
+
+| Caller | Reads | Writes |
+|---|---|---|
+| P-09 dock (SHL-13), AUD/TAX/CLS docks | run view, items, run stream | plan decision, answer, control, sign-off, feedback |
+| Workbench (WB-03, WB-09) | session snapshot, session stream, capabilities | session messages |
+| Today and Home badges | badge stream | none |
+| ENG-12, engagement cockpits | engagement runs, effort | start engagement run, auto mode |
+| ADM usage (ADM-14) | firm usage | none |
+| Any screen holding a cached list | invalidations | stream topics |
+
+**Status words.** Run states are the registry's 14 (`docs/product/status-vocabulary.yaml`,
+`agent_run`): queued, planning, awaiting plan approval, dispatched, running, needs input, blocked on
+decision, waiting on inputs, succeeded ("Ready for review"), approved, partially approved, rejected,
+failed, cancelled. Step, session and question states are the registry's `agent_run_step`,
+`workbench_session` and `agent_question`. The legacy words `completed` and `escalated` read as
+`succeeded` and `needs_input` with reason `escalated` (0680's sync; 0711's backfill).
+
+**Human-only actions.** Plan approve and edit (`agent_run.approve_plan`), run sign-off
+(`agent_run.sign_off`) and proposal decisions are a live person's, refused to agent and system
+principals at the matrix and by the database (`agent_plans_decision_is_human`,
+`run_sign_offs_human`, both bound to the session's actor). Answering a question and stopping a run
+are a person's commands; the agent never answers its own question.
+
+**Audit events.** `agent_run.started`, `agent_run.plan_decided`, `agent_run.question_answered`,
+`agent_run.stopped`, `agent_run.signed_off`, `agent_feedback.created`, `engagement_ai.auto_mode_set`,
+`session.message_posted`, one `model.called` per attempt (`converse()` included, ADR-234) and
+`agent_runs.backfilled` per backfill batch (P-10-T14). Outbox events carry identifiers only.
 
