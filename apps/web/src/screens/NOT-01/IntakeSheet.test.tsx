@@ -4,7 +4,7 @@
 import { client } from "@abacus/api-client/client";
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
-import { installFixtureMode } from "../../app-core/fixture-mode";
+import { installFixtureMode, json } from "../../app-core/fixture-mode";
 import { renderRoutes } from "../../testing/support";
 import { NoticesIndex } from ".";
 import { INTAKE, type Not01State, scenarios } from "./scenarios";
@@ -91,7 +91,7 @@ describe("NOT-01 composed states (DEC-2329)", () => {
       expect(document.querySelector("[data-intake='duplicate']")).not.toBeNull();
     });
     expect(create().disabled).toBe(true);
-    expect(screen.getByRole("button", { name: "Create anyway" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Create anyway…" })).toBeTruthy();
     expect(document.querySelector("[data-intake='duplicate']")?.textContent).toMatch(
       /same notice/u,
     );
@@ -125,5 +125,34 @@ describe("NOT-01 composed states (DEC-2329)", () => {
     const draft = await screen.findByRole("button", { name: "Draft Form 2848…" });
     expect((draft as HTMLButtonElement).disabled).toBe(true);
     expect(draft.getAttribute("title")).toMatch(/template/u);
+  });
+});
+
+describe("NOT-01 Create anyway names its reason (DEC-2953)", () => {
+  it("offers the reasons and sends the one chosen", async () => {
+    const sent: unknown[] = [];
+    const scenario = scenarios.duplicate;
+    restore = installFixtureMode({
+      ...scenario,
+      handlers: {
+        ...scenario.handlers,
+        "POST /v1/notice-intakes/{intake_id}/create": (request) => {
+          sent.push(request.body);
+          return json({ notice_id: "n", engagement_id: "e" }, 201);
+        },
+      },
+    });
+    renderRoutes([
+      { path: "/", component: () => <NoticesIndex intakeId={INTAKE.duplicate ?? ""} /> },
+    ]);
+    const anyway = await screen.findByRole("button", { name: "Create anyway…" });
+    fireEvent.pointerDown(anyway, { button: 0, pointerType: "mouse" });
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Reissued by the agency" }));
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    const body = sent[0] as { create_anyway?: unknown; create_anyway_reason_code?: unknown };
+    expect(body.create_anyway).toBe(true);
+    expect(body.create_anyway_reason_code).toBe("reissued_by_agency");
   });
 });
