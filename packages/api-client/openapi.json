@@ -68302,7 +68302,8 @@
             "cls": "internal",
             "enum": [
               "consistent",
-              "inconsistent"
+              "inconsistent",
+              "not_checked"
             ],
             "title": "Consistency",
             "type": "string"
@@ -68341,9 +68342,17 @@
             "enum": [
               "4a",
               "4b",
+              "4c",
               "4d",
+              "4e",
+              "4f",
+              "4g",
+              "4h",
               "4i",
-              "4j"
+              "4j",
+              "4k",
+              "4l",
+              "4m"
             ],
             "title": "Line",
             "type": "string"
@@ -88698,6 +88707,119 @@
         ],
         "title": "SampleSetVersionStatus",
         "type": "string"
+      },
+      "Schedule4iOut": {
+        "description": "A-05-T58 close (DEC-2820): the 4i schedule by code (`compute.ebp.form5500.schedule_4i`)\nand the draft's line 1c total it must equal.",
+        "properties": {
+          "draft_total": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Draft Total"
+          },
+          "inputs_hash": {
+            "cls": "internal",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Inputs Hash",
+            "type": "string"
+          },
+          "rows": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/Schedule4iRowOut"
+            },
+            "maxItems": 500,
+            "title": "Rows",
+            "type": "array"
+          },
+          "ties": {
+            "cls": "internal",
+            "title": "Ties",
+            "type": "boolean"
+          },
+          "total": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rows",
+          "total",
+          "draft_total",
+          "ties",
+          "inputs_hash"
+        ],
+        "title": "Schedule4iOut",
+        "type": "object"
+      },
+      "Schedule4iRowOut": {
+        "description": "One line of Schedule H line 4i: \"*\" marks a party in interest; a participant-directed\nholding's cost is omitted (\"**\").",
+        "properties": {
+          "cost": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Cost"
+          },
+          "cost_omitted": {
+            "cls": "internal",
+            "title": "Cost Omitted",
+            "type": "boolean"
+          },
+          "current_value": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Current Value",
+            "type": "string"
+          },
+          "description": {
+            "cls": "internal",
+            "maxLength": 200,
+            "title": "Description",
+            "type": "string"
+          },
+          "identity": {
+            "cls": "internal",
+            "maxLength": 300,
+            "title": "Identity",
+            "type": "string"
+          },
+          "mark": {
+            "cls": "internal",
+            "enum": [
+              "*",
+              ""
+            ],
+            "title": "Mark",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mark",
+          "identity",
+          "description",
+          "cost",
+          "cost_omitted",
+          "current_value"
+        ],
+        "title": "Schedule4iRowOut",
+        "type": "object"
       },
       "ScheduleApprovalOut": {
         "description": "One seat's approval; when it was given is the audit log's\n(`firm_export_schedule.approved`).",
@@ -120339,6 +120461,7 @@
     },
     "/v1/audits/{work_item_id}/ebp/form-5500/lines/{line_id}/value": {
       "post": {
+        "description": "DV-EBP-07-1: a person keys the draft's value with where they read it; code re-ties.",
         "operationId": "ebp_form5500_key",
         "parameters": [
           {
@@ -120610,6 +120733,113 @@
           "assurance"
         ],
         "x-abacus-action": "ebp_form5500.send_note"
+      }
+    },
+    "/v1/audits/{work_item_id}/ebp/form-5500/schedules/4i": {
+      "get": {
+        "description": "EBP-07 c: the schedule of assets held at year end.",
+        "operationId": "ebp_schedule_4i",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Schedule4iOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Ebp Schedule 4I Route",
+        "tags": [
+          "assurance"
+        ],
+        "x-abacus-action": "ebp_form5500.read"
       }
     },
     "/v1/audits/{work_item_id}/ebp/imports": {

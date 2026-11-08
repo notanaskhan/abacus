@@ -2,13 +2,13 @@ import type {
   FiguresOut,
   Form5500Out,
   Form5500RowOut,
-  InvestmentsOut,
+  Schedule4iOut,
   PartIvLineOut,
 } from "@abacus/api-client";
 import {
   ebpForm5500NoteMutation,
   ebpForm5500Options,
-  ebpInvestmentsOptions,
+  ebpSchedule4iOptions,
   ebpSchedule4aOptions,
 } from "@abacus/api-client/query";
 import {
@@ -292,8 +292,12 @@ function PartIv({
                       {COPY.partIv.raise}
                     </Button>
                   </span>
-                ) : (
+                ) : row.consistency === "consistent" ? (
                   <span className="text-green">{COPY.tick}</span>
+                ) : (
+                  <span data-ebp07="not-checked" className="text-ink-3">
+                    —
+                  </span>
                 )}
               </td>
             </tr>
@@ -305,15 +309,13 @@ function PartIv({
 }
 
 function Schedules({
-  view,
-  investments,
+  schedule,
   late,
 }: {
-  view: Form5500Out;
-  investments: InvestmentsOut | undefined;
+  schedule: Schedule4iOut | undefined;
   late: FiguresOut | undefined;
 }): JSX.Element {
-  const total = (view.rows ?? []).find((r) => r.line_code === "1f");
+  const c = COPY.schedules.columns;
   return (
     <>
       <section data-ebp07="schedule-4i" className="m-[12px] rounded-[12px] bg-card shadow-e1">
@@ -323,31 +325,48 @@ function Schedules({
         <table className="w-full">
           <thead>
             <tr className="h-[28px] text-[11.5px] text-ink-3">
-              <th className="px-[12px] text-left font-normal">
-                {COPY.schedules.columns.identity}
-              </th>
-              <th className="pr-[12px] text-right font-normal">
-                {COPY.schedules.columns.current}
-              </th>
+              <th className="w-[28px] pl-[12px] text-left font-normal">{c.mark}</th>
+              <th className="px-[8px] text-left font-normal">{c.identity}</th>
+              <th className="px-[8px] text-left font-normal">{c.description}</th>
+              <th className="px-[8px] text-right font-normal">{c.cost}</th>
+              <th className="pr-[12px] text-right font-normal">{c.current}</th>
             </tr>
           </thead>
           <tbody>
-            {(investments?.rows ?? [])
-              .filter((r) => r.level !== "other")
-              .map((r) => (
-                <tr key={r.key} data-held={r.key} className="h-[28px] text-[11.5px] hairline-t">
-                  <td className="px-[12px]">{r.label}</td>
-                  <td className="pr-[12px] text-right tabular-nums">
-                    {whole(r.trust_eoy ?? r.tb_eoy)}
-                  </td>
-                </tr>
-              ))}
-            <tr data-held="total" className="h-[28px] text-[11.5px] font-medium hairline-t">
-              <td className="px-[12px]">{COPY.schedules.total}</td>
-              <td className="pr-[12px] text-right tabular-nums">{whole(total?.f5500_amount)}</td>
+            {(schedule?.rows ?? []).map((r) => (
+              <tr
+                key={r.identity}
+                data-held={r.identity}
+                data-mark={r.mark}
+                className="h-[28px] text-[11.5px] hairline-t"
+              >
+                <td className="pl-[12px]">{r.mark}</td>
+                <td className="px-[8px]">{r.identity}</td>
+                <td className="px-[8px] text-ink-2">{r.description}</td>
+                <td className="px-[8px] text-right tabular-nums">
+                  {r.cost_omitted ? COPY.schedules.omitted : whole(r.cost)}
+                </td>
+                <td className="pr-[12px] text-right tabular-nums">{whole(r.current_value)}</td>
+              </tr>
+            ))}
+            <tr
+              data-held="total"
+              data-ties={schedule?.ties === true ? "" : undefined}
+              className="h-[28px] text-[11.5px] font-medium hairline-t"
+            >
+              <td />
+              <td className="px-[8px]" colSpan={3}>
+                {COPY.schedules.total}
+              </td>
+              <td className="pr-[12px] text-right tabular-nums">{whole(schedule?.total)}</td>
             </tr>
           </tbody>
         </table>
+        <ul className="px-[12px] py-[6px] text-[11px] text-ink-3">
+          {COPY.schedules.footnotes.map((f) => (
+            <li key={f}>{f}</li>
+          ))}
+        </ul>
       </section>
       <section data-ebp07="schedule-4a" className="m-[12px] rounded-[12px] bg-card shadow-e1">
         <h4 className="flex h-[32px] items-center px-[12px] text-[13px] font-medium hairline-b">
@@ -382,8 +401,8 @@ export function useForm5500Canvas(
   const path = { path: { work_item_id: workItemId } };
   const found = useQuery({ ...ebpForm5500Options(path), enabled, retry: false });
   const schedules = enabled && tab === "schedules";
-  const investments = useQuery({
-    ...ebpInvestmentsOptions({ ...path, query: { layer: "final" } }),
+  const schedule4i = useQuery({
+    ...ebpSchedule4iOptions(path),
     enabled: schedules,
     retry: false,
   });
@@ -472,9 +491,7 @@ export function useForm5500Canvas(
               {...(options.onRaise === undefined ? {} : { onRaise: options.onRaise })}
             />
           )}
-          {tab === "schedules" && (
-            <Schedules view={view} investments={investments.data} late={late.data} />
-          )}
+          {tab === "schedules" && <Schedules schedule={schedule4i.data} late={late.data} />}
         </div>
       ),
   };

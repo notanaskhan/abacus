@@ -49,6 +49,11 @@ region, lights nothing (INV-2: the screen never composes one). With no current d
 answers `draft_received = false` and empty lists (EBP-07 d). `part_iv` lists the five lines the
 code checks (4a, 4b, 4d, 4i, 4j); `basis` is `evidence_ref.basis` on the stored answer.
 
+**A-05-T58 close (DEC-2820), additive.**
+- `part_iv` lists every line 4a to 4m. `consistency` gains `not_checked` for a line no code check covers; code checks 4a.
+- `GET /ebp/form-5500/schedules/4i` (`ebp_form5500.read`) answers `Schedule4iOut`. It is the schedule built by code from the trust report's current lines, the participant loans and the plan's parties in interest. Each row has its `*` mark, a cost omitted (`**`) for participant-directed holdings, and the current value. The read also returns the total, the draft's line 1c total and `ties`.
+- `POST /ebp/form-5500/lines/{id}/value` is live. A person keys the draft's value with a citation note (sealed, migration 0742), the event audits `ebp_form5500_line.keyed`, and code re-runs the tie-out. The response's `id` is the draft's.
+
 A-05 §4.3's other routes (provider drawers, population queries, payroll drawer, Schedule H 4a,
 loan details, SDBA and vesting, compliance and qualification, render and remind) join additively
 with their tasks.

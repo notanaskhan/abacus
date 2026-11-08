@@ -105,4 +105,5 @@ async def test_an_inconsistent_4a_and_a_na_answer(wired: dict[str, Form5500View]
     by_line = {a.line: a for a in out.part_iv}
     assert by_line["4a"].consistency == "inconsistent" and by_line["4a"].basis == ""
     assert by_line["4j"].draft_answer is None
-    assert "4e" not in by_line  # the contract's five lines only (4i and 4a schedules; DEC-2814)
+    # Every line 4a to 4m since DEC-2820; one no code check covers reads not_checked.
+    assert by_line["4e"].consistency == "not_checked" and by_line["4e"].draft_amount == D("500000")

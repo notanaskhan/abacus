@@ -42,7 +42,11 @@ from abacus.modules.assurance import (
     ebp_provisions,
 )
 from abacus.modules.assurance.compute.ebp.accounts import Group as AccountGroup
-from abacus.modules.assurance.ebp_form5500 import form5500_view
+from abacus.modules.assurance.ebp_form5500 import (
+    form5500_view,
+    key_line_value,
+    schedule_4i_view,
+)
 from abacus.modules.assurance.ebp_imports import ImportView, Ties, import_of, import_source
 from abacus.modules.assurance.ebp_participants import DOB_MASK, participants_of
 from abacus.modules.assurance.ebp_participants import reveal as reveal_participant_field
@@ -508,10 +512,17 @@ _PART_IV: JsonDict = {
 class PartIvLineOut(BaseModel):
     model_config = _ex(_PART_IV)
 
-    line: Annotated[Literal["4a", "4b", "4d", "4i", "4j"], classified("internal")]
+    # A-05-T58 close (DEC-2820): every Part IV line 4a to 4m, additively; code checks 4a against
+    # the late remittances, and a line no check covers reads `not_checked`.
+    line: Annotated[
+        Literal["4a", "4b", "4c", "4d", "4e", "4f", "4g", "4h", "4i", "4j", "4k", "4l", "4m"],
+        classified("internal"),
+    ]
     draft_answer: Annotated[Literal["yes", "no"] | None, classified("internal")]
     draft_amount: MaybeMoney
-    consistency: Annotated[Literal["consistent", "inconsistent"], classified("internal")]
+    consistency: Annotated[
+        Literal["consistent", "inconsistent", "not_checked"], classified("internal")
+    ]
     basis: Label
 
 
@@ -2381,7 +2392,6 @@ async def ebp_form5500_route(work_item_id: UUID, ctx: Ctx) -> Form5500Out:
     await _gate(ctx, work_item_id, "ebp_form5500.read", _F)
     view = await form5500_view(ctx, work_item_id)
     matches = await _line_matches(ctx, [line.f5500_citation_id for line in view.lines])
-    part_iv_lines = {"4a", "4b", "4d", "4i", "4j"}
     return Form5500Out(
         draft_received=view.draft_id is not None,
         draft_id=view.draft_id,
@@ -2415,16 +2425,17 @@ async def ebp_form5500_route(work_item_id: UUID, ctx: Ctx) -> Form5500Out:
         ],
         part_iv=[
             PartIvLineOut(
-                line=answer.question,  # type: ignore[arg-type]  # CHECK `^4[a-m]$`, read as listed
+                line=answer.question,  # type: ignore[arg-type]  # 0665's CHECK `^4[a-m]$`
                 draft_answer="yes"
                 if answer.draft_answer == "yes"
                 else ("no" if answer.draft_answer == "no" else None),
                 draft_amount=answer.amount,
-                consistency="inconsistent" if answer.result == "inconsistent" else "consistent",
+                consistency="inconsistent"
+                if answer.result == "inconsistent"
+                else ("consistent" if answer.result == "consistent" else "not_checked"),
                 basis=answer.evidence_ref or "",
             )
             for answer in view.part_iv
-            if answer.question in part_iv_lines
         ],
         allowed_actions=["ebp_form5500.key", "ebp_form5500.send_note", "ebp_form5500.remind"],
     )
@@ -2439,8 +2450,64 @@ async def ebp_form5500_route(work_item_id: UUID, ctx: Ctx) -> Form5500Out:
 async def ebp_form5500_key_route(
     work_item_id: UUID, line_id: UUID, body: LineValueIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> AcceptedOut:
+    """DV-EBP-07-1: a person keys the draft's value with where they read it; code re-ties."""
     await _gate(ctx, work_item_id, "ebp_form5500.key", _F)
-    _not_yet()
+    del idempotency_key  # the write is a set: keying the same value again changes nothing more
+    draft_id = await key_line_value(ctx, work_item_id, line_id, body.value, body.citation_note)
+    return AcceptedOut(id=draft_id)
+
+
+class Schedule4iRowOut(BaseModel):
+    """One line of Schedule H line 4i: "*" marks a party in interest; a participant-directed
+    holding's cost is omitted ("**")."""
+
+    model_config = ConfigDict(frozen=True)
+
+    mark: Annotated[Literal["*", ""], classified("internal")]
+    identity: Label
+    description: Annotated[str, Field(max_length=200), classified("internal")]
+    cost: MaybeMoney
+    cost_omitted: Annotated[bool, classified("internal")]
+    current_value: Money
+
+
+class Schedule4iOut(BaseModel):
+    """A-05-T58 close (DEC-2820): the 4i schedule by code (`compute.ebp.form5500.schedule_4i`)
+    and the draft's line 1c total it must equal."""
+
+    model_config = ConfigDict(frozen=True)
+
+    rows: Annotated[list[Schedule4iRowOut], Field(max_length=500), classified("confidential")]
+    total: Money
+    draft_total: MaybeMoney
+    ties: Annotated[bool, classified("internal")]
+    inputs_hash: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$"), classified("internal")]
+
+
+@router.get(
+    "/ebp/form-5500/schedules/4i", action="ebp_form5500.read", response_model=Schedule4iOut
+)
+async def ebp_schedule_4i_route(work_item_id: UUID, ctx: Ctx) -> Schedule4iOut:
+    """EBP-07 c: the schedule of assets held at year end."""
+    await _gate(ctx, work_item_id, "ebp_form5500.read", _F)
+    schedule, draft_total = await schedule_4i_view(ctx, work_item_id)
+    return Schedule4iOut(
+        rows=[
+            Schedule4iRowOut(
+                mark=r.mark,
+                identity=r.identity,
+                description=r.description,
+                cost=r.cost,
+                cost_omitted=r.cost_omitted,
+                current_value=r.current_value,
+            )
+            for r in schedule.rows
+        ],
+        total=schedule.total,
+        draft_total=draft_total,
+        ties=schedule.ties,
+        inputs_hash=schedule.inputs_hash,
+    )
 
 
 @router.post(

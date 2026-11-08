@@ -377,3 +377,120 @@ async def document_reconciling_item(
 SUBSCRIPTIONS: Final = {Form5500DraftReceived.event_type: on_draft_received}
 WORKFLOWS: Final = {Form5500TieOutWorkflow: "background"}
 ACTIVITIES: Final = (tie_out_activity,)
+
+
+# --- A-05-T58 close (S31; DEC-2820): the 4i schedule and a keyed value ------------------------
+
+_HOLDINGS = text(
+    "SELECT fund_name, eoy FROM ebp_trust_report_lines "
+    "WHERE work_item_id = :w AND superseded_by IS NULL ORDER BY line_key"
+)
+_LOANS = text(
+    "SELECT COALESCE(sum(ending_balance), 0) AS total, count(*) AS n "
+    "FROM ebp_participant_loans WHERE work_item_id = :w"
+)
+_PARTIES = text("SELECT name FROM parties_in_interest WHERE work_item_id = :w")
+_INVESTED = text(
+    """
+    SELECT sum(l.f5500_amount) FROM ebp_form5500_lines l
+      JOIN ebp_form5500_drafts d ON d.id = l.draft_id
+     WHERE d.work_item_id = :w AND d.status <> 'superseded' AND l.line_code LIKE '1c%'
+    """
+)
+LOANS_IDENTITY: Final = "Participant loans"
+
+
+def _party_in_interest(fund: str, parties: Sequence[str]) -> bool:
+    """A holding issued by a party in interest: the party's name appears in the fund's name."""
+    name = " ".join(fund.lower().split())
+    return any(p and " ".join(p.lower().split()) in name for p in parties)
+
+
+async def schedule_4i_facts(tenant: TenantContext, work_item_id: UUID) -> engine.Schedule4i:
+    """The schedule by code from the trust report's current lines, the participant loans and the
+    plan's parties in interest; it ties when its total equals the draft's line 1c investments.
+    Every holding is participant-directed (cost omitted); loans carry the party mark, since the
+    participants who hold them are parties in interest (ERISA §3(14)(H))."""
+    async with tenant_session(tenant) as session:
+        holdings = (await session.execute(_HOLDINGS, {"w": work_item_id})).all()
+        loans = (await session.execute(_LOANS, {"w": work_item_id})).one()
+        parties = [str(r.name) for r in (await session.execute(_PARTIES, {"w": work_item_id}))]
+        invested = await session.scalar(_INVESTED, {"w": work_item_id})
+    assets = [
+        engine.HeldAsset(
+            str(h.fund_name), "", Decimal(h.eoy or 0), None,
+            _party_in_interest(str(h.fund_name), parties), True,
+        )
+        for h in holdings
+    ]  # fmt: skip
+    if int(loans.n) > 0:
+        assets.append(
+            engine.HeldAsset(LOANS_IDENTITY, "", Decimal(loans.total), Decimal(0), True, False)
+        )
+    return engine.schedule_4i(assets, None if invested is None else Decimal(invested))
+
+
+async def schedule_4i_view(
+    ctx: AuthContext, work_item_id: UUID
+) -> tuple[engine.Schedule4i, Decimal | None]:
+    """EBP-07 c: the schedule and the draft's own figure it ties to."""
+    await _engagement(ctx, work_item_id, "ebp_form5500.read")
+    found = await schedule_4i_facts(ctx.tenant, work_item_id)
+    async with tenant_session(ctx.tenant) as session:
+        invested = await session.scalar(_INVESTED, {"w": work_item_id})
+    return found, None if invested is None else Decimal(invested)
+
+
+class KeyedValueRefused(DomainConflict):
+    """Only a person keys a Form 5500 value, and only on a draft that is not superseded."""
+
+    code = "form5500_key_refused"
+
+
+_KEY_LINE = text(
+    """
+    UPDATE ebp_form5500_lines l
+       SET f5500_amount = :value, keyed_by = :by, keyed_note_sealed = :note,
+           version = l.version + 1, updated_at = clock_timestamp()
+      FROM ebp_form5500_drafts d
+     WHERE l.id = :id AND l.work_item_id = :w AND d.id = l.draft_id AND d.status <> 'superseded'
+    RETURNING l.draft_id, d.engagement_id
+    """
+)
+
+
+async def key_line_value(
+    ctx: AuthContext, work_item_id: UUID, line_id: UUID, value: Decimal, citation_note: str
+) -> UUID:
+    """DV-EBP-07-1's agent-off path: a person keys the draft's value for a line, with where they
+    read it (sealed); code then ties the draft out again. Returns the draft's id."""
+    from abacus.kernel.crypto import seal
+
+    await _engagement(ctx, work_item_id, "ebp_form5500.key")
+    if ctx.tenant.actor_kind != "human" or ctx.client or not citation_note.strip():
+        raise KeyedValueRefused
+    sealed = await seal(
+        ctx.tenant_id, citation_note.strip().encode(), f"ebp_form5500_line:{line_id}:keyed"
+    )
+    async with uow(ctx.tenant) as tx:
+        row = (
+            await tx.session.execute(
+                _KEY_LINE,
+                {
+                    "value": value,
+                    "by": ctx.user_id,
+                    "note": sealed,
+                    "id": line_id,
+                    "w": work_item_id,
+                },
+            )
+        ).first()
+        if row is None:
+            raise NotFound("ebp_form5500_line")
+        tx.record(
+            "ebp_form5500_line.keyed",
+            target=Target("ebp_form5500_line", line_id),
+            scope=Scope(engagement_id=row.engagement_id, work_item_id=work_item_id),
+        )
+    await tie_out(ctx.tenant, row.draft_id)
+    return cast(UUID, row.draft_id)

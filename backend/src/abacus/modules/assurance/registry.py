@@ -932,6 +932,7 @@ UPDATE_COLUMNS.update(
             {"fs_amount", "f5500_amount", "difference", "classification", "note_ref"}
             | {"fs_ref", "classified_by_kind", "engine_version", "inputs_hash", "version"}
             | {"updated_at"}
+            | {"keyed_by", "keyed_note_sealed"}  # A-05-T58 close (0742)
         ),
         "ebp_part_iv_answers": frozenset(
             {"draft_answer", "amount", "evidence_ref", "result", "issue_id", "version"}

@@ -282,6 +282,31 @@ async def certification(tenant: TenantContext, work_item_id: UUID) -> ItemFact:
     return ItemFact("open", f"{len(found) - left} of {len(found)} points evaluated", link)
 
 
+_FOUR_A = text(
+    """
+    SELECT a.result FROM ebp_part_iv_answers a JOIN ebp_form5500_drafts d ON d.id = a.draft_id
+     WHERE d.work_item_id = :wi AND d.status <> 'superseded' AND a.question = '4a'
+     ORDER BY d.created_at DESC LIMIT 1
+    """
+)
+
+
+async def schedules(tenant: TenantContext, work_item_id: UUID) -> ItemFact:
+    """EBP-07 (DEC-2820): the 4i schedule ties to the draft's line 1c investments, and Part IV
+    4a agrees with the late remittances that make up the 4a schedule."""
+    from abacus.modules.assurance.ebp_form5500 import schedule_4i_facts
+
+    found = await schedule_4i_facts(tenant, work_item_id)
+    async with tenant_session(tenant) as session:
+        four_a = await session.scalar(_FOUR_A, {"wi": work_item_id})
+    link = f"/firm/audits/{work_item_id}?section=ebp_07&tab=schedules"
+    if found.ties and four_a == "consistent":
+        return ItemFact("done", "4i ties to the draft; 4a agrees with the late remittances", link)
+    if not found.ties:
+        return ItemFact("open", "4i does not tie to the draft", link)
+    return ItemFact("open", "4a not consistent with the late remittances", link)
+
+
 def register_completion_facts() -> None:
     """Once, from `assurance.api`."""
     for key, provider in (
@@ -302,6 +327,7 @@ def register_completion_facts() -> None:
         ("disclosure_checklist", disclosure_checklist),
         ("form5500_tie", form5500_tie),
         ("certification", certification),
+        ("schedules", schedules),
     ):
         register_completion_fact(key, provider)
 

@@ -3,7 +3,12 @@
 // only differences are the 48,600 receivable (15,060 / 33,540). All names are fictional. Dev and
 // test only.
 
-import type { Form5500Out, Form5500RowOut, PartIvLineOut } from "@abacus/api-client";
+import type {
+  Form5500Out,
+  Form5500RowOut,
+  PartIvLineOut,
+  Schedule4iOut,
+} from "@abacus/api-client";
 
 export const EBP07_WORK_ITEM = "6f1c2a90-0000-4000-8000-0000000000e7";
 export const EBP07_DRAFT_VERSION = "6f1c2a90-0000-4000-8000-0000000005e7";
@@ -55,6 +60,10 @@ export const INCOME_LINES: Form5500RowOut[] = [
   line("2k", "Net income", "2632500", "2583900"),
 ];
 
+// Part IV, every line 4a to 4m as the handoff's b artboard lists them. Code checks 4a against the
+// late remittances (DEC-2820); the others are the draft's answers, not checked by code.
+const NO = { draft_answer: "no", draft_amount: null, consistency: "not_checked" } as const;
+
 function partIv(variant: Ebp07Variant): PartIvLineOut[] {
   const late = variant === "e";
   return [
@@ -67,28 +76,66 @@ function partIv(variant: Ebp07Variant): PartIvLineOut[] {
     },
     {
       line: "4b",
-      draft_answer: "no",
-      draft_amount: null,
-      consistency: "consistent",
+      ...NO,
       basis:
         "participant loans are excluded from 4b; the plan holds no other loans (EBP-05, EBP-06)",
     },
+    { line: "4c", ...NO, basis: "" },
+    { line: "4d", ...NO, basis: "late contributions belong on 4a" },
     {
-      line: "4d",
-      draft_answer: "no",
-      draft_amount: null,
-      consistency: "consistent",
-      basis: "late contributions belong on 4a",
+      line: "4e",
+      draft_answer: "yes",
+      draft_amount: "500000.00",
+      consistency: "not_checked",
+      basis: "EBP-01",
     },
+    { line: "4f", ...NO, basis: "" },
+    { line: "4g", ...NO, basis: "" },
+    { line: "4h", ...NO, basis: "" },
     {
       line: "4i",
       draft_answer: "yes",
       draft_amount: null,
-      consistency: "consistent",
+      consistency: "not_checked",
       basis: "EBP-06",
     },
-    { line: "4j", draft_answer: "no", draft_amount: null, consistency: "consistent", basis: "" },
+    { line: "4j", ...NO, basis: "" },
+    { line: "4k", ...NO, basis: "" },
+    { line: "4l", ...NO, basis: "" },
+    { line: "4m", ...NO, basis: "" },
   ];
+}
+
+// The 4i schedule by code (EBP-07 c): seven holdings issued by parties in interest, cost omitted
+// for the participant-directed ones; total 16,812,400 ties to the draft's line 1c.
+function held(identity: string, value: string, mark: "*" | "", directed = true) {
+  return {
+    mark,
+    identity,
+    description: "",
+    cost: directed ? null : "0.00",
+    cost_omitted: directed,
+    current_value: value,
+  };
+}
+
+export function ebp07Schedule4i(): Schedule4iOut {
+  return {
+    rows: [
+      held("KRS 500 Index Fund", "6120450.00", "*"),
+      held("KRS Target 2035 Fund", "2384910.00", "*"),
+      held("KRS Target 2045 Fund", "2915330.00", "*"),
+      held("KRS Bond Index Fund", "1408220.00", "*"),
+      held("KRS International Index Fund", "902610.00", "*"),
+      held("Harborline Stable Value Fund", "1163480.00", "*"),
+      held("Self-directed brokerage accounts (BrokerWindow)", "1605000.00", ""),
+      held("Participant loans", "312400.00", "*", false),
+    ],
+    total: "16812400.00",
+    draft_total: "16812400.00",
+    ties: true,
+    inputs_hash: "d".repeat(64),
+  };
 }
 
 export function ebp07View(variant: Ebp07Variant = "a"): Form5500Out {
