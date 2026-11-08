@@ -17,6 +17,7 @@ export const MODULES = [
   "insights",
   "tax_returns",
   "ebp_audits",
+  "assurance_completion", // A-06-T37 (0713): AUD-15/16/17/20 and adjustments
 ] as const;
 export type Module = (typeof MODULES)[number];
 

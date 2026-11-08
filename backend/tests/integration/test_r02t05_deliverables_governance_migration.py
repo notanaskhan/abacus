@@ -221,3 +221,22 @@ def test_a_reissue_after_lock_may_add_a_deliverable() -> None:
 
     assert ALLOWED_KINDS["deliverables"] == ("post_issuance",)
     assert "uncorrected_misstatement_acknowledgements" not in ALLOWED_KINDS
+
+
+def test_ac12_the_acknowledgement_needs_the_actor_s_own_active_client_grant(
+    db: sc.Database,
+) -> None:
+    """End pass (DEC-2716): the database has no principal setting, so a constraint trigger binds
+    `grant_id` to the actor's own active, unexpired client grant (a firm person holds none)."""
+    found = asyncio.run(
+        Seeder(db.superuser_dsn).rows(
+            "SELECT t.tgconstraint <> 0 AS deferred_kind, pg_get_functiondef(t.tgfoid) AS body "
+            "FROM pg_trigger t WHERE t.tgrelid = "
+            "'uncorrected_misstatement_acknowledgements'::regclass "
+            "AND t.tgname = 'uncorrected_misstatement_ack_grant'"
+        )
+    )
+    assert len(found) == 1 and found[0]["deferred_kind"]
+    body = str(found[0]["body"])
+    for clause in ("g.user_id = NEW.actor_user_id", "g.status = 'active'", "g.expires_at"):
+        assert clause in body, clause

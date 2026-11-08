@@ -31,7 +31,7 @@ MIGRATION = (REPO / "backend/migrations/versions/0710_r02_deliverables_governanc
 
 def _check_list(name: str) -> set[str]:
     """The quoted values of a CHECK list constant in migration 0710."""
-    block = re.search(rf"{name} = \(\n(.*?)\n\)", MIGRATION, re.S)
+    block = re.search(rf"^{name} = (\(\n.*?\n\)|\"[^\n]*\")$", MIGRATION, re.S | re.M)
     assert block, name
     return set(re.findall(r"'([a-z_0-9]+)'", block.group(1)))
 

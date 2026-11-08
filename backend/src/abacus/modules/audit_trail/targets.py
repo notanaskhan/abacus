@@ -58,6 +58,7 @@ FIRM_LEVEL: Final = frozenset(
         "team",  # G-01-T08: teams and groups, and their rosters
         "secure_link",  # P-08-T21: a portal email's link, for one contact (no engagement)
         "firm_integration",  # A-02-T12: a firm's install of a catalogue app and its secret
+        "ocr_daily_cap",  # P-11-T33: a platform operator's page cap for the firm
         "email_template",  # R-01-T19: a firm's template key, its drafts and versions
         "follow_up_policy",  # R-01-T24: the firm's follow-up policy (one per firm)
         "sending_domain",  # R-01-T27: the firm's sender domain (no client or engagement)

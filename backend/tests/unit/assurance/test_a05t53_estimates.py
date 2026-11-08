@@ -95,4 +95,4 @@ def test_the_card_names_its_estimate_in_the_question_key() -> None:
 
 async def test_screen_out_needs_a_reason_before_anything_else() -> None:
     with pytest.raises(aud27.ScreenOutReasonRequired):
-        await aud27.screen_out(None, uuid4(), uuid4(), "   ")  # type: ignore[arg-type]
+        await aud27.screen_out(None, uuid4(), uuid4(), "   ")  # type: ignore[arg-type]  # test double or SDK shape

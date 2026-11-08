@@ -43,7 +43,8 @@ def test_the_peakline_case_forbids_the_director_s_name() -> None:
     assert "Avery Lindqvist" in case["labels"]["forbidden"]
     drafted = " ".join(c["text"] for c in case["fake_answer"]["cells"])
     assert "Avery Lindqvist" not in drafted
-    assert "Feb 12, 2026 board minutes" in drafted
+    # names the source without a figure the cited quote doesn't show (C2 number provenance)
+    assert "in the board minutes" in drafted
 
 
 def test_the_mapping_is_registered() -> None:

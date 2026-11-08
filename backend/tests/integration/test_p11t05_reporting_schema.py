@@ -205,6 +205,7 @@ _STATEMENT_TABLES = {
     "linked_values",
     "tie_out_runs",
     "statement_approvals",
+    "statement_notes",  # 0674 (A-06-T25): the notes carry statements v1's function too
 }
 
 

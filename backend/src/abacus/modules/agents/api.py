@@ -128,6 +128,7 @@ from abacus.modules.agents.run_backfill import register_session_links
 from abacus.modules.agents.run_backfill_workflow import (
     BACKFILL_ID_PREFIX,
     AgentRunBackfillWorkflow,
+    BackfillBatch,
     BackfillInput,
 )
 from abacus.modules.agents.runs import run_initiators
@@ -361,6 +362,7 @@ __all__ = [
     "AnalyzeFacts",
     "ApprovedChangeSet",
     "ApproverMustDiffer",
+    "BackfillBatch",
     "BackfillInput",
     "BatchOutcome",
     "ChangeSetApplier",

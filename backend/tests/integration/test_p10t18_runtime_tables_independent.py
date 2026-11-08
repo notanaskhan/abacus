@@ -105,7 +105,7 @@ def test_a_session_is_soft_deleted_never_removed(db: sc.Database) -> None:
 @pytest.mark.parametrize(
     ("kind", "actor"),
     [
-        ("human", str(uuid.uuid4())),
+        ("human", "0b6f1c1e-5a7d-4c1f-9d2e-3f4a5b6c7d8e"),  # a fixed id: xdist collects alike
         ("system", "someone.else"),
         ("agent", "notifications.realtime_prune"),
     ],

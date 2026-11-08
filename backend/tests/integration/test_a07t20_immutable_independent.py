@@ -99,7 +99,7 @@ def test_every_scoped_registry_table_carries_the_guard(db: sc.Database) -> None:
 
 
 def test_every_exemption_names_a_real_table_with_a_reason() -> None:
-    owned = _registry_tables()
+    owned = _registry_tables() | set(sc.TABLE_OWNERS)  # the modules' and the platform's tables
     for table, reason in EXEMPT.items():
         assert reason.strip(), table
         assert table in owned or table in {

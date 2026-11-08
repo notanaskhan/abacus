@@ -87,15 +87,15 @@ async def test_the_c11_kinds_are_registered_and_render_nothing_final(kind: str) 
         await found.variables_provider(cast(c11.OwnerRef, None), cast(c11.RenderScope, None))
 
 
-@pytest.mark.parametrize("card", [a07._going_concern_card, a07._opinion_card])  # pyright: ignore[reportPrivateUsage]
+@pytest.mark.parametrize("card", [a07._going_concern_card, a07._opinion_card])  # pyright: ignore[reportPrivateUsage]  # cards
 async def test_home02_no_decision_card_can_be_raised(card: object) -> None:
     with pytest.raises(a07.NotLive):
-        await card(TENANT, SimpleNamespace(work_item_id=uuid4()))  # type: ignore[operator]
+        await card(TENANT, SimpleNamespace(work_item_id=uuid4()))  # type: ignore[operator]  # test double or SDK shape
 
 
 async def test_no_report_version_and_no_seal_file_while_off() -> None:
     assert await a07.report_version_reviewables(TENANT, uuid4()) == []
-    assert await a07.archive_seal_section(TENANT, cast(object, None)) == []  # type: ignore[arg-type]
+    assert await a07.archive_seal_section(TENANT, cast(object, None)) == []  # type: ignore[arg-type]  # test double or SDK shape
 
 
 @pytest.mark.parametrize(

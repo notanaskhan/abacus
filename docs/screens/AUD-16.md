@@ -34,6 +34,20 @@
 ## Copy
 "Summary of uncorrected misstatements", "Passed adjustments (SUM)", "Within threshold" (firm side only; never on the portal). Every word comes from the screen's `copy.ts`, verbatim from the handoff.
 
+## Links
+| From | To (manifest builder) | Planned or live |
+|---|---|---|
+| Opens AUD-01 · all audits | AUD-01 | per manifest |
+| Opens AUD-02 · audit cockpit | AUD-02 | per manifest |
+| Opens SHL-12 | SHL-12 | per manifest |
+| Opens AUD-03 · source documents | AUD-03 | per manifest |
+| Opens AUD-15 with this finding selected | AUD-15 | per manifest |
+| Opens SHL-11 · reserved to Engagement Partner | SHL-11 | per manifest |
+| Opens AUD-21 · rep letter attachments | AUD-21 | per manifest |
+| Opens AUD-17 · review notes | AUD-17 | per manifest |
+
+The designed links of AUD-16 in `handoff-links.json`, as `link-contract.test.ts` reads them.
+
 ## Parity, accessibility and keyboard
 Tier C report (fixture build); axe and keyboard in `apps/web/e2e/screens/AUD-completion-a11y.spec.ts` (A-06-T36); journey steps in J03, J04, J05 and J22 (A-06-T35). Tier C locks wait for measured baselines.
 

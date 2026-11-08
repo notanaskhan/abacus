@@ -329,6 +329,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.completion_errors.ChecklistIncomplete
+    - abacus.modules.assurance.eqr_service.ChecklistIncomplete
     summary: An item or an EQR note is still open (EQR concurrence, archive lock).
   checklist_invalid:
     status: 422
@@ -400,6 +401,10 @@ codes:
     raised_by:
     - abacus.modules.engagements.letters.ComputedVariable
     summary: 'A fee or billing variable was given as text: code computes those.'
+  conclusion_already_requested:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.aud27.ConclusionAlreadyRequested
   confirmed_out_of_order:
     status: 422
     raised_by:
@@ -839,6 +844,10 @@ codes:
     - abacus.modules.signatures.portal.EnvelopeNotOpen
     summary: Only a draft or an envelope out for signature can be voided; a completed, declined, expired
       or voided one stays as it is.
+  eqr_already_concurred:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.eqr_service.AlreadyConcurred
   eqr_approval_required:
     status: 409
     raised_by:
@@ -868,15 +877,24 @@ codes:
   eqr_not_eligible:
     status: 409
     raised_by:
+    - abacus.modules.assurance.eqr_service.EqrNotEligible
     - abacus.modules.engagements.team_errors.EqrNotEligible
     summary: 'The candidate fails an eligibility check (each failing check is a fact): pick an eligible
       reviewer.'
+  eqr_notes_open:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.eqr_service.EqrNotesOpen
   eqr_on_team:
     status: 409
     raised_by:
     - abacus.modules.engagements.team_errors.EqrOnTeam
     summary: 'The engagement quality reviewer is never on the team: pick someone who isn''t, or keep
       the EQR off the team roles.'
+  eqr_template_missing:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.eqr_service.EqrTemplateMissing
   esign_consent_required:
     status: 409
     raised_by:
@@ -886,6 +904,10 @@ codes:
     raised_by:
     - abacus.modules.integrations.esign_install.EsignInstallExists
     summary: 'The firm already has a live DocuSeal install: rotate or disconnect it instead.'
+  estimate_not_evaluated:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.aud27.EstimateNotEvaluated
   evidence_accepted:
     status: 409
     raised_by:
@@ -1076,6 +1098,10 @@ codes:
     raised_by:
     - abacus.modules.agents.follow_up_drafts.FollowUpV2Only
     summary: 'This follow-up was drafted from a binder: send it from the binder''s follow-up sheet.'
+  form5500_not_tied:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.ebp_form5500.DraftNotTied
   fraud_session_invalid:
     status: 422
     raised_by:
@@ -2343,6 +2369,10 @@ codes:
     raised_by:
     - abacus.modules.review.decisions.RecommendationChanged
     summary: The card moved past the version the decider saw (reassessed or superseded).
+  reconciling_items_do_not_foot:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.ebp_form5500.ReconcilingItemsDoNotFoot
   record_out_of_phase:
     status: 409
     raised_by:
@@ -2580,6 +2610,10 @@ codes:
     - abacus.modules.identity.contact_access.ScopeOutsideClient
     - abacus.modules.organisations.contacts_contract.ScopeOutsideClient
     summary: A grant's scope, or a delegated request, is not the contact's client's.
+  screen_out_reason_required:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.aud27.ScreenOutReasonRequired
   screening_running:
     status: 409
     raised_by:
@@ -2807,7 +2841,9 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.agents.ai_policy_service.StaleDraft
+    - abacus.modules.assurance.aud27.StaleEstimate
     - abacus.modules.assurance.completion_errors.StaleVersion
+    - abacus.modules.assurance.eqr_service.StaleItem
     - abacus.modules.assurance.mapping_live.StaleVersion
     - abacus.modules.assurance.phase.ProfileStale
     - abacus.modules.communications.follow_up_policy.FollowUpPolicyStale

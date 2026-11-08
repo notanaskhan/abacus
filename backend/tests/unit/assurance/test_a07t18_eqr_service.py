@@ -27,7 +27,7 @@ ENGAGEMENT, WORK_ITEM, REVIEW = uuid4(), uuid4(), uuid4()
 def _ctx(user: UUID, *, mfa_minutes_ago: float | None = 1, actor: str = "human") -> AuthContext:
     mfa = None if mfa_minutes_ago is None else NOW - timedelta(minutes=mfa_minutes_ago)
     return AuthContext(
-        TenantContext(uuid4(), actor, str(user)),  # type: ignore[arg-type]
+        TenantContext(uuid4(), actor, str(user)),  # type: ignore[arg-type]  # test double or SDK shape
         user,
         uuid4(),
         None,

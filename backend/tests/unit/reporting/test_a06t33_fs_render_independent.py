@@ -64,14 +64,18 @@ def test_a_draft_is_marked_and_a_final_is_not() -> None:
 
 
 def _texts(blocks: list[object]) -> list[str]:
-    return [str(cast(dict[str, Any], b).get("text", "")) for b in blocks if isinstance(b, dict)]
+    dicts = [cast(dict[str, Any], b) for b in blocks if isinstance(b, dict)]  # render blocks
+    return [str(d.get("text", "")) for d in dicts]
 
 
 def test_ar_c_70_legend_only_on_a_preparation_engagement() -> None:
+    # LINES are a plan's net assets (ASC 962), so both headings are a plan's
     prepared = compose_body(
-        Heading("Granite Peak", date(2025, 12, 31), preparation=True), LINES, []
+        Heading("Granite Peak", date(2025, 12, 31), preparation=True, plan=True), LINES, []
     )
-    audited = compose_body(Heading("Northwind", date(2025, 12, 31), preparation=False), LINES, [])
+    audited = compose_body(
+        Heading("Northwind", date(2025, 12, 31), preparation=False, plan=True), LINES, []
+    )
     assert NO_ASSURANCE in _texts(prepared)
     assert NO_ASSURANCE not in _texts(audited)
     assert NO_ASSURANCE == "No assurance is provided."
@@ -85,10 +89,11 @@ def test_the_body_carries_code_s_figures_and_no_checklist_or_source() -> None:
         LINES,
         [Note(8, "Reconciliation to Form 5500", "Receivables of 48,600 are not on the form.")],
     )
-    dicts = [cast(dict[str, Any], b) for b in blocks if isinstance(b, dict)]
+    dicts = [cast(dict[str, Any], b) for b in blocks if isinstance(b, dict)]  # SDK object or JSON
     tables = [t for t in dicts if t.get("type") == "table"]
     assert (
-        tables and ["Investments, at fair value", "14,895,000", "13,940,000"] in tables[0]["rows"]
+        tables
+        and ["Investments, at fair value", "14,895,000.00", "13,940,000.00"] in tables[0]["rows"]
     )
     flat = " ".join(str(b) for b in blocks).lower()
     for banned in ("checklist", "citation", "agent", "materiality", "source"):
@@ -97,7 +102,7 @@ def test_the_body_carries_code_s_figures_and_no_checklist_or_source() -> None:
 
 @pytest.mark.parametrize("kind", ["fs_draft"])
 def test_only_the_owner_or_approver_of_record_approves_a_draft(kind: str) -> None:
-    rule = DECIDER_RULES[kind]  # type: ignore[index]
+    rule = DECIDER_RULES[kind]  # type: ignore[index]  # test double or SDK shape
     assert rule.any_of == {"owner", "approver_of_record"}
     for outsider in ("contributor", "tcwg", "k1_recipient", "third_party", "delegate"):
         assert outsider not in rule.any_of

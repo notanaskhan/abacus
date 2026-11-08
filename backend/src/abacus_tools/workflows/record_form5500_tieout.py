@@ -16,7 +16,7 @@ from temporalio import activity
 from temporalio.worker import Worker
 
 from abacus.kernel.temporal import payload_codec
-from abacus.modules.assurance.form5500_workflow import (
+from abacus.modules.assurance.api import (
     TIEOUT_ID_PREFIX,
     Form5500TieOutWorkflow,
     TieOutCounts,

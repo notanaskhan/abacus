@@ -26,7 +26,7 @@ from uuid import UUID
 
 from sqlalchemy import text
 
-from abacus.kernel.db import tenant_session
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.modules.evidence.api import ServableVersion
 from abacus.modules.identity.api import (
@@ -102,7 +102,11 @@ _VERSION = text(
            EXISTS (
                SELECT 1 FROM deliverable_events e
                 WHERE e.deliverable_version_id = v.id AND e.kind = 'withdrawn'
-           ) AS withdrawn
+           ) AS withdrawn,
+           EXISTS (
+               SELECT 1 FROM deliverable_events e
+                WHERE e.deliverable_version_id = v.id AND e.kind = 'published'
+           ) AS published
       FROM deliverables d
       JOIN deliverable_versions v ON v.deliverable_id = d.id
      WHERE d.id = :deliverable_id AND v.version_no = :version_no
@@ -185,7 +189,7 @@ async def _first_covering_grant(
 
 async def reader_version(ctx: AuthContext, deliverable_id: UUID, version_no: int) -> ReaderVersion:
     """The version for a client person holding an audience grant; `NotFound` for anyone else."""
-    if not ctx.client or ctx.tenant.actor_kind != "human":
+    if ctx.tenant.actor_kind != "human" or not ctx.client:
         raise NotFound("deliverable")
     async with tenant_session(ctx.tenant) as session:
         row = (
@@ -197,7 +201,8 @@ async def reader_version(ctx: AuthContext, deliverable_id: UUID, version_no: int
             .mappings()
             .first()
         )
-        if row is None or row["withdrawn"]:
+        # End pass (DEC-2716): published means its `published` event exists, not only the row.
+        if row is None or row["withdrawn"] or not row["published"]:
             raise NotFound("deliverable")
         audiences = [
             Audience(str(a.scope_kind), a.scope_id)
@@ -226,3 +231,21 @@ async def reader_version(ctx: AuthContext, deliverable_id: UUID, version_no: int
         contact_id=contacts[0],
         grant_id=grant,
     )
+
+
+# The audit trail places a deliverable version on its engagement (R-02-T07, S30 end pass); a
+# client-level deliverable has none and stays with the firm-wide rows readers see under ADM-07.
+AUDIT_KINDS: Final = frozenset({"deliverable_version"})
+_OWNERS = text(
+    "SELECT v.id, d.engagement_id FROM deliverable_versions v "
+    "JOIN deliverables d ON d.id = v.deliverable_id WHERE v.id = ANY(:ids)"
+)
+
+
+async def audit_owners(tenant: TenantContext, kind: str, ids: Sequence[UUID]) -> dict[UUID, UUID]:
+    del kind
+    if not ids:
+        return {}
+    async with tenant_session(tenant) as session:
+        rows = await session.execute(_OWNERS, {"ids": list(ids)})
+        return {found: owned for found, owned in rows if owned is not None}

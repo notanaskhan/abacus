@@ -10,8 +10,13 @@
 # boundary basis: infra/tests/test_textract.py fails if it stops opting every AI service out.
 
 terraform {
+  required_version = "~> 1.10"
+
   required_providers {
-    aws = { source = "hashicorp/aws" }
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
   }
 }
 

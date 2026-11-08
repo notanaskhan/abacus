@@ -12,7 +12,9 @@ Expand-only, ahead of the Thu Dec 23, 2027 train.
 - `assurance`: insert-only, human-only `uncorrected_misstatement_acknowledgements`. Only a client
   principal acting as itself inserts one: the row's actor must be the session's (`app.actor_kind`,
   `app.actor_id`), and `principal_kind` is always `client`, so neither an agent, the platform nor a
-  firm user's session can write one (R-02 AC-12, I-AGENT-NEVER).
+  firm user's session can write one (R-02 AC-12, I-AGENT-NEVER). The database has no principal
+  setting, so a trigger also requires `grant_id` to be the actor's own active, unexpired client
+  grant (for `contact_id` when the grant names one): a firm person holds no such grant.
 - Human-only audit actions gain the client's three decisions (R-02 §4.7):
   `uncorrected_misstatements.acknowledged`, `proposed_entry.client_decided` and
   `statement.approved_by_management`.
@@ -469,7 +471,36 @@ def upgrade() -> None:
             f"CREATE TRIGGER {table}_no_truncate BEFORE TRUNCATE ON {table} "
             f"FOR EACH STATEMENT EXECUTE FUNCTION {function}()"
         )
+    op.execute(_ACK_GRANT)
+    op.execute("REVOKE ALL ON FUNCTION uncorrected_misstatement_ack_grant() FROM PUBLIC")
+    op.execute(
+        # A constraint trigger runs after the row's CHECKs (they answer first, as check_violation).
+        "CREATE CONSTRAINT TRIGGER uncorrected_misstatement_ack_grant AFTER INSERT "
+        "ON uncorrected_misstatement_acknowledgements "
+        "FOR EACH ROW EXECUTE FUNCTION uncorrected_misstatement_ack_grant()"
+    )
     _human_only(_HUMAN_ONLY)
+
+
+_ACK_GRANT = """
+    CREATE FUNCTION uncorrected_misstatement_ack_grant() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path = pg_catalog, public, pg_temp
+    AS $$
+    BEGIN
+        IF NOT EXISTS (
+            SELECT 1 FROM client_access_grants g
+             WHERE g.tenant_id = NEW.tenant_id AND g.id = NEW.grant_id
+               AND g.user_id = NEW.actor_user_id AND g.status = 'active'
+               AND (g.expires_at IS NULL OR g.expires_at > clock_timestamp())
+               AND (g.contact_id IS NULL OR g.contact_id = NEW.contact_id)
+        ) THEN
+            RAISE EXCEPTION 'an acknowledgement is made under the person''s own client grant'
+                USING ERRCODE = 'insufficient_privilege';
+        END IF;
+        RETURN NEW;
+    END $$
+"""
 
 
 def downgrade() -> None:
@@ -479,3 +510,4 @@ def downgrade() -> None:
     for table in reversed(_TABLES):
         op.execute(f"DROP TABLE {table}")
     op.execute("DROP FUNCTION acknowledgement_rows_immutable()")
+    op.execute("DROP FUNCTION uncorrected_misstatement_ack_grant()")

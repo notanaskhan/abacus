@@ -414,12 +414,16 @@ test.describe("J03 planning (A-04-T34)", () => {
 test.describe("J03 completion (A-06-T35)", () => {
   const AUDIT = "/audits/_auditId_";
   const FULL_STACK = "the full-stack run waits for A-08's AUD-26 (S35)";
+  const COCKPIT = ["audits.cockpit"]; // E0 leaves the cockpit off; its fixtures turn it on
 
   test("j03 13: the findings and misstatements tabs read the SUM (AUD-16 a)", async ({
     journey,
   }) => {
     test.fixme(journey.project !== "fixture", FULL_STACK);
-    await journey.as("hannah-leclerc", `${AUDIT}/misstatements`, { scenario: "AUD-16:a" });
+    await journey.as("hannah-leclerc", `${AUDIT}/misstatements`, {
+      scenario: "AUD-16:a",
+      flags: COCKPIT,
+    });
     await journey.step("J03 step 13: the summary of uncorrected misstatements", async (page) => {
       await expect(page.getByText("Summary of uncorrected misstatements").first()).toBeVisible();
     });
@@ -427,7 +431,10 @@ test.describe("J03 completion (A-06-T35)", () => {
 
   test("j03 14: review notes and the sign-off matrix (AUD-17 a)", async ({ journey }) => {
     test.fixme(journey.project !== "fixture", FULL_STACK);
-    await journey.as("hannah-leclerc", `${AUDIT}/review-notes`, { scenario: "AUD-17:a" });
+    await journey.as("hannah-leclerc", `${AUDIT}/review-notes`, {
+      scenario: "AUD-17:a",
+      flags: COCKPIT,
+    });
     await journey.step("J03 step 14: the sign-off matrix", async (page) => {
       await expect(page.getByText("Sign-off matrix").first()).toBeVisible();
     });
@@ -437,7 +444,10 @@ test.describe("J03 completion (A-06-T35)", () => {
     journey,
   }) => {
     test.fixme(journey.project !== "fixture", FULL_STACK);
-    await journey.as("hannah-leclerc", `${AUDIT}/fs-disclosure`, { scenario: "AUD-20:a" });
+    await journey.as("hannah-leclerc", `${AUDIT}/fs-disclosure`, {
+      scenario: "AUD-20:a",
+      flags: COCKPIT,
+    });
     await journey.step(
       "J03 step 16: every line ties and the checklist is 142 items",
       async (page) => {

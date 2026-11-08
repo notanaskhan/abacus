@@ -32,6 +32,20 @@
 ## Copy
 "Findings", "Awaiting a decision", band and severity words from the status registry. Every word comes from the screen's `copy.ts`, verbatim from the handoff.
 
+## Links
+| From | To (manifest builder) | Planned or live |
+|---|---|---|
+| Opens AUD-01 · all audits | AUD-01 | per manifest |
+| Opens AUD-02 · audit cockpit | AUD-02 | per manifest |
+| Opens AUD-10 | AUD-10 | per manifest |
+| Opens AUD-16 | AUD-16 | per manifest |
+| Opens AUD-17 · review notes | AUD-17 | per manifest |
+| Opens SHL-08 · PayGrid Contribution Detail 2025.xlsx at pay date 12/26/2025 | SHL-08 | per manifest |
+| Opens EBP-04 with cell F31 selected | EBP-04 | per manifest |
+| Opens AUD-09 with D5 selected | AUD-09 | per manifest |
+
+The designed links of AUD-15 in `handoff-links.json`, as `link-contract.test.ts` reads them.
+
 ## Parity, accessibility and keyboard
 Tier C report (fixture build); axe and keyboard in `apps/web/e2e/screens/AUD-completion-a11y.spec.ts` (A-06-T36); journey steps in J03, J04, J05 and J22 (A-06-T35). Tier C locks wait for measured baselines.
 

@@ -116,6 +116,7 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "notice.created",  # N-04-T16: the notice's timers start
         "statement.draft_requested",  # A-06-T25: starts FsDraftWorkflow
         "statement.tie_out_requested",  # A-06-T25: starts TieOutWorkflow
+        "ebp.form5500.draft_received",  # A-05-T54: starts Form5500TieOut
         "notice.respond_by_soon",  # N-04-T16: C16 to the assignee
         "notice.follow_up_due",  # N-04-T16: C16 to the assignee
         "notice_response.ready_to_send",  # N-04-T16: C16 to the assignee

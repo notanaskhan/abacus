@@ -18,6 +18,7 @@ import {
   defineScenarios,
   json,
 } from "../../app-core/fixture-mode";
+import { auditHandlers } from "../handlers/audits";
 import { seedScenario } from "../scenario";
 import { getSeed } from "../seed";
 import { type Aud20Variant, checklistView, statementsView } from "../seed/aud20";
@@ -46,6 +47,8 @@ function frame(
     get handlers(): Record<string, FixtureHandler> {
       return {
         ...E0.handlers,
+        // A-06-T35: the Evaluation route reads Northwind's cockpit for its audit bar.
+        ...auditHandlers(seed, "run"),
         "GET /v1/me/capabilities": ({ persona }) =>
           json(capabilities(persona, options.on ?? true)),
         "GET /v1/engagements/{engagement_id}/financial-statements": () =>
