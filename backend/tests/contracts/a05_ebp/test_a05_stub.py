@@ -74,6 +74,8 @@ SERVED = {
     ("post", f"{A}/ebp/plan-reviews"),
     ("post", f"{A}/ebp/participants/{{participant_id}}/reveals"),
     ("post", f"{A}/ebp/imports"),
+    # S31 close: party-in-interest create is served (A-05-T57, DEC-2821).
+    ("post", f"{A}/parties-in-interest"),
 }
 READS = {"ebp.read", "ebp_form5500.read", "test.read", "estimate.read", "related_party.read"}
 NEW_ACTIONS = sorted(
