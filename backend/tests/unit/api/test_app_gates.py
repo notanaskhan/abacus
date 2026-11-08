@@ -88,6 +88,8 @@ def test_ac20_each_new_route_declares_exactly_one_action_and_a_response_model() 
 # TASK-019: taking, releasing and assigning a review return the assignment, so 200.
 REVIEW_QUEUE = "/v1/engagements/{engagement_id}/review-queue/{version_id}"
 NOT_CREATING = {
+    # A-07-T22 (DEC-2806): publishing a checklist version acts on it, so 200.
+    "/v1/methodology/assurance-checklists/{template_id}/versions/{version}/publish",
     # A-06-T25 (#1375): publishing a note template's version acts on it, so 200.
     "/v1/methodology/statement-note-templates/{template_id}/versions/{version}/publish",
     # S29: acts on an existing record, so 200.
@@ -513,6 +515,10 @@ def test_ac20_creating_routes_answer_201() -> None:
     assert created == {
         # A-06-T25 (#1375): a firm's note templates come in as rows.
         "/v1/methodology/statement-note-templates:import",
+        # A-07-T22 (DEC-2806): a firm's assurance checklist comes in as rows.
+        "/v1/methodology/assurance-checklists:import",
+        # A-05-T62 close (DEC-2823): publishing a Schedule H mapping inserts its version's rows.
+        "/v1/ebp/schedule-h-mappings:publish",
         "/v1/engagements",
         "/v1/engagements/{engagement_id}/request-items",
         # N-04-T02: a notice from its intake, a decision request, a note, the response, its

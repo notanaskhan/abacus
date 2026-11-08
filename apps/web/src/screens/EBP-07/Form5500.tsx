@@ -82,7 +82,7 @@ function Line({ row }: { row: Form5500RowOut }): JSX.Element {
       <td data-col="fs" className="w-[96px] pr-[8px] text-right tabular-nums">
         {whole(row.fs_amount)}
       </td>
-      <td data-col="form" className="w-[96px] pr-[8px] text-right tabular-nums text-doc-typed">
+      <td data-col="form" className="w-[96px] pr-[8px] text-right tabular-nums">
         {whole(row.f5500_amount)}
       </td>
       <td
@@ -251,16 +251,14 @@ function PartIv({
             >
               <td className="px-[8px] tabular-nums text-ink-2">{row.line}</td>
               <td className="px-[8px]">{COPY.partIv.questions[row.line] ?? row.line}</td>
-              <td className="px-[8px] text-doc-typed">
+              <td className="px-[8px]">
                 {row.draft_answer === "yes"
                   ? COPY.partIv.yes
                   : row.draft_answer === "no"
                     ? COPY.partIv.no
                     : ""}
               </td>
-              <td className="px-[8px] text-right tabular-nums text-doc-typed">
-                {whole(row.draft_amount)}
-              </td>
+              <td className="px-[8px] text-right tabular-nums">{whole(row.draft_amount)}</td>
               <td className="px-[8px] text-ink-2">
                 {links.length === 0 ? (
                   row.basis

@@ -2016,6 +2016,8 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "updated_at",
                 "version",
             }
+            # A-05-T58 close (0742, DEC-2820): who keyed a value and the sealed note of where.
+            | {"keyed_by", "keyed_note_sealed"}
         ),
         "ebp_late_remittances": frozenset(
             {

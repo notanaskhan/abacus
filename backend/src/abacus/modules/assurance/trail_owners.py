@@ -20,6 +20,10 @@ _READS: Final = {
         "SELECT id, engagement_id FROM accounting_estimates WHERE id = ANY(:ids)"
     ),
     "related_party": text("SELECT id, engagement_id FROM related_parties WHERE id = ANY(:ids)"),
+    # A-05-T57 close (S31 close end pass): a party in interest a person added on AUD-27.
+    "party_in_interest": text(
+        "SELECT id, engagement_id FROM parties_in_interest WHERE id = ANY(:ids)"
+    ),
 }
 AUDIT_KINDS: Final = frozenset(_READS)
 
