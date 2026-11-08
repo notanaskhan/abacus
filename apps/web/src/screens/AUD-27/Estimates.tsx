@@ -14,6 +14,7 @@ import {
   StatusPill,
   amount,
   cn,
+  useFormat,
   status,
 } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
@@ -170,6 +171,7 @@ function EstimatesTable({
 }
 
 function MethodCard({ e }: { e: Aud27ItemOut }): JSX.Element {
+  const fmt = useFormat();
   const components = e.components ?? [];
   return (
     <section data-aud27="method" className={CARD}>
@@ -202,12 +204,21 @@ function MethodCard({ e }: { e: Aud27ItemOut }): JSX.Element {
       </table>
       {e.rollforward != null && (
         <p data-aud27="rollforward" className="mt-[8px] text-[12.5px] tabular-nums text-ink-2">
-          {COPY.method.rollforward(
-            money(e.rollforward.opening),
-            money(e.rollforward.usage),
-            money(e.rollforward.additions),
-            money(e.rollforward.computed_closing),
-          )}
+          {e.rollforward.opening_on != null && e.rollforward.closing_on != null
+            ? COPY.method.rollforwardDated(
+                fmt.date(e.rollforward.opening_on, { withYear: true }),
+                money(e.rollforward.opening),
+                money(e.rollforward.usage),
+                money(e.rollforward.additions),
+                fmt.date(e.rollforward.closing_on, { withYear: true }),
+                money(e.rollforward.computed_closing),
+              )
+            : COPY.method.rollforward(
+                money(e.rollforward.opening),
+                money(e.rollforward.usage),
+                money(e.rollforward.additions),
+                money(e.rollforward.computed_closing),
+              )}
         </p>
       )}
     </section>
@@ -353,6 +364,17 @@ function PartiesTable({
               <tr key={p.id} data-party={p.id} data-status={p.status} className="hairline-t">
                 <td className={TD}>{p.name}</td>
                 <td className={cn(TD, "text-ink-2")}>{p.relationship}</td>
+                <td data-aud27="transactions" className={cn(TD, "text-ink-2 tabular-nums")}>
+                  {(p.transactions ?? []).length === 0
+                    ? COPY.estimates.none
+                    : (p.transactions ?? []).map((t, i) => (
+                        <span key={i} className="block">
+                          {t.amount == null
+                            ? t.description
+                            : `${t.description} ${money(t.amount)}`}
+                        </span>
+                      ))}
+                </td>
                 <td className={cn(TD, "text-ink-2")}>{p.exemption ?? COPY.estimates.none}</td>
                 <td className={TD}>
                   <span className="flex items-center gap-[8px]">
@@ -383,7 +405,11 @@ function PartiesTable({
             <dd>
               {t.form_5330_status == null
                 ? COPY.estimates.none
-                : status("ebp_form5330", t.form_5330_status).label}
+                : t.form_5330_status === "exposure" &&
+                    t.excise_exposure != null &&
+                    t.lost_earnings != null
+                  ? COPY.pii.excise(money(t.lost_earnings), money(t.excise_exposure))
+                  : status("ebp_form5330", t.form_5330_status).label}
             </dd>
             <dt className="text-ink-3">{COPY.pii.scheduleG}</dt>
             <dd>{COPY.pii.scheduleGNote}</dd>

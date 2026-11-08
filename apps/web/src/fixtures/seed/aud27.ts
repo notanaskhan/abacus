@@ -34,6 +34,8 @@ const INVENTORY_RESERVE: Aud27ItemOut = {
     additions: "472000.00",
     computed_closing: "486000.00",
     ties: true,
+    opening_on: "2025-07-01",
+    closing_on: "2026-06-30",
   },
   retrospectives: [
     {
@@ -137,6 +139,18 @@ export function relatedPartiesView(variant: "b" | "e" = "b"): Aud27ListOut {
   };
 }
 
+// The handoff's "2025 transactions" column, row by row (the person's words; amounts in the text).
+const PII_TRANSACTIONS: readonly (readonly string[])[] = [
+  ["Dec 26, 2025 deferrals $33,540.00 deposited Jan 9, 2026"],
+  [],
+  [],
+  ["CIT holding $1,163,480.00"],
+  ["Fees $24,600.00; revenue sharing $2,650.00 to ERISA budget account"],
+  ["Fees $7,800.00"],
+  ["Fee $6,000.00 from plan"],
+  ["36 loans, $312,400.00"],
+];
+
 export const PARTIES_IN_INTEREST: Aud27ListOut = {
   items: [
     [
@@ -171,7 +185,7 @@ export const PARTIES_IN_INTEREST: Aud27ListOut = {
       "4i asterisk",
       "unevaluated",
     ],
-  ].map(([name, relationship, exemption, reporting, state]) => ({
+  ].map(([name, relationship, exemption, reporting, state], i) => ({
     id: stableId(`party-in-interest:northwind:${String(name)}`),
     name: String(name),
     amount: null,
@@ -180,6 +194,11 @@ export const PARTIES_IN_INTEREST: Aud27ListOut = {
     relationship: relationship ?? null,
     exemption: exemption ?? null,
     reporting: reporting ?? null,
+    // S31 close (DV-AUD-27-2): the year's transactions as a person recorded them.
+    transactions: (PII_TRANSACTIONS[i] ?? []).map((description) => ({
+      description,
+      amount: null,
+    })),
   })),
   allowed_actions: ["party_in_interest.manage"],
   prohibited: [
@@ -191,6 +210,7 @@ export const PARTIES_IN_INTEREST: Aud27ListOut = {
       lost_earnings: "64.38",
       correction_status: "pending_vfcp_scc",
       form_5330_status: "exposure",
+      excise_exposure: "9.66",
     },
   ],
 };

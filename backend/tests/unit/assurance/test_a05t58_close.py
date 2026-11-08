@@ -78,9 +78,9 @@ def _db(monkeypatch: pytest.MonkeyPatch, invested: D | None, parties: list[str])
 
 
 async def test_the_schedule_ties_to_the_draft_s_line_1c(monkeypatch: pytest.MonkeyPatch) -> None:
-    _db(monkeypatch, D("9200930"), ["KRS", "Harborline"])
+    _db(monkeypatch, D("9201330"), ["KRS", "Harborline"])
     found = await svc.schedule_4i_facts(TENANT, WI)
-    assert found.total == D("9200930") and found.ties
+    assert found.total == D("9201330") and found.ties
     marks = {r.identity: r.mark for r in found.rows}
     assert marks == {
         "KRS 500 Index Fund": "*",
@@ -133,3 +133,19 @@ async def test_only_a_person_keys_a_value_and_names_where_they_read_it(
 def test_a_party_in_interest_matches_by_name() -> None:
     assert svc._party_in_interest("KRS Bond Index Fund", ["krs"])  # pyright: ignore[reportPrivateUsage]  # the matcher under test
     assert not svc._party_in_interest("BrokerWindow", ["KRS"])  # pyright: ignore[reportPrivateUsage]  # the matcher under test
+
+
+@pytest.mark.parametrize(
+    ("fund", "party", "marked"),
+    [
+        ("KRS 500 Index Fund", "Keystone Retirement Services", True),
+        ("Harborline Stable Value Fund", "Harborline Trust Company", True),
+        ("Self-directed brokerage accounts (BrokerWindow)", "Summit Plan Administrators", False),
+        ("Self-directed brokerage accounts (BrokerWindow)", "Brightwater Hale LLP", False),
+        ("KRS Bond Index Fund", "Northwind Robotics, Inc.", False),
+    ],
+)
+def test_a_party_matches_by_its_name_first_word_or_initials(
+    fund: str, party: str, marked: bool
+) -> None:
+    assert svc._party_in_interest(fund, [party]) is marked  # pyright: ignore[reportPrivateUsage]  # the matcher under test

@@ -115,6 +115,21 @@ async def work_item_titles(
     return {r.id: str(r.name) for r in rows}
 
 
+async def work_item_period(
+    tenant: TenantContext, work_item_id: UUID
+) -> tuple[date | None, date | None]:
+    """S31 close (AUD-27's rollforward dates): the work item's period start and end."""
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(
+                select(WorkItem.period_start, WorkItem.period_end).where(
+                    WorkItem.id == work_item_id
+                )
+            )
+        ).first()
+    return (None, None) if row is None else (row.period_start, row.period_end)
+
+
 async def work_item_engagement(tenant: TenantContext, work_item_id: UUID) -> UUID | None:
     """The work item's engagement, or None outside the tenant."""
     async with tenant_session(tenant) as session:

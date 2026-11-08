@@ -1382,6 +1382,8 @@ export const partiesInInterest = <ThrowOnError extends boolean = false>(options:
 
 /**
  * Party In Interest Create Route
+ *
+ * AUD-27 c: a person records a party in interest (S31 close).
  */
 export const partyInInterestCreate = <ThrowOnError extends boolean = false>(options: Options<PartyInInterestCreateData, ThrowOnError>): RequestResult<PartyInInterestCreateResponses, PartyInInterestCreateErrors, ThrowOnError> => (options.client ?? client).post<PartyInInterestCreateResponses, PartyInInterestCreateErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

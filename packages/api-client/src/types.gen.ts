@@ -3425,9 +3425,25 @@ export type Aud27ComponentOut = {
  */
 export type Aud27ItemIn = {
     /**
+     * Exemption
+     */
+    exemption?: string | null;
+    /**
      * Name
      */
     name: string;
+    /**
+     * Relationship
+     */
+    relationship?: string | null;
+    /**
+     * Reporting
+     */
+    reporting?: string | null;
+    /**
+     * Transactions
+     */
+    transactions?: Array<Aud27TransactionIn>;
 };
 
 /**
@@ -3505,6 +3521,10 @@ export type Aud27ItemOut = {
      * Status
      */
     status: 'unevaluated' | 'evaluated' | 'exception' | 'screened_out';
+    /**
+     * Transactions
+     */
+    transactions?: Array<Aud27TransactionOut>;
 };
 
 /**
@@ -3563,6 +3583,10 @@ export type Aud27ProhibitedOut = {
      * Deposited On
      */
     deposited_on?: string | null;
+    /**
+     * Excise Exposure
+     */
+    excise_exposure?: string | null;
     /**
      * Form 5330 Status
      */
@@ -3640,6 +3664,10 @@ export type Aud27RollforwardOut = {
      */
     additions: string;
     /**
+     * Closing On
+     */
+    closing_on?: string | null;
+    /**
      * Computed Closing
      */
     computed_closing: string;
@@ -3648,6 +3676,10 @@ export type Aud27RollforwardOut = {
      */
     opening: string;
     /**
+     * Opening On
+     */
+    opening_on?: string | null;
+    /**
      * Ties
      */
     ties: boolean;
@@ -3655,6 +3687,37 @@ export type Aud27RollforwardOut = {
      * Usage
      */
     usage: string;
+};
+
+/**
+ * Aud27TransactionIn
+ */
+export type Aud27TransactionIn = {
+    /**
+     * Amount
+     */
+    amount?: number | string | null;
+    /**
+     * Description
+     */
+    description: string;
+};
+
+/**
+ * Aud27TransactionOut
+ *
+ * S31 close (DV-AUD-27-2): one thing the plan did with a party in interest in the year, as a
+ * person recorded it.
+ */
+export type Aud27TransactionOut = {
+    /**
+     * Amount
+     */
+    amount: string | null;
+    /**
+     * Description
+     */
+    description: string;
 };
 
 /**
@@ -59800,10 +59863,6 @@ export type PartyInInterestCreateErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type PartyInInterestCreateError = PartyInInterestCreateErrors[keyof PartyInInterestCreateErrors];

@@ -52,6 +52,16 @@ function show(state: Aud27State, tab: Aud27Tab, kind: EngagementKind = "fs"): vo
   );
 }
 
+const drawn = (selector: string): Promise<HTMLElement> =>
+  waitFor(
+    () => {
+      const found = document.querySelector<HTMLElement>(selector);
+      expect(found).not.toBeNull();
+      return found as HTMLElement;
+    },
+    { timeout: 6000 },
+  );
+
 // Every status pill on the canvas (Status marks each with `data-status-pill`; S31 end pass).
 function pills(): string[] {
   return [...document.querySelectorAll("[data-status-pill]")].map((n) => n.textContent);
@@ -69,6 +79,22 @@ describe("AUD-27", () => {
     expect(document.querySelector("[data-tie]")?.getAttribute("data-tie")).toBe("ties");
     expect(document.querySelector('[data-aud27="bias"]')?.textContent).toContain("less than 6%");
     expect(document.body.textContent).toContain(COPY.requestConclusion);
+  });
+
+  it("a: the rollforward reads the period's dates (DV-AUD-27-3 closed)", async () => {
+    show("a", "estimates");
+    const line = await drawn('[data-aud27="rollforward"]');
+    expect(line.textContent).toContain("Jul 1, 2025");
+    expect(line.textContent).toContain("Jun 30, 2026");
+  });
+
+  it("c: the parties' 2025 transactions and the PT card's excise line", async () => {
+    show("c", "parties_in_interest", "ebp");
+    await drawn('[data-aud27="transactions"]');
+    expect(document.body.textContent).toContain("Fees $24,600.00; revenue sharing $2,650.00");
+    expect(document.body.textContent).toContain(
+      "Excise tax 15% × $64.38 = $9.66 unless PTE 2002-51 relief applies",
+    );
   });
 
   it("d: every estimate is unevaluated and no method card shows", async () => {

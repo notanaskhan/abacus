@@ -2332,6 +2332,8 @@ export const partiesInInterestOptions = (options: Options<PartiesInInterestData>
 
 /**
  * Party In Interest Create Route
+ *
+ * AUD-27 c: a person records a party in interest (S31 close).
  */
 export const partyInInterestCreateMutation = (options?: Partial<Options<PartyInInterestCreateData>>): UseMutationOptions<PartyInInterestCreateResponse, PartyInInterestCreateError, Options<PartyInInterestCreateData>> => {
     const mutationOptions: UseMutationOptions<PartyInInterestCreateResponse, PartyInInterestCreateError, Options<PartyInInterestCreateData>> = {
