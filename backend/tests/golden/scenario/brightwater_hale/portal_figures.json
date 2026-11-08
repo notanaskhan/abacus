@@ -1,0 +1,48 @@
+{
+  "_doc": "R-02-T08 (ADR-078; author N): the portal's Brightwater Hale figures, transcribed from docs/plan/epics/R-02.md §3 (POR-08, POR-09, POR-15), never from the code. Read by backend/tests/contracts/c10_deliverables and c18_portal_approvals and by apps/web/src/fixtures/contracts/portal-figures.test.ts. Amounts are strings: whole dollars, or cents where the artboard shows cents.",
+  "uncorrected_misstatements": {
+    "would_increase": "35300.00", "would_decrease": "13050.00", "net_effect": "22250.00",
+    "entries_declined": 2,
+    "sentence": "If recorded, the two entries you chose not to record would increase net assets by $22,250.00 in total ($35,300.00 − $13,050.00). They'll be listed in your representation letter, where you confirm their effect is not material, individually and in total."
+  },
+  "attest_entries": {
+    "names": ["AJE-1", "RJE-1", "PAJE-1", "PAJE-2"],
+    "receivable": {"total": "48600.00", "lines": ["33540.00", "15060.00"]},
+    "accrued": {"total": "13050.00", "lines": ["6150.00", "2400.00", "4500.00"]}
+  },
+  "posted_entries": {
+    "list": ["11860", "700", "2140", "5320", "14900", "380"], "total": "35300",
+    "accrued_expenses": {"total": "14900", "lines": ["12600", "1480", "820"]},
+    "qbo_range": "48213–48218"
+  },
+  "fs_draft": {
+    "title": "Financial statements and supplemental schedules", "draft_version": 3,
+    "pages": 14, "sent_on": "2026-10-06", "approved_on": "2026-10-08",
+    "page_2": {
+      "investments": {"parts": ["14895000", "1605000"], "total": "16500000"},
+      "receivables": {"parts": ["312400", "48600"], "total": "361000"},
+      "net_assets": "16861000",
+      "prior_year": {"parts": ["13940000", "288500"], "total": "14228500"}
+    }
+  },
+  "release": {
+    "released_on": "2026-10-09",
+    "files": [
+      {"title": "Independent auditor's report.pdf", "pages": 3},
+      {"title": "Financial statements and supplemental schedules.pdf", "pages": 14}
+    ]
+  },
+  "k1": {
+    "title": "Ridgeline Property Partners, LP — 2025 Schedule K-1 (Form 1065)",
+    "released_on": "2026-09-15",
+    "boxes": {"2": "468008", "5": "6992", "18A": "2356", "19A": "228000"},
+    "ownership": "38% · full year"
+  },
+  "governance": {
+    "body": "Benefits Committee", "members": ["Victoria Lam", "Robert Haines", "Dana Kowalski"],
+    "chair": "Victoria Lam", "planning_letter_dated": "2026-09-17", "acknowledged_on": "2026-09-21",
+    "deficiency": {"payroll_on": "2025-12-26", "amount": "48600", "remitted_on": "2026-01-09"},
+    "inquiries": 2
+  },
+  "decline_reasons": ["number_looks_wrong", "something_missing", "other"]
+}
