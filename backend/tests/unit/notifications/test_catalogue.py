@@ -26,6 +26,8 @@ def test_ac1_every_catalogued_event_is_subscribed() -> None:
 
 def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
     assert set(CATALOGUE) == {
+        "eqr.concurred_v2",  # A-07-T18 (C16 `eqr_concurred`, to the engagement partners)
+        "eqr.requested",  # A-07-T18 (C16 `eqr_requested`, to the assigned EQR; DF-05)
         "extension_payment.approval_requested",  # T-03-T07 (DEC-2350)
         "extension.ack_rejected",  # T-03-T07 (DEC-2350)
         "estimate.due_soon",  # T-03-T07 (DEC-2350)

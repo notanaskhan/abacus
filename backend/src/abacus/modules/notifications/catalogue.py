@@ -44,6 +44,19 @@ async def _envelope_sender(tenant_id: UUID, payload: dict[str, object]) -> list[
     return [sender] if sender is not None else []
 
 
+async def _eqr_partners(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """A-07-T18: the engagement partners named on the concurrence event."""
+    del tenant_id
+    return _uuids(payload, "partner_user_ids")
+
+
+async def _assigned_eqr(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
+    """A-07-T18: the assigned EQR a Request EQR… names (DF-05)."""
+    del tenant_id
+    found = _uuid(payload, "eqr_user_id")
+    return [found] if found is not None else []
+
+
 async def _admins(tenant_id: UUID, payload: dict[str, object]) -> list[UUID]:
     return await firm_admins(tenant_id)
 
@@ -309,6 +322,9 @@ class Kind:
 
 
 CATALOGUE: Final[dict[str, Kind]] = {
+    # A-07-T18 (A-07 §4.8): G6 met, to the engagement partners; Request EQR…, to the EQR.
+    "eqr.concurred_v2": Kind("eqr_concurred", _eqr_partners, "engagement", "engagement_id"),
+    "eqr.requested": Kind("eqr_requested", _assigned_eqr, "engagement", "engagement_id"),
     # T-01-T16: a signed §7216 consent 30 days from expiry (the lifecycle sweep, once each).
     "consent.expiring": Kind(
         "consent_expiring", _consent_requester, "consent", "consent_id", None
@@ -562,6 +578,8 @@ def register_kind_source(
 
 
 TEMPLATES: Final[dict[str, str]] = {
+    "eqr.concurred_v2": "The engagement quality reviewer concurred on {subject}.",
+    "eqr.requested": "The report on {subject} is waiting for your engagement quality review.",
     "consent.expiring": (
         "A §7216 consent expires within 30 days. Renew it from the consent registry."
     ),

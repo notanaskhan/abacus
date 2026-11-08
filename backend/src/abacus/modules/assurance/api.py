@@ -58,6 +58,8 @@ from abacus.modules.assurance.ebp_plan import audit_owners as ebp_plan_owners
 from abacus.modules.assurance.ebp_remittances import AUDIT_KINDS as LATE_REMITTANCE_KINDS
 from abacus.modules.assurance.ebp_remittances import audit_owners as late_remittance_owners
 from abacus.modules.assurance.ebp_remittances import late_remittances
+from abacus.modules.assurance.eqr_service import SUBSCRIPTIONS as EQR_SUBSCRIPTIONS
+from abacus.modules.assurance.eqr_service import register_eqr_checklist_template
 from abacus.modules.assurance.findings import AUDIT_KINDS as FINDING_KINDS
 from abacus.modules.assurance.findings import audit_owners as finding_owners
 from abacus.modules.assurance.findings import register_exception_routes
@@ -210,6 +212,7 @@ SUBSCRIPTIONS = (
     | dict(IC_REDRAFT_SUBSCRIPTIONS)
     | dict(CHECKLIST_SUGGESTION_SUBSCRIPTIONS)
     | dict(A07_SUBSCRIPTIONS)
+    | dict(EQR_SUBSCRIPTIONS)
 )
 WORKFLOWS: dict[type, str] = {}
 ACTIVITIES: tuple[object, ...] = ()
@@ -341,6 +344,7 @@ __all__ = [
     "record_sum_factor",
     "register_audit_section",
     "register_audit_segment",
+    "register_eqr_checklist_template",
     "register_exception_route",
     "register_index_tag",
     "register_materiality_dependents",

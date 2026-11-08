@@ -349,6 +349,16 @@ async def eligibility_checks(
     ]
 
 
+async def eqr_eligibility(
+    tenant: TenantContext, engagement_id: UUID, user_id: UUID
+) -> dict[str, str]:
+    """A-07-T18: the candidate's checks by code (`not_on_team`, `cooling_off`, ...), for the EQR
+    review's re-check on assignment; the caller has authorised (or is the system)."""
+    target = await _target(tenant, engagement_id)
+    checks = await eligibility_checks(tenant, target, user_id, confirmation=None)
+    return {check.code: check.result for check in checks}
+
+
 def _independence(confirmation: str | None) -> CheckResult:
     if confirmation == "confirmed":
         return "pass"
