@@ -42,6 +42,8 @@ CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
     "deficiency.concluded": _a("decision", "ok"),
     "sum.concluded": _a("decision", "ok"),
     "notice.position_decided": _a("decision", "ok"),
+    # S28 partials (TASK-3396): the partner's sign-off moved the notice to Approved (system).
+    "notice.approved": _a("change", "ok"),
     "service_org.reliance_concluded": _a("decision", "ok"),
     "ocr.run_recorded": _a("run"),
     # S15 (N-01, N-02): where the fallback reads the verb wrong. A sealed address revealed and a

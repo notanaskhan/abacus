@@ -9,10 +9,11 @@ from __future__ import annotations
 import asyncio
 import json
 from collections.abc import Iterator
+from dataclasses import replace
 from datetime import date
 from types import SimpleNamespace
 from typing import cast
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -20,11 +21,14 @@ from abacus.kernel.clock import system_now
 from abacus.kernel.config import settings
 from abacus.kernel.db import TenantContext, configure_engine, dispose_engine
 from abacus.kernel.flags import forget_flags
+from abacus.kernel.uow import OutboxEvent
+from abacus.modules.engagements.api import answer_independence
 from abacus.modules.identity.api import AuthContext
 from abacus.modules.notices import analysis, response, sending
 from abacus.modules.notices.service import notice
 from abacus.modules.reporting.compose import block_texts, compose
-from abacus.modules.review.api import decide_card
+from abacus.modules.review.api import STATEMENTS, decide_card, sign_target
+from abacus.modules.review.sign_offs import hash_out
 from abacus_tools.quality.schema_check import Database, provisioned_database
 from abacus_tools.synthetic.scenarios.brightwater_hale import loader
 from abacus_tools.synthetic.scenarios.brightwater_hale import notices_content as nc
@@ -218,6 +222,10 @@ async def test_ac_a_disagree_letter_says_disagree_and_carries_what_the_person_wr
     assert await analysis.complete_run(loader.TENANT, work_item, version) == "ready"
     before = await response.draft(ctx, work_item)
     assert before.position_source == "provisional"
+    status = "SELECT status FROM notices WHERE work_item_id = $1"
+    assert (
+        await seed.value(status, work_item) == "response_drafted"
+    )  # TASK-3396: drafting moves it
     response_id = before.id
 
     card = await analysis.request_decision(ctx, work_item, None)
@@ -261,9 +269,33 @@ async def test_ac_a_disagree_letter_says_disagree_and_carries_what_the_person_wr
     assert ready is not None and ready.blocked_code is None
     assert edited.row_version > fresh.row_version
 
-    envelope = await sending.send_for_signature(
-        _person(cast(UUID, row["reserved_user_id"])), work_item
+    # TASK-3396: nobody signed yet, so it can't go out for signature (it could before).
+    partner = _person(cast(UUID, row["reserved_user_id"]))
+    with pytest.raises(sending.NotReady):
+        await sending.send_for_signature(partner, work_item)
+    # The ladder: Kevin prepares (L1), the partner approves (L4); the notice is Approved.
+    signed = await response.facts(loaded_tenant(), response_id)
+    assert signed is not None
+    engagement = cast(
+        UUID,
+        await seed.value("SELECT engagement_id FROM notices WHERE work_item_id = $1", work_item),
     )
+    for person, level in ((ctx, 1), (partner, 4)):
+        # R-SO-5: each signer's own independence confirmation on the notice's engagement.
+        await answer_independence(person, engagement, confirm=True, note=None)
+        await sign_target(
+            replace(person, mfa_at=system_now()),
+            response.TARGET,
+            response_id,
+            level,
+            hash_out(signed.content_hash),
+            STATEMENTS[level].version,
+        )
+    assert await seed.value(status, work_item) == "response_drafted"
+    await response.approve_when_signed(loaded_tenant(), response_id)  # the outbox subscriber's
+    assert await seed.value(status, work_item) == "approved"
+
+    envelope = await sending.send_for_signature(partner, work_item)
     assert envelope is not None
     snapshot = await seed.value(
         "SELECT s.snapshot FROM generated_document_snapshots s "
@@ -286,4 +318,36 @@ async def test_ac_a_disagree_letter_says_disagree_and_carries_what_the_person_wr
     words = " ".join(t for _key, _clause, t in block_texts(letter))
     assert written in words
     assert "agree with them" not in words
+
+    # The signature itself is DocuSeal's: stand in for its completed webhook, then run the rest as
+    # a person would, with readiness read for real (it was patched before).
+    assert not (await sending.readiness(partner, work_item)).ready
+    await seed.run(
+        "UPDATE envelopes SET status = 'completed', completed_at = now() WHERE id = $1", envelope
+    )
+    await sending.on_envelope_completed(
+        OutboxEvent(
+            event_id=uuid4(),
+            tenant_id=loader.TENANT,
+            event_type="envelope.completed",
+            payload={"source_kind": "notice_response", "envelope_id": str(envelope)},
+        )
+    )
+    assert (await sending.readiness(partner, work_item)).ready
+
+    async def no_signal(*_a: object, **_k: object) -> None:
+        return None
+
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(sending, "signal_workflow", no_signal)  # no worker in this test
+        sent = await sending.mark_sent(
+            ctx,
+            work_item,
+            channel="fax",
+            confirmation_no=None,
+            sent_on=date(2026, 9, 17),
+            follow_up_days=60,
+        )
+    assert sent[1] == date(2026, 11, 16)
+    assert await seed.value(status, work_item) == "awaiting_irs"
     await dispose_engine()
