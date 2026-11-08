@@ -35,3 +35,6 @@
 
 Every operation answers 404 to a client principal, 404 with the flag off and 501
 `not_implemented` until its task.
+
+## Screen contract (A-06-T38)
+AUD-16: `docs/screens/AUD-16.md` (artboards, deviations, consumer notes).
