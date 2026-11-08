@@ -43,6 +43,7 @@ from abacus.modules.engagements.api import (
     replace_gate_provider,
     required_gates,
 )
+from abacus.modules.identity.api import team_of
 from abacus.modules.review.api import (
     GateSource,
     OpenGate,
@@ -126,14 +127,26 @@ async def _in_app_facts(tenant: TenantContext, engagement_id: UUID) -> Mapping[s
     return {"engagement_type": engagement_type, **dict(row)}
 
 
+async def _eqr_on_team(tenant: TenantContext, engagement_id: UUID) -> bool:
+    """ENG-05 assigned an EQR: someone on the team holds `eqr_reviewer`."""
+    team = await team_of(tenant.tenant_id, engagement_id)
+    return any(role == "eqr_reviewer" for _member, role in team)
+
+
 async def in_app_g6(tenant: TenantContext, engagement_id: UUID) -> GateFact:
     facts = await _in_app_facts(tenant, engagement_id)
     if facts is None:
         return GateFact(met=False, blockers=("no_work_item",))
     if _not_required(cast(str | None, facts["engagement_type"]), "G6"):
         return GateFact(met=True)
-    # EQR-required comes from the ENG-05 assignment: no review row, none required.
-    if facts["eqr_user_id"] is None or facts["eqr_status"] == "concurred":
+    if facts["eqr_status"] == "concurred":
+        return GateFact(met=True)
+    if facts["eqr_user_id"] is None:
+        # EQR-required comes from the ENG-05 assignment. An EQR on the team whose review hasn't
+        # opened yet (eligibility pending, or no checklist template: it fails closed) still owes a
+        # concurrence, so G6 stays unmet until one exists (A-07-T21; DEC-2817).
+        if await _eqr_on_team(tenant, engagement_id):
+            return GateFact(met=False, blockers=("eqr_not_concurred",))
         return GateFact(met=True)
     return GateFact(met=False, blockers=("eqr_not_concurred",))
 
