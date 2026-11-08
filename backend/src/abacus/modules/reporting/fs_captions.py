@@ -59,3 +59,18 @@ async def statement_state(
         None if row.status is None else str(row.status),
         None if row.management_approval is None else str(row.management_approval),
     )
+
+
+async def checklist_counts(tenant: TenantContext, work_item_id: UUID) -> tuple[int, int] | None:
+    """S31 close (A-07-T22): the disclosure checklist's answered and total items on the work
+    item's statement document, for the completion checklist's `disclosure_checklist` fact; None
+    before AUD-20 has a document or a picked checklist."""
+    from abacus.modules.reporting.statements import current_of, disclosure_view
+
+    found = await current_of(tenant, work_item_id)
+    if found.document is None:
+        return None
+    view = await disclosure_view(tenant, found.document["id"])
+    if view.template_version_id is None:
+        return None
+    return view.answered, view.total

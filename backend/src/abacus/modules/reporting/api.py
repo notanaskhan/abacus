@@ -82,6 +82,9 @@ from abacus.modules.reporting.engagement_letters import (
     render_engagement_letter,
 )
 from abacus.modules.reporting.fs_captions import (
+    checklist_counts as checklist_counts,
+)
+from abacus.modules.reporting.fs_captions import (
     statement_caption_amounts as statement_caption_amounts,
 )
 from abacus.modules.reporting.fs_captions import (
