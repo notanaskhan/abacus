@@ -236,6 +236,7 @@ from abacus.modules.engagements.team import (
     approve_eqr_eligibility,
     approve_team,
     assign_eqr,
+    eqr_eligibility,
     team_approval,
 )
 from abacus.modules.engagements.transitions import (
@@ -558,6 +559,7 @@ __all__ = [
     "engagements_in_hold_scope",
     "engagements_of_entity",
     "entity_of",
+    "eqr_eligibility",
     "eqr_eligibility_due",
     "firm_router",
     "function_holders",
