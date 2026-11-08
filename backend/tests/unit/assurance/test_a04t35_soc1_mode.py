@@ -14,7 +14,8 @@ def test_soc1_runs_on_its_own_prompt_in_spec_version_10() -> None:
     spec: dict[str, object] = SPECS["workpapers.section_drafter"]
     modes = spec["modes"]
     # Version 10 added soc1; A-05-T36 (ebp_trust) made it 11. Each mode bumps it once.
-    assert spec["version"] == 11
+    version = spec["version"]  # later modes bump the spec (v12: A-05-T55)
+    assert isinstance(version, int) and version >= 11
     assert (
         isinstance(modes, dict) and modes["soc1"]["prompt"] == "workpapers.section_draft.soc1@v1"
     )

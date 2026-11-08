@@ -43,5 +43,6 @@ def test_facts_name_the_rows_and_the_thresholds() -> None:
 def test_the_mode_has_its_own_prompt() -> None:
     spec = cast("dict[str, Any]", _specs.SPECS["workpapers.section_drafter"])
     # Version 9 added ic; soc1 (10) and ebp_trust (11) followed in S27, one bump per mode.
-    assert spec["version"] == 11
+    version = spec["version"]  # later modes bump the spec (v12: A-05-T55)
+    assert isinstance(version, int) and version >= 11
     assert spec["modes"]["ic"]["prompt"] == "workpapers.section_draft.ic@v1"

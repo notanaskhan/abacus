@@ -19,6 +19,7 @@ from abacus.modules.agents.api import (
 from abacus.modules.assurance import (
     completion_errors,  # A-07 refusal codes (A-07-T06)
     ebp_attribute,
+    ebp_form5500_mode,
     ebp_investments,
     ebp_provisions,
     ebp_reconcile,
@@ -201,6 +202,7 @@ register_mode_mapping(ebp_reconcile.MODE, ebp_reconcile.reconcile_inputs)  # A-0
 register_mode_mapping(ic_mode.MODE, ic_mode.ic_inputs)  # A-04-T29
 register_mode_mapping(soc1_mode.MODE, soc1_mode.soc1_inputs)  # A-04-T35
 register_mode_mapping(ebp_trust_mode.MODE, ebp_trust_mode.trust_inputs)  # A-05-T36
+register_mode_mapping(ebp_form5500_mode.MODE, ebp_form5500_mode.form5500_inputs)  # A-05-T55
 register_sign_off_guard(ebp_provisions.KIND, ebp_provisions.sign_off_guard)  # A-05-T16
 register_sign_off_guard(ebp_investments.KIND, ebp_investments.sign_off_guard)  # A-05-T39
 # A-04-T23 (DEC-2059): code inserts the presumed fraud risks before a narrative draft.
