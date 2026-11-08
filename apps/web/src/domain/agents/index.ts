@@ -5,3 +5,15 @@ export { applyItems, EMPTY_FEED, isActive, POLL_MS, type RunFeed, useRunFeed } f
 export { duration, STATE, SUBJECT, TraceDrawer } from "./TraceDrawer";
 export { RUN_TRACE_OVERLAY, traceLink } from "./links";
 export { useOpenTrace } from "./overlay";
+// P-09-T05 (DEC-2811): the E6 core.
+export {
+  documentVisibility,
+  PollingRunSource,
+  type RunSource,
+  type RunSourceEvent,
+  RunStore,
+  ScriptedRunSource,
+  type ScriptStep,
+  staticRequested,
+  useRunStore,
+} from "./runSource";
