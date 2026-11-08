@@ -1,0 +1,8 @@
+# Form W-2c TY2026 (P-11-T34; DEC-2809): unchanged from TY2025, so it inherits that map under
+# its own year and version.
+form: "W-2c"
+form_type: "w2c"
+tax_year: 2026
+family: tax_forms
+version: "w2c-2026-v1"
+inherits: 2025

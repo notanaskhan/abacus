@@ -1,0 +1,8 @@
+# Form 1098 TY2026 (P-11-T34; DEC-2809): unchanged from TY2025, so it inherits that map under
+# its own year and version.
+form: "1098"
+form_type: "1098"
+tax_year: 2026
+family: tax_forms
+version: "1098-2026-v1"
+inherits: 2025

@@ -1,0 +1,17 @@
+# Form 1099-INT box map (P-11-T34; P-11 F8; DEC-76, DEC-2809). PROTECTED: golden tested and reviewed
+# yearly against the IRS form for the year. Dark until the firm's `evidence.form_extraction`
+# variant covers `tax_forms`. TINs (SSN, EIN) are never fields: P-03 masks them on the page.
+form: "1099-INT"
+form_type: "1099_int"
+tax_year: 2025
+family: tax_forms
+version: "1099_int-2025-v1"
+anchors: ["1099-INT"]
+year_after: "1099-INT"
+corrected_anchor: "CORRECTED"
+fields:
+  - {key: int.box1, label: "Interest income", anchor: "Interest income", value_type: money}
+  - {key: int.box2, label: "Early withdrawal penalty", anchor: "Early withdrawal penalty", value_type: money}
+  - {key: int.box3, label: "Interest on U.S. Savings Bonds and Treasury obligations", anchor: "Interest on U.S. Savings Bonds", value_type: money}
+  - {key: int.box4, label: "Federal income tax withheld", anchor: "Federal income tax withheld", value_type: money}
+  - {key: int.box8, label: "Tax-exempt interest", anchor: "Tax-exempt interest", value_type: money}

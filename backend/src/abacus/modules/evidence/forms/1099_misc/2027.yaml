@@ -1,0 +1,17 @@
+# Form 1099-MISC box map (P-11-T34; P-11 F8; DEC-76, DEC-2809). PROTECTED: golden tested and reviewed
+# yearly against the IRS form for the year. Dark until the firm's `evidence.form_extraction`
+# variant covers `tax_forms`. TINs (SSN, EIN) are never fields: P-03 masks them on the page.
+form: "1099-MISC"
+form_type: "1099_misc"
+tax_year: 2027
+family: tax_forms
+version: "1099_misc-2027-v1"
+anchors: ["1099-MISC"]
+year_after: "1099-MISC"
+corrected_anchor: "CORRECTED"
+fields:
+  - {key: misc.box1, label: "Rents", anchor: "Rents", value_type: money}
+  - {key: misc.box2, label: "Royalties", anchor: "Royalties", value_type: money}
+  - {key: misc.box3, label: "Other income", anchor: "Other income", value_type: money}
+  - {key: misc.box4, label: "Federal income tax withheld", anchor: "Federal income tax withheld", value_type: money}
+  - {key: misc.box10, label: "Gross proceeds paid to an attorney", anchor: "Gross proceeds paid to an attorney", value_type: money}
