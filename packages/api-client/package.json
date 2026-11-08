@@ -26,6 +26,7 @@
     "./query": {
       "types": "./dist/@tanstack/react-query.gen.d.ts",
       "default": "./src/@tanstack/react-query.gen.ts"
-    }
+    },
+    "./schemas/agent-blocks.v1.json": "./schemas/agent-blocks.v1.json"
   }
 }
