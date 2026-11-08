@@ -22,15 +22,14 @@ from uuid import UUID
 from fastapi import Depends, Header, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import ASSURANCE_COMPLETION
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound
-from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.kernel.safe_xlsx import XLSX
 from abacus.kernel.uow.idempotency import idempotent
 from abacus.modules.engagements.api import get_ref, work_item_engagement
 from abacus.modules.identity.api import AbacusRouter, AuthContext, authorise, current_context
+from abacus.modules.platform.api import entitlement
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -60,6 +59,8 @@ MisstatementStatus = Literal[
 ]
 DeficiencyStatus = Literal["exception_for_resolution", "proposed", "concluded", "communicated"]
 ColumnSet = Literal["ebp_net_assets", "commercial"]
+
+ENTITLEMENT = "assurance_completion"  # A-06-T37 (DEC-2714)
 
 
 # --- findings (AUD-15) ---------------------------------------------------------------------------
@@ -456,16 +457,17 @@ async def _gate(ctx: AuthContext, work_item_id: UUID, action: str) -> None:
         raise NotFound("work_item")
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, action, ref.resource())
-    if not await flag_enabled(ctx.tenant, ASSURANCE_COMPLETION):
-        raise NotFound(ASSURANCE_COMPLETION.name)
+    # A-06-T37 (DEC-2714): the `assurance_completion` entitlement replaces the retired flag.
+    if await entitlement(ctx.tenant, ENTITLEMENT) is None:
+        raise NotFound(ENTITLEMENT)
 
 
 async def _gate_flag(ctx: AuthContext) -> None:
-    """A record's own path: client 404 and the flag; the record's service authorises (T09+)."""
+    """A record's own path: client 404 and the entitlement; the record's service authorises."""
     if ctx.client:
         raise NotFound("completion")
-    if not await flag_enabled(ctx.tenant, ASSURANCE_COMPLETION):
-        raise NotFound(ASSURANCE_COMPLETION.name)
+    if await entitlement(ctx.tenant, ENTITLEMENT) is None:
+        raise NotFound(ENTITLEMENT)
 
 
 router = AbacusRouter(prefix="/v1", tags=["assurance"])

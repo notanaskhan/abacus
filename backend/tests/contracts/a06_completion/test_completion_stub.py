@@ -112,6 +112,9 @@ def test_the_sum_example_is_northwinds() -> None:
     assert (found.pct_of_pm, found.fill_pct_of_overall) == (Decimal("18.1"), Decimal("13.5"))
 
 
-def test_the_flag_defaults_off() -> None:
-    flag = _flags.FLAGS["assurance.completion"]
-    assert flag.kind == "boolean" and str(flag.default).lower() == "false"
+def test_the_retired_flag_is_gone_and_the_entitlement_gates() -> None:
+    # A-06-T37 (DEC-2714): `assurance.completion` retired into `assurance_completion`.
+    from abacus.modules.platform.entitlements import MODULES
+
+    assert "assurance.completion" not in _flags.FLAGS
+    assert "assurance_completion" in MODULES

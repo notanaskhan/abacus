@@ -21,13 +21,12 @@ from uuid import UUID
 from fastapi import Depends, Header, Query
 from pydantic import BaseModel, ConfigDict, Field
 
-from abacus.kernel._flags import ADJUSTMENTS_ENTRIES
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
-from abacus.kernel.flags import flag_enabled
 from abacus.kernel.listing import ListPage
 from abacus.modules.engagements.api import get_ref, work_item_engagement
 from abacus.modules.identity.api import AbacusRouter, AuthContext, authorise, current_context
+from abacus.modules.platform.api import entitlement
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -208,8 +207,9 @@ async def _gate(ctx: AuthContext, work_item_id: UUID, action: str) -> None:
         raise NotFound("work_item")
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, action, ref.resource())
-    if not await flag_enabled(ctx.tenant, ADJUSTMENTS_ENTRIES):
-        raise NotFound(ADJUSTMENTS_ENTRIES.name)
+    # A-06-T37 (DEC-2714): the `assurance_completion` entitlement replaces the retired flag.
+    if await entitlement(ctx.tenant, "assurance_completion") is None:
+        raise NotFound("assurance_completion")
 
 
 router = AbacusRouter(prefix="/v1", tags=["adjustments"])
