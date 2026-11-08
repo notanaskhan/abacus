@@ -46,6 +46,7 @@ CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
     "notice.approved": _a("change", "ok"),
     "service_org.reliance_concluded": _a("decision", "ok"),
     "ocr.run_recorded": _a("run"),
+    "ocr.daily_cap_set": _a("change"),  # P-11-T33: a platform operator sets a firm's page cap
     # S15 (N-01, N-02): where the fallback reads the verb wrong. A sealed address revealed and a
     # message body read are access; a provider send and a reminder are communication.
     "signer.ip_revealed": _a("access"),

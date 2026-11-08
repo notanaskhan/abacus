@@ -35,6 +35,7 @@ from abacus.modules.evidence.ocr_gate import (
     first_refusal,
     over_daily_cap,
     record_run,
+    warn_if_near_cap,
 )
 from abacus.modules.evidence.ocr_normalise import IMAGES, PDF, PageImage, rasterise_isolated
 from abacus.modules.evidence.pii import names_a_tin
@@ -281,6 +282,8 @@ async def _read(
         pages=[" ".join(w.text for w in page_read.words) for _, page_read, _f in results],
     )
     _log.info("upload.ocr_read", kind=given.kind, pages=len(rows))
+    units = len(images) + sum(1 for _i, _r, forms in results if forms is not None)
+    await warn_if_near_cap(tenant, units)  # P-11-T33: the 80% alarm's log line
     return len(rows)
 
 

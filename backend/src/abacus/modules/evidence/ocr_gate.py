@@ -13,6 +13,7 @@ only, never document text. A refusal is never retried automatically and never re
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Final, Literal
 from uuid import UUID
 
@@ -23,6 +24,7 @@ from abacus.kernel.clock import today
 from abacus.kernel.controls import control_active
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.flags import flag_enabled
+from abacus.kernel.logging import get_logger
 from abacus.kernel.ocr import Api
 from abacus.kernel.provider_terms import covering
 from abacus.kernel.uow import Ref, Target, uow
@@ -33,6 +35,7 @@ Refusal = Literal[
 ]  # fmt: skip
 ROUTE: Final = "textract"
 DAILY_PAGE_CAP: Final = 5000  # per firm, P-11 §cost; a refusal, never a queue
+_log = get_logger(__name__)
 
 
 @dataclass(frozen=True)
@@ -60,8 +63,19 @@ async def first_refusal(tenant: TenantContext, facts: GateFacts) -> Refusal | No
     return None
 
 
-async def over_daily_cap(tenant: TenantContext, pages: int) -> bool:
-    """Whether reading `pages` more would pass the firm's daily cap (P-11-T25; DEC-2375)."""
+CAP_WARN_SHARE: Final = Decimal("0.8")  # P-11 alarms: "daily page cap at 80%"
+
+
+async def daily_page_cap(tenant: TenantContext) -> int:
+    """The firm's cap: its latest `ocr_daily_caps` row (P-11-T33, 0714), else the default."""
+    async with tenant_session(tenant) as session:
+        cap = await session.scalar(
+            text("SELECT daily_pages FROM ocr_daily_caps ORDER BY set_at DESC, id LIMIT 1")
+        )
+    return int(cap) if cap is not None else DAILY_PAGE_CAP
+
+
+async def pages_today(tenant: TenantContext) -> int:
     async with tenant_session(tenant) as session:
         used = await session.scalar(
             text(
@@ -69,7 +83,58 @@ async def over_daily_cap(tenant: TenantContext, pages: int) -> bool:
                 "WHERE created_at >= date_trunc('day', clock_timestamp())"
             )
         )
-    return int(used or 0) + pages > DAILY_PAGE_CAP
+    return int(used or 0)
+
+
+async def over_daily_cap(tenant: TenantContext, pages: int) -> bool:
+    """Whether reading `pages` more would pass the firm's daily cap (P-11-T25; DEC-2375; the
+    per-firm cap is P-11-T33)."""
+    return await pages_today(tenant) + pages > await daily_page_cap(tenant)
+
+
+def crossed_warning(before: int, pages: int, cap: int) -> bool:
+    """Whether this read took the firm across 80% of its cap (once a day per firm: only the read
+    that crosses it, never the ones after)."""
+    line = cap * CAP_WARN_SHARE
+    return before < line <= before + pages
+
+
+async def warn_if_near_cap(tenant: TenantContext, pages: int) -> bool:
+    """After a completed read of `pages`: log `ocr.daily_cap_warning` (identifiers and counts
+    only) when it crossed 80% of the cap. The log line is what the alarm counts (RB-68)."""
+    after = await pages_today(tenant)
+    cap = await daily_page_cap(tenant)
+    if not crossed_warning(after - pages, pages, cap):
+        return False
+    _log.warning("ocr.daily_cap_warning", tenant_id=str(tenant.tenant_id), used=after, cap=cap)
+    return True
+
+
+async def set_daily_page_cap(
+    tenant: TenantContext, *, pages: int, raised_by: str, second_by: str | None, reason: str
+) -> UUID:
+    """A platform operator's cap change for one firm (P-11-T33; R9: a raise above the default
+    names both founders). The table's CHECKs are the rule; this only records and audits it."""
+    async with uow(tenant) as tx:
+        cap_id = await tx.session.scalar(
+            text(
+                "INSERT INTO ocr_daily_caps (tenant_id, daily_pages, raised_by, second_by, "
+                "reason) VALUES (:t, :pages, :by, :second, :reason) RETURNING id"
+            ),
+            {
+                "t": tenant.tenant_id,
+                "pages": pages,
+                "by": raised_by,
+                "second": second_by,
+                "reason": reason,
+            },
+        )
+        tx.record(
+            "ocr.daily_cap_set",
+            target=Target("ocr_daily_cap", UUID(str(cap_id))),
+            after=Ref(daily_pages=pages, second=int(second_by is not None)),
+        )
+    return UUID(str(cap_id))
 
 
 async def record_run(

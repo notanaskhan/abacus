@@ -118,6 +118,52 @@ resource "aws_cloudwatch_metric_alarm" "errors" {
   alarm_actions       = var.alarm_topic_arns
 }
 
+# P-11-T33 (DEC-2715): the December TPS alarm, at 80% of the DetectDocumentText quota (RB-68).
+resource "aws_cloudwatch_metric_alarm" "request_rate" {
+  count               = var.enabled ? 1 : 0
+  alarm_name          = "abacus-${var.environment}-textract-request-rate"
+  alarm_description   = "Textract calls near 80% of quota for the OCR port. Runbook: docs/runbooks/RB-68-ocr-december.md"
+  namespace           = "AWS/Textract"
+  metric_name         = "SuccessfulRequestCount"
+  statistic           = "Sum"
+  period              = 60
+  evaluation_periods  = 3
+  threshold           = var.request_rate_alarm_per_minute
+  comparison_operator = "GreaterThanThreshold"
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = var.alarm_topic_arns
+}
+
+# P-11-T33: a firm crossed 80% of its daily page cap. The worker logs `ocr.daily_cap_warning`
+# (identifiers and counts only) on the read that crosses it; the filter counts those lines.
+resource "aws_cloudwatch_log_metric_filter" "daily_cap_warning" {
+  for_each       = var.enabled ? toset(var.worker_log_group_names) : toset([])
+  name           = "abacus-${var.environment}-ocr-daily-cap-warning"
+  log_group_name = each.value
+  pattern        = "{ $.event = \"ocr.daily_cap_warning\" }"
+  metric_transformation {
+    name          = "OcrDailyCapWarnings"
+    namespace     = "Abacus/OCR"
+    value         = "1"
+    default_value = "0"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "daily_cap_warning" {
+  count               = var.enabled && length(var.worker_log_group_names) > 0 ? 1 : 0
+  alarm_name          = "abacus-${var.environment}-ocr-daily-cap-80"
+  alarm_description   = "A firm crossed 80% of its daily OCR page cap. Runbook: docs/runbooks/RB-68-ocr-december.md"
+  namespace           = "Abacus/OCR"
+  metric_name         = "OcrDailyCapWarnings"
+  statistic           = "Sum"
+  period              = 300
+  evaluation_periods  = 1
+  threshold           = 0
+  comparison_operator = "GreaterThanThreshold"
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = var.alarm_topic_arns
+}
+
 resource "aws_budgets_budget" "textract" {
   count        = var.enabled ? 1 : 0
   name         = "abacus-${var.environment}-textract"

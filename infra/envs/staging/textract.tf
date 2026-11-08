@@ -11,4 +11,6 @@ module "textract" {
   worker_role_name         = aws_iam_role.task["worker"].name
   monthly_budget_usd       = var.textract_monthly_budget_usd
   quota_requests           = var.textract_quota_requests
+  # P-11-T33: the 80%-of-cap alarm counts the workers' ocr.daily_cap_warning lines.
+  worker_log_group_names = [for k, m in module.backend : m.log_group_name if startswith(k, "worker")]
 }
