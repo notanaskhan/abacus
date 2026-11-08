@@ -23,3 +23,13 @@ test.describe("J05", () => {
     });
   });
 });
+
+// A-06-T35 (TASK-6121): J05 step 4, the preparation engagement's statements; fixme until A-08's
+// AUD-26 runs full stack (S35) and the preparation scenario lands on AUD-20.
+test.describe("J05 completion (A-06-T35)", () => {
+  test.fixme("j05 4: the prepared statements carry the AR-C 70 legend (AUD-20)", async ({
+    journey,
+  }) => {
+    await journey.as("priya-raman", "/audits/_auditId_/fs-disclosure", { scenario: "AUD-20:a" });
+  });
+});
