@@ -186,6 +186,14 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
         "notice.response_sent",
         "rep_letter.approved",
         "report.released",
+        # I-01-T23 (S29 leftovers, DEC-2609): a return waiting for its engine export.
+        "tax_return.approved",
+        "engine_sync.exported",
+        # I-01-T23 (DEC-2613): the firm-level gates; `methodology.review_requested`,
+        # `wall.created` and `wall.approved` already had subscribers (notifications).
+        "methodology_version.approved",
+        "methodology_version.discarded",
+        "wall.removed",
         "suggestion.created",  # A-06-T16 seam: a suggested checklist answer lands on its item
     }
     # SPEC-022: a new connection both notifies the leads and starts automatic retrieval.
