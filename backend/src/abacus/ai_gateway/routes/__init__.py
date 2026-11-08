@@ -8,7 +8,7 @@ imported only in this package (ADR-019, AC-8). Each route's provider is built la
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import Final
+from typing import Final, Literal
 
 from abacus.ai_gateway.providers import (
     ConversingProvider,
@@ -72,3 +72,23 @@ def route_enabled(route: Route) -> bool:
     if parity is None:
         return False
     return system_now().date() - parity.checked_on <= timedelta(days=PARITY_DAYS)
+
+
+SpecShape = Literal["single", "loop"]
+
+
+def route_enabled_for(route: Route, shape: SpecShape) -> bool:
+    """P-10-T13 (ADR-234 §7): a loop-shaped spec (multi-turn tool use) needs a route whose
+    parity report, under 90 days old, also passed tools and documents. The fake route serves
+    loops in synthetic environments (its trajectories are the conformance fixtures)."""
+    if not route_enabled(route):
+        return False
+    if shape == "single" or route == "fake":
+        return True
+    parity = settings().route_parity.get(route)
+    return parity is not None and parity.tool_parity
+
+
+def loop_routes(routes: tuple[Route, ...]) -> tuple[Route, ...]:
+    """The routes, in order, a loop spec may use; empty means the spec is refused."""
+    return tuple(r for r in routes if route_enabled_for(r, "loop"))

@@ -1,6 +1,7 @@
 """`make route-parity ROUTE=direct|bedrock` (SPEC-010 AC-5): run the parity check with real
 credentials, write `docs/operations/route-parity/<route>-<date>.json`, and print the SHA-256 to
-record in `route_parity` (TASK-025 D2). Exits non-zero when the route fails parity."""
+record in `route_parity` (TASK-025 D2), with `tool_parity: true` when tools and documents passed
+too (P-10-T13). Exits non-zero when the route fails parity."""
 
 from __future__ import annotations
 
@@ -28,7 +29,9 @@ def main(argv: list[str] | None = None) -> int:
     path = REPORTS / f"{route}-{report.checked_on}.json"
     path.write_text(body, encoding="utf-8")
     digest = hashlib.sha256(body.encode()).hexdigest()
-    print(f"{path}\nreport_sha256={digest}\npassed={report.passed}")
+    print(
+        f"{path}\nreport_sha256={digest}\npassed={report.passed}\ntool_parity={report.tool_parity}"
+    )
     return 0 if report.passed else 1
 
 
