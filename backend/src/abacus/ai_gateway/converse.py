@@ -23,7 +23,9 @@ structured final answer or none (a tool-using turn). Every `call()` invariant ho
    one repair turn carrying the failure (a code and a path, never the text); if the repair fails
    too, the turn is `escalated` and the run goes to `needs_input` with reason `escalated` (AC-G4).
 5. **A structured final turn** validates against `output_schema`, with the same one repair, then
-   `escalated`. Nothing streams (AC-G7): the result is returned whole.
+   `escalated`. With an `output_kind`, it is then settled against the output-check registry
+   (P-09-T04): one repair with the check's code and path, then `unsupported`, shown as the
+   Unsupported state and never as the output. Nothing streams (AC-G7): the result is whole.
 
 `converse()` commits per attempt, so never call it inside a unit of work.
 """
@@ -62,6 +64,7 @@ from abacus.ai_gateway.admission import NotAdmitted, refusal_reason
 from abacus.ai_gateway.boundary import Basis, enforce_boundary, enforce_tri_consent
 from abacus.ai_gateway.budgets import check_budget, forget_spend
 from abacus.ai_gateway.context import AssembledContext, DataSubject, estimate_tokens
+from abacus.ai_gateway.output_checks import settle
 from abacus.ai_gateway.pii import part_with_tin
 from abacus.ai_gateway.prompts import Prompt, UnknownPrompt, prompt
 from abacus.ai_gateway.providers import (
@@ -88,13 +91,20 @@ from abacus.kernel.work_class import WorkClass
 _log = get_logger(__name__)
 _tracer = trace.get_tracer(__name__)
 
-ConverseStatus = Literal["ok", "repaired", "tool_use", "escalated"]
+# `unsupported` (P-09-T04): a structured final turn that failed its output check after the one
+# repair; the surface shows the Unsupported state, never the output (P-09 §3.7).
+ConverseStatus = Literal["ok", "repaired", "tool_use", "escalated", "unsupported"]
 AttemptOutcome = Literal[
     "ok", "invalid", "repaired", "budget_refused", "provider_error", "rate_limited"
 ]
 # Why a turn's output failed, as a code: the repair turn carries it with a path, never the text.
 TurnFailure = Literal[
-    "schema_invalid", "tool_unknown", "tool_arguments_invalid", "no_output", "refusal"
+    "schema_invalid",
+    "tool_unknown",
+    "tool_arguments_invalid",
+    "no_output",
+    "refusal",
+    "output_check",
 ]
 REPAIRS = 1
 
@@ -127,6 +137,9 @@ class ConverseCall[T: BaseModel]:
     tool_choice: ToolChoice = "auto"
     # The structured final turn's schema; None for a turn expected to call tools.
     output_schema: type[T] | None = None
+    # P-09-T04: the output-check kind the structured final turn is settled against
+    # (`ai_gateway.output_checks`, e.g. `agent_blocks`). An unregistered kind fails closed.
+    output_kind: str | None = None
     # §7216 (C19): whose tax return information the turn carries.
     data_subjects: tuple[DataSubject, ...] = ()
     # Evidence versions in the turn, for the identifier-only access events (Q-02-T20).
@@ -436,7 +449,7 @@ async def _converse[T: BaseModel](c: ConverseCall[T], found: Prompt) -> Converse
         await check_budget(
             c.attribution.tenant, c.attribution.engagement_id, c.essential, estimate
         )
-        needed = estimate_tokens(f"{found.text}\n{sent}") + c.max_output_tokens
+        needed: int = estimate_tokens(f"{found.text}\n{sent}") + int(c.max_output_tokens)
         tiers = (tier, *c.cheaper_tiers) if attempt == 1 else (tier,)
         excluded: set[Route] = set(barred)
         while True:
@@ -511,6 +524,7 @@ async def _converse[T: BaseModel](c: ConverseCall[T], found: Prompt) -> Converse
         spent += this_cost
         calls: tuple[ToolCallRequest, ...] = ()
         output: T | None = None
+        unsupported = False
         if response.stop_reason == "refusal":
             failure, where = "refusal", None
         elif response.tool_uses:
@@ -519,6 +533,17 @@ async def _converse[T: BaseModel](c: ConverseCall[T], found: Prompt) -> Converse
             )
         elif c.output_schema is not None:
             output, failure, where = _parsed(c.output_schema, response.text)
+            if output is not None and c.output_kind is not None:
+                # P-09-T04 (DE-3, DE-5, DE-6): the owner's check on the structured final turn,
+                # one repair with its code and path, then Unsupported. `call()` never runs it.
+                settled = settle(c.output_kind, output, attempt - 1)
+                if settled.outcome != "passed":
+                    check = settled.failure
+                    failure = "output_check"
+                    where = None if check is None else f"{check.code}@{check.where}"
+                    output = None
+                    if settled.outcome == "unsupported":
+                        unsupported = True
         elif not response.text.strip():
             failure, where = "no_output", None
         else:
@@ -546,6 +571,11 @@ async def _converse[T: BaseModel](c: ConverseCall[T], found: Prompt) -> Converse
                 status, output, calls, attempt, spent, inputs_hash, model, found, route,
                 None, None, response,
             )  # fmt: skip
+        if unsupported:
+            return ConverseResult(
+                "unsupported", None, (), attempt, spent, inputs_hash, model, found, route,
+                failure, where, response,
+            )  # fmt: skip
         if failure == "refusal":
             break  # a refusal is not repaired: the run goes to a person
         # AC-G4: one repair with the failure's code and path; the assistant's turn is replayed
@@ -569,8 +599,9 @@ async def _converse[T: BaseModel](c: ConverseCall[T], found: Prompt) -> Converse
             _repair_turn(failure, where),
         )
         sent = _turn_text(replace(cast(ConverseCall[BaseModel], c), messages=messages))
+    final: ConverseStatus = "unsupported" if failure == "output_check" else "escalated"
     return ConverseResult(
-        "escalated", None, (), attempt, spent, inputs_hash, model, found, route,
+        final, None, (), attempt, spent, inputs_hash, model, found, route,
         failure, where, last,
     )  # fmt: skip
 
