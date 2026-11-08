@@ -124,6 +124,12 @@ from abacus.modules.agents.routes import (
     router,
     template_drafts_router,
 )
+from abacus.modules.agents.run_backfill import register_session_links
+from abacus.modules.agents.run_backfill_workflow import (
+    BACKFILL_ID_PREFIX,
+    AgentRunBackfillWorkflow,
+    BackfillInput,
+)
 from abacus.modules.agents.runs import run_initiators
 from abacus.modules.agents.runs_routes import engagement_runs_router, runs_router
 from abacus.modules.agents.runs_v2_contract import (
@@ -331,6 +337,7 @@ __all__ = [
     "ACTIVITIES",
     "AGENTS",
     "ASSESSOR",
+    "BACKFILL_ID_PREFIX",
     "DRAFTER",
     "ENGAGEMENT_AGENT_HANDLE",
     "ENGAGEMENT_AGENT_NEXT_TICK",
@@ -346,6 +353,7 @@ __all__ = [
     "AdoptedValue",
     "AgentEvent",
     "AgentInput",
+    "AgentRunBackfillWorkflow",
     "AgentRunBusy",
     "AgentRunNotRunning",
     "AgentSpec",
@@ -353,6 +361,7 @@ __all__ = [
     "AnalyzeFacts",
     "ApprovedChangeSet",
     "ApproverMustDiffer",
+    "BackfillInput",
     "BatchOutcome",
     "ChangeSetApplier",
     "Citation",
@@ -487,6 +496,7 @@ __all__ = [
     "register_notice_shadows",
     "register_proposal_adapter",
     "register_section_source",
+    "register_session_links",
     "register_suggestion_applier",
     "register_suggestion_target",
     "register_threshold_policy",
