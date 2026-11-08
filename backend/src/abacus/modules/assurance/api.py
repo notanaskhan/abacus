@@ -5,6 +5,7 @@ The audit line's read models and actions: the AUD-06 trial balance first (SPEC-3
 
 # A-03-T08: the C9 v2 routes call this lazily; imported here so its error codes are catalogued.
 from abacus.kernel.audit_owners import register_engagement_owners
+from abacus.kernel.dispatch import register_work_classes
 from abacus.modules.adjustments.api import (
     register_entry_decision_hook,
     register_entry_proposed_hook,
@@ -52,6 +53,9 @@ from abacus.modules.assurance.draft_mappings import gap_inputs, risk_inputs, ris
 from abacus.modules.assurance.ebp_contract import router as ebp_router
 from abacus.modules.assurance.ebp_designed import register as register_ebp_designed
 from abacus.modules.assurance.ebp_designed import register_modes as register_ebp_modes
+from abacus.modules.assurance.ebp_form5500 import ACTIVITIES as FORM5500_ACTIVITIES
+from abacus.modules.assurance.ebp_form5500 import SUBSCRIPTIONS as FORM5500_SUBSCRIPTIONS
+from abacus.modules.assurance.ebp_form5500 import WORKFLOWS as FORM5500_WORKFLOWS
 from abacus.modules.assurance.ebp_investments import AUDIT_KINDS as CERTIFICATION_KINDS
 from abacus.modules.assurance.ebp_investments import audit_owners as certification_owners
 from abacus.modules.assurance.ebp_plan import AUDIT_KINDS as EBP_PLAN_KINDS
@@ -214,9 +218,12 @@ SUBSCRIPTIONS = (
     | dict(CHECKLIST_SUGGESTION_SUBSCRIPTIONS)
     | dict(A07_SUBSCRIPTIONS)
     | dict(EQR_SUBSCRIPTIONS)
+    | dict(FORM5500_SUBSCRIPTIONS)
 )
-WORKFLOWS: dict[type, str] = {}
-ACTIVITIES: tuple[object, ...] = ()
+# A-05-T54: Form5500TieOut, code only, on the background class.
+WORKFLOWS: dict[type, str] = dict(FORM5500_WORKFLOWS)
+ACTIVITIES: tuple[object, ...] = tuple(FORM5500_ACTIVITIES)
+register_work_classes(WORKFLOWS)  # type: ignore[arg-type]
 
 # A-01-T02 (A-01 §5.1): the AUD-01 segments every firm has; X-01 (SOC & IT) and X-03 (Internal
 # audit) register theirs with an entitlement.
