@@ -721,6 +721,8 @@ REVIEWED_FALLBACK: Final = frozenset(
         "proposed_entries.send_undone",
         "audit_finding.recorded",
         "audit_finding.converted",
+        "consultation.raised",
+        "consultation.concluded",
         # S28 (TASK-3334): statements (A-06-T25), form extraction and OCR (P-11-T25, T26) and the
         # notice response (N-04-T16); the names read right through the fallback.
         "statement.drafted",
