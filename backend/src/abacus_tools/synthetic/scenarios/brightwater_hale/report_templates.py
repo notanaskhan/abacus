@@ -535,13 +535,34 @@ def _a07_bundle(raw: Mapping[str, Any]) -> Json:  # Any: YAML
     """A-07-T12: a template bundle from the content file; no wording in this module (AGENTS 16)."""
     paragraphs = raw["paragraphs"]
     body: list[Json] = [_p(text) for text in paragraphs.get("general", ())]
-    body += [_p(str(item["text"])) for item in paragraphs.get("specific", ())]
+    # A-07-T24 (DEC-2808): a specific representation is a C11 clause keyed by its trigger, off by
+    # default; the letter service turns it on when the trigger's facts hold.
+    specific = list(paragraphs.get("specific", ()))
+    clauses: list[Json] = [
+        {
+            "clause_id": str(item["trigger"]),
+            "title": f"Representation {item['n']}",
+            "standard": [_p(str(item["text"]))],
+            "default_enabled": False,
+        }
+        for item in specific
+    ]
+    body += [
+        {
+            "type": "clause",
+            "clause_id": str(item["trigger"]),
+            "enabled": False,
+            "non_standard": False,
+            "blocks": [_p(str(item["text"]))],
+        }
+        for item in specific
+    ]
     return {
         "family": raw["family"],
         "name": raw["name"],
         "layout_key": raw["layout"],
         "body": body,
-        "clauses": [],
+        "clauses": clauses,
         "variables": [],
         "sample_data": {},
     }

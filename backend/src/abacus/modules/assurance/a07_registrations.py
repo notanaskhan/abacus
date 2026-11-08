@@ -29,6 +29,7 @@ from collections.abc import Mapping, Sequence
 from typing import Final, Literal
 from uuid import UUID
 
+from abacus.kernel.clock import FIRM_ZONE
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import NotFound
 from abacus.kernel.uow.relay import OutboxEvent
@@ -178,7 +179,21 @@ async def on_letter_envelope_completed(event: OutboxEvent) -> None:
         return
     if not live("audits.letters"):
         return
-    # Live: A-07-T24 records G7 with the date check; A-07-T26 the acknowledgement.
+    if event.payload.get("source_kind") == REP_LETTER:
+        # A-07-T24 (DEC-2808): G7 with the date check, on the client signer's signing instant in
+        # the firm's zone. A-07-T26 records the governance acknowledgement.
+        from abacus.modules.assurance.rep_letters import record_signature
+        from abacus.modules.signatures.api import envelope_signing
+
+        envelope_id = UUID(str(event.payload["envelope_id"]))
+        tenant = TenantContext(event.tenant_id, "system", "rep_letter_g7")
+        signing = await envelope_signing(tenant, envelope_id)
+        signed_at = None if signing is None else signing.signed_at.get("client")
+        if signed_at is None:
+            return
+        await record_signature(
+            tenant, envelope_id, signed_at, signed_at.astimezone(FIRM_ZONE).date()
+        )
 
 
 # --- C11 document kinds ----------------------------------------------------------------------
