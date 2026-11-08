@@ -40,8 +40,7 @@ export function RiskDrawer({
   );
   const data = drawer.data;
   // A-04-T26 (f): a drafted rationale waits for a person (C-31); nothing adopts by itself.
-  const suggestionId = data?.rationale_suggestion_id ?? null;
-  const drafted = suggestionId !== null;
+  const suggested = data?.rationale_suggestion;
   const response = data?.response_suggestion;
   const refresh = (): void => {
     void drawer.refetch();
@@ -77,6 +76,7 @@ export function RiskDrawer({
         </Button>
       </div>
     ) : undefined;
+  const hasRationale = (data?.rationale ?? "") !== "";
   return (
     <Drawer
       open
@@ -100,36 +100,53 @@ export function RiskDrawer({
         <section data-aud08="rationale" className="rounded-pane bg-card p-[12px] shadow-e1">
           <h3 className="mb-[8px] flex items-center text-section font-medium">
             {COPY.drawer.rationaleCard}
-            {drafted && <DraftedMarker citations={data?.citation_ids.length ?? 0} />}
+            {suggested != null && <DraftedMarker citations={suggested.citations} />}
           </h3>
-          <AgentText
-            text={data?.rationale ?? ""}
-            className={
-              drafted
-                ? "text-[12.5px] leading-[1.55] text-ink-2"
-                : "text-[12.5px] leading-[1.55] text-ink"
-            }
-          />
+          {hasRationale && (
+            <AgentText
+              text={data?.rationale ?? ""}
+              className="text-[12.5px] leading-[1.55] text-ink"
+            />
+          )}
           {(data?.citation_ids.length ?? 0) > 0 && (
             <p className="mt-[8px] text-micro text-ink-3">
               {COPY.drawer.citations(data?.citation_ids.length ?? 0)}
             </p>
           )}
-          {suggestionId !== null && (
-            <DraftedFooter
-              onAdopt={() => {
-                adopt.mutate({ path: { suggestion_id: suggestionId }, body: { seen_version: 1 } });
-              }}
-              onEdit={() => {
-                onEdit?.();
-              }}
-              onDiscard={() => {
-                dismiss.mutate({
-                  path: { suggestion_id: suggestionId },
-                  body: { seen_version: 1 },
-                });
-              }}
-            />
+          {suggested != null && (
+            <>
+              <div
+                data-aud08="proposed-rationale"
+                className={hasRationale ? "mt-[8px]" : undefined}
+              >
+                <AgentText
+                  text={suggested.text}
+                  className="text-[12.5px] leading-[1.55] text-ink-2"
+                />
+                {suggested.citations > 0 && (
+                  <p className="mt-[8px] text-micro text-ink-3">
+                    {COPY.drawer.citations(suggested.citations)}
+                  </p>
+                )}
+              </div>
+              <DraftedFooter
+                onAdopt={() => {
+                  adopt.mutate({
+                    path: { suggestion_id: suggested.suggestion_id },
+                    body: { seen_version: suggested.version },
+                  });
+                }}
+                onEdit={() => {
+                  onEdit?.();
+                }}
+                onDiscard={() => {
+                  dismiss.mutate({
+                    path: { suggestion_id: suggested.suggestion_id },
+                    body: { seen_version: suggested.version },
+                  });
+                }}
+              />
+            </>
           )}
         </section>
         {response != null && (
