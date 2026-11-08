@@ -75,7 +75,10 @@ The same model family is reachable through two routes, `direct` (the provider's 
 **When a route can be used:**
 - it is in `model_routes`;
 - it has a parity report from the last 90 days (`route_parity`; run `make route-parity ROUTE=…`);
-- outside synthetic environments, the agent has passed its evaluation on that route.
+- outside synthetic environments, the agent has passed its evaluation on that route;
+- for a loop-shaped spec (multi-turn tool use through `converse()`), the report also passed tools
+  and documents (`tool_parity: true` on the `route_parity` record; `routes.route_enabled_for`,
+  P-10-T13).
 
 **Admission:** admission walks tiers, then routes. Capacity and blocks are keyed by route and model.
 
