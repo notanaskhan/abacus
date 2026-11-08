@@ -14,7 +14,8 @@ from abacus.modules.agents.specs._specs import SPECS
 def test_ebp_trust_runs_on_its_own_prompt_in_spec_version_11() -> None:
     spec: dict[str, object] = SPECS["workpapers.section_drafter"]
     modes = spec["modes"]
-    assert spec["version"] == 11
+    version = spec["version"]  # later modes bump the spec (v12: A-05-T55)
+    assert isinstance(version, int) and version >= 11
     assert isinstance(modes, dict)
     assert modes["ebp_trust"]["prompt"] == "workpapers.section_draft.ebp_trust@v1"
 
