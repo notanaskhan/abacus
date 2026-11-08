@@ -110,6 +110,7 @@ export const COPY = {
     } as Record<string, string>,
     routed: (name: string, at: string): string => `Routed to ${name} · ${at}`,
     remind: (first: string): string => `Remind ${first}…`,
+    reminded: (who: string): string => `Reminded ${who}.`,
     approve: "Approve as significant risk",
     notSignificant: "Not significant…",
     citations: (n: number): string => `${String(n)} citations`,
