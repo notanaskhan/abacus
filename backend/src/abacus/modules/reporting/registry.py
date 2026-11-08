@@ -25,6 +25,9 @@ TABLES: frozenset[str] = frozenset(
         "statement_approvals",
         "statement_notes",  # A-06-T25 (0674, DEC-2389)
     }
+    # R-02-T05 (0710): C10 deliverables, their audiences, versions, events and receipts.
+    | {"deliverables", "deliverable_audiences", "deliverable_versions", "deliverable_events"}
+    | {"deliverable_receipts"}
 )
 # Insert and read, never update or delete, for the app role (ADR-004); each also carries a
 # `reporting_rows_immutable` trigger (I-IMMUTABLE).
@@ -42,6 +45,7 @@ INSERT_ONLY: frozenset[str] = frozenset(
         "statement_approvals",
         "statement_notes",
     }
+    | {"deliverable_audiences", "deliverable_versions", "deliverable_events"}  # R-02-T05
 )
 # Columns the app may supply on insert; everything else is server-set.
 INSERT_COLUMNS: dict[str, frozenset[str]] = {
@@ -197,5 +201,44 @@ UPDATE_COLUMNS["disclosure_checklist_answers"] = frozenset(
         "suggestion_id",
         "updated_at",
         "version",
+    }
+)
+
+# R-02-T05 (0710; R-02 §4.2): C10. `deliverables` is one row per (source_module, source_ref);
+# audiences, versions and events are insert-only; receipts are a projection of access events.
+INSERT_COLUMNS.update(
+    {
+        "deliverables": frozenset(
+            {"id", "tenant_id", "client_id", "client_entity_id", "engagement_id", "work_item_id"}
+            | {"kind", "title", "source_module", "source_ref", "restricted_use", "legend_kind"}
+            | {"created_by"}
+        ),
+        "deliverable_audiences": frozenset(
+            {"tenant_id", "deliverable_id", "scope_kind", "scope_id"}
+        ),
+        "deliverable_versions": frozenset(
+            {"id", "tenant_id", "deliverable_id", "version_no", "evidence_version_id"}
+            | {"generated_document_id", "render_hash", "page_count", "is_draft", "page_comments"}
+            | {"approval_kind", "approval_item_id", "published_by_user_id", "actor_kind"}
+            | {"on_behalf_of_user_id", "supersedes_version_id"}
+        ),
+        "deliverable_events": frozenset(
+            {"id", "tenant_id", "deliverable_version_id", "kind", "reason_code", "note_sealed"}
+            | {"actor_kind", "actor_user_id", "on_behalf_of_user_id"}
+        ),
+        "deliverable_receipts": frozenset(
+            {"tenant_id", "deliverable_version_id", "contact_id", "first_viewed_at"}
+            | {"last_viewed_at", "first_downloaded_at", "download_count"}
+        ),
+    }
+)
+UPDATE_COLUMNS.update(
+    {
+        "deliverables": frozenset(
+            {"title", "restricted_use", "legend_kind", "version", "updated_at"}
+        ),
+        "deliverable_receipts": frozenset(
+            {"first_viewed_at", "last_viewed_at", "first_downloaded_at", "download_count"}
+        ),
     }
 )
