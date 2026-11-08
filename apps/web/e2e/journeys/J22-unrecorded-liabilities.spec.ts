@@ -74,3 +74,13 @@ test.describe("J22", () => {
     },
   );
 });
+
+// A-06-T35 (TASK-6121): J22 step 8, the search's finding on the register; fixme until A-08's
+// AUD-26 runs full stack (S35).
+test.describe("J22 completion (A-06-T35)", () => {
+  test.fixme("j22 8: the unrecorded liability lands on the findings register (AUD-15)", async ({
+    journey,
+  }) => {
+    await journey.as("hannah-leclerc", "/audits/_auditId_/findings", { scenario: "AUD-15:a" });
+  });
+});

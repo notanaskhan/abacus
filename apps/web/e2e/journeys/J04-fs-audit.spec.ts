@@ -278,3 +278,19 @@ test.describe("J04-fs-audit pbc-ai through SHL-10 (P-04-T45)", () => {
     },
   );
 });
+
+// A-06-T35 (TASK-6121): J04 step 13 on AUD-20 in fixture mode; the full-stack run waits for A-08's
+// AUD-26 (S35).
+test.describe("J04 completion (A-06-T35)", () => {
+  test("j04 13: the draft statements' client preview carries DRAFT and no checklist (AUD-20 d)", async ({
+    journey,
+  }) => {
+    test.fixme(journey.project !== "fixture", "the full-stack run waits for A-08's AUD-26 (S35)");
+    await journey.as("hannah-leclerc", "/audits/_auditId_/fs-disclosure", {
+      scenario: "AUD-20:d",
+    });
+    await journey.step("J04 step 13: the client preview", async (page) => {
+      await expect(page.locator('[data-pane="checklist"]')).toHaveCount(0);
+    });
+  });
+});
