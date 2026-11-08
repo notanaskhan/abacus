@@ -92,6 +92,25 @@ describe("EBP-03 results", () => {
     );
   });
 
+  it("a: a verified rule shows no entry-rule notice", async () => {
+    show("a");
+    await matrix();
+    expect(document.querySelector("[data-ebp03='entry-rule']")).toBeNull();
+  });
+
+  it("f: with the entry rule unverified the rows show no entry date and no computation", async () => {
+    show("f");
+    const grid = await matrix();
+    expect(document.querySelector("[data-ebp03='entry-rule']")?.textContent).toContain(
+      "must be verified on EBP-02",
+    );
+    expect(grid.textContent).not.toContain("06/01/2025");
+    expect(document.querySelector("[data-ebp03='computation']")).toBeNull();
+    expect(document.querySelector("[data-ebp03='exceptions']")?.textContent).not.toContain(
+      "2,472",
+    );
+  });
+
   it("b: untested rows spin while the agent tests", async () => {
     show("b");
     const grid = await matrix();

@@ -13,14 +13,14 @@ ENTRY_2025 = date(2025, 6, 1)
 
 def test_eligible_on_is_shown_where_hire_plus_three_months_governs() -> None:
     entry = eligibility.entry(date(1990, 1, 15), date(2025, 2, 10))
-    assert eligible_shown(entry, date(2025, 2, 10)) == date(2025, 5, 10)
+    assert eligible_shown(entry) == date(2025, 5, 10)
 
 
 def test_eligible_on_is_withheld_where_it_would_be_the_21st_birthday() -> None:
     dob = date(2004, 9, 1)
     entry = eligibility.entry(dob, date(2025, 1, 6))
     assert entry.eligible_on == date(2025, 9, 1)
-    assert eligible_shown(entry, date(2025, 1, 6)) is None
+    assert eligible_shown(entry) is None
 
 
 def test_the_rate_label_reads_the_election_or_codes_escalated_default() -> None:

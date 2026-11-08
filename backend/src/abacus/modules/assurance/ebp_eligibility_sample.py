@@ -3,8 +3,12 @@
 The eligibility test's rows in A-03's order: the census against the HR roster, code's entry date,
 the row's result from the shared grid, and code's missed amounts on an exception. Code opens a date
 of birth only to compute the entry date, and no row discloses one: `dob_masked` is a constant, and
-`eligible_on` is shown only where hire + 3 months governs (the later of that and age 21), so it can
-never be read back to a birthday. Nothing here is logged or written.
+`eligible_on` is shown only where hire plus the service months governs, so it can never be read
+back to a birthday. Nothing here is logged or written.
+
+The entry rule is the verified provision's (`ebp_provisions.entry_rule_read`, A-05-T16). Until it
+is verified and readable code computes nothing from it: no date of birth is opened, and the rows
+show no entry date, default rate, no-effect note or missed amount (DEC-2482).
 """
 
 from __future__ import annotations
@@ -25,8 +29,10 @@ from abacus.modules.assurance.ebp_contract import (
     EligibilityResult,
     EligibilitySampleOut,
     EligibilitySampleRowOut,
+    EntryRuleOut,
 )
 from abacus.modules.assurance.ebp_participants import binding
+from abacus.modules.assurance.ebp_provisions import EntryRuleRead, entry_rule_read
 from abacus.modules.engagements.api import assurance_item, engagement_metadata, get_ref
 from abacus.modules.identity.api import AuthContext, allowed_actions, names_of
 from abacus.modules.review.api import sign_off_states
@@ -81,9 +87,19 @@ async def _dob(tenant: TenantContext, person: _Person) -> date | None:
     return date.fromisoformat(opened.decode())
 
 
-def eligible_shown(entry: eligibility.Entry, hire_on: date) -> date | None:
-    """Only where hire + 3 months governs: otherwise the date is the 21st birthday (DEC-2225)."""
-    return entry.eligible_on if entry.eligible_on == eligibility.add_months(hire_on, 3) else None
+def eligible_shown(entry: eligibility.Entry) -> date | None:
+    """Only where hire plus the service months governs: otherwise the date is a birthday
+    (DEC-2225)."""
+    return entry.eligible_on if entry.eligible_on == entry.service_on else None
+
+
+def rule_out(read: EntryRuleRead) -> EntryRuleOut:
+    rule = read.rule
+    return EntryRuleOut(
+        state=read.state,
+        minimum_age=None if rule is None else rule.minimum_age,
+        service_months=None if rule is None else rule.service_months,
+    )
 
 
 def rate_label(
@@ -120,20 +136,36 @@ async def _row(
     census: _Person | None,
     hr: _Person | None,
     year: int,
+    rule: eligibility.EntryRule | None,
 ) -> EligibilitySampleRowOut:
     hire = census.hire_on if census else None
-    dob = await _dob(tenant, census) if census else None
-    entry = None if dob is None or hire is None else eligibility.entry(dob, hire)
+    # Opened only to compute: no rule or no hire date computes nothing.
+    dob = (
+        await _dob(tenant, census)
+        if census and census.hire_on is not None and rule is not None
+        else None
+    )
+    entry = (
+        None if rule is None or dob is None or hire is None else eligibility.entry(dob, hire, rule)
+    )
     flagged = state == "exception"
     gone = None if census else "Not on the census"
     review = (
-        eligibility.review(dob, hire, hr.hire_on)
-        if dob is not None and hire is not None and hr is not None and hr.hire_on is not None
+        eligibility.review(dob, hire, hr.hire_on, rule)
+        if rule is not None
+        and dob is not None
+        and hire is not None
+        and hr is not None
+        and hr.hire_on is not None
         else None
     )
     missed = (
         eligibility.missed(census.compensation)
-        if flagged and census is not None and census.election == 0 and census.compensation
+        if rule is not None
+        and flagged
+        and census is not None
+        and census.election == 0
+        and census.compensation
         else None
     )
     version = _cell_value(cells, "hire_date", "hr_record_version_id")
@@ -147,7 +179,7 @@ async def _row(
         dob_masked=MASKED,
         census_hire=hire,
         hr_hire=hr.hire_on if hr else None,
-        eligible_on=None if entry is None or hire is None else eligible_shown(entry, hire),
+        eligible_on=None if entry is None else eligible_shown(entry),
         entry_on=None if entry is None else entry.entry_on,
         recordkeeper_entry_on=_iso(_cell_value(cells, "entry_date", "recordkeeper_entry_on")),
         rate_label=rate_label(
@@ -172,6 +204,7 @@ async def _can(ctx: AuthContext, engagement_id: UUID) -> list[str]:
 async def sample(ctx: AuthContext, work_item_id: UUID) -> EligibilitySampleOut:
     """The route authorised `ebp.read`. No test yet is no rows: EBP-03's empty state."""
     item = await assurance_item(ctx.tenant, work_item_id)
+    rule = await entry_rule_read(ctx.tenant, item.engagement_id, work_item_id)
     found = await latest_test_of_variant(ctx.tenant, work_item_id, VARIANT)
     if found is None:
         return EligibilitySampleOut(
@@ -181,6 +214,7 @@ async def sample(ctx: AuthContext, work_item_id: UUID) -> EligibilitySampleOut:
             exceptions=0,
             needs_human=0,
             allowed_actions=await _can(ctx, item.engagement_id),
+            entry_rule=rule_out(rule),
         )
     test_id, content_hash = found
     table = await grid(ctx, item.engagement_id, test_id)
@@ -199,6 +233,7 @@ async def sample(ctx: AuthContext, work_item_id: UUID) -> EligibilitySampleOut:
             census.get(row.record_key),
             roster.get(row.record_key),
             year,
+            rule.rule,
         )
         for row in table.rows
     ]
@@ -224,4 +259,5 @@ async def sample(ctx: AuthContext, work_item_id: UUID) -> EligibilitySampleOut:
         reviewed_by=initials(2),
         workpaper_id=table.workpaper_id,
         allowed_actions=await _can(ctx, item.engagement_id),
+        entry_rule=rule_out(rule),
     )

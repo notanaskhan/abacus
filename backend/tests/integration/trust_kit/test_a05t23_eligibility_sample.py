@@ -14,7 +14,9 @@ from sqlalchemy import text
 
 from abacus.kernel.uow import Target, uow
 from abacus.modules.assurance import ebp_eligibility_sample as sample_module
+from abacus.modules.assurance.compute.ebp.eligibility import EntryRule
 from abacus.modules.assurance.ebp_participants import seal_pii
+from abacus.modules.assurance.ebp_provisions import EntryRuleRead
 
 from .support import Firm, Seeder, make_firm
 
@@ -144,7 +146,11 @@ async def sample(seed: Seeder, monkeypatch: pytest.MonkeyPatch) -> SimpleNamespa
     async def can(*_a: object) -> list[str]:
         return ["test.mark"]
 
+    async def rule(*_a: object) -> EntryRuleRead:
+        return EntryRuleRead("verified", EntryRule())
+
     for name, stub in (
+        ("entry_rule_read", rule),
         ("latest_test_of_variant", latest),
         ("grid", grid),
         ("sign_off_states", states),
@@ -201,3 +207,41 @@ async def test_ac_no_test_yet_is_no_rows(
     monkeypatch.setattr(sample_module, "latest_test_of_variant", none)
     out = await sample_module.sample(sample.firm.person(), sample.work_item)
     assert (out.test_id, out.rows) == (None, [])
+
+
+@pytest.mark.asyncio
+async def test_ac_an_unverified_entry_rule_computes_nothing_and_opens_no_birth_date(
+    sample: SimpleNamespace, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def unverified(*_a: object) -> EntryRuleRead:
+        return EntryRuleRead("unverified")
+
+    async def never(*_a: object) -> date:
+        raise AssertionError("a date of birth was opened with no verified rule")
+
+    monkeypatch.setattr(sample_module, "entry_rule_read", unverified)
+    monkeypatch.setattr(sample_module, "_dob", never)
+    out = await sample_module.sample(sample.firm.person(), sample.work_item)
+    assert out.entry_rule.state == "unverified"
+    assert (out.entry_rule.minimum_age, out.entry_rule.service_months) == (None, None)
+    first, young, kwame, missing = out.rows
+    assert (first.entry_on, first.eligible_on, first.note) == (None, None, None)
+    assert first.rate_label == "8% elected"  # the person's election, not a computed rate
+    assert (young.entry_on, young.rate_label) == (None, "")
+    assert (kwame.entry_on, kwame.missed_deferral, kwame.missed_match) == (None, None, None)
+    assert kwame.result == "exception"  # a person's result stays
+    assert missing.note == "Not on the census"
+
+
+@pytest.mark.asyncio
+async def test_ac_the_verified_rule_moves_the_entry_date(
+    sample: SimpleNamespace, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def six_months(*_a: object) -> EntryRuleRead:
+        return EntryRuleRead("verified", EntryRule(minimum_age=21, service_months=6))
+
+    monkeypatch.setattr(sample_module, "entry_rule_read", six_months)
+    out = await sample_module.sample(sample.firm.person(), sample.work_item)
+    assert (out.entry_rule.minimum_age, out.entry_rule.service_months) == (21, 6)
+    first = out.rows[0]
+    assert (first.eligible_on, first.entry_on) == (date(2025, 8, 10), date(2025, 9, 1))
