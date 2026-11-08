@@ -3407,6 +3407,20 @@ export type AttributeSizeRowOutput = {
 };
 
 /**
+ * Aud27ComponentOut
+ */
+export type Aud27ComponentOut = {
+    /**
+     * Amount
+     */
+    amount: string;
+    /**
+     * Label
+     */
+    label: string;
+};
+
+/**
  * Aud27ItemIn
  */
 export type Aud27ItemIn = {
@@ -3421,13 +3435,42 @@ export type Aud27ItemIn = {
  */
 export type Aud27ItemOut = {
     /**
+     * Account Ref
+     */
+    account_ref?: string | null;
+    /**
      * Amount
      */
     amount: string | null;
     /**
+     * Bias
+     */
+    bias?: 'none' | 'possible' | null;
+    /**
+     * Components
+     */
+    components?: Array<Aud27ComponentOut>;
+    /**
+     * Disclosure Ref
+     */
+    disclosure_ref?: string | null;
+    /**
+     * Exemption
+     */
+    exemption?: string | null;
+    /**
+     * Finding Id
+     */
+    finding_id?: string | null;
+    /**
      * Id
      */
     id: string;
+    method?: Aud27MethodOut | null;
+    /**
+     * Method Text
+     */
+    method_text?: string | null;
     /**
      * Name
      */
@@ -3436,6 +3479,28 @@ export type Aud27ItemOut = {
      * Pending Ep
      */
     pending_ep: boolean;
+    range?: Aud27RangeOut | null;
+    /**
+     * Relationship
+     */
+    relationship?: string | null;
+    /**
+     * Reporting
+     */
+    reporting?: string | null;
+    /**
+     * Retrospectives
+     */
+    retrospectives?: Array<Aud27RetrospectiveOut>;
+    rollforward?: Aud27RollforwardOut | null;
+    /**
+     * Significant Risk
+     */
+    significant_risk?: boolean;
+    /**
+     * Source
+     */
+    source?: string | null;
     /**
      * Status
      */
@@ -3454,6 +3519,142 @@ export type Aud27ListOut = {
      * Items
      */
     items: Array<Aud27ItemOut>;
+    /**
+     * Prohibited
+     */
+    prohibited?: Array<Aud27ProhibitedOut>;
+};
+
+/**
+ * Aud27MethodOut
+ *
+ * The method card's tie: components against the balance, code's (A-05-T53).
+ */
+export type Aud27MethodOut = {
+    /**
+     * Components Total
+     */
+    components_total: string;
+    /**
+     * Difference
+     */
+    difference: string;
+    /**
+     * Ties
+     */
+    ties: boolean;
+};
+
+/**
+ * Aud27ProhibitedOut
+ *
+ * AUD-27 c's card: the late remittance as a prohibited transaction, read from EBP-04.
+ */
+export type Aud27ProhibitedOut = {
+    /**
+     * Business Days Late
+     */
+    business_days_late?: number | null;
+    /**
+     * Correction Status
+     */
+    correction_status?: string | null;
+    /**
+     * Deposited On
+     */
+    deposited_on?: string | null;
+    /**
+     * Form 5330 Status
+     */
+    form_5330_status?: string | null;
+    /**
+     * Late Remittance Id
+     */
+    late_remittance_id: string;
+    /**
+     * Lost Earnings
+     */
+    lost_earnings: string | null;
+    /**
+     * Principal
+     */
+    principal: string | null;
+};
+
+/**
+ * Aud27RangeOut
+ */
+export type Aud27RangeOut = {
+    /**
+     * High
+     */
+    high: string;
+    /**
+     * Inside
+     */
+    inside: boolean;
+    /**
+     * Low
+     */
+    low: string;
+};
+
+/**
+ * Aud27RetrospectiveOut
+ *
+ * A prior-year estimate against its outcome ("over by $14,000.00, 3.4%").
+ */
+export type Aud27RetrospectiveOut = {
+    /**
+     * Difference
+     */
+    difference: string;
+    /**
+     * Direction
+     */
+    direction: 'over' | 'under' | 'exact';
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Outcome
+     */
+    outcome: string;
+    /**
+     * Percent
+     */
+    percent: string;
+    /**
+     * Prior Estimate
+     */
+    prior_estimate: string;
+};
+
+/**
+ * Aud27RollforwardOut
+ */
+export type Aud27RollforwardOut = {
+    /**
+     * Additions
+     */
+    additions: string;
+    /**
+     * Computed Closing
+     */
+    computed_closing: string;
+    /**
+     * Opening
+     */
+    opening: string;
+    /**
+     * Ties
+     */
+    ties: boolean;
+    /**
+     * Usage
+     */
+    usage: string;
 };
 
 /**

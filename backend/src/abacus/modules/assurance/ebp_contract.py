@@ -912,6 +912,54 @@ _ESTIMATE: JsonDict = {
 }
 
 
+class Aud27MethodOut(BaseModel):
+    """The method card's tie: components against the balance, code's (A-05-T53)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    components_total: Money
+    difference: Money
+    ties: Annotated[bool, classified("internal")]
+
+
+class Aud27ComponentOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    label: Annotated[str, Field(max_length=300), classified("confidential")]
+    amount: Money
+
+
+class Aud27RollforwardOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    opening: Money
+    usage: Money
+    additions: Money
+    computed_closing: Money
+    ties: Annotated[bool, classified("internal")]
+
+
+class Aud27RetrospectiveOut(BaseModel):
+    """A prior-year estimate against its outcome ("over by $14,000.00, 3.4%")."""
+
+    model_config = ConfigDict(frozen=True)
+
+    label: Annotated[str, Field(max_length=120), classified("confidential")]
+    prior_estimate: Money
+    outcome: Money
+    difference: Money
+    percent: Annotated[Decimal, classified("internal")]
+    direction: Annotated[Literal["over", "under", "exact"], classified("internal")]
+
+
+class Aud27RangeOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    low: Money
+    high: Money
+    inside: Annotated[bool, classified("internal")]
+
+
 class Aud27ItemOut(BaseModel):
     model_config = _ex(_ESTIMATE)
 
@@ -921,6 +969,43 @@ class Aud27ItemOut(BaseModel):
     status: Annotated[AudItemStatus, classified("internal")]
     # "Evaluated · pending EP" is a display variant of evaluated.
     pending_ep: Annotated[bool, classified("internal")]
+    # A-05-T57 (DEC-2813), additive: what AUD-27's rows and cards show, from A-05-T53's views.
+    account_ref: Annotated[str | None, Field(max_length=40), classified("internal")] = None
+    significant_risk: Annotated[bool, classified("internal")] = False
+    method_text: Annotated[str | None, Field(max_length=500), classified("confidential")] = None
+    disclosure_ref: Annotated[str | None, Field(max_length=200), classified("confidential")] = None
+    components: Annotated[
+        list[Aud27ComponentOut], Field(max_length=50), classified("confidential")
+    ] = Field(default_factory=list[Aud27ComponentOut])
+    method: Annotated[Aud27MethodOut | None, classified("confidential")] = None
+    rollforward: Annotated[Aud27RollforwardOut | None, classified("confidential")] = None
+    retrospectives: Annotated[
+        list[Aud27RetrospectiveOut], Field(max_length=10), classified("confidential")
+    ] = Field(default_factory=list[Aud27RetrospectiveOut])
+    range: Annotated[Aud27RangeOut | None, classified("confidential")] = None
+    # A possible bias: every retrospective difference points the same way (AU-C 540.A133).
+    bias: Annotated[Literal["none", "possible"] | None, classified("internal")] = None
+    # Related parties: where the candidate came from, the relationship, the finding it raised.
+    source: Annotated[str | None, Field(max_length=40), classified("internal")] = None
+    relationship: Annotated[str | None, Field(max_length=300), classified("confidential")] = None
+    finding_id: Annotated[UUID | None, classified("internal")] = None
+    # Parties in interest (EBP): the ERISA relationship, exemption and reporting line.
+    exemption: Annotated[str | None, Field(max_length=200), classified("confidential")] = None
+    reporting: Annotated[str | None, Field(max_length=200), classified("confidential")] = None
+
+
+class Aud27ProhibitedOut(BaseModel):
+    """AUD-27 c's card: the late remittance as a prohibited transaction, read from EBP-04."""
+
+    model_config = ConfigDict(frozen=True)
+
+    late_remittance_id: Annotated[UUID, classified("internal")]
+    principal: MaybeMoney
+    deposited_on: Annotated[date | None, classified("internal")] = None
+    business_days_late: Annotated[int | None, classified("internal")] = None
+    lost_earnings: MaybeMoney
+    correction_status: Annotated[str | None, Field(max_length=60), classified("internal")] = None
+    form_5330_status: Annotated[str | None, Field(max_length=60), classified("internal")] = None
 
 
 class Aud27ListOut(BaseModel):
@@ -928,6 +1013,10 @@ class Aud27ListOut(BaseModel):
 
     items: Annotated[list[Aud27ItemOut], Field(max_length=200), classified("confidential")]
     allowed_actions: Actions
+    # A-05-T57 (DEC-2813): the parties-in-interest read carries the prohibited transactions.
+    prohibited: Annotated[list[Aud27ProhibitedOut], classified("confidential")] = Field(
+        default_factory=list[Aud27ProhibitedOut]
+    )
 
 
 class Aud27ItemIn(BaseModel):
@@ -2288,10 +2377,48 @@ async def estimates_route(work_item_id: UUID, ctx: Ctx) -> Aud27ListOut:
                 amount=e.balance,
                 status=e.status,  # type: ignore[arg-type]  # registry kind literal
                 pending_ep=e.pending_ep,
+                account_ref=e.account_ref,
+                significant_risk=e.significant_risk,
+                method_text=e.method_text,
+                disclosure_ref=e.disclosure_ref,
+                components=[Aud27ComponentOut(label=lbl, amount=amt) for lbl, amt in e.components],
+                method=None
+                if e.footing is None
+                else Aud27MethodOut(
+                    components_total=e.footing.components_total,
+                    difference=e.footing.difference,
+                    ties=e.footing.difference == 0,
+                ),
+                rollforward=None
+                if e.rollforward is None
+                else Aud27RollforwardOut(
+                    opening=e.rollforward.opening,
+                    usage=e.rollforward.usage,
+                    additions=e.rollforward.additions,
+                    computed_closing=e.rollforward.computed_closing,
+                    ties=e.rollforward.computed_closing == e.rollforward.balance,
+                ),
+                retrospectives=[
+                    Aud27RetrospectiveOut(
+                        label=r.label,
+                        prior_estimate=r.prior_estimate,
+                        outcome=r.outcome,
+                        difference=r.difference,
+                        percent=r.percent,
+                        direction=r.direction,
+                    )
+                    for r in e.retrospectives
+                ],
+                range=None
+                if e.range is None
+                else Aud27RangeOut(low=e.range.low, high=e.range.high, inside=e.range.inside),
+                bias=None
+                if not e.retrospectives
+                else ("possible" if e.bias.direction is not None else "none"),
             )
             for e in found
         ],
-        allowed_actions=["estimate.evaluate"],
+        allowed_actions=["estimate.evaluate", "estimate.request_conclusion"],
     )
 
 
@@ -2340,10 +2467,13 @@ async def related_parties_route(work_item_id: UUID, ctx: Ctx) -> Aud27ListOut:
                 amount=None,
                 status=p.status,  # type: ignore[arg-type]  # registry kind literal
                 pending_ep=False,
+                source=p.source,
+                relationship=p.relationship,
+                finding_id=p.finding_id,
             )
             for p in parties
         ],
-        allowed_actions=["related_party.manage"],
+        allowed_actions=["related_party.manage", "related_party.screen_out"],
     )
 
 
@@ -2383,7 +2513,39 @@ async def related_party_screen_out_route(
 async def parties_in_interest_route(work_item_id: UUID, ctx: Ctx) -> Aud27ListOut:
     """AUD-27 c (Northwind); the prohibited transaction reads the late remittance (T52)."""
     await _gate(ctx, work_item_id, "ebp.read", _A)
-    return Aud27ListOut(items=[], allowed_actions=["party_in_interest.manage"])
+    parties, prohibited = await aud27.parties_in_interest(ctx, work_item_id)
+    return Aud27ListOut(
+        items=[
+            Aud27ItemOut(
+                id=pid,
+                name=name,
+                amount=None,
+                # A late remittance is the sponsor's use of plan assets (ERISA §406), so the
+                # sponsor's row carries the exception while one exists; the rest are unevaluated.
+                status="exception"
+                if prohibited and "sponsor" in (relationship or "").lower()
+                else "unevaluated",
+                pending_ep=False,
+                relationship=relationship,
+                exemption=exemption,
+                reporting=reporting,
+            )
+            for pid, name, relationship, exemption, reporting in parties
+        ],
+        allowed_actions=["party_in_interest.manage"],
+        prohibited=[
+            Aud27ProhibitedOut(
+                late_remittance_id=t.late_remittance_id,
+                principal=t.principal,
+                deposited_on=t.deposited_on if isinstance(t.deposited_on, date) else None,
+                business_days_late=t.business_days_late,
+                lost_earnings=t.lost_earnings,
+                correction_status=t.correction_status,
+                form_5330_status=t.form_5330_status,
+            )
+            for t in prohibited
+        ],
+    )
 
 
 @router.post(

@@ -7,7 +7,7 @@
 | Surface | firm (never a client surface) |
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/AUD-27 Estimates, related parties & parties in interest/` (README.md, spec.md; no revision file) |
 | Epic and tasks | A-05 · SPEC-640 · contract stub A-05-T04 (`docs/contracts/ebp-workpapers.md`) · bundle T05 · migrations T06 and later · seed T07 |
-| Manifest status | planned |
+| Manifest status | planned (canvas in the AUD-02 cockpit, `?section=estimates_rp`, A-05-T57) |
 
 ## States
 | Artboard | Viewer (persona) and clock | Snapshot | Data condition that produces it | Endpoints | Parity tier | Status |
@@ -94,6 +94,10 @@ Verbatim from the handoff (copy keys in `screens/AUD-27/copy.ts` when built). Ke
 | ID | What differs from the handoff | Why | Decision recorded |
 |---|---|---|---|
 | DV-AUD-27-1 | Agent-off path: every agent-filled value has a keyed or imported equivalent with a required citation note; the agent states read "not cleared" until A-04's `workpapers.drafting` and the firm's opt-in hold | A-05 F13; ADR-112 | DEC-1857 |
+| DV-AUD-27-2 | The related-parties table shows Party · Relationship · Source · Status, and the parties-in-interest table Party · ERISA relationship · Exemption · Reporting; the handoff's "FY2026 transactions", "Disclosure" and "2025 transactions" columns wait for those figures on the C3 read (0685 stores parties-in-interest transactions; the read does not return them yet) | No figure is shown that the server did not compute | DEC-2813 |
+| DV-AUD-27-3 | The rollforward line reads "Opening … − write-offs … + provision … = closing …"; the handoff's "Jul 1, 2025" and "Jun 30, 2026" wait for period dates on the rollforward | The dates are not on the read | DEC-2813 |
+| DV-AUD-27-4 | The footer carries "Request partner conclusion…" only; "Citations (6)" and "Procedures (2)" wait for counts on the read. The Agent dock is the AUD-02 cockpit's (TASK-5003's dock, then P-09-T09 on the E6 store); the canvas does not draw it | Counts not on the read; the dock is the host's | DEC-2813 |
+| DV-AUD-27-5 | The PT card's Form 5330 line shows the server's status text; the excise figure is never computed in the browser | ADR-050 | DEC-2813 |
 
 ## Parity
 | Artboard | Tier | Diff % | Notes |

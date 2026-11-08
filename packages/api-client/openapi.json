@@ -7145,6 +7145,28 @@
         "title": "AttributeSizeRow",
         "type": "object"
       },
+      "Aud27ComponentOut": {
+        "properties": {
+          "amount": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Amount",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "maxLength": 300,
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "amount"
+        ],
+        "title": "Aud27ComponentOut",
+        "type": "object"
+      },
       "Aud27ItemIn": {
         "additionalProperties": false,
         "properties": {
@@ -7173,6 +7195,19 @@
           }
         ],
         "properties": {
+          "account_ref": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Account Ref"
+          },
           "amount": {
             "anyOf": [
               {
@@ -7186,11 +7221,99 @@
             "cls": "confidential",
             "title": "Amount"
           },
+          "bias": {
+            "anyOf": [
+              {
+                "enum": [
+                  "none",
+                  "possible"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Bias"
+          },
+          "components": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/Aud27ComponentOut"
+            },
+            "maxItems": 50,
+            "title": "Components",
+            "type": "array"
+          },
+          "disclosure_ref": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Disclosure Ref"
+          },
+          "exemption": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Exemption"
+          },
+          "finding_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Finding Id"
+          },
           "id": {
             "cls": "internal",
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "method": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Aud27MethodOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
+          },
+          "method_text": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Method Text"
           },
           "name": {
             "cls": "confidential",
@@ -7202,6 +7325,82 @@
             "cls": "internal",
             "title": "Pending Ep",
             "type": "boolean"
+          },
+          "range": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Aud27RangeOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
+          },
+          "relationship": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Relationship"
+          },
+          "reporting": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Reporting"
+          },
+          "retrospectives": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/Aud27RetrospectiveOut"
+            },
+            "maxItems": 10,
+            "title": "Retrospectives",
+            "type": "array"
+          },
+          "rollforward": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Aud27RollforwardOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential"
+          },
+          "significant_risk": {
+            "cls": "internal",
+            "default": false,
+            "title": "Significant Risk",
+            "type": "boolean"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Source"
           },
           "status": {
             "cls": "internal",
@@ -7266,6 +7465,14 @@
             "maxItems": 200,
             "title": "Items",
             "type": "array"
+          },
+          "prohibited": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/Aud27ProhibitedOut"
+            },
+            "title": "Prohibited",
+            "type": "array"
           }
         },
         "required": [
@@ -7273,6 +7480,255 @@
           "allowed_actions"
         ],
         "title": "Aud27ListOut",
+        "type": "object"
+      },
+      "Aud27MethodOut": {
+        "description": "The method card's tie: components against the balance, code's (A-05-T53).",
+        "properties": {
+          "components_total": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Components Total",
+            "type": "string"
+          },
+          "difference": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Difference",
+            "type": "string"
+          },
+          "ties": {
+            "cls": "internal",
+            "title": "Ties",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "components_total",
+          "difference",
+          "ties"
+        ],
+        "title": "Aud27MethodOut",
+        "type": "object"
+      },
+      "Aud27ProhibitedOut": {
+        "description": "AUD-27 c's card: the late remittance as a prohibited transaction, read from EBP-04.",
+        "properties": {
+          "business_days_late": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Business Days Late"
+          },
+          "correction_status": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Correction Status"
+          },
+          "deposited_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Deposited On"
+          },
+          "form_5330_status": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Form 5330 Status"
+          },
+          "late_remittance_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Late Remittance Id",
+            "type": "string"
+          },
+          "lost_earnings": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Lost Earnings"
+          },
+          "principal": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Principal"
+          }
+        },
+        "required": [
+          "late_remittance_id",
+          "principal",
+          "lost_earnings"
+        ],
+        "title": "Aud27ProhibitedOut",
+        "type": "object"
+      },
+      "Aud27RangeOut": {
+        "properties": {
+          "high": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "High",
+            "type": "string"
+          },
+          "inside": {
+            "cls": "internal",
+            "title": "Inside",
+            "type": "boolean"
+          },
+          "low": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Low",
+            "type": "string"
+          }
+        },
+        "required": [
+          "low",
+          "high",
+          "inside"
+        ],
+        "title": "Aud27RangeOut",
+        "type": "object"
+      },
+      "Aud27RetrospectiveOut": {
+        "description": "A prior-year estimate against its outcome (\"over by $14,000.00, 3.4%\").",
+        "properties": {
+          "difference": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Difference",
+            "type": "string"
+          },
+          "direction": {
+            "cls": "internal",
+            "enum": [
+              "over",
+              "under",
+              "exact"
+            ],
+            "title": "Direction",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "maxLength": 120,
+            "title": "Label",
+            "type": "string"
+          },
+          "outcome": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Outcome",
+            "type": "string"
+          },
+          "percent": {
+            "cls": "internal",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Percent",
+            "type": "string"
+          },
+          "prior_estimate": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Prior Estimate",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "prior_estimate",
+          "outcome",
+          "difference",
+          "percent",
+          "direction"
+        ],
+        "title": "Aud27RetrospectiveOut",
+        "type": "object"
+      },
+      "Aud27RollforwardOut": {
+        "properties": {
+          "additions": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Additions",
+            "type": "string"
+          },
+          "computed_closing": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Computed Closing",
+            "type": "string"
+          },
+          "opening": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Opening",
+            "type": "string"
+          },
+          "ties": {
+            "cls": "internal",
+            "title": "Ties",
+            "type": "boolean"
+          },
+          "usage": {
+            "cls": "confidential",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Usage",
+            "type": "string"
+          }
+        },
+        "required": [
+          "opening",
+          "usage",
+          "additions",
+          "computed_closing",
+          "ties"
+        ],
+        "title": "Aud27RollforwardOut",
         "type": "object"
       },
       "AuditActorOut": {
