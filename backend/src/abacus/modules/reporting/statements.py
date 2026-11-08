@@ -494,6 +494,26 @@ async def _notes(tenant: TenantContext, version_id: UUID) -> list[JsonRow]:
     return [dict(r) for r in rows]
 
 
+@dataclass(frozen=True)
+class RenderSource:
+    """What the FS render reads of one version (A-06-T29; DEC-2615)."""
+
+    engagement_id: UUID
+    work_item_id: UUID
+    lines: list[JsonRow]
+    notes: list[JsonRow]
+
+
+async def version_for_render(tenant: TenantContext, version_id: UUID) -> RenderSource:
+    row = await _version_row(tenant, version_id)
+    return RenderSource(
+        row["engagement_id"],
+        row["work_item_id"],
+        await _lines(tenant, version_id),
+        await _notes(tenant, version_id),
+    )
+
+
 async def is_out_of_date(tenant: TenantContext, version: JsonRow) -> bool:
     """A new TB version or a newly recorded entry makes the version out of date."""
     try:

@@ -152,17 +152,19 @@ async def run(tenant_id: UUID, document_id: UUID, version_no: int) -> None:
                 else await report_template_parts(session, cast(UUID, row["template_version_id"]))
             )
             sealed = await snapshot_of_version(session, version_id)
-        if parts is None or sealed is None:
+        composed = None if sealed is None else sealed.get("body")
+        if sealed is None or (parts is None and not isinstance(composed, list)):
             raise RenderRefused("unknown_variable")  # no template version or sealed snapshot
         composition = compose.compose(
             layout_key=str(row["layout_key"]),
-            body=parts.body,
-            clauses=parts.clauses,
+            # DEC-2615: a composed kind's body is the sealed one; a template's is the template's.
+            body=cast(list[object], composed) if parts is None else parts.body,
+            clauses=() if parts is None else parts.clauses,
             snapshot=sealed,
         )
         request = compose.render_input(
             composition,
-            title=title_for(kind, parts.template_name),
+            title=title_for(kind, "" if parts is None else parts.template_name),
             as_of=cast(datetime, row["created_at"]),
             mode=cast(Mode, str(row["mode"])),
             content_hash=str(row["content_hash"]),
