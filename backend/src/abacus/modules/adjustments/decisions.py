@@ -89,6 +89,18 @@ class EntriesSentToClient(DomainEvent):
     wording_template_version_id: Annotated[UUID, classified("internal")]
 
 
+class EntryClientDecided(DomainEvent):
+    """A client's decision on an entry was recorded; C16 tells the partner and managers (A-06 §4.5:
+    `proposed_entry_client_responded`)."""
+
+    event_type: ClassVar[str] = "proposed_entry.client_decided"
+
+    entry_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    work_item_id: Annotated[UUID, classified("internal")]
+    decision: Annotated[str, classified("internal")]
+
+
 @dataclass(frozen=True)
 class Sent:
     approval_batch_id: UUID
@@ -456,6 +468,14 @@ async def _one(
         if client is not None:
             for hook in _HOOKS:
                 await hook(tx, entry_id, row["misstatement_id"], client)
+            tx.emit(
+                EntryClientDecided(
+                    entry_id=entry_id,
+                    engagement_id=row["engagement_id"],
+                    work_item_id=row["work_item_id"],
+                    decision=client,
+                )
+            )
         tx.record(
             _AUDIT[decision],
             target=Target(TARGET, entry_id),

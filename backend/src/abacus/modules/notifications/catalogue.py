@@ -471,6 +471,10 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "proposal.routed": Kind("proposal_routed", _approver, "proposal", "proposal_id"),
     "sign_off.requested": Kind("sign_off_requested", _listed, "reviewable", "target_id"),
     "issue.assigned": Kind("issue_assigned", _assignee, "issue", "issue_id"),
+    # A-06-T10 (DEC-2422): a client's decision on a proposed entry, to the partner and managers.
+    "proposed_entry.client_decided": Kind(
+        "proposed_entry_client_responded", _leads, "proposed_entry", "entry_id"
+    ),
     "checkpoint.created": Kind(
         "import_pending_approval", _import_reviewers, "checkpoint", "checkpoint_id"
     ),
@@ -652,6 +656,9 @@ TEMPLATES: Final[dict[str, str]] = {
     ),
     "proposal.routed": "A proposal on {engagement} was sent to you for approval.",
     "sign_off.requested": "Work on {engagement} is waiting for your sign-off.",
+    "proposed_entry.client_decided": (
+        "A client decision on a proposed entry on {engagement} was recorded."
+    ),
     "issue.assigned": "An issue on {engagement} was assigned to you.",
     "checkpoint.created": "An import on {engagement} is waiting for your approval.",
     # T-01-T27 (DEC-1463): the tax engine bridge.
@@ -710,6 +717,7 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
         "Upload",
         inline_actions=("accept_document", "return_document"),
     ),
+    NotificationKind("proposed_entry_client_responded", "client_activity", "MessageSquare"),
     NotificationKind("connection.created", "client_activity", "Plug"),
     NotificationKind("connection.revoked", "client_activity", "Plug"),
     # A-02 §4.8 (A-02-T23): a connection that needs its client to sign in again (produced by the
