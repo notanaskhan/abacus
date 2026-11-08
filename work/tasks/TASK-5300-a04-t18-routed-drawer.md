@@ -4,7 +4,7 @@ title: A-04-T18 the risk drawer reads the awaiting significant_risk card
 spec: SPEC-000  # row
 acceptance_criteria: [AC-1]  # Remind through C3 and the routed and approve facts on the live read
 risk_zone: amber
-status: in-review
+status: done
 epic: A-04
 plan_key: A-04-T18
 branch: s25-a04-t18-remind
@@ -28,4 +28,4 @@ remind, who it waits for, or who may act, so the live page could not offer it.
 - 2026-11-06: built. Integration at the batch's test pass.
 
 ## Decisions made during this task
-DEC-2420.
+DEC-2484.

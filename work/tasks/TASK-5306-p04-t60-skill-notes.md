@@ -4,7 +4,7 @@ title: P-04-T60 build-screen skill notes
 spec: SPEC-000  # row
 acceptance_criteria: [AC-1]  # the row's build-screen skill notes
 risk_zone: green
-status: in-review
+status: done
 epic: P-04
 plan_key: P-04-T60
 branch: s25-p04-t60-skill

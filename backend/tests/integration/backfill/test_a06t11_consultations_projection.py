@@ -1,4 +1,4 @@
-"""A-06-T11's remaining clauses (TASK-5302; A-06 §4.3; DEC-2421).
+"""A-06-T11's remaining clauses (TASK-5302; A-06 §4.3; DEC-2485).
 
 Boundary: `create_app()` over HTTP on the migrated test database. A finding and its issue commit
 or fail as one; a consultation is raised by the partner or manager and concluded only by the
@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import contextlib
 import uuid
-from types import SimpleNamespace
 from typing import cast
 
 import pytest
@@ -63,18 +62,6 @@ def _finding_body(workpaper: uuid.UUID) -> dict[str, object]:
     }
 
 
-async def _finding(world: Books) -> str:
-    made = await world.call(
-        "POST",
-        _wi(world, "/findings"),
-        world.senior,
-        _finding_body(await _workpaper(world)),
-        headers=_keyed(),
-    )
-    assert made.status_code == 201, made.text
-    return cast(str, cast(Json, cast(Json, made.json())["finding"])["id"])
-
-
 async def test_a_finding_and_its_issue_fail_as_one(
     world: Books, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -98,16 +85,6 @@ async def test_a_finding_and_its_issue_fail_as_one(
     for table in ("audit_findings", "issues"):
         left = await world.seed.value(count.format(table), world.tenant_id, world.work_item_id)
         assert left == 0, table
-
-
-def _sample_set(engagement_id: object, status: str = "approved") -> object:
-    return SimpleNamespace(
-        engagement_id=engagement_id,
-        status=status,
-        version_no=1,
-        parameters=SimpleNamespace(final_size=25),
-        population=SimpleNamespace(record_count=412, record_unit="census records"),
-    )
 
 
 async def test_a_consultation_is_concluded_only_by_the_person_consulted(world: Books) -> None:

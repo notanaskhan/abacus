@@ -4,7 +4,7 @@ title: N-04-T05 GroupedTile specimen
 spec: SPEC-000  # row
 acceptance_criteria: [AC-1]  # the grouped tile added to the C-19 kit
 risk_zone: green
-status: in-review
+status: done
 epic: N-04
 plan_key: N-04-T05
 branch: s25-n04-t05-specimen

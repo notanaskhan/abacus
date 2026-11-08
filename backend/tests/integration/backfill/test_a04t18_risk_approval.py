@@ -85,7 +85,7 @@ async def _drawer(world: Books, risk: Json, who: object) -> Json:
 async def test_ac4_3_the_drawer_reads_who_the_card_is_routed_to_and_who_may_remind(
     world: Books,
 ) -> None:
-    """AC4.3's footers on the live read (A-04-T18, T20; DEC-2420): the senior reads Routed to the
+    """AC4.3's footers on the live read (A-04-T18, T20; DEC-2484): the senior reads Routed to the
     partner with Remind, the partner gets the decision, and Remind is C3's notify."""
     made = await _propose(world)
     before = await _drawer(world, made["R3"], world.senior)

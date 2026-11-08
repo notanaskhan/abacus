@@ -139,7 +139,7 @@ describe("AUD-08", () => {
     expect(rationale.textContent).toContain("9 business days later");
   });
 
-  it("b: Remind calls C3's notify on the pending card and confirms in words (DEC-2420)", async () => {
+  it("b: Remind calls C3's notify on the pending card and confirms in words (DEC-2484)", async () => {
     const notified: string[] = [];
     const shown = vi.spyOn(toast, "show");
     drawer("b", vi.fn(), (path) => notified.push(path));
@@ -267,7 +267,6 @@ describe("AUD-08 c, e, f, g (A-04-T26)", () => {
         <RiskDrawer
           engagementId={NORTHWIND_AUDIT}
           risk={r3}
-          cardId={null}
           onClose={() => undefined}
           onDecide={vi.fn()}
         />
@@ -316,7 +315,6 @@ describe("AUD-08 c, e, f, g (A-04-T26)", () => {
         <RiskDrawer
           engagementId={NORTHWIND_AUDIT}
           risk={r3}
-          cardId={null}
           onClose={() => undefined}
           onDecide={vi.fn()}
         />
@@ -347,7 +345,6 @@ describe("AUD-08 c, e, f, g (A-04-T26)", () => {
         <RiskDrawer
           engagementId={NORTHWIND_AUDIT}
           risk={r8}
-          cardId={null}
           onClose={() => undefined}
           onDecide={vi.fn()}
         />

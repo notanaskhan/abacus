@@ -4,7 +4,7 @@ title: A-04-T20 AUD-08's Remind and Approve footers wired to the pending card
 spec: SPEC-000  # row
 acceptance_criteria: [AC-1]  # Hannah's footer (Routed to Margaret, Remind) and the partner footer opening SHL-11
 risk_zone: green
-status: in-review
+status: done
 epic: A-04
 plan_key: A-04-T20
 branch: s25-a04-t20-remind
@@ -28,4 +28,4 @@ either, and both partner buttons keyed off `approved_card_id`, which is set only
 - 2026-11-06: built; AUD-08 tests pass.
 
 ## Decisions made during this task
-DEC-2420 (TASK-5300).
+DEC-2484 (TASK-5300).

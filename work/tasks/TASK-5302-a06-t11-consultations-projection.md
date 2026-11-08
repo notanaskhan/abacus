@@ -4,7 +4,7 @@ title: A-06-T11 consultations, projected conversion, one unit of work
 spec: SPEC-000  # row
 acceptance_criteria: [AC-1]  # the row's atomic record, projection from sampling and minimal consultations
 risk_zone: amber
-status: in-review
+status: done
 epic: A-06
 plan_key: A-06-T11
 branch: s25-a06-t11-findings
@@ -31,4 +31,4 @@ Close what DEC-2063 left of A-06-T11.
   so a live approved set through the conversion is not exercised here.
 
 ## Decisions made during this task
-DEC-2421.
+DEC-2485.

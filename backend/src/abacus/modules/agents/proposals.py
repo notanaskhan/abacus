@@ -1346,7 +1346,9 @@ async def _suggestion_readable(
 
 
 @dataclass(frozen=True)
-class PendingSuggestion:
+class PendingFieldSuggestion:
+    """What waits on one of a target's fields, as its owner shows it (A-04-T24)."""
+
     id: UUID
     target_id: UUID
     value: str
@@ -1356,14 +1358,14 @@ class PendingSuggestion:
 
 async def pending_suggestions(
     tenant: TenantContext, engagement_id: UUID, target_type: str, field_key: str
-) -> list[PendingSuggestion]:
+) -> list[PendingFieldSuggestion]:
     """A target's owner reads what waits on one of its fields (A-04-T24): the caller authorised on
     the engagement. A shadow run's value is never shown (ED-171)."""
     async with tenant_session(tenant) as session:
         rows = await pending_field_suggestions(session, engagement_id, target_type, field_key)
     hidden = {r: await _hidden(tenant, r) for r in {row.agent_run_id for row in rows}}
     return [
-        PendingSuggestion(
+        PendingFieldSuggestion(
             row.id,
             row.target_id,
             _text(row.proposed_value) or "",

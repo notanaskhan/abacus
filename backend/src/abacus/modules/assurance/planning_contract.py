@@ -476,7 +476,7 @@ class RiskDrawerOut(BaseModel):
     citation_ids: Annotated[list[UUID], Field(max_length=50), classified("internal")]
     versions: Annotated[list[RiskVersionOut], classified("internal")]
     # The awaiting `significant_risk` card over this row: Remind is C3's notify on it, and the
-    # reserved person's Approve opens it (AC4.3; DEC-2420).
+    # reserved person's Approve opens it (AC4.3; DEC-2484).
     pending_card_id: Annotated[UUID | None, classified("internal")] = None
     routed_to_name: Annotated[str | None, classified("internal")]
     routed_at: Annotated[datetime | None, classified("internal")]

@@ -4,7 +4,7 @@ title: A-04-T24 remainder - a drafted response lands on risk_linkages when a per
 spec: SPEC-620
 acceptance_criteria: [AC-21]
 risk_zone: red
-status: in-review
+status: done
 epic: A-04
 plan_key: A-04-T24
 branch: s25c-a04-t24

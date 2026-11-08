@@ -4,7 +4,7 @@ title: A-04-T19 remainder - Remind as a follow-up draft
 spec: SPEC-620
 acceptance_criteria: [AC-12]
 risk_zone: amber
-status: in-review
+status: done
 epic: A-04
 plan_key: A-04-T19
 branch: s25c-a04-t19

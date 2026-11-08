@@ -4,7 +4,7 @@ title: AUD-08 drawer - the rationale card reads the pending suggestion
 spec: SPEC-620
 acceptance_criteria: [AC-21]
 risk_zone: amber
-status: in-review
+status: done
 epic: A-04
 plan_key: A-04-T26
 branch: s25c-a04-rationale

@@ -471,7 +471,7 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "proposal.routed": Kind("proposal_routed", _approver, "proposal", "proposal_id"),
     "sign_off.requested": Kind("sign_off_requested", _listed, "reviewable", "target_id"),
     "issue.assigned": Kind("issue_assigned", _assignee, "issue", "issue_id"),
-    # A-06-T10 (DEC-2422): a client's decision on a proposed entry, to the partner and managers.
+    # A-06-T10 (DEC-2486): a client's decision on a proposed entry, to the partner and managers.
     "proposed_entry.client_decided": Kind(
         "proposed_entry_client_responded", _leads, "proposed_entry", "entry_id"
     ),

@@ -43,7 +43,7 @@ from abacus.kernel.clock import now, today
 from abacus.kernel.db import Base, TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork, uow
-from abacus.modules.agents.api import AdoptedValue, PendingSuggestion, pending_suggestions
+from abacus.modules.agents.api import AdoptedValue, PendingFieldSuggestion, pending_suggestions
 from abacus.modules.assurance.events import RiskRegisterApproved
 from abacus.modules.assurance.sections import registered_sections
 from abacus.modules.engagements.api import assurance_item_id, get_ref, lock_ref
@@ -853,7 +853,7 @@ def response_target(value: str) -> str | None:
 
 async def _pending_of(
     ctx: AuthContext, engagement_id: UUID, field_key: str
-) -> list[PendingSuggestion]:
+) -> list[PendingFieldSuggestion]:
     """A suggestion is a proposal: `proposal.read` is its read (`risk.read` alone sees none)."""
     ref = await get_ref(ctx, engagement_id)
     if "proposal.read" not in await allowed_actions(ctx, ref.resource(), ("proposal.read",)):
