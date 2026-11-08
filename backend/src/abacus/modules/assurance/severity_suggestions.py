@@ -10,6 +10,7 @@ FINDING-001): nothing here sets `severity_concluded`.
 
 from __future__ import annotations
 
+from contextlib import suppress
 from typing import Final
 from uuid import UUID
 
@@ -17,7 +18,7 @@ from sqlalchemy import text
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, NotFound
-from abacus.kernel.uow import Ref, Target, UnitOfWork, uow
+from abacus.kernel.uow import MissingAuditEvent, Ref, Target, UnitOfWork, uow
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.agents.api import AdoptedValue, pending_suggestion
 from abacus.modules.identity.api import AuthContext
@@ -57,6 +58,13 @@ async def on_suggestion_created(event: OutboxEvent) -> None:
     severity = suggested_severity(found.proposed_value)
     if severity is None or found.field_key != FIELD:
         return
+    # Nothing to mirror (a person proposed first, or the row moved on): the unit of work has no
+    # event to record, so it commits nothing, and redelivery finds the same.
+    with suppress(MissingAuditEvent):
+        await _mirror(tenant, found.target_id, found.suggestion_id, severity)
+
+
+async def _mirror(tenant: TenantContext, target: UUID, suggestion: UUID, severity: str) -> None:
     async with uow(tenant) as tx:
         moved = await tx.session.scalar(
             text(
@@ -67,14 +75,14 @@ async def on_suggestion_created(event: OutboxEvent) -> None:
                 "AND (severity_proposed IS NULL OR severity_proposed_by_kind = 'agent') "
                 "RETURNING id"
             ),
-            {"sev": severity, "sugg": found.suggestion_id, "id": found.target_id},
+            {"sev": severity, "sugg": suggestion, "id": target},
         )
         if moved is None:
             return
         tx.record(
             "deficiency.severity_suggested",
-            target=Target("deficiency", found.target_id),
-            after=Ref(suggestion=found.suggestion_id),
+            target=Target("deficiency", target),
+            after=Ref(suggestion=suggestion),
         )
 
 
