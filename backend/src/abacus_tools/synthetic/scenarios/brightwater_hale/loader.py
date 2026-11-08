@@ -199,7 +199,12 @@ from abacus.modules.ledger.api import (
 )
 from abacus.modules.methodology.api import (
     EngagementType,
+    LevelAssignment,
+    ReviewLevelsPayload,
+    StandardDraftPatchIn,
     create_standard,
+    draft_standard_version,
+    edit_standard_draft,
     import_checklist,
     import_notes,
     import_standard_workbook,
@@ -288,6 +293,7 @@ from abacus.modules.review.api import (
     raise_review_note,
     review_note_event,
     reviewable_facts,
+    reviewables_of,
     save_checkpoint,
     sign_target,
 )
@@ -4128,6 +4134,92 @@ async def _statement_notes_loaded(conn: asyncpg.Connection, _: Scenario, event: 
 # --- A-06-T28 (`--slice completion`): Northwind's completion, through the services.
 
 
+async def _completion_levels_assigned(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """TASK-3401: Daniel Reyes publishes a review_levels version naming each row kind's levels,
+    effective the day he publishes it (Sep 28), through the standards service."""
+    ctx = await _staff_context(conn, event)
+    standard = await standard_by_key(ctx, "bh-review-levels")
+    draft = await draft_standard_version(ctx, standard.id)
+    current = cast(ReviewLevelsPayload, draft.payload)
+    assigned = current.model_copy(
+        update={
+            "assignments": [
+                LevelAssignment.model_validate({"key": key, "required_levels": levels})
+                for key, levels in _completion.LEVEL_ASSIGNMENTS
+            ]
+        }
+    )
+    await edit_standard_draft(
+        ctx,
+        standard.id,
+        draft.id,
+        StandardDraftPatchIn(payload=assigned, change_summary="Audit sign-off levels by work"),
+        draft.row_version,
+    )
+    await publish_standard(
+        ctx,
+        standard.id,
+        effective_from=event.at.astimezone(_CT).date(),
+        change_summary="Audit sign-off levels by work",
+    )
+
+
+async def _completion_paper_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    code = str(event.data["paper"])
+    _code, title, kind, area, _who = next(p for p in _completion.MATRIX_PAPERS if p[0] == code)
+    await create_workpaper(
+        await _staff_context(conn, event),
+        (await _northwind_work_item(conn))[0],
+        code,
+        title,
+        area,
+        kind=kind,
+    )
+
+
+async def _completion_tb_notes_cleared(
+    conn: asyncpg.Connection, _: Scenario, event: Event
+) -> None:
+    """SHL-12's two notes on the trial balance, cleared before Hannah reviews it (AUD-17 draws
+    her on it at Oct 2) by Margaret, the engagement partner, who may clear any note."""
+    ctx = await _staff_context(conn, event)
+    engagement = (await _northwind_work_item(conn))[0]
+    rows = await tenant_rows(
+        conn,
+        TENANT,
+        "SELECT id FROM reviewable_notes WHERE engagement_id = $1 AND target_type = "
+        "'trial_balance' AND status IN ('open', 'responded') ORDER BY created_at",
+        engagement,
+    )
+    for row in rows:
+        await review_note_event(ctx, cast(UUID, row["id"]), "cleared", None)
+
+
+async def _completion_matrix_signed(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """A made-up row's sign-off (TASK-3401, DEC-2428): a paper by code, else the engagement's
+    one row of that kind, signed on the content hash its facts give, as a person signs it."""
+    ctx = await _staff_context(conn, event)
+    kind, ref = str(event.data["target"]), str(event.data["ref"])
+    if kind == "workpaper":
+        target = await _completion_paper(conn, ref)
+    else:
+        engagement = (await _northwind_work_item(conn))[0]
+        found = [r for r in await reviewables_of(ctx.tenant, engagement) if r.target_type == kind]
+        if len(found) != 1:
+            raise LookupError(f"Northwind has {len(found)} rows of {kind!r}")
+        target = found[0].target_id
+    facts = await reviewable_facts(ctx.tenant, kind, target)
+    level = int(cast(int, event.data["level"]))
+    await sign_target(
+        ctx,
+        kind,
+        target,
+        level,
+        f"sha256:{facts.content_hash.removeprefix('sha256:')}",
+        SIGN_OFF_STATEMENTS[level].version,
+    )
+
+
 async def _completion_paper(conn: asyncpg.Connection, code: str) -> UUID:
     engagement = (await _northwind_work_item(conn))[0]
     found = await tenant_value(
@@ -5708,6 +5800,10 @@ HANDLERS: Final[dict[str, Handler]] = {
     "completion.prior_year": _completion_prior_year,
     "completion.factors": _completion_factors,
     "completion.signed": _completion_signed,
+    "completion.levels_assigned": _completion_levels_assigned,
+    "completion.paper_created": _completion_paper_created,
+    "completion.tb_notes_cleared": _completion_tb_notes_cleared,
+    "completion.matrix_signed": _completion_matrix_signed,
     "completion.note_cleared": _completion_note_cleared,
     "completion.note_raised": _completion_note_raised,
     "completion.paper_changed": _completion_paper_changed,

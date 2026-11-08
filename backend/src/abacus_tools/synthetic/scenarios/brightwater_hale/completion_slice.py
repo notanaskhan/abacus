@@ -298,6 +298,104 @@ SIGN_OFFS: Final = (
     ("EBP-05", ((1, "AC"), (2, "MD"), (3, "HL"))),
     ("EBP-07", ((1, "AC"), (2, "MD"), (3, "HL"))),
 )
+# AUD-17's 26 rows (TASK-3401, DEC-2428). The handoff names 13 and counts 26 = Planning 6 +
+# Fieldwork & Testing 10 + Completion 6 + Reporting 4 (Prepared 25, Reviewed 24, Partner 8 of 13,
+# EQR 0 of 6, one changed after sign-off). The other 13 rows and their sign-offs are made up to
+# those totals (Ayush, 2026-11-08): their titles come from the product's own sections. Papers
+# are created through `workpapers`; (code, title, kind, audit area, creator).
+MATRIX_PAPERS: Final = (
+    ("RA-100", "Risk Assessment", "risk_assessment", None, "MD"),
+    ("SOC-100", "Service Organizations & SOC 1", "service_organizations", None, "MD"),
+    ("GAP-100", "General Audit Planning", "general_audit_planning", None, "MD"),
+    ("EBP-01", "Plan profile & service providers", "ebp_plan", None, "AC"),
+    # EBP-02 waits on its provisions being verified (A-05-T16), so EBP-09 stands in.
+    ("EBP-09", "Administrative expenses & operational compliance", "ebp_admin_expenses", None,
+     "AC"),
+    # EBP-06 waits on its certification (A-05-T39): a kindless testing paper stands in.
+    ("T-100", "Parties in interest", None, "Testing", "AC"),
+    ("EBP-08", "Participant accounts summary", "ebp_participant_accounts", None, "AC"),
+    ("C-100", "Completion Checklist", None, "Completion", "HL"),
+    ("C-110", "Representation letter", None, "Completion", "HL"),
+    ("C-120", "Subsequent events", None, "Completion", "HL"),
+    ("C-130", "Going concern", None, "Completion", "HL"),
+    ("R-100", "Auditor's report", None, "Reporting", "HL"),
+    ("R-110", "Supplemental schedules", None, "Reporting", "MD"),
+    ("R-120", "Engagement completion memo", None, "Reporting", "MD"),
+)  # fmt: skip
+# The 26 rows by group, as Northwind's matrix reads them once the slice loads (a paper's code, or
+# the engagement's row of a kind: TB, MAT, SMP, MAP, FND, SUM, FS).
+MATRIX_ROWS: Final = {
+    "planning": ("TB", "MAT", "RA-100", "EBP-140", "SOC-100", "GAP-100"),
+    "fieldwork": ("SMP", "EBP-03", "EBP-04", "EBP-05", "EBP-07", "MAP", "EBP-01", "EBP-08",
+                  "EBP-09", "T-100"),
+    "completion": ("FND", "SUM", "C-100", "C-110", "C-120", "C-130"),
+    "reporting": ("FS", "R-100", "R-110", "R-120"),
+}  # fmt: skip
+_L1_L3 = ["L1", "L3"]
+_EBP = ["L1", "L2", "L3"]
+# The firm's review_levels assignments, a version published Sep 28 (after E0 and SHL-12's frames):
+# each drawn row's dashes and rings, and the made-up rows' to the footer's totals.
+LEVEL_ASSIGNMENTS: Final = (
+    ("trial_balance", _L1_L3),
+    ("materiality", ["L1", "L3", "L4", "L5"]),
+    ("workpaper:risk_assessment", ["L1", "L3", "L4", "L5"]),
+    ("workpaper:internal_control", ["L1", "L3", "L4"]),
+    ("workpaper:service_organizations", ["L1", "L3", "L4"]),
+    ("workpaper:general_audit_planning", ["L1", "L3", "L4"]),
+    # The sample's approval is its L2 (A-03): AUD-17 draws Hannah in L3; recorded in DEC-2428.
+    ("sample_set_version", ["L1", "L2"]),
+    ("workpaper:ebp_eligibility", ["L1", "L2", "L3", "L4"]),
+    ("workpaper:ebp_contributions", ["L1", "L2", "L3", "L4"]),
+    ("workpaper:ebp_distributions_loans", _EBP),
+    ("workpaper:ebp_form5500", _EBP),
+    ("workpaper:ebp_plan", _EBP),
+    ("workpaper:ebp_admin_expenses", _EBP),
+    ("workpaper:t_100", _EBP),
+    ("workpaper:ebp_participant_accounts", _EBP),
+    ("mapping_set", _L1_L3),
+    ("audit_findings", ["L1", "L4", "L5"]),
+    ("sum_schedule", ["L1", "L4", "L5"]),
+    ("workpaper:c_100", ["L1", "L4"]),
+    ("workpaper:c_110", ["L1", "L4"]),
+    ("workpaper:c_120", ["L1", "L4"]),
+    ("workpaper:c_130", ["L1"]),
+    ("fs_package", ["L1", "L3", "L4", "L5"]),
+    ("workpaper:r_100", ["L1", "L5"]),
+    ("workpaper:r_110", _L1_L3),
+    ("workpaper:r_120", _L1_L3),
+)
+_PLAN = ((1, "MD"), (3, "HL"), (4, "MO"))
+_TEST = ((1, "AC"), (2, "MD"), (3, "HL"))
+# (target kind, ref, signs): a ref is a paper code, or the engagement's own row of that kind.
+MATRIX_SIGN_OFFS: Final = (
+    # Hannah prepared the trial balance in the seed (SHL-12), so she can't review it (R-SO-3):
+    # Margaret signs its L3, where AUD-17 draws Hannah (DEC-2428).
+    ("trial_balance", "TB", ((3, "MO"),)),
+    ("workpaper", "RA-100", _PLAN),
+    ("workpaper", "EBP-140", _PLAN),
+    ("workpaper", "SOC-100", _PLAN),
+    ("workpaper", "GAP-100", _PLAN),
+    ("mapping_set", "MAP", ((1, "MD"), (3, "MO"))),  # Hannah mapped it (R-SO-3)
+    ("workpaper", "EBP-01", _TEST),
+    ("workpaper", "EBP-09", _TEST),
+    ("workpaper", "T-100", _TEST),
+    ("workpaper", "EBP-08", _TEST),
+    ("audit_findings", "FND", ((1, "HL"), (4, "MO"))),
+    ("workpaper", "C-110", ((1, "HL"), (4, "MO"))),
+    ("workpaper", "C-120", ((1, "HL"),)),
+    ("workpaper", "C-130", ((1, "HL"),)),
+    ("workpaper", "R-100", ((1, "HL"),)),
+    ("workpaper", "R-110", ((1, "MD"), (3, "HL"))),
+    ("workpaper", "R-120", ((1, "MD"), (3, "HL"))),
+)
+# After materiality's Oct 6 decision, the SUM's conclusion snapshot (Oct 2) and the statements'
+# third draft and tie (Oct 6).
+LATE_SIGN_OFFS: Final = (
+    # Materiality v3's reassessment is decided "no change" on Oct 6 at 9:30 (the review slice).
+    ("materiality", "MAT", _PLAN, (10, 6, 10, 40)),
+    ("sum_schedule", "SUM", ((1, "HL"),), (10, 2, 14, 35)),
+    ("fs_package", "FS", ((1, "MD"), (3, "MO")), (10, 6, 11, 0)),  # Hannah drafted it
+)
 # The plan's statement of net assets as firm content (the firm's other set is commercial: PP&E,
 # inventory). Same import grammar as `sampling_content.grouping_set_csv`; synthetic wording.
 EBP_GROUPING_KEY: Final = "bh-ebp-groupings"
@@ -455,6 +553,29 @@ def _northwind_events() -> list[Event]:
         _event("py", _at(9, 28, 11, 30), "completion.prior_year", "HL"),
         _event("factors", _at(9, 28, 12), "completion.factors", "HL"),
     ]  # fmt: skip
+    # TASK-3401: the firm's levels, the 14 papers, the TB's two SHL-12 notes answered, then the
+    # made-up rows' sign-offs on Sep 29, before the drawn ones.
+    events.append(_event("levels", _at(9, 28, 8), "completion.levels_assigned", "DR"))
+    for n, (code, *_rest) in enumerate(MATRIX_PAPERS):
+        events.append(
+            _event(f"paper:{code}", _at(9, 28, 9) + timedelta(minutes=n),
+                   "completion.paper_created", str(_rest[3]), paper=code)
+        )  # fmt: skip
+    events.append(_event("tb-notes", _at(9, 29, 8, 40), "completion.tb_notes_cleared", "MO"))
+    minute = 0
+    for kind, ref, signs in MATRIX_SIGN_OFFS:
+        for level, who in signs:
+            events.append(
+                _event(f"matrix:{ref}:{level}", _at(9, 29, 8, 45) + timedelta(seconds=20 * minute),
+                       "completion.matrix_signed", who, target=kind, ref=ref, level=level)
+            )  # fmt: skip
+            minute += 1
+    for kind, ref, signs, (mo, day, hour, mi) in LATE_SIGN_OFFS:
+        for n, (level, who) in enumerate(signs):
+            events.append(
+                _event(f"matrix:{ref}:{level}", _at(mo, day, hour, mi) + timedelta(minutes=n),
+                       "completion.matrix_signed", who, target=kind, ref=ref, level=level)
+            )  # fmt: skip
     for code, signs in SIGN_OFFS:
         for level, who in signs:
             events.append(

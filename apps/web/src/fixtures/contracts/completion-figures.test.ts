@@ -3,7 +3,7 @@
 // .json, transcribed from the epic; backend/tests/golden/scenario/test_a06t32_completion_figures.py
 // checks the Brightwater Hale scenario against the same book, so a figure that drifts on either
 // side fails. AUD-15's tab badge (3) is the list's `awaiting_decision` count (DEC-2612); the
-// 26-row sign-off matrix isn't drawn (13 named rows, DEC-2391), so its check is expected to fail.
+// 26-row sign-off matrix holds the 13 drawn rows and 13 made up to the footer (DEC-2428).
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -79,7 +79,7 @@ describe("A-06-T32: the completion figures drawn by the screens' fixtures", () =
     expect(aud17Matrix().footer).toEqual(BOOK.matrix_footer);
   });
 
-  it.fails("AUD-17 a: the matrix draws 26 papers (DEC-2391: 13 named so far)", () => {
+  it("AUD-17 a: the matrix holds 26 papers (DEC-2428: 13 drawn, 13 made up to the footer)", () => {
     expect(aud17Matrix().rows.length).toBe(BOOK.matrix.total);
   });
 });

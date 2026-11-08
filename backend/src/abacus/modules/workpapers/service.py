@@ -606,7 +606,7 @@ async def workpaper_facts(tenant: TenantContext, workpaper_id: UUID) -> Reviewab
         ),
         blocked_code=None if blocked is None else blocked[0],
         blocked_count=0 if blocked is None else blocked[1],
-        requirement_key=f"workpaper:{paper.kind}" if paper.kind else None,
+        requirement_key=requirement_key(paper.kind, paper.code),
     )
 
 
@@ -659,6 +659,15 @@ async def matrix_sections(tenant: TenantContext, engagement_id: UUID) -> dict[UU
     async with tenant_session(tenant) as session:
         papers = await engagement_papers(session, engagement_id)
     return {p.id: section_of(p.kind, p.audit_area) for p in papers}
+
+
+def requirement_key(kind: str | None, code: str) -> str:
+    """The key the firm's review_levels standard assigns a paper's levels by (TASK-3399): its
+    kind, else its own code (`C-110` reads `workpaper:c_110`), since kindless papers differ."""
+    if kind:
+        return f"workpaper:{kind}"
+    slug = re.sub(r"[^a-z0-9]+", "_", code.lower()).strip("_")
+    return f"workpaper:{slug if slug[:1].isalpha() else 'p_' + slug}"
 
 
 def section_of(kind: str | None, audit_area: str | None) -> str:

@@ -28,25 +28,35 @@ FINDINGS: Final = "audit_findings"
 CHECKLIST: Final = "completion_checklist"
 
 # Fixed statements, bound parameters (SQL-001): one by engagement, one by work item.
-_MAT = (
-    "SELECT DISTINCT ON (work_item_id) work_item_id, engagement_id, version_no, status, "
-    "overall, pm, ct, created_by_user_id AS created_by FROM materiality_versions "
-)
-_MAT_ORDER = " ORDER BY work_item_id, version_no DESC"
-_FND = (
-    "SELECT work_item_id, engagement_id, ref, kind, route, evaluation, version "
-    "FROM audit_findings "
-)
-_FND_ORDER = " ORDER BY work_item_id, ref"
-_CHK = "SELECT work_item_id, engagement_id, item_key, status, evidence_text FROM completion_items "
-_CHK_ORDER = " ORDER BY work_item_id, position"
 _STATEMENTS: Final = {
-    (MATERIALITY, "engagement"): text(_MAT + "WHERE engagement_id = :v" + _MAT_ORDER),
-    (MATERIALITY, "item"): text(_MAT + "WHERE work_item_id = :v" + _MAT_ORDER),
-    (FINDINGS, "engagement"): text(_FND + "WHERE engagement_id = :v" + _FND_ORDER),
-    (FINDINGS, "item"): text(_FND + "WHERE work_item_id = :v" + _FND_ORDER),
-    (CHECKLIST, "engagement"): text(_CHK + "WHERE engagement_id = :v" + _CHK_ORDER),
-    (CHECKLIST, "item"): text(_CHK + "WHERE work_item_id = :v" + _CHK_ORDER),
+    (MATERIALITY, "engagement"): text(
+        "SELECT DISTINCT ON (work_item_id) work_item_id, engagement_id, version_no, status, "
+        "overall, pm, ct, created_by_user_id AS created_by FROM materiality_versions "
+        "WHERE engagement_id = :v ORDER BY work_item_id, version_no DESC"
+    ),
+    (MATERIALITY, "item"): text(
+        "SELECT DISTINCT ON (work_item_id) work_item_id, engagement_id, version_no, status, "
+        "overall, pm, ct, created_by_user_id AS created_by FROM materiality_versions "
+        "WHERE work_item_id = :v ORDER BY work_item_id, version_no DESC"
+    ),
+    (FINDINGS, "engagement"): text(
+        "SELECT work_item_id, engagement_id, ref, kind, route, evaluation, version "
+        "FROM audit_findings WHERE engagement_id = :v ORDER BY work_item_id, ref"
+    ),
+    (FINDINGS, "item"): text(
+        "SELECT work_item_id, engagement_id, ref, kind, route, evaluation, version "
+        "FROM audit_findings WHERE work_item_id = :v ORDER BY work_item_id, ref"
+    ),
+    (CHECKLIST, "engagement"): text(
+        "SELECT work_item_id, engagement_id, item_key, status, evidence_text "
+        "FROM completion_items "
+        "WHERE engagement_id = :v ORDER BY work_item_id, position"
+    ),
+    (CHECKLIST, "item"): text(
+        "SELECT work_item_id, engagement_id, item_key, status, evidence_text "
+        "FROM completion_items "
+        "WHERE work_item_id = :v ORDER BY work_item_id, position"
+    ),
 }
 
 

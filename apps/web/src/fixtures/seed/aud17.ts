@@ -212,6 +212,21 @@ export function aud17Matrix(): SignOffMatrixOut {
       row("completion", "AUD-15", "Findings", "HL — — MO o"),
       row("completion", "AUD-16", "Misstatements & SUM", "HL — — o o"),
       row("completion", "AUD-19", "Completion Checklist", "o — — o —"),
+      // TASK-3401 (DEC-2428): the 13 rows the handoff counts and doesn't draw, as the seed
+      // makes them up to the footer's totals ("Show all 26").
+      row("planning", "GAP-100", "General Audit Planning", "MD — HL MO —"),
+      row("fieldwork", "MAP", "Account mapping", "MD — MO — —"),
+      row("fieldwork", "EBP-01", "Plan profile & service providers", "AC MD HL — —"),
+      row("fieldwork", "EBP-08", "Participant accounts summary", "AC MD HL — —"),
+      row("fieldwork", "EBP-09", "Administrative expenses & operational compliance", "AC MD HL — —"),
+      row("fieldwork", "T-100", "Parties in interest", "AC MD HL — —"),
+      row("completion", "C-110", "Representation letter", "HL — — MO —"),
+      row("completion", "C-120", "Subsequent events", "HL — — o —"),
+      row("completion", "C-130", "Going concern", "HL — — — —"),
+      row("reporting", "FS", "Financial statements", "MD — MO o o"),
+      row("reporting", "R-100", "Auditor's report", "HL — — — o"),
+      row("reporting", "R-110", "Supplemental schedules", "MD — HL — —"),
+      row("reporting", "R-120", "Engagement completion memo", "MD — HL — —"),
     ],
   };
 }
