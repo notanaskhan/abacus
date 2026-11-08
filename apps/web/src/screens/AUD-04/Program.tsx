@@ -177,7 +177,7 @@ async function exportWorkpaper(
     });
     const header = response.headers.get("Content-Disposition") ?? "";
     const name = /filename="([^"]+)"/u.exec(header)?.[1] ?? "workpaper.xlsx";
-    const url = URL.createObjectURL(data as Blob);
+    const url = URL.createObjectURL(data);
     const link = document.createElement("a");
     link.href = url;
     link.download = name;
