@@ -4,7 +4,7 @@ title: "P-10-T17 independent tests for the runtime migrations and the backfill (
 spec: SPEC-000  # row (P-10-T17)
 acceptance_criteria: [AC-1]
 risk_zone: red
-status: in-review
+status: done
 epic: P-10
 plan_key: P-10-T17
 branch: s30-p10-t17

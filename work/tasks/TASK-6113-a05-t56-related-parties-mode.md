@@ -4,7 +4,7 @@ title: "A-05-T56 mode related_parties: its own prompt and mapping, no person's n
 spec: SPEC-000  # row (A-05-T56)
 acceptance_criteria: [AC-1]
 risk_zone: red
-status: in-review
+status: done
 epic: A-05
 plan_key: A-05-T56
 branch: s30-a05-t56

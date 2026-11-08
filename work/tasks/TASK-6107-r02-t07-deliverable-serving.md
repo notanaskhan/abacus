@@ -4,7 +4,7 @@ title: "R-02-T07 deliverable serving: watermarked pages, single-use 60-second li
 spec: SPEC-000  # row (R-02-T07)
 acceptance_criteria: [AC-1]
 risk_zone: red
-status: in-review
+status: done
 epic: R-02
 plan_key: R-02-T07
 branch: s30-r02-t07

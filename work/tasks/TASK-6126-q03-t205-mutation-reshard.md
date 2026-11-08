@@ -4,7 +4,7 @@ title: "Q-03-T205 re-shard the weekly mutation run to six shards for the new red
 spec: SPEC-000  # row (Q-03-T205)
 acceptance_criteria: [AC-1]
 risk_zone: red
-status: in-review
+status: done
 epic: Q-03
 plan_key: Q-03-T205
 branch: s30-q03-t205

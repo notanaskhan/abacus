@@ -4,7 +4,7 @@ title: "Q-04-T110 Dec 14-17 bundle record: A-06, N-04, T-03 retirements and the 
 spec: SPEC-000  # row (Q-04-T110)
 acceptance_criteria: [AC-1]
 risk_zone: amber
-status: in-review
+status: done
 epic: Q-04
 plan_key: Q-04-T110
 branch: s30-q04-t110

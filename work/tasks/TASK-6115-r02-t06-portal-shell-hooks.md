@@ -4,7 +4,7 @@ title: "R-02-T06 portal shell hooks: /approvals, /deliverables, /governance stub
 spec: SPEC-000  # row (R-02-T06)
 acceptance_criteria: [AC-1]
 risk_zone: green
-status: in-review
+status: done
 epic: R-02
 plan_key: R-02-T06
 branch: s30-r02-t06

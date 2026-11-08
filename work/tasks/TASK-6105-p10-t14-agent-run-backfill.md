@@ -4,7 +4,7 @@ title: "P-10-T14 legacy agent run backfill: AgentRunBackfill, migration 0711, th
 spec: SPEC-000  # row (P-10-T14)
 acceptance_criteria: [AC-1]
 risk_zone: red
-status: in-review
+status: done
 epic: P-10
 plan_key: P-10-T14
 branch: s30-p10-t14

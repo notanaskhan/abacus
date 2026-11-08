@@ -4,7 +4,7 @@ title: "A-06-T33 independent tests for the FS render and client sends"
 spec: SPEC-000  # row (A-06-T33)
 acceptance_criteria: [AC-1]
 risk_zone: amber
-status: in-review
+status: done
 epic: A-06
 plan_key: A-06-T33
 branch: s30-a06-t33

@@ -4,7 +4,7 @@ title: "A-05-T55 mode ebp_form5500: its own prompt and mapping, code's differenc
 spec: SPEC-000  # row (A-05-T55)
 acceptance_criteria: [AC-1]
 risk_zone: red
-status: in-review
+status: done
 epic: A-05
 plan_key: A-05-T55
 branch: s30-a05-t55

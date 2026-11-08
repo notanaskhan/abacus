@@ -4,7 +4,7 @@ title: "A-06-T38 screen contracts AUD-15, AUD-16, AUD-17, AUD-20 with deviations
 spec: SPEC-000  # row (A-06-T38)
 acceptance_criteria: [AC-1]
 risk_zone: green
-status: in-review
+status: done
 epic: A-06
 plan_key: A-06-T38
 branch: s30-a06-t38

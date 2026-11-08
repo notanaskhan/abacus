@@ -4,7 +4,7 @@ title: "Q-03-T206 ADR-078 catch-up lane part 2: R-02-T04, A-07-T15, A-05-T48 sui
 spec: SPEC-000  # row (Q-03-T206)
 acceptance_criteria: [AC-1]
 risk_zone: red
-status: in-review
+status: done
 epic: Q-03
 plan_key: Q-03-T206
 branch: s30-q03-t206

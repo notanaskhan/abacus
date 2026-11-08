@@ -4,7 +4,7 @@ title: "P-11-T32 full-stack OCR notice intake spec for staging"
 spec: SPEC-000  # row (P-11-T32)
 acceptance_criteria: [AC-1]
 risk_zone: green
-status: in-review
+status: done
 epic: P-11
 plan_key: P-11-T32
 branch: s30-p11-t32
