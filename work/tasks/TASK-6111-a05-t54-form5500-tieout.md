@@ -4,7 +4,7 @@ title: "A-05-T54 EBP-07 service and Form5500TieOut: Schedule H against AUD-20 by
 spec: SPEC-000  # row (A-05-T54)
 acceptance_criteria: [AC-1]
 risk_zone: amber
-status: in-review
+status: done
 epic: A-05
 plan_key: A-05-T54
 branch: s30-a05-t54

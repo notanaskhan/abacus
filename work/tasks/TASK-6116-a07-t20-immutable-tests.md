@@ -4,7 +4,7 @@ title: "A-07-T20 independent I-IMMUTABLE tests for A-07-T13 and T14"
 spec: SPEC-000  # row (A-07-T20)
 acceptance_criteria: [AC-1]
 risk_zone: red
-status: in-review
+status: done
 epic: A-07
 plan_key: A-07-T20
 branch: s30-a07-t20

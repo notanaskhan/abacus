@@ -4,7 +4,7 @@ title: "A-06-T37 A-06 flip: flags retired into the assurance_completion entitlem
 spec: SPEC-000  # row (A-06-T37)
 acceptance_criteria: [AC-1]
 risk_zone: amber
-status: in-review
+status: done
 epic: A-06
 plan_key: A-06-T37
 branch: s30-a06-t37

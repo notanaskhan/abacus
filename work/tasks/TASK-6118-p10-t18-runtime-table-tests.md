@@ -4,7 +4,7 @@ title: "P-10-T18 independent tests for sessions, realtime events, the minute led
 spec: SPEC-000  # row (P-10-T18)
 acceptance_criteria: [AC-1]
 risk_zone: amber
-status: in-review
+status: done
 epic: P-10
 plan_key: P-10-T18
 branch: s30-p10-t18

@@ -4,7 +4,7 @@ title: "R-02-T08 C10 and C18 provider contract suites and the portal figures boo
 spec: SPEC-000  # row (R-02-T08)
 acceptance_criteria: [AC-1]
 risk_zone: amber
-status: in-review
+status: done
 epic: R-02
 plan_key: R-02-T08
 branch: s30-r02-t08

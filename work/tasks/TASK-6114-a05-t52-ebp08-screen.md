@@ -4,7 +4,7 @@ title: "A-05-T52 EBP-08 Participant accounts summary, a to e on fixtures, in the
 spec: SPEC-000  # row (A-05-T52)
 acceptance_criteria: [AC-1]
 risk_zone: green
-status: in-review
+status: done
 epic: A-05
 plan_key: A-05-T52
 branch: s30-a05-t52

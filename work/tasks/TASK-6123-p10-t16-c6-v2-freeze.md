@@ -4,7 +4,7 @@ title: "P-10-T16 C6 v2 freeze: contract section complete and the frozen OpenAPI 
 spec: SPEC-000  # row (P-10-T16)
 acceptance_criteria: [AC-1]
 risk_zone: amber
-status: in-review
+status: done
 epic: P-10
 plan_key: P-10-T16
 branch: s30-p10-t16

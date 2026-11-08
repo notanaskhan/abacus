@@ -4,7 +4,7 @@ title: "P-11-T33 per-firm OCR page caps, December x100 profile, TPS and 80% alar
 spec: SPEC-000  # row (P-11-T33)
 acceptance_criteria: [AC-1]
 risk_zone: red
-status: in-review
+status: done
 epic: P-11
 plan_key: P-11-T33
 branch: s30-p11-t33

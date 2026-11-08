@@ -4,7 +4,7 @@ title: "S30 end pass: gates, targeted tests, security review, fixes"
 spec: SPEC-000  # end pass
 acceptance_criteria: [AC-1]
 risk_zone: red
-status: in-review
+status: done
 epic: S30
 plan_key: S30-END
 branch: s30-end-pass

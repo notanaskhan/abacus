@@ -4,7 +4,7 @@ title: "A-07-T19 live-path registrations bundle, inert until the A-07 flags"
 spec: SPEC-000  # row (A-07-T19)
 acceptance_criteria: [AC-1]
 risk_zone: red
-status: in-review
+status: done
 epic: A-07
 plan_key: A-07-T19
 branch: s30-a07-t19

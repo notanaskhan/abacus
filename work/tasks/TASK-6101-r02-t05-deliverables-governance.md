@@ -4,7 +4,7 @@ title: "R-02-T05 migration 0710: C10 deliverables, governance bodies, the uncorr
 spec: SPEC-000  # row (R-02-T05)
 acceptance_criteria: [AC-1]
 risk_zone: amber
-status: in-review
+status: done
 epic: R-02
 plan_key: R-02-T05
 branch: s30-r02-t05

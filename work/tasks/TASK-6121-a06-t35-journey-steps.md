@@ -4,7 +4,7 @@ title: "A-06-T35 journey steps j03 13, 14, 16, j04 13, j05 4, j22 8 on the compl
 spec: SPEC-000  # row (A-06-T35)
 acceptance_criteria: [AC-1]
 risk_zone: green
-status: in-review
+status: done
 epic: A-06
 plan_key: A-06-T35
 branch: s30-a06-t35

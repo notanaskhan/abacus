@@ -4,7 +4,7 @@ title: "A-07-T18 EQR service: open on assignment, digest by code, the EQR's acts
 spec: SPEC-000  # row (A-07-T18)
 acceptance_criteria: [AC-1]
 risk_zone: amber
-status: in-review
+status: done
 epic: A-07
 plan_key: A-07-T18
 branch: s30-a07-t18

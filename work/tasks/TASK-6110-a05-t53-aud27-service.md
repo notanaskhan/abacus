@@ -4,7 +4,7 @@ title: "A-05-T53 AUD-27 service: estimates by code, the EP's conclusion card, re
 spec: SPEC-000  # row (A-05-T53)
 acceptance_criteria: [AC-1]
 risk_zone: amber
-status: in-review
+status: done
 epic: A-05
 plan_key: A-05-T53
 branch: s30-a05-t53

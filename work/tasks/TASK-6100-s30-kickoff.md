@@ -4,7 +4,7 @@ title: "S30 kickoff: S28 and S29 checked against main, ordered S30 session list"
 spec: SPEC-000  # sprint kickoff (Vol 5, S30 day 1)
 acceptance_criteria: [AC-1]
 risk_zone: green
-status: in-review
+status: done
 epic: F-01
 plan_key: S30-kickoff
 branch: s30-kickoff

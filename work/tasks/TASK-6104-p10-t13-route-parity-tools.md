@@ -4,7 +4,7 @@ title: "P-10-T13 route parity for tools and documents; loop specs refused on a r
 spec: SPEC-000  # row (P-10-T13)
 acceptance_criteria: [AC-1]
 risk_zone: red
-status: in-review
+status: done
 epic: P-10
 plan_key: P-10-T13
 branch: s30-p10-t13
