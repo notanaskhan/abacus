@@ -12,6 +12,7 @@ const TEXT: Record<string, string> = {
   "engagement_member.added": "You were added to an engagement's team.",
   review_assigned: "Evidence was assigned to you for review.",
   client_uploaded: "The client uploaded a file to a request.",
+  proposed_entry_client_responded: "A client decision on a proposed entry was recorded.",
   "connection.created": "The client connected their accounting system.",
   "connection.revoked": "An accounting system connection was ended.",
   "independence.requested": "Confirm your independence for an engagement.",
@@ -36,6 +37,7 @@ const CATEGORY: Record<string, Category> = {
   "finding.severity_proposed": "needs_you",
   mention: "mentions",
   client_uploaded: "client",
+  proposed_entry_client_responded: "client",
   "connection.created": "client",
   "connection.revoked": "client",
 };
@@ -75,6 +77,7 @@ const GLYPH: Record<string, IconName> = {
   proposal_routed: "circle-check",
   run_finished: "refresh-cw",
   client_uploaded: "upload",
+  proposed_entry_client_responded: "message-square",
   mention: "at-sign",
   // The spec's Timer is not in the icon registry (F-05-T13); the clock stands in.
   deadline_approaching: "clock",

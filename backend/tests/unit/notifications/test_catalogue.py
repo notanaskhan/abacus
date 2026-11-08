@@ -70,6 +70,7 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "decision_card.notify_requested",  # P-04-T23 (C16 `mention`, SHL-11 b Notify)
         "proposal.routed",  # P-04-T26 (C16 `proposal_routed`, to the named approver)
         "sign_off.requested",  # P-04-T26 (`sign_off_requested`, to the people named)
+        "proposed_entry.client_decided",  # A-06-T10 (`proposed_entry_client_responded`, leads)
         "issue.assigned",  # P-04-T26 (`issue_assigned`, to the assignee; P-04-T30 emits it)
         "checkpoint.created",  # P-04-T26 (`import_pending_approval`, an import's reviewers)
         # T-01-T27 (DEC-1463): the tax engine bridge, to the people the producer names
