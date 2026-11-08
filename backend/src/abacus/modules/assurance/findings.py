@@ -3,10 +3,10 @@
 A finding is rooted on a P-04 issue (DEC-83: the issue holds lifecycle, assignee and events) and
 carries the audit's facts in 0644's `audit_findings`:
 
-- **Record** (`record_finding`): the issue on the workpaper it came from, then the finding with its
-  next `F-nn`. A finding the agent raises lands under evaluation with its `why_surfaced` sealed as
-  the agent's suggestion and must carry verified citations (422 `uncited_finding` otherwise,
-  INV-2); a person's finding needs none.
+- **Record** (`record_finding`): the issue on the workpaper it came from and the finding with its
+  next `F-nn`, in one unit of work. A finding the agent raises lands under evaluation with its
+  `why_surfaced` sealed as the agent's suggestion and must carry verified citations (422
+  `uncited_finding` otherwise, INV-2); a person's finding needs none.
 - **List** (`findings_of`): rows with the severity bands' counts (material weakness, significant
   deficiency, deficiency, not a deficiency) and the Evaluation tab's badge: findings still
   awaiting a decision, a proposed severity for the partner or an exception to resolve (AUD-15 a:
@@ -15,8 +15,8 @@ carries the audit's facts in 0644's `audit_findings`:
 - **Resolve / not applicable**: through the issue (`review.api.move_issue`); the matrix denies the
   agent both (`finding.resolve`, `finding.mark_not_applicable`).
 - **Convert** to a deficiency (Proposed, severity for the partner's card) or a misstatement
-  (factual or judgmental with its amount; a projected one takes its figure from sampling, which
-  answers 422 `projection_unavailable` until A-03's projection facts are exposed).
+  (factual or judgmental with its amount; a projected one takes the sample error and an approved
+  sample set, and its figure is sampling's, 422 `projection_unavailable` otherwise).
 
 Severity and the SUM conclusion stay the engagement partner's C3 cards (INV-1).
 """
@@ -49,7 +49,7 @@ from abacus.modules.engagements.api import assurance_item, get_ref, lock_ref, wo
 from abacus.modules.evidence.api import verified_citation_ids
 from abacus.modules.identity.api import AuthContext, allowed_actions, names_of
 from abacus.modules.review.api import (
-    create_issue,
+    create_issue_in,
     decided_cards,
     issue_row,
     move_issue,
@@ -183,21 +183,6 @@ async def record_finding(ctx: AuthContext, work_item_id: UUID, new: NewFinding) 
         live = {c for ids in verified.values() for c in ids}
         if not set(new.citation_ids) <= live:
             raise UncitedFinding
-    issue_id = await create_issue(
-        ctx,
-        record_type="workpaper",
-        record_id=new.workpaper_id,
-        kind="exception",
-        priority="medium",
-        title=new.title.strip(),
-        internal_note=None,
-        client_wording=None,
-        client_contact_id=None,
-        assignee_user_id=None,
-        assignee_agent=False,
-        blocks=(),
-        work_item_id=work_item_id,
-    )
     sealed = (
         None
         if new.why_surfaced is None
@@ -205,6 +190,16 @@ async def record_finding(ctx: AuthContext, work_item_id: UUID, new: NewFinding) 
     )
     async with uow(ctx.tenant) as tx:
         await lock_ref(tx, engagement_id)
+        issue_id = await create_issue_in(
+            tx,
+            ctx,
+            record_type="workpaper",
+            record_id=new.workpaper_id,
+            kind="exception",
+            priority="medium",
+            title=new.title.strip(),
+            work_item_id=work_item_id,
+        )
         number = (
             await tx.session.execute(
                 text("SELECT count(*) + 1 FROM audit_findings WHERE work_item_id = :w"),

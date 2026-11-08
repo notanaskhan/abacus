@@ -56,3 +56,8 @@ async def test_ac_an_uncited_agent_finding_is_refused() -> None:
 @pytest.mark.parametrize("action", ["finding.resolve", "finding.mark_not_applicable"])
 def test_ac_the_agent_may_not_resolve_or_mark_not_applicable(action: str) -> None:
     assert _matrix.ACTIONS[action].get("agent") == "deny"
+
+
+def test_only_a_person_concludes_a_consultation() -> None:
+    cells = _matrix.ACTIONS["consultation.conclude"]
+    assert (cells.get("agent"), cells.get("system")) == ("deny", "deny")
