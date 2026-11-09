@@ -4,7 +4,7 @@ title: A-07-T27 report builder service (AUD-23)
 spec: SPEC-644  # A-07 F5
 acceptance_criteria: [AC-1]
 risk_zone: amber
-status: partial
+status: in-progress
 epic: A-07
 plan_key: A-07-T27
 branch: s32-a07-t27
@@ -36,3 +36,6 @@ blocks, insert-only versions with hashes, block diff, draft DOCX through C11.
 |---|---|---|
 | DEC-3012 | Choice fields, opinion card key, clause-id conventions, going-concern lock | no |
 - `2026-11-09` — S32 end pass: gates, unit, contract, S32 integration and web suites run; fixes folded into the end-pass PR. Status partial.
+- `2026-11-09` — Partials round (branch s32p-a07-t27, DEC-3028): request-decision raises the
+  registered `opinion` card (key aligned); documents queues a C11 DRAFT render and answers the
+  generated document. Registration test added; route tests at the end pass.

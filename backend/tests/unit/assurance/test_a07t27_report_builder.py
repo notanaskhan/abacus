@@ -150,3 +150,14 @@ def test_word_counts_count_blocks_switched() -> None:
     before = [rb.Paragraph("a", True), rb.Paragraph("b", False)]
     after = [rb.Paragraph("a", False), rb.Paragraph("b", True), rb.Paragraph("c", True)]
     assert rb.word_counts(before, after) == (2, 1)
+
+
+def test_the_opinion_card_is_the_registered_kind() -> None:
+    """DEC-3028: AUD-23's request raises the `opinion` kind a07_registrations registers, and the
+    builder looks for that same question key among decided cards."""
+    import abacus.api.app  # noqa: F401  # pyright: ignore[reportUnusedImport] -- every module's registrations
+    from abacus.modules.review.api import decision_kind
+
+    found = decision_kind(rb.OPINION_KIND)
+    assert found.reserved_role == "engagement_partner"
+    assert rb.OPINION_CARD in found.questions

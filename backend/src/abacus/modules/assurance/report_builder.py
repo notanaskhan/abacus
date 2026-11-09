@@ -6,7 +6,7 @@ AUD-23 over A-07-T08's `audit_reports` and insert-only `audit_report_versions` (
 - **Choices are structured, never free text**, and each is validated where it is made:
   - `opinion_form` (`unmodified`, `qualified`, `adverse`, `disclaimer`) and `modification_basis`
     are the engagement partner's: any value but `unmodified` needs the EP's decided SHL-11 card
-    (`audit_report.opinion`, reserved to the engagement partner) whose option is that form, or it
+    (`opinion`, reserved to the engagement partner) whose option is that form, or it
     answers 409 `decision_required`. An agent or any non-person is refused here as well as by the
     matrix (`report.draft` is agent-deny for the opinion), at every layer (INV-1).
   - `going_concern` (the emphasis paragraph) is locked by AUD-19's going-concern decision: on when
@@ -43,10 +43,10 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Scope, Target, uow
 from abacus.modules.assurance.rep_letters import going_concern_doubt
-from abacus.modules.engagements.api import assurance_item, get_ref
+from abacus.modules.engagements.api import assurance_item, engagement_hold_facts, get_ref
 from abacus.modules.identity.api import AuthContext, Forbidden, authorise
 from abacus.modules.methodology.api import published_body, published_clauses
-from abacus.modules.review.api import decided_cards
+from abacus.modules.review.api import decided_cards, raise_decision_card
 
 OpinionForm = Literal["unmodified", "qualified", "adverse", "disclaimer"]
 OPINION_FORMS: Final[tuple[OpinionForm, ...]] = (
@@ -61,7 +61,9 @@ FAMILY: Final[dict[ReportKind, str]] = {
     "review": "review_report",
     "compilation": "compilation_report",
 }
-OPINION_CARD: Final = "audit_report.opinion"
+# The C3 card's question key, as `a07_registrations` registers the `opinion` kind (DEC-3028).
+OPINION_KIND: Final = "opinion"
+OPINION_CARD: Final = "opinion"
 # The structured choices and who may set them.
 PARTNER_FIELDS: Final = frozenset({"opinion_form", "modification_basis"})
 TOGGLES: Final[dict[str, str]] = {
@@ -449,3 +451,70 @@ async def draft_docx(ctx: AuthContext, work_item_id: UUID, version_no: int) -> t
         )
     )
     return out.docx, version_no != current.version_no
+
+
+async def request_opinion_decision(ctx: AuthContext, work_item_id: UUID) -> UUID:
+    """AUD-23 "Request decision" (DEC-3028): the `opinion` C3 card for the engagement partner,
+    on the report's work item; its options are the four forms (computed, never a model's). The
+    card answers 409 while `audits.report_release` is off (the kind's own check)."""
+    engagement_id = await _person(ctx, work_item_id, "report.request_decision")
+    return await raise_decision_card(
+        ctx,
+        engagement_id=engagement_id,
+        kind=OPINION_KIND,
+        question_key=OPINION_CARD,
+        work_item_id=work_item_id,
+        raised_under="report.request_decision",
+    )
+
+
+_VERSION_ID = text(
+    "SELECT v.id, v.paragraphs FROM audit_report_versions v "
+    "JOIN audit_reports r ON r.id = v.report_id WHERE r.work_item_id = :wi AND v.version_no = :no"
+)
+
+
+async def render_document(
+    ctx: AuthContext,
+    work_item_id: UUID,
+    version_no: int,
+    fmt: Literal["docx", "pdf"],
+) -> UUID:
+    """AUD-23 "Generate" (DEC-3028): a DRAFT render of one report version through C11's queue,
+    as a generated document C11 owns (its versions, its Out of date when the source moves).
+    Answers the generated document's id."""
+    from abacus.modules.reporting import api as c11
+
+    engagement_id = await _person(ctx, work_item_id, "report.generate")
+    current = await state(ctx.tenant, work_item_id)
+    if current.template_version_id is None:
+        raise NotFound("audit_report_version")
+    async with tenant_session(ctx.tenant) as session:
+        row = (await session.execute(_VERSION_ID, {"wi": work_item_id, "no": version_no})).first()
+    if row is None:
+        raise NotFound("audit_report_version")
+    facts = await engagement_hold_facts(ctx.tenant, engagement_id)
+    if facts is None:
+        raise NotFound("engagement")
+    clauses = tuple(
+        c11.ClauseState(str(p["block_id"]), bool(p["included"]))
+        for p in cast(list[dict[str, object]], row.paragraphs or [])
+    )
+    async with uow(ctx.tenant) as tx:
+        ticket = await c11.render(
+            tx,
+            c11.RenderRequest(
+                kind="audit_report",
+                owner_ref=c11.OwnerRef("audit_report_version", cast(UUID, row.id)),
+                scope=c11.RenderScope(
+                    client_id=facts.client_id,
+                    engagement_id=engagement_id,
+                    work_item_id=work_item_id,
+                ),
+                template_version_id=current.template_version_id,
+                requested_by=c11.Requester("human", user_id=ctx.user_id),
+                formats=(fmt,),
+                clause_states=clauses,
+            ),
+        )
+    return ticket.generated_document_id
