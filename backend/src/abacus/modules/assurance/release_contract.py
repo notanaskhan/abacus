@@ -60,6 +60,8 @@ ArchiveAction = Literal[
     "archive.build_index", "archive.request_lock", "archive.lock", "archive.verify",
     "archive_addition.create", "archive_addition.approve",
 ]  # fmt: skip
+ArchiveStatus = Literal["assembling", "locking", "locked"]
+BinderLetter = Literal["A", "B", "C", "D", "E", "F", "G", "H"]
 GovernanceKind = Literal[
     "planning_260", "completion_260", "sd_mw_265", "reportable_703", "management_letter"
 ]
@@ -1297,9 +1299,68 @@ async def audit_filing_route(
 
 @router.get("/archive", action="archive.read", response_model=AuditArchiveStateOut, errors=(501,))
 async def audit_archive_route(work_item_id: UUID, ctx: Ctx) -> AuditArchiveStateOut:
-    """AUD-25: the clock, nine items, the binder index, additions and the seal (A-07-T31)."""
+    """AUD-25: the clock, nine items, the binder index, additions and the seal (A-07-T31; the
+    seal and additions arrive with A-07-T37 and T42)."""
     await _gate(ctx, work_item_id, "archive.read")
-    _not_yet()
+    return await _archive_out(ctx, work_item_id)
+
+
+_ARCHIVE_ACTIONS: tuple[ArchiveAction, ...] = ("archive.build_index", "archive.request_lock")
+
+
+async def _archive_out(ctx: AuthContext, work_item_id: UUID) -> AuditArchiveStateOut:
+    from abacus.modules.assurance import archive_gate as ag
+    from abacus.modules.identity.api import names_of
+
+    state = await ag.archive_state(ctx.tenant, work_item_id)
+    engagement_id = await work_item_engagement(ctx.tenant, work_item_id)
+    held: list[str] = []
+    if engagement_id is not None:
+        ref = await get_ref(ctx, engagement_id)
+        held = list(
+            await allowed_actions(
+                ctx, replace(ref.resource(), work_item_id=work_item_id), list(_ARCHIVE_ACTIONS)
+            )
+        )
+    archive = state.archive
+    actions = [a for a in _ARCHIVE_ACTIONS if a in held and archive is not None]
+    if state.done < len(state.items):
+        actions = [a for a in actions if a != "archive.request_lock"]
+    locked_by = None
+    if archive is not None and archive.locked_by is not None:
+        locked_by = (await names_of([archive.locked_by])).get(archive.locked_by)
+    return AuditArchiveStateOut(
+        status=None if archive is None else cast(ArchiveStatus, archive.status),
+        release_date=None if archive is None else archive.release_date,
+        documentation_completion_date=None
+        if archive is None
+        else archive.documentation_completion_date,
+        days_left=state.days_left,
+        retention_until=None if archive is None else archive.retention_until,
+        on_hold=False,
+        checklist=[
+            ArchiveChecklistItemOut(key=i.key, title=i.title, done=i.done, detail=i.detail)
+            for i in state.items
+        ],
+        checklist_done=state.done,
+        checklist_total=len(state.items),
+        checklist_hash=state.checklist_sha256,
+        binder=[
+            BinderSectionOut(
+                section=cast(BinderLetter, b.section),
+                title=b.title,
+                workpapers=b.workpapers,
+                source_documents=b.source_documents,
+                run_logs=b.run_logs,
+            )
+            for b in state.binder
+        ],
+        locked_at=None if archive is None else archive.locked_at,
+        locked_by_name=locked_by,
+        seal_sha256=None if archive is None else archive.seal_sha256,
+        additions=[],
+        allowed_actions=actions,
+    )
 
 
 @router.post(
@@ -1312,9 +1373,16 @@ async def audit_archive_route(work_item_id: UUID, ctx: Ctx) -> AuditArchiveState
 async def audit_archive_index_route(
     work_item_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ReleaseRunAcceptedOut:
-    """ArchiveReadinessWorkflow (#4302): the binder index over A-01's export sections."""
+    """The binder index, built by code now (A-07-T31; ArchiveReadinessWorkflow #4302 adds the
+    fingerprint re-verification and narration with A-07-T32). The run id is the archive's."""
+    from abacus.modules.assurance import archive_gate as ag
+
     await _gate(ctx, work_item_id, "archive.build_index")
-    _not_yet()
+    del idempotency_key  # the index is keyed by its own content (the same sections answer v)
+    await ag.build_binder_index(ctx, work_item_id)
+    state = await ag.archive_state(ctx.tenant, work_item_id)
+    run_id = state.archive.id if state.archive is not None else work_item_id
+    return ReleaseRunAcceptedOut(run_id=run_id, status_url=f"/v1/audits/{work_item_id}/archive")
 
 
 @router.post(
@@ -1325,8 +1393,11 @@ async def audit_archive_index_route(
 )
 async def audit_archive_request_lock_route(work_item_id: UUID, ctx: Ctx) -> AuditArchiveStateOut:
     """A senior or above notifies the manager (409 `checklist_incomplete` before 9 of 9)."""
+    from abacus.modules.assurance import archive_gate as ag
+
     await _gate(ctx, work_item_id, "archive.request_lock")
-    _not_yet()
+    await ag.request_lock(ctx, work_item_id)
+    return await _archive_out(ctx, work_item_id)
 
 
 @router.post(

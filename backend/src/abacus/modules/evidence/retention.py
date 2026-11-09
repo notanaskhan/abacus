@@ -288,6 +288,9 @@ RECORD_TYPES: Final = frozenset(
     # N-04-T06 (DEC-2950; ADR P-14, QN-7): the notice and its response letter. `notice_response`
     # was already the letter's kind (N-04-T16) without being listed here. Years are content.
     | {"notice", "notice_response"}
+    # A-07-T31 (DEC-3108; ADR P-14): the archived audit file, anchored on the report release; its
+    # years are content like every other's, and the archive applies the five-year floor itself.
+    | {"audit_documentation"}
 )
 _DAYS_PER_YEAR: Final = Decimal("365.25")
 _EFFECTIVE_YEARS = text(

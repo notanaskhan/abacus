@@ -133,6 +133,7 @@ from abacus.modules.agents.run_backfill_workflow import (
     BackfillBatch,
     BackfillInput,
 )
+from abacus.modules.agents.run_logs import run_log_count  # A-07-T31: binder section G
 from abacus.modules.agents.runs import run_initiators
 from abacus.modules.agents.runs_routes import engagement_runs_router, runs_router
 from abacus.modules.agents.runs_v2_contract import (
@@ -532,6 +533,7 @@ __all__ = [
     "review_sha256",
     "router",
     "run_initiators",
+    "run_log_count",
     "run_outcome",
     "screen",
     "screening_responder",
