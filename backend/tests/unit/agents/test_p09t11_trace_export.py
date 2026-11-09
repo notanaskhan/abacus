@@ -7,7 +7,7 @@ the person and the sha256, and a stale MFA answers mfa_required."
 from __future__ import annotations
 
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from types import SimpleNamespace
 
@@ -31,13 +31,19 @@ async def test_two_exports_are_byte_identical_and_audited(monkeypatch: pytest.Mo
     async def run(_ctx: object, _run: uuid.UUID, _action: str) -> object:
         return object()
 
+    def record(action: str, **k: object) -> None:
+        recorded.append({"action": action, **k})
+
+    def canonical(_t: object) -> bytes:
+        return b'{"a":1}'
+
     @asynccontextmanager
-    async def unit(_t: object) -> AsyncIterator[object]:
-        yield SimpleNamespace(record=lambda action, **k: recorded.append({"action": action, **k}))
+    async def unit(_t: object) -> AsyncGenerator[object]:
+        yield SimpleNamespace(record=record)
 
     monkeypatch.setattr(runs, "trace_for", trace_for)
     monkeypatch.setattr(runs, "_run", run)
-    monkeypatch.setattr(runs, "canonical", lambda _t: b'{"a":1}')
+    monkeypatch.setattr(runs, "canonical", canonical)
     monkeypatch.setattr(runs, "uow", unit)
     monkeypatch.setattr(
         "abacus.kernel.crypto.signing.export_signer", lambda: LocalExportSigner(b"k" * 32)

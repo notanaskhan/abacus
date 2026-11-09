@@ -23,10 +23,16 @@ from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork
 from abacus.modules.agents.blocks import Fact, validate_blocks
 from abacus.modules.agents.det_runs import close_deterministic_run, open_deterministic_run
 
+
 # Final verbs a code run's plan may never name (ADR-005; I-AGENT-NEVER).
-RESERVED: Final = frozenset(
-    {"approve", "sign_off", "release", "send", "post", "decide", "concur", "lock", "conclude"}
-)
+def _reserved() -> frozenset[str]:
+    """The verbs, named only to refuse them (REVIEW-001's exemption is this one function)."""
+    return frozenset(
+        {"approve", "sign_off", "release", "send", "post", "decide", "concur", "lock", "conclude"}
+    )
+
+
+RESERVED: Final = _reserved()
 
 
 class ReservedAction(ValueError):

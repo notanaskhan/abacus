@@ -16,8 +16,8 @@ import pytest
 
 from abacus.kernel.db import TenantContext
 from abacus.modules.assurance import archive_gate as ag
-from abacus.modules.evidence import archive as ev
-from abacus.modules.evidence.api import ArchiveRow, BinderSection
+from abacus.modules.assurance import archive_records as ev
+from abacus.modules.assurance.archive_records import ArchiveRow, BinderSection
 
 pytestmark = pytest.mark.asyncio
 TENANT = TenantContext(uuid.uuid4(), "system", "test")
@@ -141,7 +141,7 @@ async def test_archive_in_47_days_on_oct_22(monkeypatch: pytest.MonkeyPatch) -> 
         return date(2026, 10, 22)
 
     monkeypatch.setattr(ag, "assurance_item", item)
-    monkeypatch.setattr("abacus.modules.evidence.api.archive_of", archive)
+    monkeypatch.setattr("abacus.modules.assurance.archive_records.archive_of", archive)
     monkeypatch.setattr(ag, "binder_sections", binder)
     monkeypatch.setattr(ag, "_items", items)
     monkeypatch.setattr(ag.clock, "today", today)

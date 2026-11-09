@@ -283,10 +283,15 @@ export function deliverables(state: Por09State): DeliverablesOut {
           key: "copperleaf-close-2026-08",
           label: "August 2026 Close",
           rows: [
-            row(DELIVERABLE_ID.copperleaf, "August 2026 financial statements", "waiting_for_approval", {
-              kind: "close_package",
-              released_on: "2026-09-14",
-            }),
+            row(
+              DELIVERABLE_ID.copperleaf,
+              "August 2026 financial statements",
+              "waiting_for_approval",
+              {
+                kind: "close_package",
+                released_on: "2026-09-14",
+              },
+            ),
           ],
         },
       ],
@@ -319,7 +324,9 @@ export function deliverables(state: Por09State): DeliverablesOut {
                 { kind: "fs_draft", latest_version: state === "a" ? 3 : 4, page_count: 14 },
               ),
               row(DELIVERABLE_ID.rep, "Representation letter", "in_sign"),
-              row(DELIVERABLE_ID.engagement, "Engagement letter", "signed", { kind: "signed_copy" }),
+              row(DELIVERABLE_ID.engagement, "Engagement letter", "signed", {
+                kind: "signed_copy",
+              }),
             ],
       },
     ],
@@ -386,15 +393,39 @@ export function deliverable(state: Por09State, id: string): DeliverableOut | und
   if (id !== DELIVERABLE_ID.fs) return undefined;
   const v3 = version(3, true, 14, ["download", "comment"], HASH_V3, "2026-10-06T14:00:00Z");
   if (state === "a") {
-    return { id, kind: "fs_draft", title: "Financial statements", status: "for_your_review", restricted_use: false, legend_kind: null, versions: [v3] };
+    return {
+      id,
+      kind: "fs_draft",
+      title: "Financial statements",
+      status: "for_your_review",
+      restricted_use: false,
+      legend_kind: null,
+      versions: [v3],
+    };
   }
   const v4 = (actions: DeliverableVersionOut["allowed_actions"]): DeliverableVersionOut =>
     version(4, true, 14, actions, HASH_V4, "2026-10-08T14:00:00Z");
   if (state === "a2") {
-    return { id, kind: "fs_draft", title: "Financial statements", status: "for_your_review", restricted_use: false, legend_kind: null, versions: [v3, v4(["download", "comment", "approve"])] };
+    return {
+      id,
+      kind: "fs_draft",
+      title: "Financial statements",
+      status: "for_your_review",
+      restricted_use: false,
+      legend_kind: null,
+      versions: [v3, v4(["download", "comment", "approve"])],
+    };
   }
   if (state === "b") {
-    return { id, kind: "fs_draft", title: "Financial statements", status: "approved_by_you", restricted_use: false, legend_kind: null, versions: [v3, v4(["download"])] };
+    return {
+      id,
+      kind: "fs_draft",
+      title: "Financial statements",
+      status: "approved_by_you",
+      restricted_use: false,
+      legend_kind: null,
+      versions: [v3, v4(["download"])],
+    };
   }
   return {
     id,

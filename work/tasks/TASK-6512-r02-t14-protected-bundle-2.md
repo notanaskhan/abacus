@@ -2,7 +2,7 @@
 id: TASK-6512
 title: "R-02-T14: protected bundle 2 — portal.approvals, portal.deliverables, portal.governance_room; notification and email-template kinds"
 spec: SPEC-646
-acceptance_criteria: [AC-flags]
+acceptance_criteria: [AC-1]  # the row's acceptance (AC-flags)
 risk_zone: red
 status: in-review
 branch: s33-r02-t14

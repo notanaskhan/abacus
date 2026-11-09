@@ -20,10 +20,10 @@ from typing import Any, Final
 import pytest
 import yaml
 
-import abacus.modules.assurance.api  # noqa: F401  # registers A-07's decision kinds at import
 from abacus.kernel.db import ActorKind, TenantContext
 from abacus.kernel.errors import NotFound
 from abacus.modules.assurance import agent_capabilities as caps
+from abacus.modules.assurance import api as assurance_api  # registers A-07's decision kinds
 from abacus.modules.assurance import governance_comms as gc
 from abacus.modules.assurance import governance_room as room
 from abacus.modules.assurance import rep_letters as rl
@@ -37,7 +37,9 @@ CLIENT_ROLES: Final = ("client_admin", "client_contributor", "third_party", "cli
 RESERVED_VERBS: Final = ("approve", "sign", "send", "release", "decide", "lock", "conclude")
 
 
-def _actions(module: str) -> dict[str, dict[str, Any]]:
+def _actions(
+    module: str,
+) -> dict[str, dict[str, Any]]:  # Any: untyped JSON or YAML (a test double)
     return dict(yaml.safe_load((MATRIX / f"{module}.yaml").read_text())["actions"])
 
 
@@ -54,6 +56,7 @@ def _ctx(kind: ActorKind = "human", *, client: bool = False) -> AuthContext:
 
 @pytest.mark.parametrize("code", ["going_concern", "opinion"])
 def test_inv1_the_card_is_reserved_to_the_engagement_partner(code: str) -> None:
+    assert assurance_api.ROUTERS  # imported for its registrations
     assert decision_kind(code).reserved_role == "engagement_partner"
     decide = _actions("review")["decision.decide"]
     assert decide["agent"] == "deny" and decide["system"] == "deny"
@@ -120,7 +123,10 @@ class _Session:
 async def test_ac_a_rep_letter_without_an_approval_of_its_current_version_never_sends(
     monkeypatch: pytest.MonkeyPatch, approved: bool, letter: bool
 ) -> None:
-    monkeypatch.setattr(rl, "tenant_session", lambda _t: _Session(approved, letter))
+    def session(_t: object) -> _Session:
+        return _Session(approved, letter)
+
+    monkeypatch.setattr(rl, "tenant_session", session)
     with pytest.raises(rl.LetterNotApproved):
         await rl.ensure_approved(TenantContext(uuid.uuid4(), "system", "test"), uuid.uuid4())
 
@@ -276,7 +282,7 @@ async def test_inv5_a_composed_draft_is_the_initiators_and_reads_via_agent(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     ctx = _ctx()
-    seen: dict[str, Any] = {}
+    seen: dict[str, Any] = {}  # Any: untyped JSON or YAML (a test double)
 
     async def item(*_a: object) -> SimpleNamespace:
         return SimpleNamespace(engagement_id=uuid.uuid4())

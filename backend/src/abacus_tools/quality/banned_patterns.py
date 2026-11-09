@@ -958,6 +958,8 @@ REVIEW_DECIDE_EXEMPT: dict[str, frozenset[str]] = {
     # client's own decision (portal human, fresh second factor). CLIENT-DECISION-001 already
     # names this file as the only home outside record mode; the exemption is that one function.
     "src/abacus/modules/portal/approvals.py": frozenset({"client_decide"}),
+    # A-07-T32 (DEC-3109): a code run's plan check names the reserved verbs only to refuse them.
+    "src/abacus/modules/agents/code_runs.py": frozenset({"_reserved"}),
 }
 
 

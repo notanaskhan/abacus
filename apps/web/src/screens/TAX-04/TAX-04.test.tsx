@@ -50,7 +50,7 @@ describe("TAX-04 Prepare preset", () => {
   it("c: the mismatch disables approval with its helper", () => {
     render(<TAX04 frame="c" />);
     expect(screen.getByText(COPY.mismatchHelper)).toBeTruthy();
-    const approve = screen.getByRole("button", { name: /Approve Document/ }) as HTMLButtonElement;
+    const approve = screen.getByRole<HTMLButtonElement>("button", { name: /Approve Document/ });
     expect(approve.disabled).toBe(true);
     expect(document.querySelector("[data-lead-row='3b']")?.textContent).toContain("$14,280");
   });
@@ -58,8 +58,12 @@ describe("TAX-04 Prepare preset", () => {
   it("d: the draft K-1 with box 5 lit beside its row; 2a keeps its flag", () => {
     render(<TAX04 frame="d" />);
     expect(screen.getByText(COPY.k1File)).toBeTruthy();
-    expect(document.querySelector("[data-lead-row='int-k1']")?.getAttribute("data-lit")).toBe("true");
-    expect(document.querySelector("[data-lead-row='texempt-all'] [aria-label='Flagged']")).not.toBeNull();
+    expect(document.querySelector("[data-lead-row='int-k1']")?.getAttribute("data-lit")).toBe(
+      "true",
+    );
+    expect(
+      document.querySelector("[data-lead-row='texempt-all'] [aria-label='Flagged']"),
+    ).not.toBeNull();
   });
 
   it("2b foots: 2,310 + 4,600 = 6,910", () => {

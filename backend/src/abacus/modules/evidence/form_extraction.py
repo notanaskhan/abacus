@@ -523,6 +523,8 @@ async def extract_version(tenant_id: UUID, version_id: UUID) -> int:
         tx.record(
             "extracted_fields.recorded",
             target=Target("evidence_version", version_id),
-            after=Ref(form=form_map.form_type, fields=len(found)),
+            # S33 end pass (escaped defect, found by P-11-T37): a Ref holds ids, counts and
+            # fingerprints only; the form type rides on the event.
+            after=Ref(fields=len(found)),
         )
     return len(found)

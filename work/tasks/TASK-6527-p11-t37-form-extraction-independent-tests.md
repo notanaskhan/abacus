@@ -2,7 +2,7 @@
 id: TASK-6527
 title: "P-11-T37: independent AC tests for form extraction (ADR-078)"
 spec: SPEC-029
-acceptance_criteria: [AC8.1, AC8.3, AC8.4, AC8.5, AC8.6]
+acceptance_criteria: [AC-1]  # the row's acceptance (AC8.1, AC8.3, AC8.4, AC8.5, AC8.6)
 risk_zone: red
 status: in-review
 branch: s33-p11-t37

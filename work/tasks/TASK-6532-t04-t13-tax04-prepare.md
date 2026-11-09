@@ -2,6 +2,7 @@
 id: TASK-6532
 title: "T-04-T13: TAX-04 Prepare preset in fixture mode on T3"
 spec: SPEC-649
+acceptance_criteria: [AC-1]  # the row's acceptance (Objective)
 screens: [TAX-04]
 risk_zone: green
 status: in-review

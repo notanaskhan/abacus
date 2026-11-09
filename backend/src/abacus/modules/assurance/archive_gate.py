@@ -38,6 +38,7 @@ from abacus.kernel.errors import DomainConflict
 from abacus.kernel.uow import Ref, Scope, Target, uow
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.assurance import completion
+from abacus.modules.assurance.archive_records import ArchiveRow, BinderSection
 from abacus.modules.assurance.external_models import (
     ExternalArchive,
     external_archive_of,
@@ -54,7 +55,7 @@ from abacus.modules.engagements.api import (
     lock_assurance_item,
     lock_ref,
 )
-from abacus.modules.evidence.api import ArchiveRow, BinderSection, final_export_for_archive
+from abacus.modules.evidence.api import final_export_for_archive
 from abacus.modules.identity.api import AuthContext
 
 ACTION: Final = "assurance.record_archive"
@@ -259,9 +260,13 @@ async def _items(
 ) -> tuple[ArchiveItem, ...]:
     from abacus.modules.agents.api import run_log_count
     from abacus.modules.assurance import gates as gate_providers
+    from abacus.modules.assurance.archive_records import (
+        archive_of,
+        index_sha256,
+        latest_binder_index,
+    )
     from abacus.modules.assurance.release import released
     from abacus.modules.assurance.release_facts import independence
-    from abacus.modules.evidence.api import archive_of, index_sha256, latest_binder_index
 
     try:
         blockers = await gate_providers.g5_blockers(tenant, engagement_id)
@@ -330,7 +335,7 @@ async def _items(
 
 async def archive_state(tenant: TenantContext, work_item_id: UUID) -> ArchiveState:
     """AUD-25's read: the archive, the nine items and the binder index, all computed now."""
-    from abacus.modules.evidence.api import archive_of
+    from abacus.modules.assurance.archive_records import archive_of
 
     found = await assurance_item(tenant, work_item_id)
     archive = await archive_of(tenant, work_item_id)
@@ -346,7 +351,7 @@ async def archive_state(tenant: TenantContext, work_item_id: UUID) -> ArchiveSta
 async def build_binder_index(ctx: AuthContext, work_item_id: UUID) -> int:
     """`POST …/archive/binder-index`: a new code-built index version (the route authorised
     `archive.build_index`). 409 `record_out_of_phase` before release."""
-    from abacus.modules.evidence.api import archive_of, record_binder_index
+    from abacus.modules.assurance.archive_records import archive_of, record_binder_index
 
     found = await assurance_item(ctx.tenant, work_item_id)
     archive = await archive_of(ctx.tenant, work_item_id)
@@ -396,8 +401,8 @@ async def request_lock(ctx: AuthContext, work_item_id: UUID) -> ArchiveState:
 
 async def on_report_released(event: OutboxEvent) -> None:
     """`report.released` → the archive opens Assembling (once; a redelivery finds the row)."""
+    from abacus.modules.assurance.archive_records import open_archive
     from abacus.modules.assurance.release import released
-    from abacus.modules.evidence.api import open_archive
 
     work_item_id = UUID(str(event.payload["work_item_id"]))
     engagement_id = UUID(str(event.payload["engagement_id"]))

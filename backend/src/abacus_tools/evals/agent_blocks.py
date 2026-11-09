@@ -22,7 +22,7 @@ from uuid import UUID
 import yaml
 
 from abacus.ai_gateway.output_checks import run_output_check
-from abacus.modules.agents.blocks import BlocksTurn, Fact
+from abacus.modules.agents.api import BlocksTurn, Fact
 from abacus_tools.evals.summary import SIGNING_KEY_ENV
 
 AGENT: Final = "agent_blocks"
@@ -30,7 +30,7 @@ SUITE: Final = Path(__file__).resolve().parents[4] / "evals" / "agent_blocks" / 
 
 
 def load(path: Path = SUITE) -> dict[str, Any]:  # ANY-001: the YAML suite
-    return cast(dict[str, Any], yaml.safe_load(path.read_text(encoding="utf-8")))
+    return cast(dict[str, Any], yaml.safe_load(path.read_text(encoding="utf-8")))  # ANY-001: YAML
 
 
 def payload(case: dict[str, Any]) -> object:  # ANY-001: a YAML case

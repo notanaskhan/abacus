@@ -6,7 +6,11 @@ import { toastStore } from "@abacus/ui";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
-import { type FixtureHandler, type Scenario, installFixtureMode } from "../../app-core/fixture-mode";
+import {
+  type FixtureHandler,
+  type Scenario,
+  installFixtureMode,
+} from "../../app-core/fixture-mode";
 import { newQueryClient } from "../../testing/support";
 import { POR09 } from ".";
 import { COPY } from "./copy";
@@ -14,9 +18,8 @@ import { FLAG_OFF, OPENING, type Por09State, scenarios } from "./scenarios";
 
 beforeAll(() => {
   client.setConfig({ baseUrl: window.location.origin, throwOnError: true });
-  if (URL.createObjectURL === undefined) {
-    Object.assign(URL, { createObjectURL: () => "blob:page", revokeObjectURL: () => undefined });
-  }
+  // jsdom has no object URLs: the page images read as a fixed blob URL.
+  Object.assign(URL, { createObjectURL: () => "blob:page", revokeObjectURL: () => undefined });
 });
 
 let restore: (() => void) | undefined;
@@ -66,7 +69,9 @@ describe("POR-09 deliverables", () => {
     expect(screen.getByText("Draft for review")).toBeTruthy();
     expect(screen.getByText("2 / 14")).toBeTruthy();
     expect(document.querySelector("[data-watermark='draft']")).not.toBeNull();
-    expect(await screen.findByText("Keystone calls these participant loans. Can the note say both?")).toBeTruthy();
+    expect(
+      await screen.findByText("Keystone calls these participant loans. Can the note say both?"),
+    ).toBeTruthy();
     expect(screen.getByText(/Note 5 will read/)).toBeTruthy();
     expect(screen.getByText("Comments · 2")).toBeTruthy();
     expect(screen.getByText("Coming next")).toBeTruthy();
@@ -83,7 +88,9 @@ describe("POR-09 deliverables", () => {
     fireEvent.click(screen.getByRole("button", { name: COPY.previous }));
     fireEvent.click(screen.getByRole("button", { name: COPY.previous }));
     expect(screen.getByText("1 / 14")).toBeTruthy();
-    expect((screen.getByRole("button", { name: COPY.previous }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: COPY.previous }).disabled).toBe(
+      true,
+    );
     fireEvent.click(screen.getByRole("button", { name: COPY.zoomIn }));
     fireEvent.click(screen.getByRole("button", { name: COPY.fit }));
   });
@@ -93,7 +100,9 @@ describe("POR-09 deliverables", () => {
     expect(await screen.findByText(COPY.approveTitle)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: COPY.approveConfirm }));
     await waitFor(() => {
-      expect(seen.calls.some((c) => c.method === "POST" && c.path.endsWith("/versions/4/approve"))).toBe(true);
+      expect(
+        seen.calls.some((c) => c.method === "POST" && c.path.endsWith("/versions/4/approve")),
+      ).toBe(true);
     });
     const post = seen.calls.find((c) => c.method === "POST");
     expect(post?.body).toEqual({ seen_hash: expect.any(String) as string });
@@ -119,7 +128,7 @@ describe("POR-09 deliverables", () => {
     expect(await screen.findByText("My K-1s")).toBeTruthy();
     expect(screen.getByText("Released Sep 15")).toBeTruthy();
     expect(await screen.findByText(COPY.k1Added)).toBeTruthy();
-    expect(screen.getByText("468,008")).toBeTruthy();
+    expect(await screen.findByText("468,008")).toBeTruthy();
     expect(screen.getByText("228,000")).toBeTruthy();
     expect(screen.queryByText(/Pell Street/)).toBeNull();
   });
@@ -150,7 +159,7 @@ describe("POR-09 deliverables", () => {
   it("no word on the screen is the product's, the agent's or materiality", async () => {
     at("a");
     await screen.findByText("Financial statements — draft v3");
-    const text = document.body.textContent ?? "";
+    const text = document.body.textContent;
     expect(text).not.toMatch(/Accrued|agent|materiality/i);
   });
 });

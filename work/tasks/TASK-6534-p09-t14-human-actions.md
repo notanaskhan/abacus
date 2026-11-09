@@ -2,6 +2,7 @@
 id: TASK-6534
 title: "P-09-T14: human-action intents on C6 v2"
 spec: SPEC-648
+acceptance_criteria: [AC-1]  # the row's acceptance (Objective)
 screens: [SHL-13]
 risk_zone: green
 status: in-review

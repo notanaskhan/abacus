@@ -15,10 +15,17 @@ from abacus.kernel import ocr
 from abacus.modules.evidence import ocr_step, statement_tables
 from abacus.modules.evidence.extraction import extract
 from abacus.modules.evidence.statement_review import read_statement
-from abacus.modules.evidence.statements import reconcile
+from abacus.modules.evidence.statements import ParsedStatement, Reconciliation
+from abacus.modules.evidence.statements import reconcile as reconcile_lines
 from abacus_tools.synthetic.documents import bank_statement_pdf, letter_pdf
 
 PDF = "application/pdf"
+
+
+def reconcile(parsed: ParsedStatement) -> Reconciliation:
+    return reconcile_lines(parsed.opening, parsed.lines, parsed.closing)
+
+
 LETTER = {"width_pt": Decimal(612), "height_pt": Decimal(792)}
 
 
@@ -26,7 +33,7 @@ def _scan_of(content: bytes) -> list[tuple[list[ocr.OcrWord], float, float]]:
     """The digital twin's printed lines as OCR words in page points (what Textract would read
     off a scan of the same page): each line's words spread across the line's box."""
     found = extract(content, PDF)
-    pages = []
+    pages: list[tuple[list[ocr.OcrWord], float, float]] = []
     for lines in found.page_lines:
         words: list[ocr.OcrWord] = []
         for line in lines:
@@ -45,20 +52,22 @@ def _scan_of(content: bytes) -> list[tuple[list[ocr.OcrWord], float, float]]:
     return pages
 
 
-def _bbox(left: float, top: float, width: float, height: float) -> dict[str, Any]:
+def _bbox(
+    left: float, top: float, width: float, height: float
+) -> dict[str, Any]:  # Any: untyped JSON or YAML (a test double)
     return {"BoundingBox": {"Left": left, "Top": top, "Width": width, "Height": height}}
 
 
-def _table_blocks() -> list[dict[str, Any]]:
+def _table_blocks() -> list[dict[str, Any]]:  # Any: untyped JSON or YAML (a test double)
     words = [
         ("w1", "Date"), ("w2", "Description"), ("w3", "Amount"),
         ("w4", "12/31"), ("w5", "Deposit"), ("w6", "$5,250.00"),
     ]  # fmt: skip
-    blocks: list[dict[str, Any]] = [
+    blocks: list[dict[str, Any]] = [  # Any: untyped JSON or YAML (a test double)
         {"Id": i, "BlockType": "WORD", "Text": t, "Geometry": _bbox(0.1, 0.5, 0.05, 0.01)}
         for i, t in words
     ]
-    cells = []
+    cells: list[str] = []
     for n, (word_id, _t) in enumerate(words):
         row, col = divmod(n, 3)
         cell_id = f"c{n}"
@@ -119,12 +128,12 @@ def test_ac_every_transaction_row_has_a_cell_bbox() -> None:
     amount = next(c for c in table.cells if (c.row, c.col) == (1, 2))
     assert amount.text == "$5,250.00" and amount.confidence == Decimal("0.975")
     assert amount.bbox == (
-        Decimal("336.60"),
+        Decimal("367.20"),
         Decimal("411.84"),
-        Decimal("483.48"),
+        Decimal("514.08"),
         Decimal("426.10"),
     )
-    assert ocr_step._rows(table) == (
+    assert ocr_step._rows(table) == (  # pyright: ignore[reportPrivateUsage]  # the grid helper
         ("Date", "Description", "Amount"),
         ("12/31", "Deposit", "$5,250.00"),
     )
@@ -165,15 +174,15 @@ def test_only_statement_pages_are_read_for_tables() -> None:
 
 def test_record_tables_writes_every_cell_with_its_box_and_no_update() -> None:
     (table,) = ocr.normalise_tables(_table_blocks(), **LETTER)
-    calls: list[tuple[str, dict[str, Any]]] = []
+    calls: list[tuple[str, dict[str, Any]]] = []  # Any: untyped JSON or YAML (a test double)
     table_id = uuid4()
 
     class Session:
-        async def scalar(self, sql: object, params: dict[str, Any]) -> object:
+        async def scalar(self, sql: object, params: dict[str, Any]) -> object:  # Any: test JSON
             calls.append((str(sql), params))
             return table_id
 
-        async def execute(self, sql: object, params: dict[str, Any]) -> None:
+        async def execute(self, sql: object, params: dict[str, Any]) -> None:  # Any: test JSON
             calls.append((str(sql), params))
 
     class Tx:

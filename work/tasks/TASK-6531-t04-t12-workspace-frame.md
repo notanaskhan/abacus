@@ -2,6 +2,7 @@
 id: TASK-6531
 title: "T-04-T12: the return review workspace frame and routes"
 spec: SPEC-649
+acceptance_criteria: [AC-1]  # the row's acceptance (Objective)
 screens: [TAX-04, TAX-05, TAX-06, TAX-07, TAX-08, TXI-01]
 risk_zone: green
 status: in-review

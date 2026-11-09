@@ -21,13 +21,16 @@ def test_ac7_each_event_emails_its_own_sentence() -> None:
 
 
 def test_ac1_every_catalogued_event_is_subscribed() -> None:
-    assert set(SUBSCRIPTIONS) == set(CATALOGUE)
+    # P-10-T27 (DEC-3117): the real-time invalidations subscribe beside the catalogue.
+    realtime = {"notification.created", "request_item.status_changed", "report.released"}
+    assert set(SUBSCRIPTIONS) == set(CATALOGUE) | realtime
 
 
 def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
     assert set(CATALOGUE) == {
         "eqr.concurred_v2",  # A-07-T18 (C16 `eqr_concurred`, to the engagement partners)
         "eqr.requested",  # A-07-T18 (C16 `eqr_requested`, to the assigned EQR; DF-05)
+        "uncorrected_misstatements.acknowledged",  # R-02-T15 (DEC-3113, to the team)
         "extension_payment.approval_requested",  # T-03-T07 (DEC-2350)
         "extension.ack_rejected",  # T-03-T07 (DEC-2350)
         "estimate.due_soon",  # T-03-T07 (DEC-2350)

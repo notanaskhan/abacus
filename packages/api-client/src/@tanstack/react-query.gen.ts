@@ -13011,7 +13011,7 @@ export const eventsStreamQueryKey = (options?: Options<EventsStreamData>) => cre
 /**
  * Events Stream Route
  *
- * `text/event-stream` of `InvalidationEventOut` (T27).
+ * `text/event-stream` of `InvalidationEventOut` (P-10-T27, DEC-3117).
  */
 export const eventsStreamOptions = (options?: Options<EventsStreamData>) => queryOptions<EventsStreamResponse, EventsStreamError, EventsStreamResponse, ReturnType<typeof eventsStreamQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -13029,7 +13029,7 @@ export const eventsStreamOptions = (options?: Options<EventsStreamData>) => quer
 /**
  * Stream Topics Route
  *
- * Add or remove topics without reconnecting; each is authorised on add.
+ * Add or remove topics without reconnecting; each is authorised on add (P-10-T27).
  */
 export const streamTopicsMutation = (options?: Partial<Options<StreamTopicsData>>): UseMutationOptions<StreamTopicsResponse, StreamTopicsError, Options<StreamTopicsData>> => {
     const mutationOptions: UseMutationOptions<StreamTopicsResponse, StreamTopicsError, Options<StreamTopicsData>> = {
@@ -18006,7 +18006,7 @@ export const agentBadgeEventsQueryKey = (options?: Options<AgentBadgeEventsData>
  * Agent Badge Events Route
  *
  * `text/event-stream` of the caller's badge counts `{running, needs_answer,
- * ready_for_review}` (T26).
+ * ready_for_review}` (P-10-T26, DEC-3116).
  */
 export const agentBadgeEventsOptions = (options?: Options<AgentBadgeEventsData>) => queryOptions<AgentBadgeEventsResponse, AgentBadgeEventsError, AgentBadgeEventsResponse, ReturnType<typeof agentBadgeEventsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -21101,7 +21101,7 @@ export const listRoomInquiriesQueryKey = (options: Options<ListRoomInquiriesData
 /**
  * List Room Inquiries Route
  *
- * Questionnaires addressed to the caller only (AC-29).
+ * Questionnaires addressed to the caller only (AC-29; R-02-T16, DEC-3114).
  */
 export const listRoomInquiriesOptions = (options: Options<ListRoomInquiriesData>) => queryOptions<ListRoomInquiriesResponse, ListRoomInquiriesError, ListRoomInquiriesResponse, ReturnType<typeof listRoomInquiriesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -21121,7 +21121,8 @@ export const listRoomReportsQueryKey = (options: Options<ListRoomReportsData>) =
 /**
  * List Room Reports Route
  *
- * Deliverables whose audiences include this room; nothing from management's list (AC-30).
+ * Deliverables whose audiences include this room; nothing from management's list (AC-30;
+ * R-02-T16, DEC-3114).
  */
 export const listRoomReportsOptions = (options: Options<ListRoomReportsData>) => queryOptions<ListRoomReportsResponse, ListRoomReportsError, ListRoomReportsResponse, ReturnType<typeof listRoomReportsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

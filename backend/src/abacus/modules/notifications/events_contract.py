@@ -10,14 +10,13 @@ answers 409 `too_many_streams`. Off (`realtime.sse`, Jan 27, 2028 train): 404, a
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import Depends, Header, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotImplementedYet
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -59,10 +58,6 @@ class StreamTopicsOut(BaseModel):
 
 
 events_router = AbacusRouter(prefix="/v1/events", tags=["real time"])
-
-
-def _not_yet() -> NoReturn:
-    raise NotImplementedYet
 
 
 async def _sse_on(ctx: AuthContext) -> None:

@@ -5,6 +5,7 @@ import {
   Toast,
   type TriadDoc,
   type TriadGroup,
+  type TriadPreset,
   TriadFooter,
   TriadTree,
   type ViewerFile,
@@ -170,14 +171,12 @@ function treeOf(approved: ReadonlySet<string>): readonly TriadGroup[] {
     subs: g.subs.map((s) => ({
       id: s.id,
       label: s.label,
-      docs: s.docs.map(
-        ([id, label]): TriadDoc => ({
-          id,
-          label,
-          ...(approved.has(id) ? { approved: true } : {}),
-          ...(id === "k1" ? { flags: 1, flagsNote: COPY.issueNote } : {}),
-        }),
-      ),
+      docs: s.docs.map(([id, label]): TriadDoc => ({
+        id,
+        label,
+        ...(approved.has(id) ? { approved: true } : {}),
+        ...(id === "k1" ? { flags: 1, flagsNote: COPY.issueNote } : {}),
+      })),
     })),
   }));
 }
@@ -186,7 +185,7 @@ export interface Tax04Props {
   frame?: Tax04Frame;
   onIssue?: (documentId: string) => void;
   onTab?: (tab: string) => void;
-  onPreset?: (preset: "review" | "prepare") => void;
+  onPreset?: (preset: TriadPreset) => void;
 }
 
 export function TAX04({ frame = "a", onIssue, onTab, onPreset }: Tax04Props): JSX.Element {

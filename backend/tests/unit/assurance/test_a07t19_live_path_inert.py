@@ -89,12 +89,22 @@ async def test_envelope_completed_is_left_alone_while_off() -> None:
 
 
 @pytest.mark.parametrize("kind", ["representation_letter", "governance_letter", "audit_report"])
-async def test_the_c11_kinds_are_registered_and_render_nothing_final(kind: str) -> None:
+async def test_the_c11_kinds_are_registered_and_render_nothing_final(
+    kind: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def off(*_a: object) -> bool:
+        return False
+
     found = c11.document_kind(kind)
     assert found.retention_record_type == a07.RECORD_TYPE
-    assert await found.approval_provider(cast(c11.ApprovalRef, None)) is None
+    if kind != "audit_report":  # A-07-T30: the report's final is approved by the release grant
+        assert await found.approval_provider(cast(c11.ApprovalRef, None)) is None
+    # A-07-T33 (DEC-3106): the gate reads the firm's flags, so it is the tenant provider's.
+    monkeypatch.setattr(a07, "live", off)
+    provider = found.tenant_variables_provider
+    assert provider is not None
     with pytest.raises(a07.NotLive):
-        await found.variables_provider(cast(c11.OwnerRef, None), cast(c11.RenderScope, None))
+        await provider(TENANT, cast(c11.OwnerRef, None), cast(c11.RenderScope, None))
 
 
 @pytest.mark.parametrize("card", [a07._going_concern_card, a07._opinion_card])  # pyright: ignore[reportPrivateUsage]  # cards

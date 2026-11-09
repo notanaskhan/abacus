@@ -2,7 +2,7 @@
 id: TASK-6506
 title: "A-07-T33: flags audits.completion, audits.letters, audits.report_release, audits.archive replace LIVE and COMPLETION_LIVE"
 spec: SPEC-644
-acceptance_criteria: [AC-flags]
+acceptance_criteria: [AC-1]  # the row's acceptance (AC-flags)
 risk_zone: red
 status: in-review
 branch: s33-a07-t33

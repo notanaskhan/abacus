@@ -7,7 +7,7 @@ failure records nothing, and agent, system and stale-MFA calls are refused."
 from __future__ import annotations
 
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
@@ -104,7 +104,7 @@ async def test_a_missing_or_failing_provider_is_unmet(monkeypatch: pytest.Monkey
     monkeypatch.setattr(rel, "_ALSO_REQUIRED", {})
 
     @asynccontextmanager
-    async def session(_t: TenantContext) -> AsyncIterator[object]:
+    async def session(_t: TenantContext) -> AsyncGenerator[object]:
         async def execute(*_a: object, **_k: object) -> object:
             return SimpleNamespace(first=lambda: None)
 
@@ -135,10 +135,12 @@ def _no_db(monkeypatch: pytest.MonkeyPatch, tx: _Tx) -> None:
     async def ref(_tx: object, _e: uuid.UUID) -> object:
         from abacus.modules.identity.api import Resource
 
-        return SimpleNamespace(resource=lambda: Resource(uuid.uuid4(), engagement_id=ENGAGEMENT))
+        return SimpleNamespace(
+            resource=lambda: Resource(uuid.uuid4(), archived=False, engagement_id=ENGAGEMENT)
+        )
 
     @asynccontextmanager
-    async def unit(_t: TenantContext) -> AsyncIterator[_Tx]:
+    async def unit(_t: TenantContext) -> AsyncGenerator[_Tx]:
         yield tx
 
     monkeypatch.setattr(rel, "assurance_item", item)

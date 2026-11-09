@@ -28,7 +28,7 @@ import time
 from collections.abc import Awaitable, Callable, Mapping, Set
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import Final, Literal, Protocol
+from typing import Final, Literal, Protocol, cast
 from uuid import UUID
 
 from abacus.modules.agents.blocks import BlocksRejected, Fact, validate_blocks
@@ -115,9 +115,10 @@ def settle_blocks(
 ) -> tuple[dict[str, object], tuple[UnsupportedPart, ...]]:
     """Validate each part on its own; a part that fails is replaced by "Unsupported" and its
     reason recorded. Shape errors of the whole payload stay errors (the turn is repaired)."""
-    parts = payload.get("parts")
-    if not isinstance(parts, list):
+    raw = payload.get("parts")
+    if not isinstance(raw, list):
         raise BlocksRejected("shape", "parts")
+    parts = cast(list[object], raw)
     kept: list[object] = []
     unsupported: list[UnsupportedPart] = []
     for index, part in enumerate(parts):
@@ -215,6 +216,8 @@ async def run_step(
         payload = output.get("blocks")
         if not isinstance(payload, dict):
             return outcome("completed")
-        known = set(citations) | (set(await verified()) if verified is not None else set())
+        known: set[UUID] = set(citations)
+        if verified is not None:
+            known |= set(await verified())
         settled, unsupported = settle_blocks(payload, facts, known)  # type: ignore[arg-type]  # a JSON object
         return outcome("completed", blocks=settled, unsupported=unsupported)

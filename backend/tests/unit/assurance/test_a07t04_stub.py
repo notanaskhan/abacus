@@ -22,6 +22,8 @@ OPERATIONS = {
     ("post", "/v1/audits/{work_item_id}/eqr/concur"): "eqr.concur",
     ("post", "/v1/audits/{work_item_id}/eqr/request"): "eqr.request",
     ("get", "/v1/audits/{work_item_id}/completion"): "completion.read",
+    # A-07-T32 (DEC-3109): the readiness check runs the code-only capability.
+    ("post", "/v1/audits/{work_item_id}/completion/readiness:check"): "completion.check_readiness",
     ("post", "/v1/audits/{work_item_id}/completion/items/{item_key}/not-applicable"): (
         "completion.update"
     ),

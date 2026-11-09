@@ -32,6 +32,9 @@ const failedItems: RunItemOut[] = [
     seq: 12,
     at: sep14("9:58:00"),
     outcome: "failed",
+    // P-09-T14: the failed step, so a person's Retry names it.
+    ref_type: "run_step",
+    ref_id: stableId("run-step:northwind-4127-internal-control"),
     blocks: prose(
       "Pack configuration error: BH-EBP-140 step 8 points to a SOC 1 bridge-letter template that EBP v3 does not include. No evidence written.",
     ),
@@ -183,6 +186,9 @@ const RUN_4127_ASK: E0Run = {
   },
   items: [
     item(1, sep14("9:41:00"), "question", {
+      // P-09-T14: the question's id, so answering and skipping name it.
+      ref_type: "run_question",
+      ref_id: stableId("run-question:northwind-4127-eligibility-population"),
       detail: "Which population should eligibility testing start from?",
       blocks: {
         version: 1,

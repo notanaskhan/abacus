@@ -2,6 +2,7 @@
 id: TASK-6530
 title: "R-02-T17: POR-09 Deliverables frontend"
 spec: SPEC-646
+acceptance_criteria: [AC-1]  # the row's acceptance (Objective)
 screens: [POR-09]
 risk_zone: green
 status: in-review

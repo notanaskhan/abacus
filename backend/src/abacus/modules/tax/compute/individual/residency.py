@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Literal
 
-from abacus.modules.tax.compute.individual.engine import Stamp, section, stamp, whole
+from abacus.modules.tax.compute.individual.engine import Stamp, parameter_table, stamp, whole
 
 ResidencyOption = Literal["full_year_nys_nyc", "full_year_nys_part_year_nyc", "part_year_nys"]
 
@@ -73,7 +73,7 @@ class ResidencyCall:
 def residency_rules(facts: ResidencyFacts, tax_year: int) -> ResidencyCall:
     """Code's recommendation only; a person confirms (ADR-005). More than the statutory days with
     an abode is full-year; fewer, with the main home elsewhere, conflicts with a full-year call."""
-    days = int(str(section(tax_year, "residency")["statutory_days"]))
+    days = int(str(parameter_table(tax_year, "residency")["statutory_days"]))
     statutory = facts.nyc_days > days and facts.has_nyc_abode
     inputs = {"facts": facts.__dict__, "tax_year": tax_year}
     if statutory:

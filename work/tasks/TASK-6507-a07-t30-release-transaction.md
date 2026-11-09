@@ -2,7 +2,7 @@
 id: TASK-6507
 title: "A-07-T30: the in-app release transaction (G8) — POST /v1/audits/{id}/release, ReleaseWorkflow, report_releases"
 spec: SPEC-644
-acceptance_criteria: [F6]
+acceptance_criteria: [AC-1]  # the row's acceptance (F6)
 risk_zone: red
 status: in-review
 branch: s33-a07-t30

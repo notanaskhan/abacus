@@ -8030,7 +8030,7 @@ export const voidEnvelope = <ThrowOnError extends boolean = false>(options: Opti
 /**
  * Events Stream Route
  *
- * `text/event-stream` of `InvalidationEventOut` (T27).
+ * `text/event-stream` of `InvalidationEventOut` (P-10-T27, DEC-3117).
  */
 export const eventsStream = <ThrowOnError extends boolean = false>(options?: Options<EventsStreamData, ThrowOnError>): RequestResult<EventsStreamResponses, EventsStreamErrors, ThrowOnError> => (options?.client ?? client).get<EventsStreamResponses, EventsStreamErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -8041,7 +8041,7 @@ export const eventsStream = <ThrowOnError extends boolean = false>(options?: Opt
 /**
  * Stream Topics Route
  *
- * Add or remove topics without reconnecting; each is authorised on add.
+ * Add or remove topics without reconnecting; each is authorised on add (P-10-T27).
  */
 export const streamTopics = <ThrowOnError extends boolean = false>(options: Options<StreamTopicsData, ThrowOnError>): RequestResult<StreamTopicsResponses, StreamTopicsErrors, ThrowOnError> => (options.client ?? client).post<StreamTopicsResponses, StreamTopicsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -10993,7 +10993,7 @@ export const me = <ThrowOnError extends boolean = false>(options?: Options<MeDat
  * Agent Badge Events Route
  *
  * `text/event-stream` of the caller's badge counts `{running, needs_answer,
- * ready_for_review}` (T26).
+ * ready_for_review}` (P-10-T26, DEC-3116).
  */
 export const agentBadgeEvents = <ThrowOnError extends boolean = false>(options?: Options<AgentBadgeEventsData, ThrowOnError>): RequestResult<AgentBadgeEventsResponses, AgentBadgeEventsErrors, ThrowOnError> => (options?.client ?? client).get<AgentBadgeEventsResponses, AgentBadgeEventsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -12875,7 +12875,7 @@ export const listRoomCommunications = <ThrowOnError extends boolean = false>(opt
 /**
  * List Room Inquiries Route
  *
- * Questionnaires addressed to the caller only (AC-29).
+ * Questionnaires addressed to the caller only (AC-29; R-02-T16, DEC-3114).
  */
 export const listRoomInquiries = <ThrowOnError extends boolean = false>(options: Options<ListRoomInquiriesData, ThrowOnError>): RequestResult<ListRoomInquiriesResponses, ListRoomInquiriesErrors, ThrowOnError> => (options.client ?? client).get<ListRoomInquiriesResponses, ListRoomInquiriesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -12886,7 +12886,8 @@ export const listRoomInquiries = <ThrowOnError extends boolean = false>(options:
 /**
  * List Room Reports Route
  *
- * Deliverables whose audiences include this room; nothing from management's list (AC-30).
+ * Deliverables whose audiences include this room; nothing from management's list (AC-30;
+ * R-02-T16, DEC-3114).
  */
 export const listRoomReports = <ThrowOnError extends boolean = false>(options: Options<ListRoomReportsData, ThrowOnError>): RequestResult<ListRoomReportsResponses, ListRoomReportsErrors, ThrowOnError> => (options.client ?? client).get<ListRoomReportsResponses, ListRoomReportsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

@@ -5,7 +5,7 @@ The tables it owns (ADR-103) and what the app role may do with them. Empty until
 
 from __future__ import annotations
 
-TABLES: frozenset[str] = frozenset(
+_TABLES_0720: frozenset[str] = frozenset(
     {"tax_returns"}  # F-03-T22 (0089)
     | {"tax_return_status_events", "return_engine_summaries"}  # T-02-T07 (0403)
     | {"engine_return_links", "engine_sync_events"}  # T-01-T19 (0465)
@@ -29,7 +29,7 @@ TABLES: frozenset[str] = frozenset(
 )
 # T-02-T07 (0403): `tax_returns` takes updates of its v1 columns now, so it is no longer
 # insert-only; its events and engine summaries are.
-INSERT_ONLY: frozenset[str] = frozenset(
+_INSERT_ONLY_0720: frozenset[str] = frozenset(
     {"tax_return_status_events", "return_engine_summaries", "engine_sync_events"}
     | {"transcripts", "transcript_lines", "transcript_comparisons"}  # T-01-T43 (0550)
     | {"write_operations"}  # T-01-T25 (0561): one row per write, a grant consumed once
@@ -230,7 +230,7 @@ UPDATE_COLUMNS["estimate_installments"] = frozenset(
 )
 
 # T-04-T10 (0761, DEC-3123): the individual return workspace.
-TABLES = TABLES | frozenset(
+TABLES: frozenset[str] = _TABLES_0720 | frozenset(
     {
         "return_worksheets",
         "return_worksheet_sections",
@@ -243,7 +243,7 @@ TABLES = TABLES | frozenset(
         "residency_facts",
     }
 )
-INSERT_ONLY = INSERT_ONLY | frozenset(
+INSERT_ONLY: frozenset[str] = _INSERT_ONLY_0720 | frozenset(
     {"document_approvals", "k1_treatment_events", "residency_facts"}
 )
 INSERT_COLUMNS.update(

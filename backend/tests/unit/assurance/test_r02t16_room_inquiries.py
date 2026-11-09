@@ -7,7 +7,7 @@ Robert Haines and never by Dana Kowalski under either of her grants."
 from __future__ import annotations
 
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from types import SimpleNamespace
 
@@ -24,7 +24,7 @@ QUESTIONNAIRE = uuid.uuid4()
 
 def _db(monkeypatch: pytest.MonkeyPatch, addressed_to: uuid.UUID) -> None:
     @asynccontextmanager
-    async def session(_t: object) -> AsyncIterator[object]:
+    async def session(_t: object) -> AsyncGenerator[object]:
         async def execute(_q: object, params: dict[str, list[uuid.UUID]]) -> object:
             mine = [c for c in params["contacts"] if c == addressed_to]
             rows = [

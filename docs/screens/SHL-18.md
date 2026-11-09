@@ -62,7 +62,7 @@ to ‹org›", "Correct…", "Redact…", "Corrected below", "Redacted by ‹per
 | "Convert to review note…" | AUD-17 | handoff link (P-04 review notes) |
 | Anchor chip | AUD-09 | handoff link (A-04) |
 | Shared org | POR-23 | planned (A-09) |
-| Row drawer host | SURL-03 | planned (K-03) |
+| Row drawer host (SURL-03, not a manifest screen yet) | — | planned (K-03) |
 | Citation [1] | SHL-08 | handoff link (C4) |
 
 ## Acceptance

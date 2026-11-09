@@ -9,10 +9,13 @@ from __future__ import annotations
 import uuid
 from decimal import Decimal
 from types import SimpleNamespace
+from typing import cast
 
 import pytest
 
+from abacus.kernel.uow import UnitOfWork
 from abacus.modules.evidence.api import CitationAnchor, CitationClaim
+from abacus.modules.identity.api import Actor
 from abacus.modules.tax import form_line_citations as flc
 
 pytestmark = pytest.mark.asyncio
@@ -47,47 +50,50 @@ async def _allowed(*_a: object) -> bool:
 async def test_a_matching_value_verifies(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(flc, "_may_read", _allowed)
     v = await flc.verify_tax_form_line(
-        _Tx(_row()),
-        object(),
+        cast(UnitOfWork, _Tx(_row())),
+        cast(Actor, object()),
         _claim(),
         CitationAnchor("x", uuid.uuid4(), engagement_id=ENGAGEMENT),
-    )  # type: ignore[arg-type]  # doubles
+    )
     assert v.verified and v.match_id == f"tfl:{RETURN}:f1040.line3b" and v.value_text == "14,820"
 
 
 async def test_a_fabricated_value_fails(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(flc, "_may_read", _allowed)
     v = await flc.verify_tax_form_line(
-        _Tx(_row()),
-        object(),
+        cast(UnitOfWork, _Tx(_row())),
+        cast(Actor, object()),
         _claim("14,920"),
         CitationAnchor("x", uuid.uuid4(), engagement_id=ENGAGEMENT),
-    )  # type: ignore[arg-type]  # doubles
+    )
     assert v.reason == "value_mismatch"
 
 
 async def test_another_engagements_return_is_not_found(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(flc, "_may_read", _allowed)
     v = await flc.verify_tax_form_line(
-        _Tx(_row(engagement=uuid.uuid4())),
-        object(),
+        cast(UnitOfWork, _Tx(_row(engagement=uuid.uuid4()))),
+        cast(Actor, object()),
         _claim(),
         CitationAnchor("x", uuid.uuid4(), engagement_id=ENGAGEMENT),
-    )  # type: ignore[arg-type]  # doubles
+    )
     assert v.reason == "source_not_found"
 
 
 async def test_no_engagement_or_no_right_is_not_visible() -> None:
     v = await flc.verify_tax_form_line(
-        _Tx(_row()), object(), _claim(), CitationAnchor("x", uuid.uuid4())
-    )  # type: ignore[arg-type]  # doubles
+        cast(UnitOfWork, _Tx(_row())),
+        cast(Actor, object()),
+        _claim(),
+        CitationAnchor("x", uuid.uuid4()),
+    )
     assert v.reason == "source_not_visible"
     w = await flc.verify_tax_form_line(
-        _Tx(_row()),
-        object(),
+        cast(UnitOfWork, _Tx(_row())),
+        cast(Actor, object()),
         _claim(),
         CitationAnchor("x", uuid.uuid4(), engagement_id=ENGAGEMENT),
-    )  # type: ignore[arg-type]  # an agent is not an AuthContext
+    )
     assert w.reason == "source_not_visible"
 
 

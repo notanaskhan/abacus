@@ -50,7 +50,7 @@ function page(afterSeq: number): RunItemsOut {
         ],
     last_seq: 1,
     resync: false,
-  } as RunItemsOut;
+  };
 }
 
 describe("P-09-T13 live swap", () => {

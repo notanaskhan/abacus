@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from abacus.kernel.numeric import allocate
-from abacus.modules.tax.compute.individual.engine import Stamp, pct, section, stamp, whole
+from abacus.modules.tax.compute.individual.engine import Stamp, parameter_table, pct, stamp, whole
 
 
 @dataclass(frozen=True)
@@ -27,7 +27,7 @@ class Qbi:
 
 
 def qbi_199a(qbi: Decimal, w2_wages: Decimal, ubia: Decimal, tax_year: int) -> Qbi:
-    p = section(tax_year, "qbi_199a")
+    p = parameter_table(tax_year, "qbi_199a")
     tentative = whole(qbi * pct(str(p["deduction_pct"])))
     limit = whole(
         max(
@@ -77,7 +77,7 @@ class PtetShares:
 
 def ptet_share(entity_ptet: Sequence[tuple[str, Decimal]], tax_year: int) -> PtetShares:
     """The partner's share of each entity PTET, each half up (the per-partner override)."""
-    share = pct(str(section(tax_year, "ptet")["partner_share_pct"]))
+    share = pct(str(parameter_table(tax_year, "ptet")["partner_share_pct"]))
     shares = tuple((state, whole(v * share)) for state, v in entity_ptet)
     inputs = {"entity": [[s, v] for s, v in entity_ptet], "tax_year": tax_year}
     return PtetShares(

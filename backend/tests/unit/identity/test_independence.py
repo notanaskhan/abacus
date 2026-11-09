@@ -166,13 +166,16 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "assurance.record_phase",
         "assurance.record_release",
         "attention_flag.convert",  # A-04-T01 (DEC-1757)
+        "audit_event.read_engagement",  # P-05-T02 (DEC-3103)
         "citation.create",  # P-03-T02 (C4 v1)
         "citation.read",
         "citation.relink",
         "client_access.grant",
         "comment.create",  # SPEC-032 (TASK-062)
         "comment.read",
+        "comment.resolve",  # P-05-T02 (DEC-3103)
         "comment.share",
+        "completion.check_readiness",  # A-07-T32 (DEC-3109)
         "completion.decide",  # SPEC-314 (TASK-332)
         "completion.read",  # SPEC-314 (TASK-332)
         "completion.record",  # SPEC-314 (TASK-332)
@@ -387,6 +390,12 @@ def test_ac7_the_client_data_actions_are_marked() -> None:
         "test.mark",
         "test.read",
         "tie_out_check.define",  # SPEC-310 (TASK-321)
+        "todo.assign",  # P-05-T02 (DEC-3103)
+        "todo.complete",  # P-05-T02
+        "todo.create",  # P-05-T02
+        "todo.delete",  # P-05-T02
+        "todo.read",  # P-05-T02
+        "todo.update",  # P-05-T02
         "trial_balance.adopt",  # SPEC-309 (TASK-320)
         "trial_balance.annotate",
         "trial_balance.export",  # A-02 §4.4 (TASK-1185)

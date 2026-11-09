@@ -88,6 +88,23 @@ def test_ac20_each_new_route_declares_exactly_one_action_and_a_response_model() 
 # TASK-019: taking, releasing and assigning a review return the assignment, so 200.
 REVIEW_QUEUE = "/v1/engagements/{engagement_id}/review-queue/{version_id}"
 NOT_CREATING = {
+    # P-05-T03 (C9 v2 stub, DEC-3104): reads by POST (counts, the AUD-29 query and export) and
+    # acts on an existing thread, comment or to-do, so 200.
+    "/v1/comment-threads/counts",
+    "/v1/comment-threads/{thread_id}/mute",
+    "/v1/comment-threads/{thread_id}/read",
+    "/v1/comment-threads/{thread_id}/reopen",
+    "/v1/comment-threads/{thread_id}/resolve",
+    "/v1/comment-threads/{thread_id}/share",
+    "/v1/thread-comments/{comment_id}/redact",
+    "/v1/todos/counts",
+    "/v1/todos/{todo_id}/assign",
+    "/v1/todos/{todo_id}/complete",
+    "/v1/todos/{todo_id}/move",
+    "/v1/todos/{todo_id}/reopen",
+    "/v1/todos/{todo_id}/seen",
+    "/v1/engagements/{engagement_id}/audit-events/query",
+    "/v1/engagements/{engagement_id}/audit-events/export",
     # A-07-T22 (DEC-2806): publishing a checklist version acts on it, so 200.
     "/v1/methodology/assurance-checklists/{template_id}/versions/{version}/publish",
     # A-06-T25 (#1375): publishing a note template's version acts on it, so 200.
@@ -442,6 +459,8 @@ def test_ac20_creating_routes_answer_201() -> None:
         TEMPLATE_DRAFTS,
         SELECT,
         ASSESS,
+        # A-07-T32 (DEC-3109): the completion readiness check starts a code run, so 202.
+        "/v1/audits/{work_item_id}/completion/readiness:check",
         # P-06-T15 (C5 v1.2 SHL-20 stub): a rerun starts screening, so 202.
         "/v1/engagements/{engagement_id}/request-items/{item_id}/screening/rerun",
         # P-04-T11 (C3 stub 3): fix instructions and Explain start an agent run, so 202.
@@ -528,6 +547,13 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/ebp/schedule-h-mappings:publish",
         "/v1/engagements",
         "/v1/engagements/{engagement_id}/request-items",
+        # P-05-T03 (C9 v2 stub, DEC-3104): a thread, a comment, a review note from a thread, a
+        # to-do and a checklist item each create a row, so 201.
+        "/v1/comment-threads",
+        "/v1/comment-threads/{thread_id}/comments",
+        "/v1/comment-threads/{thread_id}/convert-to-review-note",
+        "/v1/todos",
+        "/v1/todos/{todo_id}/checklist-items",
         # T-04-T05 (RW-1 stub): a document approval and a final-approval request are rows, so 201.
         "/v1/tax/returns/{return_id}/document-approvals",
         "/v1/tax/returns/{return_id}/final-approval-requests",

@@ -138,11 +138,15 @@ from abacus.modules.assurance.phase import SUBSCRIPTIONS as PHASE_SUBSCRIPTIONS
 from abacus.modules.assurance.planning_contract import router as planning_router
 from abacus.modules.assurance.planning_gate import g4_facts
 from abacus.modules.assurance.providers import register as register_a01_providers
-from abacus.modules.assurance.release import RELEASE_MODE_SETTING
+from abacus.modules.assurance.release import RELEASE_MODE_SETTING, ReleaseRequest
 from abacus.modules.assurance.release_contract import router as audit_release_router
 from abacus.modules.assurance.release_facts import register as register_release_facts
 from abacus.modules.assurance.release_workflow import ACTIVITIES as RELEASE_ACTIVITIES
 from abacus.modules.assurance.release_workflow import WORKFLOWS as RELEASE_WORKFLOWS
+from abacus.modules.assurance.release_workflow import (  # A-07-T30: its recorder (ADR-090)
+    ReleaseWorkflow,
+    RenderedFinal,
+)
 from abacus.modules.assurance.rep_letters import register_rep_triggers
 from abacus.modules.assurance.review_gates import register_review_gates
 from abacus.modules.assurance.risks import AUDIT_KINDS as RISK_KINDS
@@ -439,6 +443,9 @@ __all__ = [
     "MappingRunIn",
     "NewFinding",
     "NewRisk",  # A-04-T28: the planning slice records the register through the service
+    "ReleaseRequest",
+    "ReleaseWorkflow",
+    "RenderedFinal",
     "RiskEdit",
     "RouteRequest",
     "RunSummary",

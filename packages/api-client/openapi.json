@@ -87855,6 +87855,18 @@
             ],
             "cls": "internal"
           },
+          "plan_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Plan Version"
+          },
           "run_number": {
             "anyOf": [
               {
@@ -109046,10 +109058,46 @@
             "title": "Rows",
             "type": "integer"
           },
+          "run_record_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Run Record Sha256"
+          },
           "sha256": {
             "cls": "internal",
             "title": "Sha256",
             "type": "string"
+          },
+          "signature": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Signature"
+          },
+          "signature_key_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Signature Key Id"
           }
         },
         "required": [
@@ -116829,6 +116877,16 @@
               }
             },
             "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
           },
           "422": {
             "content": {
@@ -198584,7 +198642,7 @@
     },
     "/v1/events": {
       "get": {
-        "description": "`text/event-stream` of `InvalidationEventOut` (T27).",
+        "description": "`text/event-stream` of `InvalidationEventOut` (P-10-T27, DEC-3117).",
         "operationId": "events_stream",
         "parameters": [
           {
@@ -198602,6 +198660,23 @@
                 }
               ],
               "title": "Topics"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Last-Event-ID",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Last-Event-Id"
             }
           },
           {
@@ -198720,7 +198795,7 @@
     },
     "/v1/events/{stream_id}/topics": {
       "post": {
-        "description": "Add or remove topics without reconnecting; each is authorised on add.",
+        "description": "Add or remove topics without reconnecting; each is authorised on add (P-10-T27).",
         "operationId": "stream_topics",
         "parameters": [
           {
@@ -226640,7 +226715,7 @@
     },
     "/v1/me/agent-events": {
       "get": {
-        "description": "`text/event-stream` of the caller's badge counts `{running, needs_answer,\nready_for_review}` (T26).",
+        "description": "`text/event-stream` of the caller's badge counts `{running, needs_answer,\nready_for_review}` (P-10-T26, DEC-3116).",
         "operationId": "agent_badge_events",
         "parameters": [
           {
@@ -245455,7 +245530,7 @@
     },
     "/v1/portal/governance/rooms/{room_id}/inquiries": {
       "get": {
-        "description": "Questionnaires addressed to the caller only (AC-29).",
+        "description": "Questionnaires addressed to the caller only (AC-29; R-02-T16, DEC-3114).",
         "operationId": "list_room_inquiries",
         "parameters": [
           {
@@ -245572,7 +245647,7 @@
     },
     "/v1/portal/governance/rooms/{room_id}/reports": {
       "get": {
-        "description": "Deliverables whose audiences include this room; nothing from management's list (AC-30).",
+        "description": "Deliverables whose audiences include this room; nothing from management's list (AC-30;\nR-02-T16, DEC-3114).",
         "operationId": "list_room_reports",
         "parameters": [
           {

@@ -169,7 +169,8 @@ function RunLink({
   runId: string | null | undefined;
   onOpenRun: ((runId: string) => void) | undefined;
 }): JSX.Element | null {
-  if (runId === null || runId === undefined || runId === "" || onOpenRun === undefined) return null;
+  if (runId === null || runId === undefined || runId === "" || onOpenRun === undefined)
+    return null;
   const openTrace = onOpenRun;
   return (
     <button
