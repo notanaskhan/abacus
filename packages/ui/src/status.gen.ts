@@ -5204,6 +5204,159 @@ export const STATUS_REGISTRY = {
       "terminal": true,
       "derived": false
     }
+  },
+  "document_approval": {
+    "unapproved": {
+      "label": "Unapproved",
+      "variant": "outline",
+      "terminal": false,
+      "derived": true
+    },
+    "approved": {
+      "label": "Approved",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": true,
+      "contextLabels": {
+        "micro_pill": "✓ {count}"
+      }
+    },
+    "mismatch": {
+      "label": "Mismatch",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": true
+    }
+  },
+  "return_field_view": {
+    "imported": {
+      "label": "Imported",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "edited": {
+      "label": "Edited",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    },
+    "proposed": {
+      "label": "Proposed",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "new": {
+      "label": "New this year",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": true
+    },
+    "recomputed": {
+      "label": "Recomputed by CCH Axcess after import",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "signed_off": {
+      "label": "Signed off",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "k1_activity": {
+    "draft_pre_release": {
+      "label": "Draft K-1 · pre-release",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "released": {
+      "label": "Released",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "chip": "Released {date}"
+      }
+    },
+    "superseded": {
+      "label": "Superseded",
+      "variant": "soon",
+      "terminal": true,
+      "derived": false
+    }
+  },
+  "k1_treatment": {
+    "proposed": {
+      "label": "Proposed",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false,
+      "contextLabels": {
+        "changed_tag": "Changed vs {year}"
+      }
+    },
+    "approved": {
+      "label": "Approved",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "overridden": {
+      "label": "Overridden",
+      "variant": "neutral",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "residency_determination": {
+    "review_point": {
+      "label": "Review point",
+      "variant": "amber",
+      "terminal": false,
+      "derived": false
+    },
+    "confirmed": {
+      "label": "Confirmed",
+      "variant": "green-tint",
+      "terminal": false,
+      "derived": false
+    },
+    "action_required": {
+      "label": "Action required",
+      "variant": "red-tint",
+      "terminal": false,
+      "derived": false
+    }
+  },
+  "assistant_availability": {
+    "available": {
+      "label": "Available",
+      "variant": "state",
+      "terminal": false,
+      "derived": true
+    },
+    "ai_unavailable": {
+      "label": "AI unavailable",
+      "variant": "muted",
+      "terminal": false,
+      "derived": true
+    },
+    "consent_required": {
+      "label": "Consent required",
+      "variant": "amber",
+      "terminal": false,
+      "derived": true
+    },
+    "agents_off": {
+      "label": "Agents off",
+      "variant": "muted",
+      "terminal": false,
+      "derived": true
+    }
   }
 } as const;
 

@@ -1262,6 +1262,43 @@ class Aud27ItemStatus(StrEnum):
     SCREENED_OUT = "screened_out"
 
 
+class DocumentApprovalStatus(StrEnum):
+    pass
+    # derived, never stored: unapproved, approved, mismatch
+
+
+class ReturnFieldViewStatus(StrEnum):
+    IMPORTED = "imported"
+    EDITED = "edited"
+    PROPOSED = "proposed"
+    RECOMPUTED = "recomputed"
+    SIGNED_OFF = "signed_off"
+    # derived, never stored: new
+
+
+class K1ActivityStatus(StrEnum):
+    DRAFT_PRE_RELEASE = "draft_pre_release"
+    RELEASED = "released"
+    SUPERSEDED = "superseded"
+
+
+class K1TreatmentStatus(StrEnum):
+    PROPOSED = "proposed"
+    APPROVED = "approved"
+    OVERRIDDEN = "overridden"
+
+
+class ResidencyDeterminationStatus(StrEnum):
+    REVIEW_POINT = "review_point"
+    CONFIRMED = "confirmed"
+    ACTION_REQUIRED = "action_required"
+
+
+class AssistantAvailabilityStatus(StrEnum):
+    pass
+    # derived, never stored: available, ai_unavailable, consent_required, agents_off
+
+
 # Each object's stored codes, and their SQL CHECK list.
 STORED: dict[str, tuple[str, ...]] = {
     "engagement": (
@@ -2295,6 +2332,32 @@ STORED: dict[str, tuple[str, ...]] = {
         "evaluated",
         "exception",
         "screened_out",
+    ),
+    "document_approval": (
+    ),
+    "return_field_view": (
+        "imported",
+        "edited",
+        "proposed",
+        "recomputed",
+        "signed_off",
+    ),
+    "k1_activity": (
+        "draft_pre_release",
+        "released",
+        "superseded",
+    ),
+    "k1_treatment": (
+        "proposed",
+        "approved",
+        "overridden",
+    ),
+    "residency_determination": (
+        "review_point",
+        "confirmed",
+        "action_required",
+    ),
+    "assistant_availability": (
     ),
 }
 CHECKS: dict[str, str] = {

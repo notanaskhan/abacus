@@ -1515,6 +1515,53 @@ objects:
       exception:    {label: "Exception", variant: red-tint, terminal: false, derived: false}
       screened_out: {label: "Screened out", variant: muted, terminal: true, derived: false}
 
+  # ---- T-04 return workspace (T-04-T04; DEC-3019; SPEC-649) ----
+  document_approval:   # TAX-04/TAX-05 micro-pill on a document row: the viewer's level reached
+    source: "T-04 §3.1, §3.2; TAX-04 b, TAX-05 b"
+    codes:
+      unapproved: {label: "Unapproved", variant: outline, terminal: false, derived: true}
+      approved:   {label: "Approved", variant: green-tint, terminal: false, derived: true, context_labels: {micro_pill: "✓ {count}"}}   # "✓ 1" in ink at the viewer's level
+      mismatch:   {label: "Mismatch", variant: red-tint, terminal: false, derived: true}
+
+  return_field_view:   # TXI-01 field states
+    source: "T-04 §3.3; TXI-01 a-g"
+    codes:
+      imported:  {label: "Imported", variant: neutral, terminal: false, derived: false}
+      edited:    {label: "Edited", variant: neutral, terminal: false, derived: false}
+      proposed:  {label: "Proposed", variant: amber, terminal: false, derived: false}
+      new:       {label: "New this year", variant: green-tint, terminal: false, derived: true}
+      recomputed: {label: "Recomputed by CCH Axcess after import", variant: amber, terminal: false, derived: false}
+      signed_off: {label: "Signed off", variant: green-tint, terminal: false, derived: false}
+
+  k1_activity:   # the K-1 activity chip on TAX-04 d, TAX-05, TXI-02
+    source: "T-04 §3.7; TXI-02 e"
+    codes:
+      draft_pre_release: {label: "Draft K-1 · pre-release", variant: amber, terminal: false, derived: false}
+      released:          {label: "Released", variant: green-tint, terminal: false, derived: false, context_labels: {chip: "Released {date}"}}
+      superseded:        {label: "Superseded", variant: soon, terminal: true, derived: false}
+
+  k1_treatment:   # TXI-02 rows; "Changed vs {year}" is a tag beside the state
+    source: "T-04 §3.7; TXI-02 a-d"
+    codes:
+      proposed:   {label: "Proposed", variant: amber, terminal: false, derived: false, context_labels: {changed_tag: "Changed vs {year}"}}
+      approved:   {label: "Approved", variant: green-tint, terminal: false, derived: false}
+      overridden: {label: "Overridden", variant: neutral, terminal: false, derived: false}
+
+  residency_determination:   # TXI-03
+    source: "T-04 §3.8; TXI-03 a-c"
+    codes:
+      review_point:    {label: "Review point", variant: amber, terminal: false, derived: false}
+      confirmed:       {label: "Confirmed", variant: green-tint, terminal: false, derived: false}
+      action_required: {label: "Action required", variant: red-tint, terminal: false, derived: false}
+
+  assistant_availability:   # TAX-08 and the agent surfaces' DF-04 states
+    source: "T-04 §3.6, §3.11; DF-04"
+    codes:
+      available:        {label: "Available", variant: state, terminal: false, derived: true}
+      ai_unavailable:   {label: "AI unavailable", variant: muted, terminal: false, derived: true}
+      consent_required: {label: "Consent required", variant: amber, terminal: false, derived: true}
+      agents_off:       {label: "Agents off", variant: muted, terminal: false, derived: true}
+
 retired:
   # --- request_item.status (9.5.6, DEC-09; migration P-44) ---
   "request_item.open":             {replacement: ["request.draft", "request.requested"], note: "draft while firm-only; requested once sent to the client"}
