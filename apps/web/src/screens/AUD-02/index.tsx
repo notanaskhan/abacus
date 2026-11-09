@@ -34,7 +34,7 @@ import {
   useSourceDocuments,
 } from "../../domain/audits";
 import { useFlag } from "../../app-core/flags";
-import { AgentDock } from "../../domain/agents";
+import { AgentDock } from "../../domain/agent-dock";
 import { type TrialBalanceOptions, useTrialBalancePane } from "../AUD-06/TrialBalance";
 import { MaterialityDock, useMaterialityCanvas } from "../AUD-07/Materiality";
 import { usePlanProfileCanvas } from "../EBP-01/PlanProfile";
@@ -55,6 +55,11 @@ import { SERVICE_ORGS, type ServiceOrgsOptions, useServiceOrgsCanvas } from "../
 import { INVESTMENTS, type InvestmentsOptions, useInvestmentsCanvas } from "../EBP-06";
 import { FORM_5500, type Form5500Options, useForm5500Canvas } from "../EBP-07";
 import { COMPLETION_CHECKLIST, type CompletionOptions, useCompletionCanvas } from "../AUD-19";
+import {
+  type CompletionLetter,
+  isCompletionLetter,
+  useCompletionLetterCanvas,
+} from "./completionLetters";
 import { type SampleSelectionOptions, useSampleSelectionCanvas } from "../AUD-11/SampleSelection";
 import { ViewerPane } from "../SHL-08";
 import { useOpenOverlay } from "../../app-core/open";
@@ -391,10 +396,23 @@ function Cockpit({
   });
   // AUD-19 (A-07-T25): Completion › Completion Checklist; the dock's Agent tab shows its runs.
   const completionOpen = selected === COMPLETION_CHECKLIST;
+  // A-07-T28/T29 (DEC-3030): the checklist's AUD-21 and AUD-22 chips open those letters here.
+  const [letter, setLetter] = useState<CompletionLetter | null>(null);
   const completionCanvas = useCompletionCanvas(cockpit.work_item_id, {
     ...completion,
-    active: completionOpen,
+    active: completionOpen && letter === null,
+    onLink: (target) => {
+      if (isCompletionLetter(target)) setLetter(target);
+      else completion?.onLink?.(target);
+    },
   });
+  const letterCanvas = useCompletionLetterCanvas(
+    cockpit.work_item_id,
+    completionOpen ? letter : null,
+    () => {
+      setLetter(null);
+    },
+  );
   const openDoc = (r: SourceDocumentRowOut): void => {
     const version = r.latest_upload?.evidence_version_id ?? null;
     if (version !== null) onDock?.("viewer", version);
@@ -432,7 +450,7 @@ function Cockpit({
   } else if (form5500Open) {
     canvas = form5500Canvas;
   } else if (completionOpen) {
-    canvas = completionCanvas;
+    canvas = letterCanvas ?? completionCanvas;
   } else if (row?.section_state === "blocked_on_decision" && row.blocked_on_name != null) {
     canvas = {
       title: row.title,
