@@ -327,8 +327,23 @@ NOTIFICATIONS_V2 = Flag(
     kind="boolean",
     default="false",
 )
+PORTAL_APPROVALS = Flag(
+    name="portal.approvals",
+    kind="boolean",
+    default="false",
+)
+PORTAL_DELIVERABLES = Flag(
+    name="portal.deliverables",
+    kind="boolean",
+    default="false",
+)
 PORTAL_DROP_SORT = Flag(
     name="portal.drop_sort",
+    kind="boolean",
+    default="false",
+)
+PORTAL_GOVERNANCE_ROOM = Flag(
+    name="portal.governance_room",
     kind="boolean",
     default="false",
 )
@@ -540,7 +555,10 @@ FLAGS: dict[str, Flag] = {
     "methodology.programs": METHODOLOGY_PROGRAMS,
     "notifications.email": NOTIFICATIONS_EMAIL,
     "notifications.v2": NOTIFICATIONS_V2,
+    "portal.approvals": PORTAL_APPROVALS,
+    "portal.deliverables": PORTAL_DELIVERABLES,
     "portal.drop_sort": PORTAL_DROP_SORT,
+    "portal.governance_room": PORTAL_GOVERNANCE_ROOM,
     "portal.home_v2": PORTAL_HOME_V2,
     "portal.intake_upload": PORTAL_INTAKE_UPLOAD,
     "portal.settings_editor": PORTAL_SETTINGS_EDITOR,

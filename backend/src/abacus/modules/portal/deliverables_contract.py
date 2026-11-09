@@ -22,8 +22,10 @@ from uuid import UUID
 from fastapi import Depends, Header, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
+from abacus.kernel._flags import PORTAL_DELIVERABLES, PORTAL_GOVERNANCE_ROOM
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotImplementedYet
+from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.flags import Flag, flag_enabled
 from abacus.modules.assurance.api import (
     CommitteeMember,
     acknowledge_letter,
@@ -335,6 +337,13 @@ class RoomReportsOut(BaseModel):
     items: Annotated[list[DeliverableRowOut], Confidential]
 
 
+async def _flag_on(ctx: AuthContext, flag: Flag) -> None:
+    """R-02-T14 (DEC-3112): a firm whose flag is off serves none of these (404); the matrix's
+    `scope_only` and the grant checks run in the services behind each route."""
+    if not await flag_enabled(ctx.tenant, flag):
+        raise NotFound(flag.name)
+
+
 def _not_yet() -> NoReturn:
     raise NotImplementedYet
 
@@ -354,6 +363,7 @@ async def list_deliverables_route(
     section: Annotated[DeliverableSection | None, Query()] = None,
 ) -> DeliverablesOut:
     """POR-09's rail: bands by work item, Coming next, My K-1s. Only what a grant covers."""
+    await _flag_on(ctx, PORTAL_DELIVERABLES)
     _not_yet()
 
 
@@ -362,6 +372,7 @@ async def list_deliverables_route(
 )
 async def get_deliverable_route(deliverable_id: UUID, ctx: Member) -> DeliverableOut:
     """Meta, page count and versions. Outside every audience: 404."""
+    await _flag_on(ctx, PORTAL_DELIVERABLES)
     _not_yet()
 
 
@@ -372,6 +383,7 @@ async def get_deliverable_version_route(
     deliverable_id: UUID, version_no: int, ctx: Member
 ) -> DeliverableVersionOut:
     """One version; a superseded one reads under Earlier versions for audience members."""
+    await _flag_on(ctx, PORTAL_DELIVERABLES)
     _not_yet()
 
 
@@ -382,6 +394,7 @@ async def get_deliverable_page_route(
     deliverable_id: UUID, version_no: int, page: int, ctx: Member
 ) -> Response:
     """A PNG served by the server, the watermark burned in on a draft (AC-22, AC-38)."""
+    await _flag_on(ctx, PORTAL_DELIVERABLES)
     _not_yet()
 
 
@@ -392,6 +405,7 @@ async def download_deliverable_route(
     deliverable_id: UUID, version_no: int, request: Request, ctx: Member
 ) -> Response:
     """302 to a 60-second signed URL; the access event and receipt land in one unit of work."""
+    await _flag_on(ctx, PORTAL_DELIVERABLES)
     _not_yet()
 
 
@@ -410,6 +424,7 @@ async def approve_deliverable_route(
 ) -> DeliverableApprovedOut:
     """Management approves the latest draft: `reporting.api.apply_management_decision`.
     Not the decider: 403 `not_decider`. No fresh second factor: 401 `mfa_recent_required`."""
+    await _flag_on(ctx, PORTAL_DELIVERABLES)
     _not_yet()
 
 
@@ -419,6 +434,7 @@ async def approve_deliverable_route(
 async def list_page_comments_route(
     deliverable_id: UUID, version_no: int, ctx: Member
 ) -> PageCommentsOut:
+    await _flag_on(ctx, PORTAL_DELIVERABLES)
     _not_yet()
 
 
@@ -437,6 +453,7 @@ async def add_page_comment_route(
     idempotency_key: IdempotencyKey,
 ) -> PageCommentOut:
     """A version with `page_comments = false` refuses a pin: 409."""
+    await _flag_on(ctx, PORTAL_DELIVERABLES)
     _not_yet()
 
 
@@ -445,6 +462,7 @@ async def add_page_comment_route(
 )
 async def list_rooms_route(ctx: Member) -> GovernanceRoomsOut:
     """The rooms the caller's `tcwg` grants open; a management grant reaches none (DEC-93)."""
+    await _flag_on(ctx, PORTAL_GOVERNANCE_ROOM)
     return GovernanceRoomsOut(
         items=[
             GovernanceRoomOut(
@@ -476,6 +494,7 @@ async def list_room_communications_route(
     room_id: UUID, ctx: Member
 ) -> GovernanceCommunicationsOut:
     """POR-15 a: the room's letters with the reader's state and the committee (R-02-T12)."""
+    await _flag_on(ctx, PORTAL_GOVERNANCE_ROOM)
     rows, committee = await room_letters(ctx, room_id)
     return GovernanceCommunicationsOut(
         items=[
@@ -501,6 +520,7 @@ async def list_room_communications_route(
 )
 async def list_room_inquiries_route(room_id: UUID, ctx: Member) -> RoomInquiriesOut:
     """Questionnaires addressed to the caller only (AC-29)."""
+    await _flag_on(ctx, PORTAL_GOVERNANCE_ROOM)
     _not_yet()
 
 
@@ -509,6 +529,7 @@ async def list_room_inquiries_route(room_id: UUID, ctx: Member) -> RoomInquiries
 )
 async def list_room_reports_route(room_id: UUID, ctx: Member) -> RoomReportsOut:
     """Deliverables whose audiences include this room; nothing from management's list (AC-30)."""
+    await _flag_on(ctx, PORTAL_GOVERNANCE_ROOM)
     _not_yet()
 
 
@@ -520,6 +541,7 @@ async def list_room_reports_route(room_id: UUID, ctx: Member) -> RoomReportsOut:
 )
 async def get_communication_route(communication_id: UUID, ctx: Member) -> GovernanceLetterOut:
     """The paper model. A version without an EP send row is refused (AC-28)."""
+    await _flag_on(ctx, PORTAL_GOVERNANCE_ROOM)
     found = await governance_letter(ctx, communication_id)
     names = await display_names([found.signed_by_user_id])
     actions: list[GovernanceAction] = ["ask"]
@@ -546,6 +568,7 @@ async def get_communication_route(communication_id: UUID, ctx: Member) -> Govern
 )
 async def get_communication_pdf_route(communication_id: UUID, ctx: Member) -> Response:
     """302 to the C10 download."""
+    await _flag_on(ctx, PORTAL_GOVERNANCE_ROOM)
     _not_yet()
 
 
@@ -563,6 +586,7 @@ async def acknowledge_communication_route(
 ) -> GovernanceAcknowledgedOut:
     """`assurance.api.record_acknowledgement`: one row per member and version; a second
     acknowledgement answers the first (idempotent by the row, whatever the key)."""
+    await _flag_on(ctx, PORTAL_GOVERNANCE_ROOM)
     del idempotency_key
     on, status = await acknowledge_letter(ctx, communication_id, body.seen_hash)
     return GovernanceAcknowledgedOut(
@@ -578,6 +602,7 @@ async def acknowledge_communication_route(
 )
 async def list_private_questions_route(communication_id: UUID, ctx: Member) -> PrivateQuestionsOut:
     """The author's own thread; other members and management get 404 (AC-33)."""
+    await _flag_on(ctx, PORTAL_GOVERNANCE_ROOM)
     _not_yet()
 
 
@@ -594,4 +619,5 @@ async def ask_auditor_route(
     ctx: Member,
     idempotency_key: IdempotencyKey,
 ) -> PrivateQuestionOut:
+    await _flag_on(ctx, PORTAL_GOVERNANCE_ROOM)
     _not_yet()

@@ -22,8 +22,10 @@ from uuid import UUID
 from fastapi import Depends, Header, Path, Query
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from abacus.kernel._flags import PORTAL_APPROVALS
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotImplementedYet
+from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.flags import Flag, flag_enabled
 from abacus.modules.engagements.api import (
     ApprovalItem,
     ClientApprovalKind,
@@ -214,6 +216,13 @@ class EntriesJournalOut(BaseModel):
 approvals_router = AbacusRouter(prefix="/v1/portal/approvals", tags=["portal approvals"])
 
 
+async def _flag_on(ctx: AuthContext, flag: Flag) -> None:
+    """R-02-T14 (DEC-3112): a firm whose flag is off serves none of these (404); the matrix's
+    `scope_only` and the grant checks run in the services behind each route."""
+    if not await flag_enabled(ctx.tenant, flag):
+        raise NotFound(flag.name)
+
+
 def _not_yet() -> NoReturn:
     raise NotImplementedYet
 
@@ -268,6 +277,7 @@ async def list_approvals_route(
     filter: Annotated[ApprovalFilter | None, Query()] = None,
 ) -> ApprovalsOut:
     """POR-08: items whose provider reports `sent_to_client`, for scopes the grant covers."""
+    await _flag_on(ctx, PORTAL_APPROVALS)
     del context  # the period picker's contexts arrive with the close kinds (C-02)
     listing = await service.approvals(ctx, scope_id, filter)
     return ApprovalsOut(
@@ -287,6 +297,7 @@ async def decide_proposed_entry_route(
     entry_id: UUID, body: ProposedEntryDecideIn, ctx: Member, idempotency_key: IdempotencyKey
 ) -> ApprovalItemDetailOut:
     """POR-08 e: through C18's service to `adjustments.api.apply_client_decision`."""
+    await _flag_on(ctx, PORTAL_APPROVALS)
     decided = await service.client_decide(
         ctx,
         "proposed_entry",
@@ -314,6 +325,7 @@ async def acknowledge_uncorrected_route(
 ) -> ApprovalItemDetailOut:
     """POR-08 e2: one insert-only, human-only row per snapshot and contact (AC-12); 409 until
     assurance registers the kind (R-02-T15)."""
+    await _flag_on(ctx, PORTAL_APPROVALS)
     _registered("uncorrected_misstatements")
     decided = await service.client_decide(
         ctx,
@@ -336,6 +348,7 @@ async def decide_package_route(
     package_id: UUID, body: PackageDecideIn, ctx: Member, idempotency_key: IdempotencyKey
 ) -> ApprovalItemDetailOut:
     """POR-08 a to c. 409 `approval_kind_not_registered` until C-02 or A-08 registers it."""
+    await _flag_on(ctx, PORTAL_APPROVALS)
     _registered("fs_package")
     decided = await service.client_decide(
         ctx,
@@ -355,6 +368,7 @@ async def decide_package_route(
     errors=(409,),
 )
 async def get_approval_route(kind: KindParam, item_id: UUID, ctx: Member) -> ApprovalItemDetailOut:
+    await _flag_on(ctx, PORTAL_APPROVALS)
     _registered(kind)
     shown = await service.approval(ctx, kind, item_id)
     return _detail(shown.item, shown.actions)
@@ -369,6 +383,7 @@ async def get_approval_route(kind: KindParam, item_id: UUID, ctx: Member) -> App
 async def list_approval_questions_route(
     kind: KindParam, item_id: UUID, ctx: Member
 ) -> ApprovalQuestionsOut:
+    await _flag_on(ctx, PORTAL_APPROVALS)
     _registered(kind)
     _not_yet()
 
@@ -388,6 +403,7 @@ async def ask_about_item_route(
     idempotency_key: IdempotencyKey,
 ) -> ApprovalQuestionOut:
     """A client-authored comment on the item's thread (AC-31; R-02-T22)."""
+    await _flag_on(ctx, PORTAL_APPROVALS)
     _registered(kind)
     _not_yet()
 
@@ -401,5 +417,6 @@ async def ask_about_item_route(
 )
 async def entries_journal_route(kind: KindParam, item_id: UUID, ctx: Member) -> EntriesJournalOut:
     """ "Download entries": 202 `{render_job_id}`, then 302 to a signed URL."""
+    await _flag_on(ctx, PORTAL_APPROVALS)
     _registered(kind)
     _not_yet()
