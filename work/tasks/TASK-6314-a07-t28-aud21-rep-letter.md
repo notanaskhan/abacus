@@ -4,7 +4,7 @@ title: A-07-T28 AUD-21 representation letter in fixture mode on T10
 spec: SPEC-644  # handoff AUD-21
 acceptance_criteria: [AC-1]
 risk_zone: green
-status: partial
+status: in-progress
 epic: A-07
 plan_key: A-07-T28
 branch: s32-a07-t28
@@ -31,3 +31,5 @@ primary action per status.
 |---|---|---|
 | DEC-3014 | Primary action by status; toggles local in fixture mode; A-07-T11's state keys win over the handoff's letters | no |
 - `2026-11-09` — S32 end pass: gates, unit, contract, S32 integration and web suites run; fixes folded into the end-pass PR. Status partial.
+- `2026-11-09` — Partials round (branch s32p-a07-t28-mount, DEC-3030): opened inside the AUD-02
+  cockpit from AUD-19's checklist chip, Back returns; test `screens/AUD-02/completionLetters.test.tsx`.
