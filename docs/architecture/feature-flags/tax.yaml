@@ -18,3 +18,27 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: tax.review_workspace
+    description: 'T-04 RW-1 return review workspace (SPEC-649; TAX-04 to TAX-08): /v1/tax/returns/{id}/workspace, review-tree, document approvals, final-approval requests, K-1 activities and treatments, residency. Off: 404 and the return keeps its T-01/T-02 frame. Per firm, default off. T-04-T09, DEC-3111.'
+    owner: ayushkbhatia
+    created: 2026-11-09
+    expires: 2027-05-07
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: tax.individual_workpapers
+    description: 'T-04 WS-1 individual worksheets (TXI-01 to TXI-03): leadsheets, the Sch E K-1 matrix, field links and worksheets. Off: 404 and the worksheet tabs are absent. Per firm, default off. T-04-T09, DEC-3111.'
+    owner: ayushkbhatia
+    created: 2026-11-09
+    expires: 2027-05-07
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: tax_agents.enabled
+    description: 'T-04 agent runs on a return (draft runs, K-1 treatment runs, residency proposals). Off: 404 and TAX-08 shows its designed agents-off state (DF-04). Per firm, default off. T-04-T09, DEC-3111.'
+    owner: ayushkbhatia
+    created: 2026-11-09
+    expires: 2027-05-07
+    override: DEC-137
+    kind: boolean
+    default: false
