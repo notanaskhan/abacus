@@ -46,7 +46,8 @@ from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork, uow
 from abacus.modules.assurance.governance_room import SECTIONS_FINGERPRINT
 from abacus.modules.engagements.api import assurance_item, get_ref
-from abacus.modules.identity.api import AuthContext, Forbidden, authorise
+from abacus.modules.identity.api import AuthContext, Forbidden, authorise, grant_tcwg_member
+from abacus.modules.organisations.api import contact_facts, signer_contacts
 
 Kind = Literal["planning_260", "completion_260", "sd_mw_265", "management_letter"]
 KINDS: Final[tuple[Kind, ...]] = (
@@ -555,6 +556,15 @@ async def approve_and_send(
         released = cast(datetime | None, await session.scalar(_RELEASED, {"wi": work_item_id}))
     if not members or not set(recipient_contact_ids) <= members:
         raise LetterCheckFailed(facts={"checks": "recipients_not_members"})
+    # DEC-3026: each recipient gets the room's `tcwg` grant at send (a pending grant and an
+    # invitation for a contact who has never signed in), all inside the send's unit of work.
+    recipients = list(dict.fromkeys(recipient_contact_ids))
+    async with tenant_session(ctx.tenant) as session:
+        people = await contact_facts(session, recipients)
+    emails = await signer_contacts(
+        ctx.tenant,
+        [c for c in recipients if (f := people.get(c)) is not None and f.user_id is None],
+    )
     async with uow(ctx.tenant) as tx:
         send_id = cast(
             UUID,
@@ -588,6 +598,24 @@ async def approve_and_send(
             ),
             {"ch": channel, "due": due_on(str(row.kind), released), "c": communication_id},  # type: ignore[attr-defined] -- a raw SQL row's column
         )
+        invited = 0
+        for contact in recipients:
+            person = people.get(contact)
+            if person is None:
+                raise LetterCheckFailed(facts={"checks": "recipient_unknown"})
+            found = emails.get(contact)
+            given = await grant_tcwg_member(
+                tx,
+                ctx.tenant,
+                engagement_id=engagement_id,
+                client_id=person.client_id,
+                contact_id=contact,
+                user_id=person.user_id,
+                email=None if found is None else found.email,
+                governance_body_id=governance_body_id,
+                granted_by=ctx.user_id,
+            )
+            invited += int(given.invitation_id is not None)
         tx.record(
             "governance_communication.sent",
             target=Target("governance_communication", communication_id),
@@ -595,6 +623,8 @@ async def approve_and_send(
                 send=send_id,
                 body=governance_body_id,
                 seen_hash=seen_hash,
+                recipients=len(recipients),
+                invited=invited,
             ),
             scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
         )

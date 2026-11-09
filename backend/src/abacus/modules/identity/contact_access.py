@@ -330,8 +330,68 @@ async def grant_k1_recipient(
     package must be the engagement's client's. A person who signs in already holds it at once
     (None when they held it before); a contact without one gets a pending grant and an invitation
     carrying it, so the grant is theirs when they accept."""
+    return await _grant_recipient(
+        tx,
+        tenant,
+        role="k1_recipient",
+        scope_kind="k1_package",
+        scope_id=package_id,
+        engagement_id=engagement_id,
+        client_id=client_id,
+        contact_id=contact_id,
+        user_id=user_id,
+        email=email,
+        granted_by=granted_by,
+    )
+
+
+async def grant_tcwg_member(
+    tx: UnitOfWork,
+    tenant: TenantContext,
+    *,
+    engagement_id: UUID,
+    client_id: UUID,
+    contact_id: UUID,
+    user_id: UUID | None,
+    email: str | None,
+    governance_body_id: UUID,
+    granted_by: UUID,
+) -> K1Access:
+    """A-07-T26 / R-02-T12 remainder (DEC-3026): the `tcwg` role on one governance room (its
+    body), inside the EP's send, attributed to the EP who approved and sent with a fresh second
+    factor. The body must be the contact's client's. As for a K-1: a person who signs in holds it
+    at once; a contact without one gets a pending grant and an invitation carrying it."""
+    return await _grant_recipient(
+        tx,
+        tenant,
+        role="tcwg",
+        scope_kind="governance_room",
+        scope_id=governance_body_id,
+        engagement_id=engagement_id,
+        client_id=client_id,
+        contact_id=contact_id,
+        user_id=user_id,
+        email=email,
+        granted_by=granted_by,
+    )
+
+
+async def _grant_recipient(
+    tx: UnitOfWork,
+    tenant: TenantContext,
+    *,
+    role: GrantRole,
+    scope_kind: ScopeKind,
+    scope_id: UUID,
+    engagement_id: UUID,
+    client_id: UUID,
+    contact_id: UUID,
+    user_id: UUID | None,
+    email: str | None,
+    granted_by: UUID,
+) -> K1Access:
     tenant_id = tenant.tenant_id
-    facts = await scope_facts(tenant, "k1_package", package_id)
+    facts = await scope_facts(tenant, scope_kind, scope_id)
     if facts is None or facts.client_id != client_id:
         raise ScopeOutsideClient
     if user_id is not None:
@@ -340,9 +400,9 @@ async def grant_k1_recipient(
             tenant_id=tenant_id,
             target=Target("engagement", engagement_id),
             user_id=user_id,
-            role="k1_recipient",
-            scope_kind="k1_package",
-            scope_id=package_id,
+            role=role,
+            scope_kind=scope_kind,
+            scope_id=scope_id,
             granted_by=granted_by,
             contact_id=contact_id,
         )
@@ -356,9 +416,9 @@ async def grant_k1_recipient(
         {
             "tenant_id": tenant_id,
             "contact_id": contact_id,
-            "role": "k1_recipient",
-            "scope_kind": "k1_package",
-            "scope_id": package_id,
+            "role": role,
+            "scope_kind": scope_kind,
+            "scope_id": scope_id,
             "granted_by": granted_by,
         },
     )
