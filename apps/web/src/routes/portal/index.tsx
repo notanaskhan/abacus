@@ -87,13 +87,13 @@ export const AREA_PATHS: Readonly<Record<string, string>> = {
   Sign: "/sign",
   Questions: "/questions",
   "My K-1s": "/k1s",
+  Deliverables: "/deliverables", // R-02-T17: built; a firm with the flag off sees its designed state
 };
 
 /** R-02-T06: the planned areas a fixture build reaches from the nav (production keeps them put:
  * its output is unchanged until each screen is built and its flag is on). */
 export const PLANNED_AREA_PATHS: Readonly<Record<string, string>> = {
   Approvals: "/approvals",
-  Deliverables: "/deliverables",
   Communications: "/governance",
 };
 
@@ -213,7 +213,28 @@ function Area({ area }: { area: string }): JSX.Element | null {
   if (area === "Sign") return <SignPage />;
   if (area === "Questions") return <QuestionsPage />;
   if (area === "K1s") return <K1sPage />;
+  if (area === "Deliverables") return <DeliverablesPage />;
   return <Shell area={area} />;
+}
+
+/** POR-09 (R-02-T17): `/deliverables[/$deliverableId][?section=k1s]`. */
+function DeliverablesPage(): JSX.Element {
+  const mobile = useMobileViewport();
+  const navigate = useAreaNavigate();
+  const params: { deliverableId?: string } = useParams({ strict: false });
+  const [section] = useState(() =>
+    new URLSearchParams(window.location.search).get("section") === "k1s" ? "k1s" : undefined,
+  );
+  return (
+    <Suspense fallback={null}>
+      <DeliverablesScreen
+        mobile={mobile}
+        onNavigate={navigate}
+        {...(params.deliverableId === undefined ? {} : { deliverableId: params.deliverableId })}
+        {...(section === undefined ? {} : { section })}
+      />
+    </Suspense>
+  );
 }
 
 /** A nav item, to-do link or "Open binder": built areas by path, the rest stay put. */
@@ -446,8 +467,8 @@ export const portalTree = rootRoute.addChildren([
   page("/sign/$envelopeId/return", () => <Area area="Sign" />),
   page("/k1s", () => <Area area="K1s" />), // POR-13 (T-02-T27)
   page("/approvals", () => <ApprovalsScreen />), // POR-08 (R-02-T06 stub)
-  page("/deliverables", () => <DeliverablesScreen />), // POR-09 (R-02-T06 stub)
-  page("/deliverables/$deliverableId", () => <DeliverablesScreen />),
+  page("/deliverables", () => <Area area="Deliverables" />), // POR-09 (R-02-T17)
+  page("/deliverables/$deliverableId", () => <Area area="Deliverables" />),
   page("/governance", () => <GovernanceScreen />), // POR-15 (R-02-T06 stub)
   page("/governance/$communicationId", () => <GovernanceScreen />),
   page("/intake", NotBuilt),

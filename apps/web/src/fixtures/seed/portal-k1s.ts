@@ -16,7 +16,12 @@ import type {
 import { stableId } from "./prng";
 
 export type Por13Variant =
-  "nora_released" | "pell_expected" | "pell_released" | "nora_amended" | "meera_expected";
+  | "nora_released"
+  | "pell_expected"
+  | "pell_released"
+  | "nora_amended"
+  | "meera_expected"
+  | "meera_released"; // R-02-T17: POR-09 d, Meera's own Ridgeline K-1 released Sep 15
 
 const CALLOWAY = "Calloway Family Trust";
 const RIDGELINE = "Ridgeline Property Partners, LP";
@@ -96,6 +101,24 @@ const PELL = pkg("pell-street-ventures", {
   ]),
 });
 
+/** POR-09 d (R-02-T17): Meera Shah's own Ridgeline K-1, released Sep 15 (§9.4: 38%, full year). */
+export const MEERA = pkg("meera-shah", {
+  recipient_name: "Meera Shah",
+  form: "1065",
+  issuer_name: RIDGELINE,
+  k3_status: "included",
+  state_codes: ["IL", "CO", "NY"],
+  released_at: "2026-09-15T15:30:00Z",
+  documents: docs("meera-shah", [
+    ["k1", null],
+    ["k3", null],
+    ["state_k1", "IL"],
+    ["state_k1", "CO"],
+    ["state_k1", "NY"],
+    ["letter", null],
+  ]),
+});
+
 const line = (
   box_code: string,
   description: string,
@@ -117,6 +140,14 @@ const PELL_LINES: readonly K1BoxLineOut[] = [
   line("19A", "Distributions", "180000"),
 ];
 
+// The figures book's (portal-r02.ts K1_BOXES; portal_figures.json).
+const MEERA_LINES: readonly K1BoxLineOut[] = [
+  line("2", "Net rental real estate income", "468008"),
+  line("5", "Interest income", "6992"),
+  line("18A", "Tax-exempt interest income", "2356"),
+  line("19A", "Distributions", "228000"),
+];
+
 const RIDGELINE_EXPECTED: PortalK1ExpectedOut = {
   issuer_name: RIDGELINE,
   form: "1065",
@@ -134,6 +165,8 @@ export function portalK1Rows(variant: Por13Variant): K1PackageOut[] {
       return [NORA_AMENDED, { ...NORA, status: "superseded", allowed_actions: ["download"] }];
     case "pell_released":
       return [PELL];
+    case "meera_released":
+      return [MEERA];
     case "pell_expected":
     case "meera_expected":
       return [];
@@ -150,11 +183,14 @@ export function portalK1Detail(variant: Por13Variant, id: string): K1PackageDeta
   const row = portalK1Rows(variant).find((r) => r.id === id);
   if (row === undefined) return undefined;
   const pell = row.recipient_name === "Pell Street Ventures LLC";
+  const meera = row.recipient_name === "Meera Shah";
   return {
     package: row,
-    lines: [...(pell ? PELL_LINES : NORA_LINES)],
+    lines: [...(meera ? MEERA_LINES : pell ? PELL_LINES : NORA_LINES)],
     documents: row.documents ?? [],
-    tin: pell
+    tin: meera
+      ? null
+      : pell
       ? { kind: "ein", presence: "on_file", last4: "7741" }
       : { kind: "ssn", presence: "on_file", last4: "5512" },
     address_on_file: true,

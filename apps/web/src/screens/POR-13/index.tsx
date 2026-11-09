@@ -209,7 +209,8 @@ function SupersededCard({ row }: { row: K1PackageOut }): JSX.Element {
 }
 
 /** a, c, e: the released statement, its documents and the recipient's own details. */
-function PackageCard({
+/** One released package (also POR-09 d's K-1 summary, R-02-T17: DV-09). */
+export function PackageCard({
   row,
   firm,
   showDetails,
