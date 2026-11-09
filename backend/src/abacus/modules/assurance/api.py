@@ -138,6 +138,9 @@ from abacus.modules.assurance.planning_gate import g4_facts
 from abacus.modules.assurance.providers import register as register_a01_providers
 from abacus.modules.assurance.release import RELEASE_MODE_SETTING
 from abacus.modules.assurance.release_contract import router as audit_release_router
+from abacus.modules.assurance.release_facts import register as register_release_facts
+from abacus.modules.assurance.release_workflow import ACTIVITIES as RELEASE_ACTIVITIES
+from abacus.modules.assurance.release_workflow import WORKFLOWS as RELEASE_WORKFLOWS
 from abacus.modules.assurance.rep_letters import register_rep_triggers
 from abacus.modules.assurance.review_gates import register_review_gates
 from abacus.modules.assurance.risks import AUDIT_KINDS as RISK_KINDS
@@ -299,8 +302,11 @@ SUBSCRIPTIONS = _BASE_SUBSCRIPTIONS | {
     for kind in COMPLETION_SUBSCRIBED
 }
 # A-05-T54: Form5500TieOut, code only, on the background class.
-WORKFLOWS: dict[type, str] = dict(FORM5500_WORKFLOWS) | {BringDownWorkflow: "background"}
-ACTIVITIES: tuple[object, ...] = (*FORM5500_ACTIVITIES, bring_down)
+# A-07-T30 (DEC-3107): ReleaseWorkflow on the time-sensitive class.
+WORKFLOWS: dict[type, str] = (
+    dict(FORM5500_WORKFLOWS) | {BringDownWorkflow: "background"} | dict(RELEASE_WORKFLOWS)
+)
+ACTIVITIES: tuple[object, ...] = (*FORM5500_ACTIVITIES, bring_down, *RELEASE_ACTIVITIES)
 register_work_classes(WORKFLOWS)  # type: ignore[arg-type]  # registry kind literal
 
 # A-01-T02 (A-01 §5.1): the AUD-01 segments every firm has; X-01 (SOC & IT) and X-03 (Internal
@@ -316,6 +322,8 @@ register_completion_facts()
 register_rep_triggers()
 # A-07-T19: the live-path registrations, inert until the A-07 flags (T33).
 register_a07_live_path()
+# A-07-T30 (DEC-3107): AUD-24's also-required items assurance computes itself.
+register_release_facts()
 # A-05-T53: the estimate conclusion, the EP's card (AU-C 540).
 register_estimate_conclusion_kind()
 # I-01-T08: this module's HOME-01 tile or pill (platform.register_home_count).

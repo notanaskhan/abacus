@@ -1188,9 +1188,67 @@ async def audit_report_document_route(
 
 @router.get("/release", action="report.read", response_model=AuditReleaseOut, errors=(501,))
 async def audit_release_route(work_item_id: UUID, ctx: Ctx) -> AuditReleaseOut:
-    """AUD-24: G5-G7 with live values, the also-required list, deliverables, filings (A-07-T30)."""
+    """AUD-24: G5-G7 with live values, the also-required list, deliverables (A-07-T30; filings
+    arrive with A-07-T36). Every value comes from the gate providers, never the browser."""
     await _gate(ctx, work_item_id, "report.read")
-    _not_yet()
+    return await _release_out(ctx, work_item_id)
+
+
+_RELEASE_ACTIONS: tuple[ReportAction, ...] = ("report.release",)
+
+
+async def _release_out(ctx: AuthContext, work_item_id: UUID) -> AuditReleaseOut:
+    from abacus.modules.assurance import release as rel
+    from abacus.modules.identity.api import names_of, team_of
+
+    snap = await rel.snapshot(ctx.tenant, work_item_id)
+    done = await rel.released(ctx.tenant, work_item_id)
+    ref = await get_ref(ctx, snap.engagement_id)
+    held = await allowed_actions(
+        ctx, replace(ref.resource(), work_item_id=work_item_id), list(_RELEASE_ACTIONS)
+    )
+    actions = [a for a in _RELEASE_ACTIONS if a in held and done is None]
+    partners = [
+        m
+        for m, role in await team_of(ctx.tenant_id, snap.engagement_id)
+        if role == "engagement_partner"
+    ]
+    names = await names_of([*partners, *([done.released_by] if done else [])])
+    gates = [
+        GateCardOut(
+            gate=cast(Gate, g.gate),
+            met=g.met,
+            required=g.required,
+            value=None,
+            blockers=list(g.blockers),
+        )
+        for g in snap.gates
+    ]
+    gates.append(
+        GateCardOut(
+            gate="G8",
+            met=done is not None,
+            required=True,
+            value=None,
+            blockers=[] if done is not None else ["not_released"],
+        )
+    )
+    return AuditReleaseOut(
+        gates=gates,
+        also_required=[
+            AlsoRequiredOut(key=a.key, met=a.met, value=a.value) for a in snap.also_required
+        ],
+        gate_hash=snap.sha256,
+        can_release=done is None and not snap.blockers,
+        viewer_can_release="report.release" in actions,
+        engagement_partner_name=names.get(partners[0], "") if partners else "",
+        released_at=None if done is None else done.released_at,
+        released_by_name=None if done is None else names.get(done.released_by),
+        documentation_completion_date=None if done is None else done.documentation_completion_date,
+        deliverable_ids=[] if done is None else list(done.deliverable_ids),
+        filings=[],
+        allowed_actions=actions,
+    )
 
 
 @router.post(
@@ -1204,9 +1262,20 @@ async def audit_release_post_route(
     work_item_id: UUID, body: ReleaseIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ReleaseRunAcceptedOut:
     """G8 through ReleaseWorkflow: the EP only, fresh MFA, the gates re-checked at the server
-    (409 `gates_not_met`, `content_changed`); no hold and no Undo (DEC-2260)."""
+    (409 `gates_not_met`, `content_changed`); no hold and no Undo (DEC-2260). A replay with the
+    same Idempotency-Key after the release answers the release (A-07-T30, DEC-3107)."""
+    from abacus.modules.assurance import release as rel
+    from abacus.modules.assurance.release_workflow import start_release
+
     await _gate(ctx, work_item_id, "report.release")
-    _not_yet()
+    if not body.authorize:
+        raise NotFound("release")  # unreachable: the model requires True
+    outcome = await rel.request_release(ctx, work_item_id, body.seen_gate_hash, idempotency_key)
+    status_url = f"/v1/audits/{work_item_id}/release"
+    if isinstance(outcome, rel.ReleasedFacts):
+        return ReleaseRunAcceptedOut(run_id=outcome.release_id, status_url=status_url)
+    await start_release(outcome)
+    return ReleaseRunAcceptedOut(run_id=UUID(outcome.grant_id), status_url=status_url)
 
 
 @router.get("/filings", action="report.read", response_model=FilingsOut, errors=(501,))

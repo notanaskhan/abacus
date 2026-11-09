@@ -132173,7 +132173,7 @@
     },
     "/v1/audits/{work_item_id}/release": {
       "get": {
-        "description": "AUD-24: G5-G7 with live values, the also-required list, deliverables, filings (A-07-T30).",
+        "description": "AUD-24: G5-G7 with live values, the also-required list, deliverables (A-07-T30; filings\narrive with A-07-T36). Every value comes from the gate providers, never the browser.",
         "operationId": "audit_release",
         "parameters": [
           {
@@ -132288,7 +132288,7 @@
         "x-abacus-action": "report.read"
       },
       "post": {
-        "description": "G8 through ReleaseWorkflow: the EP only, fresh MFA, the gates re-checked at the server\n(409 `gates_not_met`, `content_changed`); no hold and no Undo (DEC-2260).",
+        "description": "G8 through ReleaseWorkflow: the EP only, fresh MFA, the gates re-checked at the server\n(409 `gates_not_met`, `content_changed`); no hold and no Undo (DEC-2260). A replay with the\nsame Idempotency-Key after the release answers the release (A-07-T30, DEC-3107).",
         "operationId": "audit_release_post",
         "parameters": [
           {

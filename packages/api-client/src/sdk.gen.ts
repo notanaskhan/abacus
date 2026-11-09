@@ -1491,7 +1491,8 @@ export const relatedPartyScreenOut = <ThrowOnError extends boolean = false>(opti
 /**
  * Audit Release Route
  *
- * AUD-24: G5-G7 with live values, the also-required list, deliverables, filings (A-07-T30).
+ * AUD-24: G5-G7 with live values, the also-required list, deliverables (A-07-T30; filings
+ * arrive with A-07-T36). Every value comes from the gate providers, never the browser.
  */
 export const auditRelease = <ThrowOnError extends boolean = false>(options: Options<AuditReleaseData, ThrowOnError>): RequestResult<AuditReleaseResponses, AuditReleaseErrors, ThrowOnError> => (options.client ?? client).get<AuditReleaseResponses, AuditReleaseErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -1503,7 +1504,8 @@ export const auditRelease = <ThrowOnError extends boolean = false>(options: Opti
  * Audit Release Post Route
  *
  * G8 through ReleaseWorkflow: the EP only, fresh MFA, the gates re-checked at the server
- * (409 `gates_not_met`, `content_changed`); no hold and no Undo (DEC-2260).
+ * (409 `gates_not_met`, `content_changed`); no hold and no Undo (DEC-2260). A replay with the
+ * same Idempotency-Key after the release answers the release (A-07-T30, DEC-3107).
  */
 export const auditReleasePost = <ThrowOnError extends boolean = false>(options: Options<AuditReleasePostData, ThrowOnError>): RequestResult<AuditReleasePostResponses, AuditReleasePostErrors, ThrowOnError> => (options.client ?? client).post<AuditReleasePostResponses, AuditReleasePostErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

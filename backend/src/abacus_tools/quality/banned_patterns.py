@@ -2328,6 +2328,15 @@ def _check_k1_release(src: SourceFile) -> Iterator[Finding]:
             yield Finding(getattr(node, "lineno", 0), "k1_releases outside tax/k1_release.py")
 
 
+def _check_report_release(src: SourceFile) -> Iterator[Finding]:
+    """A-07-T30 (DEC-3107): G8 is written only by `assurance/release.py`'s one unit of work, after
+    the EP's consumed grant and the server's gate re-check."""
+    for node in ast.walk(src.tree):
+        text = node.value if isinstance(node, ast.Constant) else None
+        if isinstance(text, str) and re.search(r"\binsert\s+into\s+report_releases\b", text, re.I):
+            yield Finding(getattr(node, "lineno", 0), "report_releases written outside release.py")
+
+
 def _check_fraud_minutes_approval(src: SourceFile) -> Iterator[Finding]:
     """A-04-T19 (DEC-2055): an approval of the fraud brainstorm's minutes is the engagement
     partner's own act, written only by `assurance/fraud_brainstorm.approve_minutes`."""
@@ -3181,6 +3190,14 @@ RULES: list[Rule | TreeRule] = [
         check=_check_k1_release,
         include=("src/abacus/*",),
         exclude=("src/abacus/modules/tax/k1_release.py", "src/abacus/modules/tax/registry.py"),
+    ),
+    Rule(
+        id="RELEASE-001",
+        description="Only assurance/release.py writes a report release (G8)",
+        adr="A-07 §4.10, ADR-005",
+        check=_check_report_release,
+        include=("src/abacus/*",),
+        exclude=("src/abacus/modules/assurance/release.py",),
     ),
     Rule(
         id="FRAUD-MINUTES-001",

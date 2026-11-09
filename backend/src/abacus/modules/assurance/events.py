@@ -92,3 +92,17 @@ class ServiceOrgRelianceConcluded(DomainEvent):
     service_organization_id: Annotated[UUID, classified("internal")]
     decision_id: Annotated[UUID, classified("internal")]
     relied: Annotated[bool, classified("internal")]
+
+
+class ReportReleased(DomainEvent):
+    """G8 (A-07-T30; A-07 §4.6): the engagement partner released the report in Accrued. The P-14
+    retention clock, PostReleaseClocksWorkflow (A-07-T36), A-06's findings communicated and the
+    HOME-02 projector read it."""
+
+    event_type: ClassVar[str] = "report.released"
+
+    release_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    work_item_id: Annotated[UUID, classified("internal")]
+    report_version_id: Annotated[UUID, classified("internal")]
+    final_document_version_id: Annotated[UUID, classified("internal")]
