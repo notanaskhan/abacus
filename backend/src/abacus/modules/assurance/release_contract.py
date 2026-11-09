@@ -20,16 +20,24 @@ from __future__ import annotations
 
 from dataclasses import replace
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header
 from pydantic import BaseModel, ConfigDict, Field
 
+from abacus.kernel import clock
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.modules.assurance import governance_comms as gc
 from abacus.modules.engagements.api import get_ref, work_item_engagement
-from abacus.modules.identity.api import AbacusRouter, AuthContext, authorise, current_context
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    AuthContext,
+    allowed_actions,
+    authorise,
+    current_context,
+)
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -614,6 +622,72 @@ def _not_yet() -> NoReturn:
     raise NotImplementedYet
 
 
+# --- A-07-T26: AUD-22 through `governance_comms` (DEC-3011) --------------------------------------
+
+_GOV_ACTIONS: tuple[LetterAction, ...] = (
+    "governance_comm.draft",
+    "governance_comm.request_approval",
+    "governance_comm.approve_send",
+    "governance_comm.manage_recipients",
+)
+
+
+async def _gov_actions(ctx: AuthContext, work_item_id: UUID) -> list[LetterAction]:
+    engagement_id = await work_item_engagement(ctx.tenant, work_item_id)
+    if engagement_id is None:
+        return []
+    ref = await get_ref(ctx, engagement_id)
+    held = await allowed_actions(
+        ctx, replace(ref.resource(), work_item_id=work_item_id), list(_GOV_ACTIONS)
+    )
+    return [a for a in _GOV_ACTIONS if a in held]
+
+
+def _row(r: gc.Row) -> GovernanceRowOut:
+    return GovernanceRowOut(
+        id=r.id,
+        kind=cast(GovernanceKind, r.kind),
+        standard=r.standard,
+        status=cast(
+            Literal["not_started", "draft", "awaiting_ep_approval", "sent", "acknowledged"],
+            r.status,
+        ),
+        overdue=r.overdue,
+        due_on=r.due_on,
+        sent_at=r.sent_at,
+        acknowledged_at=r.acknowledged_at,
+        acknowledged_by_body=None,
+        channel=cast(Literal["governance_room", "ack_envelope"] | None, r.channel),
+    )
+
+
+async def _communication_out(
+    ctx: AuthContext, work_item_id: UUID, communication_id: UUID
+) -> GovernanceCommunicationOut:
+    found = await gc.communication(ctx, work_item_id, communication_id)
+    today = (await clock.now(ctx.tenant)).date()
+    row = next(r for r in await gc.rows(ctx, work_item_id, today) if r.id == communication_id)
+    return GovernanceCommunicationOut(
+        row=_row(row),
+        version_no=found.version_no,
+        content_hash=found.content_hash,
+        sections=[
+            GovernanceSectionOut(
+                key=x.key,
+                title=x.heading,
+                text=x.body,
+                built_from=list(x.built_from),
+                human_edited=x.human_edited,
+                citations=[],
+            )
+            for x in found.sections
+        ],
+        watermark="none" if found.status in ("sent", "acknowledged") else "draft",
+        allowed_actions=await _gov_actions(ctx, work_item_id),
+        version=found.row_version,
+    )
+
+
 router = AbacusRouter(prefix="/v1/audits/{work_item_id}", tags=["audit release"])
 _RL = "/representation-letter"
 _GC = "/governance-communications"
@@ -769,7 +843,15 @@ async def representation_redate_route(
 async def governance_list_route(work_item_id: UUID, ctx: Ctx) -> GovernanceListOut:
     """AUD-22: rows with clocks; Overdue derived from the due date (A-07-T26)."""
     await _gate(ctx, work_item_id, "governance_comm.read")
-    _not_yet()
+    today = (await clock.now(ctx.tenant)).date()
+    found = await gc.rows(ctx, work_item_id, today)
+    required = [r for r in found if r.kind in gc.REQUIRED]
+    return GovernanceListOut(
+        items=[_row(r) for r in found],
+        required_sent=sum(1 for r in required if r.status in ("sent", "acknowledged")),
+        required_total=len(gc.REQUIRED),
+        allowed_actions=await _gov_actions(ctx, work_item_id),
+    )
 
 
 @router.post(
@@ -783,7 +865,10 @@ async def governance_create_route(
     work_item_id: UUID, body: GovernanceCreateIn, ctx: Ctx
 ) -> GovernanceCommunicationOut:
     await _gate(ctx, work_item_id, "governance_comm.draft")
-    _not_yet()
+    if body.kind == "reportable_703":
+        raise gc.KindExists(facts={"kind": "sd_mw_265"})  # 703 rides in the 265 letter
+    communication_id = await gc.create(ctx, work_item_id, body.kind)
+    return await _communication_out(ctx, work_item_id, communication_id)
 
 
 @router.get(
@@ -796,7 +881,7 @@ async def governance_route(
     work_item_id: UUID, communication_id: UUID, ctx: Ctx
 ) -> GovernanceCommunicationOut:
     await _gate(ctx, work_item_id, "governance_comm.read")
-    _not_yet()
+    return await _communication_out(ctx, work_item_id, communication_id)
 
 
 @router.post(
@@ -809,9 +894,15 @@ async def governance_route(
 async def governance_compose_route(
     work_item_id: UUID, communication_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ReleaseRunAcceptedOut:
-    """Compose or regenerate; a section-level merge keeps human edits."""
+    """Compose or regenerate; a section-level merge keeps human edits. Composition is code over
+    the engagement's facts, so it finishes in the request; the 202 names no background run."""
     await _gate(ctx, work_item_id, "governance_comm.draft")
-    _not_yet()
+    del idempotency_key
+    await gc.regenerate(ctx, work_item_id, communication_id)
+    return ReleaseRunAcceptedOut(
+        run_id=communication_id,
+        status_url=f"/v1/audits/{work_item_id}{_GC}/{communication_id}",
+    )
 
 
 @router.patch(
@@ -824,7 +915,8 @@ async def governance_section_route(
     work_item_id: UUID, communication_id: UUID, key: str, body: GovernanceSectionIn, ctx: Ctx
 ) -> GovernanceCommunicationOut:
     await _gate(ctx, work_item_id, "governance_comm.draft")
-    _not_yet()
+    await gc.edit_section(ctx, work_item_id, communication_id, key, body.text, body.seen_version)
+    return await _communication_out(ctx, work_item_id, communication_id)
 
 
 @router.post(
@@ -837,7 +929,8 @@ async def governance_request_approval_route(
     work_item_id: UUID, communication_id: UUID, ctx: Ctx
 ) -> GovernanceCommunicationOut:
     await _gate(ctx, work_item_id, "governance_comm.request_approval")
-    _not_yet()
+    await gc.request_approval(ctx, work_item_id, communication_id)
+    return await _communication_out(ctx, work_item_id, communication_id)
 
 
 @router.post(
@@ -857,7 +950,17 @@ async def governance_approve_send_route(
     """The EP approves and sends with fresh MFA (human only); output checks refuse materiality
     in a planning letter and the words 'SAS 114'."""
     await _gate(ctx, work_item_id, "governance_comm.approve_send")
-    _not_yet()
+    del idempotency_key  # one send per version: the send row is unique on the version
+    await gc.approve_and_send(
+        ctx,
+        work_item_id,
+        communication_id,
+        governance_body_id=body.governance_body_id,
+        recipient_contact_ids=body.recipient_contact_ids,
+        channel=body.channel,
+        seen_hash=body.seen_hash,
+    )
+    return await _communication_out(ctx, work_item_id, communication_id)
 
 
 @router.get(
@@ -868,7 +971,7 @@ async def governance_approve_send_route(
 )
 async def governance_recipients_route(work_item_id: UUID, ctx: Ctx) -> GovernanceRecipientsOut:
     await _gate(ctx, work_item_id, "governance_comm.read")
-    _not_yet()
+    return _recipients(await gc.recipients(ctx, work_item_id))
 
 
 @router.put(
@@ -881,7 +984,22 @@ async def governance_recipients_put_route(
     work_item_id: UUID, body: GovernanceRecipientsIn, ctx: Ctx
 ) -> GovernanceRecipientsOut:
     await _gate(ctx, work_item_id, "governance_comm.manage_recipients")
-    _not_yet()
+    return _recipients(await gc.set_recipients(ctx, work_item_id, body.governance_body_ids))
+
+
+def _recipients(found: list[gc.Recipient]) -> GovernanceRecipientsOut:
+    return GovernanceRecipientsOut(
+        items=[
+            GovernanceRecipientOut(
+                governance_body_id=r.governance_body_id,
+                body_name=r.body_name,
+                member_count=r.member_count,
+                ack_required=r.ack_required,
+            )
+            for r in found
+        ],
+        version=1,
+    )
 
 
 @router.get("/report", action="report.read", response_model=AuditReportOut, errors=(501,))
