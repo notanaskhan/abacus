@@ -1047,6 +1047,8 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
     ),
     ("POST", "/v1/engagements/{engagement_id}/agent/pause", "agent.pause"),
     ("POST", "/v1/engagements/{engagement_id}/agent/resume", "agent.pause"),
+    ("POST", "/v1/engagements/{engagement_id}/audit-events/export", "export.create"),
+    ("POST", "/v1/engagements/{engagement_id}/audit-events/query", "audit_event.read_engagement"),
     ("POST", "/v1/engagements/{engagement_id}/client-invitations", "client_contact.invite"),
     (
         "POST",
