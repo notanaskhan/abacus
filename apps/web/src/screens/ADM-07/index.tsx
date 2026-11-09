@@ -160,16 +160,50 @@ function ActorTag({ kind }: { kind: ActorKind }): JSX.Element {
   );
 }
 
-function PlannedRun(): JSX.Element | null {
-  if (!PLANNED_VISIBLE) return null;
+/** P-09-T13: a run event's "Run ›" opens the run's trace (WB-09) over this page (the host's
+ * `useOpenTrace`); without a host it is not drawn. */
+function RunLink({
+  runId,
+  onOpenRun,
+}: {
+  runId: string | null | undefined;
+  onOpenRun: ((runId: string) => void) | undefined;
+}): JSX.Element | null {
+  if (runId === null || runId === undefined || runId === "" || onOpenRun === undefined) return null;
+  const openTrace = onOpenRun;
   return (
-    <span
-      aria-disabled="true"
-      title={COPY.plannedRun}
-      className="text-meta whitespace-nowrap text-ink-3"
+    <button
+      type="button"
+      data-run-link={runId}
+      className="text-meta whitespace-nowrap text-ink-2 hover:underline"
+      onClick={() => {
+        openTrace(runId);
+      }}
     >
       {COPY.run}
-    </span>
+    </button>
+  );
+}
+
+/** The drawer's "Open run": the run's trace (P-09-T13). */
+function OpenRun({
+  runId,
+  onOpenRun,
+}: {
+  runId: string;
+  onOpenRun: (runId: string) => void;
+}): JSX.Element {
+  const openTrace = onOpenRun;
+  return (
+    <button
+      type="button"
+      className="self-start text-dense text-ink-2 hover:underline"
+      onClick={() => {
+        openTrace(runId);
+      }}
+    >
+      {COPY.drawer.openRun}
+    </button>
   );
 }
 
@@ -178,11 +212,13 @@ function Row({
   now,
   onOpen,
   onIp,
+  onOpenRun,
 }: {
   row: AuditEventRow;
   now: Date;
   onOpen: () => void;
   onIp: (ip: string) => void;
+  onOpenRun?: ((runId: string) => void) | undefined;
 }): JSX.Element {
   const title = titleOf(row);
   const when = date(row.effective_at, { now, tz: DEFAULT_TZ });
@@ -231,7 +267,7 @@ function Row({
         ) : (
           <span>{COPY.noIp}</span>
         )}
-        {row.link_kind === "run" && <PlannedRun />}
+        {row.link_kind === "run" && <RunLink runId={row.run_id} onOpenRun={onOpenRun} />}
       </span>
       <span aria-hidden="true" className="pt-[3px] text-ink-3">
         <Icon name="chevron-right" size={14} />
@@ -333,10 +369,12 @@ function EventDrawer({
   seq,
   row,
   onClose,
+  onOpenRun,
 }: {
   seq: number;
   row: AuditEventRow | undefined;
   onClose: () => void;
+  onOpenRun?: ((runId: string) => void) | undefined;
 }): JSX.Element {
   const found = useQuery(auditEventOptions({ path: { seq } }));
   const event: AuditEventDetail | undefined = found.data;
@@ -439,14 +477,21 @@ function EventDrawer({
                   .filter((v): v is string => v !== null)
                   .join(" · ")}
               </p>
-              {PLANNED_VISIBLE && (
-                <span
-                  aria-disabled="true"
-                  title={COPY.plannedRun}
-                  className="text-dense text-ink-3"
-                >
-                  {COPY.drawer.openRun}
-                </span>
+              {event.run_id !== null &&
+              event.run_id !== undefined &&
+              event.run_id !== "" &&
+              onOpenRun !== undefined ? (
+                <OpenRun runId={event.run_id} onOpenRun={onOpenRun} />
+              ) : (
+                PLANNED_VISIBLE && (
+                  <span
+                    aria-disabled="true"
+                    title={COPY.plannedRun}
+                    className="text-dense text-ink-3"
+                  >
+                    {COPY.drawer.openRun}
+                  </span>
+                )
               )}
             </section>
           )}
@@ -536,9 +581,17 @@ export interface ADM07Props {
   onSearch: (next: Adm07Search) => void;
   onNavigate?: (section: string) => void;
   onBack?: () => void;
+  /** P-09-T13: open a run's trace (the route's `useOpenTrace`). */
+  onOpenRun?: (runId: string) => void;
 }
 
-export function ADM07({ search, onSearch, onNavigate, onBack }: ADM07Props): JSX.Element {
+export function ADM07({
+  search,
+  onSearch,
+  onNavigate,
+  onBack,
+  onOpenRun,
+}: ADM07Props): JSX.Element {
   const now = useNow();
   const overview = useQuery(settingsOverviewOptions());
   const [exporting, setExporting] = useState(false);
@@ -758,6 +811,7 @@ export function ADM07({ search, onSearch, onNavigate, onBack }: ADM07Props): JSX
                   onOpen={() => {
                     set({ event: String(row.seq) });
                   }}
+                  onOpenRun={onOpenRun}
                   onIp={(ip) => {
                     set({ ip });
                   }}
@@ -799,6 +853,7 @@ export function ADM07({ search, onSearch, onNavigate, onBack }: ADM07Props): JSX
           onClose={() => {
             set({ event: undefined });
           }}
+          onOpenRun={onOpenRun}
         />
       )}
       <ExportDialog

@@ -2,6 +2,7 @@ import { EmptyState } from "@abacus/ui";
 import { Navigate, createRoute, useNavigate, useRouter, useSearch } from "@tanstack/react-router";
 import type { JSX } from "react";
 import { useCan } from "../../app-core/can";
+import { useOpenTrace } from "../../domain/agents/overlay";
 import { FeatureGate, useFlag } from "../../app-core/flags";
 import { useParam } from "../params";
 import { appRoute, lazyScreen } from "../root";
@@ -296,11 +297,13 @@ const settingsAuditLogRoute = createRoute({
   component: function SettingsAuditLogPage(): JSX.Element {
     const navigate = useNavigate();
     const router = useRouter();
+    const openTrace = useOpenTrace();
     const search: Record<string, unknown> = useSearch({ strict: false });
     return (
       <div className="flex min-h-0 flex-1 flex-col">
         <FeatureGate flag="audit_log.explorer" fallback={<NotBuilt />}>
           <FirmSettingsAuditLog
+            onOpenRun={openTrace}
             search={pick(AUDIT_SEARCH, search)}
             onSearch={(next) => {
               void navigate({ to: ".", search: { ...next }, replace: true });

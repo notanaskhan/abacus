@@ -16,7 +16,7 @@
 
 import type { RunItemsOut } from "@abacus/api-client";
 import { useSyncExternalStore } from "react";
-import { applyItems, EMPTY_FEED, isActive, POLL_MS, type RunFeed } from "./runFeed";
+import { applyItems, EMPTY_FEED, isActive, POLL_MS, type RunFeed } from "./feedCore";
 
 export type RunSourceEvent =
   { kind: "page"; page: RunItemsOut } | { kind: "error"; error: unknown };
@@ -55,6 +55,7 @@ export class RunStore {
 
   fail(error: unknown): void {
     this.error = error;
+    this.feed = { ...this.feed }; // a new snapshot, so a reader re-renders with the error
     this.emit();
   }
 

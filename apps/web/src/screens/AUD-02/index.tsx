@@ -563,6 +563,10 @@ function Cockpit({
               engagementId={cockpit.engagement_id}
               runId={runId ?? null}
               {...(onRun === undefined ? {} : { onRun })}
+              // P-09-T13: a step's tool card and the rail row it worked on stay in step by the
+              // step's `work_item_ref` (the rail key): selecting either selects the other.
+              selectedRef={selected}
+              {...(onSection === undefined ? {} : { onSelectRef: onSection })}
             >
               <AgentActivityTab engagementId={cockpit.engagement_id} />
             </AgentDock>
