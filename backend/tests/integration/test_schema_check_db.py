@@ -2338,6 +2338,8 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
                 "outputs_summary",
             }
             | {"records_read", "started_at", "state", "usage_record_ids"}
+            # P-09-T08 (0751, DEC-3005): the step's sample references and its source.
+            | {"sample_refs", "source_ref"}
         ),
         "engagement_ai_settings": frozenset({"auto_mode", "auto_mode_set_at", "auto_mode_set_by"}),
         "run_artifacts": frozenset({"saved_to", "state", "version"}),
@@ -2379,6 +2381,148 @@ def test_ac20_the_real_update_column_declarations_match_the_contract() -> None:
         "governance_bodies": frozenset({"kind", "name", "status", "updated_at", "version"}),
         "governance_body_members": frozenset({"ended_on", "member_role"}),
         "deliverable_download_links": frozenset({"used_at"}),
+        # P-10-T22 (0750, DEC-3001): a tool call moves claimed to done once (guard trigger).
+        "agent_tool_calls": frozenset(
+            {
+                "completed_at",
+                "result",
+                "state",
+            }
+        ),
+        # P-05-T04 (0760, DEC-3105): a reader's last read and mute.
+        "comment_thread_reads": frozenset(
+            {
+                "last_read_at",
+                "muted_at",
+            }
+        ),
+        # P-05-T04 (0760, DEC-3105): a thread's status, sharing and last comment.
+        "comment_threads": frozenset(
+            {
+                "last_comment_at",
+                "shared_scope_id",
+                "shared_scope_kind",
+                "status",
+                "updated_at",
+                "visibility",
+            }
+        ),
+        # T-04-T10 (0761, DEC-3123): K-1 activity state and its worksheet.
+        "k1_activities": frozenset(
+            {
+                "content_hash",
+                "k1_state",
+                "k1_worksheet_id",
+                "released_at",
+                "source_evidence_version_ids",
+                "updated_at",
+                "version_no",
+            }
+        ),
+        # T-04-T10 (0761, DEC-3123): a treatment's proposal, decision and override.
+        "k1_treatments": frozenset(
+            {
+                "changed_vs_prior",
+                "checkpoint_id",
+                "decided_at",
+                "decided_by",
+                "engine_name",
+                "engine_version",
+                "follow_up_note",
+                "inputs_hash",
+                "override_reason_sealed",
+                "override_value",
+                "prior_year",
+                "proposal_id",
+                "resolved",
+                "status",
+                "updated_at",
+                "version_no",
+            }
+        ),
+        # T-04-T10 (0761, DEC-3123): the residency proposal and its confirmation.
+        "residency_determinations": frozenset(
+            {
+                "checkpoint_id",
+                "confirmed_at",
+                "confirmed_by",
+                "conflict",
+                "issue_id",
+                "jurisdictions",
+                "options",
+                "proposal_id",
+                "proposed_option",
+                "recommended_by_run_id",
+                "status",
+                "updated_at",
+                "version_no",
+            }
+        ),
+        # T-04-T10 (0761, DEC-3123): a return field's current value and labels.
+        "return_fields": frozenset(
+            {
+                "current_fvv_seq",
+                "current_value",
+                "estimate_flag",
+                "label",
+                "new_this_year_note",
+                "sort_order",
+                "updated_at",
+            }
+        ),
+        # T-04-T10 (0761, DEC-3123): worksheet sections.
+        "return_worksheet_sections": frozenset(
+            {
+                "content_hash",
+                "name",
+                "sort_order",
+                "updated_at",
+                "version_no",
+            }
+        ),
+        # T-04-T10 (0761, DEC-3123): worksheets.
+        "return_worksheets": frozenset(
+            {
+                "active",
+                "content_hash",
+                "footer_note",
+                "group_path",
+                "sort_order",
+                "title",
+                "updated_at",
+                "version_no",
+            }
+        ),
+        # P-05-T04 (0760, DEC-3105): a to-do's checklist items.
+        "todo_checklist_items": frozenset(
+            {
+                "done",
+                "done_at",
+                "done_by",
+                "position",
+                "text",
+            }
+        ),
+        # P-05-T04 (0760, DEC-3105): to-dos and their anchors.
+        "todos": frozenset(
+            {
+                "anchor_id",
+                "anchor_kind",
+                "anchor_locator",
+                "assignee_seen_at",
+                "assignee_user_id",
+                "deleted_at",
+                "deleted_by",
+                "done_at",
+                "done_by",
+                "due_on",
+                "status",
+                "title",
+                "updated_at",
+                "version",
+                "work_item_id",
+            }
+        ),
     } == sc.APP_UPDATE_COLUMNS
     # SPEC-020 (TASK-036, migration 0029): the connection flow creates connections.
     assert sc.APP_INSERT_COLUMNS["connections"] == frozenset(
