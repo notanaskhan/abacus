@@ -4,7 +4,7 @@ title: R-02-T13 Brightwater Hale portal slices and fixtures (POR-08, POR-09, POR
 spec: SPEC-646
 acceptance_criteria: [AC-1]  # fixture data foots; seed and fixtures read one book
 risk_zone: green
-status: partial
+status: in-progress
 epic: R-02
 plan_key: R-02-T13
 branch: s32-r02-t13
@@ -33,3 +33,7 @@ The portal slice for approvals, deliverables and the governance room, from R-02-
 |---|---|---|
 | DEC-3013 | One figures book for fixtures and seed; entry titles and lines from the book's groups | no |
 - `2026-11-09` — S32 end pass: gates, unit, contract, S32 integration and web suites run; fixes folded into the end-pass PR. Status partial.
+- `2026-11-09` — Partials round (branch s32p-r02-t13, DEC-3029): `governance_room` seed slice
+  (body, members, contacts, `tcwg` grants) with a test pinning it to the figures book and the
+  fixture id. Not seeded: the planning letter (sealed), POR-08's portal sends (completion slice
+  records Dana's decisions from email).
