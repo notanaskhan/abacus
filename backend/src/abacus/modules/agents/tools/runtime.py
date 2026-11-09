@@ -49,6 +49,7 @@ from uuid import UUID, uuid5
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from sqlalchemy import text
 
+from abacus.ai_gateway import render_tool_result
 from abacus.kernel.access import AccessSubject, record_reads, register_access_kind
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import NotFound
@@ -444,17 +445,14 @@ async def call_tool(agent: AgentContext, call: ToolCallIn) -> ToolOutcome:
 
 
 def for_model(outcome: ToolOutcome, untrusted: Iterable[str] = ()) -> str:
-    """The next turn's text for an outcome (AC-R5): trusted fields as JSON, each `untrusted` field
-    in its own `<untrusted>` block, JSON-encoded with `<` escaped so client text can neither
-    close the block nor pose as instructions (ADR-052). A refusal is its code alone."""
-    if not outcome.ok or outcome.result is None:
-        return json.dumps({"tool": outcome.name, "refused": outcome.code})
-    hidden = set(untrusted) or set(_untrusted_of(outcome.name))
-    trusted = {k: v for k, v in outcome.result.items() if k not in hidden}
-    parts = [_encode({"tool": outcome.name, "result": trusted})]
-    for name in sorted(k for k in outcome.result if k in hidden):
-        parts.append(f'<untrusted name="{name}">\n{_encode(outcome.result[name])}\n</untrusted>')
-    return "\n".join(parts)
+    """The next turn's text for an outcome (AC-R5), rendered by context v2 so there is one
+    wrapping: trusted fields as JSON, each `untrusted` field in its own `<untrusted>` block,
+    JSON-encoded with `<` escaped so client text can neither close the block nor pose as
+    instructions (ADR-052). A refusal is its code alone. `untrusted` defaults to the tool's."""
+    hidden = tuple(untrusted) or tuple(_untrusted_of(outcome.name))
+    if not outcome.ok:
+        return render_tool_result(outcome.name, None, untrusted=hidden, refused=outcome.code)
+    return render_tool_result(outcome.name, outcome.result, untrusted=hidden)
 
 
 def _untrusted_of(name: str) -> Sequence[str]:
@@ -462,7 +460,3 @@ def _untrusted_of(name: str) -> Sequence[str]:
         return tool(name).untrusted
     except ToolNotRegistered:
         return ()
-
-
-def _encode(value: object) -> str:
-    return json.dumps(value, sort_keys=True, default=str).replace("<", "\\u003c")
