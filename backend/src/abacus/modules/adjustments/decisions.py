@@ -94,6 +94,8 @@ class EntriesSentToClient(DomainEvent):
     entry_ids: Annotated[list[UUID], classified("internal")]
     recipient_contact_id: Annotated[UUID, classified("internal")]
     wording_template_version_id: Annotated[UUID, classified("internal")]
+    # R-02-T14 (DEC-3140): who sent, for the client's "approval requested" email in their name.
+    sent_by: Annotated[UUID | None, classified("internal")] = None
 
 
 class EntryClientDecided(DomainEvent):
@@ -353,6 +355,7 @@ async def send(
                 entry_ids=list(entry_ids),
                 recipient_contact_id=recipient_contact_id,
                 wording_template_version_id=wording_template_version_id,
+                sent_by=ctx.user_id,
             ),
             not_before=not_before,
             grant_id=grant_id,
