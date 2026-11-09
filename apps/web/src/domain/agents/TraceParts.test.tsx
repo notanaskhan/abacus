@@ -63,6 +63,10 @@ describe("WB-09 run trace drawer", () => {
     expect(document.querySelectorAll("[data-trace-row]").length).toBeGreaterThan(5);
     fireEvent.click(screen.getByRole("tab", { name: "Writes & approvals" }));
     expect(await screen.findByText("Waiting on Hannah Leclerc")).toBeTruthy();
+    // P-09-T10 remainder (DEC-3143): the waiting proposal opens SHL-10 for a person.
+    const approve = screen.getByRole("button", { name: "Approve…" });
+    expect(approve.hasAttribute("disabled")).toBe(false);
+    expect(approve.closest("li")?.textContent).toContain("save_file");
   });
 
   it("a2: a tool row expands to its arguments through the step route", async () => {

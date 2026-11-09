@@ -21,6 +21,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type JSX, useEffect, useState } from "react";
 import { currentRoute, signIn } from "../../app-core/auth";
+import { useOpenOverlay } from "../../app-core/open";
 import { traceLink } from "./links";
 import {
   RecordsReadTable,
@@ -131,6 +132,9 @@ const WRITE_KIND: Record<RunWriteOut["kind"], string> = {
 /** C6 v1 (TASK-5000): what the run proposed to write, and who decided. Codes only. */
 export function RunWrites({ runId }: { runId: string }): JSX.Element {
   const fmt = useFormat();
+  // P-09-T10 remainder (DEC-3143): a proposal still waiting opens SHL-10 for a person, whose
+  // server-side approval rights decide there; the drawer itself approves nothing.
+  const openOverlay = useOpenOverlay();
   const writes = useQuery({
     ...agentRunWritesOptions({ path: { run_id: runId } }),
     retry: false,
@@ -152,7 +156,22 @@ export function RunWrites({ runId }: { runId: string }): JSX.Element {
           <span className="font-medium">{WRITE_KIND[w.kind]}</span>
           <span className="font-mono text-[11px] text-ink-2">{w.key}</span>
           {w.decision == null ? (
-            <WriteState write={w} />
+            <>
+              <WriteState write={w} />
+              {w.state === "waiting" && w.kind === "proposal" && w.proposal_id != null && (
+                <Button
+                  size="xs"
+                  variant="secondary"
+                  onClick={() => {
+                    // SHL-10 is `?ov=approve:<proposalRef>` (routes/to `ov.SHL10`).
+                    if (w.proposal_id != null)
+                      openOverlay({ key: "approve", args: [w.proposal_id] });
+                  }}
+                >
+                  Approve…
+                </Button>
+              )}
+            </>
           ) : (
             <span className="text-ink-2">
               {`${w.decision.replaceAll("_", " ")}${w.decided_by_name == null ? "" : ` by ${w.decided_by_name}`}`}

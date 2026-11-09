@@ -45,3 +45,4 @@ Finish WB-09 over TASK-5008's `?ov=run-trace` overlay and Copy link: every artbo
   returns read (TAX-02 seed, linking to each return) in fixtures. The connection name in "Records
   read" stays open: no firm-side connection lookup by id; needs a C6 `connection_label` resolved
   by the connections module (W-01).
+- `2026-11-10` — Partials round 2 (branch s32q-p09-t10, DEC-3143): "Approve…" on a waiting proposal opens SHL-10. Still open: "Open CCH Axcess Tax" (WB-11, W-01), PDF (P-09-T11 is JSON only).
