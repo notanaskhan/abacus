@@ -1,0 +1,20 @@
+# Form SSA-1099 Social Security Benefit Statement map (P-11-T35; P-11 F8; DEC-76, DEC-2809, DEC-3008). PROTECTED: golden tested and
+# reviewed yearly against the IRS form for the year. Dark until the firm's `evidence.form_extraction`
+# variant covers `tax_forms`. TINs (SSN, EIN) are never fields: P-03 masks them on the page.
+
+form: "SSA-1099"
+form_type: "ssa_1099"
+tax_year: 2027
+family: tax_forms
+version: "ssa_1099-2027-v1"
+anchors: ["SSA-1099"]
+year_after: "BENEFIT STATEMENT"
+# The captions print the year ("Benefits Paid in 2025"), so TY2026 does not inherit.
+fields:
+  - {key: ssa_1099.box3, label: "Benefits paid in 2027", anchor: "Benefits Paid in 2027", value_type: money}
+  - {key: ssa_1099.box4, label: "Benefits repaid to SSA in 2027", anchor: "Benefits Repaid to SSA in 2027", value_type: money}
+  - {key: ssa_1099.box5, label: "Net benefits for 2027", anchor: "Net Benefits for 2027", value_type: money}
+  - {key: ssa_1099.box6, label: "Voluntary federal income tax withheld", anchor: "Voluntary Federal Income Tax Withheld", value_type: money}
+tie_outs:
+  - {smaller: ssa_1099.box4, larger: ssa_1099.box3}
+  - {smaller: ssa_1099.box5, larger: ssa_1099.box3}

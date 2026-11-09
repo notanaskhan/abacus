@@ -1,0 +1,34 @@
+# Schedule K-1 (Form 1120-S) map (P-11-T35; P-11 F8; DEC-76, DEC-2809, DEC-3008). PROTECTED: golden tested and
+# reviewed yearly against the IRS form for the year. Dark until the firm's `evidence.form_extraction`
+# variant covers `tax_forms`. TINs (SSN, EIN) are never fields: P-03 masks them on the page.
+
+form: "Schedule K-1 (Form 1120-S)"
+form_type: "k1_1120s"
+tax_year: 2025
+family: tax_forms
+version: "k1_1120s-2025-v1"
+anchors: ["K-1", "1120-S"]
+year_after: "1120-S"
+# State attachments are flagged for a person's review; their figures are never read or summed.
+state_anchor: "State Information"
+fields:
+  - {key: k1_1120s.box1, label: "Ordinary business income (loss)", anchor: "Ordinary business income (loss)", value_type: money, box: "1"}
+  - {key: k1_1120s.box2, label: "Net rental real estate income (loss)", anchor: "Net rental real estate income (loss)", value_type: money, box: "2"}
+  - {key: k1_1120s.box3, label: "Other net rental income (loss)", anchor: "Other net rental income (loss)", value_type: money, box: "3"}
+  - {key: k1_1120s.box4, label: "Interest income", anchor: "Interest income", value_type: money, box: "4"}
+  - {key: k1_1120s.box5a, label: "Ordinary dividends", anchor: "Ordinary dividends", value_type: money, box: "5a"}
+  - {key: k1_1120s.box5b, label: "Qualified dividends", anchor: "Qualified dividends", value_type: money, box: "5b"}
+  - {key: k1_1120s.box6, label: "Royalties", anchor: "Royalties", value_type: money, box: "6"}
+  - {key: k1_1120s.box7, label: "Net short-term capital gain (loss)", anchor: "Net short-term capital gain (loss)", value_type: money, box: "7"}
+  - {key: k1_1120s.box8a, label: "Net long-term capital gain (loss)", anchor: "Net long-term capital gain (loss)", value_type: money, box: "8a"}
+  - {key: k1_1120s.box9, label: "Net section 1231 gain (loss)", anchor: "Net section 1231 gain (loss)", value_type: money, box: "9"}
+# Code lines ("18A … 2,356"): each code its own field; amounts read, never summed.
+code_boxes:
+  - {box: "10", key: k1_1120s.box10, label: "Other income (loss)"}
+  - {box: "12", key: k1_1120s.box12, label: "Other deductions"}
+  - {box: "13", key: k1_1120s.box13, label: "Credits"}
+  - {box: "15", key: k1_1120s.box15, label: "Alternative minimum tax (AMT) items"}
+  - {box: "16", key: k1_1120s.box16, label: "Items affecting shareholder basis"}
+  - {box: "17", key: k1_1120s.box17, label: "Other information"}
+tie_outs:
+  - {smaller: k1_1120s.box5b, larger: k1_1120s.box5a}

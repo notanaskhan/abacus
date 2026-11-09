@@ -1,0 +1,7 @@
+# Form 1095-C TY2026 (P-11-T35; DEC-3008): unchanged from TY2025.
+form: "1095-C"
+form_type: "f1095c"
+tax_year: 2026
+family: tax_forms
+version: "f1095c-2026-v1"
+inherits: 2025
