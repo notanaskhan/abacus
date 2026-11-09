@@ -33,3 +33,4 @@ primary action per status.
 - `2026-11-09` — S32 end pass: gates, unit, contract, S32 integration and web suites run; fixes folded into the end-pass PR. Status partial.
 - `2026-11-09` — Partials round (branch s32p-a07-t28-mount, DEC-3030): opened inside the AUD-02
   cockpit from AUD-19's checklist chip, Back returns; test `screens/AUD-02/completionLetters.test.tsx`.
+- `2026-11-10` — Partials round 2 (branch s32q-a07-t28-live, DEC-3144): live view behind `audits.letters` in the cockpit; tests in `screens/AUD-02/completionLetters.test.tsx`.
