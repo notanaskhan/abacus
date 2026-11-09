@@ -487,6 +487,9 @@ LOWER_CASE_BY_SOURCE = {"tie", "off {amount}"}
 # compound the table spells with capitals.
 CAPITALISED_BY_SOURCE = {
     "TB-linked",
+    # TXI-01's field state names the tax engine: "Recomputed by CCH Axcess after import" (T-04-T04;
+    # verbatim from the screen contract, DEC-3019).
+    "Axcess",
     "Notices",  # N-04's upload slot names the area: "Routed to Notices" (T-03-T01; verbatim)
     "Interim",  # AUD-06 g spells the chip "TB: Interim · 8/31/2026" (A-02-T02; verbatim, DEC-15)
     # The product's name for its one agent: AUD-08 and TPL-20 cells "Suggested by Accrued Agent"

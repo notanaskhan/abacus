@@ -61379,6 +61379,10 @@ export type AuditReportDocumentErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type AuditReportDocumentError = AuditReportDocumentErrors[keyof AuditReportDocumentErrors];
@@ -61491,6 +61495,10 @@ export type AuditReportRequestDecisionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
 };
 
 export type AuditReportRequestDecisionError = AuditReportRequestDecisionErrors[keyof AuditReportRequestDecisionErrors];

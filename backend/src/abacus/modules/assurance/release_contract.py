@@ -1136,7 +1136,7 @@ async def audit_report_choice_route(
     action="report.request_decision",
     response_model=AuditReportOut,
     status_code=201,
-    errors=(409,),
+    errors=(409, 501),
 )
 async def audit_report_request_decision_route(
     work_item_id: UUID, body: ReportDecisionRequestIn, ctx: Ctx
@@ -1153,7 +1153,7 @@ async def audit_report_request_decision_route(
     action="report.generate",
     response_model=ReleaseRunAcceptedOut,
     status_code=202,
-    errors=(409,),
+    errors=(409, 501),
 )
 async def audit_report_document_route(
     work_item_id: UUID, body: ReportDocumentIn, ctx: Ctx, idempotency_key: IdempotencyKey
