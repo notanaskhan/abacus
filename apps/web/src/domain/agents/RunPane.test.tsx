@@ -6,6 +6,7 @@ import type { JSX } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { ClockProvider } from "@abacus/ui";
 import {
+  PERSON_RUN_ACTIONS,
   RUN_4127_ASK_ID,
   RUN_4127_DONE_ID,
   RUN_4127_FAILED_ID,
@@ -22,20 +23,46 @@ import { levelTail, projectionTitle, RunPane, sourceOf } from "./RunPane";
 
 afterEach(cleanup);
 
-/** The E0 and SHL-13 fixture runs as exact routes (the fixture handlers' shape, per run). */
-function routes(): Parameters<typeof mockApi>[0] {
-  const out: Parameters<typeof mockApi>[0] = {};
+/** P-09-T14: `agent_runtime.v2` on (or off) for the firm, through `/v1/me/capabilities`. */
+function capabilities(v2: boolean): object {
+  return {
+    capabilities: [],
+    clock_mode: "offset",
+    engagement_id: null,
+    entitlements: [],
+    flags: { "agent_runtime.v2": v2 },
+    mfa_recent_until: null,
+    office_id: null,
+    portal: null,
+    roles: [],
+    server_now: "2026-09-14T14:41:00Z",
+    tz: "America/Chicago",
+  };
+}
+
+/** The E0 and SHL-13 fixture runs as exact routes (the fixture handlers' shape, per run). Run
+ * #4127 at 9:41 is read as Marcus Delaney, who holds every human action (P-09-T14). */
+function routes(v2 = true): Parameters<typeof mockApi>[0] {
+  const out: Parameters<typeof mockApi>[0] = {
+    "GET /v1/me/capabilities": () => json(capabilities(v2)),
+  };
   for (const [id, run] of Object.entries({ ...E0_RUNS, ...SHL13_RUNS })) {
     const last = run.items.reduce((n, i) => Math.max(n, i.seq), 0);
-    out[`GET /v1/agent-runs/${id}`] = () => json(run.view);
+    const view =
+      id === RUN_4127_ID ? { ...run.view, allowed_actions: PERSON_RUN_ACTIONS } : run.view;
+    out[`GET /v1/agent-runs/${id}`] = () => json(view);
     out[`GET /v1/agent-runs/${id}/items`] = () =>
       json({ run: run.view.run, items: run.items, last_seq: last, next_seq: last, resync: false });
   }
   return out;
 }
 
-function renderPane(runId: string, extra: Partial<Parameters<typeof RunPane>[0]> = {}): void {
-  mockApi(routes());
+function renderPane(
+  runId: string,
+  extra: Partial<Parameters<typeof RunPane>[0]> = {},
+  v2 = true,
+): void {
+  mockApi(routes(v2));
   const Page = (): JSX.Element => (
     <ClockProvider now={() => DEMO_MS}>
       <RunPane runId={runId} onTrace={() => undefined} {...extra} />
@@ -61,9 +88,9 @@ describe("SHL-13 run pane", () => {
     expect(within(strip).getByText("1 blocked · 1 running")).toBeTruthy();
     expect(document.querySelector("[data-live-dot]")).not.toBeNull();
     // Sign off run is a person's, and only once the run ends.
-    expect(screen.getByRole("button", { name: "Sign off run" }).hasAttribute("disabled")).toBe(
-      true,
-    );
+    expect(
+      (await screen.findByRole("button", { name: "Sign off run" })).hasAttribute("disabled"),
+    ).toBe(true);
     expect(await screen.findByText("yes, run it")).toBeTruthy();
     const states = [...document.querySelectorAll("[data-tool-card]")].map((n) =>
       n.getAttribute("data-tool-card"),
@@ -135,8 +162,9 @@ describe("SHL-13 run pane", () => {
     expect(
       screen.getByText("Auto mode is off — I'll propose the plan and wait for your go-ahead."),
     ).toBeTruthy();
-    const run = screen.getByRole("button", { name: "Run" });
-    expect(run.hasAttribute("disabled")).toBe(true);
+    // P-09-T14: the server lists agent_run.start for Marcus, so Run is his to press.
+    const run = await screen.findByRole("button", { name: "Run" });
+    expect(run.hasAttribute("disabled")).toBe(false);
     expect(screen.queryByRole("button", { name: "Sign off run" })).toBeNull();
     expect(screen.getAllByText(/^0 of /)).toHaveLength(5);
   });
@@ -145,9 +173,9 @@ describe("SHL-13 run pane", () => {
     renderPane(RUN_4127_PLAN_ID);
     expect(await screen.findByText("Run planning for Northwind.")).toBeTruthy();
     expect(await screen.findByText("Plan ready — approve?")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "yes, run it" }).hasAttribute("disabled")).toBe(
-      true,
-    );
+    expect(
+      (await screen.findByRole("button", { name: "yes, run it" })).hasAttribute("disabled"),
+    ).toBe(false);
     expect(screen.getByRole("button", { name: "Change order…" })).toBeTruthy();
   });
 
@@ -160,9 +188,11 @@ describe("SHL-13 run pane", () => {
     expect(within(card).getByText(/Recommended/)).toBeTruthy();
     expect(within(card).getByText(/Keystone participant file/)).toBeTruthy();
     expect(within(card).getByText("1 of 1")).toBeTruthy();
-    for (const name of ["Skip", "Previous", "Next"]) {
-      expect(within(card).getByRole("button", { name }).hasAttribute("disabled")).toBe(true);
-    }
+    // P-09-T14: Skip is live; Next waits for an answer.
+    expect((await within(card).findByRole("button", { name: "Skip" })).hasAttribute("disabled")).toBe(
+      false,
+    );
+    expect(within(card).getByRole("button", { name: "Next" }).hasAttribute("disabled")).toBe(true);
   });
 
   it("frame 8: Copperleaf's close run counts 6 of 9 with 3 running", async () => {
@@ -203,14 +233,33 @@ describe("SHL-13 run pane", () => {
       "li",
     ) as HTMLElement;
     fireEvent.click(within(card).getByRole("button", { expanded: false }));
-    expect(within(card).getByRole("button", { name: "Rerun" }).hasAttribute("disabled")).toBe(
-      true,
-    );
-    fireEvent.click(within(card).getByRole("button", { name: "Not helpful" }));
+    fireEvent.click(await within(card).findByRole("button", { name: "Not helpful" }));
     const picker = within(card).getByRole("dialog", { name: "What was wrong" });
     const submit = within(picker).getByRole("button", { name: "Submit" });
     expect(submit.hasAttribute("disabled")).toBe(true);
     fireEvent.click(within(picker).getByLabelText("Wrong document"));
     expect(submit.hasAttribute("disabled")).toBe(false);
+  });
+
+  it("P-09-T14: with agent_runtime.v2 off no human action is offered", async () => {
+    renderPane(RUN_4127_ID, {}, false);
+    await screen.findByRole("region", { name: "Run projection" });
+    for (const name of ["Sign off run", "yes, run it", "Retry", "Not helpful"]) {
+      expect(screen.queryByRole("button", { name })).toBeNull();
+    }
+    expect((screen.getByLabelText("Message") as HTMLInputElement).disabled).toBe(true);
+  });
+
+  it("P-09-T14: a run the server lists no action on offers none", async () => {
+    renderPane(RUN_CLOSE_COPPERLEAF_ID);
+    await screen.findByText("Closing agent is running");
+    expect(screen.queryByRole("button", { name: "Sign off run" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Skip" })).toBeNull();
+  });
+
+  it("P-09-T14: Sign off run lists the open issues and decisions before it is sent", async () => {
+    renderPane(RUN_4127_DONE_ID);
+    fireEvent.click(await screen.findByRole("button", { name: "Sign off run" }));
+    expect(await screen.findByRole("alertdialog")).toBeTruthy();
   });
 });

@@ -120,6 +120,7 @@ class V2Facts:
     work_item_ref: str | None
     plan_id: UUID | None
     stepped: bool  # the run has runtime steps: a v2 run, not a legacy specialist
+    plan_version: int | None = None  # P-09-T14: the plan's newest version (`expected_version`)
 
     @property
     def v2(self) -> bool:
@@ -134,7 +135,8 @@ _FACTS = text(
     "SELECT r.id, r.run_number, r.state, r.state_reason, r.blocked_on, r.records_read, "
     "r.citations_count, r.writes_done, r.writes_waiting, r.agent_ms, r.agent_minutes, "
     "r.runs_as_user_id, r.trigger_kind, r.work_item_ref, r.plan_id, "
-    "EXISTS (SELECT 1 FROM agent_run_steps s WHERE s.run_id = r.id) AS stepped "
+    "EXISTS (SELECT 1 FROM agent_run_steps s WHERE s.run_id = r.id) AS stepped, "
+    "(SELECT max(p.version) FROM agent_plans p WHERE p.run_id = r.id) AS plan_version "
     "FROM agent_runs r WHERE r.id = ANY(:ids)"
 ).bindparams(bindparam("ids", type_=ARRAY(PgUUID(as_uuid=True))))
 
@@ -164,6 +166,7 @@ async def v2_facts(session: AsyncSession, run_ids: Sequence[UUID]) -> dict[UUID,
             r.work_item_ref,
             r.plan_id,
             bool(r.stepped),
+            r.plan_version,
         )
         for r in rows
     }

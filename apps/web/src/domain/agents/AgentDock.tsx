@@ -206,6 +206,7 @@ export function AgentDock({
         <Suspense fallback={null}>
           <RunPane
             runId={open}
+            engagementId={engagementId}
             onTrace={showTrace}
             agents={dockAgents(runs.data ?? [])}
             {...(selectedRef === undefined ? {} : { selectedRef })}

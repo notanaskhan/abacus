@@ -216,6 +216,7 @@ class RunHeaderOut(BaseModel):
     runs_as_name: Annotated[str | None, classified("internal")] = None
     trigger_kind: Annotated[TriggerKind | None, classified("internal")] = None
     work_item_ref: Annotated[str | None, classified("internal")] = None
+    plan_version: Annotated[int | None, classified("internal")] = None  # P-09-T14
 
 
 class RunViewOut(BaseModel):
@@ -550,6 +551,7 @@ def _header(header: RunHeader | None) -> RunHeaderOut | None:
         runs_as_name=header.runs_as_name,
         trigger_kind=cast(TriggerKind | None, trigger),
         work_item_ref=header.work_item_ref,
+        plan_version=header.plan_version,
     )
 
 
