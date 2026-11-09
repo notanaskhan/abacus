@@ -1,0 +1,25 @@
+{
+  "_source": "P-09-T12 (TASK-6521; DEC-3121): the E0 runs' figures, verbatim from the WB-09 and SHL-13 handoffs as P-09-T01's fixtures hold them (apps/web/src/fixtures/seed/agent-runs.ts, agent-dock.ts).",
+  "run_4118": {
+    "agent": "season_progress_reporter", "initiator": "Hannah Leclerc",
+    "started": "2026-09-14T09:00:00-05:00", "finished": "2026-09-14T09:02:41-05:00",
+    "records_read": {"returns": 224, "engagements": 214, "binders": 241, "activity": 1946, "total": 2625},
+    "open_returns": {"parts": [10, 26, 26, 17], "total": 79},
+    "citations": 79, "writes_done": 0, "writes_waiting": 1
+  },
+  "run_4127": {
+    "agent": "audit_planning", "initiator": "Marcus Delaney", "engagement": "Northwind Robotics, Inc.",
+    "plan_approved": "2026-09-14T09:24:00-05:00", "trial_balance_done": "2026-09-14T09:26:00-05:00",
+    "materiality_blocked": "2026-09-14T09:27:00-05:00", "internal_control_failed": "2026-09-14T09:58:00-05:00",
+    "complete": "2026-10-02T16:05:00-05:00", "signed_off": "2026-10-02T16:10:00-05:00",
+    "levels": [1, 5, 1, 4, 3], "workpapers": 14
+  },
+  "run_aug17": {
+    "agent": "season_progress_reporter", "initiator": "Hannah Leclerc", "state": "failed",
+    "reason": "connector_unauthorised", "detail": "CCH Axcess Tax returned 401: token expired"
+  },
+  "copperleaf_run_2": {
+    "agent": "close.month_end", "initiator": "Raj Malhotra", "steps": 9, "done": 6, "running": 3,
+    "square": {"gross": "73166.90", "fees": "1684.54", "net": "71482.36"}
+  }
+}

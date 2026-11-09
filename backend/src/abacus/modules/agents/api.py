@@ -140,6 +140,11 @@ from abacus.modules.agents.run_backfill_workflow import (
     BackfillInput,
 )
 from abacus.modules.agents.run_logs import run_log_count  # A-07-T31: binder section G
+from abacus.modules.agents.run_recorder import (  # P-09-T12: the synthetic scenario's runs
+    RecordedRun,
+    RecordedStep,
+    record_synthetic_run,
+)
 from abacus.modules.agents.run_stream import badge_stream as agent_badge_stream  # P-10-T26
 from abacus.modules.agents.runs import run_initiators
 from abacus.modules.agents.runs_routes import engagement_runs_router, runs_router
@@ -454,6 +459,8 @@ __all__ = [
     "ProposedValue",
     "RecommendFacts",
     "Recommended",
+    "RecordedRun",
+    "RecordedStep",
     "ReservedAction",
     "ReviewOutcome",
     "ReviewUnavailable",
@@ -526,6 +533,7 @@ __all__ = [
     "pending_suggestions",
     "recommend",
     "record_code_run",
+    "record_synthetic_run",
     "register_change_set_applier",
     "register_engagement_run_agent",
     "register_mode_mapping",
