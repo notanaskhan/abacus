@@ -32,7 +32,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from typing import Final, Literal, cast
@@ -40,15 +40,24 @@ from uuid import UUID
 
 from sqlalchemy import text
 
+from abacus.kernel.config import settings
 from abacus.kernel.crypto import open_sealed, seal
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
+from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork, uow
 from abacus.modules.assurance.governance_room import SECTIONS_FINGERPRINT
-from abacus.modules.engagements.api import assurance_item, get_ref
-from abacus.modules.identity.api import AuthContext, Forbidden, authorise, grant_tcwg_member
+from abacus.modules.communications.api import RecipientRef, SendScope, send_templated
+from abacus.modules.engagements.api import assurance_item, get_ref, work_item_titles
+from abacus.modules.identity.api import (
+    AuthContext,
+    Forbidden,
+    authorise,
+    firm_name,
+    grant_tcwg_member,
+)
 from abacus.modules.methodology.api import published_body
-from abacus.modules.organisations.api import contact_facts, signer_contacts
+from abacus.modules.organisations.api import ContactFacts, contact_facts, signer_contacts
 
 Kind = Literal["planning_260", "completion_260", "sd_mw_265", "management_letter"]
 KINDS: Final[tuple[Kind, ...]] = (
@@ -717,7 +726,60 @@ async def approve_and_send(
             ),
             scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
         )
+    if channel == "governance_room":
+        await _letter_emails(ctx, engagement_id, work_item_id, send_id, recipients, people)
     return send_id
+
+
+# R-02-T14 (AC-36; DF-40; DEC-3140): each room recipient hears of the letter by the firm's
+# `governance_letter_sent` email (database words; no amount, no letter text). A template the firm
+# has not published blocks that email (recorded `blocked`, logged) and never undoes the send; the
+# letter still waits in the room. The envelope channel's own email is C7's.
+_GOVERNANCE_LETTER_SENT: Final = "governance_letter_sent"
+_log = get_logger(__name__)
+
+
+async def _letter_emails(
+    ctx: AuthContext,
+    engagement_id: UUID,
+    work_item_id: UUID,
+    send_id: UUID,
+    recipients: Sequence[UUID],
+    people: Mapping[UUID, ContactFacts],
+) -> None:
+    variables = {
+        "firm_name": await firm_name(ctx.tenant_id),
+        "work_item": (await work_item_titles(ctx.tenant, [work_item_id])).get(work_item_id, ""),
+        "portal_link": f"{settings().app_base_url.rstrip('/')}/portal",
+    }
+    for contact in recipients:
+        person = people.get(contact)
+        if person is None:
+            continue
+        recipient = (
+            RecipientRef("user", person.user_id)
+            if person.user_id is not None
+            else RecipientRef("contact", contact)
+        )
+        try:
+            sent = await send_templated(
+                ctx,
+                _GOVERNANCE_LETTER_SENT,
+                recipient,
+                {**variables, "client_first_name": person.display_name.split(" ")[0] or "there"},
+                scope=SendScope(engagement_id=engagement_id),
+                idempotency_key=f"{_GOVERNANCE_LETTER_SENT}:{send_id}:{contact}",
+                authority="governance_comm.approve_send",
+            )
+        except (Forbidden, NotFound, DomainInvalid, DomainConflict) as refused:
+            _log.warning(
+                "governance_letter.email_refused", send_id=send_id, error=type(refused).__name__
+            )
+            continue
+        if sent.status == "blocked":
+            _log.info(
+                "governance_letter.email_blocked", send_id=send_id, reason=sent.blocked_reason
+            )
 
 
 # --- recipients ----------------------------------------------------------------------------------

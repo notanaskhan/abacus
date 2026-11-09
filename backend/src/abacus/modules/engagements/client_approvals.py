@@ -288,6 +288,13 @@ class ClientApprovalRequested(DomainEvent):
     item_id: Annotated[UUID, classified("internal")]
     scope_kind: Annotated[str, classified("internal")]
     scope_id: Annotated[UUID, classified("internal")]
+    # R-02-T14 (DEC-3140): for the "approval requested" email, when the provider knows them: the
+    # engagement, the contact the item went to, the person who sent it and the send it was part
+    # of (one email per send, not per item).
+    engagement_id: Annotated[UUID | None, classified("internal")] = None
+    recipient_contact_id: Annotated[UUID | None, classified("internal")] = None
+    sent_by: Annotated[UUID | None, classified("internal")] = None
+    send_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class ClientApprovalDecided(DomainEvent):
@@ -302,6 +309,10 @@ class ClientApprovalDecided(DomainEvent):
 
 _DELIVERED: Final = "client_approval.requested"
 _BATCH: Final = "approval_batch"
+
+
+def _optional(value: object) -> UUID | None:
+    return None if value is None else UUID(str(value))
 
 
 async def deliver_proposed_entries(tenant: TenantContext, event: OutboxEvent) -> None:
@@ -323,6 +334,10 @@ async def deliver_proposed_entries(tenant: TenantContext, event: OutboxEvent) ->
                     item_id=entry_id,
                     scope_kind="work_item",
                     scope_id=work_item_id,
+                    engagement_id=engagement_id,
+                    recipient_contact_id=_optional(event.payload.get("recipient_contact_id")),
+                    sent_by=_optional(event.payload.get("sent_by")),
+                    send_id=batch_id,
                 )
             )
         tx.record(
