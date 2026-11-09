@@ -12,7 +12,7 @@ issue the same kind of token, so changing providers is configuration, not code.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from functools import lru_cache
 from typing import Protocol, cast
@@ -43,6 +43,9 @@ class VerifiedIdentity:
     mfa_at: datetime | None
     # SPEC-015: the provider-verified email (`email` with `email_verified: true`), else None.
     email: str | None = None
+    # P-10-T26 (DEC-3141): when the token expires (`exp`), so a stream closes before it does.
+    # Not part of who the identity is: two verifications of one person compare equal.
+    expires_at: datetime | None = field(default=None, compare=False)
 
 
 class TokenVerifier(Protocol):
@@ -102,7 +105,13 @@ class JwtVerifier:
         subject = claims["sub"]
         if not isinstance(subject, str) or not 1 <= len(subject) <= 255:
             raise InvalidToken("subject must be a non-empty string")
-        return VerifiedIdentity(self._issuer, subject, _mfa_at(claims), _verified_email(claims))
+        return VerifiedIdentity(
+            self._issuer,
+            subject,
+            _mfa_at(claims),
+            _verified_email(claims),
+            expires_at=datetime.fromtimestamp(expires, UTC),
+        )
 
 
 def _verified_email(claims: dict[str, object]) -> str | None:

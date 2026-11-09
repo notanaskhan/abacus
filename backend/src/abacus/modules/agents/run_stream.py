@@ -20,7 +20,7 @@ from uuid import UUID
 from fastapi.responses import StreamingResponse
 from sqlalchemy import text
 
-from abacus.kernel import realtime
+from abacus.kernel import realtime, request_context
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.modules.agents.runs import authorised_run
@@ -78,6 +78,8 @@ async def run_events_stream(
             return False
         return True
 
+    # P-10-T26: read before the body runs, while the request's context is bound.
+    expires = request_context.token_expires_at()
     realtime.claim_slot(ctx.tenant_id, ctx.user_id)
 
     async def body() -> AsyncIterator[bytes]:
@@ -87,7 +89,7 @@ async def run_events_stream(
                 still_allowed,
                 topics=(f"run:{run_id}", f"access:{ctx.user_id}"),
                 last_seq=last_event_id,
-                expires_at=None,
+                expires_at=expires,
             ):
                 yield chunk
         finally:
@@ -123,12 +125,14 @@ async def badge_stream(ctx: AuthContext) -> StreamingResponse:
     async def always() -> bool:
         return True
 
+    # P-10-T26: read before the body runs, while the request's context is bound.
+    expires = request_context.token_expires_at()
     realtime.claim_slot(ctx.tenant_id, ctx.user_id)
 
     async def body() -> AsyncIterator[bytes]:
         try:
             async for chunk in realtime.stream(
-                source, always, topics=(f"badge:{ctx.user_id}",), last_seq=None, expires_at=None
+                source, always, topics=(f"badge:{ctx.user_id}",), last_seq=None, expires_at=expires
             ):
                 yield chunk
         finally:

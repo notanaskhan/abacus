@@ -24,7 +24,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import bindparam, text
 from sqlalchemy.dialects.postgresql import ARRAY, TEXT
 
-from abacus.kernel import realtime
+from abacus.kernel import realtime, request_context
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainForbidden, NotFound
 from abacus.kernel.uow import Ref, Scope, Target, uow
@@ -119,6 +119,8 @@ async def events_stream(
 ) -> StreamingResponse:
     held = await _authorised(ctx, topics)
     # The slot first: a refused seventh stream registers nothing (S33 security review).
+    # P-10-T26: read before the body runs, while the request's context is bound.
+    expires = request_context.token_expires_at()
     realtime.claim_slot(ctx.tenant_id, ctx.user_id)
     stream_id = uuid4()
     _STREAMS[stream_id] = (ctx.user_id, held)
@@ -180,7 +182,7 @@ async def events_stream(
                 still_allowed,
                 topics=(*held, f"access:{ctx.user_id}"),
                 last_seq=last_event_id,
-                expires_at=None,
+                expires_at=expires,
             ):
                 yield chunk
         finally:
