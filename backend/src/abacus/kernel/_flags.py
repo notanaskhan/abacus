@@ -11,6 +11,11 @@ AGENT_DOCK_ENABLED = Flag(
     kind="boolean",
     default="false",
 )
+AGENT_RUNTIME_V2 = Flag(
+    name="agent_runtime.v2",
+    kind="boolean",
+    default="false",
+)
 AGENTS_CLIENT_DATA_OPTIN = Flag(
     name="agents.client_data_optin",
     kind="boolean",
@@ -158,6 +163,11 @@ EBP_MODULES = Flag(
 )
 ENGAGEMENT_AGENT_ENABLED = Flag(
     name="engagement_agent.enabled",
+    kind="boolean",
+    default="false",
+)
+ENGAGEMENT_RUN_ENABLED = Flag(
+    name="engagement_run.enabled",
     kind="boolean",
     default="false",
 )
@@ -355,6 +365,11 @@ PROMPT_EVIDENCE_SCREENER = Flag(
         "evidence.screen@v0",
     ),
 )
+REALTIME_SSE = Flag(
+    name="realtime.sse",
+    kind="boolean",
+    default="false",
+)
 REPORTING_FS_DISCLOSURE = Flag(
     name="reporting.fs_disclosure",
     kind="boolean",
@@ -448,6 +463,7 @@ WORKPAPERS_DRAFTING = Flag(
 
 FLAGS: dict[str, Flag] = {
     "agent_dock.enabled": AGENT_DOCK_ENABLED,
+    "agent_runtime.v2": AGENT_RUNTIME_V2,
     "agents.client_data_optin": AGENTS_CLIENT_DATA_OPTIN,
     "ai_policy.v1": AI_POLICY_V1,
     "assurance.estimates_rp": ASSURANCE_ESTIMATES_RP,
@@ -478,6 +494,7 @@ FLAGS: dict[str, Flag] = {
     "ebp.form5500_tieout": EBP_FORM5500_TIEOUT,
     "ebp.modules": EBP_MODULES,
     "engagement_agent.enabled": ENGAGEMENT_AGENT_ENABLED,
+    "engagement_run.enabled": ENGAGEMENT_RUN_ENABLED,
     "engagements.letter_composer": ENGAGEMENTS_LETTER_COMPOSER,
     "engagements.roll_forward_v2": ENGAGEMENTS_ROLL_FORWARD_V2,
     "evidence.citations_v2": EVIDENCE_CITATIONS_V2,
@@ -515,6 +532,7 @@ FLAGS: dict[str, Flag] = {
     "portal.sign_in_v2": PORTAL_SIGN_IN_V2,
     "portal.third_party_room": PORTAL_THIRD_PARTY_ROOM,
     "prompt.evidence.screener": PROMPT_EVIDENCE_SCREENER,
+    "realtime.sse": REALTIME_SSE,
     "reporting.fs_disclosure": REPORTING_FS_DISCLOSURE,
     "reporting.generated_documents": REPORTING_GENERATED_DOCUMENTS,
     "retrieval.auto": RETRIEVAL_AUTO,
