@@ -544,6 +544,9 @@ jobs:
       # A-04-T09: the materiality recommender's suite, graded by code on its fake answers.
       - if: needs.changes.outputs.agents == 'true'
         run: make evals-recommend-fast
+      # P-09-T15: the AgentBlocks conformance suite (blocks.py, output_checks.py; code only).
+      - if: needs.changes.outputs.agents == 'true'
+        run: make evals-blocks-fast
 
   # One stable check for branch protection: green only when every stage 1 and 2 job passed.
   stage-2:
