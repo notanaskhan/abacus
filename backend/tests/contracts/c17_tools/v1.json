@@ -1,0 +1,206 @@
+{
+  "ToolCallIn": {
+    "additionalProperties": false,
+    "description": "One model-requested tool call, as the harness hands it over (C17 v1, frozen).",
+    "properties": {
+      "arguments": {
+        "additionalProperties": true,
+        "cls": "restricted",
+        "title": "Arguments",
+        "type": "object"
+      },
+      "attempt": {
+        "cls": "internal",
+        "minimum": 1,
+        "title": "Attempt",
+        "type": "integer"
+      },
+      "grant_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "default": null,
+        "title": "Grant Id"
+      },
+      "name": {
+        "cls": "internal",
+        "maxLength": 80,
+        "title": "Name",
+        "type": "string"
+      },
+      "run_id": {
+        "cls": "internal",
+        "format": "uuid",
+        "title": "Run Id",
+        "type": "string"
+      },
+      "step_seq": {
+        "cls": "internal",
+        "minimum": 1,
+        "title": "Step Seq",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "run_id",
+      "step_seq",
+      "attempt",
+      "name"
+    ],
+    "title": "ToolCallIn",
+    "type": "object"
+  },
+  "ToolOutcome": {
+    "description": "What a call answers (C17 v1, frozen). Exactly one of `result` and `code` is set. A refusal\ncarries no detail about the refused record: the model reads the code alone.",
+    "properties": {
+      "active_ms": {
+        "cls": "internal",
+        "default": 0,
+        "minimum": 0,
+        "title": "Active Ms",
+        "type": "integer"
+      },
+      "code": {
+        "anyOf": [
+          {
+            "enum": [
+              "consent_required",
+              "not_visible",
+              "out_of_scope",
+              "row_limit",
+              "stale_source",
+              "no_grant",
+              "tool_not_registered",
+              "invalid_arguments",
+              "not_permitted",
+              "idempotency_key_reused",
+              "tool_failed"
+            ],
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "default": null,
+        "title": "Code"
+      },
+      "name": {
+        "cls": "internal",
+        "title": "Name",
+        "type": "string"
+      },
+      "ok": {
+        "cls": "internal",
+        "title": "Ok",
+        "type": "boolean"
+      },
+      "records_read": {
+        "cls": "internal",
+        "default": 0,
+        "minimum": 0,
+        "title": "Records Read",
+        "type": "integer"
+      },
+      "replayed": {
+        "cls": "internal",
+        "default": false,
+        "title": "Replayed",
+        "type": "boolean"
+      },
+      "restricted": {
+        "cls": "internal",
+        "default": false,
+        "title": "Restricted",
+        "type": "boolean"
+      },
+      "result": {
+        "anyOf": [
+          {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "restricted",
+        "default": null,
+        "title": "Result"
+      }
+    },
+    "required": [
+      "name",
+      "ok"
+    ],
+    "title": "ToolOutcome",
+    "type": "object"
+  },
+  "ToolPageIn": {
+    "additionalProperties": false,
+    "description": "What a paginated tool takes (AC-R6): an opaque cursor from the last page, and a page size of\nat most 200. Code reads past the page; the model never sees the rows it didn't ask for.",
+    "properties": {
+      "cursor": {
+        "anyOf": [
+          {
+            "maxLength": 200,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "default": null,
+        "title": "Cursor"
+      },
+      "limit": {
+        "cls": "internal",
+        "default": 50,
+        "maximum": 200,
+        "minimum": 1,
+        "title": "Limit",
+        "type": "integer"
+      }
+    },
+    "title": "ToolPageIn",
+    "type": "object"
+  },
+  "ToolPageOut": {
+    "description": "What a paginated tool answers beside its rows: the next page's cursor (None on the last)\nand the total, counted by code (ADR-050), never by the model.",
+    "properties": {
+      "next_cursor": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "cls": "internal",
+        "default": null,
+        "title": "Next Cursor"
+      },
+      "total": {
+        "cls": "internal",
+        "minimum": 0,
+        "title": "Total",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "total"
+    ],
+    "title": "ToolPageOut",
+    "type": "object"
+  }
+}

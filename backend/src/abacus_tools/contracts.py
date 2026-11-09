@@ -537,6 +537,17 @@ MODELS: dict[str, tuple[str, ...]] = {
     ),
 }
 Schema = dict[str, object]
+# In-process contracts (P-10-T22): models a module calls rather than routes, named
+# `<import path>:<model>`. C17 v1 freezes the tool call and outcome, and the page shapes a tool
+# declares; the kinds, refusals and error codes are enums inside them.
+IN_PROCESS: dict[str, tuple[str, ...]] = {
+    "c17_tools": (
+        "abacus.modules.agents.api:ToolCallIn",
+        "abacus.modules.agents.api:ToolOutcome",
+        "abacus.modules.agents.api:ToolPageIn",
+        "abacus.modules.agents.api:ToolPageOut",
+    ),
+}
 
 
 # A frozen name whose OpenAPI key changed with no change of shape: FastAPI qualifies a model's key
@@ -548,7 +559,22 @@ SCHEMA_KEYS: Final[dict[str, str]] = {
 }
 
 
+def _in_process(contract: str) -> dict[str, Schema]:
+    from importlib import import_module
+
+    from pydantic import BaseModel
+
+    found: dict[str, Schema] = {}
+    for ref in IN_PROCESS[contract]:
+        path, name = ref.split(":")
+        model = cast(type[BaseModel], getattr(import_module(path), name))
+        found[name] = cast(Schema, model.model_json_schema(mode="serialization"))
+    return found
+
+
 def current(contract: str) -> dict[str, Schema]:
+    if contract in IN_PROCESS:
+        return _in_process(contract)
     schemas = cast(dict[str, Schema], json.loads(document())["components"]["schemas"])
     return {name: schemas[SCHEMA_KEYS.get(name, name)] for name in MODELS[contract]}
 
@@ -601,7 +627,7 @@ def breaking(frozen: dict[str, Schema], now: dict[str, Schema]) -> list[str]:
 
 
 def snapshots() -> dict[str, list[Path]]:
-    return {c: sorted((CONTRACTS / c).glob("v*.json")) for c in MODELS}
+    return {c: sorted((CONTRACTS / c).glob("v*.json")) for c in (*MODELS, *IN_PROCESS)}
 
 
 def check() -> list[str]:
