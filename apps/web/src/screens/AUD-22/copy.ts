@@ -200,3 +200,13 @@ export const INTERNAL_CONTROL = {
     },
   ] as readonly PaperSection[],
 };
+
+/** A-07-T29 remainder (DEC-3144): each communication kind's row title and clock, the screen's own
+ * labels (not sample data), for the live list. */
+export const KIND_ROW: Readonly<Record<string, CommRow>> = {
+  planning_260: PLANNING_260,
+  completion_260: COMPLETION_260,
+  sd_mw_265: SD_MW_265,
+  reportable_703: REPORTABLE_703,
+  management_letter: MANAGEMENT_LETTER,
+};

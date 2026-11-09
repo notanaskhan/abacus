@@ -2,10 +2,15 @@
 // AUD-19's checklist (its "AUD-21" and "AUD-22" link chips) and closed by their Back. AUD-21 reads
 // the representation letter through C11's route; AUD-22 draws the handoff's E0 rows (frame a) until
 // A-07-T33 wires its live read. Every send, approve and remind stays the person's, bound later.
-import { representationLetterOptions } from "@abacus/api-client/query";
+import {
+  governanceListOptions,
+  governanceOptions,
+  representationLetterOptions,
+} from "@abacus/api-client/query";
 import type { CockpitCanvas } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
+import { useFlag } from "../../app-core/flags";
 
 // Fixture mode only (DEC-3030): both canvases still draw the E0 artboard's words, so a production
 // build must not carry them (SPEC-048 AC-10). The compile-time flag drops the imports there; the
@@ -25,23 +30,93 @@ const ReportBuilder = FIXTURES
   : () => null;
 const LiveReport = lazy(async () => ({ default: (await import("../AUD-23")).LiveReport }));
 
+// A-07-T28/T29 remainder (DEC-3144): with `audits.letters` on, AUD-21 and AUD-22 open on the
+// server's data through their live modules, which carry no artboard words.
+const RepLetterLive = lazy(async () => ({
+  default: (await import("../AUD-21/RepLetterLive")).RepLetterLive,
+}));
+const GovernanceLive = lazy(async () => ({
+  default: (await import("../AUD-22/GovernanceLive")).GovernanceLive,
+}));
+
+/** How the letters open here: the E0 frames (tests, fixture builds), live (`audits.letters`), or
+ * not at all (the chips go to the host). */
+export type LettersMode = "e0" | "live" | null;
+
+export function useLettersMode(): LettersMode {
+  const live = useFlag("audits.letters") === true;
+  if (FIXTURES) return "e0";
+  return live ? "live" : null;
+}
+
 /** The checklist link targets that open inside the cockpit. */
 export type CompletionLetter = "AUD-21" | "AUD-22" | "AUD-23";
 
-export function isCompletionLetter(target: string): target is CompletionLetter {
-  return target === "AUD-23" || (FIXTURES && (target === "AUD-21" || target === "AUD-22"));
+export function isCompletionLetter(
+  target: string,
+  mode: LettersMode = FIXTURES ? "e0" : null,
+): target is CompletionLetter {
+  // AUD-23 reads the live report (A-07-T34); AUD-21 and AUD-22 open in E0 or live mode (DEC-3144).
+  if (target === "AUD-23") return true;
+  return mode !== null && (target === "AUD-21" || target === "AUD-22");
 }
 
 export function useCompletionLetterCanvas(
   workItemId: string,
   letter: CompletionLetter | null,
   onBack: () => void,
+  mode: LettersMode = FIXTURES ? "e0" : null,
 ): CockpitCanvas | null {
+  const path = { path: { work_item_id: workItemId } };
   const rep = useQuery({
-    ...representationLetterOptions({ path: { work_item_id: workItemId } }),
+    ...representationLetterOptions(path),
     enabled: letter === "AUD-21",
     retry: false,
   });
+  const list = useQuery({
+    ...governanceListOptions(path),
+    enabled: mode === "live" && letter === "AUD-22",
+    retry: false,
+  });
+  const [picked, setPicked] = useState<string | null>(null);
+  const communication = picked ?? list.data?.items[0]?.id ?? null;
+  const detail = useQuery({
+    ...governanceOptions({
+      path: { work_item_id: workItemId, communication_id: communication ?? "" },
+    }),
+    enabled: mode === "live" && letter === "AUD-22" && communication !== null,
+    retry: false,
+  });
+  if (mode === "live" && letter === "AUD-22") {
+    return {
+      title: "Governance communications",
+      ...(list.isPending ? { state: { kind: "loading" } as const } : {}),
+      children:
+        list.data === undefined ? null : (
+          <Suspense fallback={null}>
+            <GovernanceLive
+              list={list.data}
+              letter={detail.data}
+              selected={communication}
+              onSelect={setPicked}
+              onBack={onBack}
+            />
+          </Suspense>
+        ),
+    };
+  }
+  if (mode === "live" && letter === "AUD-21") {
+    return {
+      title: "Representation letter",
+      ...(rep.isPending ? { state: { kind: "loading" } as const } : {}),
+      children:
+        rep.data === undefined ? null : (
+          <Suspense fallback={null}>
+            <RepLetterLive letter={rep.data} onBack={onBack} />
+          </Suspense>
+        ),
+    };
+  }
   if (letter === "AUD-23") {
     return {
       title: "Report builder",
