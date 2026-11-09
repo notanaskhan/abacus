@@ -4,8 +4,9 @@
 What the firm delivered to a client, the page images and downloads of it, management's approval of
 the latest draft, page comments, and the governance room's letters, reports and inquiries. Every
 route answers, in order: the matrix action (client people only, `scope_only`; firm roles, agents,
-system and support are denied); 501 until R-02-T09, T12 and T15. Flags arrive with R-02-T14
-(`portal.deliverables`, `portal.governance_room`), and only then does an off flag answer 404.
+system and support are denied); then an off flag answers 404 (R-02-T14). The deliverables reads,
+pages, download and approve are live (S33 partials round, DEC-3136: `reporting.api` reads, evidence
+serves, C18 decides); page comments stay 501 until R-02-T22.
 
 Pack rule (SPEC-646 AC-7): no field here is named or holds materiality, a threshold, a policy
 name, a review note, a sign-off, the agent, a confidence or an internal status. Client strings are
@@ -20,8 +21,10 @@ from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query, Request, Response
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, ConfigDict, Field
 
+from abacus.kernel import clock
 from abacus.kernel._flags import PORTAL_DELIVERABLES, PORTAL_GOVERNANCE_ROOM
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
@@ -33,7 +36,9 @@ from abacus.modules.assurance.api import (
     governance_rooms,
     room_letters,
 )
+from abacus.modules.engagements.api import ClientApprovalKind
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_member, display_names
+from abacus.modules.reporting.api import PortalVersion as PortalVersionFacts
 
 # A portal person themself, never a break-glass support context.
 Member = Annotated[AuthContext, Depends(current_member)]
@@ -354,66 +359,134 @@ governance_router = AbacusRouter(prefix="/v1/portal/governance", tags=["portal g
 _V = "/{deliverable_id}/versions/{version_no}"
 
 
-@deliverables_router.get(
-    "", action="deliverable.read", response_model=DeliverablesOut, errors=(501,)
-)
+@deliverables_router.get("", action="deliverable.read", response_model=DeliverablesOut)
 async def list_deliverables_route(
     ctx: Member,
     scope_id: Annotated[UUID | None, Query()] = None,
     section: Annotated[DeliverableSection | None, Query()] = None,
 ) -> DeliverablesOut:
     """POR-09's rail: bands by work item, Coming next, My K-1s. Only what a grant covers."""
+    from abacus.modules.reporting.api import portal_client_ids, portal_deliverables
+
     await _flag_on(ctx, PORTAL_DELIVERABLES)
-    _not_yet()
+    del section  # the screen selects My K-1s; the rail is the same read
+    found = await portal_deliverables(ctx, await portal_client_ids(ctx, scope_id))
+    return DeliverablesOut(
+        bands=[
+            DeliverableBandOut(
+                key=b.key,
+                label=b.label,
+                work_item_id=b.work_item_id,
+                rows=[
+                    DeliverableRowOut(
+                        id=r.deliverable_id,
+                        kind=cast(DeliverableKind, r.kind),
+                        title=r.title,
+                        status=cast(DeliverableStatus, r.status),
+                        latest_version=r.latest_version,
+                        page_count=r.page_count,
+                        released_on=r.released_on,
+                        restricted_use=r.restricted_use,
+                    )
+                    for r in b.rows
+                ],
+            )
+            for b in found.bands
+        ],
+        coming_next=[ComingNextOut(label=c.label, expected=c.expected) for c in found.coming_next],
+        k1s=[
+            K1RowOut(package_id=k.package_id, title=k.title, released_on=k.released_on)
+            for k in found.k1s
+        ],
+    )
+
+
+def _version_out(v: PortalVersionFacts) -> DeliverableVersionOut:
+    return DeliverableVersionOut(
+        version_no=v.version_no,
+        is_draft=v.is_draft,
+        page_count=v.page_count,
+        page_comments=v.page_comments,
+        published_at=v.published_at,
+        seen_hash=v.seen_hash,
+        withdrawn_on=v.withdrawn_on,
+        allowed_actions=list(v.allowed_actions),
+    )
 
 
 @deliverables_router.get(
-    "/{deliverable_id}", action="deliverable.read", response_model=DeliverableOut, errors=(501,)
+    "/{deliverable_id}", action="deliverable.read", response_model=DeliverableOut
 )
 async def get_deliverable_route(deliverable_id: UUID, ctx: Member) -> DeliverableOut:
     """Meta, page count and versions. Outside every audience: 404."""
+    from abacus.modules.reporting.api import portal_deliverable
+
     await _flag_on(ctx, PORTAL_DELIVERABLES)
-    _not_yet()
+    found = await portal_deliverable(ctx, deliverable_id)
+    return DeliverableOut(
+        id=found.id,
+        kind=cast(DeliverableKind, found.kind),
+        title=found.title,
+        status=cast(DeliverableStatus, found.status),
+        restricted_use=found.restricted_use,
+        legend_kind=cast(LegendKind | None, found.legend_kind),
+        versions=[_version_out(v) for v in found.versions],
+    )
 
 
-@deliverables_router.get(
-    _V, action="deliverable.read", response_model=DeliverableVersionOut, errors=(501,)
-)
+@deliverables_router.get(_V, action="deliverable.read", response_model=DeliverableVersionOut)
 async def get_deliverable_version_route(
     deliverable_id: UUID, version_no: int, ctx: Member
 ) -> DeliverableVersionOut:
     """One version; a superseded one reads under Earlier versions for audience members."""
+    from abacus.modules.reporting.api import portal_deliverable
+
     await _flag_on(ctx, PORTAL_DELIVERABLES)
-    _not_yet()
+    found = await portal_deliverable(ctx, deliverable_id)
+    for v in found.versions:
+        if v.version_no == version_no:
+            return _version_out(v)
+    raise NotFound("deliverable")
 
 
-@deliverables_router.get(
-    f"{_V}/pages/{{page}}", action="deliverable.read", response_model=bytes, errors=(501,)
-)
+@deliverables_router.get(f"{_V}/pages/{{page}}", action="deliverable.read", response_model=bytes)
 async def get_deliverable_page_route(
     deliverable_id: UUID, version_no: int, page: int, ctx: Member
 ) -> Response:
     """A PNG served by the server, the watermark burned in on a draft (AC-22, AC-38)."""
+    from abacus.modules.evidence.api import deliverable_page
+    from abacus.modules.reporting.api import reader_version
+
     await _flag_on(ctx, PORTAL_DELIVERABLES)
-    _not_yet()
+    reader = await reader_version(ctx, deliverable_id, version_no)
+    image = await deliverable_page(ctx, reader.servable(), page)
+    return Response(
+        image.content,
+        media_type=image.media_type,
+        headers={"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"},
+    )
 
 
-@deliverables_router.get(
-    f"{_V}/download", action="deliverable.download", response_model=bytes, errors=(501,)
-)
+@deliverables_router.get(f"{_V}/download", action="deliverable.download", response_model=bytes)
 async def download_deliverable_route(
     deliverable_id: UUID, version_no: int, request: Request, ctx: Member
 ) -> Response:
     """302 to a 60-second signed URL; the access event and receipt land in one unit of work."""
+    from abacus.modules.evidence.api import issue_deliverable_download
+    from abacus.modules.reporting.api import reader_version
+
+    del request
     await _flag_on(ctx, PORTAL_DELIVERABLES)
-    _not_yet()
+    reader = await reader_version(ctx, deliverable_id, version_no)
+    issued = await issue_deliverable_download(ctx, reader.servable())
+    return RedirectResponse(issued.url, status_code=302, headers={"Cache-Control": "no-store"})
 
 
 @deliverables_router.post(
     f"{_V}/approve",
     action="statement.client_approve",
     response_model=DeliverableApprovedOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def approve_deliverable_route(
     deliverable_id: UUID,
@@ -422,10 +495,33 @@ async def approve_deliverable_route(
     ctx: Member,
     idempotency_key: IdempotencyKey,
 ) -> DeliverableApprovedOut:
-    """Management approves the latest draft: `reporting.api.apply_management_decision`.
-    Not the decider: 403 `not_decider`. No fresh second factor: 401 `mfa_recent_required`."""
+    """Management approves the latest draft through C18 (the version's approval item, the same
+    decision POR-08 records). Not the decider: 403 `not_decider`; a stale `seen_hash` or a
+    version that is not the newest awaiting one: 409 `item_changed`."""
+    from abacus.modules.engagements.api import ClientDecision, ItemChanged
+    from abacus.modules.portal import approvals as c18
+    from abacus.modules.reporting.api import approval_target
+
     await _flag_on(ctx, PORTAL_DELIVERABLES)
-    _not_yet()
+    target = await approval_target(ctx, deliverable_id, version_no)
+    if target is None:
+        raise ItemChanged
+    decided = await c18.client_decide(
+        ctx,
+        cast(ClientApprovalKind, target.kind),
+        target.item_id,
+        ClientDecision(decision="approve", seen_hash=body.seen_hash),
+        action="statement.client_approve",
+        idempotency_key=idempotency_key,
+    )
+    if decided.state != "approved":
+        raise ItemChanged
+    return DeliverableApprovedOut(
+        deliverable_id=deliverable_id,
+        version_no=version_no,
+        status="approved_by_you",
+        approved_at=decided.decided_at or await clock.now(ctx.tenant),
+    )
 
 
 @deliverables_router.get(
