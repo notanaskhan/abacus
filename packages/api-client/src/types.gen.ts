@@ -2155,6 +2155,75 @@ export type AnalysisRunOut = {
 };
 
 /**
+ * AnchorCountsIn
+ *
+ * Up to 200 anchors for the C-27 chips on one screen.
+ */
+export type AnchorCountsIn = {
+    /**
+     * Anchors
+     */
+    anchors: Array<AnchorRef>;
+};
+
+/**
+ * AnchorFactsOut
+ *
+ * The anchor as its provider reports it at read time (label resolved, never stored).
+ */
+export type AnchorFactsOut = {
+    /**
+     * Anchor Id
+     */
+    anchor_id: string;
+    /**
+     * Anchor Kind
+     */
+    anchor_kind: string;
+    /**
+     * Client Visible
+     */
+    client_visible?: boolean;
+    /**
+     * Engagement Id
+     */
+    engagement_id?: string | null;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Locator
+     */
+    locator?: {
+        [key: string]: string | number;
+    } | null;
+};
+
+/**
+ * AnchorRef
+ *
+ * What a thread or a to-do is on: the kind, the record and, for a row or a cell, where in it.
+ * The provider validates the locator against its schema (P-05-T05).
+ */
+export type AnchorRef = {
+    /**
+     * Anchor Id
+     */
+    anchor_id: string;
+    /**
+     * Anchor Kind
+     */
+    anchor_kind: string;
+    /**
+     * Locator
+     */
+    locator?: {
+        [key: string]: string | number;
+    } | null;
+};
+
+/**
  * AnnotationBody
  */
 export type AnnotationBody = {
@@ -3163,6 +3232,16 @@ export type AssignedOut = {
      * Evidence Version Id
      */
     evidence_version_id: string;
+};
+
+/**
+ * AssigneeCandidatesOut
+ */
+export type AssigneeCandidatesOut = {
+    /**
+     * Items
+     */
+    items: Array<PersonCandidateOut>;
 };
 
 /**
@@ -9106,6 +9185,60 @@ export type CommentOut = {
 };
 
 /**
+ * CommentPostIn
+ *
+ * A reply; `corrects_comment_id` makes it the author's Correct… (DF-18).
+ */
+export type CommentPostIn = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Citation Ids
+     */
+    citation_ids?: Array<string>;
+    /**
+     * Corrects Comment Id
+     */
+    corrects_comment_id?: string | null;
+    /**
+     * Mention Team
+     */
+    mention_team?: boolean;
+    /**
+     * Mention User Ids
+     */
+    mention_user_ids?: Array<string>;
+};
+
+/**
+ * CommentPostedOut
+ *
+ * The thread after the post, and who was notified (the delivery line, AC-7).
+ */
+export type CommentPostedOut = {
+    /**
+     * Comment Id
+     */
+    comment_id: string;
+    /**
+     * Notified
+     */
+    notified?: Array<PersonRefOut>;
+    /**
+     * Notified By Email
+     */
+    notified_by_email?: Array<string>;
+    thread: ThreadOut;
+};
+
+/**
+ * CommentThreadStatus
+ */
+export type CommentThreadStatus = 'open' | 'resolved';
+
+/**
  * CommitteeMemberOut
  */
 export type CommitteeMemberOut = {
@@ -11015,6 +11148,17 @@ export type ConvertToMisstatementIn = {
      * Type
      */
     type: 'factual' | 'judgmental' | 'projected';
+};
+
+/**
+ * ConvertedOut
+ */
+export type ConvertedOut = {
+    /**
+     * Review Note Id
+     */
+    review_note_id: string;
+    thread: ThreadOut;
 };
 
 /**
@@ -14193,6 +14337,71 @@ export type EnclosuresBlock = {
      * Type
      */
     type?: 'enclosures';
+};
+
+/**
+ * EngagementActivityExportIn
+ *
+ * The same filter, streamed as CSV (masked values, formula cells neutralised; AC-38).
+ */
+export type EngagementActivityExportIn = {
+    /**
+     * Categories
+     */
+    categories?: Array<string>;
+    /**
+     * Q
+     */
+    q?: string | null;
+    /**
+     * Segment
+     */
+    segment?: 'all' | 'human' | 'via_agent' | 'policy';
+    /**
+     * Since
+     */
+    since?: string | null;
+    /**
+     * Until
+     */
+    until?: string | null;
+};
+
+/**
+ * EngagementActivityQueryIn
+ *
+ * AUD-29's filter: segment, categories, the business-time window, the search text and the
+ * keyset cursor. Counts (`all`, `human`, `via_agent`, `policy`) foot under every filter.
+ */
+export type EngagementActivityQueryIn = {
+    /**
+     * Categories
+     */
+    categories?: Array<string>;
+    /**
+     * Cursor
+     */
+    cursor?: string | null;
+    /**
+     * Limit
+     */
+    limit?: number;
+    /**
+     * Q
+     */
+    q?: string | null;
+    /**
+     * Segment
+     */
+    segment?: 'all' | 'human' | 'via_agent' | 'policy';
+    /**
+     * Since
+     */
+    since?: string | null;
+    /**
+     * Until
+     */
+    until?: string | null;
 };
 
 /**
@@ -30919,6 +31128,21 @@ export type MentionCandidateOut = {
 };
 
 /**
+ * MentionCandidatesOut
+ */
+export type MentionCandidatesOut = {
+    /**
+     * Members
+     */
+    members: Array<PersonCandidateOut>;
+    /**
+     * Not On Engagement
+     */
+    not_on_engagement?: Array<PersonCandidateOut>;
+    team?: TeamEntryOut | null;
+};
+
+/**
  * MessageTriageOut
  *
  * `GET /v1/inbox/messages/{id}/triage`.
@@ -32910,6 +33134,42 @@ export type PayrollOut = {
 };
 
 /**
+ * PersonCandidateOut
+ *
+ * A mention or assignee candidate; a non-member is listed greyed, never a walled person.
+ */
+export type PersonCandidateOut = {
+    /**
+     * Initials
+     */
+    initials: string;
+    /**
+     * Is Self
+     */
+    is_self?: boolean;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Reason
+     */
+    reason?: 'not_on_engagement' | null;
+    /**
+     * Selectable
+     */
+    selectable?: boolean;
+    /**
+     * Title
+     */
+    title?: string | null;
+    /**
+     * User Id
+     */
+    user_id: string;
+};
+
+/**
  * PersonChipOut
  */
 export type PersonChipOut = {
@@ -32993,6 +33253,26 @@ export type PersonPatchIn = {
      * Version
      */
     version: number;
+};
+
+/**
+ * PersonRefOut
+ *
+ * A person as the UI names them; `initials` for the avatar. Never the agent.
+ */
+export type PersonRefOut = {
+    /**
+     * Initials
+     */
+    initials: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * User Id
+     */
+    user_id: string;
 };
 
 /**
@@ -49028,6 +49308,20 @@ export type TeamApproveIn = {
 };
 
 /**
+ * TeamEntryOut
+ */
+export type TeamEntryOut = {
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Member Count
+     */
+    member_count: number;
+};
+
+/**
  * TeamMemberIn
  */
 export type TeamMemberIn = {
@@ -49769,6 +50063,231 @@ export type ThirdPartyFeeOut = {
 };
 
 /**
+ * ThreadCommentOut
+ *
+ * One comment. `body` is null when redacted; a correction names what it corrects.
+ */
+export type ThreadCommentOut = {
+    author: PersonRefOut;
+    /**
+     * Author Side
+     */
+    author_side: 'firm' | 'client';
+    /**
+     * Body
+     */
+    body?: string | null;
+    /**
+     * Citation Ids
+     */
+    citation_ids?: Array<string>;
+    /**
+     * Corrected By Comment Id
+     */
+    corrected_by_comment_id?: string | null;
+    /**
+     * Corrects Comment Id
+     */
+    corrects_comment_id?: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Mentioned User Ids
+     */
+    mentioned_user_ids?: Array<string>;
+    redaction?: ThreadRedactionOut | null;
+};
+
+/**
+ * ThreadCountOut
+ */
+export type ThreadCountOut = {
+    anchor: AnchorRef;
+    /**
+     * Open
+     */
+    open: number;
+    /**
+     * Resolved
+     */
+    resolved: number;
+    /**
+     * Unread
+     */
+    unread: number;
+};
+
+/**
+ * ThreadCountsOut
+ */
+export type ThreadCountsOut = {
+    /**
+     * Items
+     */
+    items: Array<ThreadCountOut>;
+};
+
+/**
+ * ThreadEventOut
+ *
+ * A thread event (append-only): who resolved, reopened, shared or converted it, and when.
+ */
+export type ThreadEventOut = {
+    actor: PersonRefOut;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Kind
+     */
+    kind: 'opened' | 'resolved' | 'reopened' | 'muted' | 'unmuted' | 'converted' | 'shared' | 'unshared';
+    /**
+     * Ref Id
+     */
+    ref_id?: string | null;
+    /**
+     * Ref Type
+     */
+    ref_type?: 'todo' | 'review_note' | null;
+};
+
+/**
+ * ThreadMuteIn
+ */
+export type ThreadMuteIn = {
+    /**
+     * Muted
+     */
+    muted: boolean;
+};
+
+/**
+ * ThreadOpenIn
+ *
+ * Open a thread on an anchor with its first comment.
+ */
+export type ThreadOpenIn = {
+    anchor: AnchorRef;
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Citation Ids
+     */
+    citation_ids?: Array<string>;
+    /**
+     * Mention Team
+     */
+    mention_team?: boolean;
+    /**
+     * Mention User Ids
+     */
+    mention_user_ids?: Array<string>;
+};
+
+/**
+ * ThreadOut
+ *
+ * A thread with its comments, newest last, and what the reader may do on it.
+ */
+export type ThreadOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<'comment.create' | 'comment.resolve' | 'comment.share' | 'comment.redact' | 'review_note.raise' | 'todo.create'>;
+    anchor: AnchorFactsOut;
+    /**
+     * Comment Count
+     */
+    comment_count: number;
+    /**
+     * Comments
+     */
+    comments?: Array<ThreadCommentOut>;
+    /**
+     * Engagement Id
+     */
+    engagement_id: string;
+    /**
+     * Events
+     */
+    events?: Array<ThreadEventOut>;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Last Comment At
+     */
+    last_comment_at?: string | null;
+    /**
+     * Muted
+     */
+    muted?: boolean;
+    /**
+     * Opened On Version No
+     */
+    opened_on_version_no?: number | null;
+    /**
+     * Pinned Version No
+     */
+    pinned_version_no?: number | null;
+    status: CommentThreadStatus;
+    /**
+     * Unread
+     */
+    unread?: boolean;
+    /**
+     * Visibility
+     */
+    visibility: 'internal' | 'shared';
+};
+
+/**
+ * ThreadPageOut
+ *
+ * The P-36 envelope; `counts` holds `open` and `resolved` for the anchor (SHL-18d).
+ */
+export type ThreadPageOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<ThreadOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
  * ThreadReadIn
  */
 export type ThreadReadIn = {
@@ -49786,6 +50305,50 @@ export type ThreadReadOut = {
      * Read
      */
     read?: boolean;
+};
+
+/**
+ * ThreadRedactIn
+ */
+export type ThreadRedactIn = {
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
+ * ThreadRedactionOut
+ *
+ * The redaction stub every reader sees in the comment's place; the sealed body is kept and
+ * never returned.
+ */
+export type ThreadRedactionOut = {
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Redacted At
+     */
+    redacted_at: string;
+    redacted_by: PersonRefOut;
+};
+
+/**
+ * ThreadShareIn
+ *
+ * Share with a grant scope (C5); only on a client-visible anchor (409 otherwise).
+ */
+export type ThreadShareIn = {
+    /**
+     * Scope Id
+     */
+    scope_id: string;
+    /**
+     * Scope Kind
+     */
+    scope_kind: string;
 };
 
 /**
@@ -50331,6 +50894,271 @@ export type TinRevealOut = {
      */
     value: string;
 };
+
+/**
+ * TodoAssignIn
+ */
+export type TodoAssignIn = {
+    /**
+     * Assignee User Id
+     */
+    assignee_user_id: string;
+};
+
+/**
+ * TodoChecklistItemIn
+ */
+export type TodoChecklistItemIn = {
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * TodoChecklistItemOut
+ */
+export type TodoChecklistItemOut = {
+    /**
+     * Done
+     */
+    done: boolean;
+    /**
+     * Done At
+     */
+    done_at?: string | null;
+    done_by?: PersonRefOut | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Position
+     */
+    position: number;
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * TodoChecklistItemPatchIn
+ */
+export type TodoChecklistItemPatchIn = {
+    /**
+     * Done
+     */
+    done?: boolean | null;
+    /**
+     * Text
+     */
+    text?: string | null;
+};
+
+/**
+ * TodoCountOut
+ */
+export type TodoCountOut = {
+    anchor: AnchorRef;
+    /**
+     * Open
+     */
+    open: number;
+};
+
+/**
+ * TodoCountsOut
+ */
+export type TodoCountsOut = {
+    /**
+     * Items
+     */
+    items: Array<TodoCountOut>;
+};
+
+/**
+ * TodoCreateIn
+ */
+export type TodoCreateIn = {
+    anchor?: AnchorRef | null;
+    /**
+     * Assignee User Id
+     */
+    assignee_user_id: string;
+    /**
+     * Checklist
+     */
+    checklist?: Array<string>;
+    /**
+     * Due On
+     */
+    due_on?: string | null;
+    /**
+     * Engagement Id
+     */
+    engagement_id?: string | null;
+    /**
+     * Scope Kind
+     */
+    scope_kind?: 'engagement' | 'firm';
+    /**
+     * Source Thread Id
+     */
+    source_thread_id?: string | null;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * TodoMoveIn
+ *
+ * Re-anchor within the same engagement (422 `anchor_scope_mismatch` otherwise).
+ */
+export type TodoMoveIn = {
+    anchor: AnchorRef;
+};
+
+/**
+ * TodoOut
+ *
+ * A to-do. `overdue` is derived at read time in the firm's time zone, never stored (AC-23).
+ */
+export type TodoOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions?: Array<'todo.update' | 'todo.complete' | 'todo.assign' | 'todo.delete' | 'comment.create'>;
+    anchor?: AnchorFactsOut | null;
+    assignee: PersonRefOut;
+    /**
+     * Bucket
+     */
+    bucket?: 'overdue' | 'today' | 'this_week' | 'later' | 'no_date' | null;
+    /**
+     * Checklist
+     */
+    checklist?: Array<TodoChecklistItemOut>;
+    /**
+     * Comment Count
+     */
+    comment_count?: number;
+    /**
+     * Created At
+     */
+    created_at: string;
+    created_by: PersonRefOut;
+    /**
+     * Done At
+     */
+    done_at?: string | null;
+    done_by?: PersonRefOut | null;
+    /**
+     * Due On
+     */
+    due_on?: string | null;
+    /**
+     * Engagement Id
+     */
+    engagement_id?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Overdue
+     */
+    overdue?: boolean;
+    /**
+     * Row Text
+     */
+    row_text?: string | null;
+    /**
+     * Scope Kind
+     */
+    scope_kind: 'engagement' | 'firm';
+    /**
+     * Source Thread Id
+     */
+    source_thread_id?: string | null;
+    status: TodoStatus;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Unread
+     */
+    unread?: boolean;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * TodoPageOut
+ *
+ * The P-36 envelope; for `assignee=me`, `counts` holds `overdue`, `today`, `this_week`,
+ * `later` and `no_date` in the firm's time zone (AC-29), and `open` and `done`.
+ */
+export type TodoPageOut = {
+    /**
+     * Counts
+     */
+    counts?: {
+        [key: string]: number;
+    };
+    /**
+     * Facets
+     */
+    facets?: {
+        [key: string]: Array<Facet>;
+    };
+    /**
+     * Items
+     */
+    items: Array<TodoOut>;
+    /**
+     * Next Cursor
+     */
+    next_cursor?: string | null;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Total Capped
+     */
+    total_capped?: boolean;
+};
+
+/**
+ * TodoPatchIn
+ *
+ * Autosave: title and due date, under `If-Match: <version>` (409 `stale_version`).
+ */
+export type TodoPatchIn = {
+    /**
+     * Clear Due On
+     */
+    clear_due_on?: boolean;
+    /**
+     * Due On
+     */
+    due_on?: string | null;
+    /**
+     * Title
+     */
+    title?: string | null;
+};
+
+/**
+ * TodoStatus
+ */
+export type TodoStatus = 'open' | 'done';
 
 /**
  * TotalsOut
@@ -66487,6 +67315,620 @@ export type ClientRelationshipsResponses = {
 
 export type ClientRelationshipsResponse = ClientRelationshipsResponses[keyof ClientRelationshipsResponses];
 
+export type ListCommentThreadsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query: {
+        /**
+         * Anchor Kind
+         */
+        anchor_kind: string;
+        /**
+         * Anchor Id
+         */
+        anchor_id: string;
+        /**
+         * Locator
+         */
+        locator?: string | null;
+        /**
+         * Status
+         */
+        status?: CommentThreadStatus | null;
+    };
+    url: '/v1/comment-threads';
+};
+
+export type ListCommentThreadsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListCommentThreadsError = ListCommentThreadsErrors[keyof ListCommentThreadsErrors];
+
+export type ListCommentThreadsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ThreadPageOut;
+};
+
+export type ListCommentThreadsResponse = ListCommentThreadsResponses[keyof ListCommentThreadsResponses];
+
+export type OpenThreadData = {
+    body: ThreadOpenIn;
+    headers?: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/comment-threads';
+};
+
+export type OpenThreadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type OpenThreadError = OpenThreadErrors[keyof OpenThreadErrors];
+
+export type OpenThreadResponses = {
+    /**
+     * Successful Response
+     */
+    201: CommentPostedOut;
+};
+
+export type OpenThreadResponse = OpenThreadResponses[keyof OpenThreadResponses];
+
+export type ThreadCountsData = {
+    body: AnchorCountsIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/comment-threads/counts';
+};
+
+export type ThreadCountsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ThreadCountsError = ThreadCountsErrors[keyof ThreadCountsErrors];
+
+export type ThreadCountsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ThreadCountsOut;
+};
+
+export type ThreadCountsResponse = ThreadCountsResponses[keyof ThreadCountsResponses];
+
+export type PostCommentData = {
+    body: CommentPostIn;
+    headers?: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Thread Id
+         */
+        thread_id: string;
+    };
+    query?: never;
+    url: '/v1/comment-threads/{thread_id}/comments';
+};
+
+export type PostCommentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PostCommentError = PostCommentErrors[keyof PostCommentErrors];
+
+export type PostCommentResponses = {
+    /**
+     * Successful Response
+     */
+    201: CommentPostedOut;
+};
+
+export type PostCommentResponse = PostCommentResponses[keyof PostCommentResponses];
+
+export type ConvertToReviewNoteData = {
+    body?: never;
+    headers?: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Thread Id
+         */
+        thread_id: string;
+    };
+    query?: never;
+    url: '/v1/comment-threads/{thread_id}/convert-to-review-note';
+};
+
+export type ConvertToReviewNoteErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ConvertToReviewNoteError = ConvertToReviewNoteErrors[keyof ConvertToReviewNoteErrors];
+
+export type ConvertToReviewNoteResponses = {
+    /**
+     * Successful Response
+     */
+    201: ConvertedOut;
+};
+
+export type ConvertToReviewNoteResponse = ConvertToReviewNoteResponses[keyof ConvertToReviewNoteResponses];
+
+export type MuteThreadData = {
+    body: ThreadMuteIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Thread Id
+         */
+        thread_id: string;
+    };
+    query?: never;
+    url: '/v1/comment-threads/{thread_id}/mute';
+};
+
+export type MuteThreadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type MuteThreadError = MuteThreadErrors[keyof MuteThreadErrors];
+
+export type MuteThreadResponses = {
+    /**
+     * Successful Response
+     */
+    200: ThreadOut;
+};
+
+export type MuteThreadResponse = MuteThreadResponses[keyof MuteThreadResponses];
+
+export type ReadThreadData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Thread Id
+         */
+        thread_id: string;
+    };
+    query?: never;
+    url: '/v1/comment-threads/{thread_id}/read';
+};
+
+export type ReadThreadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ReadThreadError = ReadThreadErrors[keyof ReadThreadErrors];
+
+export type ReadThreadResponses = {
+    /**
+     * Successful Response
+     */
+    200: ThreadOut;
+};
+
+export type ReadThreadResponse = ReadThreadResponses[keyof ReadThreadResponses];
+
+export type ReopenThreadData = {
+    body?: never;
+    headers?: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Thread Id
+         */
+        thread_id: string;
+    };
+    query?: never;
+    url: '/v1/comment-threads/{thread_id}/reopen';
+};
+
+export type ReopenThreadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ReopenThreadError = ReopenThreadErrors[keyof ReopenThreadErrors];
+
+export type ReopenThreadResponses = {
+    /**
+     * Successful Response
+     */
+    200: ThreadOut;
+};
+
+export type ReopenThreadResponse = ReopenThreadResponses[keyof ReopenThreadResponses];
+
+export type ResolveThreadData = {
+    body?: never;
+    headers?: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Thread Id
+         */
+        thread_id: string;
+    };
+    query?: never;
+    url: '/v1/comment-threads/{thread_id}/resolve';
+};
+
+export type ResolveThreadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ResolveThreadError = ResolveThreadErrors[keyof ResolveThreadErrors];
+
+export type ResolveThreadResponses = {
+    /**
+     * Successful Response
+     */
+    200: ThreadOut;
+};
+
+export type ResolveThreadResponse = ResolveThreadResponses[keyof ResolveThreadResponses];
+
+export type ShareThreadData = {
+    body: ThreadShareIn;
+    headers?: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Thread Id
+         */
+        thread_id: string;
+    };
+    query?: never;
+    url: '/v1/comment-threads/{thread_id}/share';
+};
+
+export type ShareThreadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ShareThreadError = ShareThreadErrors[keyof ShareThreadErrors];
+
+export type ShareThreadResponses = {
+    /**
+     * Successful Response
+     */
+    200: ThreadOut;
+};
+
+export type ShareThreadResponse = ShareThreadResponses[keyof ShareThreadResponses];
+
 export type RunConflictCheckData = {
     body: ConflictCheckIn;
     headers?: {
@@ -70499,6 +71941,181 @@ export type SetAiExclusionResponses = {
 };
 
 export type SetAiExclusionResponse = SetAiExclusionResponses[keyof SetAiExclusionResponses];
+
+export type AssigneeCandidatesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: {
+        /**
+         * Q
+         */
+        q?: string | null;
+    };
+    url: '/v1/engagements/{engagement_id}/assignee-candidates';
+};
+
+export type AssigneeCandidatesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AssigneeCandidatesError = AssigneeCandidatesErrors[keyof AssigneeCandidatesErrors];
+
+export type AssigneeCandidatesResponses = {
+    /**
+     * Successful Response
+     */
+    200: AssigneeCandidatesOut;
+};
+
+export type AssigneeCandidatesResponse = AssigneeCandidatesResponses[keyof AssigneeCandidatesResponses];
+
+export type EngagementActivityExportData = {
+    body: EngagementActivityExportIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/audit-events/export';
+};
+
+export type EngagementActivityExportErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EngagementActivityExportError = EngagementActivityExportErrors[keyof EngagementActivityExportErrors];
+
+export type EngagementActivityExportResponses = {
+    /**
+     * Response Engagement Activity Export
+     *
+     * Successful Response
+     */
+    200: Blob | File;
+};
+
+export type EngagementActivityExportResponse = EngagementActivityExportResponses[keyof EngagementActivityExportResponses];
+
+export type EngagementActivityQueryData = {
+    body: EngagementActivityQueryIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: never;
+    url: '/v1/engagements/{engagement_id}/audit-events/query';
+};
+
+export type EngagementActivityQueryErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type EngagementActivityQueryError = EngagementActivityQueryErrors[keyof EngagementActivityQueryErrors];
+
+export type EngagementActivityQueryResponses = {
+    /**
+     * Successful Response
+     */
+    200: AuditEventPageOut;
+};
+
+export type EngagementActivityQueryResponse = EngagementActivityQueryResponses[keyof EngagementActivityQueryResponses];
 
 export type SetAutoModeData = {
     body: AutoModeIn;
@@ -77371,6 +78988,67 @@ export type MaterialityVersionsResponses = {
 };
 
 export type MaterialityVersionsResponse = MaterialityVersionsResponses[keyof MaterialityVersionsResponses];
+
+export type ThreadMentionCandidatesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Engagement Id
+         */
+        engagement_id: string;
+    };
+    query?: {
+        /**
+         * Q
+         */
+        q?: string | null;
+    };
+    url: '/v1/engagements/{engagement_id}/mention-candidates';
+};
+
+export type ThreadMentionCandidatesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ThreadMentionCandidatesError = ThreadMentionCandidatesErrors[keyof ThreadMentionCandidatesErrors];
+
+export type ThreadMentionCandidatesResponses = {
+    /**
+     * Successful Response
+     */
+    200: MentionCandidatesOut;
+};
+
+export type ThreadMentionCandidatesResponse = ThreadMentionCandidatesResponses[keyof ThreadMentionCandidatesResponses];
 
 export type ApplyMethodologyData = {
     body: ApplyMethodologyIn;
@@ -122379,6 +124057,936 @@ export type BrowserErrorResponses = {
 };
 
 export type BrowserErrorResponse = BrowserErrorResponses[keyof BrowserErrorResponses];
+
+export type RedactThreadCommentData = {
+    body: ThreadRedactIn;
+    headers?: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Comment Id
+         */
+        comment_id: string;
+    };
+    query?: never;
+    url: '/v1/thread-comments/{comment_id}/redact';
+};
+
+export type RedactThreadCommentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type RedactThreadCommentError = RedactThreadCommentErrors[keyof RedactThreadCommentErrors];
+
+export type RedactThreadCommentResponses = {
+    /**
+     * Successful Response
+     */
+    200: ThreadCommentOut;
+};
+
+export type RedactThreadCommentResponse = RedactThreadCommentResponses[keyof RedactThreadCommentResponses];
+
+export type ListTodosData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Assignee
+         */
+        assignee?: 'me' | null;
+        /**
+         * Status
+         */
+        status?: TodoStatus | null;
+        /**
+         * Anchor Kind
+         */
+        anchor_kind?: string | null;
+        /**
+         * Anchor Id
+         */
+        anchor_id?: string | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/v1/todos';
+};
+
+export type ListTodosErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ListTodosError = ListTodosErrors[keyof ListTodosErrors];
+
+export type ListTodosResponses = {
+    /**
+     * Successful Response
+     */
+    200: TodoPageOut;
+};
+
+export type ListTodosResponse = ListTodosResponses[keyof ListTodosResponses];
+
+export type CreateTodoData = {
+    body: TodoCreateIn;
+    headers?: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/todos';
+};
+
+export type CreateTodoErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CreateTodoError = CreateTodoErrors[keyof CreateTodoErrors];
+
+export type CreateTodoResponses = {
+    /**
+     * Successful Response
+     */
+    201: TodoOut;
+};
+
+export type CreateTodoResponse = CreateTodoResponses[keyof CreateTodoResponses];
+
+export type TodoCountsData = {
+    body: AnchorCountsIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/todos/counts';
+};
+
+export type TodoCountsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type TodoCountsError = TodoCountsErrors[keyof TodoCountsErrors];
+
+export type TodoCountsResponses = {
+    /**
+     * Successful Response
+     */
+    200: TodoCountsOut;
+};
+
+export type TodoCountsResponse = TodoCountsResponses[keyof TodoCountsResponses];
+
+export type DeleteTodoData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Todo Id
+         */
+        todo_id: string;
+    };
+    query?: never;
+    url: '/v1/todos/{todo_id}';
+};
+
+export type DeleteTodoErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DeleteTodoError = DeleteTodoErrors[keyof DeleteTodoErrors];
+
+export type DeleteTodoResponses = {
+    /**
+     * Successful Response
+     */
+    200: TodoOut;
+};
+
+export type DeleteTodoResponse = DeleteTodoResponses[keyof DeleteTodoResponses];
+
+export type GetTodoData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Todo Id
+         */
+        todo_id: string;
+    };
+    query?: never;
+    url: '/v1/todos/{todo_id}';
+};
+
+export type GetTodoErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type GetTodoError = GetTodoErrors[keyof GetTodoErrors];
+
+export type GetTodoResponses = {
+    /**
+     * Successful Response
+     */
+    200: TodoOut;
+};
+
+export type GetTodoResponse = GetTodoResponses[keyof GetTodoResponses];
+
+export type PatchTodoData = {
+    body: TodoPatchIn;
+    headers?: {
+        /**
+         * If-Match
+         */
+        'If-Match'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Todo Id
+         */
+        todo_id: string;
+    };
+    query?: never;
+    url: '/v1/todos/{todo_id}';
+};
+
+export type PatchTodoErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PatchTodoError = PatchTodoErrors[keyof PatchTodoErrors];
+
+export type PatchTodoResponses = {
+    /**
+     * Successful Response
+     */
+    200: TodoOut;
+};
+
+export type PatchTodoResponse = PatchTodoResponses[keyof PatchTodoResponses];
+
+export type AssignTodoData = {
+    body: TodoAssignIn;
+    headers?: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Todo Id
+         */
+        todo_id: string;
+    };
+    query?: never;
+    url: '/v1/todos/{todo_id}/assign';
+};
+
+export type AssignTodoErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AssignTodoError = AssignTodoErrors[keyof AssignTodoErrors];
+
+export type AssignTodoResponses = {
+    /**
+     * Successful Response
+     */
+    200: TodoOut;
+};
+
+export type AssignTodoResponse = AssignTodoResponses[keyof AssignTodoResponses];
+
+export type AddChecklistItemData = {
+    body: TodoChecklistItemIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Todo Id
+         */
+        todo_id: string;
+    };
+    query?: never;
+    url: '/v1/todos/{todo_id}/checklist-items';
+};
+
+export type AddChecklistItemErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type AddChecklistItemError = AddChecklistItemErrors[keyof AddChecklistItemErrors];
+
+export type AddChecklistItemResponses = {
+    /**
+     * Successful Response
+     */
+    201: TodoOut;
+};
+
+export type AddChecklistItemResponse = AddChecklistItemResponses[keyof AddChecklistItemResponses];
+
+export type DeleteChecklistItemData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Todo Id
+         */
+        todo_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/v1/todos/{todo_id}/checklist-items/{item_id}';
+};
+
+export type DeleteChecklistItemErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DeleteChecklistItemError = DeleteChecklistItemErrors[keyof DeleteChecklistItemErrors];
+
+export type DeleteChecklistItemResponses = {
+    /**
+     * Successful Response
+     */
+    200: TodoOut;
+};
+
+export type DeleteChecklistItemResponse = DeleteChecklistItemResponses[keyof DeleteChecklistItemResponses];
+
+export type PatchChecklistItemData = {
+    body: TodoChecklistItemPatchIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Todo Id
+         */
+        todo_id: string;
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/v1/todos/{todo_id}/checklist-items/{item_id}';
+};
+
+export type PatchChecklistItemErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type PatchChecklistItemError = PatchChecklistItemErrors[keyof PatchChecklistItemErrors];
+
+export type PatchChecklistItemResponses = {
+    /**
+     * Successful Response
+     */
+    200: TodoOut;
+};
+
+export type PatchChecklistItemResponse = PatchChecklistItemResponses[keyof PatchChecklistItemResponses];
+
+export type CompleteTodoData = {
+    body?: never;
+    headers?: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Todo Id
+         */
+        todo_id: string;
+    };
+    query?: never;
+    url: '/v1/todos/{todo_id}/complete';
+};
+
+export type CompleteTodoErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CompleteTodoError = CompleteTodoErrors[keyof CompleteTodoErrors];
+
+export type CompleteTodoResponses = {
+    /**
+     * Successful Response
+     */
+    200: TodoOut;
+};
+
+export type CompleteTodoResponse = CompleteTodoResponses[keyof CompleteTodoResponses];
+
+export type MoveTodoData = {
+    body: TodoMoveIn;
+    headers?: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Todo Id
+         */
+        todo_id: string;
+    };
+    query?: never;
+    url: '/v1/todos/{todo_id}/move';
+};
+
+export type MoveTodoErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type MoveTodoError = MoveTodoErrors[keyof MoveTodoErrors];
+
+export type MoveTodoResponses = {
+    /**
+     * Successful Response
+     */
+    200: TodoOut;
+};
+
+export type MoveTodoResponse = MoveTodoResponses[keyof MoveTodoResponses];
+
+export type ReopenTodoData = {
+    body?: never;
+    headers?: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key'?: string | null;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Todo Id
+         */
+        todo_id: string;
+    };
+    query?: never;
+    url: '/v1/todos/{todo_id}/reopen';
+};
+
+export type ReopenTodoErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ReopenTodoError = ReopenTodoErrors[keyof ReopenTodoErrors];
+
+export type ReopenTodoResponses = {
+    /**
+     * Successful Response
+     */
+    200: TodoOut;
+};
+
+export type ReopenTodoResponse = ReopenTodoResponses[keyof ReopenTodoResponses];
+
+export type SeenTodoData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Todo Id
+         */
+        todo_id: string;
+    };
+    query?: never;
+    url: '/v1/todos/{todo_id}/seen';
+};
+
+export type SeenTodoErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SeenTodoError = SeenTodoErrors[keyof SeenTodoErrors];
+
+export type SeenTodoResponses = {
+    /**
+     * Successful Response
+     */
+    200: TodoOut;
+};
+
+export type SeenTodoResponse = SeenTodoResponses[keyof SeenTodoResponses];
 
 export type LatestComparisonData = {
     body?: never;
