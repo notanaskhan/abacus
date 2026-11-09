@@ -718,6 +718,12 @@ _REGISTERED: Final[tuple[NotificationKind, ...]] = (
         inline_actions=("accept_document", "return_document"),
     ),
     NotificationKind("proposed_entry_client_responded", "client_activity", "MessageSquare"),
+    # R-02-T14 (R-02 §4.8, DEC-3112): the portal's client-side kinds. Their producers land with
+    # R-02-T15 (the acknowledgement) and R-02-T16 (questions); every recipient is re-authorised
+    # at fan-out and read, and a row holds identifiers only (DEC-61).
+    NotificationKind("client_question_asked", "client_activity", "MessageSquare"),
+    NotificationKind("uncorrected_misstatements_acknowledged", "client_activity", "ShieldCheck"),
+    NotificationKind("tcwg_question_asked", "client_activity", "MessageSquare"),
     NotificationKind("connection.created", "client_activity", "Plug"),
     NotificationKind("connection.revoked", "client_activity", "Plug"),
     # A-02 §4.8 (A-02-T23): a connection that needs its client to sign in again (produced by the

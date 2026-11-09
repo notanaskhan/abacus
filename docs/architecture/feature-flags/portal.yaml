@@ -43,3 +43,27 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: portal.approvals
+    description: 'R-02 POR-08 Approvals (C18): /v1/portal/approvals* and the client approval decisions. Off: 404, the nav item and its home source are absent. Per firm, default off. R-02-T14, DEC-3112.'
+    owner: notanaskhan
+    created: 2026-11-09
+    expires: 2027-05-07
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: portal.deliverables
+    description: 'R-02 POR-09 Deliverables (C10): /v1/portal/deliverables*, page images, downloads and page comments. Off: 404 and the nav item is absent; publishing is never flagged. Per firm, default off. R-02-T14, DEC-3112.'
+    owner: notanaskhan
+    created: 2026-11-09
+    expires: 2027-05-07
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: portal.governance_room
+    description: 'R-02 POR-15 Governance room: /v1/portal/governance-rooms*, letters, reports and inquiries. Off: 404, and A-07 sends governance letters through the acknowledgement envelope (DEC-83). Per firm, default off. R-02-T14, DEC-3112.'
+    owner: notanaskhan
+    created: 2026-11-09
+    expires: 2027-05-07
+    override: DEC-137
+    kind: boolean
+    default: false
