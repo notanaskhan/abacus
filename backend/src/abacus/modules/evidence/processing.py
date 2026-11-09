@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from datetime import date
 from decimal import Decimal
@@ -58,6 +59,8 @@ from abacus.modules.evidence.events import (
 from abacus.modules.evidence.extraction import (
     EXTRACTOR_VERSION,
     Extraction,
+    Table,
+    TextLine,
     extract_isolated,
     from_ocr_pages,
 )
@@ -296,13 +299,15 @@ async def record_ocr_extraction(
     source: EvidenceVersion | InboxFile | IntakeSource,
     page_count: int,
     pages: list[str],
+    page_lines: Sequence[tuple[TextLine, ...]] = (),
+    tables: Sequence[Table] = (),
 ) -> None:
     """P-11-T25: the OCR-derived row (`ocr-v1`), newer than the extract step's, so the checks and
     every other reader of `newest_extraction` see a scan's words. Derived and rebuildable; the
     version's bytes never change. One per upload and extractor, by the existing unique indexes."""
     tenant_id, source_id = UUID(given.tenant_id), UUID(given.source_id)
     tenant = _system(tenant_id)
-    found = from_ocr_pages(page_count, pages)
+    found = from_ocr_pages(page_count, pages, page_lines, tables)
     document = json.dumps(asdict(found), default=_json_default, sort_keys=True)
     derived = await storage.put(tenant_id, document.encode(), under=under_key(source))
     async with uow(tenant) as tx:

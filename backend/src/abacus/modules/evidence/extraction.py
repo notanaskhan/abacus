@@ -161,9 +161,16 @@ def _from_pages(
     )
 
 
-def from_ocr_pages(count: int, pages: Sequence[str]) -> Extraction:
-    """P-11-T25: what OCR read, in the shape a PDF's text gives (SPEC-029's checks read it)."""
-    return _from_pages(count, pages, ())
+def from_ocr_pages(
+    count: int,
+    pages: Sequence[str],
+    page_lines: Sequence[tuple[TextLine, ...]] = (),
+    tables: Sequence[Table] = (),
+) -> Extraction:
+    """P-11-T25: what OCR read, in the shape a PDF's text gives (SPEC-029's checks read it).
+    P-11-T36: a scanned statement also carries its lines' boxes and its TABLES rows, so it reads
+    exactly as its digital twin."""
+    return _from_pages(count, pages, tables, page_lines)
 
 
 def _lines_of(page: object) -> tuple[TextLine, ...]:
