@@ -4,8 +4,8 @@
 One owner per route: P-09 owns the run view, items feed, run list and trace; P-10 owns the streams,
 run commands and engagement run below. `GET /v1/agent-runs/{id}` gains these fields with P-10-T29.
 
-Every route answers, in order: the matrix action; 501 until its task. Flags `agent_runtime.v2`,
-`realtime.sse` and `engagement_run.enabled` arrive on the Thu Jan 27, 2028 train; then 404 off.
+Every route answers, in order: its flag (P-10-T24: `agent_runtime.v2`, `realtime.sse` for the run
+stream, `engagement_run.enabled` for the engagement run; 404 off), then 501 until its task.
 
 **Events carry identifiers, enums and verified items only** (AC-T2): an item that would hold a
 Restricted-tagged field travels as `{id, ref_only: true}`. No model token is streamed (ADR-234).
@@ -22,8 +22,10 @@ from uuid import UUID
 from fastapi import Depends, Header, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 
+from abacus.kernel._flags import AGENT_RUNTIME_V2, ENGAGEMENT_RUN_ENABLED, REALTIME_SSE
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotImplementedYet
+from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.flags import Flag, flag_enabled
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -377,6 +379,13 @@ feedback_router = AbacusRouter(prefix="/v1/agent-feedback", tags=["agent runs v2
 capabilities_router = AbacusRouter(prefix="/v1/agents/capabilities", tags=["agent runs v2"])
 
 
+async def _flag_on(ctx: AuthContext, flag: Flag) -> None:
+    """P-10-T24 (DEC-3110): a firm whose flag is off reaches nothing here (404); the matrix
+    action is still declared and checked once the route has a resource (its build task)."""
+    if not await flag_enabled(ctx.tenant, flag):
+        raise NotFound(flag.name)
+
+
 def _not_yet() -> NoReturn:
     raise NotImplementedYet
 
@@ -391,6 +400,7 @@ async def run_events_route(
 ) -> Response:
     """`text/event-stream` of `RunEventOut`: every later event in order, then tails; a gap older
     than the prune horizon answers `resync`; a new wall sends `locked` within 60 seconds (T26)."""
+    await _flag_on(ctx, REALTIME_SSE)
     _not_yet()
 
 
@@ -405,6 +415,7 @@ async def start_engagement_run_route(
     engagement_id: UUID, body: EngagementRunIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> RunAcceptedOut:
     """The engagement run: its plan computed by code from methodology (T39)."""
+    await _flag_on(ctx, ENGAGEMENT_RUN_ENABLED)
     _not_yet()
 
 
@@ -418,6 +429,7 @@ async def set_auto_mode_route(
     engagement_id: UUID, body: AutoModeIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> AutoModeOut:
     """Standing plan approval per engagement type (ADR-186); refused for real firms in season 1."""
+    await _flag_on(ctx, ENGAGEMENT_RUN_ENABLED)
     _not_yet()
 
 
@@ -431,6 +443,7 @@ async def approve_run_plan_route(
     run_id: UUID, body: PlanDecisionIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> RunPlanOut:
     """Never optimistic. PLAN-001: plan decisions come only from `agents/commands.py` (T33)."""
+    await _flag_on(ctx, AGENT_RUNTIME_V2)
     _not_yet()
 
 
@@ -443,6 +456,7 @@ async def approve_run_plan_route(
 async def edit_run_plan_route(
     run_id: UUID, body: RunPlanEditIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> RunPlanOut:
+    await _flag_on(ctx, AGENT_RUNTIME_V2)
     _not_yet()
 
 
@@ -455,6 +469,7 @@ async def edit_run_plan_route(
 async def cancel_run_plan_route(
     run_id: UUID, body: PlanDecisionIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> RunPlanOut:
+    await _flag_on(ctx, AGENT_RUNTIME_V2)
     _not_yet()
 
 
@@ -471,6 +486,7 @@ async def answer_question_route(
     ctx: Ctx,
     idempotency_key: IdempotencyKey,
 ) -> RunQuestionOut:
+    await _flag_on(ctx, AGENT_RUNTIME_V2)
     _not_yet()
 
 
@@ -483,6 +499,7 @@ async def answer_question_route(
 async def skip_question_route(
     run_id: UUID, question_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> RunQuestionOut:
+    await _flag_on(ctx, AGENT_RUNTIME_V2)
     _not_yet()
 
 
@@ -496,6 +513,7 @@ async def skip_question_route(
 async def redirect_run_route(
     run_id: UUID, body: RunMessageIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> RunAcceptedOut:
+    await _flag_on(ctx, AGENT_RUNTIME_V2)
     _not_yet()
 
 
@@ -510,6 +528,7 @@ async def retry_step_route(
     run_id: UUID, step_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> RunAcceptedOut:
     """Re-dispatches only the failed step."""
+    await _flag_on(ctx, AGENT_RUNTIME_V2)
     _not_yet()
 
 
@@ -523,6 +542,7 @@ async def retry_step_route(
 async def stop_run_route(
     run_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> RunAcceptedOut:
+    await _flag_on(ctx, AGENT_RUNTIME_V2)
     _not_yet()
 
 
@@ -535,6 +555,7 @@ async def stop_run_route(
 async def sign_off_run_route(
     run_id: UUID, body: RunSignOffIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> RunV2Out:
+    await _flag_on(ctx, AGENT_RUNTIME_V2)
     _not_yet()
 
 
@@ -548,6 +569,7 @@ async def sign_off_run_route(
 async def create_feedback_route(
     body: AgentFeedbackIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> AgentFeedbackOut:
+    await _flag_on(ctx, AGENT_RUNTIME_V2)
     _not_yet()
 
 
@@ -557,4 +579,5 @@ async def create_feedback_route(
 async def list_capabilities_route(
     ctx: Ctx, engagement_id: Annotated[UUID | None, Query()] = None
 ) -> AgentCapabilitiesOut:
+    await _flag_on(ctx, AGENT_RUNTIME_V2)
     _not_yet()
