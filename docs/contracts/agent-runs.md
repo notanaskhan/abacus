@@ -322,3 +322,33 @@ Code: `agents/run_views.py`, `agents/runs.py`, `agents/run_recorder.py`.
   one approved plan, step rows, item events, counters) for a synthetic firm only (`synthetic_only`
   otherwise), as the run's initiator, with `agent_run.recorded_synthetic`. P-09-T12's scenario
   calls it; P-10-T25's harness records real runs.
+
+## 12. Trace read model (P-09-T08, 2026-11-09; TASK-6305; DEC-3005)
+Fills §10's trace fields; additive (`TraceRowOut.kind` gains `plan` and `step`). Code:
+`agents/trace.py`, `agents/runs.py`; migration 0751.
+
+- **Summary** on every trace (`TraceSummaryOut`): run number, agent label, start, trigger, runs
+  as, duration, records read, citations, writes done and waiting (code's counts).
+- **v2 timeline** from durable records (survives the 30-day `run_events` prune): the plan decision
+  (`kind: plan`, actor the decider) and each step row (`kind: step`). Phase by step kind (`tool`
+  execute, `compute` compute, `approval` proposed_write, `decision` decision, `question` steer,
+  else notice); mark by state (`succeeded` done, `running`/`dispatched` running,
+  `waiting_on_inputs` waiting, `blocked`, `failed`/`cancelled` failed, `queued`/`skipped` muted);
+  title "‹Verb› › ‹plan label›"; detail a code (needs, error code, blocked-on role). Legacy rows
+  gain a phase and mark too.
+- **Metadata projection**: titles are the verb alone, no details, no model text.
+- **Step detail** `GET …/trace/steps/{step_id}?records=` (no longer 501): 404 with the flag off,
+  for a metadata reader, or for another run's step; otherwise the step's title, the harness's
+  redacted `args_summary` (TINs scrubbed) and up to five samples resolved by the owning module's
+  `agents.trace.register_trace_samples(record_type, resolver)`, filtered by `visible()`; a type
+  without a resolver shows none.
+- **Records read** for a v2 run: steps' `records_read` summed by the tool's declared record type
+  and `source_ref`; `through` is "Accrued" for the firm's own records, the connection id otherwise.
+- **Writes**: `state` (`waiting`, `approved`, `declined`, `superseded`), `proposal_id`, and
+  `approver_name` for a waiting proposal (its `routed_to_user_id`); none for metadata readers.
+- **Region** from the register entry covering the run's route on its start day; training from
+  the register's statement. Model text has TINs scrubbed.
+- **Migration 0751** (P-09 §4.2 fallback): `agent_run_steps.sample_refs` (≤ 5 `{record_type, id}`)
+  and `source_ref` (`accrued` or a connection id), nullable, app-updatable; the harness fills them.
+- The trace-v1 export's bytes are unchanged: the v1.1 fields stay out of `canonical` until
+  P-09-T11's export.

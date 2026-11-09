@@ -278,6 +278,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     "agent_run_steps": frozenset(
         {"state", "needs", "started_at", "ended_at", "active_ms", "records_read"}
         | {"outputs_summary", "error_code", "error_detail_safe", "usage_record_ids"}
+        | {"sample_refs", "source_ref"}  # P-09-T08 (0751): the trace's samples and source
     ),
     "agent_questions": frozenset(
         {"state", "answer", "answered_by", "answered_at", "skip_default_applied"}

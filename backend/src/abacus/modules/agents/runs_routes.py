@@ -20,22 +20,26 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from abacus.kernel._flags import RUN_TRACE_ENABLED
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
 from abacus.modules.agents.blocks import AgentBlocks
 from abacus.modules.agents.run_records import RunRecord, record_for
 from abacus.modules.agents.runs import (
+    LEGACY_PHASE,
     RunHeader,
     RunItem,
     RunItems,
     RunSummary,
     RunWrite,
     Trace,
+    TraceRow,
+    authorised_run,
     export_trace,
     items_for,
     records_read_for,
     run_view,
     runs_for,
+    step_detail,
     trace_for,
     writes_for,
 )
@@ -110,8 +114,9 @@ class TraceRowOut(BaseModel):
 
     seq: Annotated[int, classified("internal")]
     at: Annotated[datetime, classified("internal")]
+    # A v2 run's rows (P-09-T08, additive): `plan` for the plan decision, `step` for a step row.
     kind: Annotated[
-        Literal["start", "queued", "attempt", "output", "decision", "finish"],
+        Literal["start", "queued", "attempt", "output", "decision", "finish", "plan", "step"],
         classified("internal"),
     ]
     title: Annotated[str, classified("internal")]
@@ -448,14 +453,66 @@ def _trace(trace: Trace) -> RunTraceOut:
         attempts=trace.attempts,
         tokens_in=trace.tokens_in,
         tokens_out=trace.tokens_out,
-        rows=[TraceRowOut.model_validate(r, from_attributes=True) for r in trace.rows],
+        rows=_rows(trace),
         records_read=[
             RecordsReadOut.model_validate(r, from_attributes=True) for r in trace.records_read
         ],
         output_counts=[OutputCountOut(kind=k, count=n) for k, n in trace.output_counts],
         model_text=trace.model_text,
         projection=trace.projection,
+        summary=_trace_summary(trace),
         access=trace.projection,
+    )
+
+
+def _legacy_row(r: TraceRow) -> TraceRowOut:
+    phase, mark = LEGACY_PHASE[r.kind]
+    if r.state == "failed":
+        mark = "failed"
+    elif r.state == "waiting" and r.kind == "finish":
+        mark = "waiting"
+    return TraceRowOut.model_validate(r, from_attributes=True).model_copy(
+        update={"phase": phase, "mark": mark}
+    )
+
+
+def _rows(trace: Trace) -> list[TraceRowOut]:
+    """A v2 run's timeline from its durable records; a legacy run's rows with phase and mark."""
+    if not trace.v2_rows:
+        return [_legacy_row(r) for r in trace.rows]
+    return [
+        TraceRowOut(
+            seq=r.seq,
+            at=r.at,
+            kind="plan" if r.phase == "plan" else "step",
+            title=r.title,
+            state=r.state,
+            detail=r.detail,
+            actor=r.actor,
+            phase=r.phase,
+            mark=r.mark,
+            duration_ms=r.duration_ms,
+        )
+        for r in trace.v2_rows
+    ]
+
+
+def _trace_summary(trace: Trace) -> TraceSummaryOut | None:
+    s = trace.summary
+    if s is None:
+        return None
+    trigger = s.trigger_kind if s.trigger_kind in TRIGGER_KINDS else None
+    return TraceSummaryOut(
+        run_number=s.run_number,
+        agent_label=s.agent_label,
+        started_at=s.started_at,
+        trigger_kind=cast(TriggerKind | None, trigger),
+        runs_as_name=s.runs_as_name,
+        duration_ms=s.duration_ms,
+        records_read=s.records_read,
+        citations=s.citations,
+        writes_done=s.writes_done,
+        writes_waiting=s.writes_waiting,
     )
 
 
@@ -586,13 +643,19 @@ async def agent_run_trace_step_route(
     ctx: Ctx,
     records: Annotated[int, Query(ge=0, le=5)] = 5,
 ) -> TraceStepOut:
-    """C6 v1.1 stub (P-09-T01): 404 while `run_trace.enabled` is off, 501 until P-09-T08. The
-    run is authorised first, so no one learns the flag's state for a run they may not read."""
-    del step_id, records
-    await run_view(ctx, run_id)
+    """WB-09 a2 (P-09-T08): 404 while `run_trace.enabled` is off. The run is authorised first, so
+    no one learns the flag's state for a run they may not read; content only."""
+    await authorised_run(ctx, run_id)
     if not await flag_enabled(ctx.tenant, RUN_TRACE_ENABLED):
         raise NotFound(RUN_TRACE_ENABLED.name)
-    raise NotImplementedYet
+    found = await step_detail(ctx, run_id, step_id, records)
+    return TraceStepOut(
+        step_id=found.step_id,
+        title=found.title,
+        args_summary=found.args_summary,
+        records_read=found.records_read,
+        samples=[TraceSampleOut.model_validate(x, from_attributes=True) for x in found.samples],
+    )
 
 
 @runs_router.get("/{run_id}/trace", action="agent_run.read", response_model=RunTraceOut)
