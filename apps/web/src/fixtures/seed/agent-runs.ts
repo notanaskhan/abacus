@@ -29,7 +29,7 @@ const SHA = `sha256:${"0".repeat(64)}`;
 const CONTENT_ACTIONS = ["agent_run.read", "run_trace.export"];
 
 /** 9:00 AM CT on Mon Sep 14, 2026 is 14:00 UTC (CDT). */
-function sep14(hms: string): string {
+export function sep14(hms: string): string {
   const [h, m, s] = hms.split(":").map(Number);
   return new Date(Date.UTC(2026, 8, 14, (h ?? 0) + 5, m ?? 0, s ?? 0)).toISOString();
 }
@@ -239,7 +239,7 @@ const RUN_4118_E0: E0Run = {
 
 export const RUN_4127_ID = stableId("agent-run:northwind-py2025-planning-4127");
 
-const RUN_4127: AgentRunOut = {
+export const RUN_4127: AgentRunOut = {
   id: RUN_4127_ID,
   agent: "audit_planning",
   agent_label: "Northwind Robotics 401(k) Plan — PY2025 planning run",
@@ -295,7 +295,116 @@ const ROWS_4127: TraceRowOut[] = [
   }),
 ];
 
-const RUN_4127_E0: E0Run = {
+export const LEVELS_4127_941 = [
+  { level: 1, total: 1, done: 1, running: 0, blocked: 0, waiting: 0, queued: 0, failed: 0 },
+  { level: 2, total: 5, done: 0, running: 1, blocked: 1, waiting: 2, queued: 1, failed: 0 },
+  { level: 3, total: 1, done: 0, running: 0, blocked: 0, waiting: 0, queued: 1, failed: 0 },
+  { level: 4, total: 4, done: 0, running: 0, blocked: 0, waiting: 0, queued: 4, failed: 0 },
+  { level: 5, total: 3, done: 0, running: 0, blocked: 0, waiting: 0, queued: 3, failed: 0 },
+];
+export const MATERIALITY_DECISION_ID = stableId("decision:northwind-py2025-materiality");
+
+function prose(text: string): RunItemOut["blocks"] {
+  return { version: 1, parts: [{ kind: "p", segments: [{ kind: "text", text }] }] };
+}
+
+function v2(
+  seq: number,
+  at: string,
+  kind: NonNullable<RunItemOut["session_kind"]>,
+  fields: Partial<RunItemOut> = {},
+): RunItemOut {
+  return {
+    seq,
+    at,
+    kind: kind as RunItemOut["kind"],
+    session_kind: kind,
+    code: kind,
+    outcome: null,
+    detail: null,
+    actor: null,
+    ref_type: null,
+    ref_id: null,
+    blocks: null,
+    ...fields,
+  };
+}
+
+/** SHL-13 frames 3 and 4 at 9:41 (handoff copy, verbatim). */
+export const ITEMS_4127_941: RunItemOut[] = [
+  v2(1, sep14("9:24:00"), "user", { detail: "yes, run it", actor: "Marcus Delaney" }),
+  v2(2, sep14("9:24:10"), "line", {
+    blocks: prose(
+      "Foundation level. Dispatching the Trial Balance workpaper first, in the order the run projection returns.",
+    ),
+  }),
+  v2(3, sep14("9:24:20"), "tool", {
+    code: "workpapers.trial_balance",
+    outcome: "succeeded",
+    detail: "Run trial balance workpaper",
+    blocks: {
+      version: 1,
+      parts: [
+        {
+          kind: "kv",
+          rows: [
+            {
+              label: "Read",
+              value: [
+                {
+                  kind: "text",
+                  text: "Harborline Net Trust Assets 12-31-2025.pdf (pp. 1–3) · Keystone Account Balances PY2025.xlsx (286 participants)",
+                },
+              ],
+            },
+            { label: "Wrote", value: [{ kind: "text", text: "14 cells · 3 citations" }] },
+            { label: "Duration", value: [{ kind: "text", text: "1 m 52 s · ended 9:26 AM" }] },
+          ],
+        },
+      ],
+    },
+  }),
+  v2(4, sep14("9:26:05"), "line", {
+    blocks: prose(
+      "Trial Balance is complete and agreed to the Harborline net trust assets: $16,812,400.00 at 12/31/2025 (investments $16,500,000.00 + participant notes $312,400.00).",
+    ),
+  }),
+  v2(5, sep14("9:26:30"), "tool", {
+    code: "workpapers.materiality",
+    outcome: "succeeded",
+    detail: "Run materiality workpaper",
+  }),
+  v2(6, sep14("9:27:00"), "line", {
+    blocks: prose(
+      "Materiality v1 is proposed on unadjusted net assets of $16,812,400. Planning materiality is blocked on a partner decision (Margaret Okonkwo), so I am continuing with the branches it does not affect.",
+    ),
+  }),
+  v2(7, sep14("9:27:10"), "decision_ref", {
+    detail: "Await partner decision — Materiality",
+    ref_type: "decision_card",
+    ref_id: MATERIALITY_DECISION_ID,
+  }),
+  v2(8, sep14("9:31:00"), "tool", {
+    code: "workpapers.risk_assessment",
+    outcome: "running",
+    detail: "Run risk assessment workpaper",
+  }),
+  v2(9, sep14("9:33:00"), "tool", {
+    code: "workpapers.audit_planning",
+    outcome: "waiting_on_inputs",
+    detail: "Run audit planning workpaper",
+    blocks: prose("Trust agreement — Harborline Trust Company · IRS opinion letter"),
+  }),
+  v2(10, sep14("9:35:00"), "tool", {
+    code: "workpapers.internal_control",
+    outcome: "waiting_on_inputs",
+    detail: "Run internal control workpaper",
+    blocks: prose("Opt-out elections — 4 auto-enrolled participants"),
+  }),
+  v2(11, sep14("9:36:00"), "progress", { code: "level.holding", detail: "Sampling level" }),
+];
+
+export const RUN_4127_E0: E0Run = {
   view: {
     run: RUN_4127,
     run_record_sha256: SHA,
@@ -316,9 +425,9 @@ const RUN_4127_E0: E0Run = {
       trigger_kind: "manual",
       work_item_ref: null,
     },
-    levels: [
-      { level: 1, total: 4, done: 1, running: 1, blocked: 1, waiting: 1, queued: 0, failed: 0 },
-    ],
+    // SHL-13 frame 3 (P-09-T09): 1 + 5 + 1 + 4 + 3 = 14 workpapers at 9:41; Planning "0 of 5" with
+    // "1 blocked · 1 running" (two waiting on inputs, Service Organizations & SOC 1 queued).
+    levels: LEVELS_4127_941,
   },
   trace: {
     run: RUN_4127,
@@ -348,7 +457,7 @@ const RUN_4127_E0: E0Run = {
       writes_waiting: 0,
     },
   },
-  items: [],
+  items: ITEMS_4127_941,
   recordsRead: [],
   writes: [],
 };
