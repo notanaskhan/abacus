@@ -30,9 +30,19 @@ TENANT = TenantContext(uuid4(), "system", "test")
 CTX = cast(AuthContext, SimpleNamespace(tenant=TENANT))
 
 
-def test_every_flag_is_off_until_a07_t33() -> None:
-    assert not any(a07.LIVE.values())
-    assert set(a07.LIVE) == {
+@pytest.fixture(autouse=True)
+def _flags_off(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A-07-T33 (DEC-3106): every firm's A-07 flags at their default, off."""
+
+    async def off(_tenant: TenantContext, _flag: object) -> bool:
+        return False
+
+    monkeypatch.setattr(a07, "flag_enabled", off)
+
+
+def test_every_flag_is_off_by_default() -> None:
+    assert {f.default for f in a07.FLAGS.values()} == {"false"}
+    assert set(a07.FLAGS) == {
         "audits.completion",
         "audits.letters",
         "audits.report_release",

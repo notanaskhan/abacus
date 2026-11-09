@@ -1,13 +1,13 @@
 """A-07-T19: the live-path registrations bundle (A-07 §4.10, §8.1; DEC-83; DF-11), inert until the
 A-07 flags.
 
-Merged before the Fri Dec 24, 2027 freeze so nothing on the live path moves in the window, and
-inert until A-07-T33 brings `audits.completion`, `audits.letters`, `audits.report_release` and
-`audits.archive` (S33): `LIVE` holds each at False, and every provider below answers as if it were
-not there (a rail row or tag provider returns nothing, a source refuses with 404, a decision card
-cannot be raised, the seal section writes no file, the envelope consumer does nothing). With every
-flag off, AUD-02, ENG-02, SIG-01 and HOME-02 answer exactly as before (row acceptance). A-07-T33
-replaces `LIVE` with the per-firm flag checks.
+Merged before the Fri Dec 24, 2027 freeze so nothing on the live path moves in the window. Since
+A-07-T33 (DEC-3106) each provider reads its firm's flag: `audits.completion`, `audits.letters`,
+`audits.report_release`, `audits.archive` (boolean, per firm, default off). Off, every provider
+below answers as if it were not there (a rail row or tag provider returns nothing, a source
+refuses with 404, a decision card cannot be raised, the seal section writes no file, the envelope
+consumer does nothing), so with every flag off AUD-02, ENG-02, SIG-01 and HOME-02 answer exactly
+as before (row acceptance).
 
 What registers here:
 - **C7 envelope sources** `rep_letter` (gate G7; signed by management with the provider's email
@@ -29,9 +29,17 @@ from collections.abc import Mapping, Sequence
 from typing import Final, Literal
 from uuid import UUID
 
+from abacus.kernel._flags import (
+    AUDITS_ARCHIVE,
+    AUDITS_COMPLETION,
+    AUDITS_LETTERS,
+    AUDITS_REPORT_RELEASE,
+)
 from abacus.kernel.clock import FIRM_ZONE
 from abacus.kernel.db import TenantContext
 from abacus.kernel.errors import NotFound
+from abacus.kernel.flags import Flag as FlagDef
+from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.assurance.sections import (
     Band,
@@ -56,12 +64,14 @@ from abacus.modules.review.api import (
 from abacus.modules.signatures.api import EnvelopeSource, register_envelope_source
 
 Flag = Literal["audits.completion", "audits.letters", "audits.report_release", "audits.archive"]
-# A-07-T33 replaces this with the per-firm flag checks (ADR-089); until then nothing here is live.
-LIVE: Final[dict[Flag, bool]] = {
-    "audits.completion": False,
-    "audits.letters": False,
-    "audits.report_release": False,
-    "audits.archive": False,
+# A-07-T33 (DEC-3106): the per-firm flags (ADR-089), boolean and default off, replace the S27
+# `LIVE` table and `completion_dark.COMPLETION_LIVE`: nothing here is live for a firm until its
+# flag flips in a Tuesday slot (P-29).
+FLAGS: Final[dict[Flag, FlagDef]] = {
+    "audits.completion": AUDITS_COMPLETION,
+    "audits.letters": AUDITS_LETTERS,
+    "audits.report_release": AUDITS_REPORT_RELEASE,
+    "audits.archive": AUDITS_ARCHIVE,
 }
 REP_LETTER: Final = "rep_letter"
 GOVERNANCE_LETTER: Final = "governance_letter"
@@ -70,8 +80,15 @@ SEAL_SECTION: Final = "archive_seal"
 REPORT_VERSION: Final = "audit_report_version"
 
 
-def live(flag: Flag) -> bool:
-    return LIVE[flag]
+async def live(tenant: TenantContext, flag: Flag) -> bool:
+    """The firm's flag (a read error falls back to the default, off)."""
+    return await flag_enabled(tenant, FLAGS[flag])
+
+
+async def require_live(tenant: TenantContext, flag: Flag) -> None:
+    """A path behind an off flag answers as if it did not exist (404)."""
+    if not await live(tenant, flag):
+        raise NotLive(flag)
 
 
 class NotLive(NotFound):
@@ -114,8 +131,8 @@ def _section_provider(key: str) -> SectionStateProvider:
     async def state(tenant: TenantContext, work_item_id: UUID) -> SectionState | None:
         """None leaves the row out (A-01 DV-1). Off, the row never shows; the live states
         arrive with the A-07 service behind each screen (T24 to T32) and T33's flag checks."""
-        del tenant, work_item_id
-        return None if not live(_SECTION_FLAG[key]) else _NO_SERVICE_YET
+        del work_item_id
+        return None if not await live(tenant, _SECTION_FLAG[key]) else _NO_SERVICE_YET
 
     return state
 
@@ -150,8 +167,8 @@ async def _rep_letter_signers(ctx: AuthContext, version_id: UUID) -> Sequence[ob
 async def rep_letter_dated_as_of_report(ctx: AuthContext, version_id: UUID) -> Sequence[str]:
     """The date rule (A-07 §3.3): a representation letter is dated as of the auditor's report
     date. While the letters flag is off, every send is refused with the flag's problem."""
-    del ctx, version_id
-    return ["letters_not_live"] if not live("audits.letters") else []
+    del version_id
+    return ["letters_not_live"] if not await live(ctx.tenant, "audits.letters") else []
 
 
 async def _governance_documents(ctx: AuthContext, version_id: UUID) -> Sequence[object]:
@@ -167,8 +184,8 @@ async def _governance_signers(ctx: AuthContext, version_id: UUID) -> Sequence[ob
 async def governance_acknowledgement_only(ctx: AuthContext, version_id: UUID) -> Sequence[str]:
     """DEC-83: a governance letter goes by envelope only as an acknowledgement, and only where the
     POR-15 room is off for the firm; refused while the letters flag is off."""
-    del ctx, version_id
-    return ["letters_not_live"] if not live("audits.letters") else []
+    del version_id
+    return ["letters_not_live"] if not await live(ctx.tenant, "audits.letters") else []
 
 
 async def on_letter_envelope_completed(event: OutboxEvent) -> None:
@@ -177,7 +194,7 @@ async def on_letter_envelope_completed(event: OutboxEvent) -> None:
     other consumers (signatures' own record is unchanged)."""
     if event.payload.get("source_kind") not in (REP_LETTER, GOVERNANCE_LETTER):
         return
-    if not live("audits.letters"):
+    if not await live(TenantContext(event.tenant_id, "system", "a07_letters"), "audits.letters"):
         return
     if event.payload.get("source_kind") == REP_LETTER:
         # A-07-T24 (DEC-2808): G7 with the date check, on the client signer's signing instant in
@@ -200,9 +217,21 @@ async def on_letter_envelope_completed(event: OutboxEvent) -> None:
 
 
 async def _no_variables(owner: c11.OwnerRef, scope: c11.RenderScope) -> Mapping[str, str]:
+    """The kinds declare no variables. Regenerate and the out-of-date read reach only documents
+    a live render made, so they need no flag here."""
     del owner, scope
-    if not live("audits.letters") and not live("audits.report_release"):
-        raise NotLive
+    return {}
+
+
+async def _live_variables(
+    tenant: TenantContext, owner: c11.OwnerRef, scope: c11.RenderScope
+) -> Mapping[str, str]:
+    """A new render: refused (404) while both the letters and the report flags are off."""
+    del owner, scope
+    if not await live(tenant, "audits.letters") and not await live(
+        tenant, "audits.report_release"
+    ):
+        raise NotLive("audits.letters")
     return {}
 
 
@@ -237,16 +266,14 @@ _OPINION: Final = (
 
 
 async def _going_concern_card(tenant: TenantContext, subject: CardSubject) -> ComputedCard:
-    del tenant, subject
-    if not live("audits.completion"):
-        raise NotLive
+    del subject
+    await require_live(tenant, "audits.completion")
     return ComputedCard(options=tuple(CardOption(k, label) for k, label in _GOING_CONCERN))
 
 
 async def _opinion_card(tenant: TenantContext, subject: CardSubject) -> ComputedCard:
-    del tenant, subject
-    if not live("audits.report_release"):
-        raise NotLive
+    del subject
+    await require_live(tenant, "audits.report_release")
     return ComputedCard(options=tuple(CardOption(k, label) for k, label in _OPINION))
 
 
@@ -312,6 +339,7 @@ def register() -> None:
                     approval_provider=_no_approval,
                     retention_record_type=RECORD_TYPE,
                     formats=("pdf", "docx"),
+                    tenant_variables_provider=_live_variables,
                 )
             )
     register_decision_kind(

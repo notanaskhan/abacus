@@ -17,7 +17,7 @@ sticks. A derived one answers 409 `item_derived`.
 - **Rebuild** (`rebuild`) recomputes every derived row from the facts alone, so a rebuild yields
   identical rows to the projection it replaces (the row's acceptance).
 - **Inert until M16**: the subscriber returns at once unless the firm's `assurance_release_mode`
-  is `in_app` and `completion_dark.COMPLETION_LIVE` is True; neither holds before M16.
+  is `in_app` and its `audits.completion` flag is on (A-07-T33; off by default before M16).
 
 Counts exclude N/A ("12 of 17"). Blockers are the open items, with their gate tag, whether they
 depend on the client, and whether they fall due on the report date.
@@ -38,7 +38,6 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
 from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork, uow
 from abacus.kernel.uow.relay import OutboxEvent
-from abacus.modules.assurance import completion_dark
 from abacus.modules.assurance.release import release_mode
 from abacus.modules.engagements.api import assurance_item, assurance_item_id, get_ref
 from abacus.modules.identity.api import AuthContext, Forbidden, authorise
@@ -94,7 +93,10 @@ def engagement_type_of(assurance_type: str, ebp_plan_kind: str | None) -> str:
 
 
 async def projector_live(tenant: TenantContext) -> bool:
-    return completion_dark.COMPLETION_LIVE and await release_mode(tenant) == "in_app"
+    """A-07-T33 (DEC-3106): the firm's `audits.completion` flag replaces COMPLETION_LIVE."""
+    from abacus.modules.assurance.a07_registrations import live
+
+    return await live(tenant, "audits.completion") and await release_mode(tenant) == "in_app"
 
 
 @dataclass(frozen=True)

@@ -27,6 +27,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.modules.assurance.a07_registrations import require_live
 from abacus.modules.engagements.api import get_ref, work_item_engagement
 from abacus.modules.identity.api import AbacusRouter, AuthContext, authorise, current_context
 
@@ -361,6 +362,8 @@ async def _gate(ctx: AuthContext, work_item_id: UUID, action: str) -> None:
         raise NotFound("work_item")
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, action, replace(ref.resource(), work_item_id=work_item_id))
+    # A-07-T33 (DEC-3106): then the firm's `audits.completion` flag (off: 404).
+    await require_live(ctx.tenant, "audits.completion")
 
 
 def _not_yet() -> NoReturn:
