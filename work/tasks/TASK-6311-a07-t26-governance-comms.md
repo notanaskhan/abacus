@@ -38,3 +38,6 @@ to the POR-15 room or an acknowledgement envelope, AU-C 265 due date, output che
 |---|---|---|
 | DEC-3011 | Section keys per kind, merge rule, output checks, 703 inside 265, due rule | no |
 - `2026-11-09` — S32 end pass: gates, unit, contract, S32 integration and web suites run; fixes folded into the end-pass PR. Status partial.
+- `2026-11-09` — Partials round (branch s32p-a07-t26-grants, DEC-3026): approve & send issues
+  each recipient's `tcwg` grant on the room, or a pending grant and invitation; unit tests in
+  `tests/unit/identity/test_a07t26_tcwg_grant.py`.

@@ -4,7 +4,7 @@ title: R-02-T12 governance room backend part 1
 spec: SPEC-646  # AC-26 to AC-30; R-02 §3.5
 acceptance_criteria: [AC-26, AC-27, AC-28]
 risk_zone: amber
-status: partial
+status: in-progress
 epic: R-02
 plan_key: R-02-T12
 branch: s32-r02-t12
@@ -37,3 +37,6 @@ the paper without citation markers, and the acknowledgement.
 |---|---|---|
 | DEC-3010 | Room = body; tcwg grant plus current membership opens it; per-reader states; sealed sections format; idempotent acknowledgement | no |
 - `2026-11-09` — S32 end pass: gates, unit, contract, S32 integration and web suites run; fixes folded into the end-pass PR. Status partial.
+- `2026-11-09` — Partials round (branch s32p-a07-t26-grants, DEC-3026): approve & send issues
+  each recipient's `tcwg` grant on the room, or a pending grant and invitation; unit tests in
+  `tests/unit/identity/test_a07t26_tcwg_grant.py`.
