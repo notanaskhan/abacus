@@ -1,7 +1,22 @@
-import type { RunItemOut, RunProjectionLevelOut, RunViewOut } from "@abacus/api-client";
-import { agentRunOptions } from "@abacus/api-client/query";
-import { AgentBlocks, Button, count, Icon, type IconName, Skeleton, StatusPill } from "@abacus/ui";
-import { useQuery } from "@tanstack/react-query";
+import type {
+  AgentRunOut,
+  RunItemOut,
+  RunProjectionLevelOut,
+  RunViewOut,
+} from "@abacus/api-client";
+import { agentRunOptions, createFeedbackMutation } from "@abacus/api-client/query";
+import {
+  AgentBlocks,
+  Button,
+  count,
+  Icon,
+  type IconName,
+  ProgressBar,
+  Skeleton,
+  StatusPill,
+  useNow,
+} from "@abacus/ui";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { narrate } from "./narrate";
 import { isActive, POLL_MS, useRunFeed } from "./runFeed";
@@ -97,7 +112,13 @@ function StatusDisc({ disc }: { disc: string }): JSX.Element {
   );
 }
 
-function ProjectionStrip({ levels }: { levels: readonly RunProjectionLevelOut[] }): JSX.Element {
+function ProjectionStrip({
+  levels,
+  planReady = false,
+}: {
+  levels: readonly RunProjectionLevelOut[];
+  planReady?: boolean;
+}): JSX.Element {
   const [open, setOpen] = useState(true);
   return (
     <section
@@ -113,7 +134,17 @@ function ProjectionStrip({ levels }: { levels: readonly RunProjectionLevelOut[] 
         }}
       >
         {projectionTitle(levels)}
-        <Icon name="chevron-down" size={12} />
+        <span className="flex items-center gap-1">
+          {planReady && (
+            <span
+              data-plan-ready="true"
+              className="rounded-full bg-amber-tint px-[6px] text-amber-ink"
+            >
+              Plan ready — approve?
+            </span>
+          )}
+          <Icon name="chevron-down" size={12} />
+        </span>
       </button>
       {open && (
         <ul className="pt-[4px]">
@@ -155,12 +186,123 @@ function Blocks({ item }: { item: RunItemOut }): JSX.Element | null {
   return <AgentBlocks blocks={item.blocks} facts={{}} />;
 }
 
+/** SHL-13 revision 4: the thumbs-down reasons, in the handoff's words, and C6 v2's codes for them
+ * (DEC-3023: the contract's words differ; the screen keeps the handoff's). */
+export const FEEDBACK_REASONS = [
+  ["Wrong period", "wrong_figure"],
+  ["Wrong document", "wrong_source"],
+  ["Missed evidence", "missed_something"],
+  ["Wording", "not_useful"],
+  ["Other", "other"],
+] as const;
+type FeedbackReason = (typeof FEEDBACK_REASONS)[number][1];
+
+/** A finished card's footer: Rerun and Follow up (a person's, bound in P-09-T14), and the thumbs
+ * that store a correction. Thumbs-down needs a reason before Submit. */
+function FeedbackFooter({ runId, item }: { runId: string; item: RunItemOut }): JSX.Element {
+  const [picking, setPicking] = useState(false);
+  const [reason, setReason] = useState<FeedbackReason | null>(null);
+  const [sent, setSent] = useState<"up" | "down" | null>(null);
+  const send = useMutation({
+    ...createFeedbackMutation(),
+    onSuccess: (_out, vars) => {
+      setSent(vars.body.rating);
+      setPicking(false);
+    },
+  });
+  const rate = (rating: "up" | "down", why: FeedbackReason | null): void => {
+    send.mutate({
+      body: { run_id: runId, rating, reason: why, item_id: item.ref_id ?? null },
+      headers: { "Idempotency-Key": crypto.randomUUID() },
+    });
+  };
+  return (
+    <div data-tool-footer="true" className="relative flex items-center gap-1 pt-[6px]">
+      <Button size="xs" variant="ghost" disabled title="Rerun arrives with P-09-T14">
+        Rerun
+      </Button>
+      <Button size="xs" variant="ghost" disabled title="Follow up arrives with P-09-T14">
+        Follow up
+      </Button>
+      <span className="flex-1" />
+      <button
+        type="button"
+        aria-label="Helpful"
+        aria-pressed={sent === "up"}
+        disabled={sent !== null || send.isPending}
+        className="text-ink-3"
+        onClick={() => {
+          rate("up", null);
+        }}
+      >
+        <Icon name="thumbs-up" size={13} />
+      </button>
+      <button
+        type="button"
+        aria-label="Not helpful"
+        aria-expanded={picking}
+        aria-pressed={sent === "down"}
+        disabled={sent !== null || send.isPending}
+        className="text-ink-3"
+        onClick={() => {
+          setPicking(!picking);
+        }}
+      >
+        <Icon name="thumbs-down" size={13} />
+      </button>
+      {picking && (
+        <div
+          role="dialog"
+          aria-label="What was wrong"
+          className="absolute right-0 top-[30px] z-10 w-[220px] rounded-[10px] bg-card p-[8px] shadow-e2"
+        >
+          <ul className="flex flex-col">
+            {FEEDBACK_REASONS.map(([label, code]) => (
+              <li key={code}>
+                <label className="flex h-[28px] items-center gap-2 text-[12px]">
+                  <input
+                    type="radio"
+                    name={`reason-${String(item.seq)}`}
+                    checked={reason === code}
+                    onChange={() => {
+                      setReason(code);
+                    }}
+                  />
+                  {label}
+                </label>
+              </li>
+            ))}
+          </ul>
+          <div className="flex justify-end pt-[4px]">
+            <Button
+              size="xs"
+              disabled={reason === null || send.isPending}
+              onClick={() => {
+                rate("down", reason);
+              }}
+            >
+              Submit
+            </Button>
+          </div>
+          {send.isError && (
+            <p className="pt-[4px] text-[11px] text-ink-3">
+              Feedback isn&apos;t on for this firm yet.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ToolCard({
+  runId,
   item,
   selected,
   onSelect,
   onTrace,
 }: {
+  runId: string;
   item: RunItemOut;
   selected: boolean;
   onSelect?: ((ref: string) => void) | undefined;
@@ -219,17 +361,31 @@ function ToolCard({
           </Button>
         </div>
       )}
+      {state === "succeeded" && open && <FeedbackFooter runId={runId} item={item} />}
+    </li>
+  );
+}
+
+/** SHL-13 frame 8: a close run's task row (✓ done, spinner running), no tool-card chrome. */
+function TaskRow({ item }: { item: RunItemOut }): JSX.Element {
+  const state = toolState(item.outcome);
+  return (
+    <li data-task-row={state} className="flex h-[40px] items-center gap-2 text-[12.5px]">
+      <StatusDisc disc={TOOL_STATE[state].disc} />
+      <span className="min-w-0 flex-1 truncate">{item.detail ?? item.code}</span>
     </li>
   );
 }
 
 function ThreadItem({
+  runId,
   item,
   selectedRef,
   onSelectRef,
   onTrace,
   onOpenDecision,
 }: {
+  runId: string;
   item: RunItemOut;
   selectedRef?: string | null | undefined;
   onSelectRef?: ((ref: string) => void) | undefined;
@@ -258,6 +414,7 @@ function ThreadItem({
     case "tool":
       return (
         <ToolCard
+          runId={runId}
           item={item}
           selected={item.ref_id !== null && item.ref_id === selectedRef}
           onSelect={onSelectRef}
@@ -302,6 +459,35 @@ function ThreadItem({
         </li>
       );
     case "question":
+      // SHL-13 frame 5: the agent's question with its options (blocks); answering, skipping and
+      // paging are a person's, bound in P-09-T14.
+      return (
+        <li
+          data-ask-card="question"
+          className="rounded-[10px] bg-card px-[12px] py-[10px] text-[12.5px] shadow-ask"
+        >
+          <p className="flex items-center gap-2 pb-[6px]">
+            <span className="flex size-[18px] items-center justify-center rounded-full bg-chip text-[11px] font-medium">
+              ?
+            </span>
+            <span className="flex-1 font-medium">{item.detail ?? ""}</span>
+            <span className="text-[11px] text-ink-3">1 of 1</span>
+          </p>
+          <Blocks item={item} />
+          <div className="flex items-center gap-2 pt-[8px]">
+            <Button size="xs" variant="ghost" disabled title="Answering arrives with P-09-T14">
+              Skip
+            </Button>
+            <span className="flex-1" />
+            <Button size="xs" variant="secondary" disabled>
+              Previous
+            </Button>
+            <Button size="xs" disabled title="Answering arrives with P-09-T14">
+              Next
+            </Button>
+          </div>
+        </li>
+      );
     case "plan":
     case "approval":
       return (
@@ -342,6 +528,136 @@ function ThreadItem({
   }
 }
 
+/** One agent in the dock's strip (SHL-13 revision 1): its name, how it started, its state. */
+export interface DockAgent {
+  key: string;
+  label: string;
+  /** Known for the open run (its `trigger_kind`); the run list does not carry it. */
+  source?: "Trigger" | "Agent column" | "Manual";
+  state: AgentRunOut["state"];
+}
+
+/** How a run started, in the strip's words (C6 v1.1 `trigger_kind`). */
+export function sourceOf(trigger: string | null | undefined): NonNullable<DockAgent["source"]> {
+  if (trigger === "agent_column") return "Agent column";
+  if (
+    trigger === "agent_trigger" ||
+    trigger === "engagement_trigger" ||
+    trigger === "event_policy" ||
+    trigger === "schedule"
+  ) {
+    return "Trigger";
+  }
+  return "Manual";
+}
+
+const AGENT_STATE: Readonly<Record<AgentRunOut["state"], string>> = {
+  queued: "Queued",
+  running: "Running",
+  needs_input: "Needs your input",
+  succeeded: "Done",
+  failed: "Failed",
+};
+
+/** SHL-13 revision 1: "Agents on this engagement · n ⌄", collapsed in frames 1 to 8. */
+function AgentsStrip({ agents }: { agents: readonly DockAgent[] }): JSX.Element {
+  const [open, setOpen] = useState(false);
+  return (
+    <section aria-label="Agents on this engagement" className="mx-[10px] mb-[6px]">
+      <button
+        type="button"
+        aria-expanded={open}
+        className="flex h-[30px] w-full items-center justify-between text-[11.5px] font-medium text-ink-2"
+        onClick={() => {
+          setOpen(!open);
+        }}
+      >
+        {`Agents on this engagement · ${count(agents.length)}`}
+        <Icon name="chevron-down" size={12} />
+      </button>
+      {open && (
+        <ul>
+          {agents.map((a) => (
+            <li key={a.key} className="flex h-[36px] items-center gap-2 text-[12.5px]">
+              <Icon name="sparkles" size={12} />
+              <span className="min-w-0 flex-1 truncate">{a.label}</span>
+              {a.source !== undefined && (
+                <span className="rounded-[6px] bg-nested px-[6px] text-[11px] leading-[20px]">
+                  {a.source}
+                </span>
+              )}
+              <StatusPill tone={a.state === "failed" ? "danger" : "neutral"}>
+                {AGENT_STATE[a.state]}
+              </StatusPill>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+/** SHL-13 frame 1: the engagement agent before its first run. */
+function IdleCard({ levels }: { levels: readonly RunProjectionLevelOut[] }): JSX.Element {
+  const total = levels.reduce((n, lv) => n + lv.total, 0);
+  return (
+    <section
+      data-run-idle="true"
+      className="mx-[10px] rounded-[10px] bg-shell px-[12px] py-[10px]"
+    >
+      <h3 className="text-[15px] font-medium">Engagement agent</h3>
+      <p className="text-[12.5px] text-ink-3">
+        {`Ready to run ${count(total)} workpapers across ${count(levels.length)} levels`}
+      </p>
+      <p className="pt-[8px] text-[12px] text-ink-2">
+        Auto mode is off — I&apos;ll propose the plan and wait for your go-ahead.
+      </p>
+    </section>
+  );
+}
+
+/** SHL-13 frame 8: a close run's card, counted by code from its one level. */
+function CloseRunCard({
+  levels,
+  startedAt,
+}: {
+  levels: readonly RunProjectionLevelOut[];
+  startedAt: string | null;
+}): JSX.Element {
+  const now = useNow();
+  const total = levels.reduce((n, lv) => n + lv.total, 0);
+  const done = levels.reduce((n, lv) => n + (lv.done ?? 0), 0);
+  const running = levels.reduce((n, lv) => n + (lv.running ?? 0), 0);
+  const minutes =
+    startedAt === null
+      ? null
+      : Math.max(0, Math.round((now.getTime() - new Date(startedAt).getTime()) / 60_000));
+  return (
+    <section
+      data-close-run-card="true"
+      className="mx-[10px] rounded-[10px] bg-card px-[12px] py-[10px] shadow-e1"
+    >
+      <h3 className="text-[15px] font-medium">
+        {running > 0 ? "Closing agent is running" : "Closing agent"}
+      </h3>
+      {running > 0 && (
+        <p className="text-[12.5px] text-ink-3">{`${count(running)} tasks running at once`}</p>
+      )}
+      <ProgressBar
+        className="mt-[8px]"
+        done={done}
+        total={total}
+        {...(minutes === null ? {} : { right: `Started ${count(minutes)} minutes ago` })}
+      />
+    </section>
+  );
+}
+
+/** A close run (CLS-02) draws tasks, not workpaper levels (SHL-13 frame 8). */
+function isCloseRun(run: AgentRunOut | undefined): boolean {
+  return run?.agent.startsWith("close") ?? false;
+}
+
 export interface RunPaneProps {
   runId: string;
   onTrace: (runId: string) => void;
@@ -349,6 +665,8 @@ export interface RunPaneProps {
   selectedRef?: string | null;
   onSelectRef?: (ref: string) => void;
   onOpenDecision?: (ref: string) => void;
+  /** The agents on this engagement for the strip under the header (the dock's run list). */
+  agents?: readonly DockAgent[];
 }
 
 function header(view: RunViewOut | undefined): {
@@ -363,6 +681,44 @@ function header(view: RunViewOut | undefined): {
   return { live, ended, canSign };
 }
 
+function HeaderAction({
+  view,
+  idle,
+  canSign,
+}: {
+  view: RunViewOut | undefined;
+  idle: boolean;
+  canSign: boolean;
+}): JSX.Element {
+  if (isCloseRun(view?.run)) {
+    const n = view?.header?.run_number;
+    return (
+      <Button size="sm" variant="ghost" disabled title="The run picker arrives with P-09-T13">
+        {`Run ${n == null ? "" : count(n)}`}
+        <Icon name="chevron-down" size={12} />
+      </Button>
+    );
+  }
+  if (idle) {
+    return (
+      <Button size="sm" disabled title="Starting a run arrives with P-09-T14">
+        <Icon name="play" size={12} />
+        Run
+      </Button>
+    );
+  }
+  return (
+    <Button
+      size="sm"
+      variant="secondary"
+      disabled={!canSign}
+      title="Only a person signs off a run"
+    >
+      Sign off run
+    </Button>
+  );
+}
+
 /** SHL-13: one run in the dock. */
 export function RunPane({
   runId,
@@ -370,6 +726,7 @@ export function RunPane({
   selectedRef,
   onSelectRef,
   onOpenDecision,
+  agents,
 }: RunPaneProps): JSX.Element {
   const view = useQuery({
     ...agentRunOptions({ path: { run_id: runId } }),
@@ -383,10 +740,15 @@ export function RunPane({
   if (view.isError) {
     return (
       <p data-run-pane="not-allowed" className="p-[12px] text-dense text-ink-3">
-        You can't open this run.
+        You can&apos;t open this run.
       </p>
     );
   }
+  const levels = view.data?.levels ?? [];
+  const idle = view.data?.run.state === "queued" && feed.items.length === 0;
+  const planReady =
+    view.data?.run.state === "needs_input" && view.data.header?.blocked_on?.kind === "approval";
+  const close = isCloseRun(view.data?.run);
   return (
     <section
       data-run-pane={view.data?.run.state ?? "loading"}
@@ -402,38 +764,70 @@ export function RunPane({
         )}
         <h2 className="text-[14.5px] font-medium">Agent</h2>
         <div className="absolute right-[10px]">
-          <Button
-            size="sm"
-            variant="secondary"
-            disabled={!canSign}
-            title="Only a person signs off a run"
-          >
-            Sign off run
-          </Button>
+          <HeaderAction view={view.data} idle={idle} canSign={canSign} />
         </div>
       </header>
+      {agents !== undefined && agents.length > 0 && !close && (
+        <AgentsStrip
+          agents={agents.map((a) =>
+            a.key === view.data?.run.agent
+              ? { ...a, source: sourceOf(view.data.header?.trigger_kind) }
+              : a,
+          )}
+        />
+      )}
       {view.isPending ? (
         <Skeleton className="m-[10px] h-[120px]" />
-      ) : (view.data.levels ?? []).length > 0 ? (
-        <ProjectionStrip levels={view.data.levels ?? []} />
-      ) : null}
+      ) : close ? (
+        <CloseRunCard levels={levels} startedAt={view.data.run.started_at} />
+      ) : (
+        <>
+          {idle && <IdleCard levels={levels} />}
+          {levels.length > 0 && <ProjectionStrip levels={levels} planReady={planReady} />}
+        </>
+      )}
       <ol
         aria-label="Run thread"
         className="flex min-h-0 flex-1 flex-col gap-[8px] overflow-y-auto p-[12px]"
       >
-        {feed.items.map((item) => (
-          <ThreadItem
-            key={item.seq}
-            item={item}
-            selectedRef={selectedRef}
-            onSelectRef={onSelectRef}
-            onOpenDecision={onOpenDecision}
-            onTrace={() => {
-              onTrace(runId);
-            }}
-          />
-        ))}
+        {feed.items.map((item) =>
+          close && item.session_kind === "tool" ? (
+            <TaskRow key={item.seq} item={item} />
+          ) : (
+            <ThreadItem
+              key={item.seq}
+              runId={runId}
+              item={item}
+              selectedRef={selectedRef}
+              onSelectRef={onSelectRef}
+              onOpenDecision={onOpenDecision}
+              onTrace={() => {
+                onTrace(runId);
+              }}
+            />
+          ),
+        )}
       </ol>
+      {planReady && (
+        <div data-quick-replies="true" className="mx-[10px] mb-[6px] flex gap-2">
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled
+            title="Approving the plan arrives with P-09-T14"
+          >
+            yes, run it
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled
+            title="Editing the plan arrives with P-09-T14"
+          >
+            Change order…
+          </Button>
+        </div>
+      )}
       <form
         aria-label="Message the agent"
         className="mx-[10px] mb-[10px] flex h-[38px] items-center gap-2 rounded-full border-[0.5px] border-hair bg-nested px-[12px]"

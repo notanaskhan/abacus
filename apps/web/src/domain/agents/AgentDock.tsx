@@ -11,12 +11,12 @@ import {
   useFormat,
 } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
-import { type JSX, type ReactNode, useState } from "react";
+import { type JSX, lazy, type ReactNode, Suspense, useState } from "react";
 import { useFlag } from "../../app-core/flags";
 import { narrate } from "./narrate";
-import { RunPane } from "./RunPane";
+import type { DockAgent } from "./RunPane";
 import { isActive, POLL_MS, useRunFeed } from "./runFeed";
-import { duration, STATE, SUBJECT, TraceDrawer } from "./TraceDrawer";
+import { duration, STATE, SUBJECT } from "./traceWords";
 
 // SHL-13 agent dock, first slice (P-09-T09; SPEC-318 AC-10): the engagement's runs as tool cards
 // in the cockpit's 330 px Agent tab, oldest first like a thread. A pre-v2 run is one card
@@ -150,6 +150,20 @@ function ToolCard({
   );
 }
 
+// The SHL-13 pane loads when a run opens, so it stays out of every cockpit's route chunk.
+const RunPane = lazy(async () => ({ default: (await import("./RunPane")).RunPane }));
+const TraceDrawer = lazy(async () => ({ default: (await import("./TraceDrawer")).TraceDrawer }));
+
+/** SHL-13 revision 1: one row per agent on the engagement, from its latest run. */
+export function dockAgents(runs: readonly AgentRunOut[]): DockAgent[] {
+  const latest = new Map<string, AgentRunOut>();
+  for (const r of runs) {
+    const seen = latest.get(r.agent);
+    if (seen === undefined || r.started_at > seen.started_at) latest.set(r.agent, r);
+  }
+  return [...latest.values()].map((r) => ({ key: r.agent, label: r.agent_label, state: r.state }));
+}
+
 /** The Agent tab's run pane; `children` (the v1 activity list) stays below the thread. */
 export function AgentDock({
   engagementId,
@@ -180,33 +194,38 @@ export function AgentDock({
   const [localRun, setLocalRun] = useState<string | null>(null);
   const open = runId ?? localRun;
   const openRun = onRun ?? setLocalRun;
-  if (paneOn && open !== null) {
-    return (
-      <div data-agent-dock="run" className="flex min-h-0 flex-1 flex-col">
-        <RunPane
-          runId={open}
-          onTrace={showTrace}
-          {...(selectedRef === undefined ? {} : { selectedRef })}
-          {...(onSelectRef === undefined ? {} : { onSelectRef })}
-          {...(onOpenDecision === undefined ? {} : { onOpenDecision })}
-        />
-        {trace !== null && (
-          <TraceDrawer
-            runId={trace}
-            onClose={() => {
-              setTrace(null);
-            }}
-          />
-        )}
-      </div>
-    );
-  }
   const runs = useQuery({
     ...listAgentRunsOptions({ path: { engagement_id: engagementId }, query: { limit: 10 } }),
     retry: false,
     refetchInterval: (q) => (q.state.data?.some((r) => isActive(r)) === true ? POLL_MS : false),
     refetchIntervalInBackground: false,
   });
+  if (paneOn && open !== null) {
+    return (
+      <div data-agent-dock="run" className="flex min-h-0 flex-1 flex-col">
+        <Suspense fallback={null}>
+          <RunPane
+            runId={open}
+            onTrace={showTrace}
+            agents={dockAgents(runs.data ?? [])}
+            {...(selectedRef === undefined ? {} : { selectedRef })}
+            {...(onSelectRef === undefined ? {} : { onSelectRef })}
+            {...(onOpenDecision === undefined ? {} : { onOpenDecision })}
+          />
+        </Suspense>
+        {trace !== null && (
+          <Suspense fallback={null}>
+            <TraceDrawer
+              runId={trace}
+              onClose={() => {
+                setTrace(null);
+              }}
+            />
+          </Suspense>
+        )}
+      </div>
+    );
+  }
   // The runs list answers 403 to anyone agent_run.read refuses: the dock then shows only children.
   const thread = runs.data === undefined ? [] : [...runs.data].reverse();
   return (
@@ -231,12 +250,14 @@ export function AgentDock({
       )}
       {children}
       {trace !== null && (
-        <TraceDrawer
-          runId={trace}
-          onClose={() => {
-            setTrace(null);
-          }}
-        />
+        <Suspense fallback={null}>
+          <TraceDrawer
+            runId={trace}
+            onClose={() => {
+              setTrace(null);
+            }}
+          />
+        </Suspense>
       )}
     </div>
   );
