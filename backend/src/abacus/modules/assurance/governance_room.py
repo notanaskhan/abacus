@@ -45,6 +45,7 @@ from abacus.kernel.errors import DomainConflict, NotFound
 from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork, uow
 from abacus.modules.identity.api import AuthContext, ScopeFacts, active_grants
 from abacus.modules.organisations.api import contact_facts, contacts_of_user, entity_display_name
+from abacus.modules.reporting.api import AudienceDeliverable, released_for_audience
 
 ROOM: Final = "governance_room"
 TCWG: Final = "tcwg"
@@ -442,3 +443,46 @@ async def acknowledge(
     )
     on = next((r.acknowledged_on for r in rows if r.id == communication_id), None)
     return (on or await today(ctx.tenant)), state
+
+
+# --- R-02-T16: private inquiries and released reports (DEC-3114; DEC-93) ----------------------
+
+_INQUIRIES = text(
+    "SELECT f.questionnaire_id, f.respondent_contact_id FROM fraud_inquiries f "
+    "WHERE f.questionnaire_id IS NOT NULL AND f.respondent_contact_id = ANY(:contacts) "
+    "ORDER BY f.created_at"
+).bindparams(bindparam("contacts", type_=_UUIDS))
+
+
+@dataclass(frozen=True)
+class RoomInquiry:
+    questionnaire_id: UUID
+    question_id: UUID
+    prompt: str
+
+
+async def room_inquiries(ctx: AuthContext, room_id: UUID) -> list[RoomInquiry]:
+    """A-04's fraud inquiries addressed to the reader, inside a room the reader is a member of:
+    addressee only (DEC-93). Another member, or a client person on another grant, sees none;
+    the questionnaire service's own addressee check holds as well (T-02)."""
+    from abacus.modules.requests.api import portal_questionnaire
+
+    contacts = await _open(ctx, room_id)  # 404 unless a current member of an open room
+    async with tenant_session(ctx.tenant) as session:
+        rows = (await session.execute(_INQUIRIES, {"contacts": contacts})).all()
+    out: list[RoomInquiry] = []
+    for row in rows:
+        try:
+            view = await portal_questionnaire(
+                ctx, row.questionnaire_id, unanswered=False, section=None
+            )
+        except NotFound:
+            continue
+        out.extend(RoomInquiry(view.id, q.id, q.client_wording) for q in view.questions)
+    return out
+
+
+async def room_reports(ctx: AuthContext, room_id: UUID) -> list[AudienceDeliverable]:
+    """Released reports whose audience includes this room (C10), for a current member."""
+    await _open(ctx, room_id)
+    return await released_for_audience(ctx.tenant, ROOM, room_id)

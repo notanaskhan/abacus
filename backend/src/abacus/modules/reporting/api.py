@@ -881,3 +881,51 @@ async def fs_approved_by_management_at(
             {"wi": work_item_id},
         )
     return cast(datetime | None, found)
+
+
+@dataclass(frozen=True)
+class AudienceDeliverable:
+    """R-02-T16: a released (non-draft) deliverable whose audience names a scope."""
+
+    deliverable_id: UUID
+    kind: str
+    title: str
+    latest_version: int
+    page_count: int
+    released_at: datetime
+    restricted_use: bool
+
+
+async def released_for_audience(
+    tenant: TenantContext, scope_kind: str, scope_id: UUID
+) -> list[AudienceDeliverable]:
+    """Every deliverable whose audience includes (`scope_kind`, `scope_id`) and whose newest
+    version is not a draft; the caller has already shown the reader holds that scope."""
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                text(
+                    "SELECT d.id, d.kind, d.title, d.restricted_use, v.version_no, "
+                    "v.page_count, v.published_at FROM deliverables d "
+                    "JOIN deliverable_audiences a ON a.deliverable_id = d.id "
+                    "AND a.scope_kind = :kind AND a.scope_id = :scope "
+                    "JOIN LATERAL (SELECT version_no, page_count, published_at, is_draft "
+                    "FROM deliverable_versions WHERE deliverable_id = d.id "
+                    "ORDER BY version_no DESC LIMIT 1) v ON NOT v.is_draft "
+                    "ORDER BY v.published_at DESC"
+                ),
+                {"kind": scope_kind, "scope": scope_id},
+            )
+        ).all()
+    return [
+        AudienceDeliverable(
+            r.id,
+            str(r.kind),
+            str(r.title),
+            int(r.version_no),
+            int(r.page_count),
+            r.published_at,
+            bool(r.restricted_use),
+        )
+        for r in rows
+    ]
