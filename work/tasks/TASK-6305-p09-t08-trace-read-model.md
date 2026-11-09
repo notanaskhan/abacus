@@ -4,7 +4,7 @@ title: P-09-T08 trace read model, v2 timeline, step detail, records read, writes
 spec: SPEC-648
 acceptance_criteria: [AC-1]
 risk_zone: red
-status: partial
+status: in-progress
 epic: P-09
 plan_key: P-09-T08
 branch: s32-p09-t08
@@ -39,3 +39,7 @@ source, writes with approvers; content and metadata; region from the register; T
 |---|---|---|
 | DEC-3005 | Phase and mark maps, metadata titles, step detail 404s, write states, 0751 | no |
 - `2026-11-09` — S32 end pass: gates, unit, contract, S32 integration and web suites run; fixes folded into the end-pass PR. Status partial.
+- `2026-11-09` — Partials round (branch s32p-p09-t10, DEC-3024): WB-09 a2 shows the first five
+  returns read (TAX-02 seed, linking to each return) in fixtures. The connection name in "Records
+  read" stays open: no firm-side connection lookup by id; needs a C6 `connection_label` resolved
+  by the connections module (W-01).

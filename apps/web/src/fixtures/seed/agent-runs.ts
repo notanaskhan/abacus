@@ -12,7 +12,9 @@ import type {
   RunViewOut,
   RunWriteOut,
   TraceRowOut,
+  TraceSampleOut,
 } from "@abacus/api-client";
+import taxReturns from "./e0.tax-returns.json";
 import { stableId } from "./prng";
 
 export type E0Run = {
@@ -52,6 +54,26 @@ function sumRead(rows: RecordsReadOut[]): number {
 
 export const RUN_4118_ID = stableId("agent-run:season-progress-reporter-4118");
 export const LIST_RETURNS_STEP_ID = stableId("agent-run-step:4118-list-returns");
+
+const FORM: Readonly<Record<string, string>> = {
+  "1040": "1040",
+  "1041": "1041",
+  "1065": "1065",
+  "1120": "1120",
+  "1120s": "1120-S",
+  "990": "990",
+};
+
+/** WB-09 a2 (P-09-T10 remainder): "list returns" read the season's returns; its first five are
+ * the TAX-02 seed's first five rows, each linking to its return. */
+export const LIST_RETURNS_SAMPLES: TraceSampleOut[] = taxReturns.body.items
+  .slice(0, 5)
+  .map((r) => ({
+    id: r.id,
+    record_type: "tax_return",
+    label: `${r.client_name} · ${FORM[r.form] ?? r.form}`,
+    open_route: `/tax-returns/${r.id}`,
+  }));
 const CCH = stableId("connection:cch-axcess-tax");
 
 const RUN_4118: AgentRunOut = {

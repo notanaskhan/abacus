@@ -4,7 +4,7 @@ title: P-09-T10 WB-09 TraceDrawer, summary card, timeline grammar, a2 to a4, not
 spec: SPEC-648  # Stories 4.1 to 4.3; handoff WB-09
 acceptance_criteria: [AC-1]
 risk_zone: green
-status: partial
+status: in-progress
 epic: P-09
 plan_key: P-09-T10
 branch: s32-p09-t10
@@ -41,3 +41,7 @@ Finish WB-09 over TASK-5008's `?ov=run-trace` overlay and Copy link: every artbo
 |---|---|---|
 | DEC-3007 | Not-allowed on 403 and 404; skeleton floor; row expansion only for v2 tool rows with content | no |
 - `2026-11-09` — S32 end pass: gates, unit, contract, S32 integration and web suites run; fixes folded into the end-pass PR. Status partial.
+- `2026-11-09` — Partials round (branch s32p-p09-t10, DEC-3024): WB-09 a2 shows the first five
+  returns read (TAX-02 seed, linking to each return) in fixtures. The connection name in "Records
+  read" stays open: no firm-side connection lookup by id; needs a C6 `connection_label` resolved
+  by the connections module (W-01).

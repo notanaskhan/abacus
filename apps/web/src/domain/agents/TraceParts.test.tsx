@@ -6,6 +6,7 @@ import type { JSX } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   E0_RUNS,
+  LIST_RETURNS_SAMPLES,
   LIST_RETURNS_STEP_ID,
   RUN_4118_ID,
   RUN_4127_ID,
@@ -31,7 +32,7 @@ function routes(): Parameters<typeof mockApi>[0] {
       title: "Execute › list returns",
       args_summary: "tax year 2025",
       records_read: 224,
-      samples: [],
+      samples: LIST_RETURNS_SAMPLES,
     });
   out["GET /v1/agent-runs/walled/trace"] = () => json({ detail: "not_found" }, 404);
   out["GET /v1/agent-runs/walled/items"] = () => json({ detail: "not_found" }, 404);
@@ -70,6 +71,14 @@ describe("WB-09 run trace drawer", () => {
     fireEvent.click(row);
     expect(row.getAttribute("aria-expanded")).toBe("true");
     expect(await screen.findByText("tax year 2025")).toBeTruthy();
+    // P-09-T10 remainder: the first five returns read, each linking to its return.
+    const read = screen.getByRole("list", { name: "First records read" });
+    const links = within(read).getAllByRole("link");
+    expect(links).toHaveLength(5);
+    expect(links[0]?.getAttribute("href")).toBe(
+      `/tax-returns/${LIST_RETURNS_SAMPLES[0]?.id ?? ""}`,
+    );
+    expect(links[0]?.textContent).toBe("Amber & Birchwood Ceramics, LP · 1065");
   });
 
   it("a3: records read by source, through, with the total", async () => {
