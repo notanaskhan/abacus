@@ -14,6 +14,7 @@ hostile (ADR-052): restricted, never rendered as HTML, never stored in an audit 
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import date, datetime
 from typing import Annotated, Literal, NoReturn
 from uuid import UUID
@@ -23,7 +24,14 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotImplementedYet
-from abacus.modules.identity.api import AbacusRouter, AuthContext, current_member
+from abacus.modules.assurance.api import (
+    CommitteeMember,
+    acknowledge_letter,
+    governance_letter,
+    governance_rooms,
+    room_letters,
+)
+from abacus.modules.identity.api import AbacusRouter, AuthContext, current_member, display_names
 
 # A portal person themself, never a break-glass support context.
 Member = Annotated[AuthContext, Depends(current_member)]
@@ -437,7 +445,25 @@ async def add_page_comment_route(
 )
 async def list_rooms_route(ctx: Member) -> GovernanceRoomsOut:
     """The rooms the caller's `tcwg` grants open; a management grant reaches none (DEC-93)."""
-    _not_yet()
+    return GovernanceRoomsOut(
+        items=[
+            GovernanceRoomOut(
+                id=r.id,
+                body_name=r.body_name,
+                subject=r.subject,
+                member_role=r.member_role,
+                questions_for_you=r.questions_for_you,
+            )
+            for r in await governance_rooms(ctx)
+        ]
+    )
+
+
+def _committee(members: Sequence[CommitteeMember]) -> list[CommitteeMemberOut]:
+    return [
+        CommitteeMemberOut(name=m.name, member_role=m.role, acknowledged_on=m.acknowledged_on)
+        for m in members
+    ]
 
 
 @governance_router.get(
@@ -449,7 +475,22 @@ async def list_rooms_route(ctx: Member) -> GovernanceRoomsOut:
 async def list_room_communications_route(
     room_id: UUID, ctx: Member
 ) -> GovernanceCommunicationsOut:
-    _not_yet()
+    """POR-15 a: the room's letters with the reader's state and the committee (R-02-T12)."""
+    rows, committee = await room_letters(ctx, room_id)
+    return GovernanceCommunicationsOut(
+        items=[
+            RoomLetterRowOut(
+                id=r.id,
+                title=r.title,
+                status=r.status,
+                sent_on=r.sent_on,
+                due_on=r.due_on,
+                acknowledged_on=r.acknowledged_on,
+            )
+            for r in rows
+        ],
+        committee=_committee(committee),
+    )
 
 
 @governance_router.get(
@@ -479,7 +520,22 @@ async def list_room_reports_route(room_id: UUID, ctx: Member) -> RoomReportsOut:
 )
 async def get_communication_route(communication_id: UUID, ctx: Member) -> GovernanceLetterOut:
     """The paper model. A version without an EP send row is refused (AC-28)."""
-    _not_yet()
+    found = await governance_letter(ctx, communication_id)
+    names = await display_names([found.signed_by_user_id])
+    actions: list[GovernanceAction] = ["ask"]
+    if found.can_acknowledge:
+        actions.insert(0, "acknowledge")
+    return GovernanceLetterOut(
+        id=found.id,
+        title=found.title,
+        dated_on=found.dated_on,
+        signed_by=names.get(found.signed_by_user_id, ""),
+        sections=[LetterSectionOut(heading=x.heading, body=x.body) for x in found.sections],
+        status=found.status,
+        seen_hash=found.seen_hash,
+        committee=_committee(found.committee),
+        allowed_actions=actions,
+    )
 
 
 @governance_router.get(
@@ -505,8 +561,13 @@ async def acknowledge_communication_route(
     ctx: Member,
     idempotency_key: IdempotencyKey,
 ) -> GovernanceAcknowledgedOut:
-    """`assurance.api.record_acknowledgement`: one row per member and version."""
-    _not_yet()
+    """`assurance.api.record_acknowledgement`: one row per member and version; a second
+    acknowledgement answers the first (idempotent by the row, whatever the key)."""
+    del idempotency_key
+    on, status = await acknowledge_letter(ctx, communication_id, body.seen_hash)
+    return GovernanceAcknowledgedOut(
+        communication_id=communication_id, acknowledged_on=on, status=status
+    )
 
 
 @governance_router.get(

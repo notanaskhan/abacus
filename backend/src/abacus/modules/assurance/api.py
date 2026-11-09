@@ -191,7 +191,11 @@ from abacus.modules.assurance.trial_balance import adopt as adopt_trial_balance
 from abacus.modules.assurance.trial_balance import tb_facts, tb_reviewables
 from abacus.modules.engagements.api import work_item_engagement
 from abacus.modules.evidence.api import engagement_of_version
-from abacus.modules.identity.api import AbacusRouter, register_firm_setting
+from abacus.modules.identity.api import (
+    AbacusRouter,
+    register_firm_setting,
+    register_scope_resolver,
+)
 from abacus.modules.review.api import (
     register_gate_kind,
     register_reviewable,
@@ -425,6 +429,7 @@ __all__ = [
     "SectionState",
     "TieOutCounts",
     "TieOutInput",
+    "acknowledge_letter",
     "adopt_trial_balance",
     "completion_errors",
     "completion_router",
@@ -435,6 +440,8 @@ __all__ = [
     "finding_to_misstatement",
     "follows_gate",
     "g4_facts",
+    "governance_letter",
+    "governance_rooms",
     "import_grouping_csv",
     "late_remittances",  # A-05-T30: AUD-27 and EBP-07 read the one late remittance
     "mapping_live",
@@ -458,6 +465,7 @@ __all__ = [
     "request_risk_approval",
     "request_severity_decision",
     "request_sum_conclusion",
+    "room_letters",
     "route_exception",
     "router",
     "set_misstatement_effect",
@@ -501,3 +509,24 @@ from abacus.modules.assurance.compute.ebp.review import review_signed  # noqa: E
 from abacus.modules.platform.api import register_module_review  # noqa: E402
 
 register_module_review("ebp_audits", review_signed)
+
+# R-02-T12 (DEC-3010): POR-15's governance room. A `governance_room` scope is a governance body,
+# resolved to its client; the room's reads and the acknowledgement live in `governance_room`.
+from abacus.modules.assurance.governance_room import (  # noqa: E402
+    CommitteeMember as CommitteeMember,
+)
+from abacus.modules.assurance.governance_room import (  # noqa: E402
+    LetterChanged as LetterChanged,
+)
+from abacus.modules.assurance.governance_room import (  # noqa: E402
+    acknowledge as acknowledge_letter,
+)
+from abacus.modules.assurance.governance_room import letter as governance_letter  # noqa: E402
+from abacus.modules.assurance.governance_room import letters as room_letters  # noqa: E402
+from abacus.modules.assurance.governance_room import (  # noqa: E402
+    record_acknowledgement as record_acknowledgement,
+)
+from abacus.modules.assurance.governance_room import room_scope  # noqa: E402
+from abacus.modules.assurance.governance_room import rooms as governance_rooms  # noqa: E402
+
+register_scope_resolver("governance_room", room_scope)

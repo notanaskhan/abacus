@@ -257,6 +257,7 @@ from abacus.modules.identity.repository import (
     MemberFacts,
     active_grants,
     contact_user_ids,
+    display_names,
     emails_of,  # K-02-T11: onboarding owners
     engagement_team_query,
     firm_tenant_ids,
@@ -680,6 +681,7 @@ __all__ = [
     "declared_action",
     "delegation_holders",
     "delegation_holders_by_grant",
+    "display_names",
     "drafted_guidance_to_clients",
     "earliest_partner",
     "emails_of",
