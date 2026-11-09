@@ -231,15 +231,25 @@ async def _read(
     # extraction covers statements (`all`); each read is a billed page unit like the others.
     statements = covers(await flag_variant(tenant, EVIDENCE_FORM_EXTRACTION), "statements")
     tabled: list[tuple[PageImage, OcrPage]] = []
-    if statements:
+    # S33 partials round (DEC-3139): an intake attachment's tables are read when it is filed (its
+    # evidence version is read on its own), so none are paid for here; and the TABLES pages count
+    # against the daily cap with the pages just read, before any is sent.
+    candidates = (
+        [(image, read) for image, read, _f in results if looks_like_statement(read.words)]
+        if statements and (version_id is not None or inbox_id is not None)
+        else []
+    )
+    tables_refused = bool(candidates) and await over_daily_cap(
+        tenant, len(images) + len(candidates)
+    )
+    if not tables_refused:
         by_page = {i.page: i for i in images}
-        for image, page_read, _f in results:
-            if looks_like_statement(page_read.words):
-                width, height = Decimal(str(image.width_pt)), Decimal(str(image.height_pt))
-                tables = await engine.read(
-                    by_page[image.page].png, width_pt=width, height_pt=height, api=TABLES_API
-                )
-                tabled.append((image, tables))
+        for image, _read in candidates:
+            width, height = Decimal(str(image.width_pt)), Decimal(str(image.height_pt))
+            tables = await engine.read(
+                by_page[image.page].png, width_pt=width, height_pt=height, api=TABLES_API
+            )
+            tabled.append((image, tables))
     run_id = await record_run(
         tenant, evidence_version_id=version_id, inbox_file_id=inbox_id, provider=engine.name,
         api=API, pages=[i.page for i in images], refused=None,
@@ -254,6 +264,13 @@ async def _read(
             synthetic_firm=facts.synthetic_firm,
             request_ids=[f.request_id for _i, f in with_forms if f.request_id],
         )  # fmt: skip
+    if tables_refused:
+        await record_run(
+            tenant, evidence_version_id=version_id, inbox_file_id=inbox_id,
+            provider=engine.name, api=TABLES_API, pages=[i.page for i, _r in candidates],
+            refused="quota_exceeded", synthetic_firm=facts.synthetic_firm, request_ids=[],
+        )  # fmt: skip
+        _log.info("upload.ocr_tables_refused", kind=given.kind, reason="quota_exceeded")
     tables_run = (
         await record_run(
             tenant, evidence_version_id=version_id, inbox_file_id=inbox_id,
@@ -304,8 +321,6 @@ async def _read(
         added = await insert_pages(tx.session, rows)
         cells = 0
         for image, tables in tabled:
-            if version_id is None and inbox_id is None:
-                break  # an intake attachment's tables are read when it is filed
             cells += await record_tables(
                 tx, tenant_id=tenant_id, evidence_version_id=version_id, inbox_file_id=inbox_id,
                 ocr_run_id=tables_run, page_no=image.page, tables=tables.tables,
