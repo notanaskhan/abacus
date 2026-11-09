@@ -1,6 +1,6 @@
 import { EmptyState, FlagOffState } from "@abacus/ui";
 import { createRoute, useNavigate, useSearch } from "@tanstack/react-router";
-import type { JSX, ReactNode } from "react";
+import { type JSX, type ReactNode, Suspense, lazy } from "react";
 import { FeatureGate } from "../../app-core/flags";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { WorkspaceFrame, type WorkspaceTab } from "../../screens/TAX-04/frame";
@@ -22,6 +22,13 @@ import { to } from "../to";
 //   /tax-returns/$returnId/residency           TXI-03
 
 export const REVIEW_FLAG = "tax.review_workspace";
+
+// T-04-T13: TAX-04's Prepare preset is fixture mode (the review tree and regions read T-04-T05's
+// routes, still 501), so a production build drops it and keeps the frame (SPEC-048 AC-10).
+const FIXTURES = import.meta.env.MODE === "test" || import.meta.env.VITE_FIXTURES === "1";
+const Prepare = FIXTURES
+  ? lazy(async () => ({ default: (await import("../../screens/TAX-04")).TAX04 }))
+  : null;
 type WorkspaceSearch = { ov?: "assistant" };
 
 function validateSearch(search: Record<string, unknown>): WorkspaceSearch {
@@ -74,6 +81,25 @@ export const taxReviewRoute = createRoute({
   path: "/tax-returns/$returnId/review/$section",
   validateSearch,
   component: function TaxReviewPage(): JSX.Element {
+    const returnId = useParam("returnId");
+    const navigate = useNavigate();
+    if (Prepare !== null) {
+      return (
+        <div className="flex min-h-0 flex-1 flex-col">
+          <FeatureGate entitlement="tax_returns" fallback={<FlagOffState flag="tax_returns" label="Tax Returns" />}>
+            <FeatureGate flag={REVIEW_FLAG} fallback={<FlagOffState flag={REVIEW_FLAG} label="Return review" />}>
+              <Suspense fallback={null}>
+                <Prepare
+                  onIssue={() => {
+                    void navigate({ to: "/tax-returns/$returnId/issues", params: { returnId } });
+                  }}
+                />
+              </Suspense>
+            </FeatureGate>
+          </FeatureGate>
+        </div>
+      );
+    }
     return <Workspace tab="review" title="Review" />;
   },
 });
