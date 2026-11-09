@@ -1394,6 +1394,9 @@ LIST_EXEMPT = frozenset(
         # A-02-T16 (DEC-514): an entity's engagements as candidates `authorise` judges one by one
         # (`connections.authorised_engagement`); never returned as a list.
         ("src/abacus/modules/engagements/repository.py", "entity_engagement_ids"),
+        # R-02-T11 (DEC-3025): a client grant's engagements as approval scopes; every item is
+        # then judged by `covering_grant` one by one.
+        ("src/abacus/modules/engagements/repository.py", "client_engagement_ids"),
         ("src/abacus/modules/requests/repository.py", "items_fulfilled_by"),
         # P-06-T07: one binder's sections, requests and recipient history, read after
         # `authorise(binder.*)` on that binder; and the platform's close rule on a C1 fact.

@@ -46,6 +46,8 @@ from abacus.modules.engagements.api import (
     client_approval_provider,
     covering_grant,
     decider_for,
+    engagements_of_client,
+    engagements_of_entity,
 )
 from abacus.modules.identity.api import AuthContext, Forbidden, active_grants, scope_facts
 from abacus.modules.organisations.api import attest_client_of
@@ -154,7 +156,16 @@ async def _covered_scopes(ctx: AuthContext, scope_id: UUID | None) -> list[UUID]
     """The scope ids the person's grants name (a grant on a work item names that item); one of
     them when asked for. Providers list their items per scope id."""
     grants = await active_grants(ctx.tenant, ctx.user_id)
-    ids = list(dict.fromkeys(g.scope_id for g in grants))
+    ids: list[UUID] = []
+    for g in grants:
+        # A client or entity grant covers its engagements (DEC-3025): providers list by an
+        # engagement or work item, and `_shown` still judges each item by its covering grant.
+        if g.scope_kind == "client":
+            ids += await engagements_of_client(ctx.tenant, g.scope_id)
+        elif g.scope_kind == "client_entity":
+            ids += await engagements_of_entity(ctx.tenant, g.scope_id)
+        ids.append(g.scope_id)
+    ids = list(dict.fromkeys(ids))
     if scope_id is not None:
         return [scope_id] if scope_id in ids else []
     return ids
