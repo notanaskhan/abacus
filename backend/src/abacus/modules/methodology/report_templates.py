@@ -703,3 +703,24 @@ async def published_clauses(
         tuple((str(c["clause_id"]), bool(c.get("default_enabled", False))) for c in raw),
         int(row.blocks),
     )
+
+
+_PUBLISHED_BODY = text(
+    """
+    SELECT v.id, v.body FROM report_template_versions v
+      JOIN report_templates t ON t.id = v.template_id
+     WHERE v.id = :id AND t.family = :family
+    """
+)
+
+
+async def published_body(
+    tenant: TenantContext, family: str, version_id: UUID
+) -> list[object] | None:
+    """A-07-T27: the blocks of a published version of `family` for a C11 render the consumer
+    composes itself (the wording stays C11 content; the consumer passes it through unread)."""
+    async with tenant_session(tenant) as session:
+        row = (
+            await session.execute(_PUBLISHED_BODY, {"id": version_id, "family": family})
+        ).first()
+    return None if row is None else cast("list[object]", row.body or [])
