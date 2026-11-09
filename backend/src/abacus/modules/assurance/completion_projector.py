@@ -262,7 +262,29 @@ async def on_completion_event(event: OutboxEvent) -> None:
         )
     if work_item_id is None:
         return
-    await store_items(tenant, work_item_id, event.event_id)
+    if await store_items(tenant, work_item_id, event.event_id):
+        await _readiness_after_burst(event.tenant_id, work_item_id)
+
+
+async def _readiness_after_burst(tenant_id: UUID, work_item_id: UUID) -> None:
+    """#4231 (DEC-3138): the first change of a burst starts the 60-second readiness run; later
+    changes attach to it while it waits; a finished one lets the next burst start anew."""
+    from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
+
+    from abacus.kernel.dispatch import dispatch
+    from abacus.modules.assurance.completion_readiness_workflow import (
+        CompletionReadinessWorkflow,
+        ReadinessInput,
+        workflow_id,
+    )
+
+    await dispatch(
+        CompletionReadinessWorkflow,
+        ReadinessInput(str(tenant_id), str(work_item_id)),
+        id=workflow_id(tenant_id, work_item_id),
+        id_reuse_policy=WorkflowIDReusePolicy.ALLOW_DUPLICATE,
+        id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
+    )
 
 
 # --- the read and the manual N/A -----------------------------------------------------------------

@@ -440,6 +440,7 @@ async def _new_version(
     sections: Sequence[LetterPart],
     action: str,
     template_version_id: UUID | None = None,
+    drafted_by_run_id: UUID | None = None,
 ) -> tuple[int, str]:
     body, digest = canonical(sections)
     sealed = await seal(ctx.tenant_id, body, SECTIONS_FINGERPRINT)
@@ -459,8 +460,8 @@ async def _new_version(
         text(
             "INSERT INTO governance_communication_versions (tenant_id, engagement_id, "
             "work_item_id, communication_id, version_no, sections_sealed, section_refs, "
-            "content_hash, created_by, template_version_id) VALUES (:t, :e, :wi, :c, :no, :s, "
-            "CAST(:refs AS jsonb), :h, :by, :tv) RETURNING id"
+            "content_hash, created_by, template_version_id, drafted_by_run_id) VALUES (:t, :e, "
+            ":wi, :c, :no, :s, CAST(:refs AS jsonb), :h, :by, :tv, :run) RETURNING id"
         ),
         {
             "t": ctx.tenant_id,
@@ -473,6 +474,7 @@ async def _new_version(
             "h": digest,
             "by": ctx.user_id,
             "tv": template_version_id,
+            "run": drafted_by_run_id,
         },
     )
     await tx.session.execute(
@@ -500,9 +502,11 @@ async def regenerate(
     communication_id: UUID,
     *,
     template_version_id: UUID | None = None,
+    drafted_by_run_id: UUID | None = None,
 ) -> str:
     """Compose again from today's facts; a person's edited sections keep their text. The letter
-    keeps the template its current version was composed from (DEC-3027)."""
+    keeps the template its current version was composed from (DEC-3027). A regenerate the Agent
+    ran names its run (`drafted_by_run_id`)."""
     await _person(ctx, work_item_id, "governance_comm.draft")
     row = await _read(ctx.tenant, work_item_id, communication_id)
     if str(row.status) in ("sent", "acknowledged"):  # type: ignore[attr-defined] -- a raw SQL row's column
@@ -528,6 +532,7 @@ async def regenerate(
             merge(previous, composed),
             "governance_communication.composed",
             template_version_id,
+            drafted_by_run_id,
         )
     return digest
 
