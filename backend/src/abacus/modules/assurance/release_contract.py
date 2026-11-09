@@ -30,6 +30,7 @@ from abacus.kernel import clock
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
 from abacus.modules.assurance import governance_comms as gc
+from abacus.modules.assurance import report_builder as rb
 from abacus.modules.engagements.api import get_ref, work_item_engagement
 from abacus.modules.identity.api import (
     AbacusRouter,
@@ -688,6 +689,55 @@ async def _communication_out(
     )
 
 
+# --- A-07-T27: AUD-23 through `report_builder` (DEC-3012) ----------------------------------------
+
+
+def _report_out(found: rb.ReportState, actions: list[ReportAction]) -> AuditReportOut:
+    current = None
+    if found.version_no is not None and found.content_hash is not None:
+        current = ReportVersionOut(
+            version_no=found.version_no,
+            content_hash=found.content_hash,
+            report_date=None,
+            city=None,
+            created_by_name="",
+            created_at=found.created_at or datetime.min,
+            approved_by_name=None,
+            approved_at=None,
+        )
+    return AuditReportOut(
+        report_kind=found.kind,
+        framework="",
+        status=cast(Literal["draft", "approved", "released", "reissued"], found.status),
+        current_version=current,
+        choices=[
+            ReportChoiceOut(
+                field=c.field,
+                value=c.value,
+                locked_by=c.locked_by,
+                decision_card_id=c.decision_card_id,
+                reason_code=c.reason_code,
+            )
+            for c in found.choices.values()
+        ],
+        paragraphs=[
+            ReportParagraphOut(
+                block_id=p.block_id,
+                heading=None,
+                text="",
+                included=p.included,
+                reason_code=p.reason_code,
+                citations=[],
+            )
+            for p in found.paragraphs
+        ],
+        documents=[],
+        eqr_required_not_concurred=False,
+        allowed_actions=actions,
+        version=found.row_version,
+    )
+
+
 router = AbacusRouter(prefix="/v1/audits/{work_item_id}", tags=["audit release"])
 _RL = "/representation-letter"
 _GC = "/governance-communications"
@@ -1006,7 +1056,7 @@ def _recipients(found: list[gc.Recipient]) -> GovernanceRecipientsOut:
 async def audit_report_route(work_item_id: UUID, ctx: Ctx) -> AuditReportOut:
     """AUD-23: choices, paper, documents and approvals (A-07-T27). No release here."""
     await _gate(ctx, work_item_id, "report.read")
-    _not_yet()
+    return _report_out(await rb.read(ctx, work_item_id), [])
 
 
 @router.get(
@@ -1014,7 +1064,22 @@ async def audit_report_route(work_item_id: UUID, ctx: Ctx) -> AuditReportOut:
 )
 async def audit_report_versions_route(work_item_id: UUID, ctx: Ctx) -> ReportVersionsOut:
     await _gate(ctx, work_item_id, "report.read")
-    _not_yet()
+    found = await rb.read(ctx, work_item_id)
+    return ReportVersionsOut(
+        items=[
+            ReportVersionOut(
+                version_no=no,
+                content_hash=digest,
+                report_date=None,
+                city=None,
+                created_by_name="",
+                created_at=at,
+                approved_by_name=None,
+                approved_at=None,
+            )
+            for no, digest, at in found.versions
+        ]
+    )
 
 
 @router.get(
@@ -1026,8 +1091,18 @@ async def audit_report_versions_route(work_item_id: UUID, ctx: Ctx) -> ReportVer
 async def audit_report_diff_route(
     work_item_id: UUID, from_version: int, to_version: int, ctx: Ctx
 ) -> ReportDiffOut:
+    """Blocks switched on and off between two versions; C11 compare words the paper later."""
     await _gate(ctx, work_item_id, "report.read")
-    _not_yet()
+    before = await rb.version_paragraphs(ctx.tenant, work_item_id, from_version)
+    after = await rb.version_paragraphs(ctx.tenant, work_item_id, to_version)
+    inserted, deleted = rb.word_counts(before, after)
+    return ReportDiffOut(
+        from_version=from_version,
+        to_version=to_version,
+        inserted_words=inserted,
+        deleted_words=deleted,
+        compare_document_id=None,
+    )
 
 
 @router.get(
@@ -1048,7 +1123,10 @@ async def audit_report_choice_route(
     """A validated choice is a new version; a modified opinion without the EP's decided card
     answers 409 `decision_required`."""
     await _gate(ctx, work_item_id, "report.draft")
-    _not_yet()
+    found = await rb.set_choice(
+        ctx, work_item_id, body.field, body.value, body.reason_code, body.seen_version
+    )
+    return _report_out(found, [])
 
 
 @router.post(

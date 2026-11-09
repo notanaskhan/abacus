@@ -108,6 +108,7 @@ from abacus.modules.methodology.report_templates import (
     PublishedClauses,
     PublishedConsentTemplate,
     consent_expiry_months,
+    published_body,
     published_clauses,
     published_consent_template,
 )
@@ -381,6 +382,7 @@ __all__ = [
     "publish_notes",
     "publish_report_template",
     "publish_standard",
+    "published_body",
     "published_checklist",
     "published_checklists",
     "published_clauses",
