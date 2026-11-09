@@ -340,6 +340,10 @@ class TraceExportOut(BaseModel):
     sha256: Annotated[str, classified("internal")]
     rows: Annotated[int, classified("internal")]
     renderer_version: Annotated[str, classified("internal")]
+    # P-09-T11 (DEC-3118): the signed manifest's additions.
+    run_record_sha256: Annotated[str | None, classified("internal")] = None
+    signature: Annotated[str | None, classified("internal")] = None
+    signature_key_id: Annotated[str | None, classified("internal")] = None
 
 
 # --- The run record (Q-02-T41; ADR-169 §3 and §4) --------------------------------------------
@@ -680,4 +684,7 @@ async def export_run_trace_route(run_id: UUID, body: TraceExportIn, ctx: Ctx) ->
         sha256=str(exported.manifest["sha256"]),
         rows=int(str(exported.manifest["rows"])),
         renderer_version=str(exported.manifest["renderer_version"]),
+        run_record_sha256=str(exported.manifest["run_record_sha256"]),
+        signature=str(exported.manifest["signature"]),
+        signature_key_id=str(exported.manifest["signature_key_id"]),
     )
