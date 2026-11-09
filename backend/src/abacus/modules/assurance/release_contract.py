@@ -1209,7 +1209,7 @@ _RELEASE_ACTIONS: tuple[ReportAction, ...] = ("report.release",)
 
 async def _release_out(ctx: AuthContext, work_item_id: UUID) -> AuditReleaseOut:
     from abacus.modules.assurance import release as rel
-    from abacus.modules.identity.api import names_of, team_of
+    from abacus.modules.identity.api import engagement_partners, names_of
 
     snap = await rel.snapshot(ctx.tenant, work_item_id)
     done = await rel.released(ctx.tenant, work_item_id)
@@ -1217,12 +1217,8 @@ async def _release_out(ctx: AuthContext, work_item_id: UUID) -> AuditReleaseOut:
     held = await allowed_actions(
         ctx, replace(ref.resource(), work_item_id=work_item_id), list(_RELEASE_ACTIONS)
     )
-    actions = [a for a in _RELEASE_ACTIONS if a in held and done is None]
-    partners = [
-        m
-        for m, role in await team_of(ctx.tenant_id, snap.engagement_id)
-        if role == "engagement_partner"
-    ]
+    actions = cast(list[ReportAction], [a for a in _RELEASE_ACTIONS if a in held and done is None])
+    partners = await engagement_partners(ctx.tenant_id, snap.engagement_id)
     names = await names_of([*partners, *([done.released_by] if done else [])])
     gates = [
         GateCardOut(
@@ -1331,9 +1327,17 @@ async def _archive_out(ctx: AuthContext, work_item_id: UUID) -> AuditArchiveStat
             )
         )
     archive = state.archive
-    actions = [a for a in _ARCHIVE_ACTIONS if a in held and archive is not None]
-    if state.done < len(state.items):
-        actions = [a for a in actions if a != "archive.request_lock"]
+    open_items = state.done < len(state.items)
+    actions = cast(
+        list[ArchiveAction],
+        [
+            a
+            for a in _ARCHIVE_ACTIONS
+            if a in held
+            and archive is not None
+            and not (open_items and a == "archive.request_lock")
+        ],
+    )
     locked_by = None
     if archive is not None and archive.locked_by is not None:
         locked_by = (await names_of([archive.locked_by])).get(archive.locked_by)

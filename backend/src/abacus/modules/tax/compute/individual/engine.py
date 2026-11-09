@@ -65,5 +65,5 @@ def parameters(tax_year: int) -> Mapping[str, object]:
     return cast(dict[str, object], yaml.safe_load(path.read_text(encoding="utf-8")))
 
 
-def section(tax_year: int, key: str) -> Mapping[str, object]:
+def parameter_table(tax_year: int, key: str) -> Mapping[str, object]:
     return cast(Mapping[str, object], parameters(tax_year)[key])

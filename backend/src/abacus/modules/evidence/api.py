@@ -9,16 +9,7 @@ from abacus.modules.evidence.activities import ACTIVITIES as UPLOAD_ACTIVITIES
 from abacus.modules.evidence.anchor_job import ACTIVITIES as ANCHOR_ACTIVITIES
 from abacus.modules.evidence.anchor_job import SCHEDULES as ANCHOR_SCHEDULES
 from abacus.modules.evidence.anchor_job import WORKFLOWS as ANCHOR_WORKFLOWS
-from abacus.modules.evidence.archive import (  # A-07-T31: the archive before its seal
-    ArchiveRow,
-    BinderSection,
-    archive_of,
-    index_sha256,
-    latest_binder_index,
-    open_archive,
-    record_binder_index,
-    source_document_count,
-)
+from abacus.modules.evidence.archive import source_document_count  # A-07-T31: section F
 from abacus.modules.evidence.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.evidence.audit_values import evidence_version_values, pii_reveal_values
 from abacus.modules.evidence.citations.display import citation_display
@@ -543,10 +534,8 @@ __all__ = [
     "WORDS_VERSION",
     "WORKFLOWS",
     "XLSX_MEDIA_TYPE",
-    "ArchiveRow",
     "AuditAnchorWorkflow",
     "BackfillInput",
-    "BinderSection",
     "Candidate",
     "CitationAnchor",
     "CitationClaim",
@@ -645,7 +634,6 @@ __all__ = [
     "add_to_inbox",
     "add_version",
     "anchor_chain",
-    "archive_of",
     "assign_inbox_file",
     "attachment_tax_years",
     "check_ready",
@@ -697,12 +685,10 @@ __all__ = [
     "holds_covering",
     "identify_form",
     "included_export_versions",
-    "index_sha256",
     "intake_masked_pages",
     "intake_masked_text",
     "is_version_withdrawn",
     "issue_deliverable_download",
-    "latest_binder_index",
     "latest_document",
     "legal_hold_activate",
     "legal_hold_apply_batch",
@@ -715,7 +701,6 @@ __all__ = [
     "match_material",
     "normalised_text",
     "ocr_refusal_of",
-    "open_archive",
     "open_deliverable_download",
     "page_quote_reason",
     "pdf_text",
@@ -730,7 +715,6 @@ __all__ = [
     "read_staged",
     "read_version",
     "record_agent_classification",
-    "record_binder_index",
     "record_citations",
     "record_generated",
     "record_intake_key",

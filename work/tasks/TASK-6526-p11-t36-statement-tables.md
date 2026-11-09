@@ -2,7 +2,7 @@
 id: TASK-6526
 title: "P-11-T36: bank statements on scans (Textract TABLES, statement fields on OCR text)"
 spec: SPEC-029
-acceptance_criteria: [AC-scan-twin, AC-cell-bbox]
+acceptance_criteria: [AC-1]  # the row's acceptance (AC-scan-twin, AC-cell-bbox)
 risk_zone: amber
 status: in-review
 branch: s33-p11-t36

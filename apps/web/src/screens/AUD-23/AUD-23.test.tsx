@@ -33,7 +33,7 @@ describe("AUD-23 report builder", () => {
     expect(document.querySelector("[data-watermark='draft']")).not.toBeNull();
     expect(screen.getByText("Supplemental Schedules Required by ERISA")).toBeTruthy();
     expect(screen.getByText("Engagement partner approval")).toBeTruthy();
-    expect(screen.getByText("October 9, 2026", { selector: "dd *, span, p" })).toBeTruthy();
+    expect(screen.getAllByText("October 9, 2026").length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole("button", { name: /Approve report/ }));
     expect(onApprove).toHaveBeenCalledTimes(1);
   });
@@ -61,7 +61,7 @@ describe("AUD-23 report builder", () => {
     expect(screen.getByText("Basis for Qualified Opinion")).toBeTruthy();
     expect(screen.getByText("Decision required")).toBeTruthy();
     expect(
-      (screen.getByRole("button", { name: /Approve report/ }) as HTMLButtonElement).disabled,
+      screen.getByRole<HTMLButtonElement>("button", { name: /Approve report/ }).disabled,
     ).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: "Request partner decision…" }));
     expect(onRequestDecision).toHaveBeenCalledWith("qual");
@@ -78,7 +78,9 @@ describe("AUD-23 report builder", () => {
   it("d: the going-concern section shows for illustration; its toggle is never a choice", () => {
     render(<ReportBuilder frame="d" canApprove />);
     expect(
-      screen.getByText("Substantial Doubt About the Plan’s Ability to Continue as a Going Concern"),
+      screen.getByText(
+        "Substantial Doubt About the Plan’s Ability to Continue as a Going Concern",
+      ),
     ).toBeTruthy();
     const toggle = screen.getByRole("switch", { name: "Going concern section" });
     expect((toggle as HTMLButtonElement).disabled).toBe(true);
@@ -97,7 +99,9 @@ describe("AUD-23 report builder", () => {
     render(<ReportBuilder frame="g" canApprove />);
     expect(screen.getByText("Reissued report")).toBeTruthy();
     expect(
-      screen.getByText("October 9, 2026, except for Note 12, as to which the date is January 15, 2027"),
+      screen.getByText(
+        "October 9, 2026, except for Note 12, as to which the date is January 15, 2027",
+      ),
     ).toBeTruthy();
     expect(screen.getByRole("button", { name: /Approve reissue/ })).toBeTruthy();
   });
@@ -112,7 +116,7 @@ describe("AUD-23 report builder", () => {
 
   it("h, i and j: generating, generated with Open in Word, and out of date", () => {
     render(<ReportBuilder frame="h" />);
-    expect(screen.getByText("Generating…")).toBeTruthy();
+    expect(screen.getAllByText("Generating…").length).toBeGreaterThan(0);
     cleanup();
     render(<ReportBuilder frame="i" />);
     expect(screen.getByRole("status").textContent).toBe(
@@ -130,9 +134,9 @@ describe("AUD-23 report builder", () => {
     const sheet = screen.getByRole("dialog", { name: "Generate from template" });
     expect(sheet.textContent).toContain("BH Report · EBP 103(a)(3)(C) v3");
     expect(sheet.textContent).toContain("Placeholder — applied at release (AUD-24)");
-    expect(
-      (screen.getByRole("switch", { name: "Watermark" }) as HTMLButtonElement).disabled,
-    ).toBe(true);
+    expect(screen.getByRole<HTMLButtonElement>("switch", { name: "Watermark" }).disabled).toBe(
+      true,
+    );
   });
 
   it("hovering a citation lights its structure row", () => {

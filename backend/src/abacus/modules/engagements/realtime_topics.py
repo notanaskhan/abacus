@@ -13,7 +13,7 @@ from uuid import UUID
 
 from abacus.kernel import realtime
 from abacus.kernel.errors import NotFound
-from abacus.modules.identity.api import AuthContext, Forbidden, allowed_actions
+from abacus.modules.identity.api import AuthContext, Forbidden, allowed_actions, firm_admins
 
 
 async def _engagement_access(
@@ -35,17 +35,19 @@ async def _engagement_access(
     held = await allowed_actions(ctx, resource, ["engagement.read"])
     if "engagement.read" in held:
         return "content"
-    return "metadata" if ctx.firm_role == "firm_admin" else None
+    # A firm admin outside the engagement reads metadata invalidations only (AC-T9).
+    return "metadata" if ctx.user_id in await firm_admins(ctx.tenant_id) else None
 
 
 async def engagement_topic(ctx: object, ident: str) -> realtime.TopicAccess | None:
-    return await _engagement_access(cast(AuthContext, ctx), UUID(ident), None)
+    auth = cast(AuthContext, ctx)  # a subscriber: a signed-in person (Member)
+    return await _engagement_access(auth, UUID(ident), None)
 
 
 async def work_item_topic(ctx: object, ident: str) -> realtime.TopicAccess | None:
     from abacus.modules.engagements.api import work_item_engagement
 
-    auth = cast(AuthContext, ctx)
+    auth = cast(AuthContext, ctx)  # a subscriber: a signed-in person (Member)
     engagement_id = await work_item_engagement(auth.tenant, UUID(ident))
     if engagement_id is None:
         return None

@@ -157,7 +157,7 @@ describe("SHL-13 run pane", () => {
   });
 
   it("frame 1: idle, the engagement agent is ready and only a person starts it", async () => {
-    renderPane(RUN_4127_IDLE_ID);
+    renderPane(RUN_4127_IDLE_ID, { engagementId: "00000000-0000-4000-8000-000000000001" });
     expect(await screen.findByText("Ready to run 14 workpapers across 5 levels")).toBeTruthy();
     expect(
       screen.getByText("Auto mode is off — I'll propose the plan and wait for your go-ahead."),
@@ -189,9 +189,9 @@ describe("SHL-13 run pane", () => {
     expect(within(card).getByText(/Keystone participant file/)).toBeTruthy();
     expect(within(card).getByText("1 of 1")).toBeTruthy();
     // P-09-T14: Skip is live; Next waits for an answer.
-    expect((await within(card).findByRole("button", { name: "Skip" })).hasAttribute("disabled")).toBe(
-      false,
-    );
+    expect(
+      (await within(card).findByRole("button", { name: "Skip" })).hasAttribute("disabled"),
+    ).toBe(false);
     expect(within(card).getByRole("button", { name: "Next" }).hasAttribute("disabled")).toBe(true);
   });
 
@@ -247,7 +247,7 @@ describe("SHL-13 run pane", () => {
     for (const name of ["Sign off run", "yes, run it", "Retry", "Not helpful"]) {
       expect(screen.queryByRole("button", { name })).toBeNull();
     }
-    expect((screen.getByLabelText("Message") as HTMLInputElement).disabled).toBe(true);
+    expect(screen.getByLabelText<HTMLInputElement>("Message").disabled).toBe(true);
   });
 
   it("P-09-T14: a run the server lists no action on offers none", async () => {

@@ -2,7 +2,7 @@
 id: TASK-6508
 title: "A-07-T31: archive service and checklist — open on report.released, nine live items, binder index A–H, Request lock…"
 spec: SPEC-644
-acceptance_criteria: [F7]
+acceptance_criteria: [AC-1]  # the row's acceptance (F7)
 risk_zone: red
 status: in-review
 branch: s33-a07-t31

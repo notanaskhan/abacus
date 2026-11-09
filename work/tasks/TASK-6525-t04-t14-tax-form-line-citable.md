@@ -2,7 +2,7 @@
 id: TASK-6525
 title: "T-04-T14: the tax_form_line citable, box citations and linked-figure labels"
 spec: SPEC-649
-acceptance_criteria: [AC-cite]
+acceptance_criteria: [AC-1]  # the row's acceptance (AC-cite)
 risk_zone: red
 status: in-review
 branch: s33-t04-t14

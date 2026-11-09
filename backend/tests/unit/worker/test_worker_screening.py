@@ -85,6 +85,9 @@ def test_ac14_the_publisher_routes_evidence_version_created_to_start_screening()
     # A-07-T22 (DEC-2806): the completion projector follows the facts its checklist reads.
     projector = importlib.import_module("abacus.modules.assurance.completion_projector").SUBSCRIBED
     assert set(built.handlers) == set(catalogue) | set(projector) | {
+        # P-10-T27 (DEC-3117): the real-time invalidations of `/v1/events`.
+        "notification.created",
+        "request_item.status_changed",
         EVIDENCE_VERSION_CREATED,
         "knowledge_document.added",
         "client_invitation.issued",  # SPEC-015

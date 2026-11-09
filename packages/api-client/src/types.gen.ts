@@ -41363,6 +41363,10 @@ export type RunHeaderOut = {
     blocked_on?: BlockedOnOut | null;
     counters?: RunCountersOut | null;
     /**
+     * Plan Version
+     */
+    plan_version?: number | null;
+    /**
      * Run Number
      */
     run_number?: number | null;
@@ -51213,9 +51217,21 @@ export type TraceExportOut = {
      */
     rows: number;
     /**
+     * Run Record Sha256
+     */
+    run_record_sha256?: string | null;
+    /**
      * Sha256
      */
     sha256: string;
+    /**
+     * Signature
+     */
+    signature?: string | null;
+    /**
+     * Signature Key Id
+     */
+    signature_key_id?: string | null;
 };
 
 /**
@@ -54877,6 +54893,10 @@ export type RunEventsErrors = {
      * Not found
      */
     404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
     /**
      * Invalid request
      */
@@ -91971,6 +91991,10 @@ export type VoidEnvelopeResponse = VoidEnvelopeResponses[keyof VoidEnvelopeRespo
 export type EventsStreamData = {
     body?: never;
     headers?: {
+        /**
+         * Last-Event-Id
+         */
+        'Last-Event-ID'?: number | null;
         /**
          * Authorization
          */

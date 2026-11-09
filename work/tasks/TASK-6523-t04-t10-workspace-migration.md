@@ -2,7 +2,7 @@
 id: TASK-6523
 title: "T-04-T10: migration 0761_tax_individual_workspace (expand-only)"
 spec: SPEC-649
-acceptance_criteria: [AC-schema]
+acceptance_criteria: [AC-1]  # the row's acceptance (AC-schema)
 risk_zone: amber
 status: in-review
 branch: s33-t04-t10

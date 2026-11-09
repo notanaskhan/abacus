@@ -15,7 +15,7 @@ import asyncio
 import inspect
 import json
 import re
-from collections.abc import AsyncIterator, Callable, Iterator
+from collections.abc import AsyncGenerator, Callable, Iterator
 from contextlib import asynccontextmanager
 from decimal import Decimal
 from typing import Any, Final
@@ -36,7 +36,7 @@ FAMILIES: Final = ("notices", "tax_forms", "statements")
 VARIANTS: Final = ("off", "notices", "notices_tax_forms", "all")
 
 
-def _blocks(key: str) -> list[dict[str, Any]]:
+def _blocks(key: str) -> list[dict[str, Any]]:  # Any: untyped JSON or YAML (a test double)
     page = next(p for p in generate() if p.key == key)
     return list(json.loads(page.textract)["Blocks"])
 
@@ -202,13 +202,13 @@ def test_ac_a_family_the_variant_does_not_cover_writes_nothing(variant: str) -> 
 
 async def _extract_version_with(layers: list[PageWords], *, variant: str) -> int:
     """`extract_version` with its ports replaced: no database, the given page layers."""
-    inserted: list[dict[str, Any]] = []
+    inserted: list[dict[str, Any]] = []  # Any: untyped JSON or YAML (a test double)
 
     class Session:
         async def scalar(self, *_a: object, **_k: object) -> int:
             return 0
 
-        async def execute(self, _sql: object, params: dict[str, Any]) -> None:
+        async def execute(self, _sql: object, params: dict[str, Any]) -> None:  # Any: test JSON
             inserted.append(params)
 
     class Tx:
@@ -219,11 +219,11 @@ async def _extract_version_with(layers: list[PageWords], *, variant: str) -> int
         def record(self, *_a: object, **_k: object) -> None: ...
 
     @asynccontextmanager
-    async def session_of(_tenant: object) -> AsyncIterator[Session]:
+    async def session_of(_tenant: object) -> AsyncGenerator[Session]:
         yield Session()
 
     @asynccontextmanager
-    async def uow_of(_tenant: object) -> AsyncIterator[Tx]:
+    async def uow_of(_tenant: object) -> AsyncGenerator[Tx]:
         yield Tx()
 
     async def pages(*_a: object, **_k: object) -> list[int]:
@@ -236,8 +236,8 @@ async def _extract_version_with(layers: list[PageWords], *, variant: str) -> int
         return variant
 
     saved = (fx.tenant_session, fx.uow, fx.pages_of, fx.read_page_layer, fx.flag_variant)
-    fx.tenant_session, fx.uow, fx.pages_of = session_of, uow_of, pages  # type: ignore[assignment]  # ports
-    fx.read_page_layer, fx.flag_variant = layer, flag  # type: ignore[assignment]  # ports
+    fx.tenant_session, fx.uow, fx.pages_of = session_of, uow_of, pages
+    fx.read_page_layer, fx.flag_variant = layer, flag
     try:
         written = await fx.extract_version(uuid4(), uuid4())
     finally:

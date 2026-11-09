@@ -7,9 +7,10 @@ templates ("I have not evaluated them"), verified citations, and drafts or sugge
 from __future__ import annotations
 
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from types import SimpleNamespace
+from typing import cast
 
 import pytest
 
@@ -69,7 +70,7 @@ async def test_narration_with_a_human_act_or_a_free_number_writes_nothing(words:
     run = _run(narration=code_runs.blocks(code_runs.text_part(code_runs.txt(words))))
 
     @asynccontextmanager
-    async def never() -> AsyncIterator[None]:
+    async def never() -> AsyncGenerator[None]:
         raise AssertionError("nothing is written")
         yield
 
@@ -93,7 +94,7 @@ async def test_the_digest_says_it_has_not_evaluated_them(monkeypatch: pytest.Mon
         return uuid.uuid4()
 
     @asynccontextmanager
-    async def session(_t: TenantContext) -> AsyncIterator[object]:
+    async def session(_t: TenantContext) -> AsyncGenerator[object]:
         async def scalar(*_a: object, **_k: object) -> int:
             return 6
 
@@ -108,11 +109,8 @@ async def test_the_digest_says_it_has_not_evaluated_them(monkeypatch: pytest.Mon
     ctx = SimpleNamespace(tenant=TenantContext(uuid.uuid4(), "human", str(PERSON)), user_id=PERSON)
     await caps.eqr_digest(ctx, WORK_ITEM)  # type: ignore[arg-type]  # a test double
     (run,) = recorded
-    words = " ".join(
-        str(s.get("text", ""))
-        for p in run.narration["parts"]
-        for s in p["segments"]  # type: ignore[index, union-attr]  # AgentBlocks payload
-    )
+    parts = cast(list[dict[str, list[dict[str, object]]]], run.narration["parts"])
+    words = " ".join(str(s.get("text", "")) for p in parts for s in p["segments"])
     assert "I have not evaluated them." in words
     assert run.facts["cards"].value == "6" and run.initiator_user_id == PERSON
 

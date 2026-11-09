@@ -222,7 +222,7 @@ function DeliverablesPage(): JSX.Element {
   const mobile = useMobileViewport();
   const navigate = useAreaNavigate();
   const params: { deliverableId?: string } = useParams({ strict: false });
-  const [section] = useState(() =>
+  const [section] = useState<"k1s" | undefined>(() =>
     new URLSearchParams(window.location.search).get("section") === "k1s" ? "k1s" : undefined,
   );
   return (

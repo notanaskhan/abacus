@@ -7,7 +7,7 @@ closes the stream with locked within 60 s, and a seventh stream gets 409 too_man
 from __future__ import annotations
 
 import uuid
-from collections.abc import Sequence
+from collections.abc import AsyncIterator, Sequence
 
 import pytest
 
@@ -30,9 +30,9 @@ def _events(after: int | None, upto: int) -> list[rt.StreamEvent]:
     ]
 
 
-async def _take(gen: object, n: int) -> list[bytes]:
+async def _take(gen: AsyncIterator[bytes], n: int) -> list[bytes]:
     out: list[bytes] = []
-    async for chunk in gen:  # type: ignore[attr-defined]  # an async generator
+    async for chunk in gen:
         out.append(chunk)
         if len(out) >= n:
             break

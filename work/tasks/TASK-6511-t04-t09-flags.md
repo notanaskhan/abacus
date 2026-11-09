@@ -2,7 +2,7 @@
 id: TASK-6511
 title: "T-04-T09: flags tax.review_workspace, tax.individual_workpapers, tax_agents.enabled"
 spec: SPEC-649
-acceptance_criteria: [AC-flags]
+acceptance_criteria: [AC-1]  # the row's acceptance (AC-flags)
 risk_zone: red
 status: in-review
 branch: s33-t04-t09

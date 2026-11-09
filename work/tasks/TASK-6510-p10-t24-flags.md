@@ -2,7 +2,7 @@
 id: TASK-6510
 title: "P-10-T24: flags agent_runtime.v2, realtime.sse, engagement_run.enabled"
 spec: SPEC-647
-acceptance_criteria: [AC-flags]
+acceptance_criteria: [AC-G1]  # the row's acceptance (AC-flags)
 risk_zone: red
 status: in-review
 branch: s33-p10-t24

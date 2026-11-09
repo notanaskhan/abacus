@@ -14,7 +14,7 @@ from abacus.modules.identity.api import AuthContext, Forbidden
 async def run_topic(ctx: object, ident: str) -> realtime.TopicAccess | None:
     from abacus.modules.agents.runs import authorised_run
 
-    auth = cast(AuthContext, ctx)
+    auth = cast(AuthContext, ctx)  # a subscriber: a signed-in person (Member)
     if auth.client:
         return None
     try:

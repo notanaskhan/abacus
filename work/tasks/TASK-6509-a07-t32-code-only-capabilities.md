@@ -2,7 +2,7 @@
 id: TASK-6509
 title: "A-07-T32: code-only Accrued Agent capabilities on the v1 recording path (digest, readiness, bring-down, letter compose, archive readiness)"
 spec: SPEC-644
-acceptance_criteria: [F10]
+acceptance_criteria: [AC-1]  # the row's acceptance (F10)
 risk_zone: red
 status: in-review
 branch: s33-a07-t32

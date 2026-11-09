@@ -11,7 +11,7 @@ from abacus.modules.identity.api import AuthContext, active_grants
 
 
 async def portal_topic(ctx: object, ident: str) -> realtime.TopicAccess | None:
-    auth = cast(AuthContext, ctx)
+    auth = cast(AuthContext, ctx)  # a subscriber: a signed-in person (Member)
     if not auth.client:
         return None
     scope = UUID(ident)

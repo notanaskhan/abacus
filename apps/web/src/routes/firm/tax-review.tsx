@@ -3,9 +3,8 @@ import { createRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { type JSX, type ReactNode, Suspense, lazy } from "react";
 import { FeatureGate } from "../../app-core/flags";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
-import { WorkspaceFrame, type WorkspaceTab } from "../../screens/TAX-04/frame";
 import { useParam } from "../params";
-import { appRoute } from "../root";
+import { appRoute, lazyScreen } from "../root";
 import { to } from "../to";
 
 // The return's review workspace (T-04-T12; T-04 §5): new routes in new files, each behind the
@@ -22,6 +21,10 @@ import { to } from "../to";
 //   /tax-returns/$returnId/residency           TXI-03
 
 export const REVIEW_FLAG = "tax.review_workspace";
+type WorkspaceTab = "overview" | "intake" | "review" | "issues" | "activity";
+const WorkspaceScreen = lazyScreen(
+  async () => (await import("../../screens/TAX-04/workspace")).Workspace,
+);
 
 // T-04-T13: TAX-04's Prepare preset is fixture mode (the review tree and regions read T-04-T05's
 // routes, still 501), so a production build drops it and keeps the frame (SPEC-048 AC-10).
@@ -51,25 +54,38 @@ function Workspace({
     if (next === "overview") void navigate(to.TAX02({ returnId }));
     else if (next === "intake") void navigate(to.TAX03({ returnId }));
     else if (next === "review")
-      void navigate({ to: "/tax-returns/$returnId/review/$section", params: { returnId, section: "documents" } });
-    else if (next === "issues") void navigate({ to: "/tax-returns/$returnId/issues", params: { returnId } });
+      void navigate({
+        to: "/tax-returns/$returnId/review/$section",
+        params: { returnId, section: "documents" },
+      });
+    else if (next === "issues")
+      void navigate({ to: "/tax-returns/$returnId/issues", params: { returnId } });
     else void navigate({ to: "/tax-returns/$returnId/activity", params: { returnId } });
   };
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <FeatureGate entitlement="tax_returns" fallback={<FlagOffState flag="tax_returns" label="Tax Returns" />}>
-        <FeatureGate flag={REVIEW_FLAG} fallback={<FlagOffState flag={REVIEW_FLAG} label="Return review" />}>
-          <WorkspaceFrame
+      <FeatureGate
+        entitlement="tax_returns"
+        fallback={<FlagOffState flag="tax_returns" label="Tax Returns" />}
+      >
+        <FeatureGate
+          flag={REVIEW_FLAG}
+          fallback={<FlagOffState flag={REVIEW_FLAG} label="Return review" />}
+        >
+          <WorkspaceScreen
             returnId={returnId}
             tab={tab}
             title={title}
             onTab={go}
             onAssistant={() => {
-              void navigate({ to: ".", search: search.ov === "assistant" ? {} : { ov: "assistant" } });
+              void navigate({
+                to: ".",
+                search: search.ov === "assistant" ? {} : { ov: "assistant" },
+              });
             }}
           >
             {children ?? (PLANNED_VISIBLE ? <EmptyState title="Not built yet" /> : null)}
-          </WorkspaceFrame>
+          </WorkspaceScreen>
         </FeatureGate>
       </FeatureGate>
     </div>
@@ -86,8 +102,14 @@ export const taxReviewRoute = createRoute({
     if (Prepare !== null) {
       return (
         <div className="flex min-h-0 flex-1 flex-col">
-          <FeatureGate entitlement="tax_returns" fallback={<FlagOffState flag="tax_returns" label="Tax Returns" />}>
-            <FeatureGate flag={REVIEW_FLAG} fallback={<FlagOffState flag={REVIEW_FLAG} label="Return review" />}>
+          <FeatureGate
+            entitlement="tax_returns"
+            fallback={<FlagOffState flag="tax_returns" label="Tax Returns" />}
+          >
+            <FeatureGate
+              flag={REVIEW_FLAG}
+              fallback={<FlagOffState flag={REVIEW_FLAG} label="Return review" />}
+            >
               <Suspense fallback={null}>
                 <Prepare
                   onIssue={() => {

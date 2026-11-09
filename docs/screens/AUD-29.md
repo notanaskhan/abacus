@@ -53,6 +53,15 @@ None of its own; rows show each object's own status word through its C2 object.
 | Risk rows | AUD-08 | handoff link (A-03) |
 | Gate rows | ENG-02, CLI-07 | handoff link |
 | To-do rows | SHL-17 | handoff link (P-05) |
+| Client chip | CLI-02 | handoff link |
+| Methodology chip | KNW-03 | handoff link (K-01) |
+| Team rows | ENG-05 | handoff link |
+| General Audit Planning rows | AUD-04 | handoff link (A-03) |
+| Internal Control rows | AUD-09 | handoff link (A-04) |
+| Service Organizations & SOC 1 rows | AUD-10 | handoff link (A-04) |
+| Sample Selection rows | AUD-11 | handoff link (A-03) |
+| Testing rows | AUD-12 | handoff link (A-04) |
+| Fraud Brainstorming rows | AUD-05 | handoff link (A-04) |
 
 ## Acceptance
 - Every artboard letter above carries live with its owning task.

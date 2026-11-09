@@ -39,6 +39,7 @@ FIRM_LEVEL: Final = frozenset(
     {
         "firm",
         "user",
+        "realtime",  # P-10-T27: an outbox event's invalidation with no row of its own
         "staff_invitation",
         "support_session",
         "methodology_version",

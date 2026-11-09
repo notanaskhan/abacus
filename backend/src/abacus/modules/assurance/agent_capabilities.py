@@ -25,12 +25,20 @@ from sqlalchemy import text
 
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.uow import uow
-from abacus.modules.agents.api import CodeRun, CodeStep, record_code_run
-from abacus.modules.agents.blocks import Fact
-from abacus.modules.agents.code_runs import blocks, fact, text_part, txt
+from abacus.modules.agents.api import (
+    CodeRun,
+    CodeStep,
+    Fact,
+    blocks,
+    fact,
+    last_completed_run_at,
+    record_code_run,
+    text_part,
+    txt,
+)
 from abacus.modules.assurance.release import AlsoRequired, register_also_required
 from abacus.modules.engagements.api import assurance_item, engagement_type_of, get_ref
-from abacus.modules.identity.api import AuthContext, authorise, team_of
+from abacus.modules.identity.api import AuthContext, authorise, engagement_partners
 
 EQR_DIGEST: Final = "audit.eqr_digest"
 COMPLETION_READINESS: Final = "audit.completion_readiness"
@@ -163,11 +171,7 @@ async def record_bring_down(
 ) -> UUID | None:
     """After the bring-down activity: the run, as the engagement partner via Agent (the timer has
     no person; the EP set the report date). None when the engagement has no EP."""
-    partners = [
-        m
-        for m, role in await team_of(tenant.tenant_id, engagement_id)
-        if role == "engagement_partner"
-    ]
+    partners = await engagement_partners(tenant.tenant_id, engagement_id)
     if not partners:
         return None
     acting = TenantContext(
@@ -215,14 +219,7 @@ async def bring_down_item(
     """AUD-24's also-required "bring-down": a completed `audit.bring_down` run on the engagement
     (A-07-T30's slot; DEC-3109)."""
     del work_item_id
-    async with tenant_session(tenant) as session:
-        at = await session.scalar(
-            text(
-                "SELECT max(finished_at) FROM agent_runs WHERE engagement_id = :e "
-                "AND agent_id = :a AND status = 'completed'"
-            ),
-            {"e": engagement_id, "a": BRING_DOWN},
-        )
+    at = await last_completed_run_at(tenant, engagement_id, BRING_DOWN)
     return AlsoRequired("bring_down", at is not None, None if at is None else at.isoformat())
 
 

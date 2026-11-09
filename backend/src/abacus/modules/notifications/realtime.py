@@ -107,14 +107,19 @@ def _uuid_or_none(value: object) -> UUID | None:
     return UUID(str(value)) if value else None
 
 
+MAX_TOPICS: Final = 100
+
+
 def parse_topics(raw: str | None) -> list[str]:
-    return sorted({t.strip() for t in (raw or "").split(",") if t.strip()})[:100]
+    return sorted({t.strip() for t in (raw or "").split(",") if t.strip()})[:MAX_TOPICS]
 
 
 async def events_stream(
     ctx: AuthContext, topics: Sequence[str], last_event_id: int | None
 ) -> StreamingResponse:
     held = await _authorised(ctx, topics)
+    # The slot first: a refused seventh stream registers nothing (S33 security review).
+    realtime.claim_slot(ctx.tenant_id, ctx.user_id)
     stream_id = uuid4()
     _STREAMS[stream_id] = (ctx.user_id, held)
     opened = False
@@ -168,8 +173,6 @@ async def events_stream(
                 return False
         return True
 
-    realtime.claim_slot(ctx.tenant_id, ctx.user_id)
-
     async def body() -> AsyncIterator[bytes]:
         try:
             async for chunk in realtime.stream(
@@ -195,11 +198,13 @@ async def change_topics(
     found = _STREAMS.get(stream_id)
     if found is None or found[0] != ctx.user_id:
         raise NotFound("stream")
-    added = await _authorised(ctx, add)
+    added = await _authorised(ctx, parse_topics(",".join(add)))
     current = dict(found[1])
-    current.update(added)
     for topic in remove:
         current.pop(topic, None)
+    current.update(added)
+    if len(current) > MAX_TOPICS:  # the open's cap holds for the stream's whole life
+        raise TopicRefused(facts={"limit": MAX_TOPICS})
     _STREAMS[stream_id] = (ctx.user_id, current)
     for topic in added:
         realtime.wake(topic)
@@ -210,12 +215,13 @@ async def change_topics(
 
 
 async def _user(ctx: object, ident: str) -> realtime.TopicAccess | None:
-    return "content" if str(cast(AuthContext, ctx).user_id) == ident else None
+    person = cast(AuthContext, ctx)  # a subscriber: a signed-in person (Member)
+    return "content" if str(person.user_id) == ident else None
 
 
 async def _firm(ctx: object, ident: str) -> realtime.TopicAccess | None:
     """`firm:home`: any firm member's own Home invalidations (client principals never)."""
-    auth = cast(AuthContext, ctx)
+    auth = cast(AuthContext, ctx)  # a subscriber: a signed-in person (Member)
     return "content" if ident == "home" and not auth.client else None
 
 

@@ -98,7 +98,7 @@ async def run_events_stream(
 
 async def badge_stream(ctx: AuthContext) -> StreamingResponse:
     """The caller's own counts; an event only when they change."""
-    if ctx.client or ctx.user_id is None:
+    if ctx.client:
         raise NotFound("agent_badge")
     seen: dict[str, int] = {}
     tick = 0

@@ -2,7 +2,7 @@
 id: TASK-6524
 title: "T-04-T11: compute package modules/tax/compute/individual/ (Feld goldens)"
 spec: SPEC-649
-acceptance_criteria: [AC-3.2, AC-6.3, AC-7.2, AC-8.2]
+acceptance_criteria: [AC-1]  # the row's acceptance (AC-3.2, AC-6.3, AC-7.2, AC-8.2)
 risk_zone: amber
 status: in-review
 branch: s33-t04-t11

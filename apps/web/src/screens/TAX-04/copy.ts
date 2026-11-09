@@ -27,9 +27,15 @@ export const COPY = {
   issueNote: "Opens TAX-06 · Return issues",
 } as const;
 
+export interface TreeGroup {
+  id: string;
+  label: string;
+  subs: readonly { id: string; label: string; docs: readonly (readonly [string, string])[] }[];
+}
+
 /** The review tree (prepare preset): groups, sub-heads and document names as the handoff draws
  * them. `halvard` and `k1` carry pages here; the rest open their name over a blank page. */
-export const TREE = [
+export const TREE: readonly TreeGroup[] = [
   {
     id: "general",
     label: "General",
@@ -95,7 +101,7 @@ export const TREE = [
       },
     ],
   },
-] as const;
+];
 
 /** A leadsheet row: its label, the value (whole dollars), a number line (500) or a support row,
  * and the source region it ties to (by key). */
@@ -160,13 +166,31 @@ export const MISMATCH_3B = "14280";
 
 /** The regions on page 1, in page points (document content, the C4 locators of fixture mode). */
 export const REGIONS = {
-  div1a: { doc: "halvard", label: "1a- Total ordinary dividends 14,820.00", bbox: [294, 79, 441, 120] },
-  div1b: { doc: "halvard", label: "1b- Qualified dividends 11,960.00", bbox: [294, 120, 441, 161] },
+  div1a: {
+    doc: "halvard",
+    label: "1a- Total ordinary dividends 14,820.00",
+    bbox: [294, 79, 441, 120],
+  },
+  div1b: {
+    doc: "halvard",
+    label: "1b- Qualified dividends 11,960.00",
+    bbox: [294, 120, 441, 161],
+  },
   int1: { doc: "halvard", label: "1- Interest income 2,310.00", bbox: [294, 420, 441, 461] },
   k1box5: { doc: "k1", label: "5 Interest income 4,600", bbox: [294, 350, 441, 370] },
-  k1box18a: { doc: "k1", label: "18A Tax-exempt interest income 1,550", bbox: [294, 374, 441, 394] },
+  k1box18a: {
+    doc: "k1",
+    label: "18A Tax-exempt interest income 1,550",
+    bbox: [294, 374, 441, 394],
+  },
 } as const;
 
 /** The demo's order (MOTION): 1a at 700 ms, 1b at 1000 ms, 3b at 1950 ms, 3a at 2250 ms; the
  * static frame is the poster at 3600 ms; reduced motion lights it at once. */
-export const DEMO_MS = { first: 700, second: 1000, third: 1950, fourth: 2250, poster: 3600 } as const;
+export const DEMO_MS = {
+  first: 700,
+  second: 1000,
+  third: 1950,
+  fourth: 2250,
+  poster: 3600,
+} as const;

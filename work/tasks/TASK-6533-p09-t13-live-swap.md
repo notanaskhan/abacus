@@ -2,6 +2,7 @@
 id: TASK-6533
 title: "P-09-T13: dock and trace fixture-to-live swap"
 spec: SPEC-648
+acceptance_criteria: [AC-1]  # the row's acceptance (Objective)
 screens: [SHL-13, WB-09]
 risk_zone: green
 status: in-review

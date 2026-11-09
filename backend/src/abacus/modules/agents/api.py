@@ -19,7 +19,11 @@ from abacus.modules.agents.code_runs import (  # A-07-T32: code-only runs, v1 pa
     CodeRun,
     CodeStep,
     ReservedAction,
+    blocks,
+    fact,
     record_code_run,
+    text_part,
+    txt,
 )
 from abacus.modules.agents.contract import proposals_router, suggestions_router
 from abacus.modules.agents.decision_recommend import (
@@ -139,7 +143,10 @@ from abacus.modules.agents.run_backfill_workflow import (
     BackfillBatch,
     BackfillInput,
 )
-from abacus.modules.agents.run_logs import run_log_count  # A-07-T31: binder section G
+from abacus.modules.agents.run_logs import (  # A-07-T31/T32: binder section G, bring-down
+    last_completed_run_at,
+    run_log_count,
+)
 from abacus.modules.agents.run_recorder import (  # P-09-T12: the synthetic scenario's runs
     RecordedRun,
     RecordedStep,
@@ -352,7 +359,7 @@ register_pilot_metric_source("w7", w7_override_rate)  # Q-04-T008 (DEC-825)
 register_client_request_sender(send_issue_to_client)  # P-04-T31 (DEC-828)
 
 # The C6 v1.1 blocks schema and the spec v2 checks, for their generators (S31 end pass; BOUND-001).
-from abacus.modules.agents.blocks import AgentBlocks  # noqa: E402
+from abacus.modules.agents.blocks import AgentBlocks, BlocksTurn, Fact  # noqa: E402
 from abacus.modules.agents.det_runs import (  # noqa: E402 -- A-06-T25
     close_deterministic_run,
     deterministic_run_facts,
@@ -398,6 +405,7 @@ __all__ = [
     "BackfillBatch",
     "BackfillInput",
     "BatchOutcome",
+    "BlocksTurn",
     "ChangeSetApplier",
     "Citation",
     "CitationStates",
@@ -414,6 +422,7 @@ __all__ = [
     "EntryAssessInput",
     "EntryAssessRunInput",
     "EntryAssessWorkflow",
+    "Fact",
     "FailKnowledgeInput",
     "GuidanceDraftInput",
     "GuidanceDraftRunInput",
@@ -498,6 +507,7 @@ __all__ = [
     "analyze_notice",
     "apply_proposal",
     "ask",
+    "blocks",
     "check",
     "check_live",
     "check_notice_answer",
@@ -516,12 +526,14 @@ __all__ = [
     "effective_ai_policy",
     "engagement_graph",
     "extract_notice_fields",
+    "fact",
     "fail_run",
     "graph_router",
     "install_fake_responses",
     "install_fake_reviews",
     "knowledge_context",
     "knowledge_router",
+    "last_completed_run_at",
     "live_override",
     "load_agent_context",
     "match",
@@ -568,6 +580,8 @@ __all__ = [
     "start_section_draft",
     "starts_in_shadow",
     "template_drafts_router",
+    "text_part",
+    "txt",
     "upload_review_available",
     "verify_citations",
     "workflow_id",

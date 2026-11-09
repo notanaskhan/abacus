@@ -191,8 +191,8 @@ export function portalK1Detail(variant: Por13Variant, id: string): K1PackageDeta
     tin: meera
       ? null
       : pell
-      ? { kind: "ein", presence: "on_file", last4: "7741" }
-      : { kind: "ssn", presence: "on_file", last4: "5512" },
+        ? { kind: "ein", presence: "on_file", last4: "7741" }
+        : { kind: "ssn", presence: "on_file", last4: "5512" },
     address_on_file: true,
   };
 }

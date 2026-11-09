@@ -2,6 +2,7 @@
 id: TASK-6529
 title: "A-07-T34: AUD-23 Report builder in fixture mode on T10"
 spec: SPEC-644  # A-07 F5 (docs/plan/epics/A-07.md)
+acceptance_criteria: [AC-1]  # the row's acceptance (Objective)
 screens: [AUD-23]
 risk_zone: green
 status: in-review

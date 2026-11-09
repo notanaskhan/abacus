@@ -32,4 +32,3 @@ export function applyItems(feed: RunFeed, page: RunItemsOut): RunFeed {
   const items = [...feed.items, ...fresh].sort((a, b) => a.seq - b.seq);
   return { run: page.run, items, lastSeq: Math.max(feed.lastSeq, page.last_seq) };
 }
-

@@ -12,6 +12,17 @@ from typing import Final
 
 REVIEWED_FALLBACK: Final = frozenset(
     {
+        # reviewed 2026-11-09 (S33 end pass): A-07-T30/T31/T32, P-10-T27, R-02-T15
+        "agent_run.code_recorded",
+        "archive.assembly_started",
+        "archive.binder_index_built",
+        "archive.lock_requested",
+        "realtime.invalidated",
+        "report.final_render_requested",
+        "report.release_failed",
+        "report.release_replayed",
+        "report.release_requested",
+        "uncorrected_misstatements.acknowledged",
         "acceptance.answers_updated",
         "acceptance.condition_completed",
         "acceptance.decided",

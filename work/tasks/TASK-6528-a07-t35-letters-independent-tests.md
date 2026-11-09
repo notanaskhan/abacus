@@ -2,7 +2,7 @@
 id: TASK-6528
 title: "A-07-T35: independent AC tests for A-07-T23, T24, T26 and T27 (ADR-078)"
 spec: SPEC-644  # A-07 F4-F7 (docs/plan/epics/A-07.md)
-acceptance_criteria: [INV-1, INV-3, INV-4, INV-5, AC-letters]
+acceptance_criteria: [AC-1]  # the row's acceptance (INV-1, INV-3, INV-4, INV-5, AC-letters)
 risk_zone: red
 status: in-review
 branch: s33-a07-t35

@@ -150,6 +150,8 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.completion.AlreadyReleased
+    - abacus.modules.assurance.release.AlreadyReleased
+    summary: The work item's original release exists (a reissue is A-07's later path).
   already_requested:
     status: 409
     raised_by:
@@ -338,6 +340,7 @@ codes:
   checklist_incomplete:
     status: 409
     raised_by:
+    - abacus.modules.assurance.archive_gate.ChecklistIncomplete
     - abacus.modules.assurance.completion_errors.ChecklistIncomplete
     - abacus.modules.assurance.eqr_service.ChecklistIncomplete
     summary: An item or an EQR note is still open (EQR concurrence, archive lock).
@@ -532,6 +535,7 @@ codes:
     raised_by:
     - abacus.modules.assurance.completion_errors.LetterContentChanged
     - abacus.modules.assurance.mapping_live.ContentChanged
+    - abacus.modules.assurance.release.ContentChanged
     - abacus.modules.review.sign_offs.ContentChanged
     - abacus.modules.sampling.sample_sets.ContentChanged
     - abacus.modules.tax.approval.ContentChanged
@@ -1176,6 +1180,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.completion_errors.GatesNotMet
+    - abacus.modules.assurance.release.GatesNotMet
     summary: A gate the act needs is not met at the server (`facts.gates`).
   grant_exists:
     status: 409
@@ -2481,6 +2486,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.completion_errors.ReleaseModeExternal
+    - abacus.modules.assurance.release.ReleaseModeExternal
     summary: The firm releases and archives in its own tool (`assurance_release_mode = external`).
   release_mode_in_app:
     status: 409
@@ -2488,6 +2494,11 @@ codes:
     - abacus.modules.assurance.release.ReleaseModeInApp
     summary: 'The firm releases reports in Accrued (`assurance_release_mode = in_app`): record mode is
       closed for release and archive.'
+  release_refused:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.release.ReleaseRefused
+    summary: 'The release cannot proceed (`facts.reason`: grant_refused, render_failed).'
   reliance_requested:
     status: 409
     raised_by:
@@ -3164,6 +3175,11 @@ codes:
     - abacus.modules.organisations.tin.TinKindNotAllowed
     summary: An SSN or ITIN can't be stored for a firm that isn't synthetic until the §7216 consent gate
       (C19) lands; an EIN can (P-07 OQ-4, DEC-52).
+  too_many_streams:
+    status: 409
+    raised_by:
+    - abacus.kernel.realtime.TooManyStreams
+    summary: A seventh concurrent stream for one person (`facts.limit`).
   tool_not_registered:
     status: 409
     raised_by:

@@ -251,7 +251,7 @@ function PageImage({
         parseAs: "blob",
         throwOnError: true,
       });
-      return data as unknown as Blob;
+      return data;
     },
     retry: false,
   });
@@ -367,7 +367,7 @@ function Viewer({
         parseAs: "blob",
         throwOnError: true,
       });
-      await save(data as unknown as Blob, `${deliverable.title}.pdf`);
+      await save(data, `${deliverable.title}.pdf`);
     } catch {
       toast.show(COPY.downloadFailed);
     }
@@ -389,9 +389,7 @@ function Viewer({
         {draft ? `${deliverable.title} — draft v${String(latest.version_no)}` : deliverable.title}
       </h2>
       {draft && !approved && <Pill variant="amber">{COPY.draftForReview}</Pill>}
-      {approved && (
-        <RegistryStatus object="deliverable" code="approved_by_you" client />
-      )}
+      {approved && <RegistryStatus object="deliverable" code="approved_by_you" client />}
       <div className="mx-auto flex items-center gap-[6px]">
         <span className="inline-flex items-center gap-[2px] rounded-pill bg-card p-[3px] shadow-e1">
           <button
@@ -471,7 +469,9 @@ function Viewer({
   return (
     <section aria-label={deliverable.title} className="flex min-h-0 flex-1 flex-col">
       {header}
-      {approved && <p className="px-[12px] py-[6px] text-[12.5px] text-ink-3">{COPY.approvedNote}</p>}
+      {approved && (
+        <p className="px-[12px] py-[6px] text-[12.5px] text-ink-3">{COPY.approvedNote}</p>
+      )}
       <div className="flex min-h-0 flex-1">
         <div className="relative min-h-0 flex-1 overflow-auto bg-shell p-[14px]">
           <div className="relative mx-auto w-fit overflow-hidden rounded-[6px] shadow-page">
@@ -491,7 +491,10 @@ function Viewer({
               </span>
             )}
             {deliverable.legend_kind === "ar_c_70" && (
-              <p data-legend="ar_c_70" className="bg-card px-[36px] pb-[12px] text-[10.5px] text-ink-3">
+              <p
+                data-legend="ar_c_70"
+                className="bg-card px-[36px] pb-[12px] text-[10.5px] text-ink-3"
+              >
                 {COPY.legend}
               </p>
             )}
@@ -533,7 +536,10 @@ function K1Summary({ packageId }: { packageId: string }): JSX.Element | null {
   const row = (rows.data ?? []).find((r) => r.id === packageId);
   if (row === undefined) return null;
   return (
-    <section aria-label={row.issuer_name ?? COPY.myK1s} className="flex flex-col gap-[10px] p-[14px]">
+    <section
+      aria-label={row.issuer_name ?? COPY.myK1s}
+      className="flex flex-col gap-[10px] p-[14px]"
+    >
       <PackageCard
         row={row}
         firm={branding.data?.firm_name ?? ""}
@@ -548,7 +554,9 @@ function K1Summary({ packageId }: { packageId: string }): JSX.Element | null {
 function Deliverables(props: Por09Props): JSX.Element {
   const bar = usePortalToolbar(null);
   const listed = useQuery({
-    ...listDeliverablesOptions(props.section === undefined ? {} : { query: { section: props.section } }),
+    ...listDeliverablesOptions(
+      props.section === undefined ? {} : { query: { section: props.section } },
+    ),
     retry: false,
   });
   const [selected, setSelected] = useState<Selected | null>(
@@ -605,7 +613,10 @@ function Deliverables(props: Por09Props): JSX.Element {
       frame={props.frame === true}
       {...(props.onNavigate === undefined ? {} : { onNavigate: props.onNavigate })}
     >
-      <div data-screen="POR-09" className={`flex min-h-0 flex-1 gap-[10px] ${mobile ? "flex-col" : ""}`}>
+      <div
+        data-screen="POR-09"
+        className={`flex min-h-0 flex-1 gap-[10px] ${mobile ? "flex-col" : ""}`}
+      >
         {rail !== null && (
           <section
             aria-label={COPY.title}

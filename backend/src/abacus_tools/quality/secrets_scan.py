@@ -31,6 +31,18 @@ EXCLUDE: tuple[str, ...] = ()
 # (path glob, rule id, reason): findings that are known local fixtures, never real secrets.
 ALLOW: tuple[tuple[str, str, str], ...] = (
     (
+        "apps/web/src/fixtures/seed/portal-r02.ts",
+        "SECRET-003",
+        "a deliverables band's `key` names the work item (tax-return-2025), never a credential"
+        " (R-02-T17)",
+    ),
+    (
+        "backend/tests/unit/tax/test_t04t14_form_line_citations.py",
+        "SECRET-003",
+        "a return field's `field_key` names the line (f1040.line3b), never a credential"
+        " (T-04-T14)",
+    ),
+    (
         "apps/web/src/fixtures/seed/not03.ts",
         "SECRET-003",
         "a response letter's `template_key` names the template (cp2000_agree), never a credential"

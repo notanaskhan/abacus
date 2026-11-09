@@ -67,7 +67,10 @@ function ValueRow({
   children: ReactNode;
 }): JSX.Element {
   return (
-    <div data-lit={lit === true ? "true" : undefined} className={lit === true ? "bg-match-bg" : ""}>
+    <div
+      data-lit={lit === true ? "true" : undefined}
+      className={lit === true ? "bg-match-bg" : ""}
+    >
       <div className="flex min-h-[34px] items-center justify-between gap-2 px-[14px]">
         <span className="text-[13px] text-ink-2">{label}</span>
         <span className="flex items-center gap-2 text-[13px] font-medium">{children}</span>
@@ -155,7 +158,7 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
 
   const record = (next: Partial<Choice>, what: string): void => {
     if (lock) return;
-    const n = `v${base.length + added.length + 1}`;
+    const n = `v${String(base.length + added.length + 1)}`;
     setChoice((c) => ({ ...c, ...next }));
     setAdded((v) => [...v, [n, "MO", what, seed.now]]);
     setMenu(null);
@@ -182,12 +185,26 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
   const approvals: readonly (readonly [Disc, string, string])[] = audit
     ? [
         ["done", "Drafted · Hannah Leclerc · Oct 2", "Oct 2, 11:20 AM · v2 · L1 · hash 4be1…09c2"],
-        ["done", "EQR concurred · Thomas Whitcombe · Oct 5", "Oct 5, 4:40 PM · v2 · G6 · hash 7a3f…d518"],
+        [
+          "done",
+          "EQR concurred · Thomas Whitcombe · Oct 5",
+          "Oct 5, 4:40 PM · v2 · G6 · hash 7a3f…d518",
+        ],
         approved
-          ? ["done", "Engagement partner approval · Margaret Okonkwo · Oct 7", `${APPROVED_AT} · v2 · L4 · hash c91e…2a07`]
+          ? [
+              "done",
+              "Engagement partner approval · Margaret Okonkwo · Oct 7",
+              `${APPROVED_AT} · v2 · L4 · hash c91e…2a07`,
+            ]
           : ["todo", "Engagement partner approval", "Pending · reserved to Margaret Okonkwo"],
         ...(reissue
-          ? [["todo", "Reissue approval · engagement partner", "Pending · reserved to Margaret Okonkwo"] as const]
+          ? [
+              [
+                "todo",
+                "Reissue approval · engagement partner",
+                "Pending · reserved to Margaret Okonkwo",
+              ] as const,
+            ]
           : []),
       ]
     : [
@@ -203,7 +220,7 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
         type="button"
         data-marker={n}
         title={`${m[1]} · ${m[2]}`}
-        aria-label={`Citation ${n}: ${m[1]}`}
+        aria-label={`Citation ${String(n)}: ${m[1]}`}
         onMouseEnter={() => {
           setLit(n);
         }}
@@ -291,7 +308,8 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
             checked={on}
             disabled={lock}
             onChange={() => {
-              const off: Partial<Choice> = key === "eom" ? { eom: false, eomC: "" } : { om: false, omC: "" };
+              const off: Partial<Choice> =
+                key === "eom" ? { eom: false, eomC: "" } : { om: false, omC: "" };
               const turnOn: Partial<Choice> = key === "eom" ? { eom: true } : { om: true };
               record(on ? off : turnOn, on ? `turned ${label} off` : `turned ${label} on`);
               if (!on) setPop(key);
@@ -301,14 +319,24 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
         <div
           className={`px-[14px] pb-[6px] text-[11.5px] ${on && code === "" ? "text-amber-ink" : "text-ink-3"}`}
         >
-          {on && code === "" ? "Pick a reason code" : on ? `Does not modify the ${word}` : "No reason code"}
+          {on && code === ""
+            ? "Pick a reason code"
+            : on
+              ? `Does not modify the ${word}`
+              : "No reason code"}
         </div>
         {codePopover(key, code)}
       </div>
     );
   };
 
-  const fixedToggle = (label: string, on: boolean, help: string, tip: string, tag?: ReactNode): JSX.Element => (
+  const fixedToggle = (
+    label: string,
+    on: boolean,
+    help: string,
+    tip: string,
+    tag?: ReactNode,
+  ): JSX.Element => (
     <div className="relative" title={tip}>
       <div className="flex min-h-[34px] items-center gap-2 px-[14px]">
         <span className="flex-1 text-[13px] text-ink-2">{label}</span>
@@ -338,15 +366,27 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
               : `Engagement letter · ${seed.m === "rev" ? "AR-C 90 review" : "AR-C 80 compilation"}`
           }
         >
-          {audit ? "Employee benefit plan audit" : seed.m === "rev" ? "Review engagement" : "Compilation engagement"}
+          {audit
+            ? "Employee benefit plan audit"
+            : seed.m === "rev"
+              ? "Review engagement"
+              : "Compilation engagement"}
         </ValueRow>
         <ValueRow label="Framework">{audit ? "US GAAP (ASC 962)" : "US GAAP (ASC 958)"}</ValueRow>
         <ValueRow label="Standards set">
-          {audit ? "GAAS nonissuer · AU-C 703" : seed.m === "rev" ? "SSARS · AR-C 90" : "SSARS · AR-C 80"}
+          {audit
+            ? "GAAS nonissuer · AU-C 703"
+            : seed.m === "rev"
+              ? "SSARS · AR-C 90"
+              : "SSARS · AR-C 80"}
         </ValueRow>
         <ValueRow label="Template">
           <button type="button" onClick={() => props.onOpen?.("KNW-03")}>
-            {audit ? TEMPLATE : seed.m === "rev" ? "BH Report · Review AR-C 90 v2" : "BH Report · Compilation AR-C 80 v2"}{" "}
+            {audit
+              ? TEMPLATE
+              : seed.m === "rev"
+                ? "BH Report · Review AR-C 90 v2"
+                : "BH Report · Compilation AR-C 80 v2"}{" "}
             <span className="text-ink-3">→</span>
           </button>
         </ValueRow>
@@ -395,7 +435,10 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
               </button>
             </ValueRow>
             {menu === "mod" && (
-              <div role="menu" className="absolute right-[10px] z-10 w-[260px] rounded-pane bg-card p-[6px] shadow-e3">
+              <div
+                role="menu"
+                className="absolute right-[10px] z-10 w-[260px] rounded-pane bg-card p-[6px] shadow-e3"
+              >
                 {MODS.map(([k, l]) => (
                   <button
                     key={k}
@@ -418,7 +461,9 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
                   >
                     <span className="text-[13px]">{l}</span>
                     {k !== "none" && (
-                      <span className="text-[11.5px] text-ink-3">Requires a partner decision card</span>
+                      <span className="text-[11.5px] text-ink-3">
+                        Requires a partner decision card
+                      </span>
                     )}
                   </button>
                 ))}
@@ -450,7 +495,10 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
         {paraRow("om", "Other matter")}
         {audit ? (
           <>
-            <div data-lit={isLit("supp") ? "true" : undefined} className={`relative ${isLit("supp") ? "bg-match-bg" : ""}`}>
+            <div
+              data-lit={isLit("supp") ? "true" : undefined}
+              className={`relative ${isLit("supp") ? "bg-match-bg" : ""}`}
+            >
               {fixedToggle(
                 "Supplemental schedules required by ERISA (AU-C 703 section)",
                 true,
@@ -468,8 +516,18 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
               )}
               {codePopover("supp", "ERISA-SUPP")}
             </div>
-            {fixedToggle("Other information (AU-C 720)", false, "No annual report other than Form 5500", "Nothing to report on")}
-            {fixedToggle("Report on other legal and regulatory requirements", false, "Not applicable", "Not applicable")}
+            {fixedToggle(
+              "Other information (AU-C 720)",
+              false,
+              "No annual report other than Form 5500",
+              "Nothing to report on",
+            )}
+            {fixedToggle(
+              "Report on other legal and regulatory requirements",
+              false,
+              "Not applicable",
+              "Not applicable",
+            )}
           </>
         ) : (
           fixedToggle("Supplementary information", false, "None presented", "None presented")
@@ -499,8 +557,15 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
       <Band title="Approvals">
         <ul>
           {approvals.map(([d, l]) => (
-            <li key={l} data-approval={d} className="flex min-h-[34px] items-center gap-2 px-[14px] text-[13px]">
-              <Icon name={(d === "done" ? "circle-check" : "circle") satisfies IconName} size={15} />
+            <li
+              key={l}
+              data-approval={d}
+              className="flex min-h-[34px] items-center gap-2 px-[14px] text-[13px]"
+            >
+              <Icon
+                name={(d === "done" ? "circle-check" : "circle") satisfies IconName}
+                size={15}
+              />
               {l}
             </li>
           ))}
@@ -510,7 +575,9 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
                 Generated documents <span className="text-ink-3">→</span>
               </button>
               <span className="flex items-center gap-2">
-                <span className="text-ink-2">{gen === "done" ? `1 · ${current} draft · Oct 6` : "None yet"}</span>
+                <span className="text-ink-2">
+                  {gen === "done" ? `1 · ${current} draft · Oct 6` : "None yet"}
+                </span>
                 {gen === "done" && stale && (
                   <button
                     type="button"
@@ -544,7 +611,8 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
     }, 1600);
   }
 
-  const banners: { icon: IconName; text: string; variant: "green-tint" | "red-tint" | "amber" }[] = [];
+  const banners: { icon: IconName; text: string; variant: "green-tint" | "red-tint" | "amber" }[] =
+    [];
   if (reissue) {
     banners.push({
       icon: "history",
@@ -566,7 +634,11 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
     });
   }
   if (!lock && blocked === "code") {
-    banners.push({ icon: "triangle-alert", text: "Pick a reason code for each paragraph you turned on", variant: "amber" });
+    banners.push({
+      icon: "triangle-alert",
+      text: "Pick a reason code for each paragraph you turned on",
+      variant: "amber",
+    });
   }
 
   const p = (text: string, n?: number, muted?: boolean): JSX.Element => (
@@ -597,7 +669,9 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
 
   const paper = audit ? (
     <>
-      <PaperSection heading="Scope and Nature of the ERISA Section 103(a)(3)(C) Audit">{p(AT.scope, 1)}</PaperSection>
+      <PaperSection heading="Scope and Nature of the ERISA Section 103(a)(3)(C) Audit">
+        {p(AT.scope, 1)}
+      </PaperSection>
       <PaperSection heading={OPH[choice.mod]}>
         {choice.mod === "none"
           ? p(AT.op, 2)
@@ -612,7 +686,10 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
           )}
         {p(AT.basis, undefined, true)}
       </PaperSection>
-      <PaperSection heading="Substantial Doubt About the Plan’s Ability to Continue as a Going Concern" shown={seed.gc === true}>
+      <PaperSection
+        heading="Substantial Doubt About the Plan’s Ability to Continue as a Going Concern"
+        shown={seed.gc === true}
+      >
         {placeholder(AT.gc)}
       </PaperSection>
       {eomSection}
@@ -633,13 +710,19 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
           <Icon name={fullAud ? "chevron-up" : "chevron-down"} size={12} />
         </button>
       </PaperSection>
-      <PaperSection heading="Supplemental Schedules Required by ERISA">{p(AT.supp, 3)}</PaperSection>
+      <PaperSection heading="Supplemental Schedules Required by ERISA">
+        {p(AT.supp, 3)}
+      </PaperSection>
     </>
   ) : seed.m === "rev" ? (
     <>
       <PaperSection>{p(RV.intro, 1)}</PaperSection>
-      <PaperSection heading="Management’s Responsibility for the Financial Statements">{p(RV.mgmt, undefined, true)}</PaperSection>
-      <PaperSection heading="Accountant’s Responsibility">{p(RV.acct, undefined, true)}</PaperSection>
+      <PaperSection heading="Management’s Responsibility for the Financial Statements">
+        {p(RV.mgmt, undefined, true)}
+      </PaperSection>
+      <PaperSection heading="Accountant’s Responsibility">
+        {p(RV.acct, undefined, true)}
+      </PaperSection>
       <PaperSection heading="Accountant’s Conclusion">{p(RV.concl, 2)}</PaperSection>
       {eomSection}
       {omSection}
@@ -652,7 +735,11 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
     </>
   );
 
-  const primaryLabel = lock ? "Go to issuance & release" : reissue ? "Approve reissue" : "Approve report";
+  const primaryLabel = lock
+    ? "Go to issuance & release"
+    : reissue
+      ? "Approve reissue"
+      : "Approve report";
   const primaryDisabled = !lock && blocked !== null;
 
   return (
@@ -665,8 +752,14 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
           <Segmented
             size="small"
             label="Report views"
-            options={["Report", `Versions ${versions.length}`, "Approvals"]}
-            active={tab === "rep" ? "Report" : tab === "ver" ? `Versions ${versions.length}` : "Approvals"}
+            options={["Report", `Versions ${String(versions.length)}`, "Approvals"]}
+            active={
+              tab === "rep"
+                ? "Report"
+                : tab === "ver"
+                  ? `Versions ${String(versions.length)}`
+                  : "Approvals"
+            }
             onChange={(v) => {
               setTab(v === "Report" ? "rep" : v === "Approvals" ? "apr" : "ver");
             }}
@@ -674,7 +767,10 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
         </div>
       </div>
       <div className="flex min-h-0 flex-1 gap-[10px] px-[12px] pb-[12px]">
-        <section aria-label="Structure" className="w-[470px] shrink-0 overflow-y-auto rounded-pane bg-card shadow-e1">
+        <section
+          aria-label="Structure"
+          className="w-[470px] shrink-0 overflow-y-auto rounded-pane bg-card shadow-e1"
+        >
           <h2 className="flex h-[32px] items-center px-[14px] text-[12.5px] font-medium text-ink-2">
             Report › {copy.ttl}
           </h2>
@@ -688,7 +784,11 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
                 .slice()
                 .reverse()
                 .map(([n, who, what, at], i) => (
-                  <li key={n} data-version={n} className="flex min-h-[44px] items-center gap-2 px-[14px] text-[13px]">
+                  <li
+                    key={n}
+                    data-version={n}
+                    className="flex min-h-[44px] items-center gap-2 px-[14px] text-[13px]"
+                  >
                     <span className="font-medium">{n}</span>
                     <span className="min-w-0 flex-1">
                       {NAMES[who]} {what}
@@ -724,9 +824,15 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
                 size="sm"
                 variant="secondary"
                 disabled={lock}
-                title={lock ? "Approved reports are locked" : "Report text comes from the structured choices"}
+                title={
+                  lock
+                    ? "Approved reports are locked"
+                    : "Report text comes from the structured choices"
+                }
                 onClick={() => {
-                  setToast("Report text comes from the structured choices · edits are logged against the template");
+                  setToast(
+                    "Report text comes from the structured choices · edits are logged against the template",
+                  );
                 }}
               >
                 Edit
@@ -756,7 +862,7 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
                 <Button
                   size="sm"
                   disabled={primaryDisabled}
-                  title={primaryDisabled && blocked !== null ? blockedTip[blocked] : undefined}
+                  title={!lock && blocked !== null ? blockedTip[blocked] : undefined}
                   onClick={() => {
                     if (lock) props.onGoToRelease?.();
                     else if (blocked === null) props.onApprove?.();
@@ -790,7 +896,7 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
               <p className="text-[11.5px] text-ink-3">{LETTERHEAD[1]}</p>
               <hr className="my-[8px] border-hair" />
               <h3 className="text-[16px] font-medium">{copy.h3}</h3>
-              <p className="pb-[4px]">{copy.to}</p>
+              <p className="pb-[4px]">{copy.addressee}</p>
               {paper}
               <div className="pt-[14px]">
                 <div
@@ -808,7 +914,12 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
         </section>
       </div>
       {sheet && (
-        <div role="dialog" aria-modal="true" aria-label="Generate from template" className="fixed inset-0 z-20 flex items-start justify-center pt-[80px]">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Generate from template"
+          className="fixed inset-0 z-20 flex items-start justify-center pt-[80px]"
+        >
           <div className="w-[500px] rounded-pane bg-card shadow-e3">
             <header className="flex h-[46px] items-center justify-between px-[14px]">
               <h2 className="text-[14.5px] font-medium">Generate from template</h2>
@@ -841,7 +952,10 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
               </div>
               <div className="flex h-[34px] items-center justify-between">
                 <dt className="text-ink-2">Watermark</dt>
-                <dd className="flex items-center gap-2" title="The DRAFT watermark stays on until release in AUD-24">
+                <dd
+                  className="flex items-center gap-2"
+                  title="The DRAFT watermark stays on until release in AUD-24"
+                >
                   DRAFT
                   <Toggle size="small" label="Watermark" checked disabled />
                 </dd>
@@ -871,7 +985,10 @@ export function ReportBuilder(props: ReportBuilderProps): JSX.Element {
         </div>
       )}
       {toast !== "" && (
-        <div role="status" className="fixed bottom-[20px] left-1/2 z-30 -translate-x-1/2 rounded-pane bg-ink px-[12px] py-[8px] text-[12.5px] text-card shadow-e3">
+        <div
+          role="status"
+          className="fixed bottom-[20px] left-1/2 z-30 -translate-x-1/2 rounded-pane bg-ink px-[12px] py-[8px] text-[12.5px] text-card shadow-e3"
+        >
           {toast}
         </div>
       )}

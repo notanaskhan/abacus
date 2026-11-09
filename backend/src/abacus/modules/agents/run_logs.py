@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import text
@@ -20,3 +21,19 @@ async def run_log_count(tenant: TenantContext, engagement_id: UUID) -> tuple[int
     async with tenant_session(tenant) as session:
         row = (await session.execute(_COUNT, {"e": engagement_id})).one()
     return int(row.total), int(row.ended)
+
+
+_LAST_COMPLETED = text(
+    "SELECT max(finished_at) FROM agent_runs WHERE engagement_id = :e "
+    "AND agent_id = :a AND status = 'completed'"
+)
+
+
+async def last_completed_run_at(
+    tenant: TenantContext, engagement_id: UUID, agent_id: str
+) -> datetime | None:
+    """When the engagement's newest completed run of `agent_id` finished (A-07-T32's bring-down
+    also-required; DEC-3109), or None."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(_LAST_COMPLETED, {"e": engagement_id, "a": agent_id})
+    return found if isinstance(found, datetime) else None

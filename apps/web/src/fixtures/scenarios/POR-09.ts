@@ -1,7 +1,12 @@
 // POR-09 · Deliverables a–f (R-02-T17; docs/screens/POR-09.md): the personas and clocks of the
 // screen contract on the portal handlers, answering the deliverables reads from seed/portal-r02.ts.
 // e is fixture-only (DV-08); d is Meera's role union with her own released K-1 (DV-09).
-import { type FixtureHandler, type Scenario, defineScenarios, json } from "../../app-core/fixture-mode";
+import {
+  type FixtureHandler,
+  type Scenario,
+  defineScenarios,
+  json,
+} from "../../app-core/fixture-mode";
 import { STATEMENT_PAGE_PNG } from "@abacus/ui/specimens";
 import { portalHandlers } from "../handlers/portal";
 import { portalK1Handlers } from "../handlers/portal-k1s";
@@ -29,7 +34,8 @@ function png(): Response {
 
 function handlers(state: Por09State | "off", clock: string): Record<string, FixtureHandler> {
   const portal = { ...E0.handlers, ...portalHandlers({ clock }) };
-  const base = state === "d" ? { ...portal, ...portalK1Handlers("meera_released", portal) } : portal;
+  const base =
+    state === "d" ? { ...portal, ...portalK1Handlers("meera_released", portal) } : portal;
   if (state === "off") {
     // A firm with `portal.deliverables` off: every deliverables read answers 404.
     return { ...base, [`GET ${P}`]: () => json({ detail: "not found" }, 404) };

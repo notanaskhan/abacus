@@ -28,13 +28,14 @@ from collections import defaultdict
 from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
 from contextlib import suppress
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Final, Literal
 from uuid import UUID
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from abacus.kernel.clock import system_now
 from abacus.kernel.errors import DomainConflict
 
 MAX_STREAMS_PER_USER: Final = 6
@@ -71,7 +72,7 @@ def frame(event: StreamEvent) -> bytes:
     """One SSE event. A payload over 64 KB is sent by reference (`ref_only`)."""
     body = json.dumps(event.data, separators=(",", ":"), sort_keys=True, default=str)
     if len(body.encode()) > MAX_EVENT_BYTES:
-        ref = {"seq": event.seq, "type": event.type, "ref_only": True}
+        ref: dict[str, object] = {"seq": event.seq, "type": event.type, "ref_only": True}
         if "id" in event.data:
             ref["id"] = event.data["id"]
         body = json.dumps(ref, separators=(",", ":"), sort_keys=True, default=str)
@@ -143,7 +144,7 @@ async def stream(
     last_beat = last_auth = started
     deadline = None
     if expires_at is not None:
-        left = (expires_at - datetime.now(UTC)).total_seconds() - CLOSE_BEFORE_EXPIRY_SECONDS
+        left = (expires_at - system_now()).total_seconds() - CLOSE_BEFORE_EXPIRY_SECONDS
         deadline = started + max(0.0, left)
     try:
         while True:

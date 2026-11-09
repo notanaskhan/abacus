@@ -58,7 +58,7 @@ export function refusalWords(error: unknown): string {
   return "The run did not take that action.";
 }
 
-function key(): Record<string, string> {
+function key(): { "Idempotency-Key": string } {
   return { "Idempotency-Key": crypto.randomUUID() };
 }
 
@@ -429,6 +429,18 @@ function TaskRow({ item }: { item: RunItemOut }): JSX.Element {
   );
 }
 
+/** The question's options in the order the blocks number them (their `key`s). */
+function optionKeys(item: RunItemOut): string[] {
+  const parts = (item.blocks?.parts ?? []) as readonly { kind?: string; options?: unknown }[];
+  return parts.flatMap((p) =>
+    p.kind === "options" && Array.isArray(p.options)
+      ? (p.options as readonly { key?: unknown }[]).flatMap((o) =>
+          typeof o.key === "string" ? [o.key] : [],
+        )
+      : [],
+  );
+}
+
 /** SHL-13 frame 5: the question card. Typing answers it (Enter), Esc skips it; the digits 1-9
  * pick an option the blocks number. Each act waits for the server. */
 function QuestionCard({ runId, item }: { runId: string; item: RunItemOut }): JSX.Element {
@@ -439,7 +451,11 @@ function QuestionCard({ runId, item }: { runId: string; item: RunItemOut }): JSX
     onSuccess: acts.done,
     onError: acts.refused,
   });
-  const skip = useMutation({ ...skipQuestionMutation(), onSuccess: acts.done, onError: acts.refused });
+  const skip = useMutation({
+    ...skipQuestionMutation(),
+    onSuccess: acts.done,
+    onError: acts.refused,
+  });
   const questionId = item.ref_id;
   const can = questionId !== null && acts.can("agent_run.answer");
   const busy = answer.isPending || skip.isPending;
@@ -461,8 +477,10 @@ function QuestionCard({ runId, item }: { runId: string; item: RunItemOut }): JSX
           e.preventDefault();
           doSkip();
         } else if (/^[1-9]$/.test(e.key) && e.target === e.currentTarget) {
+          const picked = optionKeys(item)[Number(e.key) - 1];
+          if (picked === undefined) return;
           e.preventDefault();
-          send({ option_key: e.key });
+          send({ option_key: picked });
         }
       }}
     >
@@ -795,7 +813,11 @@ function SignOffDialog({
   decisions: readonly RunItemOut[];
 }): JSX.Element {
   const acts = useContext(ActsContext);
-  const sign = useMutation({ ...signOffRunMutation(), onSuccess: acts.done, onError: acts.refused });
+  const sign = useMutation({
+    ...signOffRunMutation(),
+    onSuccess: acts.done,
+    onError: acts.refused,
+  });
   const ids = (items: readonly RunItemOut[]): string[] =>
     items.flatMap((i) => (i.ref_id === null ? [] : [i.ref_id]));
   return (
@@ -939,7 +961,11 @@ export function RunPane({
     onSuccess: acts.done,
     onError: acts.refused,
   });
-  const steer = useMutation({ ...redirectRunMutation(), onSuccess: acts.done, onError: acts.refused });
+  const steer = useMutation({
+    ...redirectRunMutation(),
+    onSuccess: acts.done,
+    onError: acts.refused,
+  });
   const [message, setMessage] = useState("");
   const canSteer = live && acts.can("agent_run.control");
   if (view.isError) {
@@ -956,135 +982,135 @@ export function RunPane({
   const close = isCloseRun(view.data?.run);
   return (
     <ActsContext.Provider value={acts}>
-    <section
-      data-run-pane={view.data?.run.state ?? "loading"}
-      className="flex min-h-0 flex-1 flex-col"
-    >
-      <header className="relative flex h-[46px] items-center justify-center">
-        {live && (
-          <span
-            data-live-dot="true"
-            aria-label="Run active"
-            className="absolute left-[12px] size-[8px] rounded-full bg-green"
-          />
-        )}
-        <h2 className="text-[14.5px] font-medium">Agent</h2>
-        <div className="absolute right-[10px]">
-          <HeaderAction
-            view={view.data}
-            idle={idle}
-            ended={ended}
-            engagementId={engagementId}
-            items={feed.items}
-          />
-        </div>
-      </header>
-      {agents !== undefined && agents.length > 0 && !close && (
-        <AgentsStrip
-          agents={agents.map((a) =>
-            a.key === view.data?.run.agent
-              ? { ...a, source: sourceOf(view.data.header?.trigger_kind) }
-              : a,
-          )}
-        />
-      )}
-      {view.isPending ? (
-        <Skeleton className="m-[10px] h-[120px]" />
-      ) : close ? (
-        <CloseRunCard levels={levels} startedAt={view.data.run.started_at} />
-      ) : (
-        <>
-          {idle && <IdleCard levels={levels} />}
-          {levels.length > 0 && <ProjectionStrip levels={levels} planReady={planReady} />}
-        </>
-      )}
-      <ol
-        aria-label="Run thread"
-        className="flex min-h-0 flex-1 flex-col gap-[8px] overflow-y-auto p-[12px]"
+      <section
+        data-run-pane={view.data?.run.state ?? "loading"}
+        className="flex min-h-0 flex-1 flex-col"
       >
-        {feed.items.map((item) =>
-          close && item.session_kind === "tool" ? (
-            <TaskRow key={item.seq} item={item} />
-          ) : (
-            <ThreadItem
-              key={item.seq}
-              runId={runId}
-              item={item}
-              selectedRef={selectedRef}
-              onSelectRef={onSelectRef}
-              onOpenDecision={onOpenDecision}
-              onTrace={() => {
-                onTrace(runId);
-              }}
+        <header className="relative flex h-[46px] items-center justify-center">
+          {live && (
+            <span
+              data-live-dot="true"
+              aria-label="Run active"
+              className="absolute left-[12px] size-[8px] rounded-full bg-green"
             />
-          ),
+          )}
+          <h2 className="text-[14.5px] font-medium">Agent</h2>
+          <div className="absolute right-[10px]">
+            <HeaderAction
+              view={view.data}
+              idle={idle}
+              ended={ended}
+              engagementId={engagementId}
+              items={feed.items}
+            />
+          </div>
+        </header>
+        {agents !== undefined && agents.length > 0 && !close && (
+          <AgentsStrip
+            agents={agents.map((a) =>
+              a.key === view.data?.run.agent
+                ? { ...a, source: sourceOf(view.data.header?.trigger_kind) }
+                : a,
+            )}
+          />
         )}
-      </ol>
-      {planReady && acts.can("agent_run.approve_plan") && (
-        <div data-quick-replies="true" className="mx-[10px] mb-[6px] flex gap-2">
-          <Button
-            size="sm"
-            variant="secondary"
-            disabled={approve.isPending || view.data?.header?.plan_version == null}
-            onClick={() => {
-              const version = view.data?.header?.plan_version;
-              if (version == null) return;
-              approve.mutate({
-                path: { run_id: runId },
-                body: { expected_version: version },
-                headers: key(),
-              });
-            }}
-          >
-            yes, run it
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            disabled
-            title="Editing the plan arrives with P-09-T14"
-          >
-            Change order…
-          </Button>
-        </div>
-      )}
-      <form
-        aria-label="Message the agent"
-        className="mx-[10px] mb-[10px] flex h-[38px] items-center gap-2 rounded-full border-[0.5px] border-hair bg-nested px-[12px]"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!canSteer || message.trim() === "") return;
-          steer.mutate(
-            { path: { run_id: runId }, body: { body: message.trim() }, headers: key() },
-            {
-              onSuccess: () => {
-                setMessage("");
-              },
-            },
-          );
-        }}
-      >
-        <Icon name="paperclip" size={14} />
-        <input
-          aria-label="Message"
-          placeholder="Message"
-          disabled={!canSteer || steer.isPending}
-          value={message}
-          onChange={(e) => {
-            setMessage(e.target.value);
-          }}
-          className="min-w-0 flex-1 bg-transparent text-[12.5px] placeholder:text-ink-3"
-        />
-        <button
-          type="submit"
-          disabled={!canSteer || steer.isPending || message.trim() === ""}
-          aria-label="Send"
-          className="size-[26px] rounded-full bg-nested"
+        {view.isPending ? (
+          <Skeleton className="m-[10px] h-[120px]" />
+        ) : close ? (
+          <CloseRunCard levels={levels} startedAt={view.data.run.started_at} />
+        ) : (
+          <>
+            {idle && <IdleCard levels={levels} />}
+            {levels.length > 0 && <ProjectionStrip levels={levels} planReady={planReady} />}
+          </>
+        )}
+        <ol
+          aria-label="Run thread"
+          className="flex min-h-0 flex-1 flex-col gap-[8px] overflow-y-auto p-[12px]"
         >
-          <Icon name="arrow-up" size={13} />
-        </button>
-      </form>
-    </section>
+          {feed.items.map((item) =>
+            close && item.session_kind === "tool" ? (
+              <TaskRow key={item.seq} item={item} />
+            ) : (
+              <ThreadItem
+                key={item.seq}
+                runId={runId}
+                item={item}
+                selectedRef={selectedRef}
+                onSelectRef={onSelectRef}
+                onOpenDecision={onOpenDecision}
+                onTrace={() => {
+                  onTrace(runId);
+                }}
+              />
+            ),
+          )}
+        </ol>
+        {planReady && acts.can("agent_run.approve_plan") && (
+          <div data-quick-replies="true" className="mx-[10px] mb-[6px] flex gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={approve.isPending || view.data?.header?.plan_version == null}
+              onClick={() => {
+                const version = view.data?.header?.plan_version;
+                if (version == null) return;
+                approve.mutate({
+                  path: { run_id: runId },
+                  body: { expected_version: version },
+                  headers: key(),
+                });
+              }}
+            >
+              yes, run it
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled
+              title="Editing the plan arrives with P-09-T14"
+            >
+              Change order…
+            </Button>
+          </div>
+        )}
+        <form
+          aria-label="Message the agent"
+          className="mx-[10px] mb-[10px] flex h-[38px] items-center gap-2 rounded-full border-[0.5px] border-hair bg-nested px-[12px]"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!canSteer || message.trim() === "") return;
+            steer.mutate(
+              { path: { run_id: runId }, body: { body: message.trim() }, headers: key() },
+              {
+                onSuccess: () => {
+                  setMessage("");
+                },
+              },
+            );
+          }}
+        >
+          <Icon name="paperclip" size={14} />
+          <input
+            aria-label="Message"
+            placeholder="Message"
+            disabled={!canSteer || steer.isPending}
+            value={message}
+            onChange={(e) => {
+              setMessage(e.target.value);
+            }}
+            className="min-w-0 flex-1 bg-transparent text-[12.5px] placeholder:text-ink-3"
+          />
+          <button
+            type="submit"
+            disabled={!canSteer || steer.isPending || message.trim() === ""}
+            aria-label="Send"
+            className="size-[26px] rounded-full bg-nested"
+          >
+            <Icon name="arrow-up" size={13} />
+          </button>
+        </form>
+      </section>
     </ActsContext.Provider>
   );
 }

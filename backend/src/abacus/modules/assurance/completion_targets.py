@@ -33,6 +33,9 @@ _OWNERS: Final[dict[str, TextClause]] = {
         "SELECT id, engagement_id FROM governance_communications WHERE id = ANY(:ids)"
     ),
     "audit_report": text("SELECT id, engagement_id FROM audit_reports WHERE id = ANY(:ids)"),
+    # S33 end pass: A-07-T30's release and A-07-T31's archive record on their own rows.
+    "report_release": text("SELECT id, engagement_id FROM report_releases WHERE id = ANY(:ids)"),
+    "archive": text("SELECT id, engagement_id FROM archives WHERE id = ANY(:ids)"),
 }
 AUDIT_KINDS: Final = frozenset(_OWNERS)
 
