@@ -204,6 +204,15 @@ class RunProjectionLevelOut(BaseModel):
     failed: Annotated[int, Field(ge=0), classified("internal")] = 0
 
 
+class PlanStepRefOut(BaseModel):
+    """One step of the run's newest plan version, for "Change order…" (DEC-3142)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    key: Annotated[str, classified("internal")]
+    label: Annotated[str, classified("internal")]
+
+
 class RunHeaderOut(BaseModel):
     """C6 v1.1: the dock's header: the run number, what it is blocked on, code's counters, who it
     runs as and what started it. Null fields wait for P-10-T29's v2 columns."""
@@ -217,6 +226,7 @@ class RunHeaderOut(BaseModel):
     trigger_kind: Annotated[TriggerKind | None, classified("internal")] = None
     work_item_ref: Annotated[str | None, classified("internal")] = None
     plan_version: Annotated[int | None, classified("internal")] = None  # P-09-T14
+    plan_steps: Annotated[list[PlanStepRefOut], classified("internal")] = []  # DEC-3142
 
 
 class RunViewOut(BaseModel):
@@ -552,6 +562,7 @@ def _header(header: RunHeader | None) -> RunHeaderOut | None:
         trigger_kind=cast(TriggerKind | None, trigger),
         work_item_ref=header.work_item_ref,
         plan_version=header.plan_version,
+        plan_steps=[PlanStepRefOut(key=k, label=label) for k, label in header.plan_steps],
     )
 
 

@@ -1,5 +1,6 @@
 import type {
   AgentRunOut,
+  PlanStepRefOut,
   RunItemOut,
   RunProjectionLevelOut,
   RunViewOut,
@@ -9,6 +10,9 @@ import {
   answerQuestionMutation,
   approveRunPlanMutation,
   createFeedbackMutation,
+  decisionCardNotifyMutation,
+  decisionCardOptions,
+  editRunPlanMutation,
   redirectRunMutation,
   retryStepMutation,
   signOffRunMutation,
@@ -588,17 +592,20 @@ function ThreadItem({
               {item.detail ?? "Await decision"}
             </span>
           </p>
-          {item.ref_id !== null && onOpenDecision !== undefined && (
-            <div className="flex justify-end pt-[4px]">
-              <Button
-                size="xs"
-                variant="ghost"
-                onClick={() => {
-                  if (item.ref_id !== null) onOpenDecision(item.ref_id);
-                }}
-              >
-                Open decision
-              </Button>
+          {item.ref_id !== null && (
+            <div className="flex justify-end gap-2 pt-[4px]">
+              <NotifyDecider cardId={item.ref_id} />
+              {onOpenDecision !== undefined && (
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  onClick={() => {
+                    if (item.ref_id !== null) onOpenDecision(item.ref_id);
+                  }}
+                >
+                  Open decision
+                </Button>
+              )}
             </div>
           )}
         </li>
@@ -967,6 +974,7 @@ export function RunPane({
     onError: acts.refused,
   });
   const [message, setMessage] = useState("");
+  const [reorder, setReorder] = useState(false);
   const canSteer = live && acts.can("agent_run.control");
   if (view.isError) {
     return (
@@ -1067,12 +1075,28 @@ export function RunPane({
             <Button
               size="sm"
               variant="secondary"
-              disabled
-              title="Editing the plan arrives with P-09-T14"
+              opensDialog
+              disabled={
+                view.data?.header?.plan_version == null ||
+                (view.data.header.plan_steps ?? []).length < 2
+              }
+              onClick={() => {
+                setReorder(true);
+              }}
             >
               Change order…
             </Button>
           </div>
+        )}
+        {reorder && view.data?.header?.plan_version != null && (
+          <PlanOrderDialog
+            runId={runId}
+            version={view.data.header.plan_version}
+            steps={view.data.header.plan_steps ?? []}
+            onClose={() => {
+              setReorder(false);
+            }}
+          />
         )}
         <form
           aria-label="Message the agent"
@@ -1112,5 +1136,115 @@ export function RunPane({
         </form>
       </section>
     </ActsContext.Provider>
+  );
+}
+
+// SHL-13 frame 4 (P-09-T14, DEC-3142): "Notify ‹first name›" on a blocked decision card, only when
+// the server lists `decision.notify` on the card for this person (P-04's SHL-11 action).
+function NotifyDecider({ cardId }: { cardId: string }): JSX.Element | null {
+  const card = useQuery({ ...decisionCardOptions({ path: { card_id: cardId } }), retry: false });
+  const notify = useMutation({
+    ...decisionCardNotifyMutation(),
+    onSuccess: () => {
+      const name = card.data?.card.reserved_user_name;
+      if (name != null) toast.show({ kind: "success", text: `${name} notified` });
+    },
+    onError: (error) => {
+      toast.show(refusalWords(error));
+    },
+  });
+  const head = card.data?.card;
+  if (head === undefined || !head.allowed_actions.includes("decision.notify")) return null;
+  const first = (head.reserved_user_name ?? "").split(" ")[0] ?? "";
+  if (first === "") return null;
+  return (
+    <Button
+      size="xs"
+      variant="secondary"
+      disabled={notify.isPending}
+      onClick={() => {
+        notify.mutate({ path: { card_id: cardId } });
+      }}
+    >
+      {`Notify ${first}`}
+    </Button>
+  );
+}
+
+// "Change order…" (P-09-T14, DEC-3142): the plan's steps in the server's words, moved up or down,
+// then "yes, run it" in that order: `POST …/plan/edit` with the keys and the version seen. An
+// edited plan is a decided one (C6 v2), so the run goes ahead as edited. Nothing is optimistic.
+function PlanOrderDialog({
+  runId,
+  version,
+  steps,
+  onClose,
+}: {
+  runId: string;
+  version: number;
+  steps: readonly PlanStepRefOut[];
+  onClose: () => void;
+}): JSX.Element {
+  const acts = useContext(ActsContext);
+  const [order, setOrder] = useState<readonly PlanStepRefOut[]>(steps);
+  const edit = useMutation({
+    ...editRunPlanMutation(),
+    onSuccess: acts.done,
+    onError: acts.refused,
+  });
+  const move = (from: number, to: number): void => {
+    if (to < 0 || to >= order.length) return;
+    const next = [...order];
+    const [step] = next.splice(from, 1);
+    if (step !== undefined) next.splice(to, 0, step);
+    setOrder(next);
+  };
+  return (
+    <ConfirmDialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      title="Change order"
+      confirmLabel="yes, run it"
+      destructive={false}
+      onConfirm={() => {
+        edit.mutate({
+          path: { run_id: runId },
+          body: { steps: order.map((s) => s.key), expected_version: version },
+          headers: key(),
+        });
+      }}
+    >
+      <ol data-plan-order="true" className="flex flex-col gap-[4px]">
+        {order.map((step, i) => (
+          <li key={step.key} className="flex items-center gap-2 text-[12.5px]">
+            <span className="flex-1">{step.label}</span>
+            <Button
+              size="xs"
+              variant="ghost"
+              aria-label={`Move ${step.label} up`}
+              disabled={i === 0}
+              onClick={() => {
+                move(i, i - 1);
+              }}
+            >
+              <Icon name="arrow-up" size={12} />
+            </Button>
+            <Button
+              size="xs"
+              variant="ghost"
+              aria-label={`Move ${step.label} down`}
+              disabled={i === order.length - 1}
+              onClick={() => {
+                move(i, i + 1);
+              }}
+            >
+              <Icon name="arrow-down" size={12} />
+            </Button>
+          </li>
+        ))}
+      </ol>
+    </ConfirmDialog>
   );
 }

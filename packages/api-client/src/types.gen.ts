@@ -33601,6 +33601,22 @@ export type PlanStepOut = {
 };
 
 /**
+ * PlanStepRefOut
+ *
+ * One step of the run's newest plan version, for "Change order…" (DEC-3142).
+ */
+export type PlanStepRefOut = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+};
+
+/**
  * PlanningMaterialityVersionOut
  */
 export type PlanningMaterialityVersionOut = {
@@ -41362,6 +41378,10 @@ export type RunCountersOut = {
 export type RunHeaderOut = {
     blocked_on?: BlockedOnOut | null;
     counters?: RunCountersOut | null;
+    /**
+     * Plan Steps
+     */
+    plan_steps?: Array<PlanStepRefOut>;
     /**
      * Plan Version
      */
@@ -111576,10 +111596,6 @@ export type ListDeliverablesErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListDeliverablesError = ListDeliverablesErrors[keyof ListDeliverablesErrors];
@@ -111632,10 +111648,6 @@ export type GetDeliverableErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetDeliverableError = GetDeliverableErrors[keyof GetDeliverableErrors];
@@ -111692,10 +111704,6 @@ export type GetDeliverableVersionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetDeliverableVersionError = GetDeliverableVersionErrors[keyof GetDeliverableVersionErrors];
@@ -111760,10 +111768,6 @@ export type ApproveDeliverableErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ApproveDeliverableError = ApproveDeliverableErrors[keyof ApproveDeliverableErrors];
@@ -111948,10 +111952,6 @@ export type DownloadDeliverableErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DownloadDeliverableError = DownloadDeliverableErrors[keyof DownloadDeliverableErrors];
@@ -112014,10 +112014,6 @@ export type GetDeliverablePageErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetDeliverablePageError = GetDeliverablePageErrors[keyof GetDeliverablePageErrors];

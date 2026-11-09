@@ -20498,8 +20498,9 @@ export const getDeliverableVersionOptions = (options: Options<GetDeliverableVers
 /**
  * Approve Deliverable Route
  *
- * Management approves the latest draft: `reporting.api.apply_management_decision`.
- * Not the decider: 403 `not_decider`. No fresh second factor: 401 `mfa_recent_required`.
+ * Management approves the latest draft through C18 (the version's approval item, the same
+ * decision POR-08 records). Not the decider: 403 `not_decider`; a stale `seen_hash` or a
+ * version that is not the newest awaiting one: 409 `item_changed`.
  */
 export const approveDeliverableMutation = (options?: Partial<Options<ApproveDeliverableData>>): UseMutationOptions<ApproveDeliverableResponse, ApproveDeliverableError, Options<ApproveDeliverableData>> => {
     const mutationOptions: UseMutationOptions<ApproveDeliverableResponse, ApproveDeliverableError, Options<ApproveDeliverableData>> = {
