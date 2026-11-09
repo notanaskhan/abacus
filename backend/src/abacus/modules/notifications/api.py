@@ -2,7 +2,11 @@
 Nothing imports it to send: modules publish domain events, and this module subscribes. Its email
 channel renders and sends through communications (P-01-T12; COMM-001)."""
 
+from collections.abc import Awaitable, Callable
+
 from abacus.kernel.audit_owners import register_engagement_owners
+from abacus.kernel.realtime import invalidating_events as _invalidating_events
+from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.notifications.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.notifications.catalogue import CATALOGUE, TEMPLATES, Recipients
@@ -22,6 +26,8 @@ from abacus.modules.notifications.kinds import (
 from abacus.modules.notifications.purge import ACTIVITIES as PURGE_ACTIVITIES
 from abacus.modules.notifications.purge import SCHEDULES
 from abacus.modules.notifications.purge import WORKFLOWS as PURGE_WORKFLOWS
+from abacus.modules.notifications.realtime import on_outbox_event as _on_realtime
+from abacus.modules.notifications.realtime import register as _register_realtime
 from abacus.modules.notifications.routes import router
 from abacus.modules.notifications.service import notify, run_purge_job
 from abacus.modules.notifications.workflows import (
@@ -35,6 +41,22 @@ from abacus.modules.notifications.workflows import (
 
 # The relay hands each catalogued event to `notify` (SPEC-013 §6).
 SUBSCRIPTIONS = dict.fromkeys(CATALOGUE, notify)
+
+Handler = Callable[[OutboxEvent], Awaitable[None]]
+# P-10-T27 (DEC-3117): the invalidation stream's subscriber, after `notify` where both read one
+# event; registered here so the worker composes it with the rest.
+_register_realtime()
+for _event in _invalidating_events():
+    _first = SUBSCRIPTIONS.get(_event)
+    if _first is None:
+        SUBSCRIPTIONS[_event] = _on_realtime
+    else:
+
+        async def _both(event: OutboxEvent, _f: Handler = _first) -> None:
+            await _f(event)
+            await _on_realtime(event)
+
+        SUBSCRIPTIONS[_event] = _both
 
 
 def register_kind_source(

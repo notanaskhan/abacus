@@ -569,8 +569,13 @@ __all__ = [
 from abacus.modules.agents.knowledge_workflow import (  # noqa: E402
     KnowledgeEmbeddingWorkflow as KnowledgeEmbeddingWorkflow,
 )
+
+# P-10-T27 (DEC-3117): the agents topics of the invalidation stream.
+from abacus.modules.agents.realtime_topics import register as _register_topics  # noqa: E402
 from abacus.modules.agents.workflow_types import BatchOutcome as BatchOutcome  # noqa: E402
 from abacus.modules.agents.workflow_types import (  # noqa: E402
     FailKnowledgeInput as FailKnowledgeInput,
 )
 from abacus.modules.agents.workflow_types import KnowledgeInput as KnowledgeInput  # noqa: E402
+
+_register_topics()

@@ -650,6 +650,8 @@ __all__ = [
 ]
 
 # S29 leftovers (TASK-6012): what the replay recorders and the OCR suite runner read (BOUND-001).
+# P-10-T27 (DEC-3117): the engagements topics of the invalidation stream.
+from abacus.modules.engagements.realtime_topics import register as _register_topics  # noqa: E402
 from abacus.modules.engagements.workflows import (  # noqa: E402
     ClientImportEraseWorkflow as ClientImportEraseWorkflow,
 )
@@ -659,3 +661,5 @@ from abacus.modules.engagements.workflows import (  # noqa: E402
 from abacus.modules.engagements.workflows import (  # noqa: E402
     ClientImportWorkflow as ClientImportWorkflow,
 )
+
+_register_topics()
