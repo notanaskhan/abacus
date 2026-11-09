@@ -134,6 +134,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "/v1/engagements/{engagement_id}/acceptance/risk-partner-review/complete",
         "acceptance.complete_review",
     ),
+    ("POST", "/v1/engagements/{engagement_id}/audit-events/export", "export.create"),
     ("POST", "/v1/engagements/{engagement_id}/independence/conclude", "independence.conclude"),
     ("POST", "/v1/engagements/{engagement_id}/letter/approve", "letter.approve"),
     ("POST", "/v1/engagements/{engagement_id}/team/approve", "team.approve"),

@@ -62,6 +62,8 @@ actions:
     senior: allow
     staff: allow
     reviewer: allow
+    eqr_reviewer: allow   # P-05-T02 (DEC-21, DEC-3103): the EQR reads and comments; reaches the live request-item threads too
+    specialist: allow   # P-05-T02 (DEC-21, DEC-3103)
     client_admin: client_visible_only
     client_contributor: assigned_only
     third_party: delegated_only   # R-01-T13 (DEC-387): POR-14's thread
@@ -73,6 +75,8 @@ actions:
     senior: allow
     staff: allow
     reviewer: allow
+    eqr_reviewer: allow   # P-05-T02 (DEC-21, DEC-3103)
+    specialist: allow   # P-05-T02 (DEC-21, DEC-3103)
     client_admin: client_visible_only
     client_contributor: assigned_only
     third_party: delegated_only   # R-01-T13 (DEC-387): POR-14's thread

@@ -1625,7 +1625,10 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     # I-01-T23 (DEC-2613): + methodology, whose versions in Needs review are a firm-level C13
     # gate registered here (`review/firm_gates.py`); methodology never imports review.
     "review": _BASE | {"engagements", "methodology"},
-    "collaboration": _BASE | {"engagements"},
+    # P-05-T02 (P-05 §4.1, DEC-3103): + review (convert a thread to a review note through C3 in
+    # the same unit of work) and communications (the share guard's `check_scope`); neither
+    # imports collaboration.
+    "collaboration": _BASE | {"engagements", "review", "communications"},
     # N-02-T38 (DEC-1567): + reporting, whose renderer draws the evidence package's legible page;
     # reporting never imports signatures.
     # N-02-T28 (DEC-1479): + review (the C13 gate kinds `envelope_send`, `envelope_countersign`),
@@ -1657,9 +1660,11 @@ MODULE_DEPENDENCIES: dict[str, frozenset[str]] = {
     # Today's fieldwork (procedures, workpapers, findings) splits into workpapers and assurance.
     # TASK-084 adds evidence (support) and requests (asking the client for it).
     "fieldwork": _BASE | {"engagements", "ledger", "sampling", "evidence", "requests"},
+    # P-05-T02 (DEC-3103): + collaboration, where the `workpaper` anchor provider registers
+    # (P-05-T09); collaboration never imports workpapers.
     "workpapers": _BASE
     | {"engagements", "methodology", "evidence", "requests", "ledger", "sampling", "review"}
-    | {"agents"},
+    | {"agents", "collaboration"},
     "adjustments": _BASE
     | {"engagements", "ledger", "methodology", "review", "agents", "integrations"},
     "reporting": _BASE

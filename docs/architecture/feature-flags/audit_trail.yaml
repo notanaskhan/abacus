@@ -18,3 +18,11 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: audit_trail.engagement_activity
+    description: 'P-05 AUD-29 engagement activity log (SPEC-650 AC-31 to AC-38): POST /v1/engagements/{engagement_id}/audit-events/query and /export and the cockpit rail row Overview › Activity. Off: 404 and the rail row is absent. P-05-T02, DEC-3103.'
+    owner: ayushkbhatia
+    created: 2026-11-09
+    expires: 2027-05-07
+    override: DEC-137
+    kind: boolean
+    default: false

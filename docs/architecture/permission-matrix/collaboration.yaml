@@ -1,0 +1,20 @@
+# The collaboration module's actions (ADR-027; P-39, F-03-T07). Compiled with every other module's
+# file into identity/authz/_matrix.py by `make regenerate`.
+#
+# P-05-T02 (TASK-6503; SPEC-650; P-05 §4.4; DEC-3103): comments v2 (ADR-236, proposed) and to-dos.
+# `comment.read`, `comment.create`, `comment.share`, `comment.redact` stay in requests.yaml (live
+# SPEC-032 routes use them). Every new action denies the agent (INV-1), client roles,
+# `client_service`, `firm_admin` and platform support (ADR-024 metadata-only; INV-4). Archived
+# engagements refuse writes through the global `archived_write: deny`.
+
+actions:
+  # Resolve and Reopen are thread events (ADR-236 decision 5); the same action covers both.
+  comment.resolve:          {engagement_partner: allow, manager: allow, senior: allow, staff: allow, specialist: allow, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, agent: deny, system: deny, independence: required}   # POST /v1/comment-threads/{id}/resolve, /reopen
+  # Firm-scope to-dos are read by their creator and assignee only (service rule, OQ-5).
+  todo.read:                {engagement_partner: allow, manager: allow, senior: allow, staff: allow, specialist: allow, eqr_reviewer: allow, reviewer: allow, practice_leader: in_scope, quality_partner: in_scope, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, agent: deny, system: deny, independence: required}   # My to-dos, anchor lists and counts, one to-do, seen
+  todo.create:              {engagement_partner: allow, manager: allow, senior: allow, staff: allow, specialist: allow, eqr_reviewer: allow, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, agent: deny, system: deny, independence: required}   # POST /v1/todos (the agent is never an assignee or actor, AC-19)
+  todo.update:              {engagement_partner: allow, manager: allow, senior: allow, staff: allow, specialist: allow, eqr_reviewer: allow, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, agent: deny, system: deny, independence: required}   # autosave with If-Match, move, checklist items
+  todo.complete:            {engagement_partner: allow, manager: allow, senior: allow, staff: allow, specialist: allow, eqr_reviewer: allow, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, agent: deny, system: deny, independence: required}   # complete and reopen (Undo is reopen, DEC-24)
+  todo.assign:              {engagement_partner: allow, manager: allow, senior: allow, staff: allow, specialist: allow, eqr_reviewer: allow, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, agent: deny, system: deny, independence: required}   # reassign; the assignee-candidates picker
+  # Creator, assignee or manager-or-above (service rule, AC-26); a soft delete only.
+  todo.delete:              {engagement_partner: allow, manager: allow, senior: allow, staff: allow, client_admin: deny, client_contributor: deny, third_party: deny, client_service: deny, agent: deny, system: deny, independence: required}   # DELETE /v1/todos/{id}

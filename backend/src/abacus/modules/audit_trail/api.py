@@ -8,6 +8,7 @@ from abacus.modules.audit_trail.activity_catalogue import (
     register_activity_kinds,
 )
 from abacus.modules.audit_trail.audit_log_contract import router as audit_log_router
+from abacus.modules.audit_trail.engagement_activity_contract import engagement_activity_router
 from abacus.modules.audit_trail.explorer import (
     EventFilter,
     events_for_work_item,
@@ -52,6 +53,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     audit_log_router,  # G-02-T04 contract; list and detail live since G-02-T08, export T17
     record_activity_routes.clients_router,  # P-07-T57: CLI-02 and ENG-02 Activity lines
     record_activity_routes.engagements_router,
+    engagement_activity_router,  # P-05-T02: AUD-29 query and export (501 until P-05-T11)
 )
 
 # G-01-T09 (AC8.6): the wall log reads its wall's events from the trail.

@@ -291,6 +291,11 @@ Every table of terms keeps the column order Term | Meaning | Code name | Don't u
 | Comment / mention / thread | Append-only (P-42). Polymorphic anchors; thread events `resolved` and `reopened`. | `comments`, `comment_mentions` | — |
 | Presence | P-15. UNLOGGED table. | `presence_heartbeats` | — |
 | To-do | Assignable work. Never "task"; never assigned to the agent; never client-visible. PRJ-01 "Tasks" becomes "To-dos" (DF-22). | `todos` | `task` |
+| Comment thread | P-05 comments v2 (ADR-236, proposed): one thread per anchor and locator, `open` or `resolved`; Resolve and Reopen are thread events, never edits. Internal unless shared on a client-visible anchor under a grant. Never blocks a sign-off; a review note does. | `comment_threads`, `comment_thread_events` | — |
+| Anchor kind | What a comment thread or to-do is attached to (`workpaper`, `todo`, later `component_thread`, `statement_line`, `sheet_row`), registered by the owning module through `collaboration.api.register_anchor`; an unregistered kind is refused (409 `anchor_kind_not_registered`). The anchor records the version it opened on; the provider pins or follows. | `anchor_kind`, `anchor_id`, `anchor_locator` | — |
+| Thread comment | A comment in a v2 thread, sealed and Restricted. Interim table name until CL-1 moves the SPEC-032 `comments` into `collaboration` after Apr 20, 2028. | `thread_comments` | — |
+| Correct… | The author's fix to a comment: a follow-up comment in the same thread marked as correcting it; the original shows "Corrected below". Replaces "Edit" (DF-18). | `corrects_comment_id` | "Edit" on a comment |
+| Redact… | A firm administrator's removal of a comment posted in error, with a reason and a fresh MFA: every reader sees "Redacted by ‹person› on ‹date›: ‹reason›"; nothing is deleted. Replaces "Delete…" (DF-18). | `thread_comment_redactions`, action `comment.redact` | "Delete" on a comment |
 
 ## New terms: workpapers
 
