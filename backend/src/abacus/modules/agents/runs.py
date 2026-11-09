@@ -10,6 +10,7 @@ An export is deterministic canonical JSON with a SHA-256 manifest, and is audite
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 from collections.abc import Sequence
@@ -602,28 +603,38 @@ class TraceExport:
 
 
 async def export_trace(ctx: AuthContext, run_id: UUID) -> TraceExport:
+    """P-09-T11 (DEC-3118): canonical JSON (byte-identical for the same trace version) and a
+    signed manifest naming the person, the body's SHA-256 and the persisted run record's hash;
+    `run_trace.export` needs a fresh second factor (matrix `mfa_recent`)."""
+    from abacus.kernel.crypto.signing import export_signer
+
     trace = await trace_for(ctx, run_id)
-    await _run(ctx, run_id, "run_trace.export")
+    run = await _run(ctx, run_id, "run_trace.export")
     body = canonical(trace)
     digest = hashlib.sha256(body).hexdigest()
+    manifest: dict[str, object] = {
+        "run_id": str(run_id),
+        "rows": len(trace.rows),
+        "sha256": digest,
+        "renderer_version": RENDERER_VERSION,
+        # P-09-T01 (DEC-2801): the export inherits the caller's projection, so an admin's
+        # export is the metadata trace and says so.
+        "projection": trace.projection,
+        "run_record_sha256": trace.run.record_sha256 or run_record_sha256(run),
+        "exported_by": str(ctx.user_id),
+    }
+    signed_body = json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode()
+    signer = export_signer()
+    signed = await signer.sign_digest(hashlib.sha256(signed_body).digest())
+    manifest["signature"] = base64.b64encode(signed.signature).decode()
+    manifest["signature_key_id"] = signed.key_id
     async with uow(ctx.tenant) as tx:
         tx.record(
             "agent_run.trace_exported",
             target=Target("agent_run", run_id),
-            after=Ref(sha256=digest, rows=len(trace.rows)),
+            after=Ref(sha256=digest, rows=len(trace.rows), by=ctx.user_id),
         )
-    return TraceExport(
-        body,
-        {
-            "run_id": str(run_id),
-            "rows": len(trace.rows),
-            "sha256": digest,
-            "renderer_version": RENDERER_VERSION,
-            # P-09-T01 (DEC-2801): the export inherits the caller's projection, so an admin's
-            # export is the metadata trace and says so.
-            "projection": trace.projection,
-        },
-    )
+    return TraceExport(body, manifest)
 
 
 # --- C6 v1 (TASK-5000): the run, its records read and its writes ---------------------------
