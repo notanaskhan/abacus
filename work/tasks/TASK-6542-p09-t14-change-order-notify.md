@@ -1,8 +1,8 @@
 ---
 id: TASK-6542
 title: "P-09-T14 finish: Change order… and Notify in the run pane"
-spec: P-09
-acceptance_criteria: [server-listed-controls]
+spec: SPEC-648  # P-09 Story 8 (SHL-13 human actions)
+acceptance_criteria: [AC-1]  # the row's acceptance (Objective)
 risk_zone: green
 status: in-review
 branch: s33r-p09-t14

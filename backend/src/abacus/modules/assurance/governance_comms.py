@@ -43,7 +43,14 @@ from sqlalchemy import text
 from abacus.kernel.config import settings
 from abacus.kernel.crypto import open_sealed, seal
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.errors import DomainConflict, DomainInvalid, NotFound
+from abacus.kernel.errors import (
+    DomainConflict,
+    DomainForbidden,
+    DomainInvalid,
+    DomainRateLimited,
+    NotFound,
+    ServiceUnavailable,
+)
 from abacus.kernel.logging import get_logger
 from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork, uow
 from abacus.modules.assurance.governance_room import SECTIONS_FINGERPRINT
@@ -771,7 +778,17 @@ async def _letter_emails(
                 idempotency_key=f"{_GOVERNANCE_LETTER_SENT}:{send_id}:{contact}",
                 authority="governance_comm.approve_send",
             )
-        except (Forbidden, NotFound, DomainInvalid, DomainConflict) as refused:
+        except (
+            Forbidden,
+            NotFound,
+            DomainInvalid,
+            DomainConflict,
+            DomainForbidden,
+            DomainRateLimited,
+            ServiceUnavailable,
+        ) as refused:
+            # The send has committed: an email refusal is logged, never a failed approve-and-send
+            # (end-pass security review).
             _log.warning(
                 "governance_letter.email_refused", send_id=send_id, error=type(refused).__name__
             )

@@ -393,12 +393,20 @@ async def list_deliverables_route(
             )
             for b in found.bands
         ],
-        coming_next=[ComingNextOut(label=c.label, expected=c.expected) for c in found.coming_next],
+        coming_next=[
+            ComingNextOut(label=c.label, expected=_expected(c.expected_on))
+            for c in found.coming_next
+        ],
         k1s=[
             K1RowOut(package_id=k.package_id, title=k.title, released_on=k.released_on)
             for k in found.k1s
         ],
     )
+
+
+def _expected(on: date | None) -> str | None:
+    """POR-09's Coming next words for a milestone date ("expected Oct 9", the handoff's form)."""
+    return None if on is None else f"expected {on:%b} {on.day}"
 
 
 def _version_out(v: PortalVersionFacts) -> DeliverableVersionOut:

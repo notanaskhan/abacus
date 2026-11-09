@@ -12,6 +12,8 @@ initiator via Agent (INV-5); regenerate keeps human edits.
 from __future__ import annotations
 
 import uuid
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
@@ -287,17 +289,30 @@ async def test_inv5_a_composed_draft_is_the_initiators_and_reads_via_agent(
     async def item(*_a: object) -> SimpleNamespace:
         return SimpleNamespace(engagement_id=uuid.uuid4())
 
-    async def start(by: AuthContext, _wi: uuid.UUID) -> SimpleNamespace:
+    async def start(by: AuthContext, _wi: uuid.UUID, **_k: object) -> SimpleNamespace:
         seen["drafted_as"] = by
         return SimpleNamespace(version_no=2)
 
-    async def record(_t: object, run: caps.CodeRun) -> uuid.UUID:
-        seen["run"] = run
+    # S33 partials round (A-07-T32, DEC-3138): the run opens before the draft and is finished
+    # through `finish_code_run`; the run it records is the one under test.
+    async def begin(*_a: object) -> uuid.UUID:
         return uuid.uuid4()
+
+    async def finish(_tx: object, _t: object, _run: uuid.UUID, run: caps.CodeRun) -> None:
+        seen["run"] = run
+
+    def ignore(*_a: object, **_k: object) -> None:
+        return None
+
+    @asynccontextmanager
+    async def unit(_t: object) -> AsyncGenerator[object]:
+        yield SimpleNamespace(record=ignore)
 
     monkeypatch.setattr(caps, "assurance_item", item)
     monkeypatch.setattr(rl, "start_letter", start)
-    monkeypatch.setattr(caps, "_record", record)
+    monkeypatch.setattr(caps, "uow", unit)
+    monkeypatch.setattr(caps, "begin_code_run", begin)
+    monkeypatch.setattr(caps, "finish_code_run", finish)
     await caps.letter_compose(ctx, uuid.uuid4())
     run = seen["run"]
     assert seen["drafted_as"] is ctx  # the draft is written as the person who asked

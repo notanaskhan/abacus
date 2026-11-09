@@ -89,8 +89,8 @@ function show(data: AuditReportOut, approve?: () => void): { bodies: unknown[] }
   const seen = { bodies: [] as unknown[] };
   mockApi({
     [`GET ${P}`]: () => json(data),
-    [`POST ${P}/choices`]: async (req: Request) => {
-      seen.bodies.push((await req.json()) as unknown);
+    [`PATCH ${P}/choices`]: (call) => {
+      seen.bodies.push(call.body);
       return json({ ...data, version: data.version + 1 });
     },
     [`POST ${P}/request-decision`]: () => json(data),
@@ -112,13 +112,9 @@ describe("AUD-23 live report", () => {
 
   it("posts a choice with the version the person saw", async () => {
     const seen = show(report());
-    fireEvent.change(await screen.findByLabelText("Modification"), {
-      target: { value: "qualified" },
-    });
+    fireEvent.click(await screen.findByRole("switch", { name: "Other information (AU-C 720)" }));
     await waitFor(() => {
-      expect(seen.bodies).toEqual([
-        { field: "opinion_form", value: "qualified", seen_version: 2 },
-      ]);
+      expect(seen.bodies).toEqual([{ field: "other_information", value: true, seen_version: 2 }]);
     });
   });
 

@@ -1,8 +1,8 @@
 ---
 id: TASK-6541
 title: "P-10-T26 finish: streams close 30 seconds before the access token expires"
-spec: P-10
-acceptance_criteria: [close-before-expiry]
+spec: SPEC-647  # P-10 SSE core, close before token expiry
+acceptance_criteria: [AC-T5]  # close 30 s before token expiry
 risk_zone: red
 status: in-review
 branch: s33r-p10-t26

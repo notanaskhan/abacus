@@ -12,7 +12,7 @@ import { MODS, type Mod } from "./copy";
 
 // AUD-23 · Report builder on live data (S33 partials round, A-07-T34; DEC-3137): the report's
 // structured choices and its assembled paper from `GET /v1/audits/{id}/report` (A-07-T27's
-// service). A choice is set through `POST …/report/choices` with the version the person saw; a
+// service). A choice is set through `PATCH …/report/choices` with the version the person saw; a
 // modification asks the partner's SHL-11 card (`…/request-decision`); Generate .docx… goes through
 // `…/documents`. Paragraphs are the server's template blocks: never free text. "Approve report"
 // shows only with the server's `sign_off.l4` and is the host's SHL-12 (`onApprove`); release

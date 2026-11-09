@@ -89,7 +89,11 @@ def _patch(
 
     monkeypatch.setattr(dp, "tenant_session", session)
     monkeypatch.setattr(dp, "reader_version", reader)
-    monkeypatch.setattr(dp, "client_approval_provider", lambda _k: Provider())
+
+    def provider(_k: object) -> Provider:
+        return Provider()
+
+    monkeypatch.setattr(dp, "client_approval_provider", provider)
 
 
 async def test_approve_is_offered_only_on_the_newest_waiting_version(
@@ -152,3 +156,15 @@ async def test_portal_client_ids_follow_the_grants(monkeypatch: pytest.MonkeyPat
     assert await dp.portal_client_ids(_ctx()) == [client_a, client_b]
     assert await dp.portal_client_ids(_ctx(), client_b) == [client_b]
     assert await dp.portal_client_ids(_ctx(), uuid.uuid4()) == []
+
+
+def test_coming_next_words_its_date_in_the_handoffs_form() -> None:
+    # End-pass review: the route read a field the read model does not carry (`expected`).
+    from datetime import date
+
+    from abacus.modules.portal.deliverables_contract import (
+        _expected,  # pyright: ignore[reportPrivateUsage]  # the words under test
+    )
+
+    assert _expected(date(2026, 10, 9)) == "expected Oct 9"
+    assert _expected(None) is None
