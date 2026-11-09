@@ -90,7 +90,7 @@ async def test_the_contact_gets_one_email_per_send_in_the_senders_name(
 async def test_no_sender_or_recipient_no_email(
     sends: list[dict[str, object]], missing: str
 ) -> None:
-    await approval_emails.on_approval_requested(_event(**{missing: None}))  # type: ignore[arg-type]
+    await approval_emails.on_approval_requested(_event(**{missing: None}))  # type: ignore[arg-type]  # a double
     assert sends == []
 
 
@@ -163,7 +163,7 @@ async def test_the_governance_room_recipients_each_get_the_letter_email(
         other: SimpleNamespace(display_name="Lee", user_id=None),
     }
     ctx = SimpleNamespace(tenant=TenantContext(TENANT, "human", str(SENDER)), tenant_id=TENANT)
-    await governance_comms._letter_emails(  # pyright: ignore[reportPrivateUsage]
+    await governance_comms._letter_emails(  # pyright: ignore[reportPrivateUsage]  # under test
         ctx,  # type: ignore[arg-type]  # a double
         ENGAGEMENT,
         WI,
@@ -173,7 +173,7 @@ async def test_the_governance_room_recipients_each_get_the_letter_email(
     )
     assert [s["key"] for s in sent] == ["governance_letter_sent"] * 2
     assert {s["authority"] for s in sent} == {"governance_comm.approve_send"}
-    assert sent[0]["recipient"].kind == "user" and sent[1]["recipient"].kind == "contact"  # type: ignore[attr-defined]
+    assert sent[0]["recipient"].kind == "user" and sent[1]["recipient"].kind == "contact"  # type: ignore[attr-defined]  # doubles
     assert sent[1]["idempotency_key"] == f"governance_letter_sent:{send_id}:{other}"
 
 

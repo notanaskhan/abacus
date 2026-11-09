@@ -36,9 +36,12 @@ def _ctx() -> AuthContext:
 
 
 def _wire(monkeypatch: pytest.MonkeyPatch, events: list[str]) -> None:
+    def record(action: str, **_k: object) -> None:
+        events.append(action)
+
     @asynccontextmanager
     async def unit(_t: object) -> AsyncGenerator[object]:
-        yield SimpleNamespace(record=lambda action, **_k: events.append(action))
+        yield SimpleNamespace(record=record)
 
     async def item(*_a: object) -> object:
         return SimpleNamespace(engagement_id=uuid.uuid4())
@@ -86,7 +89,7 @@ async def test_a_refused_draft_ends_the_run_failed(monkeypatch: pytest.MonkeyPat
     monkeypatch.setattr(rep_letters, "start_letter", refuse)
     with pytest.raises(rep_letters.NoTemplate):
         await caps.letter_compose(_ctx(), WI)
-    assert events[-2:] == ["fail:template_missing", "agent_run.failed"]
+    assert events[-2:] == [f"fail:{rep_letters.NoTemplate.code}", "agent_run.failed"]
     assert "finish" not in events
 
 

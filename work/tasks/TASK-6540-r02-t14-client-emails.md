@@ -1,7 +1,7 @@
 ---
 id: TASK-6540
 title: "R-02-T14 finish: the approval-requested and governance-letter-sent emails"
-spec: R-02
+spec: SPEC-646  # R-02 AC-36 (docs/plan/epics/R-02.md)
 acceptance_criteria: [AC-36]
 risk_zone: amber
 status: in-review

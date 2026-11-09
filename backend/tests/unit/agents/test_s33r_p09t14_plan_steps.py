@@ -6,7 +6,10 @@ from __future__ import annotations
 import uuid
 
 from abacus.modules.agents.run_views import V2Facts, step_labels
-from abacus.modules.agents.runs import Counters, _header  # pyright: ignore[reportPrivateUsage]
+from abacus.modules.agents.runs import (
+    Counters,
+    _header,  # pyright: ignore[reportPrivateUsage]  # the header under test
+)
 from abacus.modules.agents.runs_routes import RunHeaderOut
 
 

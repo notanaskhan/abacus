@@ -41,7 +41,7 @@ class Engine:
 
 def _wire(
     monkeypatch: pytest.MonkeyPatch, *, over_on: int | None
-) -> tuple[Engine, list[dict[str, Any]]]:
+) -> tuple[Engine, list[dict[str, Any]]]:  # Any: recorded run rows (a test double)
     engine = Engine()
     runs: list[dict[str, Any]] = []  # Any: record_run's keyword arguments
 
@@ -70,9 +70,24 @@ def _wire(
     async def inserted(*_a: object) -> int:
         return 1
 
+    def ignore(*_a: object, **_k: object) -> None:
+        return None
+
+    def thread(_f: object, *_a: object) -> object:
+        return raster()
+
+    def no_tin(_w: object) -> bool:
+        return False
+
+    def under(_f: object) -> str:
+        return "under"
+
+    async def no_cells(*_a: object, **_k: object) -> int:
+        return 0
+
     @asynccontextmanager
     async def unit(_t: object) -> AsyncGenerator[object]:
-        yield SimpleNamespace(session=None, record=lambda *_a, **_k: None, emit=lambda *_a: None)
+        yield SimpleNamespace(session=None, record=ignore, emit=ignore)
 
     async def raw(*_a: object) -> bytes:
         return b"%PDF"
@@ -83,14 +98,14 @@ def _wire(
     monkeypatch.setattr(ocr_step, "provider", lambda: engine)
     monkeypatch.setattr(ocr_step.storage, "get", raw)
     monkeypatch.setattr(ocr_step.storage, "put", put)
-    monkeypatch.setattr(ocr_step.asyncio, "to_thread", lambda _f, *_a: raster())
-    monkeypatch.setattr(ocr_step, "names_a_tin", lambda _w: False)
+    monkeypatch.setattr(ocr_step.asyncio, "to_thread", thread)
+    monkeypatch.setattr(ocr_step, "names_a_tin", no_tin)
     monkeypatch.setattr(ocr_step, "flag_variant", variant)
     monkeypatch.setattr(ocr_step, "record_run", record)
-    monkeypatch.setattr(ocr_step, "under_key", lambda _f: "under")
+    monkeypatch.setattr(ocr_step, "under_key", under)
     monkeypatch.setattr(ocr_step, "uow", unit)
     monkeypatch.setattr(ocr_step, "insert_pages", inserted)
-    monkeypatch.setattr(ocr_step, "record_tables", nothing)
+    monkeypatch.setattr(ocr_step, "record_tables", no_cells)
     monkeypatch.setattr(ocr_step, "record_ocr_extraction", nothing)
     monkeypatch.setattr(ocr_step, "warn_if_near_cap", nothing)
     return engine, runs
