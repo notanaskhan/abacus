@@ -1,0 +1,19 @@
+# Individual return engine parameters, TY2027 (T-04-T11; T-04 §4.4; DEC-76; DEC-3124). PROTECTED:
+# reviewed yearly with the tax CPA and pinned by golden tests (DEC-2203). A change is a reviewed
+# policy change with its goldens in the same diff. Code computes; the engine of record computes
+# tax (ADR-231): these are the review workspace's own arithmetic only.
+version: 1
+tax_year: 2027
+reviewed_by: null   # the CPA's handle once the TY2027 memo is signed (T-04-T49)
+source: "IRC §199A(a), (b)(2); NY Tax Law §§605(b), 620; IT-112-R, IT-225 and IT-360.1 instructions"
+
+qbi_199a:
+  deduction_pct: "20"        # §199A(a): 20% of qualified business income
+  w2_wage_pct: "50"          # §199A(b)(2)(B)(i)
+  w2_wage_alt_pct: "25"      # §199A(b)(2)(B)(ii), with 2.5% of UBIA
+  ubia_pct: "2.5"
+ptet:
+  partner_share_pct: "25"    # the Feld partner's share of each entity PTET
+residency:
+  statutory_days: 183        # NY Tax Law §605(b)(1)(B): more than 183 days and a permanent place of abode
+  rounding_places: 0
