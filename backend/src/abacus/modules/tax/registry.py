@@ -228,3 +228,255 @@ UPDATE_COLUMNS["estimate_installments"] = frozenset(
     | {"confirmation_request_item_id", "confirmed_by_contact_id", "confirmed_at", "row_version"}
     | {"paid_evidence_version_id"}
 )
+
+# T-04-T10 (0761, DEC-3123): the individual return workspace.
+TABLES = TABLES | frozenset(
+    {
+        "return_worksheets",
+        "return_worksheet_sections",
+        "return_fields",
+        "document_approvals",
+        "k1_activities",
+        "k1_treatments",
+        "k1_treatment_events",
+        "residency_determinations",
+        "residency_facts",
+    }
+)
+INSERT_ONLY = INSERT_ONLY | frozenset(
+    {"document_approvals", "k1_treatment_events", "residency_facts"}
+)
+INSERT_COLUMNS.update(
+    {
+        "return_worksheets": frozenset(
+            {
+                "tenant_id",
+                "engagement_id",
+                "tax_return_id",
+                "id",
+                "key",
+                "form_code",
+                "title",
+                "group_path",
+                "jurisdiction",
+                "default_tsj",
+                "origin",
+                "new_vs_prior_year",
+                "k1_activity_id",
+                "sort_order",
+                "footer_note",
+                "active",
+                "created_in_checkpoint_id",
+                "content_hash",
+            }
+        ),
+        "return_worksheet_sections": frozenset(
+            {
+                "tenant_id",
+                "engagement_id",
+                "tax_return_id",
+                "id",
+                "worksheet_id",
+                "key",
+                "name",
+                "sort_order",
+                "content_hash",
+            }
+        ),
+        "return_fields": frozenset(
+            {
+                "tenant_id",
+                "engagement_id",
+                "tax_return_id",
+                "id",
+                "worksheet_id",
+                "section_id",
+                "field_key",
+                "line_ref",
+                "label",
+                "tsj",
+                "value_type",
+                "derivation",
+                "formula_ref",
+                "engine_field_key",
+                "estimate_flag",
+                "new_this_year_note",
+                "current_value",
+                "current_fvv_seq",
+                "sort_order",
+            }
+        ),
+        "document_approvals": frozenset(
+            {
+                "tenant_id",
+                "engagement_id",
+                "tax_return_id",
+                "evidence_version_id",
+                "level",
+                "kind",
+                "reverses_id",
+                "actor_user_id",
+                "function_at_time",
+                "reason_sealed",
+                "seen_version",
+            }
+        ),
+        "k1_activities": frozenset(
+            {
+                "tenant_id",
+                "engagement_id",
+                "tax_return_id",
+                "id",
+                "issuer_name",
+                "issuer_client_entity_id",
+                "issuer_form",
+                "recipient_tsj",
+                "ownership_pct",
+                "source_package_id",
+                "k1_state",
+                "released_at",
+                "source_evidence_version_ids",
+                "k1_worksheet_id",
+                "content_hash",
+            }
+        ),
+        "k1_treatments": frozenset(
+            {
+                "tenant_id",
+                "engagement_id",
+                "tax_return_id",
+                "id",
+                "k1_activity_id",
+                "kind",
+                "resolved",
+                "prior_year",
+                "changed_vs_prior",
+                "status",
+                "proposal_id",
+                "engine_name",
+                "engine_version",
+                "inputs_hash",
+            }
+        ),
+        "k1_treatment_events": frozenset(
+            {
+                "tenant_id",
+                "engagement_id",
+                "tax_return_id",
+                "treatment_id",
+                "event",
+                "actor_kind",
+                "actor_id",
+                "proposal_id",
+                "reason_sealed",
+            }
+        ),
+        "residency_determinations": frozenset(
+            {
+                "tenant_id",
+                "engagement_id",
+                "tax_return_id",
+                "id",
+                "scope",
+                "jurisdictions",
+                "options",
+                "proposed_option",
+                "recommended_by_run_id",
+                "status",
+                "conflict",
+                "proposal_id",
+            }
+        ),
+        "residency_facts": frozenset(
+            {
+                "tenant_id",
+                "engagement_id",
+                "tax_return_id",
+                "determination_id",
+                "fact_key",
+                "value",
+                "citation_ids",
+                "source_kind",
+                "added_by_kind",
+            }
+        ),
+    }
+)
+UPDATE_COLUMNS.update(
+    {
+        "return_worksheets": frozenset(
+            {
+                "title",
+                "group_path",
+                "footer_note",
+                "active",
+                "sort_order",
+                "content_hash",
+                "version_no",
+                "updated_at",
+            }
+        ),
+        "return_worksheet_sections": frozenset(
+            {"name", "sort_order", "content_hash", "version_no", "updated_at"}
+        ),
+        "return_fields": frozenset(
+            {
+                "label",
+                "estimate_flag",
+                "new_this_year_note",
+                "current_value",
+                "current_fvv_seq",
+                "sort_order",
+                "updated_at",
+            }
+        ),
+        "k1_activities": frozenset(
+            {
+                "k1_state",
+                "released_at",
+                "source_evidence_version_ids",
+                "k1_worksheet_id",
+                "content_hash",
+                "version_no",
+                "updated_at",
+            }
+        ),
+        "k1_treatments": frozenset(
+            {
+                "resolved",
+                "prior_year",
+                "changed_vs_prior",
+                "status",
+                "override_value",
+                "override_reason_sealed",
+                "decided_by",
+                "decided_at",
+                "proposal_id",
+                "checkpoint_id",
+                "follow_up_note",
+                "engine_name",
+                "engine_version",
+                "inputs_hash",
+                "version_no",
+                "updated_at",
+            }
+        ),
+        "residency_determinations": frozenset(
+            {
+                "jurisdictions",
+                "options",
+                "proposed_option",
+                "recommended_by_run_id",
+                "status",
+                "conflict",
+                "confirmed_by",
+                "confirmed_at",
+                "proposal_id",
+                "checkpoint_id",
+                "issue_id",
+                "version_no",
+                "updated_at",
+            }
+        ),
+    }
+)
