@@ -8,6 +8,11 @@
 // (Benefits Committee chair: a `tcwg` grant on the room), Ben Ashby (Copperleaf's owner, the close
 // package) and Meera Shah (Ridgeline's partner, her K-1).
 import type {
+  DeliverableOut,
+  DeliverableRowOut,
+  DeliverablesOut,
+  DeliverableVersionOut,
+  PageCommentsOut,
   ApprovalItemDetailOut,
   ApprovalItemOut,
   ApprovalsOut,
@@ -219,4 +224,207 @@ export const PLANNING_LETTER: GovernanceLetterOut = {
   seen_hash: "fixture-planning-260-v1",
   committee: COMMITTEE,
   allowed_actions: ["ask", "download"],
+};
+
+// --- POR-09 Deliverables (R-02-T17): the rail and the viewer by artboard, from the handoff's
+// figures. Titles, page counts and dates are the book's (pack 7 and §9.4).
+
+export const DELIVERABLE_ID = {
+  fs: stableId("deliverable:northwind-fs-py2025"),
+  rep: stableId("deliverable:northwind-rep-letter"),
+  engagement: stableId("deliverable:northwind-engagement-letter"),
+  report: stableId("deliverable:northwind-auditor-report"),
+  copperleaf: stableId("deliverable:copperleaf-2026-08-statements"),
+} as const;
+
+export type Por09State = "a" | "a2" | "b" | "c" | "d" | "e" | "f";
+
+function row(
+  id: string,
+  title: string,
+  status: DeliverableRowOut["status"],
+  over: Partial<DeliverableRowOut> = {},
+): DeliverableRowOut {
+  return { id, kind: "other", title, status, restricted_use: false, ...over };
+}
+
+const FS_TITLE = "Financial statements and supplemental schedules";
+
+/** `GET /v1/portal/deliverables` by artboard. */
+export function deliverables(state: Por09State): DeliverablesOut {
+  if (state === "f") return { bands: [], coming_next: [], k1s: [] };
+  if (state === "d") {
+    return {
+      bands: [
+        {
+          key: "tax-return-2025",
+          label: "2025 Tax Return",
+          rows: [
+            row(stableId("deliverable:meera-return-2025"), "2025 Tax Return", "not_ready_yet", {
+              kind: "return_copy",
+            }),
+          ],
+        },
+      ],
+      coming_next: [],
+      k1s: [
+        {
+          package_id: stableId("portal-k1:meera-shah"),
+          title: "Ridgeline Property Partners, LP — 2025 Schedule K-1 (Form 1065)",
+          released_on: "2026-09-15",
+        },
+      ],
+    };
+  }
+  if (state === "e") {
+    return {
+      bands: [
+        {
+          key: "copperleaf-close-2026-08",
+          label: "August 2026 Close",
+          rows: [
+            row(DELIVERABLE_ID.copperleaf, "August 2026 financial statements", "waiting_for_approval", {
+              kind: "close_package",
+              released_on: "2026-09-14",
+            }),
+          ],
+        },
+      ],
+      coming_next: [],
+      k1s: [],
+    };
+  }
+  const final = state === "c";
+  return {
+    bands: [
+      {
+        key: "northwind-py2025",
+        label: "PY2025 plan audit",
+        rows: final
+          ? [
+              row(DELIVERABLE_ID.report, "Independent auditor's report.pdf", "final", {
+                kind: "auditor_report",
+                page_count: 3,
+              }),
+              row(DELIVERABLE_ID.fs, `${FS_TITLE}.pdf`, "final", {
+                kind: "fs_final",
+                page_count: 14,
+              }),
+            ]
+          : [
+              row(
+                DELIVERABLE_ID.fs,
+                FS_TITLE,
+                state === "b" ? "approved_by_you" : "for_your_review",
+                { kind: "fs_draft", latest_version: state === "a" ? 3 : 4, page_count: 14 },
+              ),
+              row(DELIVERABLE_ID.rep, "Representation letter", "in_sign"),
+              row(DELIVERABLE_ID.engagement, "Engagement letter", "signed", { kind: "signed_copy" }),
+            ],
+      },
+    ],
+    coming_next: final
+      ? []
+      : [
+          { label: "Independent auditor's report", expected: "At release · expected Oct 9" },
+          {
+            label: "Form 5500",
+            expected: "Filed by you with Summit Plan Administrators · due Oct 15 (extended)",
+          },
+        ],
+    k1s: [],
+  };
+}
+
+const HASH_V3 = "3e0a9c55b1d74f62a8e3f019c7d2b4a6e5f81c3d09b7a2e4f6c8d0b1a3e5f7c9";
+const HASH_V4 = "7c41d8a2e9f03b56c1d7e4a8b2f60c9d3e5a7b1c4d8f2a6e0b3c5d7e9f1a2b4c";
+
+function version(
+  no: number,
+  draft: boolean,
+  pages: number,
+  actions: DeliverableVersionOut["allowed_actions"],
+  hash: string,
+  publishedAt: string,
+): DeliverableVersionOut {
+  return {
+    version_no: no,
+    is_draft: draft,
+    page_count: pages,
+    page_comments: draft,
+    published_at: publishedAt,
+    seen_hash: hash,
+    withdrawn_on: null,
+    allowed_actions: actions,
+  };
+}
+
+/** `GET /v1/portal/deliverables/{id}` by artboard. */
+export function deliverable(state: Por09State, id: string): DeliverableOut | undefined {
+  if (state === "e" && id === DELIVERABLE_ID.copperleaf) {
+    return {
+      id,
+      kind: "close_package",
+      title: "August 2026 financial statements",
+      status: "waiting_for_approval",
+      restricted_use: false,
+      legend_kind: "ar_c_70",
+      versions: [version(1, false, 5, ["download"], HASH_V3, "2026-09-14T21:40:00Z")],
+    };
+  }
+  if (id === DELIVERABLE_ID.report && state === "c") {
+    return {
+      id,
+      kind: "auditor_report",
+      title: "Independent auditor's report.pdf",
+      status: "final",
+      restricted_use: false,
+      legend_kind: null,
+      versions: [version(1, false, 3, ["download"], HASH_V4, "2026-10-09T15:07:00Z")],
+    };
+  }
+  if (id !== DELIVERABLE_ID.fs) return undefined;
+  const v3 = version(3, true, 14, ["download", "comment"], HASH_V3, "2026-10-06T14:00:00Z");
+  if (state === "a") {
+    return { id, kind: "fs_draft", title: "Financial statements", status: "for_your_review", restricted_use: false, legend_kind: null, versions: [v3] };
+  }
+  const v4 = (actions: DeliverableVersionOut["allowed_actions"]): DeliverableVersionOut =>
+    version(4, true, 14, actions, HASH_V4, "2026-10-08T14:00:00Z");
+  if (state === "a2") {
+    return { id, kind: "fs_draft", title: "Financial statements", status: "for_your_review", restricted_use: false, legend_kind: null, versions: [v3, v4(["download", "comment", "approve"])] };
+  }
+  if (state === "b") {
+    return { id, kind: "fs_draft", title: "Financial statements", status: "approved_by_you", restricted_use: false, legend_kind: null, versions: [v3, v4(["download"])] };
+  }
+  return {
+    id,
+    kind: "fs_final",
+    title: `${FS_TITLE}.pdf`,
+    status: "final",
+    restricted_use: false,
+    legend_kind: null,
+    versions: [version(5, false, 14, ["download"], HASH_V4, "2026-10-09T15:07:00Z")],
+  };
+}
+
+/** Page comments on draft v3 (a): Dana's question on page 2 and Hannah's answer. */
+export const PAGE_COMMENTS: PageCommentsOut = {
+  items: [
+    {
+      id: stableId("page-comment:northwind-fs-v3-1"),
+      page: 2,
+      line_ref: "Notes receivable from participants",
+      author: "Dana Kowalski",
+      created_at: "2026-10-06T15:14:00Z",
+      body: "Keystone calls these participant loans. Can the note say both?",
+    },
+    {
+      id: stableId("page-comment:northwind-fs-v3-1-reply"),
+      page: 2,
+      line_ref: "Notes receivable from participants",
+      author: "Hannah Leclerc · Brightwater Hale",
+      created_at: "2026-10-06T16:02:00Z",
+      body: "Yes — Note 5 will read 'Notes receivable from participants (participant loans)'. It will be in draft v4 tomorrow.",
+    },
+  ],
 };
