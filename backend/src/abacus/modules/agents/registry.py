@@ -50,6 +50,7 @@ TABLES: frozenset[str] = frozenset(
         "run_artifacts",
         "run_sign_offs",
         "engagement_ai_settings",
+        "agent_tool_calls",  # P-10-T22 (0750): C17's idempotency key, claimed then done once
     }
 )
 # Insert and read, never update or delete, for the app role (ADR-004).
@@ -113,6 +114,10 @@ INSERT_COLUMNS: dict[str, frozenset[str]] = {
         {"tenant_id", "engagement_id", "auto_mode", "auto_mode_set_by", "auto_mode_set_at"}
     ),
     "tenant_counters": frozenset({"tenant_id", "name", "value"}),
+    # P-10-T22 (0750): the claim; state, result and completion are the runtime's update.
+    "agent_tool_calls": frozenset(
+        {"id", "tenant_id", "run_id", "step_seq", "attempt", "tool_name", "args_hash"}
+    ),
     # G-02-T23 (0272): the draft (one per firm) and the requested versions.
     "autonomy_policy_drafts": frozenset(
         {"tenant_id", "base_version_no", "sections", "schema_version", "updated_by"}
@@ -279,6 +284,7 @@ UPDATE_COLUMNS: dict[str, frozenset[str]] = {
     ),
     "run_artifacts": frozenset({"version", "state", "saved_to"}),
     "engagement_ai_settings": frozenset({"auto_mode", "auto_mode_set_by", "auto_mode_set_at"}),
+    "agent_tool_calls": frozenset({"state", "result", "completed_at"}),  # P-10-T22 (0750)
     # SPEC-009: document status, and each chunk's vector written once.
     "knowledge_documents": frozenset({"status", "failure_code", "withdrawn_at"}),
     "knowledge_chunks": frozenset({"embedding", "embedding_model", "embedded_at"}),

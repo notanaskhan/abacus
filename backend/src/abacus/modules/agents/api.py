@@ -212,9 +212,17 @@ from abacus.modules.agents.stage_routes import platform_stages_router
 from abacus.modules.agents.stages import assistants, stage_for, starts_in_shadow
 from abacus.modules.agents.tools.registry import AgentTool as AgentTool
 from abacus.modules.agents.tools.registry import ToolNotRegistered as ToolNotRegistered
+from abacus.modules.agents.tools.registry import ToolPageIn as ToolPageIn
+from abacus.modules.agents.tools.registry import ToolPageOut as ToolPageOut
 from abacus.modules.agents.tools.registry import agent_tool as agent_tool
 from abacus.modules.agents.tools.registry import register_tool as register_tool
 from abacus.modules.agents.tools.registry import registered_tools as registered_tools
+
+# P-10-T22 (C17 v1, frozen): the runtime the harness calls, and the shapes a tool declares.
+from abacus.modules.agents.tools.runtime import ToolCallIn as ToolCallIn
+from abacus.modules.agents.tools.runtime import ToolOutcome as ToolOutcome
+from abacus.modules.agents.tools.runtime import ToolTargets as ToolTargets
+from abacus.modules.agents.tools.runtime import call_tool as call_tool
 from abacus.modules.agents.upload_review import (
     REVIEWER,
     ReviewOutcome,
