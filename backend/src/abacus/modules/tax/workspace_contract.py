@@ -3,10 +3,10 @@
 `docs/contracts/tax-worksheets.md` (WS-1).
 
 Every route declares exactly one matrix action (T-04-T03's rows) and answers 501 until its build
-row lands (T-04-T15 to T-04-T24); the flags `tax.review_workspace` and `tax.individual_workpapers`
-arrive with T-04-T09. Every model is classified; return values are TRI (`restricted`, §7216) and
-never leave as a model's text. Figures are code's (ADR-050) and the engine's (DEC-77): no route
-computes tax.
+row lands (T-04-T15 to T-04-T24); the flags `tax.review_workspace`, `tax.individual_workpapers`
+and `tax_agents.enabled` (T-04-T09) answer 404 while off. Every model is classified; return
+values are TRI (`restricted`, §7216) and never leave as a model's text. Figures are code's
+(ADR-050) and the engine's (DEC-77): no route computes tax.
 """
 
 from __future__ import annotations
@@ -19,6 +19,11 @@ from uuid import UUID
 from fastapi import Depends, Query
 from pydantic import BaseModel, ConfigDict, Field
 
+from abacus.kernel._flags import (
+    TAX_AGENTS_ENABLED,
+    TAX_INDIVIDUAL_WORKPAPERS,
+    TAX_REVIEW_WORKSPACE,
+)
 from abacus.kernel._statuses import (
     K1ActivityStatus,
     K1TreatmentStatus,
@@ -26,7 +31,8 @@ from abacus.kernel._statuses import (
     ReturnFieldViewStatus,
 )
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotImplementedYet
+from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.flags import Flag, flag_enabled
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
 
 Ctx = Annotated[AuthContext, Depends(current_context)]
@@ -60,6 +66,13 @@ def _frozen() -> ConfigDict:
 
 def _strict() -> ConfigDict:
     return ConfigDict(frozen=True, extra="forbid")
+
+
+async def _flag_on(ctx: AuthContext, flag: Flag) -> None:
+    """T-04-T09 (DEC-3111): off for the firm, the route is absent (404); a client principal never
+    reaches the workspace."""
+    if ctx.client or not await flag_enabled(ctx.tenant, flag):
+        raise NotFound(flag.name)
 
 
 def _not_yet() -> NoReturn:
@@ -344,6 +357,7 @@ _R = "/returns/{return_id}"
     f"{_R}/workspace", action="tax_return.read", response_model=WorkspaceSummaryOut, errors=(501,)
 )
 async def workspace_route(return_id: UUID, ctx: Ctx) -> WorkspaceSummaryOut:
+    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
     _not_yet()
 
 
@@ -357,6 +371,7 @@ async def review_tree_route(
     q: Annotated[str | None, Query(max_length=120)] = None,
     category: Annotated[str | None, Query(max_length=60)] = None,
 ) -> ReviewTreeOut:
+    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
     _not_yet()
 
 
@@ -371,6 +386,7 @@ async def document_approval_route(
     return_id: UUID, body: DocumentApprovalIn, ctx: Ctx
 ) -> DocumentApprovalOut:
     """409 `mismatch` (`facts.field_key`), 403 `level_not_permitted`, 409 `version_superseded`."""
+    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
     _not_yet()
 
 
@@ -384,6 +400,7 @@ async def document_approval_reverse_route(
     approval_id: UUID, body: DocumentApprovalReverseIn, ctx: Ctx
 ) -> DocumentApprovalOut:
     """Unapprove as a reversing row, own level only; nothing is deleted."""
+    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
     _not_yet()
 
 
@@ -393,6 +410,7 @@ async def document_approval_reverse_route(
 async def return_leadsheets_route(
     return_id: UUID, ctx: Ctx, form: Annotated[str, Query(max_length=20)] = "1040"
 ) -> LeadsheetsOut:
+    await _flag_on(ctx, TAX_INDIVIDUAL_WORKPAPERS)
     _not_yet()
 
 
@@ -403,6 +421,7 @@ async def return_leadsheets_route(
     errors=(501,),
 )
 async def sch_e_k1_matrix_route(return_id: UUID, ctx: Ctx) -> K1MatrixOut:
+    await _flag_on(ctx, TAX_INDIVIDUAL_WORKPAPERS)
     _not_yet()
 
 
@@ -412,6 +431,7 @@ async def sch_e_k1_matrix_route(return_id: UUID, ctx: Ctx) -> K1MatrixOut:
 async def field_links_route(
     return_id: UUID, ctx: Ctx, evidence_version_id: Annotated[UUID | None, Query()] = None
 ) -> FieldLinksOut:
+    await _flag_on(ctx, TAX_INDIVIDUAL_WORKPAPERS)
     _not_yet()
 
 
@@ -426,6 +446,7 @@ async def final_approval_request_route(
     return_id: UUID, body: FinalApprovalRequestIn, ctx: Ctx
 ) -> FinalApprovalRequestOut:
     """409 `{blockers: draft_k1 | blocking_issues | unapproved_documents}`."""
+    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
     _not_yet()
 
 
@@ -437,6 +458,8 @@ async def final_approval_request_route(
     errors=(409, 501),
 )
 async def draft_run_route(return_id: UUID, ctx: Ctx) -> ReturnRunAcceptedOut:
+    await _flag_on(ctx, TAX_AGENTS_ENABLED)
+    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
     _not_yet()
 
 
@@ -444,6 +467,7 @@ async def draft_run_route(return_id: UUID, ctx: Ctx) -> ReturnRunAcceptedOut:
     f"{_R}/worksheets", action="return_worksheet.read", response_model=WorksheetsOut, errors=(501,)
 )
 async def worksheets_route(return_id: UUID, ctx: Ctx) -> WorksheetsOut:
+    await _flag_on(ctx, TAX_INDIVIDUAL_WORKPAPERS)
     _not_yet()
 
 
@@ -456,6 +480,7 @@ async def worksheets_route(return_id: UUID, ctx: Ctx) -> WorksheetsOut:
 async def worksheet_fields_route(
     worksheet_id: UUID, ctx: Ctx, q: Annotated[str | None, Query(max_length=120)] = None
 ) -> WorksheetFieldsOut:
+    await _flag_on(ctx, TAX_INDIVIDUAL_WORKPAPERS)
     _not_yet()
 
 
@@ -466,6 +491,7 @@ async def worksheet_fields_route(
     errors=(501,),
 )
 async def k1_activities_route(return_id: UUID, ctx: Ctx) -> K1ActivitiesOut:
+    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
     _not_yet()
 
 
@@ -476,6 +502,7 @@ async def k1_activities_route(return_id: UUID, ctx: Ctx) -> K1ActivitiesOut:
     errors=(501,),
 )
 async def k1_activity_route(activity_id: UUID, ctx: Ctx) -> K1ActivityOut:
+    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
     _not_yet()
 
 
@@ -487,6 +514,8 @@ async def k1_activity_route(activity_id: UUID, ctx: Ctx) -> K1ActivityOut:
     errors=(409, 501),
 )
 async def k1_treatment_run_route(activity_id: UUID, ctx: Ctx) -> ReturnRunAcceptedOut:
+    await _flag_on(ctx, TAX_AGENTS_ENABLED)
+    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
     _not_yet()
 
 
@@ -498,6 +527,7 @@ async def k1_treatment_run_route(activity_id: UUID, ctx: Ctx) -> ReturnRunAccept
 )
 async def k1_override_route(treatment_id: UUID, body: K1OverrideIn, ctx: Ctx) -> K1TreatmentOut:
     """422 `reason_required` when the reason is blank (the model enforces 1+ characters)."""
+    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
     _not_yet()
 
 
@@ -505,6 +535,7 @@ async def k1_override_route(treatment_id: UUID, body: K1OverrideIn, ctx: Ctx) ->
     f"{_R}/residency", action="residency.read", response_model=ReturnResidencyOut, errors=(501,)
 )
 async def residency_route(return_id: UUID, ctx: Ctx) -> ReturnResidencyOut:
+    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
     _not_yet()
 
 
@@ -516,6 +547,8 @@ async def residency_route(return_id: UUID, ctx: Ctx) -> ReturnResidencyOut:
     errors=(409, 501),
 )
 async def residency_proposal_route(return_id: UUID, ctx: Ctx) -> ReturnRunAcceptedOut:
+    await _flag_on(ctx, TAX_AGENTS_ENABLED)
+    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
     _not_yet()
 
 
@@ -526,4 +559,5 @@ async def residency_proposal_route(return_id: UUID, ctx: Ctx) -> ReturnRunAccept
     errors=(501,),
 )
 async def state_allocation_route(return_id: UUID, ctx: Ctx) -> StateAllocationOut:
+    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
     _not_yet()

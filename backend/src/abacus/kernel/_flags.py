@@ -440,6 +440,21 @@ TAX_ENGINE_BRIDGE = Flag(
     kind="boolean",
     default="false",
 )
+TAX_INDIVIDUAL_WORKPAPERS = Flag(
+    name="tax.individual_workpapers",
+    kind="boolean",
+    default="false",
+)
+TAX_REVIEW_WORKSPACE = Flag(
+    name="tax.review_workspace",
+    kind="boolean",
+    default="false",
+)
+TAX_AGENTS_ENABLED = Flag(
+    name="tax_agents.enabled",
+    kind="boolean",
+    default="false",
+)
 UPLOAD_REVIEW_ENABLED = Flag(
     name="upload_review.enabled",
     kind="boolean",
@@ -547,6 +562,9 @@ FLAGS: dict[str, Flag] = {
     "signatures.esign_provider": SIGNATURES_ESIGN_PROVIDER,
     "tax.delivery_efile": TAX_DELIVERY_EFILE,
     "tax.engine_bridge": TAX_ENGINE_BRIDGE,
+    "tax.individual_workpapers": TAX_INDIVIDUAL_WORKPAPERS,
+    "tax.review_workspace": TAX_REVIEW_WORKSPACE,
+    "tax_agents.enabled": TAX_AGENTS_ENABLED,
     "upload_review.enabled": UPLOAD_REVIEW_ENABLED,
     "uploads.processing": UPLOADS_PROCESSING,
     "workpapers.core": WORKPAPERS_CORE,
