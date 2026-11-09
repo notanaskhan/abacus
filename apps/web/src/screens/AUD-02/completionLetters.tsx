@@ -18,16 +18,18 @@ const RepLetter = FIXTURES
 const Governance = FIXTURES
   ? lazy(async () => ({ default: (await import("../AUD-22")).Governance }))
   : () => null;
-// A-07-T34: AUD-23's report builder, fixture mode, opened from AUD-19's "AUD-23" chip.
+// A-07-T34: AUD-23's report builder, opened from AUD-19's "AUD-23" chip: the canvas in fixture
+// builds, the live report (`GET …/report`) everywhere else (S33 partials round, DEC-3137).
 const ReportBuilder = FIXTURES
   ? lazy(async () => ({ default: (await import("../AUD-23")).ReportBuilder }))
   : () => null;
+const LiveReport = lazy(async () => ({ default: (await import("../AUD-23")).LiveReport }));
 
 /** The checklist link targets that open inside the cockpit. */
 export type CompletionLetter = "AUD-21" | "AUD-22" | "AUD-23";
 
 export function isCompletionLetter(target: string): target is CompletionLetter {
-  return FIXTURES && (target === "AUD-21" || target === "AUD-22" || target === "AUD-23");
+  return target === "AUD-23" || (FIXTURES && (target === "AUD-21" || target === "AUD-22"));
 }
 
 export function useCompletionLetterCanvas(
@@ -45,7 +47,11 @@ export function useCompletionLetterCanvas(
       title: "Report builder",
       children: (
         <Suspense fallback={null}>
-          <ReportBuilder frame="a" onBack={onBack} />
+          {FIXTURES ? (
+            <ReportBuilder frame="a" onBack={onBack} />
+          ) : (
+            <LiveReport workItemId={workItemId} onBack={onBack} />
+          )}
         </Suspense>
       ),
     };
