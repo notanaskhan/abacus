@@ -8,7 +8,6 @@ import {
   type IconName,
   Skeleton,
   StatusPill,
-  type StatusTone,
 } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
@@ -42,11 +41,11 @@ export type ToolState =
   | "failed";
 
 export const TOOL_STATE: Readonly<
-  Record<ToolState, { label: string; tone: StatusTone | null; disc: string }>
+  Record<ToolState, { label: string; tone: "neutral" | null; disc: string }>
 > = {
   dispatched: { label: "Dispatched", tone: "neutral", disc: "todo" },
   running: { label: "Running", tone: null, disc: "run" },
-  waiting_on_inputs: { label: "Waiting on inputs", tone: "muted", disc: "half" },
+  waiting_on_inputs: { label: "Waiting on inputs", tone: "neutral", disc: "half" },
   blocked: { label: "Blocked on a partner decision", tone: null, disc: "warn" },
   succeeded: { label: "Complete", tone: null, disc: "done" },
   failed: { label: "Failed", tone: null, disc: "fail" },
