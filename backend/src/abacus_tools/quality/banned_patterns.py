@@ -954,6 +954,10 @@ REVIEW_DECIDE_EXEMPT: dict[str, frozenset[str]] = {
     "src/abacus/modules/agents/proposal_adapters.py": frozenset(
         {"<import>", "approve_typed", "reject_typed"}
     ),
+    # R-02-T11 (SPEC-646, DEC-3009): C18's one caller of a provider's `decide()` slot, the
+    # client's own decision (portal human, fresh second factor). CLIENT-DECISION-001 already
+    # names this file as the only home outside record mode; the exemption is that one function.
+    "src/abacus/modules/portal/approvals.py": frozenset({"client_decide"}),
 }
 
 

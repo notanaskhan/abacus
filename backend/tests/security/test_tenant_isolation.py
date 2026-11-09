@@ -37,6 +37,7 @@ TABLES: tuple[str, ...] = (
     "agent_run_steps",
     "agent_runs",
     "agent_stages",
+    "agent_tool_calls",
     "answer_effects",
     "answer_versions",
     "approval_batches",

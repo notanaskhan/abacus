@@ -551,6 +551,17 @@ UI labels (N-04-T01): **Response sent** (status `sent`), **Awaiting agency** (st
 | Uncorrected misstatement acknowledgement | Management's human-only acknowledgement of a SUM snapshot's net effect. | `uncorrected_misstatement_acknowledgements` | — |
 | My K-1s | POR-09's band of K-1s released to this person. | UI label only | — |
 
+## New terms: tax return workspace (T-04-T03)
+
+| Term | Meaning | Code name | Don't use |
+|---|---|---|---|
+| Return workspace | TAX-04 to TAX-07: a return's Review, Issues and Activity tabs (RW-1). | `tax_review_workspace` | — |
+| Document approval | A person's approval of one source document at their level (preparer, detail, manager; DEC-37); one row per level; an unapprove is a reversing row. | `document_approvals` | sign-off |
+| Worksheet | TXI-01's fields per form and section, with provenance and section sign-offs (WS-1). | `return_worksheet` | — |
+| K-1 treatment | How a K-1 line flows into the return (TXI-02): proposed, approved, or overridden with a reason. | `k1_treatment` | — |
+| Residency confirmation | TXI-03's residency for a tax year, decided through an SHL-10 proposal (Q1). | `residency` | — |
+| Draft run | The Return Drafter's run on a return, started by a person or a trigger (Q12). | `tax_return.draft_run` | — |
+
 ## Legacy identifiers: rename or freeze
 
 | Identifier | Problem | Action | When |
