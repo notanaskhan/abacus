@@ -34,6 +34,15 @@ from abacus.modules.agents.repository import (
     run_writes,
     screening_results_of_run,
 )
+from abacus.modules.agents.run_views import (
+    Counters,
+    LevelCount,
+    V2Facts,
+    levels_for,
+    v2_facts,
+    v2_items,
+)
+from abacus.modules.agents.run_views import V2Item as V2ItemT
 from abacus.modules.engagements.api import get_ref
 from abacus.modules.evidence.api import decisions_on_screenings, withdrawn_among
 from abacus.modules.identity.api import (
@@ -253,7 +262,15 @@ async def runs_for(
     async with tenant_session(ctx.tenant) as session:
         runs = await engagement_runs(session, ctx, engagement_id, max(1, min(limit, 100)))
     if state == "active":
-        runs = [r for r in runs if r.status == "running"]
+        async with tenant_session(ctx.tenant) as session:
+            facts = await v2_facts(session, [r.id for r in runs])
+        # A v2 run is active until its state is terminal; a legacy one while it runs.
+        runs = [
+            r
+            for r in runs
+            if (r.id in facts and facts[r.id].v2 and facts[r.id].active)
+            or (not (r.id in facts and facts[r.id].v2) and r.status == "running")
+        ]
     names = {m.user_id: m.display_name for m in await engagement_team(ctx, engagement_id)}
     async with tenant_session(ctx.tenant) as session:
         facts = await _v1_facts(session, [r.id for r in runs])
@@ -496,11 +513,52 @@ async def export_trace(ctx: AuthContext, run_id: UUID) -> TraceExport:
 
 
 @dataclass(frozen=True)
+class RunHeader:
+    """C6 v1.1's header (P-09-T07): from the v2 columns; names from the engagement team."""
+
+    run_number: int | None
+    blocked_on: dict[str, object] | None
+    counters: Counters | None
+    runs_as_name: str | None
+    trigger_kind: str | None
+    work_item_ref: str | None
+
+
+@dataclass(frozen=True)
 class RunView:
     run: RunSummary
     run_record_sha256: str
     allowed_actions: list[str]
     projection: Projection
+    header: RunHeader | None = None
+    levels: tuple[LevelCount, ...] = ()
+
+
+# What the dock may offer on a run: P-10's policy decides, and the view passes the caller's
+# allowed set through (P-09-T07). The commands answer 404 until P-10's routes land (P-09-T14).
+RUN_ACTIONS: Final = (
+    "agent_run.read",
+    "run_trace.export",
+    "agent_run.approve_plan",
+    "agent_run.answer",
+    "agent_run.control",
+    "agent_run.sign_off",
+)
+
+
+def _header(facts: V2Facts, names: dict[UUID, str], metadata: bool) -> RunHeader:
+    runs_as = facts.runs_as_user_id
+    blocked = facts.blocked_on
+    if metadata and blocked is not None:  # DEC-87: no record references or needs
+        blocked = {"kind": blocked.get("kind"), "role": blocked.get("role")}
+    return RunHeader(
+        facts.run_number,
+        blocked,
+        facts.counters if facts.v2 else None,
+        None if runs_as is None else names.get(runs_as, "Former member"),
+        facts.trigger_kind,
+        None if metadata else facts.work_item_ref,
+    )
 
 
 @dataclass(frozen=True)
@@ -545,10 +603,19 @@ async def run_view(ctx: AuthContext, run_id: UUID) -> RunView:
         raise NotFound
     names = {m.user_id: m.display_name for m in await engagement_team(ctx, engagement_id)}
     ref = await get_ref(ctx, engagement_id)
-    actions = await allowed_actions(ctx, ref.resource(), ["agent_run.read", "run_trace.export"])
+    actions = await allowed_actions(ctx, ref.resource(), list(RUN_ACTIONS))
     projection = await projection_for(ctx, engagement_id)
+    async with tenant_session(ctx.tenant) as session:
+        facts = (await v2_facts(session, [run.id])).get(run.id)
+        levels = await levels_for(session, facts) if facts is not None and facts.v2 else []
+    header = None if facts is None else _header(facts, names, projection == "metadata")
     return RunView(
-        await _summary_v1(ctx, run, names), run_record_sha256(run), sorted(actions), projection
+        await _summary_v1(ctx, run, names),
+        run_record_sha256(run),
+        sorted(actions),
+        projection,
+        header,
+        tuple(levels),
     )
 
 
@@ -622,7 +689,12 @@ async def writes_for(ctx: AuthContext, run_id: UUID) -> list[RunWrite]:
 
 # --- C6 v1 run items (TASK-5001; P-09 Story 1.3 and 8.1) ------------------------------------
 
-ItemKind = Literal["tool_card", "narration", "decision", "failure"]
+# Legacy kinds (read-time adapter), then the C6 v2 wire set a v2 run's events carry (P-09-T07).
+ItemKind = Literal[
+    "tool_card", "narration", "decision", "failure",
+    "user", "line", "block", "tool", "progress", "question", "answer", "error", "plan",
+    "approval", "decision_ref", "artifact", "run_card", "notice",
+]  # fmt: skip
 _ITEM_ORDER: Final = ("tool_card", "narration", "decision", "failure")
 
 
@@ -645,6 +717,8 @@ class RunItem:
     actor: str | None
     ref_type: str | None
     ref_id: UUID | None
+    # A v2 item's AgentBlocks as stored; the route validates them (P-09-T03) or drops them.
+    blocks: dict[str, object] | None = None
 
 
 @dataclass(frozen=True)
@@ -664,6 +738,11 @@ async def items_for(ctx: AuthContext, run_id: UUID, after_seq: int) -> RunItems:
         raise NotFound
     names = {m.user_id: m.display_name for m in await engagement_team(ctx, engagement_id)}
     summary = await _summary_v1(ctx, run, names)
+    async with tenant_session(ctx.tenant) as session:
+        facts = (await v2_facts(session, [run.id])).get(run.id)
+        found = await v2_items(session, run.id, after_seq) if facts and facts.v2 else None
+    if found is not None:
+        return await _v2_run_items(ctx, engagement_id, summary, names, *found)
     async with tenant_session(ctx.tenant) as session:
         writes = await run_writes(session, run.id)
         results = await screening_results_of_run(session, run.id)
@@ -748,6 +827,44 @@ async def items_for(ctx: AuthContext, run_id: UUID, after_seq: int) -> RunItems:
         # the same thing to every viewer and polling still works.
         items = [replace(i, ref_id=None) for i in items if i.kind != "narration"]
     return RunItems(summary, items, last, resync)
+
+
+# DEC-87: what a metadata reader sees of a v2 run's items: the kind and its code, no words, no
+# blocks, no record references.
+_CONTENT_KINDS: Final = frozenset({"line", "block", "user", "answer", "question"})
+
+
+async def _v2_run_items(
+    ctx: AuthContext,
+    engagement_id: UUID,
+    summary: RunSummary,
+    names: dict[UUID, str],
+    items: Sequence[V2ItemT],
+    last: int,
+    resync: bool,
+) -> RunItems:
+    out = [
+        RunItem(
+            i.seq,
+            cast(ItemKind, i.kind),
+            i.at,
+            i.code,
+            i.outcome,
+            i.detail,
+            None if i.actor_user_id is None else names.get(i.actor_user_id, "Former member"),
+            i.ref_type,
+            i.ref_id,
+            i.blocks,
+        )
+        for i in items
+    ]
+    if await projection_for(ctx, engagement_id) == "metadata":
+        out = [
+            replace(i, detail=None, ref_id=None, blocks=None)
+            for i in out
+            if i.kind not in _CONTENT_KINDS
+        ]
+    return RunItems(summary, out, last, resync)
 
 
 def page_items(raw: Sequence[RunItem], after_seq: int) -> tuple[list[RunItem], int, bool]:

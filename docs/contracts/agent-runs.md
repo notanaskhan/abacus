@@ -296,3 +296,29 @@ Season Progress Reporter (Sep 14, 9:00 AM, 2,625 records, 79 citations, 1 write 
 the Northwind PY2025 planning run (Sep 14, 9:24 AM, running, materiality blocked on a partner
 decision), the Aug 17 failed run (CCH Axcess Tax 401) and Copperleaf Run 2.
 
+
+## 11. Run read model (P-09-T07, 2026-11-09; TASK-6304; DEC-3004)
+Fills §10's run-view and feed fields; additive (one enum widened), so v1's snapshot still passes.
+Code: `agents/run_views.py`, `agents/runs.py`, `agents/run_recorder.py`.
+
+- **Header** from the v2 columns: `run_number`, `blocked_on` (a metadata reader gets its `kind`
+  and `role` only), `counters` (v2 runs), `runs_as_name`, `trigger_kind`, `work_item_ref` (null for
+  metadata).
+- **Levels**: the newest decided plan version's steps (`key`, `level`), each counted in its latest
+  step row's bucket: `succeeded`/`skipped` done, `running`/`dispatched` running, `blocked`,
+  `waiting_on_inputs` waiting, `queued` (and a plan step with no row yet), `failed`/`cancelled`
+  failed. Levels below 1 count as level 1. A legacy run has none.
+- **`allowed_actions`** passes through the caller's allowed set of `agent_run.read`,
+  `run_trace.export`, `agent_run.approve_plan`, `.answer`, `.control` and `.sign_off`; the commands
+  are P-10's routes (P-09-T14 binds them).
+- **Items**: a v2 run (a plan or runtime steps) reads its `item.appended` run events in `run_seq`
+  order, 200 at most per page; `RunItemOut.kind` widens to the v2 wire set and `session_kind` is
+  the same value; stored `blocks` are validated as AgentBlocks again or dropped. A metadata reader
+  gets no `line`, `block`, `user`, `answer` or `question` items and no detail, blocks or
+  references. A legacy run keeps the read-time adapter (one tool card, templated narration).
+- **Engagement list `state=active`**: a v2 run until its state is terminal; a legacy one while it
+  runs.
+- **Synthetic-only recorder**: `record_synthetic_run(tenant, RecordedRun)` writes a v2 run (row,
+  one approved plan, step rows, item events, counters) for a synthetic firm only (`synthetic_only`
+  otherwise), as the run's initiator, with `agent_run.recorded_synthetic`. P-09-T12's scenario
+  calls it; P-10-T25's harness records real runs.

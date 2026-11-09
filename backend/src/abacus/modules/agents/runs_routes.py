@@ -12,11 +12,11 @@ and 501 until P-09-T08. Every count is code's (ADR-050)."""
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Literal
+from typing import Annotated, Literal, cast, get_args
 from uuid import UUID
 
 from fastapi import Depends, Path, Query
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from abacus.kernel._flags import RUN_TRACE_ENABLED
 from abacus.kernel.classification import classified
@@ -25,6 +25,8 @@ from abacus.kernel.flags import flag_enabled
 from abacus.modules.agents.blocks import AgentBlocks
 from abacus.modules.agents.run_records import RunRecord, record_for
 from abacus.modules.agents.runs import (
+    RunHeader,
+    RunItem,
     RunItems,
     RunSummary,
     RunWrite,
@@ -39,6 +41,8 @@ from abacus.modules.agents.runs import (
 )
 from abacus.modules.agents.runs_v2_contract import BlockedOnOut, RunCountersOut, TriggerKind
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_context
+
+TRIGGER_KINDS: frozenset[str] = frozenset(get_args(TriggerKind))
 
 engagement_runs_router = AbacusRouter(prefix="/v1/engagements/{engagement_id}", tags=["agents"])
 runs_router = AbacusRouter(prefix="/v1/agent-runs", tags=["agents"])
@@ -255,9 +259,15 @@ class RunItemOut(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     seq: Annotated[int, classified("internal")]
+    # Legacy kinds, then (C6 v1.1, P-09-T07, additive) the v2 wire set a v2 run's items carry.
     kind: Annotated[
-        Literal["tool_card", "narration", "decision", "failure"], classified("internal")
-    ]
+        Literal[
+            "tool_card", "narration", "decision", "failure",
+            "user", "line", "block", "tool", "progress", "question", "answer", "error", "plan",
+            "approval", "decision_ref", "artifact", "run_card", "notice",
+        ],
+        classified("internal"),
+    ]  # fmt: skip
     at: Annotated[datetime, classified("internal")]
     code: Annotated[str, classified("internal")]
     # The row's own code: mixed objects, so not one status vocabulary (codes only).
@@ -458,6 +468,28 @@ async def list_agent_runs_route(
     return [_run(r) for r in await runs_for(ctx, engagement_id, state, limit)]
 
 
+def _header(header: RunHeader | None) -> RunHeaderOut | None:
+    if header is None:
+        return None
+    blocked = (
+        BlockedOnOut.model_validate(header.blocked_on) if header.blocked_on is not None else None
+    )
+    counters = (
+        RunCountersOut.model_validate(header.counters, from_attributes=True)
+        if header.counters is not None
+        else None
+    )
+    trigger = header.trigger_kind if header.trigger_kind in TRIGGER_KINDS else None
+    return RunHeaderOut(
+        run_number=header.run_number,
+        blocked_on=blocked,
+        counters=counters,
+        runs_as_name=header.runs_as_name,
+        trigger_kind=cast(TriggerKind | None, trigger),
+        work_item_ref=header.work_item_ref,
+    )
+
+
 @runs_router.get("/{run_id}", action="agent_run.read", response_model=RunViewOut)
 async def agent_run_route(run_id: UUID, ctx: Ctx) -> RunViewOut:
     view = await run_view(ctx, run_id)
@@ -467,18 +499,45 @@ async def agent_run_route(run_id: UUID, ctx: Ctx) -> RunViewOut:
         allowed_actions=view.allowed_actions,
         projection=view.projection,
         access=view.projection,
+        header=_header(view.header),
+        levels=[
+            RunProjectionLevelOut.model_validate(lv, from_attributes=True) for lv in view.levels
+        ],
+    )
+
+
+def _blocks(raw: dict[str, object] | None) -> AgentBlocks | None:
+    """A v2 item's stored blocks, validated again on the way out; invalid ones are dropped
+    (the dock shows the item without them rather than unvalidated content)."""
+    if raw is None:
+        return None
+    try:
+        return AgentBlocks.model_validate(raw)
+    except ValidationError:
+        return None
+
+
+def _item(i: RunItem) -> RunItemOut:
+    session_kind = LEGACY_SESSION_KIND.get(i.kind, cast(SessionItemKind, i.kind))
+    return RunItemOut(
+        seq=i.seq,
+        kind=i.kind,
+        at=i.at,
+        code=i.code,
+        outcome=i.outcome,
+        detail=i.detail,
+        actor=i.actor,
+        ref_type=i.ref_type,
+        ref_id=i.ref_id,
+        blocks=_blocks(i.blocks),
+        session_kind=session_kind,
     )
 
 
 def _items(found: RunItems) -> RunItemsOut:
     return RunItemsOut(
         run=_run(found.run),
-        items=[
-            RunItemOut.model_validate(i, from_attributes=True).model_copy(
-                update={"session_kind": LEGACY_SESSION_KIND.get(i.kind)}
-            )
-            for i in found.items
-        ],
+        items=[_item(i) for i in found.items],
         last_seq=found.last_seq,
         resync=found.resync,
         next_seq=found.last_seq,
