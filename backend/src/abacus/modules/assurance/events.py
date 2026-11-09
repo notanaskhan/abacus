@@ -118,3 +118,15 @@ class ArchiveLockRequested(DomainEvent):
     engagement_id: Annotated[UUID, classified("internal")]
     work_item_id: Annotated[UUID, classified("internal")]
     requested_by: Annotated[UUID, classified("internal")]
+
+
+class UncorrectedMisstatementsAcknowledged(DomainEvent):
+    """R-02-T15: a client person acknowledged the frozen SUM snapshot's uncorrected misstatements
+    (A-07's rep letter and the EP and manager read it)."""
+
+    event_type: ClassVar[str] = "uncorrected_misstatements.acknowledged"
+
+    sum_snapshot_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    work_item_id: Annotated[UUID, classified("internal")]
+    contact_id: Annotated[UUID, classified("internal")]

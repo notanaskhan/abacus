@@ -372,6 +372,11 @@ CATALOGUE: Final[dict[str, Kind]] = {
     "reminders.drafted": Kind("reminders.drafted", _leads, "engagement", "engagement_id"),
     # P-06-T14: the same, under its C16 code (events from before the rename keep the legacy one).
     "follow_up.drafted": Kind("follow_up_drafted", _leads, "engagement", "engagement_id"),
+    # R-02-T15 (DEC-3113): the client acknowledged the uncorrected misstatements; the EP and the
+    # managers hear of it (identifiers only, DEC-61).
+    "uncorrected_misstatements.acknowledged": Kind(
+        "uncorrected_misstatements_acknowledged", _leads, "engagement", "engagement_id"
+    ),
     "agent.digest": Kind("agent.digest", _leads, "engagement", "engagement_id"),
     # SPEC-032 (TASK-062): a person mentioned in a comment, on the request it's about.
     "comment.mentioned": Kind("mention", _mentioned, "request_item", "request_item_id"),
@@ -605,6 +610,10 @@ TEMPLATES: Final[dict[str, str]] = {
     "independence.requested": "Confirm your independence for {engagement}.",
     "reminders.drafted": "Overdue reminders on {engagement} are waiting for you to send.",
     "follow_up.drafted": "Follow-ups on {engagement} are waiting for you to send.",
+    # R-02-T15 (DEC-3113): words follow the proposed-entry response line; no amount, no names.
+    "uncorrected_misstatements.acknowledged": (
+        "A client acknowledgement of the uncorrected misstatements on {engagement} was recorded."
+    ),
     "agent.digest": "Items are overdue on {engagement}: see its activity for today's reminders.",
     "comment.mentioned": "You were mentioned in a comment on {engagement}.",
     "materiality.proposed": "Materiality on {engagement} is waiting for your decision.",
