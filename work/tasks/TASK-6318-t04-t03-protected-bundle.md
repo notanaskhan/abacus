@@ -4,7 +4,7 @@ title: T-04-T03 protected bundle, matrix rows, dependencies, glossary
 spec: SPEC-649
 acceptance_criteria: [AC-1]  # generated allow/deny tests; the agent denied every approve, override, confirm, draft-run and request
 risk_zone: red
-status: partial
+status: in-progress
 epic: T-04
 plan_key: T-04-T03
 branch: s32-t04-t03

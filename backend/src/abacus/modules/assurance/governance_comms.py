@@ -594,6 +594,12 @@ _RELEASED = text(
 _MEMBERS = text(
     "SELECT contact_id FROM governance_body_members WHERE body_id = :b AND ended_on IS NULL"
 )
+_IS_RECIPIENT = text(
+    "SELECT 1 FROM governance_recipients WHERE work_item_id = :wi AND governance_body_id = :b"
+)
+_BODIES_OF_CLIENT = text(
+    "SELECT id FROM governance_bodies WHERE id = ANY(:ids) AND client_id = :c"
+)
 
 
 async def approve_and_send(
@@ -620,6 +626,13 @@ async def approve_and_send(
     if problems:
         raise LetterCheckFailed(facts={"checks": ",".join(problems)})
     async with tenant_session(ctx.tenant) as session:
+        # S32 partials review: the letter goes only to a body set as this work item's recipient
+        # (which `set_recipients` keeps to the engagement's client); its members get room grants.
+        if (
+            await session.scalar(_IS_RECIPIENT, {"wi": work_item_id, "b": governance_body_id})
+            is None
+        ):
+            raise LetterCheckFailed(facts={"checks": "body_not_a_recipient"})
         members = {
             r.contact_id
             for r in (await session.execute(_MEMBERS, {"b": governance_body_id})).all()
@@ -736,8 +749,20 @@ async def set_recipients(
 ) -> list[Recipient]:
     """The TCWG bodies the engagement's letters go to (DEC-93); acknowledgement required."""
     engagement_id = await _person(ctx, work_item_id, "governance_comm.manage_recipients")
+    # S32 partials review: a body is a recipient only for its own client's engagement.
+    client_id = (await get_ref(ctx, engagement_id)).client_id
+    wanted = list(dict.fromkeys(body_ids))
+    async with tenant_session(ctx.tenant) as session:
+        owned = {
+            r.id
+            for r in (
+                await session.execute(_BODIES_OF_CLIENT, {"ids": wanted, "c": client_id})
+            ).all()
+        }
+    if set(wanted) - owned:
+        raise LetterCheckFailed(facts={"checks": "body_not_the_clients"})
     async with uow(ctx.tenant) as tx:
-        for body_id in dict.fromkeys(body_ids):
+        for body_id in wanted:
             await tx.session.execute(
                 text(
                     "INSERT INTO governance_recipients (tenant_id, engagement_id, work_item_id, "

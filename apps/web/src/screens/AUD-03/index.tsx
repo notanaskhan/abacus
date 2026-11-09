@@ -32,7 +32,7 @@ import { useNow } from "../../app-core/clock";
 import { useOverlays } from "../../app-core/overlay-host";
 import { PLANNED_VISIBLE } from "../../app-core/planned";
 import { useSession } from "../../app-core/session";
-import { AgentDock } from "../../domain/agents";
+import { AgentDock } from "../../domain/agent-dock";
 import {
   AgentActivityTab,
   AuditCockpit,

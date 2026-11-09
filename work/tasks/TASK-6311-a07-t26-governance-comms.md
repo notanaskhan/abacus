@@ -4,7 +4,7 @@ title: A-07-T26 governance communications service (AUD-22)
 spec: SPEC-644  # A-07 F4
 acceptance_criteria: [AC-1]
 risk_zone: amber
-status: partial
+status: in-progress
 epic: A-07
 plan_key: A-07-T26
 branch: s32-a07-t26
