@@ -80,6 +80,7 @@ from abacus.modules.tax.tax_profile import return_for_entity as return_for_entit
 from abacus.modules.tax.tax_profile import return_label as return_label
 from abacus.modules.tax.tax_profile import transcript_comparison_lines
 from abacus.modules.tax.transitions import apply_transition, record_sync_state
+from abacus.modules.tax.workspace_contract import workspace_router
 
 # T-01-T10: §7216 consent capture behind C19's routes, and the `consent_set` envelope source.
 consent_capture.register()
@@ -115,6 +116,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     portal_k1_router,  # POR-13 (T-02-T02 stub)
     portal_filing_router,  # T-01-T41: the filed client copy's download
     schedules_router,  # extensions, estimates and payments (T-03-T02 stub)
+    workspace_router,  # RW-1 and WS-1, the return workspace (T-04-T05 stub)
 )
 
 
