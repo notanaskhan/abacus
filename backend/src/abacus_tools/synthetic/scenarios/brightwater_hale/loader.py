@@ -338,6 +338,7 @@ from abacus_tools.fakes.identity import ISSUER
 from abacus_tools.flags import set_flag
 from abacus_tools.local.db_guard import violations
 from abacus_tools.synthetic.documents import positioned_pdf
+from abacus_tools.synthetic.scenarios.brightwater_hale import agent_runs_slice as _runs
 from abacus_tools.synthetic.scenarios.brightwater_hale import completion_slice as _completion
 from abacus_tools.synthetic.scenarios.brightwater_hale import governance_room_slice as _room
 from abacus_tools.synthetic.scenarios.brightwater_hale import sampling_content
@@ -1285,6 +1286,40 @@ async def _portal_user_added(conn: asyncpg.Connection, _: Scenario, event: Event
         return "client_access.granted", "engagement", str(engagement_id_of(audit))
 
     await _bootstrap(conn, event, write)
+
+
+async def _run_recorded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """P-09-T12 (DEC-3121): run #4127 through the agents module's synthetic-only recorder, as its
+    initiator (a human context), never by SQL here."""
+    from abacus.modules.agents.api import RecordedRun, RecordedStep, record_synthetic_run
+
+    del conn
+    initiator = user_id_of(_SEATS[event.actor])
+    northwind = next(a for a in AUDITS if a.client == _runs.CLIENT)
+    steps = cast("list[dict[str, object]]", event.data["steps"])
+    await record_synthetic_run(
+        TenantContext(TENANT, "human", str(initiator)),
+        RecordedRun(
+            agent_id=str(event.data["agent_id"]),
+            engagement_id=engagement_id_of(northwind),
+            initiator_user_id=initiator,
+            run_number=int(cast(int, event.data["run_number"])),
+            state=str(event.data["state"]),
+            steps=[
+                RecordedStep(
+                    key=str(st["key"]),
+                    level=int(cast(int, st["level"])),
+                    label=str(st["label"]),
+                    state=str(st["state"]),
+                    reached=st["state"] != "queued",
+                )
+                for st in steps
+            ],
+            blocked_on=cast("dict[str, object]", event.data["blocked_on"]),
+            plan_decided_at=datetime.fromisoformat(str(event.data["plan_decided_at"])),
+            id=UUID(str(event.data["run_id"])),
+        ),
+    )
 
 
 async def _governance_body_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
@@ -5917,6 +5952,7 @@ HANDLERS: Final[dict[str, Handler]] = {
     "portal.host_added": _host_added,
     "identity.portal_person_added": _portal_person_added,
     "assurance.governance_body_seeded": _governance_body_seeded,
+    "agents.run_recorded": _run_recorded,  # P-09-T12 (`--slice agent_runs`)
     "identity.client_invitation_created": _client_invitation_created,
     # G-01-T06 (`--slice people`): seats, then teams, then each person's profile.
     "identity.seats_provisioned": _seats_provisioned,
