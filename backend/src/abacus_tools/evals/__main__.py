@@ -52,6 +52,10 @@ def main(argv: list[str]) -> int:
         choices=["gap", "risk_narrative", "risk", "ic", "soc1", "ebp_provisions", "ebp_attribute"],
     )
     args = parser.parse_args(argv)
+    if args.agent == "agent_blocks":  # P-09-T15: the deterministic AgentBlocks conformance suite
+        from abacus_tools.evals.agent_blocks import main as blocks_main
+
+        return blocks_main(cast(Path, args.out))
     if args.agent == "evidence.upload_reviewer":  # SPEC-030 (TASK-058 D4): its own runner
         return review_main(
             cast(Tier | None, args.tier),
