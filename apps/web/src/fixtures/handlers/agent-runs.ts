@@ -4,7 +4,12 @@
 import type { RunItemsOut } from "@abacus/api-client";
 import { type FixtureHandler, json } from "../../app-core/fixture-mode";
 import { SHL13_RUNS } from "../seed/agent-dock";
-import { E0_RUNS, type E0Run, LIST_RETURNS_STEP_ID } from "../seed/agent-runs";
+import {
+  E0_RUNS,
+  type E0Run,
+  LIST_RETURNS_SAMPLES,
+  LIST_RETURNS_STEP_ID,
+} from "../seed/agent-runs";
 
 const ALL_RUNS: Record<string, E0Run> = { ...E0_RUNS, ...SHL13_RUNS };
 
@@ -51,7 +56,7 @@ export function agentRunHandlers(
       return run === undefined ? json(NOT_FOUND, 404) : json(run.writes);
     },
     // WB-09 a2: the one expandable row the handoff draws ("Execute › list returns": the summarised
-    // arguments; the five returns it read are TAX-02 records the fixtures don't hold, so none).
+    // arguments and the first five returns it read, from the TAX-02 seed).
     "GET /v1/agent-runs/{run_id}/trace/steps/{step_id}": ({ params }) =>
       params.step_id === LIST_RETURNS_STEP_ID
         ? json({
@@ -59,7 +64,7 @@ export function agentRunHandlers(
             title: "Execute › list returns",
             args_summary: "tax year 2025",
             records_read: 224,
-            samples: [],
+            samples: LIST_RETURNS_SAMPLES,
           })
         : json(NOT_FOUND, 404),
   };
