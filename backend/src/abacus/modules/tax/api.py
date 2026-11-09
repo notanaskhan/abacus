@@ -255,6 +255,10 @@ from abacus.modules.tax.gate_sources import register_tax_gates  # noqa: E402
 register_tax_gates()
 
 # S29 leftovers (TASK-6012): what the replay recorders and the OCR suite runner read (BOUND-001).
+# T-04-T14 (DEC-3125): the `tax_form_line` citable.
+from abacus.modules.tax.form_line_citations import register as _register_form_line  # noqa: E402
 from abacus.modules.tax.schedule_workflows import (  # noqa: E402
     TaxCalendarSweepWorkflow as TaxCalendarSweepWorkflow,
 )
+
+_register_form_line()
