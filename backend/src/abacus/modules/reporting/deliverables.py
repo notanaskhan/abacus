@@ -604,7 +604,7 @@ _PORTAL = text(
            ORDER BY x.version_no DESC LIMIT 1
       ) v ON true
      WHERE d.client_id = ANY(:clients)
-     ORDER BY wi.title NULLS LAST, d.created_at, d.id
+     ORDER BY d.work_item_id NULLS LAST, d.created_at, d.id
     """
 )
 _AUDIENCES = text(

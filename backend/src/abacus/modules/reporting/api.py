@@ -48,6 +48,14 @@ from abacus.modules.reporting.contract import (
     templates_router,
 )
 from abacus.modules.reporting.contract import TemplateImportIn as TemplateImportIn
+from abacus.modules.reporting.deliverable_portal import (  # S33 partials: POR-09 live reads
+    ApprovalTarget as ApprovalTarget,
+)
+from abacus.modules.reporting.deliverable_portal import PortalDeliverable as PortalDeliverable
+from abacus.modules.reporting.deliverable_portal import PortalVersion as PortalVersion
+from abacus.modules.reporting.deliverable_portal import approval_target as approval_target
+from abacus.modules.reporting.deliverable_portal import portal_client_ids as portal_client_ids
+from abacus.modules.reporting.deliverable_portal import portal_deliverable as portal_deliverable
 from abacus.modules.reporting.deliverable_reads import ReaderVersion as ReaderVersion
 from abacus.modules.reporting.deliverable_reads import reader_version as reader_version
 from abacus.modules.reporting.deliverables import AudienceReceipt as AudienceReceipt
