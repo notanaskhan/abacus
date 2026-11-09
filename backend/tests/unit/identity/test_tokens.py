@@ -277,7 +277,22 @@ def test_ac1_role_like_claims_are_ignored(
 
 def test_ac1_verified_identity_carries_only_issuer_subject_mfa_at_and_verified_email() -> None:
     # SPEC-015: the provider-verified email binds an invitation to the person accepting it.
-    assert {f.name for f in fields(VerifiedIdentity)} == {"issuer", "subject", "mfa_at", "email"}
+    # P-10-T26 (DEC-3141): and the token's expiry, so a stream closes before it.
+    assert {f.name for f in fields(VerifiedIdentity)} == {
+        "issuer",
+        "subject",
+        "mfa_at",
+        "email",
+        "expires_at",
+    }
+
+
+def test_p10t26_the_identity_carries_the_tokens_expiry(
+    idp: FakeIdentityProvider, verifier: JwtVerifier
+) -> None:
+    exp = int(time.time()) + 300
+    found = verifier.verify(idp.token("user-1", exp=exp)).expires_at
+    assert found == datetime.fromtimestamp(exp, UTC)
 
 
 # --- invalid tokens ----------------------------------------------------------------------------
