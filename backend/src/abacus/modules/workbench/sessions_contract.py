@@ -128,5 +128,12 @@ async def session_events_route(
 @agent_badge_router.get("", action="session.read", response_model=bytes, errors=(501,))
 async def agent_badge_events_route(ctx: Ctx) -> Response:
     """`text/event-stream` of the caller's badge counts `{running, needs_answer,
-    ready_for_review}` (T26)."""
-    _not_yet()
+    ready_for_review}` (P-10-T26, DEC-3116)."""
+    from abacus.kernel._flags import REALTIME_SSE
+    from abacus.kernel.errors import NotFound
+    from abacus.kernel.flags import flag_enabled
+    from abacus.modules.agents.api import agent_badge_stream
+
+    if not await flag_enabled(ctx.tenant, REALTIME_SSE):
+        raise NotFound(REALTIME_SSE.name)
+    return await agent_badge_stream(ctx)

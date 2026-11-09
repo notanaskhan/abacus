@@ -391,7 +391,7 @@ def _not_yet() -> NoReturn:
 
 
 @runs_v2_router.get(
-    "/{run_id}/events", action="agent_run.read", response_model=bytes, errors=(501,)
+    "/{run_id}/events", action="agent_run.read", response_model=bytes, errors=(409, 501)
 )
 async def run_events_route(
     run_id: UUID,
@@ -400,8 +400,10 @@ async def run_events_route(
 ) -> Response:
     """`text/event-stream` of `RunEventOut`: every later event in order, then tails; a gap older
     than the prune horizon answers `resync`; a new wall sends `locked` within 60 seconds (T26)."""
+    from abacus.modules.agents.run_stream import run_events_stream
+
     await _flag_on(ctx, REALTIME_SSE)
-    _not_yet()
+    return await run_events_stream(ctx, run_id, last_event_id)
 
 
 @engagement_runs_v2_router.post(
