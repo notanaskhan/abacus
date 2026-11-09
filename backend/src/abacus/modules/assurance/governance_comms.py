@@ -47,6 +47,7 @@ from abacus.kernel.uow import Ref, Scope, Target, UnitOfWork, uow
 from abacus.modules.assurance.governance_room import SECTIONS_FINGERPRINT
 from abacus.modules.engagements.api import assurance_item, get_ref
 from abacus.modules.identity.api import AuthContext, Forbidden, authorise, grant_tcwg_member
+from abacus.modules.methodology.api import published_body
 from abacus.modules.organisations.api import contact_facts, signer_contacts
 
 Kind = Literal["planning_260", "completion_260", "sd_mw_265", "management_letter"]
@@ -165,9 +166,36 @@ _SEVERITY_WORD: Final = {
 }
 
 
-def compose(kind: Kind, facts: Facts) -> list[LetterPart]:
-    """The kind's sections from the facts; a section with no facts states none were found."""
+FIRM_TEMPLATE: Final = "firm_template"
+
+
+def template_paragraphs(blocks: Sequence[object] | None) -> list[str]:
+    """DEC-3027: a published `governance_letter` version's paragraphs, in order, read from its
+    C11 blocks' text runs (the firm's words; code never writes them)."""
+    out: list[str] = []
+    for raw in blocks or ():
+        if not isinstance(raw, dict):
+            continue
+        block = cast("dict[str, object]", raw)
+        if block.get("type") != "paragraph":
+            continue
+        words = ""
+        for run in cast("list[object]", block.get("runs") or []):
+            if isinstance(run, dict):
+                part = cast("dict[str, object]", run)
+                if part.get("type") == "text":
+                    words += str(part.get("text", ""))
+        if words.strip():
+            out.append(words.strip())
+    return out
+
+
+def compose(kind: Kind, facts: Facts, template: Sequence[str] = ()) -> list[LetterPart]:
+    """The kind's sections from the facts; a section with no facts states none were found. A
+    firm template's paragraphs open the letter as one section (DEC-3027)."""
     sections: list[LetterPart] = []
+    if template:
+        sections.append(LetterPart(FIRM_TEMPLATE, "", "\n\n".join(template), ("template",)))
     for key, heading in HEADINGS[kind]:
         built: tuple[str, ...] = ()
         lines: list[str] = []
@@ -355,9 +383,20 @@ async def communication(
 # --- writes --------------------------------------------------------------------------------------
 
 
-async def create(ctx: AuthContext, work_item_id: UUID, kind: Kind) -> UUID:
-    """A communication of `kind` (one per work item), composed at once as version 1."""
+async def create(
+    ctx: AuthContext,
+    work_item_id: UUID,
+    kind: Kind,
+    template_version_id: UUID | None = None,
+) -> UUID:
+    """A communication of `kind` (one per work item), composed at once as version 1, opening with
+    the chosen published firm template when one is given (DEC-3027)."""
     engagement_id = await _person(ctx, work_item_id, "governance_comm.draft")
+    if (
+        template_version_id is not None
+        and (await published_body(ctx.tenant, TEMPLATE_FAMILY, template_version_id)) is None
+    ):
+        raise NotFound("report_template_version")
     async with uow(ctx.tenant) as tx:
         exists = await tx.session.scalar(
             text(
@@ -390,7 +429,7 @@ async def create(ctx: AuthContext, work_item_id: UUID, kind: Kind) -> UUID:
             target=Target("governance_communication", communication_id),
             scope=Scope(engagement_id=engagement_id, work_item_id=work_item_id),
         )
-    await regenerate(ctx, work_item_id, communication_id)
+    await regenerate(ctx, work_item_id, communication_id, template_version_id=template_version_id)
     return communication_id
 
 
@@ -400,6 +439,7 @@ async def _new_version(
     row: object,
     sections: Sequence[LetterPart],
     action: str,
+    template_version_id: UUID | None = None,
 ) -> tuple[int, str]:
     body, digest = canonical(sections)
     sealed = await seal(ctx.tenant_id, body, SECTIONS_FINGERPRINT)
@@ -419,8 +459,8 @@ async def _new_version(
         text(
             "INSERT INTO governance_communication_versions (tenant_id, engagement_id, "
             "work_item_id, communication_id, version_no, sections_sealed, section_refs, "
-            "content_hash, created_by) VALUES (:t, :e, :wi, :c, :no, :s, CAST(:refs AS jsonb), "
-            ":h, :by) RETURNING id"
+            "content_hash, created_by, template_version_id) VALUES (:t, :e, :wi, :c, :no, :s, "
+            "CAST(:refs AS jsonb), :h, :by, :tv) RETURNING id"
         ),
         {
             "t": ctx.tenant_id,
@@ -432,6 +472,7 @@ async def _new_version(
             "refs": json.dumps(refs),
             "h": digest,
             "by": ctx.user_id,
+            "tv": template_version_id,
         },
     )
     await tx.session.execute(
@@ -453,19 +494,49 @@ async def _new_version(
     return version_no, digest
 
 
-async def regenerate(ctx: AuthContext, work_item_id: UUID, communication_id: UUID) -> str:
-    """Compose again from today's facts; a person's edited sections keep their text."""
+async def regenerate(
+    ctx: AuthContext,
+    work_item_id: UUID,
+    communication_id: UUID,
+    *,
+    template_version_id: UUID | None = None,
+) -> str:
+    """Compose again from today's facts; a person's edited sections keep their text. The letter
+    keeps the template its current version was composed from (DEC-3027)."""
     await _person(ctx, work_item_id, "governance_comm.draft")
     row = await _read(ctx.tenant, work_item_id, communication_id)
     if str(row.status) in ("sent", "acknowledged"):  # type: ignore[attr-defined] -- a raw SQL row's column
         raise StaleCommunication(facts={"status": str(row.status)})  # type: ignore[attr-defined] -- a raw SQL row's column
     previous = await _open(ctx.tenant, row)
-    composed = compose(cast(Kind, str(row.kind)), await facts_of(ctx.tenant, work_item_id))  # type: ignore[attr-defined] -- a raw SQL row's column
+    if template_version_id is None:
+        async with tenant_session(ctx.tenant) as session:
+            template_version_id = cast(
+                UUID | None, await session.scalar(_CURRENT_TEMPLATE, {"c": communication_id})
+            )
+    template = (
+        template_paragraphs(await published_body(ctx.tenant, TEMPLATE_FAMILY, template_version_id))
+        if template_version_id is not None
+        else []
+    )
+    facts = await facts_of(ctx.tenant, work_item_id)
+    composed = compose(cast(Kind, str(row.kind)), facts, template)  # type: ignore[attr-defined] -- a raw SQL row's column
     async with uow(ctx.tenant) as tx:
         _no, digest = await _new_version(
-            tx, ctx, row, merge(previous, composed), "governance_communication.composed"
+            tx,
+            ctx,
+            row,
+            merge(previous, composed),
+            "governance_communication.composed",
+            template_version_id,
         )
     return digest
+
+
+TEMPLATE_FAMILY: Final = "governance_letter"
+_CURRENT_TEMPLATE = text(
+    "SELECT v.template_version_id FROM governance_communications c "
+    "JOIN governance_communication_versions v ON v.id = c.current_version_id WHERE c.id = :c"
+)
 
 
 async def edit_section(

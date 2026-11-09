@@ -255,6 +255,8 @@ class GovernanceCreateIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     kind: Annotated[GovernanceKind, classified("internal")]
+    # DEC-3027: a published `governance_letter` version whose paragraphs open the letter.
+    template_version_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class GovernanceSectionIn(BaseModel):
@@ -917,7 +919,7 @@ async def governance_create_route(
     await _gate(ctx, work_item_id, "governance_comm.draft")
     if body.kind == "reportable_703":
         raise gc.KindExists(facts={"kind": "sd_mw_265"})  # 703 rides in the 265 letter
-    communication_id = await gc.create(ctx, work_item_id, body.kind)
+    communication_id = await gc.create(ctx, work_item_id, body.kind, body.template_version_id)
     return await _communication_out(ctx, work_item_id, communication_id)
 
 
