@@ -140,6 +140,7 @@ from abacus.modules.agents.run_backfill_workflow import (
     BackfillInput,
 )
 from abacus.modules.agents.run_logs import run_log_count  # A-07-T31: binder section G
+from abacus.modules.agents.run_stream import badge_stream as agent_badge_stream  # P-10-T26
 from abacus.modules.agents.runs import run_initiators
 from abacus.modules.agents.runs_routes import engagement_runs_router, runs_router
 from abacus.modules.agents.runs_v2_contract import (
@@ -486,6 +487,7 @@ __all__ = [
     "UploadReviewWorkflow",
     "VerifiedCitation",
     "active_engagement_runs",
+    "agent_badge_stream",
     "analyze_notice",
     "apply_proposal",
     "ask",
