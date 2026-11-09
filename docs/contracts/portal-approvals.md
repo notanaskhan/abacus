@@ -4,12 +4,12 @@
 |---|---|
 | Register row | C18 in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | stub (R-02-T03, 2026-11-06). Unregistered kinds answer 409; decide routes answer 501 until R-02-T11, T15 |
+| Status | live (R-02-T11, 2026-11-09, DEC-3009; stub R-02-T03). `proposed_entry` and `fs_draft` are registered; `uncorrected_misstatements` (R-02-T15) and `fs_package` (C-02, A-08) still answer 409. Questions (R-02-T22) and the journal (C11) answer 501 |
 | Provider epic | R-02 (SPEC-646) |
 | Consumers | A-06 (entries, drafts), A-07 (`fs.approved_by_management` and the acknowledgement for release), C-02, A-08 (packages), X-01 (system description, later) |
 | Freeze sprint | S30 |
 | Flag | `portal.approvals` arrives with R-02-T14 |
-| Code | `backend/src/abacus/modules/engagements/client_approvals.py`, `backend/src/abacus/modules/portal/approvals_contract.py` |
+| Code | `engagements/client_approvals.py` (slot, decider rule), `portal/approvals.py` (service), `portal/approvals_contract.py` (routes), `adjustments/client_approvals.py` (`proposed_entry`), `reporting/client_approvals.py` (`fs_draft`) |
 | Screens | `docs/screens/POR-08.md`, `docs/screens/POR-09.md` a2, b |
 
 ## 1. Purpose
@@ -67,7 +67,36 @@ through `fs_draft`.
   1,000 characters). Client text is sealed, never HTML, never in an audit row (AC-34).
 - **No Post control** exists for an attest client; nothing is written to a client ledger (AC-10).
 
-## 5. Change log
+## 5. The service (R-02-T11)
+`portal/approvals.py` composes every registered kind. In order, for a decision:
+1. a live client human in a portal session (agent, system, support, firm people: 403 at the
+   matrix and again here);
+2. the kind's provider (409 `approval_kind_not_registered`);
+3. the item, `sent_to_client`, on a scope one of the person's active grants covers (else 404);
+4. the decider (`engagements.decider_for`): an owner grant covering the item, or the
+   approver-of-record designation of one of the person's contacts on its engagement; for an attest
+   client's `fs_package`, also the SKE designee (else 403 `not_decider`);
+5. the item still waiting and `seen_hash` current (else 409 `item_changed`, nothing written);
+6. once per `Idempotency-Key` (kernel `idempotent`): one unit of work runs the provider's
+   `decide(tx, item_id, decision, ClientDecisionContext)` with the person's contact, grant, basis,
+   MFA time and portal session, emits `client_approval.decided` and audits
+   `client_approval.decided` (identifiers, basis and MFA time).
+
+The list counts waiting, posted, approved and declined before the filter; each item carries the
+actions its viewer may take (`accept`/`decline`, `acknowledge` or `approve` for the decider, `ask`
+for everyone in scope).
+
+**`proposed_entry`** (adjustments): an entry with a `sent_to_client` decision, waiting while
+`approved`, decided by `adjustments.api.apply_client_decision` (an insert-only
+`proposed_entry_decisions` row with principal `client_user`, channel `portal` and the client
+grant; the status; the owners' hooks; `proposed_entry.client_decided`). Its `seen_hash` covers the
+version, amount, description and lines. **`fs_draft`** (reporting): a statement version sent for
+approval on the portal channel; approving writes `statement_approvals` (`approved_by_management`,
+principal `contact`, channel `portal`, `grant:<id>`), moves the statement and emits
+`fs.approved_by_management`. Its `seen_hash` covers the version and its content hash.
+
+## 6. Change log
 | Version | Date | Change |
 |---|---|---|
 | v1 | 2026-11-06 | Stub (R-02-T03, DEC-2403) |
+| v1 | 2026-11-09 | Service, decider rule, `proposed_entry` and `fs_draft` providers (R-02-T11, DEC-3009) |

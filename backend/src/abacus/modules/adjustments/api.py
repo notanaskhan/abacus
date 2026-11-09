@@ -5,6 +5,12 @@ Pre-registered (F-03-T08; ADR-140); A-06-T05 (DEC-1965): the C8 contract stub
 """
 
 from abacus.kernel.audit_owners import register_engagement_owners
+from abacus.modules.adjustments.client_approvals import (
+    ProposedEntryApprovals,
+)
+from abacus.modules.adjustments.client_approvals import (
+    apply_client_decision as apply_client_decision,
+)
 from abacus.modules.adjustments.contract import router
 from abacus.modules.adjustments.decisions import (
     SUBSCRIPTIONS,
@@ -19,7 +25,7 @@ from abacus.modules.adjustments.entries import (
     recorded_entries,
     register_entry_proposed_hook,
 )
-from abacus.modules.engagements.api import deliver_proposed_entries
+from abacus.modules.engagements.api import deliver_proposed_entries, register_client_approval_kind
 from abacus.modules.identity.api import AbacusRouter
 from abacus.modules.ledger.api import register_adjustment_source
 
@@ -61,3 +67,6 @@ __all__ = [
     "router",
     "send_entries",
 ]
+
+# R-02-T11 (C18, DEC-3009): POR-08 e's `proposed_entry` kind, decided through the portal.
+register_client_approval_kind("proposed_entry", ProposedEntryApprovals())

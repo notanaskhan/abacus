@@ -147,6 +147,11 @@ async def _evidence_on(tenant: TenantContext, version_id: UUID, engagement_id: U
     return await _EVIDENCE_ENGAGEMENT[0](tenant, version_id) == engagement_id
 
 
+def decision_hooks() -> tuple[DecisionHook, ...]:
+    """The owners' hooks a client decision calls (R-02-T11's portal channel reads them too)."""
+    return tuple(_HOOKS)
+
+
 def register_entry_decision_hook(hook: DecisionHook) -> None:
     if hook not in _HOOKS:
         _HOOKS.append(hook)

@@ -3,8 +3,9 @@
 
 Every route answers, in order: the matrix action (client people only, `scope_only`; firm roles,
 agents, system and support are denied); 409 `approval_kind_not_registered` for a kind no provider
-registered (the slot, `engagements.client_approval_provider`); 501 until R-02-T11 and T15. The
-flag `portal.approvals` arrives with R-02-T14.
+registered (the slot, `engagements.client_approval_provider`); then C18's service
+(`portal/approvals.py`, R-02-T11): list, detail and the decide routes. Questions (R-02-T22) and
+the entries journal (C11) still answer 501. The flag `portal.approvals` arrives with R-02-T14.
 
 Pack rule (AC-7): no field is named or holds materiality, a threshold, a policy name, "within
 threshold", a review note, a sign-off, the agent, a confidence or an internal status; the schema
@@ -24,12 +25,15 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotImplementedYet
 from abacus.modules.engagements.api import (
+    ApprovalItem,
     ClientApprovalKind,
     ClientApprovalState,
+    ClientDecision,
     DeclineReason,
     client_approval_provider,
 )
 from abacus.modules.identity.api import AbacusRouter, AuthContext, current_member
+from abacus.modules.portal import approvals as service
 
 # A portal person themself, never a break-glass support context.
 Member = Annotated[AuthContext, Depends(current_member)]
@@ -218,9 +222,45 @@ def _registered(kind: str) -> None:
     client_approval_provider(kind)
 
 
-@approvals_router.get(
-    "", action="client_approval.read", response_model=ApprovalsOut, errors=(501,)
-)
+def _out(shown: service.Shown) -> ApprovalItemOut:
+    i = shown.item
+    return ApprovalItemOut(
+        kind=i.kind,
+        id=i.item_id,
+        title=i.title,
+        state=i.state,
+        amount=i.amount,
+        decided_by=i.decided_by,
+        decided_at=i.decided_at,
+        reason_code=i.reason_code,
+        allowed_actions=list(shown.actions),
+    )
+
+
+def _detail(
+    i: ApprovalItem, actions: tuple[service.ApprovalAction, ...] = ("ask",)
+) -> ApprovalItemDetailOut:
+    return ApprovalItemDetailOut(
+        kind=i.kind,
+        id=i.item_id,
+        title=i.title,
+        state=i.state,
+        amount=i.amount,
+        decided_by=i.decided_by,
+        decided_at=i.decided_at,
+        reason_code=i.reason_code,
+        allowed_actions=list(actions),
+        seen_hash=i.seen_hash,
+        lines=[
+            ApprovalLineOut(account=line.account, debit=line.debit, credit=line.credit)
+            for line in i.lines
+        ],
+        legend=i.legend,
+        highlights=i.highlights,
+    )
+
+
+@approvals_router.get("", action="client_approval.read", response_model=ApprovalsOut)
 async def list_approvals_route(
     ctx: Member,
     scope_id: Annotated[UUID | None, Query()] = None,
@@ -228,58 +268,96 @@ async def list_approvals_route(
     filter: Annotated[ApprovalFilter | None, Query()] = None,
 ) -> ApprovalsOut:
     """POR-08: items whose provider reports `sent_to_client`, for scopes the grant covers."""
-    _not_yet()
+    del context  # the period picker's contexts arrive with the close kinds (C-02)
+    listing = await service.approvals(ctx, scope_id, filter)
+    return ApprovalsOut(
+        items=[_out(s) for s in listing.items],
+        counts=ApprovalCountsOut(**listing.counts),
+        contexts=[],
+    )
 
 
 @approvals_router.post(
     "/proposed-entries/{entry_id}/decide",
     action="proposed_entry.client_decide",
     response_model=ApprovalItemDetailOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def decide_proposed_entry_route(
     entry_id: UUID, body: ProposedEntryDecideIn, ctx: Member, idempotency_key: IdempotencyKey
 ) -> ApprovalItemDetailOut:
-    """POR-08 e: `adjustments.api.apply_client_decision`. Provider wired with R-02-T07."""
-    _not_yet()
+    """POR-08 e: through C18's service to `adjustments.api.apply_client_decision`."""
+    decided = await service.client_decide(
+        ctx,
+        "proposed_entry",
+        entry_id,
+        ClientDecision(
+            body.decision,
+            body.seen_hash,
+            "other" if body.decision == "decline" else None,
+            body.reason,
+        ),
+        action="proposed_entry.client_decide",
+        idempotency_key=idempotency_key,
+    )
+    return _detail(decided)
 
 
 @approvals_router.post(
     "/uncorrected-misstatements/{item_id}/acknowledge",
     action="uncorrected_misstatements.acknowledge",
     response_model=ApprovalItemDetailOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def acknowledge_uncorrected_route(
     item_id: UUID, body: ApprovalAcknowledgeIn, ctx: Member, idempotency_key: IdempotencyKey
 ) -> ApprovalItemDetailOut:
-    """POR-08 e2: one insert-only, human-only row per snapshot and contact (AC-12)."""
-    _not_yet()
+    """POR-08 e2: one insert-only, human-only row per snapshot and contact (AC-12); 409 until
+    assurance registers the kind (R-02-T15)."""
+    _registered("uncorrected_misstatements")
+    decided = await service.client_decide(
+        ctx,
+        "uncorrected_misstatements",
+        item_id,
+        ClientDecision("acknowledge", body.seen_hash),
+        action="uncorrected_misstatements.acknowledge",
+        idempotency_key=idempotency_key,
+    )
+    return _detail(decided)
 
 
 @approvals_router.post(
     "/packages/{package_id}/decide",
     action="close_package.client_decide",
     response_model=ApprovalItemDetailOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def decide_package_route(
     package_id: UUID, body: PackageDecideIn, ctx: Member, idempotency_key: IdempotencyKey
 ) -> ApprovalItemDetailOut:
     """POR-08 a to c. 409 `approval_kind_not_registered` until C-02 or A-08 registers it."""
     _registered("fs_package")
-    _not_yet()
+    decided = await service.client_decide(
+        ctx,
+        "fs_package",
+        package_id,
+        ClientDecision(body.decision, body.seen_hash, body.reason_code, body.note),
+        action="close_package.client_decide",
+        idempotency_key=idempotency_key,
+    )
+    return _detail(decided)
 
 
 @approvals_router.get(
     "/{kind}/{item_id}",
     action="client_approval.read",
     response_model=ApprovalItemDetailOut,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def get_approval_route(kind: KindParam, item_id: UUID, ctx: Member) -> ApprovalItemDetailOut:
     _registered(kind)
-    _not_yet()
+    shown = await service.approval(ctx, kind, item_id)
+    return _detail(shown.item, shown.actions)
 
 
 @approvals_router.get(
