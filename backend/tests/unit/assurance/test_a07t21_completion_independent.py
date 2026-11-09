@@ -6,7 +6,7 @@ the I-GATES table for G6-G9 by engagement type and release mode; the EQR signs L
 denied every mutating workpaper act; concur is the assigned EQR's alone (403 `eqr_only`), never an
 agent's; the engagement partner can never open as the EQR; the digest is built from decided cards
 only; the A-07 registrations are inert with every flag off; the bring-down never starts for an
-external-mode firm or while `COMPLETION_LIVE` is False.
+external-mode firm or while the firm's `audits.completion` flag is off (A-07-T33).
 """
 
 from __future__ import annotations
@@ -21,7 +21,6 @@ from abacus.kernel.db import TenantContext
 from abacus.modules.assurance import (
     a07_registrations,
     bring_down,
-    completion_dark,
     completion_projector,
     eqr_service,
     gates,
@@ -259,11 +258,20 @@ def test_the_digest_is_built_from_decided_cards_only() -> None:
 
 
 def test_every_a07_flag_is_off() -> None:
-    assert set(a07_registrations.LIVE.values()) == {False}
+    # A-07-T33 (DEC-3106): per-firm flags, boolean and default off, replace the LIVE table.
+    assert {f.kind for f in a07_registrations.FLAGS.values()} == {"boolean"}
+    assert {f.default for f in a07_registrations.FLAGS.values()} == {"false"}
+
+
+async def _flags_off(_tenant: TenantContext, _flag: object) -> bool:
+    return False
 
 
 @pytest.mark.parametrize("key", [key for key, *_ in a07_registrations.SECTIONS])
-async def test_no_a07_rail_row_shows_with_its_flag_off(key: str) -> None:
+async def test_no_a07_rail_row_shows_with_its_flag_off(
+    monkeypatch: pytest.MonkeyPatch, key: str
+) -> None:
+    monkeypatch.setattr(a07_registrations, "flag_enabled", _flags_off)
     provider = a07_registrations._section_provider(key)  # pyright: ignore[reportPrivateUsage]  # a test double or a private name the test pins
     assert await provider(TENANT, uuid.uuid4()) is None
 
@@ -287,7 +295,10 @@ async def test_the_bring_down_never_starts_dark_or_external(
     async def start(*args: object, **kwargs: object) -> None:
         started.append((args, kwargs))
 
-    monkeypatch.setattr(completion_dark, "COMPLETION_LIVE", live)
+    async def flag(_tenant: TenantContext, _flag: object) -> bool:
+        return live
+
+    monkeypatch.setattr(a07_registrations, "flag_enabled", flag)
     monkeypatch.setattr(completion_projector, "release_mode", release_mode)
     monkeypatch.setattr("abacus.kernel.dispatch.signal_with_start", start)
     scheduled = await bring_down.schedule_bring_down(
@@ -309,7 +320,10 @@ async def test_the_bring_down_starts_live_and_in_app(monkeypatch: pytest.MonkeyP
     async def start(*args: object, **kwargs: object) -> None:
         started.append(kwargs.get("id"))
 
-    monkeypatch.setattr(completion_dark, "COMPLETION_LIVE", True)
+    async def flag_on(_tenant: TenantContext, _flag: object) -> bool:
+        return True
+
+    monkeypatch.setattr(a07_registrations, "flag_enabled", flag_on)
     monkeypatch.setattr(completion_projector, "release_mode", release_mode)
     monkeypatch.setattr("abacus.kernel.dispatch.signal_with_start", start)
     item = uuid.uuid4()

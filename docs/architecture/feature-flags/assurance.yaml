@@ -90,3 +90,35 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: audits.completion
+    description: 'A-07 completion (AUD-18 EQR, AUD-19 completion checklist): the rail rows, the completion and EQR routes, the completion projector and the bring-down timer. Off: 404, the rail rows are absent, no projector writes and no workflow starts (it replaces COMPLETION_LIVE). Per firm, default off. A-07-T33, DEC-3106.'
+    owner: notanaskhan
+    created: 2026-11-09
+    expires: 2027-05-07
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: audits.letters
+    description: 'A-07 letters (AUD-21 representation letter, AUD-22 governance communications): the rail rows, the letter routes, the C11 letter kinds and the C7 envelope sources. Off: 404 and every letter send is refused (letters_not_live). Per firm, default off. A-07-T33, DEC-3106.'
+    owner: notanaskhan
+    created: 2026-11-09
+    expires: 2027-05-07
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: audits.report_release
+    description: 'A-07 report and release (AUD-23 report builder, AUD-24 issuance and release, filings): the rail rows, the report, release and filing routes, the opinion card and the audit_report C11 kind. Off: 404. Per firm, default off. A-07-T33, DEC-3106.'
+    owner: notanaskhan
+    created: 2026-11-09
+    expires: 2027-05-07
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: audits.archive
+    description: 'A-07 assembly and archive (AUD-25): the rail row, the archive, lock and addition routes and the archive seal section. Off: 404; a lock that exists still holds (immutability is schema, not a flag). Per firm, default off. A-07-T33, DEC-3106.'
+    owner: notanaskhan
+    created: 2026-11-09
+    expires: 2027-05-07
+    override: DEC-137
+    kind: boolean
+    default: false

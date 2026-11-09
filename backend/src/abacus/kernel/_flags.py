@@ -61,6 +61,11 @@ AUDIT_TRAIL_ENGAGEMENT_ACTIVITY = Flag(
     kind="boolean",
     default="false",
 )
+AUDITS_ARCHIVE = Flag(
+    name="audits.archive",
+    kind="boolean",
+    default="false",
+)
 AUDITS_BINDER_EXPORT = Flag(
     name="audits.binder_export",
     kind="boolean",
@@ -68,6 +73,21 @@ AUDITS_BINDER_EXPORT = Flag(
 )
 AUDITS_COCKPIT = Flag(
     name="audits.cockpit",
+    kind="boolean",
+    default="false",
+)
+AUDITS_COMPLETION = Flag(
+    name="audits.completion",
+    kind="boolean",
+    default="false",
+)
+AUDITS_LETTERS = Flag(
+    name="audits.letters",
+    kind="boolean",
+    default="false",
+)
+AUDITS_REPORT_RELEASE = Flag(
+    name="audits.report_release",
     kind="boolean",
     default="false",
 )
@@ -438,8 +458,12 @@ FLAGS: dict[str, Flag] = {
     "audit_log.explorer": AUDIT_LOG_EXPLORER,
     "audit_log.values": AUDIT_LOG_VALUES,
     "audit_trail.engagement_activity": AUDIT_TRAIL_ENGAGEMENT_ACTIVITY,
+    "audits.archive": AUDITS_ARCHIVE,
     "audits.binder_export": AUDITS_BINDER_EXPORT,
     "audits.cockpit": AUDITS_COCKPIT,
+    "audits.completion": AUDITS_COMPLETION,
+    "audits.letters": AUDITS_LETTERS,
+    "audits.report_release": AUDITS_REPORT_RELEASE,
     "binders.engine": BINDERS_ENGINE,
     "clients.tax_profile": CLIENTS_TAX_PROFILE,
     "collaboration.v2": COLLABORATION_V2,

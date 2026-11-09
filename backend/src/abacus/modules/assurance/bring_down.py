@@ -13,9 +13,10 @@ new date's 09:00. When it fires, the activity `assurance.bring_down`:
   a subsequent event, or any decision (INV-1).
 
 The starter (`schedule_bring_down`) starts the workflow, or signals the running one, only when the
-firm's `assurance_release_mode` is `in_app` **and** `completion_dark.COMPLETION_LIVE` is True: no
-workflow starts and no timer exists before M16. Fire times are computed outside the workflow (UTC
-instants in the input and the signal), so the workflow stays deterministic.
+firm's `assurance_release_mode` is `in_app` **and** its `audits.completion` flag is on (A-07-T33,
+DEC-3106): no workflow starts and no timer exists while the flag is off. Fire times are computed
+outside the workflow (UTC instants in the input and the signal), so the workflow stays
+deterministic.
 """
 
 from __future__ import annotations

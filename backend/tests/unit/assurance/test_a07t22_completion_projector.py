@@ -112,7 +112,11 @@ async def test_the_subscriber_is_inert_until_m16(monkeypatch: pytest.MonkeyPatch
     event: Any = SimpleNamespace(  # Any: a test double
         tenant_id=uuid.uuid4(), event_id=uuid.uuid4(), payload={"work_item_id": str(uuid.uuid4())}
     )
-    assert cp.completion_dark.COMPLETION_LIVE is False
+
+    async def flag_off(_tenant: object, _flag: object) -> bool:
+        return False  # A-07-T33: the firm's `audits.completion` flag, default off
+
+    monkeypatch.setattr("abacus.modules.assurance.a07_registrations.flag_enabled", flag_off)
     await cp.on_completion_event(event)
     assert called == []
 

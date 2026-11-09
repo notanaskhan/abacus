@@ -29,8 +29,10 @@ from pydantic import BaseModel, ConfigDict, Field
 from abacus.kernel import clock
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.modules.assurance import a07_registrations as a07
 from abacus.modules.assurance import governance_comms as gc
 from abacus.modules.assurance import report_builder as rb
+from abacus.modules.assurance.a07_registrations import require_live
 from abacus.modules.engagements.api import get_ref, work_item_engagement
 from abacus.modules.identity.api import (
     AbacusRouter,
@@ -619,6 +621,22 @@ async def _gate(ctx: AuthContext, work_item_id: UUID, action: str) -> None:
         raise NotFound("work_item")
     ref = await get_ref(ctx, engagement_id)
     await authorise(ctx, action, replace(ref.resource(), work_item_id=work_item_id))
+    # A-07-T33 (DEC-3106): authorised first, then the family's per-firm flag (off: 404), so no
+    # one learns a flag state they may not use.
+    await require_live(ctx.tenant, _flag_of(action))
+
+
+def _flag_of(action: str) -> a07.Flag:
+    """The route family's flag: letters (AUD-21, AUD-22, their envelopes), report and release
+    (AUD-23, AUD-24, filings), archive (AUD-25)."""
+    family = action.split(".", 1)[0]
+    if family in ("rep_letter", "governance_comm", "envelope"):
+        return "audits.letters"
+    if family in ("report", "filing"):
+        return "audits.report_release"
+    if family in ("archive", "archive_addition"):
+        return "audits.archive"
+    raise ValueError(f"no A-07 flag for {action}")
 
 
 def _not_yet() -> NoReturn:
