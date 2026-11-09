@@ -19,8 +19,12 @@ from decimal import Decimal
 from typing import Annotated, ClassVar, Final, Literal, Protocol, cast, get_args
 from uuid import UUID
 
+from sqlalchemy import bindparam, text
+from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.dialects.postgresql import UUID as PgUUID
+
 from abacus.kernel.classification import classified
-from abacus.kernel.db import TenantContext
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict, DomainForbidden
 from abacus.kernel.uow import (
     DomainEvent,
@@ -32,6 +36,8 @@ from abacus.kernel.uow import (
     uow,
 )
 from abacus.kernel.uow.relay import OutboxEvent
+from abacus.modules.identity.api import ScopeFacts, active_grants, scope_facts
+from abacus.modules.organisations.api import contacts_of_user
 
 ClientApprovalKind = Literal[
     "proposed_entry", "uncorrected_misstatements", "fs_draft", "fs_package"
@@ -162,6 +168,88 @@ class ClientApprovalProvider(Protocol):
 
 
 _PROVIDERS: dict[str, ClientApprovalProvider] = {}
+
+# --- R-02-T11: the decider rule (DEC-63; OQ-1, DEC-2400; DEC-3009) ---------------------------
+
+# The grant role that is an owner grant (identity's `GRANT_ROLE_OF`: client_admin's owner).
+OWNER_GRANT_ROLE: Final = "owner"
+_DESIGNATIONS = text(
+    "SELECT DISTINCT designation FROM engagement_contacts WHERE engagement_id = :engagement "
+    "AND contact_id = ANY(:contacts) AND designation IN ('approver_of_record', 'ske_designee')"
+).bindparams(bindparam("contacts", type_=ARRAY(PgUUID(as_uuid=True))))
+
+
+@dataclass(frozen=True)
+class ApprovalScope:
+    """Where an item sits, for the grant and designation checks."""
+
+    client_id: UUID
+    engagement_id: UUID | None
+    work_item_id: UUID | None
+
+
+def scope_covered(facts: ScopeFacts, at: ApprovalScope) -> bool:
+    """Whether a grant's scope covers the item's (a grant on a work item covers that item only;
+    on an engagement, its work items; on a client, all of it)."""
+    if facts.client_id != at.client_id:
+        return False
+    if facts.work_item_id is not None:
+        return facts.work_item_id == at.work_item_id
+    if facts.engagement_id is not None:
+        return facts.engagement_id == at.engagement_id
+    return True
+
+
+@dataclass(frozen=True)
+class Decider:
+    basis: DesignationBasis
+    grant_id: UUID
+    contact_id: UUID
+
+
+async def covering_grant(
+    tenant: TenantContext, user_id: UUID, at: ApprovalScope, *, role: str | None = None
+) -> UUID | None:
+    """One of the person's active grants whose scope covers the item (of `role`, if named)."""
+    for grant in await active_grants(tenant, user_id):
+        if role is not None and grant.role != role:
+            continue
+        facts = await scope_facts(tenant, grant.scope_kind, grant.scope_id)
+        if facts is not None and scope_covered(facts, at):
+            return grant.id
+    return None
+
+
+async def decider_for(
+    tenant: TenantContext, user_id: UUID, kind: ClientApprovalKind, at: ApprovalScope, attest: bool
+) -> Decider | None:
+    """The person's basis for deciding `kind` here, or None (403 `not_decider`): an owner grant
+    covering the item, or the approver-of-record designation on its engagement; on an attest
+    client a kind may also need the SKE designee (DECIDER_RULES). The basis an owner grant gives
+    wins over a designation when both hold."""
+    rule = DECIDER_RULES[kind]
+    grant = await covering_grant(tenant, user_id, at)
+    if grant is None:
+        return None
+    held: set[DesignationBasis] = set()
+    owner = await covering_grant(tenant, user_id, at, role=OWNER_GRANT_ROLE)
+    if owner is not None:
+        held.add("owner")
+    async with tenant_session(tenant) as session:
+        contacts = await contacts_of_user(session, user_id)
+        if contacts and at.engagement_id is not None:
+            rows = await session.execute(
+                _DESIGNATIONS, {"engagement": at.engagement_id, "contacts": list(contacts)}
+            )
+            held |= {cast(DesignationBasis, r.designation) for r in rows}
+    if not held & rule.any_of:
+        return None
+    if attest and rule.attest_also and not held & rule.attest_also:
+        return None
+    basis: DesignationBasis = "owner" if "owner" in held else "approver_of_record"
+    if not contacts:
+        return None  # a decision is attributed to a contact (AC-6)
+    return Decider(basis, owner or grant, contacts[0])
 
 
 def register_client_approval_kind(

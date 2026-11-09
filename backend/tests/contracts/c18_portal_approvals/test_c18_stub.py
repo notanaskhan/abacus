@@ -41,12 +41,22 @@ def _doc() -> dict[str, object]:
     return cast(dict[str, object], json.loads(document()))
 
 
+# R-02-T11 (DEC-3009): adjustments registers `proposed_entry` and reporting `fs_draft`; the
+# other two kinds still fail closed until R-02-T15 (assurance) and C-02 or A-08 register them.
+UNREGISTERED = ("uncorrected_misstatements", "fs_package")
+
+
 def test_unregistered_kind_fails_closed() -> None:
-    for kind in sorted(CLIENT_APPROVAL_KINDS):
+    import abacus.api.app  # noqa: F401  # pyright: ignore[reportUnusedImport] -- every module's registrations
+
+    for kind in UNREGISTERED:
         with pytest.raises(ApprovalKindNotRegistered):
             client_approval_provider(kind)
     with pytest.raises(ApprovalKindNotRegistered):
         client_approval_provider("made_up_kind")
+    assert {"proposed_entry", "fs_draft"} <= set(CLIENT_APPROVAL_KINDS)
+    for kind in ("proposed_entry", "fs_draft"):
+        client_approval_provider(kind)
 
 
 async def test_package_decide_is_409_until_a_provider_registers() -> None:
@@ -60,10 +70,13 @@ async def test_package_decide_is_409_until_a_provider_registers() -> None:
 
 
 @pytest.mark.parametrize("path", sorted(DECIDE))
-def test_decide_routes_answer_501_with_one_action(path: str) -> None:
+def test_decide_routes_are_live_with_one_action(path: str) -> None:
+    """R-02-T11: the decide routes answer through C18's service (409 for a stale item or an
+    unregistered kind), no longer 501."""
     paths = cast(dict[str, dict[str, dict[str, object]]], _doc()["paths"])
     assert list(paths[path]) == ["post"]
-    assert "501" in cast(dict[str, object], paths[path]["post"]["responses"])
+    responses = cast(dict[str, object], paths[path]["post"]["responses"])
+    assert "501" not in responses and "409" in responses
 
 
 @pytest.mark.parametrize("action", sorted(set(DECIDE.values())))

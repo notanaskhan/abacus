@@ -25,12 +25,14 @@ from abacus.kernel.db import TenantContext, tenant_session, transaction_context
 from abacus.kernel.uow import UnitOfWork
 from abacus.kernel.uow.relay import OutboxEvent
 from abacus.modules.engagements.api import (
+    register_client_approval_kind,
     register_letter_finaliser,
     register_letter_locker,
     register_letter_renderer,
 )
 from abacus.modules.evidence.api import register_folder_provider as _register_folder_provider
 from abacus.modules.reporting import deliverables as _deliverables
+from abacus.modules.reporting.client_approvals import FsDraftApprovals
 from abacus.modules.reporting.consent import Recipients as Recipients
 from abacus.modules.reporting.consent import RecipientsUnavailable as RecipientsUnavailable
 from abacus.modules.reporting.consent import recipients as _consent_recipients
@@ -798,3 +800,6 @@ from abacus.modules.reporting.statements_workflow_types import (  # noqa: E402
 )
 
 _ensure_fs_kind()
+
+# R-02-T11 (C18, DEC-3009): management approval of a draft version through the portal.
+register_client_approval_kind("fs_draft", FsDraftApprovals())
