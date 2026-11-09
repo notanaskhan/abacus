@@ -4,10 +4,21 @@
 import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import type { JSX } from "react";
 import { afterEach, describe, expect, it } from "vitest";
-import { RUN_4127_DONE_ID, RUN_4127_FAILED_ID, SHL13_RUNS } from "../../fixtures/seed/agent-dock";
+import { ClockProvider } from "@abacus/ui";
+import {
+  RUN_4127_ASK_ID,
+  RUN_4127_DONE_ID,
+  RUN_4127_FAILED_ID,
+  RUN_4127_IDLE_ID,
+  RUN_4127_PLAN_ID,
+  RUN_CLOSE_COPPERLEAF_ID,
+  SHL13_RUNS,
+} from "../../fixtures/seed/agent-dock";
+import { DEMO_MS } from "../../fixtures/seed/clock";
 import { E0_RUNS, LEVELS_4127_941, RUN_4127_ID } from "../../fixtures/seed/agent-runs";
 import { json, mockApi, renderRoutes } from "../../testing/support";
-import { levelTail, projectionTitle, RunPane } from "./RunPane";
+import { dockAgents } from "./AgentDock";
+import { levelTail, projectionTitle, RunPane, sourceOf } from "./RunPane";
 
 afterEach(cleanup);
 
@@ -25,7 +36,11 @@ function routes(): Parameters<typeof mockApi>[0] {
 
 function renderPane(runId: string, extra: Partial<Parameters<typeof RunPane>[0]> = {}): void {
   mockApi(routes());
-  const Page = (): JSX.Element => <RunPane runId={runId} onTrace={() => undefined} {...extra} />;
+  const Page = (): JSX.Element => (
+    <ClockProvider now={() => DEMO_MS}>
+      <RunPane runId={runId} onTrace={() => undefined} {...extra} />
+    </ClockProvider>
+  );
   renderRoutes([{ path: "/", component: Page }]);
 }
 
@@ -112,5 +127,90 @@ describe("SHL-13 run pane", () => {
   it("a run the viewer may not read shows the not-allowed state", async () => {
     renderPane("not-a-run");
     expect(await screen.findByText("You can't open this run.")).toBeTruthy();
+  });
+
+  it("frame 1: idle, the engagement agent is ready and only a person starts it", async () => {
+    renderPane(RUN_4127_IDLE_ID);
+    expect(await screen.findByText("Ready to run 14 workpapers across 5 levels")).toBeTruthy();
+    expect(
+      screen.getByText("Auto mode is off — I'll propose the plan and wait for your go-ahead."),
+    ).toBeTruthy();
+    const run = screen.getByRole("button", { name: "Run" });
+    expect(run.hasAttribute("disabled")).toBe(true);
+    expect(screen.queryByRole("button", { name: "Sign off run" })).toBeNull();
+    expect(screen.getAllByText(/^0 of /)).toHaveLength(5);
+  });
+
+  it("frame 2: the plan is proposed and waits; the go-ahead chips are the person's", async () => {
+    renderPane(RUN_4127_PLAN_ID);
+    expect(await screen.findByText("Run planning for Northwind.")).toBeTruthy();
+    expect(await screen.findByText("Plan ready — approve?")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "yes, run it" }).hasAttribute("disabled")).toBe(
+      true,
+    );
+    expect(screen.getByRole("button", { name: "Change order…" })).toBeTruthy();
+  });
+
+  it("frame 5: the Sampling question with its recommended option, answered by a person", async () => {
+    renderPane(RUN_4127_ASK_ID);
+    const card = (
+      await screen.findByText("Which population should eligibility testing start from?")
+    ).closest("li") as HTMLElement;
+    expect(within(card).getByText(/PayGrid payroll census/)).toBeTruthy();
+    expect(within(card).getByText(/Recommended/)).toBeTruthy();
+    expect(within(card).getByText(/Keystone participant file/)).toBeTruthy();
+    expect(within(card).getByText("1 of 1")).toBeTruthy();
+    for (const name of ["Skip", "Previous", "Next"]) {
+      expect(within(card).getByRole("button", { name }).hasAttribute("disabled")).toBe(true);
+    }
+  });
+
+  it("frame 8: Copperleaf's close run counts 6 of 9 with 3 running", async () => {
+    renderPane(RUN_CLOSE_COPPERLEAF_ID);
+    expect(await screen.findByText("Closing agent is running")).toBeTruthy();
+    expect(screen.getByText("3 tasks running at once")).toBeTruthy();
+    expect(screen.getByText("6 of 9 complete")).toBeTruthy();
+    expect(screen.getByText("Started 18 minutes ago")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Run 2/ })).toBeTruthy();
+    expect(await screen.findAllByText(/./, { selector: "[data-task-row] span" })).toHaveLength(9);
+    expect(document.querySelectorAll("[data-task-row='succeeded']")).toHaveLength(6);
+    expect(
+      screen.getByText("Tie Square payouts (gross $73,166.90 − fees $1,684.54 = net $71,482.36)"),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Sign off run" })).toBeNull();
+  });
+
+  it("revision 1: the agents strip lists each agent once, with the open run's source", async () => {
+    const agents = dockAgents(
+      [SHL13_RUNS[RUN_4127_DONE_ID]?.view.run, SHL13_RUNS[RUN_4127_FAILED_ID]?.view.run].filter(
+        (r) => r !== undefined,
+      ),
+    );
+    expect(agents).toHaveLength(1);
+    expect(sourceOf("agent_column")).toBe("Agent column");
+    expect(sourceOf("event_policy")).toBe("Trigger");
+    expect(sourceOf(null)).toBe("Manual");
+    renderPane(RUN_4127_ID, { agents });
+    const strip = await screen.findByRole("button", { name: "Agents on this engagement · 1" });
+    expect(strip.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(strip);
+    expect(screen.getByText("Manual")).toBeTruthy();
+  });
+
+  it("revision 4: thumbs-down needs a reason before Submit", async () => {
+    renderPane(RUN_4127_ID);
+    const card = (await screen.findByText("Run trial balance workpaper")).closest(
+      "li",
+    ) as HTMLElement;
+    fireEvent.click(within(card).getByRole("button", { expanded: false }));
+    expect(within(card).getByRole("button", { name: "Rerun" }).hasAttribute("disabled")).toBe(
+      true,
+    );
+    fireEvent.click(within(card).getByRole("button", { name: "Not helpful" }));
+    const picker = within(card).getByRole("dialog", { name: "What was wrong" });
+    const submit = within(picker).getByRole("button", { name: "Submit" });
+    expect(submit.hasAttribute("disabled")).toBe(true);
+    fireEvent.click(within(picker).getByLabelText("Wrong document"));
+    expect(submit.hasAttribute("disabled")).toBe(false);
   });
 });

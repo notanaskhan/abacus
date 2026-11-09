@@ -4,7 +4,7 @@ title: P-09-T09 SHL-13 run pane in the T2 dock
 spec: SPEC-648  # Stories 1.1 to 1.3; handoff SHL-13
 acceptance_criteria: [AC-1]
 risk_zone: green
-status: partial
+status: in-progress
 epic: P-09
 plan_key: P-09-T09
 branch: s32-p09-t09
@@ -43,3 +43,10 @@ SHL-13: one run in the 330 dock, behind `agent_dock.enabled`, opened with `?dock
 |---|---|---|
 | DEC-3006 | Human actions render disabled until T14; level labels; tool item fields | no |
 - `2026-11-09` — S32 end pass: gates, unit, contract, S32 integration and web suites run; fixes folded into the end-pass PR. Status partial.
+- `2026-11-09` — Partials round (branch s32p-p09-t09, DEC-3023): frames 1 (idle "Run"), 2 (plan
+  proposed, chips), 5 (question card with options) and 8 (CLS-02 close run card, task rows,
+  "Run 2 ⌄") drawn from new fixture runs; the collapsed agents strip (revision 1) from the dock's
+  run list; finished tool cards get Rerun/Follow up (disabled until P-09-T14) and thumbs with the
+  reason picker (revision 4). The dock's run-list query moved above its early return. Tests added
+  in `RunPane.test.tsx`. Still open: frame 9's trigger line and step card, frame 10 submit
+  (feedback route 501), human actions (P-09-T14), rail sync (P-09-T13), fact tokens.
