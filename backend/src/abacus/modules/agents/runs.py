@@ -198,7 +198,9 @@ def state_of(run: AgentRun) -> State:
 
 
 def duration_ms(start: datetime, end: datetime | None) -> int | None:
-    return None if end is None else int((end - start).total_seconds() * 1000)
+    """Milliseconds from start to end. A run whose end reads a hair before its start (rows written
+    in one transaction, `clock_timestamp()` order) lasted no time, never a negative one."""
+    return None if end is None else max(0, int((end - start).total_seconds() * 1000))
 
 
 def _subject(run: AgentRun) -> str | None:
