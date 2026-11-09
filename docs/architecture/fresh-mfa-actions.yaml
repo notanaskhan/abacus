@@ -150,3 +150,6 @@ actions:
     group: release
   - action: archive_addition.approve
     group: sign_off
+  # A-07-T30 (DEC-3107): G8 with its live handler.
+  - action: report.release
+    group: release

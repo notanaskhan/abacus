@@ -29,6 +29,8 @@ from collections.abc import Mapping, Sequence
 from typing import Final, Literal
 from uuid import UUID
 
+from sqlalchemy import text
+
 from abacus.kernel._flags import (
     AUDITS_ARCHIVE,
     AUDITS_COMPLETION,
@@ -36,11 +38,12 @@ from abacus.kernel._flags import (
     AUDITS_REPORT_RELEASE,
 )
 from abacus.kernel.clock import FIRM_ZONE
-from abacus.kernel.db import TenantContext
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import Flag as FlagDef
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow.relay import OutboxEvent
+from abacus.modules.assurance.release import report_release_approval
 from abacus.modules.assurance.sections import (
     Band,
     IndexTag,
@@ -140,8 +143,31 @@ def _section_provider(key: str) -> SectionStateProvider:
 async def report_released_tags(
     tenant: TenantContext, work_item_ids: Sequence[UUID]
 ) -> Mapping[UUID, Sequence[IndexTag]]:
-    del tenant, work_item_ids
-    return {}  # off: no tag; the release service (A-07-T30) supplies "Released Oct 9"
+    """A-07-T30: "Released Oct 9" on an AUD-01 row once G8 is recorded in Accrued; nothing while
+    `audits.report_release` is off."""
+    if not work_item_ids or not await live(tenant, "audits.report_release"):
+        return {}
+    from abacus.modules.assurance.providers import month_day
+
+    async with tenant_session(tenant) as session:
+        rows = (
+            await session.execute(
+                text(
+                    "SELECT work_item_id, released_at FROM report_releases "
+                    "WHERE kind = 'original' AND work_item_id = ANY(:ids)"
+                ),
+                {"ids": list(work_item_ids)},
+            )
+        ).all()
+    return {
+        r.work_item_id: [
+            IndexTag(
+                "report_released",
+                f"Released {month_day(r.released_at.astimezone(FIRM_ZONE).date())}",
+            )
+        ]
+        for r in rows
+    }
 
 
 async def archived_tags(
@@ -336,7 +362,11 @@ def register() -> None:
                     kind=kind,
                     layout=layout,
                     variables_provider=_no_variables,
-                    approval_provider=_no_approval,
+                    # A-07-T30: the report's final render is approved by the consumed release
+                    # grant (the EP's decision); the letters' finals stay with their services.
+                    approval_provider=report_release_approval
+                    if kind == "audit_report"
+                    else _no_approval,
                     retention_record_type=RECORD_TYPE,
                     formats=("pdf", "docx"),
                     tenant_variables_provider=_live_variables,

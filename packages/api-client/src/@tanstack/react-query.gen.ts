@@ -2484,7 +2484,8 @@ export const auditReleaseQueryKey = (options: Options<AuditReleaseData>) => crea
 /**
  * Audit Release Route
  *
- * AUD-24: G5-G7 with live values, the also-required list, deliverables, filings (A-07-T30).
+ * AUD-24: G5-G7 with live values, the also-required list, deliverables (A-07-T30; filings
+ * arrive with A-07-T36). Every value comes from the gate providers, never the browser.
  */
 export const auditReleaseOptions = (options: Options<AuditReleaseData>) => queryOptions<AuditReleaseResponse, AuditReleaseError, AuditReleaseResponse, ReturnType<typeof auditReleaseQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -2503,7 +2504,8 @@ export const auditReleaseOptions = (options: Options<AuditReleaseData>) => query
  * Audit Release Post Route
  *
  * G8 through ReleaseWorkflow: the EP only, fresh MFA, the gates re-checked at the server
- * (409 `gates_not_met`, `content_changed`); no hold and no Undo (DEC-2260).
+ * (409 `gates_not_met`, `content_changed`); no hold and no Undo (DEC-2260). A replay with the
+ * same Idempotency-Key after the release answers the release (A-07-T30, DEC-3107).
  */
 export const auditReleasePostMutation = (options?: Partial<Options<AuditReleasePostData>>): UseMutationOptions<AuditReleasePostResponse, AuditReleasePostError, Options<AuditReleasePostData>> => {
     const mutationOptions: UseMutationOptions<AuditReleasePostResponse, AuditReleasePostError, Options<AuditReleasePostData>> = {

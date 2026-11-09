@@ -4330,6 +4330,7 @@ ACTIONS: dict[str, dict[str, str]] = {
         "agent": "deny",
         "system": "deny",
         "independence": "required",
+        "mfa_recent": "required",
     },
     "report.request_decision": {
         "manager": "allow",

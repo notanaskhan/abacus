@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Final, Literal, cast, get_args
 from uuid import UUID
 
@@ -803,3 +804,80 @@ _ensure_fs_kind()
 
 # R-02-T11 (C18, DEC-3009): management approval of a draft version through the portal.
 register_client_approval_kind("fs_draft", FsDraftApprovals())
+
+
+@dataclass(frozen=True)
+class RenderOutcome:
+    """A-07-T30: a version's render job as its consumer waits on it: `queued`, `running`,
+    `succeeded` (with the PDF's evidence version, render hash and page count) or `failed` (with
+    the job's failure code)."""
+
+    status: Literal["queued", "running", "succeeded", "failed"]
+    version_id: UUID | None = None
+    evidence_version_id: UUID | None = None
+    render_hash: str | None = None
+    page_count: int | None = None
+    failure_code: str | None = None
+
+
+_OUTCOME = text(
+    "SELECT j.status, j.failure_code, v.id AS version_id, f.evidence_version_id, "
+    "encode(f.render_hash, 'hex') AS render_hash, f.page_count "
+    "FROM render_jobs j JOIN generated_document_versions v "
+    "ON v.generated_document_id = j.generated_document_id AND v.version_no = j.target_version_no "
+    "LEFT JOIN generated_document_files f ON f.version_id = v.id AND f.format = 'pdf' "
+    "WHERE j.generated_document_id = :d AND j.target_version_no = :n"
+)
+
+
+async def render_outcome(
+    tenant: TenantContext, document_id: UUID, version_no: int
+) -> RenderOutcome:
+    """The render job of one version and, once it succeeded, its PDF filed as evidence."""
+    async with tenant_session(tenant) as session:
+        row = (await session.execute(_OUTCOME, {"d": document_id, "n": version_no})).first()
+    if row is None:
+        return RenderOutcome("queued")
+    status = cast(Literal["queued", "running", "succeeded", "failed"], str(row.status))
+    if status == "succeeded" and row.evidence_version_id is None:
+        status = "running"  # the job finished before its PDF row: not yet servable
+    return RenderOutcome(
+        status,
+        cast(UUID, row.version_id),
+        cast(UUID | None, row.evidence_version_id),
+        cast(str | None, row.render_hash),
+        cast(int | None, row.page_count),
+        cast(str | None, row.failure_code),
+    )
+
+
+async def document_of_owner(tenant: TenantContext, owner: OwnerRef, kind: str) -> UUID | None:
+    """A-07-T30: the one generated document of a consumer record and kind (0430's unique key)."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text(
+                "SELECT id FROM generated_documents WHERE owner_type = :t AND owner_id = :o "
+                "AND kind = :k"
+            ),
+            {"t": owner.type, "o": owner.id, "k": kind},
+        )
+    return cast(UUID | None, found)
+
+
+async def fs_approved_by_management_at(
+    tenant: TenantContext, work_item_id: UUID
+) -> datetime | None:
+    """A-07-T30's also-required "FS approved": when management approved the work item's newest
+    statement version (A-06's `approved_by_management`, the C18 portal decision); None before."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text(
+                "SELECT max(a.created_at) FROM statement_approvals a "
+                "JOIN statement_versions v ON v.id = a.statement_version_id "
+                "WHERE v.work_item_id = :wi AND a.event = 'approved_by_management' "
+                "AND v.version_no = (SELECT max(version_no) FROM statement_versions "
+                "WHERE work_item_id = :wi)"
+            ),
+            {"wi": work_item_id},
+        )
+    return cast(datetime | None, found)
