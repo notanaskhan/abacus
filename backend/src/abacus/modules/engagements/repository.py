@@ -302,6 +302,23 @@ async def engagement_count(session: AsyncSession) -> int:
     return int(await session.scalar(select(func.count()).select_from(Engagement)) or 0)
 
 
+async def client_engagement_ids(session: AsyncSession, client_id: UUID) -> Sequence[UUID]:
+    """R-02-T11 (DEC-3025): a client's engagements, newest first, as the scopes a client-level
+    portal grant lists approvals on; each item is then judged by its covering grant (never
+    returned as a list)."""
+    return (
+        (
+            await session.execute(
+                select(Engagement.id)
+                .where(Engagement.client_id == client_id)
+                .order_by(Engagement.created_at.desc(), Engagement.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
 async def entity_engagement_ids(session: AsyncSession, client_entity_id: UUID) -> Sequence[UUID]:
     """A-02-T16: the entity's engagements, newest first, for a caller that then authorises its
     action on each (LIST_EXEMPT: candidates for `authorise`, never shown as a list)."""

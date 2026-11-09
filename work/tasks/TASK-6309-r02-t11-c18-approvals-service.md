@@ -4,7 +4,7 @@ title: R-02-T11 C18 approvals service, decider rule, proposed_entry and fs_draft
 spec: SPEC-646  # AC-1 to AC-7
 acceptance_criteria: [AC-1, AC-2, AC-4, AC-5, AC-6]
 risk_zone: amber
-status: partial
+status: in-progress
 epic: R-02
 plan_key: R-02-T11
 branch: s32-r02-t11
@@ -43,3 +43,8 @@ client human, MFA time, Idempotency-Key, seen-hash binding and attribution.
 |---|---|---|
 | DEC-3009 | Check order, decider rule, the two providers' seen hashes and rows | no |
 - `2026-11-09` — S32 end pass: gates, unit, contract, S32 integration and web suites run; fixes folded into the end-pass PR. Status partial.
+- `2026-11-09` — Partials round (branch s32p-r02-t11, DEC-3025): client and entity grants list
+  the items on their engagements (new `engagements.api.engagements_of_client`, list-exempt as a
+  candidate set); unit test for the expansion; DB-backed service test
+  `tests/integration/backfill/test_r02t11_portal_approvals_live.py` (AJE-1 sent, Dana's accept,
+  client grant, no grant). Still open: period contexts (C-02).

@@ -149,6 +149,7 @@ def world(monkeypatch: pytest.MonkeyPatch, provider: Recording) -> World:
     @dataclass
     class _Grant:
         scope_id: uuid.UUID
+        scope_kind: str = "work_item"
 
     async def grants(*_: object) -> list[_Grant]:
         # Dana's portal grant names the work item; a person outside the scope holds none.
@@ -251,6 +252,7 @@ async def test_the_list_offers_the_decider_accept_and_decline(
         @dataclass
         class G:
             scope_id: uuid.UUID
+            scope_kind: str = "work_item"
 
         return [G(WORK_ITEM)]
 
@@ -271,3 +273,32 @@ def test_the_decider_rule_covers_a_work_item_grant_only_for_its_item() -> None:
     assert ca.scope_covered(ScopeFacts(CLIENT, ENGAGEMENT, None), at)
     assert ca.scope_covered(ScopeFacts(CLIENT, None, None), at)
     assert not ca.scope_covered(ScopeFacts(uuid.uuid4(), None, None), at)
+
+
+async def test_a_client_grant_lists_the_items_on_its_engagements(
+    world: World, provider: Recording, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """DEC-3025: a grant on the client covers its engagements; each item is still judged by its
+    covering grant, so the list is never wider than the decider rule."""
+
+    @dataclass
+    class ClientGrant:
+        scope_id: uuid.UUID
+        scope_kind: str = "client"
+
+    async def grants(*_: object) -> list[ClientGrant]:
+        return [ClientGrant(CLIENT)]
+
+    async def engagements_of_client(_: TenantContext, client_id: uuid.UUID) -> list[uuid.UUID]:
+        return [ENGAGEMENT] if client_id == CLIENT else []
+
+    async def items(_: TenantContext, scope_id: uuid.UUID) -> list[ApprovalItem]:
+        return [provider.aje()] if scope_id == ENGAGEMENT else []
+
+    monkeypatch.setattr(service, "active_grants", grants)
+    monkeypatch.setattr(service, "engagements_of_client", engagements_of_client)
+    monkeypatch.setattr(provider, "items", items)
+    listing = await service.approvals(_person(), None, None)
+    assert [s.item.item_id for s in listing.items] == [AJE_1]
+    world.covered = False
+    assert (await service.approvals(_person(), None, None)).items == []
