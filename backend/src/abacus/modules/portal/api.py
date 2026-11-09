@@ -56,3 +56,8 @@ __all__ = [
     "add_portal_host",
     "set_branding",
 ]
+
+# P-10-T27 (DEC-3117): the portal topics of the invalidation stream.
+from abacus.modules.portal.realtime_topics import register as _register_topics  # noqa: E402
+
+_register_topics()

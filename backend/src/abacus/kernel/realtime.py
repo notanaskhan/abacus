@@ -29,7 +29,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
 from contextlib import suppress
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Final
+from typing import Final, Literal
 from uuid import UUID
 
 from sqlalchemy import text
@@ -179,16 +179,80 @@ async def stream(
                 del _WAKE[topic]
 
 
+# --- topics: each owner registers who may subscribe (P-10-T27; ADR-232 decision 5) -------------
+#
+# The slot lives here, not in `notifications`, because nothing may import `notifications` (the
+# module graph); `notifications.realtime` reads it. An authorizer answers "content", "metadata"
+# (a firm admin's engagement topics: metadata invalidations only, AC-T9) or None (refused).
+
+TopicAccess = Literal["content", "metadata"]
+TopicAuthorizer = Callable[[object, str], Awaitable[TopicAccess | None]]
+_TOPICS: dict[str, TopicAuthorizer] = {}
+TOPIC_KINDS: Final = ("user", "engagement", "work_item", "run", "session", "firm", "portal")
+
+
+def register_topic(kind: str, authorizer: TopicAuthorizer) -> None:
+    if kind not in TOPIC_KINDS:
+        raise ValueError(f"unknown topic kind {kind!r}")
+    if kind in _TOPICS and _TOPICS[kind] is not authorizer:
+        raise ValueError(f"topic kind {kind!r} is already registered")
+    _TOPICS[kind] = authorizer
+
+
+async def authorise_topic(ctx: object, topic: str) -> TopicAccess | None:
+    """`<kind>:<id>` through its owner's authorizer; an unknown kind is refused (fail closed)."""
+    kind, _, ident = topic.partition(":")
+    authorizer = _TOPICS.get(kind)
+    if authorizer is None or not ident:
+        return None
+    try:
+        return await authorizer(ctx, ident)
+    except Exception:  # an owner that cannot answer refuses
+        return None
+
+
+@dataclass(frozen=True)
+class Invalidation:
+    """Which topics an outbox event invalidates: the payload's id fields by topic kind."""
+
+    ref_type: str
+    ref_field: str
+    topic_fields: tuple[tuple[str, str], ...]  # (topic kind, payload field)
+
+
+_INVALIDATIONS: dict[str, Invalidation] = {}
+
+
+def register_invalidation(event_type: str, invalidation: Invalidation) -> None:
+    _INVALIDATIONS[event_type] = invalidation
+
+
+def invalidation_of(event_type: str) -> Invalidation | None:
+    return _INVALIDATIONS.get(event_type)
+
+
+def invalidating_events() -> frozenset[str]:
+    return frozenset(_INVALIDATIONS)
+
+
 __all__ = [
     "MAX_STREAMS_PER_USER",
     "SSE_HEADERS",
+    "TOPIC_KINDS",
     "GapTooOld",
+    "Invalidation",
     "StreamEvent",
     "TooManyStreams",
+    "TopicAccess",
+    "authorise_topic",
     "claim_slot",
     "comment",
     "frame",
+    "invalidating_events",
+    "invalidation_of",
     "notify",
+    "register_invalidation",
+    "register_topic",
     "release_slot",
     "stream",
     "wake",

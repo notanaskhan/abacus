@@ -65,12 +65,26 @@ def _not_yet() -> NoReturn:
     raise NotImplementedYet
 
 
+async def _sse_on(ctx: AuthContext) -> None:
+    from abacus.kernel._flags import REALTIME_SSE
+    from abacus.kernel.errors import NotFound
+    from abacus.kernel.flags import flag_enabled
+
+    if not await flag_enabled(ctx.tenant, REALTIME_SSE):
+        raise NotFound(REALTIME_SSE.name)
+
+
 @events_router.get("", action="events.subscribe", response_model=bytes, errors=(409, 501))
 async def events_stream_route(
-    ctx: Ctx, topics: Annotated[str | None, Query(max_length=2000)] = None
+    ctx: Ctx,
+    topics: Annotated[str | None, Query(max_length=2000)] = None,
+    last_event_id: Annotated[int | None, Header(alias="Last-Event-ID", ge=0)] = None,
 ) -> Response:
-    """`text/event-stream` of `InvalidationEventOut` (T27)."""
-    _not_yet()
+    """`text/event-stream` of `InvalidationEventOut` (P-10-T27, DEC-3117)."""
+    from abacus.modules.notifications import realtime as live
+
+    await _sse_on(ctx)
+    return await live.events_stream(ctx, live.parse_topics(topics), last_event_id)
 
 
 @events_router.post(
@@ -79,5 +93,9 @@ async def events_stream_route(
 async def stream_topics_route(
     stream_id: UUID, body: StreamTopicsIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> StreamTopicsOut:
-    """Add or remove topics without reconnecting; each is authorised on add."""
-    _not_yet()
+    """Add or remove topics without reconnecting; each is authorised on add (P-10-T27)."""
+    from abacus.modules.notifications import realtime as live
+
+    await _sse_on(ctx)
+    del idempotency_key  # the change is a set operation: a repeat changes nothing
+    return StreamTopicsOut(topics=await live.change_topics(ctx, stream_id, body.add, body.remove))
