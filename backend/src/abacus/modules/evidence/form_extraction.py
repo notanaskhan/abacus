@@ -63,6 +63,9 @@ class FieldMap:
     label: str
     anchor: str
     value_type: str
+    # P-11-T35: the box number printed before the anchor on its line ("5 Interest income"), so a
+    # caption repeated inside another box ("18A Tax-exempt interest income") is never taken.
+    box: str | None = None
 
 
 @dataclass(frozen=True)
@@ -75,6 +78,17 @@ class TableMap:
     header: str
     stop: str
     columns: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class CodeBox:
+    """P-11-T35: a K-1 box whose lines carry a code letter and an amount ("18A … 2,356", or
+    "18 A … 2,356"). Each code line becomes its own field, `<key><code>`; amounts are read, never
+    summed (AC8.7)."""
+
+    box: str
+    key: str
+    label: str
 
 
 @dataclass(frozen=True)
@@ -91,6 +105,9 @@ class FormMap:
     year_after: str | None = None
     corrected_anchor: str | None = None
     tie_outs: tuple[TieOut, ...] = ()
+    # P-11-T35 (DEC-3008): K-1 code lines, and the state attachments a page is flagged for.
+    code_boxes: tuple[CodeBox, ...] = ()
+    state_anchor: str | None = None
 
 
 @dataclass(frozen=True)
@@ -109,7 +126,10 @@ def _form_map(raw: JsonMap, year: int | None = None) -> FormMap:
     return FormMap(
         raw["form"], raw["form_type"], int(year if year is not None else raw["tax_year"]),
         raw["family"], raw["version"], tuple(raw["anchors"]),
-        tuple(FieldMap(f["key"], f["label"], f["anchor"], f["value_type"]) for f in raw["fields"]),
+        tuple(
+            FieldMap(f["key"], f["label"], f["anchor"], f["value_type"], f.get("box"))
+            for f in raw["fields"]
+        ),
         tuple(
             TableMap(t["key"], t["label"], t["header"], t["stop"], tuple(t["columns"]))
             for t in raw.get("tables", ())
@@ -117,6 +137,8 @@ def _form_map(raw: JsonMap, year: int | None = None) -> FormMap:
         raw.get("year_after"),
         raw.get("corrected_anchor"),
         tuple(TieOut(t["smaller"], t["larger"]) for t in raw.get("tie_outs", ())),
+        tuple(CodeBox(str(c["box"]), c["key"], c["label"]) for c in raw.get("code_boxes", ())),
+        raw.get("state_anchor"),
     )  # fmt: skip
 
 
@@ -159,6 +181,22 @@ def _find_anchor(page: PageWords, anchor: str) -> list[Word] | None:
             found = ordered[start : start + len(wanted)]
             if abs(found[0].top - found[-1].top) <= _LINE_TOLERANCE:
                 return found
+    return None
+
+
+def _find_boxed_anchor(page: PageWords, anchor: str, box: str | None) -> list[Word] | None:
+    """`_find_anchor`, and with `box` the word just before it on its line must be that box."""
+    if box is None:
+        return _find_anchor(page, anchor)
+    wanted = [t.lower() for t in anchor.split()]
+    for line in _lines(page):
+        lowered = _lower_words(line)
+        for start in range(1, len(line) - len(wanted) + 1):
+            if (
+                lowered[start : start + len(wanted)] == wanted
+                and lowered[start - 1] == box.lower()
+            ):
+                return line[start : start + len(wanted)]
     return None
 
 
@@ -231,11 +269,16 @@ def identify(pages: Sequence[PageWords]) -> FormMap | None:
 
 
 def extract(form_map: FormMap, pages: Sequence[PageWords]) -> tuple[Extracted, ...]:
-    """Each field by its label, first page that has it. A field with no value is not written."""
+    """Each field by its label, first page that has it. A field with no value is not written.
+    P-11-T35: a state attachment page is flagged for review and none of its amounts is read."""
+    attachments: list[PageWords] = []
+    if form_map.state_anchor is not None:
+        attachments = [p for p in pages if _find_anchor(p, form_map.state_anchor) is not None]
+        pages = [p for p in pages if p not in attachments]
     out: list[Extracted] = []
     for field in form_map.fields:
         for page in pages:
-            label = _find_anchor(page, field.anchor)
+            label = _find_boxed_anchor(page, field.anchor, field.box)
             if label is None:
                 continue
             words = _value_words(page, label)
@@ -264,7 +307,70 @@ def extract(form_map: FormMap, pages: Sequence[PageWords]) -> tuple[Extracted, .
             if cells:
                 out.extend(cells)
                 break
+    for code_box in form_map.code_boxes:
+        for page in pages:
+            lines = extract_code_box(code_box, page)
+            if lines:
+                out.extend(lines)
+                break
+    if attachments:
+        out.append(_state_attachment(form_map, attachments[0]))
     return tuple(_tax_form_checks(form_map, pages, out))
+
+
+_CODE: Final = re.compile(r"^[A-Z]{1,2}$")
+
+
+def _lines(page: PageWords) -> list[list[Word]]:
+    rows: dict[int, list[Word]] = {}
+    for word in page.words:
+        rows.setdefault(round(word.top / _LINE_TOLERANCE), []).append(word)
+    return [sorted(rows[k], key=lambda w: w.x0) for k in sorted(rows)]
+
+
+def extract_code_box(code_box: CodeBox, page: PageWords) -> tuple[Extracted, ...]:
+    """Each line of `code_box` with a code and an amount: "18A Tax-exempt interest 2,356" or
+    "18 A …". The amount is the line's last money token, read as printed (never summed)."""
+    found: list[Extracted] = []
+    joined = re.compile(rf"^{re.escape(code_box.box)}([A-Z]{{1,2}})$")
+    for line in _lines(page):
+        if len(line) < 2:
+            continue
+        code: str | None = None
+        match = joined.match(line[0].text)
+        if match is not None:
+            code = match.group(1)
+        elif line[0].text == code_box.box and _CODE.match(line[1].text):
+            code = line[1].text
+        if code is None:
+            continue
+        amount = next((w for w in reversed(line) if _MONEY.match(w.text.rstrip(".,;:"))), None)
+        if amount is None:
+            continue
+        value, readable = _normalise("money", amount.text)
+        confidence = Decimal(str(amount.confidence)).quantize(Decimal("0.001"))
+        found.append(
+            Extracted(
+                f"{code_box.key}{code.lower()}", f"{code_box.label}, code {code}", "money", value,
+                page.page, (amount.x0, amount.top, amount.x1, amount.bottom), confidence,
+                confidence < LOW_CONFIDENCE or not readable,
+            )
+        )  # fmt: skip
+    return tuple(found)
+
+
+def _state_attachment(form_map: FormMap, page: PageWords) -> Extracted:
+    """A state K-1 attachment: flagged for a person's review, its figures left unread."""
+    anchor = _find_anchor(page, cast(str, form_map.state_anchor)) or []
+    box = (
+        (anchor[0].x0, anchor[0].top, anchor[-1].x1, anchor[-1].bottom)
+        if anchor
+        else (0.0, 0.0, 0.0, 0.0)
+    )
+    return Extracted(
+        f"{form_map.form_type}.state_attachment", "State attachment", "boolean", "true",
+        page.page, box, Decimal("1.000"), True,
+    )  # fmt: skip
 
 
 def _tax_form_checks(

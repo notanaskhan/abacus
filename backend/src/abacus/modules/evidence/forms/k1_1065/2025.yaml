@@ -1,0 +1,38 @@
+# Schedule K-1 (Form 1065) map (P-11-T35; P-11 F8; DEC-76, DEC-2809, DEC-3008). PROTECTED: golden tested and
+# reviewed yearly against the IRS form for the year. Dark until the firm's `evidence.form_extraction`
+# variant covers `tax_forms`. TINs (SSN, EIN) are never fields: P-03 masks them on the page.
+
+form: "Schedule K-1 (Form 1065)"
+form_type: "k1_1065"
+tax_year: 2025
+family: tax_forms
+version: "k1_1065-2025-v1"
+anchors: ["K-1", "1065"]
+year_after: "1065"
+# State attachments are flagged for a person's review; their figures are never read or summed.
+state_anchor: "State Information"
+fields:
+  - {key: k1_1065.box1, label: "Ordinary business income (loss)", anchor: "Ordinary business income (loss)", value_type: money, box: "1"}
+  - {key: k1_1065.box2, label: "Net rental real estate income (loss)", anchor: "Net rental real estate income (loss)", value_type: money, box: "2"}
+  - {key: k1_1065.box3, label: "Other net rental income (loss)", anchor: "Other net rental income (loss)", value_type: money, box: "3"}
+  - {key: k1_1065.box4a, label: "Guaranteed payments for services", anchor: "Guaranteed payments for services", value_type: money, box: "4a"}
+  - {key: k1_1065.box4b, label: "Guaranteed payments for capital", anchor: "Guaranteed payments for capital", value_type: money, box: "4b"}
+  - {key: k1_1065.box5, label: "Interest income", anchor: "Interest income", value_type: money, box: "5"}
+  - {key: k1_1065.box6a, label: "Ordinary dividends", anchor: "Ordinary dividends", value_type: money, box: "6a"}
+  - {key: k1_1065.box6b, label: "Qualified dividends", anchor: "Qualified dividends", value_type: money, box: "6b"}
+  - {key: k1_1065.box7, label: "Royalties", anchor: "Royalties", value_type: money, box: "7"}
+  - {key: k1_1065.box8, label: "Net short-term capital gain (loss)", anchor: "Net short-term capital gain (loss)", value_type: money, box: "8"}
+  - {key: k1_1065.box9a, label: "Net long-term capital gain (loss)", anchor: "Net long-term capital gain (loss)", value_type: money, box: "9a"}
+  - {key: k1_1065.box10, label: "Net section 1231 gain (loss)", anchor: "Net section 1231 gain (loss)", value_type: money, box: "10"}
+# Code lines ("18A … 2,356"): each code its own field; amounts read, never summed.
+code_boxes:
+  - {box: "11", key: k1_1065.box11, label: "Other income (loss)"}
+  - {box: "13", key: k1_1065.box13, label: "Other deductions"}
+  - {box: "14", key: k1_1065.box14, label: "Self-employment earnings (loss)"}
+  - {box: "15", key: k1_1065.box15, label: "Credits"}
+  - {box: "17", key: k1_1065.box17, label: "Alternative minimum tax (AMT) items"}
+  - {box: "18", key: k1_1065.box18, label: "Tax-exempt income and nondeductible expenses"}
+  - {box: "19", key: k1_1065.box19, label: "Distributions"}
+  - {box: "20", key: k1_1065.box20, label: "Other information"}
+tie_outs:
+  - {smaller: k1_1065.box6b, larger: k1_1065.box6a}
