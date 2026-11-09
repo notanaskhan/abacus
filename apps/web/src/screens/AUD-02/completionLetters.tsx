@@ -1,4 +1,4 @@
-// A-07-T28 / A-07-T29 remainder (DEC-3030): AUD-21 and AUD-22 inside the AUD-02 cockpit, opened from
+// A-07-T28 / A-07-T29 remainder (DEC-3030), A-07-T34: AUD-21, AUD-22 and AUD-23 inside the AUD-02 cockpit, opened from
 // AUD-19's checklist (its "AUD-21" and "AUD-22" link chips) and closed by their Back. AUD-21 reads
 // the representation letter through C11's route; AUD-22 draws the handoff's E0 rows (frame a) until
 // A-07-T33 wires its live read. Every send, approve and remind stays the person's, bound later.
@@ -18,12 +18,16 @@ const RepLetter = FIXTURES
 const Governance = FIXTURES
   ? lazy(async () => ({ default: (await import("../AUD-22")).Governance }))
   : () => null;
+// A-07-T34: AUD-23's report builder, fixture mode, opened from AUD-19's "AUD-23" chip.
+const ReportBuilder = FIXTURES
+  ? lazy(async () => ({ default: (await import("../AUD-23")).ReportBuilder }))
+  : () => null;
 
 /** The checklist link targets that open inside the cockpit. */
-export type CompletionLetter = "AUD-21" | "AUD-22";
+export type CompletionLetter = "AUD-21" | "AUD-22" | "AUD-23";
 
 export function isCompletionLetter(target: string): target is CompletionLetter {
-  return FIXTURES && (target === "AUD-21" || target === "AUD-22");
+  return FIXTURES && (target === "AUD-21" || target === "AUD-22" || target === "AUD-23");
 }
 
 export function useCompletionLetterCanvas(
@@ -36,6 +40,16 @@ export function useCompletionLetterCanvas(
     enabled: letter === "AUD-21",
     retry: false,
   });
+  if (letter === "AUD-23") {
+    return {
+      title: "Report builder",
+      children: (
+        <Suspense fallback={null}>
+          <ReportBuilder frame="a" onBack={onBack} />
+        </Suspense>
+      ),
+    };
+  }
   if (letter === "AUD-22") {
     return {
       title: "Governance communications",
