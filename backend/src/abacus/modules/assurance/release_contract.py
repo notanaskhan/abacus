@@ -1136,14 +1136,16 @@ async def audit_report_choice_route(
     action="report.request_decision",
     response_model=AuditReportOut,
     status_code=201,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def audit_report_request_decision_route(
     work_item_id: UUID, body: ReportDecisionRequestIn, ctx: Ctx
 ) -> AuditReportOut:
-    """Raise the `opinion` card for the EP (C3)."""
+    """Raise the `opinion` card for the EP (C3; DEC-3028)."""
     await _gate(ctx, work_item_id, "report.request_decision")
-    _not_yet()
+    del body  # one field today: the opinion
+    await rb.request_opinion_decision(ctx, work_item_id)
+    return _report_out(await rb.read(ctx, work_item_id), [])
 
 
 @router.post(
@@ -1151,14 +1153,19 @@ async def audit_report_request_decision_route(
     action="report.generate",
     response_model=ReleaseRunAcceptedOut,
     status_code=202,
-    errors=(409, 501),
+    errors=(409,),
 )
 async def audit_report_document_route(
     work_item_id: UUID, body: ReportDocumentIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ReleaseRunAcceptedOut:
-    """A draft render through C11 (DRAFT watermark, signature placeholder; byte-identical)."""
+    """A draft render through C11 (DRAFT watermark, signature placeholder; byte-identical;
+    DEC-3028): the generated document's id is the run to follow."""
     await _gate(ctx, work_item_id, "report.generate")
-    _not_yet()
+    del idempotency_key  # C11's render is keyed by the owner version and the template
+    document_id = await rb.render_document(ctx, work_item_id, body.report_version, body.format)
+    return ReleaseRunAcceptedOut(
+        run_id=document_id, status_url=f"/v1/generated-documents/{document_id}"
+    )
 
 
 @router.get("/release", action="report.read", response_model=AuditReleaseOut, errors=(501,))
