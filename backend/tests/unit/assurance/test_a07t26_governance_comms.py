@@ -9,9 +9,14 @@ code: composition, the regenerate merge, the output checks and AU-C 265's due da
 from __future__ import annotations
 
 import uuid
+from collections.abc import AsyncGenerator
 from datetime import UTC, date, datetime
+from typing import cast
+
+import pytest
 
 from abacus.modules.assurance import governance_comms as gc
+from abacus.modules.identity.api import AuthContext
 
 FACTS = gc.Facts(
     significant_risks=(("R1", "Contributions and remittance"), ("R4", "Participant data")),
@@ -79,3 +84,107 @@ def test_the_content_hash_follows_the_sections() -> None:
     b = gc.canonical(gc.compose("planning_260", FACTS))[1]
     c = gc.canonical(gc.compose("planning_260", gc.Facts()))[1]
     assert a == b != c
+
+
+def test_a_firm_template_opens_the_letter_in_its_own_words() -> None:
+    """DEC-3027: a published governance_letter version's paragraphs, read from its C11 blocks,
+    open the letter; the fact sections follow unchanged and a regenerate keeps the template."""
+    blocks: list[object] = [
+        {"type": "heading", "level": 1, "text": "Not a paragraph"},
+        {"type": "paragraph", "runs": [
+            {"type": "text", "text": "We communicate "},
+            {"type": "text", "text": "the significant findings."},
+        ]},
+        {"type": "paragraph", "runs": [{"type": "var", "key": "client"}]},
+        "not a block",
+        {"type": "paragraph", "runs": [
+            {"type": "text", "text": "Corrected misstatements are listed."},
+        ]},
+    ]  # fmt: skip
+    words = gc.template_paragraphs(blocks)
+    assert words == [
+        "We communicate the significant findings.",
+        "Corrected misstatements are listed.",
+    ]
+    sections = gc.compose("completion_260", FACTS, words)
+    assert sections[0].key == gc.FIRM_TEMPLATE
+    assert (
+        sections[0].body
+        == "We communicate the significant findings.\n\nCorrected misstatements are listed."
+    )
+    assert [s.key for s in sections[1:]] == [s.key for s in gc.compose("completion_260", FACTS)]
+    assert gc.template_paragraphs(None) == []
+    assert gc.compose("completion_260", FACTS, [])[0].key != gc.FIRM_TEMPLATE
+
+
+class _Rows:
+    def __init__(self, rows: list[object]) -> None:
+        self._rows = rows
+
+    def all(self) -> list[object]:
+        return self._rows
+
+
+class _Session:
+    """A session stand-in: the bodies owned by the engagement's client, and no recipient rows."""
+
+    def __init__(self, owned: set[uuid.UUID]) -> None:
+        self.owned = owned
+
+    async def execute(self, _sql: object, params: dict[str, object]) -> _Rows:
+        from types import SimpleNamespace
+
+        ids = cast(list[uuid.UUID], params.get("ids", []))
+        return _Rows([SimpleNamespace(id=i) for i in ids if i in self.owned])
+
+    async def scalar(self, _sql: object, _params: dict[str, object]) -> None:
+        return None
+
+
+async def test_a_body_of_another_client_is_never_a_recipient_or_sent_to(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """S32 partials review: `set_recipients` keeps to the engagement's client's bodies, and a send
+    names a body set as this work item's recipient, or it is refused before any grant."""
+    from contextlib import asynccontextmanager
+    from types import SimpleNamespace
+
+    ours, theirs = uuid.uuid4(), uuid.uuid4()
+    session = _Session({ours})
+
+    @asynccontextmanager
+    async def tenant_session(_: object) -> AsyncGenerator[_Session]:
+        yield session
+
+    async def person(*_: object) -> uuid.UUID:
+        return uuid.uuid4()
+
+    async def ref(*_: object) -> object:
+        return SimpleNamespace(client_id=uuid.uuid4())
+
+    async def read(*_: object) -> object:
+        return SimpleNamespace(
+            status="awaiting_ep_approval", content_hash="h", kind="planning_260"
+        )
+
+    async def opened(*_: object) -> tuple[gc.LetterPart, ...]:
+        return ()
+
+    monkeypatch.setattr(gc, "tenant_session", tenant_session)
+    monkeypatch.setattr(gc, "_person", person)
+    monkeypatch.setattr(gc, "get_ref", ref)
+    monkeypatch.setattr(gc, "_read", read)
+    monkeypatch.setattr(gc, "_open", opened)
+    ctx = cast(AuthContext, SimpleNamespace(mfa_at=datetime.now(UTC), tenant=None))
+    with pytest.raises(gc.LetterCheckFailed):
+        await gc.set_recipients(ctx, uuid.uuid4(), [ours, theirs])
+    with pytest.raises(gc.LetterCheckFailed):
+        await gc.approve_and_send(
+            ctx,
+            uuid.uuid4(),
+            uuid.uuid4(),
+            governance_body_id=theirs,
+            recipient_contact_ids=[uuid.uuid4()],
+            channel="governance_room",
+            seen_hash="h",
+        )

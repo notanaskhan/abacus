@@ -41,3 +41,7 @@ to the POR-15 room or an acknowledgement envelope, AU-C 265 due date, output che
 - `2026-11-09` — Partials round (branch s32p-a07-t26-grants, DEC-3026): approve & send issues
   each recipient's `tcwg` grant on the room, or a pending grant and invitation; unit tests in
   `tests/unit/identity/test_a07t26_tcwg_grant.py`.
+- `2026-11-09` — Partials round (branch s32p-a07-t26-templates, DEC-3027): create takes an
+  optional published `governance_letter` version; its paragraphs open the letter, versions store
+  the template and regenerate keeps it; contract field added (client regenerates at the end
+  pass); unit test. Still open: the SIG-02 envelope draft for `ack_envelope` (A-07-T33).
