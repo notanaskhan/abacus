@@ -165,6 +165,17 @@ async def bring_down(
             ),
             scope=Scope(engagement_id=engagement, work_item_id=wi),
         )
+    # A-07-T32 (DEC-3109): the run #4240 the dock shows, as the EP via Agent; no model call.
+    from abacus.modules.assurance.agent_capabilities import record_bring_down
+
+    await record_bring_down(
+        tenant,
+        wi,
+        engagement,
+        procedures=int(counts.total),
+        performed=int(counts.through),
+        reconfirmations=len(team),
+    )
     return BringDownResult(report_date, int(counts.total), int(counts.through), len(team))
 
 

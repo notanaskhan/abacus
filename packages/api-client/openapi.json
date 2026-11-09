@@ -122570,6 +122570,134 @@
         "x-abacus-action": "completion.update"
       }
     },
+    "/v1/audits/{work_item_id}/completion/readiness:check": {
+      "post": {
+        "description": "#4231: sign-offs, review notes and (EBP) the draft Form 5500 checked by code, recorded as\nthe `audit.completion_readiness` run (A-07-T32, DEC-3109).",
+        "operationId": "completion_readiness",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "work_item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Work Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompletionRunAcceptedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Completion Readiness Route",
+        "tags": [
+          "audit completion"
+        ],
+        "x-abacus-action": "completion.check_readiness"
+      }
+    },
     "/v1/audits/{work_item_id}/ebp/certification": {
       "get": {
         "description": "The six points in order; a point nobody evaluated reads `not_evaluated`.",
@@ -128313,7 +128441,7 @@
     },
     "/v1/audits/{work_item_id}/eqr/digest:build": {
       "post": {
-        "description": "Starts EqrDigestWorkflow (code only; A-07-T18, T32).",
+        "description": "The judgments digest, built by code and recorded as the `audit.eqr_digest` run (A-07-T32,\nDEC-3109); the run id is the 202's.",
         "operationId": "eqr_digest_build",
         "parameters": [
           {
@@ -133608,7 +133736,7 @@
     },
     "/v1/audits/{work_item_id}/representation-letter/compose": {
       "post": {
-        "description": "LetterComposeWorkflow: template paragraphs and trigger rules over findings and the SUM.",
+        "description": "Template paragraphs and trigger rules over findings and the SUM, composed by code and\nrecorded as the `audit.letter_compose` run (A-07-T32, DEC-3109).",
         "operationId": "representation_letter_compose",
         "parameters": [
           {

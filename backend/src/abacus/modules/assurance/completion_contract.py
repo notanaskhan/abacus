@@ -390,9 +390,34 @@ async def eqr_review_route(work_item_id: UUID, ctx: Ctx) -> EqrReviewOut:
 async def eqr_digest_build_route(
     work_item_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> CompletionRunAcceptedOut:
-    """Starts EqrDigestWorkflow (code only; A-07-T18, T32)."""
+    """The judgments digest, built by code and recorded as the `audit.eqr_digest` run (A-07-T32,
+    DEC-3109); the run id is the 202's."""
+    from abacus.modules.assurance.agent_capabilities import eqr_digest
+
     await _gate(ctx, work_item_id, "eqr.build_digest")
-    _not_yet()
+    del idempotency_key  # the digest keeps unchanged cards: a repeat builds nothing new
+    run_id = await eqr_digest(ctx, work_item_id)
+    return CompletionRunAcceptedOut(run_id=run_id, status_url=f"/v1/agent-runs/{run_id}")
+
+
+@router.post(
+    "/completion/readiness:check",
+    action="completion.check_readiness",
+    response_model=CompletionRunAcceptedOut,
+    status_code=202,
+    errors=(501,),
+)
+async def completion_readiness_route(
+    work_item_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
+) -> CompletionRunAcceptedOut:
+    """#4231: sign-offs, review notes and (EBP) the draft Form 5500 checked by code, recorded as
+    the `audit.completion_readiness` run (A-07-T32, DEC-3109)."""
+    from abacus.modules.assurance.agent_capabilities import completion_readiness
+
+    await _gate(ctx, work_item_id, "completion.check_readiness")
+    del idempotency_key
+    run_id = await completion_readiness(ctx, work_item_id)
+    return CompletionRunAcceptedOut(run_id=run_id, status_url=f"/v1/agent-runs/{run_id}")
 
 
 @router.post(
