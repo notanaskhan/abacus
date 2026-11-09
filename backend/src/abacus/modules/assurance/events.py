@@ -106,3 +106,15 @@ class ReportReleased(DomainEvent):
     work_item_id: Annotated[UUID, classified("internal")]
     report_version_id: Annotated[UUID, classified("internal")]
     final_document_version_id: Annotated[UUID, classified("internal")]
+
+
+class ArchiveLockRequested(DomainEvent):
+    """A senior or above asked the lockers to lock the archive (A-07-T31): HOME-02's
+    `archive_lock_due` and the notification read it."""
+
+    event_type: ClassVar[str] = "archive.lock_requested"
+
+    archive_id: Annotated[UUID, classified("internal")]
+    engagement_id: Annotated[UUID, classified("internal")]
+    work_item_id: Annotated[UUID, classified("internal")]
+    requested_by: Annotated[UUID, classified("internal")]

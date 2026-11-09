@@ -364,7 +364,8 @@ export const auditsIndex = <ThrowOnError extends boolean = false>(options?: Opti
 /**
  * Audit Archive Route
  *
- * AUD-25: the clock, nine items, the binder index, additions and the seal (A-07-T31).
+ * AUD-25: the clock, nine items, the binder index, additions and the seal (A-07-T31; the
+ * seal and additions arrive with A-07-T37 and T42).
  */
 export const auditArchive = <ThrowOnError extends boolean = false>(options: Options<AuditArchiveData, ThrowOnError>): RequestResult<AuditArchiveResponses, AuditArchiveErrors, ThrowOnError> => (options.client ?? client).get<AuditArchiveResponses, AuditArchiveErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -441,7 +442,8 @@ export const auditArchiveAdditionReject = <ThrowOnError extends boolean = false>
 /**
  * Audit Archive Index Route
  *
- * ArchiveReadinessWorkflow (#4302): the binder index over A-01's export sections.
+ * The binder index, built by code now (A-07-T31; ArchiveReadinessWorkflow #4302 adds the
+ * fingerprint re-verification and narration with A-07-T32). The run id is the archive's.
  */
 export const auditArchiveIndex = <ThrowOnError extends boolean = false>(options: Options<AuditArchiveIndexData, ThrowOnError>): RequestResult<AuditArchiveIndexResponses, AuditArchiveIndexErrors, ThrowOnError> => (options.client ?? client).post<AuditArchiveIndexResponses, AuditArchiveIndexErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

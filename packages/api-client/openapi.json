@@ -120559,7 +120559,7 @@
     },
     "/v1/audits/{work_item_id}/archive": {
       "get": {
-        "description": "AUD-25: the clock, nine items, the binder index, additions and the seal (A-07-T31).",
+        "description": "AUD-25: the clock, nine items, the binder index, additions and the seal (A-07-T31; the\nseal and additions arrive with A-07-T37 and T42).",
         "operationId": "audit_archive",
         "parameters": [
           {
@@ -121380,7 +121380,7 @@
     },
     "/v1/audits/{work_item_id}/archive/binder-index": {
       "post": {
-        "description": "ArchiveReadinessWorkflow (#4302): the binder index over A-01's export sections.",
+        "description": "The binder index, built by code now (A-07-T31; ArchiveReadinessWorkflow #4302 adds the\nfingerprint re-verification and narration with A-07-T32). The run id is the archive's.",
         "operationId": "audit_archive_index",
         "parameters": [
           {

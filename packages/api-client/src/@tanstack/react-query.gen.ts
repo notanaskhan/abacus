@@ -689,7 +689,8 @@ export const auditArchiveQueryKey = (options: Options<AuditArchiveData>) => crea
 /**
  * Audit Archive Route
  *
- * AUD-25: the clock, nine items, the binder index, additions and the seal (A-07-T31).
+ * AUD-25: the clock, nine items, the binder index, additions and the seal (A-07-T31; the
+ * seal and additions arrive with A-07-T37 and T42).
  */
 export const auditArchiveOptions = (options: Options<AuditArchiveData>) => queryOptions<AuditArchiveResponse, AuditArchiveError, AuditArchiveResponse, ReturnType<typeof auditArchiveQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -802,7 +803,8 @@ export const auditArchiveAdditionRejectMutation = (options?: Partial<Options<Aud
 /**
  * Audit Archive Index Route
  *
- * ArchiveReadinessWorkflow (#4302): the binder index over A-01's export sections.
+ * The binder index, built by code now (A-07-T31; ArchiveReadinessWorkflow #4302 adds the
+ * fingerprint re-verification and narration with A-07-T32). The run id is the archive's.
  */
 export const auditArchiveIndexMutation = (options?: Partial<Options<AuditArchiveIndexData>>): UseMutationOptions<AuditArchiveIndexResponse, AuditArchiveIndexError, Options<AuditArchiveIndexData>> => {
     const mutationOptions: UseMutationOptions<AuditArchiveIndexResponse, AuditArchiveIndexError, Options<AuditArchiveIndexData>> = {

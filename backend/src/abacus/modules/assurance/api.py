@@ -33,6 +33,7 @@ from abacus.modules.assurance import (
 from abacus.modules.assurance import mapping_live as mapping_live
 from abacus.modules.assurance.a07_registrations import SUBSCRIPTIONS as A07_SUBSCRIPTIONS
 from abacus.modules.assurance.a07_registrations import register as register_a07_live_path
+from abacus.modules.assurance.archive_gate import SUBSCRIPTIONS as ARCHIVE_SUBSCRIPTIONS
 from abacus.modules.assurance.aud27 import register_estimate_conclusion_kind
 from abacus.modules.assurance.audits_contract import audits_router
 from abacus.modules.assurance.bring_down import (
@@ -278,6 +279,7 @@ _BASE_SUBSCRIPTIONS = (
     | dict(EQR_SUBSCRIPTIONS)
     | dict(FORM5500_SUBSCRIPTIONS)
     | dict(CHECKLIST_SUGGESTION_SUBSCRIPTIONS)
+    | dict(ARCHIVE_SUBSCRIPTIONS)  # A-07-T31: report.released opens the archive
     | {"suggestion.created": _on_suggestion_created}
 )
 
