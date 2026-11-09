@@ -41,6 +41,13 @@ CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
     # S26, S27: human-only conclusions the fallback reads as neutral, and a code run (DEC-2264).
     "deficiency.concluded": _a("decision", "ok"),
     "sum.concluded": _a("decision", "ok"),
+    # S32 end pass (R-02-T11, DEC-3009): a client's own decision in the portal.
+    "proposed_entry.client_accepted": _a("decision", "ok"),
+    "proposed_entry.client_declined": _a("decision", "no"),
+    "statement.management_approved_in_portal": _a("decision", "ok"),
+    "client_approval.decided": _a("decision"),
+    # A-07-T26 / R-02-T12: a governance letter's send and its acknowledgement are communications.
+    "governance_communication.acknowledged": _a("communication", "ok"),
     "notice.position_decided": _a("decision", "ok"),
     # S28 partials (TASK-3396): the partner's sign-off moved the notice to Approved (system).
     "notice.approved": _a("change", "ok"),

@@ -171,6 +171,7 @@ codes:
   amount_in_letter:
     status: 422
     raised_by:
+    - abacus.modules.assurance.governance_comms.AmountInLetter
     - abacus.modules.assurance.rep_letters.AmountInLetter
     summary: No amount (and so no materiality figure) in letter text (A-07 F3).
   annotation_invalid:
@@ -360,6 +361,14 @@ codes:
     raised_by:
     - abacus.modules.review.checkpoints.CheckpointInvalid
     summary: A restore of a checkpoint that is not in effect, or of Current itself; an empty proposal.
+  choice_invalid:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.report_builder.ChoiceInvalid
+  choice_locked:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.report_builder.ChoiceLocked
   citation_note_required:
     status: 422
     raised_by:
@@ -390,6 +399,10 @@ codes:
     - abacus.modules.sampling.populations.ColumnMapInvalid
     summary: The column map names an unknown field, no record key, a column the sheet does not have,
       one column twice, or an amount column holding something other than an amount.
+  communication_exists:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.governance_comms.KindExists
   completeness_tie_required:
     status: 409
     raised_by:
@@ -616,6 +629,7 @@ codes:
     status: 409
     raised_by:
     - abacus.modules.assurance.completion_errors.DecisionRequired
+    - abacus.modules.assurance.report_builder.DecisionRequired
     - abacus.modules.communications.intake_contract.DecisionRequired
     summary: An attachment in the apply has no decision, or a forced Hold was answered otherwise.
   decline_not_withdrawable:
@@ -1424,6 +1438,9 @@ codes:
   item_changed:
     status: 409
     raised_by:
+    - abacus.modules.assurance.governance_comms.StaleCommunication
+    - abacus.modules.assurance.governance_room.LetterChanged
+    - abacus.modules.assurance.report_builder.StaleReport
     - abacus.modules.engagements.client_approvals.ItemChanged
     summary: 'The decide call''s `seen_hash` is not the item''s current one (AC-4): reload.'
   item_closed:
@@ -1540,6 +1557,10 @@ codes:
     raised_by:
     - abacus.modules.engagements.record.LetterBeforeAcceptance
     summary: The letter's date is before the acceptance decision (G1 < letter, R-06).
+  letter_check_failed:
+    status: 422
+    raised_by:
+    - abacus.modules.assurance.governance_comms.LetterCheckFailed
   letter_exception_reason_required:
     status: 422
     raised_by:
@@ -1859,6 +1880,10 @@ codes:
     raised_by:
     - abacus.modules.reporting.statements.NotAnswered
     summary: Only an answered or adopted item can be reviewed (`facts.item_key`).
+  not_awaiting_approval:
+    status: 409
+    raised_by:
+    - abacus.modules.assurance.governance_comms.NotApprovable
   not_concludable:
     status: 409
     raised_by:
@@ -3072,6 +3097,7 @@ codes:
   template_missing:
     status: 409
     raised_by:
+    - abacus.modules.assurance.report_builder.NoReportTemplate
     - abacus.modules.notices.response.TemplateMissing
     summary: The firm has no published notice-response template.
   template_name_invalid:

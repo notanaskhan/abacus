@@ -1930,6 +1930,28 @@ export type AjeThresholdsPayload = {
 };
 
 /**
+ * AllocationRowOut
+ */
+export type AllocationRowOut = {
+    /**
+     * Credits
+     */
+    credits?: string | null;
+    /**
+     * Derivation
+     */
+    derivation?: string | null;
+    /**
+     * Income
+     */
+    income?: string | null;
+    /**
+     * Jurisdiction
+     */
+    jurisdiction: string;
+};
+
+/**
  * AlsoRequiredOut
  */
 export type AlsoRequiredOut = {
@@ -12525,6 +12547,64 @@ export type DnsRecordOut = {
 };
 
 /**
+ * DocumentApprovalIn
+ */
+export type DocumentApprovalIn = {
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Level
+     */
+    level: 'preparer' | 'detail' | 'manager';
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+};
+
+/**
+ * DocumentApprovalOut
+ */
+export type DocumentApprovalOut = {
+    /**
+     * Approved At
+     */
+    approved_at: string;
+    /**
+     * Approved By Name
+     */
+    approved_by_name: string;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Level
+     */
+    level: 'preparer' | 'detail' | 'manager';
+    /**
+     * Reversed
+     */
+    reversed?: boolean;
+};
+
+/**
+ * DocumentApprovalReverseIn
+ */
+export type DocumentApprovalReverseIn = {
+    /**
+     * Reason
+     */
+    reason?: string | null;
+};
+
+/**
  * DocumentConfidencePayload
  *
  * `auto_accept_enabled` stays false while the policy principal is dormant (P-08).
@@ -17854,6 +17934,53 @@ export type FieldFlagOut = {
 };
 
 /**
+ * FieldLinkOut
+ *
+ * `match_id` to region to field to line for MatchProvider: identifiers and locators only.
+ */
+export type FieldLinkOut = {
+    /**
+     * Bbox
+     */
+    bbox: [
+        number,
+        number,
+        number,
+        number
+    ];
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Field Key
+     */
+    field_key: string;
+    /**
+     * Line Key
+     */
+    line_key?: string | null;
+    /**
+     * Match Id
+     */
+    match_id: string;
+    /**
+     * Page
+     */
+    page: number;
+};
+
+/**
+ * FieldLinksOut
+ */
+export type FieldLinksOut = {
+    /**
+     * Items
+     */
+    items: Array<FieldLinkOut>;
+};
+
+/**
  * FieldOut
  *
  * One placed field, in PDF points.
@@ -18630,6 +18757,30 @@ export type FinalApprovalOut = {
      * Return Id
      */
     return_id: string;
+};
+
+/**
+ * FinalApprovalRequestIn
+ */
+export type FinalApprovalRequestIn = {
+    /**
+     * Assignee User Id
+     */
+    assignee_user_id: string;
+};
+
+/**
+ * FinalApprovalRequestOut
+ */
+export type FinalApprovalRequestOut = {
+    /**
+     * Gate Id
+     */
+    gate_id: string;
+    /**
+     * Requested At
+     */
+    requested_at: string;
 };
 
 /**
@@ -25323,6 +25474,48 @@ export type JurisdictionLineOut = {
 };
 
 /**
+ * K1ActivitiesOut
+ */
+export type K1ActivitiesOut = {
+    /**
+     * Items
+     */
+    items: Array<K1ActivityOut>;
+};
+
+/**
+ * K1ActivityOut
+ */
+export type K1ActivityOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Pending Proposal Id
+     */
+    pending_proposal_id?: string | null;
+    /**
+     * Released On
+     */
+    released_on?: string | null;
+    status: K1ActivityStatus;
+    /**
+     * Treatments
+     */
+    treatments: Array<K1TreatmentOut>;
+};
+
+/**
+ * K1ActivityStatus
+ */
+export type K1ActivityStatus = 'draft_pre_release' | 'released' | 'superseded';
+
+/**
  * K1BoxLineOut
  */
 export type K1BoxLineOut = {
@@ -25518,6 +25711,67 @@ export type K1HandoffOut = {
  * K1HandoffStatus
  */
 export type K1HandoffStatus = 'awaiting' | 'received';
+
+/**
+ * K1MatrixOut
+ *
+ * Sch E - K-1: CY per K-1 activity and the PY column (TAX-05 a).
+ */
+export type K1MatrixOut = {
+    /**
+     * Prior Year
+     */
+    prior_year: number;
+    /**
+     * Rows
+     */
+    rows: Array<K1MatrixRowOut>;
+    /**
+     * Tax Year
+     */
+    tax_year: number;
+};
+
+/**
+ * K1MatrixRowOut
+ */
+export type K1MatrixRowOut = {
+    /**
+     * Activity Id
+     */
+    activity_id: string;
+    /**
+     * Current Year
+     */
+    current_year?: string | null;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Prior Year
+     */
+    prior_year?: string | null;
+    status: K1ActivityStatus;
+};
+
+/**
+ * K1OverrideIn
+ */
+export type K1OverrideIn = {
+    /**
+     * Reason
+     */
+    reason: string;
+    /**
+     * Seen Version
+     */
+    seen_version: number;
+    /**
+     * Value
+     */
+    value: string;
+};
 
 /**
  * K1PackageDetailOut
@@ -25786,6 +26040,42 @@ export type K1ShareOut = {
      */
     shared: number;
 };
+
+/**
+ * K1TreatmentOut
+ */
+export type K1TreatmentOut = {
+    /**
+     * Changed Vs Year
+     */
+    changed_vs_year?: number | null;
+    /**
+     * Decided By Name
+     */
+    decided_by_name?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Line
+     */
+    line: string;
+    status: K1TreatmentStatus;
+    /**
+     * Treatment
+     */
+    treatment: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * K1TreatmentStatus
+ */
+export type K1TreatmentStatus = 'proposed' | 'approved' | 'overridden';
 
 /**
  * K1ViewerManifestOut
@@ -26197,6 +26487,32 @@ export type LeadRowOut = {
 };
 
 /**
+ * LeadsheetLineOut
+ */
+export type LeadsheetLineOut = {
+    /**
+     * Amount
+     */
+    amount?: string | null;
+    /**
+     * Contributing Field Keys
+     */
+    contributing_field_keys: Array<string>;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Line Key
+     */
+    line_key: string;
+    /**
+     * Mismatch
+     */
+    mismatch?: boolean;
+};
+
+/**
  * LeadsheetOut
  */
 export type LeadsheetOut = {
@@ -26224,6 +26540,16 @@ export type LeadsheetOut = {
      * Rows
      */
     rows: Array<LeadRowOut>;
+};
+
+/**
+ * LeadsheetsOut
+ */
+export type LeadsheetsOut = {
+    /**
+     * Items
+     */
+    items: Array<ReturnLeadsheetOut>;
 };
 
 /**
@@ -38496,6 +38822,29 @@ export type RequesterOut = {
 };
 
 /**
+ * ResidencyDeterminationStatus
+ */
+export type ResidencyDeterminationStatus = 'review_point' | 'confirmed' | 'action_required';
+
+/**
+ * ResidencyOptionOut
+ */
+export type ResidencyOptionOut = {
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Recommended
+     */
+    recommended?: boolean;
+};
+
+/**
  * ResidencyOut
  *
  * ADM-06 fieldset E (AC-26): from `firms.region` and settings, every row locked.
@@ -39094,6 +39443,62 @@ export type ReturnAsFiledIn = {
 };
 
 /**
+ * ReturnFieldViewStatus
+ */
+export type ReturnFieldViewStatus = 'imported' | 'edited' | 'proposed' | 'recomputed' | 'signed_off';
+
+/**
+ * ReturnLeadsheetOut
+ */
+export type ReturnLeadsheetOut = {
+    /**
+     * Form
+     */
+    form: string;
+    /**
+     * Lines
+     */
+    lines: Array<LeadsheetLineOut>;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * ReturnResidencyOut
+ */
+export type ReturnResidencyOut = {
+    /**
+     * Confirmed At
+     */
+    confirmed_at?: string | null;
+    /**
+     * Confirmed By Name
+     */
+    confirmed_by_name?: string | null;
+    /**
+     * Facts
+     */
+    facts: Array<string>;
+    /**
+     * Options
+     */
+    options: Array<ResidencyOptionOut>;
+    status: ResidencyDeterminationStatus;
+};
+
+/**
+ * ReturnRunAcceptedOut
+ */
+export type ReturnRunAcceptedOut = {
+    /**
+     * Agent Run Id
+     */
+    agent_run_id: string;
+};
+
+/**
  * ReturnStatus
  */
 export type ReturnStatus = 'not_started' | 'gathering' | 'preparing' | 'prepared' | 'in_review' | 'action_required' | 'approved' | 'awaiting_signature' | 'filed' | 'accepted' | 'rejected' | 'fixing';
@@ -39142,6 +39547,48 @@ export type ReviewChecklistPayload = {
      * Kind
      */
     kind: 'review_checklist';
+};
+
+/**
+ * ReviewDocumentOut
+ */
+export type ReviewDocumentOut = {
+    /**
+     * DocumentApprovalStatus
+     */
+    approval: never;
+    /**
+     * Approvals Count
+     */
+    approvals_count?: number;
+    /**
+     * Category
+     */
+    category: string;
+    /**
+     * Evidence Version Id
+     */
+    evidence_version_id: string;
+    /**
+     * Flagged
+     */
+    flagged?: boolean;
+    /**
+     * Mismatch Field Key
+     */
+    mismatch_field_key?: string | null;
+    /**
+     * Sub Head
+     */
+    sub_head?: string | null;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**
@@ -39500,6 +39947,24 @@ export type ReviewTier = {
      * Tier
      */
     tier: number;
+};
+
+/**
+ * ReviewTreeOut
+ */
+export type ReviewTreeOut = {
+    /**
+     * Items
+     */
+    items: Array<ReviewDocumentOut>;
+    /**
+     * Review Count
+     */
+    review_count: number;
+    /**
+     * Total
+     */
+    total: number;
 };
 
 /**
@@ -40657,7 +41122,7 @@ export type RunItemOut = {
     /**
      * Kind
      */
-    kind: 'tool_card' | 'narration' | 'decision' | 'failure';
+    kind: 'tool_card' | 'narration' | 'decision' | 'failure' | 'user' | 'line' | 'block' | 'tool' | 'progress' | 'question' | 'answer' | 'error' | 'plan' | 'approval' | 'decision_ref' | 'artifact' | 'run_card' | 'notice';
     /**
      * Outcome
      */
@@ -45775,6 +46240,16 @@ export type StartOut = {
 };
 
 /**
+ * StateAllocationOut
+ */
+export type StateAllocationOut = {
+    /**
+     * Rows
+     */
+    rows: Array<AllocationRowOut>;
+};
+
+/**
  * StatementDecisionsBody
  */
 export type StatementDecisionsBody = {
@@ -49934,7 +50409,7 @@ export type TraceRowOut = {
     /**
      * Kind
      */
-    kind: 'start' | 'queued' | 'attempt' | 'output' | 'decision' | 'finish';
+    kind: 'start' | 'queued' | 'attempt' | 'output' | 'decision' | 'finish' | 'plan' | 'step';
     /**
      * Mark
      */
@@ -49951,6 +50426,10 @@ export type TraceRowOut = {
      * State
      */
     state: 'done' | 'failed' | 'waiting' | 'running';
+    /**
+     * Step Id
+     */
+    step_id?: string | null;
     /**
      * Title
      */
@@ -52400,6 +52879,162 @@ export type WorkpaperVersionOut = {
      * Version No
      */
     version_no: number;
+};
+
+/**
+ * WorksheetFieldOut
+ */
+export type WorksheetFieldOut = {
+    /**
+     * Citations
+     */
+    citations?: number;
+    /**
+     * Engine Label
+     */
+    engine_label?: string | null;
+    /**
+     * Field Key
+     */
+    field_key: string;
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Provenance
+     */
+    provenance?: string | null;
+    /**
+     * Seen Seq
+     */
+    seen_seq: number;
+    /**
+     * Signed Off By
+     */
+    signed_off_by?: Array<string>;
+    state: ReturnFieldViewStatus;
+    /**
+     * Value
+     */
+    value?: string | null;
+};
+
+/**
+ * WorksheetFieldsOut
+ */
+export type WorksheetFieldsOut = {
+    /**
+     * Sections
+     */
+    sections: Array<WorksheetSectionOut>;
+    /**
+     * Worksheet Id
+     */
+    worksheet_id: string;
+};
+
+/**
+ * WorksheetNodeOut
+ */
+export type WorksheetNodeOut = {
+    /**
+     * Edited
+     */
+    edited?: boolean;
+    /**
+     * Group
+     */
+    group: string;
+    /**
+     * New This Year
+     */
+    new_this_year?: boolean;
+    /**
+     * Sub Head
+     */
+    sub_head?: string | null;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Tsj
+     */
+    tsj?: 'T' | 'S' | 'J' | null;
+    /**
+     * Worksheet Id
+     */
+    worksheet_id: string;
+};
+
+/**
+ * WorksheetSectionOut
+ */
+export type WorksheetSectionOut = {
+    /**
+     * Fields
+     */
+    fields: Array<WorksheetFieldOut>;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Signed Off
+     */
+    signed_off?: boolean;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * WorksheetsOut
+ */
+export type WorksheetsOut = {
+    /**
+     * Items
+     */
+    items: Array<WorksheetNodeOut>;
+};
+
+/**
+ * WorkspaceSummaryOut
+ *
+ * The tabs' counts at the viewer's level, the K-1 dependency chip and availability.
+ */
+export type WorkspaceSummaryOut = {
+    /**
+     * Allowed Actions
+     */
+    allowed_actions: Array<'document.approve' | 'tax_return.request_approval' | 'tax_return.draft_run' | 'k1_treatment.resolve' | 'k1_treatment.approve' | 'k1_treatment.override' | 'residency.request_proposal' | 'residency.confirm' | 'issue.explain'>;
+    /**
+     * AssistantAvailabilityStatus
+     */
+    assistant: never;
+    /**
+     * Checkpoints Proposed
+     */
+    checkpoints_proposed?: number;
+    /**
+     * Issues Open
+     */
+    issues_open: number;
+    k1_dependency?: K1ActivityStatus | null;
+    /**
+     * Return Id
+     */
+    return_id: string;
+    /**
+     * Review Count
+     */
+    review_count: number;
+    /**
+     * Viewer Level
+     */
+    viewer_level?: 'preparer' | 'detail' | 'manager' | null;
 };
 
 /**
@@ -107693,10 +108328,6 @@ export type ListApprovalsErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type ListApprovalsError = ListApprovalsErrors[keyof ListApprovalsErrors];
@@ -107757,10 +108388,6 @@ export type DecidePackageErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DecidePackageError = DecidePackageErrors[keyof DecidePackageErrors];
@@ -107821,10 +108448,6 @@ export type DecideProposedEntryErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type DecideProposedEntryError = DecideProposedEntryErrors[keyof DecideProposedEntryErrors];
@@ -107885,10 +108508,6 @@ export type AcknowledgeUncorrectedErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AcknowledgeUncorrectedError = AcknowledgeUncorrectedErrors[keyof AcknowledgeUncorrectedErrors];
@@ -107949,10 +108568,6 @@ export type GetApprovalErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type GetApprovalError = GetApprovalErrors[keyof GetApprovalErrors];
@@ -119689,6 +120304,66 @@ export type BulkAssignResponses = {
 
 export type BulkAssignResponse = BulkAssignResponses[keyof BulkAssignResponses];
 
+export type DocumentApprovalReverseData = {
+    body: DocumentApprovalReverseIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Approval Id
+         */
+        approval_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/document-approvals/{approval_id}/reverse';
+};
+
+export type DocumentApprovalReverseErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DocumentApprovalReverseError = DocumentApprovalReverseErrors[keyof DocumentApprovalReverseErrors];
+
+export type DocumentApprovalReverseResponses = {
+    /**
+     * Successful Response
+     */
+    200: DocumentApprovalOut;
+};
+
+export type DocumentApprovalReverseResponse = DocumentApprovalReverseResponses[keyof DocumentApprovalReverseResponses];
+
 export type TaxEstimatesData = {
     body?: never;
     headers?: {
@@ -120590,6 +121265,182 @@ export type ExtensionsSubmitResponses = {
 
 export type ExtensionsSubmitResponse = ExtensionsSubmitResponses[keyof ExtensionsSubmitResponses];
 
+export type K1ActivityData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Activity Id
+         */
+        activity_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/k1-activities/{activity_id}';
+};
+
+export type K1ActivityErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type K1ActivityError = K1ActivityErrors[keyof K1ActivityErrors];
+
+export type K1ActivityResponses = {
+    /**
+     * Successful Response
+     */
+    200: K1ActivityOut;
+};
+
+export type K1ActivityResponse = K1ActivityResponses[keyof K1ActivityResponses];
+
+export type K1TreatmentRunData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Activity Id
+         */
+        activity_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/k1-activities/{activity_id}/treatment-runs';
+};
+
+export type K1TreatmentRunErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type K1TreatmentRunError = K1TreatmentRunErrors[keyof K1TreatmentRunErrors];
+
+export type K1TreatmentRunResponses = {
+    /**
+     * Successful Response
+     */
+    202: ReturnRunAcceptedOut;
+};
+
+export type K1TreatmentRunResponse = K1TreatmentRunResponses[keyof K1TreatmentRunResponses];
+
+export type K1OverrideData = {
+    body: K1OverrideIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Treatment Id
+         */
+        treatment_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/k1-treatments/{treatment_id}/override';
+};
+
+export type K1OverrideErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type K1OverrideError = K1OverrideErrors[keyof K1OverrideErrors];
+
+export type K1OverrideResponses = {
+    /**
+     * Successful Response
+     */
+    200: K1TreatmentOut;
+};
+
+export type K1OverrideResponse = K1OverrideResponses[keyof K1OverrideResponses];
+
 export type PaymentsData = {
     body?: never;
     headers?: {
@@ -120649,6 +121500,834 @@ export type PaymentsResponses = {
 };
 
 export type PaymentsResponse = PaymentsResponses[keyof PaymentsResponses];
+
+export type DocumentApprovalData = {
+    body: DocumentApprovalIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/document-approvals';
+};
+
+export type DocumentApprovalErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DocumentApprovalError = DocumentApprovalErrors[keyof DocumentApprovalErrors];
+
+export type DocumentApprovalResponses = {
+    /**
+     * Successful Response
+     */
+    201: DocumentApprovalOut;
+};
+
+export type DocumentApprovalResponse = DocumentApprovalResponses[keyof DocumentApprovalResponses];
+
+export type DraftRunData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/draft-runs';
+};
+
+export type DraftRunErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type DraftRunError = DraftRunErrors[keyof DraftRunErrors];
+
+export type DraftRunResponses = {
+    /**
+     * Successful Response
+     */
+    202: ReturnRunAcceptedOut;
+};
+
+export type DraftRunResponse = DraftRunResponses[keyof DraftRunResponses];
+
+export type FinalApprovalRequestData = {
+    body: FinalApprovalRequestIn;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/final-approval-requests';
+};
+
+export type FinalApprovalRequestErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type FinalApprovalRequestError = FinalApprovalRequestErrors[keyof FinalApprovalRequestErrors];
+
+export type FinalApprovalRequestResponses = {
+    /**
+     * Successful Response
+     */
+    201: FinalApprovalRequestOut;
+};
+
+export type FinalApprovalRequestResponse = FinalApprovalRequestResponses[keyof FinalApprovalRequestResponses];
+
+export type K1ActivitiesData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/k1-activities';
+};
+
+export type K1ActivitiesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type K1ActivitiesError = K1ActivitiesErrors[keyof K1ActivitiesErrors];
+
+export type K1ActivitiesResponses = {
+    /**
+     * Successful Response
+     */
+    200: K1ActivitiesOut;
+};
+
+export type K1ActivitiesResponse = K1ActivitiesResponses[keyof K1ActivitiesResponses];
+
+export type ReturnLeadsheetsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: {
+        /**
+         * Form
+         */
+        form?: string;
+    };
+    url: '/v1/tax/returns/{return_id}/leadsheets';
+};
+
+export type ReturnLeadsheetsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ReturnLeadsheetsError = ReturnLeadsheetsErrors[keyof ReturnLeadsheetsErrors];
+
+export type ReturnLeadsheetsResponses = {
+    /**
+     * Successful Response
+     */
+    200: LeadsheetsOut;
+};
+
+export type ReturnLeadsheetsResponse = ReturnLeadsheetsResponses[keyof ReturnLeadsheetsResponses];
+
+export type FieldLinksData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: {
+        /**
+         * Evidence Version Id
+         */
+        evidence_version_id?: string | null;
+    };
+    url: '/v1/tax/returns/{return_id}/links';
+};
+
+export type FieldLinksErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type FieldLinksError = FieldLinksErrors[keyof FieldLinksErrors];
+
+export type FieldLinksResponses = {
+    /**
+     * Successful Response
+     */
+    200: FieldLinksOut;
+};
+
+export type FieldLinksResponse = FieldLinksResponses[keyof FieldLinksResponses];
+
+export type SchEk1MatrixData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/matrices/sch-e-k1';
+};
+
+export type SchEk1MatrixErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type SchEk1MatrixError = SchEk1MatrixErrors[keyof SchEk1MatrixErrors];
+
+export type SchEk1MatrixResponses = {
+    /**
+     * Successful Response
+     */
+    200: K1MatrixOut;
+};
+
+export type SchEk1MatrixResponse = SchEk1MatrixResponses[keyof SchEk1MatrixResponses];
+
+export type ResidencyData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/residency';
+};
+
+export type ResidencyErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ResidencyError = ResidencyErrors[keyof ResidencyErrors];
+
+export type ResidencyResponses = {
+    /**
+     * Successful Response
+     */
+    200: ReturnResidencyOut;
+};
+
+export type ResidencyResponse = ResidencyResponses[keyof ResidencyResponses];
+
+export type ResidencyProposalData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/residency/proposal-runs';
+};
+
+export type ResidencyProposalErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Conflict with the resource's state
+     */
+    409: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ResidencyProposalError = ResidencyProposalErrors[keyof ResidencyProposalErrors];
+
+export type ResidencyProposalResponses = {
+    /**
+     * Successful Response
+     */
+    202: ReturnRunAcceptedOut;
+};
+
+export type ResidencyProposalResponse = ResidencyProposalResponses[keyof ResidencyProposalResponses];
+
+export type ReviewTreeData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: {
+        /**
+         * Level
+         */
+        level?: 'preparer' | 'detail' | 'manager' | null;
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Category
+         */
+        category?: string | null;
+    };
+    url: '/v1/tax/returns/{return_id}/review-tree';
+};
+
+export type ReviewTreeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type ReviewTreeError = ReviewTreeErrors[keyof ReviewTreeErrors];
+
+export type ReviewTreeResponses = {
+    /**
+     * Successful Response
+     */
+    200: ReviewTreeOut;
+};
+
+export type ReviewTreeResponse = ReviewTreeResponses[keyof ReviewTreeResponses];
+
+export type StateAllocationData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/state-allocation';
+};
+
+export type StateAllocationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type StateAllocationError = StateAllocationErrors[keyof StateAllocationErrors];
+
+export type StateAllocationResponses = {
+    /**
+     * Successful Response
+     */
+    200: StateAllocationOut;
+};
+
+export type StateAllocationResponse = StateAllocationResponses[keyof StateAllocationResponses];
+
+export type WorksheetsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/worksheets';
+};
+
+export type WorksheetsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type WorksheetsError = WorksheetsErrors[keyof WorksheetsErrors];
+
+export type WorksheetsResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorksheetsOut;
+};
+
+export type WorksheetsResponse = WorksheetsResponses[keyof WorksheetsResponses];
+
+export type WorkspaceData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Return Id
+         */
+        return_id: string;
+    };
+    query?: never;
+    url: '/v1/tax/returns/{return_id}/workspace';
+};
+
+export type WorkspaceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type WorkspaceError = WorkspaceErrors[keyof WorkspaceErrors];
+
+export type WorkspaceResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorkspaceSummaryOut;
+};
+
+export type WorkspaceResponse = WorkspaceResponses[keyof WorkspaceResponses];
+
+export type WorksheetFieldsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Worksheet Id
+         */
+        worksheet_id: string;
+    };
+    query?: {
+        /**
+         * Q
+         */
+        q?: string | null;
+    };
+    url: '/v1/tax/worksheets/{worksheet_id}/fields';
+};
+
+export type WorksheetFieldsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type WorksheetFieldsError = WorksheetFieldsErrors[keyof WorksheetFieldsErrors];
+
+export type WorksheetFieldsResponses = {
+    /**
+     * Successful Response
+     */
+    200: WorksheetFieldsOut;
+};
+
+export type WorksheetFieldsResponse = WorksheetFieldsResponses[keyof WorksheetFieldsResponses];
 
 export type BrowserErrorData = {
     body?: never;

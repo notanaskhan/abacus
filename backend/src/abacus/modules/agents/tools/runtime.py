@@ -43,7 +43,7 @@ import json
 import time
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Final, Literal, Protocol, cast, runtime_checkable
+from typing import Annotated, Final, Literal, Protocol, cast, runtime_checkable
 from uuid import UUID, uuid5
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -51,6 +51,7 @@ from sqlalchemy import text
 
 from abacus.ai_gateway import render_tool_result
 from abacus.kernel.access import AccessSubject, record_reads, register_access_kind
+from abacus.kernel.classification import classified
 from abacus.kernel.db import tenant_session
 from abacus.kernel.errors import NotFound
 from abacus.kernel.logging import get_logger
@@ -75,6 +76,7 @@ from abacus.modules.identity.api import (
 from abacus.modules.organisations.api import (
     TriConsentRequired,
     TriSubject,
+    client_of_entity,
     require_tri_consent,
 )
 
@@ -118,28 +120,30 @@ class ToolCallIn(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    run_id: UUID
-    step_seq: int = Field(ge=1)
-    attempt: int = Field(ge=1)
-    name: str = Field(max_length=80)
-    arguments: dict[str, object] = Field(default_factory=dict)
+    run_id: Annotated[UUID, classified("internal")]
+    step_seq: Annotated[int, Field(ge=1), classified("internal")]
+    attempt: Annotated[int, Field(ge=1), classified("internal")]
+    name: Annotated[str, Field(max_length=80), classified("internal")]
+    # The model wrote these from client content: treated as Restricted, never logged (ADR-031).
+    arguments: Annotated[dict[str, object], classified("restricted")] = Field(default_factory=dict)
     # An approved_write's grant, issued by P-04 from a person's approval.
-    grant_id: UUID | None = None
+    grant_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class ToolOutcome(BaseModel):
     """What a call answers (C17 v1, frozen). Exactly one of `result` and `code` is set. A refusal
     carries no detail about the refused record: the model reads the code alone."""
 
-    name: str
-    ok: bool
-    code: ToolCode | None = None
-    result: dict[str, object] | None = None
-    records_read: int = Field(default=0, ge=0)
+    name: Annotated[str, classified("internal")]
+    ok: Annotated[bool, classified("internal")]
+    code: Annotated[ToolCode | None, classified("internal")] = None
+    # A read's rows may carry Restricted or TRI content: never logged (ADR-031).
+    result: Annotated[dict[str, object] | None, classified("restricted")] = None
+    records_read: Annotated[int, Field(ge=0), classified("internal")] = 0
     # Restricted or TRI content was read: the harness keeps it out of logs and summaries.
-    restricted: bool = False
-    replayed: bool = False
-    active_ms: int = Field(default=0, ge=0)
+    restricted: Annotated[bool, classified("internal")] = False
+    replayed: Annotated[bool, classified("internal")] = False
+    active_ms: Annotated[int, Field(ge=0), classified("internal")] = 0
 
 
 @dataclass(frozen=True)
@@ -243,7 +247,17 @@ async def _scope_and_rights(
         if client not in pinned:
             return "out_of_scope"
         resources.append(resource)
-    for client in targets.client_ids:
+    # A TRI taxpayer is reached through its client: an entity of a client outside the pinned
+    # scope is out of scope, and the client goes through `authorise` like any other (S32 review).
+    clients = list(targets.client_ids)
+    for subject in targets.tri_subjects:
+        if subject.entity_id is None:
+            continue
+        owner = await client_of_entity(agent.tenant, subject.entity_id)
+        if owner is None:
+            return "not_visible"
+        clients.append(owner)
+    for client in dict.fromkeys(clients):
         if client not in pinned:
             return "out_of_scope"
         resources.append(Resource.client(agent.tenant_id, client))

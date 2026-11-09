@@ -1,0 +1,17 @@
+{
+  "letterhead": "Northwind Robotics 401(k) Plan",
+  "care": "c/o Northwind Robotics, Inc. · Plan Administrator",
+  "date": "October 9, 2026",
+  "addressee": "Brightwater Hale LLP · 311 West Brannock Street · Chicago, Illinois",
+  "intro": "We are providing this letter in connection with your audit of the financial statements of the Northwind Robotics 401(k) Plan as of December 31, 2025 and 2024 and for the year ended December 31, 2025. The audit was performed under ERISA section 103(a)(3)(C), as we elected. We confirm, to the best of our knowledge and belief, the following representations made to you during the audit.",
+  "financial": [
+    "We have fulfilled our responsibilities, as set out in the engagement letter, for the preparation and fair presentation of the financial statements in accordance with US GAAP.",
+    "We elected the ERISA section 103(a)(3)(C) audit and determined that the election is permissible. Harborline Trust Company is a qualified institution, and its certification of investments and related investment information as of and for the year ended December 31, 2025 is prepared and certified by that institution. We are responsible for determining that the certified investment information is appropriately measured, presented and disclosed in accordance with US GAAP.",
+    "The effects of the uncorrected misstatements in the attached summary are immaterial, individually and in aggregate, to the financial statements as a whole.",
+    "All events after December 31, 2025 that require adjustment or disclosure have been adjusted or disclosed."
+  ],
+  "more": "5–11 · 7 more general representations ⌄",
+  "signer": "Dana Kowalski",
+  "title": "HR Director and Plan Administrator",
+  "attachment": "Attachment — Summary of uncorrected misstatements (PAJE-1 35,300 · PAJE-2 (13,050))"
+}

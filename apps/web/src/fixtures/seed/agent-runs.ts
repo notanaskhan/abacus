@@ -6,6 +6,7 @@
 import type {
   AgentRunOut,
   RecordsReadOut,
+  RunHeaderOut,
   RunItemOut,
   RunTraceOut,
   RunViewOut,
@@ -307,7 +308,7 @@ export const LEVELS_4127_941 = [
 ];
 export const MATERIALITY_DECISION_ID = stableId("decision:northwind-py2025-materiality");
 
-function prose(text: string): RunItemOut["blocks"] {
+function prose(text: string): NonNullable<RunItemOut["blocks"]> {
   return { version: 1, parts: [{ kind: "p", segments: [{ kind: "text", text }] }] };
 }
 
@@ -320,7 +321,7 @@ function v2(
   return {
     seq,
     at,
-    kind: kind as RunItemOut["kind"],
+    kind: kind,
     session_kind: kind,
     code: kind,
     outcome: null,
@@ -407,6 +408,22 @@ export const ITEMS_4127_941: RunItemOut[] = [
   v2(11, sep14("9:36:00"), "progress", { code: "level.holding", detail: "Sampling level" }),
 ];
 
+/** WB-02/SHL-13 run header at 9:41: blocked on the engagement partner's decision. */
+export const HEADER_4127: RunHeaderOut = {
+  run_number: 4127,
+  blocked_on: {
+    kind: "decision",
+    id: null,
+    role: "engagement_partner",
+    user_id: null,
+    needs: [],
+  },
+  counters: null,
+  runs_as_name: "Marcus Delaney",
+  trigger_kind: "manual",
+  work_item_ref: null,
+};
+
 export const RUN_4127_E0: E0Run = {
   view: {
     run: RUN_4127,
@@ -414,20 +431,7 @@ export const RUN_4127_E0: E0Run = {
     allowed_actions: CONTENT_ACTIONS,
     projection: "content",
     access: "content",
-    header: {
-      run_number: 4127,
-      blocked_on: {
-        kind: "decision",
-        id: null,
-        role: "engagement_partner",
-        user_id: null,
-        needs: [],
-      },
-      counters: null,
-      runs_as_name: "Marcus Delaney",
-      trigger_kind: "manual",
-      work_item_ref: null,
-    },
+    header: HEADER_4127,
     // SHL-13 frame 3 (P-09-T09): 1 + 5 + 1 + 4 + 3 = 14 workpapers at 9:41; Planning "0 of 5" with
     // "1 blocked · 1 running" (two waiting on inputs, Service Organizations & SOC 1 queued).
     levels: LEVELS_4127_941,

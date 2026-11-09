@@ -33,7 +33,6 @@ from abacus.modules.agents.runs import (
     RunWrite,
     Trace,
     TraceRow,
-    authorised_run,
     export_trace,
     items_for,
     records_read_for,
@@ -128,7 +127,7 @@ class TraceRowOut(BaseModel):
     phase: Annotated[TracePhase | None, classified("internal")] = None
     mark: Annotated[TraceMark | None, classified("internal")] = None
     duration_ms: Annotated[int | None, Field(ge=0), classified("internal")] = None
-    # P-09-T10 (additive): a v2 step row's id, for its detail (`…/trace/steps/{step_id}`).
+    # P-09-T10 (additive): a v2 step row's id, for its detail (the trace step detail route).
     step_id: Annotated[UUID | None, classified("internal")] = None
 
 
@@ -648,7 +647,7 @@ async def agent_run_trace_step_route(
 ) -> TraceStepOut:
     """WB-09 a2 (P-09-T08): 404 while `run_trace.enabled` is off. The run is authorised first, so
     no one learns the flag's state for a run they may not read; content only."""
-    await authorised_run(ctx, run_id)
+    await run_view(ctx, run_id)
     if not await flag_enabled(ctx.tenant, RUN_TRACE_ENABLED):
         raise NotFound(RUN_TRACE_ENABLED.name)
     found = await step_detail(ctx, run_id, step_id, records)

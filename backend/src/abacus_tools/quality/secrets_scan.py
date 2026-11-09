@@ -235,6 +235,18 @@ ALLOW: tuple[tuple[str, str, str], ...] = (
         "K-02-T17: C21 reference sets carry a `key` / `set_key` set code"
         " (us.due_date_rules.ty2025), never a credential",
     ),
+    (
+        "apps/web/src/screens/AUD-2[12]/copy.ts",
+        "SECRET-003",
+        "A-07-T28/T29: an AUD-21 representation's or AUD-22 letter row's `key` names the row"
+        " (form_5500, planning_260), never a credential",
+    ),
+    (
+        "backend/tests/unit/portal/test_r02t11_approvals_service.py",
+        "SECRET-003",
+        "R-02-T11: a client decision's `idempotency_key` is a replay key (key-aje-1), never a"
+        " credential",
+    ),
 )
 DATA_SUFFIXES = frozenset({".csv", ".json", ".yaml", ".yml", ".txt", ".tsv"})
 CONFIG_SUFFIXES = frozenset(
