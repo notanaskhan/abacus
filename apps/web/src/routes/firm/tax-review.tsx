@@ -1,0 +1,123 @@
+import { EmptyState, FlagOffState } from "@abacus/ui";
+import { createRoute, useNavigate, useSearch } from "@tanstack/react-router";
+import type { JSX, ReactNode } from "react";
+import { FeatureGate } from "../../app-core/flags";
+import { PLANNED_VISIBLE } from "../../app-core/planned";
+import { WorkspaceFrame, type WorkspaceTab } from "../../screens/TAX-04/frame";
+import { useParam } from "../params";
+import { appRoute } from "../root";
+import { to } from "../to";
+
+// The return's review workspace (T-04-T12; T-04 §5): new routes in new files, each behind the
+// `tax_returns` entitlement and `tax.review_workspace`; with the flag off every one shows F-05's
+// flag-off state and T-02's screens are unchanged. The sections' bodies are their screens' own
+// (TAX-04 Review from T-04-T13; TAX-06 Issues, TAX-07 Activity, TXI-02 K-1 resolver and TXI-03
+// residency after it); until then a fixture build draws "Not built yet". `?ov=assistant` opens
+// TAX-08's panel over any section (P-10's dock).
+//
+//   /tax-returns/$returnId/review/$section     TAX-04 (prepare preset) / TAX-05 (review preset)
+//   /tax-returns/$returnId/issues              TAX-06
+//   /tax-returns/$returnId/activity            TAX-07
+//   /tax-returns/$returnId/k1-resolver/$activityId   TXI-02
+//   /tax-returns/$returnId/residency           TXI-03
+
+export const REVIEW_FLAG = "tax.review_workspace";
+type WorkspaceSearch = { ov?: "assistant" };
+
+function validateSearch(search: Record<string, unknown>): WorkspaceSearch {
+  return search.ov === "assistant" ? { ov: "assistant" } : {};
+}
+
+function Workspace({
+  tab,
+  title,
+  children,
+}: {
+  tab: WorkspaceTab;
+  title: string;
+  children?: ReactNode;
+}): JSX.Element {
+  const returnId = useParam("returnId");
+  const navigate = useNavigate();
+  const search: WorkspaceSearch = useSearch({ strict: false });
+  const go = (next: WorkspaceTab): void => {
+    if (next === "overview") void navigate(to.TAX02({ returnId }));
+    else if (next === "intake") void navigate(to.TAX03({ returnId }));
+    else if (next === "review")
+      void navigate({ to: "/tax-returns/$returnId/review/$section", params: { returnId, section: "documents" } });
+    else if (next === "issues") void navigate({ to: "/tax-returns/$returnId/issues", params: { returnId } });
+    else void navigate({ to: "/tax-returns/$returnId/activity", params: { returnId } });
+  };
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <FeatureGate entitlement="tax_returns" fallback={<FlagOffState flag="tax_returns" label="Tax Returns" />}>
+        <FeatureGate flag={REVIEW_FLAG} fallback={<FlagOffState flag={REVIEW_FLAG} label="Return review" />}>
+          <WorkspaceFrame
+            returnId={returnId}
+            tab={tab}
+            title={title}
+            onTab={go}
+            onAssistant={() => {
+              void navigate({ to: ".", search: search.ov === "assistant" ? {} : { ov: "assistant" } });
+            }}
+          >
+            {children ?? (PLANNED_VISIBLE ? <EmptyState title="Not built yet" /> : null)}
+          </WorkspaceFrame>
+        </FeatureGate>
+      </FeatureGate>
+    </div>
+  );
+}
+
+export const taxReviewRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/tax-returns/$returnId/review/$section",
+  validateSearch,
+  component: function TaxReviewPage(): JSX.Element {
+    return <Workspace tab="review" title="Review" />;
+  },
+});
+
+export const taxIssuesRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/tax-returns/$returnId/issues",
+  validateSearch,
+  component: function TaxIssuesPage(): JSX.Element {
+    return <Workspace tab="issues" title="Issues" />;
+  },
+});
+
+export const taxActivityRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/tax-returns/$returnId/activity",
+  validateSearch,
+  component: function TaxActivityPage(): JSX.Element {
+    return <Workspace tab="activity" title="Activity" />;
+  },
+});
+
+export const taxK1ResolverRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/tax-returns/$returnId/k1-resolver/$activityId",
+  validateSearch,
+  component: function TaxK1ResolverPage(): JSX.Element {
+    return <Workspace tab="review" title="K-1 treatment" />;
+  },
+});
+
+export const taxResidencyRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/tax-returns/$returnId/residency",
+  validateSearch,
+  component: function TaxResidencyPage(): JSX.Element {
+    return <Workspace tab="review" title="Residency" />;
+  },
+});
+
+export const taxReviewRoutes = [
+  taxReviewRoute,
+  taxIssuesRoute,
+  taxActivityRoute,
+  taxK1ResolverRoute,
+  taxResidencyRoute,
+] as const;
