@@ -45389,6 +45389,19 @@
             ],
             "title": "Kind",
             "type": "string"
+          },
+          "template_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Template Version Id"
           }
         },
         "required": [
@@ -84126,8 +84139,13 @@
         "properties": {
           "approval": {
             "cls": "internal",
-            "enum": [],
-            "title": "DocumentApprovalStatus"
+            "enum": [
+              "unapproved",
+              "approved",
+              "mismatch"
+            ],
+            "title": "Approval",
+            "type": "string"
           },
           "approvals_count": {
             "cls": "internal",
@@ -112846,8 +112864,14 @@
           },
           "assistant": {
             "cls": "internal",
-            "enum": [],
-            "title": "AssistantAvailabilityStatus"
+            "enum": [
+              "available",
+              "ai_unavailable",
+              "consent_required",
+              "agents_off"
+            ],
+            "title": "Assistant",
+            "type": "string"
           },
           "checkpoints_proposed": {
             "cls": "internal",
@@ -131080,7 +131104,7 @@
     },
     "/v1/audits/{work_item_id}/report/documents": {
       "post": {
-        "description": "A draft render through C11 (DRAFT watermark, signature placeholder; byte-identical).",
+        "description": "A draft render through C11 (DRAFT watermark, signature placeholder; byte-identical;\nDEC-3028): the generated document's id is the run to follow.",
         "operationId": "audit_report_document",
         "parameters": [
           {
@@ -131207,16 +131231,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Audit Report Document Route",
@@ -131345,7 +131359,7 @@
     },
     "/v1/audits/{work_item_id}/report/request-decision": {
       "post": {
-        "description": "Raise the `opinion` card for the EP (C3).",
+        "description": "Raise the `opinion` card for the EP (C3; DEC-3028).",
         "operationId": "audit_report_request_decision",
         "parameters": [
           {
@@ -131461,16 +131475,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Audit Report Request Decision Route",

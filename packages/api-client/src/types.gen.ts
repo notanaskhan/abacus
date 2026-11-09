@@ -21120,6 +21120,10 @@ export type GovernanceCreateIn = {
      * Kind
      */
     kind: 'planning_260' | 'completion_260' | 'sd_mw_265' | 'reportable_703' | 'management_letter';
+    /**
+     * Template Version Id
+     */
+    template_version_id?: string | null;
 };
 
 /**
@@ -39554,9 +39558,9 @@ export type ReviewChecklistPayload = {
  */
 export type ReviewDocumentOut = {
     /**
-     * DocumentApprovalStatus
+     * Approval
      */
-    approval: never;
+    approval: 'unapproved' | 'approved' | 'mismatch';
     /**
      * Approvals Count
      */
@@ -53011,9 +53015,9 @@ export type WorkspaceSummaryOut = {
      */
     allowed_actions: Array<'document.approve' | 'tax_return.request_approval' | 'tax_return.draft_run' | 'k1_treatment.resolve' | 'k1_treatment.approve' | 'k1_treatment.override' | 'residency.request_proposal' | 'residency.confirm' | 'issue.explain'>;
     /**
-     * AssistantAvailabilityStatus
+     * Assistant
      */
-    assistant: never;
+    assistant: 'available' | 'ai_unavailable' | 'consent_required' | 'agents_off';
     /**
      * Checkpoints Proposed
      */
@@ -61375,10 +61379,6 @@ export type AuditReportDocumentErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AuditReportDocumentError = AuditReportDocumentErrors[keyof AuditReportDocumentErrors];
@@ -61491,10 +61491,6 @@ export type AuditReportRequestDecisionErrors = {
      * Invalid request
      */
     422: ValidationErrorOut;
-    /**
-     * Contract stub: not implemented yet
-     */
-    501: ErrorOut;
 };
 
 export type AuditReportRequestDecisionError = AuditReportRequestDecisionErrors[keyof AuditReportRequestDecisionErrors];

@@ -20,8 +20,6 @@ from fastapi import Depends, Query
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._statuses import (
-    AssistantAvailabilityStatus,
-    DocumentApprovalStatus,
     K1ActivityStatus,
     K1TreatmentStatus,
     ResidencyDeterminationStatus,
@@ -39,6 +37,10 @@ Money = Annotated[Decimal, Field(max_digits=20, decimal_places=2), Tri]
 # An optional figure keeps its tag: Optional[Money] would drop it at the field (ADR-031).
 MaybeMoney = Annotated[Decimal | None, Field(max_digits=20, decimal_places=2), Tri]
 ApprovalLevel = Literal["preparer", "detail", "manager"]
+# Derived codes, never stored, so `_statuses` generates them empty (as `due_risk` on HOME-02): the
+# contract types them from the vocabulary's codes (`document_approval`, `assistant_availability`).
+DocumentApproval = Literal["unapproved", "approved", "mismatch"]
+AssistantAvailability = Literal["available", "ai_unavailable", "consent_required", "agents_off"]
 WorkspaceAction = Literal[
     "document.approve",
     "tax_return.request_approval",
@@ -78,7 +80,7 @@ class WorkspaceSummaryOut(BaseModel):
     issues_open: Annotated[int, Field(ge=0), Internal]
     checkpoints_proposed: Annotated[int, Field(ge=0), Internal] = 0
     k1_dependency: Annotated[K1ActivityStatus | None, Internal] = None
-    assistant: Annotated[AssistantAvailabilityStatus, Internal]
+    assistant: Annotated[AssistantAvailability, Internal]
     allowed_actions: Annotated[list[WorkspaceAction], Internal]
 
 
@@ -89,7 +91,7 @@ class ReviewDocumentOut(BaseModel):
     title: Annotated[str, Confidential]
     category: Annotated[str, Internal]
     sub_head: Annotated[str | None, Internal] = None
-    approval: Annotated[DocumentApprovalStatus, Internal]
+    approval: Annotated[DocumentApproval, Internal]
     approvals_count: Annotated[int, Field(ge=0), Internal] = 0  # the "✓ n" micro-pill
     flagged: Annotated[bool, Internal] = False
     mismatch_field_key: Annotated[str | None, Internal] = None

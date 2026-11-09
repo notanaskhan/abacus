@@ -3,8 +3,13 @@
 // samuel-ito (manager reviewer); clocks Wed Aug 26, 2026 10:15 AM to Sat Sep 19. Figures verbatim
 // from the T-04 epic and the screen contracts; footed in tax-workspace.foot.test.ts. Synthetic only.
 //
-// Shapes mirror backend `tax/workspace_contract.py` (RW-1, WS-1); they switch to the generated
-// client's types once `make generate` publishes the stubs (end of S32).
+// Shapes are the generated client's RW-1 and WS-1 types (`tax/workspace_contract.py`).
+import type {
+  K1TreatmentOut,
+  ReturnResidencyOut,
+  ReviewDocumentOut,
+  WorkspaceSummaryOut,
+} from "@abacus/api-client";
 import { stableId } from "./prng";
 
 export const PERSONAS = { kevin: "kevin-osei", samuel: "samuel-ito" } as const;
@@ -25,16 +30,7 @@ export const IDS = {
 } as const;
 
 /** TAX-04 a → b: Review 36 → 35 at Kevin's (preparer) level; 36 documents, 7 issues raised. */
-export function workspace(state: "a" | "b" | "c" | "e"): {
-  return_id: string;
-  review_count: number;
-  viewer_level: "preparer" | "detail" | "manager";
-  issues_open: number;
-  checkpoints_proposed: number;
-  k1_dependency: "draft_pre_release" | "released";
-  assistant: "available";
-  allowed_actions: string[];
-} {
+export function workspace(state: "a" | "b" | "c" | "e"): WorkspaceSummaryOut {
   return {
     return_id: FELD_RETURN_ID,
     review_count: state === "b" ? 35 : state === "e" ? 0 : 36,
@@ -48,7 +44,7 @@ export function workspace(state: "a" | "b" | "c" | "e"): {
 }
 
 /** TAX-04's two documents the artboards draw (the rest of the 36 are the seed's rows). */
-export const REVIEW_TREE = [
+export const REVIEW_TREE: ReviewDocumentOut[] = [
   {
     evidence_version_id: IDS.halvard1099,
     title: "Halvard Securities 2025 Consolidated 1099",
@@ -94,7 +90,7 @@ export const FIGURES = {
 } as const;
 
 /** TXI-02 a: seven treatments awaiting one approval; treatment 8 Approved · SI 9:31. */
-export const TREATMENTS = Array.from({ length: 8 }, (_, i) => ({
+export const TREATMENTS: K1TreatmentOut[] = Array.from({ length: 8 }, (_, i) => ({
   id: stableId(`k1-treatment:feld-ridgeline-${String(i + 1)}`),
   line: i === 7 ? "Box 20Z" : `Line ${String(i + 1)}`,
   treatment: i === 3 ? "Passive" : "Default",
@@ -105,7 +101,7 @@ export const TREATMENTS = Array.from({ length: 8 }, (_, i) => ({
 }));
 
 /** TXI-03 a (Review point) and b (Confirmed by Samuel Ito · Sep 15, 4:55 PM). */
-export function residency(state: "a" | "b") {
+export function residency(state: "a" | "b"): ReturnResidencyOut {
   return {
     status: state === "b" ? "confirmed" : "review_point",
     facts: ["150 NYC days", "Rhinebeck main home"],
