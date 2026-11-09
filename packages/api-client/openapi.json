@@ -4189,6 +4189,58 @@
         "title": "AjeThresholdsPayload",
         "type": "object"
       },
+      "AllocationRowOut": {
+        "properties": {
+          "credits": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Credits"
+          },
+          "derivation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Derivation"
+          },
+          "income": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Income"
+          },
+          "jurisdiction": {
+            "cls": "internal",
+            "title": "Jurisdiction",
+            "type": "string"
+          }
+        },
+        "required": [
+          "jurisdiction"
+        ],
+        "title": "AllocationRowOut",
+        "type": "object"
+      },
       "AlsoRequiredOut": {
         "properties": {
           "key": {
@@ -26876,6 +26928,112 @@
         "title": "DnsRecordOut",
         "type": "object"
       },
+      "DocumentApprovalIn": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "level": {
+            "cls": "internal",
+            "enum": [
+              "preparer",
+              "detail",
+              "manager"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "seen_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Seen Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "evidence_version_id",
+          "level",
+          "seen_version"
+        ],
+        "title": "DocumentApprovalIn",
+        "type": "object"
+      },
+      "DocumentApprovalOut": {
+        "properties": {
+          "approved_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Approved At",
+            "type": "string"
+          },
+          "approved_by_name": {
+            "cls": "confidential",
+            "title": "Approved By Name",
+            "type": "string"
+          },
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "level": {
+            "cls": "internal",
+            "enum": [
+              "preparer",
+              "detail",
+              "manager"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "reversed": {
+            "cls": "internal",
+            "default": false,
+            "title": "Reversed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "evidence_version_id",
+          "level",
+          "approved_by_name",
+          "approved_at"
+        ],
+        "title": "DocumentApprovalOut",
+        "type": "object"
+      },
+      "DocumentApprovalReverseIn": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Reason"
+          }
+        },
+        "title": "DocumentApprovalReverseIn",
+        "type": "object"
+      },
       "DocumentConfidencePayload-Input": {
         "additionalProperties": false,
         "description": "`auto_accept_enabled` stays false while the policy principal is dormant (P-08).",
@@ -38581,6 +38739,81 @@
         "title": "FieldFlagOut",
         "type": "object"
       },
+      "FieldLinkOut": {
+        "description": "`match_id` to region to field to line for MatchProvider: identifiers and locators only.",
+        "properties": {
+          "bbox": {
+            "cls": "internal",
+            "items": {
+              "type": "number"
+            },
+            "maxItems": 4,
+            "minItems": 4,
+            "title": "Bbox",
+            "type": "array"
+          },
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "field_key": {
+            "cls": "internal",
+            "title": "Field Key",
+            "type": "string"
+          },
+          "line_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Line Key"
+          },
+          "match_id": {
+            "cls": "internal",
+            "title": "Match Id",
+            "type": "string"
+          },
+          "page": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "match_id",
+          "evidence_version_id",
+          "page",
+          "bbox",
+          "field_key"
+        ],
+        "title": "FieldLinkOut",
+        "type": "object"
+      },
+      "FieldLinksOut": {
+        "properties": {
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/FieldLinkOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "FieldLinksOut",
+        "type": "object"
+      },
       "FieldOut": {
         "description": "One placed field, in PDF points.",
         "properties": {
@@ -40231,6 +40464,44 @@
           "approved_at"
         ],
         "title": "FinalApprovalOut",
+        "type": "object"
+      },
+      "FinalApprovalRequestIn": {
+        "additionalProperties": false,
+        "properties": {
+          "assignee_user_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Assignee User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "assignee_user_id"
+        ],
+        "title": "FinalApprovalRequestIn",
+        "type": "object"
+      },
+      "FinalApprovalRequestOut": {
+        "properties": {
+          "gate_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Gate Id",
+            "type": "string"
+          },
+          "requested_at": {
+            "cls": "internal",
+            "format": "date-time",
+            "title": "Requested At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "gate_id",
+          "requested_at"
+        ],
+        "title": "FinalApprovalRequestOut",
         "type": "object"
       },
       "FindingDetailOut": {
@@ -54313,6 +54584,93 @@
         "title": "JurisdictionLineOut",
         "type": "object"
       },
+      "K1ActivitiesOut": {
+        "properties": {
+          "items": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/K1ActivityOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "K1ActivitiesOut",
+        "type": "object"
+      },
+      "K1ActivityOut": {
+        "properties": {
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "pending_proposal_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Pending Proposal Id"
+          },
+          "released_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Released On"
+          },
+          "status": {
+            "$ref": "#/components/schemas/K1ActivityStatus",
+            "cls": "internal"
+          },
+          "treatments": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/K1TreatmentOut"
+            },
+            "title": "Treatments",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "status",
+          "treatments"
+        ],
+        "title": "K1ActivityOut",
+        "type": "object"
+      },
+      "K1ActivityStatus": {
+        "enum": [
+          "draft_pre_release",
+          "released",
+          "superseded"
+        ],
+        "title": "K1ActivityStatus",
+        "type": "string"
+      },
       "K1BoxLineOut": {
         "properties": {
           "amount": {
@@ -54705,6 +55063,120 @@
         ],
         "title": "K1HandoffStatus",
         "type": "string"
+      },
+      "K1MatrixOut": {
+        "description": "Sch E - K-1: CY per K-1 activity and the PY column (TAX-05 a).",
+        "properties": {
+          "prior_year": {
+            "cls": "internal",
+            "title": "Prior Year",
+            "type": "integer"
+          },
+          "rows": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/K1MatrixRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "tax_year": {
+            "cls": "internal",
+            "title": "Tax Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "rows",
+          "tax_year",
+          "prior_year"
+        ],
+        "title": "K1MatrixOut",
+        "type": "object"
+      },
+      "K1MatrixRowOut": {
+        "properties": {
+          "activity_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Activity Id",
+            "type": "string"
+          },
+          "current_year": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Current Year"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "prior_year": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Prior Year"
+          },
+          "status": {
+            "$ref": "#/components/schemas/K1ActivityStatus",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "activity_id",
+          "label",
+          "status"
+        ],
+        "title": "K1MatrixRowOut",
+        "type": "object"
+      },
+      "K1OverrideIn": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "cls": "confidential",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "seen_version": {
+            "cls": "internal",
+            "minimum": 1.0,
+            "title": "Seen Version",
+            "type": "integer"
+          },
+          "value": {
+            "cls": "internal",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "reason",
+          "seen_version"
+        ],
+        "title": "K1OverrideIn",
+        "type": "object"
       },
       "K1PackageDetailOut": {
         "properties": {
@@ -55278,6 +55750,77 @@
         ],
         "title": "K1ShareOut",
         "type": "object"
+      },
+      "K1TreatmentOut": {
+        "properties": {
+          "changed_vs_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Changed Vs Year"
+          },
+          "decided_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Decided By Name"
+          },
+          "id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "line": {
+            "cls": "internal",
+            "title": "Line",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/K1TreatmentStatus",
+            "cls": "internal"
+          },
+          "treatment": {
+            "cls": "internal",
+            "title": "Treatment",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "line",
+          "treatment",
+          "status",
+          "version"
+        ],
+        "title": "K1TreatmentOut",
+        "type": "object"
+      },
+      "K1TreatmentStatus": {
+        "enum": [
+          "proposed",
+          "approved",
+          "overridden"
+        ],
+        "title": "K1TreatmentStatus",
+        "type": "string"
       },
       "K1ViewerManifestOut": {
         "description": "What SHL-08 opens for one document (C4).",
@@ -56187,6 +56730,54 @@
         "title": "LeadRowOut",
         "type": "object"
       },
+      "LeadsheetLineOut": {
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Amount"
+          },
+          "contributing_field_keys": {
+            "cls": "internal",
+            "items": {
+              "type": "string"
+            },
+            "title": "Contributing Field Keys",
+            "type": "array"
+          },
+          "label": {
+            "cls": "internal",
+            "title": "Label",
+            "type": "string"
+          },
+          "line_key": {
+            "cls": "internal",
+            "title": "Line Key",
+            "type": "string"
+          },
+          "mismatch": {
+            "cls": "internal",
+            "default": false,
+            "title": "Mismatch",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "line_key",
+          "label",
+          "contributing_field_keys"
+        ],
+        "title": "LeadsheetLineOut",
+        "type": "object"
+      },
       "LeadsheetOut": {
         "properties": {
           "area": {
@@ -56257,6 +56848,23 @@
           "change_pct"
         ],
         "title": "LeadsheetOut",
+        "type": "object"
+      },
+      "LeadsheetsOut": {
+        "properties": {
+          "items": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/ReturnLeadsheetOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "LeadsheetsOut",
         "type": "object"
       },
       "LedgerPullIn": {
@@ -81867,6 +82475,41 @@
         "title": "RequesterOut",
         "type": "object"
       },
+      "ResidencyDeterminationStatus": {
+        "enum": [
+          "review_point",
+          "confirmed",
+          "action_required"
+        ],
+        "title": "ResidencyDeterminationStatus",
+        "type": "string"
+      },
+      "ResidencyOptionOut": {
+        "properties": {
+          "key": {
+            "cls": "internal",
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "cls": "confidential",
+            "title": "Label",
+            "type": "string"
+          },
+          "recommended": {
+            "cls": "internal",
+            "default": false,
+            "title": "Recommended",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "label"
+        ],
+        "title": "ResidencyOptionOut",
+        "type": "object"
+      },
       "ResidencyOut": {
         "description": "ADM-06 fieldset E (AC-26): from `firms.region` and settings, every row locked.",
         "properties": {
@@ -83262,6 +83905,117 @@
         "title": "ReturnAsFiledIn",
         "type": "object"
       },
+      "ReturnFieldViewStatus": {
+        "enum": [
+          "imported",
+          "edited",
+          "proposed",
+          "recomputed",
+          "signed_off"
+        ],
+        "title": "ReturnFieldViewStatus",
+        "type": "string"
+      },
+      "ReturnLeadsheetOut": {
+        "properties": {
+          "form": {
+            "cls": "internal",
+            "title": "Form",
+            "type": "string"
+          },
+          "lines": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/LeadsheetLineOut"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "title": {
+            "cls": "internal",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "form",
+          "title",
+          "lines"
+        ],
+        "title": "ReturnLeadsheetOut",
+        "type": "object"
+      },
+      "ReturnResidencyOut": {
+        "properties": {
+          "confirmed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Confirmed At"
+          },
+          "confirmed_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "confidential",
+            "title": "Confirmed By Name"
+          },
+          "facts": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Facts",
+            "type": "array"
+          },
+          "options": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/ResidencyOptionOut"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ResidencyDeterminationStatus",
+            "cls": "internal"
+          }
+        },
+        "required": [
+          "status",
+          "facts",
+          "options"
+        ],
+        "title": "ReturnResidencyOut",
+        "type": "object"
+      },
+      "ReturnRunAcceptedOut": {
+        "properties": {
+          "agent_run_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Agent Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "agent_run_id"
+        ],
+        "title": "ReturnRunAcceptedOut",
+        "type": "object"
+      },
       "ReturnStatus": {
         "enum": [
           "not_started",
@@ -83366,6 +84120,82 @@
           "items"
         ],
         "title": "ReviewChecklistPayload",
+        "type": "object"
+      },
+      "ReviewDocumentOut": {
+        "properties": {
+          "approval": {
+            "cls": "internal",
+            "enum": [],
+            "title": "DocumentApprovalStatus"
+          },
+          "approvals_count": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Approvals Count",
+            "type": "integer"
+          },
+          "category": {
+            "cls": "internal",
+            "title": "Category",
+            "type": "string"
+          },
+          "evidence_version_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Evidence Version Id",
+            "type": "string"
+          },
+          "flagged": {
+            "cls": "internal",
+            "default": false,
+            "title": "Flagged",
+            "type": "boolean"
+          },
+          "mismatch_field_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Mismatch Field Key"
+          },
+          "sub_head": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Sub Head"
+          },
+          "title": {
+            "cls": "confidential",
+            "title": "Title",
+            "type": "string"
+          },
+          "version": {
+            "cls": "internal",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "evidence_version_id",
+          "title",
+          "category",
+          "approval",
+          "version"
+        ],
+        "title": "ReviewDocumentOut",
         "type": "object"
       },
       "ReviewFlagCountOut": {
@@ -84084,6 +84914,37 @@
           "second_partner_review"
         ],
         "title": "ReviewTier",
+        "type": "object"
+      },
+      "ReviewTreeOut": {
+        "properties": {
+          "items": {
+            "cls": "confidential",
+            "items": {
+              "$ref": "#/components/schemas/ReviewDocumentOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "review_count": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Review Count",
+            "type": "integer"
+          },
+          "total": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "review_count"
+        ],
+        "title": "ReviewTreeOut",
         "type": "object"
       },
       "RiskBody": {
@@ -86524,7 +87385,21 @@
               "tool_card",
               "narration",
               "decision",
-              "failure"
+              "failure",
+              "user",
+              "line",
+              "block",
+              "tool",
+              "progress",
+              "question",
+              "answer",
+              "error",
+              "plan",
+              "approval",
+              "decision_ref",
+              "artifact",
+              "run_card",
+              "notice"
             ],
             "title": "Kind",
             "type": "string"
@@ -97473,6 +98348,23 @@
         "title": "StartOut",
         "type": "object"
       },
+      "StateAllocationOut": {
+        "properties": {
+          "rows": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/AllocationRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "rows"
+        ],
+        "title": "StateAllocationOut",
+        "type": "object"
+      },
       "StatementDecisionsBody": {
         "additionalProperties": false,
         "properties": {
@@ -106471,7 +107363,9 @@
               "attempt",
               "output",
               "decision",
-              "finish"
+              "finish",
+              "plan",
+              "step"
             ],
             "title": "Kind",
             "type": "string"
@@ -106535,6 +107429,19 @@
             ],
             "title": "State",
             "type": "string"
+          },
+          "step_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Step Id"
           },
           "title": {
             "cls": "internal",
@@ -111688,6 +112595,324 @@
         "title": "WorkpaperVersionOut",
         "type": "object"
       },
+      "WorksheetFieldOut": {
+        "properties": {
+          "citations": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Citations",
+            "type": "integer"
+          },
+          "engine_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Engine Label"
+          },
+          "field_key": {
+            "cls": "internal",
+            "title": "Field Key",
+            "type": "string"
+          },
+          "label": {
+            "cls": "internal",
+            "title": "Label",
+            "type": "string"
+          },
+          "provenance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Provenance"
+          },
+          "seen_seq": {
+            "cls": "internal",
+            "title": "Seen Seq",
+            "type": "integer"
+          },
+          "signed_off_by": {
+            "cls": "confidential",
+            "items": {
+              "type": "string"
+            },
+            "title": "Signed Off By",
+            "type": "array"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ReturnFieldViewStatus",
+            "cls": "internal"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,18}|(?=[\\d.]{1,21}0*$)\\d{0,18}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "restricted",
+            "title": "Value"
+          }
+        },
+        "required": [
+          "field_key",
+          "label",
+          "state",
+          "seen_seq"
+        ],
+        "title": "WorksheetFieldOut",
+        "type": "object"
+      },
+      "WorksheetFieldsOut": {
+        "properties": {
+          "sections": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/WorksheetSectionOut"
+            },
+            "title": "Sections",
+            "type": "array"
+          },
+          "worksheet_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Worksheet Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "worksheet_id",
+          "sections"
+        ],
+        "title": "WorksheetFieldsOut",
+        "type": "object"
+      },
+      "WorksheetNodeOut": {
+        "properties": {
+          "edited": {
+            "cls": "internal",
+            "default": false,
+            "title": "Edited",
+            "type": "boolean"
+          },
+          "group": {
+            "cls": "internal",
+            "title": "Group",
+            "type": "string"
+          },
+          "new_this_year": {
+            "cls": "internal",
+            "default": false,
+            "title": "New This Year",
+            "type": "boolean"
+          },
+          "sub_head": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Sub Head"
+          },
+          "title": {
+            "cls": "internal",
+            "title": "Title",
+            "type": "string"
+          },
+          "tsj": {
+            "anyOf": [
+              {
+                "enum": [
+                  "T",
+                  "S",
+                  "J"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Tsj"
+          },
+          "worksheet_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Worksheet Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "worksheet_id",
+          "title",
+          "group"
+        ],
+        "title": "WorksheetNodeOut",
+        "type": "object"
+      },
+      "WorksheetSectionOut": {
+        "properties": {
+          "fields": {
+            "cls": "restricted",
+            "items": {
+              "$ref": "#/components/schemas/WorksheetFieldOut"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "key": {
+            "cls": "internal",
+            "title": "Key",
+            "type": "string"
+          },
+          "signed_off": {
+            "cls": "internal",
+            "default": false,
+            "title": "Signed Off",
+            "type": "boolean"
+          },
+          "title": {
+            "cls": "internal",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "title",
+          "fields"
+        ],
+        "title": "WorksheetSectionOut",
+        "type": "object"
+      },
+      "WorksheetsOut": {
+        "properties": {
+          "items": {
+            "cls": "internal",
+            "items": {
+              "$ref": "#/components/schemas/WorksheetNodeOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "WorksheetsOut",
+        "type": "object"
+      },
+      "WorkspaceSummaryOut": {
+        "description": "The tabs' counts at the viewer's level, the K-1 dependency chip and availability.",
+        "properties": {
+          "allowed_actions": {
+            "cls": "internal",
+            "items": {
+              "enum": [
+                "document.approve",
+                "tax_return.request_approval",
+                "tax_return.draft_run",
+                "k1_treatment.resolve",
+                "k1_treatment.approve",
+                "k1_treatment.override",
+                "residency.request_proposal",
+                "residency.confirm",
+                "issue.explain"
+              ],
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "assistant": {
+            "cls": "internal",
+            "enum": [],
+            "title": "AssistantAvailabilityStatus"
+          },
+          "checkpoints_proposed": {
+            "cls": "internal",
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Checkpoints Proposed",
+            "type": "integer"
+          },
+          "issues_open": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Issues Open",
+            "type": "integer"
+          },
+          "k1_dependency": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/K1ActivityStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal"
+          },
+          "return_id": {
+            "cls": "internal",
+            "format": "uuid",
+            "title": "Return Id",
+            "type": "string"
+          },
+          "review_count": {
+            "cls": "internal",
+            "minimum": 0.0,
+            "title": "Review Count",
+            "type": "integer"
+          },
+          "viewer_level": {
+            "anyOf": [
+              {
+                "enum": [
+                  "preparer",
+                  "detail",
+                  "manager"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "cls": "internal",
+            "title": "Viewer Level"
+          }
+        },
+        "required": [
+          "return_id",
+          "review_count",
+          "issues_open",
+          "assistant",
+          "allowed_actions"
+        ],
+        "title": "WorkspaceSummaryOut",
+        "type": "object"
+      },
       "YourPartOut": {
         "properties": {
           "blocks_fieldwork": {
@@ -115757,7 +116982,7 @@
     },
     "/v1/agent-runs/{run_id}/trace/steps/{step_id}": {
       "get": {
-        "description": "C6 v1.1 stub (P-09-T01): 404 while `run_trace.enabled` is off, 501 until P-09-T08. The\nrun is authorised first, so no one learns the flag's state for a run they may not read.",
+        "description": "WB-09 a2 (P-09-T08): 404 while `run_trace.enabled` is off. The run is authorised first, so\nno one learns the flag's state for a run they may not read; content only.",
         "operationId": "agent_run_trace_step",
         "parameters": [
           {
@@ -127058,7 +128283,7 @@
     },
     "/v1/audits/{work_item_id}/governance-communications/{communication_id}/compose": {
       "post": {
-        "description": "Compose or regenerate; a section-level merge keeps human edits.",
+        "description": "Compose or regenerate; a section-level merge keeps human edits. Composition is code over\nthe engagement's facts, so it finishes in the request; the 202 names no background run.",
         "operationId": "governance_compose",
         "parameters": [
           {
@@ -130373,6 +131598,7 @@
     },
     "/v1/audits/{work_item_id}/report/versions/{from_version}/diff/{to_version}": {
       "get": {
+        "description": "Blocks switched on and off between two versions; C11 compare words the paper later.",
         "operationId": "audit_report_diff",
         "parameters": [
           {
@@ -233411,16 +234637,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Approvals Route",
@@ -233559,16 +234775,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Decide Package Route",
@@ -233580,7 +234786,7 @@
     },
     "/v1/portal/approvals/proposed-entries/{entry_id}/decide": {
       "post": {
-        "description": "POR-08 e: `adjustments.api.apply_client_decision`. Provider wired with R-02-T07.",
+        "description": "POR-08 e: through C18's service to `adjustments.api.apply_client_decision`.",
         "operationId": "decide_proposed_entry",
         "parameters": [
           {
@@ -233707,16 +234913,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Decide Proposed Entry Route",
@@ -233728,7 +234924,7 @@
     },
     "/v1/portal/approvals/uncorrected-misstatements/{item_id}/acknowledge": {
       "post": {
-        "description": "POR-08 e2: one insert-only, human-only row per snapshot and contact (AC-12).",
+        "description": "POR-08 e2: one insert-only, human-only row per snapshot and contact (AC-12); 409 until\nassurance registers the kind (R-02-T15).",
         "operationId": "acknowledge_uncorrected",
         "parameters": [
           {
@@ -233855,16 +235051,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Acknowledge Uncorrected Route",
@@ -233991,16 +235177,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Approval Route",
@@ -239717,7 +240893,7 @@
     },
     "/v1/portal/governance/communications/{communication_id}/acknowledge": {
       "post": {
-        "description": "`assurance.api.record_acknowledgement`: one row per member and version.",
+        "description": "`assurance.api.record_acknowledgement`: one row per member and version; a second\nacknowledgement answers the first (idempotent by the row, whatever the key).",
         "operationId": "acknowledge_communication",
         "parameters": [
           {
@@ -240343,6 +241519,7 @@
     },
     "/v1/portal/governance/rooms/{room_id}/communications": {
       "get": {
+        "description": "POR-15 a: the room's letters with the reader's state and the committee (R-02-T12).",
         "operationId": "list_room_communications",
         "parameters": [
           {
@@ -259842,6 +261019,143 @@
         "x-abacus-action": "tax_return.assign"
       }
     },
+    "/v1/tax/document-approvals/{approval_id}/reverse": {
+      "post": {
+        "description": "Unapprove as a reversing row, own level only; nothing is deleted.",
+        "operationId": "document_approval_reverse",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "approval_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Approval Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentApprovalReverseIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentApprovalOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Document Approval Reverse Route",
+        "tags": [
+          "tax workspace"
+        ],
+        "x-abacus-action": "document.approve"
+      }
+    },
     "/v1/tax/estimates": {
       "get": {
         "description": "Schedules by the quarter's installment; `counts` {due, paid, scheduled,\nconfirmation_requested, not_required} from visible rows; no `quarter`: the next one due.",
@@ -261965,6 +263279,385 @@
         "x-abacus-action": "filing_extension.prepare"
       }
     },
+    "/v1/tax/k1-activities/{activity_id}": {
+      "get": {
+        "operationId": "k1_activity",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "activity_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Activity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/K1ActivityOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "K1 Activity Route",
+        "tags": [
+          "tax workspace"
+        ],
+        "x-abacus-action": "k1_treatment.read"
+      }
+    },
+    "/v1/tax/k1-activities/{activity_id}/treatment-runs": {
+      "post": {
+        "operationId": "k1_treatment_run",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "activity_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Activity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReturnRunAcceptedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "K1 Treatment Run Route",
+        "tags": [
+          "tax workspace"
+        ],
+        "x-abacus-action": "k1_treatment.resolve"
+      }
+    },
+    "/v1/tax/k1-treatments/{treatment_id}/override": {
+      "post": {
+        "description": "422 `reason_required` when the reason is blank (the model enforces 1+ characters).",
+        "operationId": "k1_override",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "treatment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Treatment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/K1OverrideIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/K1TreatmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "K1 Override Route",
+        "tags": [
+          "tax workspace"
+        ],
+        "x-abacus-action": "k1_treatment.override"
+      }
+    },
     "/v1/tax/payments": {
       "get": {
         "description": "DF-08's union, read only: extension payments, PTET and paid installments.",
@@ -262098,6 +263791,1792 @@
           "tax"
         ],
         "x-abacus-action": "filing_extension.read"
+      }
+    },
+    "/v1/tax/returns/{return_id}/document-approvals": {
+      "post": {
+        "description": "409 `mismatch` (`facts.field_key`), 403 `level_not_permitted`, 409 `version_superseded`.",
+        "operationId": "document_approval",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentApprovalIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentApprovalOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Document Approval Route",
+        "tags": [
+          "tax workspace"
+        ],
+        "x-abacus-action": "document.approve"
+      }
+    },
+    "/v1/tax/returns/{return_id}/draft-runs": {
+      "post": {
+        "operationId": "draft_run",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReturnRunAcceptedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Draft Run Route",
+        "tags": [
+          "tax workspace"
+        ],
+        "x-abacus-action": "tax_return.draft_run"
+      }
+    },
+    "/v1/tax/returns/{return_id}/final-approval-requests": {
+      "post": {
+        "description": "409 `{blockers: draft_k1 | blocking_issues | unapproved_documents}`.",
+        "operationId": "final_approval_request",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinalApprovalRequestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinalApprovalRequestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Final Approval Request Route",
+        "tags": [
+          "tax workspace"
+        ],
+        "x-abacus-action": "tax_return.request_approval"
+      }
+    },
+    "/v1/tax/returns/{return_id}/k1-activities": {
+      "get": {
+        "operationId": "k1_activities",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/K1ActivitiesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "K1 Activities Route",
+        "tags": [
+          "tax workspace"
+        ],
+        "x-abacus-action": "k1_treatment.read"
+      }
+    },
+    "/v1/tax/returns/{return_id}/leadsheets": {
+      "get": {
+        "operationId": "return_leadsheets",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "form",
+            "required": false,
+            "schema": {
+              "default": "1040",
+              "maxLength": 20,
+              "title": "Form",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeadsheetsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Return Leadsheets Route",
+        "tags": [
+          "tax workspace"
+        ],
+        "x-abacus-action": "return_worksheet.read"
+      }
+    },
+    "/v1/tax/returns/{return_id}/links": {
+      "get": {
+        "operationId": "field_links",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "evidence_version_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Evidence Version Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldLinksOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Field Links Route",
+        "tags": [
+          "tax workspace"
+        ],
+        "x-abacus-action": "return_worksheet.read"
+      }
+    },
+    "/v1/tax/returns/{return_id}/matrices/sch-e-k1": {
+      "get": {
+        "operationId": "sch_e_k1_matrix",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/K1MatrixOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Sch E K1 Matrix Route",
+        "tags": [
+          "tax workspace"
+        ],
+        "x-abacus-action": "return_worksheet.read"
+      }
+    },
+    "/v1/tax/returns/{return_id}/residency": {
+      "get": {
+        "operationId": "residency",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReturnResidencyOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Residency Route",
+        "tags": [
+          "tax workspace"
+        ],
+        "x-abacus-action": "residency.read"
+      }
+    },
+    "/v1/tax/returns/{return_id}/residency/proposal-runs": {
+      "post": {
+        "operationId": "residency_proposal",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReturnRunAcceptedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Residency Proposal Route",
+        "tags": [
+          "tax workspace"
+        ],
+        "x-abacus-action": "residency.request_proposal"
+      }
+    },
+    "/v1/tax/returns/{return_id}/review-tree": {
+      "get": {
+        "operationId": "review_tree",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "level",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "preparer",
+                    "detail",
+                    "manager"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Level"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 120,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 60,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewTreeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Review Tree Route",
+        "tags": [
+          "tax workspace"
+        ],
+        "x-abacus-action": "tax_return.read"
+      }
+    },
+    "/v1/tax/returns/{return_id}/state-allocation": {
+      "get": {
+        "operationId": "state_allocation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StateAllocationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "State Allocation Route",
+        "tags": [
+          "tax workspace"
+        ],
+        "x-abacus-action": "residency.read"
+      }
+    },
+    "/v1/tax/returns/{return_id}/worksheets": {
+      "get": {
+        "operationId": "worksheets",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorksheetsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Worksheets Route",
+        "tags": [
+          "tax workspace"
+        ],
+        "x-abacus-action": "return_worksheet.read"
+      }
+    },
+    "/v1/tax/returns/{return_id}/workspace": {
+      "get": {
+        "operationId": "workspace",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "return_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Return Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceSummaryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Workspace Route",
+        "tags": [
+          "tax workspace"
+        ],
+        "x-abacus-action": "tax_return.read"
+      }
+    },
+    "/v1/tax/worksheets/{worksheet_id}/fields": {
+      "get": {
+        "operationId": "worksheet_fields",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "worksheet_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Worksheet Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 120,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorksheetFieldsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Contract stub: not implemented yet"
+          }
+        },
+        "summary": "Worksheet Fields Route",
+        "tags": [
+          "tax workspace"
+        ],
+        "x-abacus-action": "return_worksheet.read"
       }
     },
     "/v1/telemetry/errors": {

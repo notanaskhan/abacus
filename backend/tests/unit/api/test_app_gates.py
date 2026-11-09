@@ -93,6 +93,9 @@ NOT_CREATING = {
     # A-06-T25 (#1375): publishing a note template's version acts on it, so 200.
     "/v1/methodology/statement-note-templates/{template_id}/versions/{version}/publish",
     # S29: acts on an existing record, so 200.
+    # T-04-T05 (RW-1 stub): reversing an approval and overriding a treatment act on them, so 200.
+    "/v1/tax/document-approvals/{approval_id}/reverse",
+    "/v1/tax/k1-treatments/{treatment_id}/override",
     "/v1/agent-runs/{run_id}/plan/approve",
     "/v1/agent-runs/{run_id}/plan/cancel",
     "/v1/agent-runs/{run_id}/plan/edit",
@@ -508,6 +511,10 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/audits/{work_item_id}/ebp/participant-accounts/run",
         "/v1/engagements/{engagement_id}/runs",
         "/v1/workbench/sessions/{session_id}/messages",
+        # T-04-T05 (RW-1 stub): a draft, treatment or residency run starts the agent, so 202.
+        "/v1/tax/returns/{return_id}/draft-runs",
+        "/v1/tax/k1-activities/{activity_id}/treatment-runs",
+        "/v1/tax/returns/{return_id}/residency/proposal-runs",
     }
     created = {r.path for r in posts if r.path not in accepted and r.path not in NOT_CREATING}
     assert all(r.status_code == 202 for r in posts if r.path == SCREEN_REQUEST)
@@ -521,6 +528,9 @@ def test_ac20_creating_routes_answer_201() -> None:
         "/v1/ebp/schedule-h-mappings:publish",
         "/v1/engagements",
         "/v1/engagements/{engagement_id}/request-items",
+        # T-04-T05 (RW-1 stub): a document approval and a final-approval request are rows, so 201.
+        "/v1/tax/returns/{return_id}/document-approvals",
+        "/v1/tax/returns/{return_id}/final-approval-requests",
         # N-04-T02: a notice from its intake, a decision request, a note, the response, its
         # signature request and an agency reply each create a row, so 201.
         "/v1/notice-intakes/{intake_id}/create",

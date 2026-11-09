@@ -1,6 +1,6 @@
 // SPEC-318 (TASK-461): the agent run list, the trace drawer and the JSON export.
 import type { AgentRunOut, RunTraceOut } from "@abacus/api-client";
-import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import type { JSX } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { json, mockApi, renderRoutes } from "../testing/support";
@@ -118,7 +118,7 @@ describe("SPEC-318 agent runs", () => {
     renderOne(() => <AgentRuns engagementId={E} />);
     fireEvent.click(await screen.findByRole("button", { name: "Open trace" }));
     await screen.findByText("Model call");
-    fireEvent.click(screen.getByRole("button", { name: "Export JSON" }));
+    fireEvent.click(screen.getByRole("button", { name: "Export trace (JSON)" }));
     await waitFor(() => {
       expect(created).toHaveBeenCalled();
     });
@@ -161,7 +161,11 @@ describe("SPEC-318 agent runs", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Open trace" }));
     await screen.findByText("Model call");
     fireEvent.click(screen.getByRole("tab", { name: "Records read" }));
-    expect(screen.getByText("An evidence version (1)")).toBeTruthy();
+    // P-09-T10 (WB-09 a3): records read are a table, one row per source with its count.
+    const row = screen
+      .getByRole("cell", { name: "An evidence version" })
+      .closest("tr") as HTMLElement;
+    expect(within(row).getByRole("cell", { name: "1" })).toBeTruthy();
     fireEvent.click(screen.getByRole("tab", { name: "Writes & approvals" }));
     expect(await screen.findByText("adopted by Dana Leader")).toBeTruthy();
     expect(screen.getByText("Waiting on a person")).toBeTruthy();
@@ -227,7 +231,7 @@ describe("SPEC-318 agent runs", () => {
     renderOne(() => <AgentRuns engagementId={E} />);
     fireEvent.click(await screen.findByRole("button", { name: "Open trace" }));
     await screen.findByText("Model call");
-    fireEvent.click(screen.getByRole("button", { name: "Export JSON" }));
+    fireEvent.click(screen.getByRole("button", { name: "Export trace (JSON)" }));
     expect(await screen.findByText("Confirm it's you")).toBeTruthy();
   });
 

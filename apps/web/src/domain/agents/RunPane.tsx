@@ -1,14 +1,6 @@
 import type { RunItemOut, RunProjectionLevelOut, RunViewOut } from "@abacus/api-client";
-import { getAgentRunOptions } from "@abacus/api-client/query";
-import {
-  AgentBlocks,
-  type AgentBlocksPayload,
-  Button,
-  Icon,
-  type IconName,
-  Skeleton,
-  StatusPill,
-} from "@abacus/ui";
+import { agentRunOptions } from "@abacus/api-client/query";
+import { AgentBlocks, Button, count, Icon, type IconName, Skeleton, StatusPill } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { narrate } from "./narrate";
@@ -33,12 +25,7 @@ export const LEVEL_LABEL: Readonly<Record<number, string>> = {
 
 /** A tool card's step state as §3.3.1 words it, with its disc and pill. */
 export type ToolState =
-  | "dispatched"
-  | "running"
-  | "waiting_on_inputs"
-  | "blocked"
-  | "succeeded"
-  | "failed";
+  "dispatched" | "running" | "waiting_on_inputs" | "blocked" | "succeeded" | "failed";
 
 export const TOOL_STATE: Readonly<
   Record<ToolState, { label: string; tone: "neutral" | null; disc: string }>
@@ -60,15 +47,16 @@ const TERMINAL = new Set(["succeeded", "failed"]);
 /** "Run projection · 14 workpapers · 5 levels". */
 export function projectionTitle(levels: readonly RunProjectionLevelOut[]): string {
   const total = levels.reduce((n, lv) => n + lv.total, 0);
-  return `Run projection · ${total} workpapers · ${levels.length} levels`;
+  return `Run projection · ${count(total)} workpapers · ${count(levels.length)} levels`;
 }
 
 /** The ink-3 tail of a level row: "1 blocked · 1 running" (and failures). */
 export function levelTail(level: RunProjectionLevelOut): string | null {
   const parts: string[] = [];
-  if (level.blocked > 0) parts.push(`${level.blocked} blocked`);
-  if (level.running > 0) parts.push(`${level.running} running`);
-  if (level.failed > 0) parts.push(`${level.failed} failed`);
+  const { blocked = 0, running = 0, failed = 0 } = level;
+  if (blocked > 0) parts.push(`${count(blocked)} blocked`);
+  if (running > 0) parts.push(`${count(running)} running`);
+  if (failed > 0) parts.push(`${count(failed)} failed`);
   return parts.length === 0 ? null : parts.join(" · ");
 }
 
@@ -100,7 +88,11 @@ function StatusDisc({ disc }: { disc: string }): JSX.Element {
               : "text-ink-2"
       }
     >
-      <Icon name={icon} size={15} {...(disc === "run" ? { className: "motion-safe:animate-spin" } : {})} />
+      <Icon
+        name={icon}
+        size={15}
+        {...(disc === "run" ? { className: "motion-safe:animate-spin" } : {})}
+      />
     </span>
   );
 }
@@ -134,7 +126,9 @@ function ProjectionStrip({ levels }: { levels: readonly RunProjectionLevelOut[] 
                 data-level={lv.level}
                 className="flex h-[22px] items-center gap-2 text-dense"
               >
-                <span className="min-w-0 flex-1">{LEVEL_LABEL[lv.level] ?? `Level ${lv.level}`}</span>
+                <span className="min-w-0 flex-1">
+                  {LEVEL_LABEL[lv.level] ?? `Level ${count(lv.level)}`}
+                </span>
                 {tail !== null && <span className="text-[11px] text-ink-3">{tail}</span>}
                 <span
                   className={
@@ -143,7 +137,9 @@ function ProjectionStrip({ levels }: { levels: readonly RunProjectionLevelOut[] 
                       : "rounded-full bg-chip px-[6px] tabular-nums"
                   }
                 >
-                  {complete ? `${lv.done} of ${lv.total} ✓` : `${lv.done} of ${lv.total}`}
+                  {complete
+                    ? `${count(lv.done ?? 0)} of ${count(lv.total)} ✓`
+                    : `${count(lv.done ?? 0)} of ${count(lv.total)}`}
                 </span>
               </li>
             );
@@ -156,7 +152,7 @@ function ProjectionStrip({ levels }: { levels: readonly RunProjectionLevelOut[] 
 
 function Blocks({ item }: { item: RunItemOut }): JSX.Element | null {
   if (item.blocks == null) return null;
-  return <AgentBlocks blocks={item.blocks as AgentBlocksPayload} facts={{}} />;
+  return <AgentBlocks blocks={item.blocks} facts={{}} />;
 }
 
 function ToolCard({
@@ -286,7 +282,9 @@ function ThreadItem({
         >
           <p className="flex items-center gap-2">
             <StatusDisc disc="warn" />
-            <span className="flex-1 text-[12px] font-medium">{item.detail ?? "Await decision"}</span>
+            <span className="flex-1 text-[12px] font-medium">
+              {item.detail ?? "Await decision"}
+            </span>
           </p>
           {item.ref_id !== null && onOpenDecision !== undefined && (
             <div className="flex justify-end pt-[4px]">
@@ -320,7 +318,10 @@ function ThreadItem({
       );
     case "error":
       return (
-        <li data-tool-card="failed" className="rounded-[10px] bg-card px-[11px] py-[8px] shadow-e1">
+        <li
+          data-tool-card="failed"
+          className="rounded-[10px] bg-card px-[11px] py-[8px] shadow-e1"
+        >
           <p className="flex items-center gap-2">
             <StatusDisc disc="fail" />
             <span className="text-[11.5px] font-medium text-red-ink">Failed</span>
@@ -350,7 +351,11 @@ export interface RunPaneProps {
   onOpenDecision?: (ref: string) => void;
 }
 
-function header(view: RunViewOut | undefined): { live: boolean; ended: boolean; canSign: boolean } {
+function header(view: RunViewOut | undefined): {
+  live: boolean;
+  ended: boolean;
+  canSign: boolean;
+} {
   const state = view?.run.state ?? "queued";
   const live = view !== undefined && isActive(view.run);
   const ended = TERMINAL.has(state);
@@ -367,9 +372,10 @@ export function RunPane({
   onOpenDecision,
 }: RunPaneProps): JSX.Element {
   const view = useQuery({
-    ...getAgentRunOptions({ path: { run_id: runId } }),
+    ...agentRunOptions({ path: { run_id: runId } }),
     retry: false,
-    refetchInterval: (q) => (q.state.data !== undefined && isActive(q.state.data.run) ? POLL_MS : false),
+    refetchInterval: (q) =>
+      q.state.data !== undefined && isActive(q.state.data.run) ? POLL_MS : false,
     refetchIntervalInBackground: false,
   });
   const feed = useRunFeed(runId);
@@ -382,7 +388,10 @@ export function RunPane({
     );
   }
   return (
-    <section data-run-pane={view.data?.run.state ?? "loading"} className="flex min-h-0 flex-1 flex-col">
+    <section
+      data-run-pane={view.data?.run.state ?? "loading"}
+      className="flex min-h-0 flex-1 flex-col"
+    >
       <header className="relative flex h-[46px] items-center justify-center">
         {live && (
           <span
@@ -393,17 +402,25 @@ export function RunPane({
         )}
         <h2 className="text-[14.5px] font-medium">Agent</h2>
         <div className="absolute right-[10px]">
-          <Button size="sm" variant="secondary" disabled={!canSign} title="Only a person signs off a run">
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={!canSign}
+            title="Only a person signs off a run"
+          >
             Sign off run
           </Button>
         </div>
       </header>
       {view.isPending ? (
         <Skeleton className="m-[10px] h-[120px]" />
-      ) : view.data.levels.length > 0 ? (
-        <ProjectionStrip levels={view.data.levels} />
+      ) : (view.data.levels ?? []).length > 0 ? (
+        <ProjectionStrip levels={view.data.levels ?? []} />
       ) : null}
-      <ol aria-label="Run thread" className="flex min-h-0 flex-1 flex-col gap-[8px] overflow-y-auto p-[12px]">
+      <ol
+        aria-label="Run thread"
+        className="flex min-h-0 flex-1 flex-col gap-[8px] overflow-y-auto p-[12px]"
+      >
         {feed.items.map((item) => (
           <ThreadItem
             key={item.seq}
@@ -431,7 +448,12 @@ export function RunPane({
           disabled
           className="min-w-0 flex-1 bg-transparent text-[12.5px] placeholder:text-ink-3"
         />
-        <button type="submit" disabled aria-label="Send" className="size-[26px] rounded-full bg-nested">
+        <button
+          type="submit"
+          disabled
+          aria-label="Send"
+          className="size-[26px] rounded-full bg-nested"
+        >
           <Icon name="arrow-up" size={13} />
         </button>
       </form>

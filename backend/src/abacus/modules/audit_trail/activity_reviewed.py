@@ -608,6 +608,17 @@ REVIEWED_FALLBACK: Final = frozenset(
         "statement_note_template.published",  # reviewed 2026-11-07 (A-06-T25)
         "deliverable.published",  # reviewed 2026-11-08 (R-02-T09)
         "deliverable.publish_repeated",  # reviewed 2026-11-08 (S31 end pass: idempotent retry)
+        # reviewed 2026-11-09 (S32 end pass): the fallback reads each right.
+        "agent_run.recorded_synthetic",
+        "agent_tool.call_claimed",
+        "agent_tool.call_completed",
+        "agent_tool.call_released",
+        "audit_report.choice_set",
+        "governance_communication.acknowledgement_repeated",
+        "governance_communication.approval_requested",
+        "governance_communication.created",
+        "governance_communication.sent",
+        "governance_recipients.set",
         "deliverable.superseded",  # reviewed 2026-11-08 (R-02-T09)
         "deliverable.withdrawn",  # reviewed 2026-11-08 (R-02-T09)
         "assurance_checklist_template.imported",  # reviewed 2026-11-08 (A-07-T22)
