@@ -339,6 +339,7 @@ from abacus_tools.flags import set_flag
 from abacus_tools.local.db_guard import violations
 from abacus_tools.synthetic.documents import positioned_pdf
 from abacus_tools.synthetic.scenarios.brightwater_hale import completion_slice as _completion
+from abacus_tools.synthetic.scenarios.brightwater_hale import governance_room_slice as _room
 from abacus_tools.synthetic.scenarios.brightwater_hale import sampling_content
 from abacus_tools.synthetic.scenarios.brightwater_hale import tax_schedules as _tax_schedules
 from abacus_tools.synthetic.scenarios.brightwater_hale.acceptance import (
@@ -1286,6 +1287,80 @@ async def _portal_user_added(conn: asyncpg.Connection, _: Scenario, event: Event
     await _bootstrap(conn, event, write)
 
 
+async def _governance_body_seeded(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
+    """R-02-T13 (DEC-3029): Northwind's Benefits Committee, its members as client-person contacts
+    linked to their portal users, and each member's `tcwg` grant on the room."""
+    body = UUID(_room.BODY_ID)
+    by = user_id_of(_SEATS[event.actor])
+    since = date.fromisoformat(str(event.data["since"]))
+    members = cast("list[list[str]]", event.data["members"])
+
+    async def write() -> tuple[str, str, str]:
+        client = await _client_id(conn, _room.CLIENT)
+        await conn.execute(
+            "INSERT INTO governance_bodies (id, tenant_id, client_id, name, kind, created_at) "
+            "VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING",
+            body,
+            TENANT,
+            client,
+            str(event.data["body"]),
+            str(event.data["kind"]),
+            event.at,
+        )
+        for name, role in members:
+            user = UUID(_PORTAL[name].id)
+            contact = UUID(_room.contact_id_of(name))
+            await conn.execute(
+                "INSERT INTO contacts (id, tenant_id, client_id, display_name, contact_kind, "
+                "user_id, created_at) VALUES ($1, $2, $3, $4, 'client_person', $5, $6) "
+                "ON CONFLICT DO NOTHING",
+                contact,
+                TENANT,
+                client,
+                name,
+                user,
+                event.at,
+            )
+            await conn.execute(
+                "INSERT INTO governance_body_members (id, tenant_id, body_id, contact_id, "
+                "member_role, started_on, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7) "
+                "ON CONFLICT DO NOTHING",
+                UUID(stable_id(f"governance-member:{body}:{name}")),
+                TENANT,
+                body,
+                contact,
+                role,
+                since,
+                event.at,
+            )
+            grant = UUID(_room.grant_id_of(name))
+            inserted = await conn.fetchval(
+                "INSERT INTO client_access_grants (id, tenant_id, user_id, contact_id, role, "
+                "scope_kind, scope_id, granted_by, status, created_at) VALUES ($1, $2, $3, $4, "
+                "'tcwg', 'governance_room', $5, $6, 'active', $7) ON CONFLICT DO NOTHING "
+                "RETURNING id",
+                grant,
+                TENANT,
+                user,
+                contact,
+                body,
+                by,
+                event.at,
+            )
+            if inserted is not None:
+                await conn.execute(
+                    "INSERT INTO client_access_events (tenant_id, grant_id, event, by_user_id, "
+                    "at) VALUES ($1, $2, 'granted', $3, $4)",
+                    TENANT,
+                    grant,
+                    by,
+                    event.at,
+                )
+        return "governance_body.seeded", "governance_body", str(body)
+
+    await _bootstrap(conn, event, write)
+
+
 async def _pbc_list_created(conn: asyncpg.Connection, _: Scenario, event: Event) -> None:
     """A PBC list with its categories and requests, published when the firm has sent it."""
     pbc = _PBC[str(event.data["list"])]
@@ -1901,6 +1976,7 @@ SLICE_NEEDS: Final[dict[str, tuple[str, ...]]] = {
     TAX_CONTENT_SLICE: TAX_CONTENT_NEEDS,  # T-02-T23: K-1 sets, the organizer, questions
     _tax_schedules.SLICE: _tax_schedules.NEEDS,  # T-03-T15: organizer v6, TAX-13's rows
     _completion.SLICE: _completion.NEEDS,  # A-06-T28: the ASC 962 checklist
+    _room.SLICE: _room.NEEDS,  # R-02-T13: Northwind's Benefits Committee room
     PILOT_SLICE: PILOT_NEEDS,  # TASK-2470: PF-X1's enrolments name the Feld return and Northwind
     REVIEW_SLICE: REVIEW_NEEDS,  # P-04-T36: the review grammar's objects on registered owners
     PLANNING_SLICE: PLANNING_NEEDS,  # A-04-T28: Northwind's planning day; G4 met at 4:40 PM
@@ -5840,6 +5916,7 @@ HANDLERS: Final[dict[str, Handler]] = {
     "portal.branding_set": _branding_set,
     "portal.host_added": _host_added,
     "identity.portal_person_added": _portal_person_added,
+    "assurance.governance_body_seeded": _governance_body_seeded,
     "identity.client_invitation_created": _client_invitation_created,
     # G-01-T06 (`--slice people`): seats, then teams, then each person's profile.
     "identity.seats_provisioned": _seats_provisioned,
