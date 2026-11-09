@@ -808,9 +808,14 @@ async def representation_letter_version_route(
 async def representation_letter_compose_route(
     work_item_id: UUID, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ReleaseRunAcceptedOut:
-    """LetterComposeWorkflow: template paragraphs and trigger rules over findings and the SUM."""
+    """Template paragraphs and trigger rules over findings and the SUM, composed by code and
+    recorded as the `audit.letter_compose` run (A-07-T32, DEC-3109)."""
+    from abacus.modules.assurance.agent_capabilities import letter_compose
+
     await _gate(ctx, work_item_id, "rep_letter.draft")
-    _not_yet()
+    del idempotency_key
+    run_id = await letter_compose(ctx, work_item_id)
+    return ReleaseRunAcceptedOut(run_id=run_id, status_url=f"/v1/agent-runs/{run_id}")
 
 
 @router.patch(
@@ -968,9 +973,12 @@ async def governance_compose_route(
 ) -> ReleaseRunAcceptedOut:
     """Compose or regenerate; a section-level merge keeps human edits. Composition is code over
     the engagement's facts, so it finishes in the request; the 202 names no background run."""
+    from abacus.modules.assurance.agent_capabilities import letter_compose
+
     await _gate(ctx, work_item_id, "governance_comm.draft")
     del idempotency_key
-    await gc.regenerate(ctx, work_item_id, communication_id)
+    # A-07-T32: the regenerate is recorded as the `audit.letter_compose` run.
+    await letter_compose(ctx, work_item_id, communication_id=communication_id)
     return ReleaseRunAcceptedOut(
         run_id=communication_id,
         status_url=f"/v1/audits/{work_item_id}{_GC}/{communication_id}",
@@ -1376,13 +1384,13 @@ async def audit_archive_index_route(
     """The binder index, built by code now (A-07-T31; ArchiveReadinessWorkflow #4302 adds the
     fingerprint re-verification and narration with A-07-T32). The run id is the archive's."""
     from abacus.modules.assurance import archive_gate as ag
+    from abacus.modules.assurance.agent_capabilities import archive_readiness
 
     await _gate(ctx, work_item_id, "archive.build_index")
-    del idempotency_key  # the index is keyed by its own content (the same sections answer v)
-    await ag.build_binder_index(ctx, work_item_id)
-    state = await ag.archive_state(ctx.tenant, work_item_id)
-    run_id = state.archive.id if state.archive is not None else work_item_id
-    return ReleaseRunAcceptedOut(run_id=run_id, status_url=f"/v1/audits/{work_item_id}/archive")
+    del idempotency_key, ag  # the index is keyed by its own content (the same sections answer v)
+    # A-07-T32: the build is recorded as the `audit.archive_readiness` run (#4302).
+    run_id = await archive_readiness(ctx, work_item_id)
+    return ReleaseRunAcceptedOut(run_id=run_id, status_url=f"/v1/agent-runs/{run_id}")
 
 
 @router.post(

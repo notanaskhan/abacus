@@ -859,6 +859,7 @@ ROUTES: tuple[tuple[str, str, str], ...] = (
         "completion.update",
     ),
     ("POST", "/v1/audits/{work_item_id}/completion/items/{item_key}/reopen", "completion.update"),
+    ("POST", "/v1/audits/{work_item_id}/completion/readiness:check", "completion.check_readiness"),
     ("POST", "/v1/audits/{work_item_id}/ebp/form-5500/lines/{line_id}/value", "ebp_form5500.key"),
     (
         "POST",

@@ -80,6 +80,12 @@ AGENT_LABEL: Final = {
     "fieldwork.entry_assessor": "Entry assessor",
     "engagement.agent": "Engagement agent",
     "reporting.fs_draft": "Statements draft",
+    # A-07-T32 (DEC-3109): code-only capabilities on the v1 recording path, no model call.
+    "audit.eqr_digest": "Judgments digest",
+    "audit.completion_readiness": "Completion readiness",
+    "audit.bring_down": "Bring-down",
+    "audit.letter_compose": "Letter compose",
+    "audit.archive_readiness": "Archive readiness",
 }
 State = Literal["queued", "running", "succeeded", "needs_input", "failed"]
 # DEC-87 (TASK-5002): content for the engagement's people and oversight in scope; metadata for

@@ -15,6 +15,12 @@ from abacus.modules.agents.ai_policy_store import policy_autonomy_level
 from abacus.modules.agents.audit_targets import AUDIT_KINDS, audit_owners
 from abacus.modules.agents.citations import SheetLayoutError
 from abacus.modules.agents.citations import verify as verify_citations
+from abacus.modules.agents.code_runs import (  # A-07-T32: code-only runs, v1 path
+    CodeRun,
+    CodeStep,
+    ReservedAction,
+    record_code_run,
+)
 from abacus.modules.agents.contract import proposals_router, suggestions_router
 from abacus.modules.agents.decision_recommend import (
     RECOMMENDER,
@@ -389,6 +395,8 @@ __all__ = [
     "ChangeSetApplier",
     "Citation",
     "CitationStates",
+    "CodeRun",
+    "CodeStep",
     "DecidedNotice",
     "DraftCitation",
     "DraftOutcome",
@@ -445,6 +453,7 @@ __all__ = [
     "ProposedValue",
     "RecommendFacts",
     "Recommended",
+    "ReservedAction",
     "ReviewOutcome",
     "ReviewUnavailable",
     "RunInput",
@@ -514,6 +523,7 @@ __all__ = [
     "pending_suggestion",
     "pending_suggestions",
     "recommend",
+    "record_code_run",
     "register_change_set_applier",
     "register_engagement_run_agent",
     "register_mode_mapping",

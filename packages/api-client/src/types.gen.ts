@@ -57435,6 +57435,66 @@ export type CompletionItemReopenResponses = {
 
 export type CompletionItemReopenResponse = CompletionItemReopenResponses[keyof CompletionItemReopenResponses];
 
+export type CompletionReadinessData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * X-Abacus-Tenant
+         */
+        'X-Abacus-Tenant'?: string | null;
+    };
+    path: {
+        /**
+         * Work Item Id
+         */
+        work_item_id: string;
+    };
+    query?: never;
+    url: '/v1/audits/{work_item_id}/completion/readiness:check';
+};
+
+export type CompletionReadinessErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorOut;
+    /**
+     * Forbidden
+     */
+    403: ErrorOut;
+    /**
+     * Not found
+     */
+    404: ErrorOut;
+    /**
+     * Invalid request
+     */
+    422: ValidationErrorOut;
+    /**
+     * Contract stub: not implemented yet
+     */
+    501: ErrorOut;
+};
+
+export type CompletionReadinessError = CompletionReadinessErrors[keyof CompletionReadinessErrors];
+
+export type CompletionReadinessResponses = {
+    /**
+     * Successful Response
+     */
+    202: CompletionRunAcceptedOut;
+};
+
+export type CompletionReadinessResponse = CompletionReadinessResponses[keyof CompletionReadinessResponses];
+
 export type EbpCertificationReadData = {
     body?: never;
     headers?: {

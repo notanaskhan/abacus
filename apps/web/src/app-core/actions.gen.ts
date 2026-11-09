@@ -86,6 +86,7 @@ export const ACTIONS = [
   "comment.redact",
   "comment.resolve",
   "comment.share",
+  "completion.check_readiness",
   "completion.decide",
   "completion.read",
   "completion.record",
