@@ -18,14 +18,18 @@ from uuid import UUID
 
 from temporalio.common import WorkflowIDConflictPolicy, WorkflowIDReusePolicy
 
+from abacus.kernel._flags import EVIDENCE_FORM_EXTRACTION
 from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.dispatch import dispatch, signal_workflow
+from abacus.kernel.flags import flag_variant
 from abacus.kernel.logging import get_logger
-from abacus.kernel.ocr import OcrPage, OcrProvider, TextractOcr
+from abacus.kernel.ocr import OcrPage, OcrProvider, OcrTable, TextractOcr
 from abacus.kernel.uow import Ref, Target, uow
 from abacus.modules.engagements.api import service_line_of
 from abacus.modules.evidence import storage
 from abacus.modules.evidence.events import EvidenceTextReady, OcrRefusal, OcrRunRefused
+from abacus.modules.evidence.extraction import Table
+from abacus.modules.evidence.form_extraction import covers
 from abacus.modules.evidence.intake_sources import IntakeSource, source_of, target_type
 from abacus.modules.evidence.models import EvidenceVersion, InboxFile
 from abacus.modules.evidence.object_keys import under_key
@@ -46,6 +50,11 @@ from abacus.modules.evidence.repository import (
     pages_of,
     sources_without_ocr,
 )
+from abacus.modules.evidence.statement_tables import (
+    lines_of,
+    looks_like_statement,
+    record_tables,
+)
 from abacus.modules.evidence.words import (
     WORDS_VERSION,
     KeyHint,
@@ -65,6 +74,7 @@ from abacus.modules.identity.api import is_synthetic_firm
 
 API: Final = "detect_text"
 FORMS_API: Final = "analyze_forms"
+TABLES_API: Final = "analyze_tables"  # P-11-T36: a statement page's transaction table
 BACKGROUND_ABOVE_PAGES: Final = 20  # P-11 §4: a long scan never delays a person's upload
 LONG: Final = "long"
 SHORT: Final = "short"
@@ -217,6 +227,19 @@ async def _read(
             else None
         )
         results.append((image, page_read, forms))
+    # P-11-T36: a statement page is read again for its TABLES (cell boxes) while the firm's form
+    # extraction covers statements (`all`); each read is a billed page unit like the others.
+    statements = covers(await flag_variant(tenant, EVIDENCE_FORM_EXTRACTION), "statements")
+    tabled: list[tuple[PageImage, OcrPage]] = []
+    if statements:
+        by_page = {i.page: i for i in images}
+        for image, page_read, _f in results:
+            if looks_like_statement(page_read.words):
+                width, height = Decimal(str(image.width_pt)), Decimal(str(image.height_pt))
+                tables = await engine.read(
+                    by_page[image.page].png, width_pt=width, height_pt=height, api=TABLES_API
+                )
+                tabled.append((image, tables))
     run_id = await record_run(
         tenant, evidence_version_id=version_id, inbox_file_id=inbox_id, provider=engine.name,
         api=API, pages=[i.page for i in images], refused=None,
@@ -231,6 +254,16 @@ async def _read(
             synthetic_firm=facts.synthetic_firm,
             request_ids=[f.request_id for _i, f in with_forms if f.request_id],
         )  # fmt: skip
+    tables_run = (
+        await record_run(
+            tenant, evidence_version_id=version_id, inbox_file_id=inbox_id,
+            provider=engine.name, api=TABLES_API, pages=[i.page for i, _t in tabled],
+            refused=None, synthetic_firm=facts.synthetic_firm,
+            request_ids=[t.request_id for _i, t in tabled if t.request_id],
+        )
+        if tabled
+        else None
+    )  # fmt: skip
     under = under_key(found)
     rows: list[dict[str, object]] = []
     for image, page_read, forms in results:
@@ -269,10 +302,18 @@ async def _read(
         )
     async with uow(tenant) as tx:
         added = await insert_pages(tx.session, rows)
+        cells = 0
+        for image, tables in tabled:
+            if version_id is None and inbox_id is None:
+                break  # an intake attachment's tables are read when it is filed
+            cells += await record_tables(
+                tx, tenant_id=tenant_id, evidence_version_id=version_id, inbox_file_id=inbox_id,
+                ocr_run_id=tables_run, page_no=image.page, tables=tables.tables,
+            )  # fmt: skip
         tx.record(
             "upload.ocr_read",
             target=Target(target_type(given.kind), UUID(given.source_id)),
-            after=Ref(pages=added, run=run_id),
+            after=Ref(pages=added, run=run_id, table_cells=cells),
         )
     # SPEC-029's checks read this row on a scan, as they read a PDF's text (P-11-T25).
     await record_ocr_extraction(
@@ -280,11 +321,31 @@ async def _read(
         source=found,
         page_count=len(results),
         pages=[" ".join(w.text for w in page_read.words) for _, page_read, _f in results],
+        page_lines=[
+            lines_of(page_read.words, image.width_pt, image.height_pt)
+            for image, page_read, _f in results
+        ]
+        if statements
+        else (),
+        tables=[
+            Table(None, image.page, _rows(table))
+            for image, tables in tabled
+            for table in tables.tables
+        ],
     )
     _log.info("upload.ocr_read", kind=given.kind, pages=len(rows))
-    units = len(images) + sum(1 for _i, _r, forms in results if forms is not None)
+    units = len(images) + len(tabled) + sum(1 for _i, _r, f in results if f is not None)
     await warn_if_near_cap(tenant, units)  # P-11-T33: the 80% alarm's log line
     return len(rows)
+
+
+def _rows(table: OcrTable) -> tuple[tuple[str, ...], ...]:
+    """A TABLES table as rows of cell text, the shape a PDF's table takes (`extraction.Table`)."""
+    grid = [["" for _ in range(table.cols)] for _ in range(table.rows)]
+    for cell in table.cells:
+        if cell.row < table.rows and cell.col < table.cols:
+            grid[cell.row][cell.col] = cell.text
+    return tuple(tuple(row) for row in grid)
 
 
 async def _publish_text_ready(

@@ -53,11 +53,32 @@ class OcrKeyValue:
 
 
 @dataclass(frozen=True)
+class OcrCell:
+    """One table cell (`analyze_tables`, P-11-T36): its row and column (0-based), its words'
+    text, its box in page points and Textract's confidence."""
+
+    row: int
+    col: int
+    text: str
+    bbox: tuple[Decimal, Decimal, Decimal, Decimal]
+    confidence: Decimal
+
+
+@dataclass(frozen=True)
+class OcrTable:
+    bbox: tuple[Decimal, Decimal, Decimal, Decimal]
+    rows: int
+    cols: int
+    cells: tuple[OcrCell, ...]
+
+
+@dataclass(frozen=True)
 class OcrPage:
     image_sha256: str
     words: tuple[OcrWord, ...]
     request_id: str | None
     key_values: tuple[OcrKeyValue, ...] = ()
+    tables: tuple[OcrTable, ...] = ()
 
     @property
     def mean_confidence(self) -> Decimal:
@@ -144,6 +165,51 @@ def _related(
         if r.get("Type") == kind
         for i in r.get("Ids", [])
     ]
+
+
+MAX_TABLE_ROWS: Final = 2000
+MAX_TABLE_COLS: Final = 50
+
+
+def normalise_tables(
+    blocks: Sequence[Mapping[str, Any]],  # Any: Textract blocks are untyped JSON
+    *,
+    width_pt: Decimal,
+    height_pt: Decimal,
+) -> tuple[OcrTable, ...]:
+    """Textract's TABLE and CELL blocks to tables in page points; a cell's text is its WORD
+    children joined by a space (P-11-T36, DEC-3126)."""
+    by_id = {str(b.get("Id")): b for b in blocks}
+    tables: list[OcrTable] = []
+    for block in blocks:
+        if block.get("BlockType") != "TABLE":
+            continue
+        cells: list[OcrCell] = []
+        for cell_id in _related(block, "CHILD"):
+            cell = by_id.get(cell_id)
+            if cell is None or cell.get("BlockType") != "CELL":
+                continue
+            words = [
+                str(by_id[w].get("Text", ""))
+                for w in _related(cell, "CHILD")
+                if w in by_id and by_id[w].get("BlockType") == "WORD"
+            ]
+            row, col = int(cell.get("RowIndex", 1)) - 1, int(cell.get("ColumnIndex", 1)) - 1
+            if not (0 <= row < MAX_TABLE_ROWS and 0 <= col < MAX_TABLE_COLS):
+                continue  # outside any statement's table: never sizes a grid
+            cells.append(
+                OcrCell(
+                    row,
+                    col,
+                    " ".join(words)[:2000],
+                    _points(cell, width_pt, height_pt),
+                    (Decimal(str(cell.get("Confidence", 0))) / 100).quantize(Decimal("0.001")),
+                )
+            )
+        rows = 1 + max((c.row for c in cells), default=-1)
+        cols = 1 + max((c.col for c in cells), default=-1)
+        tables.append(OcrTable(_points(block, width_pt, height_pt), rows, cols, tuple(cells)))
+    return tuple(tables)
 
 
 def normalise_key_values(
@@ -237,6 +303,9 @@ class TextractOcr:
             normalise_key_values(
                 response.get("Blocks", []), width_pt=width_pt, height_pt=height_pt
             ),
+            normalise_tables(response.get("Blocks", []), width_pt=width_pt, height_pt=height_pt)
+            if api == "analyze_tables"
+            else (),
         )
         _log.info("ocr.read", image_sha256=sha, words=len(page.words), api=api)
         self._cache.put((sha, api), page)
@@ -261,7 +330,6 @@ class FakeOcr:
     async def read(
         self, image: bytes, *, width_pt: Decimal, height_pt: Decimal, api: Api
     ) -> OcrPage:
-        del api
         sha = _sha(image)
         raw = self._recordings.get(sha)
         blocks = cast(list[JsonBlock], json.loads(raw).get("Blocks", [])) if raw else []
@@ -270,4 +338,7 @@ class FakeOcr:
             normalise(blocks, width_pt=width_pt, height_pt=height_pt),
             None,
             normalise_key_values(blocks, width_pt=width_pt, height_pt=height_pt),
+            normalise_tables(blocks, width_pt=width_pt, height_pt=height_pt)
+            if api == "analyze_tables"
+            else (),
         )
