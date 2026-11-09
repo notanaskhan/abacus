@@ -194,6 +194,7 @@ from abacus.modules.assurance.trail_owners import AUDIT_KINDS as TRAIL_KINDS
 from abacus.modules.assurance.trail_owners import audit_owners as trail_owners
 from abacus.modules.assurance.trial_balance import adopt as adopt_trial_balance
 from abacus.modules.assurance.trial_balance import tb_facts, tb_reviewables
+from abacus.modules.assurance.uncorrected_ack import register as register_uncorrected_ack
 from abacus.modules.engagements.api import work_item_engagement
 from abacus.modules.evidence.api import engagement_of_version
 from abacus.modules.identity.api import (
@@ -329,6 +330,8 @@ register_a07_live_path()
 register_release_facts()
 # A-07-T32 (DEC-3109): the bring-down item reads the `audit.bring_down` runs.
 register_agent_capabilities()
+# R-02-T15 (DEC-3113): C18's uncorrected-misstatements kind on the frozen SUM snapshot.
+register_uncorrected_ack()
 # A-05-T53: the estimate conclusion, the EP's card (AU-C 540).
 register_estimate_conclusion_kind()
 # I-01-T08: this module's HOME-01 tile or pill (platform.register_home_count).
