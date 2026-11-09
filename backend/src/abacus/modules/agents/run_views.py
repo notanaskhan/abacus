@@ -121,6 +121,9 @@ class V2Facts:
     plan_id: UUID | None
     stepped: bool  # the run has runtime steps: a v2 run, not a legacy specialist
     plan_version: int | None = None  # P-09-T14: the plan's newest version (`expected_version`)
+    # S33 partials round (P-09-T14, DEC-3142): that version's steps, (key, label), in order, for
+    # the dock's "Change order…" editor.
+    plan_steps: tuple[tuple[str, str], ...] = ()
 
     @property
     def v2(self) -> bool:
@@ -136,8 +139,9 @@ _FACTS = text(
     "r.citations_count, r.writes_done, r.writes_waiting, r.agent_ms, r.agent_minutes, "
     "r.runs_as_user_id, r.trigger_kind, r.work_item_ref, r.plan_id, "
     "EXISTS (SELECT 1 FROM agent_run_steps s WHERE s.run_id = r.id) AS stepped, "
-    "(SELECT max(p.version) FROM agent_plans p WHERE p.run_id = r.id) AS plan_version "
-    "FROM agent_runs r WHERE r.id = ANY(:ids)"
+    "(SELECT max(p.version) FROM agent_plans p WHERE p.run_id = r.id) AS plan_version, "
+    "(SELECT p.steps FROM agent_plans p WHERE p.run_id = r.id ORDER BY p.version DESC LIMIT 1) "
+    "AS plan_steps FROM agent_runs r WHERE r.id = ANY(:ids)"
 ).bindparams(bindparam("ids", type_=ARRAY(PgUUID(as_uuid=True))))
 
 
@@ -167,6 +171,7 @@ async def v2_facts(session: AsyncSession, run_ids: Sequence[UUID]) -> dict[UUID,
             r.plan_id,
             bool(r.stepped),
             r.plan_version,
+            step_labels(r.plan_steps),
         )
         for r in rows
     }
@@ -196,6 +201,20 @@ def plan_steps(raw: object) -> list[PlanStep]:
             if isinstance(key, str) and isinstance(level, int):
                 steps.append(PlanStep(key, level))
     return steps
+
+
+def step_labels(raw: object) -> tuple[tuple[str, str], ...]:
+    """The plan's (key, label) pairs in order; a malformed entry is left out."""
+    if not isinstance(raw, list):
+        return ()
+    out: list[tuple[str, str]] = []
+    for item in cast(list[object], raw):
+        if isinstance(item, dict):
+            entry = cast(dict[str, object], item)
+            key, label = entry.get("key"), entry.get("label")
+            if isinstance(key, str) and isinstance(label, str):
+                out.append((key, label))
+    return tuple(out)
 
 
 async def levels_for(session: AsyncSession, facts: V2Facts) -> list[LevelCount]:

@@ -1,7 +1,7 @@
 // P-09-T09 (SHL-13 run pane; SPEC-648 Story 1.1; handoff frames 3, 4, 6 and 7): the projection by
 // level, the six tool-card states, the decision card, the failed step and the completed run, from
 // the E0 fixtures, and nothing here decides for a person.
-import { cleanup, fireEvent, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import type { JSX } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { ClockProvider } from "@abacus/ui";
@@ -16,7 +16,12 @@ import {
   SHL13_RUNS,
 } from "../../fixtures/seed/agent-dock";
 import { DEMO_MS } from "../../fixtures/seed/clock";
-import { E0_RUNS, LEVELS_4127_941, RUN_4127_ID } from "../../fixtures/seed/agent-runs";
+import {
+  E0_RUNS,
+  LEVELS_4127_941,
+  MATERIALITY_DECISION_ID,
+  RUN_4127_ID,
+} from "../../fixtures/seed/agent-runs";
 import { json, mockApi, renderRoutes } from "../../testing/support";
 import { dockAgents } from "./AgentDock";
 import { levelTail, projectionTitle, RunPane, sourceOf } from "./RunPane";
@@ -261,5 +266,82 @@ describe("SHL-13 run pane", () => {
     renderPane(RUN_4127_DONE_ID);
     fireEvent.click(await screen.findByRole("button", { name: "Sign off run" }));
     expect(await screen.findByRole("alertdialog")).toBeTruthy();
+  });
+
+  it("P-09-T14: Change order… moves a step and sends the keys with the version seen", async () => {
+    const bodies: unknown[] = [];
+    mockApi({
+      ...routes(),
+      [`POST /v1/agent-runs/${RUN_4127_PLAN_ID}/plan/edit`]: (call) => {
+        bodies.push(call.body);
+        return json({ id: "p", run_id: RUN_4127_PLAN_ID, state: "edited", steps: [], version: 2 });
+      },
+    });
+    const Page = (): JSX.Element => (
+      <ClockProvider now={() => DEMO_MS}>
+        <RunPane runId={RUN_4127_PLAN_ID} onTrace={() => undefined} />
+      </ClockProvider>
+    );
+    renderRoutes([{ path: "/", component: Page }]);
+    fireEvent.click(await screen.findByRole("button", { name: "Change order…" }));
+    const dialog = await screen.findByRole("alertdialog");
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Move Run materiality workpaper up" }),
+    );
+    fireEvent.click(within(dialog).getByRole("button", { name: "yes, run it" }));
+    await waitFor(() => {
+      expect(bodies).toHaveLength(1);
+    });
+    expect(bodies).toEqual([
+      {
+        steps: [
+          "materiality",
+          "trial_balance",
+          "risk_assessment",
+          "audit_planning",
+          "internal_control",
+        ],
+        expected_version: 1,
+      },
+    ]);
+  });
+
+  it("P-09-T14: Notify shows only when the card lists decision.notify for this person", async () => {
+    const notified: string[] = [];
+    const card = (actions: string[]): object => ({
+      card: {
+        allowed_actions: actions,
+        blocking_count: 0,
+        engagement_id: "e",
+        id: "c",
+        kind: "materiality",
+        requested_at: "2026-09-14T14:27:10Z",
+        reserved_role: "engagement_partner",
+        reserved_user_id: "u",
+        reserved_user_name: "Margaret Okonkwo",
+        status: "awaiting",
+        superseded_by_version: null,
+        version_no: 1,
+        work_item_id: null,
+      },
+    });
+    mockApi({
+      ...routes(),
+      [`GET /v1/decision-cards/${MATERIALITY_DECISION_ID}`]: () => json(card(["decision.notify"])),
+      [`POST /v1/decision-cards/${MATERIALITY_DECISION_ID}/notify`]: (call) => {
+        notified.push(call.path);
+        return json({});
+      },
+    });
+    const Page = (): JSX.Element => (
+      <ClockProvider now={() => DEMO_MS}>
+        <RunPane runId={RUN_4127_ID} onTrace={() => undefined} />
+      </ClockProvider>
+    );
+    renderRoutes([{ path: "/", component: Page }]);
+    fireEvent.click(await screen.findByRole("button", { name: "Notify Margaret" }));
+    await waitFor(() => {
+      expect(notified).toHaveLength(1);
+    });
   });
 });

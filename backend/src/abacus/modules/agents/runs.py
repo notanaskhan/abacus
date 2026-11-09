@@ -651,6 +651,7 @@ class RunHeader:
     trigger_kind: str | None
     work_item_ref: str | None
     plan_version: int | None = None  # P-09-T14: a plan decision's `expected_version`
+    plan_steps: tuple[tuple[str, str], ...] = ()  # DEC-3142: (key, label) for "Change order…"
 
 
 @dataclass(frozen=True)
@@ -691,6 +692,7 @@ def _header(facts: V2Facts, names: dict[UUID, str], metadata: bool) -> RunHeader
         facts.trigger_kind,
         None if metadata else facts.work_item_ref,
         facts.plan_version,
+        () if metadata else facts.plan_steps,
     )
 
 

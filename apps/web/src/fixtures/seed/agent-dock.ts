@@ -266,6 +266,14 @@ export const PERSON_RUN_ACTIONS = [
   "run_trace.export",
 ];
 
+const PLAN_4127_STEPS = [
+  { key: "trial_balance", label: "Run trial balance workpaper" },
+  { key: "materiality", label: "Run materiality workpaper" },
+  { key: "risk_assessment", label: "Run risk assessment workpaper" },
+  { key: "audit_planning", label: "Run audit planning workpaper" },
+  { key: "internal_control", label: "Run internal control workpaper" },
+];
+
 function asPerson(run: E0Run, planVersion: number | null = null): E0Run {
   return {
     ...run,
@@ -274,7 +282,14 @@ function asPerson(run: E0Run, planVersion: number | null = null): E0Run {
       allowed_actions: PERSON_RUN_ACTIONS,
       ...(run.view.header == null
         ? {}
-        : { header: { ...run.view.header, plan_version: planVersion } }),
+        : {
+            header: {
+              ...run.view.header,
+              plan_version: planVersion,
+              // DEC-3142: the plan's steps for "Change order…" (SHL-13 frame 3's workpapers).
+              ...(planVersion === null ? {} : { plan_steps: PLAN_4127_STEPS }),
+            },
+          }),
     },
   };
 }

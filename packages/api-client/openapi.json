@@ -71329,6 +71329,27 @@
         "title": "PlanStepOut",
         "type": "object"
       },
+      "PlanStepRefOut": {
+        "description": "One step of the run's newest plan version, for \"Change order\u2026\" (DEC-3142).",
+        "properties": {
+          "key": {
+            "cls": "internal",
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "cls": "internal",
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label"
+        ],
+        "title": "PlanStepRefOut",
+        "type": "object"
+      },
       "PlanningMaterialityVersionOut": {
         "properties": {
           "created_at": {
@@ -87854,6 +87875,15 @@
               }
             ],
             "cls": "internal"
+          },
+          "plan_steps": {
+            "cls": "internal",
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/PlanStepRefOut"
+            },
+            "title": "Plan Steps",
+            "type": "array"
           },
           "plan_version": {
             "anyOf": [
@@ -241868,16 +241898,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "List Deliverables Route",
@@ -241985,16 +242005,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Deliverable Route",
@@ -242111,16 +242121,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Deliverable Version Route",
@@ -242132,7 +242132,7 @@
     },
     "/v1/portal/deliverables/{deliverable_id}/versions/{version_no}/approve": {
       "post": {
-        "description": "Management approves the latest draft: `reporting.api.apply_management_decision`.\nNot the decider: 403 `not_decider`. No fresh second factor: 401 `mfa_recent_required`.",
+        "description": "Management approves the latest draft through C18 (the version's approval item, the same\ndecision POR-08 records). Not the decider: 403 `not_decider`; a stale `seen_hash` or a\nversion that is not the newest awaiting one: 409 `item_changed`.",
         "operationId": "approve_deliverable",
         "parameters": [
           {
@@ -242268,16 +242268,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Approve Deliverable Route",
@@ -242676,16 +242666,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Download Deliverable Route",
@@ -242813,16 +242793,6 @@
               }
             },
             "description": "Invalid request"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorOut"
-                }
-              }
-            },
-            "description": "Contract stub: not implemented yet"
           }
         },
         "summary": "Get Deliverable Page Route",

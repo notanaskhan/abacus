@@ -12538,8 +12538,9 @@ export const getDeliverableVersion = <ThrowOnError extends boolean = false>(opti
 /**
  * Approve Deliverable Route
  *
- * Management approves the latest draft: `reporting.api.apply_management_decision`.
- * Not the decider: 403 `not_decider`. No fresh second factor: 401 `mfa_recent_required`.
+ * Management approves the latest draft through C18 (the version's approval item, the same
+ * decision POR-08 records). Not the decider: 403 `not_decider`; a stale `seen_hash` or a
+ * version that is not the newest awaiting one: 409 `item_changed`.
  */
 export const approveDeliverable = <ThrowOnError extends boolean = false>(options: Options<ApproveDeliverableData, ThrowOnError>): RequestResult<ApproveDeliverableResponses, ApproveDeliverableErrors, ThrowOnError> => (options.client ?? client).post<ApproveDeliverableResponses, ApproveDeliverableErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
