@@ -650,6 +650,7 @@ class RunHeader:
     runs_as_name: str | None
     trigger_kind: str | None
     work_item_ref: str | None
+    plan_version: int | None = None  # P-09-T14: a plan decision's `expected_version`
 
 
 @dataclass(frozen=True)
@@ -671,6 +672,9 @@ RUN_ACTIONS: Final = (
     "agent_run.answer",
     "agent_run.control",
     "agent_run.sign_off",
+    # P-09-T14 (DEC-3134): the dock draws Run and the thumbs only when the server lists them.
+    "agent_run.start",
+    "agent_feedback.create",
 )
 
 
@@ -686,6 +690,7 @@ def _header(facts: V2Facts, names: dict[UUID, str], metadata: bool) -> RunHeader
         None if runs_as is None else names.get(runs_as, "Former member"),
         facts.trigger_kind,
         None if metadata else facts.work_item_ref,
+        facts.plan_version,
     )
 
 

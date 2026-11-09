@@ -247,11 +247,37 @@ const RUN_CLOSE_COPPERLEAF: E0Run = {
   ),
 };
 
+/** P-09-T14: what the server lists for Marcus Delaney (manager, on the team) on run #4127: each
+ * human action's matrix action (`RUN_ACTIONS`, DEC-3134). */
+export const PERSON_RUN_ACTIONS = [
+  "agent_feedback.create",
+  "agent_run.answer",
+  "agent_run.approve_plan",
+  "agent_run.control",
+  "agent_run.read",
+  "agent_run.sign_off",
+  "agent_run.start",
+  "run_trace.export",
+];
+
+function asPerson(run: E0Run, planVersion: number | null = null): E0Run {
+  return {
+    ...run,
+    view: {
+      ...run.view,
+      allowed_actions: PERSON_RUN_ACTIONS,
+      ...(run.view.header == null
+        ? {}
+        : { header: { ...run.view.header, plan_version: planVersion } }),
+    },
+  };
+}
+
 export const SHL13_RUNS: Record<string, E0Run> = {
-  [RUN_4127_FAILED_ID]: RUN_4127_FAILED,
-  [RUN_4127_DONE_ID]: RUN_4127_DONE,
-  [RUN_4127_IDLE_ID]: RUN_4127_IDLE,
-  [RUN_4127_PLAN_ID]: RUN_4127_PLAN,
-  [RUN_4127_ASK_ID]: RUN_4127_ASK,
+  [RUN_4127_FAILED_ID]: asPerson(RUN_4127_FAILED),
+  [RUN_4127_DONE_ID]: asPerson(RUN_4127_DONE),
+  [RUN_4127_IDLE_ID]: asPerson(RUN_4127_IDLE),
+  [RUN_4127_PLAN_ID]: asPerson(RUN_4127_PLAN, 1),
+  [RUN_4127_ASK_ID]: asPerson(RUN_4127_ASK),
   [RUN_CLOSE_COPPERLEAF_ID]: RUN_CLOSE_COPPERLEAF,
 };

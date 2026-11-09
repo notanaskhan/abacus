@@ -4,7 +4,17 @@ import type {
   RunProjectionLevelOut,
   RunViewOut,
 } from "@abacus/api-client";
-import { agentRunOptions, createFeedbackMutation } from "@abacus/api-client/query";
+import {
+  agentRunOptions,
+  answerQuestionMutation,
+  approveRunPlanMutation,
+  createFeedbackMutation,
+  redirectRunMutation,
+  retryStepMutation,
+  signOffRunMutation,
+  skipQuestionMutation,
+  startEngagementRunMutation,
+} from "@abacus/api-client/query";
 import {
   AgentBlocks,
   Button,
@@ -13,21 +23,52 @@ import {
   type IconName,
   ProgressBar,
   Skeleton,
+  ConfirmDialog,
   StatusPill,
+  toast,
   useNow,
 } from "@abacus/ui";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { type JSX, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createContext, type JSX, useContext, useState } from "react";
+import { useFlag } from "../../app-core/flags";
 import { narrate } from "./narrate";
 import { isActive, POLL_MS, useRunFeed } from "./runFeed";
+
+// P-09-T14 (DEC-3134): every human action binds to P-10's C6 v2 routes and renders only when the
+// server lists its matrix action on the run (`allowed_actions`) and `agent_runtime.v2` is on (the
+// routes answer 404 while it is off). Nothing is optimistic: a control waits for the server, a
+// refusal shows the server's reason, and the run view and feed are read again after each act. An
+// agent context is never listed any of these actions, so it is offered none.
+interface RunActs {
+  can: (action: string) => boolean;
+  /** The server's refusal, in its words (the error code, or its detail). */
+  refused: (error: unknown) => void;
+  done: () => void;
+}
+
+const NO_ACTS: RunActs = { can: () => false, refused: () => undefined, done: () => undefined };
+const ActsContext = createContext<RunActs>(NO_ACTS);
+
+export function refusalWords(error: unknown): string {
+  if (typeof error === "object" && error !== null) {
+    const body = error as { code?: unknown; detail?: unknown };
+    if (typeof body.code === "string") return body.code.replaceAll("_", " ");
+    if (typeof body.detail === "string") return body.detail;
+  }
+  return "The run did not take that action.";
+}
+
+function key(): Record<string, string> {
+  return { "Idempotency-Key": crypto.randomUUID() };
+}
 
 // SHL-13 run pane (P-09-T09; SPEC-648 Story 1.1 to 1.3; handoff SHL-13 frames 1 to 8): one run in
 // the 330 dock: the header with the live dot and "Sign off run", the run projection by level
 // (code's counts from C6 v1.1's `levels`), and the thread in the C6 v2 wire set: the person's
 // bubbles, narration through AgentBlocks, tool cards in their six states, the level row, the
 // decision and ask cards, failures and the close run card. The composer and every human action
-// ("Sign off run", plan and question answers, Retry) are bound to P-10's run commands by P-09-T14;
-// until then they render disabled. Nothing here decides for a person (ADR-005; frontend rule 3).
+// ("Sign off run", plan and question answers, Retry) are bound to P-10's run commands (P-09-T14).
+// Nothing here decides for a person (ADR-005; frontend rule 3).
 
 /** The engagement run's five levels (SHL-13 projection strip). */
 export const LEVEL_LABEL: Readonly<Record<number, string>> = {
@@ -199,7 +240,8 @@ type FeedbackReason = (typeof FEEDBACK_REASONS)[number][1];
 
 /** A finished card's footer: Rerun and Follow up (a person's, bound in P-09-T14), and the thumbs
  * that store a correction. Thumbs-down needs a reason before Submit. */
-function FeedbackFooter({ runId, item }: { runId: string; item: RunItemOut }): JSX.Element {
+function FeedbackFooter({ runId, item }: { runId: string; item: RunItemOut }): JSX.Element | null {
+  const acts = useContext(ActsContext);
   const [picking, setPicking] = useState(false);
   const [reason, setReason] = useState<FeedbackReason | null>(null);
   const [sent, setSent] = useState<"up" | "down" | null>(null);
@@ -209,7 +251,9 @@ function FeedbackFooter({ runId, item }: { runId: string; item: RunItemOut }): J
       setSent(vars.body.rating);
       setPicking(false);
     },
+    onError: acts.refused,
   });
+  if (!acts.can("agent_feedback.create")) return null;
   const rate = (rating: "up" | "down", why: FeedbackReason | null): void => {
     send.mutate({
       body: { run_id: runId, rating, reason: why, item_id: item.ref_id ?? null },
@@ -218,12 +262,6 @@ function FeedbackFooter({ runId, item }: { runId: string; item: RunItemOut }): J
   };
   return (
     <div data-tool-footer="true" className="relative flex items-center gap-1 pt-[6px]">
-      <Button size="xs" variant="ghost" disabled title="Rerun arrives with P-09-T14">
-        Rerun
-      </Button>
-      <Button size="xs" variant="ghost" disabled title="Follow up arrives with P-09-T14">
-        Follow up
-      </Button>
       <span className="flex-1" />
       <button
         type="button"
@@ -310,6 +348,12 @@ function ToolCard({
 }): JSX.Element {
   const state = toolState(item.outcome);
   const look = TOOL_STATE[state];
+  const acts = useContext(ActsContext);
+  const retry = useMutation({
+    ...retryStepMutation(),
+    onSuccess: acts.done,
+    onError: acts.refused,
+  });
   const [open, setOpen] = useState(false);
   // Waiting, blocked and failed cards show their body (needs line, error); a finished one on click.
   const body = state === "succeeded" ? open : item.blocks != null;
@@ -351,8 +395,16 @@ function ToolCard({
       )}
       {(state === "succeeded" ? open : state === "failed") && (
         <div className="flex justify-end gap-2 pt-[6px]">
-          {state === "failed" && (
-            <Button size="xs" variant="secondary" disabled>
+          {state === "failed" && item.ref_id !== null && acts.can("agent_run.control") && (
+            <Button
+              size="xs"
+              variant="secondary"
+              disabled={retry.isPending}
+              onClick={() => {
+                if (item.ref_id !== null)
+                  retry.mutate({ path: { run_id: runId, step_id: item.ref_id }, headers: key() });
+              }}
+            >
               Retry
             </Button>
           )}
@@ -377,6 +429,80 @@ function TaskRow({ item }: { item: RunItemOut }): JSX.Element {
   );
 }
 
+/** SHL-13 frame 5: the question card. Typing answers it (Enter), Esc skips it; the digits 1-9
+ * pick an option the blocks number. Each act waits for the server. */
+function QuestionCard({ runId, item }: { runId: string; item: RunItemOut }): JSX.Element {
+  const acts = useContext(ActsContext);
+  const [text, setText] = useState("");
+  const answer = useMutation({
+    ...answerQuestionMutation(),
+    onSuccess: acts.done,
+    onError: acts.refused,
+  });
+  const skip = useMutation({ ...skipQuestionMutation(), onSuccess: acts.done, onError: acts.refused });
+  const questionId = item.ref_id;
+  const can = questionId !== null && acts.can("agent_run.answer");
+  const busy = answer.isPending || skip.isPending;
+  const send = (body: { option_key?: string | null; text?: string | null }): void => {
+    if (questionId === null) return;
+    answer.mutate({ path: { run_id: runId, question_id: questionId }, body, headers: key() });
+  };
+  const doSkip = (): void => {
+    if (questionId === null) return;
+    skip.mutate({ path: { run_id: runId, question_id: questionId }, headers: key() });
+  };
+  return (
+    <li
+      data-ask-card="question"
+      className="rounded-[10px] bg-card px-[12px] py-[10px] text-[12.5px] shadow-ask"
+      onKeyDown={(e) => {
+        if (!can || busy) return;
+        if (e.key === "Escape") {
+          e.preventDefault();
+          doSkip();
+        } else if (/^[1-9]$/.test(e.key) && e.target === e.currentTarget) {
+          e.preventDefault();
+          send({ option_key: e.key });
+        }
+      }}
+    >
+      <p className="flex items-center gap-2 pb-[6px]">
+        <span className="flex size-[18px] items-center justify-center rounded-full bg-chip text-[11px] font-medium">
+          ?
+        </span>
+        <span className="flex-1 font-medium">{item.detail ?? ""}</span>
+        <span className="text-[11px] text-ink-3">1 of 1</span>
+      </p>
+      <Blocks item={item} />
+      {can && (
+        <form
+          className="flex items-center gap-2 pt-[8px]"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (text.trim() !== "") send({ text: text.trim() });
+          }}
+        >
+          <input
+            aria-label="Answer"
+            value={text}
+            disabled={busy}
+            onChange={(e) => {
+              setText(e.target.value);
+            }}
+            className="h-[28px] min-w-0 flex-1 rounded-[8px] bg-nested px-[8px] text-[12.5px]"
+          />
+          <Button size="xs" variant="ghost" type="button" disabled={busy} onClick={doSkip}>
+            Skip
+          </Button>
+          <Button size="xs" type="submit" disabled={busy || text.trim() === ""}>
+            Next
+          </Button>
+        </form>
+      )}
+    </li>
+  );
+}
+
 function ThreadItem({
   runId,
   item,
@@ -393,6 +519,7 @@ function ThreadItem({
   onOpenDecision?: ((ref: string) => void) | undefined;
 }): JSX.Element {
   const kind = item.session_kind ?? "notice";
+  const acts = useContext(ActsContext);
   switch (kind) {
     case "user":
       return (
@@ -459,35 +586,8 @@ function ThreadItem({
         </li>
       );
     case "question":
-      // SHL-13 frame 5: the agent's question with its options (blocks); answering, skipping and
-      // paging are a person's, bound in P-09-T14.
-      return (
-        <li
-          data-ask-card="question"
-          className="rounded-[10px] bg-card px-[12px] py-[10px] text-[12.5px] shadow-ask"
-        >
-          <p className="flex items-center gap-2 pb-[6px]">
-            <span className="flex size-[18px] items-center justify-center rounded-full bg-chip text-[11px] font-medium">
-              ?
-            </span>
-            <span className="flex-1 font-medium">{item.detail ?? ""}</span>
-            <span className="text-[11px] text-ink-3">1 of 1</span>
-          </p>
-          <Blocks item={item} />
-          <div className="flex items-center gap-2 pt-[8px]">
-            <Button size="xs" variant="ghost" disabled title="Answering arrives with P-09-T14">
-              Skip
-            </Button>
-            <span className="flex-1" />
-            <Button size="xs" variant="secondary" disabled>
-              Previous
-            </Button>
-            <Button size="xs" disabled title="Answering arrives with P-09-T14">
-              Next
-            </Button>
-          </div>
-        </li>
-      );
+      // SHL-13 frame 5: the agent's question; answering and skipping are a person's (P-09-T14).
+      return <QuestionCard runId={runId} item={item} />;
     case "plan":
     case "approval":
       return (
@@ -497,9 +597,11 @@ function ThreadItem({
         >
           <Blocks item={item} />
           {item.detail !== null && <p className="font-medium">{item.detail}</p>}
-          <p className="pt-[6px] text-[11.5px] text-ink-3">
-            Answer in the run once run commands are on for this firm.
-          </p>
+          {!acts.can("agent_run.approve_plan") && (
+            <p className="pt-[6px] text-[11.5px] text-ink-3">
+              Answer in the run once run commands are on for this firm.
+            </p>
+          )}
         </li>
       );
     case "error":
@@ -667,29 +769,86 @@ export interface RunPaneProps {
   onOpenDecision?: (ref: string) => void;
   /** The agents on this engagement for the strip under the header (the dock's run list). */
   agents?: readonly DockAgent[];
+  /** P-09-T14: the engagement a new run starts on (the dock's). */
+  engagementId?: string;
 }
 
-function header(view: RunViewOut | undefined): {
-  live: boolean;
-  ended: boolean;
-  canSign: boolean;
-} {
+function header(view: RunViewOut | undefined): { live: boolean; ended: boolean } {
   const state = view?.run.state ?? "queued";
   const live = view !== undefined && isActive(view.run);
   const ended = TERMINAL.has(state);
-  const canSign = ended && (view?.allowed_actions.includes("agent_run.sign_off") ?? false);
-  return { live, ended, canSign };
+  return { live, ended };
+}
+
+/** O3 "Sign off run": lists the open issues and decisions the person acknowledges. */
+function SignOffDialog({
+  runId,
+  open,
+  onOpenChange,
+  issues,
+  decisions,
+}: {
+  runId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  issues: readonly RunItemOut[];
+  decisions: readonly RunItemOut[];
+}): JSX.Element {
+  const acts = useContext(ActsContext);
+  const sign = useMutation({ ...signOffRunMutation(), onSuccess: acts.done, onError: acts.refused });
+  const ids = (items: readonly RunItemOut[]): string[] =>
+    items.flatMap((i) => (i.ref_id === null ? [] : [i.ref_id]));
+  return (
+    <ConfirmDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Sign off run"
+      confirmLabel="Sign off run"
+      destructive={false}
+      onConfirm={() => {
+        sign.mutate({
+          path: { run_id: runId },
+          body: { acknowledged_issue_ids: ids(issues), acknowledged_decision_ids: ids(decisions) },
+          headers: key(),
+        });
+      }}
+    >
+      {issues.length + decisions.length === 0 ? (
+        <p>Nothing is open on this run.</p>
+      ) : (
+        <ul data-sign-off-open className="flex flex-col gap-[4px]">
+          {issues.map((i) => (
+            <li key={i.seq}>{`Open issue · ${i.detail ?? i.code.replaceAll("_", " ")}`}</li>
+          ))}
+          {decisions.map((d) => (
+            <li key={d.seq}>{`Open decision · ${d.detail ?? d.code.replaceAll("_", " ")}`}</li>
+          ))}
+        </ul>
+      )}
+    </ConfirmDialog>
+  );
 }
 
 function HeaderAction({
   view,
   idle,
-  canSign,
+  ended,
+  engagementId,
+  items,
 }: {
   view: RunViewOut | undefined;
   idle: boolean;
-  canSign: boolean;
-}): JSX.Element {
+  ended: boolean;
+  engagementId: string | undefined;
+  items: readonly RunItemOut[];
+}): JSX.Element | null {
+  const acts = useContext(ActsContext);
+  const [confirm, setConfirm] = useState(false);
+  const start = useMutation({
+    ...startEngagementRunMutation(),
+    onSuccess: acts.done,
+    onError: acts.refused,
+  });
   if (isCloseRun(view?.run)) {
     const n = view?.header?.run_number;
     return (
@@ -700,22 +859,47 @@ function HeaderAction({
     );
   }
   if (idle) {
+    if (!acts.can("agent_run.start") || engagementId === undefined) return null;
     return (
-      <Button size="sm" disabled title="Starting a run arrives with P-09-T14">
+      <Button
+        size="sm"
+        disabled={start.isPending}
+        onClick={() => {
+          start.mutate({
+            path: { engagement_id: engagementId },
+            body: { work_item_ref: view?.header?.work_item_ref ?? null, auto: false },
+            headers: key(),
+          });
+        }}
+      >
         <Icon name="play" size={12} />
         Run
       </Button>
     );
   }
+  if (!acts.can("agent_run.sign_off")) return null;
+  const runId = view?.run.id ?? "";
   return (
-    <Button
-      size="sm"
-      variant="secondary"
-      disabled={!canSign}
-      title="Only a person signs off a run"
-    >
-      Sign off run
-    </Button>
+    <>
+      <Button
+        size="sm"
+        variant="secondary"
+        disabled={!ended}
+        title={ended ? "Only a person signs off a run" : "A run is signed off once it has ended"}
+        onClick={() => {
+          setConfirm(true);
+        }}
+      >
+        Sign off run
+      </Button>
+      <SignOffDialog
+        runId={runId}
+        open={confirm}
+        onOpenChange={setConfirm}
+        issues={items.filter((i) => i.session_kind === "error" || i.kind === "failure")}
+        decisions={items.filter((i) => i.session_kind === "decision_ref")}
+      />
+    </>
   );
 }
 
@@ -727,7 +911,10 @@ export function RunPane({
   onSelectRef,
   onOpenDecision,
   agents,
+  engagementId,
 }: RunPaneProps): JSX.Element {
+  const queryClient = useQueryClient();
+  const v2 = useFlag("agent_runtime.v2") === true;
   const view = useQuery({
     ...agentRunOptions({ path: { run_id: runId } }),
     retry: false,
@@ -736,7 +923,25 @@ export function RunPane({
     refetchIntervalInBackground: false,
   });
   const feed = useRunFeed(runId);
-  const { live, canSign } = header(view.data);
+  const { live, ended } = header(view.data);
+  const allowed = new Set(view.data?.allowed_actions ?? []);
+  const acts: RunActs = {
+    can: (action) => v2 && allowed.has(action),
+    refused: (error) => {
+      toast.show(refusalWords(error));
+    },
+    done: () => {
+      void queryClient.invalidateQueries();
+    },
+  };
+  const approve = useMutation({
+    ...approveRunPlanMutation(),
+    onSuccess: acts.done,
+    onError: acts.refused,
+  });
+  const steer = useMutation({ ...redirectRunMutation(), onSuccess: acts.done, onError: acts.refused });
+  const [message, setMessage] = useState("");
+  const canSteer = live && acts.can("agent_run.control");
   if (view.isError) {
     return (
       <p data-run-pane="not-allowed" className="p-[12px] text-dense text-ink-3">
@@ -750,6 +955,7 @@ export function RunPane({
     view.data?.run.state === "needs_input" && view.data.header?.blocked_on?.kind === "approval";
   const close = isCloseRun(view.data?.run);
   return (
+    <ActsContext.Provider value={acts}>
     <section
       data-run-pane={view.data?.run.state ?? "loading"}
       className="flex min-h-0 flex-1 flex-col"
@@ -764,7 +970,13 @@ export function RunPane({
         )}
         <h2 className="text-[14.5px] font-medium">Agent</h2>
         <div className="absolute right-[10px]">
-          <HeaderAction view={view.data} idle={idle} canSign={canSign} />
+          <HeaderAction
+            view={view.data}
+            idle={idle}
+            ended={ended}
+            engagementId={engagementId}
+            items={feed.items}
+          />
         </div>
       </header>
       {agents !== undefined && agents.length > 0 && !close && (
@@ -808,13 +1020,21 @@ export function RunPane({
           ),
         )}
       </ol>
-      {planReady && (
+      {planReady && acts.can("agent_run.approve_plan") && (
         <div data-quick-replies="true" className="mx-[10px] mb-[6px] flex gap-2">
           <Button
             size="sm"
             variant="secondary"
-            disabled
-            title="Approving the plan arrives with P-09-T14"
+            disabled={approve.isPending || view.data?.header?.plan_version == null}
+            onClick={() => {
+              const version = view.data?.header?.plan_version;
+              if (version == null) return;
+              approve.mutate({
+                path: { run_id: runId },
+                body: { expected_version: version },
+                headers: key(),
+              });
+            }}
           >
             yes, run it
           </Button>
@@ -833,18 +1053,31 @@ export function RunPane({
         className="mx-[10px] mb-[10px] flex h-[38px] items-center gap-2 rounded-full border-[0.5px] border-hair bg-nested px-[12px]"
         onSubmit={(e) => {
           e.preventDefault();
+          if (!canSteer || message.trim() === "") return;
+          steer.mutate(
+            { path: { run_id: runId }, body: { body: message.trim() }, headers: key() },
+            {
+              onSuccess: () => {
+                setMessage("");
+              },
+            },
+          );
         }}
       >
         <Icon name="paperclip" size={14} />
         <input
           aria-label="Message"
           placeholder="Message"
-          disabled
+          disabled={!canSteer || steer.isPending}
+          value={message}
+          onChange={(e) => {
+            setMessage(e.target.value);
+          }}
           className="min-w-0 flex-1 bg-transparent text-[12.5px] placeholder:text-ink-3"
         />
         <button
           type="submit"
-          disabled
+          disabled={!canSteer || steer.isPending || message.trim() === ""}
           aria-label="Send"
           className="size-[26px] rounded-full bg-nested"
         >
@@ -852,5 +1085,6 @@ export function RunPane({
         </button>
       </form>
     </section>
+    </ActsContext.Provider>
   );
 }
