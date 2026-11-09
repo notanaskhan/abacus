@@ -128,6 +128,8 @@ class TraceRowOut(BaseModel):
     phase: Annotated[TracePhase | None, classified("internal")] = None
     mark: Annotated[TraceMark | None, classified("internal")] = None
     duration_ms: Annotated[int | None, Field(ge=0), classified("internal")] = None
+    # P-09-T10 (additive): a v2 step row's id, for its detail (`…/trace/steps/{step_id}`).
+    step_id: Annotated[UUID | None, classified("internal")] = None
 
 
 class RecordsReadOut(BaseModel):
@@ -492,6 +494,7 @@ def _rows(trace: Trace) -> list[TraceRowOut]:
             phase=r.phase,
             mark=r.mark,
             duration_ms=r.duration_ms,
+            step_id=r.step_id if r.phase in ("execute", "compute") else None,
         )
         for r in trace.v2_rows
     ]

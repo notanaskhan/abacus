@@ -50,6 +50,7 @@ function sumRead(rows: RecordsReadOut[]): number {
 // --- #4118: Season Progress Reporter, weekly run (WB-09 a) ---------------------------------------
 
 export const RUN_4118_ID = stableId("agent-run:season-progress-reporter-4118");
+export const LIST_RETURNS_STEP_ID = stableId("agent-run-step:4118-list-returns");
 const CCH = stableId("connection:cch-axcess-tax");
 
 const RUN_4118: AgentRunOut = {
@@ -122,6 +123,8 @@ const ROWS_4118: TraceRowOut[] = [
     state: "done",
     detail: "tax year 2025 → 224 returns read (status from CCH Axcess Tax) · 1.9 s",
     duration_ms: 1_900,
+    // WB-09 a2 (P-09-T10): the row expands through the step route.
+    step_id: LIST_RETURNS_STEP_ID,
   }),
   row(4, sep14("9:00:21"), {
     kind: "attempt",
