@@ -10,7 +10,7 @@ name: abacus
 services:
   db:
     # PostgreSQL 17 with pgvector (ADR-014)
-    image: pgvector/pgvector:0.8.7-pg17-trixie@sha256:7a7e9f22015b67edb4bef5c59daeebcd7e74bfa570df6ce60ae01237c8648a84
+    image: pgvector/pgvector:0.8.7-pg17-trixie@sha256:01215e09bd4bd582d20230e025b6c971deeeffee49ceef1aae167e839cb62a7e
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -48,7 +48,7 @@ services:
 
   temporal:
     # Temporal dev server (ADR-017); UI on 8233
-    image: temporalio/temporal:1.9.1@sha256:ad4c82c97bd12b417d1ea942610dbcd511afb250c4d5ed26c694009533df447e
+    image: temporalio/temporal:1.10.0@sha256:003508da05989e7cf0d583cfce521c4bb2732e733574e3040db8f1284783baa2
     # In-memory: workflow history is lost on restart, which is fine locally (no root, no volume).
     command: ["server", "start-dev", "--ip", "0.0.0.0"]
     ports:
