@@ -90,6 +90,9 @@ export interface AUD02Props {
   onSection?: (key: string) => void;
   /** The dock tab (`?dock=`) and the document open in the Viewer (`?doc=`). */
   dock?: DockTab;
+  /** P-09-T09: the run open in the SHL-13 pane (`?run=`). */
+  runId?: string | null;
+  onRun?: (runId: string | null) => void;
   doc?: string | null;
   onDock?: (tab: DockTab, doc?: string | null) => void;
   /** "All Audits" (AUD-01). */
@@ -227,6 +230,8 @@ function Cockpit({
   dock,
   doc,
   onDock,
+  runId,
+  onRun,
   onBack,
   onAdd,
   embedded,
@@ -536,7 +541,11 @@ function Cockpit({
               </div>
             </AgentDock>
           ) : (
-            <AgentDock engagementId={cockpit.engagement_id}>
+            <AgentDock
+              engagementId={cockpit.engagement_id}
+              runId={runId ?? null}
+              {...(onRun === undefined ? {} : { onRun })}
+            >
               <AgentActivityTab engagementId={cockpit.engagement_id} />
             </AgentDock>
           ),

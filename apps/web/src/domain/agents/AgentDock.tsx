@@ -12,7 +12,9 @@ import {
 } from "@abacus/ui";
 import { useQuery } from "@tanstack/react-query";
 import { type JSX, type ReactNode, useState } from "react";
+import { useFlag } from "../../app-core/flags";
 import { narrate } from "./narrate";
+import { RunPane } from "./RunPane";
 import { isActive, POLL_MS, useRunFeed } from "./runFeed";
 import { duration, STATE, SUBJECT, TraceDrawer } from "./TraceDrawer";
 
@@ -90,9 +92,12 @@ function lineWords(item: RunItemOut): string {
 function ToolCard({
   run,
   onTrace,
+  onOpen,
 }: {
   run: AgentRunOut;
   onTrace: (runId: string) => void;
+  /** With the SHL-13 pane on: open this run in it. */
+  onOpen?: ((runId: string) => void) | undefined;
 }): JSX.Element {
   const fmt = useFormat();
   const [open, setOpen] = useState(false);
@@ -119,7 +124,18 @@ function ToolCard({
         {`${run.agent_label} · ${fmt.time(run.started_at)} · ${run.initiator_name}`}
       </p>
       {open && <CardBody run={run} />}
-      <div className="flex justify-end pt-[4px]">
+      <div className="flex justify-end gap-2 pt-[4px]">
+        {onOpen !== undefined && (
+          <Button
+            size="xs"
+            variant="ghost"
+            onClick={() => {
+              onOpen(run.id);
+            }}
+          >
+            Open run
+          </Button>
+        )}
         <Button
           size="xs"
           variant="ghost"
@@ -139,15 +155,52 @@ export function AgentDock({
   engagementId,
   children,
   onTrace,
+  runId = null,
+  onRun,
+  selectedRef,
+  onSelectRef,
+  onOpenDecision,
 }: {
   engagementId: string;
   children?: ReactNode;
   /** Open the trace elsewhere (a route's `useOpenTrace`), instead of the dock's own drawer. */
   onTrace?: (runId: string) => void;
+  /** P-09-T09: the run open in the SHL-13 run pane (`?dock=agent&run=`), with the flag on. */
+  runId?: string | null;
+  onRun?: (runId: string | null) => void;
+  selectedRef?: string | null;
+  onSelectRef?: (ref: string) => void;
+  onOpenDecision?: (ref: string) => void;
 }): JSX.Element {
   // A route may open the trace as its `?ov=run-trace` drawer; otherwise the dock holds it.
   const [trace, setTrace] = useState<string | null>(null);
   const showTrace = onTrace ?? setTrace;
+  // SHL-13 (P-09-T09) behind `agent_dock.enabled`; off, the dock is the v1 run list (DF-04 below).
+  const paneOn = useFlag("agent_dock.enabled") === true;
+  const [localRun, setLocalRun] = useState<string | null>(null);
+  const open = runId ?? localRun;
+  const openRun = onRun ?? setLocalRun;
+  if (paneOn && open !== null) {
+    return (
+      <div data-agent-dock="run" className="flex min-h-0 flex-1 flex-col">
+        <RunPane
+          runId={open}
+          onTrace={showTrace}
+          {...(selectedRef === undefined ? {} : { selectedRef })}
+          {...(onSelectRef === undefined ? {} : { onSelectRef })}
+          {...(onOpenDecision === undefined ? {} : { onOpenDecision })}
+        />
+        {trace !== null && (
+          <TraceDrawer
+            runId={trace}
+            onClose={() => {
+              setTrace(null);
+            }}
+          />
+        )}
+      </div>
+    );
+  }
   const runs = useQuery({
     ...listAgentRunsOptions({ path: { engagement_id: engagementId }, query: { limit: 10 } }),
     retry: false,
@@ -167,7 +220,12 @@ export function AgentDock({
       ) : (
         <ol aria-label="Agent runs" className="flex flex-col gap-[8px] p-[12px]">
           {thread.map((run) => (
-            <ToolCard key={run.id} run={run} onTrace={showTrace} />
+            <ToolCard
+              key={run.id}
+              run={run}
+              onTrace={showTrace}
+              onOpen={paneOn ? openRun : undefined}
+            />
           ))}
         </ol>
       )}

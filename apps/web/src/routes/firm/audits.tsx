@@ -92,6 +92,8 @@ interface CockpitSearch {
   dock?: "agent" | "viewer";
   doc?: string;
   version?: number;
+  /** P-09-T09: the run open in the SHL-13 pane (`?dock=agent&run=`). */
+  run?: string;
 }
 
 export const auditRoute = createRoute({
@@ -101,6 +103,7 @@ export const auditRoute = createRoute({
     ...(typeof search.section === "string" ? { section: search.section } : {}),
     ...(search.dock === "agent" || search.dock === "viewer" ? { dock: search.dock } : {}),
     ...(typeof search.doc === "string" ? { doc: search.doc } : {}),
+    ...(typeof search.run === "string" ? { run: search.run } : {}),
     // EBP-02 b2: the earlier plan review, read-only.
     ...(typeof search.version === "number" ? { version: search.version } : {}),
   }),
@@ -123,6 +126,12 @@ export const auditRoute = createRoute({
         doc={search.doc ?? null}
         onDock={(dock, doc) => {
           go({ ...search, dock, ...(doc == null ? {} : { doc }) });
+        }}
+        runId={search.run ?? null}
+        onRun={(run) => {
+          const rest = { ...search };
+          delete rest.run;
+          go({ ...rest, dock: "agent", ...(run === null ? {} : { run }) });
         }}
         {...(search.version === undefined ? {} : { planReviewVersion: search.version })}
         onPlanReviewVersion={(version) => {

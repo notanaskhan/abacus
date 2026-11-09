@@ -3,16 +3,19 @@
 // is off. A scenario mounts these beside its own handlers (SHL-13 and WB-09 from P-09-T09/T10).
 import type { RunItemsOut } from "@abacus/api-client";
 import { type FixtureHandler, json } from "../../app-core/fixture-mode";
+import { SHL13_RUNS } from "../seed/agent-dock";
 import { E0_RUNS, type E0Run } from "../seed/agent-runs";
+
+const ALL_RUNS: Record<string, E0Run> = { ...E0_RUNS, ...SHL13_RUNS };
 
 const NOT_FOUND = { detail: "not_found" };
 
 function runOf(params: Record<string, string | undefined>): E0Run | undefined {
-  return E0_RUNS[params.run_id ?? ""];
+  return ALL_RUNS[params.run_id ?? ""];
 }
 
 export function agentRunHandlers(
-  runs: Record<string, E0Run> = E0_RUNS,
+  runs: Record<string, E0Run> = ALL_RUNS,
 ): Record<string, FixtureHandler> {
   const find = (params: Record<string, string | undefined>) =>
     runs[params.run_id ?? ""] ?? runOf(params);
