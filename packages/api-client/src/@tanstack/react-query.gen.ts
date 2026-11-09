@@ -2583,7 +2583,8 @@ export const auditReportChoiceMutation = (options?: Partial<Options<AuditReportC
 /**
  * Audit Report Document Route
  *
- * A draft render through C11 (DRAFT watermark, signature placeholder; byte-identical).
+ * A draft render through C11 (DRAFT watermark, signature placeholder; byte-identical;
+ * DEC-3028): the generated document's id is the run to follow.
  */
 export const auditReportDocumentMutation = (options?: Partial<Options<AuditReportDocumentData>>): UseMutationOptions<AuditReportDocumentResponse, AuditReportDocumentError, Options<AuditReportDocumentData>> => {
     const mutationOptions: UseMutationOptions<AuditReportDocumentResponse, AuditReportDocumentError, Options<AuditReportDocumentData>> = {
@@ -2622,7 +2623,7 @@ export const auditReportReasonCodesOptions = (options: Options<AuditReportReason
 /**
  * Audit Report Request Decision Route
  *
- * Raise the `opinion` card for the EP (C3).
+ * Raise the `opinion` card for the EP (C3; DEC-3028).
  */
 export const auditReportRequestDecisionMutation = (options?: Partial<Options<AuditReportRequestDecisionData>>): UseMutationOptions<AuditReportRequestDecisionResponse, AuditReportRequestDecisionError, Options<AuditReportRequestDecisionData>> => {
     const mutationOptions: UseMutationOptions<AuditReportRequestDecisionResponse, AuditReportRequestDecisionError, Options<AuditReportRequestDecisionData>> = {

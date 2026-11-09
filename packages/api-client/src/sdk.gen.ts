@@ -1562,7 +1562,8 @@ export const auditReportChoice = <ThrowOnError extends boolean = false>(options:
 /**
  * Audit Report Document Route
  *
- * A draft render through C11 (DRAFT watermark, signature placeholder; byte-identical).
+ * A draft render through C11 (DRAFT watermark, signature placeholder; byte-identical;
+ * DEC-3028): the generated document's id is the run to follow.
  */
 export const auditReportDocument = <ThrowOnError extends boolean = false>(options: Options<AuditReportDocumentData, ThrowOnError>): RequestResult<AuditReportDocumentResponses, AuditReportDocumentErrors, ThrowOnError> => (options.client ?? client).post<AuditReportDocumentResponses, AuditReportDocumentErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -1588,7 +1589,7 @@ export const auditReportReasonCodes = <ThrowOnError extends boolean = false>(opt
 /**
  * Audit Report Request Decision Route
  *
- * Raise the `opinion` card for the EP (C3).
+ * Raise the `opinion` card for the EP (C3; DEC-3028).
  */
 export const auditReportRequestDecision = <ThrowOnError extends boolean = false>(options: Options<AuditReportRequestDecisionData, ThrowOnError>): RequestResult<AuditReportRequestDecisionResponses, AuditReportRequestDecisionErrors, ThrowOnError> => (options.client ?? client).post<AuditReportRequestDecisionResponses, AuditReportRequestDecisionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
