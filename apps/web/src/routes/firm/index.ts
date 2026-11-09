@@ -11,6 +11,7 @@ import { noticeRoutes } from "./notices";
 import { settingsRoutes } from "./settings";
 import { signatureRoutes } from "./signatures";
 import { taxReturnRoutes } from "./tax-returns";
+import { taxReviewRoutes } from "./tax-review";
 // SHL-08 (P-03-T14): registers the `?ov=viewer` drawer for every firm route.
 import "./viewer";
 import "./run-trace";
@@ -27,7 +28,7 @@ import "./risks";
 export const FIRM_AREAS = [
   { key: "home", label: "Home", routes: homeRoutes },
   { key: "engagements", label: "Engagements", routes: engagementRoutes },
-  { key: "tax_returns", label: "Tax Returns", routes: taxReturnRoutes },
+  { key: "tax_returns", label: "Tax Returns", routes: [...taxReturnRoutes, ...taxReviewRoutes] },
   { key: "files", label: "Files", routes: filesRoutes },
   { key: "knowledge", label: "Knowledge", routes: knowledgeRoutes },
   { key: "workbench", label: "Workbench", routes: [] },
@@ -55,6 +56,8 @@ export const firmRoutes = [
   ...auditRoutes,
   // T-02-T12: TAX-01 behind the `tax_returns` entitlement.
   ...taxReturnRoutes,
+  // T-04-T12: the review workspace behind `tax.review_workspace`.
+  ...taxReviewRoutes,
   // N-02-T40: SIG-01 behind `signatures.envelopes`.
   ...signatureRoutes,
   // N-04-T05: NOT-01 to NOT-03 (`notices.workspace` retired at N-04-T27, DEC-2602).

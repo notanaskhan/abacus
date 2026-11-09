@@ -44,6 +44,10 @@ export interface DefaultRecordHeaderProps extends Common {
   /** Its drawer is open. */
   checkpointsPressed?: boolean;
   onCheckpoints?: () => void;
+  /** T-04-T12 (TAX-07 b, c): the chip's own words and icon, "1 proposed" (list) or "No changes
+   * needed" (circle-check). Default "Checkpoints" with the history icon. */
+  checkpointsLabel?: string;
+  checkpointsIcon?: IconName;
   /** The sync chip's state; null hides it. Default `synced`. */
   sync?: SyncCode | null;
   /** "Mon D" of the last successful export or import, for `synced`. */
@@ -263,6 +267,8 @@ function DefaultHeader({
   checkpoints = true,
   checkpointsPressed = false,
   onCheckpoints,
+  checkpointsLabel = "Checkpoints",
+  checkpointsIcon = "history",
   sync = "synced",
   syncDate,
   onSync,
@@ -279,8 +285,13 @@ function DefaultHeader({
       {left ?? (
         <>
           {checkpoints && (
-            <Chip icon="history" chevron pressed={checkpointsPressed} onClick={onCheckpoints}>
-              Checkpoints
+            <Chip
+              icon={checkpointsIcon}
+              chevron
+              pressed={checkpointsPressed}
+              onClick={onCheckpoints}
+            >
+              {checkpointsLabel}
             </Chip>
           )}
           {sync !== null && (
