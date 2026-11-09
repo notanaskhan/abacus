@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from datetime import date, datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
 from fastapi import Depends, Header, Query, Request, Response
@@ -519,18 +519,44 @@ async def list_room_communications_route(
     errors=(501,),
 )
 async def list_room_inquiries_route(room_id: UUID, ctx: Member) -> RoomInquiriesOut:
-    """Questionnaires addressed to the caller only (AC-29)."""
+    """Questionnaires addressed to the caller only (AC-29; R-02-T16, DEC-3114)."""
+    from abacus.modules.assurance.api import room_inquiries
+
     await _flag_on(ctx, PORTAL_GOVERNANCE_ROOM)
-    _not_yet()
+    return RoomInquiriesOut(
+        items=[
+            RoomInquiryOut(
+                questionnaire_id=i.questionnaire_id, question_id=i.question_id, prompt=i.prompt
+            )
+            for i in await room_inquiries(ctx, room_id)
+        ]
+    )
 
 
 @governance_router.get(
     "/rooms/{room_id}/reports", action="tcwg.read", response_model=RoomReportsOut, errors=(501,)
 )
 async def list_room_reports_route(room_id: UUID, ctx: Member) -> RoomReportsOut:
-    """Deliverables whose audiences include this room; nothing from management's list (AC-30)."""
+    """Deliverables whose audiences include this room; nothing from management's list (AC-30;
+    R-02-T16, DEC-3114)."""
+    from abacus.modules.assurance.api import room_reports
+
     await _flag_on(ctx, PORTAL_GOVERNANCE_ROOM)
-    _not_yet()
+    return RoomReportsOut(
+        items=[
+            DeliverableRowOut(
+                id=r.deliverable_id,
+                kind=cast(DeliverableKind, r.kind),
+                title=r.title,
+                status="released",
+                latest_version=r.latest_version,
+                page_count=r.page_count,
+                released_on=r.released_at.date(),
+                restricted_use=r.restricted_use,
+            )
+            for r in await room_reports(ctx, room_id)
+        ]
+    )
 
 
 @governance_router.get(

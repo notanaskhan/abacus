@@ -542,6 +542,8 @@ from abacus.modules.assurance.governance_room import letters as room_letters  # 
 from abacus.modules.assurance.governance_room import (  # noqa: E402
     record_acknowledgement as record_acknowledgement,
 )
+from abacus.modules.assurance.governance_room import room_inquiries as room_inquiries  # noqa: E402
+from abacus.modules.assurance.governance_room import room_reports as room_reports  # noqa: E402
 from abacus.modules.assurance.governance_room import room_scope  # noqa: E402
 from abacus.modules.assurance.governance_room import rooms as governance_rooms  # noqa: E402
 
