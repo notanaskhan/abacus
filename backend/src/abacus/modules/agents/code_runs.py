@@ -83,14 +83,42 @@ async def record_code_run(tx: UnitOfWork, tenant_id: UUID, run: CodeRun) -> UUID
     `BlocksRejected` before anything is written."""
     check_plan(run)
     validate_blocks(run.narration, run.facts, run.citations)
-    run_id = await open_deterministic_run(
+    run_id = await begin_code_run(
+        tx, tenant_id, run.agent_id, run.engagement_id, run.initiator_user_id, run.task_scope
+    )
+    await finish_code_run(tx, tenant_id, run_id, run)
+    return run_id
+
+
+async def begin_code_run(
+    tx: UnitOfWork,
+    tenant_id: UUID,
+    agent_id: str,
+    engagement_id: UUID,
+    initiator_user_id: UUID,
+    task_scope: tuple[str, ...],
+) -> UUID:
+    """Open the run first when what it drafts must name it (a letter's `drafted_by_run_id`; S33
+    partials round). `finish_code_run` writes its steps and narration and ends it."""
+    return await open_deterministic_run(
         tx,
         tenant_id=tenant_id,
-        agent_id=run.agent_id,
-        engagement_id=run.engagement_id,
-        initiator=run.initiator_user_id,
-        task_scope=run.task_scope,
+        agent_id=agent_id,
+        engagement_id=engagement_id,
+        initiator=initiator_user_id,
+        task_scope=task_scope,
     )
+
+
+async def fail_code_run(tx: UnitOfWork, run_id: UUID, code: str) -> None:
+    """A run whose work was refused ends failed with the refusal's code (nothing else written)."""
+    await close_deterministic_run(tx, run_id, failure_code=code[:60])
+
+
+async def finish_code_run(tx: UnitOfWork, tenant_id: UUID, run_id: UUID, run: CodeRun) -> None:
+    """Steps, the narration and the end of a run `begin_code_run` opened."""
+    check_plan(run)
+    validate_blocks(run.narration, run.facts, run.citations)
     seq = 0
     for step in run.steps:
         seq += 1
@@ -132,7 +160,6 @@ async def record_code_run(tx: UnitOfWork, tenant_id: UUID, run: CodeRun) -> UUID
         after=Ref(steps=len(run.steps), model_calls=0),
         scope=Scope(engagement_id=run.engagement_id, work_item_id=run.work_item_id),
     )
-    return run_id
 
 
 def text_part(*segments: Mapping[str, object]) -> dict[str, object]:

@@ -24,13 +24,16 @@ from uuid import UUID
 from sqlalchemy import text
 
 from abacus.kernel.db import TenantContext, tenant_session
-from abacus.kernel.uow import uow
+from abacus.kernel.uow import Target, uow
 from abacus.modules.agents.api import (
     CodeRun,
     CodeStep,
     Fact,
+    begin_code_run,
     blocks,
     fact,
+    fail_code_run,
+    finish_code_run,
     last_completed_run_at,
     record_code_run,
     text_part,
@@ -117,26 +120,45 @@ async def eqr_digest(ctx: AuthContext, work_item_id: UUID) -> UUID:
 
 async def completion_readiness(ctx: AuthContext, work_item_id: UUID) -> UUID:
     """Check sign-offs, review notes and (EBP) the draft Form 5500's tie-out; narration only."""
-    from abacus.modules.assurance import gates as gate_providers
-
     found = await assurance_item(ctx.tenant, work_item_id)
     ref = await get_ref(ctx, found.engagement_id)
     await authorise(ctx, "completion.check_readiness", ref.resource())
-    blockers = await gate_providers.g5_blockers(ctx.tenant, found.engagement_id)
+    return await _readiness(ctx.tenant, work_item_id, found.engagement_id, ctx.user_id)
+
+
+async def record_readiness_as_partner(tenant: TenantContext, work_item_id: UUID) -> UUID | None:
+    """#4231 after a burst of checklist changes (CompletionReadinessWorkflow): the run as the
+    engagement partner via Agent (the timer has no person); None when the engagement has no EP."""
+    found = await assurance_item(tenant, work_item_id)
+    partners = await engagement_partners(tenant.tenant_id, found.engagement_id)
+    if not partners:
+        return None
+    acting = TenantContext(
+        tenant.tenant_id, "system", "completion_readiness", on_behalf_of_user_id=partners[0]
+    )
+    return await _readiness(acting, work_item_id, found.engagement_id, partners[0])
+
+
+async def _readiness(
+    tenant: TenantContext, work_item_id: UUID, engagement_id: UUID, initiator: UUID
+) -> UUID:
+    from abacus.modules.assurance import gates as gate_providers
+
+    blockers = await gate_providers.g5_blockers(tenant, engagement_id)
     unsigned = sum(1 for b in blockers if b.startswith("unsigned:"))
     notes = sum(1 for b in blockers if b.startswith("review_note:"))
     steps = [
         CodeStep("completion.check_sign_offs", "Check workpaper sign-offs", unsigned),
         CodeStep("completion.check_review_notes", "Check review notes", notes),
     ]
-    if await engagement_type_of(ctx.tenant, found.engagement_id) == "ebp_audit":
+    if await engagement_type_of(tenant, engagement_id) == "ebp_audit":
         steps.append(CodeStep("ebp.read_tie_out", "Read draft Form 5500 for consistency"))
     return await _record(
-        ctx.tenant,
+        tenant,
         CodeRun(
             agent_id=COMPLETION_READINESS,
-            engagement_id=found.engagement_id,
-            initiator_user_id=ctx.user_id,
+            engagement_id=engagement_id,
+            initiator_user_id=initiator,
             task_scope=("completion.read", "review_note.read"),
             steps=tuple(steps),
             narration=blocks(
@@ -230,40 +252,58 @@ async def letter_compose(
     ctx: AuthContext, work_item_id: UUID, *, communication_id: UUID | None = None
 ) -> UUID:
     """Compose the representation letter's next draft, or regenerate one governance letter, then
-    record the run. Drafts only: a manager edits, the EP approves, a person sends."""
+    record the run. Drafts only: a manager edits, the EP approves, a person sends. The run opens
+    first so the draft names it (`drafted_by_run_id`; S33 partials round); a refused draft ends
+    the run failed with the refusal's code."""
     from abacus.modules.assurance import governance_comms as gc
     from abacus.modules.assurance import rep_letters
 
     found = await assurance_item(ctx.tenant, work_item_id)
-    if communication_id is None:
-        version = await rep_letters.start_letter(ctx, work_item_id)
-        label, kind = "Compose representation letter", "rep_letter"
-        drafted = getattr(version, "version_no", 1)
-    else:
-        await gc.regenerate(ctx, work_item_id, communication_id)
-        label, kind = "Regenerate governance letter", "governance_letter"
-        drafted = 1
-    return await _record(
-        ctx.tenant,
-        CodeRun(
-            agent_id=LETTER_COMPOSE,
-            engagement_id=found.engagement_id,
-            initiator_user_id=ctx.user_id,
-            task_scope=("rep_letter.draft", "governance_comm.draft"),
-            steps=(CodeStep(f"{kind}.compose_draft", label),),
-            narration=blocks(
-                text_part(
-                    txt("I composed draft "),
-                    fact("version"),
-                    txt(" from the firm's template and the file's facts. A person edits it, "),
-                    txt("the engagement partner decides on it."),
-                )
+    scope = ("rep_letter.draft", "governance_comm.draft")
+    async with uow(ctx.tenant) as tx:
+        run_id = await begin_code_run(
+            tx, ctx.tenant_id, LETTER_COMPOSE, found.engagement_id, ctx.user_id, scope
+        )
+        tx.record("agent_run.started", target=Target("agent_run", run_id))
+    try:
+        if communication_id is None:
+            version = await rep_letters.start_letter(ctx, work_item_id, drafted_by_run_id=run_id)
+            label, kind = "Compose representation letter", "rep_letter"
+            drafted = version.version_no
+        else:
+            await gc.regenerate(ctx, work_item_id, communication_id, drafted_by_run_id=run_id)
+            label, kind = "Regenerate governance letter", "governance_letter"
+            drafted = 1
+    except Exception as refused:
+        async with uow(ctx.tenant) as tx:
+            await fail_code_run(tx, run_id, getattr(refused, "code", "draft_refused"))
+            tx.record("agent_run.failed", target=Target("agent_run", run_id))
+        raise
+    async with uow(ctx.tenant) as tx:
+        await finish_code_run(
+            tx,
+            ctx.tenant_id,
+            run_id,
+            CodeRun(
+                agent_id=LETTER_COMPOSE,
+                engagement_id=found.engagement_id,
+                initiator_user_id=ctx.user_id,
+                task_scope=scope,
+                steps=(CodeStep(f"{kind}.compose_draft", label),),
+                narration=blocks(
+                    text_part(
+                        txt("I composed draft "),
+                        fact("version"),
+                        txt(" from the firm's template and the file's facts. A person edits it, "),
+                        txt("the engagement partner decides on it."),
+                    )
+                ),
+                facts={"version": _count("version", int(drafted), "the draft's version number")},
+                output={"kind": kind},
+                work_item_id=work_item_id,
             ),
-            facts={"version": _count("version", int(drafted), "the draft's version number")},
-            output={"kind": kind},
-            work_item_id=work_item_id,
-        ),
-    )
+        )
+    return run_id
 
 
 # --- audit.archive_readiness (#4302) -------------------------------------------------------------

@@ -63,6 +63,16 @@ from abacus.modules.assurance.completion_decisions import register_completion_de
 from abacus.modules.assurance.completion_facts import register_completion_facts
 from abacus.modules.assurance.completion_projector import SUBSCRIBED as COMPLETION_SUBSCRIBED
 from abacus.modules.assurance.completion_projector import on_completion_event
+from abacus.modules.assurance.completion_readiness_workflow import (
+    ACTIVITIES as READINESS_ACTIVITIES,
+)
+from abacus.modules.assurance.completion_readiness_workflow import (
+    WORKFLOWS as READINESS_WORKFLOWS,
+)
+from abacus.modules.assurance.completion_readiness_workflow import (  # its recorder (ADR-090)
+    CompletionReadinessWorkflow,
+    ReadinessInput,
+)
 from abacus.modules.assurance.completion_routes import dashboard_router
 from abacus.modules.assurance.completion_routes import router as completion_router
 from abacus.modules.assurance.completion_targets import AUDIT_KINDS as COMPLETION_TARGET_KINDS
@@ -311,10 +321,19 @@ SUBSCRIPTIONS = _BASE_SUBSCRIPTIONS | {
 }
 # A-05-T54: Form5500TieOut, code only, on the background class.
 # A-07-T30 (DEC-3107): ReleaseWorkflow on the time-sensitive class.
+# S33 partials round (DEC-3138): #4231's readiness run after a burst, on the interactive class.
 WORKFLOWS: dict[type, str] = (
-    dict(FORM5500_WORKFLOWS) | {BringDownWorkflow: "background"} | dict(RELEASE_WORKFLOWS)
+    dict(FORM5500_WORKFLOWS)
+    | {BringDownWorkflow: "background"}
+    | dict(RELEASE_WORKFLOWS)
+    | dict(READINESS_WORKFLOWS)
 )
-ACTIVITIES: tuple[object, ...] = (*FORM5500_ACTIVITIES, bring_down, *RELEASE_ACTIVITIES)
+ACTIVITIES: tuple[object, ...] = (
+    *FORM5500_ACTIVITIES,
+    bring_down,
+    *RELEASE_ACTIVITIES,
+    *READINESS_ACTIVITIES,
+)
 register_work_classes(WORKFLOWS)  # type: ignore[arg-type]  # registry kind literal
 
 # A-01-T02 (A-01 §5.1): the AUD-01 segments every firm has; X-01 (SOC & IT) and X-03 (Internal
@@ -435,6 +454,7 @@ __all__ = [
     "BringDownInput",
     "BringDownResult",
     "BringDownWorkflow",
+    "CompletionReadinessWorkflow",
     "ExceptionRouter",
     "ExceptionRow",
     "Form5500TieOutWorkflow",
@@ -443,6 +463,7 @@ __all__ = [
     "MappingRunIn",
     "NewFinding",
     "NewRisk",  # A-04-T28: the planning slice records the register through the service
+    "ReadinessInput",
     "ReleaseRequest",
     "ReleaseWorkflow",
     "RenderedFinal",

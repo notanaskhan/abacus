@@ -220,6 +220,7 @@ async def _insert_version(
     reps: Sequence[Representation],
     sum_snapshot: UUID | None,
     edited: bytes | None,
+    drafted_by_run_id: UUID | None = None,
 ) -> tuple[UUID, int, str]:
     body, digest = _canonical(template_version_id, reps, sum_snapshot)
     version_no = int(
@@ -236,8 +237,10 @@ async def _insert_version(
         text(
             "INSERT INTO representation_letter_versions (tenant_id, engagement_id, work_item_id, "
             "letter_id, version_no, template_version_id, representations, "
-            "edited_paragraphs_sealed, sum_snapshot_id, content_hash, created_by) VALUES (:t, :e, "
-            ":wi, :l, :no, :tv, CAST(:reps AS jsonb), :edited, :sum, :hash, :by) RETURNING id"
+            "edited_paragraphs_sealed, sum_snapshot_id, content_hash, created_by, "
+            "drafted_by_run_id) "
+            "VALUES (:t, :e, :wi, :l, :no, :tv, CAST(:reps AS jsonb), :edited, :sum, :hash, :by, "
+            ":run) RETURNING id"
         ),
         {
             "t": ctx.tenant_id,
@@ -251,6 +254,7 @@ async def _insert_version(
             "sum": sum_snapshot,
             "hash": digest,
             "by": ctx.user_id,
+            "run": drafted_by_run_id,
         },
     )
     await tx.session.execute(
@@ -278,8 +282,11 @@ class LetterVersion:
     representations: tuple[Representation, ...]
 
 
-async def start_letter(ctx: AuthContext, work_item_id: UUID) -> LetterVersion:
-    """Compose version 1 (or the next) from the published template and the facts."""
+async def start_letter(
+    ctx: AuthContext, work_item_id: UUID, *, drafted_by_run_id: UUID | None = None
+) -> LetterVersion:
+    """Compose version 1 (or the next) from the published template and the facts. A draft the
+    Agent composed names its run (`drafted_by_run_id`, A-07 §6; S33 partials round)."""
     engagement_id = await _person(ctx, work_item_id, "rep_letter.draft")
     template = await published_clauses(ctx.tenant, FAMILY)
     if template is None:
@@ -310,6 +317,7 @@ async def start_letter(ctx: AuthContext, work_item_id: UUID) -> LetterVersion:
             reps=reps,
             sum_snapshot=sum_snapshot,
             edited=None,
+            drafted_by_run_id=drafted_by_run_id,
         )
     return LetterVersion(letter_id, version_id, version_no, digest, tuple(reps))
 
