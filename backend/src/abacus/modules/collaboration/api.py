@@ -9,6 +9,7 @@ from abacus.kernel.audit_owners import register_engagement_owners
 from abacus.modules.collaboration.anchors import (
     AnchorFacts,
     AnchorProvider,
+    Locator,
     register_anchor,
     registered_kinds,
 )
@@ -29,4 +30,11 @@ register_anchor("todo", TODO_ANCHORS)
 # DEC-121: the audit explorer asks each owner which engagement its targets belong to.
 register_engagement_owners(AUDIT_KINDS, audit_owners)
 
-__all__ = ["ROUTERS", "AnchorFacts", "AnchorProvider", "register_anchor", "registered_kinds"]
+__all__ = [
+    "ROUTERS",
+    "AnchorFacts",
+    "AnchorProvider",
+    "Locator",
+    "register_anchor",
+    "registered_kinds",
+]

@@ -3208,6 +3208,11 @@ codes:
     raised_by:
     - abacus.modules.collaboration.errors.ThreadNotResolved
     summary: 'Reopen on an open thread: nothing to reopen.'
+  thread_shared:
+    status: 409
+    raised_by:
+    - abacus.modules.collaboration.errors.ThreadShared
+    summary: A shared thread is never converted to an internal review note (P-05-T09, SHL-18f).
   tie_out_check_invalid:
     status: 422
     raised_by:

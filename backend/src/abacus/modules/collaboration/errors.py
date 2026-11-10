@@ -30,6 +30,12 @@ class ThreadAlreadyResolved(DomainConflict):
     code = "thread_already_resolved"
 
 
+class ThreadShared(DomainConflict):
+    """SHL-18f: a shared thread is never converted to an internal review note (P-05-T09)."""
+
+    code = "thread_shared"
+
+
 class ThreadNotResolved(DomainConflict):
     """Reopen on an open thread: nothing to reopen."""
 
