@@ -73,7 +73,8 @@ const RequestSheetScreen = lazy(async () => ({
   default: (await import("../../screens/POR-04")).POR04,
 }));
 
-// R-02-T06: POR-08, POR-09 and POR-15's lazy route stubs, each its own chunk (planned).
+// R-02-T06: POR-08, POR-09 and POR-15's lazy routes, each its own chunk (POR-08 R-02-T19, POR-09
+// R-02-T17 built; POR-15 planned).
 const ApprovalsScreen = lazy(async () => ({
   default: (await import("../../screens/POR-08")).POR08,
 }));
@@ -92,12 +93,12 @@ export const AREA_PATHS: Readonly<Record<string, string>> = {
   Questions: "/questions",
   "My K-1s": "/k1s",
   Deliverables: "/deliverables", // R-02-T17: built; a firm with the flag off sees its designed state
+  Approvals: "/approvals", // R-02-T19: built; the nav shows it only on an entity scope (shell.ts)
 };
 
 /** R-02-T06: the planned areas a fixture build reaches from the nav (production keeps them put:
  * its output is unchanged until each screen is built and its flag is on). */
 export const PLANNED_AREA_PATHS: Readonly<Record<string, string>> = {
-  Approvals: "/approvals",
   Communications: "/governance",
 };
 
@@ -218,6 +219,7 @@ function Area({ area }: { area: string }): JSX.Element | null {
   if (area === "Questions") return <QuestionsPage />;
   if (area === "K1s") return <K1sPage />;
   if (area === "Deliverables") return <DeliverablesPage />;
+  if (area === "Approvals") return <ApprovalsPage />;
   return <Shell area={area} />;
 }
 
@@ -236,6 +238,31 @@ function DeliverablesPage(): JSX.Element {
         onNavigate={navigate}
         {...(params.deliverableId === undefined ? {} : { deliverableId: params.deliverableId })}
         {...(section === undefined ? {} : { section })}
+      />
+    </Suspense>
+  );
+}
+
+// POR-08's `?filter=` and `?ov=` words (its Filter and Overlay).
+const FILTERS = ["waiting", "posted", "approved", "declined"] as const;
+const OVERLAYS = ["confirm", "decline", "ask"] as const;
+
+/** POR-08 (R-02-T19): `/approvals[?context=][&filter=][&ov=decline|ask:<kind>:<id>]`. */
+function ApprovalsPage(): JSX.Element {
+  const mobile = useMobileViewport();
+  const navigate = useAreaNavigate();
+  const [search] = useState(() => new URLSearchParams(window.location.search));
+  const context = search.get("context") ?? undefined;
+  const filter = FILTERS.find((f) => f === search.get("filter"));
+  const overlay = OVERLAYS.find((o) => o === (search.get("ov") ?? "").split(":")[0]);
+  return (
+    <Suspense fallback={null}>
+      <ApprovalsScreen
+        mobile={mobile}
+        onNavigate={navigate}
+        {...(context === undefined ? {} : { context })}
+        {...(filter === undefined ? {} : { filter })}
+        {...(overlay === undefined ? {} : { overlay })}
       />
     </Suspense>
   );
@@ -476,7 +503,7 @@ export const portalTree = rootRoute.addChildren([
   page("/sign/$envelopeId", () => <Area area="Sign" />),
   page("/sign/$envelopeId/return", () => <Area area="Sign" />),
   page("/k1s", () => <Area area="K1s" />), // POR-13 (T-02-T27)
-  page("/approvals", () => <ApprovalsScreen />), // POR-08 (R-02-T06 stub)
+  page("/approvals", () => <Area area="Approvals" />), // POR-08 (R-02-T19)
   page("/deliverables", () => <Area area="Deliverables" />), // POR-09 (R-02-T17)
   page("/deliverables/$deliverableId", () => <Area area="Deliverables" />),
   page("/governance", () => <GovernanceScreen />), // POR-15 (R-02-T06 stub)
