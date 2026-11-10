@@ -82,7 +82,7 @@ describe("POR-15 governance room", () => {
     expect(screen.getByText("Acknowledged Sep 19")).toBeTruthy();
     expect(screen.getByText("Acknowledged Sep 18")).toBeTruthy();
     expect(screen.getByText(COPY.ackLine)).toBeTruthy();
-    expect(screen.getByText("Sent Sep 18")).toBeTruthy();
+    expect(screen.getByText("Sent Sep 18 · from Margaret Okonkwo")).toBeTruthy();
   });
 
   it("a: Acknowledge sends the hash of the letter read, with a key", async () => {

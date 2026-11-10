@@ -71,6 +71,7 @@ export function communications(state: Por15State): GovernanceCommunicationsOut {
       title: "Planning communication",
       status: planningAcked ? "acknowledged" : "new",
       sent_on: "2026-09-18",
+      sent_by: "Margaret Okonkwo",
       acknowledged_on: planningAcked ? "2026-09-21" : null,
       due_on: null,
     },

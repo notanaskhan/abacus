@@ -251,6 +251,8 @@ class RoomLetterRowOut(BaseModel):
     sent_on: Annotated[date | None, Internal] = None
     due_on: Annotated[date | None, Internal] = None
     acknowledged_on: Annotated[date | None, Internal] = None
+    # R-02-T21: "Sent Sep 18 · from Margaret Okonkwo" (the person who sent it to the room).
+    sent_by: Annotated[str | None, Confidential] = None
 
 
 class GovernanceCommunicationsOut(BaseModel):
@@ -600,6 +602,7 @@ async def list_room_communications_route(
     """POR-15 a: the room's letters with the reader's state and the committee (R-02-T12)."""
     await _flag_on(ctx, PORTAL_GOVERNANCE_ROOM)
     rows, committee = await room_letters(ctx, room_id)
+    names = await display_names([r.sent_by_user_id for r in rows if r.sent_by_user_id is not None])
     return GovernanceCommunicationsOut(
         items=[
             RoomLetterRowOut(
@@ -609,6 +612,7 @@ async def list_room_communications_route(
                 sent_on=r.sent_on,
                 due_on=r.due_on,
                 acknowledged_on=r.acknowledged_on,
+                sent_by=None if r.sent_by_user_id is None else names.get(r.sent_by_user_id),
             )
             for r in rows
         ],

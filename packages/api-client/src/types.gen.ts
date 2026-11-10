@@ -41156,6 +41156,10 @@ export type RoomLetterRowOut = {
      */
     id?: string | null;
     /**
+     * Sent By
+     */
+    sent_by?: string | null;
+    /**
      * Sent On
      */
     sent_on?: string | null;
@@ -41419,7 +41423,7 @@ export type RunHeaderOut = {
     /**
      * State
      */
-    state?: string | null;
+    state?: 'queued' | 'planning' | 'awaiting_plan_approval' | 'dispatched' | 'running' | 'needs_input' | 'blocked_on_decision' | 'waiting_on_inputs' | 'succeeded' | 'approved' | 'partially_approved' | 'rejected' | 'failed' | 'cancelled' | null;
     /**
      * State Reason
      */
