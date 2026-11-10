@@ -288,6 +288,16 @@ ignore_imports = [
 unmatched_ignore_imports_alerting = "none"
 
 [[tool.importlinter.contracts]]
+# T-05-T04: the entity engines (T-05 §4.4) and the individual engines (T-04) share no code; each is
+# golden-tested and CPA-reviewed on its own.
+name = "tax entity and individual engines are independent"
+type = "independence"
+modules = [
+    "abacus.modules.tax.compute.entity",
+    "abacus.modules.tax.compute.individual",
+]
+
+[[tool.importlinter.contracts]]
 name = "In-module layering: routes -> service -> repository (ADR-012)"
 type = "layers"
 layers = ["(routes)", "(retrievals)", "(service)", "(repository)"]

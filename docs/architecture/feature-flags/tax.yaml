@@ -42,3 +42,27 @@ flags:
     override: DEC-137
     kind: boolean
     default: false
+  - name: tax.entity_workspace
+    description: 'T-05 entity returns workspace (SPEC-651; TXP-00, 01, 02, 05, 06, 07, 10, 11): routes, tabs and the form-family dispatch. Off: the 1065 opens TAX-02''s coordination view and no entity route answers (404). Per firm, default off. T-05-T04.'
+    owner: ayushkbhatia
+    created: 2026-11-10
+    expires: 2027-05-07
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: tax.workbook_run
+    description: 'T-05 workbook runs: ▶ Run, re-runs, imports and the deterministic engines. Off: 404 and the run controls read their reason. Per firm, default off. T-05-T04.'
+    owner: ayushkbhatia
+    created: 2026-11-10
+    expires: 2027-05-07
+    override: DEC-137
+    kind: boolean
+    default: false
+  - name: tax.entity_agents
+    description: 'T-05 model-backed steps (mapper suggestions, agreement reader, memo drafting, recommender modes); synthetic-only until T-05-T64''s clearance. Off: every model-backed control is disabled with its reason (F13). Per firm, default off. T-05-T04.'
+    owner: ayushkbhatia
+    created: 2026-11-10
+    expires: 2027-05-07
+    override: DEC-137
+    kind: boolean
+    default: false

@@ -62,6 +62,14 @@ is a reviewed policy change with its goldens in the same diff; `tax/compute` imp
 `abacus.kernel.numeric` and `abacus.kernel.calendar` (the import-linter compute contract).
 
 
+## Entity return engines and the workbook formula engine (T-05-T04; T-05 §4.4, ADR-237)
+Red files: `backend/src/abacus/modules/tax/compute/entity/` (allocation, interim closings,
+capital and basis roll-forwards, tie-outs) and `backend/src/abacus/modules/workpapers/compute/`
+(E13, the closed-grammar formula engine; FORMULA-001 refuses `eval`, `exec` and `compile` there).
+A change needs the security review of a red diff with its goldens in the same diff. Both sit in the
+import-linter compute contract (only `abacus.kernel.numeric` and `abacus.kernel.calendar`), and
+the entity and individual engines are independent of each other (their own contract).
+
 ## EBP remittance rate file (A-05-T24, DEC-2211; A-05 §4.4, DEC-76)
 `backend/src/abacus/modules/assurance/compute/ebp/reference/irc_6621_rates.yaml` and `irs_plan_limits.yaml` (A-05-T43) are red files:
 the IRC §6621(a)(2) quarterly rates VFCP lost earnings compound at, reviewed with the audit CPA
