@@ -26,6 +26,7 @@ from abacus.modules.assurance.events import UncorrectedMisstatementsAcknowledged
 from abacus.modules.engagements.api import (
     ApprovalFacts,
     ApprovalItem,
+    ApprovalLine,
     ClientDecision,
     ClientDecisionContext,
     ItemChanged,
@@ -64,6 +65,20 @@ def net_effect(totals: object) -> Decimal:
     return Decimal(str(raw)).quantize(Decimal("0.01"))
 
 
+def parts(totals: object) -> tuple[ApprovalLine, ...]:
+    """R-02-T19: the net effect's two figures as the snapshot froze them (would increase, would
+    decrease), for the acknowledgement's sentence; none from a snapshot frozen before they were."""
+    t = cast(dict[str, object], totals)
+    up, down = t.get("iron_curtain_increase"), t.get("iron_curtain_decrease")
+    if up is None or down is None:
+        return ()
+    q = Decimal("0.01")
+    return (
+        ApprovalLine("Would increase net assets", debit=Decimal(str(up)).quantize(q)),
+        ApprovalLine("Would decrease net assets", credit=Decimal(str(down)).quantize(q)),
+    )
+
+
 def seen_hash(snapshot_id: UUID, inputs_hash: str, net: Decimal) -> str:
     return hashlib.sha256(f"{snapshot_id}:{inputs_hash}:{net}".encode()).hexdigest()
 
@@ -82,6 +97,7 @@ def _item(r: object) -> ApprovalItem:
         state="acknowledged" if row["acknowledged_at"] is not None else "waiting",
         seen_hash=seen_hash(snapshot_id, str(row["inputs_hash"]), net),
         amount=net,
+        lines=parts(row["totals"]),
         decided_at=cast(object, row["acknowledged_at"]),  # type: ignore[arg-type]  # a timestamptz
     )
 

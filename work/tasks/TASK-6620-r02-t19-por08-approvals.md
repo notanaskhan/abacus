@@ -55,3 +55,12 @@ and no threshold, materiality or agent word appears.
   PAJEs as receivables, unlike the handoff's e frame (RJE-1 14,850 loan offsets, PAJE-1 35,300,
   PAJE-2 13,050). POR-08 reads its own seed transcribed from the handoff; the R-02-T13 seed is left
   for its foot test.
+- 2026-11-10 (partial closure, S34 partials): the acknowledgement's two figures are live. The SUM
+  engine's `Result` carries `iron_curtain_increase` and `iron_curtain_decrease` (the counted items'
+  positive and negative iron-curtain parts, half-up to cents); `sum_service.snapshot` freezes them in
+  `totals` beside `iron_curtain`; the `uncorrected_misstatements` provider answers them as the
+  item's two lines (debit = would increase, credit = would decrease), read from the snapshot,
+  never re-added. A snapshot frozen before this keeps the short sentence. Tests:
+  `backend/tests/unit/assurance/test_r02t19_ack_parts.py`. Still partial: Card A's released-by and
+  released-at, Card B's footer, QBO range pill and total strip, Coming next's sub-line (no API
+  field; no provider for the QBO posting range).
