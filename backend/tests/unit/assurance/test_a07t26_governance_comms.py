@@ -15,6 +15,7 @@ from typing import cast
 
 import pytest
 
+from abacus.kernel.uow import UnitOfWork
 from abacus.modules.assurance import governance_comms as gc
 from abacus.modules.identity.api import AuthContext
 
@@ -188,3 +189,75 @@ async def test_a_body_of_another_client_is_never_a_recipient_or_sent_to(
             channel="governance_room",
             seen_hash="h",
         )
+
+
+# --- TASK-6543 (DEC-3145): the letter as a final C11 document ------------------------------------
+
+
+def test_letter_blocks_are_the_versions_own_words_in_order() -> None:
+    parts = [
+        gc.LetterPart(gc.FIRM_TEMPLATE, "", "We communicate the findings.\n\nAs agreed."),
+        gc.LetterPart("scope_timing", "Planned scope and timing", "- Fieldwork in October"),
+    ]
+    assert gc.letter_blocks(parts) == [
+        {"type": "paragraph", "runs": [{"type": "text", "text": "We communicate the findings."}]},
+        {"type": "paragraph", "runs": [{"type": "text", "text": "As agreed."}]},
+        {"type": "heading", "level": 2, "text": "Planned scope and timing"},
+        {"type": "paragraph", "runs": [{"type": "text", "text": "- Fieldwork in October"}]},
+    ]
+
+
+async def test_only_the_send_in_flight_approves_its_final() -> None:
+    from abacus.modules.reporting.api import ApprovalRef
+
+    partner = uuid.uuid4()
+    ref = ApprovalRef(gc.APPROVAL_KIND, uuid.uuid4(), "h" * 64)
+    assert await gc.send_approval(ref) is None  # nothing in flight
+    token = gc._approving.set((ref, partner))  # pyright: ignore[reportPrivateUsage] -- the rule under test
+    try:
+        assert await gc.send_approval(ref) == (partner, "h" * 64)
+        other = ApprovalRef(gc.APPROVAL_KIND, uuid.uuid4(), "h" * 64)
+        assert await gc.send_approval(other) is None
+    finally:
+        gc._approving.reset(token)  # pyright: ignore[reportPrivateUsage] -- the rule under test
+
+
+async def test_the_send_renders_a_draft_then_its_final_approved_by_the_send(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from types import SimpleNamespace
+
+    from abacus.modules.reporting import api as c11
+
+    calls: list[str] = []
+    seen: dict[str, object] = {}
+
+    async def render(_tx: object, request: c11.RenderRequest) -> c11.RenderTicket:
+        calls.append("draft")
+        seen["owner"] = request.owner_ref
+        return c11.RenderTicket(uuid.uuid4(), 1, content_hash="d" * 64)
+
+    async def render_final(
+        _tx: object, document_id: uuid.UUID, ref: c11.ApprovalRef, who: c11.Requester
+    ) -> object:
+        calls.append("final")
+        seen["approved"] = await gc.send_approval(ref)
+        seen["ref"] = ref
+        return SimpleNamespace(generated_document_id=document_id)
+
+    async def ref_of(*_: object) -> object:
+        return SimpleNamespace(client_id=uuid.uuid4())
+
+    monkeypatch.setattr(c11, "render", render)
+    monkeypatch.setattr(c11, "render_final", render_final)
+    monkeypatch.setattr(gc, "get_ref", ref_of)
+    partner, version, send = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+    ctx = cast(AuthContext, SimpleNamespace(user_id=partner, tenant=None))
+    await gc._render_final(  # pyright: ignore[reportPrivateUsage] -- the rule under test
+        cast("UnitOfWork", object()), ctx, version, send, uuid.uuid4(), uuid.uuid4()
+    )
+    assert calls == ["draft", "final"]
+    assert seen["owner"] == c11.OwnerRef(gc.VERSION_OWNER, version)
+    assert seen["approved"] == (partner, "d" * 64)
+    assert cast(c11.ApprovalRef, seen["ref"]).id == send
+    assert await gc.send_approval(seen["ref"]) is None  # released after the call
