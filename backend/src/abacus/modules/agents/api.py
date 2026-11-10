@@ -149,6 +149,7 @@ from abacus.modules.agents.run_backfill_workflow import (
 from abacus.modules.agents.run_logs import (  # A-07-T31/T32: binder section G, bring-down
     last_completed_run_at,
     run_log_count,
+    run_record_hashes,  # A-07-T37: the archive seal's run-record leaves
 )
 from abacus.modules.agents.run_recorder import (  # P-09-T12: the synthetic scenario's runs
     RecordedRun,
@@ -576,6 +577,7 @@ __all__ = [
     "run_initiators",
     "run_log_count",
     "run_outcome",
+    "run_record_hashes",
     "screen",
     "screening_responder",
     "screening_results_for",

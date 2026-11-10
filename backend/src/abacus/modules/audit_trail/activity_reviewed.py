@@ -12,6 +12,10 @@ from typing import Final
 
 REVIEWED_FALLBACK: Final = frozenset(
     {
+        # reviewed 2026-11-10 (S34): A-07-T37 the lock decision, the seal, the engagement archived
+        "archive.engagement_archived",
+        "archive.lock_decided",
+        "archive.sealed",
         # reviewed 2026-11-10 (S34): A-07-T36 filings and post-release clocks
         "archive.deadline_risk",
         "filing.opened",

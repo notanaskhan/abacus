@@ -1443,17 +1443,77 @@ async def audit_archive_request_lock_route(work_item_id: UUID, ctx: Ctx) -> Audi
 async def audit_archive_lock_route(
     work_item_id: UUID, body: ArchiveLockIn, ctx: Ctx, idempotency_key: IdempotencyKey
 ) -> ReleaseRunAcceptedOut:
-    """G9: the lock decision and ArchiveLockWorkflow (seal, COMPLIANCE manifest; A-07-T37)."""
+    """G9: the lock decision and ArchiveLockWorkflow (seal, COMPLIANCE manifest; A-07-T37). A
+    manager or the EP with a fresh MFA, at 9 of 9 (409 `checklist_incomplete`), on the checklist
+    they saw (409 `checklist_changed`); once (409 `archive_locked`). A replay with the key answers
+    the same run."""
+    from abacus.kernel.uow.idempotency import idempotent
+    from abacus.modules.assurance import archive_lock as al
+
     await _gate(ctx, work_item_id, "archive.lock")
-    _not_yet()
+
+    async def run() -> tuple[int, dict[str, object]]:
+        archive_id = await al.decide_lock(
+            ctx,
+            work_item_id,
+            then_roll_forward=body.then_roll_forward,
+            seen_checklist_hash=body.seen_checklist_hash,
+        )
+        return 202, {"archive_id": str(archive_id)}
+
+    stored = await idempotent(
+        ctx.tenant,
+        route="archive.lock",
+        key=idempotency_key,
+        body={"work_item_id": str(work_item_id), **body.model_dump(mode="json")},
+        run=run,
+    )
+    archive_id = UUID(str(stored.body["archive_id"]))
+    run_id = await al.start_lock(ctx.tenant_id, work_item_id, archive_id)
+    return ReleaseRunAcceptedOut(
+        run_id=archive_id, status_url=f"/v1/audits/{work_item_id}/archive?run={run_id}"
+    )
 
 
-@router.get(
-    "/archive/manifest", action="archive.read", response_model=ArchiveManifestOut, errors=(501,)
-)
+@router.get("/archive/manifest", action="archive.read", response_model=ArchiveManifestOut)
 async def audit_archive_manifest_route(work_item_id: UUID, ctx: Ctx) -> ArchiveManifestOut:
+    """The locked archive's manifest facts (A-07-T37): counts, the checkpoint, the roots and both
+    retain-until dates; 404 before the seal."""
+    from sqlalchemy import text as sql
+
+    from abacus.kernel.db import tenant_session
+
     await _gate(ctx, work_item_id, "archive.read")
-    _not_yet()
+    async with tenant_session(ctx.tenant) as session:
+        row = (
+            await session.execute(
+                sql(
+                    "SELECT m.manifest_version, m.canonicalization, m.evidence_leaf_count, "
+                    "m.row_leaf_count, m.run_record_count, m.audit_checkpoint_seq_to, "
+                    "m.audit_checkpoint_root, m.merkle_root, m.manifest_sha256, "
+                    "m.compliance_retain_until, a.retention_until FROM archive_manifests m "
+                    "JOIN archives a ON a.id = m.archive_id WHERE m.work_item_id = :wi "
+                    "ORDER BY m.manifest_version DESC LIMIT 1"
+                ),
+                {"wi": work_item_id},
+            )
+        ).first()
+    if row is None:
+        raise NotFound("archive_manifest")
+    empty = "0" * 64
+    return ArchiveManifestOut(
+        manifest_version=row.manifest_version,
+        canonicalization="rfc8785",
+        evidence_leaf_count=row.evidence_leaf_count,
+        row_leaf_count=row.row_leaf_count,
+        run_record_count=row.run_record_count,
+        audit_checkpoint_seq_to=row.audit_checkpoint_seq_to or 0,
+        audit_checkpoint_root=row.audit_checkpoint_root or empty,
+        merkle_root=row.merkle_root,
+        manifest_sha256=row.manifest_sha256,
+        compliance_retain_until=row.compliance_retain_until,
+        governance_retain_until=row.retention_until,
+    )
 
 
 @router.get(
