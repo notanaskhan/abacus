@@ -1,0 +1,1 @@
+Read how an engagement connects: its client and entity, the prior engagement it rolled from and the methodology version it is pinned to.

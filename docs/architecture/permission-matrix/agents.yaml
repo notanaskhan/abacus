@@ -3,9 +3,9 @@
 
 actions:
   knowledge.manage:         {firm_admin: allow, practice_leader: allow, mfa_recent: required}   # SPEC-009 Q4
-  knowledge.read:           {firm_admin: allow, practice_leader: allow, quality_partner: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, platform_support_content: allow}   # SPEC-009 Q4
+  knowledge.read:           {firm_admin: allow, practice_leader: allow, quality_partner: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, platform_support_content: allow, agent: task_scope}   # SPEC-009 Q4; P-10-T28 (DEC-3204): knowledge.search
   # --- The engagement agent (SPEC-027; TASK-050) ---
-  activity.read:            {firm_admin: allow, practice_leader: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow}   # the activity feed
+  activity.read:            {firm_admin: allow, practice_leader: allow, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, agent: task_scope}   # the activity feed; P-10-T28 (DEC-3204): activity.read
   agent_run.read:           {firm_admin: allow, security_admin: allow, practice_leader: allow, quality_partner: in_scope, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, independence: required}   # SPEC-318 (TASK-461): the run list and trace; shadow runs never
   run_content.read:         {practice_leader: in_scope, quality_partner: in_scope, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, agent: deny, independence: required}   # DEC-87 (TASK-5002): the trace's content; without it agent_run.read is metadata only
   run_trace.export:         {firm_admin: allow, security_admin: allow, practice_leader: allow, quality_partner: in_scope, engagement_partner: allow, manager: allow, senior: allow, staff: allow, reviewer: allow, eqr_reviewer: allow, agent: deny, independence: required, mfa_recent: required, not_offshore: required}   # SPEC-318 (P-09-T11): canonical JSON with a SHA-256 manifest, audited; fresh MFA. P-09-T01 (DEC-2801): the agent_run.read principals, the projection inherited (admins export metadata)
@@ -21,6 +21,7 @@ actions:
     client_admin: client_visible_only
     client_contributor: client_visible_only
     platform_support_content: allow   # SPEC-012
+    agent: task_scope   # P-10-T28 (DEC-3204): the engagements.* read tools
   # --- Screening and suggestions ---
   screening.run:            {system: allow, agent: task_scope}
   screening.request:       {engagement_partner: allow, manager: allow, senior: allow, staff: allow, independence: required}   # SPEC-024 (TASK-042 D1): "Screen now" at Advise
