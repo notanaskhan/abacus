@@ -2,14 +2,15 @@
 id: TASK-6543
 title: Governance letters as final C11 documents; the acknowledgement envelope; the room's letter PDF
 spec: SPEC-314  # A-07 (letters); R-02 §3 POR-15
-acceptance_criteria: []  # remainders of A-07-T26, A-07-T19 and R-02-T12 (see DEC-3145, DEC-3146)
+acceptance_criteria: [AC-1]  # the rows' acceptance (Objective); remainders of A-07-T26, A-07-T19 and R-02-T12 (see DEC-3145, DEC-3146)
 risk_zone: red
-status: in-progress
+status: done
 epic: A-07
 plan_key: A-07-T26
 branch: s32r-letters-render
 worktree: /Users/ayushkbhatia/Accrued/abacus-s32
 created: 2026-11-10
+updated: 2026-11-10
 ---
 
 ## Objective
@@ -43,3 +44,4 @@ Rollback: revert; sends then record without a document, as before.
 ## Progress log
 - `2026-11-10` — PR 1 (branch s32r-letters-render, DEC-3145): final render at send; envelope source and ack_envelope draft; unit tests. PDF route next.
 - `2026-11-10` — PR 2 (branch s32r-room-pdf, DEC-3146): the room's letter PDF via C10 publish on first read; unit test.
+- `2026-11-10` — End pass: governance draft gated on `audits.letters`; PDF route documents 501 (contract convention); DB test (books world) sends a planning letter and finds C11's draft and final. Not run here: WeasyPrint renders (no glib), the room PDF on a real render. Mistake made twice in this repo: a live route in a stub contract must keep documenting 501.

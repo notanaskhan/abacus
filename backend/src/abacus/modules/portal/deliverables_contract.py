@@ -694,7 +694,7 @@ async def get_communication_route(communication_id: UUID, ctx: Member) -> Govern
     "/communications/{communication_id}/pdf",
     action="tcwg.read",
     response_model=bytes,
-    errors=(409,),
+    errors=(409, 501),
 )
 async def get_communication_pdf_route(communication_id: UUID, ctx: Member) -> Response:
     """302 to the C10 download of the sent letter (R-02-T12 remainder; DEC-3146): a room member
