@@ -51,8 +51,8 @@ export const WB09: Readonly<
 export const WB09_STATES = Object.keys(WB09) as Wb09State[];
 
 /** The agent surfaces' scenario: the seed, the runs' routes and the flags on, as Hannah Leclerc.
- * `loading` holds the trace unanswered (WB-09e). */
-export function agentScenario(state: string, loading = false): Scenario {
+ * `loading` holds the trace unanswered (WB-09e); `forbidden` answers 403 (not allowed). */
+export function agentScenario(state: string, loading = false, forbidden = false): Scenario {
   const seed = getSeed();
   const runs = agentRunHandlers();
   return {
@@ -64,6 +64,13 @@ export function agentScenario(state: string, loading = false): Scenario {
       ...runs,
       ...(loading
         ? { "GET /v1/agent-runs/{run_id}/trace": () => new Promise<Response>(() => undefined) }
+        : {}),
+      // P-09-T19 (j18 5): a person `agent_run.read` refuses (Lena Park, seasonal) reads 403.
+      ...(forbidden
+        ? {
+            "GET /v1/agent-runs/{run_id}/trace": () => json({ detail: "forbidden" }, 403),
+            "GET /v1/agent-runs/{run_id}": () => json({ detail: "forbidden" }, 403),
+          }
         : {}),
       "GET /v1/me/capabilities": ({ persona }) => {
         const base = capabilitiesFor(seed, persona ?? "hannah-leclerc");
