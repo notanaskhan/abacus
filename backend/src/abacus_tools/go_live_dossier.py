@@ -6,6 +6,7 @@ Q-04 AC-6.5; `docs/runbooks/pilot-onboarding.md` §0.1 and §12).
     python -m abacus_tools.go_live_dossier fill PF-A1 --report report.json
     python -m abacus_tools.go_live_dossier check                     # every dossier (check-fast)
     python -m abacus_tools.go_live_dossier check PF-A1 --ready       # before both founders sign
+    python -m abacus_tools.go_live_dossier check PF-X1 --ready --rehearsal   # DEC-4100
 
 The dossier is chapter 06 §8.3's checklist for one firm, by section and owner: N signs off tenant
 and identity, data protection, AI and operations (T021); AY communications, content and
@@ -21,6 +22,12 @@ integrations (T022); F-09 contract and legal. Each section has two parts:
 address or phone number, every section and the sign-off table are there. `--ready` is the
 acceptance: every generated row `pass` (a `manual` row's by-hand twin green), every by-hand row
 `green`, the shadow-rules acknowledgement recorded, and the go-live check run within 7 days.
+
+`--rehearsal` (DEC-4100) is the same acceptance rehearsed on the synthetic test pilot firm: only a
+`PF-X…` dossier, and only one whose go-live check is a rehearsal (`go_live --rehearse-real`); its
+by-hand rows may read `green (synthetic)` and its acknowledgement must name a synthetic entry.
+Plain `--ready` refuses a rehearsal's stamp and a `green (synthetic)` row, so PF-X1 never reads
+ready as a real firm, and a real firm's dossier never accepts synthetic evidence.
 """
 
 from __future__ import annotations
@@ -42,6 +49,9 @@ PILOT: Final = re.compile(r"PF-[ATCX]\d{1,2}|PC\d{2}-\d{2}")
 _EMAIL: Final = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
 _PHONE: Final = re.compile(r"(?<![\d-])\+?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}(?!\d)")
 REPORT_MAX_AGE: Final = timedelta(days=7)
+SYNTHETIC_PILOT: Final = re.compile(r"PF-X\d{1,2}")
+REHEARSAL_MARK: Final = "rehearsal, synthetic"
+SYNTHETIC_GREEN: Final = "green (synthetic)"
 
 
 @dataclass(frozen=True)
@@ -222,8 +232,10 @@ def fill(text: str, report: Mapping[str, object]) -> str:
         _old, tail = rest.split(end, 1)
         text = f"{head}{start}\n{_rows(items, section.key)}{end}{tail}"
     failed = ", ".join(map(str, cast(list[object], report.get("failed", []))))
-    outcome = "passed |" if report.get("passed") else f"failed: {failed} |"
-    stamp = f"| Go-live check | {report.get('level')} at {report.get('at')}, {outcome}"
+    outcome = "passed" if report.get("passed") else f"failed: {failed}"
+    if report.get("rehearsal"):
+        outcome += f" ({REHEARSAL_MARK}, DEC-4100)"
+    stamp = f"| Go-live check | {report.get('level')} at {report.get('at')}, {outcome} |"
     return re.sub(r"^\| Go-live check \|.*\|$", stamp.rstrip(), text, count=1, flags=re.MULTILINE)
 
 
@@ -256,10 +268,16 @@ def _table_rows(text: str, after: str) -> list[list[str]]:
     return rows[1:]  # the header
 
 
-def not_ready(name: str, text: str, today: date) -> list[str]:
-    """What stands between the dossier and both signatures (the acceptance)."""
+def not_ready(name: str, text: str, today: date, *, rehearsal: bool = False) -> list[str]:
+    """What stands between the dossier and both signatures (the acceptance). `rehearsal` is the
+    same acceptance on the synthetic test firm (DEC-4100); without it, synthetic evidence never
+    counts."""
     found: list[str] = []
-    stamp = re.search(r"^\| Go-live check \| (\w+) at (\S+), (passed|failed)", text, re.MULTILINE)
+    if rehearsal and not SYNTHETIC_PILOT.fullmatch(name):
+        return [f"{name}: --rehearsal is for the synthetic test firm only (PF-X…, DEC-4100)"]
+    stamp = re.search(
+        r"^\| Go-live check \| (\w+) at (\S+), (passed|failed)(.*)$", text, re.MULTILINE
+    )
     if stamp is None:
         found.append(f"{name}: the go-live check has not been filled in")
     else:
@@ -268,14 +286,22 @@ def not_ready(name: str, text: str, today: date) -> list[str]:
             found.append(f"{name}: the go-live check is older than 7 days ({when.isoformat()})")
         if stamp.group(3) != "passed":
             found.append(f"{name}: the go-live check failed")
+        is_rehearsal = REHEARSAL_MARK in stamp.group(4)
+        if is_rehearsal and not rehearsal:
+            found.append(f"{name}: the go-live check is a rehearsal, not a real firm's (DEC-4100)")
+        if rehearsal and not is_rehearsal:
+            found.append(f"{name}: --rehearsal needs a rehearsal go-live check (--rehearse-real)")
+    greens = ("green", SYNTHETIC_GREEN) if rehearsal else ("green",)
     for section in SECTIONS:
         block = text.split(f"## {section.title}", 1)[-1]
         for row in _table_rows(block, "By hand:"):
-            if len(row) >= 4 and row[3].lower() != "green":
+            if len(row) >= 4 and row[3].lower() not in greens:
                 found.append(f"{name}: {row[0]} is not green")
     ack = _table_rows(text, "## Shadow rules acknowledged")
     if not ack or ack[0][0] in ("—", ""):
         found.append(f"{name}: the shadow rules are not acknowledged in writing")
+    elif rehearsal and "synthetic" not in " ".join(ack[0]).lower():
+        found.append(f"{name}: a rehearsal's acknowledgement names its synthetic entry")
     return found
 
 
@@ -294,8 +320,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     check_cmd = commands.add_parser("check")
     check_cmd.add_argument("pilot", nargs="?")
     check_cmd.add_argument("--ready", action="store_true")
+    check_cmd.add_argument(
+        "--rehearsal", action="store_true", help="with --ready: the synthetic test firm (DEC-4100)"
+    )
     args = parser.parse_args(argv)
 
+    if args.command == "check" and args.rehearsal and not (args.ready and args.pilot):
+        print("--rehearsal goes with --ready and one PF-X… dossier", file=sys.stderr)
+        return 2
     if args.command in ("new", "fill") and not PILOT.fullmatch(args.pilot):
         print("a dossier is named by its pilot code (PF-A1, PC28-07)", file=sys.stderr)
         return 2
@@ -311,6 +343,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         if report.get("pilot_code") not in (None, args.pilot):
             print("the report is for another firm", file=sys.stderr)
             return 2
+        if report.get("rehearsal") and not SYNTHETIC_PILOT.fullmatch(args.pilot):
+            print("a rehearsal report fills only a PF-X… dossier (DEC-4100)", file=sys.stderr)
+            return 2
         path = _path(args.pilot)
         path.write_text(fill(path.read_text(encoding="utf-8"), report), encoding="utf-8")
         return 0
@@ -324,7 +359,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.ready:
             from abacus.kernel.clock import system_now
 
-            problems += not_ready(path.stem, text, system_now().date())
+            problems += not_ready(
+                path.stem, text, system_now().date(), rehearsal=bool(args.rehearsal)
+            )
     for problem in problems:
         print(f"dossier: {problem}")
     return 1 if problems else 0
