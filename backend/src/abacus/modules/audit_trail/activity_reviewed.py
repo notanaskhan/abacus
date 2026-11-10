@@ -12,6 +12,11 @@ from typing import Final
 
 REVIEWED_FALLBACK: Final = frozenset(
     {
+        # reviewed 2026-11-10 (S34): A-07-T36 filings and post-release clocks
+        "archive.deadline_risk",
+        "filing.opened",
+        "governance_communication.due_set",
+        "filing.updated",
         # reviewed 2026-11-10 (S34): P-10-T29 AgentRunWorkflow part 1's transitions
         "agent_run.completed_v2",
         "agent_run.plan_proposed",

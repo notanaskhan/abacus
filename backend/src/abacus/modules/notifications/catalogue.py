@@ -489,6 +489,8 @@ CATALOGUE: Final[dict[str, Kind]] = {
     # P-05-T05 (P-05 §4.8): a v2 comment's mention, a second source of `mention`, the target the
     # thread (and through it the anchor); one event per person, re-checked at fan-out (AC-8).
     "mention.created": Kind("mention", _mentioned_member, "comment_thread", "thread_id"),
+    # A-07-T36 (A-07 §4.8): a post-release clock at a boundary, to the engagement's leads.
+    "archive.deadline_risk": Kind("archive_deadline_risk", _leads, "work_item", "work_item_id"),
     # P-05-T06: a to-do assigned to someone (SHL-04 R2 "To-do assigned"), never to the agent.
     "todo.assigned": Kind("todo_assigned", _todo_assignee, "todo", "todo_id"),
     # A-04-T12 (AC3.7): a revised materiality tells the preparers of every impacted workpaper.
@@ -689,6 +691,7 @@ TEMPLATES: Final[dict[str, str]] = {
     "decision_card.raised": "A decision on {engagement} is waiting for you.",
     "decision_card.notify_requested": "A decision on {engagement} is waiting for you.",
     "mention.created": "You were mentioned in a comment on {engagement}.",  # P-05-T05
+    "archive.deadline_risk": "A post-release deadline on {engagement} is close or has passed.",
     "todo.assigned": "You were assigned a to-do.",  # P-05-T06 (a firm to-do names no engagement)
     # A-04-T12 (AC3.7): the impacted workpapers' preparers.
     "materiality.revised": "Materiality on {engagement} was revised; your workpapers use it.",

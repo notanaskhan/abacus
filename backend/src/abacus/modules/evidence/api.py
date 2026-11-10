@@ -504,6 +504,9 @@ from abacus.modules.evidence.ocr_gate import (  # noqa: E402 -- P-11-T33
     set_daily_page_cap,
 )
 from abacus.modules.evidence.ocr_step import start_ocr_backfill  # noqa: E402 -- P-11-T25
+
+# A-07-T36 (P-14): the stored versions a report release anchors.
+from abacus.modules.evidence.retention_anchor import engagement_stored_versions  # noqa: E402
 from abacus.modules.evidence.workflows import LongOcr, OcrBackfill  # noqa: E402
 
 __all__ = [
@@ -663,6 +666,7 @@ __all__ = [
     "effective_policies",
     "engagement_of_version",
     "engagement_snapshots",
+    "engagement_stored_versions",
     "evidence_versions_for",
     "export_manifest_json_schema",
     "export_requester",
