@@ -8,19 +8,19 @@
 | Handoff | `$ACCRUED_HANDOFF_DIR/handoff/screens/TAX-05 …/` |
 | Epic and tasks | T-04 · T-04-T02 (contract), T-04-T07 (fixtures), screen rows per §9 |
 | Priority | P0 |
-| Manifest status | planned |
+| Manifest status | fixture (T-04-T21: `screens/TAX-05`; live wiring with the TAX-04 host) |
 
 ## States
 | Artboard | Data condition that produces it | Status |
 |---|---|---|
-| a | Default (K-1 beside Sch E – K-1 matrix, CY + 2024, box 5 ↔ Interest Income lit) | planned |
-| b | Approved (Statement A "✓ 1", Review 37→36, toast "Approved for manager review · Samuel Ito") | planned |
-| c | Flagged (⚑ 1 opens TAX-06 with 18A selected) | planned |
-| d | Worksheets tab (TXI-01 fields "Sch E p2 — Ridgeline", ✓ KO ✓ OB) | planned |
-| e | All approved (green-tint banner "All 41 documents approved at manager level · Samuel Ito"; "Request final approval…" blocked by Draft K-1) | planned |
-| f | Loading | planned |
-| loading | skeleton per the handoff | planned |
-| not allowed | walled or out of scope: 404 (INV-3) | planned |
+| a | Default (K-1 beside Sch E – K-1 matrix, CY + 2024, box 5 ↔ Interest Income lit) | fixture |
+| b | Approved (Statement A "✓ 1", Review 37→36, toast "Approved for manager review · Samuel Ito") | fixture |
+| c | Flagged (⚑ 1 opens TAX-06 with 18A selected) | fixture |
+| d | Worksheets tab (TXI-01 fields "Sch E p2 — Ridgeline", ✓ KO ✓ OB) | fixture |
+| e | All approved (green-tint banner "All 41 documents approved at manager level · Samuel Ito"; "Request final approval…" blocked by Draft K-1) | fixture |
+| f | Loading | fixture |
+| loading | skeleton per the handoff | fixture |
+| not allowed | walled or out of scope: 404 (INV-3) | fixture |
 
 ## API
 RW-1 and WS-1 (T-04-T05); matrix actions from `permission-matrix/tax.yaml` (T-04-T03).
