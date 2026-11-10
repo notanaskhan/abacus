@@ -67,6 +67,18 @@ DF-34: Schedule L follows pack 08 (1200 → L5, mortgage → L18, 2000 split fro
 - Schedule K and capital are read models over workbook cells; no `schedule_k_lines` or `capital_account_lines` tables (T-05 OQ-8).
 - TXP-12 (K-1 package) is T-02's screen; T-05 only links to it.
 
+### Designed states the handoff lacks (T-05-T03)
+
+| State | What renders | None blank |
+|---|---|---|
+| Agent off | Mapping suggestions are absent: unmapped accounts read "Map…" (C9 picker) and the tally counts them; every mapping is a person's ("Mapped by Olivia Brandt"). | yes |
+| Flag off (`tax.entity_workspace`) | The 1065 opens TAX-02's coordination view as today (F13); no entity route answers and no pane renders blank. Not a screen state: the screen is unreachable. | yes |
+| Consent blocked (§7216) | The suggestions column header reads "§7216 AI consent — Ridgeline (1 of 2 signed)"; mapping by hand works; no model call. | yes |
+| Import mode | None on this screen: TB → TTB is always computed by code over C8's adjusted TB. | yes |
+| Entitlement refused (`tax.entity_returns`, CPA memos unsigned, non-synthetic firm) | The return opens the coordination view with the designed locked card: title "Entity return workspace", body "Opens once the firm's entity returns are set up." (undesigned, T-05-T03), no workbook route answers (F13). | yes |
+
+Every string above with no handoff source is undesigned (T-05-T03) and is replaced by the handoff's copy when one lands; the consent line is the spec's (SPEC-651 F13).
+
 ## Acceptance
 
 SPEC-651's criteria for this screen; each becomes a test named "TXP-02 acceptance: <criterion>".
