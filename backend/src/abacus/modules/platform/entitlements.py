@@ -29,12 +29,13 @@ Module = Literal[
     "tax_returns",  # T-03-T19: Tax Returns and K-1 packages (DEC-2372)
     "ebp_audits",  # A-05-T49: EBP-01 to EBP-09 (ADR P-28; DEC-2603)
     "assurance_completion",  # A-06-T37: AUD-15, AUD-16, AUD-17, AUD-20 (ADR P-28; DEC-2714)
+    "tax_entity_returns",  # T-05-T04: TXP-00 to TXP-11, entity returns (ADR P-28; requires_review)
 ]
 MODULES: Final = frozenset(get_args(Module))
 # A-05-T49 (ADR P-28; chapter 10 §10.9.4): modules whose engines a CPA signs off. For a firm that
 # isn't synthetic the module holds only while its owner's registered check says the review is
 # signed; no registered check refuses (fail closed). Synthetic firms are the review's own test bed.
-REVIEWED_MODULES: Final = frozenset({"ebp_audits"})
+REVIEWED_MODULES: Final = frozenset({"ebp_audits", "tax_entity_returns"})
 ReviewCheck = Callable[[], bool]
 _reviews: dict[str, ReviewCheck] = {}
 
