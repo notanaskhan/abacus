@@ -234,6 +234,13 @@ import { scenarios as ebp06Scenarios } from "./EBP-06/scenarios";
 import { scenarios as ebp07Scenarios } from "./EBP-07/scenarios";
 import { scenarios as ebp08Scenarios } from "./EBP-08/scenarios";
 import { scenarios as ebp09Scenarios } from "./EBP-09/scenarios";
+import { Governance } from "./AUD-22";
+import { ReportBuilder } from "./AUD-23";
+import { FRAMES as AUD23_FRAMES } from "./AUD-23/copy";
+import { Issuance } from "./AUD-24";
+import { FRAMES as AUD24_FRAMES } from "./AUD-24/copy";
+import { Archive } from "./AUD-25";
+import { FRAMES as AUD25_FRAMES } from "./AUD-25/copy";
 import { scenarios as aud27Scenarios } from "./AUD-27/scenarios";
 import { NORTHWIND_AUDIT as SECTION_AUDIT_ID } from "../fixtures/scenarios/AUD-06";
 import {
@@ -3398,3 +3405,72 @@ function Adm08Artboard({ params }: { params: FixtureParams }): JSX.Element | nul
 }
 
 registerScreen("ADM-08", { title: "Integration settings", Component: Adm08Artboard });
+
+// A-07-T48 (A-07 §5.4): the frame-driven A-07 canvases on the gallery, one artboard per state, in
+// the app shell, so Tier C (locked: AUD-22 a/b/c, AUD-23 a/b, AUD-24 a/b/d/e, AUD-25 a/b/c), Tier
+// D (T2 and T10 geometry) and axe measure what the cockpit shows.
+function A07Frame({ state, children }: { state: string; children: JSX.Element }): JSX.Element {
+  const firm = useSession().tenant?.firm_name ?? "";
+  const bar = useFirmToolbar({
+    at: { pathname: "/audits" },
+    firm,
+    navigate: () => undefined,
+    hotkeys: false,
+  });
+  return (
+    <div data-artboard={state}>
+      <AppShell frame height={860} toolbar={bar.toolbar} overlay={bar.overlay}>
+        {children}
+      </AppShell>
+    </div>
+  );
+}
+
+function pick<T extends string>(states: readonly T[], st: string | undefined): T {
+  return states.find((s) => s === st) ?? (states[0] as T);
+}
+
+registerScreen("AUD-22", {
+  title: "Governance communications",
+  Component: ({ params }) => {
+    const st = pick(["a", "b", "c"] as const, params.st);
+    return (
+      <A07Frame state={st}>
+        <Governance frame={st} canApproveSend />
+      </A07Frame>
+    );
+  },
+});
+registerScreen("AUD-23", {
+  title: "Report builder",
+  Component: ({ params }) => {
+    const st = pick(Object.keys(AUD23_FRAMES) as (keyof typeof AUD23_FRAMES)[], params.st);
+    return (
+      <A07Frame state={st}>
+        <ReportBuilder frame={st} canApprove />
+      </A07Frame>
+    );
+  },
+});
+registerScreen("AUD-24", {
+  title: "Issuance & release",
+  Component: ({ params }) => {
+    const st = pick(AUD24_FRAMES, params.st);
+    return (
+      <A07Frame state={st}>
+        <Issuance frame={st} canRelease={st !== "e"} />
+      </A07Frame>
+    );
+  },
+});
+registerScreen("AUD-25", {
+  title: "Assembly & archive",
+  Component: ({ params }) => {
+    const st = pick(AUD25_FRAMES, params.st);
+    return (
+      <A07Frame state={st}>
+        <Archive frame={st} canLock={st !== "a" && st !== "e"} />
+      </A07Frame>
+    );
+  },
+});
