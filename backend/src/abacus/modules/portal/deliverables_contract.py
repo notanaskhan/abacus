@@ -694,12 +694,20 @@ async def get_communication_route(communication_id: UUID, ctx: Member) -> Govern
     "/communications/{communication_id}/pdf",
     action="tcwg.read",
     response_model=bytes,
-    errors=(501,),
+    errors=(409, 501),
 )
 async def get_communication_pdf_route(communication_id: UUID, ctx: Member) -> Response:
-    """302 to the C10 download."""
+    """302 to the C10 download of the sent letter (R-02-T12 remainder; DEC-3146): a room member
+    only (404 otherwise); 409 `letter_rendering` while its final PDF is not yet servable."""
+    from abacus.modules.assurance.api import governance_letter_pdf
+    from abacus.modules.evidence.api import issue_deliverable_download
+    from abacus.modules.reporting.api import reader_version
+
     await _flag_on(ctx, PORTAL_GOVERNANCE_ROOM)
-    _not_yet()
+    deliverable_id, version_no = await governance_letter_pdf(ctx, communication_id)
+    reader = await reader_version(ctx, deliverable_id, version_no)
+    issued = await issue_deliverable_download(ctx, reader.servable())
+    return RedirectResponse(issued.url, status_code=302, headers={"Cache-Control": "no-store"})
 
 
 @governance_router.post(

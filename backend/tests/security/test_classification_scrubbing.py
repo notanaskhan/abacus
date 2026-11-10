@@ -26,13 +26,13 @@ refusal's audit row is read back from `audit_events`).
 from __future__ import annotations
 
 import contextlib
-import importlib.util
 import json
 import re
 import sys
 import uuid
 from collections.abc import Iterator
 from decimal import Decimal
+from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 from typing import Annotated, cast
 
@@ -118,9 +118,9 @@ def test_ac19_a_flag_below_restricted_fails_at_import(
         "class Seeded(BaseModel):\n"
         f'    value: Annotated[str, classified("{level}", {flag})]\n'
     )
-    spec = importlib.util.spec_from_file_location(module.stem, module)
+    spec = spec_from_file_location(module.stem, module)
     assert spec is not None and spec.loader is not None
-    loaded = importlib.util.module_from_spec(spec)
+    loaded = module_from_spec(spec)
     sys.modules[module.stem] = loaded
     try:
         with pytest.raises(ValueError):

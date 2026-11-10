@@ -12833,7 +12833,8 @@ export const acknowledgeCommunication = <ThrowOnError extends boolean = false>(o
 /**
  * Get Communication Pdf Route
  *
- * 302 to the C10 download.
+ * 302 to the C10 download of the sent letter (R-02-T12 remainder; DEC-3146): a room member
+ * only (404 otherwise); 409 `letter_rendering` while its final PDF is not yet servable.
  */
 export const getCommunicationPdf = <ThrowOnError extends boolean = false>(options: Options<GetCommunicationPdfData, ThrowOnError>): RequestResult<GetCommunicationPdfResponses, GetCommunicationPdfErrors, ThrowOnError> => (options.client ?? client).get<GetCommunicationPdfResponses, GetCommunicationPdfErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

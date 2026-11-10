@@ -197,16 +197,6 @@ async def rep_letter_dated_as_of_report(ctx: AuthContext, version_id: UUID) -> S
     return ["letters_not_live"] if not await live(ctx.tenant, "audits.letters") else []
 
 
-async def _governance_documents(ctx: AuthContext, version_id: UUID) -> Sequence[object]:
-    del ctx, version_id
-    raise NotLive  # off; A-07-T26 builds the letter
-
-
-async def _governance_signers(ctx: AuthContext, version_id: UUID) -> Sequence[object]:
-    del ctx, version_id
-    raise NotLive  # off; A-07-T26: the committee members acknowledge
-
-
 async def governance_acknowledgement_only(ctx: AuthContext, version_id: UUID) -> Sequence[str]:
     """DEC-83: a governance letter goes by envelope only as an acknowledgement, and only where the
     POR-15 room is off for the firm; refused while the letters flag is off."""
@@ -343,14 +333,19 @@ def register() -> None:
             completed_label="Signed",
         )
     )
+    # TASK-6543 (DEC-3145): the governance letter's source drafts from a sent version's final
+    # document, the recipients signing to acknowledge.
+    from abacus.modules.assurance import governance_comms as gc
+
     register_envelope_source(
         EnvelopeSource(
             kind=GOVERNANCE_LETTER,
-            documents=_governance_documents,
-            signers=_governance_signers,
+            documents=gc.governance_documents,
+            signers=gc.governance_signers,
             retention_record_type=RECORD_TYPE,
             checks=(governance_acknowledgement_only,),
             completed_label="Acknowledged",
+            draft=gc.governance_draft,  # type: ignore[arg-type] -- returns C7's SourceDraft
         )
     )
     for kind, layout in _DOCUMENT_KINDS:
@@ -366,7 +361,11 @@ def register() -> None:
                     # grant (the EP's decision); the letters' finals stay with their services.
                     approval_provider=report_release_approval
                     if kind == "audit_report"
+                    else gc.send_approval
+                    if kind == GOVERNANCE_LETTER
                     else _no_approval,
+                    # The governance letter's body is its version's sections (DEC-3145).
+                    body_provider=gc.letter_body if kind == GOVERNANCE_LETTER else None,
                     retention_record_type=RECORD_TYPE,
                     formats=("pdf", "docx"),
                     tenant_variables_provider=_live_variables,

@@ -7,12 +7,12 @@ again."""
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import uuid
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from decimal import Decimal
+from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 from types import SimpleNamespace
 from typing import get_args
@@ -78,9 +78,9 @@ def test_the_kind_is_composed_in_the_code_only_layout() -> None:
 
 def test_the_kind_list_stays_one_list() -> None:
     path = Path(__file__).parents[3] / "migrations/versions/0763_c11_entries_journal.py"
-    spec = importlib.util.spec_from_file_location("m0763", path)
+    spec = spec_from_file_location("m0763", path)
     assert spec is not None and spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
+    module = module_from_spec(spec)
     spec.loader.exec_module(module)
     assert set(module._NEW) == set(get_args(GeneratedDocumentKind))
 

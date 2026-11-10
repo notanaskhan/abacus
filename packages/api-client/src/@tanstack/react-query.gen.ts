@@ -21028,7 +21028,8 @@ export const getCommunicationPdfQueryKey = (options: Options<GetCommunicationPdf
 /**
  * Get Communication Pdf Route
  *
- * 302 to the C10 download.
+ * 302 to the C10 download of the sent letter (R-02-T12 remainder; DEC-3146): a room member
+ * only (404 otherwise); 409 `letter_rendering` while its final PDF is not yet servable.
  */
 export const getCommunicationPdfOptions = (options: Options<GetCommunicationPdfData>) => queryOptions<GetCommunicationPdfResponse, GetCommunicationPdfError, GetCommunicationPdfResponse, ReturnType<typeof getCommunicationPdfQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

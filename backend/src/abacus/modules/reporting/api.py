@@ -877,6 +877,19 @@ async def render_outcome(
     )
 
 
+async def final_version_no(tenant: TenantContext, document_id: UUID) -> int | None:
+    """TASK-6543: the newest final version's number of a generated document, or None."""
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text(
+                "SELECT max(version_no) FROM generated_document_versions "
+                "WHERE generated_document_id = :d AND mode = 'final'"
+            ),
+            {"d": document_id},
+        )
+    return None if found is None else int(found)
+
+
 async def document_of_owner(tenant: TenantContext, owner: OwnerRef, kind: str) -> UUID | None:
     """A-07-T30: the one generated document of a consumer record and kind (0430's unique key)."""
     async with tenant_session(tenant) as session:

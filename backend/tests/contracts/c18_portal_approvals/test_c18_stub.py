@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
+from types import SimpleNamespace
 from typing import cast
 from uuid import uuid4
 
@@ -43,7 +44,9 @@ def _doc() -> dict[str, object]:
 
 # R-02-T11 (DEC-3009): adjustments registers `proposed_entry` and reporting `fs_draft`; the
 # other two kinds still fail closed until R-02-T15 (assurance) and C-02 or A-08 register them.
-UNREGISTERED = ("uncorrected_misstatements", "fs_package")
+# R-02-T15 (S33) registered `uncorrected_misstatements`; `fs_package` waits for C-02 or A-08.
+UNREGISTERED = ("fs_package",)
+REGISTERED = ("proposed_entry", "fs_draft", "uncorrected_misstatements")
 
 
 def test_unregistered_kind_fails_closed() -> None:
@@ -54,17 +57,25 @@ def test_unregistered_kind_fails_closed() -> None:
             client_approval_provider(kind)
     with pytest.raises(ApprovalKindNotRegistered):
         client_approval_provider("made_up_kind")
-    assert {"proposed_entry", "fs_draft"} <= set(CLIENT_APPROVAL_KINDS)
-    for kind in ("proposed_entry", "fs_draft"):
+    assert set(REGISTERED) <= set(CLIENT_APPROVAL_KINDS)
+    for kind in REGISTERED:
         client_approval_provider(kind)
 
 
-async def test_package_decide_is_409_until_a_provider_registers() -> None:
+async def test_package_decide_is_409_until_a_provider_registers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # R-02-T14 (DEC-3112): the route checks `portal.approvals` first; with it on, the kind's slot
+    # answers 409 before any service call.
+    async def on(*_a: object) -> bool:
+        return True
+
+    monkeypatch.setattr(approvals_contract, "flag_enabled", on)
     with pytest.raises(ApprovalKindNotRegistered):
         await approvals_contract.decide_package_route(
             uuid4(),
             approvals_contract.PackageDecideIn(decision="approve", seen_hash="h"),
-            cast("approvals_contract.AuthContext", None),
+            cast("approvals_contract.AuthContext", SimpleNamespace(tenant=None)),
             "key",
         )
 

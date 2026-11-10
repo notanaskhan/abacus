@@ -628,6 +628,7 @@ REVIEWED_FALLBACK: Final = frozenset(
         "governance_communication.acknowledgement_repeated",
         "governance_communication.approval_requested",
         "governance_communication.created",
+        "governance_communication.envelope_drafted",  # TASK-6543: the fallback reads it right
         "governance_communication.sent",
         "governance_recipients.set",
         "deliverable.superseded",  # reviewed 2026-11-08 (R-02-T09)
