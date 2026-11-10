@@ -372,6 +372,11 @@ from abacus.modules.agents.det_runs import (  # noqa: E402 -- A-06-T25
     deterministic_run_facts,
     open_deterministic_run,
 )
+
+# T-04-T15: an owner's applier reads an approved proposal's rows (never a pending one).
+from abacus.modules.agents.proposal_store import (  # noqa: E402
+    approved_rows as approved_proposal_rows,
+)
 from abacus.modules.agents.spec_v2 import (  # noqa: E402
     AgentSpecV2,
     ToolFacts,
@@ -513,6 +518,7 @@ __all__ = [
     "agent_badge_stream",
     "analyze_notice",
     "apply_proposal",
+    "approved_proposal_rows",
     "ask",
     "begin_code_run",
     "blocks",
