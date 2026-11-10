@@ -1,5 +1,5 @@
 # The only command surface for humans, agents and CI (ADR-010). PROTECTED.
-.PHONY: refdata-draft refdata-diff refdata-publish refdata-withdraw backfill-rerun shadow-report pilot-metrics pilot-read m12-pack go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast evals-match-fast evals-recommend-fast evals-blocks-fast evals-completion-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check release-pr golden-render
+.PHONY: refdata-draft refdata-diff refdata-publish refdata-withdraw backfill-rerun shadow-report pilot-metrics pilot-read m12-pack go-live-check windows flag-calendar agent-stage setup dev seed e2e check-fast check check-generated check-heads regenerate db-guard worktree-env dev-fixtures ci-unit ci-integration ci-coverage ci-contracts ci-frontend ci-visual test test-integration evals evals-review-fast evals-match-fast evals-recommend-fast evals-blocks-fast evals-trajectory-fast evals-completion-fast generate migrate loadtest seed-demo seed-staging fixtures journeys journeys-full route-parity flag access-review audit-chain-verify entitlement incident-propagate incident-status schedules deploy-lock release-check release-pr golden-render
 
 setup:
 	cd backend && uv sync --locked
@@ -245,6 +245,10 @@ evals-review-fast:
 # adversarial corpus, every repeat at 1.0). CI's stage 3 runs it on agent paths.
 evals-blocks-fast:
 	cd backend && uv run python -m abacus_tools.evals --agent agent_blocks
+
+# P-10-T34: runtime v2's trajectory and conversation suite, fast subset (code only, no model).
+evals-trajectory-fast:
+	cd backend && uv run python -m abacus_tools.evals --agent agent_trajectories --subset fast
 
 # A-07-T40: A-07's audit completion conformance suite, graded by code (no model, no stack).
 evals-completion-fast:

@@ -37,7 +37,6 @@ from abacus.modules.agents.decision_recommend import (
     RecommendFacts,
     recommend,
 )
-from abacus.modules.agents.run_waits import on_decision_decided
 from abacus.modules.agents.engagement_agent import start_agents
 from abacus.modules.agents.engagement_agent_workflow import HANDLE as ENGAGEMENT_AGENT_HANDLE
 from abacus.modules.agents.engagement_agent_workflow import (
@@ -164,6 +163,7 @@ from abacus.modules.agents.run_recorder import (  # P-09-T12: the synthetic scen
     record_synthetic_run,
 )
 from abacus.modules.agents.run_stream import badge_stream as agent_badge_stream  # P-10-T26
+from abacus.modules.agents.run_waits import on_decision_decided
 from abacus.modules.agents.run_workflow import AgentRunInput as AgentRunInput
 from abacus.modules.agents.run_workflow import AgentRunWorkflow as AgentRunWorkflow
 from abacus.modules.agents.runs import run_initiators
@@ -251,6 +251,7 @@ from abacus.modules.agents.tools.registry import ToolNotRegistered as ToolNotReg
 from abacus.modules.agents.tools.registry import ToolPageIn as ToolPageIn
 from abacus.modules.agents.tools.registry import ToolPageOut as ToolPageOut
 from abacus.modules.agents.tools.registry import agent_tool as agent_tool
+from abacus.modules.agents.tools.registry import has_never_verb
 from abacus.modules.agents.tools.registry import register_tool as register_tool
 from abacus.modules.agents.tools.registry import registered_tools as registered_tools
 from abacus.modules.agents.tools.runtime import ToolCallIn as ToolCallIn
@@ -409,6 +410,7 @@ __all__ = [
     "SCREENER",
     "SCREEN_PROMPT",
     "SUBSCRIPTIONS",
+    "has_never_verb",
     "WORKFLOWS",
     "ActiveRun",
     "AdoptedValue",

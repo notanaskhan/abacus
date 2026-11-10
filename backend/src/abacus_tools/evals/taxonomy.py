@@ -32,6 +32,24 @@ ADVERSARIAL_CATEGORIES: Final = frozenset(
     }
 )
 
+# P-10-T34: runtime v2's trajectory failures, one per grader (`evals.trajectory.FAILURE_CODES`).
+TRAJECTORY_CATEGORIES: Final = frozenset(
+    {
+        "wrong_tool",
+        "forbidden_tool",
+        "invalid_args",
+        "repeated_call",
+        "step_budget",
+        "undeclared_write",
+        "reserved_action",
+        "missing_fact",
+        "unverified_citation",
+        "uncited_claim",
+        "unprovenanced_number",
+        "access_breach",
+    }
+)
+
 # What each agent's suite must cover (SPEC-005 AC-4): the categories its purpose involves. The
 # screener reads whole trial balances from clients' systems, so it meets all of them.
 REQUIRED_COVERAGE: Final[dict[str, frozenset[str]]] = {
