@@ -76,6 +76,7 @@ def test_ac1_the_catalogue_is_the_approved_kinds() -> None:
         "review_note.raised",  # P-04-T21 (C16 `review_note_raised`, to the assignee)
         "decision_card.raised",  # P-04-T23 (C16 `decision_assigned`, to the reserved person)
         "decision_card.notify_requested",  # P-04-T23 (C16 `mention`, SHL-11 b Notify)
+        "mention.created",  # P-05-T05 (C16 `mention`, a v2 comment's mention; AC-8 re-check)
         "proposal.routed",  # P-04-T26 (C16 `proposal_routed`, to the named approver)
         "sign_off.requested",  # P-04-T26 (`sign_off_requested`, to the people named)
         "proposed_entry.client_decided",  # A-06-T10 (`proposed_entry_client_responded`, leads)

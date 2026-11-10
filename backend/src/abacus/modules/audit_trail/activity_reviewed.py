@@ -12,6 +12,15 @@ from typing import Final
 
 REVIEWED_FALLBACK: Final = frozenset(
     {
+        # reviewed 2026-11-10 (S34): P-05-T05/T06 collaboration; AUD-29 shows only
+        # `todo.deleted` and `comment.redacted` (OQ-4, P-05-T11's catalogue entries)
+        "comment.corrected",
+        "comment_thread.muted",
+        "comment_thread.opened",
+        "comment_thread.reopened",
+        "comment_thread.resolved",
+        "comment_thread.shared",
+        "comment_thread.unmuted",
         # reviewed 2026-11-09 (S33 end pass): A-07-T30/T31/T32, P-10-T27, R-02-T15
         "agent_run.code_recorded",
         "archive.assembly_started",

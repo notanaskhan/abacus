@@ -1,6 +1,6 @@
-"""The P-05 acceptance world (ac-test-author: P-05-T07, T08; written from SPEC-650 and the 501 stubs,
-not from the services): one Brightwater-Hale-shaped firm with `collaboration.v2` on, Northwind's
-engagement team of five, a firm member not on the engagement, a walled member and a client
+"""The P-05 acceptance world (ac-test-author: P-05-T07, T08; written from SPEC-650 and the 501
+stubs, not from the services): one Brightwater-Hale-shaped firm with `collaboration.v2`
+on, Northwind's engagement team of five, a firm member not on the engagement, a walled member and a client
 contact.
 
 Names follow the SPEC's people so that a failure reads like the story: Margaret Okonkwo (EP),
@@ -41,7 +41,12 @@ class Collab:
     client: Person
 
     async def call(
-        self, method: str, path: str, who: Person, body: dict[str, object] | None = None, **kw: bool
+        self,
+        method: str,
+        path: str,
+        who: Person,
+        body: dict[str, object] | None = None,
+        **kw: bool,
     ) -> httpx.Response:
         return await self.net.call(method, path, who, body=body, **kw)
 
@@ -82,7 +87,11 @@ class Collab:
         return cast(dict[str, object], response.json())
 
     async def thread_on(
-        self, anchor_id: object, who: Person | None = None, body: str = "First note.", **extra: object
+        self,
+        anchor_id: object,
+        who: Person | None = None,
+        body: str = "First note.",
+        **extra: object,
     ) -> httpx.Response:
         payload: dict[str, object] = {
             "anchor": {"anchor_kind": "todo", "anchor_id": str(anchor_id)},
