@@ -22,7 +22,7 @@ from collections import Counter
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Annotated, ClassVar, Final, cast
+from typing import Annotated, ClassVar, Final, Literal, cast
 from uuid import UUID, uuid4
 
 from sqlalchemy import text
@@ -77,6 +77,10 @@ class IssueRow:
     title_sealed: bytes
     internal_note_sealed: bytes | None
     client_wording_sealed: bytes | None
+    # T-04-T23 (0800): where it came from, the queue's grouping, a system-resolved dependency.
+    source_kind: str | None = None
+    category_path: str | None = None
+    system_resolved_only: bool = False
 
 
 @dataclass(frozen=True)
@@ -91,6 +95,7 @@ _SELECT_ONE: Final = text(
     "SELECT i.id, i.engagement_id, i.work_item_id, i.record_ref, i.kind, i.priority, i.status, "
     "i.instructions_required, i.assignee_user_id, i.assignee_agent, i.blocks, i.version, "
     "i.created_at, i.title_sealed, i.internal_note_sealed, i.client_wording_sealed, "
+    "i.source_kind, i.category_path, i.system_resolved_only, "
     "(SELECT count(*) FROM issue_links l WHERE l.issue_id = i.id) AS link_count "
     "FROM issues i WHERE i.id = :id"
 )
@@ -98,6 +103,7 @@ _SELECT_LIST: Final = text(
     "SELECT i.id, i.engagement_id, i.work_item_id, i.record_ref, i.kind, i.priority, i.status, "
     "i.instructions_required, i.assignee_user_id, i.assignee_agent, i.blocks, i.version, "
     "i.created_at, i.title_sealed, i.internal_note_sealed, i.client_wording_sealed, "
+    "i.source_kind, i.category_path, i.system_resolved_only, "
     "(SELECT count(*) FROM issue_links l WHERE l.issue_id = i.id) AS link_count "
     "FROM issues i WHERE i.engagement_id = :e "
     "AND (CAST(:r AS text) IS NULL OR i.record_ref ->> 'id' = CAST(:r AS text)) "
@@ -135,7 +141,27 @@ def _row(r: object) -> IssueRow:
         cast(bytes, m["title_sealed"]),
         cast(bytes | None, m["internal_note_sealed"]),
         cast(bytes | None, m["client_wording_sealed"]),
+        cast(str | None, m.get("source_kind")),
+        cast(str | None, m.get("category_path")),
+        bool(m.get("system_resolved_only") or False),
     )
+
+
+SourceKind = Literal["mismatch", "self_check", "engine_diagnostic", "k1_dependency", "manual"]
+
+
+@dataclass(frozen=True)
+class IssueSource:
+    """T-04-T23 (0800): where an issue came from, the queue's category path, and whether only the
+    system resolves it (a dependency, such as the Draft K-1 issue: TAX-06b)."""
+
+    kind: SourceKind
+    category_path: str | None = None
+    system_resolved_only: bool = False
+
+    def __post_init__(self) -> None:
+        if self.system_resolved_only and self.kind != "k1_dependency":
+            raise ValueError("only a dependency issue resolves by the system alone")
 
 
 async def _record(
@@ -162,6 +188,7 @@ async def create_issue(
     blocks: Sequence[str],
     source_ref: str | None = None,
     work_item_id: UUID | None = None,
+    source: IssueSource | None = None,
 ) -> UUID:
     engagement_id, resource, _ = await _record(ctx, record_type, record_id)
     await authorise(ctx, "issue.create", resource)
@@ -207,6 +234,7 @@ async def create_issue(
             blocks=blocks,
             source_ref=source_ref,
             work_item_id=work_item_id,
+            source=source,
         )
     return issue_id
 
@@ -268,14 +296,16 @@ async def _write_issue(
     blocks: Sequence[str],
     source_ref: str | None,
     work_item_id: UUID | None,
+    source: IssueSource | None = None,
 ) -> None:
     await tx.session.execute(
         text(
             "INSERT INTO issues (id, tenant_id, engagement_id, work_item_id, record_ref, "
             "kind, priority, title_sealed, assignee_user_id, assignee_agent, "
             "client_contact_id, client_wording_sealed, internal_note_sealed, blocks, "
-            "source_ref) VALUES (:id, :t, :e, :w, CAST(:ref AS jsonb), :k, :p, :title, :a, "
-            ":agent, :contact, :wording, :note, CAST(:blocks AS text[]), :src)"
+            "source_ref, source_kind, category_path, system_resolved_only) VALUES (:id, :t, :e, "
+            ":w, CAST(:ref AS jsonb), :k, :p, :title, :a, :agent, :contact, :wording, :note, "
+            "CAST(:blocks AS text[]), :src, :source_kind, :category, :system_only)"
         ),
         {
             "id": issue_id,
@@ -293,6 +323,9 @@ async def _write_issue(
             "note": sealed["internal_note_sealed"],
             "blocks": sorted(set(blocks)),
             "src": source_ref,
+            "source_kind": source.kind if source is not None else None,
+            "category": source.category_path if source is not None else None,
+            "system_only": source.system_resolved_only if source is not None else False,
         },
     )
     await tx.session.execute(

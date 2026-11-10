@@ -17,10 +17,12 @@ from abacus.modules.identity.api import AbacusRouter, register_scope_resolver
 from abacus.modules.organisations.api import register_office_facts
 from abacus.modules.platform.api import register_search_projection
 from abacus.modules.reporting.api import register_k1_rows
+from abacus.modules.tax import activity_kinds as _activity_kinds
 from abacus.modules.tax import answer_effects as _answer_effects
 from abacus.modules.tax import consent_capture, filed_delivery, filing, k1_release
 from abacus.modules.tax import drafter_workflow as _drafter
 from abacus.modules.tax import extensions as _extensions
+from abacus.modules.tax import return_issues as _return_issues
 from abacus.modules.tax import schedule_jobs as _schedule_jobs
 from abacus.modules.tax.approval import Blocker as ApprovalBlocker
 from abacus.modules.tax.approval import eligibility as final_approval_eligibility
@@ -136,6 +138,7 @@ async def _filing_acknowledged(event: OutboxEvent) -> None:
 
 
 _answer_effects.register()  # T-03-T06 (DEC-2352): review points from organizer answers
+_activity_kinds.register()  # T-04-T23: TAX-07's Activity kinds on P-05's query
 
 SUBSCRIPTIONS = {
     "reference_set.published": _reference_set_published,
@@ -151,6 +154,8 @@ SUBSCRIPTIONS = {
     **k1_release.SUBSCRIPTIONS,
     # T-01-T37: a published filed return emails the client's owners "Deliverable ready".
     **filed_delivery.SUBSCRIPTIONS,
+    # T-04-T23: a released K-1 resolves the receiving returns' Draft K-1 issues (the system's).
+    **_return_issues.SUBSCRIPTIONS,
 }
 # T-02-T21: `K1ReleaseWorkflow` and its activities (the worker composes every module's parts).
 WORKFLOWS: dict[type, str] = {

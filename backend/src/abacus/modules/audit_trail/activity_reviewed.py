@@ -18,6 +18,9 @@ REVIEWED_FALLBACK: Final = frozenset(
         "archive.seal_verified",
         "archive_addition.created",
         "archive_addition.decided",
+        # reviewed 2026-11-10 (S35): T-04-T23 (registered by tax.activity_kinds as well)
+        "export.created",
+        "issue.system_resolved",
         # reviewed 2026-11-10 (S35): P-10-T36 the synthetic recorder's later step states
         "agent_run.advanced_synthetic",
         # reviewed 2026-11-10 (S35): P-10-T33 a person's run commands (agents/commands.py)

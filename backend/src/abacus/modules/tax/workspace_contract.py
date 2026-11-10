@@ -16,7 +16,7 @@ from decimal import Decimal
 from typing import Annotated, Literal, NoReturn, cast
 from uuid import UUID
 
-from fastapi import Depends, Query
+from fastapi import Depends, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import (
@@ -358,15 +358,19 @@ _R = "/returns/{return_id}"
 )
 async def workspace_route(return_id: UUID, ctx: Ctx) -> WorkspaceSummaryOut:
     """TAX-04's tab counts at the viewer's level (T-04-T17)."""
+    from abacus.modules.tax.return_issues import checkpoint_chip, issue_counts
     from abacus.modules.tax.review_tree import summary
 
     await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
     found = await summary(ctx, return_id)
+    issues = await issue_counts(ctx, return_id)  # T-04-T23: TAX-06's open count
+    chip = await checkpoint_chip(ctx, return_id)  # T-04-T23: TAX-07's "☰ n proposed"
     return WorkspaceSummaryOut(
         return_id=return_id,
         review_count=found.review_count,
         viewer_level=found.viewer_level,
-        issues_open=0,
+        issues_open=issues.open_total,
+        checkpoints_proposed=chip.proposed,
         k1_dependency=None
         if found.k1_dependency is None
         else K1ActivityStatus(found.k1_dependency),
@@ -653,3 +657,24 @@ async def residency_proposal_route(return_id: UUID, ctx: Ctx) -> ReturnRunAccept
 async def state_allocation_route(return_id: UUID, ctx: Ctx) -> StateAllocationOut:
     await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
     _not_yet()
+
+
+@workspace_router.get(
+    f"{_R}/issues/export", action="export.create", response_model=bytes, errors=(501,)
+)
+async def return_issues_export_route(return_id: UUID, ctx: Ctx) -> Response:
+    """T-04-T23 (AC-4.7): TAX-06's issues as CSV; `export.create` needs a fresh MFA (matrix
+    `mfa_recent`), each cell is neutralised against formula injection, `export.created` records
+    the row count."""
+    from abacus.modules.tax.return_issues import issues_csv
+
+    await _flag_on(ctx, TAX_REVIEW_WORKSPACE)
+    content = await issues_csv(ctx, return_id)
+    return Response(
+        content=content.encode("utf-8"),
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": f'attachment; filename="issues-{return_id}.csv"',
+            "Cache-Control": "no-store",
+        },
+    )

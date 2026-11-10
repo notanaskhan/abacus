@@ -48,6 +48,8 @@ class EngagementActivityQueryIn(BaseModel):
     )
     since: Annotated[datetime | None, classified("internal")] = None
     until: Annotated[datetime | None, classified("internal")] = None
+    # T-04-T23 (AC-5.6): one return's events, for TAX-07 (inside the engagement only).
+    work_item_id: Annotated[UUID | None, classified("internal")] = None
     # The search text: matched server-side against the actor's name, the resolved target label,
     # the detail facts and the catalogue's keywords. It can name a client, so it is confidential
     # and stays in the body (AC-34).
@@ -67,6 +69,8 @@ class EngagementActivityExportIn(BaseModel):
     )
     since: Annotated[datetime | None, classified("internal")] = None
     until: Annotated[datetime | None, classified("internal")] = None
+    # T-04-T23 (AC-5.6): one return's events, for TAX-07 (inside the engagement only).
+    work_item_id: Annotated[UUID | None, classified("internal")] = None
     q: Annotated[str | None, Field(max_length=120), classified("confidential")] = None
 
 
@@ -91,6 +95,7 @@ def _filter(
         since=body.since,
         until=body.until,
         q=body.q.strip() or None if body.q is not None else None,
+        work_item_id=body.work_item_id,
     )
 
 

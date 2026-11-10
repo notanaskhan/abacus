@@ -25,6 +25,7 @@ from uuid import UUID
 
 from sqlalchemy import text
 
+from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.errors import DomainConflict
 from abacus.kernel.uow import Ref, Scope, Target, uow
 from abacus.modules.engagements.api import gate_fact
@@ -59,6 +60,13 @@ class IssueStatusRefused(DomainConflict):
     """The issue cannot move there from where it is (`facts.status`)."""
 
     code = "issue_status_refused"
+
+
+class IssueSystemResolvedOnly(DomainConflict):
+    """T-04-T23 (TAX-06b, 0800): a dependency issue resolves when its dependency does, by the
+    system, never by a person (`POST /v1/issues/{id}/resolve` answers 409)."""
+
+    code = "system_resolved_only"
 
 
 class FixRunnerUnavailable(DomainConflict):
@@ -106,6 +114,8 @@ async def move(ctx: AuthContext, issue_id: UUID, to: str, seen_version: int) -> 
     await authorise(ctx, _ACTION[to], resource)
     if current.status not in _FROM[to]:
         raise IssueStatusRefused(facts={"status": current.status})
+    if to in ("resolved", "not_applicable") and await _system_only(ctx.tenant, issue_id):
+        raise IssueSystemResolvedOnly
     async with uow(ctx.tenant) as tx:
         if (
             await tx.session.execute(_MOVE, {"status": to, "id": issue_id, "v": seen_version})
@@ -128,6 +138,57 @@ async def move(ctx: AuthContext, issue_id: UUID, to: str, seen_version: int) -> 
             after=Ref(version=current.version + 1),
             scope=Scope(engagement_id=current.engagement_id),
         )
+
+
+async def _system_only(tenant: TenantContext, issue_id: UUID) -> bool:
+    async with tenant_session(tenant) as session:
+        return bool(
+            await session.scalar(
+                text("SELECT system_resolved_only FROM issues WHERE id = :i"), {"i": issue_id}
+            )
+        )
+
+
+_SYSTEM_DEPENDENTS = text(
+    "SELECT id, version, engagement_id FROM issues WHERE source_kind = 'k1_dependency' "
+    "AND system_resolved_only AND source_ref = :ref AND status IN ('open', 'in_progress', "
+    "'reopened') FOR UPDATE"
+)
+
+
+async def system_resolve_dependents(system: TenantContext, source_ref: str) -> list[UUID]:
+    """T-04-T23 (AC-4.2): the open dependency issues named `source_ref` (the Draft K-1 issue's
+    `k1_dependency:<package>`) resolve as the system once their dependency is met: status
+    `resolved`, a `system_resolved` event (0800: the system only), one audit event each."""
+    if system.actor_kind != "system":
+        raise Forbidden("issue.system_resolve", "role")
+    resolved: list[UUID] = []
+    async with uow(system) as tx:
+        rows = (await tx.session.execute(_SYSTEM_DEPENDENTS, {"ref": source_ref})).all()
+        for row in rows:
+            await tx.session.execute(
+                text("UPDATE issues SET status = 'resolved', version = version + 1 WHERE id = :i"),
+                {"i": row.id},
+            )
+            await tx.session.execute(
+                _EVENT_ROW,
+                {
+                    "t": system.tenant_id,
+                    "i": row.id,
+                    "event": "system_resolved",
+                    "sealed": None,
+                    "scope": None,
+                },
+            )
+            tx.record(
+                "issue.system_resolved",
+                target=Target(SUBJECT, row.id),
+                before=Ref(version=int(row.version)),
+                after=Ref(version=int(row.version) + 1),
+                scope=Scope(engagement_id=row.engagement_id),
+            )
+            resolved.append(row.id)
+    return resolved
 
 
 async def set_fix_instructions(
