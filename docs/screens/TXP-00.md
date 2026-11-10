@@ -65,6 +65,18 @@ DF-34: Schedule L follows pack 08 (1200 → L5, mortgage → L18, 2000 split fro
 - Schedule K and capital are read models over workbook cells; no `schedule_k_lines` or `capital_account_lines` tables (T-05 OQ-8).
 - TXP-12 (K-1 package) is T-02's screen; T-05 only links to it.
 
+### Designed states the handoff lacks (T-05-T03)
+
+| State | What renders | None blank |
+|---|---|---|
+| Agent off (`tax.entity_agents` off, or a step's capability not cleared) | The run plan still lists every step; model-backed steps (mapper suggestions, agreement reader, memo drafting) read "By hand" in ink-3 with the reason from `GET /v1/agents/capabilities` on hover, and ▶ Run runs the deterministic steps only. Composer disabled with the same reason, never hidden. | yes |
+| Flag off (`tax.entity_workspace`) | The 1065 opens TAX-02's coordination view as today (F13); no entity route answers and no pane renders blank. Not a screen state: the screen is unreachable. | yes |
+| Consent blocked (§7216) | The run reaches the first model-backed step and that step waits on inputs: amber step chip "§7216 AI consent — Ridgeline (1 of 2 signed)", "Request consent…" for permitted roles; every deterministic step still runs; no model call (SPEC-651 F13, `consent_required` 409 on a direct call). | yes |
+| Import mode | `depreciation_register`, `bonus_eligibility`, `apportionment_ptet` and `state_k1s_k3s` show "Imported from the firm's report" with the import's file name and date in the step's detail; ▶ Run on them opens the import sheet instead of running (until T-06). | yes |
+| Entitlement refused (`tax.entity_returns`, CPA memos unsigned, non-synthetic firm) | The return opens the coordination view with the designed locked card: title "Entity return workspace", body "Opens once the firm's entity returns are set up." (undesigned, T-05-T03), no workbook route answers (F13). | yes |
+
+Every string above with no handoff source is undesigned (T-05-T03) and is replaced by the handoff's copy when one lands; the consent line is the spec's (SPEC-651 F13).
+
 ## Acceptance
 
 SPEC-651's criteria for this screen; each becomes a test named "TXP-00 acceptance: <criterion>".
