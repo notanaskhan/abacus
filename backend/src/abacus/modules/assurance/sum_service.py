@@ -548,6 +548,8 @@ async def snapshot(
     totals = {
         "rollover": str(result.rollover),
         "iron_curtain": str(result.iron_curtain),
+        "iron_curtain_increase": str(result.iron_curtain_increase),
+        "iron_curtain_decrease": str(result.iron_curtain_decrease),
         "aggregate": str(result.aggregate),
         "pct_of_pm": str(result.pct_of_pm),
         "accumulated": list(result.accumulated),

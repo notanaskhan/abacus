@@ -78,6 +78,11 @@ class Result:
     engine_name: str
     engine_version: str
     inputs_hash: str
+    # R-02-T15/T19: the iron-curtain total's two signed parts (what the counted items would add to
+    # net assets, and what they would take away), so POR-08's acknowledgement shows both figures
+    # from the frozen snapshot; `iron_curtain` is their difference.
+    iron_curtain_increase: Decimal = Decimal(0)
+    iron_curtain_decrease: Decimal = Decimal(0)
 
 
 def _text(value: object) -> object:
@@ -127,6 +132,8 @@ def evaluate(
     with localcontext(CONTEXT):
         rollover = sum((i.rollover for i in counted), Decimal(0))
         iron = sum((i.iron_curtain for i in counted), Decimal(0))
+        increase = sum((i.iron_curtain for i in counted if i.iron_curtain > 0), Decimal(0))
+        decrease = -sum((i.iron_curtain for i in counted if i.iron_curtain < 0), Decimal(0))
     aggregate = max(abs(rollover), abs(iron))
     pct_pm = _pct(aggregate, thresholds.pm)
     return Result(
@@ -150,6 +157,8 @@ def evaluate(
             thresholds=[thresholds.overall, thresholds.pm, thresholds.ct],
             approaching_pm_pct=approaching_pm_pct,
         ),
+        iron_curtain_increase=quantize_half_up(increase, 2),
+        iron_curtain_decrease=quantize_half_up(decrease, 2),
     )
 
 
