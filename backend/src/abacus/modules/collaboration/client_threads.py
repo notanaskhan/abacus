@@ -65,7 +65,7 @@ def _client(ctx: AuthContext) -> None:
 
 
 def _clean(body: str) -> str:
-    kept = "".join(c for c in body if c in "\n\t" or (c.isprintable() and c not in "‮‭"))
+    kept = "".join(c for c in body if c in "\n\t" or (c.isprintable() and c not in "\u202e\u202d"))
     kept = kept.strip()
     if not kept:
         raise EmptyComment
