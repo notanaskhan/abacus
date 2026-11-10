@@ -29,7 +29,7 @@ Every row is marked the same way in `status-verified.csv`, evidence starting "sy
 
 ## Go-live: dossiers, M9/M10, A1–A3, contract
 
-Held PR branch `pfx1-go-live`.
+Held PR #1622 (branch `pfx1-go-live`); the decision and this list are #1621.
 
 | Row | S | Needs | Outcome | Evidence |
 |---|---|---|---|---|
@@ -45,7 +45,7 @@ Held PR branch `pfx1-go-live`.
 
 ## Pilot 0 (S2–S15)
 
-Held PR branch `pfx1-pilot0`.
+Held PR #1623 (branch `pfx1-pilot0`); the decision and this list are #1621.
 
 | Row | S | Needs | Outcome | Evidence |
 |---|---|---|---|---|
@@ -79,7 +79,7 @@ Held PR branch `pfx1-pilot0`.
 
 ## PW1 and PW2 operations (S14–S19)
 
-Held PR branch `pfx1-pw1-pw2`.
+Held PR #1624 (branch `pfx1-pw1-pw2`); the decision and this list are #1621.
 
 | Row | S | Needs | Outcome | Evidence |
 |---|---|---|---|---|
@@ -106,7 +106,7 @@ Held PR branch `pfx1-pw1-pw2`.
 
 ## Tax pilot and the autumn window (S19–S25)
 
-Held PR branch `pfx1-season`.
+Held PR #1625 (branch `pfx1-season`); the decision and this list are #1621.
 
 | Row | S | Needs | Outcome | Evidence |
 |---|---|---|---|---|
