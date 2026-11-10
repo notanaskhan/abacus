@@ -1,9 +1,12 @@
 """HTTP edge middleware: size limits and trusted hosts (ADR-152, P-45; Q-01-T16). PROTECTED.
 
 Plain ASGI, not `BaseHTTPMiddleware`, so a request is refused before its body is read or parsed.
-Proxy headers are handled by uvicorn's `ProxyHeadersMiddleware` in `create_app()`, trusted only
-from the peers in `proxy_trusted_hosts` (the load balancer). Nothing here reads `X-Forwarded-Host`:
-the portal host is a branding hint only, and a tenant comes from membership or grant (INV-4).
+`X-Forwarded-For` and `X-Forwarded-Proto` are handled by uvicorn's `ProxyHeadersMiddleware` in
+`create_app()`, trusted only from the peers in `proxy_trusted_hosts` (the load balancer).
+`TrustedHosts` judges the viewer's host (`kernel.viewer_host`, DEC-3990): `X-Forwarded-Host` from
+those same peers, `Host` from anyone else, so it runs outside the proxy middleware and sees the
+real peer. The viewer host is a branding hint and a session pin only; a tenant comes from
+membership or grant (ADR-163 §5, INV-4).
 """
 
 from __future__ import annotations
@@ -15,6 +18,8 @@ from typing import Final
 
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
+
+from abacus.kernel.viewer_host import SCOPE_KEY, ProxyPeers, host_name, resolve_viewer_host
 
 JSON_BODY_LIMIT: Final = 1024 * 1024
 _SAFE_METHODS: Final = frozenset({"GET", "HEAD", "OPTIONS"})
@@ -148,7 +153,7 @@ class HostPolicy:
     def allows(self, host: str) -> bool:
         if self.any:
             return True
-        name = _host_name(host)
+        name = host_name(host)
         if not name:
             return False
         if name in self.names or any(name.endswith(suffix) for suffix in self.suffixes):
@@ -162,31 +167,30 @@ class HostPolicy:
         )
 
 
-def _host_name(value: str) -> str:
-    """The host without its port, lower case and without a trailing dot."""
-    host = value.strip().lower()
-    if host.startswith("["):  # [::1]:8000
-        end = host.find("]")
-        return host[1:end] if end > 0 else ""
-    if host.count(":") == 1:
-        host = host.split(":", 1)[0]
-    return host.rstrip(".")
-
-
 class TrustedHosts:
-    """A request whose `Host` is not trusted gets 400, before any route runs. A missing or
-    repeated `Host` header is untrusted too."""
+    """A request whose viewer host is not trusted gets 400, before any route runs: the
+    `X-Forwarded-Host` of a peer in `proxies` (the load balancer behind CloudFront), else the
+    `Host` (DEC-3990). A missing or repeated `Host`, or an ambiguous forwarded host, is untrusted
+    too. A trusted viewer host is kept on the scope for `kernel.viewer_host.ViewerHost`.
 
-    def __init__(self, app: ASGIApp, *, allowed: Iterable[str]) -> None:
+    It must see the TCP peer as it is, so it runs outside uvicorn's proxy middleware."""
+
+    def __init__(
+        self, app: ASGIApp, *, allowed: Iterable[str], proxies: Iterable[str] = ()
+    ) -> None:
         self.app = app
         self._policy = HostPolicy(allowed)
+        self._proxies = ProxyPeers(proxies)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] not in ("http", "websocket"):
             await self.app(scope, receive, send)
             return
-        hosts = _header(scope, b"host")
-        if len(hosts) == 1 and self._policy.allows(hosts[0].decode("latin-1")):
+        client = scope.get("client")
+        peer = str(client[0]) if client else None
+        viewer = resolve_viewer_host(scope["headers"], peer, self._proxies)
+        if viewer is not None and self._policy.allows(viewer):
+            scope[SCOPE_KEY] = viewer
             await self.app(scope, receive, send)
             return
         if scope["type"] == "http":
