@@ -44,3 +44,11 @@ Rollback: nothing starts the workflow until P-10-T33's start route; revert.
 | Decision | Reason | Needs ADR? |
 |---|---|---|
 | DEC-3205 | Part 1's boundaries: deterministic plans only; pause polling; stalled runs end | no |
+
+- 2026-11-10 (partial closed): the replay history is recorded (`record_agent_run`,
+  `agent-run-v1-succeeded.json`, `tests/workflows/test_p10t29_agent_run_replay.py`). Recording it
+  found a real defect: Temporal's converter decodes `Any`, not `object`, so `RunFacts.plan`,
+  `PlanState.steps` and the `dict[str, object]` activity parameters failed with "Failed decoding
+  arguments" and every v2 run would have died at its first activity. They are `JsonObject`
+  (`dict[str, Any]`) now; `tests/unit/agents/test_p10t29_payloads.py` round-trips each payload and
+  refuses an `object` dict on any run v2 activity. Status: done.

@@ -29,7 +29,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass, field
-from typing import Final, cast
+from typing import Any, Final, cast
 from uuid import UUID
 
 from sqlalchemy import text
@@ -57,6 +57,11 @@ def _tenant(tenant_id: str, run_id: str) -> TenantContext:
     return TenantContext(UUID(tenant_id), "system", f"{_READER}:{run_id}")
 
 
+# Temporal's payload converter decodes `Any`, not `object`: a JSON object crossing the activity
+# boundary (plan steps, blocked facts) is typed this way (P-10-T29; the recorder caught it).
+JsonObject = dict[str, Any]  # Any: JSON values
+
+
 @dataclass(frozen=True)
 class RunFacts:
     state: str | None
@@ -65,7 +70,7 @@ class RunFacts:
     declared_writes: list[str]
     tool_actions: dict[str, str]
     max_parallel: int | None
-    plan: list[dict[str, object]] | None
+    plan: list[JsonObject] | None
     approver_holds: list[tuple[str, str]] = field(default_factory=list[tuple[str, str]])
 
 
@@ -123,7 +128,7 @@ async def _approver_holds(
 
 @activity.defn(name="agents.run_v2.record_plan")
 async def record_plan_activity(
-    tenant_id: str, run_id: str, steps: list[dict[str, object]], problems: list[str]
+    tenant_id: str, run_id: str, steps: list[JsonObject], problems: list[str]
 ) -> int:
     """The plan as a `proposed` version (0 when refused: the run fails `plan_invalid`)."""
     tenant = _tenant(tenant_id, run_id)
@@ -166,7 +171,7 @@ async def record_plan_activity(
 class PlanState:
     version: int
     state: str  # proposed · approved · edited · cancelled · standing
-    steps: list[dict[str, object]]
+    steps: list[JsonObject]
 
 
 @activity.defn(name="agents.run_v2.plan_state")
@@ -192,7 +197,7 @@ async def set_state_activity(
     run_id: str,
     state: str,
     reason: str | None,
-    blocked_on: dict[str, object] | None,
+    blocked_on: JsonObject | None,
 ) -> int:
     """One transition: the state, its event (the run's own sequence) and its outbox event."""
     tenant = _tenant(tenant_id, run_id)
@@ -273,7 +278,7 @@ def _args_hash(name: str, arguments: dict[str, object]) -> str:
 
 @activity.defn(name="agents.run_v2.execute_step")
 async def execute_step_activity(
-    tenant_id: str, run_id: str, seq: int, step: dict[str, object], attempt: int = 1
+    tenant_id: str, run_id: str, seq: int, step: JsonObject, attempt: int = 1
 ) -> StepOutcome:
     """One step: its row, then (for a tool or compute step) its one C17 call."""
     tenant = _tenant(tenant_id, run_id)
