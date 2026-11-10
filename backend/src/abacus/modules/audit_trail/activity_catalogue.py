@@ -207,6 +207,8 @@ CATALOGUE: Final[Mapping[str, CatalogueEntry]] = {
     "envelope.voided": _a("change", "no"),
     "envelope.evidence_recorded": _a("change", "pl"),
     "signer.signing_session_issued": _a("sign_in", "pl"),
+    # P-05-T11: AUD-29's Download (filter fingerprint and row count; category Exports).
+    "audit_event.exported": _a("export", "pl", "filter_sha256", "row_count"),
 }
 
 _REGISTERED: dict[str, CatalogueEntry] = {}

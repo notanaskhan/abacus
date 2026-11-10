@@ -53,7 +53,7 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     audit_log_router,  # G-02-T04 contract; list and detail live since G-02-T08, export T17
     record_activity_routes.clients_router,  # P-07-T57: CLI-02 and ENG-02 Activity lines
     record_activity_routes.engagements_router,
-    engagement_activity_router,  # P-05-T02: AUD-29 query and export (501 until P-05-T11)
+    engagement_activity_router,  # P-05-T02 stubs, P-05-T11: AUD-29 query and export
 )
 
 # G-01-T09 (AC8.6): the wall log reads its wall's events from the trail.

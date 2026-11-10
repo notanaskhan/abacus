@@ -3,8 +3,9 @@ AC-38; P-05 §4.3; DEC-3103).
 
 `POST /v1/engagements/{engagement_id}/audit-events/query` and `…/export`. Each checks the
 principal (a client principal 404s), the engagement (404 alike for a walled or an unknown one,
-DEC-43), the one matrix action, then the flag `audit_trail.engagement_activity` (off: 404), and
-answers 501 until P-05-T11. The search text travels in the body and is never logged or put in the
+DEC-43), the one matrix action, then the flag `audit_trail.engagement_activity` (off: 404).
+P-05-T11 implements both in `engagement_activity.py`; the 501 stays declared (the stub tests
+read it). The search text travels in the body and is never logged or put in the
 URL (AC-34). Rows are the explorer's `AuditEventRow`: action code, category, mark, actor grammar
 and identifier facts; the SPA words them (P-34 rule).
 """
@@ -12,7 +13,7 @@ and identifier facts; the SPA words them (P-34 rule).
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import Response
@@ -20,8 +21,9 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import AUDIT_TRAIL_ENGAGEMENT_ACTIVITY
 from abacus.kernel.classification import classified
-from abacus.kernel.errors import NotFound, NotImplementedYet
+from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
+from abacus.modules.audit_trail import engagement_activity as activity
 from abacus.modules.audit_trail.audit_log_contract import AuditEventPageOut, Ctx
 from abacus.modules.engagements import api as engagements
 from abacus.modules.identity.api import AbacusRouter, AuthContext, authorise
@@ -79,8 +81,17 @@ async def _gate(ctx: AuthContext, engagement_id: UUID, action: str) -> None:
         raise NotFound(AUDIT_TRAIL_ENGAGEMENT_ACTIVITY.name)
 
 
-def _not_yet() -> NoReturn:
-    raise NotImplementedYet
+def _filter(
+    engagement_id: UUID, body: EngagementActivityQueryIn | EngagementActivityExportIn
+) -> activity.ActivityFilter:
+    return activity.ActivityFilter(
+        engagement_id=engagement_id,
+        segment=body.segment,
+        categories=tuple(body.categories),
+        since=body.since,
+        until=body.until,
+        q=body.q.strip() or None if body.q is not None else None,
+    )
 
 
 @engagement_activity_router.post(
@@ -92,9 +103,10 @@ def _not_yet() -> NoReturn:
 async def engagement_activity_query_route(
     engagement_id: UUID, body: EngagementActivityQueryIn, ctx: Ctx
 ) -> AuditEventPageOut:
-    """AUD-29's list, newest first by business time, keyset on `seq` (P-05-T11)."""
+    """AUD-29's list, newest first by business time, keyset on `(effective_at, seq)`."""
     await _gate(ctx, engagement_id, READ_ENGAGEMENT)
-    _not_yet()
+    page = await activity.query(ctx, _filter(engagement_id, body), body.cursor, body.limit)
+    return AuditEventPageOut.model_validate(page.model_dump())
 
 
 @engagement_activity_router.post(
@@ -107,6 +119,14 @@ async def engagement_activity_export_route(
     engagement_id: UUID, body: EngagementActivityExportIn, ctx: Ctx
 ) -> Response:
     """The filtered rows as CSV; `export.create` needs a fresh MFA (matrix `mfa_recent`) and
-    `audit_event.exported` records the filter hash and row count (P-05-T11)."""
+    `audit_event.exported` records the filter hash and row count."""
     await _gate(ctx, engagement_id, EXPORT)
-    _not_yet()
+    found = await activity.export_csv(ctx, _filter(engagement_id, body))
+    return Response(
+        content=found.content,
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": f'attachment; filename="{found.filename}"',
+            "Cache-Control": "no-store",
+        },
+    )

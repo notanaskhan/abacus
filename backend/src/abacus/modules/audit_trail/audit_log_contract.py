@@ -66,7 +66,8 @@ ActorKind = Literal["person", "via_agent", "policy", "system", "support"]
 # reversal or removal; `pl` a neutral event.
 Category = Literal["decision", "change", "access", "run", "sign_in", "communication", "export"]
 Mark = Literal["ok", "no", "pl"]
-LinkKind = Literal["run", "none"]
+# P-05-T11 (AUD-29 AC-35): where a row's click goes; ADM-07 uses `run` and `none`.
+LinkKind = Literal["run", "sign_off", "materiality", "document", "risk", "gate", "todo", "none"]
 ValuesStatus = Literal["resolved", "withheld", "unavailable"]
 WithheldReason = Literal["need_to_know", "walled", "not_enabled"]
 AuthMethod = Literal["sso", "email_code", "passkey", "totp", "support", "service"]

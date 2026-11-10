@@ -1,7 +1,6 @@
 """P-05-T08 (ac-test-author; SPEC-650 AC-32, AC-34, AC-36, AC-38): AUD-29's engagement routes over
-HTTP, from the SPEC and the P-05-T02 501 stubs. P-05-T11 (S35) builds them, so each is a strict
-xfail citing this row's task: the suite fails the moment the routes answer and the mark is not
-removed with them.
+HTTP, from the SPEC and the P-05-T02 501 stubs. P-05-T11 (S35, TASK-6703) built them and removed
+the strict xfails.
 
 The seed is AUD-29a's split: 12 events by people and 11 by the agent on Northwind, none by policy,
 so All 23 · Human 12 · via Agent 11 · Policy 0, footing under any filter.
@@ -21,9 +20,6 @@ from .p05_support import Collab, collab
 from .support import Net
 
 pytestmark = pytest.mark.asyncio
-WAITING = pytest.mark.xfail(
-    strict=True, reason="TASK-6604: the AUD-29 routes answer 501 until P-05-T11 (S35)"
-)
 
 
 @pytest.fixture
@@ -52,7 +48,6 @@ def _path(w: Collab, tail: str) -> str:
     return f"/v1/engagements/{w.site.engagement_id}/audit-events/{tail}"
 
 
-@WAITING
 async def test_ac32_the_segments_foot_12_11_0_to_23(w: Collab) -> None:
     response = await w.call("POST", _path(w, "query"), w.hannah, {"segment": "all"})
     assert response.status_code == 200, response.text
@@ -62,21 +57,18 @@ async def test_ac32_the_segments_foot_12_11_0_to_23(w: Collab) -> None:
     assert agent.json()["counts"]["all"] == 23  # counts foot under every filter
 
 
-@WAITING
 async def test_ac34_the_search_text_stays_in_the_body(w: Collab) -> None:
     response = await w.call("POST", _path(w, "query"), w.hannah, {"q": "Materiality"})
     assert response.status_code == 200, response.text
     assert "Materiality" not in str(response.request.url)
 
 
-# The refusals come before the 501: authorisation and walls already answer (no WAITING).
 async def test_ac36_a_firm_admin_and_a_client_are_refused(w: Collab) -> None:
     for who in (w.grace, w.client, w.victor):
         response = await w.call("POST", _path(w, "query"), who, {})
         assert response.status_code in (403, 404), who
 
 
-@WAITING
 async def test_ac38_export_needs_export_create_and_a_fresh_mfa(w: Collab) -> None:
     staff = await w.call("POST", _path(w, "export"), w.marcus, {})
     assert staff.status_code == 403
