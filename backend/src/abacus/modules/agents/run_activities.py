@@ -40,6 +40,7 @@ from abacus.kernel.db import TenantContext, tenant_session
 from abacus.kernel.flags import flag_enabled
 from abacus.kernel.uow import DomainEvent, Ref, Target, uow
 from abacus.modules.agents.events import RunStateChanged
+from abacus.modules.agents.run_waits import RUN_WAIT_ACTIVITIES, QUESTION_KINDS, open_wait
 from abacus.modules.agents.service import AgentRunNotRunning, load_run_v2_context
 from abacus.modules.agents.tools.registry import registered_tools
 from abacus.modules.agents.tools.runtime import ToolCallIn, call_tool
@@ -51,6 +52,7 @@ from abacus.modules.identity.api import (
 )
 
 _READER: Final = "agent-run-v2"
+WAIT_KINDS: Final = QUESTION_KINDS | {"decision"}
 
 
 def _tenant(tenant_id: str, run_id: str) -> TenantContext:
@@ -261,10 +263,12 @@ async def paused_activity(tenant_id: str, engagement_id: str | None) -> bool:
 
 @dataclass(frozen=True)
 class StepOutcome:
-    state: str  # succeeded · failed · skipped
+    # succeeded · failed · skipped; part 2: waiting_on_inputs (a question) · blocked (a decision)
+    state: str
     error_code: str | None = None
     records_read: int = 0
     active_ms: int = 0
+    wait_ref: str | None = None  # P-10-T32: the question's or the card's id
 
 
 async def _agent(tenant_id: str, run_id: str) -> AgentContext:
@@ -278,9 +282,16 @@ def _args_hash(name: str, arguments: dict[str, object]) -> str:
 
 @activity.defn(name="agents.run_v2.execute_step")
 async def execute_step_activity(
-    tenant_id: str, run_id: str, seq: int, step: JsonObject, attempt: int = 1
+    tenant_id: str,
+    run_id: str,
+    seq: int,
+    step: JsonObject,
+    attempt: int = 1,
+    retry_of_seq: int | None = None,
 ) -> StepOutcome:
-    """One step: its row, then (for a tool or compute step) its one C17 call."""
+    """One step: its row, then (for a tool or compute step) its one C17 call; a question, an
+    approval or a decision opens its wait and returns held (P-10-T32). A retry is a new row at a
+    new `seq` naming the failed row (`retry_of_step_id`, AC-W6)."""
     tenant = _tenant(tenant_id, run_id)
     run = UUID(run_id)
     kind = str(step.get("kind", "tool"))
@@ -292,8 +303,10 @@ async def execute_step_activity(
             await tx.session.scalar(
                 text(
                     "INSERT INTO agent_run_steps (tenant_id, run_id, seq, plan_step_key, level, "
-                    "kind, tool_name, args_hash, state, started_at) VALUES (:t, :run, :seq, :key, "
-                    ":level, :kind, :tool, :hash, 'running', clock_timestamp()) "
+                    "kind, tool_name, args_hash, state, started_at, retry_of_step_id) VALUES "
+                    "(:t, :run, :seq, :key, :level, :kind, :tool, :hash, 'running', "
+                    "clock_timestamp(), (SELECT p.id FROM agent_run_steps p WHERE p.run_id = :run "
+                    "AND p.seq = :retry_of)) "
                     "ON CONFLICT (tenant_id, run_id, seq) DO UPDATE SET state = 'running' "
                     "RETURNING id"
                 ),
@@ -306,10 +319,18 @@ async def execute_step_activity(
                     "kind": kind,
                     "tool": tool_name,
                     "hash": _args_hash(tool_name or kind, arguments),
+                    "retry_of": retry_of_seq,
                 },
             ),
         )
         tx.record("agent_run_step.started", target=Target("agent_run", run), after=Ref(seq=seq))
+    if kind in WAIT_KINDS:
+        opened = await open_wait(tenant_id, run_id, step_id, step)
+        if opened.state != "failed":
+            return StepOutcome(opened.state, wait_ref=opened.ref)
+        return await _finish_step(
+            tenant, run, step_id, seq, StepOutcome("failed", opened.error_code)
+        )
     agent: AgentContext | None = None
     if kind == "narration":
         outcome = StepOutcome("succeeded")
@@ -334,7 +355,13 @@ async def execute_step_activity(
             result.active_ms,
         )
     else:
-        outcome = StepOutcome("failed", "step_kind_pending")  # P-10-T32
+        outcome = StepOutcome("failed", "step_kind_pending")  # model steps: P-10-T40
+    return await _finish_step(tenant, run, step_id, seq, outcome)
+
+
+async def _finish_step(
+    tenant: TenantContext, run: UUID, step_id: UUID, seq: int, outcome: StepOutcome
+) -> StepOutcome:
     async with uow(tenant) as tx:
         await tx.session.execute(
             text(
@@ -394,4 +421,5 @@ RUN_V2_ACTIVITIES: Final = (
     paused_activity,
     execute_step_activity,
     complete_run_activity,
+    *RUN_WAIT_ACTIVITIES,  # P-10-T32: wait_state, cancel_held
 )

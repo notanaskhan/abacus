@@ -2713,6 +2713,11 @@ codes:
     raised_by:
     - abacus.modules.fieldwork.workpapers.RowsNotReviewed
     summary: 'SPEC-040 AC-10: every row is signed by a reviewer, on its current result, first.'
+  run_not_ended:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.run_commands.RunNotEnded
+    summary: A whole-run retry is for an ended run (P-10-T32).
   safeguards_person_invalid:
     status: 422
     raised_by:
@@ -3080,6 +3085,11 @@ codes:
     raised_by:
     - abacus.modules.methodology.drafts.StepHasRequests
     summary: A step a PBC request links to stays in the program.
+  step_not_failed:
+    status: 409
+    raised_by:
+    - abacus.modules.agents.run_commands.StepNotFailed
+    summary: Only a failed step is retried (P-10-T32, AC-W6).
   suggestion_changed:
     status: 409
     raised_by:

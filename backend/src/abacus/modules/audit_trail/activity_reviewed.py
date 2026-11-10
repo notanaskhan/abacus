@@ -12,6 +12,13 @@ from typing import Final
 
 REVIEWED_FALLBACK: Final = frozenset(
     {
+        # reviewed 2026-11-10 (S35): P-10-T32 AgentRunWorkflow part 2's waits, retries and stop
+        "agent_run.decision_raised",
+        "agent_run.question_opened",
+        "agent_run.retried",
+        "agent_run.skip_default_applied",
+        "agent_run.stopped",
+        "agent_run_step.retry_requested",
         # reviewed 2026-11-10 (S34): T-04-T17 document approvals and the final-approval request
         "document.approval_reversed",
         "document.approved",

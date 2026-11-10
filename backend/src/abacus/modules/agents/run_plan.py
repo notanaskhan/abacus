@@ -175,6 +175,20 @@ def cap(max_parallel_steps: int | None) -> int:
     return min(max_parallel_steps, MAX_PARALLEL)
 
 
+def _ancestors(steps: Sequence[PlanStep], key: str) -> set[str]:
+    """Every step `key` depends on, directly or not."""
+    by_key = {s.key: s for s in steps}
+    found: set[str] = set()
+    todo = list(by_key[key].depends_on) if key in by_key else []
+    while todo:
+        k = todo.pop()
+        if k in found:
+            continue
+        found.add(k)
+        todo.extend(by_key[k].depends_on if k in by_key else ())
+    return found
+
+
 def blocked_by_failure(steps: Sequence[PlanStep], states: Mapping[str, str]) -> set[str]:
     """Steps that can never run: they depend, directly or not, on a failed, cancelled or skipped
     step."""
@@ -265,6 +279,53 @@ class Schedule:
 
     def finish(self, key: str, state: str) -> None:
         self.states[key] = state
+
+    # --- part 2 (P-10-T32): waits, retries, redirects and stop ---------------------------------
+
+    @property
+    def waiting(self) -> list[str]:
+        """Steps held on a person: a question (`waiting_on_inputs`) or a decision (`blocked`)."""
+        return [k for k, v in self.states.items() if v in ("waiting_on_inputs", "blocked")]
+
+    def retry(self, key: str) -> bool:
+        """A person retried a failed step (AC-W6): it runs again as a new row, and the steps a
+        failure had skipped below it are queued again. False when the step had not failed."""
+        if self.states.get(key) != "failed":
+            return False
+        self.states[key] = "queued"
+        changed = True
+        while changed:
+            changed = False
+            for s in self.steps:
+                if self.states.get(s.key) == "skipped" and key in _ancestors(self.steps, s.key):
+                    self.states[s.key] = "queued"
+                    changed = True
+        return True
+
+    def replace(self, steps: Sequence[PlanStep]) -> list[str]:
+        """A redirect (AC-W10): a new plan version. Steps already started keep their state; a
+        queued step the new version drops is cancelled; new steps are queued. Returns the keys
+        cancelled."""
+        keep = {s.key for s in steps}
+        cancelled = [k for k, v in self.states.items() if v == "queued" and k not in keep]
+        for k in cancelled:
+            self.states[k] = "cancelled"
+        started = {s.key: s for s in self.steps if self.states.get(s.key, "queued") != "queued"}
+        merged = list(started.values()) + [s for s in steps if s.key not in started]
+        self.steps = merged
+        for s in merged:
+            self.states.setdefault(s.key, "queued")
+        return cancelled
+
+    def stop(self) -> list[str]:
+        """Stop (AC-W8's sibling): nothing new starts; queued and held steps are cancelled.
+        Returns the keys cancelled; running steps finish or are cancelled by the workflow."""
+        cancelled = [
+            k for k, v in self.states.items() if v in ("queued", "waiting_on_inputs", "blocked")
+        ]
+        for k in cancelled:
+            self.states[k] = "cancelled"
+        return cancelled
 
     @property
     def done(self) -> bool:

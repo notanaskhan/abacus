@@ -37,6 +37,7 @@ from abacus.modules.agents.decision_recommend import (
     RecommendFacts,
     recommend,
 )
+from abacus.modules.agents.run_waits import on_decision_decided
 from abacus.modules.agents.engagement_agent import start_agents
 from abacus.modules.agents.engagement_agent_workflow import HANDLE as ENGAGEMENT_AGENT_HANDLE
 from abacus.modules.agents.engagement_agent_workflow import (
@@ -345,6 +346,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (
 # Q-02-T08: a firm's changed boundary facts are forgotten in the worker too.
 SUBSCRIPTIONS = {
     **SCREENING_SUBSCRIPTIONS,
+    # P-10-T32 (AC-W4): a decided card resumes the run branch held on it.
+    "decision.decided": on_decision_decided,
     FollowUpSent.event_type: on_follow_up_sent,
     BoundaryFactsChanged.event_type: on_boundary_facts_changed,
 }
