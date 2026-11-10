@@ -122,3 +122,12 @@ Evidence items and their immutable versions (glossary; ADR-004). Owns `evidence_
 - **Build:** `EngagementExportWorkflow` snapshots the selection at an audit sequence, builds the package (`export_builder.py`: README, manifest and checksums, `index.csv`/`index.xlsx`, `evidence/`, `provenance/`, `sections/`, `audit_trail/`) and seals it in 64 MiB segments (`export_storage.py`). Paths are normalised and checked (`export_selection.py`, `export_manifest.py`); every index and provenance cell is text with formula leads neutralised.
 - **Lifecycle:** ready for 7 days on the later of the two clocks, then expired by the daily sweep; voided when a held version is withdrawn (`export_lifecycle.py`).
 - **Operations:** RB-33 (binder export and pilot rollback); security review `docs/ops/pentests/2027-04-binder-export-review.md` (A-01-T32).
+
+## OCR and form extraction (P-11; RB-43 part 2)
+- Every page reaches Textract only through `ocr_gate` (kill switch, firm flag, provider terms,
+  boundary basis, §7216, daily cap); a refusal writes one insert-only `ocr_runs` row with ids and
+  counts and is never retried or rerouted. Uploads land whatever OCR does.
+- Words feed the viewer and `form_extraction`, whose maps are repo files under
+  `forms/<form>/<tax_year>.yaml` (PROTECTED, refreshed yearly, RB-43 §13).
+- The backfill (`python -m abacus_tools.ocr_backfill`) is an operator command run as an ECS one-off
+  task, never from a laptop against a shared database; it never changes evidence.

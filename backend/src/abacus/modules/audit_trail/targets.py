@@ -86,7 +86,8 @@ FIRM_LEVEL: Final = frozenset(
 )
 # Kinds whose rows may belong to no engagement (a notification about the firm): then firm-level.
 # P-04-T10: an approval grant belongs to its decision's engagement, or to the firm.
-OPTIONAL_OWNER: Final = frozenset({"notification", "approval_grant"})
+# P-05-T06: a to-do belongs to its engagement, or (firm scope, AC-28) to the firm.
+OPTIONAL_OWNER: Final = frozenset({"notification", "approval_grant", "todo"})
 
 # The modules register what they own (`kernel.audit_owners`), read when asked so that a module
 # loaded later is still seen; a kind nobody registered is unknown and hidden.

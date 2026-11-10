@@ -1,0 +1,1 @@
+Read one engagement's facts: name, type, service line, status, fiscal period, client and client entity. Defaults to the run's engagement.

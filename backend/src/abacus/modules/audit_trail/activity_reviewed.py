@@ -12,6 +12,49 @@ from typing import Final
 
 REVIEWED_FALLBACK: Final = frozenset(
     {
+        # reviewed 2026-11-10 (S34): T-04-T17 document approvals and the final-approval request
+        "document.approval_reversed",
+        "document.approved",
+        "tax_return.final_approval_requested",
+        # reviewed 2026-11-10 (S34): T-04-T15 the workspace in the review grammar
+        "return_field.edited",
+        "return_field.proposal_applied",
+        "tax_proposal.linked",
+        # reviewed 2026-11-10 (S34): A-07-T37 the lock decision, the seal, the engagement archived
+        "archive.engagement_archived",
+        "archive.lock_decided",
+        "archive.sealed",
+        # reviewed 2026-11-10 (S34): A-07-T36 filings and post-release clocks
+        "archive.deadline_risk",
+        "filing.opened",
+        "governance_communication.due_set",
+        "filing.updated",
+        # reviewed 2026-11-10 (S34): P-10-T29 AgentRunWorkflow part 1's transitions
+        "agent_run.completed_v2",
+        "agent_run.plan_proposed",
+        "agent_run.plan_refused",
+        "agent_run.state_changed",
+        "agent_run_step.finished",
+        "agent_run_step.started",
+        # reviewed 2026-11-10 (S34): P-05-T05/T06 collaboration; AUD-29 shows only
+        # `todo.deleted` and `comment.redacted` (OQ-4, P-05-T11's catalogue entries)
+        "comment.corrected",
+        "comment_thread.muted",
+        "comment_thread.opened",
+        "comment_thread.reopened",
+        "comment_thread.resolved",
+        "comment_thread.shared",
+        "comment_thread.unmuted",
+        "comment_thread.converted",
+        "todo.assigned",
+        "todo.checklist_changed",
+        "todo.completed",
+        "todo.created",
+        "todo.deleted",
+        "todo.moved",
+        "todo.reopened",
+        "todo.seen",
+        "todo.updated",
         # reviewed 2026-11-09 (S33 end pass): A-07-T30/T31/T32, P-10-T27, R-02-T15
         "agent_run.code_recorded",
         "archive.assembly_started",

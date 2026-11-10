@@ -1,0 +1,1 @@
+Compute, in code, the section 199A QBI deduction (with the W-2 wage and UBIA limit) and the partner's outside basis (tax capital plus section 752 liability share) from the figures you pass. Never do this arithmetic yourself.

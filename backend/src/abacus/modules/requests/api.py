@@ -277,8 +277,12 @@ register_home_counts()
 
 register_pilot_metric_source("w5", w5_pbc_via_portal)  # Q-04-T008 (DEC-825)
 
+# P-10-T28: the agent tools this module owns (C17 via the kernel slot; `agents` registers them).
+from abacus.modules.requests.agent_tools import AGENT_TOOLS  # noqa: E402
+
 __all__ = [
     "ACTIVITIES",
+    "AGENT_TOOLS",
     "ROUTERS",
     "SUBSCRIPTIONS",
     "WORKFLOWS",

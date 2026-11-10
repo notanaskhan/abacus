@@ -50,7 +50,9 @@ from abacus.modules.review.field_values import (
     PreviousValue,
     changed_since,
     current_values,
+    edited_by_a_person,
     field_timeline,
+    latest_sources,
     previous_value,
     record_value,
     typed_value,
@@ -274,6 +276,7 @@ __all__ = [
     "decided_cards",
     "decision_kind",
     "detect_stale",
+    "edited_by_a_person",
     "field_owner",
     "field_states",  # A-05-T16 (DEC-2069)
     "field_timeline",
@@ -281,6 +284,7 @@ __all__ = [
     "gate_met",
     "issue_engagement",
     "issue_row",  # A-06-T11: a finding's issue status and version
+    "latest_sources",
     "move_issue",  # A-06-T11: resolve or mark not applicable through the issue
     "notes_for",
     "open_note_counts",

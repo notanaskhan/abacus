@@ -1451,8 +1451,11 @@
       "crop": "window",
       "tier": "C",
       "mask": [
-        "[data-cockpit='dock']"
-      ]
+        "[data-spinner]",
+        "[data-shimmer]",
+        "[data-live-dot]"
+      ],
+      "deviation": "A-01-T33 (DEC-909): report-only: 3.19% at S13 with the dock masked; the dock now draws the live SHL-13 pane unmasked, so the end-pass run re-measures and locks it if under 3%"
     },
     "aud-02b.window": {
       "page": "screens/AUD-02?st=b",
@@ -1463,7 +1466,8 @@
       "tier": "C",
       "mask": [
         "[data-cockpit='dock']"
-      ]
+      ],
+      "deviation": "A-01-T33 (DEC-909): report-only at 3.13% (S13): the Source Documents order under DEC-341 and the OverviewCard height differ from the artboard; AUD-02 contract DV-13"
     },
     "aud-02c.window": {
       "page": "screens/AUD-02?st=c",
@@ -1473,8 +1477,11 @@
       "crop": "window",
       "tier": "C",
       "mask": [
-        "[data-cockpit='dock']"
-      ]
+        "[data-spinner]",
+        "[data-shimmer]",
+        "[data-live-dot]"
+      ],
+      "deviation": "A-01-T33 (DEC-909): report-only: 3.13% at S13 with the dock masked; the dock now draws the live SHL-13 pane unmasked, so the end-pass run re-measures and locks it if under 3%"
     },
     "aud-02d.window": {
       "page": "screens/AUD-02?st=d",
@@ -1484,8 +1491,11 @@
       "crop": "window",
       "tier": "C",
       "mask": [
-        "[data-cockpit='dock']"
-      ]
+        "[data-spinner]",
+        "[data-shimmer]",
+        "[data-live-dot]"
+      ],
+      "locked": true
     },
     "aud-02e.window": {
       "page": "screens/AUD-02?st=e",
@@ -1495,8 +1505,11 @@
       "crop": "window",
       "tier": "C",
       "mask": [
-        "[data-cockpit='dock']"
-      ]
+        "[data-spinner]",
+        "[data-shimmer]",
+        "[data-live-dot]"
+      ],
+      "deviation": "A-01-T33 (DEC-909): report-only: 3.19% at S13 with the dock masked; the dock now draws the live SHL-13 pane unmasked, so the end-pass run re-measures and locks it if under 3%"
     },
     "aud-02f.window": {
       "page": "screens/AUD-02?st=f",
@@ -1518,7 +1531,8 @@
       "tier": "C",
       "mask": [
         "[data-cockpit='dock']"
-      ]
+      ],
+      "deviation": "A-01-T33 (DEC-909): report-only at 3.14% (S13): the Source Documents order under DEC-341 and the OverviewCard height, as b; AUD-02 contract DV-13"
     },
     "aud-03a.window": {
       "page": "screens/AUD-03?st=a",
@@ -1566,7 +1580,8 @@
       "mask": [
         "[data-cockpit='dock']",
         "[data-overlay='dialog']"
-      ]
+      ],
+      "deviation": "A-01-T33 (DEC-909): report-only at 7.51% (S13): P-06's ReturnDialog against the artboard's Return to uploader sheet; AUD-03 contract DV-10"
     },
     "aud-03e.window": {
       "page": "screens/AUD-03?st=e",
@@ -1589,7 +1604,8 @@
       "tier": "C",
       "mask": [
         "[data-cockpit='dock']"
-      ]
+      ],
+      "deviation": "A-01-T33 (DEC-909): report-only at 3.18% (S13), cause not yet traced; re-measured at each parity run; AUD-03 contract DV-10"
     },
     "aud-03g.window": {
       "page": "screens/AUD-03?st=g",
@@ -5129,6 +5145,272 @@
       "sha256": "df7d86b5ff2f8a6febf08fe973be4505a9bd0d59b0e9e2d31ceec5fc9c7bb6d0",
       "crop": "window",
       "tier": "C"
+    },
+    "shl-13x.dock-1": {
+      "page": "screens/SHL-13?st=board",
+      "selector": "[data-dock=\"1\"]",
+      "source": "handoff/screens/SHL-13 Agent dock - run pane/screenshots/SHL-13x.png",
+      "sha256": "9210070ba241943231f3817ab33377f39847846d192300b7f34b9a3f71f614a7",
+      "crop": [
+        48,
+        120,
+        708,
+        1586
+      ],
+      "tier": "C",
+      "mask": [
+        "[data-spinner]",
+        "[data-shimmer]",
+        "[data-live-dot]"
+      ]
+    },
+    "shl-13x.dock-2": {
+      "page": "screens/SHL-13?st=board",
+      "selector": "[data-dock=\"2\"]",
+      "source": "handoff/screens/SHL-13 Agent dock - run pane/screenshots/SHL-13x.png",
+      "sha256": "9210070ba241943231f3817ab33377f39847846d192300b7f34b9a3f71f614a7",
+      "crop": [
+        756,
+        120,
+        1416,
+        1586
+      ],
+      "tier": "C",
+      "mask": [
+        "[data-spinner]",
+        "[data-shimmer]",
+        "[data-live-dot]"
+      ]
+    },
+    "shl-13x.dock-3": {
+      "page": "screens/SHL-13?st=board",
+      "selector": "[data-dock=\"3\"]",
+      "source": "handoff/screens/SHL-13 Agent dock - run pane/screenshots/SHL-13x.png",
+      "sha256": "9210070ba241943231f3817ab33377f39847846d192300b7f34b9a3f71f614a7",
+      "crop": [
+        1464,
+        120,
+        2124,
+        1586
+      ],
+      "tier": "C",
+      "mask": [
+        "[data-spinner]",
+        "[data-shimmer]",
+        "[data-live-dot]"
+      ]
+    },
+    "shl-13x.dock-4": {
+      "page": "screens/SHL-13?st=board",
+      "selector": "[data-dock=\"4\"]",
+      "source": "handoff/screens/SHL-13 Agent dock - run pane/screenshots/SHL-13x.png",
+      "sha256": "9210070ba241943231f3817ab33377f39847846d192300b7f34b9a3f71f614a7",
+      "crop": [
+        2172,
+        120,
+        2832,
+        1586
+      ],
+      "tier": "C",
+      "mask": [
+        "[data-spinner]",
+        "[data-shimmer]",
+        "[data-live-dot]"
+      ]
+    },
+    "shl-13x.dock-5": {
+      "page": "screens/SHL-13?st=board",
+      "selector": "[data-dock=\"5\"]",
+      "source": "handoff/screens/SHL-13 Agent dock - run pane/screenshots/SHL-13x.png",
+      "sha256": "9210070ba241943231f3817ab33377f39847846d192300b7f34b9a3f71f614a7",
+      "crop": [
+        48,
+        1754,
+        708,
+        3220
+      ],
+      "tier": "C",
+      "mask": [
+        "[data-spinner]",
+        "[data-shimmer]",
+        "[data-live-dot]"
+      ]
+    },
+    "shl-13x.dock-6": {
+      "page": "screens/SHL-13?st=board",
+      "selector": "[data-dock=\"6\"]",
+      "source": "handoff/screens/SHL-13 Agent dock - run pane/screenshots/SHL-13x.png",
+      "sha256": "9210070ba241943231f3817ab33377f39847846d192300b7f34b9a3f71f614a7",
+      "crop": [
+        756,
+        1754,
+        1416,
+        3220
+      ],
+      "tier": "C",
+      "mask": [
+        "[data-spinner]",
+        "[data-shimmer]",
+        "[data-live-dot]"
+      ]
+    },
+    "shl-13x.dock-7": {
+      "page": "screens/SHL-13?st=board",
+      "selector": "[data-dock=\"7\"]",
+      "source": "handoff/screens/SHL-13 Agent dock - run pane/screenshots/SHL-13x.png",
+      "sha256": "9210070ba241943231f3817ab33377f39847846d192300b7f34b9a3f71f614a7",
+      "crop": [
+        1464,
+        1754,
+        2124,
+        3220
+      ],
+      "tier": "C",
+      "mask": [
+        "[data-spinner]",
+        "[data-shimmer]",
+        "[data-live-dot]"
+      ]
+    },
+    "shl-13x.dock-8": {
+      "page": "screens/SHL-13?st=board",
+      "selector": "[data-dock=\"8\"]",
+      "source": "handoff/screens/SHL-13 Agent dock - run pane/screenshots/SHL-13x.png",
+      "sha256": "9210070ba241943231f3817ab33377f39847846d192300b7f34b9a3f71f614a7",
+      "crop": [
+        2172,
+        1754,
+        2832,
+        3220
+      ],
+      "tier": "C",
+      "mask": [
+        "[data-spinner]",
+        "[data-shimmer]",
+        "[data-live-dot]"
+      ]
+    },
+    "shl-13.window": {
+      "page": "screens/SHL-13?st=F",
+      "selector": "[data-artboard=\"F\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/SHL-13 Agent dock - run pane/screenshots/SHL-13.png",
+      "sha256": "d5465eca6706ad71a8c7928a2793f3ac2882e2a4d3291939f5490a215ea10e57",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-shimmer]",
+        "[data-live-dot]"
+      ]
+    },
+    "wb-09a.window": {
+      "page": "screens/WB-09?st=a",
+      "selector": "[data-artboard=\"a\"]",
+      "source": "handoff/screens/WB-09 Run trace drawer - Season Progress Reporter- Sep 14/screenshots/WB-09a.png",
+      "sha256": "1cee1a6b5d460cd2f680541b66e9ab6c5c2b47016af8ba07286e24bd223ccb5e",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-spinner]",
+        "[data-shimmer]",
+        "[data-live-dot]"
+      ],
+      "locked": true
+    },
+    "wb-09a2.window": {
+      "page": "screens/WB-09?st=a2",
+      "selector": "[data-artboard=\"a2\"]",
+      "source": "handoff/screens/WB-09 Run trace drawer - Season Progress Reporter- Sep 14/screenshots/WB-09a2.png",
+      "sha256": "8302bad1cf3c12de11b063f4f20d4076a0d44468df3c01405b1bbd714aaed9b4",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-spinner]",
+        "[data-shimmer]",
+        "[data-live-dot]"
+      ],
+      "deviation": "P-09-T18: a2 is a tool row expanded by a click; the gallery renders the drawer as it opens (Timeline, rows closed), so a2 is report-only"
+    },
+    "wb-09a3.window": {
+      "page": "screens/WB-09?st=a3",
+      "selector": "[data-artboard=\"a3\"]",
+      "source": "handoff/screens/WB-09 Run trace drawer - Season Progress Reporter- Sep 14/screenshots/WB-09a3.png",
+      "sha256": "715a9b7586e4e01e4f8a3ad9312e560e5cd5e2b253e005fe7bee0a562176c3ea",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-spinner]",
+        "[data-shimmer]",
+        "[data-live-dot]"
+      ]
+    },
+    "wb-09a4.window": {
+      "page": "screens/WB-09?st=a4",
+      "selector": "[data-artboard=\"a4\"]",
+      "source": "handoff/screens/WB-09 Run trace drawer - Season Progress Reporter- Sep 14/screenshots/WB-09a4.png",
+      "sha256": "cad6fc5aa3dc737fda48f0023bc0c42573d3b87b24a542561d700dd20208cf46",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-spinner]",
+        "[data-shimmer]",
+        "[data-live-dot]"
+      ]
+    },
+    "wb-09b.window": {
+      "page": "screens/WB-09?st=b",
+      "selector": "[data-artboard=\"b\"]",
+      "source": "handoff/screens/WB-09 Run trace drawer - Season Progress Reporter- Sep 14/screenshots/WB-09b.png",
+      "sha256": "ce510d68714e426c006589204fcab06c775e846d2dbfc635c2be66ef50fb97e6",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-spinner]",
+        "[data-shimmer]",
+        "[data-live-dot]"
+      ],
+      "locked": true
+    },
+    "wb-09c.window": {
+      "page": "screens/WB-09?st=c",
+      "selector": "[data-artboard=\"c\"]",
+      "source": "handoff/screens/WB-09 Run trace drawer - Season Progress Reporter- Sep 14/screenshots/WB-09c.png",
+      "sha256": "4ba0d02daaf98edb28986656badac091d51e5619ddf477191d7dc9e0165bb7f9",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-spinner]",
+        "[data-shimmer]",
+        "[data-live-dot]"
+      ],
+      "locked": true
+    },
+    "wb-09d.window": {
+      "page": "screens/WB-09?st=d",
+      "selector": "[data-artboard=\"d\"]",
+      "source": "handoff/screens/WB-09 Run trace drawer - Season Progress Reporter- Sep 14/screenshots/WB-09d.png",
+      "sha256": "12320fecddfdea1ac6213abdb3bf42ed97720a21d93d67f8f2adadfb624b1077",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-spinner]",
+        "[data-shimmer]",
+        "[data-live-dot]"
+      ]
+    },
+    "wb-09e.window": {
+      "page": "screens/WB-09?st=e",
+      "selector": "[data-artboard=\"e\"]",
+      "source": "handoff/screens/WB-09 Run trace drawer - Season Progress Reporter- Sep 14/screenshots/WB-09e.png",
+      "sha256": "2a74fc1b245ed307a5b735c0f1d8e477a6c13f6b80bd41559c3f8f4ed194e51a",
+      "crop": "window",
+      "tier": "C",
+      "mask": [
+        "[data-spinner]",
+        "[data-shimmer]",
+        "[data-live-dot]"
+      ]
     }
   }
 }

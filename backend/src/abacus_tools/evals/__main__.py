@@ -52,6 +52,10 @@ def main(argv: list[str]) -> int:
         choices=["gap", "risk_narrative", "risk", "ic", "soc1", "ebp_provisions", "ebp_attribute"],
     )
     args = parser.parse_args(argv)
+    if args.agent == "audit_completion":  # A-07-T40: A-07's deterministic conformance suite
+        from abacus_tools.evals.audit_completion import main as completion_main
+
+        return completion_main(cast(Path, args.out))
     if args.agent == "agent_blocks":  # P-09-T15: the deterministic AgentBlocks conformance suite
         from abacus_tools.evals.agent_blocks import main as blocks_main
 

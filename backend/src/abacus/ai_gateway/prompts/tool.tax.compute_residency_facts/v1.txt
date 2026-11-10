@@ -1,0 +1,1 @@
+Compute, in code, the NYS/NYC residency rules' recommendation from the days in NYC, whether there is an NYC abode and whether the main home is outside NYC. The result is a recommendation and a conflict flag; a person decides.

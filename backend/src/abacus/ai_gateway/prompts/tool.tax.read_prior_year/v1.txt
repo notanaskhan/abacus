@@ -1,0 +1,1 @@
+Read each K-1 treatment with its current and prior-year values and whether it changed. Reads only; a person approves treatments.

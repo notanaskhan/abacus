@@ -1,0 +1,1 @@
+Propose a treatment for one or more K-1 treatments (for example passive or nonpassive). Creates a proposal for a person to approve; the treatment is never confirmed by you.

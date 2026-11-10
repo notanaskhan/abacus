@@ -96,6 +96,17 @@ outcome = await screen(agent)
 - `evals/screening/` runs the real pipeline (retrieval, then the agent through the gateway) on synthetic data, with `FakeModel` today. Invariants on every case: the result is an agent proposal, citations are verified, client text stays in `<untrusted>`, spend stays in budget. Cost per case goes to `backend/.evals/screening.json`; `make evals` runs them.
 - A new agent ships with its spec, prompt, handoff model, eval suite and fake responder.
 
+## Showing a run (P-09)
+A run is shown, never decided, in two places: the SHL-13 dock (`domain/agents/RunPane.tsx`) and the
+WB-09 trace drawer (`TraceDrawer.tsx`). Both read C6 (`/v1/agent-runs/{id}`, `/items`, `/trace`).
+- The feed polls `items?after_seq=` every 1.5 s through `PollingRunSource` into a `RunStore`
+  (seq order, each item once, `resync` replaces) and stops for good on a terminal state; P-10's SSE
+  source plugs into the same store.
+- Agent output renders through `AgentBlocks`/`AgentProse` (React nodes only, facts through
+  `format.ts`); attribution through `formatActor` and `HumanAction` (no human verb on an agent
+  control).
+- Behind `agent_dock.enabled` and `run_trace.enabled`; degraded operation is RB-69.
+
 ## Not yet
 - A real provider (it arrives with the spec that enables real calls) and escalation to `escalation_tier`: an escalated run goes to a person today.
 - Multi-step agents and tools (`shape` is `single_call`).

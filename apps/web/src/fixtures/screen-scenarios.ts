@@ -48,6 +48,14 @@ import { scenarios as not03 } from "./scenarios/NOT-03";
 import { TAX13_OPENS, scenarios as tax13 } from "./scenarios/TAX-13";
 import { IDS as AUD03_IDS, scenarios as aud03 } from "./scenarios/AUD-03";
 import { NORTHWIND_AUDIT } from "./scenarios/AUD-06";
+import { AUDIT_ID as AUD02_AUDIT, scenarios as aud02 } from "./scenarios/AUD-02";
+import {
+  AUD02_DOCK_RUN,
+  WB09,
+  WB09_STATES,
+  agentScenario,
+  withAgentDock,
+} from "./scenarios/SHL-13";
 import { scenarios as aud08 } from "./scenarios/AUD-08";
 import { scenarios as aud09 } from "./scenarios/AUD-09";
 import { scenarios as bnd01 } from "./scenarios/BND-01";
@@ -174,6 +182,27 @@ export const SCREEN_SCENARIOS: Readonly<Record<string, ScreenScenarios>> = {
   "AUD-03": { scenarios: aud03, opens: {}, ids: AUD03_IDS }, // A-01-T26: j03 4e, 5, 5c
   // A-04-T34: j03 9 and 10a on Northwind's audit (AUD-08 register, AUD-09 IC pack failure).
   "AUD-08": { scenarios: aud08, opens: {}, ids: northwind(aud08) },
+  // P-09-T19: SHL-13 on AUD-02's run artboards (the dock live with its run open) and WB-09's
+  // drawer over any firm page (`n` is a person the trace refuses: Lena Park, j18 5).
+  "SHL-13": {
+    scenarios: Object.fromEntries(
+      Object.keys(AUD02_DOCK_RUN).map((s) => [s, withAgentDock(aud02[s as keyof typeof aud02])]),
+    ),
+    opens: Object.fromEntries(
+      Object.entries(AUD02_DOCK_RUN).map(([s, run]) => [s, `?dock=agent&run=${run}`]),
+    ),
+    ids: Object.fromEntries(Object.keys(AUD02_DOCK_RUN).map((s) => [s, { auditId: AUD02_AUDIT }])),
+  },
+  "WB-09": {
+    scenarios: {
+      ...Object.fromEntries(WB09_STATES.map((s) => [s, agentScenario(s, s === "e")])),
+      n: agentScenario("n", false, true),
+    },
+    opens: {
+      ...Object.fromEntries(WB09_STATES.map((s) => [s, `?ov=run-trace:${WB09[s].runId}`])),
+      n: `?ov=run-trace:${WB09.b.runId}`,
+    },
+  },
   // A-05-T50: the EBP canvases are sections of AUD-02, on Northwind's audit.
   "EBP-01": { scenarios: ebp01, opens: {}, ids: northwind(ebp01) },
   "EBP-03": { scenarios: ebp03, opens: {}, ids: northwind(ebp03) },

@@ -250,6 +250,8 @@ ROUTERS: tuple[AbacusRouter, ...] = (
     assurance_checklists_router,  # A-07-T22 (DEC-2806): completion, EQR, archive checklists
 )
 
+# P-10-T28: what `methodology.read_step` reads (the tool is declared by `engagements`).
+from abacus.modules.methodology.agent_tools import StepIn, StepOut, step_of_version  # noqa: E402
 from abacus.modules.methodology.disclosure_checklists import (  # noqa: E402 -- A-06-T28
     MAX_BYTES as CHECKLIST_MAX_BYTES,
 )
@@ -327,6 +329,8 @@ __all__ = [
     "SsarsFramework",
     "StandardDraftPatchIn",
     "StandardKind",
+    "StepIn",
+    "StepOut",
     "TemplateInvalid",
     "TemplateItem",
     "TemplateLibrary",
@@ -405,6 +409,7 @@ __all__ = [
     "standard_by_key",
     "standard_workbook",
     "step_at",
+    "step_of_version",
     "store_pages",
     "stored_pages",
     "submit_version",

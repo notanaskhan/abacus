@@ -149,7 +149,11 @@ from abacus.modules.agents.run_backfill_workflow import (
 from abacus.modules.agents.run_logs import (  # A-07-T31/T32: binder section G, bring-down
     last_completed_run_at,
     run_log_count,
+    run_record_hashes,  # A-07-T37: the archive seal's run-record leaves
 )
+from abacus.modules.agents.run_plan import reserved as reserved_plan_tools
+
+# P-10-T22 (C17 v1, frozen): the runtime the harness calls, and the shapes a tool declares.
 from abacus.modules.agents.run_recorder import (  # P-09-T12: the synthetic scenario's runs
     RecordedRun,
     RecordedStep,
@@ -233,6 +237,9 @@ from abacus.modules.agents.stage_admin import (
 )
 from abacus.modules.agents.stage_routes import platform_stages_router
 from abacus.modules.agents.stages import assistants, stage_for, starts_in_shadow
+
+# P-10-T28: importing the catalogue registers every module's declared tools.
+from abacus.modules.agents.tools.catalogue import DECLARED as DECLARED
 from abacus.modules.agents.tools.registry import AgentTool as AgentTool
 from abacus.modules.agents.tools.registry import ToolNotRegistered as ToolNotRegistered
 from abacus.modules.agents.tools.registry import ToolPageIn as ToolPageIn
@@ -240,12 +247,11 @@ from abacus.modules.agents.tools.registry import ToolPageOut as ToolPageOut
 from abacus.modules.agents.tools.registry import agent_tool as agent_tool
 from abacus.modules.agents.tools.registry import register_tool as register_tool
 from abacus.modules.agents.tools.registry import registered_tools as registered_tools
-
-# P-10-T22 (C17 v1, frozen): the runtime the harness calls, and the shapes a tool declares.
 from abacus.modules.agents.tools.runtime import ToolCallIn as ToolCallIn
 from abacus.modules.agents.tools.runtime import ToolOutcome as ToolOutcome
 from abacus.modules.agents.tools.runtime import ToolTargets as ToolTargets
 from abacus.modules.agents.tools.runtime import call_tool as call_tool
+from abacus.modules.agents.tools.runtime import for_model as tool_output_for_model
 from abacus.modules.agents.upload_review import (
     REVIEWER,
     ReviewOutcome,
@@ -367,6 +373,11 @@ from abacus.modules.agents.det_runs import (  # noqa: E402 -- A-06-T25
     close_deterministic_run,
     deterministic_run_facts,
     open_deterministic_run,
+)
+
+# T-04-T15: an owner's applier reads an approved proposal's rows (never a pending one).
+from abacus.modules.agents.proposal_store import (  # noqa: E402
+    approved_rows as approved_proposal_rows,
 )
 from abacus.modules.agents.spec_v2 import (  # noqa: E402
     AgentSpecV2,
@@ -509,6 +520,7 @@ __all__ = [
     "agent_badge_stream",
     "analyze_notice",
     "apply_proposal",
+    "approved_proposal_rows",
     "ask",
     "begin_code_run",
     "blocks",
@@ -566,6 +578,7 @@ __all__ = [
     "register_threshold_policy",
     "registry_problems",
     "request_review",
+    "reserved_plan_tools",
     "review",
     "review_citation_states",
     "review_sha256",
@@ -573,6 +586,7 @@ __all__ = [
     "run_initiators",
     "run_log_count",
     "run_outcome",
+    "run_record_hashes",
     "screen",
     "screening_responder",
     "screening_results_for",
@@ -587,6 +601,7 @@ __all__ = [
     "starts_in_shadow",
     "template_drafts_router",
     "text_part",
+    "tool_output_for_model",
     "txt",
     "upload_review_available",
     "verify_citations",
