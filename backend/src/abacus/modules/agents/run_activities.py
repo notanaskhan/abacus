@@ -375,7 +375,7 @@ async def complete_run_activity(
             {"state": state, "reason": reason, "run": run},
         )
         tx.record(
-            "agent_run.completed_v2",
+            "agent_run.finished",
             target=Target("agent_run", run),
             after=None,
         )
