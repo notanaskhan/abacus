@@ -71,6 +71,7 @@ _TITLES: Final = {
     "fs_package": "Financial statements",
     "run_trace_export": "Run trace export",
     "ebp_supplemental_schedule": "Supplemental schedule",
+    "client_entries_journal": "Entries journal",
 }
 
 

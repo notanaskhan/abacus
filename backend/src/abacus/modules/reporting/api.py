@@ -810,6 +810,24 @@ from abacus.modules.reporting.statements_workflow_types import (  # noqa: E402
 
 _ensure_fs_kind()
 
+# R-02-T14 remainder (DEC-3172): POR-08's entries journal, a composed kind registered at import so
+# the render job knows its layout and record type.
+from abacus.modules.reporting.entries_journal import (  # noqa: E402
+    JournalPending as JournalPending,
+)
+from abacus.modules.reporting.entries_journal import (  # noqa: E402
+    JournalReady as JournalReady,
+)
+from abacus.modules.reporting.entries_journal import (  # noqa: E402
+    ensure_kind as _ensure_journal_kind,
+)
+from abacus.modules.reporting.entries_journal import (  # noqa: E402
+    journal as _journal,
+)
+
+entries_journal = _journal
+_ensure_journal_kind()
+
 # R-02-T11 (C18, DEC-3009): management approval of a draft version through the portal.
 register_client_approval_kind("fs_draft", FsDraftApprovals())
 

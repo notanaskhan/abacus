@@ -4,7 +4,7 @@
 |---|---|
 | Register row | C18 in `docs/contracts/README.md` |
 | Version | v1 |
-| Status | live (R-02-T11, 2026-11-09, DEC-3009; stub R-02-T03). `proposed_entry` and `fs_draft` are registered; `uncorrected_misstatements` (R-02-T15) and `fs_package` (C-02, A-08) still answer 409. Questions (R-02-T22) and the journal (C11) answer 501 |
+| Status | live (R-02-T11, 2026-11-09, DEC-3009; stub R-02-T03). `proposed_entry` and `fs_draft` are registered; `uncorrected_misstatements` (R-02-T15) and `fs_package` (C-02, A-08) still answer 409. Questions (R-02-T22) answer 501. The entries journal is live (R-02-T14 remainder, 2026-11-10, DEC-3172) |
 | Provider epic | R-02 (SPEC-646) |
 | Consumers | A-06 (entries, drafts), A-07 (`fs.approved_by_management` and the acknowledgement for release), C-02, A-08 (packages), X-01 (system description, later) |
 | Freeze sprint | S30 |
@@ -49,7 +49,8 @@ have no cell. Every read is `scope_only`; out of scope is 404, in scope but not 
 | Acknowledge uncorrected | `POST …/uncorrected-misstatements/{item_id}/acknowledge` + `Idempotency-Key` | `uncorrected_misstatements.acknowledge` | 501 |
 | Approve or decline a package | `POST …/packages/{id}/decide` + `Idempotency-Key` | `close_package.client_decide` | 409, then 501 |
 | Questions | `GET·POST …/{kind}/{item_id}/questions` | `client_approval.ask` | 409, then 501 |
-| Entries journal | `GET …/{kind}/{item_id}/journal` (202, then 302) | `client_approval.read` | 409, then 501 |
+| Entries journal | `GET …/{kind}/{item_id}/journal`: 202 `{render_job_id}` while C11 renders the deterministic `client_entries_journal`, then 302 to `…/journal/file` | `client_approval.read` | 404 (not the person's item), 409 |
+| Entries journal file | `GET …/{kind}/{item_id}/journal/file`: the filed PDF (`application/pdf`, `no-store`, attachment) for the admitted person | `client_approval.read` | 404 (not theirs, or not yet filed), 409 |
 
 Management approval of a draft is C10's `POST …/deliverables/{id}/versions/{v}/approve`, decided
 through `fs_draft`.
