@@ -4,8 +4,9 @@
 Every route answers, in order: the matrix action (client people only, `scope_only`; firm roles,
 agents, system and support are denied); 409 `approval_kind_not_registered` for a kind no provider
 registered (the slot, `engagements.client_approval_provider`); then C18's service
-(`portal/approvals.py`, R-02-T11): list, detail and the decide routes. Questions (R-02-T22) and
-the entries journal (C11) still answer 501. The flag `portal.approvals` arrives with R-02-T14.
+(`portal/approvals.py`, R-02-T11): list, detail and the decide routes, and the entries journal
+(R-02-T14 remainder, DEC-3172). Questions (R-02-T22) still answer 501. The flag
+`portal.approvals` arrives with R-02-T14.
 
 Pack rule (AC-7): no field is named or holds materiality, a threshold, a policy name, "within
 threshold", a review note, a sign-off, the agent, a confidence or an internal status; the schema
@@ -19,7 +20,8 @@ from decimal import Decimal
 from typing import Annotated, Literal, NoReturn, Self
 from uuid import UUID
 
-from fastapi import Depends, Header, Path, Query
+from fastapi import Depends, Header, Path, Query, Response
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from abacus.kernel._flags import PORTAL_APPROVALS
@@ -413,10 +415,69 @@ async def ask_about_item_route(
     action="client_approval.read",
     response_model=EntriesJournalOut,
     status_code=202,
-    errors=(409, 501),
+    errors=(409,),
 )
-async def entries_journal_route(kind: KindParam, item_id: UUID, ctx: Member) -> EntriesJournalOut:
-    """ "Download entries": 202 `{render_job_id}`, then 302 to a signed URL."""
+async def entries_journal_route(
+    kind: KindParam, item_id: UUID, ctx: Member
+) -> EntriesJournalOut | RedirectResponse:
+    """ "Download entries" (R-02-T14 remainder, DEC-3172): 202 `{render_job_id}` while the
+    deterministic journal renders (C11); once filed, 302 to the journal's bytes on this API
+    (ADR-104: never an object key or a presigned URL). The person is admitted as POR-08's
+    detail admits them."""
+    from abacus.modules.reporting.api import JournalReady, entries_journal
+
     await _flag_on(ctx, PORTAL_APPROVALS)
     _registered(kind)
-    _not_yet()
+    shown = await service.approval(ctx, kind, item_id)
+    at = await service.item_scope(ctx, shown.item)
+    found = await entries_journal(
+        ctx.tenant,
+        ctx.user_id,
+        shown.item,
+        client_id=at.client_id,
+        engagement_id=at.engagement_id,
+        work_item_id=at.work_item_id,
+    )
+    if isinstance(found, JournalReady):
+        return RedirectResponse(
+            f"{approvals_router.prefix}/{kind}/{item_id}/journal/file",
+            status_code=302,
+            headers={"Cache-Control": "no-store"},
+        )
+    return EntriesJournalOut(render_job_id=found.render_job_id)
+
+
+@approvals_router.get(
+    "/{kind}/{item_id}/journal/file",
+    action="client_approval.read",
+    response_model=bytes,
+    errors=(409,),
+)
+async def entries_journal_file_route(kind: KindParam, item_id: UUID, ctx: Member) -> Response:
+    """The filed journal's PDF for the admitted person; 404 until it is filed."""
+    from abacus.modules.evidence.api import version_content
+    from abacus.modules.reporting.api import JournalReady, entries_journal
+
+    await _flag_on(ctx, PORTAL_APPROVALS)
+    _registered(kind)
+    shown = await service.approval(ctx, kind, item_id)
+    at = await service.item_scope(ctx, shown.item)
+    found = await entries_journal(
+        ctx.tenant,
+        ctx.user_id,
+        shown.item,
+        client_id=at.client_id,
+        engagement_id=at.engagement_id,
+        work_item_id=at.work_item_id,
+    )
+    if not isinstance(found, JournalReady):
+        raise NotFound("client_entries_journal")
+    return Response(
+        await version_content(ctx.tenant, found.evidence_version_id),
+        media_type="application/pdf",
+        headers={
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+            "Content-Disposition": 'attachment; filename="entries.pdf"',
+        },
+    )

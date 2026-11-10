@@ -45036,7 +45036,8 @@
               "k1_cover_letter",
               "fs_package",
               "run_trace_export",
-              "ebp_supplemental_schedule"
+              "ebp_supplemental_schedule",
+              "client_entries_journal"
             ],
             "title": "Kind",
             "type": "string"
@@ -81334,7 +81335,8 @@
               "k1_cover_letter",
               "fs_package",
               "run_trace_export",
-              "ebp_supplemental_schedule"
+              "ebp_supplemental_schedule",
+              "client_entries_journal"
             ],
             "title": "Family",
             "type": "string"
@@ -105806,7 +105808,8 @@
               "k1_cover_letter",
               "fs_package",
               "run_trace_export",
-              "ebp_supplemental_schedule"
+              "ebp_supplemental_schedule",
+              "client_entries_journal"
             ],
             "title": "Family",
             "type": "string"
@@ -239112,7 +239115,7 @@
     },
     "/v1/portal/approvals/{kind}/{item_id}/journal": {
       "get": {
-        "description": "\"Download entries\": 202 `{render_job_id}`, then 302 to a signed URL.",
+        "description": "\"Download entries\" (R-02-T14 remainder, DEC-3147): 202 `{render_job_id}` while the\ndeterministic journal renders (C11); once filed, 302 to the journal's bytes on this API\n(ADR-104: never an object key or a presigned URL). The person is admitted as POR-08's\ndetail admits them.",
         "operationId": "entries_journal",
         "parameters": [
           {
@@ -239228,8 +239231,87 @@
               }
             },
             "description": "Invalid request"
+          }
+        },
+        "summary": "Entries Journal Route",
+        "tags": [
+          "portal approvals"
+        ],
+        "x-abacus-action": "client_approval.read"
+      }
+    },
+    "/v1/portal/approvals/{kind}/{item_id}/journal/file": {
+      "get": {
+        "description": "The filed journal's PDF for the admitted person; 404 until it is filed.",
+        "operationId": "entries_journal_file",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "maxLength": 40,
+              "title": "Kind",
+              "type": "string"
+            }
           },
-          "501": {
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Abacus-Tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Abacus-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "contentMediaType": "application/octet-stream",
+                  "title": "Response Entries Journal File",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
             "content": {
               "application/json": {
                 "schema": {
@@ -239237,10 +239319,50 @@
                 }
               }
             },
-            "description": "Contract stub: not implemented yet"
+            "description": "Not authenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict with the resource's state"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorOut"
+                }
+              }
+            },
+            "description": "Invalid request"
           }
         },
-        "summary": "Entries Journal Route",
+        "summary": "Entries Journal File Route",
         "tags": [
           "portal approvals"
         ],
@@ -252861,7 +252983,8 @@
                     "k1_cover_letter",
                     "fs_package",
                     "run_trace_export",
-                    "ebp_supplemental_schedule"
+                    "ebp_supplemental_schedule",
+                    "client_entries_journal"
                   ],
                   "type": "string"
                 },

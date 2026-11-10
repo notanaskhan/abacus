@@ -171,6 +171,15 @@ async def _covered_scopes(ctx: AuthContext, scope_id: UUID | None) -> list[UUID]
     return ids
 
 
+async def item_scope(ctx: AuthContext, item: ApprovalItem) -> ApprovalScope:
+    """Where an admitted item sits (its client, engagement and work item), for the journal's
+    render scope; 404 when it no longer resolves."""
+    at = await _scope_of(ctx, item)
+    if at is None:
+        raise NotFound("client_approval")
+    return at
+
+
 async def approval(ctx: AuthContext, kind: str, item_id: UUID) -> Shown:
     """One item's detail; 404 when it isn't sent or the person's grants don't cover it."""
     live_client_human(ctx, "client_approval.read")
