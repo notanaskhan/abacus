@@ -11,6 +11,7 @@ lookups faked; the acknowledgement's insert-only row is in the integration suite
 from __future__ import annotations
 
 import uuid
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -198,3 +199,94 @@ async def test_ac_victoria_acknowledges_once_and_the_third_member_rolls_it_up() 
     await ack(tx, letter, version, BEN, members=members)  # type: ignore[arg-type] -- a test double stands in
     assert tx.rolled
     assert tx.events.count("governance_communication.acknowledged") == 3
+
+
+# --- the letter's PDF (R-02-T12 remainder; TASK-6543; DEC-3146) ----------------------------------
+
+
+async def test_the_letter_pdf_publishes_the_final_to_the_room_once_it_has_rendered(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A member gets the sent letter as a C10 deliverable for the room's audience, published by
+    the system on behalf of the partner who sent it; 409 while the final PDF is not servable."""
+    from contextlib import asynccontextmanager
+    from types import SimpleNamespace
+
+    from abacus.modules.reporting import api as c11
+
+    version, body, partner, document = uuid.uuid4(), uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+    sent = SimpleNamespace(
+        version_id=version, governance_body_id=body, sent_by=partner, kind="planning_260"
+    )
+    status = {"now": "running"}
+    published: list[c11.DeliverableSpec] = []
+
+    async def sent_letter(*_: object) -> object:
+        return sent
+
+    async def opened(*_: object) -> set[uuid.UUID]:
+        return {uuid.uuid4()}
+
+    async def owner_doc(_t: object, owner: c11.OwnerRef, kind: str) -> uuid.UUID:
+        assert (owner.type, owner.id, kind) == (
+            "governance_communication_version",
+            version,
+            "governance_letter",
+        )
+        return document
+
+    async def final_no(*_: object) -> int:
+        return 2
+
+    async def outcome(*_: object) -> c11.RenderOutcome:
+        if status["now"] != "succeeded":
+            return c11.RenderOutcome("running")
+        return c11.RenderOutcome("succeeded", uuid.uuid4(), uuid.uuid4(), "r" * 64, 3)
+
+    async def client_of(*_: object) -> uuid.UUID:
+        return uuid.uuid4()
+
+    class _Session:
+        async def execute(self, *_: object) -> object:
+            return SimpleNamespace(
+                first=lambda: SimpleNamespace(
+                    engagement_id=uuid.uuid4(), work_item_id=uuid.uuid4()
+                )
+            )
+
+    @asynccontextmanager
+    async def session(_: object) -> AsyncGenerator[_Session]:
+        yield _Session()
+
+    @asynccontextmanager
+    async def unit(_: object) -> AsyncGenerator[object]:
+        yield object()
+
+    async def publish(_tx: object, spec: c11.DeliverableSpec) -> object:
+        published.append(spec)
+        return SimpleNamespace(deliverable_id=uuid.uuid4(), version_no=1)
+
+    monkeypatch.setattr(room, "_sent_letter", sent_letter)
+    monkeypatch.setattr(room, "_open", opened)
+    monkeypatch.setattr(room, "_client_of_room", client_of)
+    monkeypatch.setattr(room, "tenant_session", session)
+    monkeypatch.setattr(room, "uow", unit)
+    monkeypatch.setattr(c11, "document_of_owner", owner_doc)
+    monkeypatch.setattr(c11, "final_version_no", final_no)
+    monkeypatch.setattr(c11, "render_outcome", outcome)
+    monkeypatch.setattr(c11, "publish_deliverable", publish)
+    member = AuthContext(
+        TenantContext(uuid.uuid4(), "human", str(VICTORIA_USER)), VICTORIA_USER, uuid.uuid4(),
+        None, None, client=True,
+    )  # fmt: skip
+    with pytest.raises(room.LetterRendering):
+        await room.letter_pdf(member, uuid.uuid4())
+    assert published == []
+    status["now"] = "succeeded"
+    await room.letter_pdf(member, uuid.uuid4())
+    [spec] = published
+    assert spec.kind == "governance_letter"
+    assert [(a.scope_kind, a.scope_id) for a in spec.audiences] == [("governance_room", body)]
+    assert (spec.actor_kind, spec.on_behalf_of_user_id) == ("system", partner)
+    assert spec.source_ref == f"governance_communication_version:{version}"
+    assert spec.generated_document_id == document

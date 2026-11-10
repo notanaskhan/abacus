@@ -366,6 +366,91 @@ async def letter(ctx: AuthContext, communication_id: UUID) -> Letter:
     )
 
 
+# --- the letter's PDF (R-02-T12 remainder; TASK-6543; DEC-3146) ----------------------------------
+
+_SEND_SCOPE = text(
+    "SELECT s.engagement_id, s.work_item_id FROM governance_communication_sends s "
+    "WHERE s.version_id = :v AND s.channel = 'governance_room' ORDER BY s.sent_at DESC LIMIT 1"
+)
+
+
+async def _client_of_room(tenant: TenantContext, room: UUID) -> UUID:
+    async with tenant_session(tenant) as session:
+        found = await session.scalar(
+            text("SELECT client_id FROM governance_bodies WHERE id = :b"), {"b": room}
+        )
+    if found is None:
+        raise NotFound("governance_room")
+    return cast(UUID, found)
+
+
+class LetterRendering(DomainConflict):
+    """The letter's final PDF is still being rendered (or its render failed): try again."""
+
+    code = "letter_rendering"
+
+
+async def letter_pdf(ctx: AuthContext, communication_id: UUID) -> tuple[UUID, int]:
+    """A room member's sent letter as a C10 deliverable: (deliverable id, version number).
+
+    The send rendered the letter final (DEC-3145); once that job has filed its PDF, the letter
+    is published to the room's audience on the first read, idempotent per sent version (C10 keys
+    a publish by its source), by the system on behalf of the partner who sent it. 404 to anyone
+    not in the room; 409 `letter_rendering` while the PDF is not yet servable."""
+    from abacus.modules.reporting import api as c11
+
+    row = await _sent_letter(ctx, communication_id)
+    room = cast(UUID, row.governance_body_id)  # type: ignore[attr-defined] -- a raw SQL row's column
+    await _open(ctx, room)  # a member of the room, or 404
+    version_id = cast(UUID, row.version_id)  # type: ignore[attr-defined] -- a raw SQL row's column
+    document = await c11.document_of_owner(
+        ctx.tenant,
+        c11.OwnerRef("governance_communication_version", version_id),
+        "governance_letter",
+    )
+    final_no = None if document is None else await c11.final_version_no(ctx.tenant, document)
+    if document is None or final_no is None:
+        raise LetterRendering
+    outcome = await c11.render_outcome(ctx.tenant, document, final_no)
+    if (
+        outcome.status != "succeeded"
+        or outcome.evidence_version_id is None
+        or outcome.render_hash is None
+        or outcome.page_count is None
+    ):
+        raise LetterRendering(facts={"status": outcome.status})
+    async with tenant_session(ctx.tenant) as session:
+        scope = (await session.execute(_SEND_SCOPE, {"v": version_id})).first()
+    if scope is None:
+        raise NotFound("governance_communication")
+    sent_by = cast(UUID, row.sent_by)  # type: ignore[attr-defined] -- a raw SQL row's column
+    engagement_id = cast(UUID, scope.engagement_id)
+    client_id = await _client_of_room(ctx.tenant, room)
+    system = TenantContext(ctx.tenant_id, "system", "governance_letter_publish")
+    async with uow(system) as tx:
+        published = await c11.publish_deliverable(
+            tx,
+            c11.DeliverableSpec(
+                client_id=client_id,
+                kind="governance_letter",
+                title=TITLE.get(str(row.kind), str(row.kind)),  # type: ignore[attr-defined] -- a raw SQL row's column
+                source_module="assurance",
+                source_ref=f"governance_communication_version:{version_id}",
+                evidence_version_id=outcome.evidence_version_id,
+                render_hash=outcome.render_hash,
+                page_count=outcome.page_count,
+                audiences=(c11.DeliverableAudience("governance_room", room),),
+                published_by_user_id=sent_by,
+                actor_kind="system",
+                on_behalf_of_user_id=sent_by,
+                engagement_id=engagement_id,
+                work_item_id=cast(UUID, scope.work_item_id),
+                generated_document_id=document,
+            ),
+        )
+    return published.deliverable_id, published.version_no
+
+
 # --- acknowledge ---------------------------------------------------------------------------------
 
 _INSERT_ACK = text(

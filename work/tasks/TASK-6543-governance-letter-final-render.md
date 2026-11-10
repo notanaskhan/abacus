@@ -42,3 +42,4 @@ Rollback: revert; sends then record without a document, as before.
 
 ## Progress log
 - `2026-11-10` — PR 1 (branch s32r-letters-render, DEC-3145): final render at send; envelope source and ack_envelope draft; unit tests. PDF route next.
+- `2026-11-10` — PR 2 (branch s32r-room-pdf, DEC-3146): the room's letter PDF via C10 publish on first read; unit test.

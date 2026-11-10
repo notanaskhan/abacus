@@ -459,6 +459,7 @@ __all__ = [
     "ExceptionRow",
     "Form5500TieOutWorkflow",
     "IndexTag",
+    "LetterRendering",
     "MappingConfirmIn",
     "MappingRunIn",
     "NewFinding",
@@ -485,6 +486,7 @@ __all__ = [
     "follows_gate",
     "g4_facts",
     "governance_letter",
+    "governance_letter_pdf",
     "governance_rooms",
     "import_grouping_csv",
     "late_remittances",  # A-05-T30: AUD-27 and EBP-07 read the one late remittance
@@ -563,9 +565,15 @@ from abacus.modules.assurance.governance_room import (  # noqa: E402
     LetterChanged as LetterChanged,
 )
 from abacus.modules.assurance.governance_room import (  # noqa: E402
+    LetterRendering as LetterRendering,
+)
+from abacus.modules.assurance.governance_room import (  # noqa: E402
     acknowledge as acknowledge_letter,
 )
 from abacus.modules.assurance.governance_room import letter as governance_letter  # noqa: E402
+from abacus.modules.assurance.governance_room import (  # noqa: E402
+    letter_pdf as governance_letter_pdf,
+)
 from abacus.modules.assurance.governance_room import letters as room_letters  # noqa: E402
 from abacus.modules.assurance.governance_room import (  # noqa: E402
     record_acknowledgement as record_acknowledgement,
