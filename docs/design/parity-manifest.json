@@ -5411,6 +5411,162 @@
         "[data-shimmer]",
         "[data-live-dot]"
       ]
+    },
+    "aud-22a.window": {
+      "page": "screens/AUD-22?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-22 Governance communications -AU-C 260 planning letter AU-C 260 265/screenshots/AUD-22a.png",
+      "sha256": "8e6c118eee942fe9a26c21557d8caa9313f32e6cfe44bb69165a67fa864a7e4d",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-presence]"
+      ]
+    },
+    "aud-22b.window": {
+      "page": "screens/AUD-22?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-22 Governance communications -AU-C 260 planning letter AU-C 260 265/screenshots/AUD-22b.png",
+      "sha256": "b2f8fb87419c856cd358b9d269a01186d61811c6db4fd2118d0992d73b1359ab",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-presence]"
+      ]
+    },
+    "aud-22c.window": {
+      "page": "screens/AUD-22?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-22 Governance communications -AU-C 260 planning letter AU-C 260 265/screenshots/AUD-22c.png",
+      "sha256": "be06ee0c987e1dc8c5c501a46201eb1b045a2fb99ace5f8b2dbfc8dae2bb84a2",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-presence]"
+      ]
+    },
+    "aud-23a.window": {
+      "page": "screens/AUD-23?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-23 Report builder/screenshots/AUD-23a.png",
+      "sha256": "d4252bd6f89a734b08dd0fe7caed3d4e1189475f4f7c11d7c57a7726024479d3",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-presence]"
+      ]
+    },
+    "aud-23b.window": {
+      "page": "screens/AUD-23?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-23 Report builder/screenshots/AUD-23b.png",
+      "sha256": "a1eb20214fe801a0d4310e28d663be4199f5b514420df79253a1a4a6ccbea417",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-presence]"
+      ]
+    },
+    "aud-24a.window": {
+      "page": "screens/AUD-24?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-24 Issuance and release/screenshots/AUD-24a.png",
+      "sha256": "423a38509b82e01d3358907f08f30ca3cb0a702a3b22d33a9fded2d61bd939da",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-presence]"
+      ]
+    },
+    "aud-24b.window": {
+      "page": "screens/AUD-24?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-24 Issuance and release/screenshots/AUD-24b.png",
+      "sha256": "4237bae03b6fb3090d7973db0bba1199d880f832884e50f4ff5fb61eeb3a2a90",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-presence]"
+      ]
+    },
+    "aud-24d.window": {
+      "page": "screens/AUD-24?st=d",
+      "selector": "[data-artboard=\"d\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-24 Issuance and release/screenshots/AUD-24d.png",
+      "sha256": "f42ce0d67c99d7e820289ecd76411e9133125f6c422f1ad010c1b1a27d878b19",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-presence]"
+      ]
+    },
+    "aud-24e.window": {
+      "page": "screens/AUD-24?st=e",
+      "selector": "[data-artboard=\"e\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-24 Issuance and release/screenshots/AUD-24e.png",
+      "sha256": "0078e6c2c36706b369d459f08b19532a0f579443f977824c3a27a475e916c59e",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-presence]"
+      ]
+    },
+    "aud-25a.window": {
+      "page": "screens/AUD-25?st=a",
+      "selector": "[data-artboard=\"a\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-25 Assembly and archive/screenshots/AUD-25a.png",
+      "sha256": "30620180a448428193b977e7f8c29f1e13d86322cb0802f080905cb64192a637",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-presence]"
+      ]
+    },
+    "aud-25b.window": {
+      "page": "screens/AUD-25?st=b",
+      "selector": "[data-artboard=\"b\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-25 Assembly and archive/screenshots/AUD-25b.png",
+      "sha256": "f7d6fdd4cebebcc4647a7467c797118f6d0106885f22d7a9888bc07e1243b337",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-presence]"
+      ]
+    },
+    "aud-25c.window": {
+      "page": "screens/AUD-25?st=c",
+      "selector": "[data-artboard=\"c\"] [data-shell=\"app\"]",
+      "source": "handoff/screens/AUD-25 Assembly and archive/screenshots/AUD-25c.png",
+      "sha256": "8afeb016c50870d76a210a1e718a0a5fd5158b2a6251acdbc76f0ba925a73a6c",
+      "crop": "window",
+      "tier": "C",
+      "locked": true,
+      "mask": [
+        "[data-spinner]",
+        "[data-presence]"
+      ]
     }
   }
 }
