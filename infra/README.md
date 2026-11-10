@@ -35,7 +35,7 @@ Do these signed in as the management account's root user only where a step says 
 5. **Service control policies** (Organizations → Policies → SCPs). AWS allows at most five SCPs on a target and Control Tower already uses some, so ours are combined. Attach at the **root**: `scp-region-guard.json` (us-east-2 and us-west-2 only; us-east-1 only for the global edge and Bedrock US Geo) and `scp-baseline-guards.json` (no IAM users or long-lived keys; protected CloudTrail, Config, GuardDuty, Security Hub, Access Analyzer, Macie). Leaving the organisation is already denied by AWS's managed account security policy on the root, and `aws-managed/` keeps a copy of AWS's region-restriction policy as it was enabled (`region-restriction.original.json` before our edit). SCPs never apply to the management account itself, so keep it empty of workloads.
 6. **AI services opt-out** (Organizations → Policies → AI services opt-out policies): enable the policy type, create from `ai-services-opt-out.json`, attach at the root (ADR-114, SPEC-050 AC-4).
 7. **Budgets** after DEC-03 is recorded: one budget per account at the DEC-03 envelope with 50/80/100 % alerts to your email. The amounts live in the vault, not here.
-8. **Portal DNS** when F-09-T09 delivers the neutral portal domain: hosted zone in `shared`, delegate from the registrar. The portal edge then follows section "Portal edge".
+8. **Portal DNS** when F-09-T09 delivers the neutral portal domain: hosted zone in `shared`, delegate from the registrar. When `firm_domain` and `portal_base_domain` are the same domain (DEC-3901), `shared` makes one zone and both name-server outputs show it. The portal edge then follows section "Portal edge".
 
 ### Open gap: 4-hour expiry on elevated assignments (SPEC-050 AC-3)
 

@@ -42,7 +42,7 @@ output "name_servers" {
   description = "Name servers to delegate the firm and portal domains to, once they exist."
   value = {
     firm   = try(aws_route53_zone.firm[0].name_servers, null)
-    portal = try(aws_route53_zone.portal[0].name_servers, null)
+    portal = try(aws_route53_zone.portal[0].name_servers, aws_route53_zone.firm[0].name_servers, null)
   }
 }
 

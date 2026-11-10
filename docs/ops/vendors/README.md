@@ -40,7 +40,7 @@ Record them in the vault and put only the vault reference here.
 | Sentry order form and DPA | error reporting | Oct 19 | Nov 13 | M2 | — | to file | |
 | Better Stack order form and DPA (status page, paging) | on-call, status page | Oct 19 | Dec 11 | M4 | — | to file | |
 | GitHub plan, DPA | the repository | Oct 19 | Oct 30 | M1 | — | to file | |
-| Product domain, neutral portal domain (never contains "accrued"), mail domains; registrar MFA; DNS delegated to Route 53 (F-09-T09) | edge, email, portal | Oct 19 | Oct 30 | M1 | — | to file | |
+| Product domain, neutral portal domain (never contains "accrued"), mail domains; registrar MFA; DNS delegated to Route 53 (F-09-T09) | edge, email, portal | Oct 19 | Oct 30 | M1 | — | registered 2026-10-05: one domain for every role (DEC-3901); registrar MFA and Route 53 delegation pending | name in the vault |
 
 ## Ledgers, tax and practice
 
