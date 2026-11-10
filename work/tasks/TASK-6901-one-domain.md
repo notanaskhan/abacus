@@ -4,7 +4,7 @@ title: One registered domain for the firm app, the portal and mail (F-09-T09)
 spec: SPEC-049  # row F-09-T09 (AC-8, AC-11)
 acceptance_criteria: [AC-8, AC-11]
 risk_zone: amber
-status: in-review
+status: done
 branch: f09-t09-one-domain
 created: 2026-11-10
 updated: 2026-11-10
@@ -52,3 +52,5 @@ variables are null.
 - 2026-11-10: Ayush set the four Route 53 name servers at the registrar; the .si registry
   published them at 10:03 UTC (Cloudflare and Quad9 resolve them; Google still cached the parking
   answer). Row stays partial until Ayush confirms registrar MFA.
+- 2026-11-10: Ayush waived registrar MFA ("Skip MFA, not required"; admin override, DEC-3903).
+  F-09-T09 marked done.
