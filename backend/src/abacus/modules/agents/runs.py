@@ -654,6 +654,9 @@ class RunHeader:
     work_item_ref: str | None
     plan_version: int | None = None  # P-09-T14: a plan decision's `expected_version`
     plan_steps: tuple[tuple[str, str], ...] = ()  # DEC-3142: (key, label) for "Change order…"
+    # P-10-T29: the v2 run state and its reason code, as AgentRunWorkflow writes them.
+    state: str | None = None
+    state_reason: str | None = None
 
 
 @dataclass(frozen=True)
@@ -695,6 +698,8 @@ def _header(facts: V2Facts, names: dict[UUID, str], metadata: bool) -> RunHeader
         None if metadata else facts.work_item_ref,
         facts.plan_version,
         () if metadata else facts.plan_steps,
+        facts.state,
+        facts.state_reason,
     )
 
 

@@ -12,6 +12,13 @@ from typing import Final
 
 REVIEWED_FALLBACK: Final = frozenset(
     {
+        # reviewed 2026-11-10 (S34): P-10-T29 AgentRunWorkflow part 1's transitions
+        "agent_run.completed_v2",
+        "agent_run.plan_proposed",
+        "agent_run.plan_refused",
+        "agent_run.state_changed",
+        "agent_run_step.finished",
+        "agent_run_step.started",
         # reviewed 2026-11-10 (S34): P-05-T05/T06 collaboration; AUD-29 shows only
         # `todo.deleted` and `comment.redacted` (OQ-4, P-05-T11's catalogue entries)
         "comment.corrected",
