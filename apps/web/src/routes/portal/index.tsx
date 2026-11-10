@@ -73,8 +73,8 @@ const RequestSheetScreen = lazy(async () => ({
   default: (await import("../../screens/POR-04")).POR04,
 }));
 
-// R-02-T06: POR-08, POR-09 and POR-15's lazy routes, each its own chunk (POR-08 R-02-T19, POR-09
-// R-02-T17 built; POR-15 planned).
+// R-02-T06: POR-08, POR-09 and POR-15's lazy routes, each its own chunk (built by R-02-T19,
+// R-02-T17 and R-02-T21).
 const ApprovalsScreen = lazy(async () => ({
   default: (await import("../../screens/POR-08")).POR08,
 }));
@@ -94,13 +94,12 @@ export const AREA_PATHS: Readonly<Record<string, string>> = {
   "My K-1s": "/k1s",
   Deliverables: "/deliverables", // R-02-T17: built; a firm with the flag off sees its designed state
   Approvals: "/approvals", // R-02-T19: built; the nav shows it only on an entity scope (shell.ts)
+  Communications: "/governance", // R-02-T21: built; a tcwg scope's reduced nav (DEC-93)
 };
 
 /** R-02-T06: the planned areas a fixture build reaches from the nav (production keeps them put:
  * its output is unchanged until each screen is built and its flag is on). */
-export const PLANNED_AREA_PATHS: Readonly<Record<string, string>> = {
-  Communications: "/governance",
-};
+export const PLANNED_AREA_PATHS: Readonly<Record<string, string>> = {};
 
 function Root(): JSX.Element {
   return (
@@ -220,6 +219,7 @@ function Area({ area }: { area: string }): JSX.Element | null {
   if (area === "K1s") return <K1sPage />;
   if (area === "Deliverables") return <DeliverablesPage />;
   if (area === "Approvals") return <ApprovalsPage />;
+  if (area === "Governance") return <GovernancePage />;
   return <Shell area={area} />;
 }
 
@@ -263,6 +263,30 @@ function ApprovalsPage(): JSX.Element {
         {...(context === undefined ? {} : { context })}
         {...(filter === undefined ? {} : { filter })}
         {...(overlay === undefined ? {} : { overlay })}
+      />
+    </Suspense>
+  );
+}
+
+const TABS = ["communications", "reports", "questions"] as const;
+
+/** POR-15 (R-02-T21): `/governance[/$communicationId][?tab=communications|reports|questions]`. */
+function GovernancePage(): JSX.Element {
+  const mobile = useMobileViewport();
+  const navigate = useAreaNavigate();
+  const params: { communicationId?: string } = useParams({ strict: false });
+  const [tab] = useState(() =>
+    TABS.find((t) => t === new URLSearchParams(window.location.search).get("tab")),
+  );
+  return (
+    <Suspense fallback={null}>
+      <GovernanceScreen
+        mobile={mobile}
+        onNavigate={navigate}
+        {...(params.communicationId === undefined
+          ? {}
+          : { communicationId: params.communicationId })}
+        {...(tab === undefined ? {} : { tab })}
       />
     </Suspense>
   );
@@ -506,8 +530,8 @@ export const portalTree = rootRoute.addChildren([
   page("/approvals", () => <Area area="Approvals" />), // POR-08 (R-02-T19)
   page("/deliverables", () => <Area area="Deliverables" />), // POR-09 (R-02-T17)
   page("/deliverables/$deliverableId", () => <Area area="Deliverables" />),
-  page("/governance", () => <GovernanceScreen />), // POR-15 (R-02-T06 stub)
-  page("/governance/$communicationId", () => <GovernanceScreen />),
+  page("/governance", () => <Area area="Governance" />), // POR-15 (R-02-T21)
+  page("/governance/$communicationId", () => <Area area="Governance" />),
   page("/intake", NotBuilt),
   page("/component-room", NotBuilt),
 ]);
