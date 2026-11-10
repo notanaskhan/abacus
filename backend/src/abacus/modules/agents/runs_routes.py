@@ -11,6 +11,7 @@ and 501 until P-09-T08. Every count is code's (ADR-050)."""
 
 from __future__ import annotations
 
+import time
 from datetime import datetime
 from typing import Annotated, Literal, cast, get_args
 from uuid import UUID
@@ -22,6 +23,7 @@ from abacus.kernel._flags import RUN_TRACE_ENABLED
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
+from abacus.kernel.metrics import meter
 from abacus.modules.agents.blocks import AgentBlocks
 from abacus.modules.agents.run_records import RunRecord, record_for
 from abacus.modules.agents.runs import (
@@ -455,6 +457,17 @@ class RunRecordOut(BaseModel):
     withheld: Annotated[int, classified("internal")]
 
 
+# P-09-T20: the dashboards' two signals (RB-69). A poll is one `items` read, labelled by whether
+# it brought anything new and the run's state; the trace latency is the trace read's server time.
+_meter = meter(__name__)
+_polls = _meter.create_counter(
+    "abacus.agent_run.items_polls", description="Run feed polls (GET /v1/agent-runs/{id}/items)"
+)
+_trace_seconds = _meter.create_histogram(
+    "abacus.agent_run.trace_latency", unit="s", description="Run trace read time (WB-09)"
+)
+
+
 def _record(found: RunRecord) -> RunRecordOut:
     return RunRecordOut.model_validate(found, from_attributes=True)
 
@@ -634,7 +647,9 @@ async def agent_run_record_route(run_id: UUID, ctx: Ctx) -> RunRecordOut:
 async def agent_run_items_route(
     run_id: UUID, ctx: Ctx, after_seq: Annotated[int, Query(ge=0)] = 0
 ) -> RunItemsOut:
-    return _items(await items_for(ctx, run_id, after_seq))
+    found = _items(await items_for(ctx, run_id, after_seq))
+    _polls.add(1, {"state": found.run.state, "empty": not found.items})
+    return found
 
 
 @runs_router.get(
@@ -684,7 +699,11 @@ async def agent_run_trace_step_route(
 
 @runs_router.get("/{run_id}/trace", action="agent_run.read", response_model=RunTraceOut)
 async def agent_run_trace_route(run_id: UUID, ctx: Ctx) -> RunTraceOut:
-    return _trace(await trace_for(ctx, run_id))
+    started = time.perf_counter()
+    try:
+        return _trace(await trace_for(ctx, run_id))
+    finally:
+        _trace_seconds.record(time.perf_counter() - started)
 
 
 @runs_router.post(
