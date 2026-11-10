@@ -637,6 +637,10 @@ async def _released_step(system: TenantContext, d: _Delivery) -> None:
             target=Target(KIND, d.return_id),
             after=Ref(release=d.release_id, package=d.package_id),
         )
+        # T-04-T23: the receiving returns' Draft K-1 issues resolve (the system's, AC-4.2).
+        from abacus.modules.tax.return_issues import K1PackageReleased
+
+        tx.emit(K1PackageReleased(package_id=d.package_id, work_item_id=d.return_id))
 
 
 async def _variables(tenant_id: UUID, first_name: str) -> dict[str, str]:

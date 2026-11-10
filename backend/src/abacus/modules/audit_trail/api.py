@@ -8,6 +8,10 @@ from abacus.modules.audit_trail.activity_catalogue import (
     register_activity_kinds,
 )
 from abacus.modules.audit_trail.audit_log_contract import router as audit_log_router
+from abacus.modules.audit_trail.engagement_activity import (  # T-04-T23: TAX-07's kinds
+    ActivityLink,
+    register_activity_links,
+)
 from abacus.modules.audit_trail.engagement_activity_contract import engagement_activity_router
 from abacus.modules.audit_trail.explorer import (
     EventFilter,
@@ -85,6 +89,7 @@ __all__ = [
     "SUBSCRIPTIONS",
     "VERIFY_ID",
     "WORKFLOWS",
+    "ActivityLink",
     "AuditChainVerifyWorkflow",
     "AuditCheckpointWorkflow",
     "AuditExportFacts",
@@ -110,6 +115,7 @@ __all__ = [
     "latest_checkpoint",
     "list_events",
     "register_activity_kinds",
+    "register_activity_links",
     "router",
     "verify_chain",
 ]

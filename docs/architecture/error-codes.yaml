@@ -3185,6 +3185,11 @@ codes:
     raised_by:
     - abacus.modules.identity.support.SupportSessionInvalid
     summary: A reason of 20 to 1,000 characters, a scope, and 1 to 240 minutes (60 in an emergency).
+  system_resolved_only:
+    status: 409
+    raised_by:
+    - abacus.modules.review.issue_resolutions.IssueSystemResolvedOnly
+    summary: 'A dependency issue (the Draft K-1) resolves only when its dependency does, by the system (T-04-T23).'
   tax_profile_file_unavailable:
     status: 409
     raised_by:

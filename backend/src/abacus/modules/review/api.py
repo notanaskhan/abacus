@@ -18,6 +18,7 @@ from abacus.modules.review.checkpoints import (
     checkpoint_deltas,
     decide_import,
     follow_proposal_decision,
+    list_checkpoints,  # T-04-T23: TAX-07's chip
     record_import_proposal,
 )
 from abacus.modules.review.checkpoints import propose as propose_checkpoint
@@ -70,12 +71,20 @@ from abacus.modules.review.gates import (
 from abacus.modules.review.gates import SUBSCRIPTIONS as GATE_SUBSCRIPTIONS
 from abacus.modules.review.hashing import Json, NotCanonical, canonical_json, content_hash
 from abacus.modules.review.issue_refs import issue_engagement
+from abacus.modules.review.issue_resolutions import (
+    IssueSystemResolvedOnly,  # T-04-T23
+    register_client_request_sender,
+    system_resolve_dependents,
+)
 from abacus.modules.review.issue_resolutions import move as move_issue
-from abacus.modules.review.issue_resolutions import register_client_request_sender
 from abacus.modules.review.issues import (
+    OPEN_STATUSES,  # T-04-T23
+    IssueSource,  # T-04-T23: source kind, category path, system-resolved dependency
     create_issue,
     create_issue_in,
     issue_row,
+    list_issues,  # T-04-T23: TAX-06 counts and the CSV export
+    read_issue,
     record_engine_issue,  # T-01-T26: engine diagnostics
     record_rule_issue,
 )
@@ -202,6 +211,7 @@ __all__ = [
     "ACTIVITIES",
     "C13_EVENTS",
     "LEVELS",
+    "OPEN_STATUSES",
     "REQUIRED_LEVELS",
     "ROUTERS",
     "STATEMENTS",
@@ -236,6 +246,8 @@ __all__ = [
     "GateView",
     "Incomplete",
     "IndependencePending",
+    "IssueSource",
+    "IssueSystemResolvedOnly",
     "Json",
     "LevelNotPermitted",
     "LevelState",
@@ -264,9 +276,9 @@ __all__ = [
     "UnregisteredKind",
     "approved_values",
     "awaiting_cards",
-    "card_decision",
     "blocking_issues",
     "canonical_json",
+    "card_decision",
     "changed_since",
     "checkpoint_deltas",
     "content_hash",
@@ -288,6 +300,8 @@ __all__ = [
     "issue_engagement",
     "issue_row",  # A-06-T11: a finding's issue status and version
     "latest_sources",
+    "list_checkpoints",
+    "list_issues",
     "move_issue",  # A-06-T11: resolve or mark not applicable through the issue
     "notes_for",
     "open_note_counts",
@@ -299,6 +313,7 @@ __all__ = [
     "raise_decision_card",
     "raise_review_note",
     "raise_review_note_in",
+    "read_issue",
     "rebuild_human_gates",
     "record_engine_issue",
     "record_import_proposal",
@@ -333,6 +348,7 @@ __all__ = [
     "sign_target",
     "stale_of",
     "states_of",
+    "system_resolve_dependents",
     "typed_value",
 ]
 

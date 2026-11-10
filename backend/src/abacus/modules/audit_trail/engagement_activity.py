@@ -208,6 +208,8 @@ class ActivityFilter:
     since: datetime | None = None
     until: datetime | None = None
     q: str | None = None
+    # T-04-T23 (AC-5.6): TAX-07 reads one return's events (the audit row's `work_item_id`).
+    work_item_id: UUID | None = None
 
     def digest(self) -> str:
         return query_hash(
@@ -217,6 +219,7 @@ class ActivityFilter:
             since=self.since,
             until=self.until,
             q=self.q,
+            work_item=self.work_item_id,
         )
 
     def fingerprint(self) -> str:
@@ -229,6 +232,7 @@ class ActivityFilter:
                 "since": self.since.isoformat() if self.since else None,
                 "until": self.until.isoformat() if self.until else None,
                 "q": self.q,
+                "work_item": str(self.work_item_id) if self.work_item_id else None,
             },
             sort_keys=True,
             separators=(",", ":"),
@@ -261,6 +265,8 @@ async def _conditions(
     ]
     if where.categories:
         found.append(t.action.in_(await _actions_in(ctx, where.engagement_id, where.categories)))
+    if where.work_item_id is not None:
+        found.append(t.work_item_id == where.work_item_id)
     if where.since is not None:
         found.append(t.effective_at >= where.since)
     if where.until is not None:
