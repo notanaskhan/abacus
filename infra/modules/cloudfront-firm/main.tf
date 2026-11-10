@@ -1,8 +1,9 @@
 # The firm app's edge (Q-01-T15): one CloudFront distribution on its default *.cloudfront.net
 # host until the firm domain exists (DEC-1003). The SPA comes from abacus-<env>-web through origin
 # access control; /v1/* goes to the internal ALB through a CloudFront VPC origin (no public
-# endpoint). /healthz and /readyz answer 403 at the edge (the ALB alone probes them). The WAF
-# WebACL attaches when given; the firm host and its certificate join with the domain.
+# endpoint). /healthz and /readyz answer 403 at the edge (the ALB alone probes them); /v1/* carries
+# the viewer's Host as X-Forwarded-Host, never one the viewer sent (DEC-3990). The WAF WebACL
+# attaches when given; the firm host and its certificate join with the domain.
 
 resource "aws_cloudfront_origin_access_control" "web" {
   name                              = "abacus-${var.environment}-web"
@@ -74,7 +75,7 @@ data "aws_cloudfront_origin_request_policy" "all_viewer_except_host" {
 resource "aws_cloudfront_function" "edge_block" {
   name    = "abacus-${var.environment}-firm-edge-block"
   runtime = "cloudfront-js-2.0"
-  comment = "Refuse /healthz and /readyz at the edge (403)"
+  comment = "Refuse /healthz and /readyz at the edge (403); /v1 gets X-Forwarded-Host (DEC-3990)"
   publish = true
   code    = file("${path.module}/firm-edge.js")
 }
@@ -134,6 +135,11 @@ resource "aws_cloudfront_distribution" "firm" {
     origin_request_policy_id   = data.aws_cloudfront_origin_request_policy.all_viewer_except_host.id
     response_headers_policy_id = aws_cloudfront_response_headers_policy.firm.id
     compress                   = false
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.edge_block.arn
+    }
   }
 
   ordered_cache_behavior {
@@ -146,6 +152,11 @@ resource "aws_cloudfront_distribution" "firm" {
     origin_request_policy_id   = data.aws_cloudfront_origin_request_policy.all_viewer_except_host.id
     response_headers_policy_id = aws_cloudfront_response_headers_policy.firm.id
     compress                   = true
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.edge_block.arn
+    }
   }
 
   # The SPA's client routes: a missing object is the app shell.

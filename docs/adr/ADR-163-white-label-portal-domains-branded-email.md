@@ -110,6 +110,13 @@ tenant_id = TENANT_BY_HOST[request.headers["host"]]   # the host never decides t
 PORTAL_URL = f"https://{slug}.portal.accrued.app"     # never a domain constant; never "accrued" in a portal host
 ```
 
+## Amendment: the host is the viewer's host (2026-11-10; TASK-6990, DEC-3990)
+Behind CloudFront the request's `Host` is the origin's own name (the internal load balancer): both distributions forward every viewer header except `Host`, and their viewer-request functions pass the viewer's `Host` on `/v1/*` as `X-Forwarded-Host`, replacing any value the viewer sent (`portal-entry.js`, `firm-edge.js`). So "the host" in §5, in host pinning and in the connect host's hand-off (ADR-152's DEC-3902 amendment) means the **viewer host** (`abacus.kernel.viewer_host`):
+- `X-Forwarded-Host` only from a peer in `proxy_trusted_hosts` (the load balancer, the peers uvicorn already believes `X-Forwarded-For` from); from any other peer it is ignored and `Host` is the viewer host. A trusted peer with no forwarded host (the load balancer's probes) is judged on `Host`. Several values, a comma chain or an empty one are no host.
+- Lower case, without its port or a trailing dot.
+- `TrustedHosts` judges that value against `trusted_hosts` and `*.<portal_base_domain>` (400 otherwise), runs outside uvicorn's proxy middleware so it sees the real peer, and keeps it on the request for every host-dependent read (branding and logo, portal sign-in and refresh, `portal_context` and `portal_invitee` pinning, invitation preview, link renewal, `origin_host` at connect start).
+- Unchanged: the host is a branding hint and a session pin, never a tenant (INV-4, ADR-002). A forwarded host from a stranger moves nothing.
+
 ## Revisit when
 WorkOS cannot hold a redirect URI per portal host and an `auth.<neutral-portal-domain>` hop is needed (chapter 06 §1.12); CloudFront multi-tenant limits or pricing force one distribution per custom domain; a firm asks for the portal on the firm app's domain; or the neutral domains' reputation fails the M10 deliverability gate.
 

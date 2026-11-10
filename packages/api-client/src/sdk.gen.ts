@@ -4130,7 +4130,7 @@ export const revoke = <ThrowOnError extends boolean = false>(options: Options<Re
  * Start Route
  *
  * SPEC-020 AC-2, AC-3: a client admin, signed in recently, starts connecting. A-02-T33: the
- * state keeps this request's `Host` (after `TrustedHosts`), never anything in the query.
+ * state keeps this request's viewer host (`TrustedHosts`, DEC-3990), never the query's.
  */
 export const start = <ThrowOnError extends boolean = false>(options: Options<StartData, ThrowOnError>): RequestResult<StartResponses, StartErrors, ThrowOnError> => (options.client ?? client).post<StartResponses, StartErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -12661,7 +12661,7 @@ export const listEntityConnections = <ThrowOnError extends boolean = false>(opti
  * POR-16 b, e: one consent row as shown, then the provider's sign-in URL (fresh MFA). 422
  * `authorization_required`; 409 `consent_version_stale`, `ledger_already_connected`,
  * `connector_not_available`. Audited `connection.consent_recorded`, `connection.started`.
- * A-02-T33: the state keeps this request's `Host` (after `TrustedHosts`), never the query's.
+ * A-02-T33: the state keeps the request's viewer host (DEC-3990), never the query's.
  */
 export const startConnection = <ThrowOnError extends boolean = false>(options: Options<StartConnectionData, ThrowOnError>): RequestResult<StartConnectionResponses, StartConnectionErrors, ThrowOnError> => (options.client ?? client).post<StartConnectionResponses, StartConnectionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

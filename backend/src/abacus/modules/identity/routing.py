@@ -31,6 +31,7 @@ from abacus.kernel.controls import control_active, ensure_writable
 from abacus.kernel.errors import NotFound
 from abacus.kernel.logging import get_logger
 from abacus.kernel.request_context import note_session
+from abacus.kernel.viewer_host import viewer_host
 from abacus.modules.identity.access_window import access_has_ended
 from abacus.modules.identity.authz import recording_checks
 from abacus.modules.identity.authz.matrix import RULES
@@ -223,9 +224,9 @@ async def current_context(
         return support
     scheme, _, token = (authorization or "").partition(" ")
     if scheme.lower() == "bearer" and is_portal_token(token):
-        # ADR-168: an opaque portal token, resolved only on the host it was minted on; the tenant
-        # header can't choose another firm.
-        portal = await portal_context(token, request.headers.get("host"))
+        # ADR-168: an opaque portal token, resolved only on the (viewer) host it was minted on
+        # (DEC-3990); the tenant header can't choose another firm.
+        portal = await portal_context(token, viewer_host(request))
         if portal is None or x_abacus_tenant not in (None, str(portal.tenant_id)):
             raise HTTPException(401, "not authenticated", headers={"WWW-Authenticate": "Bearer"})
         # G-02-T06: a portal session is the portal's own email code (ADR-168).
@@ -301,7 +302,7 @@ async def current_invitee(
     routes that take only the hosted identity (sign-up) depend on `current_identity` too."""
     scheme, _, token = (authorization or "").partition(" ")
     if scheme.lower() == "bearer" and is_portal_token(token):
-        found = await portal_invitee(token, request.headers.get("host"))
+        found = await portal_invitee(token, viewer_host(request))
         if found is None:
             raise HTTPException(401, "not authenticated", headers={"WWW-Authenticate": "Bearer"})
         return found

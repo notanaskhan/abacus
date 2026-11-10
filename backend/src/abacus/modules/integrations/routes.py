@@ -14,6 +14,7 @@ from uuid import UUID
 
 from fastapi import Depends, Request
 
+from abacus.kernel.viewer_host import viewer_host
 from abacus.modules.identity.api import AuthContext, current_context
 from abacus.modules.integrations.client_connect import (
     detail_of,
@@ -69,8 +70,8 @@ async def start_connection_route(
     """POR-16 b, e: one consent row as shown, then the provider's sign-in URL (fresh MFA). 422
     `authorization_required`; 409 `consent_version_stale`, `ledger_already_connected`,
     `connector_not_available`. Audited `connection.consent_recorded`, `connection.started`.
-    A-02-T33: the state keeps this request's `Host` (after `TrustedHosts`), never the query's."""
-    return await start_card(ctx, entity_id, catalog_key, body, host=request.headers.get("host"))
+    A-02-T33: the state keeps the request's viewer host (DEC-3990), never the query's."""
+    return await start_card(ctx, entity_id, catalog_key, body, host=viewer_host(request))
 
 
 @portal_router.get(

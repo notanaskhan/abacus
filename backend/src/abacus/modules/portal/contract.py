@@ -22,13 +22,14 @@ from datetime import date, datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import Depends, Header, Query, Response
+from fastapi import Depends, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from abacus.kernel._flags import PORTAL_HOME_V2
 from abacus.kernel.classification import classified
 from abacus.kernel.errors import NotFound
 from abacus.kernel.flags import flag_enabled
+from abacus.kernel.viewer_host import ViewerHost
 from abacus.modules.identity.api import (
     PORTAL_PUBLIC,
     AbacusRouter,
@@ -300,9 +301,7 @@ _SIGN_IN = PortalSignInPolicyOut(methods=["email_code"], mfa_floor=["owner", "si
 
 
 @router.get("/branding", action=PORTAL_PUBLIC, response_model=PortalBrandingOut)
-async def get_portal_branding_route(
-    response: Response, host: Annotated[str | None, Header()] = None
-) -> PortalBrandingOut:
+async def get_portal_branding_route(response: Response, host: ViewerHost) -> PortalBrandingOut:
     """POR-01's branding for the request's host: Public slots, or the same shape with neutral
     values. Cached per host at the edge for a minute."""
     found = await branding_for_host(host)
@@ -312,7 +311,7 @@ async def get_portal_branding_route(
 
 
 @router.get("/branding/logo", action=PORTAL_PUBLIC, response_model=str)
-async def get_portal_logo_route(host: Annotated[str | None, Header()] = None) -> Response:
+async def get_portal_logo_route(host: ViewerHost) -> Response:
     """The firm's logo, re-encoded as PNG on upload, served same-origin; 404 for any host
     without one. The body is `image/png` (the model is only the generator's placeholder)."""
     png = await logo_for_host(host)

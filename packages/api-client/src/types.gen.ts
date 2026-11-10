@@ -102631,12 +102631,6 @@ export type AcceptInvitationResponse = AcceptInvitationResponses[keyof AcceptInv
 
 export type PreviewInvitationData = {
     body: InvitationPreviewIn;
-    headers?: {
-        /**
-         * Host
-         */
-        host?: string | null;
-    };
     path?: never;
     query?: never;
     url: '/v1/invitations/preview';
@@ -110684,10 +110678,6 @@ export type PortalMfaData = {
     body: PortalMfaIn;
     headers?: {
         /**
-         * Host
-         */
-        host?: string | null;
-        /**
          * User-Agent
          */
         'user-agent'?: string | null;
@@ -110741,12 +110731,6 @@ export type PortalMfaResponse = PortalMfaResponses[keyof PortalMfaResponses];
 
 export type PortalMfaSetupData = {
     body: PortalMfaSetupIn;
-    headers?: {
-        /**
-         * Host
-         */
-        host?: string | null;
-    };
     path?: never;
     query?: never;
     url: '/v1/portal/auth/mfa/setup';
@@ -110792,12 +110776,6 @@ export type PortalMfaSetupResponse = PortalMfaSetupResponses[keyof PortalMfaSetu
 
 export type PortalMfaSetupVerifyData = {
     body: PortalMfaSetupVerifyIn;
-    headers?: {
-        /**
-         * Host
-         */
-        host?: string | null;
-    };
     path?: never;
     query?: never;
     url: '/v1/portal/auth/mfa/setup/verify';
@@ -110857,10 +110835,6 @@ export type PortalRefreshData = {
          */
         origin?: string | null;
         /**
-         * Host
-         */
-        host?: string | null;
-        /**
          * X-Abacus-Activity
          */
         'X-Abacus-Activity'?: string | null;
@@ -110902,12 +110876,6 @@ export type PortalRefreshResponse = PortalRefreshResponses[keyof PortalRefreshRe
 
 export type PortalResendData = {
     body: PortalSignInResendIn;
-    headers?: {
-        /**
-         * Host
-         */
-        host?: string | null;
-    };
     path?: never;
     query?: never;
     url: '/v1/portal/auth/resend';
@@ -111004,12 +110972,6 @@ export type PortalSignOutResponse = PortalSignOutResponses[keyof PortalSignOutRe
 
 export type PortalStartData = {
     body: PortalSignInStartIn;
-    headers?: {
-        /**
-         * Host
-         */
-        host?: string | null;
-    };
     path?: never;
     query?: never;
     url: '/v1/portal/auth/start';
@@ -111051,12 +111013,6 @@ export type PortalStartResponse = PortalStartResponses[keyof PortalStartResponse
 
 export type PortalVerifyData = {
     body: PortalSignInVerifyIn;
-    headers?: {
-        /**
-         * Host
-         */
-        host?: string | null;
-    };
     path?: never;
     query?: never;
     url: '/v1/portal/auth/verify';
@@ -111412,12 +111368,6 @@ export type UndoMarkDoneResponse = UndoMarkDoneResponses[keyof UndoMarkDoneRespo
 
 export type GetPortalBrandingData = {
     body?: never;
-    headers?: {
-        /**
-         * Host
-         */
-        host?: string | null;
-    };
     path?: never;
     query?: never;
     url: '/v1/portal/branding';
@@ -111455,12 +111405,6 @@ export type GetPortalBrandingResponse = GetPortalBrandingResponses[keyof GetPort
 
 export type GetPortalLogoData = {
     body?: never;
-    headers?: {
-        /**
-         * Host
-         */
-        host?: string | null;
-    };
     path?: never;
     query?: never;
     url: '/v1/portal/branding/logo';
@@ -114329,12 +114273,6 @@ export type PortalEFurnishingResponse = PortalEFurnishingResponses[keyof PortalE
 
 export type PortalLinkRenewData = {
     body: PortalLinkRenewIn;
-    headers?: {
-        /**
-         * Host
-         */
-        host?: string | null;
-    };
     path?: never;
     query?: never;
     url: '/v1/portal/links/renew';

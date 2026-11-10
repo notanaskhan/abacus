@@ -5,11 +5,9 @@ its own state, never from here."""
 
 from __future__ import annotations
 
-from typing import Annotated
-
-from fastapi import Header
 from fastapi.responses import JSONResponse, Response
 
+from abacus.kernel.viewer_host import ViewerHost
 from abacus.modules.communications.secure_links import renew_link
 from abacus.modules.identity.api import (
     PRE_SESSION,
@@ -22,9 +20,7 @@ router = AbacusRouter(prefix="/v1/portal/links", tags=["portal-auth"])
 
 
 @router.post("/renew", action=PRE_SESSION, response_model=PortalLinkRenewOut, status_code=202)
-async def portal_link_renew_route(
-    body: PortalLinkRenewIn, host: Annotated[str | None, Header()] = None
-) -> Response:
+async def portal_link_renew_route(body: PortalLinkRenewIn, host: ViewerHost) -> Response:
     await renew_link(host, body.link_token)
     response = JSONResponse(PortalLinkRenewOut().model_dump(mode="json"), status_code=202)
     response.headers["Cache-Control"] = "no-store"
