@@ -654,6 +654,8 @@ export function AuditCockpitPage({
   initial?: {
     section?: string;
     dock?: DockTab;
+    /** P-09-T18: the run open in the SHL-13 pane (SHL-13·F, the full frame at 9:41). */
+    run?: string;
     doc?: string | null;
     trialBalance?: TrialBalanceOptions["initial"];
     autoMode?: AutoModeStep;
@@ -677,6 +679,7 @@ export function AuditCockpitPage({
 }): JSX.Element {
   const [section, setSection] = useState(initial.section);
   const [dock, setDock] = useState<DockTab>(initial.dock ?? "agent");
+  const [run, setRun] = useState<string | null>(initial.run ?? null);
   const [doc, setDoc] = useState<string | null>(initial.doc ?? null);
   const [reviewVersion, setReviewVersion] = useState(initial.planReviewVersion);
   return (
@@ -685,6 +688,8 @@ export function AuditCockpitPage({
       {...(section === undefined ? {} : { section })}
       onSection={setSection}
       dock={dock}
+      runId={run}
+      onRun={setRun}
       doc={doc}
       onDock={(tab, next) => {
         setDock(tab);
