@@ -260,6 +260,12 @@ async def field_engagement(tenant: TenantContext, field_id: UUID) -> UUID | None
     return await _engagement_of("return_fields", tenant, field_id)
 
 
+async def worksheet_engagement(tenant: TenantContext, worksheet_id: UUID) -> UUID | None:
+    """T-04-T19: `tax.propose_field_changes` rows name the worksheet and the field key, as
+    `apply_field_proposal` reads them."""
+    return await _engagement_of("return_worksheets", tenant, worksheet_id)
+
+
 async def k1_engagement(tenant: TenantContext, treatment_id: UUID) -> UUID | None:
     return await _engagement_of("k1_treatments", tenant, treatment_id)
 
@@ -353,6 +359,7 @@ def register() -> None:
         )
     )
     register_suggestion_target("return_field", engagement_of=field_engagement)
+    register_suggestion_target(WORKSHEET, engagement_of=worksheet_engagement)
     register_suggestion_target("pass_through_treatment", engagement_of=k1_engagement)
     register_suggestion_target("residency_determination", engagement_of=residency_engagement)
     register_proposal_adapter("return_field_changes", apply_field_proposal)
